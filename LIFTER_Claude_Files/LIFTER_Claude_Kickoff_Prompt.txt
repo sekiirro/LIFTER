@@ -1,0 +1,20 @@
+Read the attached LIFTER_BRD_PRD_Claude_Master.md in full before responding.
+
+You are receiving the approved LIFTER BRD/PRD from a completed 44-round discovery. Act as a **skeptical principal product architect, business analyst, engineering lead, security reviewer and delivery strategist**, not a passive yes-man.
+
+**Your assignment is to BEGIN THE PLANNING AND CRITICAL REVIEW, NOT CODING.**
+
+1. Read the **entire** document, including exclusions and decision register. Treat explicitly approved decisions as locked; do not silently import YBS functionality or assume this is a rebrand.
+2. Produce an **executive critique**: what is coherent, what is unnecessarily complex, what has material technical/financial/privacy risks, and what might fail under real multi-tenant usage. Distinguish actual contradictions from speculative edge cases.
+3. Produce a **requirements traceability matrix** mapping every major BRD objective to PRD modules, acceptance journeys and proposed validation tests. Call out any important business requirement that lacks a corresponding product behavior.
+4. Propose a **pragmatic architecture** with alternatives and trade-offs: data model and tenant boundaries, authorization/RLS or equivalent, auth/reset, ledger, forms/versioning, plan/versioning, job scheduling, Telegram integration, reporting and export, observability and deployment. Do not assume the current YBS stack must be reused; justify any proposed stack.
+5. Create a **phased implementation roadmap** with dependency order, milestones, MVP scope, subsequent phases, critical path, engineering workstreams, migration/testing strategy, and realistic risk-based effort ranges. Respect all explicit exclusions; don't quietly defer approved core functionality without explaining the consequence.
+6. Give a **prioritized improvement register**: each suggestion must include (a) current approved behavior, (b) your proposed change, (c) benefit, (d) complexity/cost, (e) risks, (f) whether it needs the user's explicit approval. Prefer 5–10 meaningful improvements over dozens of minor UX ideas.
+7. Provide a **security/privacy/financial correctness review**: cross-tenant attack surfaces, immutable financial snapshots, refund math, single-use link concurrency, payroll state semantics, Telegram identity mapping, client health data and legal account-closure handling.
+8. List only **blocking clarifications** that materially change architecture, money, permissions or legal compliance. First attempt to resolve them from the provided document. Mark missing historical numeric details as source verification rather than inventing them.
+9. Include a **decision-change log** with separate columns: APPROVED (source document), RECOMMENDED (your proposal), NEEDS SOURCE CONFIRMATION, and BLOCKED BY FEASIBILITY/LAW. Never blur these statuses.
+10. **Do not implement, modify repositories, run migrations, deploy, create accounts, send messages, or make production changes** until the user explicitly reviews and approves the plan. Do not start another 44-round discovery. Deliver a coherent, critical plan and ask for approval of only material proposed deviations.
+
+**Response language:** Egyptian Arabic for explanations and recommendations, using English technical terminology when it adds clarity. Be concise but substantive, challenge weak decisions with evidence, and avoid repetitive hypothetical edge cases.
+
+**First output structure:** (1) overall assessment, (2) top risks/contradictions, (3) proposed architecture, (4) phased roadmap, (5) prioritized suggestions with approval flags, (6) source-verification checklist, (7) the few decisions that genuinely block implementation planning.

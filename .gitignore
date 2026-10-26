@@ -1,0 +1,72 @@
+# Environment files and credentials
+.env
+.env.*
+!.env.example
+!.env.template
+.netrc
+.npmrc
+.pypirc
+.aws/
+.azure/
+.config/gcloud/
+.docker/
+credentials/
+secrets/
+**/credentials.json
+**/*-credentials.json
+**/service-account*.json
+
+# Private keys and certificates
+*.pem
+*.key
+*.p12
+*.pfx
+*.jks
+*.keystore
+*.mobileprovision
+*.provisionprofile
+*.secret
+*.secrets
+
+# Dependencies and generated output
+node_modules/
+vendor/
+dist/
+build/
+out/
+target/
+coverage/
+.next/
+.nuxt/
+.output/
+.turbo/
+.vercel/
+.expo/
+.cache/
+
+# Python caches and virtual environments
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Local databases, logs, and temporary files
+*.sqlite
+*.sqlite3
+*.db
+*.log
+npm-debug.log*
+yarn-debug.log*
+pnpm-debug.log*
+tmp/
+temp/
+
+# Editor and operating system files
+.vscode/
+.idea/
+.DS_Store
+Thumbs.db
+Desktop.ini
