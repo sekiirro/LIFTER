@@ -43,6 +43,10 @@ Install Docker and Supabase CLI 2.122.0 before running the local database suite.
 The integration job in GitHub Actions uses a disposable local stack, applies all
 migrations from scratch, and needs no repository secrets or deployment.
 
+On Windows, Docker Desktop is enough, and the pinned CLI runs via `npx supabase@2.122.0`
+(verified 2026-10-27, Docker 29.9.2). If `docker` isn't on `PATH`, add
+`%LOCALAPPDATA%\Programs\DockerDesktop\resources\bin` (per-user install).
+
 In Bash, start the stack and export its generated development environment:
 
 ```bash

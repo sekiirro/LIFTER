@@ -36,7 +36,7 @@
 
 ## Phase 7: Polish
 
-- [ ] T013 (Claude) Review: SQL read line by line against data-model; run unit gates locally; push; CI integration green; negative check (weaken a policy on a scratch branch commit → CI red → drop the commit) if CI time allows, otherwise record it in the PR as pending.
+- [x] T013 (Claude) Review: SQL read line by line against data-model; run unit gates locally; push; CI integration green; negative check (weaken a policy on a scratch branch commit → CI red → drop the commit) if CI time allows, otherwise record it in the PR as pending.
 
 ## Dependencies
 
