@@ -19,7 +19,10 @@
     "build:edge": "opennextjs-cloudflare build",
     "build:cron": "wrangler deploy --dry-run --config workers/cron/wrangler.jsonc --outdir .wrangler/cron-dist",
     "size": "node scripts/size-report.mjs",
-    "test:integration": "vitest run --config vitest.integration.config.ts"
+    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "backup": "node scripts/backup/backup.mjs",
+    "backup:restore-test": "node scripts/backup/restore-test.mjs",
+    "backup:keygen": "node scripts/backup/keygen.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-sans-arabic": "5.3.0",
@@ -36,6 +39,7 @@
     "@types/node": "24.19.2",
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
+    "age-encryption": "0.3.1",
     "eslint": "9.39.5",
     "eslint-config-next": "16.4.3",
     "postgres": "3.4.9",
