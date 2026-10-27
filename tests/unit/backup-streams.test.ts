@@ -1,4 +1,5 @@
-import { afterEach, expect, it } from 'vitest';
+import { afterEach, expect, it, vi } from 'vitest';
+import { EventEmitter } from 'node:events';
 import { Readable, Writable } from 'node:stream';
 import { createReadStream, createWriteStream } from 'node:fs';
 import { mkdtemp, rm, readFile } from 'node:fs/promises';
@@ -12,9 +13,11 @@ import {
 } from 'age-encryption';
 import {
   CommandError,
+  InterruptedError,
   TimeoutError,
   npxCommand,
   run,
+  watchInterruptions,
 } from '../../scripts/backup/lib/exec.mjs';
 
 const roots: string[] = [];
@@ -25,17 +28,84 @@ it('times out a sleeping Node process and terminates it', async () => {
       process.execPath,
       ['-e', 'console.log(process.pid); setTimeout(()=>{},60000)'],
       {
-        timeoutMs: 500,
+        timeoutMs: 2000,
         output: async (stream) => {
           let output = '';
           for await (const chunk of stream) output += chunk.toString();
-          pids.push(...output.trim().split(/\s+/).map(Number));
+          pids.push(...output.trim().split(/\s+/).filter(Boolean).map(Number));
         },
       },
     ),
   ).rejects.toMatchObject({ code: 'TIMEOUT' });
   expect(pids).toHaveLength(1);
   for (const pid of pids) expect(() => process.kill(pid, 0)).toThrow();
+}, 14000);
+
+it.each(['SIGINT', 'SIGTERM'])(
+  'awaits tree termination before rejecting with INTERRUPTED on %s',
+  async (signal) => {
+    const signals = new EventEmitter();
+    let finish!: () => void;
+    const terminate = vi.fn(
+      () =>
+        new Promise<void>((resolve) => {
+          finish = resolve;
+        }),
+    );
+    const interruption = watchInterruptions(terminate, {
+      signals,
+      stderr: () => 'password=secret',
+    });
+    const rejected = expect(interruption.promise).rejects.toMatchObject({
+      code: 'INTERRUPTED',
+      stderr: 'password=[REDACTED]',
+    });
+    let settled = false;
+    interruption.promise.catch(() => {
+      settled = true;
+    });
+    try {
+      signals.emit(signal);
+      signals.emit(signal);
+      await Promise.resolve();
+      expect(terminate).toHaveBeenCalledTimes(1);
+      expect(settled).toBe(false);
+      expect(interruption.error).toBeInstanceOf(InterruptedError);
+      expect(interruption.error).toBeInstanceOf(CommandError);
+      finish();
+      await rejected;
+    } finally {
+      interruption.dispose();
+    }
+    expect(signals.listenerCount('SIGINT')).toBe(0);
+    expect(signals.listenerCount('SIGTERM')).toBe(0);
+  },
+);
+
+it('shares signal listeners and leaves settled commands alone', async () => {
+  const signals = new EventEmitter();
+  const stopped = vi.fn(async () => {});
+  const active = vi.fn(async () => {});
+  const first = watchInterruptions(stopped, { signals });
+  const second = watchInterruptions(active, { signals });
+  const rejected = expect(second.promise).rejects.toMatchObject({
+    code: 'INTERRUPTED',
+  });
+  try {
+    expect(signals.listenerCount('SIGINT')).toBe(1);
+    expect(signals.listenerCount('SIGTERM')).toBe(1);
+    first.dispose();
+    first.dispose();
+    signals.emit('SIGINT');
+    await rejected;
+    expect(stopped).not.toHaveBeenCalled();
+    expect(active).toHaveBeenCalledOnce();
+  } finally {
+    first.dispose();
+    second.dispose();
+  }
+  expect(signals.listenerCount('SIGINT')).toBe(0);
+  expect(signals.listenerCount('SIGTERM')).toBe(0);
 });
 
 it('allows commands to finish before their timeout', async () => {

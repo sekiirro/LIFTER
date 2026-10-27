@@ -18,6 +18,66 @@ export class TimeoutError extends CommandError {
     this.code = 'TIMEOUT';
   }
 }
+export class InterruptedError extends CommandError {
+  constructor(stderr = '') {
+    super(stderr);
+    this.message = 'INTERRUPTED';
+    this.code = 'INTERRUPTED';
+  }
+}
+
+const signalWatchers = new WeakMap();
+
+// Share one pair of listeners across concurrent commands. The signal source is
+// injectable so tests never send operator signals to the test runner.
+export function watchInterruptions(
+  terminate,
+  { signals = process, stderr = () => '' } = {},
+) {
+  let error;
+  let receive;
+  let disposed = false;
+  const promise = new Promise((resolve, reject) => {
+    receive = () => {
+      if (error) return;
+      error = new InterruptedError(stderr());
+      Promise.resolve()
+        .then(terminate)
+        .then(
+          () => reject(error),
+          () => reject(error),
+        );
+    };
+  });
+  let shared = signalWatchers.get(signals);
+  if (!shared) {
+    const watchers = new Set();
+    const listener = () => {
+      for (const watcher of watchers) watcher();
+    };
+    shared = { watchers, listener };
+    signalWatchers.set(signals, shared);
+    signals.on('SIGINT', listener);
+    signals.on('SIGTERM', listener);
+  }
+  shared.watchers.add(receive);
+  return {
+    promise,
+    get error() {
+      return error;
+    },
+    dispose() {
+      if (disposed) return;
+      disposed = true;
+      shared.watchers.delete(receive);
+      if (shared.watchers.size === 0) {
+        signals.off('SIGINT', shared.listener);
+        signals.off('SIGTERM', shared.listener);
+        signalWatchers.delete(signals);
+      }
+    },
+  };
+}
 
 async function terminateTree(child) {
   if (!child.pid) return;
@@ -130,9 +190,13 @@ export async function run(
   });
   // Attach a handler immediately: process exit can precede stream completion.
   done.catch(() => {});
+  let termination;
+  const stop = () => (termination ||= terminateTree(child));
+  const interruption = watchInterruptions(stop, { stderr: () => stderr });
+  child.once('close', interruption.dispose);
   let captured = '';
   const reading = output
-    ? output(child.stdout)
+    ? Promise.resolve().then(() => output(child.stdout))
     : (async () => {
         for await (const chunk of child.stdout) {
           captured += chunk.toString();
@@ -145,33 +209,38 @@ export async function run(
     : Promise.resolve(child.stdin.end());
   let timer;
   let timeoutError;
-  let termination;
   const timeout = new Promise((resolve, reject) => {
     timer = setTimeout(() => {
       timeoutError = new TimeoutError(stderr);
-      termination = terminateTree(child);
-      termination.then(
+      stop().then(
         () => reject(timeoutError),
         () => reject(timeoutError),
       );
     }, timeoutMs);
   });
   try {
-    await Promise.race([Promise.all([done, reading, writing]), timeout]);
+    await Promise.race([
+      Promise.all([done, reading, writing]),
+      timeout,
+      interruption.promise,
+    ]);
+    if (interruption.error) throw interruption.error;
     if (timeoutError) throw timeoutError;
   } catch (error) {
-    if (termination) await termination.catch(() => {});
-    else child.kill();
+    await stop().catch(() => {});
     child.stdout.destroy();
     child.stdin.destroy();
     // Wait for encrypted output files to close before the caller removes a partial backup.
     await Promise.allSettled([done, reading, writing]);
     throw (
+      interruption.error ||
       timeoutError ||
       (error instanceof CommandError ? error : new CommandError(stderr))
     );
   } finally {
     clearTimeout(timer);
+    interruption.dispose();
+    child.off('close', interruption.dispose);
   }
   return captured;
 }

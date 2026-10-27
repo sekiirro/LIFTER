@@ -167,7 +167,7 @@ try {
   code = 'OK';
 } catch (error) {
   if (error instanceof UsageError) code = 'USAGE';
-  else if (error?.code === 'TIMEOUT') code = 'TIMEOUT';
+  else if (['TIMEOUT', 'INTERRUPTED'].includes(error?.code)) code = error.code;
   diagnostic = firstErrorLine(error?.stderr);
 } finally {
   if (sql) {
