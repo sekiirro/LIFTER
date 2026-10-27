@@ -3,6 +3,7 @@ import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { gzipSync } from 'node:zlib';
+import { pathToFileURL } from 'node:url';
 import { evaluate } from './size-limit.mjs';
 
 // https://developers.cloudflare.com/workers/platform/limits/
@@ -34,7 +35,7 @@ async function bundleSizeBytes(directory) {
   return { bytes, gzipBytes, files };
 }
 
-async function main() {
+export async function main() {
   const configuredLimit = process.env.WORKER_SIZE_LIMIT_KIB;
   const limitKiB =
     configuredLimit === undefined ? defaultLimitKiB : Number(configuredLimit);
@@ -42,51 +43,61 @@ async function main() {
 
   const outdir = await mkdtemp(join(tmpdir(), 'lifter-worker-size-'));
   try {
-    const args = ['wrangler', 'deploy', '--dry-run', '--outdir', outdir];
-    // Run npx's JS entry point on Windows to avoid cmd.exe quoting and .cmd
-    // execution restrictions. npm run supplies npm_execpath; standalone Node
-    // installations also ship npx alongside npm under node_modules/npm/bin.
-    const windows = process.platform === 'win32';
-    const npxCli = process.env.npm_execpath
-      ? join(dirname(process.env.npm_execpath), 'npx-cli.js')
-      : join(
-          dirname(process.execPath),
-          'node_modules',
-          'npm',
-          'bin',
-          'npx-cli.js',
-        );
-    const result = spawnSync(
-      windows ? process.execPath : 'npx',
-      windows ? [npxCli, ...args] : args,
-      {
-        stdio: 'inherit',
-        env: { ...process.env, WRANGLER_SEND_METRICS: 'false' },
-      },
-    );
-    if (result.error) throw result.error;
-    if (result.status !== 0) {
-      throw new Error(
-        `Wrangler dry-run failed (${result.signal ?? result.status})`,
+    let overLimit = false;
+    for (const [name, config] of [
+      ['web', null],
+      ['cron', 'workers/cron/wrangler.jsonc'],
+    ]) {
+      const directory = join(outdir, name);
+      const args = ['wrangler', 'deploy', '--dry-run', '--outdir', directory];
+      if (config) args.push('--config', config);
+      // Run npx's JS entry point on Windows to avoid cmd.exe quoting and .cmd
+      // execution restrictions. npm run supplies npm_execpath; standalone Node
+      // installations also ship npx alongside npm under node_modules/npm/bin.
+      const windows = process.platform === 'win32';
+      const npxCli = process.env.npm_execpath
+        ? join(dirname(process.env.npm_execpath), 'npx-cli.js')
+        : join(
+            dirname(process.execPath),
+            'node_modules',
+            'npm',
+            'bin',
+            'npx-cli.js',
+          );
+      const result = spawnSync(
+        windows ? process.execPath : 'npx',
+        windows ? [npxCli, ...args] : args,
+        {
+          stdio: 'inherit',
+          env: { ...process.env, WRANGLER_SEND_METRICS: 'false' },
+        },
       );
-    }
+      if (result.error) throw result.error;
+      if (result.status !== 0) {
+        throw new Error(
+          `Wrangler dry-run failed (${result.signal ?? result.status})`,
+        );
+      }
 
-    const { bytes, gzipBytes, files } = await bundleSizeBytes(outdir);
-    if (files === 0)
-      throw new Error('Wrangler emitted no uploaded module files');
-    const sizeKiB = bytes / 1024;
-    const gzipKiB = gzipBytes / 1024;
-    const { pct, over } = evaluate(sizeKiB, limitKiB);
-    console.log(
-      `Worker size: ${sizeKiB.toFixed(2)} KiB uncompressed (gzip ${gzipKiB.toFixed(2)} KiB) / limit ${limitKiB} KiB (${pct.toFixed(2)}%)`,
-    );
-    process.exitCode = over ? 1 : 0;
+      const { bytes, gzipBytes, files } = await bundleSizeBytes(directory);
+      if (files === 0)
+        throw new Error('Wrangler emitted no uploaded module files');
+      const sizeKiB = bytes / 1024;
+      const gzipKiB = gzipBytes / 1024;
+      const { pct, over } = evaluate(sizeKiB, limitKiB);
+      console.log(
+        `Worker size (${name}): ${sizeKiB.toFixed(2)} KiB uncompressed (gzip ${gzipKiB.toFixed(2)} KiB) / limit ${limitKiB} KiB (${pct.toFixed(2)}%)`,
+      );
+      overLimit ||= over;
+    }
+    process.exitCode = overLimit ? 1 : 0;
   } finally {
     await rm(outdir, { recursive: true, force: true });
   }
 }
 
-main().catch((error) => {
-  console.error(`Worker size report failed: ${error.message}`);
-  process.exitCode = 1;
-});
+if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+  main().catch((error) => {
+    console.error(`Worker size report failed: ${error.message}`);
+    process.exitCode = 1;
+  });

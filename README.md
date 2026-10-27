@@ -37,6 +37,47 @@ The additional `build:edge` and `size` gates run in Linux CI only. This scaffold
 does not deploy; no deploy, account setup, or login commands are part of development
 validation.
 
+## Free-tier validation
+
+Offline preparation (no deployment):
+
+1. After `npm run build:edge`, run `npm run size` in Linux CI to measure both
+   web and cron Workers using Wrangler dry-runs. Each size is compared with the
+   existing uncompressed limit; either Worker exceeding it exits 1.
+2. With the local database stack running, privately supply `FREE_TIER_DB_URL`
+   in the environment, then run
+   `npm run free-tier:db -- --count public.workspaces,public.jobs --json usage.json`.
+   The URL is accepted only from that environment variable, never from arguments.
+   Catalog statistics and optional exact counts run in a read-only transaction
+   with a 15-second statement timeout. No row contents are read.
+3. Copy `scripts/free-tier/volumes.example.json` to a local volumes file and fill
+   only confirmed expected row counts. Add all tables present in `usage.json`.
+   Run `npm run free-tier:project -- --per-row usage.json --volumes volumes.json`.
+   Null or absent volumes print `MISSING` and exit 2; partial totals are incomplete.
+   Projection covers the measured top 15 relations, not all database overhead.
+   Database/projection `--limit-mb` defaults to 500 decimal MB (1 MB = 1,000,000 bytes).
+4. Parse synthetic logs offline with
+   `npm run free-tier:tail -- scripts/free-tier/fixtures/tail-sample.jsonl`.
+   Override the 10 ms CPU limit with `--cpu-limit-ms`; `--json report.json` saves
+   sanitized aggregates. Verdicts use maximum observed CPU: warn at 70%, over
+   above 100%. Missing timing fields stay null; invalid lines are counted.
+
+After PO approval, per the approval record, use the explicitly approved staging
+host with `npm run free-tier:probe -- --base-url https://approved-host.example --routes scripts/free-tier/routes.example.json --n 20 --concurrency 2 --json probe.json`.
+For the reviewer's local smoke test use `http://localhost:3000` with `next start`.
+Only HTTPS or loopback HTTP is allowed. Requests carry no credentials, never
+follow redirects, and time out after 15 seconds. `--n` is capped at 200 per route
+and `--concurrency` at 5; batches run sequentially. Latency includes response-body
+reading; body bytes are counted without saving content. Query strings never
+appear in reports. Authenticated measurements await ND-F8-3.
+
+After PO approval, capture request events from the approved Worker with
+`wrangler tail --format json > tail.jsonl`, then parse the saved file with
+`npm run free-tier:tail -- tail.jsonl --json cpu.json`. Keep raw tail files
+private: they can contain headers, logs and exceptions. Only the parser's
+aggregates are suitable for the report. Local latency does not measure platform
+CPU. Pilot volumes remain **NEEDS SOURCE CONFIRMATION** (ND-F8-1).
+
 ## Local database & isolation tests
 
 Install Docker and Supabase CLI 2.122.0 before running the local database suite.
