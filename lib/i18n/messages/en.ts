@@ -1,6 +1,56 @@
 import type { ar } from './ar';
 
 export const en: Record<keyof typeof ar, string> = {
+  'registration.title': 'Registration links',
+  'registration.intro':
+    'Issue a registration link using the approved package terms.',
+  'registration.workspace': 'Workspace',
+  'registration.new': 'New link',
+  'registration.package': 'Package',
+  'registration.days': 'days',
+  'registration.price': 'Price in currency minor units',
+  'registration.issue': 'Issue link',
+  'registration.confirmTitle': 'Confirm registration link',
+  'registration.confirmDescription':
+    'Review the package terms and payments before issuing the link.',
+  'registration.schedule': 'Optional installment schedule',
+  'registration.amount': 'Amount in currency minor units',
+  'registration.offset': 'Due day offset',
+  'registration.add': 'Add installment',
+  'registration.remove': 'Remove installment',
+  'registration.total': 'Total',
+  'registration.sumValid': 'Total matches price',
+  'registration.invalid_input':
+    'Check amounts and day order. The total must match the price.',
+  'registration.stale_terms':
+    'These package terms changed. Refresh and try again.',
+  'registration.reload': 'Reload',
+  'registration.not_permitted': 'This action is not permitted.',
+  'registration.unavailable': 'Unable to complete the request. Try again.',
+  'registration.copy': 'Copy link',
+  'registration.close': 'Close',
+  'registration.copied': 'Link copied.',
+  'registration.once':
+    'Copy the link now. It cannot be shown again after closing this dialog.',
+  'registration.ready': 'Registration link ready',
+  'registration.url': 'Registration URL',
+  'registration.recent': 'Recent links',
+  'registration.empty': 'No links yet.',
+  'registration.noOffer': 'No packages are currently available.',
+  'registration.noWorkspace': 'No workspaces are available.',
+  'registration.loading': 'Loading…',
+  'registration.valid': 'Valid',
+  'registration.opened': 'Opened',
+  'registration.expired': 'Expired',
+  'registration.consumed': 'Used',
+  'registration.firstOpen': 'First opened',
+  'registration.rate': 'Commission basis points',
+  'registration.publicValid': 'This registration link is valid.',
+  'registration.publicInvalid':
+    'This registration link is invalid or no longer available.',
+  'registration.copyError':
+    'Unable to copy. Select and copy the link manually.',
+
   'packages.title': 'Packages',
   'packages.workspace': 'Workspace',
   'packages.select': 'Select',

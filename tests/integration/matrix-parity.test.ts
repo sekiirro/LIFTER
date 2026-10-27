@@ -2,14 +2,215 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { authorize, type Actor } from '../../lib/auth/authorize';
 import {
   CAPABILITIES,
+  MATRIX,
   ROLES,
   roleHasCapability,
 } from '../../lib/auth/capabilities';
 import { createStaff, sql, twoWorkspaceFixture } from './harness';
+import {
+  registrationFixture,
+  crossWorkspaceOffer,
+  issue,
+  schedule,
+  type RegistrationFixture,
+} from './registration-links-fixture';
 
 const db = sql();
 afterAll(async () => {
   await db.end();
+});
+
+describe('registration RPC/app two-capability parity', () => {
+  let fixture: RegistrationFixture;
+  beforeAll(async () => {
+    fixture = await registrationFixture();
+  });
+  for (const name of [
+    'po',
+    'woA',
+    'salesA',
+    'trainerA',
+    'trainerB',
+    'revoked',
+    'noProfile',
+  ] as const)
+    for (const present of [false, true])
+      it(`${name} schedule ${present}`, async () => {
+        const identity = fixture.actors[name];
+        const roles = {
+          po: 'platform_owner',
+          woA: 'workspace_owner',
+          salesA: 'sales',
+          trainerA: 'trainer',
+          trainerB: 'trainer',
+          revoked: 'sales',
+          noProfile: null,
+        } as const;
+        const actor: Actor = {
+          userId: identity.userId!,
+          role: roles[name],
+          activeWorkspaceIds: ['woA', 'salesA', 'trainerA'].includes(name)
+            ? [fixture.wsA.id]
+            : name === 'trainerB'
+              ? [fixture.wsB.id]
+              : [],
+        };
+        const allowed =
+          authorize(actor, 'generate_registration_link', fixture.wsA.id) &&
+          (!present ||
+            authorize(actor, 'configure_installment_schedule', fixture.wsA.id));
+        const result = await issue(fixture, identity.client, {
+          installments: present ? schedule : null,
+        });
+        expect(result.error?.code ?? null).toBe(allowed ? null : '42501');
+      });
+});
+
+describe('registration read and commission parity', () => {
+  let fixture: RegistrationFixture;
+  let foreignVersionId: string;
+  let linkA: string;
+  let linkB: string;
+  const names = [
+    'po',
+    'woA',
+    'salesA',
+    'trainerA',
+    'woB',
+    'salesB',
+    'trainerB',
+    'revoked',
+    'noProfile',
+    'client',
+    'anon',
+  ] as const;
+  const roleOf = (name: (typeof names)[number]) =>
+    name === 'po'
+      ? 'platform_owner'
+      : name.startsWith('wo')
+        ? 'workspace_owner'
+        : name.startsWith('sales') || name === 'revoked'
+          ? 'sales'
+          : name.startsWith('trainer')
+            ? 'trainer'
+            : null;
+  beforeAll(async () => {
+    fixture = await registrationFixture();
+    linkA = checkedIssue(
+      await issue(fixture, fixture.salesA.client, { installments: schedule }),
+    );
+    const foreign = await crossWorkspaceOffer(fixture);
+    foreignVersionId = foreign.versionId;
+    linkB = checkedIssue(
+      await issue(fixture, fixture.po.client, {
+        workspace_id: fixture.wsB.id,
+        package_version_id: foreign.versionId,
+      }),
+    );
+  });
+  function checkedIssue(result: {
+    data: unknown;
+    error: { message: string } | null;
+  }) {
+    if (result.error) throw new Error(result.error.message);
+    return result.data as string;
+  }
+  for (const name of names)
+    for (const workspace of ['A', 'B'] as const)
+      it(`${name} / ${workspace}: safe reads and commission gate match authorize()`, async () => {
+        const identity = fixture.actors[name],
+          workspaceId = workspace === 'A' ? fixture.wsA.id : fixture.wsB.id,
+          actor: Actor = {
+            userId: identity.userId ?? '',
+            role: roleOf(name),
+            activeWorkspaceIds: name.endsWith('A')
+              ? [fixture.wsA.id]
+              : name.endsWith('B')
+                ? [fixture.wsB.id]
+                : [],
+          };
+        const canRead = authorize(
+          actor,
+          'generate_registration_link',
+          workspaceId,
+        );
+        const expectedLink = workspace === 'A' ? linkA : linkB;
+        const read = await identity.client
+          .from('registration_links_safe')
+          .select('id')
+          .eq('workspace_id', workspaceId);
+        if (name === 'anon') expect(read.error).not.toBeNull();
+        else expect(read.data).toEqual(canRead ? [{ id: expectedLink }] : []);
+        const canCommission =
+          canRead &&
+          (actor.role === 'platform_owner' || actor.role === 'workspace_owner');
+        const rates = await identity.client.rpc(
+          'get_registration_link_commissions',
+          { workspace_id: workspaceId },
+        );
+        if (canCommission) {
+          expect(rates.error).toBeNull();
+          expect(rates.data).toEqual([
+            { link_id: expectedLink, commission_rate_bp: 17 },
+          ]);
+        } else expect(rates.error).not.toBeNull();
+      });
+  it("the read fixture's foreign version is not readable from workspace A", async () => {
+    const result = await fixture.actors.po.client
+      .from('package_versions_safe')
+      .select('id')
+      .eq('id', foreignVersionId);
+    expect(result.data).toEqual([{ id: foreignVersionId }]);
+    const [row] =
+      await db`select workspace_id from public.package_versions where id=${foreignVersionId}`;
+    expect(row!.workspace_id).toBe(fixture.wsB.id);
+  });
+});
+
+it('keeps the role and capability definitions unchanged', () => {
+  expect(ROLES).toEqual([
+    'platform_owner',
+    'workspace_owner',
+    'trainer',
+    'sales',
+  ]);
+  expect(CAPABILITIES).toEqual([
+    'generate_recovery_link',
+    'set_package_pricing',
+    'generate_registration_link',
+    'configure_installment_schedule',
+    'approve_registration',
+    'record_payment',
+    'manage_freeze',
+    'record_refund',
+    'delete_client',
+    'export_client_dataset',
+    'manage_workspaces',
+    'manage_staff_access',
+    'coaching_work',
+  ]);
+  expect(
+    Object.fromEntries(ROLES.map((role) => [role, [...MATRIX[role]]])),
+  ).toEqual({
+    platform_owner: [...CAPABILITIES],
+    workspace_owner: [
+      'generate_recovery_link',
+      'generate_registration_link',
+      'configure_installment_schedule',
+      'approve_registration',
+      'record_payment',
+      'manage_freeze',
+      'coaching_work',
+    ],
+    trainer: ['generate_registration_link', 'coaching_work'],
+    sales: [
+      'generate_registration_link',
+      'configure_installment_schedule',
+      'approve_registration',
+      'record_payment',
+      'manage_freeze',
+    ],
+  });
 });
 
 for (const role of ROLES) {
