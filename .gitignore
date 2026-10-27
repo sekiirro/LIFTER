@@ -37,12 +37,18 @@ out/
 target/
 coverage/
 .next/
+.open-next/
+.wrangler/
 .nuxt/
 .output/
 .turbo/
 .vercel/
 .expo/
 .cache/
+test-results/
+playwright-report/
+next-env.d.ts
+*.tsbuildinfo
 
 # Python caches and virtual environments
 __pycache__/

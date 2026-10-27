@@ -1,0 +1,10 @@
+.next
+.open-next
+specs
+docs
+.specify
+.claude
+LIFTER_Claude_Files
+node_modules
+coverage
+package-lock.json

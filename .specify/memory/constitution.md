@@ -1,50 +1,147 @@
-# [PROJECT_NAME] Constitution
-<!-- Example: Spec Constitution, TaskFlow Constitution, etc. -->
+# LIFTER Constitution
+
+This Constitution holds LIFTER's non-negotiable principles. It does not replace the technical plan
+([docs/02-architecture.md](../../docs/02-architecture.md)), the roadmap
+([docs/03-roadmap.md](../../docs/03-roadmap.md)) or the decision register
+([docs/04-changes-and-questions.md](../../docs/04-changes-and-questions.md)). Business rules come
+from `LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md` (DR-01) and the register (D-03..D-17).
 
 ## Core Principles
 
-### [PRINCIPLE_1_NAME]
-<!-- Example: I. Library-First -->
-[PRINCIPLE_1_DESCRIPTION]
-<!-- Example: Every feature starts as a standalone library; Libraries must be self-contained, independently testable, documented; Clear purpose required - no organizational-only libraries -->
+### I. Strict Workspace Isolation (NON-NEGOTIABLE)
 
-### [PRINCIPLE_2_NAME]
-<!-- Example: II. CLI Interface -->
-[PRINCIPLE_2_DESCRIPTION]
-<!-- Example: Every library exposes functionality via CLI; Text in/out protocol: stdin/args → stdout, errors → stderr; Support JSON + human-readable formats -->
+- Every tenant-owned record MUST carry `workspace_id`, and its relations MUST use composite
+  `(workspace_id, id)` keys.
+- Access MUST be authorized server-side by actual membership: deny by default, at two walls (an
+  app-layer policy check and database RLS keyed to the signed identity). The UI is never a
+  security boundary.
+- Every surface MUST be isolated: APIs, exports, Telegram bot, jobs, storage, notifications, logs.
+  No data, existence or membership of one workspace may be revealed in another. Duplicate
+  email/phone responses MUST be the generic support message only (D-08).
+- Every new tenant table, endpoint, job or bot command MUST ship with a foreign-workspace
+  negative test.
 
-### [PRINCIPLE_3_NAME]
-<!-- Example: III. Test-First (NON-NEGOTIABLE) -->
-[PRINCIPLE_3_DESCRIPTION]
-<!-- Example: TDD mandatory: Tests written → User approved → Tests fail → Then implement; Red-Green-Refactor cycle strictly enforced -->
+Rationale: BRD invariant 1; a single leak breaks the product's core promise.
 
-### [PRINCIPLE_4_NAME]
-<!-- Example: IV. Integration Testing -->
-[PRINCIPLE_4_DESCRIPTION]
-<!-- Example: Focus areas requiring integration tests: New library contract tests, Contract changes, Inter-service communication, Shared schemas -->
+### II. Immutable Financial Truth (NON-NEGOTIABLE)
 
-### [PRINCIPLE_5_NAME]
-<!-- Example: V. Observability, VI. Versioning & Breaking Changes, VII. Simplicity -->
-[PRINCIPLE_5_DESCRIPTION]
-<!-- Example: Text I/O ensures debuggability; Structured logging required; Or: MAJOR.MINOR.BUILD format; Or: Start simple, YAGNI principles -->
+- Ledger, payroll and subscription snapshots are append-only. Corrections MUST be new reversing
+  or adjusting events; UPDATE/DELETE of financial history MUST be impossible for the application.
+- Price, duration, commission rate and installment schedule MUST be snapshotted at purchase.
+  Later settings changes apply prospectively only.
+- Commission MUST be earned only on each confirmed collected payment at the snapshot rate,
+  attributed to its collection month (Africa/Cairo). Unpaid balances earn nothing (D-13).
+- Refunds MUST be full only: 100% of the amount actually collected. A refund MUST reverse all
+  related revenue and commission, cancel unpaid installments, and is Platform Owner only (D-10,
+  D-15).
+- Installment totals MUST equal the Platform Owner's approved price (D-17).
+- Amounts MUST be integer minor units with currency. Money-changing operations MUST be
+  idempotent. LIFTER records owed commission, never inter-party settlement.
 
-## [SECTION_2_NAME]
-<!-- Example: Additional Constraints, Security Requirements, Performance Standards, etc. -->
+Rationale: BRD invariants 3–4; historical truth must survive any later change.
 
-[SECTION_2_CONTENT]
-<!-- Example: Technology stack requirements, compliance standards, deployment policies, etc. -->
+### III. Platform Owner Governance & Least Privilege
 
-## [SECTION_3_NAME]
-<!-- Example: Development Workflow, Review Process, Quality Gates, etc. -->
+- Only the Platform Owner creates workspaces, manages staff access, sets prices and durations,
+  issues refunds, deletes clients, exports full client datasets and decides compensation or
+  discipline.
+- Capabilities MUST follow the approved permission matrix (D-09/D-10, architecture §
+  Multi-tenancy). Any capability not explicitly granted is denied, including unlisted Sales
+  rights.
+- A staff member's role MUST be the same across all of their authorized workspaces. Staff and
+  client accounts are separate identities with separate emails (D-16). Client email and phone
+  are globally unique, with no merging or transfer (D-08).
 
-[SECTION_3_CONTENT]
-<!-- Example: Code review requirements, testing gates, deployment approval process, etc. -->
+### IV. Approved Scope Only (NON-NEGOTIABLE)
+
+- Features MUST trace to the BRD/PRD or an approved D-xx decision. No business rule may be
+  invented, and no behavior may be imported from YBS.
+- PRD-12 exclusions MUST NOT be built. Examples: public marketing pages, payment gateway,
+  in-app chat/helpdesk/broadcasts, bulk client actions, web workout/meal logging, web progress
+  photos, Hevy, AI alternatives, automatic bonuses/deductions/firing, mandatory 2FA, YBS sync.
+- Unknown values MUST be marked NEEDS SOURCE CONFIRMATION, never guessed.
+- The pilot MAY sequence features but MUST NOT remove Full Launch scope (D-07).
+
+### V. Versioned, Non-Retroactive Content
+
+- Published plans, form templates, package versions and catalog entries MUST be immutable
+  versions. Edits create new versions.
+- Published plans MUST snapshot the food nutrition values and canonical exercise identities they
+  use. Submitted forms MUST remain readable after template changes.
+- A first subscription activates only on the atomic delivery of both initial plans, with
+  `activated_at` = the delivery timestamp and exactly one productivity unit per subscription.
+
+### VI. Human-Governed People Decisions
+
+- KPIs are decision support only. Incentives, deductions, strikes and termination MUST be
+  explicit, audited Platform Owner decisions. Nothing is automatic.
+- Payroll approval means paid. It is a single, immutable step.
+- Historical attribution and payroll MUST be preserved through access revocation and
+  reassignment.
+
+### VII. Privacy & Health-Data Protection
+
+- Client health, fitness and personal data MUST be least-privilege, never written to logs, and
+  every access to sensitive actions and exports MUST be audited.
+- Audit history MUST be append-only and tamper-resistant. The client timeline is a curated
+  projection, not the audit log.
+- Account closure MUST deactivate access and pseudonymize PII while keeping the legally required
+  ledger and audit records.
+- Reset, registration and Telegram link tokens MUST be hashed, expiring and single-use.
+- Production with real client data MUST NOT start until the jurisdiction/retention values (B4)
+  are confirmed.
+
+### VIII. Bilingual, Accessible, Design-System UI
+
+- All UI MUST be built on the P0 Design System: dark/monochrome with lime accent, Arabic-first
+  RTL plus English LTR, with loading/empty/error states.
+- UI MUST be responsive and accessible (keyboard access, labeled inputs, clear errors).
+- Trainer-authored content MUST be displayed as authored, never machine-translated.
+
+### IX. Reliable, Idempotent Operations
+
+- Scheduled and asynchronous work MUST be idempotent with deterministic dedup keys: reminders,
+  expiry/installment notices, check-ins, SLA timers, Telegram delivery.
+- Registration-token consumption, approval, delivery and payment events MUST be
+  transaction-safe under concurrency.
+- Time rules MUST be pure, tested functions in Africa/Cairo: 5 working days with Friday
+  excluded and an 18:00 cutoff; 30-day months; freeze stop/remove semantics; early renewal
+  stacking (D-03..D-05, D-11).
+
+## Platform & Delivery Constraints
+
+- The approved stack and hosting are fixed by [docs/02-architecture.md](../../docs/02-architecture.md):
+  Next.js on Cloudflare plus Supabase, $0 recurring initially (D-06). Moving to a paid tier is a
+  Platform Owner decision.
+- Encrypted backups of the database and storage MUST run with a periodic restore test (D-14). A
+  failed or missing restore test blocks production migrations.
+- Migrations MUST be forward-only, expand/contract. Destructive migrations, pushes, production
+  deploys and any production change require explicit Product Owner approval.
+- LIFTER is independent of YBS. YBS production systems MUST NOT be touched.
+
+## Development Workflow & Quality Gates
+
+- Every feature follows Spec Kit: Specify → Clarify (only if blocking) → Plan → Tasks → Analyze,
+  before any code.
+- Claude (Technical Lead) plans and reviews. Codex implements bounded tasks. OpenCode is used only
+  on confirmed Codex quota exhaustion. Coders MUST NOT plan or approve their own work. One writing
+  agent per worktree.
+- Merge gates (from [docs/03-roadmap.md](../../docs/03-roadmap.md)): typecheck, lint, unit and
+  integration tests independently re-run by the reviewer; the isolation gate; the money gate; AR
+  and EN UI check; log-scrub check; acceptance criteria verified against
+  [docs/01-traceability.md](../../docs/01-traceability.md).
+- Only passing, reviewed work is committed.
 
 ## Governance
-<!-- Example: Constitution supersedes all other practices; Amendments require documentation, approval, migration plan -->
 
-[GOVERNANCE_RULES]
-<!-- Example: All PRs/reviews must verify compliance; Complexity must be justified; Use [GUIDANCE_FILE] for runtime development guidance -->
+- This Constitution overrides conflicting practices, plans and briefs. Where the architecture or
+  roadmap conflicts with it, the Constitution wins until amended.
+- Amendments require Product Owner approval, a decision-register entry, and a semantic version
+  bump:
+  - MAJOR: a principle is removed or redefined.
+  - MINOR: a principle or section is added or materially expanded.
+  - PATCH: clarification only.
+- Every spec, plan and review MUST include a constitution check. Deviations MUST be justified in
+  the plan's complexity tracking and approved before implementation.
 
-**Version**: [CONSTITUTION_VERSION] | **Ratified**: [RATIFICATION_DATE] | **Last Amended**: [LAST_AMENDED_DATE]
-<!-- Example: Version: 2.1.1 | Ratified: 2025-06-13 | Last Amended: 2025-07-16 -->
+**Version**: 1.0.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-27
