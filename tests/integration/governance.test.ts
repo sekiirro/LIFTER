@@ -211,6 +211,58 @@ describe('T009 governance', () => {
     expect(workspace?.name).toBe('C updated');
   });
 
+  it('a second PO can rename another PO workspace but API callers cannot change its creator', async () => {
+    const secondPo = await createStaff('platform_owner', 'second-po');
+    const ws = checked(
+      await f.po.client
+        .from('workspaces')
+        .insert({
+          name: 'Shared governance',
+          slug: `f3-shared-${randomUUID()}`,
+          created_by: f.po.userId,
+        })
+        .select()
+        .single(),
+    ) as Workspace;
+    const updatedSlug = `f3-renamed-${randomUUID()}`;
+    const updated = checked(
+      await secondPo.client
+        .from('workspaces')
+        .update({ name: 'Renamed by second PO', slug: updatedSlug })
+        .eq('id', ws.id)
+        .select()
+        .single(),
+    ) as Workspace;
+    expect(updated).toMatchObject({
+      id: ws.id,
+      name: 'Renamed by second PO',
+      slug: updatedSlug,
+      created_by: f.po.userId,
+    });
+
+    for (const client of [
+      f.po.client,
+      secondPo.client,
+      f.woA.client,
+      f.trainerA.client,
+      f.salesA.client,
+      anonClient(),
+    ]) {
+      const result = await client
+        .from('workspaces')
+        .update({ created_by: secondPo.userId })
+        .eq('id', ws.id);
+      expect(result.error?.code).toBe('42501');
+      const [workspace] =
+        await db`select name, slug, created_by from public.workspaces where id = ${ws.id}`;
+      expect(workspace).toEqual({
+        name: 'Renamed by second PO',
+        slug: updatedSlug,
+        created_by: f.po.userId,
+      });
+    }
+  });
+
   it('PO cannot forge created_by or granted_by', async () => {
     const id = randomUUID();
     expect(

@@ -23,11 +23,31 @@ describe('tenancy security catalog (T007)', () => {
         expect(row?.allowed).toBe(false);
         const [authenticated] =
           await db`select has_table_privilege('authenticated', ${`public.${table}`}, ${privilege}) as allowed`;
-        expect(authenticated?.allowed).toBe(true);
+        expect(authenticated?.allowed).toBe(
+          table !== 'workspaces' || privilege !== 'UPDATE',
+        );
       }
       const [row] =
         await db`select has_table_privilege('authenticated', ${`public.${table}`}, 'DELETE') as allowed`;
       expect(row?.allowed).toBe(false);
+    },
+  );
+
+  it.each(['id', 'created_by', 'created_at'])(
+    'authenticated cannot update workspaces.%s',
+    async (column) => {
+      const [row] =
+        await db`select has_column_privilege('authenticated', 'public.workspaces', ${column}, 'UPDATE') as allowed`;
+      expect(row?.allowed).toBe(false);
+    },
+  );
+
+  it.each(['name', 'slug'])(
+    'authenticated can update workspaces.%s subject to RLS',
+    async (column) => {
+      const [row] =
+        await db`select has_column_privilege('authenticated', 'public.workspaces', ${column}, 'UPDATE') as allowed`;
+      expect(row?.allowed).toBe(true);
     },
   );
 
