@@ -22,7 +22,7 @@ All calls carry the current user's JWT via the server session client; never an a
 | RPC                               | Named JSON input                                           | Successful value                                                            |
 | --------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
 | `create_package`                  | `{code: string}`                                           | canonical package UUID; existing UUID on exact code replay                  |
-| `publish_package_version`         | `{workspace_id: uuid, package_id: uuid, duration_months: 1 | 3                                                                           | 6   | 8   | 12  | null, duration_days: integer, name_ar: string, name_en: string, price_minor: decimal-integer-string, currency: string, commission_rate_bp: integer}` | published version UUID; existing version UUID for exact payload replay |
+| `publish_package_version`         | `{workspace_id: uuid, package_id: uuid, duration_months: 1 | 3                                                                           | 6   | 8   | 12  | null, duration_days: integer, name_ar: string, name_en: string, price_minor: decimal-integer-string, currency: string, commission_rate_bp: integer}` | published version UUID; current version UUID for exact current-payload replay |
 | `set_package_offer_available`     | `{workspace_id: uuid, offer_id: uuid, available: boolean}` | offer UUID, including same-state no-op                                      |
 | `get_package_version_commissions` | `{workspace_id: uuid}`                                     | rows `{version_id, commission_rate_bp}` for requested workspace; PO/WO only |
 
@@ -30,7 +30,7 @@ SQL signatures/types and constraints are exact in [data-model.md](../data-model.
 
 Mutation failure codes: `42501/not_permitted` for authorization, missing/foreign workspace/offer/package; `22023/invalid_input` for authorized scalar/representation validation. Database guard violations use `23514`; accidental constraint/provider text never crosses the app boundary. Malformed UUIDs at the app boundary are `denied` so targets are not probed; authorized malformed scalar terms are `invalid_input`. Direct RPC typed-argument parser errors are not forwarded to users. Failed writes and no-ops create no business audit event.
 
-**Replay semantics**: Full exact terms in the same offer identify a publication. Repeating them returns its id without another version/event or changing current. This includes replay of older terms after another publication. A distinct payload appends N+1 and becomes current. Concurrent distinct calls serialize; which distinct payload gets the next number follows lock acquisition, not client request time. The signature cannot express intentional identical re-publication separately from retry.
+**Replay semantics**: Full exact terms equal to the offer's CURRENT version are a replay: return current id without insert, pointer change or event. Any other payload, including older non-current terms, appends N+1 and becomes current with one publication event. v1 -> v2 -> v1 terms therefore creates current v3 with v1 terms. Concurrent distinct calls serialize; which distinct payload gets the next number follows lock acquisition, not client request time. Retries after successful publication deduplicate while their payload equals current.
 
 ## Server actions and results
 

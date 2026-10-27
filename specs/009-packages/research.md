@@ -20,12 +20,12 @@ This records the supplied architect decisions against repository evidence; it do
 - **Rationale**: Existing API roles must have no direct mutation privileges; an invoker writer with no grants cannot perform this operation. Advisory locking also covers absent offers. Constitution I/IX requires both app and database checks.
 - **Alternatives**: App-side max+1 races; row locking alone misses first creation; separate offer/version/action calls allow partial state; service credentials in actions remove the caller's signed-identity boundary. The general architecture preference for invoker functions is narrowed by the binding F9 definer-RPC decision, with explicit authorization inside every function.
 
-## R4 — Idempotency within the binding signature
+## R4 - Current-only publication replay and reverts
 
-- **Decision**: Same canonical code create returns existing id; same availability state is a no-op. Under the offer lock, publishing an exact full-term payload already present in that offer returns the existing version id, without moving current or generating audit. A distinct payload appends N+1.
-- **Rationale**: No idempotency-key argument exists in the binding signature. Full-history equality handles delayed retries after another version without duplicated effects or pointer rewind.
-- **Alternatives**: Current-only equality duplicates an older retry after an intervening publish; always append is not idempotent; adding a required key/table changes the supplied interface. Searching only price/rate would collapse legitimate label changes, so equality includes every authored term and duration.
-- **Ambiguity handled**: Intentional identical re-publication is indistinguishable from retry and therefore treated as replay. The docs make this fixed-signature limitation visible to Claude; it is not a new catalog policy or an ND-F9-1..5 resolution.
+- **Decision**: Same canonical code create returns existing id; same availability state is a no-op. Under the offer lock compare every term with the CURRENT version only. Equality returns current id without insert, pointer change or event. Every other payload appends N+1 and moves current with one publication event.
+- **Rationale**: Historical equality breaks reverts: v1 -> v2 -> v1 terms must create current v3 with v1 terms. Successful publication retries still deduplicate against current.
+- **Alternatives**: Searching all historical versions silently prevents reverts; always append duplicates immediate retries. Price/rate-only equality collapses legitimate label changes.
+- **Ambiguity handled**: Identical-to-current publication is replay; older non-current payload is a new publication even if intended as a delayed retry. The fixed signature has no request key. This binding R1 correction does not resolve ND-F9-1..5.
 
 ## R5 — Safe staff reads and privileged commission projection
 

@@ -24,7 +24,7 @@ The PO creates a stable package identity, selects a workspace and duration, auth
 3. **Given** an existing offer, **When** the PO changes its labels, price, currency or commission and publishes, **Then** the next version becomes current and prior versions remain unchanged.
 4. **Given** preset months 1/3/6/8/12, **When** published, **Then** the corresponding duration is 30/90/180/240/360 days. Preset 2 or 4 months, mismatched preset days, and custom 0 days are rejected. Custom positive whole days are accepted within storage limits.
 5. **Given** simultaneous distinct publications for the same offer, **When** both complete, **Then** both receive distinct consecutive version numbers, without duplicate offers or lost versions.
-6. **Given** a replay of identical published terms, **When** submitted again, **Then** the same version identity is returned without another event or a change to the current pointer. Replaying older terms does not restore them as current (see assumptions).
+6. **Given** terms identical to the current version, **When** submitted again, **Then** the current version id is returned without insert, pointer change or event. Publishing older non-current terms instead appends N+1 and makes it current, allowing reverts.
 
 ### User Story 2 - Control what each workspace may sell (Priority: P1)
 
@@ -76,7 +76,7 @@ The PO opens `/packages` from the signed-in landing, selects a workspace, create
 - Empty, whitespace-only or over-120-character labels; malformed slug; missing commission (zero is explicit and valid), negative price/rate, excessive rate, fractional days and unsafe numeric conversion are rejected.
 - Currency must have three uppercase ASCII letters. Format validation does not approve a currency list or assume two minor-unit decimals for every currency.
 - Custom 90 days and preset 3 months share the same offer key. Its duration representation is fixed at first creation; a conflicting representation is rejected rather than silently editing the offer.
-- A lost response followed by identical retry returns the existing version. The fixed input signature cannot distinguish a retry from an intentional identical re-publication; such requests are treated as replay, including after another publication.
+- A lost response followed by a retry identical to current returns the current version id. Any other payload, including older non-current terms, appends N+1 and moves current with one publication event.
 - A simultaneous first publish and availability change serialize safely. Publishing never silently re-enables an existing offer.
 - A cross-workspace version pointer or offer relation is rejected even when submitted through a privileged SQL test connection.
 - Audit failure rolls back the entire mutation. No-op requests, current-pointer maintenance and failed mutations do not create extra business events.
@@ -111,9 +111,9 @@ The PO opens `/packages` from the signed-in landing, selects a workspace, create
 ## Success Criteria _(mandatory)_
 
 - **SC-001**: 100% of role/workspace fixture cases match the read and mutation rules; zero foreign-workspace or unauthorized commission values are returned.
-- **SC-002**: Across simultaneous first and later distinct publications, zero duplicate offers/version numbers occur and successful versions are consecutively numbered; identical replays add zero versions/events.
+- **SC-002**: Across simultaneous first and later distinct publications, zero duplicate offers/version numbers occur and successful versions are consecutively numbered; identical-to-current replays add zero versions/events; reverting to older terms appends N+1 and advances current.
 - **SC-003**: Every attempted update/delete/truncate of published history is refused in the all-role guard tests; old terms remain byte-for-byte unchanged after a new publication or availability change.
-- **SC-004**: Each successful actual change yields exactly one matching audit event and every rejected or replayed request yields zero new change events; zero PII fields occur in package audit details.
+- **SC-004**: Each successful actual change yields exactly one matching audit event and every rejected or identical-to-current replayed request yields zero new change events; reverting to older terms yields one publication event; zero PII fields occur in package audit details.
 - **SC-005**: PO can complete create → publish → enable in both AR and EN; all required states are exercised, keyboard operation succeeds and automated accessibility checks find zero violations in tested markup.
 - **SC-006**: All preset/custom boundary cases, required values and supported-currency minor-unit formatting fixtures pass without precision loss or invented catalog data.
 
@@ -130,7 +130,7 @@ These data/policy decisions do not block local development. Existing [production
 ## Assumptions
 
 - Existing auth, tenancy, audit and Design System from `origin/main` are reused. This run writes artifacts only; Claude's independent implementation review remains required.
-- Fixed publish signature has no request key. Exact full-term equality within an offer is the database replay identity across its history; replay returns that version without rewinding current. Intentional identical re-publication cannot be distinguished under this signature and is treated as replay. No new idempotency-key parameter/table is invented.
+- Fixed publish signature has no request key. Exact full-term equality with the offer's CURRENT version is the database replay identity. Replay returns current without insert, pointer change or event. All other payloads, including older non-current terms, append N+1 and move current with one publication event. No new idempotency-key parameter/table is invented.
 - Initial unavailability and fixed duration representation are conservative implementation interpretations, not catalog policy. No automatic offer enablement is implied by publication.
 - Staff may read unavailable offers/history within their workspaces; future sellable selection filters `available` and uses `current_version_id`. F10/F12 implement token issuance, purchase snapshots and subscriptions, not F9.
 - Price entry is in explicitly labeled minor units. Currency-aware display follows currency minor-unit metadata; unknown format-valid codes fall back to an exact minor-unit display with the code instead of guessing an exponent.

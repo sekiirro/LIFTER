@@ -32,7 +32,7 @@ Gate before research, rechecked after design against v1.1.0:
 | VI — Human governance | PASS: explicit PO actions only; no automated people/payroll decisions.                                                                                                                                        |
 | VII — Privacy/audit   | PASS: business-field allow-lists, exactly one event per actual change, no PII/labels/provider logging; existing audit RLS retained.                                                                           |
 | VIII — UI             | PASS: Design System, Arabic-first RTL/EN LTR, dark/light, responsive keyboard controls, confirmation and required states. Authored content preserved.                                                         |
-| IX — Reliability      | PASS: advisory lock before first offer, row lock, exact-payload replay, atomic pointer/audit and 30-day presets. Fixed-signature replay limitation explicit.                                                  |
+| IX — Reliability      | PASS: advisory lock before first offer, row lock, exact current-payload replay; older-term revert appends N+1, atomic pointer/audit and 30-day presets. Fixed-signature replay limitation explicit.                                                  |
 | Platform/delivery     | PASS: forward-only migration, local Docker under D-20, existing backup/production gates unchanged; no deployment/cloud migration/YBS access.                                                                  |
 | Workflow              | PASS for artifact scope: supplied Claude decisions transcribed through Spec → Plan → Tasks → Analyze; future Codex implementation and independent Claude review are separate.                                 |
 
@@ -44,7 +44,7 @@ Normative details: [data-model.md](data-model.md), [contract](contracts/packages
 
 ### Database transactions and reads
 
-Publication checks signed PO/pricing authority, validates, locks workspace/package/day key, creates or locks the offer, checks fixed duration representation and exact historical payload equality, then returns an existing id unchanged or inserts N+1 and advances current atomically. New offers start unavailable; publication never changes availability on an existing offer. Availability RPC locks the offer and no-ops same-state requests. Code creation deduplicates in the DB.
+Publication checks signed PO/pricing authority, validates, locks workspace/package/day key, creates or locks the offer, checks fixed duration representation and exact current-version payload equality, then returns current id unchanged or inserts N+1 and advances current atomically. New offers start unavailable; publication never changes availability on an existing offer. Availability RPC locks the offer and no-ops same-state requests. Code creation deduplicates in the DB.
 
 Version guards are independent of RLS/grants and contain no privileged exception. Insert guard checks duration snapshot parity. Composite FKs prevent tenant mismatch and a triple FK prevents a wrong-offer current pointer in the same workspace. Audit AFTER triggers extend the latest complete body; pointer maintenance/offer insert do not duplicate publication events.
 
