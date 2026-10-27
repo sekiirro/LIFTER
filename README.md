@@ -383,10 +383,11 @@ try {
   # The dev stack must still hold exactly the original row.
   $row = & $docker exec supabase_db_lifter psql -U postgres -d postgres -v ON_ERROR_STOP=1 -t -A -c "SELECT id || ':' || note FROM public.backup_drill;"
   if ($LASTEXITCODE -ne 0 -or ($row | Out-String).Trim() -ne '1:LIFTER_BACKUP_PLAINTEXT_SENTINEL') { throw 'Scratch row check failed' }
-  # Remove only the reviewer-created scratch table.
-  & $docker exec supabase_db_lifter psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'DROP TABLE public.backup_drill;'
-  if ($LASTEXITCODE -ne 0) { throw 'Scratch table drop failed' }
 } finally {
+  # This drill created the scratch table (it aborted earlier otherwise), so drop it
+  # on success and failure alike; a drop failure warns without masking the original error.
+  & $docker exec supabase_db_lifter psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'DROP TABLE public.backup_drill;'
+  if ($LASTEXITCODE -ne 0) { Write-Warning 'Scratch table drop failed; drop public.backup_drill manually' }
   try {
     Remove-Item -LiteralPath $keys -Recurse -Force -ErrorAction Stop
     if (Test-Path -LiteralPath $keys) { throw 'Temporary key directory still exists' }
