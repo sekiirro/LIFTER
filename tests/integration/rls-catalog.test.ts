@@ -63,6 +63,7 @@ describe('tenancy security catalog (T007)', () => {
       'audit_row_change',
       'current_staff_role',
       'enqueue_job',
+      'forbid_delete',
       'guard_membership_update',
       'has_workspace_access',
       'is_platform_owner',
@@ -71,7 +72,11 @@ describe('tenancy security catalog (T007)', () => {
     ]);
     for (const row of rows) {
       expect(row.prosecdef).toBe(
-        !['audit_events_immutable', 'jobs_updated_at'].includes(row.proname),
+        ![
+          'audit_events_immutable',
+          'forbid_delete',
+          'jobs_updated_at',
+        ].includes(row.proname),
       );
       expect(row.proconfig).toContain('search_path=""');
       expect(row.owner).toBe('postgres');
@@ -81,6 +86,7 @@ describe('tenancy security catalog (T007)', () => {
           'audit_events_immutable',
           'audit_row_change',
           'enqueue_job',
+          'forbid_delete',
           'jobs_updated_at',
         ].includes(row.proname),
       );
@@ -89,6 +95,27 @@ describe('tenancy security catalog (T007)', () => {
 });
 
 describe('audit security catalog (T005)', () => {
+  it.each(['workspaces', 'staff_profiles', 'workspace_memberships'])(
+    '%s has row DELETE and statement TRUNCATE guards',
+    async (table) => {
+      const triggers = await db`
+        select t.tgname, t.tgtype::int as type, t.tgenabled
+        from pg_catalog.pg_trigger t
+        join pg_catalog.pg_proc p on p.oid = t.tgfoid
+        join pg_catalog.pg_namespace n on n.oid = p.pronamespace
+        where t.tgrelid = ${`public.${table}`}::regclass and not t.tgisinternal
+          and n.nspname = 'app_private' and p.proname = 'forbid_delete'
+        order by t.tgname`;
+      expect(triggers).toEqual([
+        { tgname: `${table}_no_delete`, type: 11, tgenabled: 'O' },
+        { tgname: `${table}_no_truncate`, type: 34, tgenabled: 'O' },
+      ]);
+      const [guard] = await db`
+        select has_function_privilege('service_role', 'app_private.forbid_delete()', 'EXECUTE') as allowed`;
+      expect(guard?.allowed).toBe(false);
+    },
+  );
+
   it('forces RLS and grants only authenticated SELECT', async () => {
     const [table] =
       await db`select relrowsecurity, relforcerowsecurity from pg_catalog.pg_class where oid = 'public.audit_events'::regclass`;

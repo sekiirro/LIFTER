@@ -199,6 +199,43 @@ describe('emission (T002)', () => {
 });
 
 describe('immutability (T003)', () => {
+  it.each(['workspaces', 'staff_profiles', 'workspace_memberships'] as const)(
+    'postgres cannot DELETE or TRUNCATE audited governance table %s',
+    async (table) => {
+      const [role] = await db`select current_user as name`;
+      expect(role?.name).toBe('postgres');
+      const key = table === 'staff_profiles' ? 'user_id' : 'id';
+      const before =
+        await db`select * from public.${db(table)} order by ${db(key)}`;
+      expect(before.length).toBeGreaterThan(0);
+      const target = before[0];
+      if (!target) throw new Error('Governance fixture row missing');
+      const historyBefore =
+        await db`select * from public.audit_events order by id`;
+      for (const operation of ['delete', 'truncate'] as const) {
+        await expect(
+          db.begin(async (tx) => {
+            if (operation === 'delete')
+              await tx`delete from public.${tx(table)} where ${tx(key)} = ${target[key]}`;
+            // CASCADE reaches the trigger instead of failing on foreign keys.
+            if (operation === 'truncate')
+              await tx`truncate public.${tx(table)} cascade`;
+            throw new Error('governance mutation unexpectedly succeeded');
+          }),
+        ).rejects.toMatchObject({
+          code: '23514',
+          message: 'Deletes are not allowed on audited governance tables',
+        });
+        expect(
+          await db`select * from public.${db(table)} order by ${db(key)}`,
+        ).toEqual(before);
+        expect(await db`select * from public.audit_events order by id`).toEqual(
+          historyBefore,
+        );
+      }
+    },
+  );
+
   it.each(['postgres', 'service_role', 'authenticated', 'anon'] as const)(
     '%s cannot UPDATE, DELETE or TRUNCATE audit history',
     async (role) => {
