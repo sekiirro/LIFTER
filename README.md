@@ -350,6 +350,7 @@ New-Item -ItemType Directory -Force 'backups\review' | Out-Null
 # Drill identities live outside the repository and are deleted even if the drill fails.
 $keys = Join-Path ([IO.Path]::GetTempPath()) ("lifter-drill-keys-" + [guid]::NewGuid())
 New-Item -ItemType Directory $keys | Out-Null
+$drillFailure = $null
 try {
   node scripts/backup/keygen.mjs --out (Join-Path $keys 'age-identity-review.txt') > (Join-Path $keys 'recipient.txt')
   # PowerShell redirection may write UTF-16; normalize the public recipient to UTF-8.
@@ -383,16 +384,23 @@ try {
   # The dev stack must still hold exactly the original row.
   $row = & $docker exec supabase_db_lifter psql -U postgres -d postgres -v ON_ERROR_STOP=1 -t -A -c "SELECT id || ':' || note FROM public.backup_drill;"
   if ($LASTEXITCODE -ne 0 -or ($row | Out-String).Trim() -ne '1:LIFTER_BACKUP_PLAINTEXT_SENTINEL') { throw 'Scratch row check failed' }
+} catch {
+  $drillFailure = $_
+  throw
 } finally {
   # This drill created the scratch table (it aborted earlier otherwise), so drop it
-  # on success and failure alike; a drop failure warns without masking the original error.
+  # on success and failure alike; preserve earlier failures and report a lone drop failure.
   & $docker exec supabase_db_lifter psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'DROP TABLE public.backup_drill;'
-  if ($LASTEXITCODE -ne 0) { Write-Warning 'Scratch table drop failed; drop public.backup_drill manually' }
+  $dropFailed = $LASTEXITCODE -ne 0
+  if ($dropFailed) { Write-Warning 'Scratch table drop failed; drop public.backup_drill manually' -WarningAction Continue }
   try {
     Remove-Item -LiteralPath $keys -Recurse -Force -ErrorAction Stop
     if (Test-Path -LiteralPath $keys) { throw 'Temporary key directory still exists' }
   } finally {
     Remove-Item Env:BACKUP_DB_URL
+  }
+  if ($dropFailed -and $null -eq $drillFailure) {
+    throw 'Scratch table drop failed; drop public.backup_drill manually'
   }
 }
 ```
