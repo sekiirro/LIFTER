@@ -127,6 +127,8 @@ describe('tenancy security catalog (T007)', () => {
       'enqueue_job',
       'forbid_delete',
       'guard_membership_update',
+      'guard_package_offer_update',
+      'guard_package_version_insert',
       'has_workspace_access',
       'is_platform_owner',
       'jobs_updated_at',
@@ -153,6 +155,8 @@ describe('tenancy security catalog (T007)', () => {
           'audit_row_change',
           'enqueue_job',
           'forbid_delete',
+          'guard_package_offer_update',
+          'guard_package_version_insert',
           'jobs_updated_at',
           'recovery_link_guard',
           'recovery_link_limits',
@@ -248,6 +252,27 @@ describe('audit security catalog (T005)', () => {
         proname: 'audit_row_change',
       },
       {
+        tgname: 'audit_package_offers',
+        relname: 'package_offers',
+        type: 17,
+        tgenabled: 'O',
+        proname: 'audit_row_change',
+      },
+      {
+        tgname: 'audit_package_versions',
+        relname: 'package_versions',
+        type: 5,
+        tgenabled: 'O',
+        proname: 'audit_row_change',
+      },
+      {
+        tgname: 'audit_packages',
+        relname: 'packages',
+        type: 5,
+        tgenabled: 'O',
+        proname: 'audit_row_change',
+      },
+      {
         tgname: 'audit_recovery_link_issuances',
         relname: 'recovery_link_issuances',
         type: 5,
@@ -274,6 +299,20 @@ describe('audit security catalog (T005)', () => {
         type: 21,
         tgenabled: 'O',
         proname: 'audit_row_change',
+      },
+      {
+        tgname: 'package_versions_no_update',
+        relname: 'package_versions',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'packages_no_update',
+        relname: 'packages',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
       },
       {
         tgname: 'recovery_link_issuances_no_update',
@@ -338,6 +377,147 @@ describe('jobs security catalog (T006)', () => {
           await db`select has_function_privilege(${role}, ${name}, 'EXECUTE') as allowed`;
         expect(row?.allowed).toBe(
           role === 'service_role' && name.startsWith('public.'),
+        );
+      }
+    }
+  });
+});
+
+describe('package security catalog', () => {
+  it.each(['packages', 'package_offers', 'package_versions'])(
+    '%s forces RLS, scoped SELECT and no API writes',
+    async (table) => {
+      const relation = `public.${table}`;
+      const [row] =
+        await db`select relrowsecurity,relforcerowsecurity from pg_class where oid=${relation}::regclass`;
+      expect(row).toMatchObject({
+        relrowsecurity: true,
+        relforcerowsecurity: true,
+      });
+      const policies =
+        await db`select policyname,cmd,roles,qual from pg_policies where schemaname='public' and tablename=${table}`;
+      expect(policies).toHaveLength(1);
+      expect(policies[0]).toMatchObject({
+        policyname: `${table}_select_scoped`,
+        cmd: 'SELECT',
+        roles: ['authenticated'],
+      });
+      expect(policies[0]?.qual).toContain('generate_registration_link');
+      for (const role of ['anon', 'authenticated', 'service_role'])
+        for (const privilege of [
+          'SELECT',
+          'INSERT',
+          'UPDATE',
+          'DELETE',
+          'TRUNCATE',
+          'REFERENCES',
+          'TRIGGER',
+        ]) {
+          const [grant] =
+            await db`select has_table_privilege(${role},${relation},${privilege}) as allowed`;
+          expect(grant?.allowed).toBe(
+            role === 'authenticated' &&
+              privilege === 'SELECT' &&
+              table !== 'package_versions',
+          );
+        }
+      const triggers =
+        await db`select tgname,tgtype::int as type,tgenabled from pg_trigger where tgrelid=${relation}::regclass and not tgisinternal order by tgname`;
+      const expected = [
+        { tgname: `${table}_no_delete`, type: 11, tgenabled: 'O' },
+        { tgname: `${table}_no_truncate`, type: 34, tgenabled: 'O' },
+      ];
+      if (table === 'package_offers')
+        expected.push(
+          { tgname: 'package_offers_guard', type: 19, tgenabled: 'O' },
+          { tgname: 'audit_package_offers', type: 17, tgenabled: 'O' },
+        );
+      else {
+        expected.push(
+          { tgname: `${table}_no_update`, type: 19, tgenabled: 'O' },
+          { tgname: `audit_${table}`, type: 5, tgenabled: 'O' },
+        );
+        if (table === 'package_versions')
+          expected.push({
+            tgname: 'package_versions_insert_guard',
+            type: 7,
+            tgenabled: 'O',
+          });
+      }
+      expect(triggers).toEqual(
+        expected.sort((a, b) => a.tgname.localeCompare(b.tgname)),
+      );
+    },
+  );
+  it('grants only safe columns and uses an exact-text security-invoker view', async () => {
+    const columns =
+      await db`select column_name from information_schema.columns where table_schema='public' and table_name='package_versions' order by ordinal_position`;
+    for (const column of columns)
+      for (const role of ['authenticated', 'anon', 'service_role']) {
+        const [grant] =
+          await db`select has_column_privilege(${role},'public.package_versions',${column.column_name},'SELECT') as allowed`;
+        expect(grant?.allowed).toBe(
+          role === 'authenticated' &&
+            column.column_name !== 'commission_rate_bp',
+        );
+      }
+    const [view] =
+      await db`select reloptions,pg_get_viewdef(oid) as definition from pg_class where oid='public.package_versions_safe'::regclass`;
+    expect(view?.reloptions).toContain('security_invoker=true');
+    expect(view?.definition).toMatch(/price_minor\)?::text/);
+    expect(view?.definition).not.toContain('commission_rate_bp');
+    expect(view?.definition).not.toContain('*');
+    const projection =
+      await db`select column_name,data_type from information_schema.columns where table_schema='public' and table_name='package_versions_safe' order by ordinal_position`;
+    expect(projection.map((r) => r.column_name)).toEqual([
+      'workspace_id',
+      'id',
+      'offer_id',
+      'version',
+      'name_ar',
+      'name_en',
+      'price_minor',
+      'currency',
+      'duration_days',
+      'duration_months',
+      'published_at',
+      'published_by',
+    ]);
+    expect(
+      projection.find((r) => r.column_name === 'price_minor')?.data_type,
+    ).toBe('text');
+  });
+  it('has all restrictive foreign keys including workspace pair and same-offer triple', async () => {
+    const fks =
+      await db`select conrelid::regclass::text as tbl,pg_get_constraintdef(oid) as definition from pg_constraint where contype='f' and conrelid in ('public.packages'::regclass,'public.package_offers'::regclass,'public.package_versions'::regclass)`;
+    expect(fks).toHaveLength(8);
+    for (const fk of fks) expect(fk.definition).toContain('ON DELETE RESTRICT');
+    for (const definition of [
+      'FOREIGN KEY (workspace_id, offer_id) REFERENCES package_offers(workspace_id, id) ON DELETE RESTRICT',
+      'FOREIGN KEY (workspace_id, current_version_id) REFERENCES package_versions(workspace_id, id) ON DELETE RESTRICT',
+      'FOREIGN KEY (workspace_id, current_version_id, id) REFERENCES package_versions(workspace_id, id, offer_id) ON DELETE RESTRICT',
+    ])
+      expect(fks.map((f) => f.definition)).toContain(definition);
+  });
+  it('hardens all four package RPCs and two private guards', async () => {
+    for (const name of [
+      'public.create_package(text)',
+      'public.publish_package_version(uuid,uuid,smallint,integer,text,text,bigint,text,integer)',
+      'public.set_package_offer_available(uuid,uuid,boolean)',
+      'public.get_package_version_commissions(uuid)',
+      'app_private.guard_package_offer_update()',
+      'app_private.guard_package_version_insert()',
+    ]) {
+      const [fn] =
+        await db`select prosecdef,proconfig,provolatile,pg_get_userbyid(proowner) as owner from pg_proc where oid=${name}::regprocedure`;
+      expect(fn).toMatchObject({ prosecdef: true, owner: 'postgres' });
+      expect(fn?.proconfig).toContain('search_path=""');
+      expect(fn?.provolatile).toBe(name.includes('commissions') ? 's' : 'v');
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        const [grant] =
+          await db`select has_function_privilege(${role},${name},'EXECUTE') as allowed`;
+        expect(grant?.allowed).toBe(
+          role === 'authenticated' && name.startsWith('public.'),
         );
       }
     }

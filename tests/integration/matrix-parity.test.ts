@@ -108,3 +108,68 @@ describe('has_workspace_access parity', () => {
     }
   }
 });
+
+describe('package operation parity', () => {
+  it('pricing and registration scope match app/DB for active, revoked, null-role and membership-free PO', async () => {
+    const { packagesFixture, createSynthetic, publish, publishedFixture } =
+      await import('./packages-fixture');
+    const fixture = await packagesFixture();
+    const p = await publishedFixture(fixture);
+    const canonical = await createSynthetic(fixture);
+    for (const [name, identity] of Object.entries(fixture.actors)) {
+      const role =
+        name === 'po'
+          ? 'platform_owner'
+          : name.startsWith('wo')
+            ? 'workspace_owner'
+            : name.startsWith('sales') || name === 'revoked'
+              ? 'sales'
+              : name.startsWith('trainer')
+                ? 'trainer'
+                : null;
+      const activeWorkspaceIds = name.endsWith('A')
+        ? [fixture.wsA.id]
+        : name.endsWith('B')
+          ? [fixture.wsB.id]
+          : [];
+      const actor: Actor = {
+        userId: identity.userId ?? '',
+        role,
+        activeWorkspaceIds,
+      };
+      for (const workspaceId of [fixture.wsA.id, fixture.wsB.id]) {
+        for (const capability of [
+          'set_package_pricing',
+          'generate_registration_link',
+        ])
+          await db.begin(async (tx) => {
+            await tx`select set_config('role',${name === 'anon' ? 'anon' : 'authenticated'},true)`;
+            await tx`select set_config('request.jwt.claims',${JSON.stringify(identity.userId ? { sub: identity.userId, role: 'authenticated' } : { role: 'anon' })},true)`;
+            if (name === 'anon') return; // Private helper has no anon EXECUTE; public RPC negatives below exercise it.
+            const [row] =
+              await tx`select app_private.has_workspace_access(${workspaceId}::uuid,${capability}) as allowed`;
+            expect(row?.allowed).toBe(
+              authorize(actor, capability, workspaceId),
+            );
+          });
+        const write = await publish(
+          fixture,
+          canonical.id,
+          { workspace_id: workspaceId },
+          identity.client,
+        );
+        expect(write.error === null).toBe(
+          authorize(actor, 'set_package_pricing', workspaceId),
+        );
+        const toggle = await identity.client.rpc(
+          'set_package_offer_available',
+          { workspace_id: workspaceId, offer_id: p.offer.id, available: false },
+        );
+        expect(toggle.error === null).toBe(
+          authorize(actor, 'set_package_pricing', workspaceId) &&
+            workspaceId === fixture.wsA.id,
+        );
+      }
+    }
+  });
+});

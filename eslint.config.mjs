@@ -8,6 +8,7 @@ export default defineConfig([
   {
     files: [
       'lib/auth/**',
+      'lib/packages/**',
       'lib/supabase/**',
       'app/login/**',
       'app/auth/**',
@@ -19,6 +20,7 @@ export default defineConfig([
   {
     files: [
       'components/**',
+      'app/(app)/packages/PackagesManager.tsx',
       'app/login/LoginForm.tsx',
       'app/auth/recovery/RecoveryForm.tsx',
       'app/(dev)/showcase/ComponentDemos.tsx',

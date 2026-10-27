@@ -7,12 +7,15 @@ import { signOut } from './actions';
 import styles from '../login/login.module.css';
 
 export default async function HomePage() {
-  await requireActor();
+  const actor = await requireActor();
   const store = await cookies();
   const m = getMessages(parseLocale(store.get(LOCALE_COOKIE)?.value));
   return (
     <main className={styles.main}>
       <h1>{m['auth.signedIn']}</h1>
+      {actor.role === 'platform_owner' && (
+        <a href="/packages">{m['packages.title']}</a>
+      )}
       <form action={signOut}>
         <Button type="submit">{m['auth.signOut']}</Button>
       </form>

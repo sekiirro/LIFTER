@@ -1,0 +1,62 @@
+.main {
+  display: grid;
+  gap: var(--space-6);
+  max-inline-size: 75rem;
+  margin-inline: auto;
+  padding: var(--space-6) var(--space-4);
+}
+.stack {
+  display: grid;
+  gap: var(--space-3);
+}
+.fields {
+  display: grid;
+  gap: var(--space-4);
+  border: 0;
+  padding: 0;
+  margin: 0;
+  min-inline-size: 0;
+}
+.presets {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-2);
+}
+.main select {
+  color: var(--color-text);
+  background: var(--color-bg);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  min-block-size: 2.75rem;
+  padding: var(--space-2);
+  max-inline-size: 100%;
+}
+.tableWrap {
+  overflow-x: auto;
+}
+.main table {
+  inline-size: 100%;
+  border-collapse: collapse;
+  text-align: start;
+}
+.main caption {
+  text-align: start;
+  font-weight: 600;
+  padding-block: var(--space-3);
+}
+.main th,
+.main td {
+  border-block-end: 1px solid var(--color-border);
+  padding: var(--space-3);
+  text-align: start;
+  vertical-align: top;
+}
+.main td:last-child {
+  display: grid;
+  gap: var(--space-2);
+}
+@media (min-width: 48rem) {
+  .fields {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
