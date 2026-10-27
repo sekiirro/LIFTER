@@ -27,9 +27,9 @@ Verdicts: `ok` (< 70%) · `warn` (≥ 70%) · `over` (> 100%) · `pending approv
 |---|---|---|---|---|---|---|
 | Workers requests/day | 100,000 (Cloudflare Workers limits, 2026-10-27) | — | — | dashboard after deploy | pending approval | Workers Paid (~$5/mo) |
 | Workers CPU per HTTP request | 10 ms (same) | per route: `free-tier:tail` | — | measured after deploy | pending approval | Workers Paid / split static from API |
-| Web Worker size | 64 MiB uncompressed (same) | `npm run size` | | measured offline | | split Workers |
-| Cron Worker size | 64 MiB uncompressed (same) | `npm run size` | | measured offline | | — |
-| Supabase DB size | 500 MB ([pricing](https://supabase.com/pricing), 2026-10-27) | local: `free-tier:db`; projection: `free-tier:project` | | measured offline + projection | | Supabase Pro (from $25/mo) |
+| Web Worker size | 64 MiB uncompressed (same) | 4,783.93 KiB (gzip 997.74 KiB), `main` + F8 | 7.30% | measured offline | ok | split Workers |
+| Cron Worker size | 64 MiB uncompressed (same) | 2.85 KiB (gzip 1.25 KiB) | 0.00% | measured offline | ok | — |
+| Supabase DB size | 500 MB ([pricing](https://supabase.com/pricing), 2026-10-27) | local stack with test fixtures: 13,039,283 bytes (mostly platform baseline); projection blocked on ND-F8-1 | 2.61% (local) | measured offline; projection pending | ok (local); projection pending | Supabase Pro (from $25/mo) |
 | Supabase egress | 5 GB + 5 GB cached (same) | — | — | dashboard after deploy | pending approval | Pro |
 | Supabase storage | 1 GB (same) | 0 buckets today (F7) | 0% | measured offline | ok | R2 overflow |
 | Supabase Auth MAU | 50,000 (same) | — | — | dashboard after deploy | pending approval | — |
@@ -46,6 +46,6 @@ Pilot volumes: **NEEDS SOURCE CONFIRMATION**. `free-tier:project` refuses to pro
 
 | Item | Value |
 |---|---|
-| Measured by / date | |
+| Measured by / date | Claude (reviewer), 2026-10-27, local only |
 | Environment(s) | local only (until approval) |
 | PO decision | |

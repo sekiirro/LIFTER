@@ -65,7 +65,7 @@
 
 ## Phase 6: Review (Claude)
 
-- [ ] T011 Re-run the gates. Run `free-tier:db` against the local stack and `free-tier:probe` against a local `next start`. Fill the offline rows of `docs/06-free-tier-report.md`. PR, CI, CodeRabbit.
+- [x] T011 Re-run the gates. Run `free-tier:db` against the local stack and `free-tier:probe` against a local `next start`. Fill the offline rows of `docs/06-free-tier-report.md`. PR, CI, CodeRabbit.
 
 ## Dependencies
 
