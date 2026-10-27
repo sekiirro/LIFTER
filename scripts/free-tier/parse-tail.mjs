@@ -4,15 +4,46 @@ import { normalizeRoute } from './lib/routes.mjs';
 import { percentile, verdict } from './lib/stats.mjs';
 import { isMain, output, positive, run } from './lib/cli.mjs';
 
+function* tailObjects(text) {
+  let buffer = '';
+  let depth = 0;
+  let quoted = false;
+  let escaped = false;
+  for (const character of text) {
+    if (depth === 0) {
+      if (character === '{') {
+        if (buffer.trim()) yield buffer;
+        buffer = '{';
+        depth = 1;
+      } else if (character === '\n') {
+        if (buffer.trim()) yield buffer;
+        buffer = '';
+      } else buffer += character;
+      continue;
+    }
+    buffer += character;
+    if (quoted) {
+      if (escaped) escaped = false;
+      else if (character === '\\') escaped = true;
+      else if (character === '"') quoted = false;
+    } else if (character === '"') quoted = true;
+    else if (character === '{') depth++;
+    else if (character === '}' && --depth === 0) {
+      yield buffer;
+      buffer = '';
+    }
+  }
+  if (buffer.trim()) yield buffer;
+}
+
 export function parseTail(text, cpuLimitMs = 10) {
   positive(cpuLimitMs, 10);
   const groups = new Map();
   let invalid_lines = 0;
-  for (const line of text.split(/\r?\n/)) {
-    if (!line.trim()) continue;
+  for (const object of tailObjects(text)) {
     let event, route;
     try {
-      event = JSON.parse(line);
+      event = JSON.parse(object);
       if (
         typeof event.event?.request?.method !== 'string' ||
         typeof event.event?.request?.url !== 'string'

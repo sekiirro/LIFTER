@@ -3,7 +3,7 @@ import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { dirname, join } from 'node:path';
 import { gzipSync } from 'node:zlib';
-import { pathToFileURL } from 'node:url';
+import { isMain } from './free-tier/lib/cli.mjs';
 import { evaluate } from './size-limit.mjs';
 
 // https://developers.cloudflare.com/workers/platform/limits/
@@ -96,7 +96,7 @@ export async function main() {
   }
 }
 
-if (process.argv[1] && import.meta.url === pathToFileURL(process.argv[1]).href)
+if (isMain(import.meta.url))
   main().catch((error) => {
     console.error(`Worker size report failed: ${error.message}`);
     process.exitCode = 1;

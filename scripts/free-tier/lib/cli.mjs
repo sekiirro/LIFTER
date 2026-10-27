@@ -1,3 +1,4 @@
+import { realpathSync } from 'node:fs';
 import { writeFile } from 'node:fs/promises';
 import { pathToFileURL } from 'node:url';
 import { pct } from './stats.mjs';
@@ -25,7 +26,12 @@ export function run(main) {
 }
 
 export function isMain(url) {
-  return Boolean(
-    process.argv[1] && url === pathToFileURL(process.argv[1]).href,
-  );
+  try {
+    return Boolean(
+      process.argv[1] &&
+      url === pathToFileURL(realpathSync(process.argv[1])).href,
+    );
+  } catch {
+    return false;
+  }
 }

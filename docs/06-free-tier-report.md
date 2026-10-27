@@ -16,6 +16,12 @@ Verdicts: `ok` (< 70%) · `warn` (≥ 70%) · `over` (> 100%) · `pending approv
 
 ### 1a. What the PO checks (read-only, dashboard)
 
+Supabase may also refuse a new project when another Owner or Administrator of
+the same organization has exhausted their own Free quota. Eligibility therefore
+assumes a dedicated LIFTER organization whose only Owner is the PO and which has
+no other Administrators; otherwise, check every Owner's and Administrator's quota
+across their organizations before treating the organization as eligible.
+
 1. Go to supabase.com/dashboard and open **every** organization listed. For each one, note your role (Owner/Administrator/Developer/Read-only) and its plan.
 2. In each org where you're Owner/Administrator: count the Free-plan projects whose status is **active** (not paused).
 3. Eligible for one new LIFTER project if that total is ≤ 1. Eligible for staging + prod if it's 0.

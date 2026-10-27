@@ -60,7 +60,8 @@ Offline preparation (no deployment):
    `npm run free-tier:tail -- scripts/free-tier/fixtures/tail-sample.jsonl`.
    Override the 10 ms CPU limit with `--cpu-limit-ms`; `--json report.json` saves
    sanitized aggregates. Verdicts use maximum observed CPU: warn at 70%, over
-   above 100%. Missing timing fields stay null; invalid lines are counted.
+   above 100%. Missing timing fields stay null; malformed or invalid objects are counted
+   in the report's `invalid_lines` field. Compact and pretty-printed events are supported.
 
 After PO approval, per the approval record, use the explicitly approved staging
 host with `npm run free-tier:probe -- --base-url https://approved-host.example --routes scripts/free-tier/routes.example.json --n 20 --concurrency 2 --json probe.json`.
@@ -71,12 +72,20 @@ and `--concurrency` at 5; batches run sequentially. Latency includes response-bo
 reading; body bytes are counted without saving content. Query strings never
 appear in reports. Authenticated measurements await ND-F8-3.
 
-After PO approval, capture request events from the approved Worker with
-`wrangler tail --format json > tail.jsonl`, then parse the saved file with
+After PO approval, capture request events from the approved Worker in Bash with
+`(umask 077 && npx wrangler tail <worker> --format json > tail.jsonl)`, replacing
+`<worker>` with the approved Worker name. Use a new file in a private directory;
+`umask` does not tighten permissions on an existing file. Then parse the saved file with
 `npm run free-tier:tail -- tail.jsonl --json cpu.json`. Keep raw tail files
 private: they can contain headers, logs and exceptions. Only the parser's
 aggregates are suitable for the report. Local latency does not measure platform
 CPU. Pilot volumes remain **NEEDS SOURCE CONFIRMATION** (ND-F8-1).
+
+In PowerShell on Windows, create a new empty `tail.jsonl`, disable ACL inheritance,
+and grant only the current user FullControl **before** redirecting
+`npx wrangler tail <worker> --format json > tail.jsonl` into it. Use a private
+directory and stop if the ACL change fails. After parsing, delete the raw file
+(`rm -- tail.jsonl` in Bash or `Remove-Item -LiteralPath tail.jsonl` in PowerShell).
 
 ## Local database & isolation tests
 

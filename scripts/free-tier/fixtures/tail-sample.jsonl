@@ -2,3 +2,18 @@
 {"event":{"request":{"method":"GET","url":"https://example.invalid/api/jobs/456"}},"cpuTime":11,"wallTime":30,"outcome":"exceededCpu"}
 not-json
 {"event":{"request":{"method":"GET","url":"https://example.invalid/login"}},"outcome":"ok"}
+{
+  "event": {
+    "request": {
+      "method": "GET",
+      "url": "https://example.invalid/api/pretty/789?token=fixture-pretty-query-secret",
+      "headers": {
+        "x-fixture": "fixture-pretty-header-secret { and } with \"quotes\" and \\ backslash"
+      }
+    }
+  },
+  "cpuTime": 4,
+  "wallTime": 12,
+  "outcome": "ok",
+  "logs": [{ "message": ["fixture-pretty-log-secret { }"] }]
+}
