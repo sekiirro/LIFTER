@@ -37,6 +37,58 @@ The additional `build:edge` and `size` gates run in Linux CI only. This scaffold
 does not deploy; no deploy, account setup, or login commands are part of development
 validation.
 
+## Local database & isolation tests
+
+Install Docker and Supabase CLI 2.122.0 before running the local database suite.
+The integration job in GitHub Actions uses a disposable local stack, applies all
+migrations from scratch, and needs no repository secrets or deployment.
+
+On Windows, Docker Desktop is enough, and the pinned CLI runs via `npx supabase@2.122.0`
+(verified 2026-10-27, Docker 29.9.2). If `docker` isn't on `PATH`, add
+`%LOCALAPPDATA%\Programs\DockerDesktop\resources\bin` (per-user install).
+
+In Bash, start the stack and export its generated development environment:
+
+```bash
+npx supabase@2.122.0 start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,storage-api,postgres-meta
+npx supabase@2.122.0 status -o env
+eval "$(npx supabase@2.122.0 status -o env | sed 's/^/export /')"
+npm run test:integration
+npx supabase@2.122.0 stop --no-backup
+```
+
+In PowerShell, replace the `eval` command with:
+
+```powershell
+npx supabase@2.122.0 status -o env | ForEach-Object {
+  if ($_ -match '^([A-Z_]+)="?(.*?)"?$') {
+    Set-Item -Path "Env:$($Matches[1])" -Value $Matches[2]
+  }
+}
+```
+
+The harness accepts `API_URL`, `ANON_KEY`, `SERVICE_ROLE_KEY`, and `DB_URL`, or
+their `SUPABASE_` aliases (`SUPABASE_URL`, `SUPABASE_ANON_KEY`,
+`SUPABASE_SERVICE_ROLE_KEY`, `SUPABASE_DB_URL`). Missing environment values fail
+immediately with “Integration env missing”. Treat status output as local
+credentials; do not commit it. Fixtures use unique synthetic users and slugs in
+each test file and remain only in the disposable local database.
+
+Every new tenant table must include a foreign-workspace negative test through
+`tests/integration/harness.ts`, exercising a signed user's API client. Unit tests
+remain separate and run without Docker via `npm test`.
+
+The first Platform Owner requires an existing auth account. An operator runs this
+SQL in the intended local or staging database, substituting its auth user UUID:
+
+```sql
+insert into public.staff_profiles (user_id, role)
+values ('<auth-user-uuid>'::uuid, 'platform_owner'::public.staff_role);
+```
+
+Never commit a real user UUID. Bootstrap is manual; this feature does not prevent
+removal of the last PO role. Audit event emission is deferred to F5.
+
 ## Design system
 
 `lib/design/tokens.ts` defines the typed light/dark surfaces, semantic colors,
