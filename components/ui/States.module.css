@@ -1,0 +1,58 @@
+.state {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-3);
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  text-align: center;
+}
+.state p {
+  color: var(--color-text-muted);
+}
+.state[role='alert'] > svg {
+  color: var(--color-error-fg);
+}
+.skeletonGroup {
+  display: grid;
+  gap: var(--space-3);
+}
+.skeleton {
+  display: block;
+  inline-size: var(--skeleton-width);
+  background: var(--color-border);
+  border-radius: var(--radius-sm);
+}
+.text {
+  block-size: var(--space-4);
+}
+.circle {
+  inline-size: var(--space-10);
+  block-size: var(--space-10);
+  border-radius: var(--radius-full);
+}
+.card {
+  block-size: calc(var(--space-10) * 3);
+  border-radius: var(--radius-card);
+}
+@media (prefers-reduced-motion: no-preference) {
+  .skeleton {
+    background: linear-gradient(
+      100deg,
+      var(--color-border) 20%,
+      var(--color-card-raised) 50%,
+      var(--color-border) 80%
+    );
+    background-size: 200% 100%;
+    animation: shimmer calc(var(--motion-slow) * 6) linear infinite;
+  }
+}
+@keyframes shimmer {
+  from {
+    background-position: 200% 0;
+  }
+  to {
+    background-position: -200% 0;
+  }
+}

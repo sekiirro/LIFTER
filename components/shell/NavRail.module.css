@@ -1,0 +1,43 @@
+.rail {
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-3);
+  padding-block: var(--space-5);
+  background: var(--color-card);
+  border-inline-end: 1px solid var(--color-border);
+}
+.link {
+  display: grid;
+  place-items: center;
+  position: relative;
+  min-inline-size: var(--touch-min);
+  min-block-size: var(--touch-min);
+  border: 2px solid var(--color-card);
+  border-radius: var(--radius-button);
+  color: var(--color-text-muted);
+  text-decoration: none;
+  transition:
+    color var(--motion-fast),
+    border-color var(--motion-fast);
+}
+.link[aria-current='page'] {
+  color: var(--brand-text);
+  border-color: var(--brand-ring);
+}
+.tooltip {
+  position: absolute;
+  inset-inline-start: calc(100% + var(--space-3));
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-card);
+  color: var(--color-text);
+  box-shadow: var(--shadow-sm);
+  white-space: nowrap;
+  visibility: hidden;
+  pointer-events: none;
+}
+.link:hover .tooltip,
+.link:focus-visible .tooltip {
+  visibility: visible;
+}
