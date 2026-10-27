@@ -7,6 +7,7 @@ export const ROLES = [
 export type Role = (typeof ROLES)[number];
 
 export const CAPABILITIES = [
+  'generate_recovery_link',
   'set_package_pricing',
   'generate_registration_link',
   'configure_installment_schedule',
@@ -25,6 +26,7 @@ export type Capability = (typeof CAPABILITIES)[number];
 export const MATRIX: Readonly<Record<Role, readonly Capability[]>> = {
   platform_owner: CAPABILITIES,
   workspace_owner: [
+    'generate_recovery_link',
     'generate_registration_link',
     'configure_installment_schedule',
     'approve_registration',

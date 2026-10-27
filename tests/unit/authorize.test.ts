@@ -9,6 +9,7 @@ import {
 
 // Independent literal oracle: columns are PO, WO, Trainer, Sales (D-09/D-10).
 const expected: Record<Capability, readonly boolean[]> = {
+  generate_recovery_link: [true, true, false, false],
   set_package_pricing: [true, false, false, false],
   generate_registration_link: [true, true, true, true],
   configure_installment_schedule: [true, true, false, true],

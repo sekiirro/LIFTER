@@ -408,3 +408,28 @@ try {
 Each run uses a fresh temporary key folder outside the repository, so keygen never hits an existing file.
 The reviewer owns this Docker verification; unit gates do not establish a
 successful end-to-end restore.
+
+## Authentication
+
+Set `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY` and
+`APP_ORIGIN` on the server only, never with a `NEXT_PUBLIC_` prefix. URLs must
+use HTTPS; loopback HTTP is allowed for local development. Missing or invalid
+configuration fails closed.
+
+For local sign-in, start the local Supabase stack, create an email-confirmed
+test user through the admin API, set the four environment variables, run
+`npm run dev`, and open `/login`. Sign-in and recovery run through server
+actions. Sign-out ends only the current browser session.
+
+Manual recovery checks the user's capability and target workspace before
+generating a provider token. The link is shown once, copied manually, never
+logged or stored by LIFTER, and returned only after the issuance and audit event
+commit. Opening it does not consume it: the Continue action verifies it, then
+the account holder sets a new password.
+
+ND-F4-3 uses the provider OTP expiry, configured per environment. ND-F4-4
+placeholders live in `app_private.recovery_link_limits()`: 20 per actor and 3
+per target per rolling hour. Both values need owner decisions before production.
+P1 replaces `app_private.recovery_target_workspace`; until then, generation is
+denied for every target. Trainers remain denied pending ND-F4-1. F4 offers copy
+only, with no share button.

@@ -5,6 +5,7 @@ specs
 docs
 .specify
 .claude
+.agents
 LIFTER_Claude_Files
 node_modules
 coverage

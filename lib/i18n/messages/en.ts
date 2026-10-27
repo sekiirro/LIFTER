@@ -1,6 +1,35 @@
 import type { ar } from './ar';
 
 export const en: Record<keyof typeof ar, string> = {
+  'auth.signInTitle': 'Sign in',
+  'auth.email': 'Email',
+  'auth.password': 'Password',
+  'auth.signIn': 'Sign in',
+  'auth.invalid_credentials': 'Invalid email or password.',
+  'auth.unavailable': 'The service is unavailable. Please try again.',
+  'auth.continue': 'Continue',
+  'auth.newPassword': 'New password',
+  'auth.confirmPassword': 'Confirm password',
+  'auth.setPassword': 'Set password',
+  'auth.invalid_link':
+    'This link is invalid or expired. Ask your coach or workspace for a new link.',
+  'auth.weak_password': 'Choose a stronger password.',
+  'auth.mismatch': 'The passwords do not match.',
+  'auth.signedIn': 'You are signed in',
+  'auth.signOut': 'Sign out',
+  'auth.recoveryTitle': 'Generate a recovery link',
+  'auth.recoveryConfirm':
+    'Generate a new link for this client? Any earlier unused link will stop working.',
+  'auth.copy': 'Copy link',
+  'auth.copied': 'Link copied',
+  'auth.close': 'Close',
+  'auth.shownOnce':
+    'This link is shown once. Copy it before closing this dialog.',
+  'auth.denied': 'You cannot generate a recovery link for this account.',
+  'auth.rate_limited':
+    'The recovery link limit has been reached. Try again later.',
+  'auth.recoveryLink': 'Recovery link',
+  'auth.copyFailed': 'Unable to copy. Select the link and copy it manually.',
   'showcase.shellDescription':
     'A role-based navigation demo that adapts to screen size and language direction.',
   'showcase.shellLinks': 'Open a full-size demo:',
