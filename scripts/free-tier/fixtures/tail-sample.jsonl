@@ -17,3 +17,15 @@ not-json
   "outcome": "ok",
   "logs": [{ "message": ["fixture-pretty-log-secret { }"] }]
 }
+{"event":
+{
+  "event": {
+    "request": {
+      "method": "GET",
+      "url": "https://example.invalid/api/recovered/321"
+    }
+  },
+  "cpuTime": 6,
+  "wallTime": 18,
+  "outcome": "ok"
+}

@@ -5,7 +5,7 @@ import { main, parseTail } from '../../scripts/free-tier/parse-tail.mjs';
 const fixture = 'scripts/free-tier/fixtures/tail-sample.jsonl';
 it('aggregates the fixture and keeps absent timings distinct from zero', () => {
   const result = parseTail(readFileSync(fixture, 'utf8'));
-  expect(result.invalid_lines).toBe(1);
+  expect(result.invalid_lines).toBe(2);
   expect(result.routes[0]).toMatchObject({
     route: 'GET /api/jobs/:id',
     count: 2,
@@ -24,7 +24,7 @@ it('aggregates the fixture and keeps absent timings distinct from zero', () => {
 });
 it('collects pretty-printed events despite braces and escapes inside strings', () => {
   const result = parseTail(readFileSync(fixture, 'utf8'));
-  expect(result.invalid_lines).toBe(1);
+  expect(result.invalid_lines).toBe(2);
   expect(
     result.routes.find((row) => row.route === 'GET /api/pretty/:id'),
   ).toMatchObject({
@@ -36,6 +36,25 @@ it('collects pretty-printed events despite braces and escapes inside strings', (
     outcomes: { ok: 1 },
   });
 });
+
+it.each(['\n', '\r\n'])(
+  'recovers the event after a truncated record with %j newlines',
+  (newline) => {
+    const text = readFileSync(fixture, 'utf8').replace(/\r?\n/g, newline);
+    const result = parseTail(text);
+    expect(result.invalid_lines).toBe(2);
+    expect(
+      result.routes.find((row) => row.route === 'GET /api/recovered/:id'),
+    ).toMatchObject({
+      count: 1,
+      cpu_p50_ms: 6,
+      cpu_p95_ms: 6,
+      cpu_max_ms: 6,
+      wall_p50_ms: 18,
+      outcomes: { ok: 1 },
+    });
+  },
+);
 
 it('handles concatenated objects and counts malformed or incomplete objects', () => {
   const event = {
