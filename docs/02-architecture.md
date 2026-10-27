@@ -23,7 +23,7 @@ Approved hosting direction (PO, 2026-10-27): Next.js + Cloudflare + serverless b
 | Limit (reported) | Impact | Mitigation / exit |
 |---|---|---|
 | Supabase: 500 MB DB, ~5 GB egress, 2 projects, **project pauses after ~7 days inactivity, no backups**, egress overage may return 402 | Losing the ledger is unacceptable (Inv.4). A pause means an outage. | Encrypted local backups (below). Cron traffic keeps the project active. Monitor DB size and egress. **Exit trigger:** Supabase Pro (~$25/mo) when usage exceeds 70% of a limit (PO decision). |
-| Cloudflare Workers Free: ~100k req/day, low per-invocation CPU limit, compressed script-size cap | The OpenNext bundle may exceed the cap. SSR or heavy JSON may exceed CPU. | P0 spike: deploy a skeleton and measure. Exit: Workers Paid (~$5/mo) or split static pages from the API Worker. |
+| Cloudflare Workers Free: ~100k req/day; **10 ms CPU per HTTP request; 64 MiB uncompressed Worker size, no compressed limit** (official limits page, verified 2026-10-27) | Bundle size is low-risk. The 10 ms CPU limit for SSR or heavy JSON is the real constraint. | P0 spike: deploy a skeleton and measure. Exit: Workers Paid (~$5/mo) or split static pages from the API Worker. |
 | Supabase Auth: 50k MAU | Ample | — |
 
 ## Multi-tenancy & authorization

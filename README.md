@@ -17,7 +17,7 @@ Install dependencies with `npm ci`.
 | `npm test`             | Run the Vitest unit tests in `tests/unit`.                                                                                                                          |
 | `npm run e2e`          | Run Playwright health API tests in the Chromium project. Builds and starts the production server automatically; reuses an existing healthy local server outside CI. |
 | `npm run build:edge`   | Build the Cloudflare Worker bundle in Linux CI only.                                                                                                                |
-| `npm run size`         | Check the Worker bundle size in Linux CI only (script added in Batch 3).                                                                                            |
+| `npm run size`         | Check uncompressed Worker size against 64 MiB in Linux CI; override with `WORKER_SIZE_LIMIT_KIB`.                                                                   |
 
 Run these development gates:
 

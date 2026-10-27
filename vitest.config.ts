@@ -3,7 +3,7 @@ import { defineConfig } from 'vitest/config';
 export default defineConfig({
   test: {
     environment: 'node',
-    include: ['tests/unit/**'],
+    include: ['tests/unit/**/*.test.ts'],
     passWithNoTests: false,
   },
 });

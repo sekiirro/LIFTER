@@ -1,0 +1,34 @@
+name: CI
+
+on:
+  push:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  validate:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - name: Ensure edge build native tools work
+        run: |
+          # npm 11 may gate native install scripts. Rebuild only if the esbuild
+          # or workerd binaries needed by build:edge fail their local checks.
+          if ! node -e "require('esbuild').transformSync('const x = 1')" || ! npx --no-install workerd --version; then
+            npm rebuild esbuild workerd
+          fi
+      - run: npm run typecheck
+      - run: npm run lint
+      - run: npm run format:check
+      - run: npm test
+      - run: npm run build:edge
+      - run: npm run size
+      - run: npx playwright install --with-deps chromium
+      - run: CI=1 npm run e2e

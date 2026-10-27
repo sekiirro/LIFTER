@@ -58,15 +58,15 @@ The app starts locally and exposes a health endpoint that reports status and ver
 
 ### User Story 4 - Free-tier bundle-size report (Priority: P2)
 
-Each build reports the compressed edge-worker size against the free-tier limit, so the Product Owner sees early whether the $0 hosting target (D-06) holds.
+Each build reports the edge-worker size against the official Workers size limit (64 MiB uncompressed), so the Product Owner sees early whether the $0 hosting target (D-06) holds.
 
 **Why this priority**: The P0 free-tier spike is a gate in the approved roadmap.
 
-**Independent Test**: Run the size-report command after an edge build. It prints the compressed size, the configured limit and the headroom percentage.
+**Independent Test**: Run the size-report command after an edge build. It prints the sizes, the configured limit and the headroom percentage.
 
 **Acceptance Scenarios**:
 
-1. **Given** a completed edge build, **When** the size report runs, **Then** it prints the compressed size, the limit and the percentage used.
+1. **Given** a completed edge build, **When** the size report runs, **Then** it prints the uncompressed and gzip sizes, the limit and the percentage used.
 2. **Given** the size exceeds the configured limit, **When** the report runs, **Then** it exits non-zero, and CI marks it as failed.
 
 ---
@@ -88,7 +88,7 @@ Each build reports the compressed edge-worker size against the free-tier limit, 
 - **FR-005**: An e2e smoke suite MUST verify the health endpoint. No pages, layouts or UI components are created in this feature.
 - **FR-006**: The app MUST expose a public health endpoint returning only `status` and `version`.
 - **FR-007**: The edge build MUST produce the worker artifact for the approved edge host without deploying it.
-- **FR-008**: A size-report command MUST compute the compressed worker size, compare it to a configurable limit (default = free-tier limit documented with its source link), print headroom, and exit non-zero when over.
+- **FR-008**: A size-report command MUST compute the worker bundle size (uncompressed, plus gzip shown for information), compare the uncompressed size to a configurable limit (default = official Workers limit of 64 MiB uncompressed; Cloudflare has no compressed limit, verified 2026-10-27), print headroom, and exit non-zero when over.
 - **FR-009**: CI MUST run typecheck, lint, format check, unit tests, edge build and size report on every push and PR. CI MUST use no secrets and MUST NOT deploy.
 - **FR-010**: Local database tooling configuration MUST be committed (no schema, no migrations, no credentials).
 - **FR-011**: No secrets or real env values may be committed. A placeholder-only example env file MUST exist.
