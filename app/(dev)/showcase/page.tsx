@@ -20,6 +20,7 @@ import { isShowcaseEnabled } from '../../../lib/design/showcase';
 import { modes } from '../../../lib/design/tokens';
 import { getMessages } from '../../../lib/i18n';
 import { ComponentDemos } from './ComponentDemos';
+import { parseDemoRole, ShellDemo } from './ShellDemo';
 import styles from './showcase.module.css';
 
 const samples = [
@@ -53,12 +54,17 @@ const swatches = [
   ),
 ];
 
-export default async function ShowcasePage() {
+export default async function ShowcasePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ role?: string | string[] }>;
+}) {
   if (!isShowcaseEnabled(process.env)) notFound();
   const preferences = await cookies();
   const locale = parseLocale(preferences.get(LOCALE_COOKIE)?.value);
   const theme = parseTheme(preferences.get(THEME_COOKIE)?.value);
   const m = getMessages(locale);
+  const role = parseDemoRole((await searchParams).role);
   return (
     <ToastProvider dismissLabel={m['toast.dismiss']}>
       <main className={styles.main} data-testid="showcase">
@@ -262,6 +268,7 @@ export default async function ShowcasePage() {
           </div>
         </section>
         <ComponentDemos messages={m} />
+        <ShellDemo role={role} messages={m} />
       </main>
     </ToastProvider>
   );

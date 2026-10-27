@@ -59,6 +59,16 @@ video {
   transform: scaleX(-1);
 }
 
+@media print {
+  html,
+  body {
+    background: var(--color-print-bg);
+    color: var(--color-print-text);
+    /* Override the more specific explicit-theme token selectors. */
+    color-scheme: light !important;
+  }
+}
+
 @media (prefers-reduced-motion: reduce) {
   *,
   *::before,

@@ -1,0 +1,49 @@
+.shell {
+  --rail-width: calc(var(--space-10) + var(--space-6));
+  --bottom-bar-size: calc(var(--touch-min) + var(--space-8));
+}
+.content {
+  min-block-size: var(--shell-min-block-size, 100dvb);
+  padding-block-end: calc(
+    var(--bottom-bar-size) + env(safe-area-inset-bottom, 0px)
+  );
+}
+.rail {
+  display: none;
+  position: fixed;
+  inset-inline-start: 0;
+  inset-block: 0;
+  inline-size: var(--rail-width);
+  z-index: 5;
+}
+.bottom {
+  display: flex;
+  position: fixed;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: calc(var(--bottom-bar-size) + env(safe-area-inset-bottom, 0px));
+  z-index: 5;
+}
+/* ND-3 provisional */
+@media (min-width: 48rem) {
+  .rail {
+    display: flex;
+  }
+  .bottom {
+    display: none;
+  }
+  .content {
+    padding-inline-start: var(--rail-width);
+    padding-block-end: 0;
+  }
+}
+@media print {
+  .rail,
+  .bottom {
+    display: none;
+  }
+  .content {
+    min-block-size: 0;
+    padding: 0;
+  }
+}

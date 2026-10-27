@@ -1,6 +1,10 @@
 import type { Hex } from './color';
 
 export type SemanticTokens = { fg: Hex; bg: Hex; border: Hex };
+export const printTokens = {
+  bg: '#FFFFFF',
+  text: '#000000',
+} as const satisfies Record<string, Hex>;
 export type ModeTokens = {
   bg: Hex;
   card: Hex;

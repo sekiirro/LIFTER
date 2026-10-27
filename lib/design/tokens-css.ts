@@ -1,5 +1,5 @@
 import { deriveBrand, type BrandVariants } from './color';
-import { modes, scales, type ModeTokens } from './tokens';
+import { modes, printTokens, scales, type ModeTokens } from './tokens';
 
 const brandKeys = {
   fill: 'fill',
@@ -46,6 +46,8 @@ function mapping(mode: 'light' | 'dark'): string {
 
 export function tokensToCss(): string {
   const vars: Record<string, string> = {
+    '--color-print-bg': printTokens.bg,
+    '--color-print-text': printTokens.text,
     ...brandToCssVars(deriveBrand(undefined)),
     '--touch-min': `${scales.touchMin}px`,
     '--font-sans':

@@ -1,6 +1,19 @@
 import type { ar } from './ar';
 
 export const en: Record<keyof typeof ar, string> = {
+  'showcase.shellDescription':
+    'A role-based navigation demo that adapts to screen size and language direction.',
+  'showcase.shellLinks': 'Open a full-size demo:',
+  'showcase.backToShowcase': 'Back to the design system',
+  'print.title': 'Workout print sample',
+  'print.description':
+    'A sample for checking Arabic layout, text direction, and numbers in print.',
+  'print.englishParagraph':
+    'This sample checks Arabic shaping, mixed text, and repeated table headers when printed.',
+  'print.exercise': 'Exercise',
+  'print.sets': 'Sets',
+  'print.reps': 'Repetitions',
+  'print.exerciseName': 'Squat',
   'showcase.intro':
     'A reference for components, colors, and states in Arabic and English.',
   'showcase.arabicSample': 'خطّة واضحة، وتقدّم يمكنك متابعته كل يوم.',

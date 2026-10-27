@@ -1,4 +1,17 @@
 export const ar = {
+  'showcase.shellDescription':
+    'نموذج للتنقل حسب الدور، يتكيّف مع عرض الشاشة واتجاه اللغة.',
+  'showcase.shellLinks': 'افتح النموذج بالحجم الكامل:',
+  'showcase.backToShowcase': 'العودة إلى نظام التصميم',
+  'print.title': 'نموذج طباعة برنامج التمرين',
+  'print.description':
+    'نموذج لاختبار تنسيق العربية واتجاه النص والأرقام عند الطباعة.',
+  'print.englishParagraph':
+    'This sample checks Arabic shaping, mixed text, and repeated table headers when printed.',
+  'print.exercise': 'التمرين',
+  'print.sets': 'المجموعات',
+  'print.reps': 'التكرارات',
+  'print.exerciseName': 'القرفصاء',
   'showcase.intro':
     'مرجع المكوّنات والألوان والحالات باللغتين العربية والإنجليزية.',
   'showcase.arabicSample': 'خطّة واضحة، وتقدّم يمكنك متابعته كل يوم.',
