@@ -22,6 +22,8 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 | D-16 | Identities | Staff and client accounts use separate emails. No dual-role accounts. |
 | D-18 | Design System | [DESIGN.md](../DESIGN.md) approved (2026-10-27): emerald `#059669` default brand (not lime), workspace-customizable colors with WCAG 2.2 AA contrast guard, dark + light modes (device first, manual choice persisted). Constitution VIII amended to v1.1.0. Open items in DESIGN.md §11 stay open. |
 | D-17 | Installment total | Installment amounts must sum exactly to the PO-approved price |
+| D-20 | Hosting region (B4, part) (2026-10-27) | Supabase region **eu-central-1 (Frankfurt, EU)** for LIFTER is **APPROVED by the PO, including the legal question**. PO statement: YBS previously operated using German hosting without issues. Hosting: one dedicated LIFTER Free organization with **one** cloud project (production); development and testing use local Docker, with no cloud staging project. Never touch YBS. **B4 retention values remain OPEN** (client closure retention period, audit retention ND-F5-1) and still block production with real client data. |
+| D-21 | Cloudflare account (2026-10-27) | The Cloudflare **LIFTER** account (`c3a2ab30d3888eda7071b02916732b69`) is the only target; **Free**, confirmed by the PO on 2026-10-27, with no paid subscription. Both Wrangler configs pin this account id. The personal account is never used for LIFTER. |
 | — | Architecture | [02-architecture.md](02-architecture.md) v3 APPROVED (R1, R2, R4, R5, R6, R7 adopted) |
 
 ## Superseded
@@ -40,7 +42,8 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 
 ## Open (does not block the Constitution)
 
-- **B4:** jurisdiction / data residency / closure retention period. Gates production only.
+- **B4 (remaining):** client closure retention period and audit retention (ND-F5-1). Gates production with real client data only.
+- Outstanding production gates: [07-production-readiness.md](07-production-readiness.md). Per the PO (2026-10-27), these do not block local development or PR merges.
 - Phase-gated, no defaults approved:
   - check-in anchor (C1, P5)
   - form-builder permission matrix (P2)

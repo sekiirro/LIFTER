@@ -1,6 +1,7 @@
 {
   "$schema": "../../node_modules/wrangler/config-schema.json",
   "name": "lifter-cron",
+  "account_id": "c3a2ab30d3888eda7071b02916732b69",
   "main": "src/index.ts",
   "compatibility_date": "2026-10-23",
   "triggers": {

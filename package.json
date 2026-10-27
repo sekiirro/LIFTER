@@ -22,7 +22,11 @@
     "test:integration": "vitest run --config vitest.integration.config.ts",
     "backup": "node scripts/backup/backup.mjs",
     "backup:restore-test": "node scripts/backup/restore-test.mjs",
-    "backup:keygen": "node scripts/backup/keygen.mjs"
+    "backup:keygen": "node scripts/backup/keygen.mjs",
+    "free-tier:db": "node scripts/free-tier/db-usage.mjs",
+    "free-tier:probe": "node scripts/free-tier/http-probe.mjs",
+    "free-tier:tail": "node scripts/free-tier/parse-tail.mjs",
+    "free-tier:project": "node scripts/free-tier/project.mjs"
   },
   "dependencies": {
     "@fontsource/ibm-plex-sans-arabic": "5.3.0",
