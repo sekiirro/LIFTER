@@ -35,8 +35,8 @@
 - [x] Read-only local pgcrypto schema/digest evidence recorded; future migration verification remains required.
 - [x] Codex final verification execution and independent Claude audit/approval are explicitly separated.
 - [x] Constitution checked; no deployment, production gate closure or application-test completion claimed.
-- [ ] Architect/reviewer acknowledges the offer-only RPC versus literal stale-version rejection tension (research R3); no unapproved parameter was added.
+- [x] Architect correction R10-1 resolves displayed-version rejection through package_version_id and authorization-first stale_terms (research R3).
 
 ## Notes
 
-Artifact traceability result: PASS, with the explicit API/test wording tension left for review. This unchecked acknowledgment does not authorize silently changing the binding signature or claim optimistic-concurrency rejection exists. Local implementation may proceed with required current-version selection; a requirement for rejecting an unprovided stale displayed version would need an approved contract change. Owner policy NDs intentionally remain unresolved and are not forgotten clarifications. Research R10 records all other ambiguities/handling.
+Artifact traceability result: PASS. R10-1 is binding and recorded in research R3; displayed-version rejection and translated reload are required. Owner policy NDs remain unresolved. Independent implementation audit remains pending.

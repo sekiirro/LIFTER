@@ -34,11 +34,11 @@ Initial copy direction: English “This registration link is valid.” / “This
 
 All functions SECURITY DEFINER, postgres owner, empty search_path and fully qualified references. REVOKE default EXECUTE first; only specified grants below. SQL transaction details and guard definitions are in the data model.
 
-| RPC                               | Named input                                                                          | Success                          | Grants                               |
-| --------------------------------- | ------------------------------------------------------------------------------------ | -------------------------------- | ------------------------------------ |
-| issue_registration_link           | `{workspace_id:uuid,offer_id:uuid,token_hash:lowercase-hex-string,installments:array | null}`                           | Link UUID only                       | authenticated |
-| registration_link_open            | `{token:text}`                                                                       | Exact valid/invalid JSON above   | anon, authenticated                  |
-| get_registration_link_commissions | `{workspace_id:uuid}`                                                                | `{link_id,commission_rate_bp}[]` | authenticated, internally PO/WO only |
+| RPC                               | Named input                                                                                    | Success                          | Grants                               |
+| --------------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------- | ------------------------------------ |
+| issue_registration_link           | `{workspace_id:uuid,package_version_id:uuid,token_hash:lowercase-hex-string,installments:array | null}`                           | Link UUID only                       | authenticated |
+| registration_link_open            | `{token:text}`                                                                                 | Exact valid/invalid JSON above   | anon, authenticated                  |
+| get_registration_link_commissions | `{workspace_id:uuid}`                                                                          | `{link_id,commission_rate_bp}[]` | authenticated, internally PO/WO only |
 
 Installment JSON when present is a nonempty array:
 
@@ -51,19 +51,19 @@ Installment JSON when present is a nonempty array:
 
 Illustrative synthetic price total 1200; this is not an approved catalog, percentage rule, first-offset requirement or due-date anchor. An otherwise valid first offset of 2 is also allowed. Strings for amounts are mandatory; JSON numbers for money are rejected, including safe-looking ones, to keep one exact transport contract. Sequence/offset numbers are bounded safe integers matching SQL int; exact array keys only. NULL is the only absent schedule. Empty `[]`, JSON `null` payload distinct from SQL NULL where relevant, non-array, negative/zero amounts, overflow, fractions, missing/extra fields, gap/repeated seq and non-increasing offsets fail invalid_input. App serializes absent schedule as SQL NULL, not JSON scalar null.
 
-Any non-null schedule requires both capabilities before parsing, including malformed/empty payloads from Trainer. No actor/membership/version/snapshot/rate/expiry override arguments accepted. The RPC always resolves available/current version under lock. It has no stale-version compare argument: see [research R3](../research.md#r3--current-version-selection-versus-stale-request-rejection).
+Any non-null schedule requires both capabilities before parsing or target lookup, including malformed/empty Trainer payloads. R10-1 accepts the displayed package_version_id, derives its same-workspace offer and locks it. Unknown/foreign versions return `42501/not_permitted`. Only after authorization, unavailable or superseded terms return `22023/stale_terms`; validate schedules against that exact version snapshot. No actor/membership/snapshot/rate/expiry overrides.
 
-Issuance errors: `42501/not_permitted` for unauthorized/missing/foreign workspace/offer; `22023/invalid_input` for controlled authorized shape/schedule/hash validation; `P0001/unavailable` for unavailable/current-missing offer, rate exhaustion or duplicate hash. Unknown/provider/constraint errors map to unavailable at app boundary. No SQL/provider message or foreign existence detail crosses that boundary. RPC transaction commit failures, including deferred audit, are failures, never URL success. No `rate_limited` public result is added for F10.
+Issuance errors: `42501/not_permitted` for unauthorized/missing/foreign workspace or version; `22023/stale_terms` for authorized unavailable/superseded terms; `22023/invalid_input` for authorized shape/schedule/hash validation; `P0001/unavailable` for rate exhaustion or duplicate hash. Unknown/provider/constraint errors map to unavailable without provider echo. Deferred commit failures never return success.
 
 ## Server action and library
 
 `app/(app)/registration-links/actions.ts` exports `issueRegistrationLinkAction(input:unknown)` delegating to server-only `lib/registration-links/service.ts`.
 
-Input is exactly `{workspaceId,offerId,installments:null|{seq,amountMinor:string,dueOffsetDays:number}[]}`. Reject unknown fields, especially packageVersionId/priceMinor/currency/commissionRateBp/expiresAt/createdBy. Browser may select an offer only. Result:
+Input is exactly `{workspaceId,packageVersionId,installments:null|{seq,amountMinor:string,dueOffsetDays:number}[]}`. Reject unknown fields, especially offerId/priceMinor/currency/commissionRateBp/expiresAt/createdBy. Browser supplies the version it displayed. Result:
 
 ```text
 {status:'ok', linkId:uuid, link:string}
-| {status:'not_permitted'|'invalid_input'|'unavailable'}
+| {status:'not_permitted'|'invalid_input'|'unavailable'|'stale_terms'}
 ```
 
 Sequence: re-derive verified actor → check `authorize(generate_registration_link,ws)` → if schedule present check `authorize(configure_installment_schedule,ws)` → validate exact shape/IDs/schedule → validate configured APP_ORIGIN → generate 32-byte random token and SHA-256 hex → call issuing RPC with session JWT, only hash → after confirmed commit construct `${APP_ORIGIN}/register/<token>` → return once and revalidate staff list. Never admin/service client, browser crypto generation, token in thrown error, URL in cache/revalidation keys, console, response persistence or automatic blind retry.
@@ -98,3 +98,5 @@ Use AR-first RTL/EN LTR, existing dark/light and responsive states, keyboard foc
 ## F11 handoff
 
 Only F11 signup RPC can consume, in the same transaction as account creation using guarded UPDATE RETURNING and authoritative clock, with rollback on any validation/duplicate failure. It must coordinate on this row and use the shared validity predicate; it may never consume on GET/open. Account uniqueness/attempt limits under D-08, payment approval and subscription/account UI are future scope. F10 tests compatibility via privileged fixtures only; it adds no public consume endpoint.
+
+R10-1 UI: `stale_terms` shows translated "These package terms changed. Refresh and try again." and a reload action. Publication between load/issue and offer disablement insert nothing and emit no event; foreign/unknown versions remain not_permitted.

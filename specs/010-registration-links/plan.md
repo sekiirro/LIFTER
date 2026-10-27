@@ -43,11 +43,11 @@ Pre-research and post-design check against v1.1.0:
 
 ## Phase 0 — Research decisions
 
-[research.md](research.md) records source precedence, existing capability/read patterns, offer-only RPC tension, verified pgcrypto schema, schedule JSON and deferred checks, grace/open locking, deferred child-count audit, local-only rate placeholder and logging/UI boundaries. Every technical interpretation is flagged there for review.
+[research.md](research.md) records source precedence, existing capability/read patterns, R10-1 displayed-version issuance decision, verified pgcrypto schema, schedule JSON and deferred checks, grace/open locking, deferred child-count audit, local-only rate placeholder and logging/UI boundaries. Every technical interpretation is flagged there for review.
 
 ## Phase 1 — Design
 
-Normative details: [data-model.md](data-model.md) and [contract](contracts/registration-links-surface.md). Issuance: signed actor + two capabilities as applicable → actor lock/count → offer row lock → available/current selection → schedule/hash validation → link + rows → deferred totals and issued audit → UUID response. Server alone generates raw 32-byte token/hash and returns URL after success. Failures never return URL.
+Normative details: [data-model.md](data-model.md) and [contract](contracts/registration-links-surface.md). Issuance (R10-1): authorize both capabilities as applicable, resolve the displayed same-workspace version (unknown/foreign -> not_permitted), actor lock/count, derived offer row lock, available/current comparison (otherwise stale_terms), exact-version schedule/hash validation, link + rows, deferred totals/audit, UUID. Server alone generates the raw 32-byte token/hash and returns the URL after commit. Stale terms show translated refresh/reload guidance; failures never return a URL.
 
 Open: hash in SQL, row lock, consumed/time check, first-open timestamp set only once before expiry; minimal JSON. TS and private SQL pure functions share strict `max(expiry, first-open+30m)` rule and fixtures. No client-controlled DB clock. No IP blocking. Marker UPDATE grants remain absent; only open definer changes opened_at and F11 will later own consumption.
 
@@ -96,4 +96,4 @@ Extend existing harness/DS; no new service or project layout. Keep pure validati
 
 ## Complexity Tracking
 
-No constitutional violation. Specific binding definer RPCs are a controlled exception to the architecture's generic invoker preference, using existing hardened pattern. Deferred parent audit is necessary for final installment count; column grants plus gated reader are necessary with a shared authenticated SQL role. Transaction provenance guard prevents schedule extension after issuance. Offer-only signature cannot reject an unprovided stale displayed version: flagged in research, no API expansion. Strict source decisions and workflow ownership remain intact.
+No constitutional violation. Specific binding definer RPCs are a controlled exception to the architecture's generic invoker preference, using existing hardened pattern. Deferred parent audit is necessary for final installment count; column grants plus gated reader are necessary with a shared authenticated SQL role. Transaction provenance guard prevents schedule extension after issuance. R10-1 binds package_version_id and requires available/current under offer lock after authorization; stale_terms is translated with reload and tested for no writes/events. Strict source decisions and workflow ownership remain intact.
