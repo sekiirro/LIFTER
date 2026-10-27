@@ -22,6 +22,7 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 | D-16 | Identities | Staff and client accounts use separate emails. No dual-role accounts. |
 | D-18 | Design System | [DESIGN.md](../DESIGN.md) approved (2026-10-27): emerald `#059669` default brand (not lime), workspace-customizable colors with WCAG 2.2 AA contrast guard, dark + light modes (device first, manual choice persisted). Constitution VIII amended to v1.1.0. Open items in DESIGN.md §11 stay open. |
 | D-17 | Installment total | Installment amounts must sum exactly to the PO-approved price |
+| D-20 | Hosting region (B4, part) (2026-10-27) | Supabase region **eu-central-1 (Frankfurt, EU)** for LIFTER, approved by the PO on the basis that no approved specification sets a conflicting data-residency requirement (none found). Hosting: one dedicated LIFTER Free organization with **one** cloud project (production); development and testing use local Docker. Never touch YBS. Risk noted for legal review: cross-border transfer rules (e.g. Egypt PDPL 151/2020) for health data. **B4 retention values remain OPEN** (closure retention, ND-F5-1) and still block production with real client data. |
 | — | Architecture | [02-architecture.md](02-architecture.md) v3 APPROVED (R1, R2, R4, R5, R6, R7 adopted) |
 
 ## Superseded
@@ -40,7 +41,7 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 
 ## Open (does not block the Constitution)
 
-- **B4:** jurisdiction / data residency / closure retention period. Gates production only.
+- **B4 (remaining):** closure retention period and audit retention (ND-F5-1); legal confirmation of cross-border transfer for the D-20 region. Gates production only.
 - Phase-gated, no defaults approved:
   - check-in anchor (C1, P5)
   - form-builder permission matrix (P2)
