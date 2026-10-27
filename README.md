@@ -37,6 +37,20 @@ The additional `build:edge` and `size` gates run in Linux CI only. This scaffold
 does not deploy; no deploy, account setup, or login commands are part of development
 validation.
 
+## Cloudflare account targeting
+
+The LIFTER account ID `c3a2ab30d3888eda7071b02916732b69` is pinned in
+both `wrangler.jsonc` and `workers/cron/wrangler.jsonc`. Worker commands must
+use the `lifter` Wrangler profile via `--profile lifter` or a directory binding
+of the repository checkout to that profile. Credentials stay in Wrangler's own
+config outside the repository.
+
+Verify with `npx --yes wrangler@4.153.0 whoami` from the bound checkout, or with
+`npx --yes wrangler@4.153.0 whoami --cwd <checkout>`, and confirm that the account
+ID is `c3a2ab30d3888eda7071b02916732b69`.
+Never run Wrangler for LIFTER with the personal profile. Deployment requires
+PO approval.
+
 ## Free-tier validation
 
 Offline preparation (no deployment):
