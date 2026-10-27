@@ -5,6 +5,37 @@ import nextTypeScript from 'eslint-config-next/typescript';
 export default defineConfig([
   ...nextVitals,
   ...nextTypeScript,
+  {
+    files: [
+      'lib/auth/**',
+      'lib/supabase/**',
+      'app/login/**',
+      'app/auth/**',
+      'app/(app)/**',
+      'middleware.ts',
+    ],
+    rules: { 'no-console': 'error' },
+  },
+  {
+    files: [
+      'components/**',
+      'app/login/LoginForm.tsx',
+      'app/auth/recovery/RecoveryForm.tsx',
+      'app/(dev)/showcase/ComponentDemos.tsx',
+    ],
+    rules: {
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            '@supabase/*',
+            '**/lib/supabase/admin',
+            '@/lib/supabase/admin',
+          ],
+        },
+      ],
+    },
+  },
   globalIgnores([
     '.next/**',
     '.open-next/**',

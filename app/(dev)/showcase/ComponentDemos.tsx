@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import { RecoveryLinkDialog } from '../../../components/auth/RecoveryLinkDialog';
 import type { Messages } from '../../../lib/i18n';
 import { Alert } from '../../../components/ui/Alert';
 import { Bidi } from '../../../components/ui/Bidi';
@@ -24,6 +25,17 @@ export function ComponentDemos({ messages: m }: { messages: Messages }) {
   const toast = useToast();
   return (
     <>
+      <section className={styles.section} aria-labelledby="recovery-title">
+        <h2 id="recovery-title">{m['auth.recoveryTitle']}</h2>
+        <RecoveryLinkDialog
+          targetUserId="00000000-0000-0000-0000-000000000001"
+          messages={m}
+          action={async () => ({
+            status: 'ok',
+            link: 'https://example.test/auth/recovery?token_hash=demo&type=recovery',
+          })}
+        />
+      </section>
       <section
         id="buttons"
         aria-labelledby="buttons-title"

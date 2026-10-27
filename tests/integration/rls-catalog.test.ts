@@ -6,6 +6,68 @@ afterAll(async () => {
   await db.end();
 });
 
+describe('recovery security catalog', () => {
+  it('forces RLS with no policies and no API privileges', async () => {
+    const [table] =
+      await db`select relrowsecurity, relforcerowsecurity from pg_catalog.pg_class where oid = 'public.recovery_link_issuances'::regclass`;
+    expect(table).toMatchObject({
+      relrowsecurity: true,
+      relforcerowsecurity: true,
+    });
+    const policies =
+      await db`select * from pg_catalog.pg_policies where schemaname = 'public' and tablename = 'recovery_link_issuances'`;
+    expect(policies).toHaveLength(0);
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      for (const privilege of [
+        'SELECT',
+        'INSERT',
+        'UPDATE',
+        'DELETE',
+        'TRUNCATE',
+        'REFERENCES',
+        'TRIGGER',
+        'MAINTAIN',
+      ]) {
+        const [row] =
+          await db`select has_table_privilege(${role}, 'public.recovery_link_issuances', ${privilege}) as allowed`;
+        expect(row?.allowed).toBe(false);
+      }
+    }
+  });
+  it('attaches insert audit and update/delete/truncate guards', async () => {
+    const triggers =
+      await db`select tgname, tgtype::int as type from pg_catalog.pg_trigger where tgrelid = 'public.recovery_link_issuances'::regclass and not tgisinternal order by tgname`;
+    expect(triggers).toEqual([
+      { tgname: 'audit_recovery_link_issuances', type: 5 },
+      { tgname: 'recovery_link_issuances_no_delete', type: 11 },
+      { tgname: 'recovery_link_issuances_no_truncate', type: 34 },
+      { tgname: 'recovery_link_issuances_no_update', type: 19 },
+    ]);
+  });
+  it('hardens all five recovery functions and grants only the public RPCs to authenticated', async () => {
+    for (const name of [
+      'app_private.recovery_target_workspace(uuid)',
+      'app_private.recovery_link_limits()',
+      'app_private.recovery_link_guard(uuid)',
+      'public.recovery_link_authorize(uuid)',
+      'public.recovery_link_record(uuid)',
+    ]) {
+      const [fn] =
+        await db`select prosecdef, proconfig, pg_catalog.pg_get_userbyid(proowner) as owner from pg_catalog.pg_proc where oid = ${name}::regprocedure`;
+      expect(fn?.prosecdef).toBe(!name.includes('recovery_link_limits'));
+      expect(fn?.owner).toBe('postgres');
+      expect(fn?.proconfig).toContain('search_path=""');
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        const [grant] =
+          await db`select has_function_privilege(${role}, ${name}, 'EXECUTE') as allowed`;
+        expect(grant?.allowed).toBe(
+          role === 'authenticated' && name.startsWith('public.'),
+        );
+      }
+    }
+  });
+});
+
 describe('tenancy security catalog (T007)', () => {
   it.each(['staff_profiles', 'workspaces', 'workspace_memberships'])(
     '%s forces RLS and has least-privilege grants',
@@ -68,6 +130,9 @@ describe('tenancy security catalog (T007)', () => {
       'has_workspace_access',
       'is_platform_owner',
       'jobs_updated_at',
+      'recovery_link_guard',
+      'recovery_link_limits',
+      'recovery_target_workspace',
       'role_has_capability',
     ]);
     for (const row of rows) {
@@ -76,6 +141,7 @@ describe('tenancy security catalog (T007)', () => {
           'audit_events_immutable',
           'forbid_delete',
           'jobs_updated_at',
+          'recovery_link_limits',
         ].includes(row.proname),
       );
       expect(row.proconfig).toContain('search_path=""');
@@ -88,6 +154,9 @@ describe('tenancy security catalog (T007)', () => {
           'enqueue_job',
           'forbid_delete',
           'jobs_updated_at',
+          'recovery_link_guard',
+          'recovery_link_limits',
+          'recovery_target_workspace',
         ].includes(row.proname),
       );
     }
@@ -179,6 +248,13 @@ describe('audit security catalog (T005)', () => {
         proname: 'audit_row_change',
       },
       {
+        tgname: 'audit_recovery_link_issuances',
+        relname: 'recovery_link_issuances',
+        type: 5,
+        tgenabled: 'O',
+        proname: 'audit_row_change',
+      },
+      {
         tgname: 'audit_staff_profiles',
         relname: 'staff_profiles',
         type: 21,
@@ -198,6 +274,13 @@ describe('audit security catalog (T005)', () => {
         type: 21,
         tgenabled: 'O',
         proname: 'audit_row_change',
+      },
+      {
+        tgname: 'recovery_link_issuances_no_update',
+        relname: 'recovery_link_issuances',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
       },
     ]);
     const [emitter] = await db`select p.prosecdef, p.proconfig,

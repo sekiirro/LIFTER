@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useId, useRef } from 'react';
+import { useEffect, useId, useRef, type ReactNode } from 'react';
 import { Button } from './Button';
 import styles from './ConfirmDialog.module.css';
 
@@ -13,6 +13,8 @@ export type ConfirmDialogProps = {
   tone?: 'default' | 'destructive';
   onConfirm: () => void;
   onCancel: () => void;
+  children?: ReactNode;
+  loading?: boolean;
 };
 
 export function ConfirmDialog({
@@ -24,6 +26,8 @@ export function ConfirmDialog({
   tone = 'default',
   onConfirm,
   onCancel,
+  children,
+  loading = false,
 }: ConfirmDialogProps) {
   const dialogRef = useRef<HTMLDialogElement>(null);
   const cancelRef = useRef<HTMLButtonElement>(null);
@@ -92,6 +96,7 @@ export function ConfirmDialog({
     >
       <h3 id={`${id}-title`}>{title}</h3>
       {description && <p id={`${id}-description`}>{description}</p>}
+      {children}
       <div className={styles.actions}>
         <Button
           ref={cancelRef}
@@ -104,6 +109,7 @@ export function ConfirmDialog({
         <Button
           variant={tone === 'destructive' ? 'destructive' : 'primary'}
           data-testid="dialog-confirm"
+          loading={loading}
           onClick={onConfirm}
         >
           {confirmLabel}
