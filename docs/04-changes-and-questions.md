@@ -43,7 +43,6 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 
 ## Open (does not block the Constitution)
 
-- **B4:** jurisdiction / data residency / closure retention period. Gates production only.
 - **F4 auth sub-decisions (ND-F4-1..7):** Trainer permission, link delivery, link expiry, rate-limit values, client-target sequencing, staff recovery, self-service email reset timing. Expiry and limits gate production.
 - **B4 (remaining):** client closure retention period and audit retention (ND-F5-1). Gates production with real client data only.
 - Outstanding production gates: [07-production-readiness.md](07-production-readiness.md). Per the PO (2026-10-27), these do not block local development or PR merges.
