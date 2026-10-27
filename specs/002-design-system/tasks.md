@@ -30,34 +30,34 @@
 
 **Independent test**: `/showcase` honors the device theme, persists the manual theme and language, and has the correct `lang`/`dir` on first paint.
 
-- [ ] T015 [US1] Implement `components/preferences/ThemeSwitcher.tsx` (client). It's a labeled radio group: follow device / dark / light. Dark or light sets the cookie and `document.documentElement.dataset.theme` immediately. Follow device deletes the cookie (`Max-Age=0`) and removes the attribute.
-- [ ] T016 [US1] Implement `components/preferences/LanguageSwitcher.tsx` (client): labeled AR/EN control that sets the cookie, then `router.refresh()`.
-- [ ] T017 [US1] Implement `components/ui/Bidi.tsx` (`<bdi>`, optional `dir`).
-- [ ] T018 [US1] Implement the gated `app/(dev)/showcase/page.tsx` (`notFound()` unless `isShowcaseEnabled(process.env)`; server component with messages from the locale cookie) with sections for: switchers, a token swatch grid (each swatch labeled with its variable name), typography in AR and EN, an Arabic sentence with an inline number, measurement and code wrapped in `Bidi` (e.g. `الوزن 82.5 kg`, `ID LFT-0042`), and an "authored content" sample shown as authored.
-- [ ] T019 [US1] Write `tests/e2e/theme-locale.spec.ts`. Cases: (a) no cookies + `colorScheme: 'dark'` → computed body background = dark bg; with `'light'` → light bg. (b) Choosing dark in the switcher, then reloading under `colorScheme: 'light'`, stays dark; follow device restores device behavior. (c) Default `html[lang=ar][dir=rtl]`; switching to EN and reloading gives `lang=en dir=ltr`. (d) With JS disabled (`javaScriptEnabled: false`) and a theme or locale cookie preset, the first response HTML already has the right attributes. (e) Without the showcase flag the gate is covered by the unit test; in e2e, assert that `/showcase` returns 200 with the flag.
+- [x] T015 [US1] Implement `components/preferences/ThemeSwitcher.tsx` (client). It's a labeled radio group: follow device / dark / light. Dark or light sets the cookie and `document.documentElement.dataset.theme` immediately. Follow device deletes the cookie (`Max-Age=0`) and removes the attribute.
+- [x] T016 [US1] Implement `components/preferences/LanguageSwitcher.tsx` (client): labeled AR/EN control that sets the cookie, then `router.refresh()`.
+- [x] T017 [US1] Implement `components/ui/Bidi.tsx` (`<bdi>`, optional `dir`).
+- [x] T018 [US1] Implement the gated `app/(dev)/showcase/page.tsx` (`notFound()` unless `isShowcaseEnabled(process.env)`; server component with messages from the locale cookie) with sections for: switchers, a token swatch grid (each swatch labeled with its variable name), typography in AR and EN, an Arabic sentence with an inline number, measurement and code wrapped in `Bidi` (e.g. `الوزن 82.5 kg`, `ID LFT-0042`), and an "authored content" sample shown as authored.
+- [x] T019 [US1] Write `tests/e2e/theme-locale.spec.ts`. Cases: (a) no cookies + `colorScheme: 'dark'` → computed body background = dark bg; with `'light'` → light bg. (b) Choosing dark in the switcher, then reloading under `colorScheme: 'light'`, stays dark; follow device restores device behavior. (c) Default `html[lang=ar][dir=rtl]`; switching to EN and reloading gives `lang=en dir=ltr`. (d) With JS disabled (`javaScriptEnabled: false`) and a theme or locale cookie preset, the first response HTML already has the right attributes. (e) Without the showcase flag the gate is covered by the unit test; in e2e, assert that `/showcase` returns 200 with the flag.
 
 ## Phase 4: US2: Brand and workspace colors (P1)
 
 **Independent test**: Sample brands render in BrandScopes with passing contrast; semantic colors are unchanged.
 
-- [ ] T020 [US2] Implement `components/ui/BrandScope.tsx` (`div[data-brand-scope]`, inline style from `brandToCssVars(deriveBrand(color))`).
-- [ ] T021 [US2] Showcase section "Workspace brands": one BrandScope per sample color from T007, each with a primary button, a link, an active nav chip, and a success/warning/error alert. It also shows the derived hex values and contrast ratios as text, wrapped in `Bidi`.
-- [ ] T022 [US2] Add to `tests/e2e/components.spec.ts`: inside the `#FFFF00` and `#000000` scopes, the computed primary-button bg/fg contrast is ≥ 4.5 in both modes. The computed error-alert color is identical inside and outside a brand scope.
+- [x] T020 [US2] Implement `components/ui/BrandScope.tsx` (`div[data-brand-scope]`, inline style from `brandToCssVars(deriveBrand(color))`).
+- [x] T021 [US2] Showcase section "Workspace brands": one BrandScope per sample color from T007, each with a primary button, a link, an active nav chip, and a success/warning/error alert. It also shows the derived hex values and contrast ratios as text, wrapped in `Bidi`.
+- [x] T022 [US2] Add to `tests/e2e/components.spec.ts`: inside the `#FFFF00` and `#000000` scopes, the computed primary-button bg/fg contrast is ≥ 4.5 in both modes. The computed error-alert color is identical inside and outside a brand scope.
 
 ## Phase 5: US3: Accessible components and states (P1)
 
 **Independent test**: keyboard-only and axe runs across the 4 combinations.
 
-- [ ] T023 [P] [US3] `components/ui/Button.tsx` + `Button.module.css` per contract: variants primary/secondary/destructive; hover, `:focus-visible`, disabled and loading (spinner via token motion, `aria-busy`, `aria-disabled`, clicks ignored); min-block-size `--touch-min`; radius `--radius-button`.
-- [ ] T024 [P] [US3] `components/ui/Field.tsx` + CSS per contract (label above, `useId`, `aria-describedby` for hint and error, `aria-invalid`, error with an icon plus text).
-- [ ] T025 [P] [US3] `components/ui/Card.tsx` + CSS.
-- [ ] T026 [P] [US3] `components/ui/ConfirmDialog.tsx` (client) per contract: native `<dialog>.showModal()`, initial focus on cancel, Escape → `onCancel`, focus restore, `aria-labelledby`/`aria-describedby`, destructive tone uses the error tokens.
-- [ ] T027 [P] [US3] `components/ui/States.tsx` + CSS: `Skeleton` (aria-hidden, shimmer disabled under reduced motion), `EmptyState` (inbox icon), `NoResults` (search icon), `ErrorState` (`role="alert"`, x-circle icon, Retry button calling `onRetry`).
-- [ ] T028 [P] [US3] `components/ui/Toast.tsx` (client): `ToastProvider`, `useToast().success(msg)`, a single `role="status"` `aria-live="polite"` region at the inline-end/bottom, auto-dismiss after 5000 ms (paused on hover and focus-within), dismiss button, focus never moved.
-- [ ] T029 [P] [US3] `components/ui/Alert.tsx` + CSS: tones info/success/warning/error; error and warning use `role="alert"`, the others `role="status"`; icon plus title; semantic tokens only.
-- [ ] T030 [US3] Showcase sections for every component and state, both enabled and disabled/loading variants, a form with one invalid field, a "Delete sample" button that opens ConfirmDialog (destructive), a toast trigger, and the three empty/no-results/error states with a working Retry (the demo counter increments).
-- [ ] T031 [US3] `tests/e2e/a11y.spec.ts`: for each of AR/EN × dark/light (set via cookies), run axe with tags `wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa` and assert 0 violations of impact `serious` or `critical`.
-- [ ] T032 [US3] Add to `tests/e2e/components.spec.ts`: Tab reaches the primary button and the focus ring is visible (non-`none` outline or box-shadow); a loading button ignores clicks and has `aria-busy`; the invalid field has `aria-invalid` and its `aria-describedby` points to the error text; the dialog opens, focus is inside, Escape closes it and focus returns to the trigger; the toast appears in the `role=status` region without moving focus; Retry works; with `reducedMotion: 'reduce'` the button transition duration is ≤ 0.01 s.
+- [x] T023 [P] [US3] `components/ui/Button.tsx` + `Button.module.css` per contract: variants primary/secondary/destructive; hover, `:focus-visible`, disabled and loading (spinner via token motion, `aria-busy`, `aria-disabled`, clicks ignored); min-block-size `--touch-min`; radius `--radius-button`.
+- [x] T024 [P] [US3] `components/ui/Field.tsx` + CSS per contract (label above, `useId`, `aria-describedby` for hint and error, `aria-invalid`, error with an icon plus text).
+- [x] T025 [P] [US3] `components/ui/Card.tsx` + CSS.
+- [x] T026 [P] [US3] `components/ui/ConfirmDialog.tsx` (client) per contract: native `<dialog>.showModal()`, initial focus on cancel, Escape → `onCancel`, focus restore, `aria-labelledby`/`aria-describedby`, destructive tone uses the error tokens.
+- [x] T027 [P] [US3] `components/ui/States.tsx` + CSS: `Skeleton` (aria-hidden, shimmer disabled under reduced motion), `EmptyState` (inbox icon), `NoResults` (search icon), `ErrorState` (`role="alert"`, x-circle icon, Retry button calling `onRetry`).
+- [x] T028 [P] [US3] `components/ui/Toast.tsx` (client): `ToastProvider`, `useToast().success(msg)`, a single `role="status"` `aria-live="polite"` region at the inline-end/bottom, auto-dismiss after 5000 ms (paused on hover and focus-within), dismiss button, focus never moved.
+- [x] T029 [P] [US3] `components/ui/Alert.tsx` + CSS: tones info/success/warning/error; error and warning use `role="alert"`, the others `role="status"`; icon plus title; semantic tokens only.
+- [x] T030 [US3] Showcase sections for every component and state, both enabled and disabled/loading variants, a form with one invalid field, a "Delete sample" button that opens ConfirmDialog (destructive), a toast trigger, and the three empty/no-results/error states with a working Retry (the demo counter increments).
+- [x] T031 [US3] `tests/e2e/a11y.spec.ts`: for each of AR/EN × dark/light (set via cookies), run axe with tags `wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa` and assert 0 violations of impact `serious` or `critical`.
+- [x] T032 [US3] Add to `tests/e2e/components.spec.ts`: Tab reaches the primary button and the focus ring is visible (non-`none` outline or box-shadow); a loading button ignores clicks and has `aria-busy`; the invalid field has `aria-invalid` and its `aria-describedby` points to the error text; the dialog opens, focus is inside, Escape closes it and focus returns to the trigger; the toast appears in the `role=status` region without moving focus; Retry works; with `reducedMotion: 'reduce'` the button transition duration is ≤ 0.01 s.
 
 ## Phase 6: US4: Responsive app shell (P2)
 
