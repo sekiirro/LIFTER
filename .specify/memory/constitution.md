@@ -93,8 +93,10 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 
 ### VIII. Bilingual, Accessible, Design-System UI
 
-- All UI MUST be built on the P0 Design System: dark/monochrome with lime accent, Arabic-first
-  RTL plus English LTR, with loading/empty/error states.
+- All UI MUST be built on the P0 Design System ([DESIGN.md](../../DESIGN.md)): neutral dark and light
+  modes, LIFTER emerald `#059669` as the default brand with workspace-customizable brand colors
+  that MUST pass WCAG 2.2 AA contrast (D-18), Arabic-first RTL plus English LTR, with
+  loading/empty/error states.
 - UI MUST be responsive and accessible (keyboard access, labeled inputs, clear errors).
 - Trainer-authored content MUST be displayed as authored, never machine-translated.
 
@@ -144,4 +146,4 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Every spec, plan and review MUST include a constitution check. Deviations MUST be justified in
   the plan's complexity tracking and approved before implementation.
 
-**Version**: 1.0.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-27
+**Version**: 1.1.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-27 (VIII: lime → emerald, D-18)

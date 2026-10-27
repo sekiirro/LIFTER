@@ -47,4 +47,4 @@ RLS: SELECT if `user_id = (select auth.uid())` OR PO. INSERT: PO only, with `gra
 - `is_platform_owner() returns boolean`
 - `current_staff_role() returns public.staff_role` (null when none)
 - `role_has_capability(r public.staff_role, cap text) returns boolean` (IMMUTABLE, matrix in research.md; unknown → false)
-- `has_workspace_access(ws uuid, cap text default null) returns boolean`: PO → true. Otherwise there must be an active membership of `auth.uid()` in `ws`, and either `cap` is null or `role_has_capability(current_staff_role(), cap)`. A null `auth.uid()` → false.
+- `has_workspace_access(ws uuid, cap text default null) returns boolean`: a non-null `cap` must pass `role_has_capability(current_staff_role(), cap)` for every caller, the PO included (migration `20261027140000`). A null `cap` checks workspace access only. Workspace access means the PO, or an active membership of `auth.uid()` in `ws`. A null `auth.uid()` → false.
