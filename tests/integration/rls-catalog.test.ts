@@ -1,7 +1,21 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { sql } from './harness';
+import {
+  registrationFixture,
+  issue,
+  checked,
+} from './registration-links-fixture';
 
 const db = sql();
+const registrationPrivate = [
+  'registration_link_is_valid',
+  'registration_link_limits',
+  'guard_registration_link_insert',
+  'guard_registration_link_update',
+  'guard_registration_installment_insert',
+  'validate_registration_link_schedule',
+  'check_registration_link_schedule',
+];
 afterAll(async () => {
   await db.end();
 });
@@ -120,23 +134,26 @@ describe('tenancy security catalog (T007)', () => {
         has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated_execute
       from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid = p.pronamespace
       where n.nspname = 'app_private'`;
-    expect(rows.map((row) => row.proname).sort()).toEqual([
-      'audit_events_immutable',
-      'audit_row_change',
-      'current_staff_role',
-      'enqueue_job',
-      'forbid_delete',
-      'guard_membership_update',
-      'guard_package_offer_update',
-      'guard_package_version_insert',
-      'has_workspace_access',
-      'is_platform_owner',
-      'jobs_updated_at',
-      'recovery_link_guard',
-      'recovery_link_limits',
-      'recovery_target_workspace',
-      'role_has_capability',
-    ]);
+    expect(rows.map((row) => row.proname).sort()).toEqual(
+      [
+        ...registrationPrivate,
+        'audit_events_immutable',
+        'audit_row_change',
+        'current_staff_role',
+        'enqueue_job',
+        'forbid_delete',
+        'guard_membership_update',
+        'guard_package_offer_update',
+        'guard_package_version_insert',
+        'has_workspace_access',
+        'is_platform_owner',
+        'jobs_updated_at',
+        'recovery_link_guard',
+        'recovery_link_limits',
+        'recovery_target_workspace',
+        'role_has_capability',
+      ].sort(),
+    );
     for (const row of rows) {
       expect(row.prosecdef).toBe(
         ![
@@ -144,24 +161,26 @@ describe('tenancy security catalog (T007)', () => {
           'forbid_delete',
           'jobs_updated_at',
           'recovery_link_limits',
+          'registration_link_limits',
         ].includes(row.proname),
       );
       expect(row.proconfig).toContain('search_path=""');
       expect(row.owner).toBe('postgres');
       expect(row.anon_execute).toBe(false);
       expect(row.authenticated_execute).toBe(
-        ![
-          'audit_events_immutable',
-          'audit_row_change',
-          'enqueue_job',
-          'forbid_delete',
-          'guard_package_offer_update',
-          'guard_package_version_insert',
-          'jobs_updated_at',
-          'recovery_link_guard',
-          'recovery_link_limits',
-          'recovery_target_workspace',
-        ].includes(row.proname),
+        !registrationPrivate.includes(row.proname) &&
+          ![
+            'audit_events_immutable',
+            'audit_row_change',
+            'enqueue_job',
+            'forbid_delete',
+            'guard_package_offer_update',
+            'guard_package_version_insert',
+            'jobs_updated_at',
+            'recovery_link_guard',
+            'recovery_link_limits',
+            'recovery_target_workspace',
+          ].includes(row.proname),
       );
     }
   });
@@ -280,6 +299,20 @@ describe('audit security catalog (T005)', () => {
         proname: 'audit_row_change',
       },
       {
+        tgname: 'audit_registration_links_issued',
+        relname: 'registration_links',
+        type: 5,
+        tgenabled: 'O',
+        proname: 'audit_row_change',
+      },
+      {
+        tgname: 'audit_registration_links_opened',
+        relname: 'registration_links',
+        type: 17,
+        tgenabled: 'O',
+        proname: 'audit_row_change',
+      },
+      {
         tgname: 'audit_staff_profiles',
         relname: 'staff_profiles',
         type: 21,
@@ -317,6 +350,13 @@ describe('audit security catalog (T005)', () => {
       {
         tgname: 'recovery_link_issuances_no_update',
         relname: 'recovery_link_issuances',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'registration_link_installments_no_update',
+        relname: 'registration_link_installments',
         type: 19,
         tgenabled: 'O',
         proname: 'audit_events_immutable',
@@ -521,5 +561,344 @@ describe('package security catalog', () => {
         );
       }
     }
+  });
+});
+
+describe('registration security catalog', () => {
+  it.each(['registration_links', 'registration_link_installments'])(
+    '%s forced RLS, scoped policies, all enabled guards',
+    async (table) => {
+      const [r] =
+        await db`select relrowsecurity,relforcerowsecurity from pg_class where oid=${'public.' + table}::regclass`;
+      expect(r).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
+      const policies =
+        await db`select cmd,qual from pg_policies where schemaname='public' and tablename=${table}`;
+      expect(policies).toHaveLength(1);
+      expect(policies[0]!.cmd).toBe('SELECT');
+      expect(policies[0]!.qual).toContain('generate_registration_link');
+      const triggers =
+        await db`select tgname,tgenabled,tgdeferrable,tginitdeferred from pg_trigger where tgrelid=${'public.' + table}::regclass and not tgisinternal`;
+      expect(triggers.length).toBe(table === 'registration_links' ? 7 : 5);
+      for (const t of triggers) {
+        expect(t.tgenabled).toBe('O');
+        if (t.tgname.includes('schedule') || t.tgname.endsWith('_issued'))
+          expect(t).toMatchObject({ tgdeferrable: true, tginitdeferred: true });
+      }
+      for (const role of ['anon', 'authenticated', 'service_role'])
+        for (const privilege of ['INSERT', 'UPDATE', 'DELETE', 'TRUNCATE']) {
+          const [grant] =
+            await db`select has_table_privilege(${role},${'public.' + table},${privilege}) as allowed`;
+          expect(grant!.allowed).toBe(false);
+        }
+    },
+  );
+  it('uses invoker exact-text safe projections; secret grants absent', async () => {
+    for (const [view, amount] of [
+      ['registration_links_safe', 'price_minor'],
+      ['registration_link_installments_safe', 'amount_minor'],
+    ] as const) {
+      const [r] =
+        await db`select reloptions,pg_get_viewdef(oid) as definition from pg_class where oid=${'public.' + view}::regclass`;
+      expect(r!.reloptions).toContain('security_invoker=true');
+      expect(r!.definition).toContain('::text');
+      expect(r!.definition).not.toMatch(/token_hash|commission_rate_bp/);
+      const [c] =
+        await db`select data_type from information_schema.columns where table_schema='public' and table_name=${view} and column_name=${amount}`;
+      expect(c!.data_type).toBe('text');
+      const columns =
+        await db`select column_name from information_schema.columns where table_schema='public' and table_name=${view} order by ordinal_position`;
+      expect(columns.map((c) => c.column_name)).toEqual(
+        view === 'registration_links_safe'
+          ? [
+              'workspace_id',
+              'id',
+              'package_version_id',
+              'created_by',
+              'created_at',
+              'expires_at',
+              'opened_at',
+              'consumed_at',
+              'price_minor',
+              'currency',
+              'duration_days',
+              'duration_months',
+            ]
+          : [
+              'workspace_id',
+              'link_id',
+              'seq',
+              'amount_minor',
+              'due_offset_days',
+            ],
+      );
+    }
+    for (const role of ['anon', 'authenticated', 'service_role'])
+      for (const c of ['token_hash', 'commission_rate_bp']) {
+        const [r] =
+          await db`select has_column_privilege(${role},'public.registration_links',${c},'SELECT') as allowed`;
+        expect(r!.allowed).toBe(false);
+      }
+  });
+  it('grants no table-level SELECT on either F10 base table', async () => {
+    for (const table of [
+      'registration_links',
+      'registration_link_installments',
+    ]) {
+      const [grant] =
+        await db`select has_table_privilege('authenticated',${'public.' + table},'SELECT') as allowed`;
+      expect(grant!.allowed).toBe(false);
+    }
+  });
+  it('grants authenticated exactly the safe F10 base columns', async () => {
+    const safeColumns: Record<string, readonly string[]> = {
+      registration_links: [
+        'workspace_id',
+        'id',
+        'package_version_id',
+        'created_by',
+        'created_at',
+        'expires_at',
+        'opened_at',
+        'consumed_at',
+        'price_minor',
+        'currency',
+        'duration_days',
+        'duration_months',
+      ],
+      registration_link_installments: [
+        'workspace_id',
+        'link_id',
+        'seq',
+        'amount_minor',
+        'due_offset_days',
+      ],
+    };
+    for (const [table, safe] of Object.entries(safeColumns)) {
+      const columns =
+        await db`select column_name from information_schema.columns where table_schema='public' and table_name=${table} order by ordinal_position`;
+      const explicit =
+        await db`select column_name from information_schema.column_privileges where grantee='authenticated' and table_schema='public' and table_name=${table} and privilege_type='SELECT'`;
+      expect(explicit.map((r) => r.column_name).sort()).toEqual(
+        [...safe].sort(),
+      );
+      for (const column of columns) {
+        const [grant] =
+          await db`select has_column_privilege('authenticated',${'public.' + table},${column.column_name},'SELECT') as allowed`;
+        expect(grant!.allowed).toBe(safe.includes(column.column_name));
+      }
+    }
+    for (const column of ['token_hash', 'commission_rate_bp']) {
+      const [grant] =
+        await db`select has_column_privilege('authenticated','public.registration_links',${column},'SELECT') as allowed`;
+      expect(grant!.allowed).toBe(false);
+    }
+  });
+  it('hardens complete F10 function inventory and pgcrypto schema/vector', async () => {
+    const signatures = [
+      ...registrationPrivate.map(
+        (n) =>
+          'app_private.' +
+          n +
+          (n === 'registration_link_is_valid'
+            ? '(timestamptz,timestamptz,timestamptz,timestamptz)'
+            : n === 'validate_registration_link_schedule'
+              ? '(uuid,uuid)'
+              : '()'),
+      ),
+      'public.issue_registration_link(uuid,uuid,text,jsonb)',
+      'public.registration_link_open(text)',
+      'public.get_registration_link_commissions(uuid)',
+    ];
+    for (const name of signatures) {
+      const [r] =
+        await db`select pg_get_userbyid(proowner) as owner,proconfig from pg_proc where oid=${name}::regprocedure`;
+      expect(r!.owner).toBe('postgres');
+      expect(r!.proconfig).toContain('search_path=""');
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        const [g] =
+          await db`select has_function_privilege(${role},${name},'EXECUTE') as allowed`;
+        expect(g!.allowed).toBe(
+          name.startsWith('public.') &&
+            (role === 'authenticated' ||
+              (role === 'anon' && name.includes('registration_link_open'))),
+        );
+      }
+    }
+    const [r] =
+      await db`select n.nspname from pg_extension e join pg_namespace n on n.oid=e.extnamespace where extname='pgcrypto'`;
+    expect(r!.nspname).toBe('extensions');
+    const [v] =
+      await db`select encode(extensions.digest('abc','sha256'),'hex') as hash`;
+    expect(v!.hash).toBe(
+      'ba7816bf8f01cfea414140de5dae2223b00361a396177a9cb410ff61f20015ad',
+    );
+    const fks =
+      await db`select pg_get_constraintdef(oid) as definition from pg_constraint where contype='f' and conrelid in ('public.registration_links'::regclass,'public.registration_link_installments'::regclass)`;
+    expect(fks.map((f) => f.definition)).toContain(
+      'FOREIGN KEY (workspace_id, package_version_id) REFERENCES package_versions(workspace_id, id) ON DELETE RESTRICT',
+    );
+    expect(fks.map((f) => f.definition)).toContain(
+      'FOREIGN KEY (workspace_id, link_id) REFERENCES registration_links(workspace_id, id) ON DELETE RESTRICT',
+    );
+  });
+  it('attaches the complete enabled F10 trigger inventory', async () => {
+    const rows =
+      await db`select t.tgname,c.relname,t.tgtype::int as type,t.tgenabled,t.tgdeferrable,t.tginitdeferred,p.proname from pg_catalog.pg_trigger t join pg_catalog.pg_class c on c.oid=t.tgrelid join pg_catalog.pg_proc p on p.oid=t.tgfoid where c.oid in ('public.registration_links'::regclass,'public.registration_link_installments'::regclass) and not t.tgisinternal order by c.relname desc,t.tgname`;
+    expect(rows).toEqual([
+      {
+        tgname: 'audit_registration_links_issued',
+        relname: 'registration_links',
+        type: 5,
+        tgenabled: 'O',
+        tgdeferrable: true,
+        tginitdeferred: true,
+        proname: 'audit_row_change',
+      },
+      {
+        tgname: 'audit_registration_links_opened',
+        relname: 'registration_links',
+        type: 17,
+        tgenabled: 'O',
+        tgdeferrable: false,
+        tginitdeferred: false,
+        proname: 'audit_row_change',
+      },
+      {
+        tgname: 'registration_links_insert_guard',
+        relname: 'registration_links',
+        type: 7,
+        tgenabled: 'O',
+        tgdeferrable: false,
+        tginitdeferred: false,
+        proname: 'guard_registration_link_insert',
+      },
+      {
+        tgname: 'registration_links_no_delete',
+        relname: 'registration_links',
+        type: 11,
+        tgenabled: 'O',
+        tgdeferrable: false,
+        tginitdeferred: false,
+        proname: 'forbid_delete',
+      },
+      {
+        tgname: 'registration_links_no_truncate',
+        relname: 'registration_links',
+        type: 34,
+        tgenabled: 'O',
+        tgdeferrable: false,
+        tginitdeferred: false,
+        proname: 'forbid_delete',
+      },
+      {
+        tgname: 'registration_links_schedule',
+        relname: 'registration_links',
+        type: 5,
+        tgenabled: 'O',
+        tgdeferrable: true,
+        tginitdeferred: true,
+        proname: 'check_registration_link_schedule',
+      },
+      {
+        tgname: 'registration_links_update_guard',
+        relname: 'registration_links',
+        type: 19,
+        tgenabled: 'O',
+        tgdeferrable: false,
+        tginitdeferred: false,
+        proname: 'guard_registration_link_update',
+      },
+      {
+        tgname: 'registration_installments_insert_guard',
+        relname: 'registration_link_installments',
+        type: 7,
+        tgenabled: 'O',
+        tgdeferrable: false,
+        tginitdeferred: false,
+        proname: 'guard_registration_installment_insert',
+      },
+      {
+        tgname: 'registration_installments_schedule',
+        relname: 'registration_link_installments',
+        type: 5,
+        tgenabled: 'O',
+        tgdeferrable: true,
+        tginitdeferred: true,
+        proname: 'check_registration_link_schedule',
+      },
+      {
+        tgname: 'registration_link_installments_no_delete',
+        relname: 'registration_link_installments',
+        type: 11,
+        tgenabled: 'O',
+        tgdeferrable: false,
+        tginitdeferred: false,
+        proname: 'forbid_delete',
+      },
+      {
+        tgname: 'registration_link_installments_no_truncate',
+        relname: 'registration_link_installments',
+        type: 34,
+        tgenabled: 'O',
+        tgdeferrable: false,
+        tginitdeferred: false,
+        proname: 'forbid_delete',
+      },
+      {
+        tgname: 'registration_link_installments_no_update',
+        relname: 'registration_link_installments',
+        type: 19,
+        tgenabled: 'O',
+        tgdeferrable: false,
+        tginitdeferred: false,
+        proname: 'audit_events_immutable',
+      },
+    ]);
+  });
+  it('has the complete composite FK inventory', async () => {
+    const fks =
+      await db`select pg_get_constraintdef(oid) as definition from pg_constraint where contype='f' and conrelid in ('public.registration_links'::regclass,'public.registration_link_installments'::regclass) order by definition`;
+    expect(fks.map((f) => f.definition).sort()).toEqual(
+      [
+        'FOREIGN KEY (created_by) REFERENCES staff_profiles(user_id) ON DELETE RESTRICT',
+        'FOREIGN KEY (workspace_id, link_id) REFERENCES registration_links(workspace_id, id) ON DELETE RESTRICT',
+        'FOREIGN KEY (workspace_id, package_version_id) REFERENCES package_versions(workspace_id, id) ON DELETE RESTRICT',
+        'FOREIGN KEY (workspace_id) REFERENCES workspaces(id) ON DELETE RESTRICT',
+      ].sort(),
+    );
+  });
+  it('security_invoker views return only RLS-scoped rows to non-owner roles', async () => {
+    const fixture = await registrationFixture(),
+      linkId = checked(await issue(fixture, fixture.salesA.client));
+    for (const [name, expected] of [
+      ['po', 1],
+      ['woA', 1],
+      ['salesA', 1],
+      ['trainerA', 1],
+      ['woB', 0],
+      ['salesB', 0],
+      ['trainerB', 0],
+      ['revoked', 0],
+      ['noProfile', 0],
+      ['client', 0],
+    ] as const)
+      await db.begin(async (tx) => {
+        await tx`select set_config('role','authenticated',true)`;
+        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: fixture.actors[name].userId, role: 'authenticated' })},true)`;
+        const rows =
+          await tx`select id from public.registration_links_safe where workspace_id=${fixture.wsA.id}`;
+        expect(rows).toHaveLength(expected);
+        if (expected) expect(rows[0]!.id).toBe(linkId);
+      });
+    await expect(
+      db.begin(async (tx) => {
+        await tx`select set_config('role','anon',true)`;
+        await tx`select id from public.registration_links_safe`;
+      }),
+    ).rejects.toMatchObject({ code: '42501' });
+    const [view] =
+      await db`select pg_get_userbyid(relowner) as owner,reloptions from pg_class where oid='public.registration_links_safe'::regclass`;
+    expect(view!.owner).toBe('postgres');
+    expect(view!.reloptions).toContain('security_invoker=true');
   });
 });

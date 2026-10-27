@@ -9,6 +9,9 @@ export default defineConfig([
     files: [
       'lib/auth/**',
       'lib/packages/**',
+      'lib/registration-links/**',
+      'components/registration-links/**',
+      'app/register/**',
       'lib/supabase/**',
       'app/login/**',
       'app/auth/**',
