@@ -87,4 +87,39 @@ values ('<auth-user-uuid>'::uuid, 'platform_owner'::public.staff_role);
 ```
 
 Never commit a real user UUID. Bootstrap is manual; this feature does not prevent
-removal of the last PO role. Audit event emission is deferred to F5.
+removal of the last PO role. Governance writes emit audit events automatically,
+including bootstrap and maintenance writes (null actor when no JWT is present).
+
+## Auditing new tables
+
+`app_private.audit_row_change()` is the reusable audit trigger helper. In a new
+forward migration, use `create or replace function` to extend its table/action
+mapping and hard-coded details allow-list, preserving the existing mappings,
+`security definer`, empty `search_path`, postgres ownership and revoked API
+EXECUTE grants. Then attach it to the new table:
+
+```sql
+create trigger audit_example_records after insert or update on public.example_records
+  for each row execute function app_private.audit_row_change();
+```
+
+Define a namespaced action, UUID target and workspace scope explicitly (null for
+platform events). Return without emitting for updates with no audited change.
+Unsupported tables raise an error until their mapping exists. AFTER triggers see
+the final values from BEFORE guards; events and source writes commit or roll back
+together. The helper inserts as postgres even though API roles lack INSERT grants.
+
+Never serialize whole rows into details. Allow only identifiers, roles, slugs and
+explicitly approved non-personal fields; workspace names are business data. Never
+record personal names, emails or phone numbers. Future columns must not enter the
+audit log automatically.
+
+Follow `tests/integration/audit.test.ts` using an independent
+`twoWorkspaceFixture()`: assert exactly one event per change, actor/action/target/
+workspace and exact details; no event for no-op, rejected or rolled-back writes;
+and null actors for service fixtures. Scan details for fixture emails and `@`.
+Verify PO visibility, active WO visibility, foreign-workspace denial, trainer/sales/
+anonymous denial and loss of access on revocation. Keep direct-insert and
+UPDATE/DELETE/TRUNCATE rejection tests, including postgres guard tests that fail
+if a guard is removed. Extend the catalog assertions for the new trigger. Run the
+full integration suite on the disposable Supabase stack before review.
