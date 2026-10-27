@@ -87,7 +87,7 @@ values ('<auth-user-uuid>'::uuid, 'platform_owner'::public.staff_role);
 ```
 
 Never commit a real user UUID. Bootstrap is manual; this feature does not prevent
-removal of the last PO role. Governance writes emit audit events automatically,
+removal of the last PO role. Mapped governance writes (workspace create/update, staff role assign/change, membership grant/revoke) emit audit events automatically,
 including bootstrap and maintenance writes (null actor when no JWT is present).
 
 ## Auditing new tables

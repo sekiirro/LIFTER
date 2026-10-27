@@ -64,7 +64,7 @@ The PO reads all audit events. A WO reads only the events of workspaces they're 
 ### Edge Cases
 
 - Fixture or maintenance writes with no signed-in identity are still audited, with actor = system (null actor).
-- Platform-level events (staff role changes, workspace creation before membership) have no workspace, so only the PO sees them. Workspace creation is attributed to that workspace.
+- Platform-level events (staff role changes) have no workspace, so only the PO sees them. Workspace creation is attributed to the new workspace.
 - High-volume future tables reuse the same mechanism. Per-feature audit actions are added by later features.
 
 ## Requirements *(mandatory)*
