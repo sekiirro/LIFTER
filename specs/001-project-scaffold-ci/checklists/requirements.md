@@ -6,7 +6,7 @@
 
 ## Content Quality
 
-- [x] No implementation details (languages, frameworks, APIs). Exception: the stack is fixed by approved Architecture v3 and is named only in FR-001 and the Assumptions.
+- [x] No implementation details beyond what an infra feature needs. Accepted exception: the approved stack, commands and the health endpoint are named because they ARE the deliverable.
 - [x] Focused on user value and business needs
 - [x] Written for non-technical stakeholders (as far as an infra feature allows)
 - [x] All mandatory sections completed

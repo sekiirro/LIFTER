@@ -103,12 +103,12 @@ Each build reports the edge-worker size against the official Workers size limit 
 - **SC-001**: A fresh clone reaches all-gates-green in ≤ 10 minutes using only the README.
 - **SC-002**: 100% of the listed gates run automatically on every PR. 0 secrets are required.
 - **SC-003**: The health endpoint responds successfully in 100% of smoke runs and exposes exactly 2 fields.
-- **SC-004**: The size report states the used percentage of the free-tier limit on every build.
+- **SC-004**: The size report states the used percentage of the 64 MiB uncompressed Worker limit on every build.
 - **SC-005**: 0 deployments and 0 paid-service calls occur as part of this feature.
 
 ## Assumptions
 
 - Architecture v3 fixes the stack: Next.js App Router, OpenNext Cloudflare adapter, Supabase CLI for local DB, GitHub Actions. This spec doesn't redesign it.
-- The free-tier compressed worker-size limit is taken from the official Cloudflare limits page at implementation time and recorded with its source. If it can't be verified, it stays configurable and is flagged.
+- The Worker size limit comes from the official Cloudflare limits page (checked 2026-10-27: 64 MiB uncompressed, no compressed limit) and stays overridable via `WORKER_SIZE_LIMIT_KIB`.
 - Design system, i18n/RTL, auth, tenancy, schema, jobs and backups are separate P0 features.
 - The GitHub remote exists. CodeRabbit reviews are enabled separately once configured.

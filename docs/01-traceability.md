@@ -5,24 +5,24 @@ Journeys = PRD-14 (A–G). `AT-*` = proposed acceptance test ids; each becomes a
 | BRD objective | PRD | Journey | Proposed acceptance tests | Gap |
 |---|---|---|---|---|
 | Inv.1 Strict workspace isolation | PRD-02, 10, 11, 13.1 | E | AT-ISO-01 API IDOR matrix (every resource × foreign workspace id) · AT-ISO-02 export scope · AT-ISO-03 bot command/outbound scope · AT-ISO-04 job context · AT-ISO-05 storage signed URLs scoped · AT-ISO-06 RLS denies with app-layer check disabled | — |
-| Inv.2 Platform Owner governance | PRD-01 | — | AT-GOV-01 non-PO cannot create workspace/change price/commission/permissions | **Sales rights undefined** (DR-02) |
-| Inv.3/BRD-03 External collection, commission owed | PRD-07, 11 | A, D | AT-FIN-01 payment recorded only after approval · AT-FIN-02 commission/share derived from snapshot | **Commission base & partial-refund math** NEEDS SOURCE |
+| Inv.2 Platform Owner governance | PRD-01 | — | AT-GOV-01 non-PO cannot create workspace/change price/commission/permissions | Sales per D-09 (unlisted rights deny-all) |
+| Inv.3/BRD-03 External collection, commission owed | PRD-07, 11 | A, D | AT-FIN-01 payment recorded only after approval · AT-FIN-02 commission/share derived from snapshot | Resolved: D-13 (per collected payment), D-15 (full refund only) |
 | Inv.4 Historical financial truth | PRD-07 | D | AT-FIN-03 package price edit doesn't change prior subscription · AT-FIN-04 ledger rows reject UPDATE/DELETE at DB level · AT-FIN-05 refund = reversal event | — |
 | Inv.5 Post-sale registration only | PRD-02, 12 | A | AT-REG-01 no public routes except token registration, login, reset | — |
 | Inv.6 Activation on plan pair | PRD-06 | A | AT-ACT-01 one plan published → not active · AT-ACT-02 second delivery sets `activated_at` = its timestamp · AT-ACT-03 idempotent under concurrent publish | Single-plan visibility before pair (C5) |
 | BRD-02 Roles, multi-workspace staff, consistent role | PRD-02 | E | AT-ISO-07 role identical across memberships · AT-ISO-08 workspace switch scopes all reads | — |
 | BRD-02 Branding preview/publish | PRD-01 | — | AT-BRD-01 preview not visible on live registration until publish · AT-BRD-02 branding can't alter finance/security | **No PRD acceptance check** |
-| BRD-03 Packages data-driven, canonical id | PRD-07 | A | AT-PKG-01 token bound to package version; tamper → reject | Tier/duration list NEEDS SOURCE |
+| BRD-03 Packages data-driven, canonical id | PRD-07 | A | AT-PKG-01 token bound to package version; tamper → reject | Resolved: D-11 (PO-only; 30-day months 1/3/6/8/12 or custom days) |
 | BRD-03 Installments (superseded by D-12: configurable schedule) | PRD-07 | D | AT-INS-01 due dates = activation + configured day offsets · AT-INS-02 overdue → plans blocked, login OK, notices sent · AT-INS-03 confirmed payment restores access | — |
 | BRD-03 PO aggregate + drill-down | PRD-11 | — | AT-RPT-01 PO totals = Σ workspace reports | **No journey** |
 | BRD-04.1 Token 24h + 30m grace, single use, no IP block | PRD-02 | A | AT-REG-02 concurrent double submit → one account · AT-REG-03 failed validation doesn't consume · AT-REG-04 opened at T-1m finishes at T+29m; new open at T+1m rejected · AT-REG-05 shared IP OK | — |
-| BRD-04.3 Account identity per workspace | PRD-02 | E | AT-ID-01 per approved collision policy | **Email/phone uniqueness** NEEDS SOURCE |
+| BRD-04.3 Account identity per workspace | PRD-02 | E | AT-ID-01 global uniqueness (see D-08 rows) | Resolved: D-08 |
 | BRD-04.4 Approval / rejection / release | PRD-02 | A | AT-REG-06 approval visible without re-login · AT-REG-07 rejection keeps audit | **Rejection/release semantics** undefined |
 | BRD-04.5 Intake form | PRD-03 | A | AT-FRM-01 autosave survives nav · AT-FRM-02 conditional render · AT-FRM-03 historical submission readable after template edit | Form-builder permission matrix NEEDS SOURCE |
-| BRD-04.6 5-working-day SLA | PRD-06 | A | AT-SLA-01..n table-driven (before/after 18:00, Thursday/Friday boundaries) · AT-SLA-02 answer correction doesn't reset | **Timezone & holidays** NEEDS SOURCE |
+| BRD-04.6 5-working-day SLA | PRD-06 | A | AT-SLA-01..n table-driven (before/after 18:00, Thursday/Friday boundaries) · AT-SLA-02 answer correction doesn't reset | Resolved: D-03 (Africa/Cairo, Friday only); deadline instant open |
 | BRD-04.8 Expiry restrictions | PRD-07 | D | AT-EXP-01 notices at 3d/1d/0d exactly once · AT-EXP-02 plans/exports blocked; settings OK | — |
-| BRD-04.8 Freeze | PRD-03, 07 | D | AT-FRZ-01 no check-in prompts while frozen · AT-FRZ-02 stop keeps accrued extension · AT-FRZ-03 remove reverses extension · AT-FRZ-04 audited | Rules APPROVED (D-05); freeze authority open (B2) |
-| BRD-04.9 Renewal | PRD-07 | D | AT-REN-01 recorded renewal → snapshot + access | Early-renewal start (C2) |
+| BRD-04.8 Freeze | PRD-03, 07 | D | AT-FRZ-01 no check-in prompts while frozen · AT-FRZ-02 stop keeps accrued extension · AT-FRZ-03 remove reverses extension · AT-FRZ-04 audited | Resolved: D-05 rules; D-09 authority (PO/WO/Sales) |
+| BRD-04.9 Renewal | PRD-07 | D | AT-REN-01 recorded renewal → snapshot + access | Resolved: D-04 (remaining days preserved; stacks after current end) |
 | BRD-04.10 / G Closure | PRD-07, 13.3 | G | AT-CLS-01 access closed, ledger/audit intact | **Retention policy/jurisdiction** NEEDS SOURCE |
 | BRD-05 Balanced auto-assignment | PRD-08 | B | AT-ASN-01 least-loaded trainer; deterministic tie-break | "Client count" definition (active only?) unconfirmed |
 | BRD-05 Productivity unit | PRD-06, 08 | B | AT-KPI-01 one unit per subscription · AT-KPI-02 revisions earn none · AT-KPI-03 refund doesn't remove unit | "Genuinely new plans" on renewal: definition |

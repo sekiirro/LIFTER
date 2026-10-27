@@ -10,6 +10,6 @@
 | Lint/format | ESLint 9 flat config with `eslint-config-next` + Prettier; `--max-warnings=0` | Standard for Next | Biome (fine, but less Next integration) |
 | Unit tests | Vitest; health payload built by the pure `lib/health.ts` | Fast, TS-native | Jest |
 | E2E | Playwright Chromium against `next start`; CI installs Chromium only | Matches the later RTL/AR screenshot gate | Cypress |
-| Version in health | `process.env.npm_package_version` injected at build via `next.config.ts` env → `APP_VERSION` | Never exposes the env generically | Reading package.json at runtime (not available in Workers) |
+| Version in health | `next.config.ts` imports `package.json` and injects `version` as `APP_VERSION` at build | Never exposes the env generically | Reading package.json at runtime (not available in Workers) |
 | Supabase | `supabase init` output committed (`config.toml`), with no migrations | Local DB tooling ready for P0-F3 | — |
 | CI | GitHub Actions on push and PR: `npm ci` → typecheck → lint → format:check → test → build:edge → size → e2e. No secrets, no deploy step. | FR-009 | — |

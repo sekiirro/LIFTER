@@ -1,7 +1,7 @@
 import { spawnSync } from 'node:child_process';
 import { mkdtemp, readdir, readFile, rm } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, extname, join } from 'node:path';
+import { dirname, join } from 'node:path';
 import { gzipSync } from 'node:zlib';
 import { evaluate } from './size-limit.mjs';
 
@@ -22,7 +22,8 @@ async function bundleSizeBytes(directory) {
       files += nested.files;
     } else if (
       entry.isFile() &&
-      ['.js', '.mjs', '.wasm'].includes(extname(entry.name))
+      !/\.map$/i.test(entry.name) &&
+      !/^README(?:\.md)?$/i.test(entry.name)
     ) {
       const content = await readFile(path);
       bytes += content.byteLength;
@@ -72,7 +73,7 @@ async function main() {
 
     const { bytes, gzipBytes, files } = await bundleSizeBytes(outdir);
     if (files === 0)
-      throw new Error('Wrangler emitted no .js, .mjs or .wasm files');
+      throw new Error('Wrangler emitted no uploaded module files');
     const sizeKiB = bytes / 1024;
     const gzipKiB = gzipBytes / 1024;
     const { pct, over } = evaluate(sizeKiB, limitKiB);

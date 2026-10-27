@@ -13,20 +13,20 @@ This feature creates the LIFTER repository baseline on the approved Architecture
 - a `/api/health` route
 - Supabase CLI config (no schema)
 - GitHub Actions CI
-- a compressed-worker-size report checked against the free-tier limit
+- a Worker-size report checked against the official 64 MiB uncompressed limit
 
 Design decisions are in [research.md](research.md).
 
 ## Technical Context
 
-**Language/Version**: TypeScript 5.x (strict), Node.js 24 LTS (pinned via `.nvmrc` + `engines`)
+**Language/Version**: TypeScript 6.0.3 (strict; eslint-config-next requires <6.1), Node.js 24 LTS (pinned via `.nvmrc` + `engines`)
 **Primary Dependencies**: Next.js (App Router), `@opennextjs/cloudflare`, `wrangler` (local build/dry-run only)
 **Storage**: N/A. Supabase CLI `supabase/config.toml` only, with no migrations.
 **Testing**: Vitest (unit), Playwright Chromium (e2e smoke)
 **Target Platform**: Cloudflare Workers (free plan), modern browsers
 **Project Type**: Single web application (repo root)
 **Package manager**: npm 11 with a committed `package-lock.json` (already installed; no extra tooling)
-**Performance Goals**: Compressed worker ≤ the free-tier limit (FR-008)
+**Performance Goals**: Uncompressed worker ≤ 64 MiB official limit (FR-008)
 **Constraints**: $0; no secrets; no deploy; no Cloudflare/Supabase account calls; Windows and Linux parity (`.gitattributes` LF)
 **Scale/Scope**: Baseline only; no business features
 
@@ -69,8 +69,8 @@ app/
 └── api/health/route.ts      # GET → { status, version }; no pages/layout (UI waits for F2 approval)
 lib/health.ts                # pure builder of health payload (unit-tested)
 tests/unit/health.test.ts
-tests/e2e/smoke.spec.ts
-scripts/size-report.mjs      # wrangler dry-run → gzip size vs limit
+tests/e2e/health.spec.ts
+scripts/size-report.mjs      # wrangler dry-run → uncompressed size vs 64 MiB (gzip info)
 supabase/config.toml         # supabase init output, no migrations
 .github/workflows/ci.yml
 open-next.config.ts

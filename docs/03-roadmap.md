@@ -38,7 +38,7 @@ Critical path: P0 tenancy/auth → P1 token+subscription+ledger → P3 planners 
 ## Quality gates (every feature, enforced by Claude review)
 
 1. Spec Kit artifacts exist (spec → plan → tasks → analyze clean) before code.
-2. Typecheck + lint + unit + integration tests green in CI. Claude re-runs them locally rather than trusting the coder's report.
+2. Typecheck + lint + unit tests green in CI (integration tests join the CI gate from P0-F3, when the Supabase schema exists). Claude re-runs them locally rather than trusting the coder's report.
 3. **Isolation gate:** every new tenant table has RLS + a composite FK, and every new endpoint/job/bot command has a foreign-workspace negative test.
 4. **Money gate:** ledger/payroll changes include immutability + idempotency tests. Amounts are integers only.
 5. Migrations are forward-only, reviewed and reversible-by-expand/contract. Destructive ones need PO approval.

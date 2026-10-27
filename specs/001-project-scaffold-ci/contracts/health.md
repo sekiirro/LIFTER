@@ -8,4 +8,4 @@
 ```
 
 - Exactly these two keys. No env values, hostnames, paths, timestamps or dependency checks.
-- Any other method → `405`.
+- `HEAD` is allowed (HTTP semantics for a GET resource, served by the framework). Any other method → `405`.

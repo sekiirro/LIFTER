@@ -27,8 +27,8 @@
 
 - [x] T011 [US4] Implement `scripts/size-report.mjs`:
   - Run `wrangler deploy --dry-run --outdir <tmp>`; no login.
-  - Gzip the emitted bundle with Node zlib and sum the sizes.
-  - Compare against `WORKER_SIZE_LIMIT_KIB`, defaulting to the free-tier compressed limit from https://developers.cloudflare.com/workers/platform/limits/ (value + URL in a comment; if unverifiable, 3072 with a printed warning).
+  - Sum the uncompressed size of all emitted modules (gzip shown for information).
+  - Compare against `WORKER_SIZE_LIMIT_KIB`, defaulting to the official uncompressed Worker limit (64 MiB) from https://developers.cloudflare.com/workers/platform/limits/ (value + URL in a comment; if unverifiable, 3072 with a printed warning).
   - Print the result; exit 1 when over the limit.
 - [x] T012 [US2] Create `.github/workflows/ci.yml`:
   - Triggers: push + pull_request; runs on `ubuntu-latest`.
