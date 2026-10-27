@@ -1,4 +1,11 @@
 export class UsageError extends Error {}
+export function timeoutOptions(minutes) {
+  if (minutes === undefined) return {};
+  const timeoutMs = Number(minutes) * 60000;
+  if (!Number.isFinite(timeoutMs) || timeoutMs <= 0 || timeoutMs > 2147483647)
+    throw new UsageError('Invalid timeout minutes');
+  return { timeoutMs };
+}
 export function parseArgs(argv, values, booleans = []) {
   const result = {};
   for (let i = 0; i < argv.length; i++) {

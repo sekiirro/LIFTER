@@ -10,9 +10,42 @@ import {
   generateIdentity,
   identityToRecipient,
 } from 'age-encryption';
-import { CommandError, npxCommand } from '../../scripts/backup/lib/exec.mjs';
+import {
+  CommandError,
+  TimeoutError,
+  npxCommand,
+  run,
+} from '../../scripts/backup/lib/exec.mjs';
 
 const roots: string[] = [];
+it('times out a sleeping Node process and terminates it', async () => {
+  const pids: number[] = [];
+  await expect(
+    run(
+      process.execPath,
+      ['-e', 'console.log(process.pid); setTimeout(()=>{},60000)'],
+      {
+        timeoutMs: 500,
+        output: async (stream) => {
+          let output = '';
+          for await (const chunk of stream) output += chunk.toString();
+          pids.push(...output.trim().split(/\s+/).map(Number));
+        },
+      },
+    ),
+  ).rejects.toMatchObject({ code: 'TIMEOUT' });
+  expect(pids).toHaveLength(1);
+  for (const pid of pids) expect(() => process.kill(pid, 0)).toThrow();
+});
+
+it('allows commands to finish before their timeout', async () => {
+  expect(
+    await run(process.execPath, ['-e', "process.stdout.write('done')"], {
+      timeoutMs: 5000,
+    }),
+  ).toBe('done');
+  expect(new TimeoutError()).toBeInstanceOf(CommandError);
+});
 afterEach(async () => {
   for (const root of roots.splice(0))
     await rm(root, { recursive: true, force: true });

@@ -1,4 +1,5 @@
 export const RESTORE_EXCLUSIONS: string;
+export function mergeReason(current: string, secondary: string): string;
 export function teardownRestoreStack(
   workdir: string,
   keepStack: boolean,

@@ -12,10 +12,15 @@ import { Readable } from 'node:stream';
 import { pipeline } from 'node:stream/promises';
 import postgres from 'postgres';
 import { Encrypter } from 'age-encryption';
-import { parseArgs, requireArgs, UsageError } from './lib/args.mjs';
+import {
+  parseArgs,
+  requireArgs,
+  timeoutOptions,
+  UsageError,
+} from './lib/args.mjs';
 import { collectChecks } from './lib/checks.mjs';
 import { buildManifest, verifyManifest } from './lib/manifest.mjs';
-import { selectRetained } from './lib/retention.mjs';
+import { selectRetained, shouldPrune } from './lib/retention.mjs';
 import { supabase } from './lib/exec.mjs';
 
 let folder;
@@ -24,11 +29,12 @@ let sql;
 try {
   const args = parseArgs(
     process.argv.slice(2),
-    ['db-url', 'recipient', 'recipient-file', 'out-root'],
+    ['db-url', 'recipient', 'recipient-file', 'out-root', 'timeout-minutes'],
     ['no-prune'],
   );
   args['db-url'] ||= process.env.BACKUP_DB_URL;
   requireArgs(args, ['db-url', 'out-root']);
+  const commandOptions = timeoutOptions(args['timeout-minutes']);
   if (Boolean(args.recipient) === Boolean(args['recipient-file']))
     throw new UsageError('Choose one recipient source');
   const recipient =
@@ -57,6 +63,7 @@ try {
     ['data', ['--data-only', '--use-copy']],
   ]) {
     await supabase(['db', 'dump', '--db-url', args['db-url'], ...flags], {
+      ...commandOptions,
       output: async (stream) =>
         pipeline(
           Readable.fromWeb(await encrypter.encrypt(Readable.toWeb(stream))),
@@ -92,9 +99,13 @@ try {
       )
         continue;
       const path = join(root, entry.name);
+      const idDate = new Date(
+        entry.name.replace(/T(\d\d)-(\d\d)-(\d\d)-(\d{3})Z$/, 'T$1:$2:$3.$4Z'),
+      );
+      if (idDate > now) continue;
       try {
         const manifest = await verifyManifest(path);
-        backups.push({ path, date: new Date(manifest.created_at) });
+        backups.push({ path, idDate, date: new Date(manifest.created_at) });
       } catch {
         // Only a missing manifest marks an incomplete folder. Preserve corrupt
         // completed archives for investigation rather than silently deleting them.
@@ -102,7 +113,8 @@ try {
           await access(join(path, 'manifest.json'));
         } catch (error) {
           if (error.code !== 'ENOENT') throw error;
-          await rm(path, { recursive: true });
+          if (shouldPrune(idDate, false, false, now))
+            await rm(path, { recursive: true });
         }
       }
     }
@@ -111,7 +123,14 @@ try {
       now,
     );
     for (const backup of backups)
-      if (!retained.has(backup.date.getTime()))
+      if (
+        shouldPrune(
+          backup.idDate,
+          retained.has(backup.date.getTime()),
+          true,
+          now,
+        )
+      )
         await rm(backup.path, { recursive: true });
   }
   console.log('BACKUP_COMPLETE');
@@ -119,7 +138,7 @@ try {
   if (folder && !complete) await rm(folder, { recursive: true, force: true });
   console.error(
     error instanceof UsageError
-      ? 'Usage: backup --out-root <path> --recipient <public key> [--db-url <url> | BACKUP_DB_URL] [--no-prune]'
+      ? 'Usage: backup --out-root <path> --recipient <public key> [--db-url <url> | BACKUP_DB_URL] [--no-prune] [--timeout-minutes <minutes>]'
       : 'BACKUP_FAILED',
   );
   process.exitCode = error instanceof UsageError ? 2 : 1;

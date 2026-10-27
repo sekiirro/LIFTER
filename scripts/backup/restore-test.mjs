@@ -13,13 +13,22 @@ import { fileURLToPath } from 'node:url';
 import { Readable } from 'node:stream';
 import postgres from 'postgres';
 import { Decrypter } from 'age-encryption';
-import { parseArgs, requireArgs, UsageError } from './lib/args.mjs';
+import {
+  parseArgs,
+  requireArgs,
+  timeoutOptions,
+  UsageError,
+} from './lib/args.mjs';
 import { collectChecks, compareChecks } from './lib/checks.mjs';
 import { FILES, verifyManifest } from './lib/manifest.mjs';
 import { docker, supabase } from './lib/exec.mjs';
 import { restoreConfig } from './lib/config.mjs';
-import { firstErrorLine } from './lib/redact.mjs';
-import { RESTORE_EXCLUSIONS, teardownRestoreStack } from './lib/restore.mjs';
+import { firstErrorLine, redact } from './lib/redact.mjs';
+import {
+  RESTORE_EXCLUSIONS,
+  mergeReason,
+  teardownRestoreStack,
+} from './lib/restore.mjs';
 
 let args;
 let workdir;
@@ -29,14 +38,23 @@ let code = 'USAGE';
 let id = 'unknown';
 let log;
 let diagnostic;
-let cleanupFailed = false;
+let commandOptions = {};
+const secondaryFailure = (reason, error) => {
+  code = mergeReason(code, reason);
+  console.error(
+    redact(
+      `${reason}: ${firstErrorLine(error?.stderr) || error?.message || reason}`,
+    ).slice(0, 1024),
+  );
+};
 try {
   args = parseArgs(
     process.argv.slice(2),
-    ['backup', 'identity-file', 'log'],
+    ['backup', 'identity-file', 'log', 'timeout-minutes'],
     ['keep-stack'],
   );
   requireArgs(args, ['backup', 'identity-file']);
+  commandOptions = timeoutOptions(args['timeout-minutes']);
   const folder = resolve(args.backup);
   if (/^\d{4}-\d\d-\d\dT\d\d-\d\d-\d\d-\d{3}Z$/.test(basename(folder)))
     id = basename(folder);
@@ -62,12 +80,18 @@ try {
   }
   const expected = JSON.parse(plaintext['checks.json.age'].toString('utf8'));
   code = 'STACK_EXISTS';
-  const containers = await docker(['ps', '-a', '--format', '{{.Names}}']);
+  const containers = await docker(
+    ['ps', '-a', '--format', '{{.Names}}'],
+    commandOptions,
+  );
   if (
     containers.split(/\r?\n/).some((name) => name.endsWith('_lifter-restore'))
   )
     throw new Error(code);
-  const volumes = await docker(['volume', 'ls', '--format', '{{.Name}}']);
+  const volumes = await docker(
+    ['volume', 'ls', '--format', '{{.Name}}'],
+    commandOptions,
+  );
   if (volumes.split(/\r?\n/).some((name) => name.endsWith('_lifter-restore')))
     throw new Error(code);
   code = 'STACK_START_FAILED';
@@ -79,7 +103,10 @@ try {
   );
   await writeFile(join(workdir, 'supabase/config.toml'), restoreConfig(source));
   started = true;
-  await supabase(['start', '-x', RESTORE_EXCLUSIONS, '--workdir', workdir]);
+  await supabase(
+    ['start', '-x', RESTORE_EXCLUSIONS, '--workdir', workdir],
+    commandOptions,
+  );
   code = 'RESTORE_FAILED';
   await docker(
     [
@@ -98,6 +125,7 @@ try {
       'postgres',
     ],
     {
+      ...commandOptions,
       input: Readable.from([
         plaintext['roles.sql.age'],
         Buffer.from('\n'),
@@ -110,7 +138,10 @@ try {
   );
   code = 'CHECKS_FAILED';
   const status = JSON.parse(
-    await supabase(['status', '--workdir', workdir, '--output', 'json']),
+    await supabase(
+      ['status', '--workdir', workdir, '--output', 'json'],
+      commandOptions,
+    ),
   );
   const url = new URL(status.DB_URL);
   if (
@@ -136,29 +167,30 @@ try {
   code = 'OK';
 } catch (error) {
   if (error instanceof UsageError) code = 'USAGE';
+  else if (error?.code === 'TIMEOUT') code = 'TIMEOUT';
   diagnostic = firstErrorLine(error?.stderr);
 } finally {
   if (sql) {
     try {
       await sql.end({ timeout: 5 });
-    } catch {
-      code = 'CLEANUP_FAILED';
+    } catch (error) {
+      secondaryFailure('CLEANUP_FAILED', error);
     }
   }
   if (started) {
     try {
-      await teardownRestoreStack(workdir, Boolean(args?.['keep-stack']));
+      await teardownRestoreStack(workdir, Boolean(args?.['keep-stack']), {
+        stop: (argv) => supabase(argv, commandOptions),
+      });
     } catch (error) {
-      cleanupFailed = true;
-      if (code === 'OK') code = 'CLEANUP_FAILED';
-      diagnostic ||= firstErrorLine(error?.stderr);
+      secondaryFailure('CLEANUP_FAILED', error);
     }
   }
   if (workdir && !started && !args?.['keep-stack']) {
     try {
       await rm(workdir, { recursive: true, force: true });
-    } catch {
-      code = 'CLEANUP_FAILED';
+    } catch (error) {
+      secondaryFailure('CLEANUP_FAILED', error);
     }
   }
   if (log) {
@@ -169,17 +201,15 @@ try {
         `${new Date().toISOString()}\t${id}\t${code === 'OK' ? 'PASS' : 'FAIL'}\t${code}\n`,
         { mode: 0o600 },
       );
-    } catch {
-      code = 'LOG_FAILED';
+    } catch (error) {
+      secondaryFailure('LOG_FAILED', error);
     }
   }
   console.log(code === 'OK' ? 'PASS' : `FAIL ${code}`);
   if (code !== 'OK' && diagnostic) console.error(diagnostic);
-  if (cleanupFailed && code !== 'CLEANUP_FAILED')
-    console.error('CLEANUP_FAILED');
   if (code === 'USAGE')
     console.error(
-      'Usage: backup:restore-test --backup <folder> --identity-file <path> [--log <path>] [--keep-stack]',
+      'Usage: backup:restore-test --backup <folder> --identity-file <path> [--log <path>] [--keep-stack] [--timeout-minutes <minutes>]',
     );
   process.exitCode = code === 'OK' ? 0 : code === 'USAGE' ? 2 : 1;
 }

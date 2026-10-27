@@ -4,6 +4,15 @@ const midnight = (d) =>
 const week = (d) => midnight(d) - ((d.getUTCDay() + 6) % 7) * day;
 const month = (d) => d.getUTCFullYear() * 12 + d.getUTCMonth();
 
+export function shouldPrune(idDate, retained, complete, now = new Date()) {
+  return (
+    Number.isFinite(idDate.getTime()) &&
+    idDate <= now &&
+    !retained &&
+    (complete || now.getTime() - idDate.getTime() > day)
+  );
+}
+
 /** Select the newest timestamp in each UTC calendar bucket, including the current bucket. */
 export function selectRetained(dates, now = new Date()) {
   const buckets = new Set();

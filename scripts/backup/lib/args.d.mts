@@ -1,4 +1,7 @@
 export class UsageError extends Error {}
+export function timeoutOptions(minutes?: string | boolean): {
+  timeoutMs?: number;
+};
 export function parseArgs(
   argv: string[],
   values: string[],

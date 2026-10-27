@@ -4,7 +4,11 @@ export class CommandError extends Error {
   stderr: string;
 }
 export function npxCommand(args: string[]): Promise<[string, string[]]>;
+export class TimeoutError extends CommandError {
+  code: 'TIMEOUT';
+}
 export interface RunOptions {
+  timeoutMs?: number;
   output?: (stream: Readable) => Promise<unknown>;
   input?: Readable;
 }

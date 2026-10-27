@@ -1,5 +1,33 @@
 import { expect, it } from 'vitest';
-import { selectRetained } from '../../scripts/backup/lib/retention.mjs';
+import {
+  selectRetained,
+  shouldPrune,
+} from '../../scripts/backup/lib/retention.mjs';
+
+it('keeps future folders, retained backups and incomplete folders up to 24 hours old', () => {
+  const now = new Date('2026-10-27T12:00:00Z');
+  for (const complete of [false, true]) {
+    expect(
+      shouldPrune(new Date('2026-10-28T12:00:00Z'), false, complete, now),
+    ).toBe(false);
+    expect(
+      shouldPrune(new Date('2025-01-01T00:00:00Z'), true, complete, now),
+    ).toBe(false);
+  }
+  expect(shouldPrune(new Date('2026-10-26T12:00:00Z'), false, false, now)).toBe(
+    false,
+  );
+  expect(shouldPrune(new Date('2026-10-26T11:59:59Z'), false, false, now)).toBe(
+    true,
+  );
+  expect(shouldPrune(new Date('2026-10-27T11:00:00Z'), false, false, now)).toBe(
+    false,
+  );
+  expect(shouldPrune(new Date('2026-10-27T11:00:00Z'), false, true, now)).toBe(
+    true,
+  );
+  expect(shouldPrune(new Date('invalid'), false, true, now)).toBe(false);
+});
 
 it('retains the exact union over eighteen months, two backups per day', () => {
   const now = new Date('2026-10-27T23:00:00Z');

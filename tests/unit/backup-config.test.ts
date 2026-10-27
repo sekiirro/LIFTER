@@ -1,5 +1,14 @@
 import { expect, it } from 'vitest';
 import { restoreConfig } from '../../scripts/backup/lib/config.mjs';
+import { timeoutOptions, UsageError } from '../../scripts/backup/lib/args.mjs';
+
+it('converts the optional CLI timeout to milliseconds and rejects invalid durations', () => {
+  expect(timeoutOptions()).toEqual({});
+  expect(timeoutOptions('30')).toEqual({ timeoutMs: 1800000 });
+  expect(timeoutOptions('0.001')).toEqual({ timeoutMs: 60 });
+  for (const value of ['0', '-1', 'NaN', 'Infinity', '99999999'])
+    expect(() => timeoutOptions(value)).toThrow(UsageError);
+});
 
 it('overrides existing sections without duplicate TOML tables', () => {
   const output = restoreConfig(

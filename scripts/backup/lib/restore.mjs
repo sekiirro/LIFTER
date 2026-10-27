@@ -4,6 +4,9 @@ import { supabase } from './exec.mjs';
 export const RESTORE_EXCLUSIONS =
   'studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,storage-api,postgres-meta';
 
+export const mergeReason = (current, secondary) =>
+  current === 'OK' ? secondary : current;
+
 export async function teardownRestoreStack(
   workdir,
   keepStack,

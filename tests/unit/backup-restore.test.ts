@@ -1,5 +1,19 @@
 import { expect, it, vi } from 'vitest';
-import { teardownRestoreStack } from '../../scripts/backup/lib/restore.mjs';
+import {
+  mergeReason,
+  teardownRestoreStack,
+} from '../../scripts/backup/lib/restore.mjs';
+
+it('preserves the root cause through cleanup and log failures', () => {
+  for (const secondary of ['CLEANUP_FAILED', 'LOG_FAILED']) {
+    expect(mergeReason('RESTORE_FAILED', secondary)).toBe('RESTORE_FAILED');
+    expect(mergeReason('TIMEOUT', secondary)).toBe('TIMEOUT');
+    expect(mergeReason('OK', secondary)).toBe(secondary);
+  }
+  expect(mergeReason(mergeReason('OK', 'CLEANUP_FAILED'), 'LOG_FAILED')).toBe(
+    'CLEANUP_FAILED',
+  );
+});
 
 it('stops without backup and then removes the temp workdir on the failure cleanup path', async () => {
   const calls: string[] = [];
