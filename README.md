@@ -347,41 +347,48 @@ $docker = if ($env:DOCKER_BIN) { $env:DOCKER_BIN } else { 'docker' }
 if ($LASTEXITCODE -ne 0) { throw 'backup_drill not created; aborting drill' }
 $env:BACKUP_DB_URL = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
 New-Item -ItemType Directory -Force 'backups\review' | Out-Null
-node scripts/backup/keygen.mjs --out 'backups\review\age-identity-review.txt' > 'backups\review\recipient.txt'
-# PowerShell redirection may write UTF-16; normalize the public recipient to UTF-8.
-$recipient = (Get-Content 'backups\review\recipient.txt' -Raw).Trim()
-npm run backup -- --recipient $recipient --out-root 'backups\review\archives' --no-prune
-$backup = (Get-ChildItem 'backups\review\archives' -Directory | Sort-Object Name -Descending | Select-Object -First 1).FullName
-$log = 'backups\review\archives\restore-tests.log'
-npm run backup:restore-test -- --backup $backup --identity-file 'backups\review\age-identity-review.txt'
-if ($LASTEXITCODE -ne 0) { throw 'Expected PASS' }
-$archive = Join-Path $backup 'data.sql.age'
-$original = [IO.File]::ReadAllBytes($archive)
-$tampered = [byte[]]$original.Clone()
-$tampered[100] = $tampered[100] -bxor 1
+# Drill identities live outside the repository and are deleted even if the drill fails.
+$keys = Join-Path ([IO.Path]::GetTempPath()) ("lifter-drill-keys-" + [guid]::NewGuid())
+New-Item -ItemType Directory $keys | Out-Null
 try {
-  [IO.File]::WriteAllBytes($archive, $tampered)
-  npm run backup:restore-test -- --backup $backup --identity-file 'backups\review\age-identity-review.txt'
-  if ($LASTEXITCODE -ne 1) { throw 'Expected tamper FAIL' }
-  if ((Get-Content $log -Tail 1) -notmatch "`tFAIL`tHASH_MISMATCH") { throw 'Expected HASH_MISMATCH' }
-} finally { [IO.File]::WriteAllBytes($archive, $original) }
-node scripts/backup/keygen.mjs --out 'backups\review\age-identity-wrong.txt' > $null
-npm run backup:restore-test -- --backup $backup --identity-file 'backups\review\age-identity-wrong.txt'
-if ($LASTEXITCODE -ne 1) { throw 'Expected wrong-key FAIL' }
-if ((Get-Content $log -Tail 1) -notmatch "`tFAIL`tDECRYPT_FAILED") { throw 'Expected DECRYPT_FAILED' }
-Get-Content 'backups\review\archives\restore-tests.log'
-# Ciphertext scan: expect no sentinel or common SQL statements in any archive file.
-Get-ChildItem $backup -File | ForEach-Object {
-  $bytes = [IO.File]::ReadAllBytes($_.FullName)
-  $text = [Text.Encoding]::UTF8.GetString($bytes)
-  if ($text -match 'LIFTER_BACKUP_PLAINTEXT_SENTINEL|CREATE TABLE|COPY public\.') { throw 'Plaintext detected' }
+  node scripts/backup/keygen.mjs --out (Join-Path $keys 'age-identity-review.txt') > (Join-Path $keys 'recipient.txt')
+  # PowerShell redirection may write UTF-16; normalize the public recipient to UTF-8.
+  $recipient = (Get-Content (Join-Path $keys 'recipient.txt') -Raw).Trim()
+  npm run backup -- --recipient $recipient --out-root 'backups\review\archives' --no-prune
+  $backup = (Get-ChildItem 'backups\review\archives' -Directory | Sort-Object Name -Descending | Select-Object -First 1).FullName
+  $log = 'backups\review\archives\restore-tests.log'
+  npm run backup:restore-test -- --backup $backup --identity-file (Join-Path $keys 'age-identity-review.txt')
+  if ($LASTEXITCODE -ne 0) { throw 'Expected PASS' }
+  $archive = Join-Path $backup 'data.sql.age'
+  $original = [IO.File]::ReadAllBytes($archive)
+  $tampered = [byte[]]$original.Clone()
+  $tampered[100] = $tampered[100] -bxor 1
+  try {
+    [IO.File]::WriteAllBytes($archive, $tampered)
+    npm run backup:restore-test -- --backup $backup --identity-file (Join-Path $keys 'age-identity-review.txt')
+    if ($LASTEXITCODE -ne 1) { throw 'Expected tamper FAIL' }
+    if ((Get-Content $log -Tail 1) -notmatch "`tFAIL`tHASH_MISMATCH") { throw 'Expected HASH_MISMATCH' }
+  } finally { [IO.File]::WriteAllBytes($archive, $original) }
+  node scripts/backup/keygen.mjs --out (Join-Path $keys 'age-identity-wrong.txt') > $null
+  npm run backup:restore-test -- --backup $backup --identity-file (Join-Path $keys 'age-identity-wrong.txt')
+  if ($LASTEXITCODE -ne 1) { throw 'Expected wrong-key FAIL' }
+  if ((Get-Content $log -Tail 1) -notmatch "`tFAIL`tDECRYPT_FAILED") { throw 'Expected DECRYPT_FAILED' }
+  Get-Content 'backups\review\archives\restore-tests.log'
+  # Ciphertext scan: expect no sentinel or common SQL statements in any archive file.
+  Get-ChildItem $backup -File | ForEach-Object {
+    $bytes = [IO.File]::ReadAllBytes($_.FullName)
+    $text = [Text.Encoding]::UTF8.GetString($bytes)
+    if ($text -match 'LIFTER_BACKUP_PLAINTEXT_SENTINEL|CREATE TABLE|COPY public\.') { throw 'Plaintext detected' }
+  }
+  & $docker exec supabase_db_lifter psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'SELECT * FROM public.backup_drill;'
+  # Expect the original row; remove only the reviewer-created scratch table afterwards.
+  & $docker exec supabase_db_lifter psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'DROP TABLE public.backup_drill;'
+} finally {
+  Remove-Item -Recurse -Force $keys
+  Remove-Item Env:BACKUP_DB_URL
 }
-& $docker exec supabase_db_lifter psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'SELECT * FROM public.backup_drill;'
-# Expect the original row; remove only the reviewer-created scratch table afterwards.
-& $docker exec supabase_db_lifter psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'DROP TABLE public.backup_drill;'
-Remove-Item Env:BACKUP_DB_URL
 ```
 
-Choose fresh identity filenames for repeat runs (keygen never overwrites).
+Each run uses a fresh temporary key folder outside the repository, so keygen never hits an existing file.
 The reviewer owns this Docker verification; unit gates do not establish a
 successful end-to-end restore.
