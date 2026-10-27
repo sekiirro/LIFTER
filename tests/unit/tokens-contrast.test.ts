@@ -51,6 +51,7 @@ describe.each(['light', 'dark'] as const)('%s contrast', (mode) => {
     expect(contrastRatio(brand.text, tokens.bg)).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(brand.text, tokens.card)).toBeGreaterThanOrEqual(4.5);
     expect(contrastRatio(brand.ring, tokens.bg)).toBeGreaterThanOrEqual(3);
+    expect(contrastRatio(brand.ring, tokens.card)).toBeGreaterThanOrEqual(3);
     expect(['#FFFFFF', '#0B0C0E']).toContain(brand.onFill);
     // One of the two labels always passes for the raw sRGB sample: no fill change needed.
     expect(brand.fill).toBe(parseHex(input));

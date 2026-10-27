@@ -22,8 +22,8 @@ export function Alert({
 }) {
   return (
     <div
+      role={tone === 'error' ? 'alert' : 'status'}
       {...props}
-      role={tone === 'error' || tone === 'warning' ? 'alert' : 'status'}
       className={[styles.alert, styles[tone], className]
         .filter(Boolean)
         .join(' ')}

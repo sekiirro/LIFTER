@@ -41,12 +41,6 @@ export function ConfirmDialog({
       cancelRef.current?.focus();
     } else if (!open && dialog.open) dialog.close();
   }, [open]);
-  useEffect(
-    () => () => {
-      previousFocus.current?.focus();
-    },
-    [],
-  );
   return (
     <dialog
       ref={dialogRef}
@@ -82,7 +76,6 @@ export function ConfirmDialog({
       }}
       onCancel={(event) => {
         event.preventDefault();
-        event.currentTarget.close();
         onCancel();
       }}
       onClose={() => {
@@ -97,20 +90,14 @@ export function ConfirmDialog({
           ref={cancelRef}
           variant="secondary"
           data-testid="dialog-cancel"
-          onClick={() => {
-            dialogRef.current?.close();
-            onCancel();
-          }}
+          onClick={onCancel}
         >
           {cancelLabel}
         </Button>
         <Button
           variant={tone === 'destructive' ? 'destructive' : 'primary'}
           data-testid="dialog-confirm"
-          onClick={() => {
-            onConfirm();
-            dialogRef.current?.close();
-          }}
+          onClick={onConfirm}
         >
           {confirmLabel}
         </Button>

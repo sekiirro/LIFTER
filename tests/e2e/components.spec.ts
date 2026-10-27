@@ -128,6 +128,10 @@ for (const locale of ['ar', 'en'] as const) {
         await page.getByTestId('dialog-cancel').click();
         await expect(dialog).not.toBeVisible();
         await expect(trigger).toBeFocused();
+        await trigger.click();
+        await page.getByTestId('dialog-confirm').click();
+        await expect(dialog).not.toBeVisible();
+        await expect(trigger).toBeFocused();
       });
 
       test('toast uses the pre-existing polite region without moving focus, and dismisses', async ({

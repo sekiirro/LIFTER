@@ -47,7 +47,7 @@ getMessages(locale: Locale): Messages
 | `Skeleton` | `shape`, `lines?` | `aria-hidden`; the parent region has `aria-busy` |
 | `EmptyState` / `NoResults` / `ErrorState` | `title`, `description?`; `ErrorState.onRetry` | Distinct icon and copy each. `ErrorState` renders a Retry button and `role="alert"`. |
 | `ToastProvider` + `useToast().success(msg)` | — | One polite live region. Auto-dismiss ~5 s, paused on hover/focus. Has a dismiss button. Does not move focus. |
-| `Alert` | `tone: 'info'\|'success'\|'warning'\|'error'`, `title`, children | Persistent. `role="alert"` for error/warning, `role="status"` otherwise. |
+| `Alert` | `tone: 'info'\|'success'\|'warning'\|'error'`, `title`, children | Persistent. `role="alert"` for error, `role="status"` otherwise; callers may override `role`. |
 | `BrandScope` | `color?: string`, children | Renders `div[data-brand-scope]` with `brandToCssVars(deriveBrand(color))` |
 | `Bidi` | `children`, `dir?: 'ltr'\|'rtl'\|'auto'` | `<bdi>` isolation for numbers, codes and Latin data |
 | `Icon` | `name`, `label?` | Decorative → `aria-hidden`. With `label` → `role="img"` + `aria-label`. Directional icons flip under `[dir=rtl]`. |

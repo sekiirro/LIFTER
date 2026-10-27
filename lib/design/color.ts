@@ -145,7 +145,12 @@ export function deriveBrand(input: string | null | undefined): BrandVariants {
           contrastRatio(hex, surface.bg) >= 4.5 &&
           contrastRatio(hex, surface.card) >= 4.5,
       ).hex,
-      ring: nearest(source, (hex) => contrastRatio(hex, surface.bg) >= 3).hex,
+      ring: nearest(
+        source,
+        (hex) =>
+          contrastRatio(hex, surface.bg) >= 3 &&
+          contrastRatio(hex, surface.card) >= 3,
+      ).hex,
     };
   }
   const light = forMode('light'),

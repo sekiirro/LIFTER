@@ -33,6 +33,9 @@ describe('seeded brand fuzzing', () => {
           4.5,
         );
         expect(contrastRatio(brand.ring, surface.bg)).toBeGreaterThanOrEqual(3);
+        expect(contrastRatio(brand.ring, surface.card)).toBeGreaterThanOrEqual(
+          3,
+        );
       }
     },
   );
