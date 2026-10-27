@@ -36,7 +36,7 @@ All functions SECURITY DEFINER, postgres owner, empty search_path and fully qual
 
 | RPC                               | Named input                                                                                    | Success                          | Grants                               |
 | --------------------------------- | ---------------------------------------------------------------------------------------------- | -------------------------------- | ------------------------------------ |
-| issue_registration_link           | `{workspace_id:uuid,package_version_id:uuid,token_hash:lowercase-hex-string,installments:array | null}`                           | Link UUID only                       | authenticated |
+| issue_registration_link           | `{workspace_id:uuid,package_version_id:uuid,token_hash:lowercase-hex-string,installments:array or null}`                           | Link UUID only                       | authenticated |
 | registration_link_open            | `{token:text}`                                                                                 | Exact valid/invalid JSON above   | anon, authenticated                  |
 | get_registration_link_commissions | `{workspace_id:uuid}`                                                                          | `{link_id,commission_rate_bp}[]` | authenticated, internally PO/WO only |
 
