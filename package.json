@@ -17,6 +17,7 @@
     "test": "vitest run",
     "e2e": "playwright test",
     "build:edge": "opennextjs-cloudflare build",
+    "build:cron": "wrangler deploy --dry-run --config workers/cron/wrangler.jsonc --outdir .wrangler/cron-dist",
     "size": "node scripts/size-report.mjs",
     "test:integration": "vitest run --config vitest.integration.config.ts"
   },
