@@ -22,6 +22,7 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 | D-16 | Identities | Staff and client accounts use separate emails. No dual-role accounts. |
 | D-18 | Design System | [DESIGN.md](../DESIGN.md) approved (2026-10-27): emerald `#059669` default brand (not lime), workspace-customizable colors with WCAG 2.2 AA contrast guard, dark + light modes (device first, manual choice persisted). Constitution VIII amended to v1.1.0. Open items in DESIGN.md §11 stay open. |
 | D-17 | Installment total | Installment amounts must sum exactly to the PO-approved price |
+| D-19 | Auth & manual recovery (2026-10-27) | Supabase Auth, no external SMTP for now. PO, WO and authorized Trainers may generate a manual recovery link from a client's profile, only server-side (privileged credentials never reach the browser), behind capability + workspace scope, audited (`recovery_link.generated`), shown once, never logged, rate-limited. Extends BRD line 104 (PO-only manual reset). Open sub-decisions ND-F4-1..7 in [specs/004-auth/spec.md](../specs/004-auth/spec.md). |
 | — | Architecture | [02-architecture.md](02-architecture.md) v3 APPROVED (R1, R2, R4, R5, R6, R7 adopted) |
 
 ## Superseded
@@ -41,6 +42,7 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 ## Open (does not block the Constitution)
 
 - **B4:** jurisdiction / data residency / closure retention period. Gates production only.
+- **F4 auth sub-decisions (ND-F4-1..7):** Trainer permission, link delivery, link expiry, rate-limit values, client-target sequencing, staff recovery, self-service email reset timing. Expiry and limits gate production.
 - Phase-gated, no defaults approved:
   - check-in anchor (C1, P5)
   - form-builder permission matrix (P2)

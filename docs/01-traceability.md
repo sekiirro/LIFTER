@@ -42,7 +42,7 @@ Journeys = PRD-14 (A–G). `AT-*` = proposed acceptance test ids; each becomes a
 | D-11 Durations (30-day months) | PRD-07 | A, D | AT-DUR-01 1/3/6/8/12 → 30/90/180/240/360 days · AT-DUR-02 custom days · AT-DUR-03 non-PO can't change price/duration | — |
 | D-12/13 Installments & commission | PRD-07 | D | AT-INS-04 schedule sum ≠ PO price → rejected (D-17) · AT-FIN-06 commission = collected × snapshot rate, unpaid balance 0 · AT-FIN-07 payment reported in its collection month (Cairo) | — |
 | D-14 Backups | PRD-13.2/9 | — | AT-BKP-01 archive encrypted (no plaintext) · AT-BKP-02 restore into local Supabase passes ledger/audit checksums | — |
-| PRD-02 Password reset | PRD-02 | — | AT-AUTH-01 reset single-use, expiring, audited (self + PO-manual) | **No PRD acceptance check** |
+| PRD-02 Password reset | PRD-02 | — | AT-AUTH-01 reset single-use, expiring, audited (self + PO-manual; D-19 adds WO/authorized Trainer, F4) | Self-service email reset sequenced until SMTP (ND-F4-7); expiry ND-F4-3 |
 | PRD-13 NFRs | PRD-13 | all | Gates in [03-roadmap.md](03-roadmap.md) | Retention policy |
 
 ## Uncovered business requirements (summary)
