@@ -95,7 +95,7 @@ describe('package publication', () => {
           offer_id: p.offer.id,
           package_id: p.id,
           version: n + 1,
-          price_minor: Number(versions[n]!.price_minor),
+          price_minor: versions[n]!.price_minor,
           currency: 'XTS',
           commission_rate_bp: 17,
           duration_days: 61,

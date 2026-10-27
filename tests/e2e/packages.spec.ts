@@ -156,7 +156,7 @@ test.describe('local-stack authenticated package acceptance (required for review
         .getByRole('row')
         .filter({ has: page.getByRole('rowheader').filter({ hasText: code }) });
       await expect(row).toHaveCount(1);
-      await expect(row).toContainText(`90 ${m['packages.days']}`);
+      await expect(row).toContainText(`${m['packages.days']}: 90`);
       await row
         .getByRole('button', { name: m['packages.enable'], exact: true })
         .click();
@@ -169,7 +169,27 @@ test.describe('local-stack authenticated package acceptance (required for review
       await row
         .getByRole('button', { name: m['packages.enable'], exact: true })
         .click();
+      await expect(page.getByRole('dialog')).toContainText(
+        `${m['packages.days']}: 90`,
+      );
+      await page.route('**/packages*', async (route) => {
+        if (route.request().method() === 'POST') await route.abort('failed');
+        else await route.continue();
+      });
       await page.getByTestId('dialog-confirm').click();
+      await expect(page.getByRole('dialog')).not.toBeVisible();
+      await expect(page.getByRole('main').getByRole('alert')).toContainText(
+        m['packages.unavailable'],
+      );
+      await expect(
+        row.getByRole('button', { name: m['packages.enable'], exact: true }),
+      ).toBeVisible();
+      await page.unroute('**/packages*');
+      await row
+        .getByRole('button', { name: m['packages.enable'], exact: true })
+        .click();
+      await page.getByTestId('dialog-confirm').click();
+      await expect(page.getByRole('dialog')).not.toBeVisible();
       await expect(row).toContainText(m['packages.available']);
       await fillTerms();
       await page

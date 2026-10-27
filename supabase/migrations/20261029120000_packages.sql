@@ -183,7 +183,7 @@ begin
     event_workspace := new.workspace_id;
     event_details := jsonb_build_object('offer_id', new.offer_id,
       'package_id', (select o.package_id from public.package_offers o where o.workspace_id = new.workspace_id and o.id = new.offer_id),
-      'version', new.version, 'price_minor', new.price_minor, 'currency', new.currency,
+      'version', new.version, 'price_minor', new.price_minor::text, 'currency', new.currency,
       'commission_rate_bp', new.commission_rate_bp, 'duration_days', new.duration_days);
   elsif tg_table_schema = 'public' and tg_table_name = 'package_offers' then
     if tg_op <> 'UPDATE' or new.available is not distinct from old.available then return new; end if;

@@ -318,7 +318,7 @@ export function PackagesManager({
                       {v && <p>{locale === 'ar' ? v.name_ar : v.name_en}</p>}
                     </th>
                     <td>
-                      {offer.duration_days} {m['packages.days']}
+                      {m['packages.days']}: {offer.duration_days}
                     </td>
                     <td>{v?.version}</td>
                     <td>
@@ -363,7 +363,7 @@ export function PackagesManager({
         title={m['packages.confirmTitle']}
         description={
           confirm
-            ? `${workspaces.find((w) => w.id === workspaceId)?.name} / ${codes.get(confirm.package_id)} / ${confirm.duration_days} ${m['packages.days']} / ${confirm.available ? m['packages.disable'] : m['packages.enable']}`
+            ? `${workspaces.find((w) => w.id === workspaceId)?.name} / ${codes.get(confirm.package_id)} / ${m['packages.days']}: ${confirm.duration_days} / ${confirm.available ? m['packages.disable'] : m['packages.enable']}`
             : undefined
         }
         confirmLabel={m['packages.confirm']}
@@ -375,16 +375,12 @@ export function PackagesManager({
         onConfirm={() => {
           if (!confirm) return;
           const target = confirm;
-          void run(
-            () =>
-              setPackageOfferAvailable({
-                workspaceId,
-                offerId: target.id,
-                available: !target.available,
-              }),
-            () => {
-              setConfirm(null);
-            },
+          void run(() =>
+            setPackageOfferAvailable({
+              workspaceId,
+              offerId: target.id,
+              available: !target.available,
+            }).finally(() => setConfirm(null)),
           );
         }}
       />

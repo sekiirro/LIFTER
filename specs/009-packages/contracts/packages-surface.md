@@ -22,7 +22,7 @@ All calls carry the current user's JWT via the server session client; never an a
 | RPC                               | Named JSON input                                           | Successful value                                                            |
 | --------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
 | `create_package`                  | `{code: string}`                                           | canonical package UUID; existing UUID on exact code replay                  |
-| `publish_package_version`         | `{workspace_id: uuid, package_id: uuid, duration_months: 1 | 3                                                                           | 6   | 8   | 12  | null, duration_days: integer, name_ar: string, name_en: string, price_minor: decimal-integer-string, currency: string, commission_rate_bp: integer}` | published version UUID; current version UUID for exact current-payload replay |
+| `publish_package_version` | `{workspace_id: uuid, package_id: uuid, duration_months: 1 \| 3 \| 6 \| 8 \| 12 \| null, duration_days: integer, name_ar: string, name_en: string, price_minor: decimal-integer-string, currency: string, commission_rate_bp: integer}` | published version UUID; current version UUID for exact current-payload replay |
 | `set_package_offer_available`     | `{workspace_id: uuid, offer_id: uuid, available: boolean}` | offer UUID, including same-state no-op                                      |
 | `get_package_version_commissions` | `{workspace_id: uuid}`                                     | rows `{version_id, commission_rate_bp}` for requested workspace; PO/WO only |
 
@@ -38,9 +38,9 @@ Mutation failure codes: `42501/not_permitted` for authorization, missing/foreign
 
 | Action                     | Input                                                                                                            | Result                                |
 | -------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
-| `createPackage`            | `{workspaceId, code}`                                                                                            | `{status:'ok', packageId}` or `denied | invalid_input | unavailable` |
-| `publishPackageVersion`    | `{workspaceId, packageId, durationMonths, durationDays, nameAr, nameEn, priceMinor, currency, commissionRateBp}` | `{status:'ok', versionId}` or `denied | invalid_input | unavailable` |
-| `setPackageOfferAvailable` | `{workspaceId, offerId, available}`                                                                              | `{status:'ok', offerId}` or `denied   | invalid_input | unavailable` |
+| `createPackage`            | `{workspaceId, code}`                                                                                            | `{status:'ok', packageId}` or `denied \| invalid_input \| unavailable` |
+| `publishPackageVersion`    | `{workspaceId, packageId, durationMonths, durationDays, nameAr, nameEn, priceMinor, currency, commissionRateBp}` | `{status:'ok', versionId}` or `denied \| invalid_input \| unavailable` |
+| `setPackageOfferAvailable` | `{workspaceId, offerId, available}`                                                                              | `{status:'ok', offerId}` or `denied   \| invalid_input \| unavailable` |
 
 Failures are exactly `{status:'denied'|'invalid_input'|'unavailable'}`, with translated generic text selected locally. No raw SQL/provider error, data echo, constraint name, stack, code-existence distinction or `console.*`. `lib/packages/results.ts` maps known `42501` to denied, controlled `22023/invalid_input` to invalid_input; unknown/network/env/guard failures to unavailable. Validation exposes only stable generic field codes where needed, never server details.
 
