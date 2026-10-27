@@ -380,12 +380,19 @@ try {
     $text = [Text.Encoding]::UTF8.GetString($bytes)
     if ($text -match 'LIFTER_BACKUP_PLAINTEXT_SENTINEL|CREATE TABLE|COPY public\.') { throw 'Plaintext detected' }
   }
-  & $docker exec supabase_db_lifter psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'SELECT * FROM public.backup_drill;'
-  # Expect the original row; remove only the reviewer-created scratch table afterwards.
+  # The dev stack must still hold exactly the original row.
+  $row = & $docker exec supabase_db_lifter psql -U postgres -d postgres -v ON_ERROR_STOP=1 -t -A -c "SELECT id || ':' || note FROM public.backup_drill;"
+  if ($LASTEXITCODE -ne 0 -or ($row | Out-String).Trim() -ne '1:LIFTER_BACKUP_PLAINTEXT_SENTINEL') { throw 'Scratch row check failed' }
+  # Remove only the reviewer-created scratch table.
   & $docker exec supabase_db_lifter psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c 'DROP TABLE public.backup_drill;'
+  if ($LASTEXITCODE -ne 0) { throw 'Scratch table drop failed' }
 } finally {
-  Remove-Item -Recurse -Force $keys
-  Remove-Item Env:BACKUP_DB_URL
+  try {
+    Remove-Item -LiteralPath $keys -Recurse -Force -ErrorAction Stop
+    if (Test-Path -LiteralPath $keys) { throw 'Temporary key directory still exists' }
+  } finally {
+    Remove-Item Env:BACKUP_DB_URL
+  }
 }
 ```
 
