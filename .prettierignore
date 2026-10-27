@@ -1,5 +1,6 @@
 .next
 .open-next
+.wrangler
 specs
 docs
 .specify
@@ -8,3 +9,4 @@ LIFTER_Claude_Files
 node_modules
 coverage
 package-lock.json
+DESIGN.md

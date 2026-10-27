@@ -1,0 +1,83 @@
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+body,
+h1,
+h2,
+h3,
+h4,
+h5,
+h6,
+p {
+  margin: 0;
+}
+
+body {
+  min-block-size: 100dvb;
+  background: var(--color-bg);
+  color: var(--color-text);
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: var(--line-height-body);
+}
+
+:lang(ar) {
+  --font-sans:
+    var(--font-plex-arabic), var(--font-geist), system-ui, sans-serif;
+  font-family: var(--font-sans);
+}
+
+:lang(en) {
+  --font-sans:
+    var(--font-geist), var(--font-plex-arabic), system-ui, sans-serif;
+  font-family: var(--font-sans);
+}
+
+button,
+input,
+select,
+textarea {
+  font: inherit;
+}
+
+img,
+video {
+  display: block;
+  max-inline-size: 100%;
+  block-size: auto;
+}
+
+:focus-visible {
+  outline: 2px solid var(--brand-ring);
+  outline-offset: 2px;
+}
+
+[dir='rtl'] [data-icon-mirror] {
+  transform: scaleX(-1);
+}
+
+@media print {
+  html,
+  body {
+    background: var(--color-print-bg);
+    color: var(--color-print-text);
+    /* Override the more specific explicit-theme token selectors. */
+    color-scheme: light !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    transition-delay: 0ms !important;
+    animation-delay: 0ms !important;
+    scroll-behavior: auto !important;
+  }
+}

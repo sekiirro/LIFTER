@@ -1,0 +1,9 @@
+{
+  "$schema": "../../node_modules/wrangler/config-schema.json",
+  "name": "lifter-cron",
+  "main": "src/index.ts",
+  "compatibility_date": "2026-10-23",
+  "triggers": {
+    "crons": ["* * * * *"],
+  },
+}

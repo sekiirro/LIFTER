@@ -1,0 +1,189 @@
+# Feature Specification: Design System Foundation (P0-F2)
+
+**Feature Branch**: `002-design-system`
+**Created**: 2026-10-27
+**Status**: Draft
+**Input**: User description: "P0-F2 Design System foundation: tokens for dark/light modes, emerald brand with accessible variants, semantic colors, workspace brand override with contrast guard, device-first theme with persisted manual choice, AR-first RTL + EN LTR, Geist + IBM Plex Sans Arabic, accessible base components and states, responsive app shell (desktop icon rail, mobile bottom bar) with Trainer/Client nav only, reduced motion, dev-only showcase, Arabic browser print spike. Constitution amendment lime → emerald."
+
+Governing documents: [DESIGN.md](../../DESIGN.md) (PO-approved design reference, 2026-10-27; supersedes earlier design assumptions), Constitution v1.0.0 → v1.1.0 (this feature), [Architecture v3](../../docs/02-architecture.md), [Roadmap P0](../../docs/03-roadmap.md), [Assessment](../../docs/00-assessment.md) (Arabic print spike in P0-F2).
+
+## User Scenarios & Testing *(mandatory)*
+
+Actors: **End user** (any future role viewing LIFTER UI), **Feature implementer** (builds later screens on this system), **Reviewer** (Claude), **Product Owner**.
+
+### User Story 1 - Consistent themed, bilingual foundation (Priority: P1)
+
+Every page renders with LIFTER's design tokens in dark or light mode, in Arabic (RTL, default) or English (LTR), with correct fonts and no flash of the wrong theme or direction.
+
+**Why this priority**: Constitution VIII requires all UI to build on the Design System; every later feature depends on it.
+
+**Independent Test**: Open the showcase in a browser whose device preference is dark, then light; switch theme manually and reload; switch language AR↔EN and reload.
+
+**Acceptance Scenarios**:
+
+1. **Given** a first visit with no saved choice, **When** the device prefers dark (or light), **Then** the page renders in that mode from the first paint.
+2. **Given** the user selects a theme manually, **When** the page is reloaded or reopened, **Then** the manual choice is kept regardless of the device setting, and the user can return to "follow device".
+3. **Given** no saved language, **When** a page loads, **Then** it renders in Arabic with right-to-left direction and the Arabic font; **When** English is selected, **Then** it renders left-to-right with the English font, and the choice persists.
+4. **Given** Arabic mode, **When** numbers, measurements, codes or Latin identifiers appear inline, **Then** they keep their own reading order and are not mirrored.
+5. **Given** trainer-authored or other user content, **When** displayed, **Then** it appears exactly as authored, never machine-translated.
+
+---
+
+### User Story 2 - Brand and workspace colors with guaranteed legibility (Priority: P1)
+
+LIFTER's emerald (`#059669`) is the default brand. A workspace brand color can replace it at runtime. Semantic success/warning/error colors stay independent of any brand. Text and controls on brand surfaces always meet contrast requirements.
+
+**Why this priority**: DESIGN.md §2 makes workspace customization and contrast mandatory; P1 workspace branding builds on this.
+
+**Independent Test**: Render the showcase with the default brand and with several sample workspace colors (very light, very dark, saturated, the emerald itself), and check the contrast reports in both modes.
+
+**Acceptance Scenarios**:
+
+1. **Given** the default brand, **When** a primary button renders, **Then** its label contrast is at least 4.5:1 in both modes (the raw `#059669` with small white text, ~3.77:1, is not used for small text).
+2. **Given** any valid workspace brand color, **When** applied, **Then** primary actions, active navigation and focus indicators use derived variants that meet the contrast targets in both modes, or fall back to an accessible variant automatically.
+3. **Given** any workspace brand color, **When** success, warning or error feedback renders, **Then** its colors are unchanged by the brand.
+4. **Given** an invalid brand value, **When** applied, **Then** the default LIFTER brand is used and nothing breaks.
+
+---
+
+### User Story 3 - Accessible base components and feedback states (Priority: P1)
+
+Implementers have shared components: buttons, form fields, cards, confirmation dialog, loading skeleton, empty / no-results / error-with-retry states, transient success toast and persistent alert. They work by keyboard and screen reader in both languages and modes.
+
+**Why this priority**: Prevents per-screen drift and makes accessibility the default (Constitution VIII, DESIGN.md §4).
+
+**Independent Test**: Navigate the showcase by keyboard only and with automated accessibility checks, in AR and EN, dark and light.
+
+**Acceptance Scenarios**:
+
+1. **Given** a button, **When** hovered, focused, disabled or waiting, **Then** each state is visually distinct, focus is visible, a waiting button can't be activated twice and announces that it is busy.
+2. **Given** a form field with an error, **When** rendered, **Then** the label sits above the field, the error message is visible in plain language and programmatically tied to the field.
+3. **Given** a confirmation dialog, **When** opened, **Then** focus moves into it, stays inside until closed, Escape closes it, and focus returns to the trigger.
+4. **Given** the state components, **When** shown, **Then** "no data", "search returned nothing" and "an error occurred" are visibly different, and the error state offers retry.
+5. **Given** a non-critical success, **When** reported, **Then** a toast appears and is announced without stealing focus; an important problem uses a persistent alert instead.
+6. **Given** the device requests reduced motion, **When** any transition would run, **Then** it is removed or minimized; otherwise transitions take about 150–250 ms and never block interaction.
+
+---
+
+### User Story 4 - Responsive app shell with role navigation (Priority: P2)
+
+On wide screens, a compact vertical icon rail shows each section's name on hover and on keyboard focus. On narrow screens, a bottom bar shows icons with visible labels plus "More". Trainer and Client navigation follow the approved order. The shell mirrors correctly in Arabic.
+
+**Why this priority**: DESIGN.md §5 fixes navigation patterns; later role screens plug into it.
+
+**Independent Test**: View the shell demo at desktop and mobile widths, as Trainer and as Client, in AR and EN.
+
+**Acceptance Scenarios**:
+
+1. **Given** a wide viewport, **When** a rail item gets pointer hover or keyboard focus, **Then** its name is shown, and every item has an accessible name.
+2. **Given** a narrow viewport, **When** the Trainer shell renders, **Then** the bottom bar is Home, Clients, Workout, Nutrition, More, with visible labels and nothing that needs hover.
+3. **Given** a narrow viewport, **When** the Client shell renders, **Then** the bottom bar is Home, Workout, Nutrition, Progress, More.
+4. **Given** Arabic, **When** the shell renders, **Then** the rail sits on the right side, and the bar order and directional icons follow RTL.
+5. **Given** Platform Owner, Workspace Owner or Sales, **When** navigation is requested, **Then** no tab set is defined; the system reports it as an open decision instead of inventing one.
+
+---
+
+### User Story 5 - Arabic browser print spike (Priority: P3)
+
+A sample bilingual page printed through the browser to PDF shows correctly shaped Arabic, RTL layout, readable tables and numbers. The result is recorded as a report for the P3 export work.
+
+**Why this priority**: Architecture v3 chose browser-side print-to-PDF; the Assessment schedules this spike in P0-F2.
+
+**Independent Test**: Open the print sample, print to PDF from a Chromium browser, inspect the output, and read the recorded findings.
+
+**Acceptance Scenarios**:
+
+1. **Given** the print sample, **When** printed to PDF, **Then** Arabic letters join correctly, direction is RTL, mixed Arabic/Latin/number runs read correctly, and screen-only chrome (navigation, theme controls) is hidden.
+2. **Given** the spike, **When** finished, **Then** a findings report states what worked, what failed and what remains for the booklet design (which is not built here).
+
+---
+
+### Edge Cases
+
+- Storage unavailable (private mode, blocked cookies): theme follows the device and language defaults to Arabic; nothing errors.
+- Device preference changes while the page is open and no manual choice is saved: the page follows the change.
+- Fonts fail to load: fallbacks keep text legible and Arabic shaped.
+- Very long Arabic or English labels in buttons, rail tooltips and bottom bar: wrap or truncate with the full name still available to assistive technology.
+- Browser zoom to 200%: content stays usable without horizontal page scroll at mobile width.
+- Workspace brand equals a semantic color (e.g., red): semantic error remains distinguishable by icon and text, not color alone.
+- JavaScript disabled or slow: initial theme and direction are still correct on first paint.
+
+## Requirements *(mandatory)*
+
+### Functional Requirements
+
+**Tokens & theming**
+
+- **FR-001**: The system MUST define a single set of named design tokens (color, surface, border, text, focus, radius, spacing, typography, elevation, motion) with dark and light values; components MUST use tokens, not raw values.
+- **FR-002**: Surfaces MUST follow DESIGN.md §2: dark = neutral black/charcoal, light = very light neutral gray with white cards; the sample values there are starting points, and final values are recorded with contrast evidence.
+- **FR-003**: The default brand MUST be emerald `#059669`. Brand-dependent uses (primary action fill, active nav, focus ring, links) MUST use derived variants that meet WCAG 2.2 AA: 4.5:1 for normal text, 3:1 for large text, UI components and focus indicators, in each mode.
+- **FR-004**: Success, warning, error and info colors MUST be independent of the brand and meet the same contrast targets in both modes.
+- **FR-005**: A workspace brand color MUST be applicable at runtime to a page subtree. The system MUST validate it, derive variants per mode, and automatically use an accessible variant when the raw color fails a target. Invalid input falls back to the default brand.
+- **FR-006**: First visit MUST follow the device theme. A manual choice (dark, light, or follow device) MUST persist across reloads, and the correct theme MUST apply before first paint.
+- **FR-007**: Radii MUST be in the approved ranges (cards ~12–16 px, buttons ~8–10 px), with surfaces "luxurious and soft": subtle borders and low-intensity shadows.
+
+**Language & direction**
+
+- **FR-008**: Arabic MUST be the default language with right-to-left direction. English MUST be available left-to-right. The document language and direction MUST be correct on first paint, and the user's choice MUST persist.
+- **FR-009**: Layout MUST mirror by direction using direction-relative positioning. Inherently directional icons (back/forward, chevrons) MUST mirror; non-directional icons, numbers, charts, codes and Latin data MUST NOT be blindly mirrored.
+- **FR-010**: Inline numbers, measurements and Latin identifiers inside Arabic text MUST be isolated so they keep their reading order.
+- **FR-011**: UI strings MUST come from per-language message catalogs for AR and EN, with a check that both catalogs contain the same keys. Authored content MUST be rendered as authored.
+
+**Typography & icons**
+
+- **FR-012**: English text MUST use Geist and Arabic text IBM Plex Sans Arabic, self-hosted, with system fallbacks. Display fonts (Inter Black, The Year of the Camel) MUST NOT be included in this feature.
+- **FR-013**: Icons MUST be a simple, consistent outline style. Icon-only controls MUST have an accessible name.
+
+**Components & states**
+
+- **FR-014**: Button: primary (brand), secondary (quiet) and destructive variants; hover, focus-visible, disabled and loading states; loading prevents repeat activation and announces busy.
+- **FR-015**: Field: persistent label above the input, optional hint, error message tied to the input, invalid state exposed to assistive technology, visible focus.
+- **FR-016**: Card and surface primitives using the token radii, borders and elevation.
+- **FR-017**: Confirmation dialog with focus trap, Escape to close, focus return and labelled title. It is for confirmations of dangerous actions; plan publishing is explicitly exempt from confirmation (DESIGN.md §4, §7).
+- **FR-018**: State components: context-shaped loading skeleton, empty ("no data"), no-results ("search returned nothing"), and error with retry, each with distinct visuals and copy.
+- **FR-019**: Toast for non-critical success (announced politely, auto-dismissed, never the only report of a failure) and a persistent alert for important problems.
+- **FR-020**: Transitions MUST be about 150–250 ms and MUST be removed or minimized when the device requests reduced motion.
+
+**App shell**
+
+- **FR-021**: Wide layout: compact vertical icon rail on the inline-start side, showing names on hover and keyboard focus. Narrow layout: bottom bar with icons and visible labels, plus "More". Breakpoints adapt to available width; the numeric breakpoint values are provisional and marked as an open item.
+- **FR-022**: Navigation configuration MUST be data-driven per role. Only Trainer (Home, Clients, Workout, Nutrition, More) and Client (Home, Workout, Nutrition, Progress, More) are defined. Other roles MUST be left undefined with an explicit open-decision marker. The shell is presentational only: it is not a permission boundary and contains no authorization logic.
+
+**Showcase & spike**
+
+- **FR-023**: A showcase route MUST demonstrate every token group, component, state and the shell in AR/EN and dark/light with sample brand colors. It MUST be unavailable in production builds.
+- **FR-024**: A print sample MUST demonstrate RTL print styling (screen chrome hidden, Arabic shaping, a table, mixed-direction numbers). A findings report MUST be committed with the feature.
+
+**Governance**
+
+- **FR-025**: Constitution Principle VIII and Architecture v3's UI row MUST be updated from "lime accent" to the approved emerald brand with workspace-customizable colors, with a decision-register entry and a version bump, pending PO approval at merge.
+- **FR-026**: Open items from DESIGN.md §11 touched by this feature (secondary token values beyond what is verified, final icon library, breakpoint numbers, minimum touch-target size, other roles' tabs, Arabic vs. Western digit shapes) MUST be listed as NEEDS DECISION in the plan, with no invented values presented as approved.
+
+### Key Entities
+
+- **Design token**: named value with dark and light variants and a category; brand-dependent tokens are derived from a brand color.
+- **Brand color**: a validated color (default `#059669`) plus its derived per-mode variants and contrast results.
+- **Theme preference**: dark | light | follow-device, stored per browser.
+- **Language preference**: ar | en, stored per browser; determines direction.
+- **Navigation config**: per-role ordered list of sections (key, label key, icon); defined for Trainer and Client only.
+
+## Success Criteria *(mandatory)*
+
+### Measurable Outcomes
+
+- **SC-001**: 100% of brand, semantic and text token pairs used by components meet their WCAG 2.2 AA contrast target in both modes, verified by an automated test, for the default brand and at least 8 sample workspace colors.
+- **SC-002**: 0 automated accessibility violations (serious or critical) on the showcase in each of the 4 combinations: AR/EN × dark/light.
+- **SC-003**: Every interactive component in the showcase can be reached and operated by keyboard alone, with visible focus, in both directions.
+- **SC-004**: 0 frames with the wrong theme or direction on first load across the 4 combinations, with storage both present and blocked.
+- **SC-005**: AR and EN message catalogs have 100% matching keys.
+- **SC-006**: The print spike's report covers shaping, direction, mixed numbers, tables and hidden chrome, each marked pass or fail with evidence.
+- **SC-007**: The edge build stays within the free-tier size limit, with headroom reported.
+
+## Assumptions
+
+- No authentication, tenancy or real data exist yet (F3/F4). Role selection in the shell demo is a showcase control, not a security feature.
+- Language and theme preferences are stored per browser until user accounts exist; moving them to the account is later work.
+- Workspace branding management (preview/publish) is P1; this feature provides only the runtime mechanism and contrast guard.
+- Digit shapes: numbers are rendered as stored, with no conversion between Arabic-Indic and Western digits, until the PO decides (open item).
+- Print/booklet design, planners, calculator, dashboards, tables/data grids and charts are later features; only the base primitives here.
+- The final icon library is open; a small set of outline icons sufficient for the shell and components is used, replaceable later without changing the component API.

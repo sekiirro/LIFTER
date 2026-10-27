@@ -20,6 +20,7 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 | D-14 | Backups | Encrypted local DB + storage exports with restore testing, $0 |
 | D-15 | Refunds | **Full refund only** = 100% of the amount actually collected. Reverse all collected revenue and commission, cancel unpaid installments, keep immutable history. No partial refunds. |
 | D-16 | Identities | Staff and client accounts use separate emails. No dual-role accounts. |
+| D-18 | Design System | [DESIGN.md](../DESIGN.md) approved (2026-10-27): emerald `#059669` default brand (not lime), workspace-customizable colors with WCAG 2.2 AA contrast guard, dark + light modes (device first, manual choice persisted). Constitution VIII amended to v1.1.0. Open items in DESIGN.md §11 stay open. |
 | D-17 | Installment total | Installment amounts must sum exactly to the PO-approved price |
 | — | Architecture | [02-architecture.md](02-architecture.md) v3 APPROVED (R1, R2, R4, R5, R6, R7 adopted) |
 
@@ -33,6 +34,7 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 | R8 verification-code collision disclosure; X2 | D-08 (rev.) |
 | X1 installment-amount conflict | D-17 |
 | X3 proportional refund commission | D-15 |
+| Constitution v1.0.0 VIII "lime accent" | D-18 |
 | Calendar-month default; B1, B2, B3, B5 | D-08, D-09/10, D-13/15, D-11 |
 | "Staff email can't also be client" (technical note) | D-16 (policy) |
 

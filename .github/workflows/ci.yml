@@ -31,6 +31,30 @@ jobs:
       - run: npm run format:check
       - run: npm test
       - run: npm run build:edge
+      - run: npm run build:cron
       - run: npm run size
       - run: npx playwright install --with-deps chromium
       - run: CI=1 npm run e2e
+
+  integration:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+      - run: supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,storage-api,postgres-meta
+      - name: Export local stack environment
+        run: supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
+      - run: npm run test:integration
+      - run: supabase stop --no-backup
+        if: always()
