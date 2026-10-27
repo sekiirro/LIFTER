@@ -5,3 +5,10 @@ export function GET() {
     headers: { 'Cache-Control': 'no-store' },
   });
 }
+
+export function OPTIONS() {
+  return new Response(null, {
+    status: 405,
+    headers: { Allow: 'GET, HEAD' },
+  });
+}

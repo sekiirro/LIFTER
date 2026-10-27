@@ -21,3 +21,16 @@ test('POST /api/health returns method not allowed', async ({ request }) => {
 
   expect(response.status()).toBe(405);
 });
+
+test('OPTIONS /api/health returns method not allowed', async ({ request }) => {
+  const response = await request.fetch('/api/health', { method: 'OPTIONS' });
+
+  expect(response.status()).toBe(405);
+  expect(response.headers()['allow']).toBe('GET, HEAD');
+});
+
+test('HEAD /api/health returns success', async ({ request }) => {
+  const response = await request.head('/api/health');
+
+  expect(response.status()).toBe(200);
+});
