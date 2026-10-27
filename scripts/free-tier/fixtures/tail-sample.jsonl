@@ -1,0 +1,31 @@
+{"event":{"request":{"method":"GET","url":"https://example.invalid/api/jobs/123?token=fixture-query-secret","headers":{"authorization":"fixture-header-secret"}}},"cpuTime":7,"wallTime":20,"outcome":"ok","logs":[{"message":["fixture-log-secret"]}],"exceptions":[{"message":"fixture-exception-secret"}]}
+{"event":{"request":{"method":"GET","url":"https://example.invalid/api/jobs/456"}},"cpuTime":11,"wallTime":30,"outcome":"exceededCpu"}
+not-json
+{"event":{"request":{"method":"GET","url":"https://example.invalid/login"}},"outcome":"ok"}
+{
+  "event": {
+    "request": {
+      "method": "GET",
+      "url": "https://example.invalid/api/pretty/789?token=fixture-pretty-query-secret",
+      "headers": {
+        "x-fixture": "fixture-pretty-header-secret { and } with \"quotes\" and \\ backslash"
+      }
+    }
+  },
+  "cpuTime": 4,
+  "wallTime": 12,
+  "outcome": "ok",
+  "logs": [{ "message": ["fixture-pretty-log-secret { }"] }]
+}
+{"event":
+{
+  "event": {
+    "request": {
+      "method": "GET",
+      "url": "https://example.invalid/api/recovered/321"
+    }
+  },
+  "cpuTime": 6,
+  "wallTime": 18,
+  "outcome": "ok"
+}

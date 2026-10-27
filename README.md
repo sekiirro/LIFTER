@@ -37,6 +37,70 @@ The additional `build:edge` and `size` gates run in Linux CI only. This scaffold
 does not deploy; no deploy, account setup, or login commands are part of development
 validation.
 
+## Cloudflare account targeting
+
+The LIFTER account ID `c3a2ab30d3888eda7071b02916732b69` is pinned in
+both `wrangler.jsonc` and `workers/cron/wrangler.jsonc`. Worker commands must
+use the `lifter` Wrangler profile via `--profile lifter` or a directory binding
+of the repository checkout to that profile. Credentials stay in Wrangler's own
+config outside the repository.
+
+Verify with `npx --yes wrangler@4.153.0 whoami` from the bound checkout, or with
+`npx --yes wrangler@4.153.0 whoami --cwd <checkout>`, and confirm that the account
+ID is `c3a2ab30d3888eda7071b02916732b69`.
+Never run Wrangler for LIFTER with the personal profile. Deployment requires
+PO approval.
+
+## Free-tier validation
+
+Offline preparation (no deployment):
+
+1. After `npm run build:edge`, run `npm run size` in Linux CI to measure both
+   web and cron Workers using Wrangler dry-runs. Each size is compared with the
+   existing uncompressed limit; either Worker exceeding it exits 1.
+2. With the local database stack running, privately supply `FREE_TIER_DB_URL`
+   in the environment, then run
+   `npm run free-tier:db -- --count public.workspaces,public.jobs --json usage.json`.
+   The URL is accepted only from that environment variable, never from arguments.
+   Catalog statistics and optional exact counts run in a read-only transaction
+   with a 15-second statement timeout. No row contents are read.
+3. Copy `scripts/free-tier/volumes.example.json` to a local volumes file and fill
+   only confirmed expected row counts. Add all tables present in `usage.json`.
+   Run `npm run free-tier:project -- --per-row usage.json --volumes volumes.json`.
+   Null or absent volumes print `MISSING` and exit 2; partial totals are incomplete.
+   Projection covers the measured top 15 relations, not all database overhead.
+   Database/projection `--limit-mb` defaults to 500 decimal MB (1 MB = 1,000,000 bytes).
+4. Parse synthetic logs offline with
+   `npm run free-tier:tail -- scripts/free-tier/fixtures/tail-sample.jsonl`.
+   Override the 10 ms CPU limit with `--cpu-limit-ms`; `--json report.json` saves
+   sanitized aggregates. Verdicts use maximum observed CPU: warn at 70%, over
+   above 100%. Missing timing fields stay null; malformed or invalid objects are counted
+   in the report's `invalid_lines` field. Compact and pretty-printed events are supported.
+
+After PO approval, per the approval record, use the explicitly approved staging
+host with `npm run free-tier:probe -- --base-url https://approved-host.example --routes scripts/free-tier/routes.example.json --n 20 --concurrency 2 --json probe.json`.
+For the reviewer's local smoke test use `http://localhost:3000` with `next start`.
+Only HTTPS or loopback HTTP is allowed. Requests carry no credentials, never
+follow redirects, and time out after 15 seconds. `--n` is capped at 200 per route
+and `--concurrency` at 5; batches run sequentially. Latency includes response-body
+reading; body bytes are counted without saving content. Query strings never
+appear in reports. Authenticated measurements await ND-F8-3.
+
+After PO approval, capture request events from the approved Worker in Bash with
+`(umask 077 && npx wrangler tail <worker> --format json > tail.jsonl)`, replacing
+`<worker>` with the approved Worker name. Use a new file in a private directory;
+`umask` does not tighten permissions on an existing file. Then parse the saved file with
+`npm run free-tier:tail -- tail.jsonl --json cpu.json`. Keep raw tail files
+private: they can contain headers, logs and exceptions. Only the parser's
+aggregates are suitable for the report. Local latency does not measure platform
+CPU. Pilot volumes remain **NEEDS SOURCE CONFIRMATION** (ND-F8-1).
+
+In PowerShell on Windows, create a new empty `tail.jsonl`, disable ACL inheritance,
+and grant only the current user FullControl **before** redirecting
+`npx wrangler tail <worker> --format json > tail.jsonl` into it. Use a private
+directory and stop if the ACL change fails. After parsing, delete the raw file
+(`rm -- tail.jsonl` in Bash or `Remove-Item -LiteralPath tail.jsonl` in PowerShell).
+
 ## Local database & isolation tests
 
 Install Docker and Supabase CLI 2.122.0 before running the local database suite.
