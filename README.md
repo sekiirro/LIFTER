@@ -236,8 +236,10 @@ The scripts also add that binary's directory to child-process PATH for the CLI.
 For direct `npx supabase` commands, add the directory to your own PATH.
 All child processes use argument arrays, including paths containing spaces.
 
-Choose a backup root and an offline identity location. Keep both outside source
-control. Generate an identity once, on the PO's machine:
+Choose a backup root and an offline identity location. The PO-chosen local root
+is `backup/` in the repository directory (Git-ignored, like `backups/`, `*.age`
+and `age-identity*.txt`). Never keep the identity there or anywhere in the
+repository. Generate an identity once, on the PO's machine:
 
 ```powershell
 npm run backup:keygen -- --out 'E:\Offline Keys\age-identity-lifter.txt'
@@ -262,8 +264,11 @@ npm run backup -- --recipient-file 'C:\Operator\lifter-recipient.txt' --out-root
 ```
 
 `--recipient <public-key>` is an alternative to `--recipient-file`. `--db-url`
-overrides the environment but exposes the URL in process arguments/history;
-prefer the environment. `--no-prune` disables retention. Do not run concurrent
+overrides the environment and also lands in shell history, so prefer the
+environment. **Known limitation:** either way, the script passes the URL to the
+Supabase CLI (`db dump --db-url`) as a child-process argument, which other local
+users can read from the process list. Run backups only on a single-user operator
+machine until a non-argument credential path is implemented. `--no-prune` disables retention. Do not run concurrent
 backups against the same root. Do not mutate an archive during verification.
 
 Only encrypted `roles.sql.age`, `schema.sql.age`, `data.sql.age`, and
@@ -338,6 +343,8 @@ Reviewer end-to-end drill (PowerShell, Docker running, repo working directory):
 npx --yes supabase@2.122.0 start
 $docker = if ($env:DOCKER_BIN) { $env:DOCKER_BIN } else { 'docker' }
 & $docker exec supabase_db_lifter psql -U postgres -d postgres -v ON_ERROR_STOP=1 -c "CREATE TABLE public.backup_drill (id int primary key, note text); INSERT INTO public.backup_drill VALUES (1, 'LIFTER_BACKUP_PLAINTEXT_SENTINEL');"
+# Abort if the scratch table already existed, so the final DROP never removes a table this drill did not create.
+if ($LASTEXITCODE -ne 0) { throw 'backup_drill not created; aborting drill' }
 $env:BACKUP_DB_URL = 'postgresql://postgres:postgres@127.0.0.1:54322/postgres'
 New-Item -ItemType Directory -Force 'backups\review' | Out-Null
 node scripts/backup/keygen.mjs --out 'backups\review\age-identity-review.txt' > 'backups\review\recipient.txt'
@@ -345,6 +352,7 @@ node scripts/backup/keygen.mjs --out 'backups\review\age-identity-review.txt' > 
 $recipient = (Get-Content 'backups\review\recipient.txt' -Raw).Trim()
 npm run backup -- --recipient $recipient --out-root 'backups\review\archives' --no-prune
 $backup = (Get-ChildItem 'backups\review\archives' -Directory | Sort-Object Name -Descending | Select-Object -First 1).FullName
+$log = 'backups\review\archives\restore-tests.log'
 npm run backup:restore-test -- --backup $backup --identity-file 'backups\review\age-identity-review.txt'
 if ($LASTEXITCODE -ne 0) { throw 'Expected PASS' }
 $archive = Join-Path $backup 'data.sql.age'
@@ -355,10 +363,12 @@ try {
   [IO.File]::WriteAllBytes($archive, $tampered)
   npm run backup:restore-test -- --backup $backup --identity-file 'backups\review\age-identity-review.txt'
   if ($LASTEXITCODE -ne 1) { throw 'Expected tamper FAIL' }
+  if ((Get-Content $log -Tail 1) -notmatch "`tFAIL`tHASH_MISMATCH") { throw 'Expected HASH_MISMATCH' }
 } finally { [IO.File]::WriteAllBytes($archive, $original) }
 node scripts/backup/keygen.mjs --out 'backups\review\age-identity-wrong.txt' > $null
 npm run backup:restore-test -- --backup $backup --identity-file 'backups\review\age-identity-wrong.txt'
 if ($LASTEXITCODE -ne 1) { throw 'Expected wrong-key FAIL' }
+if ((Get-Content $log -Tail 1) -notmatch "`tFAIL`tDECRYPT_FAILED") { throw 'Expected DECRYPT_FAILED' }
 Get-Content 'backups\review\archives\restore-tests.log'
 # Ciphertext scan: expect no sentinel or common SQL statements in any archive file.
 Get-ChildItem $backup -File | ForEach-Object {

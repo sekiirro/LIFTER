@@ -78,6 +78,7 @@ Thumbs.db
 Desktop.ini
 
 # Encrypted backups and offline age identities
+backup/
 backups/
 *.age
 age-identity*.txt
