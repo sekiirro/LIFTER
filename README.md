@@ -50,17 +50,17 @@ On Windows, Docker Desktop is enough, and the pinned CLI runs via `npx supabase@
 In Bash, start the stack and export its generated development environment:
 
 ```bash
-supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,storage-api,postgres-meta
-supabase status -o env
-eval "$(supabase status -o env | sed 's/^/export /')"
+npx supabase@2.122.0 start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,storage-api,postgres-meta
+npx supabase@2.122.0 status -o env
+eval "$(npx supabase@2.122.0 status -o env | sed 's/^/export /')"
 npm run test:integration
-supabase stop --no-backup
+npx supabase@2.122.0 stop --no-backup
 ```
 
 In PowerShell, replace the `eval` command with:
 
 ```powershell
-supabase status -o env | ForEach-Object {
+npx supabase@2.122.0 status -o env | ForEach-Object {
   if ($_ -match '^([A-Z_]+)="?(.*?)"?$') {
     Set-Item -Path "Env:$($Matches[1])" -Value $Matches[2]
   }
