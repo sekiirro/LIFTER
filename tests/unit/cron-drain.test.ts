@@ -228,6 +228,7 @@ describe('cron edge wiring', () => {
         'https://example.test/rest/v1/rpc/jobs_claim',
         {
           method: 'POST',
+          redirect: 'manual',
           headers: {
             apikey: 'test-runtime-key',
             Authorization: 'Bearer test-runtime-key',
@@ -242,6 +243,28 @@ describe('cron edge wiring', () => {
       await expect(rpc('jobs_claim', { batch: 3 })).rejects.toThrow(
         /^rpc_http_403$/,
       );
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('rejects redirects without fetching again', async () => {
+    const fetchMock = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(null, {
+        status: 302,
+        headers: { location: 'https://evil.test/' },
+      }),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const rpc = createRpc({
+        SUPABASE_URL: 'https://example.test/',
+        SUPABASE_SERVICE_ROLE_KEY: 'test-runtime-key',
+      });
+      await expect(rpc('jobs_claim', { batch: 3 })).rejects.toThrow(
+        /^rpc_http_302$/,
+      );
+      expect(fetchMock).toHaveBeenCalledOnce();
     } finally {
       vi.unstubAllGlobals();
     }

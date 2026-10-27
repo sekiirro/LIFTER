@@ -27,6 +27,7 @@ export function createRpc(env: Env): Rpc {
       `${env.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/rpc/${name}`,
       {
         method: 'POST',
+        redirect: 'manual',
         headers: {
           apikey: env.SUPABASE_SERVICE_ROLE_KEY,
           Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,
