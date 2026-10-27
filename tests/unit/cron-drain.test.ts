@@ -172,6 +172,47 @@ describe('cron drain (T004)', () => {
 });
 
 describe('cron edge wiring', () => {
+  it.each(['http://example.test', 'not a url', 'ftp://example.test', ''])(
+    'rejects insecure RPC URL %s before fetching',
+    (url) => {
+      const fetchMock = vi.fn<typeof fetch>();
+      vi.stubGlobal('fetch', fetchMock);
+      try {
+        const env = {
+          SUPABASE_URL: url,
+          SUPABASE_SERVICE_ROLE_KEY: 'test-runtime-key',
+        };
+        expect(() => createRpc(env)).toThrow(/^rpc_insecure_url$/);
+        expect(fetchMock).not.toHaveBeenCalled();
+      } finally {
+        vi.unstubAllGlobals();
+      }
+    },
+  );
+
+  it('does not include runtime secrets or the URL in validation errors', () => {
+    const env = {
+      SUPABASE_URL: 'http://example.test/private',
+      SUPABASE_SERVICE_ROLE_KEY: 'test-runtime-key',
+    };
+    expect(() => createRpc(env)).toThrow(/^rpc_insecure_url$/);
+    expect(() => createRpc(env)).not.toThrow(env.SUPABASE_URL);
+    expect(() => createRpc(env)).not.toThrow(env.SUPABASE_SERVICE_ROLE_KEY);
+  });
+
+  it.each([
+    'http://127.0.0.1:54321',
+    'http://localhost:54321',
+    'http://[::1]:54321',
+  ])('accepts loopback RPC URL %s', (url) => {
+    expect(() =>
+      createRpc({
+        SUPABASE_URL: url,
+        SUPABASE_SERVICE_ROLE_KEY: 'test-runtime-key',
+      }),
+    ).not.toThrow();
+  });
+
   it('POSTs scoped RPC arguments using runtime secrets', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()

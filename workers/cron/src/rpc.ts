@@ -6,6 +6,22 @@ export type Env = {
 };
 
 export function createRpc(env: Env): Rpc {
+  let url: URL;
+  try {
+    url = new URL(env.SUPABASE_URL);
+  } catch {
+    throw new Error('rpc_insecure_url');
+  }
+  if (
+    url.protocol !== 'https:' &&
+    !(
+      url.protocol === 'http:' &&
+      ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
+    )
+  ) {
+    throw new Error('rpc_insecure_url');
+  }
+
   return async (name, args) => {
     const response = await fetch(
       `${env.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/rpc/${name}`,

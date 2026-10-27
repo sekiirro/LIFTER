@@ -150,8 +150,9 @@ must match `^[a-z_]+\.[a-z_]+$`. Add a handler in
 `{ jobId, kind, workspaceId, payload }`; use the explicit `workspaceId` from the job
 for workspace operations. Never derive workspace scope from payload fields.
 
-The separate cron Worker runs every minute, claiming batches of 25 within a
-20-second budget. Claims increment attempts and hold a five-minute lease. Reports
+The separate cron Worker runs every minute and claims batches of 25. It stops
+starting new jobs after 20 seconds; an in-flight handler can run longer, so keep
+handlers short. Claims increment attempts and hold a five-minute lease. Reports
 must carry the current lease token; expired leases can be reclaimed. Failures
 retry after 1, 2, 4, 8… minutes, capped at 60 minutes. Maximum attempts or permanent
 failures become dead and emit one `job.dead_lettered` audit event. Unknown kinds
@@ -166,7 +167,8 @@ deploying. CI runs it after `build:edge`. Unit tests cover the drain; database
 integration tests cover concurrent enqueue/claim, retries, leases and access.
 
 Production deployment and runtime secrets require PO approval. At deploy time,
-configure `SUPABASE_URL` and `SUPABASE_SERVICE_ROLE_KEY` through
+configure `SUPABASE_URL` (must be `https://`; the Worker rejects plain `http://`
+except loopback hosts for local development) and `SUPABASE_SERVICE_ROLE_KEY` through
 `wrangler secret put SUPABASE_URL --config workers/cron/wrangler.jsonc` and
 `wrangler secret put SUPABASE_SERVICE_ROLE_KEY --config workers/cron/wrangler.jsonc`.
 Never commit secret values or put them in Wrangler vars. The Worker reads them
