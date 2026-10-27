@@ -62,15 +62,21 @@ describe('tenancy security catalog (T007)', () => {
       'audit_events_immutable',
       'audit_row_change',
       'current_staff_role',
+      'enqueue_job',
       'forbid_delete',
       'guard_membership_update',
       'has_workspace_access',
       'is_platform_owner',
+      'jobs_updated_at',
       'role_has_capability',
     ]);
     for (const row of rows) {
       expect(row.prosecdef).toBe(
-        !['audit_events_immutable', 'forbid_delete'].includes(row.proname),
+        ![
+          'audit_events_immutable',
+          'forbid_delete',
+          'jobs_updated_at',
+        ].includes(row.proname),
       );
       expect(row.proconfig).toContain('search_path=""');
       expect(row.owner).toBe('postgres');
@@ -79,7 +85,9 @@ describe('tenancy security catalog (T007)', () => {
         ![
           'audit_events_immutable',
           'audit_row_change',
+          'enqueue_job',
           'forbid_delete',
+          'jobs_updated_at',
         ].includes(row.proname),
       );
     }
@@ -138,7 +146,7 @@ describe('audit security catalog (T005)', () => {
   });
 
   it('attaches all emitters plus row and statement immutability guards', async () => {
-    // The four row triggers plus the separate TRUNCATE statement trigger.
+    // All emitters plus the separate TRUNCATE statement trigger.
     const triggers = await db`
       select t.tgname, c.relname, t.tgtype::int as type, t.tgenabled, p.proname
       from pg_catalog.pg_trigger t
@@ -162,6 +170,13 @@ describe('audit security catalog (T005)', () => {
         type: 34,
         tgenabled: 'O',
         proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'audit_jobs',
+        relname: 'jobs',
+        type: 17,
+        tgenabled: 'O',
+        proname: 'audit_row_change',
       },
       {
         tgname: 'audit_staff_profiles',
@@ -192,5 +207,56 @@ describe('audit security catalog (T005)', () => {
     expect(emitter?.prosecdef).toBe(true);
     expect(emitter?.proconfig).toContain('search_path=""');
     expect(emitter?.service_execute).toBe(false);
+  });
+});
+
+describe('jobs security catalog (T006)', () => {
+  it('forces RLS and grants service_role SELECT only', async () => {
+    const [table] =
+      await db`select relrowsecurity, relforcerowsecurity from pg_catalog.pg_class where oid = 'public.jobs'::regclass`;
+    expect(table).toMatchObject({
+      relrowsecurity: true,
+      relforcerowsecurity: true,
+    });
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      for (const privilege of [
+        'SELECT',
+        'INSERT',
+        'UPDATE',
+        'DELETE',
+        'TRUNCATE',
+        'REFERENCES',
+        'TRIGGER',
+        'MAINTAIN',
+      ]) {
+        const [row] =
+          await db`select has_table_privilege(${role}, 'public.jobs', ${privilege}) as allowed`;
+        expect(row?.allowed).toBe(
+          role === 'service_role' && privilege === 'SELECT',
+        );
+      }
+    }
+  });
+
+  it('hardens RPC ownership/search paths and restricts execution to service_role', async () => {
+    const functions = [
+      'public.jobs_claim(integer,integer)',
+      'public.jobs_complete(uuid,uuid)',
+      'public.jobs_fail(uuid,uuid,text,boolean)',
+      'app_private.enqueue_job(text,uuid,jsonb,text,timestamptz,integer)',
+    ];
+    for (const name of functions) {
+      const [fn] =
+        await db`select prosecdef, proconfig, pg_catalog.pg_get_userbyid(proowner) as owner from pg_catalog.pg_proc where oid = ${name}::regprocedure`;
+      expect(fn).toMatchObject({ prosecdef: true, owner: 'postgres' });
+      expect(fn?.proconfig).toContain('search_path=""');
+      for (const role of ['anon', 'authenticated', 'service_role']) {
+        const [row] =
+          await db`select has_function_privilege(${role}, ${name}, 'EXECUTE') as allowed`;
+        expect(row?.allowed).toBe(
+          role === 'service_role' && name.startsWith('public.'),
+        );
+      }
+    }
   });
 });
