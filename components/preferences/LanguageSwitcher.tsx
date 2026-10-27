@@ -1,6 +1,6 @@
 'use client';
 
-import { useId, useState, useTransition } from 'react';
+import { useId, useOptimistic, useTransition } from 'react';
 import { useRouter } from 'next/navigation';
 import {
   LOCALE_COOKIE,
@@ -22,13 +22,7 @@ export function LanguageSwitcher({
   const id = useId();
   const router = useRouter();
   const [pending, startTransition] = useTransition();
-  const [selected, setSelected] = useState(value);
-  const [previousValue, setPreviousValue] = useState(value);
-  // Reconcile a refreshed server preference without delaying local selection.
-  if (value !== previousValue) {
-    setPreviousValue(value);
-    setSelected(value);
-  }
+  const [selected, setSelected] = useOptimistic(value);
   return (
     <div className={styles.control}>
       <label htmlFor={id}>{label}</label>
@@ -39,9 +33,11 @@ export function LanguageSwitcher({
         data-testid="language-select"
         onChange={(event) => {
           const next = parseLocale(event.currentTarget.value);
-          setSelected(next);
           document.cookie = serializePreferenceCookie(LOCALE_COOKIE, next);
-          startTransition(() => router.refresh());
+          startTransition(() => {
+            setSelected(next);
+            router.refresh();
+          });
         }}
       >
         <option value="ar">{labels.ar}</option>

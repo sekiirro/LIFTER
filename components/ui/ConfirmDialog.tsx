@@ -41,6 +41,13 @@ export function ConfirmDialog({
       cancelRef.current?.focus();
     } else if (!open && dialog.open) dialog.close();
   }, [open]);
+  useEffect(() => {
+    // Capture the node before React clears its ref during unmount.
+    const dialog = dialogRef.current;
+    return () => {
+      if (dialog?.open) previousFocus.current?.focus();
+    };
+  }, []);
   return (
     <dialog
       ref={dialogRef}
