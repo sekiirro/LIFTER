@@ -63,7 +63,7 @@ Gate checked before research and after Phase 1 against v1.1.0:
 | Platform            | Required / preserved: existing Cloudflare/Supabase, local only, forward-only future migration, existing backup/restore gates.                                                                             |
 | Workflow            | Required / conditional: explicit user authorization for Codex U2 planning; prior U2 research retained; user-authorized U3 decision/tasks; independent Claude audit/Analyze and no self-approval.          |
 
-**Result:** Design artifacts complete; **ERROR / blocked for implementation readiness** under the skill's unresolved-clarification gate. Binding C1–C4 proof obligations, open sub-decisions and architecture parity proofs remain outstanding. No constitutional exception approved/requested. This is not an application test pass or production acceptance.
+**Result:** AD-F11-1 option (i), ND-F11-1..10 and ND-F11-2a are decided (updated session 8). Remaining blockers are hosted/production only: C4, Vault provisioning, purge scheduling, host log redaction, ND-F5-1 and APP_ORIGIN. No constitutional exception approved/requested. This is not production acceptance.
 
 ## Phase 0 — Research
 
