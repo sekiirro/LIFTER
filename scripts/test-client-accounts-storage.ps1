@@ -1,7 +1,13 @@
 $ErrorActionPreference = 'Stop'
 if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
   $dockerCandidates = @()
-  if ($env:DOCKER_BIN) { $dockerCandidates += $env:DOCKER_BIN }
+  if ($env:DOCKER_BIN) {
+    if (Test-Path -LiteralPath $env:DOCKER_BIN -PathType Leaf) {
+      $dockerCandidates += Split-Path -Parent $env:DOCKER_BIN
+    } else {
+      $dockerCandidates += $env:DOCKER_BIN
+    }
+  }
   if ($env:ProgramFiles) {
     $dockerCandidates += Join-Path $env:ProgramFiles 'Docker\Docker\resources\bin'
   }

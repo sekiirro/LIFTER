@@ -21,6 +21,12 @@ it('uses portable Docker path fallbacks only when docker is absent from PATH', (
   expect(script).not.toContain('C:\\Users\\NEW LAP');
   expect(script).toContain('Get-Command docker');
   expect(script).toContain('$env:DOCKER_BIN');
+  expect(script).toContain(
+    'Test-Path -LiteralPath $env:DOCKER_BIN -PathType Leaf',
+  );
+  expect(script).toContain('Split-Path -Parent $env:DOCKER_BIN');
+  expect(script).toContain('$dockerCandidates += $env:DOCKER_BIN');
+  expect(script).toContain('Test-Path -LiteralPath $_ -PathType Container');
   expect(script).toContain('$env:ProgramFiles');
   expect(script).toContain('$env:LOCALAPPDATA');
   expect(script).toContain('Test-Path');
