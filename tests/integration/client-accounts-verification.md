@@ -192,3 +192,156 @@ Final `npx --yes supabase@2.122.0 db reset` and local provisioning both exited 0
 T001–T005 were marked complete only after these observed passes.
 U1 assigns no e2e spec; later-unit e2e, RPC integration and attested issuance
 are pending as explicitly staged in tasks.md, rather than skipped U1 tests.
+
+## U2 — client model, claims, default deny and ticket redemption
+
+Started on clean `011-client-accounts` at
+`7998eb590e5484ab94c170440c6126a8c46b55c5`; `git pull --ff-only` reported
+already up to date. Only the owned LFTR-011 worktree and local Docker stack
+were used. The required start exclusions were retained, including storage-api.
+No audit function, previous migration, dependency, capability matrix or seed
+was modified. No public signup issuer/RPC or approval transition is installed.
+
+### RED evidence, before the model migration
+
+With local environment loaded privately, ran:
+
+```text
+node --env-file=.env.local node_modules/vitest/vitest.mjs run --config vitest.integration.config.ts tests/integration/client-accounts-catalog.test.ts tests/integration/client-accounts-integrity.test.ts --reporter=json --outputFile=tmp/u2-red-final.json
+```
+
+Observed **0 passed / 59 failed / 4 todo**, exit 1. Failures included:
+
+- `public.clients: exists, forces RLS, and has no policies`: expected a catalog
+  row with both RLS flags true; received no row.
+- `public.clients: zero effective table AND column grants, overriding default
+ACLs`: expected the table to exist; it did not.
+- Every quoted client/claim/receipt FK and UNIQUE catalog assertion failed.
+- Pending synthetic JWT/catalog RPC probes failed because the model was absent.
+- Normalization, Auth synchronization, staff/client exclusivity, immutable
+  records, ticket binding, two-connection redemption and rollback tests failed.
+
+The app authorization tests exercise every capability with a null-role pending
+actor and an accepting backend mock; existing authorize() already denies them,
+so no application or capability-matrix change was needed.
+
+Additional observed RED regressions before their corrections:
+
+- `GoTrue stored digits map to E.164 without defining client phone input
+acceptance`: `-t 'GoTrue stored digits'`, 0 passed / 1 failed,
+  `unresolved_identifier`. The canonicalizer now distinguishes persisted Auth
+  representation from canonical client storage. No phone input parser exists.
+- `resolved tickets require exact workspace/link as well as link key and
+request hash`: `-t 'resolved tickets'`, 0 passed / 1 failed, missing five-argument
+  internal redemption function. Exact resolved binding is now checked in UPDATE.
+- Concurrent phone/both probes initially hit `users_phone_key`, revealing Auth
+  index masking. BEFORE Auth synchronization plus a deferred claim-to-Auth FK
+  now makes the registry's UNIQUE constraints reject the competing writes.
+
+### Model/security evidence
+
+- Five tables have enabled and forced RLS, no policies, and explicit REVOKE ALL
+  from PUBLIC, anon, authenticated and service_role immediately after creation.
+  Catalog probes check effective table privileges (including MAINTAIN), column
+  privileges, PUBLIC ACL entries and creating-owner pg_default_acl effects.
+  UUID defaults create no sequences. All U2 functions are postgres-owned
+  SECURITY DEFINER, empty search_path, qualified object references and zero API
+  EXECUTE. No new public function or grant is introduced.
+- Client identity, issued version, workspace and link are constrained by global
+  UNIQUE keys and ordinary/composite RESTRICT FKs. Independent rolled-back
+  probes disable client insert/deferred guards to isolate UNIQUE and FK failures.
+  Normal inserts validate locked unconsumed/unexpired links, derive canonical
+  Auth email and persist required name, server time and pending-approval only.
+- Both classification directions lock the Auth row and contend on identity and
+  sorted canonical keys. Two physical connections prove email/phone/both claim
+  races and staff/client exclusivity. UNIQUE constraints remain the backstop.
+  NULL Auth phone preserves an existing client claim; a non-NULL disagreement
+  fails. Direct claim reassignment and identifier clearing fail closed.
+- Backfill replays use the local platform owner only to disable Auth-owned
+  triggers inside one rolled-back transaction. Canonical collisions and unresolved
+  phones abort the entire INSERT, leave no partial claims and merge no identities.
+  Email folding follows [GoTrue v2.197.0 validateEmail](https://github.com/supabase/auth/blob/v2.197.0/internal/api/mail.go#L659).
+  Persisted Auth phone translation follows its
+  [phone representation](https://github.com/supabase/auth/blob/v2.197.0/internal/api/phone.go#L19).
+  ND-F11-2a stays OPEN; no input parsing, whitespace removal or country default.
+- Pending-access SQL probes SET LOCAL ROLE authenticated and transaction-local
+  JWT claims. They iterate every public RLS table, fixture-grant a safe UUID
+  column inside rollback, and check own/foreign has_workspace_access denial.
+  Public RPCs are discovered from pg_proc, with unknown argument types failing
+  the probe. Real GoTrue later sign-in and PostgREST table/RPC denial also run.
+- Clients and committed receipts reject UPDATE/DELETE/TRUNCATE. Claims permit
+  synchronization only. Attempts allow only safe outcome/time/resolved scope,
+  reject UPDATE/general DELETE/TRUNCATE, and have a not-yet-authorized purge seam.
+  The deferred client integrity check verifies consumed link/claim correspondence;
+  U3 owns the full converse consumption/audit extension.
+- Ticket redemption invokes C1 before writes, binds link key/request-secret hash
+  and exact nullable resolved scope, and uses guarded NULL-to-now UPDATE RETURNING.
+  A transaction/ticket-scoped HMAC capability (U1 Vault key) authorizes the update
+  trigger; a caller-writable boolean cannot authorize it. The capability is cleared
+  after use. Tickets persist only hashes, never raw request secrets or attribution.
+  Two connections prove one winner; replay/wrong bindings fail. Inner business
+  savepoint rollback retains redemption; outer infrastructure rollback restores it.
+
+### Q-M03 canonical UNIQUE mutation
+
+Temporarily patched only the independent duplicate probes to drop their target
+client canonical UNIQUE constraint inside rollback; ran:
+
+```text
+node --env-file=.env.local node_modules/vitest/vitest.mjs run --config vitest.integration.config.ts tests/integration/client-accounts-integrity.test.ts -t 'client (email_normalized|phone_e164) UNIQUE' --reporter=json --outputFile=tmp/u2-qm03-red.json
+```
+
+Observed exit 1, **0 passed / 2 failed**: both duplicate inserts resolved instead
+of rejecting. There was no FK/claim/grant masking. Database mutations rolled
+back. The scratch patch was removed and the test file SHA-256 matched before
+and after: `A4A11A406E5DEDA0E4ECE17B230F05C71C16DCAD42C6F909077B949069AD8599`.
+Restored independent UNIQUE/FK probes pass.
+
+### Staged coverage and open decisions
+
+The following are explicit `it.todo` cases, not passing evidence:
+
+- `[U3/T012 U5/T020 staged RED] public signup RPC exact anon/authenticated-only EXECUTE`.
+- `[U5/T020] narrow 30-day purge removes only old attempts and preserves audit`.
+- `[U4/T029] Storage pending real-JWT read/write denial: storage-api excluded`.
+
+Public attested issuance, counters/nonces, operational purge/cleanup audit and
+signup success/consumption audit remain with their assigned later units. Storage
+cannot be exercised against the required excluded service. Real sign-in and
+PostgREST were feasible and are implemented now. Archived-state/review design,
+identifier release/pseudonymization and audit retention remain unresolved; no
+release, archival, approval or general cleanup operation was added. Hosted proof
+and deployment remain blocked by C4.
+
+### U2 final gate results
+
+The first full run observed **666 passed / 3 failed / 3 todo**. The exact private
+function/immutability-trigger inventories required the new U2 objects. The F10
+privileged TRUNCATE probe encountered the new incoming FKs before its guard;
+it now discovers/removes all incoming FKs inside rollback, preserving its exact
+23514 guard assertion. All 57 catalog/F10 regression tests then passed.
+
+Final review placed Auth trigger installation before backfill: CREATE TRIGGER's
+SHARE ROW EXCLUSIVE lock is held through migration commit, closing the possible
+concurrent Auth write gap. The final file was applied by another clean local
+reset, followed by `node tests/integration/client-accounts-provision.mjs`, both
+exit 0. The final full integration gate used that exact migration file.
+
+| Gate                                 | Pass | Fail | Staged | Evidence                                    |
+| ------------------------------------ | ---: | ---: | -----: | ------------------------------------------- |
+| `npm run typecheck`                  |    1 |    0 |      0 | Exit 0                                      |
+| `npm run lint`                       |    1 |    0 |      0 | Exit 0, no warnings                         |
+| `npm run format:check`               |    1 |    0 |      0 | Exit 0                                      |
+| `npm test`                           | 1258 |    0 |      0 | 50 files, exit 0                            |
+| `npm run test:integration`           |  678 |    0 |      3 | 19 files, final reset + provision, exit 0   |
+| U2 integration files, included above |   82 |    0 |      3 | Model/security/normalization/claims/tickets |
+| U2 e2e                               |    0 |    0 |      0 | No e2e spec assigned to U2                  |
+
+Integration environment was loaded privately from ignored `.env.local` before
+the npm command. An initial bare npm invocation without those private variables
+was not counted as evidence. The first stack start command unexpectedly emitted
+local stack credentials; subsequent CLI output was suppressed/captured. No
+credential values are included in committed artifacts or this report.
+
+T006–T009 were ticked only after the observed final-file passes. The three named
+staged cases above remain with their later owners. T046 is unchanged.

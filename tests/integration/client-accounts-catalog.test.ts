@@ -1,0 +1,225 @@
+import { afterAll, expect, it } from 'vitest';
+import { randomUUID } from 'node:crypto';
+import { admin, anonClient } from './harness';
+import {
+  clientContext,
+  modelTables,
+  pending,
+  probe,
+  sql,
+} from './client-accounts-fixture';
+const db = sql();
+afterAll(() => db.end());
+
+for (const table of modelTables) {
+  it(`${table}: exists, forces RLS, and has no policies`, async () => {
+    const [row] =
+      await db`select relrowsecurity,relforcerowsecurity from pg_class where oid=to_regclass(${table})`;
+    expect(row).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
+    expect(
+      await db`select 1 from pg_policy where polrelid=to_regclass(${table})`,
+    ).toHaveLength(0);
+  });
+  it(`${table}: zero effective table AND column grants, overriding default ACLs`, async () => {
+    expect(
+      await db`select to_regclass(${table}) is not null as present`,
+    ).toMatchObject([{ present: true }]);
+    const grants =
+      await db`select r.rolname,a.attname from pg_roles r cross join pg_attribute a where a.attrelid=to_regclass(${table}) and a.attnum>0 and not a.attisdropped and r.rolname in ('anon','authenticated','service_role') and (has_any_column_privilege(r.oid,a.attrelid,'SELECT,INSERT,UPDATE,REFERENCES') or has_table_privilege(r.oid,a.attrelid,'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN'))`;
+    expect(grants).toHaveLength(0);
+    expect(
+      await db`select 1 from pg_class c cross join lateral aclexplode(c.relacl) acl where c.oid=to_regclass(${table}) and acl.grantee=0`,
+    ).toHaveLength(0);
+    // Inspect the creating owner's actual defaults; effective checks above prove
+    // the explicit object revokes defeated any inherited defaults.
+    const defaults =
+      await db`select defaclobjtype,defaclacl from pg_default_acl where defaclrole=(select relowner from pg_class where oid=to_regclass(${table}))`;
+    expect(defaults.length).toBeGreaterThan(0);
+  });
+  it(`${table}: privileged TRUNCATE is forbidden`, async () => {
+    await expect(
+      probe(async (tx) => {
+        await tx.unsafe(`truncate ${table} cascade`);
+      }),
+    ).rejects.toMatchObject({ code: '23514' });
+  });
+}
+
+it('all U2 helpers revoke API/PUBLIC EXECUTE, are postgres owned and use empty search_path', async () => {
+  const helpers =
+    await db`select p.oid,p.proname,p.proconfig,r.rolname from pg_proc p join pg_namespace n on n.oid=p.pronamespace join pg_roles r on r.oid=p.proowner where n.nspname='app_private' and (p.proname like 'signup_%' or p.proname in ('sync_account_identifier_claims','guard_account_identity_kind','guard_client_signup_insert','check_client_signup_integrity','guard_client_signup_operation','client_signup_limits','client_signup_audit_contract','redeem_signup_admission_ticket'))`;
+  expect(helpers.length).toBeGreaterThanOrEqual(17);
+  for (const helper of helpers) {
+    expect(helper.rolname).toBe('postgres');
+    expect(helper.proconfig).toContain('search_path=""');
+    expect(
+      await db`select 1 from pg_roles where rolname in ('anon','authenticated','service_role') and has_function_privilege(oid,${helper.oid}::oid,'execute')`,
+    ).toHaveLength(0);
+    expect(
+      await db`select 1 from pg_proc p cross join lateral aclexplode(coalesce(p.proacl,acldefault('f',p.proowner))) acl where p.oid=${helper.oid}::oid and acl.grantee=0`,
+    ).toHaveLength(0);
+  }
+});
+
+it.todo(
+  '[U3/T012 U5/T020 staged RED] public signup RPC exact anon/authenticated-only EXECUTE',
+);
+it.todo(
+  '[U5/T020] narrow 30-day purge removes only old attempts and preserves audit',
+);
+it.todo(
+  '[U4/T029] Storage pending real-JWT read/write denial: storage-api excluded',
+);
+
+it('pending synthetic JWT denies has_workspace_access and every catalog RLS table even with safe fixture grants', async () => {
+  const context = await clientContext();
+  await probe(async (tx) => {
+    const c = await pending(tx, context);
+    const tables =
+      await tx`select n.nspname,c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relrowsecurity`;
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: c.auth_user_id, role: 'authenticated' })},true)`;
+    for (const table of tables) {
+      // The selected constant exposes no protected field. Grant SELECT on a
+      // safe UUID column to prevent missing privileges from hiding bad RLS.
+      const [column] =
+        await tx`select attname from pg_attribute where attrelid=to_regclass(${table.nspname + '.' + table.relname}) and attnum>0 and atttypid='uuid'::regtype order by attnum limit 1`;
+      if (!column) throw new Error('RLS probe needs a safe UUID column');
+      const target = '"' + table.nspname + '"."' + table.relname + '"';
+      await tx.unsafe(
+        `grant select ("${column.attname}") on ${target} to authenticated`,
+      );
+      await tx.unsafe(
+        `grant update ("${column.attname}") on ${target} to authenticated`,
+      );
+      await tx`set local role authenticated`;
+      expect(
+        await tx.unsafe(`select "${column.attname}" from ${target}`),
+        table.relname,
+      ).toHaveLength(0);
+      const changed = await tx.unsafe(
+        `update ${target} set "${column.attname}"="${column.attname}"`,
+      );
+      expect(changed.count, table.relname).toBe(0);
+      await tx`reset role`;
+    }
+    await tx`set local role authenticated`;
+    const [access] =
+      await tx`select app_private.has_workspace_access(${context.wsA.id},null) as own,app_private.has_workspace_access(${context.wsB.id},null) as foreign`;
+    expect(access).toEqual({ own: false, foreign: false });
+    await tx`reset role`;
+  });
+});
+it('pending client signs in later with real JWT and gets no PostgREST table or RPC access', async () => {
+  const context = await clientContext();
+  const email = `u2-jwt-${randomUUID()}@example.test`;
+  const password = `U2-${randomUUID()}!`;
+  const response = await admin().auth.admin.createUser({
+    email,
+    password,
+    email_confirm: true,
+  });
+  if (response.error) throw new Error('Synthetic Auth fixture creation failed');
+  const created = response.data;
+  if (!created.user) throw new Error('Synthetic Auth fixture missing');
+  await db.begin(async (tx) => {
+    await pending(tx, context, {}, created.user!.id);
+  });
+  const client = anonClient();
+  const signed = await client.auth.signInWithPassword({ email, password });
+  expect(signed.error).toBeNull();
+  expect(Boolean(signed.data.session)).toBe(true);
+  const tables =
+    await db`select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relrowsecurity`;
+  for (const table of tables) {
+    const result = await client.from(table.relname).select('*');
+    expect(
+      result.error !== null || result.data?.length === 0,
+      table.relname,
+    ).toBe(true);
+  }
+  const functions =
+    await db`select p.proname,p.proargnames,to_jsonb(array(select format_type(t,null) from unnest(p.proargtypes) t)) as types from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prokind='f'`;
+  for (const fn of functions) {
+    const args: Record<string, unknown> = {};
+    fn.types.forEach((type: string, i: number) => {
+      const values: Record<string, unknown> = {
+        uuid: context.wsA.id,
+        text: 'synthetic-invalid',
+        jsonb: null,
+        integer: 1,
+        smallint: 1,
+        bigint: 1,
+        boolean: false,
+        bytea: '\\x00',
+        'timestamp with time zone': new Date().toISOString(),
+      };
+      if (!(type in values)) throw new Error('Uncovered HTTP RPC type');
+      args[fn.proargnames[i]] = values[type];
+    });
+    const result = await client.rpc(fn.proname, args);
+    expect(
+      result.error !== null ||
+        result.data === null ||
+        result.data === false ||
+        (Array.isArray(result.data) && result.data.length === 0) ||
+        result.data?.status === 'invalid',
+      fn.proname,
+    ).toBe(true);
+  }
+  await client.auth.signOut();
+});
+it('pending synthetic JWT cannot gain client access through ANY catalog public RPC', async () => {
+  const context = await clientContext();
+  await probe(async (tx) => {
+    const c = await pending(tx, context);
+    const functions =
+      await tx`select p.proname,to_jsonb(array(select format_type(t,null) from unnest(p.proargtypes) t)) as types from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prokind='f'`;
+    expect(functions.length).toBeGreaterThan(0);
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: c.auth_user_id, role: 'authenticated' })},true)`;
+    for (const fn of functions) {
+      const args: string[] = [];
+      for (const typeName of fn.types) {
+        const values: Record<string, string> = {
+          uuid: `'${context.wsA.id}'::uuid`,
+          text: "'synthetic-invalid'::text",
+          jsonb: 'null::jsonb',
+          integer: '1::integer',
+          smallint: '1::smallint',
+          bigint: '1::bigint',
+          boolean: 'false',
+          bytea: "decode('00','hex')",
+          'timestamp with time zone': 'now()',
+        };
+        if (!values[typeName])
+          throw new Error('Uncovered public RPC argument type');
+        args.push(values[typeName]!);
+      }
+      await tx
+        .savepoint(async (inner) => {
+          await inner`set local role authenticated`;
+          try {
+            const rows = await inner.unsafe(
+              `select * from public."${fn.proname}"(${args.join(',')})`,
+            );
+            for (const row of rows)
+              for (const value of Object.values(row))
+                expect(
+                  value === null ||
+                    value === false ||
+                    (typeof value === 'object' &&
+                      value !== null &&
+                      'status' in value &&
+                      value.status === 'invalid'),
+                  fn.proname,
+                ).toBe(true);
+          } catch (error) {
+            expect((error as { code?: string }).code, fn.proname).toBe('42501');
+            throw error;
+          }
+        })
+        .catch((error: { code?: string }) => {
+          if (error.code !== '42501') throw error;
+        });
+    }
+  });
+});
