@@ -53,19 +53,19 @@ that part of the work and go to the PO with A/B/C options and the architect's re
 
 ## Main merge gate
 
-Before asking the PO to approve a merge to `main`, require all of the following on the exact PR
-head:
+Before asking the PO to approve a merge to `main`, require items 1-5 on the exact PR head:
 
 1. A completed CodeRabbit review is APPROVED, with no later CHANGES_REQUESTED or DISMISSED review.
 2. PR `reviewDecision` is APPROVED.
 3. There are zero unresolved review threads and all actionable findings are resolved.
 4. CI and security checks are green on that exact head.
 5. The architect has independently reviewed the actual diff and evidence.
-6. The PO has explicitly approved the merge.
 
-Pin the merge commit with `--match-head-commit`. Never use `--admin`, `--auto`, or
-`--delete-branch`. Branch protection returns 403 on the current private Free plan, so this gate is
-process-only.
+Then ask the PO for explicit merge approval.
+
+6. Merge only after explicit PO approval, once items 1-5 remain true, using `gh pr merge <n> --merge --match-head-commit <sha>` on the approved head.
+
+Never use `--admin`, `--auto`, or `--delete-branch`. Branch protection returns 403 on the current private Free plan, so this gate is process-only.
 
 ## Brief and implementation conventions
 

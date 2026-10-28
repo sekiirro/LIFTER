@@ -1,6 +1,6 @@
 ﻿# LIFTER feature tracker
 
-Use verified GitHub and Git facts only. `pending` means not yet verified or no record exists. Branch SHAs are remote heads as of 2026-10-28 unless noted.
+The branch, SHA, PR and CI columns contain facts verified from GitHub/Git. `pending` means not yet verified or no record exists. State, dependency, DB-lock and open-item fields come from feature specifications, `docs/04-changes-and-questions.md`, and the PO decision record. Branch SHAs are remote heads as of 2026-10-28 unless noted.
 
 | Feature | State | Branch@SHA | PR | CI | Depends on | DB lock | Open items |
 |---|---|---|---|---|---|---|---|

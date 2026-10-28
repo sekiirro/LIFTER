@@ -66,8 +66,10 @@ For each item, record PASS/FAIL and evidence in the REPORT.
 - [ ] States: loading, empty, error, success, disabled, pending, interaction (hover/active/focus).
 - [ ] Copy: bilingual AR/EN from `lib/i18n/messages`, no hard-coded strings; generic security copy
   kept verbatim where specified.
-- [ ] Matrix rendered and screenshotted (Playwright, real rendered screens): {AR-RTL, EN-LTR} ×
-  {light, dark} × {mobile 390px, desktop 1440px} (+ tablet when layout changes). Screenshots saved
-  under the run's OS temp dir; list paths. Reviewed by you against `DESIGN.md` §12; findings fixed
-  and re-shot.
+- [ ] Matrix rendered and screenshotted (Playwright, real rendered screens): {AR-RTL, EN-LTR} x
+  {light, dark} x {mobile 390px, desktop 1440px} (+ tablet when layout changes). Attach the
+  screenshot matrix to the PR as a retained CI artifact or, when small, commit it under the PR's
+  evidence path. Record stable references in the REPORT and the feature's verification evidence;
+  OS-temp paths alone are not acceptable evidence. Review against `DESIGN.md` section 12; fix and
+  re-shoot findings.
 - [ ] Tests: unit/e2e/axe for the changed UI; no new dependency; `npm run size` within budget.

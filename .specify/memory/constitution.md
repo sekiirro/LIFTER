@@ -144,11 +144,13 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Controlled Parallel Development: at most three concurrent agents. Each code-changing agent uses
   its own worktree and branch, edits disjoint files, and respects the single local-DB lock. Feature
   branches integrate sequentially, each after architect review and relevant green CI.
-- Main merge gate: completed CodeRabbit review APPROVED with no later CHANGES_REQUESTED or
-  DISMISSED review; `reviewDecision` APPROVED; zero unresolved threads; all actionable findings
-  resolved; green CI/security checks on the exact head; independent architect review; and explicit
-  PO approval. Pin the merge commit with `--match-head-commit`; never use `--admin`, `--auto`, or
-  `--delete-branch`. This is process-only because branch protection returns 403.
+- Main merge gate: before requesting PO approval, require a completed CodeRabbit review APPROVED
+  with no later CHANGES_REQUESTED or DISMISSED review; `reviewDecision` APPROVED; zero unresolved
+  threads and all actionable findings resolved; green CI/security checks on the exact PR head; and
+  independent architect review of the diff and evidence. Then ask the PO for explicit merge approval.
+  Merge only after that approval, once these checks remain true, using
+  `gh pr merge <n> --merge --match-head-commit <sha>` on the approved head. Never use `--admin`,
+  `--auto`, or `--delete-branch`. This is process-only because branch protection returns 403.
 - Merge gates (from [docs/03-roadmap.md](../../docs/03-roadmap.md)): typecheck, lint, unit and
   integration tests independently re-run by the reviewer; the isolation gate; the money gate; AR
   and EN UI check; log-scrub check; acceptance criteria verified against
