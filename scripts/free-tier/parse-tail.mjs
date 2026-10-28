@@ -11,7 +11,7 @@ function* tailObjects(text) {
   let escaped = false;
   for (let index = 0; index < text.length; index++) {
     const character = text[index];
-    if (depth > 0 && !quoted && character === '\n' && text[index + 1] === '{') {
+    if (depth > 0 && character === '\n' && text[index + 1] === '{') {
       yield buffer;
       buffer = '';
       depth = 0;
