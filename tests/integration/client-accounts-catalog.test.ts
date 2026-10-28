@@ -1,5 +1,5 @@
 import { afterAll, expect, it } from 'vitest';
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { admin, anonClient } from './harness';
 import {
   clientContext,
@@ -49,7 +49,7 @@ for (const table of modelTables) {
 
 it('all U2 helpers revoke API/PUBLIC EXECUTE, are postgres owned and use empty search_path', async () => {
   const helpers =
-    await db`select p.oid,p.proname,p.proconfig,r.rolname from pg_proc p join pg_namespace n on n.oid=p.pronamespace join pg_roles r on r.oid=p.proowner where n.nspname='app_private' and (p.proname like 'signup_%' or p.proname in ('sync_account_identifier_claims','guard_account_identity_kind','guard_client_signup_insert','check_client_signup_integrity','guard_client_signup_operation','client_signup_limits','client_signup_audit_contract','redeem_signup_admission_ticket'))`;
+    await db`select p.oid,p.proname,p.proconfig,r.rolname from pg_proc p join pg_namespace n on n.oid=p.pronamespace join pg_roles r on r.oid=p.proowner where n.nspname='app_private' and (p.proname like 'signup_%' or p.proname in ('sync_account_identifier_claims','guard_account_identity_kind','guard_client_signup_insert','check_client_signup_integrity','guard_client_signup_operation','client_signup_limits','client_signup_audit_contract','redeem_signup_admission_ticket','purge_client_signup_attempts'))`;
   expect(helpers.length).toBeGreaterThanOrEqual(17);
   for (const helper of helpers) {
     expect(helper.rolname).toBe('postgres');
@@ -76,10 +76,107 @@ it('public signup RPC exact anon/authenticated-only EXECUTE', async () => {
     await db`select 1 from pg_proc p cross join lateral aclexplode(p.proacl) a where p.oid=${p!.oid}::oid and a.grantee=0`,
   ).toHaveLength(0);
 });
-it.todo('[U5/T020] public admission RPC exact anon/authenticated-only EXECUTE');
-it.todo(
-  '[U5/T020] narrow 30-day purge removes only old attempts and preserves audit',
-);
+it('public admission RPC exact anon/authenticated-only EXECUTE and private enforcement state', async () => {
+  const [p] =
+    await db`select oid,prosecdef,proconfig,pg_get_userbyid(proowner) as owner from pg_proc where oid=to_regprocedure('public.client_signup_admit(text,text,bytea,bytea,timestamptz,uuid,bytea)')`;
+  expect(p, 'bounded admission RPC exists').toBeDefined();
+  expect(p).toMatchObject({ prosecdef: true, owner: 'postgres' });
+  expect(p!.proconfig).toContain('search_path=""');
+  expect(
+    await db`select rolname from pg_roles where rolname in ('anon','authenticated','service_role') and has_function_privilege(oid,${p!.oid}::oid,'execute') order by rolname`,
+  ).toEqual([{ rolname: 'anon' }, { rolname: 'authenticated' }]);
+  expect(
+    await db`select 1 from pg_proc p cross join lateral aclexplode(p.proacl) a where p.oid=${p!.oid}::oid and a.grantee=0`,
+  ).toHaveLength(0);
+  for (const table of ['signup_rate_counters', 'signup_admission_nonces']) {
+    const [r] =
+      await db`select relrowsecurity,relforcerowsecurity from pg_class where oid=to_regclass(${'app_private.' + table})`;
+    expect(r).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
+    expect(
+      await db`select 1 from pg_roles r where r.rolname in ('anon','authenticated','service_role') and (has_any_column_privilege(r.oid,to_regclass(${'app_private.' + table}),'SELECT,INSERT,UPDATE,REFERENCES') or has_table_privilege(r.oid,to_regclass(${'app_private.' + table}),'SELECT,INSERT,UPDATE,DELETE,TRUNCATE,REFERENCES,TRIGGER,MAINTAIN'))`,
+    ).toHaveLength(0);
+    expect(
+      await db`select 1 from pg_class c cross join lateral aclexplode(c.relacl) a where c.oid=to_regclass(${'app_private.' + table}) and a.grantee=0`,
+    ).toHaveLength(0);
+    const columns =
+      await db`select attname from pg_attribute where attrelid=to_regclass(${'app_private.' + table}) and attnum>0 and not attisdropped order by attnum`;
+    expect(columns.map((c) => c.attname)).toEqual(
+      table === 'signup_rate_counters'
+        ? ['scope', 'key', 'window_start', 'count', 'expires_at']
+        : ['nonce', 'expires_at'],
+    );
+    expect(
+      await db`select 1 from information_schema.table_privileges where table_schema='app_private' and table_name=${table} and grantee in ('PUBLIC','anon','authenticated','service_role')`,
+    ).toHaveLength(0);
+    expect(
+      await db`select 1 from pg_constraint where conrelid=to_regclass(${'app_private.' + table}) and contype='f'`,
+    ).toHaveLength(0);
+  }
+});
+it('narrow 30-day purge removes only old attempts and preserves audit and tickets', async () => {
+  await probe(async (tx) => {
+    const oldNonce = randomUUID(),
+      youngNonce = randomUUID(),
+      key = randomBytes(32);
+    await tx`insert into app_private.signup_admission_nonces(nonce,expires_at) values(${oldNonce},clock_timestamp()-interval '1 second'),(${youngNonce},clock_timestamp()+interval '60 seconds')`;
+    await tx`insert into app_private.signup_rate_counters(scope,key,window_start,count,expires_at) values('ip',${key},clock_timestamp()-interval '2 hours',1,clock_timestamp()-interval '1 hour')`;
+    const [old] =
+      await tx`insert into app_private.client_signup_attempts(outcome_class,created_at) values('attempt',clock_timestamp()-interval '31 days') returning id`;
+    const [young] =
+      await tx`insert into app_private.client_signup_attempts(outcome_class) values('attempt') returning id`;
+    await tx`insert into public.audit_events(action,target_table,target_id,details) values('client.signup_attempted','client_signup_attempts',${old!.id},'{"outcome_class":"attempt"}')`;
+    const audits =
+      await tx`select id,details from public.audit_events order by id`;
+    const tickets =
+      await tx`select id,redeemed_at from app_private.signup_admission_tickets order by id`;
+    await expect(
+      tx.savepoint(async (inner) => {
+        await inner`delete from app_private.client_signup_attempts where id=${old!.id}`;
+      }),
+    ).rejects.toMatchObject({ code: '23514' });
+    await tx`select set_config('app_private.signup_purge_proof','forged',true)`;
+    await expect(
+      tx.savepoint(async (inner) => {
+        await inner`delete from app_private.client_signup_attempts where id=${young!.id}`;
+      }),
+    ).rejects.toMatchObject({ code: '23514' });
+    const [result] =
+      await tx`select app_private.purge_client_signup_attempts() as result`;
+    expect(result!.result.count).toBeGreaterThanOrEqual(1);
+    expect(
+      await tx`select 1 from app_private.signup_admission_nonces where nonce=${oldNonce}`,
+    ).toHaveLength(0);
+    expect(
+      await tx`select 1 from app_private.signup_admission_nonces where nonce=${youngNonce}`,
+    ).toHaveLength(1);
+    expect(
+      await tx`select 1 from app_private.signup_rate_counters where key=${key}`,
+    ).toHaveLength(0);
+
+    expect(
+      await tx`select 1 from app_private.client_signup_attempts where id=${old!.id}`,
+    ).toHaveLength(0);
+    expect(
+      await tx`select 1 from app_private.client_signup_attempts where id=${young!.id}`,
+    ).toHaveLength(1);
+    expect(
+      await tx`select id,redeemed_at from app_private.signup_admission_tickets order by id`,
+    ).toEqual(tickets);
+    expect(
+      await tx`select id,details from public.audit_events where action<>'client.signup_cleanup' order by id`,
+    ).toEqual(audits);
+    const [cleanup] =
+      await tx`select target_table,target_id,details from public.audit_events where action='client.signup_cleanup' order by occurred_at desc,id desc limit 1`;
+    expect(cleanup!.target_table).toBe('client_signup_attempts');
+    expect(
+      cleanup!.target_id === old!.id || cleanup!.target_id === young!.id,
+    ).toBe(false);
+    expect(Object.keys(cleanup!.details)).toEqual(['count']);
+    expect(
+      await tx`select 1 from pg_roles where rolname in ('anon','authenticated','service_role') and has_function_privilege(oid,'app_private.purge_client_signup_attempts()','execute')`,
+    ).toHaveLength(0);
+  });
+});
 it.todo(
   '[U4/T029] Storage pending real-JWT read/write denial: storage-api excluded',
 );

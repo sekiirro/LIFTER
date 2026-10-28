@@ -836,3 +836,131 @@ probe; isolated final rerun passed. No production workaround was added.
 
 No task checkbox changed. Secrets remain in ignored `.env.local`; diagnostics
 contain only safe statuses and names. No dependencies, seeds or capabilities changed.
+
+## U5 - durable admission, attestation, counters and purge
+
+Start: clean `011-client-accounts`, `cd465abc65f52a5e30e8e3af17ecb82a44ebb63d`;
+`git pull --ff-only` was already up to date. U3-R2 was committed and pushed first.
+Local Docker only. New migration `20261031123600_client_accounts_admission.sql`
+is after U3-R2 and avoids the already-used 123000 timestamp. No committed migration
+was edited, and no audit trigger body was changed.
+
+### Observed RED before implementation
+
+- T019: `node --env-file=.env.local node_modules/vitest/vitest.mjs run --config
+vitest.integration.config.ts tests/integration/client-accounts-rate-limit.test.ts
+-t 'T019 admission contract'`: one failed assertion, bounded attested admission
+  RPC exists, expected true / received false. The test file was subsequently
+  renamed to the task-owned `client-accounts-admission.test.ts`.
+- T021: `npm test -- --run tests/unit/client-accounts-boundary.test.ts`: one failed
+  assertion, server-only admission builder exists, expected true / received false.
+  The helper suite also failed to import the absent three modules. T020/T022
+  implementation began only after these REDs.
+- Additional RED before corrections: `npm test -- --run
+tests/unit/client-accounts-admission.test.ts` accepted an extra top-level
+  workspace field (expected admission denial, received admission); exact-envelope
+  validation fixed it. The same command failed on absent `attestAdmission` before
+  adding the shared signed-field builder.
+- `node --env-file=.env.local node_modules/vitest/vitest.mjs run --config
+vitest.integration.config.ts tests/integration/client-accounts-admission.test.ts
+-t 'C1 mismatch emits'`: structured C1 server event exists, expected true /
+  received false. The migration then added only fixed code/timestamp LOG evidence
+  before returning unavailable. Database rows remain unchanged. Captured C1 logs
+  are also tested for absence of attribution and credential canaries.
+
+### Observed GREEN
+
+Final application: `npx --yes supabase@2.122.0 db reset`, then
+`node tests/integration/client-accounts-provision.mjs`, both exit 0. Docker bin was
+on PATH. The prescribed stack exclusion set was used. Integration npm inherited
+privately loaded ignored `.env.local`; no environment values are reported.
+
+| Gate                                           |                Passed | Failed | Deferred |
+| ---------------------------------------------- | --------------------: | -----: | -------: |
+| Final local reset + provisioning               |            2 commands |      0 |        0 |
+| `npm run typecheck`                            |               1 check |      0 |        0 |
+| `npm run lint`                                 |   1 check, 0 warnings |      0 |        0 |
+| `npm run format:check`                         |               1 check |      0 |        0 |
+| `npm test`                                     | 1304 tests / 52 files |      0 |        0 |
+| `npm run test:integration`                     |  842 tests / 24 files |      0 |   1 TODO |
+| Focused admission/catalog/audit/RLS regression |    82 tests / 4 files |      0 |   1 TODO |
+
+No U5 browser e2e is specified. The only TODO is
+`[U4/T029] Storage pending real-JWT read/write denial: storage-api excluded`.
+The staged U2 admission-grant and purge TODOs are real passing tests now. One full
+run found the stale private-function inventory: its four new names were added,
+retaining all hardened owner/search_path/EXECUTE checks. Bigint count expectations
+were corrected with safe integer casts in tests; production semantics were unchanged.
+
+### Security and acceptance evidence
+
+- Admission order: C1, Vault keys, constant-time attestation/freshness verification,
+  nonce insertion, independent token-to-link-key binding, advisory link then IP
+  locks, both fixed-window increments, both limit checks, hashed-secret ticket,
+  attempt row and audit. Invalid/stale/replayed attestations receive no counter
+  credit or ticket. C1/missing keys are unavailable with zero writes. Unknown,
+  malformed, expired and consumed links and invalid request-secret shapes count
+  both windows after reaching counting, then return invalid without a ticket.
+- Shared `f11-attestation-vectors.json` provides three fixed synthetic vectors,
+  including IPv6, and four concrete single-field mutations. TS and the actual DB
+  verifier use the same file: domain tags + NUL, uint32 big-endian byte lengths,
+  32-byte HMACs, decimal epoch milliseconds and raw 16-byte UUIDs agree.
+  Assertions compare booleans instead of printing MAC/key/credential values.
+- Twelve separate connections on one link yield exactly 5 admitted / 7 invalid,
+  link counter 12. Thirty-six separate connections sharing an IP across eight
+  links in two workspaces yield exactly 30 admitted / 6 invalid, IP counter 36.
+  Both counters increment on denials. Injected limits use only the policy owner;
+  an unresolved limits seam rolls all admission writes back.
+- Committed admission evidence survives business and infrastructure signup rollback.
+  Duplicate failure retains redemption and safe failure audit; infrastructure
+  failure preserves the unused ticket. A fresh admission counts again. Real anon
+  RPC tests reject forged ticket, wrong request hash and wrong link, then complete
+  exactly once with a valid admitted ticket; replay stays invalid.
+- Rotation uses the same canonical address and token before/after changing the
+  Vault rate key and corresponding test signer together. Exhausted old IP/link
+  counters remain unchanged and are ignored; new-key admission succeeds. Expired
+  old counters are removed opportunistically. Boundaries align with expiry; no
+  old-key lookup exists. Accepted extra exposure is one window per key, at most
+  one hour; rotation remains rare/manual and coordinated with the server env.
+- RPC is postgres-owned SECURITY DEFINER with empty search_path and EXECUTE only
+  anon/authenticated, revoked PUBLIC/service_role. All new private helpers revoke
+  API/PUBLIC EXECUTE. Counters/nonces are private, forced RLS, zero effective API
+  table/column grants, no workspace/link FK or identity fields. U2 redemption
+  guards and one-use integrity are reused unchanged.
+- Attempts contain no IP/ip_key/token/hash/PII. Unknown attempted/failed audit
+  targets use the attempt UUID, never a nonce/ticket/token. Audit survives signup
+  rollback. Captured DB/Auth logs and evidence are scanned with safe boolean
+  assertions for attribution, credentials and PII canaries.
+- Private purge uses a transaction/backend-bound HMAC capability, matching U2's
+  signed-capability pattern. A forged GUC cannot authorize general DELETE. The
+  function and trigger both enforce the retention-policy owner: only attempts
+  older than 30 days are deleted. Young attempts and live nonces survive; expired
+  counters/nonces are removed. Cleanup appends a count only, targeting a fresh
+  per-run UUID. Every original audit row, including references to purged attempts,
+  survives unchanged. Tickets/receipts and one-use replay protection stay intact.
+- Pure trusted-IP extraction reads only CF-Connecting-IP, canonicalizes IPv4 and
+  lowercase compressed IPv6, maps IPv4-mapped IPv6 to IPv4, ignores every other
+  header and permits overrides only with explicit non-production mode AND flag.
+  Attribution uses the full address. Builders start with server-only, read env
+  keys, return derived proof fields only, and generate 32-byte random base64url
+  request secrets. U6 must adapt hex proof fields to PostgREST bytea and wire calls.
+- Validation delegates passwords to the existing owner, reuses exact-key validation,
+  follows captured Auth email storage normalization and accepts already-canonical
+  E.164 storage values only. No phone parsing/country/input acceptance rules were
+  added. Signed-in visitors get an internal manual-sign-out requirement, with no
+  automatic sign-out, linking, merge or token redirect.
+
+### Remaining decisions and production blockers
+
+T019-T022 are ticked only after observed GREEN. ND-F11-2a phone-input acceptance/UI
+remains OPEN; only canonical E.164 primitives ship. U6 owns server-action wiring
+and build:edge, neither done here. Clock skew is an availability risk: even a
+slightly future Worker timestamp is rejected against DB clock_timestamp(); no
+tolerance was added. IPv6 address rotation can bypass the IP ceiling across
+links; this remains an open risk for the PO, with the per-link ceiling retained.
+No /64 grouping was added. Production purge scheduling is a blocker: private
+local invocation only, no pg_cron or scheduler. Audit retention/archived review
+remain pending ND-F5-1; C4 hosted proof is blocked and T046 stays reserved/unchanged.
+No dependency, seed, capability-matrix or hosted change. Secrets stay in ignored
+`.env.local`; vector keys are explicitly synthetic. Ignored diagnostic logs were
+scanned without displaying credentials; no credential-bearing log was found.

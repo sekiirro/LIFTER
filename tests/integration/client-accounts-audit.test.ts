@@ -1,3 +1,4 @@
+import { proof, admit, counts } from './client-accounts-admission-fixture';
 import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import {
@@ -91,4 +92,72 @@ it('caught failure audit is outside inner rollback and remains append-only', asy
       await tx`delete from public.audit_events where details->>'link_id'=${bad.link} and action='client.signup_failed'`;
     }),
   ).rejects.toMatchObject({ code: '23514' });
+});
+
+it('U5 admitted evidence survives infrastructure rollback and a new admission counts again', async () => {
+  const s = await signupFixture(f),
+    p = proof(s.token);
+  const a = await admit(db, p);
+  expect(a.status).toBe('admitted');
+  const before = await counts(db);
+  await probe(async (tx) => {
+    await tx`alter table public.clients add constraint u5_infra check(false) not valid`;
+    expect(
+      await signup(tx, {
+        ...s,
+        ticket: a.admission_ticket,
+        request: p.request,
+      }),
+    ).toEqual({ status: 'unavailable' });
+    expect(await counts(tx)).toEqual(before);
+    expect(
+      (
+        await tx`select redeemed_at is null as unused from app_private.signup_admission_tickets where id=${a.admission_ticket}`
+      )[0]!.unused,
+    ).toBe(true);
+  });
+  const retry = await admit(db, proof(s.token, { ip: p.ip }));
+  expect(retry.status).toBe('admitted');
+  const after = await counts(db);
+  expect(after!.credits - before!.credits).toBe(2);
+  expect(after!.tickets - before!.tickets).toBe(1);
+  expect(
+    await db`select 1 from public.audit_events where action='client.signup_attempted' and details->>'link_id'=${s.link}`,
+  ).toHaveLength(2);
+});
+
+it('U5 purge appends counts-only audit and preserves all original audit rows and receipts', async () => {
+  await probe(async (tx) => {
+    const [old] =
+      await tx`insert into app_private.client_signup_attempts(outcome_class,created_at) values('failure',clock_timestamp()-interval '31 days') returning id`;
+    await tx`insert into public.audit_events(action,target_table,target_id,details) values('client.signup_failed','client_signup_attempts',${old!.id},'{"outcome_class":"failure"}')`;
+    const original =
+      await tx`select to_jsonb(a) as row from public.audit_events a order by id`;
+    const receipts =
+      await tx`select to_jsonb(r) as row from app_private.client_signup_operations r order by id`;
+    const [result] =
+      await tx`select app_private.purge_client_signup_attempts() as result`;
+    expect(result!.result.count).toBeGreaterThanOrEqual(1);
+    const surviving =
+      await tx`select to_jsonb(a) as row from public.audit_events a order by id`;
+    expect(surviving.slice(0, original.length)).toEqual(original);
+    expect(surviving.length).toBe(original.length + 1);
+    expect(
+      JSON.stringify(
+        await tx`select to_jsonb(r) as row from app_private.client_signup_operations r order by id`,
+      ) === JSON.stringify(receipts),
+      'receipts unchanged',
+    ).toBe(true);
+    expect(
+      await tx`select 1 from public.audit_events where target_id=${old!.id}`,
+    ).toHaveLength(1);
+    expect(
+      await tx`select 1 from app_private.client_signup_attempts where id=${old!.id}`,
+    ).toHaveLength(0);
+    const [cleanup] =
+      await tx`select details,target_table,target_id from public.audit_events where action='client.signup_cleanup' order by id desc limit 1`;
+    expect(Object.keys(cleanup!.details)).toEqual(['count']);
+    expect(cleanup!.target_table).toBe('client_signup_attempts');
+    expect(cleanup!.target_id === old!.id).toBe(false);
+  });
 });

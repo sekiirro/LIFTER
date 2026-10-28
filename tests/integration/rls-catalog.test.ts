@@ -8,6 +8,10 @@ import {
 
 const db = sql();
 const signupPrivate = [
+  'signup_constant_time_equal',
+  'signup_attestation_matches',
+  'signup_attempt_purge_proof',
+  'purge_client_signup_attempts',
   'signup_auth_schema_compatible',
   'signup_bcrypt_cost',
   'signup_password_acceptable',
