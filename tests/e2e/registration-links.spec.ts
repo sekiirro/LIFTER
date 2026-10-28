@@ -251,7 +251,7 @@ test.describe('local public registration states (required for review)', () => {
         expect(page.url()).not.toContain('next=');
       }
     });
-  test('valid fixture shows only the workspace name and minimal validity message', async ({
+  test('valid fixture shows the workspace name and bilingual signup form', async ({
     page,
     context,
   }) => {
@@ -271,10 +271,13 @@ test.describe('local public registration states (required for review)', () => {
     expect(text).not.toMatch(
       /1200|XTS|test-authored|Continue|invalid|expired|consumed/i,
     );
-    await expect(page.locator('main form')).toHaveCount(0);
+    await expect(page.locator('main form')).toHaveCount(1);
     await expect(
       page.locator('main [name="email"], main [name="password"]'),
-    ).toHaveCount(0);
+    ).toHaveCount(2);
+    await expect(page.getByLabel(m['clientSignup.name'])).toBeVisible();
+    await expect(page.getByLabel(m['clientSignup.email'])).toBeVisible();
+    await expect(page.getByLabel(m['clientSignup.password'])).toBeVisible();
     expect(await violations(page)).toEqual([]);
     const raw = await page.request.get(`${link}/`, { maxRedirects: 0 });
     expect(raw.status()).toBe(308);

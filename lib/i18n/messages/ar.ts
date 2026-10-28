@@ -213,4 +213,22 @@ export const ar = {
   'showcase.disabled': 'غير متاح',
   'showcase.retryCount': 'عدد المحاولات',
   'showcase.print': 'نموذج الطباعة',
+  'clientSignup.name': 'الاسم',
+  'clientSignup.email': 'البريد الإلكتروني',
+  'clientSignup.country': 'الدولة',
+  'clientSignup.phone': 'رقم الهاتف',
+  'clientSignup.password': 'كلمة المرور',
+  'clientSignup.submit': 'إرسال طلب التسجيل',
+  'clientSignup.pending': 'جارٍ الإرسال',
+  'clientSignup.fieldError': 'يرجى التحقق من هذا الحقل.',
+  'clientSignup.signedIn':
+    'يرجى تسجيل الخروج قبل إرسال طلب التسجيل هذا. عُد إلى هذه الصفحة بعد تسجيل الخروج.',
+  'clientSignup.invalid': 'رابط التسجيل غير صالح أو لم يعد متاحًا.',
+  'clientSignup.duplicate':
+    'هذا البريد الإلكتروني مسجّل بالفعل. يُرجى التواصل مع الدعم.',
+  'clientSignup.complete': 'شكرًا لك. اكتمل طلب التسجيل.',
+  'clientSignup.unavailable': 'يرجى المحاولة مرة أخرى لاحقًا.',
+  'clientSignup.invalidInput': 'يرجى مراجعة الحقول المحددة والمحاولة مرة أخرى.',
+  'clientSignup.signOutRequired':
+    'يرجى تسجيل الخروج قبل إرسال طلب التسجيل هذا.',
 } as const;

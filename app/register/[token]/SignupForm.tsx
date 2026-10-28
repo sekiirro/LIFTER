@@ -1,6 +1,6 @@
 'use client';
 
-import { useActionState, useRef, useState } from 'react';
+import { useActionState, useEffect, useRef, useState } from 'react';
 import { Button } from '../../../components/ui/Button';
 import {
   initialSignupResult,
@@ -8,39 +8,13 @@ import {
   type SignupPublicResult,
 } from '../../../lib/client-accounts/results';
 import type { PhoneCountryOption } from '../../../lib/client-accounts/phone';
+import { getMessages } from '../../../lib/i18n';
 import styles from './signup.module.css';
 
 type SignupAction = (
   previous: SignupPublicResult,
   formData: FormData,
 ) => Promise<SignupPublicResult>;
-
-const copy = {
-  en: {
-    name: 'Name',
-    email: 'Email',
-    country: 'Country',
-    phone: 'Phone number',
-    password: 'Password',
-    submit: 'Create registration request',
-    pending: 'Submitting',
-    field: 'Please check this field.',
-    signedIn:
-      'Please sign out before submitting this registration request. Return to this page after signing out.',
-  },
-  ar: {
-    name: 'الاسم',
-    email: 'البريد الإلكتروني',
-    country: 'الدولة',
-    phone: 'رقم الهاتف',
-    password: 'كلمة المرور',
-    submit: 'إرسال طلب التسجيل',
-    pending: 'جارٍ الإرسال',
-    field: 'يرجى التحقق من هذا الحقل.',
-    signedIn:
-      'يرجى تسجيل الخروج قبل إرسال طلب التسجيل هذا. عُد إلى هذه الصفحة بعد تسجيل الخروج.',
-  },
-} satisfies Record<SignupLocale, Record<string, string>>;
 
 function newRequestSecret(): string {
   const bytes = new Uint8Array(32);
@@ -80,10 +54,44 @@ export function SignupForm({
   const [password, setPassword] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const formRef = useRef<HTMLFormElement>(null);
-  const messages = copy[locale];
+  const resultRef = useRef<HTMLParagraphElement>(null);
+  const nameRef = useRef<HTMLInputElement>(null);
+  const emailRef = useRef<HTMLInputElement>(null);
+  const phoneRef = useRef<HTMLInputElement>(null);
+  const passwordRef = useRef<HTMLInputElement>(null);
+  const allMessages = getMessages(locale);
+  const messages = {
+    name: allMessages['clientSignup.name'],
+    email: allMessages['clientSignup.email'],
+    country: allMessages['clientSignup.country'],
+    phone: allMessages['clientSignup.phone'],
+    password: allMessages['clientSignup.password'],
+    submit: allMessages['clientSignup.submit'],
+    pending: allMessages['clientSignup.pending'],
+    fieldError: allMessages['clientSignup.fieldError'],
+    signedIn: allMessages['clientSignup.signedIn'],
+  };
   const selectedCountry =
     phoneCountries.find((option) => option.code === country) ??
     phoneCountries.find((option) => option.code === 'EG');
+
+  useEffect(() => {
+    if (!submitted) return;
+    if (result.status === 'invalid_input' && result.invalidFields?.length) {
+      const firstInvalid = (
+        ['name', 'email', 'phone', 'password'] as const
+      ).find((field) => result.invalidFields?.includes(field));
+      const fieldRef = {
+        name: nameRef,
+        email: emailRef,
+        phone: phoneRef,
+        password: passwordRef,
+      } as const;
+      if (firstInvalid) fieldRef[firstInvalid].current?.focus();
+      return;
+    }
+    resultRef.current?.focus();
+  }, [result, submitted]);
 
   if (result.status === 'sign_out_required')
     return (
@@ -120,6 +128,7 @@ export function SignupForm({
       <label className={styles.field}>
         <span>{messages.name}</span>
         <input
+          ref={nameRef}
           name="name"
           aria-label={messages.name}
           aria-describedby={
@@ -137,13 +146,14 @@ export function SignupForm({
         />
         {submitted && result.invalidFields?.includes('name') && (
           <span id="signup-name-error" className={styles.fieldError}>
-            {messages.field}
+            {messages.fieldError}
           </span>
         )}
       </label>
       <label className={styles.field}>
         <span>{messages.email}</span>
         <input
+          ref={emailRef}
           name="email"
           aria-label={messages.email}
           aria-describedby={
@@ -161,7 +171,7 @@ export function SignupForm({
         />
         {submitted && result.invalidFields?.includes('email') && (
           <span id="signup-email-error" className={styles.fieldError}>
-            {messages.field}
+            {messages.fieldError}
           </span>
         )}
       </label>
@@ -188,6 +198,7 @@ export function SignupForm({
               +{selectedCountry?.callingCode ?? '20'}
             </span>
             <input
+              ref={phoneRef}
               aria-label={messages.phone}
               aria-describedby={
                 submitted && result.invalidFields?.includes('phone')
@@ -208,7 +219,7 @@ export function SignupForm({
           </span>
           {submitted && result.invalidFields?.includes('phone') && (
             <span id="signup-phone-error" className={styles.fieldError}>
-              {messages.field}
+              {messages.fieldError}
             </span>
           )}
         </label>
@@ -216,6 +227,7 @@ export function SignupForm({
       <label className={styles.field}>
         <span>{messages.password}</span>
         <input
+          ref={passwordRef}
           name="password"
           aria-label={messages.password}
           aria-describedby={
@@ -233,7 +245,7 @@ export function SignupForm({
         />
         {submitted && result.invalidFields?.includes('password') && (
           <span id="signup-password-error" className={styles.fieldError}>
-            {messages.field}
+            {messages.fieldError}
           </span>
         )}
       </label>
@@ -242,11 +254,19 @@ export function SignupForm({
       </Button>
       {submitted && (
         <p
-          role={result.status === 'invalid_input' ? 'alert' : 'status'}
+          ref={resultRef}
+          tabIndex={-1}
+          role={
+            pending
+              ? 'status'
+              : result.status === 'invalid_input'
+                ? 'alert'
+                : 'status'
+          }
           className={styles.message}
           aria-live="polite"
         >
-          {result.message}
+          {pending ? messages.pending : result.message}
         </p>
       )}
     </form>

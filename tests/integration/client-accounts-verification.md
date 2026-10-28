@@ -1201,3 +1201,35 @@ No RPC, database, migration, grant, RLS, capability-matrix, seed, or catalog cha
 | `npm run build:edge`                                    |                                 passed |
 
 No audit-body, F4 permission/rate/expiry/delivery/secret, client grant, RLS, capability, seed, catalog, or endpoint change was made. ND-F4-5 remains open.
+
+## U8 T035–T038 bilingual messages, accessibility and privacy capture
+
+### RED evidence
+
+- T035: `npx vitest run tests/unit/client-accounts-messages.test.ts` failed before message centralization because `clientSignup.name` and `clientSignup.duplicate` were absent from both catalogs; the link-state enumeration passed.
+- T037: `CI=1 npm run e2e -- tests/e2e/client-accounts.spec.ts --grep "per-submit request secret"` ran a temporary negative-control assertion expecting `requestSecretWasTransmitted` to be false; it failed with `expected false, received true`. It used deterministic synthetic bytes and emitted only the boolean assertion. The existing Server Action contract sends the form payload as multipart data; capture handling was changed to keep raw payloads in memory, redact before checking/persisting, and attach only scrubbed summaries.
+
+### GREEN evidence
+
+- T036: `npx vitest run tests/unit/client-accounts-messages.test.ts` passed 4 tests: AR/EN key parity, exact D-08 and unavailable copy, no Telegram key/field, generic completion wording, and valid/invalid link-state enumeration with `unavailable` excluded.
+- T036: `tests/e2e/client-accounts-a11y.spec.ts` passed 10 tests. Axe found zero serious/critical issues across AR/EN, light/dark, mobile/desktop. Keyboard flows cover Name → Email → Country → Phone → Password → Submit; field errors are associated and the first invalid field/result receives focus; pending is announced.
+- T037/T038: bilingual completion captures collected HTML, RSC, action request/response, metadata, browser logs, server logs and Playwright traces. Raw content is transient; captured dynamic values are scrubbed in memory, trace files are removed, and attachments contain counts/outcomes only. The server wrapper retains raw stdout/stderr only in process memory and writes aggregate counts to the OS temp directory. Scrubbed outcomes are checked for request-secret, PII, token, UUID, provider/SQL and Telegram markers.
+- T037/T038: unavailable retry tests passed in AR/EN with the same-route Server Action returning HTTP 200, `no-store`/`no-referrer`, a retained retryable form, generic status copy, and no consumption. The public link-state test enumerates valid, invalid, expired, consumed, revoked, unknown and malformed states; none maps to `unavailable`.
+- T037/T038: duplicate e2e checks passed for 12 collision combinations per locale (pending, active, staff and archived identities × email, phone and both). After scrubbing dynamic values, actual response bodies, status and stable headers compare identically across the classes.
+- T038: the valid-link acceptance assertion was updated to require the F11 signup form. The Storage e2e now skips only when the required local stack returns HTTP 503 for `storage-api`; its real-JWT read/write assertions still run when that service is enabled. `app/register/[token]/error.tsx` required no change because no disclosed error text or privacy-header defect was demonstrated.
+
+### U8 gates
+
+| Gate                                                               |                                                                                                                               Result |
+| ------------------------------------------------------------------ | -----------------------------------------------------------------------------------------------------------------------------------: |
+| `npm run typecheck`                                                |                                                                                                                       1 check passed |
+| `npm run lint`                                                     |                                                                                                                       1 check passed |
+| `npm run format:check`                                             |                                                                                                                       1 check passed |
+| `npm test`                                                         |                                                                                                        57 files / 1,346 tests passed |
+| Local DB reset + provision + `npm run test:integration`            |                                                                                               25 files / 855 tests passed; 0 pending |
+| Focused client-account and accessibility e2e pair                  |                                                                                                                30 passed / 1 skipped |
+| Full `CI=1 npm run e2e`                                            |                                                                                                   123 passed / 10 skipped / 0 failed |
+| `npm run build:edge` + `node scripts/check-client-signup-edge.mjs` |                                                                              passed; 1,446 server files and 61 client assets scanned |
+| `npm run size`                                                     | Worker web 6,401.33 KiB / 1,331.78 KiB gzip; +3.35 KiB / −0.35 KiB gzip against the latest recorded 6,397.98 / 1,332.13 KiB baseline |
+
+The 10 full-e2e skips are the eight existing Chromium/mobile project guards, the provider-fault opt-in case, and the Storage test while the mandated stack excludes `storage-api` (probe returned HTTP 503). No migrations, dependency manifests, grants, RLS, seeds, capability matrix, catalog or application endpoints changed. The existing `unavailable` action remains HTTP 200 with privacy headers.

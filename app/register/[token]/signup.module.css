@@ -57,6 +57,12 @@
 }
 .message {
   margin: 0;
+  scroll-margin-block: var(--space-4);
+}
+.message:focus {
+  outline: 2px solid var(--color-focus-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-button);
 }
 @media (max-width: 36rem) {
   .phoneFields {

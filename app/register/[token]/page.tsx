@@ -45,11 +45,7 @@ export default async function RegisterPage({
       </h1>
       {result.status === 'valid' && <p>{result.workspace_name}</p>}
       {result.status === 'valid' && signedIn && (
-        <p role="status">
-          {locale === 'en'
-            ? 'Please sign out before submitting this registration request. Return to this page after signing out.'
-            : 'يرجى تسجيل الخروج قبل إرسال طلب التسجيل هذا. عُد إلى هذه الصفحة بعد تسجيل الخروج.'}
-        </p>
+        <p role="status">{m['clientSignup.signedIn']}</p>
       )}
       {result.status === 'valid' && !signedIn && (
         <SignupForm

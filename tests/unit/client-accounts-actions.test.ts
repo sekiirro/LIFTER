@@ -1,8 +1,9 @@
-import { existsSync, readFileSync } from 'node:fs';
+import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { expect, it, vi } from 'vitest';
 import { signupResult } from '../../lib/client-accounts/results';
 import { processClientSignup } from '../../lib/client-accounts/service';
+import { getMessages } from '../../lib/i18n';
 import {
   signupFields,
   validateSignupFields,
@@ -77,7 +78,8 @@ it('T023 signup action import graph never reaches the admin client or service-ro
   const pending = [resolve('app/register/[token]/actions.ts')];
   while (pending.length > 0) {
     const file = pending.pop()!;
-    if (visited.has(file) || !existsSync(file)) continue;
+    if (visited.has(file) || !existsSync(file) || !statSync(file).isFile())
+      continue;
     visited.add(file);
     const contents = readFileSync(file, 'utf8');
     expect(file.replaceAll('\\', '/')).not.toMatch(/lib\/supabase\/admin\.ts$/);
@@ -160,10 +162,17 @@ it('T023 keeps tokens and submitted identity values out of public result code an
   const results = source('lib/client-accounts/results.ts');
 
   expect(results).toContain("'duplicate'");
-  expect(results).toContain(
+  expect(results).toContain('getMessages');
+  expect(results).toContain('clientSignup.duplicate');
+  expect(results).not.toContain(
     'This email is already registered. Contact support.',
   );
-  expect(results).toContain('يرجى المحاولة مرة أخرى لاحقًا.');
+  expect(getMessages('en')['clientSignup.duplicate']).toBe(
+    'This email is already registered. Contact support.',
+  );
+  expect(getMessages('ar')['clientSignup.unavailable']).toBe(
+    'يرجى المحاولة مرة أخرى لاحقًا.',
+  );
   expect(action + service).not.toMatch(/console\.(?:log|error|warn)\s*\(/);
   expect(results).not.toMatch(/\$\{\s*(?:input|fields|formData)/);
   expect(results).not.toMatch(/return\s+(?:input|fields|formData)\b/);

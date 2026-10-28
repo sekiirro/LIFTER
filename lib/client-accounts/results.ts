@@ -1,4 +1,5 @@
 import type { SignupFields } from './validation';
+import { getMessages } from '../i18n';
 
 export type SignupStatus =
   | 'invalid'
@@ -14,34 +15,23 @@ export type SignupPublicResult = {
   invalidFields?: Array<keyof SignupFields>;
 };
 
-const copy = {
-  en: {
-    invalid: 'This registration link is invalid or no longer available.',
-    duplicate: 'This email is already registered. Contact support.',
-    complete: 'Thank you. Your registration request is complete.',
-    unavailable: 'Please try again later.',
-    invalid_input: 'Check the highlighted fields and try again.',
-    sign_out_required:
-      'Please sign out before submitting this registration request.',
-  },
-  ar: {
-    invalid: 'رابط التسجيل غير صالح أو لم يعد متاحًا.',
-    duplicate: 'هذا البريد الإلكتروني مسجّل بالفعل. يُرجى التواصل مع الدعم.',
-    complete: 'شكرًا لك. اكتمل طلب التسجيل.',
-    unavailable: 'يرجى المحاولة مرة أخرى لاحقًا.',
-    invalid_input: 'يرجى مراجعة الحقول المحددة والمحاولة مرة أخرى.',
-    sign_out_required: 'يرجى تسجيل الخروج قبل إرسال طلب التسجيل هذا.',
-  },
-} satisfies Record<SignupLocale, Record<SignupStatus, string>>;
-
 export function signupResult(
   status: SignupStatus,
   locale: SignupLocale,
   invalidFields?: Array<keyof SignupFields>,
 ): SignupPublicResult {
+  const messages = getMessages(locale);
+  const messageKey = {
+    invalid: 'clientSignup.invalid',
+    duplicate: 'clientSignup.duplicate',
+    complete: 'clientSignup.complete',
+    unavailable: 'clientSignup.unavailable',
+    invalid_input: 'clientSignup.invalidInput',
+    sign_out_required: 'clientSignup.signOutRequired',
+  } satisfies Record<SignupStatus, keyof typeof messages>;
   return {
     status,
-    message: copy[locale][status],
+    message: messages[messageKey[status]],
     ...(status === 'invalid_input' && invalidFields?.length
       ? { invalidFields: [...new Set(invalidFields)] }
       : {}),

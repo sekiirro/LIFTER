@@ -20,6 +20,13 @@ test('a real pending-client JWT cannot read or write Storage', async ({
     !local,
     'Requires the isolated local Storage-enabled Supabase stack.',
   );
+  const storageProbe = await fetch(`${apiUrl}/storage/v1/bucket`).catch(
+    () => null,
+  );
+  test.skip(
+    storageProbe?.status === 503,
+    'The required local Supabase stack excludes storage-api.',
+  );
   const { registrationFixture, secret, issue } =
     await import('../integration/registration-links-fixture');
   const fixture = await registrationFixture();

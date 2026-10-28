@@ -220,4 +220,23 @@ export const en: Record<keyof typeof ar, string> = {
   'showcase.disabled': 'Unavailable',
   'showcase.retryCount': 'Retry count',
   'showcase.print': 'Print sample',
+  'clientSignup.name': 'Name',
+  'clientSignup.email': 'Email',
+  'clientSignup.country': 'Country',
+  'clientSignup.phone': 'Phone number',
+  'clientSignup.password': 'Password',
+  'clientSignup.submit': 'Create registration request',
+  'clientSignup.pending': 'Submitting',
+  'clientSignup.fieldError': 'Please check this field.',
+  'clientSignup.signedIn':
+    'Please sign out before submitting this registration request. Return to this page after signing out.',
+  'clientSignup.invalid':
+    'This registration link is invalid or no longer available.',
+  'clientSignup.duplicate':
+    'This email is already registered. Contact support.',
+  'clientSignup.complete': 'Thank you. Your registration request is complete.',
+  'clientSignup.unavailable': 'Please try again later.',
+  'clientSignup.invalidInput': 'Check the highlighted fields and try again.',
+  'clientSignup.signOutRequired':
+    'Please sign out before submitting this registration request.',
 };

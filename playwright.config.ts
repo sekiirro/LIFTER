@@ -1,4 +1,5 @@
 import { defineConfig, devices } from '@playwright/test';
+import { serverLogSummaryPath } from './tests/e2e/server-log-capture';
 
 export default defineConfig({
   testDir: './tests/e2e',
@@ -18,9 +19,12 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run build && npm run start',
+    command: 'npm run build && node tests/e2e/start-server-capture.mjs',
     url: 'http://localhost:3000/api/health',
-    env: { LIFTER_SHOWCASE: '1' },
+    env: {
+      LIFTER_SHOWCASE: '1',
+      U8_SERVER_LOG_SUMMARY_PATH: serverLogSummaryPath,
+    },
     reuseExistingServer: !process.env.CI,
   },
 });
