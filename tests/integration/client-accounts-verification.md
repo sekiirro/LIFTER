@@ -1566,6 +1566,8 @@ This current-status table supersedes the historical “open” labels in earlier
 
 Q-M22 status follows the checked-in quickstart: link/identity outcomes stay `invalid`; the exact HTTP 200 `unavailable` payload applies to infrastructure failures, with no leaked identifiers. It does not claim Auth acceptance completion.
 
+Architect clarification: per spec FR-002 and contract lines 208–210, expired/consumed/unknown links classify as `invalid`; only infrastructure failures map to HTTP 200 `unavailable`—there is no PO conflict.
+
 ### Delta 4 FR/SC status update
 
 The FR/SC matrix above is updated by these completed local regressions: FR-002 and SC-003 include branch-specific expired/consumed P1100 classification plus infrastructure-only HTTP 200 `unavailable`; FR-007 includes the independent registry UNIQUE mutation; FR-009 includes app-wall and DB workspace-wall mutations. Their synthetic tests pass locally. Hosted/operational acceptance remains separately blocked by C4, Vault provisioning, purge scheduling, host access-log redaction, ND-F5-1, APP_ORIGIN, and open ND-F4/F10 decisions. C4 is not called complete.
@@ -1588,3 +1590,25 @@ The FR/SC matrix above is updated by these completed local regressions: FR-002 a
 | `git diff --check`                          |                                     1 |    0 | Passed before final task/evidence formatting; rerun required after those edits and on the final commit. |
 
 The integration and full e2e counts above are local synthetic regression evidence. C4 hosted Auth/PO acceptance and the operational blockers remain open.
+
+### Post-merge gate evidence — merge `6c3d0b519746daceaa1fca622d04c249531d745b`
+
+All gates below ran on the no-ff merge commit after a clean local `npx --yes supabase@2.122.0 db reset` and `node tests/integration/client-accounts-provision.mjs` (both exited 0). Local `.env.local` values were loaded privately by the test processes and were not included in output.
+
+| Gate                                        |                                  Pass | Fail | Evidence                                                             |
+| ------------------------------------------- | ------------------------------------: | ---: | -------------------------------------------------------------------- |
+| Local DB reset + Vault provision            |                                     2 |    0 | Both commands exited 0.                                              |
+| `npm run typecheck`                         |                                     1 |    0 | `tsc --noEmit` passed.                                               |
+| `npm run lint`                              |                                     1 |    0 | ESLint passed with zero warnings.                                    |
+| `npm run format:check`                      |                                     1 |    0 | All matched files passed Prettier.                                   |
+| `npm test`                                  |                                 1,354 |    0 | 59 test files passed.                                                |
+| `npm run test:integration`                  |                                   865 |    0 | 25 files passed after reset and provisioning.                        |
+| `CI=1 npm run e2e`                          |                                   124 |    0 | 10 existing skips; server-log scanner ran.                           |
+| `scripts/test-client-accounts-storage.ps1`  |                                     1 |    0 | 1 passed, 0 skipped/failed/flaky/interrupted.                        |
+| `npm run build:edge`                        |                                     1 |    0 | OpenNext production worker bundle built.                             |
+| `node scripts/check-client-signup-edge.mjs` | 1,446 server files + 61 client assets |    0 | Edge proof passed; test-IP override identifiers absent.              |
+| `npm run check:secrets`                     |                                     1 |    0 | Secret scan passed.                                                  |
+| `npm run size`                              |                                     1 |    0 | Web 6,401.33 KiB (1,331.77 KiB gzip); cron 2.85 KiB (1.25 KiB gzip). |
+| `git diff --check`                          |                                     1 |    0 | Passed after this evidence update.                                   |
+
+These results are local synthetic verification. Hosted Auth compatibility and the listed production/operational blockers remain open; Auth acceptance is not complete.
