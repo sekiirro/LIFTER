@@ -1358,3 +1358,43 @@ The changed integration tests passed together: recovery + signup, 2 files / 81 t
 - `git diff --check` passed. This delta did not execute all SQL mutation variants or finish the complete FR/SC matrix. T039, T041, T042, T044 and T045 remain unchecked. T040 is checked from its observed evidence. T046 was not edited.
 
 Current open mutation variants: Q-M17 operation TRUNCATE green restoration not independently observed, attempts/tickets TRUNCATE; Q-M20 raw-IP and `ip_key` SQL mutations; Q-M22 SQL link-state branch/HTTP 200 `unavailable` payload. The all-Q-M01..Q-M23 record is intentionally incomplete, and the full ten-seam/T044 acceptance matrix requires continuation.
+
+## U9 delta 2 � isolation regressions and integration reruns (2026-10-28)
+
+### Initial reproduction and hypotheses
+
+After a clean local `db reset` and Vault provisioning, the first `npm run test:integration` on `440f0b2` completed **25 files / 861 passed / 0 failed**. Thus the prior recorded local **855 passed / 6 failed** result was not reproducible on this clean run. Its exact failures remain recorded above. The following changes address the concrete state-sharing and lock-risk hypotheses without relaxing assertions.
+
+- **H1, committed Q-M08 state:** the old Q-M08 test used the signup file's shared workspace. It did commit the expected failure attempt and `client.signup_failed` event, so those rows can persist between files. Q-M08 now creates its own `clientContext` (therefore a unique workspace/link) and asserts the exact link-scoped failure attempt and event. The in-transaction GoTrue sign-in is labeled a sanity check only; the committed transaction followed by real GoTrue sign-in remains the proof. No IP is used by this test: it calls the signup RPC directly and does not call admission. Admission count deltas are now scoped to that test's link key, IP key, nonce, link id and attempt-linked audit events. The purge snapshot now checks every captured preexisting audit row by its original ID and exact contents, so unrelated new audit rows do not alter the comparison; deletion or modification of a captured row still fails.
+- **H2, Q-M13 fixture write:** removed the committing `issue(context)` RPC from inside the rollback probe. The alternate registration-link row is now inserted directly within that same transaction with only the insert guard disabled for the fixture insert; the probe rollback removes it. This avoids consuming another committed F10 issuance slot. Q-M13 passed in the 5-file focused run.
+- **H3, Q-M04 concurrent probes:** the own/foreign workspace probes now run sequentially. `pendingRlsAccess` raises a dedicated `PendingRlsAccessDenied` only when a safe-column SELECT/UPDATE or workspace-access assertion observes access. The mutation harness maps only that error to `false`; all database, grant, transaction and other infrastructure errors are rethrown. With a local runtime mutation that makes `has_workspace_access` allow every authenticated user, both PO and WO recovery cases failed at the intended assertion: expected `[true,true]`, received `[false,false]`. After reset and Vault provisioning, the focused recovery test passed 2 cases / 9 skipped.
+- **H4, zero-row consume deadlock:** no deadlock recurred in the two clean full-suite runs. Live `pg_locks` polling observed only short-lived admission advisory-lock waits (PIDs 604�607 with a separate blocker 599); the waits cleared, and the next `pg_blocking_pids` snapshot was empty. No `deadlock detected` entry was present in the local DB container logs. The historical two deadlock participants therefore could not be identified from this environment. The zero-row consume test was not weakened or changed; both complete suite runs passed it. The sequential Q-M04 grant probes also remove concurrent GRANT activity on shared catalog relations. I do not claim the exact historical deadlock cause was proven.
+
+### GREEN reruns
+
+Two consecutive full integration gates each followed a fresh `npx --yes supabase@2.122.0 db reset` and `node tests/integration/client-accounts-provision.mjs`:
+
+1. **25 files / 861 passed / 0 failed** (duration 154.13 seconds).
+2. **25 files / 861 passed / 0 failed** (duration 152.59 seconds).
+
+Before these runs, the focused recovery/signup/integrity/catalog/admission set passed **5 files / 193 tests**. The Q-M04 mutation red and restored focused green are recorded above. Local SQL mutations were restored by reset/provision. No migration, application implementation, grant, RLS policy or committed SECURITY DEFINER function was changed.
+
+### Delta 2 final gates
+
+The initial clean reset/provision run on the unchanged `440f0b2` baseline passed 25 files / 861 tests, so the earlier 6-failure local result did not reproduce in this delta. After the test/evidence isolation changes, two consecutive clean reset/provision full integration runs each passed 25 files / 861 tests / 0 failures. The focused Q-M04 mutation failed both PO and WO cases at the exact `[true,true]` versus `[false,false]` assertion; reset/provision restored the focused test to 2 passed / 9 skipped. The five-file recovery/signup/integrity/catalog/admission subset passed 193 tests.
+
+- `npm run typecheck`: pass.
+- `npm run lint`: pass.
+- `npm run format:check`: pass.
+- `npm test`: 59 files / 1,348 tests passed.
+- `npm run test:integration`: two clean runs, each 25 files / 861 tests passed; each was preceded by local DB reset and Vault provisioning.
+- `CI=1 npm run e2e`: 124 passed / 10 skipped / 0 failed.
+- Provider-fault e2e: 1 passed.
+- `scripts/test-client-accounts-storage.ps1`: exactly 1 passed, 0 skipped/failed/flaky/interrupted.
+- `npm run build:edge`: pass.
+- `node scripts/check-client-signup-edge.mjs`: pass, 1,446 production server files and 61 client assets scanned.
+- `npm run check:secrets`: pass.
+- `npm run size`: pass; web 6,401.33 KiB (1,331.78 KiB gzip), cron 2.85 KiB (1.25 KiB gzip).
+- `git diff --check`: pass. Final local reset/provision completed after the gates.
+
+The previously reported six integration failures are recorded as an earlier RED result; delta 2 did not reproduce them in a clean baseline run. The two post-change full runs prove GREEN twice. The exact historical deadlock participants remain unverified because no deadlock recurred and local DB logs contained no deadlock entry. Q-M17/Q-M20/Q-M22 mutations and T043�T045 are outside this delta and were not started.

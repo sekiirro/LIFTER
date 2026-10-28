@@ -8,6 +8,7 @@ import {
   clientContext,
   createRecoveryClientTarget,
   installedRecoveryTargetDefinition,
+  PendingRlsAccessDenied,
   pendingHttpAccess,
   pendingRlsAccess,
   probe,
@@ -355,18 +356,18 @@ describe('F11 client recovery linkage', () => {
         false,
       );
       expect(authorize(appActor, 'coaching_work', contextB.wsA.id)).toBe(false);
-      const rlsProbeResults = await Promise.all(
-        [contextA, contextB].map(async (context) => {
-          try {
-            await probe((tx) =>
-              pendingRlsAccess(tx, context, claims.data!.claims),
-            );
-            return true;
-          } catch {
-            return false;
-          }
-        }),
-      );
+      const rlsProbeResults: boolean[] = [];
+      for (const context of [contextA, contextB]) {
+        try {
+          await probe((tx) =>
+            pendingRlsAccess(tx, context, claims.data!.claims),
+          );
+          rlsProbeResults.push(true);
+        } catch (error) {
+          if (!(error instanceof PendingRlsAccessDenied)) throw error;
+          rlsProbeResults.push(false);
+        }
+      }
       expect(
         rlsProbeResults,
         'safe-column RLS probes for both workspaces',

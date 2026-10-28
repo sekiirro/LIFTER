@@ -1,5 +1,11 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { proof, admit, counts, mac } from './client-accounts-admission-fixture';
+import {
+  proof,
+  admit,
+  counts,
+  countsForAdmission,
+  mac,
+} from './client-accounts-admission-fixture';
 import { anonClient } from './harness';
 import { spawnSync } from 'node:child_process';
 
@@ -38,11 +44,11 @@ it('expired, consumed and malformed-request submissions still count both windows
       }
       if (state === 'consumed')
         expect(await signup(tx, s)).toEqual({ status: 'complete' });
-      const before = await counts(tx);
+      const before = await countsForAdmission(tx, p, s.link);
       expect(
         await admit(tx, state === 'request' ? { ...p, request: 'short' } : p),
       ).toEqual({ status: 'invalid' });
-      const after = await counts(tx);
+      const after = await countsForAdmission(tx, p, s.link);
       expect(after!.credits - before!.credits).toBe(2);
       expect(after!.tickets).toBe(before!.tickets);
       expect(after!.attempts - before!.attempts).toBe(1);
@@ -56,10 +62,10 @@ it('C1 mismatch emits a code/timestamp-only server event with zero database writ
     p = proof(s.token),
     since = new Date().toISOString();
   await probe(async (tx) => {
-    const before = await counts(tx);
+    const before = await countsForAdmission(tx, p, s.link);
     await tx`create or replace function app_private.signup_auth_schema_compatible() returns boolean language sql stable security definer set search_path='' as $$select false$$`;
     expect(await admit(tx, p)).toEqual({ status: 'unavailable' });
-    expect(await counts(tx)).toEqual(before);
+    expect(await countsForAdmission(tx, p, s.link)).toEqual(before);
   });
   const capture = spawnSync(
     'docker',
@@ -242,17 +248,17 @@ it('C1 guard then missing keys: unavailable with zero writes', async () => {
   const s = await signupFixture(f),
     p = proof(s.token);
   await probe(async (tx) => {
-    const before = await counts(tx);
+    const before = await countsForAdmission(tx, p, s.link);
     await tx`create or replace function app_private.signup_auth_schema_compatible() returns boolean language sql stable security definer set search_path='' as $$select false$$`;
     expect(await admit(tx, p)).toEqual({ status: 'unavailable' });
-    expect(await counts(tx)).toEqual(before);
+    expect(await countsForAdmission(tx, p, s.link)).toEqual(before);
   });
   for (const name of ['SIGNUP_ATTEST_KEY', 'SIGNUP_RATE_KEY'])
     await probe(async (tx) => {
-      const before = await counts(tx);
+      const before = await countsForAdmission(tx, p, s.link);
       await tx`select vault.update_secret(id,'',${'MISSING_' + name}) from vault.secrets where name=${name}`;
       expect(await admit(tx, p)).toEqual({ status: 'unavailable' });
-      expect(await counts(tx)).toEqual(before);
+      expect(await countsForAdmission(tx, p, s.link)).toEqual(before);
     });
 });
 for (const kind of [
@@ -284,9 +290,9 @@ for (const kind of [
     await probe(async (tx) => {
       if (kind === 'rate-key' || kind === 'attest-key')
         await tx`select vault.update_secret(id,${randomBytes(32).toString('hex')}) from vault.secrets where name=${kind === 'rate-key' ? 'SIGNUP_RATE_KEY' : 'SIGNUP_ATTEST_KEY'}`;
-      const before = await counts(tx);
+      const before = await countsForAdmission(tx, p, s.link);
       expect(await admit(tx, p)).toEqual({ status: 'invalid' });
-      const after = await counts(tx);
+      const after = await countsForAdmission(tx, p, s.link);
       expect(after!.credits).toBe(before!.credits);
       expect(after!.tickets).toBe(before!.tickets);
       expect(after!.attempts).toBe(before!.attempts);
@@ -467,20 +473,20 @@ for (const [offset, accepted] of [
       };
       await freeze(sampled);
       const p = proof(s.token, { ms: sampled + offset });
-      const before = await counts(tx);
+      const before = await countsForAdmission(tx, p, s.link);
       expect((await admit(tx, p)).status).toBe(
         accepted ? 'admitted' : 'invalid',
       );
       if (!accepted) {
-        expect(await counts(tx)).toEqual(before);
+        expect(await countsForAdmission(tx, p, s.link)).toEqual(before);
         return;
       }
       const [expiry] =
         await tx`select expires_at=${new Date(p.ms + 60000).toISOString()}::timestamptz as covered from app_private.signup_admission_nonces where nonce=${p.nonce}`;
       expect(expiry!.covered, 'nonce covers issued_at + freshness').toBe(true);
-      const after = await counts(tx);
+      const after = await countsForAdmission(tx, p, s.link);
       expect(await admit(tx, p)).toEqual({ status: 'invalid' });
-      expect(await counts(tx)).toEqual(after);
+      expect(await countsForAdmission(tx, p, s.link)).toEqual(after);
       // Advance the frozen body to the last accepted instant and run cleanup.
       for (const name of [
         'public.client_signup_admit(text,text,bytea,bytea,timestamptz,uuid,bytea)',
@@ -496,9 +502,9 @@ for (const [offset, accepted] of [
         );
       }
       await tx`select app_private.purge_client_signup_attempts()`;
-      const afterPurge = await counts(tx);
+      const afterPurge = await countsForAdmission(tx, p, s.link);
       expect(await admit(tx, p)).toEqual({ status: 'invalid' });
-      expect(await counts(tx)).toEqual(afterPurge);
+      expect(await countsForAdmission(tx, p, s.link)).toEqual(afterPurge);
     });
   });
 

@@ -162,9 +162,14 @@ it('narrow 30-day purge removes only old attempts and preserves audit and ticket
     expect(
       await tx`select id,redeemed_at from app_private.signup_admission_tickets order by id`,
     ).toEqual(tickets);
-    expect(
-      await tx`select id,details from public.audit_events where action<>'client.signup_cleanup' order by id`,
-    ).toEqual(audits);
+    for (const audit of audits) {
+      const [survivor] = await tx`
+        select id,details from public.audit_events where id=${audit.id}`;
+      expect(
+        survivor,
+        `preexisting audit row ${audit.id} survives unchanged`,
+      ).toEqual(audit);
+    }
     const [cleanup] =
       await tx`select target_table,target_id,details from public.audit_events where action='client.signup_cleanup' order by occurred_at desc,id desc limit 1`;
     expect(cleanup!.target_table).toBe('client_signup_attempts');

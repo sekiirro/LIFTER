@@ -512,7 +512,20 @@ it('Q-M13 issued snapshot composite FK rejects a valid but different package ver
     const original = await pending(tx, context);
     const user = await identity(tx);
     await tx`set constraints all immediate`;
-    const alternateLink = checked(await issue(context)) as string;
+    await tx`alter table public.registration_links disable trigger registration_links_insert_guard`;
+    const [alternateLinkRow] = await tx`
+      insert into public.registration_links(
+        workspace_id,package_version_id,token_hash,created_by,created_at,expires_at,
+        price_minor,currency,duration_days,duration_months,commission_rate_bp
+      )
+      select l.workspace_id,l.package_version_id,encode(extensions.gen_random_bytes(32),'hex'),l.created_by,
+        statement_timestamp(),statement_timestamp()+interval '24 hours',
+        l.price_minor,l.currency,l.duration_days,l.duration_months,l.commission_rate_bp
+      from public.registration_links l where l.id=${context.link}
+      returning id`;
+    await tx`alter table public.registration_links enable trigger registration_links_insert_guard`;
+    expect(alternateLinkRow).toBeDefined();
+    const alternateLink = alternateLinkRow!.id as string;
     await tx`alter table public.package_versions disable trigger package_versions_insert_guard`;
     const [alternateVersion] = await tx`
       insert into public.package_versions(workspace_id,offer_id,version,name_ar,name_en,price_minor,currency,commission_rate_bp,duration_days,duration_months,published_by)

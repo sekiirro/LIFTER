@@ -303,6 +303,13 @@ export async function pendingHttpAccess(
   }
 }
 
+export class PendingRlsAccessDenied extends Error {
+  constructor(target: string) {
+    super(`Pending client unexpectedly accessed ${target}`);
+    this.name = 'PendingRlsAccessDenied';
+  }
+}
+
 // Safe fixture grants ensure RLS denials cannot be masked by missing privileges.
 export async function pendingRlsAccess(
   tx: TransactionSql,
@@ -326,19 +333,23 @@ export async function pendingRlsAccess(
       `grant update ("${column.attname}") on ${target} to authenticated`,
     );
     await tx`set local role authenticated`;
-    expect(
-      await tx.unsafe(`select "${column.attname}" from ${target}`),
-      table.relname,
-    ).toHaveLength(0);
+    const selected = await tx.unsafe(
+      `select "${column.attname}" from ${target}`,
+    );
+    if (selected.length !== 0)
+      throw new PendingRlsAccessDenied(`${table.relname} SELECT`);
     const changed = await tx.unsafe(
       `update ${target} set "${column.attname}"="${column.attname}"`,
     );
-    expect(changed.count, table.relname).toBe(0);
+    if (changed.count !== 0)
+      throw new PendingRlsAccessDenied(`${table.relname} UPDATE`);
     await tx`reset role`;
   }
   await tx`set local role authenticated`;
   const [access] =
     await tx`select app_private.has_workspace_access(${context.wsA.id},null) as own,app_private.has_workspace_access(${context.wsB.id},null) as foreign`;
-  expect(access).toEqual({ own: false, foreign: false });
+  if (!access) throw new Error('Workspace access probe returned no row');
+  if (access.own || access.foreign)
+    throw new PendingRlsAccessDenied('workspace access');
   await tx`reset role`;
 }

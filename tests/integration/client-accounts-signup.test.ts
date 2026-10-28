@@ -127,6 +127,8 @@ for (const stage of [
         `create ${when} on ${table} ${stage === 'deferred' ? 'deferrable initially deferred ' : ''}for each row${condition} execute function pg_temp.u3_fail()`,
       );
       expect(await signup(tx, s)).toEqual({ status: 'invalid' });
+      // Sanity check only: GoTrue cannot see uncommitted Auth rows, so the
+      // committed Q-M08 test below is the proof that no usable orphan remains.
       const login = await anonClient().auth.signInWithPassword({
         email: s.fields.email,
         password: s.fields.password,
@@ -146,7 +148,8 @@ for (const stage of [
     });
   });
 it('Q-M08: a committed business rollback leaves no GoTrue-usable Auth orphan', async () => {
-  const s = await signupFixture(f);
+  const isolated = await clientContext();
+  const s = await signupFixture(isolated);
   const result = await db.begin(async (tx) => {
     await tx.unsafe(
       `create function pg_temp.qm08_fail() returns trigger language plpgsql as $$ begin raise exception 'synthetic business failure' using errcode='P1100'; end $$`,
@@ -168,6 +171,14 @@ it('Q-M08: a committed business rollback leaves no GoTrue-usable Auth orphan', a
   expect(
     await db`select 1 from auth.users where email=${s.fields.email}`,
   ).toHaveLength(0);
+  const attempts = await db`
+    select id from app_private.client_signup_attempts
+    where workspace_id=${isolated.wsA.id} and link_id=${s.link} and outcome_class='failure'`;
+  expect(attempts).toHaveLength(1);
+  const failureEvents = await db`
+    select action from public.audit_events
+    where target_id=${attempts[0]!.id} and action='client.signup_failed'`;
+  expect(failureEvents).toHaveLength(1);
 });
 it('zero-row consume RETURNING rolls back all writes', async () => {
   const s = await signupFixture(f);
