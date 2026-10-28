@@ -4,7 +4,7 @@
 
 Stack B is running locally with project ID `lifter-stack-b` and the F14 profile below. Its API is on port 25421 and database on 25422. Stack B's database has not been reset or provisioned, and the integration suite has not been run.
 
-The saved pre-flight snapshot is `tmp/stack-b-audit/preflight.txt`; the post-start comparison is in `tmp/stack-b-audit/postflight.txt`. Stack 1 container IDs stayed the same, but its database and Auth containers have different `StartedAt` timestamps in the post-start snapshot. The isolation check therefore failed. Stack B was not used for any database writes after that finding. Before running `db reset`, the provisioner, or integration tests, coordinate with the Stack 1 owner and establish a clean isolation comparison. Do not stop, restart, reset, or otherwise alter Stack 1 to restore the snapshot.
+The saved pre-flight snapshot is `tmp/stack-b-audit/preflight.txt`; the post-start comparison is in `tmp/stack-b-audit/postflight.txt`. The Stack 1 database container ID changed from `5f780643cc38` to `83d8233ec283`. Auth kept ID `f235a973bd2c`, but its `StartedAt` timestamp changed. The other three Stack 1 container IDs and start times match. The isolation check therefore failed. Stack B was not used for any database writes after that finding. Before running `db reset`, the provisioner, or integration tests, coordinate with the Stack 1 owner and establish a clean isolation comparison. Do not stop, restart, reset, or otherwise alter Stack 1 to restore the snapshot.
 
 ## Isolation and migrations
 
