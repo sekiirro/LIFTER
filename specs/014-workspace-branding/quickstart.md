@@ -1,0 +1,51 @@
+# F14 Verification Quickstart (future implementation work)
+
+This document is an implementation verification recipe, not evidence that any command has been run. This planning unit is DB-free. Never run Docker, Supabase, local database, integration, or e2e commands as part of this unit. F11 owns stack A's database lock; F14 DB/Storage verification is assigned to stack B only after provisioning and the approvals below.
+
+## Prerequisites before any DB or Storage check
+
+1. PO approves the relevant PA-F14 items and authorizes provisioning/start of stack B.
+2. Infrastructure owner supplies the approved Storage-enabled stack-B start profile and readiness signals. Standard stack defaults do not establish Storage enablement.
+3. Use the F14-based integration line after architect review of the infra branch integration path. Select `LIFTER_SUPABASE_STACK=b`; assert project `lifter-stack-b` and ports 25420–25429 before any connection. Never use stack A or copy keys/URLs across stacks.
+4. The F11/stack-B isolated runner is ready to restore state after both success and failure; F11 pending-client Storage denials are included in the required lane.
+
+## Checks by layer
+
+| Layer | Verification | Expected evidence |
+|---|---|---|
+| Unit, no DB | Validation structure, metadata stripping, animation rejection, hash identity, state machine, revision conflicts, rendering tokens and cache/scope behavior | Unit test report; hostile PNG/WebP fixture matrix; no SVG/JPEG acceptance. |
+| Contract, no DB | App authorization matrix, preview/publication outcomes, generic failures, F10-compatible projection and proxy contract | Contract report for PO/WO own scope and Sales/Trainer/foreign-workspace denials. |
+| DB + Storage, stack B only | Forced RLS, `authorize()` plus `has_workspace_access()`, bucket-qualified path policies, direct Storage API denials, draft/publish/audit atomicity, upload reconciliation and reference-safe cleanup | CI lane run identifier, readiness proof, zero skipped Storage tests, isolated fixture cleanup/restoration proof. |
+| UI, no DB unless an explicit fixture needs it | Frontend Design Gate matrix and accessibility/state review | Screenshot paths under OS temp; AR-RTL/EN-LTR × light/dark × 390/1440 (tablet if layout changes), keyboard/screen-reader/focus/touch/reduced-motion/axe evidence, `npm run size`. |
+| Capacity/recovery, approved environment | Model two assets/version plus draft/staging, workspace count, proxy no-store egress against verified Free-tier allowances and 70% trigger; restore Storage backup and separately verify permanent audit | Assumptions, observed allowance sources, measured usage, restore checksum/results, and decision whether production remains blocked. |
+
+## Q-M mutation and isolation checks (F11-style)
+
+All mutation checks are future checks on an isolated stack-B fixture. Pair each denied request with a positive control in the same workspace. No production data or stack A is used.
+
+| ID | Mutation / attempted bypass | Expected outcome |
+|---|---|---|
+| Q-M01 | WO reads/saves another workspace draft | Deny generically; no foreign fields or revision leak. |
+| Q-M02 | Sales or Trainer invokes branding actions directly | Deny at app wall and DB wall. |
+| Q-M03 | Authenticated actor calls database path without `manage_branding` | Deny under forced RLS and `has_workspace_access()` despite app bypass. |
+| Q-M04 | Omit workspace scope or submit mismatched workspace/resource ids | Deny; no implicit workspace selection or existence disclosure. |
+| Q-M05 | Two saves submit the same draft revision | One CAS winner; stale writer cannot overwrite. |
+| Q-M06 | Publish from stale revision or race two changed publishes | Stale request rejects; serialized successful publish has one version/current pointer/audit event. |
+| Q-M07 | Cause publication audit failure | No partial version/current-pointer change. |
+| Q-M08 | Publish unchanged draft repeatedly | Idempotent no-op; no duplicate version/event. |
+| Q-M09 | Restore old version | Draft changes only; current publication remains unchanged until explicit publish. |
+| Q-M10 | Upload malformed, truncated, trailing, CRC/RIFF-invalid, animated, oversized/overcomplex PNG/WebP, SVG, or JPEG | Reject; prior reference remains; durable state can reconcile; no unvalidated object attaches. |
+| Q-M11 | Interrupt staging, validation, object creation, or stale-revision attachment | Reconciliation completes safely; cleanup never removes a referenced object. |
+| Q-M12 | Guess another workspace's path/hash or call Storage list/direct read as anon | Deny via bucket-qualified policy and independent scope/capability check; hash does not authorize. |
+| Q-M13 | Mutate published object or cross-workspace object through Storage API | Deny; immutable validated object remains intact. |
+| Q-M14 | Request proxy using invalid/expired/consumed token, changed token, arbitrary asset/version selector, or after F10 grace | Generic failure; F10 validity re-applied without grace extension; no selected historical asset. |
+| Q-M15 | Publish between page render and image fetch | Return only authorized render-bound version asset or generic failure. |
+| Q-M16 | Inspect headers and client payloads for URLs/caching | No signed URL; private/no-store including errors; no shared token cache; sniffed MIME and nosniff. |
+| Q-M17 | Switch workspace while preview is in flight or clear scope | Late response discarded; neutral defaults until authorized scope resolves. |
+| Q-M18 | Exercise semantic status colors under brand override and banner backgrounds | Semantic tokens preserved; actual surface contrast passes or text stays off imagery/uses guaranteed-token scrim. |
+| Q-M19 | Storage service unavailable or readiness signal absent in CI | Required lane fails before tests; no Storage test is skipped. |
+| Q-M20 | Force a Storage test failure mid-suite | Isolated stack/fixtures restore state; no cross-run data leak; runner assumptions updated with F11 owners. |
+
+## Audit compatibility check
+
+Before migration implementation, compare the complete F11 `audit_row_change()` definition from the current F11 head to the proposed F14 extension. Preserve all F11 mappings and add F14 mapping(s) without removing prior behavior. Resolve migration timestamp ordering/rebase risk with the architect after F11 integration; do not guess or hand-edit an already applied timestamp.
