@@ -115,6 +115,7 @@ it('public admission RPC exact anon/authenticated-only EXECUTE and private enfor
 });
 it('narrow 30-day purge removes only old attempts and preserves audit and tickets', async () => {
   await probe(async (tx) => {
+    await tx`set transaction isolation level repeatable read`;
     const oldNonce = randomUUID(),
       youngNonce = randomUUID(),
       key = randomBytes(32);
@@ -126,7 +127,7 @@ it('narrow 30-day purge removes only old attempts and preserves audit and ticket
       await tx`insert into app_private.client_signup_attempts(outcome_class) values('attempt') returning id`;
     await tx`insert into public.audit_events(action,target_table,target_id,details) values('client.signup_attempted','client_signup_attempts',${old!.id},'{"outcome_class":"attempt"}')`;
     const audits =
-      await tx`select id,details from public.audit_events order by id`;
+      await tx`select id,details from public.audit_events where action <> 'client.signup_cleanup' order by id`;
     const tickets =
       await tx`select id,redeemed_at from app_private.signup_admission_tickets order by id`;
     await expect(
@@ -170,6 +171,10 @@ it('narrow 30-day purge removes only old attempts and preserves audit and ticket
         `preexisting audit row ${audit.id} survives unchanged`,
       ).toEqual(audit);
     }
+    expect(
+      await tx`select id,details from public.audit_events where action <> 'client.signup_cleanup' order by id`,
+      'purge emits no audit rows except client.signup_cleanup',
+    ).toEqual(audits);
     const [cleanup] =
       await tx`select target_table,target_id,details from public.audit_events where action='client.signup_cleanup' order by occurred_at desc,id desc limit 1`;
     expect(cleanup!.target_table).toBe('client_signup_attempts');

@@ -38,6 +38,7 @@ it('expired, consumed and malformed-request submissions still count both windows
     const s = await signupFixture(f),
       p = proof(s.token);
     await probe(async (tx) => {
+      await tx`set transaction isolation level repeatable read`;
       if (state === 'expired') {
         await tx`alter table public.registration_links disable trigger registration_links_update_guard`;
         await tx`update public.registration_links set expires_at=statement_timestamp()-interval '1 second',created_at=statement_timestamp()-interval '24 hours 1 second' where id=${s.link}`;
@@ -45,14 +46,24 @@ it('expired, consumed and malformed-request submissions still count both windows
       if (state === 'consumed')
         expect(await signup(tx, s)).toEqual({ status: 'complete' });
       const before = await countsForAdmission(tx, p, s.link);
+      const globalBefore = await counts(tx);
       expect(
         await admit(tx, state === 'request' ? { ...p, request: 'short' } : p),
       ).toEqual({ status: 'invalid' });
       const after = await countsForAdmission(tx, p, s.link);
+      const globalAfter = await counts(tx);
       expect(after!.credits - before!.credits).toBe(2);
       expect(after!.tickets).toBe(before!.tickets);
       expect(after!.attempts - before!.attempts).toBe(1);
       expect(after!.audits - before!.audits).toBe(2);
+      expect(globalAfter).toEqual({
+        ...globalBefore,
+        counters: globalBefore!.counters + 2,
+        credits: globalBefore!.credits + 2,
+        nonces: globalBefore!.nonces + 1,
+        attempts: globalBefore!.attempts + 1,
+        audits: globalBefore!.audits + 2,
+      });
     });
   }
 });
@@ -62,10 +73,13 @@ it('C1 mismatch emits a code/timestamp-only server event with zero database writ
     p = proof(s.token),
     since = new Date().toISOString();
   await probe(async (tx) => {
+    await tx`set transaction isolation level repeatable read`;
     const before = await countsForAdmission(tx, p, s.link);
+    const globalBefore = await counts(tx);
     await tx`create or replace function app_private.signup_auth_schema_compatible() returns boolean language sql stable security definer set search_path='' as $$select false$$`;
     expect(await admit(tx, p)).toEqual({ status: 'unavailable' });
     expect(await countsForAdmission(tx, p, s.link)).toEqual(before);
+    expect(await counts(tx)).toEqual(globalBefore);
   });
   const capture = spawnSync(
     'docker',
@@ -248,17 +262,23 @@ it('C1 guard then missing keys: unavailable with zero writes', async () => {
   const s = await signupFixture(f),
     p = proof(s.token);
   await probe(async (tx) => {
+    await tx`set transaction isolation level repeatable read`;
     const before = await countsForAdmission(tx, p, s.link);
+    const globalBefore = await counts(tx);
     await tx`create or replace function app_private.signup_auth_schema_compatible() returns boolean language sql stable security definer set search_path='' as $$select false$$`;
     expect(await admit(tx, p)).toEqual({ status: 'unavailable' });
     expect(await countsForAdmission(tx, p, s.link)).toEqual(before);
+    expect(await counts(tx)).toEqual(globalBefore);
   });
   for (const name of ['SIGNUP_ATTEST_KEY', 'SIGNUP_RATE_KEY'])
     await probe(async (tx) => {
+      await tx`set transaction isolation level repeatable read`;
       const before = await countsForAdmission(tx, p, s.link);
+      const globalBefore = await counts(tx);
       await tx`select vault.update_secret(id,'',${'MISSING_' + name}) from vault.secrets where name=${name}`;
       expect(await admit(tx, p)).toEqual({ status: 'unavailable' });
       expect(await countsForAdmission(tx, p, s.link)).toEqual(before);
+      expect(await counts(tx)).toEqual(globalBefore);
     });
 });
 for (const kind of [
@@ -288,6 +308,7 @@ for (const kind of [
         attestation: kind === 'missing' ? Buffer.alloc(0) : randomBytes(32),
       };
     await probe(async (tx) => {
+      await tx`set transaction isolation level repeatable read`;
       if (kind === 'rate-key' || kind === 'attest-key')
         await tx`select vault.update_secret(id,${randomBytes(32).toString('hex')}) from vault.secrets where name=${kind === 'rate-key' ? 'SIGNUP_RATE_KEY' : 'SIGNUP_ATTEST_KEY'}`;
       const before = await countsForAdmission(tx, p, s.link);
@@ -338,6 +359,7 @@ it('unknown and malformed tokens count both windows, log no identifiers and disc
   for (const token of [randomBytes(32).toString('base64url'), 'malformed']) {
     const p = proof(token);
     await probe(async (tx) => {
+      await tx`set transaction isolation level repeatable read`;
       const before = await counts(tx);
       expect(await admit(tx, p)).toEqual({ status: 'invalid' });
       const after = await counts(tx);
