@@ -1,0 +1,364 @@
+{
+  "goTrueVersion": "v2.197.0",
+  "latestMigrationAllowlist": ["20260831180000"],
+  "bcryptCost": 10,
+  "configuration": {
+    "enable_signup": false,
+    "minimum_password_length": 8,
+    "passwordEncryption": "bcrypt; DB encryption disabled (no encryption env overrides)"
+  },
+  "columns": [
+    {
+      "table": "identities",
+      "name": "provider_id",
+      "type": "text",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "text"
+    },
+    {
+      "table": "identities",
+      "name": "user_id",
+      "type": "uuid",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "uuid"
+    },
+    {
+      "table": "identities",
+      "name": "identity_data",
+      "type": "jsonb",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "jsonb"
+    },
+    {
+      "table": "identities",
+      "name": "provider",
+      "type": "text",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "text"
+    },
+    {
+      "table": "identities",
+      "name": "last_sign_in_at",
+      "type": "timestamptz",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "timestamp with time zone"
+    },
+    {
+      "table": "identities",
+      "name": "created_at",
+      "type": "timestamptz",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "timestamp with time zone"
+    },
+    {
+      "table": "identities",
+      "name": "updated_at",
+      "type": "timestamptz",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "timestamp with time zone"
+    },
+    {
+      "table": "identities",
+      "name": "email",
+      "type": "text",
+      "generated": "ALWAYS",
+      "written": false,
+      "formattedType": "text"
+    },
+    {
+      "table": "identities",
+      "name": "id",
+      "type": "uuid",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "uuid"
+    },
+    {
+      "table": "users",
+      "name": "instance_id",
+      "type": "uuid",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "uuid"
+    },
+    {
+      "table": "users",
+      "name": "id",
+      "type": "uuid",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "uuid"
+    },
+    {
+      "table": "users",
+      "name": "aud",
+      "type": "varchar",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "character varying(255)"
+    },
+    {
+      "table": "users",
+      "name": "role",
+      "type": "varchar",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "character varying(255)"
+    },
+    {
+      "table": "users",
+      "name": "email",
+      "type": "varchar",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "character varying(255)"
+    },
+    {
+      "table": "users",
+      "name": "encrypted_password",
+      "type": "varchar",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "character varying(255)"
+    },
+    {
+      "table": "users",
+      "name": "email_confirmed_at",
+      "type": "timestamptz",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "timestamp with time zone"
+    },
+    {
+      "table": "users",
+      "name": "invited_at",
+      "type": "timestamptz",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "timestamp with time zone"
+    },
+    {
+      "table": "users",
+      "name": "confirmation_token",
+      "type": "varchar",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "character varying(255)"
+    },
+    {
+      "table": "users",
+      "name": "confirmation_sent_at",
+      "type": "timestamptz",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "timestamp with time zone"
+    },
+    {
+      "table": "users",
+      "name": "recovery_token",
+      "type": "varchar",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "character varying(255)"
+    },
+    {
+      "table": "users",
+      "name": "recovery_sent_at",
+      "type": "timestamptz",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "timestamp with time zone"
+    },
+    {
+      "table": "users",
+      "name": "email_change_token_new",
+      "type": "varchar",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "character varying(255)"
+    },
+    {
+      "table": "users",
+      "name": "email_change",
+      "type": "varchar",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "character varying(255)"
+    },
+    {
+      "table": "users",
+      "name": "email_change_sent_at",
+      "type": "timestamptz",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "timestamp with time zone"
+    },
+    {
+      "table": "users",
+      "name": "last_sign_in_at",
+      "type": "timestamptz",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "timestamp with time zone"
+    },
+    {
+      "table": "users",
+      "name": "raw_app_meta_data",
+      "type": "jsonb",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "jsonb"
+    },
+    {
+      "table": "users",
+      "name": "raw_user_meta_data",
+      "type": "jsonb",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "jsonb"
+    },
+    {
+      "table": "users",
+      "name": "is_super_admin",
+      "type": "bool",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "boolean"
+    },
+    {
+      "table": "users",
+      "name": "created_at",
+      "type": "timestamptz",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "timestamp with time zone"
+    },
+    {
+      "table": "users",
+      "name": "updated_at",
+      "type": "timestamptz",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "timestamp with time zone"
+    },
+    {
+      "table": "users",
+      "name": "phone",
+      "type": "text",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "text"
+    },
+    {
+      "table": "users",
+      "name": "phone_confirmed_at",
+      "type": "timestamptz",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "timestamp with time zone"
+    },
+    {
+      "table": "users",
+      "name": "phone_change",
+      "type": "text",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "text"
+    },
+    {
+      "table": "users",
+      "name": "phone_change_token",
+      "type": "varchar",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "character varying(255)"
+    },
+    {
+      "table": "users",
+      "name": "phone_change_sent_at",
+      "type": "timestamptz",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "timestamp with time zone"
+    },
+    {
+      "table": "users",
+      "name": "confirmed_at",
+      "type": "timestamptz",
+      "generated": "ALWAYS",
+      "written": false,
+      "formattedType": "timestamp with time zone"
+    },
+    {
+      "table": "users",
+      "name": "email_change_token_current",
+      "type": "varchar",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "character varying(255)"
+    },
+    {
+      "table": "users",
+      "name": "email_change_confirm_status",
+      "type": "int2",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "smallint"
+    },
+    {
+      "table": "users",
+      "name": "banned_until",
+      "type": "timestamptz",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "timestamp with time zone"
+    },
+    {
+      "table": "users",
+      "name": "reauthentication_token",
+      "type": "varchar",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "character varying(255)"
+    },
+    {
+      "table": "users",
+      "name": "reauthentication_sent_at",
+      "type": "timestamptz",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "timestamp with time zone"
+    },
+    {
+      "table": "users",
+      "name": "is_sso_user",
+      "type": "bool",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "boolean"
+    },
+    {
+      "table": "users",
+      "name": "deleted_at",
+      "type": "timestamptz",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "timestamp with time zone"
+    },
+    {
+      "table": "users",
+      "name": "is_anonymous",
+      "type": "bool",
+      "generated": "NEVER",
+      "written": true,
+      "formattedType": "boolean"
+    }
+  ]
+}

@@ -1,1 +1,5 @@
 project_id = "lifter"
+
+[auth]
+enable_signup = false
+minimum_password_length = 8

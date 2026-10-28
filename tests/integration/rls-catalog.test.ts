@@ -7,6 +7,10 @@ import {
 } from './registration-links-fixture';
 
 const db = sql();
+const signupPrivate = [
+  'signup_auth_schema_compatible',
+  'signup_link_key_matches',
+];
 const registrationPrivate = [
   'registration_link_is_valid',
   'registration_link_limits',
@@ -137,6 +141,7 @@ describe('tenancy security catalog (T007)', () => {
     expect(rows.map((row) => row.proname).sort()).toEqual(
       [
         ...registrationPrivate,
+        ...signupPrivate,
         'audit_events_immutable',
         'audit_row_change',
         'current_staff_role',
@@ -169,6 +174,7 @@ describe('tenancy security catalog (T007)', () => {
       expect(row.anon_execute).toBe(false);
       expect(row.authenticated_execute).toBe(
         !registrationPrivate.includes(row.proname) &&
+          !signupPrivate.includes(row.proname) &&
           ![
             'audit_events_immutable',
             'audit_row_change',
