@@ -148,7 +148,7 @@ Each quoted data-model field constraint below MUST have a failing assertion in T
 - `registration_link_id` (`uuid`): "UNIQUE globally; composite FK `(workspace_id,registration_link_id)` → registration_links(workspace_id,id), ON DELETE RESTRICT".
 - `package_version_id` (`uuid`): "Composite FK `(workspace_id,package_version_id)` → package_versions(workspace_id,id), ON DELETE RESTRICT; exact match to issued link".
 - `email_normalized` (`text`): "UNIQUE globally, nonempty; DB recomputes using ND-F11-2 seam; no ad hoc lower/trim default".
-- `phone_e164` (`text`): "UNIQUE globally, nonempty canonical E.164 output from ND-F11-2 seam; input/country handling unresolved".
+- `phone_e164` (`text`): "UNIQUE globally, nonempty canonical E.164 output from ND-F11-2 seam; input is a national number with country selector default +20, stored as E.164 (ND-F11-2a; PO, 2026-10-28), implemented in U6". (updated session 8)
 - `name` (`text`): required signup name (ND-F11-3), no invented length bound.
 - `approval_state` (proposed representation): initially pending-approval; both walls deny client capabilities until admin approval; workspace PO/WO approval ships in F12 (ND-F11-6a).
 - `created_at` (`timestamptz`): "Server insert time only".
