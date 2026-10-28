@@ -4,6 +4,7 @@ import { redirect } from 'next/navigation';
 import { createSessionClient } from '../../../lib/supabase/server';
 import type { RecoveryResult } from '../../../lib/auth/results';
 import { isRecoverySession } from '../../../lib/auth/recovery-session';
+import { validatePassword } from '../../../lib/auth/password-policy';
 
 export async function verifyRecovery(
   _previous: RecoveryResult | null,
@@ -28,6 +29,16 @@ export async function setNewPassword(
   _previous: RecoveryResult | null,
   form: FormData,
 ): Promise<RecoveryResult> {
+  const password = form.get('password');
+  const confirm = form.get('confirm');
+  if (
+    typeof password !== 'string' ||
+    typeof confirm !== 'string' ||
+    password !== confirm
+  )
+    return { status: 'mismatch' };
+  if (!validatePassword(password).valid) return { status: 'weak_password' };
+
   try {
     const client = await createSessionClient();
     if (!client) return { status: 'invalid_link' };
@@ -39,14 +50,6 @@ export async function setNewPassword(
       !isRecoverySession(claims.data?.claims.amr, Math.floor(Date.now() / 1000))
     )
       return { status: 'invalid_link' };
-    const password = form.get('password');
-    const confirm = form.get('confirm');
-    if (
-      typeof password !== 'string' ||
-      typeof confirm !== 'string' ||
-      password !== confirm
-    )
-      return { status: 'mismatch' };
     const updated = await client.auth.updateUser({ password });
     if (updated.error)
       return {

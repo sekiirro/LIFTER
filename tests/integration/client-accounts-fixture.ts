@@ -13,6 +13,22 @@ import {
 export { registrationFixture } from './registration-links-fixture';
 export { sql } from './harness';
 
+export async function installedRecoveryTargetDefinition(
+  connection: ReturnType<typeof sql>,
+) {
+  const [row] =
+    await connection`select pg_catalog.pg_get_functiondef('app_private.recovery_target_workspace(uuid)'::regprocedure) as definition`;
+  if (!row) throw new Error('Installed recovery target helper is missing');
+  return row.definition as string;
+}
+
+export async function restoreRecoveryTargetFixture(
+  connection: ReturnType<typeof sql>,
+  installedDefinition: string,
+) {
+  await connection.unsafe(installedDefinition);
+}
+
 export const modelTables = [
   'public.clients',
   'app_private.account_identifier_claims',
@@ -138,6 +154,46 @@ export async function signup(
     throw new Error(
       'Signup SQL failed: ' + String((error as { code?: string }).code),
     );
+  }
+}
+
+export type RecoveryClientTarget = {
+  userId: string;
+  workspaceId: string;
+  client: ReturnType<typeof anonClient>;
+};
+
+export async function createRecoveryClientTarget(
+  context: ClientContext,
+): Promise<RecoveryClientTarget> {
+  const fixture = await signupFixture(context);
+  const connection = sql();
+  try {
+    const result = await signup(connection, fixture);
+    if (result.status !== 'complete')
+      throw new Error('Committed recovery client fixture failed');
+    const [row] =
+      await connection`select auth_user_id,workspace_id,approval_state from public.clients where registration_link_id=${fixture.link}`;
+    if (
+      !row ||
+      row.workspace_id !== context.wsA.id ||
+      row.approval_state !== 'pending-approval'
+    )
+      throw new Error('Committed recovery client fixture was not found');
+    const client = anonClient();
+    const signedIn = await client.auth.signInWithPassword({
+      email: fixture.fields.email,
+      password: fixture.fields.password,
+    });
+    if (signedIn.error)
+      throw new Error('Recovery client sign-in fixture failed');
+    return {
+      userId: row.auth_user_id as string,
+      workspaceId: row.workspace_id as string,
+      client,
+    };
+  } finally {
+    await connection.end();
   }
 }
 

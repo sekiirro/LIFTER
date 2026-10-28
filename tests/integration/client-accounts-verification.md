@@ -1172,3 +1172,32 @@ Final U6-R1 gates:
 | `npm run size`                                          | Worker web 6,397.98 KiB / 1,332.13 KiB gzip; change from U6 start: -0.02 KiB / 0.00 KiB gzip |
 
 No RPC, database, migration, grant, RLS, capability-matrix, seed, or catalog change was made for U6-R1.
+
+## U7 T031-T034 F4 recovery linkage and shared password policy
+
+### RED evidence
+
+- T031: `npx vitest run tests/unit/auth-actions.test.ts` failed 7 recovery password cases. Each failed at the provider-factory spy: expected 0 calls, received 1; the old action reached the successful update/redirect path for underlength, missing digit, missing symbol, whitespace-only symbol, non-printable symbol, over-72-byte, and NUL inputs.
+- T031: after local DB reset and Vault provision, `npm run test:integration -- tests/integration/auth-recovery.test.ts tests/integration/client-accounts-recovery.test.ts` failed 3 client-linkage assertions. The placeholder resolved both committed signup Auth IDs to NULL, so PO preflight and record were denied. The F4 catalog and target/actor lock-order assertions passed.
+- T033: after reset and provision, `npm run test:integration -- tests/integration/auth-recovery.test.ts` passed 21 tests but the fixture restored the NULL placeholder. The following `npm run test:integration -- tests/integration/client-accounts-recovery.test.ts` failed 5 of 7 tests; the temporary override restore and committed-target lookup returned NULL instead of the client workspace.
+
+### GREEN evidence
+
+- T032: the forward migration replaces only the helper lookup. Focused local integration checks passed for two committed pending-client targets, PO/WO scope, foreign/revoked/role/self/staff/anonymous denials, no-row NULL, audit attribution, and the F4 catalog contract.
+- T034: the fixture now restores the captured installed function definition; the integration regression compares `prosecdef`, `proconfig`, `proowner`, `proacl`, and volatility before/after. The helper contract is SECURITY DEFINER, empty search path, postgres owner, owner-only execute ACL, and STABLE volatility.
+- T034: `lib/auth/password-policy.ts` runs before session client creation or any GoTrue call. All seven invalid classes return the existing localized `auth.weak_password` result without echoing the submitted password; a compliant password reaches the provider update path, and the local F4 provider lifecycle still succeeds.
+- Full local integration run after DB reset and provision: 25 files / 855 tests passed, 0 pending. Recovery e2e `CI=1 npm run e2e -- tests/e2e/auth.spec.ts`: 5 passed.
+
+### U7 gates
+
+| Gate                                                    |                                 Result |
+| ------------------------------------------------------- | -------------------------------------: |
+| `npm run typecheck`                                     |                         1 check passed |
+| `npm run lint`                                          |                         1 check passed |
+| `npm run format:check`                                  |                         1 check passed |
+| `npm test`                                              |          56 files / 1,342 tests passed |
+| Local DB reset + provision + `npm run test:integration` | 25 files / 855 tests passed; 0 pending |
+| `CI=1 npm run e2e -- tests/e2e/auth.spec.ts`            |                               5 passed |
+| `npm run build:edge`                                    |                                 passed |
+
+No audit-body, F4 permission/rate/expiry/delivery/secret, client grant, RLS, capability, seed, catalog, or endpoint change was made. ND-F4-5 remains open.

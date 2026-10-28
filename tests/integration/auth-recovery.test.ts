@@ -11,14 +11,20 @@ import {
   sql,
   twoWorkspaceFixture,
 } from './harness';
+import {
+  installedRecoveryTargetDefinition,
+  restoreRecoveryTargetFixture,
+} from './client-accounts-fixture';
 
 const db = sql();
 let f: Awaited<ReturnType<typeof twoWorkspaceFixture>>;
 let cA: Awaited<ReturnType<typeof createStaff>>;
 let cB: Awaited<ReturnType<typeof createStaff>>;
 let closedError: { message: string; code: string } | null;
+let installedRecoveryTarget: string | null = null;
 
 beforeAll(async () => {
+  installedRecoveryTarget = await installedRecoveryTargetDefinition(db);
   f = await twoWorkspaceFixture();
   cA = await createStaff(null, 'recovery-client-a');
   cB = await createStaff(null, 'recovery-client-b');
@@ -35,8 +41,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
   try {
-    await db`create or replace function app_private.recovery_target_workspace(target uuid) returns uuid
-      language sql stable security definer set search_path = '' as $$ select null::uuid; $$`;
+    if (installedRecoveryTarget)
+      await restoreRecoveryTargetFixture(db, installedRecoveryTarget);
   } finally {
     try {
       await db`drop table if exists public.test_recovery_targets`;
@@ -98,6 +104,28 @@ describe('recovery', () => {
       code: '42501',
       message: 'not_permitted',
     });
+  });
+
+  it('locks target before actor and repeats the guard before inserting', async () => {
+    const [row] =
+      await db`select pg_catalog.pg_get_functiondef('public.recovery_link_record(uuid)'::regprocedure) as definition`;
+    const definition = row!.definition as string;
+    const targetLock = definition.indexOf(
+      'pg_advisory_xact_lock(hashtextextended(target::text, 0))',
+    );
+    const actorLock = definition.indexOf(
+      'pg_advisory_xact_lock(hashtextextended(auth.uid()::text, 0))',
+    );
+    const repeatedGuard = definition.indexOf(
+      'app_private.recovery_link_guard(target)',
+    );
+    const insert = definition.indexOf(
+      'insert into public.recovery_link_issuances',
+    );
+    expect(targetLock).toBeGreaterThanOrEqual(0);
+    expect(targetLock).toBeLessThan(actorLock);
+    expect(actorLock).toBeLessThan(repeatedGuard);
+    expect(repeatedGuard).toBeLessThan(insert);
   });
 
   for (const [identity, workspace, allowed] of [
