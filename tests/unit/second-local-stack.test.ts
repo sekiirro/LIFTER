@@ -61,6 +61,21 @@ describe('isolated local Supabase stack configuration', () => {
     ).toThrow('Local Supabase target required');
     expect(() =>
       assertLocalStackTarget({
+        stack: 'a',
+        apiUrl: 'http://127.0.0.1:25421',
+        dbUrl: 'postgres://postgres:postgres@127.0.0.1:25422/postgres',
+      }),
+    ).toThrow('Local Supabase target required');
+    for (const consumer of [
+      'tests/integration/harness.ts',
+      'tests/integration/client-accounts-provision.mjs',
+    ]) {
+      expect(readFileSync(consumer, 'utf8')).toContain(
+        'assertLocalStackTarget',
+      );
+    }
+    expect(() =>
+      assertLocalStackTarget({
         stack: 'b',
         apiUrl: 'http://127.0.0.1:54321',
         dbUrl: 'postgres://postgres:postgres@127.0.0.1:54322/postgres',
@@ -74,7 +89,8 @@ describe('isolated local Supabase stack configuration', () => {
       'utf8',
     );
     expect(config).toContain('project_id = "lifter-stack-b"');
-    expect(config).toContain('stack = true');
+    expect(config).not.toContain('stack = true');
+    expect(config).toContain('[storage]\nenabled = true');
     expect(config).toContain('port = 25421');
     expect(config).toContain('port = 25422');
   });

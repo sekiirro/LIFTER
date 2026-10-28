@@ -11,6 +11,9 @@ max_rows = 1000
 port = 25422
 shadow_port = 25420
 
+[storage]
+enabled = true
+
 [studio]
 enabled = true
 port = 25423
@@ -36,6 +39,3 @@ port = 25429
 [auth]
 enable_signup = false
 minimum_password_length = 8
-
-[experimental]
-stack = true

@@ -42,14 +42,7 @@ function stackEndpointsFromStatus() {
           )
         : execFileSync(
             process.platform === 'win32' ? 'npx.cmd' : 'npx',
-            [
-              '--yes',
-              'supabase@2.122.0',
-              'status',
-              '--env',
-              '--output-format',
-              'text',
-            ],
+            ['--yes', 'supabase@2.122.0', 'status', '-o', 'env'],
             {
               cwd: stack.workdir,
               encoding: 'utf8',
