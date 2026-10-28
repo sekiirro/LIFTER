@@ -29,6 +29,8 @@ Option (iii)'s trigger atomically committed/rolled back Auth user and dummy clie
 
 U11 spikes and SDK dependency were only in `%TEMP%\lifter-f11-spikes\`; config was restored byte-for-byte (matching SHA-256 in the report), stack restarted and final local CLI 2.122.0 `db reset` completed. No feature implementation, hosted check or deployment acceptance is claimed.
 
+**U14 Option 3b confirmation (local-only):** [Tests 1–8, source sequence and proposed B1–B4](research/ad-f11-1-spikes.md#option-3b-confirmation-u14) disprove supplied app-metadata availability at INSERT on GoTrue v2.197.0. A separate UPDATE-finalization diagnostic passed atomicity/races and existing integration regressions, but response echo and trusted error classification remain blockers. Retain option (i) conditionally; **AD-F11-1 stays PENDING PO**, with no approval or task changes.
+
 ## Technical Context
 
 | Item             | Existing stack / design constraint                                                                                               |
