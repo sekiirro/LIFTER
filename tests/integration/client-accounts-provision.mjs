@@ -7,8 +7,14 @@ import {
   writeFileSync,
 } from 'node:fs';
 import postgres from 'postgres';
+import {
+  assertLocalStackTarget,
+  getStackConfig,
+  selectStack,
+} from '../../scripts/local-stack.mjs';
 
-const path = '.env.local';
+const stack = getStackConfig(selectStack());
+const path = stack.envFile;
 function parseEnv(contents) {
   const normalized = contents
     .replace(/^\uFEFF/, '')
@@ -23,15 +29,34 @@ function parseEnv(contents) {
 
 function stackEndpointsFromStatus() {
   try {
-    const status = execFileSync(
-      process.platform === 'win32' ? 'npx.cmd' : 'npx',
-      ['--yes', 'supabase@2.122.0', 'status', '-o', 'env'],
-      {
-        encoding: 'utf8',
-        stdio: ['ignore', 'pipe', 'ignore'],
-        shell: process.platform === 'win32',
-      },
-    );
+    const status =
+      stack.name === 'a'
+        ? execFileSync(
+            process.platform === 'win32' ? 'npx.cmd' : 'npx',
+            ['--yes', 'supabase@2.122.0', 'status', '-o', 'env'],
+            {
+              encoding: 'utf8',
+              stdio: ['ignore', 'pipe', 'ignore'],
+              shell: process.platform === 'win32',
+            },
+          )
+        : execFileSync(
+            process.platform === 'win32' ? 'npx.cmd' : 'npx',
+            [
+              '--yes',
+              'supabase@2.122.0',
+              'status',
+              '--env',
+              '--output-format',
+              'text',
+            ],
+            {
+              cwd: stack.workdir,
+              encoding: 'utf8',
+              stdio: ['ignore', 'pipe', 'ignore'],
+              shell: process.platform === 'win32',
+            },
+          );
     return parseEnv(status);
   } catch {
     throw new Error('Local stack environment required');
@@ -62,21 +87,11 @@ if (existsSync(path)) {
   contents = `DB_URL="${env.DB_URL}"\nAPI_URL="${env.API_URL}"\n`;
 }
 
-let target;
-try {
-  target = new URL(env.DB_URL);
-} catch {
-  throw new Error('Local stack required');
-}
-if (
-  target.hostname !== '127.0.0.1' ||
-  target.port !== '54322' ||
-  target.pathname !== '/postgres' ||
-  env.API_URL !== 'http://127.0.0.1:54321' ||
-  !/^project_id = "lifter"$/m.test(readFileSync('supabase/config.toml', 'utf8'))
-) {
-  throw new Error('Local stack required');
-}
+assertLocalStackTarget({
+  stack: stack.name,
+  apiUrl: env.API_URL,
+  dbUrl: env.DB_URL,
+});
 
 // The extension owner is supabase_admin; postgres cannot revoke its grants.
 // No secrets are passed in command arguments, input, output or diagnostics.
@@ -85,7 +100,7 @@ execFileSync(
   [
     'exec',
     '-i',
-    'supabase_db_lifter',
+    stack.name === 'a' ? 'supabase_db_lifter' : 'supabase_db_lifter-stack-b',
     'psql',
     '-U',
     'supabase_admin',
