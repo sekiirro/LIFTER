@@ -28,7 +28,7 @@
 - [x] CHK011 Requirements use clear normative language and identify relevant role, scope, and failure conditions.
 - [x] CHK012 Key entities describe business meaning without prescribing SQL or migration implementation.
 - [x] CHK013 Security, privacy, money integrity, idempotency, and live status requirements are explicit.
-- [x] CHK014 UI requirements reference the Frontend Design Gate and DESIGN.md.
+- [x] CHK014 UI requirements reference the Frontend Design Gate and DESIGN.md; the gate document's pending-merge status is stated in the spec.
 
 ## Decisions and constitution
 
@@ -36,8 +36,12 @@
 - [x] CHK016 DG-F12-1..4 each state OPEN (PO design decision).
 - [x] CHK017 Constitution I..IX are each checked against the specified scope and requirements.
 - [x] CHK018 No open policy is silently promoted to an approved default; acceptance criteria preserve the dependencies on PO decisions.
+- [x] CHK019 The spec no longer depends on machine-local source or design-gate paths.
+- [x] CHK020 The in-repository debate record includes v0, the verbatim critique, architect response r1, thread id, date, models, and outcome.
+- [x] CHK021 Source review found no email addresses or secret-like assignments in the three debate texts.
 
 ## Notes
 
 - Plan/tasks and implementation verification are intentionally pending PO decisions and later Spec Kit phases.
+- `docs/09-frontend-design-gate.md` is referenced as added by branch `docs-workflow-governance`, pending merge to main; it is not present in this worktree's base.
 - Gate results, if run, are repository artifact checks only; they do not close checklist items about future implementation behavior.

@@ -8,7 +8,7 @@
 
 **Input**: F12 registration approval, rejection, initial subscription snapshot, installment obligations, and confirmed payment recording, based on F11 client accounts and F10 issued registration-link snapshots.
 
-**Sources**: Architect response r1 at `C:/Users/NEW LAP/.lifter/specs-drafts/f12-claude-response-r1.md` (overrides v0); v0 at `C:/Users/NEW LAP/.lifter/specs-drafts/f12-draft-claude.md`; [Constitution v1.1.0](../../.specify/memory/constitution.md); [BRD/PRD](../../LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md) BRD-03/04, PRD-02/07/14, DR-01/02; [decision register](../../docs/04-changes-and-questions.md) D-08..D-17; [F9 package spec](../009-packages/spec.md) and [data model](../009-packages/data-model.md); [F10 registration-link spec](../010-registration-links/spec.md) and [data model](../010-registration-links/data-model.md); [F11 client-account spec](../011-client-accounts/spec.md) and [data model](../011-client-accounts/data-model.md).
+**Sources**: [Spec debate r1](research/spec-debate-r1.md) (architect v0, Sol Medium critique round 1, and architect response r1); [Constitution v1.1.0](../../.specify/memory/constitution.md); [BRD/PRD](../../LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md) BRD-03/04, PRD-02/07/14, DR-01/02; [decision register](../../docs/04-changes-and-questions.md) D-08..D-17; [F9 package spec](../009-packages/spec.md) and [data model](../009-packages/data-model.md); [F10 registration-link spec](../010-registration-links/spec.md) and [data model](../010-registration-links/data-model.md); [F11 client-account spec](../011-client-accounts/spec.md) and [data model](../011-client-accounts/data-model.md).
 
 ## User Scenarios & Testing
 
@@ -134,7 +134,7 @@ Concurrent approval/rejection and collection/replay attempts produce one valid o
 - **FR-014**: Approval/rejection transitions and financial events MUST be audited through the existing audit model. Extend the latest `audit_row_change()` body for client approval/rejection UPDATE transitions; audit failure MUST roll back the change. The event details MUST avoid PII/free text, and replay MUST NOT create duplicate audit events. Preserve PO/WO audit visibility.
 - **FR-015**: Unauthorized, foreign, nonexistent, or revoked targets MUST receive a generic non-disclosing denial. Stale already-decided client states MUST not be changed. Authorization MUST precede any replay or state disclosure.
 - **FR-016**: F12 MUST expose no bulk client action. All status and financial views MUST use role- and workspace-appropriate projections; Sales sees no commission amount/rate.
-- **FR-017**: F12 user interfaces MUST follow the Frontend Design Gate at `C:/Users/NEW LAP/.lifter/briefs/frontend-design-gate.txt` and the repository [DESIGN.md](../../DESIGN.md): Arabic-first RTL and English LTR, dark/light modes, responsive and keyboard-accessible interaction, WCAG 2.2 AA contrast, and loading/empty/error/success states. The four unresolved UI design gaps are listed as DG-F12-1..4.
+- **FR-017**: F12 user interfaces MUST follow the [Frontend Design Gate](../../docs/09-frontend-design-gate.md; added by branch `docs-workflow-governance`, pending merge to main) and the repository [DESIGN.md](../../DESIGN.md): Arabic-first RTL and English LTR, dark/light modes, responsive and keyboard-accessible interaction, WCAG 2.2 AA contrast, and loading/empty/error/success states. The four unresolved UI design gaps are listed as DG-F12-1..4.
 - **FR-018**: This specification MUST leave all ND-F12-1..7 and DG-F12-1..4 open pending explicit PO decisions. No conservative default in this document is an approved policy.
 
 ### Key Entities
@@ -207,7 +207,7 @@ Every ND-F12 entry below is OPEN (PO). Any conservative default is a proposal to
 
 ## Design Gaps — OPEN (PO design decision)
 
-All four items require explicit design direction before their UI is treated as settled. Every resulting UI follows the Frontend Design Gate (`C:/Users/NEW LAP/.lifter/briefs/frontend-design-gate.txt`) and [DESIGN.md](../../DESIGN.md).
+All four items require explicit design direction before their UI is treated as settled. Every resulting UI follows the [Frontend Design Gate](../../docs/09-frontend-design-gate.md) and [DESIGN.md](../../DESIGN.md).
 
 - **DG-F12-1 — OPEN (PO design decision)**: Approved-client landing before intake exists: decide the content and next action while P2 is absent.
 - **DG-F12-2 — OPEN (PO design decision)**: Approval queue and approval/rejection dialog layout, including information hierarchy and confirmation interaction.
