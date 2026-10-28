@@ -624,6 +624,24 @@ it('backfill collision aborts without merging identities; unresolved phone fails
     expect(await tx`select 1 from auth.users where id=${u.id}`).toHaveLength(1);
   });
 });
+it('Q-M03 canonical registry UNIQUE rejects duplicate email keys independently', async () => {
+  await probe(async (tx) => {
+    const first = await identity(tx);
+    const second = await identity(tx);
+    expect(first.id).not.toBe(second.id);
+    await tx`set constraints all immediate`;
+    await tx`alter table app_private.account_identifier_claims disable trigger signup_claim_write_guard`;
+    await tx`update app_private.account_identifier_claims set email_key='q-m03-canonical@example.test' where auth_user_id=${first.id}`;
+    await expect(
+      tx.savepoint(async (inner) => {
+        await inner`update app_private.account_identifier_claims set email_key='q-m03-canonical@example.test' where auth_user_id=${second.id}`;
+      }),
+    ).rejects.toMatchObject({
+      code: '23505',
+      constraint_name: 'account_identifier_claims_email_key_key',
+    });
+  });
+});
 for (const collision of ['email', 'phone', 'both'])
   it(`two real connections contend on normalized ${collision} claims`, async () => {
     const other = sql();

@@ -591,9 +591,20 @@ it.each([
 
       const [definition] =
         await tx`select pg_get_functiondef('public.client_signup(text,text,uuid,jsonb)'::regprocedure) as body`;
+      const body = definition!.body as string;
+      const classification =
+        state === 'expired'
+          ? body.slice(
+              body.indexOf('if token is null or token !~'),
+              body.indexOf('new_user:=gen_random_uuid()'),
+            )
+          : body.slice(
+              body.indexOf('if consumed is null then'),
+              body.indexOf('insert into app_private.client_signup_operations'),
+            );
       expect(
-        definition!.body,
-        'expired/consumed business branch keeps the specified P1100 classification',
+        classification,
+        `${state} SQL branch keeps the specified P1100 classification`,
       ).toContain("raise exception 'signup_invalid' using errcode='P1100'");
       expect(
         await signup(tx, s),
