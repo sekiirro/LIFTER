@@ -127,6 +127,15 @@ for (const stage of [
         `create ${when} on ${table} ${stage === 'deferred' ? 'deferrable initially deferred ' : ''}for each row${condition} execute function pg_temp.u3_fail()`,
       );
       expect(await signup(tx, s)).toEqual({ status: 'invalid' });
+      // Sanity check only: GoTrue cannot see uncommitted Auth rows, so the
+      // committed Q-M08 test below is the proof that no usable orphan remains.
+      const login = await anonClient().auth.signInWithPassword({
+        email: s.fields.email,
+        password: s.fields.password,
+      });
+      expect(login.error !== null, 'rolled-back user cannot sign in').toBe(
+        true,
+      );
       await empty(tx, s.fields.email, s.link);
       expect(
         (
@@ -136,15 +145,41 @@ for (const stage of [
       expect(
         await tx`select 1 from public.audit_events where details->>'link_id'=${s.link} and action='client.signup_failed'`,
       ).toHaveLength(1);
-      const login = await anonClient().auth.signInWithPassword({
-        email: s.fields.email,
-        password: s.fields.password,
-      });
-      expect(login.error !== null, 'rolled back user cannot sign in').toBe(
-        true,
-      );
     });
   });
+it('Q-M08: a committed business rollback leaves no GoTrue-usable Auth orphan', async () => {
+  const isolated = await clientContext();
+  const s = await signupFixture(isolated);
+  const result = await db.begin(async (tx) => {
+    await tx.unsafe(
+      `create function pg_temp.qm08_fail() returns trigger language plpgsql as $$ begin raise exception 'synthetic business failure' using errcode='P1100'; end $$`,
+    );
+    await tx.unsafe(
+      'create trigger qm08_fail before insert on public.clients for each row execute function pg_temp.qm08_fail()',
+    );
+    const response = await signup(tx, s);
+    await tx.unsafe('drop trigger qm08_fail on public.clients');
+    return response;
+  });
+  expect(result).toEqual({ status: 'invalid' });
+
+  const login = await anonClient().auth.signInWithPassword({
+    email: s.fields.email,
+    password: s.fields.password,
+  });
+  expect(login.error !== null, 'rolled-back user cannot sign in').toBe(true);
+  expect(
+    await db`select 1 from auth.users where email=${s.fields.email}`,
+  ).toHaveLength(0);
+  const attempts = await db`
+    select id from app_private.client_signup_attempts
+    where workspace_id=${isolated.wsA.id} and link_id=${s.link} and outcome_class='failure'`;
+  expect(attempts).toHaveLength(1);
+  const failureEvents = await db`
+    select action from public.audit_events
+    where target_id=${attempts[0]!.id} and action='client.signup_failed'`;
+  expect(failureEvents).toHaveLength(1);
+});
 it('zero-row consume RETURNING rolls back all writes', async () => {
   const s = await signupFixture(f);
   await probe(async (tx) => {
@@ -531,6 +566,63 @@ it('invalid link precedes canonical collision locking', async () => {
     ).data,
   ).toEqual({ status: 'invalid' });
 });
+
+it.each([
+  ['expired', "expires_at=statement_timestamp()-interval '1 second'"],
+  ['consumed', 'consumed_at=statement_timestamp()'],
+] as const)(
+  'Q-M22 %s link uses SQLSTATE P1100 business classification before identity locking',
+  async (state, mutation) => {
+    const s = await signupFixture(f);
+    await probe(async (tx) => {
+      if (state === 'expired') {
+        await tx`alter table public.registration_links disable trigger registration_links_update_guard`;
+        await tx.unsafe(
+          `update public.registration_links set ${mutation},created_at=statement_timestamp()-interval '1 second'-interval '24 hours' where id=$1`,
+          [s.link],
+        );
+      } else {
+        await tx.unsafe(
+          `update public.registration_links set ${mutation} where id=$1`,
+          [s.link],
+        );
+      }
+      await tx`create or replace function app_private.signup_lock_identity_keys(identity_id uuid,keys text[]) returns void language plpgsql security definer set search_path='' as $$ begin raise exception 'synthetic collision lock reached' using errcode='XX000'; end $$`;
+
+      const [definition] =
+        await tx`select pg_get_functiondef('public.client_signup(text,text,uuid,jsonb)'::regprocedure) as body`;
+      const body = definition!.body as string;
+      const classification =
+        state === 'expired'
+          ? body.slice(
+              body.indexOf('if token is null or token !~'),
+              body.indexOf('new_user:=gen_random_uuid()'),
+            )
+          : body.slice(
+              body.indexOf('if consumed is null then'),
+              body.indexOf('insert into app_private.client_signup_operations'),
+            );
+      expect(
+        classification,
+        `${state} SQL branch keeps the specified P1100 classification`,
+      ).toContain("raise exception 'signup_invalid' using errcode='P1100'");
+      expect(
+        await signup(tx, s),
+        `${state} links are public invalid results`,
+      ).toEqual({
+        status: 'invalid',
+      });
+      expect(
+        await tx`select 1 from auth.users where email=${s.fields.email}`,
+      ).toHaveLength(0);
+      expect(
+        (
+          await tx`select redeemed_at is not null as used from app_private.signup_admission_tickets where id=${s.ticket}`
+        )[0]!.used,
+      ).toBe(true);
+    });
+  },
+);
 
 it('known GoTrue confirmed email/password markers and captured bcrypt cost are populated', async () => {
   const s = await signupFixture(f);

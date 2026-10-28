@@ -1,5 +1,11 @@
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
-import { proof, admit, counts, mac } from './client-accounts-admission-fixture';
+import {
+  proof,
+  admit,
+  counts,
+  countsForAdmission,
+  mac,
+} from './client-accounts-admission-fixture';
 import { anonClient } from './harness';
 import { spawnSync } from 'node:child_process';
 
@@ -32,21 +38,35 @@ it('expired, consumed and malformed-request submissions still count both windows
     const s = await signupFixture(f),
       p = proof(s.token);
     await probe(async (tx) => {
+      await tx`set transaction isolation level repeatable read`;
       if (state === 'expired') {
         await tx`alter table public.registration_links disable trigger registration_links_update_guard`;
         await tx`update public.registration_links set expires_at=statement_timestamp()-interval '1 second',created_at=statement_timestamp()-interval '24 hours 1 second' where id=${s.link}`;
       }
       if (state === 'consumed')
         expect(await signup(tx, s)).toEqual({ status: 'complete' });
-      const before = await counts(tx);
+      // Normalize expired global nonce/counter state before the exact snapshot;
+      // admit itself performs this cleanup for any validly attested request.
+      await tx`select app_private.purge_client_signup_attempts()`;
+      const before = await countsForAdmission(tx, p, s.link);
+      const globalBefore = await counts(tx);
       expect(
         await admit(tx, state === 'request' ? { ...p, request: 'short' } : p),
       ).toEqual({ status: 'invalid' });
-      const after = await counts(tx);
+      const after = await countsForAdmission(tx, p, s.link);
+      const globalAfter = await counts(tx);
       expect(after!.credits - before!.credits).toBe(2);
       expect(after!.tickets).toBe(before!.tickets);
       expect(after!.attempts - before!.attempts).toBe(1);
       expect(after!.audits - before!.audits).toBe(2);
+      expect(globalAfter).toEqual({
+        ...globalBefore,
+        counters: globalBefore!.counters + 2,
+        credits: globalBefore!.credits + 2,
+        nonces: globalBefore!.nonces + 1,
+        attempts: globalBefore!.attempts + 1,
+        audits: globalBefore!.audits + 2,
+      });
     });
   }
 });
@@ -56,10 +76,13 @@ it('C1 mismatch emits a code/timestamp-only server event with zero database writ
     p = proof(s.token),
     since = new Date().toISOString();
   await probe(async (tx) => {
-    const before = await counts(tx);
+    await tx`set transaction isolation level repeatable read`;
+    const before = await countsForAdmission(tx, p, s.link);
+    const globalBefore = await counts(tx);
     await tx`create or replace function app_private.signup_auth_schema_compatible() returns boolean language sql stable security definer set search_path='' as $$select false$$`;
     expect(await admit(tx, p)).toEqual({ status: 'unavailable' });
-    expect(await counts(tx)).toEqual(before);
+    expect(await countsForAdmission(tx, p, s.link)).toEqual(before);
+    expect(await counts(tx)).toEqual(globalBefore);
   });
   const capture = spawnSync(
     'docker',
@@ -242,17 +265,23 @@ it('C1 guard then missing keys: unavailable with zero writes', async () => {
   const s = await signupFixture(f),
     p = proof(s.token);
   await probe(async (tx) => {
-    const before = await counts(tx);
+    await tx`set transaction isolation level repeatable read`;
+    const before = await countsForAdmission(tx, p, s.link);
+    const globalBefore = await counts(tx);
     await tx`create or replace function app_private.signup_auth_schema_compatible() returns boolean language sql stable security definer set search_path='' as $$select false$$`;
     expect(await admit(tx, p)).toEqual({ status: 'unavailable' });
-    expect(await counts(tx)).toEqual(before);
+    expect(await countsForAdmission(tx, p, s.link)).toEqual(before);
+    expect(await counts(tx)).toEqual(globalBefore);
   });
   for (const name of ['SIGNUP_ATTEST_KEY', 'SIGNUP_RATE_KEY'])
     await probe(async (tx) => {
-      const before = await counts(tx);
+      await tx`set transaction isolation level repeatable read`;
+      const before = await countsForAdmission(tx, p, s.link);
+      const globalBefore = await counts(tx);
       await tx`select vault.update_secret(id,'',${'MISSING_' + name}) from vault.secrets where name=${name}`;
       expect(await admit(tx, p)).toEqual({ status: 'unavailable' });
-      expect(await counts(tx)).toEqual(before);
+      expect(await countsForAdmission(tx, p, s.link)).toEqual(before);
+      expect(await counts(tx)).toEqual(globalBefore);
     });
 });
 for (const kind of [
@@ -282,15 +311,24 @@ for (const kind of [
         attestation: kind === 'missing' ? Buffer.alloc(0) : randomBytes(32),
       };
     await probe(async (tx) => {
+      await tx`set transaction isolation level repeatable read`;
       if (kind === 'rate-key' || kind === 'attest-key')
         await tx`select vault.update_secret(id,${randomBytes(32).toString('hex')}) from vault.secrets where name=${kind === 'rate-key' ? 'SIGNUP_RATE_KEY' : 'SIGNUP_ATTEST_KEY'}`;
-      const before = await counts(tx);
+      const before = await countsForAdmission(tx, p, s.link);
+      const globalBefore = await counts(tx);
       expect(await admit(tx, p)).toEqual({ status: 'invalid' });
-      const after = await counts(tx);
+      const after = await countsForAdmission(tx, p, s.link);
+      const globalAfter = await counts(tx);
       expect(after!.credits).toBe(before!.credits);
       expect(after!.tickets).toBe(before!.tickets);
       expect(after!.attempts).toBe(before!.attempts);
       expect(after!.audits).toBe(before!.audits);
+      expect(globalAfter).toEqual({
+        ...globalBefore,
+        nonces:
+          globalBefore!.nonces +
+          (kind === 'binding' || kind === 'rate-key' ? 1 : 0),
+      });
     });
   });
 it('nonce is single-use; valid issuance redeems through U3 and attempt audit survives failure', async () => {
@@ -332,6 +370,7 @@ it('unknown and malformed tokens count both windows, log no identifiers and disc
   for (const token of [randomBytes(32).toString('base64url'), 'malformed']) {
     const p = proof(token);
     await probe(async (tx) => {
+      await tx`set transaction isolation level repeatable read`;
       const before = await counts(tx);
       expect(await admit(tx, p)).toEqual({ status: 'invalid' });
       const after = await counts(tx);
@@ -447,6 +486,7 @@ for (const [offset, accepted] of [
   it(`PO clock boundary ${offset} ms: ${accepted ? 'accepted once' : 'rejected without writes'}`, async () => {
     const s = await signupFixture(f);
     await probe(async (tx) => {
+      await tx`set transaction isolation level repeatable read`;
       const [clock] =
         await tx`select floor(extract(epoch from clock_timestamp())*1000)::bigint::text as ms`;
       const sampled = Number(clock!.ms);
@@ -467,20 +507,24 @@ for (const [offset, accepted] of [
       };
       await freeze(sampled);
       const p = proof(s.token, { ms: sampled + offset });
-      const before = await counts(tx);
+      const before = await countsForAdmission(tx, p, s.link);
+      const globalBefore = await counts(tx);
       expect((await admit(tx, p)).status).toBe(
         accepted ? 'admitted' : 'invalid',
       );
       if (!accepted) {
-        expect(await counts(tx)).toEqual(before);
+        expect(await countsForAdmission(tx, p, s.link)).toEqual(before);
+        expect(await counts(tx)).toEqual(globalBefore);
         return;
       }
       const [expiry] =
         await tx`select expires_at=${new Date(p.ms + 60000).toISOString()}::timestamptz as covered from app_private.signup_admission_nonces where nonce=${p.nonce}`;
       expect(expiry!.covered, 'nonce covers issued_at + freshness').toBe(true);
-      const after = await counts(tx);
+      const after = await countsForAdmission(tx, p, s.link);
+      const globalAfter = await counts(tx);
       expect(await admit(tx, p)).toEqual({ status: 'invalid' });
-      expect(await counts(tx)).toEqual(after);
+      expect(await countsForAdmission(tx, p, s.link)).toEqual(after);
+      expect(await counts(tx)).toEqual(globalAfter);
       // Advance the frozen body to the last accepted instant and run cleanup.
       for (const name of [
         'public.client_signup_admit(text,text,bytea,bytea,timestamptz,uuid,bytea)',
@@ -496,9 +540,11 @@ for (const [offset, accepted] of [
         );
       }
       await tx`select app_private.purge_client_signup_attempts()`;
-      const afterPurge = await counts(tx);
+      const afterPurge = await countsForAdmission(tx, p, s.link);
+      const globalAfterPurge = await counts(tx);
       expect(await admit(tx, p)).toEqual({ status: 'invalid' });
-      expect(await counts(tx)).toEqual(afterPurge);
+      expect(await countsForAdmission(tx, p, s.link)).toEqual(afterPurge);
+      expect(await counts(tx)).toEqual(globalAfterPurge);
     });
   });
 
@@ -513,4 +559,32 @@ it('shared IP vectors agree with PostgreSQL canonical /64 text and HMAC encoding
       await db`select extensions.hmac(convert_to('lifter.f11.ip.v1','UTF8') || decode('00','hex') || int4send(octet_length(${v.ipKeyInput}::text)) || convert_to(${v.ipKeyInput},'UTF8'),decode(${vectors.rateKey},'hex'),'sha256') = ${Buffer.from(v.ipKey, 'hex')} as valid`;
     expect(digest!.valid, 'DB rate HMAC matches shared vector').toBe(true);
   }
+});
+
+it('Q-M20 stores the keyed IP evidence value and never the plaintext IP', async () => {
+  const s = await signupFixture(f);
+  const rawIp = '192.0.2.1';
+  const keyedIp = mac(
+    process.env.SIGNUP_RATE_KEY!,
+    'lifter.f11.ip.v1',
+    Buffer.from(rawIp),
+  );
+  const p = proof(s.token, { ip: keyedIp });
+  expect((await admit(db, p)).status).toBe('admitted');
+  const [definition] = await db`
+    select pg_get_functiondef(
+      'public.client_signup_admit(text,text,bytea,bytea,timestamptz,uuid,bytea)'::regprocedure
+    ) as body`;
+  expect(
+    definition!.body,
+    'IP counter write uses the verified keyed input, never an independent raw value',
+  ).toContain("values('ip',ip_key,ip_start,1,ip_start+ip_window)");
+  const [stored] = await db`
+    select key from app_private.signup_rate_counters
+    where scope='ip' and (key=${keyedIp} or position(${Buffer.from(rawIp)} in key)>0)`;
+  expect(
+    stored?.key,
+    'counter evidence is exactly the keyed HMAC and not plaintext IP bytes',
+  ).toEqual(keyedIp);
+  expect(Buffer.from(stored!.key).includes(Buffer.from(rawIp))).toBe(false);
 });

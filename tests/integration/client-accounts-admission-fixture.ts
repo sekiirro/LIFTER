@@ -61,3 +61,23 @@ export async function counts(
     await tx`select (select count(*)::int from app_private.signup_rate_counters) as counters,(select coalesce(sum(count),0)::int from app_private.signup_rate_counters) as credits,(select count(*)::int from app_private.signup_admission_nonces) as nonces,(select count(*)::int from app_private.signup_admission_tickets) as tickets,(select count(*)::int from app_private.client_signup_attempts) as attempts,(select count(*)::int from public.audit_events) as audits`;
   return r;
 }
+
+export async function countsForAdmission(
+  tx: ReturnType<typeof sql> | Parameters<Parameters<typeof probe>[0]>[0],
+  p: Proof,
+  linkId: string,
+) {
+  const [r] = await tx`
+    select
+      (select count(*)::int from app_private.signup_rate_counters
+        where (scope='link' and key=${p.link}) or (scope='ip' and key=${p.ip})) as counters,
+      (select coalesce(sum(count),0)::int from app_private.signup_rate_counters
+        where (scope='link' and key=${p.link}) or (scope='ip' and key=${p.ip})) as credits,
+      (select count(*)::int from app_private.signup_admission_nonces where nonce=${p.nonce}) as nonces,
+      (select count(*)::int from app_private.signup_admission_tickets where link_id=${linkId}) as tickets,
+      (select count(*)::int from app_private.client_signup_attempts where link_id=${linkId}) as attempts,
+      (select count(*)::int from public.audit_events e
+        join app_private.client_signup_attempts a on a.id=e.target_id
+        where a.link_id=${linkId}) as audits`;
+  return r;
+}

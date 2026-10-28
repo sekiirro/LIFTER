@@ -218,18 +218,36 @@ test.afterEach(async ({ page, context }, testInfo) => {
       .flat()
       .forEach((value) => forbiddenValues.add(value));
 
-    const sensitiveLogValues: Record<string, string[]> = {
-      ...capture.knownSensitiveLogValues,
+    const sensitiveLogValues: Record<string, string[]> = Object.fromEntries(
+      Object.entries(capture.knownSensitiveLogValues).map(([key, values]) => [
+        key,
+        [...values],
+      ]),
+    );
+    for (const key of [
+      'token',
+      'request_secret',
+      'password',
+      'email',
+      'phone',
+      'name',
+      'test_ip',
+    ])
+      sensitiveLogValues[key] ??= [];
+    const parsedSubmissionValues: Record<string, string[]> = {
       token: [],
       request_secret: [],
       password: [],
       email: [],
       phone: [],
       name: [],
-      test_ip: [],
     };
-    for (const match of page.url().matchAll(/\/register\/([A-Za-z0-9_-]{43})/g))
+    for (const match of page
+      .url()
+      .matchAll(/\/register\/([A-Za-z0-9_-]{43})/g)) {
       sensitiveLogValues.token!.push(match[1]!);
+      parsedSubmissionValues.token!.push(match[1]!);
+    }
     for (const headers of capture.requestHeaders)
       if (headers['cf-connecting-ip'])
         sensitiveLogValues.test_ip!.push(headers['cf-connecting-ip']);
@@ -237,7 +255,7 @@ test.afterEach(async ({ page, context }, testInfo) => {
       for (const match of body.matchAll(
         /Content-Disposition: form-data; name="([^"]+)"\r?\n(?:Content-Type:[^\r\n]+\r?\n)?\r?\n([^\r\n]*)/g,
       )) {
-        const key = match[1];
+        const key = match[1]?.replace(/^_\d+_/, '');
         const value = match[2];
         if (!key || !value) continue;
         if (
@@ -246,8 +264,10 @@ test.afterEach(async ({ page, context }, testInfo) => {
           key === 'email' ||
           key === 'name' ||
           key === 'token'
-        )
+        ) {
           sensitiveLogValues[key]!.push(value);
+          parsedSubmissionValues[key]!.push(value);
+        }
         if (key === 'ip_key' || key === 'link_key' || key === 'attestation')
           sensitiveLogValues[key]!.push(value);
         if (key === 'phone') {
@@ -258,16 +278,38 @@ test.afterEach(async ({ page, context }, testInfo) => {
             };
             if (phone.nationalNumber) {
               sensitiveLogValues.phone!.push(phone.nationalNumber);
+              parsedSubmissionValues.phone!.push(phone.nationalNumber);
               const e164 = parsePhoneNumber(
                 phone.nationalNumber,
                 phone.country as 'EG',
               ).number;
               sensitiveLogValues.phone!.push(e164);
+              parsedSubmissionValues.phone!.push(e164);
             }
           } catch {
             sensitiveLogValues.phone!.push(value);
+            parsedSubmissionValues.phone!.push(value);
           }
         }
+      }
+    }
+    if (capture.actionRequests.length > 0) {
+      for (const key of [
+        'token',
+        'request_secret',
+        'password',
+        'email',
+        'phone',
+        'name',
+      ]) {
+        expect(
+          parsedSubmissionValues[key]!.length,
+          `multipart submission capture includes ${key}`,
+        ).toBeGreaterThan(0);
+        expect(
+          sensitiveLogValues[key]!.length,
+          `sensitive scan includes ${key}`,
+        ).toBeGreaterThan(0);
       }
     }
     for (const value of inputValues) {

@@ -56,6 +56,58 @@ it.each(['\n', '\r\n'])(
   },
 );
 
+it.each(['\n', '\r\n'])(
+  'recovers pretty and compact events after a record truncated inside a string with %j newlines',
+  (newline) => {
+    const prettyEvent = {
+      event: { request: { method: 'GET', url: 'https://x/api/pretty' } },
+    };
+    const compactEvent = {
+      event: { request: { method: 'GET', url: 'https://x/api/compact' } },
+    };
+    const text =
+      `{"event":{"request":{"method":"GET","url":"https://x/api/a${newline}` +
+      `${JSON.stringify(prettyEvent, null, 2)}${newline}${JSON.stringify(compactEvent)}`;
+    const result = parseTail(text);
+
+    expect(result.invalid_lines).toBe(1);
+    expect(result.routes.reduce((count, row) => count + row.count, 0)).toBe(2);
+    expect(result.routes.map((row) => row.route)).toEqual([
+      'GET /api/pretty',
+      'GET /api/compact',
+    ]);
+  },
+);
+
+it('recovers after a record is truncated with an escaped backslash inside a string', () => {
+  const event = {
+    event: {
+      request: { method: 'GET', url: 'https://x/api/recovered-escaped' },
+    },
+  };
+  const truncated =
+    '{"event":{"request":{"method":"GET","url":"https://x/api/a\\';
+  const result = parseTail(`${truncated}\n${JSON.stringify(event)}`);
+
+  expect(result.invalid_lines).toBe(1);
+  expect(result.routes).toMatchObject([
+    { route: 'GET /api/recovered-escaped', count: 1 },
+  ]);
+});
+
+it('parses valid strings with escaped quotes, backslashes, braces, and newline text', () => {
+  const event = {
+    event: { request: { method: 'GET', url: 'https://x/api/escaped' } },
+    logs: [{ message: 'quote: " slash: \\ braces: { } newline: \\n' }],
+  };
+  const result = parseTail(JSON.stringify(event));
+
+  expect(result.invalid_lines).toBe(0);
+  expect(result.routes).toMatchObject([
+    { route: 'GET /api/escaped', count: 1 },
+  ]);
+});
+
 it('handles concatenated objects and counts malformed or incomplete objects', () => {
   const event = {
     event: {

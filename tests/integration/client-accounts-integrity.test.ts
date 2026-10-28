@@ -507,6 +507,50 @@ it('foreign workspace and wrong issued package version are rejected independentl
     }),
   ).rejects.toMatchObject({ code: '23514' });
 });
+it('Q-M13 issued snapshot composite FK rejects a valid but different package version without trigger masking', async () => {
+  await probe(async (tx) => {
+    const original = await pending(tx, context);
+    const user = await identity(tx);
+    await tx`set constraints all immediate`;
+    await tx`alter table public.registration_links disable trigger registration_links_insert_guard`;
+    const [alternateLinkRow] = await tx`
+      insert into public.registration_links(
+        workspace_id,package_version_id,token_hash,created_by,created_at,expires_at,
+        price_minor,currency,duration_days,duration_months,commission_rate_bp
+      )
+      select l.workspace_id,l.package_version_id,encode(extensions.gen_random_bytes(32),'hex'),l.created_by,
+        statement_timestamp(),statement_timestamp()+interval '24 hours',
+        l.price_minor,l.currency,l.duration_days,l.duration_months,l.commission_rate_bp
+      from public.registration_links l where l.id=${context.link}
+      returning id`;
+    await tx`alter table public.registration_links enable trigger registration_links_insert_guard`;
+    expect(alternateLinkRow).toBeDefined();
+    const alternateLink = alternateLinkRow!.id as string;
+    await tx`alter table public.package_versions disable trigger package_versions_insert_guard`;
+    const [alternateVersion] = await tx`
+      insert into public.package_versions(workspace_id,offer_id,version,name_ar,name_en,price_minor,currency,commission_rate_bp,duration_days,duration_months,published_by)
+      select workspace_id,offer_id,version+1,name_ar,name_en,price_minor,currency,commission_rate_bp,duration_days,duration_months,published_by
+      from public.package_versions where id=${context.p.versionId}
+      returning id`;
+    expect(alternateVersion).toBeDefined();
+    const clone = {
+      ...original,
+      id: randomUUID(),
+      auth_user_id: user.id,
+      registration_link_id: alternateLink,
+      package_version_id: alternateVersion!.id,
+      email_normalized: `q-m13-${randomUUID()}@example.test`,
+      phone_e164: '+2019999999997',
+    };
+    await tx`alter table public.clients disable trigger signup_client_insert_guard`;
+    await tx`alter table public.clients disable trigger signup_client_integrity`;
+    await expect(
+      tx.savepoint(async (inner) => {
+        await inner`insert into public.clients ${inner(clone)}`;
+      }),
+    ).rejects.toMatchObject({ code: '23503' });
+  });
+});
 it('client derives canonical Auth email; NULL Auth phone preserves claim; non-NULL disagreement rejected', async () => {
   await probe(async (tx) => {
     const c = await pending(tx, context);
@@ -578,6 +622,24 @@ it('backfill collision aborts without merging identities; unresolved phone fails
       }),
     ).rejects.toMatchObject({ code: '23514' });
     expect(await tx`select 1 from auth.users where id=${u.id}`).toHaveLength(1);
+  });
+});
+it('Q-M03 canonical registry UNIQUE rejects duplicate email keys independently', async () => {
+  await probe(async (tx) => {
+    const first = await identity(tx);
+    const second = await identity(tx);
+    expect(first.id).not.toBe(second.id);
+    await tx`set constraints all immediate`;
+    await tx`alter table app_private.account_identifier_claims disable trigger signup_claim_write_guard`;
+    await tx`update app_private.account_identifier_claims set email_key='q-m03-canonical@example.test' where auth_user_id=${first.id}`;
+    await expect(
+      tx.savepoint(async (inner) => {
+        await inner`update app_private.account_identifier_claims set email_key='q-m03-canonical@example.test' where auth_user_id=${second.id}`;
+      }),
+    ).rejects.toMatchObject({
+      code: '23505',
+      constraint_name: 'account_identifier_claims_email_key_key',
+    });
   });
 });
 for (const collision of ['email', 'phone', 'both'])
