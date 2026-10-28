@@ -1,12 +1,14 @@
 # Research: F11 client accounts and signup
 
+**AD-F11-1: PENDING PO — architect recommendation: option (i).** All option-(i) schema, RPC, hashing, compatibility and proof details below are conditional proposals, blocked on AD-F11-1 (PENDING PO). C1–C4 are **proposed evaluation criteria**, not approved conditions; no implementation or hosted proof is claimed. Option (ii) analysis remains in research.md. ND-F11-1..10 are Decided (PO, 2026-10-28); the verbatim decisions and explicit open sub-decisions are in [spec.md](spec.md#po-decision-register-and-open-sub-decisions).
+
 **Date**: 2026-10-28. Design only; branch `011-client-accounts`, starting HEAD `b1c75d3`. Sources: [spec](spec.md), Constitution v1.1.0, F10 artifacts and actual code/migrations. A read-only research agent inspected F4/public admission; the author inspected local Auth catalog metadata. No application, DB, dependency, seed or deployment mutation was performed.
 
 ## R1 — Source precedence and readiness
 
-**Decision:** Preserve FR-003's atomic client/link/audit database unit and its separate Auth consistency outcome. D-08/D-16/D-19 override older collision/SMTP text. No F12 approval, subscription, activation, payment or plan access. All ten ND-F11 items remain open behind the single-owner seams in [plan](plan.md#open-decision-seams).
+**Decision:** Preserve FR-003's atomic client/link/audit database unit and its separate Auth consistency outcome. D-08/D-16/D-19 override older collision/SMTP text. No F12 approval, subscription, activation, payment or plan access. ND-F11-1..10 are decided with explicit open sub-decisions tracked by the single-owner seams in [plan](plan.md#open-decision-seams).
 
-**Rationale:** The user explicitly requests planning without interactive input. The skill's unresolved-clarification gate therefore remains **ERROR for implementation readiness**, rather than silently resolving the spec's three markers. Research resolves technical questions into evidence, alternatives and proof obligations; it cannot answer PO questions. The architect has selected option (i), subject to plan C1–C4. Independent architect review remains required; this author does not approve its own design.
+**Rationale:** The user explicitly requests planning without interactive input. The skill's unresolved-clarification gate therefore remains **ERROR for implementation readiness**, rather than silently resolving the explicit remaining sub-decisions. Research resolves technical questions into evidence, alternatives and proof obligations; it cannot answer PO questions. AD-F11-1 is PENDING PO — architect recommendation: option (i); C1–C4 are proposed evaluation criteria. Independent architect review remains required; this author does not approve its own design.
 
 **Alternatives considered:** Adopting clarification recommendations as defaults, weakening atomicity, or inferring staff permissions; all rejected.
 
@@ -27,7 +29,7 @@ Version-pinned primary source cross-checks: [GoTrue admin implementation](https:
 
 ## R3 — AD-F11-1 option (i): direct transactional Auth writes
 
-**Selected by architect (AD-F11-1 option (i)):** A hardened postgres-owned SECURITY DEFINER signup function inserts `auth.users`, email `auth.identities`, canonical claims and client, guarded consumption and audit in one transaction. No Auth HTTP call or service-role application key is needed. Binding C1–C4 are in plan.md and traced to tasks; proofs have not run.
+**PENDING PO — architect recommendation: option (i).** A hardened postgres-owned SECURITY DEFINER signup function inserts `auth.users`, email `auth.identities`, canonical claims and client, guarded consumption and audit in one transaction. No Auth HTTP call or service-role application key is needed. Proposed evaluation criteria C1–C4 are in plan.md and traced to tasks; proofs have not run.
 
 **Feasibility/coupling:** Local rights and schema permit it. The function must reproduce required aud/role, provider metadata, email identity subject/provider_id, safe empty token markers and confirmation state, while omitting generated columns. Restrict role to ordinary authenticated, never accept caller role/metadata. This couples F11 to GoTrue internals and bypasses its creation hooks/validation; every Auth upgrade needs schema/behavior comparison and compatibility tests. A schema mismatch must fail closed.
 
@@ -37,9 +39,9 @@ Version-pinned primary source cross-checks: [GoTrue admin implementation](https:
 
 **Tests/runtime:** Inject failures after Auth insert, identity insert, claims, client, consumption and deferred audit; every effect must roll back. HTTPS RPC works from Workers with no DB socket, native bcrypt module, subprocess or persistent connection. Password hashing occupies the DB and needs per-token admission before hashing; do not invent throughput targets.
 
-## R4 — Rejected alternative: AD-F11-1 option (ii): Auth admin API plus compensation
+## R4 — Alternative analysis: AD-F11-1 option (ii): Auth admin API plus compensation
 
-**Rejected analysis only; not an active contract/task:** Server-only `createUser` handles provider hashing/identity construction; a separate atomic DB finalize function inserts client, consumes link and audits. Reserve one random UUIDv4 Auth ID and request-secret hash per link before HTTP creation, then reuse that exact ID on retry (the pinned admin endpoint supports an explicit ID; verify SDK typing/transport before use). No public caller supplies an arbitrary Auth ID. Do not look up ownership by email or retry with a new identity after a timeout.
+**Option (ii) analysis retained; selection PENDING PO, not an active implementation contract/task:** Server-only `createUser` handles provider hashing/identity construction; a separate atomic DB finalize function inserts client, consumes link and audits. Reserve one random UUIDv4 Auth ID and request-secret hash per link before HTTP creation, then reuse that exact ID on retry (the pinned admin endpoint supports an explicit ID; verify SDK typing/transport before use). No public caller supplies an arbitrary Auth ID. Do not look up ownership by email or retry with a new identity after a timeout.
 
 **No usable orphan:** Plain create-confirmed → DB finalize → delete-on-error is unsafe. Create with a ban already applied in the provider transaction, and use an additional durable pending-user gate. A finite `ban_duration` alone eventually expires; unconfirmed alone is not sufficient across configuration/recovery paths. A viable variant needs a reviewed Auth-row guard tied to the private reservation that holds pending users at `banned_until = 'infinity'`, including subsequent admin updates, until DB finalization. Finalization atomically inserts client, consumes, audits, marks the reservation committed and clears the pending ban; rollback leaves it banned. This narrows direct Auth coupling to gating/unban, but does not eliminate it. GoTrue timestamp scanning/ban enforcement for infinity and the guard's interactions with createUser must be proven; **not verified and a blocker**. An equivalent provider-enforced permanent gate may replace it only with the same proof. No API-only construction has been proven here to satisfy FR-003.
 
@@ -49,7 +51,7 @@ Version-pinned primary source cross-checks: [GoTrue admin implementation](https:
 
 **Tests:** Fail create response delivery, DB commit delivery, finalize, unban, delete and reconciler; terminate between each step, race retry/cleanup, advance beyond a finite ban and test sign-in/recovery while pending. Provider HTTP success cannot report signup completion before DB commit. New credentials are usable only with a committed client; later sign-in is ordinary GoTrue sign-in.
 
-## R5 — Comparison and architect decision
+## R5 — Comparison and architect recommendation (PENDING PO)
 
 | Criterion                    | (i) Direct transaction                                                   | (ii) Admin API + DB transaction                                                |
 | ---------------------------- | ------------------------------------------------------------------------ | ------------------------------------------------------------------------------ |
@@ -62,7 +64,7 @@ Version-pinned primary source cross-checks: [GoTrue admin implementation](https:
 | Workers                      | One fetch/RPC; DB does bcrypt                                            | Multiple HTTP calls; no isolate-lifetime assumptions                           |
 | Failure injection            | DB step/deferred failure + lost commit response                          | Adds provider ambiguity, cleanup outages and durable-worker races              |
 
-**Architect decision — option (i) selected:** One rollback boundary gives the smallest orphan/failure state space without a service-key signup path. Option (ii) is rejected because API-only compensation cannot guarantee no usable orphan indefinitely; its gated variant adds unproven permanent-gate/atomic-unban compatibility, reservations, fencing and durable reconciliation, while still coupling to Auth internals. If C1–C3 fail, block acceptance and return to architect review; do not silently switch designs.
+**PENDING PO — architect recommendation: option (i).** One rollback boundary gives the smallest orphan/failure state space without a service-key signup path. The architect recommends against option (ii) because API-only compensation cannot guarantee no usable orphan indefinitely; its gated variant adds unproven permanent-gate/atomic-unban compatibility, reservations, fencing and durable reconciliation, while still coupling to Auth internals. If C1–C3 fail, block acceptance and return to architect review; do not silently switch designs.
 
 **Required evidence, not yet captured:** C1 captures the actual latest `auth.schema_migrations` version in an explicit allowlist from local GoTrue v2.197.0 plus presence/types of every written column; mismatch before any write gives generic safe failure, no writes or consumption. C2 requires real `signInWithPassword` and exhaustive GoTrue-set-column parity of `auth.users`/`auth.identities` against a local admin-created reference; only ids, timestamps, hashes, email/phone values may differ. C3 uses `extensions.crypt(..., extensions.gen_salt('bf', <GoTrue cost>))` with locally captured cost; plaintext never enters exceptions/RAISE, audit, logs, receipts or returns. Server signup RPC calls use anon/publishable credentials only, never service-role; no service key reaches browsers. C4 blocks production: "Option (i) verified on local stack only; hosted Supabase Auth version/DML permission and upgrade allowlist must be re-verified before any deployment (PO approval)". Local proof remains outstanding. No live stack/source lookup or mutation was performed in U3.
 
@@ -78,4 +80,14 @@ Version-pinned primary source cross-checks: [GoTrue admin implementation](https:
 
 F4 needs only `recovery_target_workspace(target)` to return the committed client's workspace by unique Auth ID. Preserve its caller/target checks, capabilities, expiry, rates, audit and ND-F4-5. See the [contract](contracts/client-signup-surface.md#f4-recovery-dependency). A discovered test hazard: `tests/integration/auth-recovery.test.ts` replaces that helper for fixtures and restores `SELECT NULL::uuid`; future tests must restore the installed real definition or use real client fixtures, otherwise suite order erases F11 linkage.
 
-Privacy follows F10: exact public route, no token-bearing redirect/next/log, headers on every GET/POST/error outcome and host log redaction. Server Actions do not make a bound token safe for logging. B4/retention, host access logging and inherited F4/F10 open decisions remain blockers where already defined. No new ND-F11 number is introduced; new technical risks belong to AD-F11-1 or the existing ND owner.
+Privacy follows F10: exact public route, no token-bearing redirect/next/log, headers on every GET/POST/error outcome and host log redaction. Server Actions do not make a bound token safe for logging. B4/retention, host access logging and inherited F4/F10 open decisions remain blockers where already defined. Open ND sub-decisions are explicit; trusted client-IP source is technical architect item AD-F11-2 (ND-F11-5b).
+
+## R8 — Approved PO decisions integrated in U4
+
+The [spec register](spec.md#po-decision-register-and-open-sub-decisions) contains verbatim ND-F11-1..10 and all open sub-decisions. Require name/email/phone/password, no Telegram; minimum 8 characters including number and symbol (maximum/symbol definition ND-F11-1a). Normalize email by Supabase Auth rules and phone to E.164; do not infer extra input transformations.
+
+Strict consumption requires fresh authoritative time < `expires_at`, no grace. F10 open/grace contract is unchanged; post-expiry grace can render valid on open while signup is generic invalid. Public-page alignment ND-F11-4a would need PO-approved F10 change.
+
+Enforce BOTH 5/link/15 minutes and 30/IP/hour, generic exhaustion. Attempt definition/window semantics ND-F11-5a and trusted Cloudflare/OpenNext IP source AD-F11-2 (technical ND-F11-5b) remain open. Admission counts and structured attempt/failure evidence persist independently of signup rollback. Stored IP is PII retained in signup-attempt logs for 30 days; purge mechanism is local technical design. All other audit retention remains undecided; ND-F5-1/B4 unchanged.
+
+Create pending-approval with no client capabilities through either wall; approvers/action in F11 versus F12 remain ND-F11-6a, destination/session ND-F11-6b. No interim client view or approval UI. Signed-in visitors must manually sign out, no automatic sign-out/linking/merge or token redirects. DB uniqueness covers active/pending; archived collision is generic D-08 and admin review (mechanism/reviewer ND-F11-9a); archived state does not exist, behavior blocked on ND-F5-1 closure (ND-F11-9b). D-16 unchanged. Structured audit covers attempt/success/failure/consumption/cleanup, no secrets/passwords/tokens/hashes; event names and payload allow-list are technical design.
