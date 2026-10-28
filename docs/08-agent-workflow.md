@@ -51,6 +51,14 @@ The environment-local design-skills catalog is not in the repo and is advisory. 
 and its implemented tokens/components remain the single source of truth. Missing decisions stop
 that part of the work and go to the PO with A/B/C options and the architect's recommendation.
 
+## Intermediate sub-branch merges
+
+Intermediate merges of parallel sub-branches into a parent feature branch (for example,
+`011-docs-drift` into `011-client-accounts`) are not merges into `main`. They require Claude's
+independent review of the actual diff and green relevant CI on the exact head; no separate CodeRabbit
+gate is required. The content must still pass the complete main merge gate below in the parent feature
+PR before any merge into `main`. This process does not replace or bypass that gate (D-26).
+
 ## Main merge gate
 
 Before asking the PO to approve a merge to `main`, require items 1-5 on the exact PR head:

@@ -147,7 +147,9 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Main merge gate: before requesting PO approval, require a completed CodeRabbit review APPROVED
   with no later CHANGES_REQUESTED or DISMISSED review; `reviewDecision` APPROVED; zero unresolved
   threads and all actionable findings resolved; green CI/security checks on the exact PR head; and
-  independent architect review of the diff and evidence. Then ask the PO for explicit merge approval.
+  independent architect review of the diff and evidence. Intermediate sub-branch merges into a
+  parent feature branch require Claude review and green relevant CI on the exact head and do not
+  bypass this main merge gate (see docs/08 and D-26). Then ask the PO for explicit merge approval.
   Merge only after that approval, once these checks remain true, using
   `gh pr merge <n> --merge --match-head-commit <sha>` on the approved head. Never use `--admin`,
   `--auto`, or `--delete-branch`. This is process-only because branch protection returns 403.
@@ -169,4 +171,4 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Every spec, plan and review MUST include a constitution check. Deviations MUST be justified in
   the plan's complexity tracking and approved before implementation.
 
-**Version**: 1.2.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-28 (workflow governance and Frontend Design Gate, D-22)
+**Version**: 1.2.1 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-28 (workflow governance and Frontend Design Gate, D-22; intermediate sub-branch merge clarification, D-26)
