@@ -23,6 +23,7 @@
 - [x] Security denials, stale edit/publish races, upload rejection and invalid-token behavior are covered.
 - [x] Edge cases and cross-feature boundaries are stated.
 - [x] Dependencies and assumptions are identified.
+- [x] Source material and the debate record are traceable through repository-relative links.
 - [x] Every recommendation/default tied to an open PO decision is explicitly marked not approved.
 
 ## Feature Readiness
@@ -39,5 +40,5 @@
 - This checklist is intentionally not a green implementation gate. PO decisions ND-F14-1..7 and design decisions DG-F14-1..3 remain open.
 - Architect response decisions are included as `Architect Decisions (pending PO spec approval)` and are not PO approvals.
 - The logo policy is bounded to architect response constraints; storage option B′ and decoder-risk acceptance remain open under ND-F14-7.
-- All UI must follow `C:/Users/NEW LAP/.lifter/briefs/frontend-design-gate.txt` and DESIGN.md. The editor/preview layout, registration layout/logo placement, and contrast-adjustment explanation remain open.
+- All UI must follow the Frontend Design Gate linked in the spec source references and DESIGN.md. The editor/preview layout, registration layout/logo placement, and contrast-adjustment explanation remain open.
 - No application tests, Docker, Supabase, implementation changes, or implementation gates are part of this documentation-only change.

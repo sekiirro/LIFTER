@@ -4,7 +4,7 @@
 **Created**: 2026-10-28
 **Status**: Draft; specification only; ND-F14-1..7 and DG-F14-1..3 remain open for Product Owner decisions. No implementation or planning approval.
 
-**Input**: BRD-02 workspace branding, BRD-04.2, PRD-01/02, DR-01, D-18, DESIGN.md, F10/F11 contracts, and the architect response `branding-claude-response-r1.md` (v1 decisions override `branding-draft-claude.md` v0 where they differ). Architect decisions below are pending PO spec approval; the open decision register is not approval.
+**Input**: BRD-02 workspace branding, BRD-04.2, PRD-01/02, DR-01, D-18, DESIGN.md, F10/F11 contracts, and the architect/critic debate record (architect v1 decisions override v0 where they differ). Architect decisions below are pending PO spec approval; the open decision register is not approval.
 
 ## Source references
 
@@ -14,7 +14,8 @@
 - [F10 specification](../010-registration-links/spec.md) and [registration surface contract](../010-registration-links/contracts/registration-links-surface.md): token-validated public open projection, generic invalid response, response privacy and F11 handoff.
 - F11 specification, read from `origin/011-client-accounts` at this base: `specs/011-client-accounts/spec.md`. F11 owns signup and its strict signup-validity policy; F14 does not change that policy.
 - [Constitution](../../.specify/memory/constitution.md), Principles I, III, IV, V, VII, VIII and IX.
-- Mandatory frontend design policy: `C:/Users/NEW LAP/.lifter/briefs/frontend-design-gate.txt`. All UI in this feature follows that gate and DESIGN.md. Any UI choice left unresolved there remains a design gap for PO decision.
+- [Spec debate r1](research/spec-debate-r1.md) records the architect v0 draft, the Sol Medium critique, and the architect response r1.
+- The [Frontend Design Gate](../../docs/09-frontend-design-gate.md) (added by branch `docs-workflow-governance`, pending merge to main) applies to every UI change, together with DESIGN.md. Any UI choice left unresolved there remains a design gap for PO decision.
 
 ## User Scenarios & Testing
 
@@ -122,7 +123,7 @@ As a registration visitor with a valid F10 token, I see the latest published ide
 - **FR-012**: Publication MUST NOT change signup authorization, reset already-entered registration form values, or change the F10/F11 package/workspace snapshot or validity rules. A rendered form keeps its identity until reload.
 - **FR-013**: When no published customization exists, the architect-proposed default is workspace name, emerald-derived tokens and no logo. This default remains subject to applicable PO decisions.
 - **FR-014**: Branding audit MUST produce exactly one `branding.published` event per successful changed publication, containing only version id, version number, source version id and changed field names. Audit MUST exclude image bytes, authored text, tokens and URLs. Failed publication MUST roll back its audit and state changes together.
-- **FR-015**: UI MUST be Arabic-first RTL and English LTR, responsive, accessible, and use existing Design System tokens and components. Editor, preview and registration page MUST satisfy the Frontend Design Gate at `C:/Users/NEW LAP/.lifter/briefs/frontend-design-gate.txt` and DESIGN.md. The three unresolved design choices are tracked as DG-F14-1..3 and MUST NOT be invented by this specification.
+- **FR-015**: UI MUST be Arabic-first RTL and English LTR, responsive, accessible, and use existing Design System tokens and components. Editor, preview and registration page MUST satisfy the Frontend Design Gate linked in the source references and DESIGN.md. The three unresolved design choices are tracked as DG-F14-1..3 and MUST NOT be invented by this specification.
 - **FR-016**: Branding changes MUST remain presentational. They MUST NOT change finance, permissions, security boundaries, signup behavior, or workspace authorization.
 - **FR-017**: No implementation plan or task breakdown is approved by this specification. The storage choice, role capability and content/surface decisions remain blocked on the PO decisions recorded below.
 
