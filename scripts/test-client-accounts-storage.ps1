@@ -33,15 +33,28 @@ try {
   $u6OriginalErrorActionPreference = $ErrorActionPreference
   try {
     $ErrorActionPreference = 'Continue'
-    $u6StorageOutput = & npm run e2e -- tests/e2e/client-accounts-storage.spec.ts 2>&1
+    $u6StorageOutput = & npm run e2e -- tests/e2e/client-accounts-storage.spec.ts --reporter=line 2>&1
     $u6StorageExitCode = $LASTEXITCODE
   } finally {
     $ErrorActionPreference = $u6OriginalErrorActionPreference
   }
-  if ($u6StorageExitCode -ne 0) {
-    throw 'Pending-client Storage denial e2e failed.'
+  $env:U8_STORAGE_RESULT_INPUT = $u6StorageOutput -join "`n"
+  try {
+    $u6StorageResultJson = & node scripts/client-accounts-storage-result.mjs
+    $u6StorageParseExitCode = $LASTEXITCODE
+  } finally {
+    Remove-Item Env:U8_STORAGE_RESULT_INPUT -ErrorAction SilentlyContinue
   }
-  $u6StorageOutput | Where-Object { $_ -match '^\s*1 passed|^\s*\d+ passed' }
+  if ($u6StorageParseExitCode -ne 0) {
+    throw 'Storage runner result could not be parsed.'
+  }
+  $u6StorageResult = $u6StorageResultJson | ConvertFrom-Json
+  $u6StorageResultLine = "Storage runner: $($u6StorageResult.passed) passed, $($u6StorageResult.skipped) skipped, $($u6StorageResult.failed) failed, $($u6StorageResult.flaky) flaky, $($u6StorageResult.interrupted) interrupted"
+  if ($u6StorageExitCode -ne 0 -or -not $u6StorageResult.acceptable) {
+    Write-Output $u6StorageResultLine
+    throw 'Storage runner must report exactly 1 passed and 0 skipped, failed, flaky or interrupted.'
+  }
+  Write-Output $u6StorageResultLine
 } finally {
   Invoke-SupabaseQuietly @('stop')
   Invoke-SupabaseQuietly @('start', '-x', 'studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,storage-api,postgres-meta')

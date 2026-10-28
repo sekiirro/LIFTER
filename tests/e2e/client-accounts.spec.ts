@@ -1,6 +1,6 @@
 import { expect, test, type Page } from '@playwright/test';
 import { execFileSync } from 'node:child_process';
-import { readFile, mkdtemp, rm } from 'node:fs/promises';
+import { readFile, mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { inflateRawSync } from 'node:zlib';
@@ -8,9 +8,12 @@ import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { createHash, randomUUID } from 'node:crypto';
 import {
+  serverLogRawPath,
   serverLogSummaryPath,
   type ServerLogSummary,
 } from './server-log-capture';
+import { scanSensitiveLogLines } from './server-log-privacy';
+import { parsePhoneNumber } from 'libphonenumber-js';
 
 const origin = 'http://localhost:3000';
 const local = Boolean(
@@ -65,6 +68,8 @@ type PrivacyCapture = {
   metadata: string[];
   browserLogs: string[];
   serverLogs: string[];
+  serverLogStart: number;
+  knownSensitiveLogValues: Record<string, string[]>;
   requestHeaders: Array<Record<string, string>>;
   responseJobs: Promise<void>[];
 };
@@ -80,6 +85,14 @@ test.beforeEach(async ({ page, context }, testInfo) => {
     metadata: [],
     browserLogs: [],
     serverLogs: [],
+    serverLogStart: (await stat(serverLogRawPath)).size,
+    knownSensitiveLogValues: {
+      account_id: [fixture.po.userId],
+      workspace_id: [fixture.wsA.id, fixture.wsB.id],
+      ip_key: [],
+      link_key: [],
+      attestation: [],
+    },
     requestHeaders: [],
     responseJobs: [],
   };
@@ -136,7 +149,6 @@ test.afterEach(async ({ page, context }, testInfo) => {
   expect(serverLogSummary.length > 0).toBe(true);
   const parsedServerLogs = JSON.parse(serverLogSummary) as ServerLogSummary;
   expect(parsedServerLogs.storedPayload).toBe('scrubbed counts only');
-  capture.serverLogs.push(serverLogSummary);
   const traceDirectory = await mkdtemp(join(tmpdir(), 'lftr-u8-capture-'));
   const tracePath = join(traceDirectory, 'capture.zip');
   try {
@@ -202,6 +214,83 @@ test.afterEach(async ({ page, context }, testInfo) => {
       )
       .catch(() => [] as string[]);
     cookieValues.forEach((value) => forbiddenValues.add(value));
+    Object.values(capture.knownSensitiveLogValues)
+      .flat()
+      .forEach((value) => forbiddenValues.add(value));
+
+    const sensitiveLogValues: Record<string, string[]> = {
+      ...capture.knownSensitiveLogValues,
+      token: [],
+      request_secret: [],
+      password: [],
+      email: [],
+      phone: [],
+      name: [],
+      test_ip: [],
+    };
+    for (const match of page.url().matchAll(/\/register\/([A-Za-z0-9_-]{43})/g))
+      sensitiveLogValues.token!.push(match[1]!);
+    for (const headers of capture.requestHeaders)
+      if (headers['cf-connecting-ip'])
+        sensitiveLogValues.test_ip!.push(headers['cf-connecting-ip']);
+    for (const body of capture.actionRequests) {
+      for (const match of body.matchAll(
+        /Content-Disposition: form-data; name="([^"]+)"\r?\n(?:Content-Type:[^\r\n]+\r?\n)?\r?\n([^\r\n]*)/g,
+      )) {
+        const key = match[1];
+        const value = match[2];
+        if (!key || !value) continue;
+        if (
+          key === 'request_secret' ||
+          key === 'password' ||
+          key === 'email' ||
+          key === 'name' ||
+          key === 'token'
+        )
+          sensitiveLogValues[key]!.push(value);
+        if (key === 'ip_key' || key === 'link_key' || key === 'attestation')
+          sensitiveLogValues[key]!.push(value);
+        if (key === 'phone') {
+          try {
+            const phone = JSON.parse(value) as {
+              country?: string;
+              nationalNumber?: string;
+            };
+            if (phone.nationalNumber) {
+              sensitiveLogValues.phone!.push(phone.nationalNumber);
+              const e164 = parsePhoneNumber(
+                phone.nationalNumber,
+                phone.country as 'EG',
+              ).number;
+              sensitiveLogValues.phone!.push(e164);
+            }
+          } catch {
+            sensitiveLogValues.phone!.push(value);
+          }
+        }
+      }
+    }
+    for (const value of inputValues) {
+      if (value.includes('@')) sensitiveLogValues.email!.push(value);
+      else if (/^\+?\d[\d ()-]{7,}\d$/.test(value))
+        sensitiveLogValues.phone!.push(value);
+      else sensitiveLogValues.name!.push(value);
+    }
+    const rawServerLog = await readFile(serverLogRawPath).catch(() =>
+      Buffer.alloc(0),
+    );
+    const scenarioLog = rawServerLog
+      .subarray(capture.serverLogStart)
+      .toString('utf8');
+    const serverLogScan = scanSensitiveLogLines(
+      scenarioLog.split(/\r?\n/).filter(Boolean),
+      sensitiveLogValues,
+    );
+    expect(
+      serverLogScan.hitCount,
+      'Server log contained sensitive values; matched content withheld',
+    ).toBe(0);
+    capture.serverLogs.push(scenarioLog);
 
     const rawCaptures = [
       ...capture.html,
@@ -241,7 +330,10 @@ test.afterEach(async ({ page, context }, testInfo) => {
       metadataCaptures: capture.metadata.length,
       browserLogCaptures: capture.browserLogs.length,
       serverLogSummaryCaptures: capture.serverLogs.length,
-      serverLogLines: parsedServerLogs.totalLines,
+      serverLogLines: scenarioLog.split(/\r?\n/).filter(Boolean).length,
+      serverLogSensitiveHits: serverLogScan.hitCount,
+      serverLogSensitiveCategoriesChecked:
+        Object.keys(sensitiveLogValues).length,
       traceEntries: trace ? trace.length : 0,
       storedPayload: 'scrubbed summary only',
     };
@@ -297,6 +389,11 @@ async function fillSignup(
   await page
     .getByLabel(m['clientSignup.password'], { exact: true })
     .fill('Complex!2345');
+}
+
+function recordSensitiveLogValue(page: Page, category: string, value: string) {
+  const capture = privacyCaptures.get(page);
+  if (capture) (capture.knownSensitiveLogValues[category] ??= []).push(value);
 }
 
 async function issueSignupToken(useWorkspaceOwner = true) {
@@ -374,6 +471,22 @@ function embeddedRsc(html: string) {
   );
 }
 
+test('raw server-log fixture canary is detected without exposing its contents', () => {
+  const result = scanSensitiveLogLines(
+    ['fixture stderr token-canary password-canary email-canary@example.test'],
+    {
+      token: 'token-canary',
+      password: 'password-canary',
+      email: 'email-canary@example.test',
+    },
+  );
+  expect(result).toEqual({
+    hitCount: 3,
+    matchedLineCount: 1,
+    categories: ['email', 'password', 'token'],
+  });
+});
+
 for (const locale of ['ar', 'en'] as const) {
   test(`${locale} completion capture is scrubbed before recording HTML, RSC, action, metadata and trace`, async ({
     page,
@@ -403,6 +516,7 @@ for (const locale of ['ar', 'en'] as const) {
     let traceText: string[] = [];
     const traceDirectory = await mkdtemp(join(tmpdir(), 'lftr-u8-privacy-'));
     const tracePath = join(traceDirectory, 'capture.zip');
+    const serverLogStart = (await stat(serverLogRawPath)).size;
 
     await context.addCookies([
       { name: LOCALE_COOKIE, value: locale, url: origin },
@@ -465,7 +579,10 @@ for (const locale of ['ar', 'en'] as const) {
       rawHtml.push(await page.content());
       rawMetadata.push(await page.locator('head').innerHTML());
       await Promise.all(responseJobs);
-      rawServerLogs.push(await readFile(serverLogSummaryPath, 'utf8'));
+      const rawServerLog = await readFile(serverLogRawPath);
+      rawServerLogs.push(
+        rawServerLog.subarray(serverLogStart).toString('utf8'),
+      );
       await context.tracing.stop({ path: tracePath });
       traceText = traceTextEntries(await readFile(tracePath));
     } finally {
@@ -507,6 +624,24 @@ for (const locale of ['ar', 'en'] as const) {
       fixture.wsA.id,
       fixture.po.userId,
     ];
+    const serverLogScan = scanSensitiveLogLines(
+      rawServerLogs[0]!.split(/\r?\n/).filter(Boolean),
+      {
+        token,
+        request_secret: requestSecret,
+        password,
+        email,
+        phone: [phone, phoneE164],
+        name,
+        test_ip: ip,
+        account_id: [fixture.po.userId],
+        workspace_id: [fixture.wsA.id, fixture.wsB.id],
+      },
+    );
+    expect(
+      serverLogScan.hitCount,
+      'Server log contained sensitive values; matched content withheld',
+    ).toBe(0);
     const rawCaptures = [
       ...rawHtml,
       ...rawRsc,
@@ -537,9 +672,9 @@ for (const locale of ['ar', 'en'] as const) {
         capturedActionResponses: rawResponses.length,
         capturedMetadata: rawMetadata.length,
         capturedBrowserLogs: rawBrowserLogs.length,
-        capturedServerLogLines: (
-          JSON.parse(rawServerLogs[0]!) as ServerLogSummary
-        ).totalLines,
+        capturedServerLogLines: rawServerLogs[0]!.split(/\r?\n/).filter(Boolean)
+          .length,
+        serverLogSensitiveHits: serverLogScan.hitCount,
         capturedTraceEntries: traceText.length,
         storedPayload: 'scrubbed summary only',
       }),
@@ -1031,6 +1166,7 @@ for (const locale of ['ar', 'en'] as const) {
         );
       } else {
         const userId = randomUUID();
+        recordSensitiveLogValue(page, 'account_id', userId);
         await database.begin(async (tx) => {
           await tx`insert into auth.users(id,email,phone,email_confirmed_at,deleted_at) values(${userId},${email},${phoneE164},clock_timestamp(),${kind === 'archived' ? new Date() : null})`;
           if (kind === 'staff') {
