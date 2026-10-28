@@ -97,6 +97,14 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   modes, LIFTER emerald `#059669` as the default brand with workspace-customizable brand colors
   that MUST pass WCAG 2.2 AA contrast (D-18), Arabic-first RTL plus English LTR, with
   loading/empty/error states.
+- The Design System — [DESIGN.md](../../DESIGN.md), `specs/002-design-system/`, and implemented
+  tokens/components — is the single source of truth. Installed design skills are advisory only.
+- Every UI feature MUST pass the [Frontend Design Gate](../../docs/09-frontend-design-gate.md):
+  real rendered screenshots for AR-RTL/EN-LTR × light/dark × mobile/desktop, all required states,
+  and accessibility verification.
+- Any UI decision missing from the Design System MUST be escalated to the Product Owner (PO) with
+  A/B/C options and the architect's recommendation. It MUST NOT be invented or silently change the
+  Design System. Approved decisions MUST be recorded and reused.
 - UI MUST be responsive and accessible (keyboard access, labeled inputs, clear errors).
 - Trainer-authored content MUST be displayed as authored, never machine-translated.
 
@@ -125,9 +133,22 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 
 - Every feature follows Spec Kit: Specify → Clarify (only if blocking) → Plan → Tasks → Analyze,
   before any code.
-- Claude (Technical Lead) plans and reviews. Codex implements bounded tasks. OpenCode is used only
-  on confirmed Codex quota exhaustion. Coders MUST NOT plan or approve their own work. One writing
-  agent per worktree.
+- Claude is the architect/orchestrator/reviewer; Codex implements bounded tasks. There are no
+  fallback agents or automatic model substitutions. On quota or capacity limits, work stops and the
+  PO is asked. Operational model routing is in [docs/08-agent-workflow.md](../../docs/08-agent-workflow.md).
+- Mandatory Spec Debate: the architect drafts the spec and architecture; an independent Sol Medium
+  critique follows; by default there is one response round, with more rounds only for significant
+  unresolved issues. The architect incorporates critique and presents unresolved product/design
+  decisions to the PO. Implementation starts only after PO approval and a completed plan/tasks.
+  AI agreement never replaces PO approval; the architect remains the final technical authority.
+- Controlled Parallel Development: at most three concurrent agents. Each code-changing agent uses
+  its own worktree and branch, edits disjoint files, and respects the single local-DB lock. Feature
+  branches integrate sequentially, each after architect review and relevant green CI.
+- Main merge gate: completed CodeRabbit review APPROVED with no later CHANGES_REQUESTED or
+  DISMISSED review; `reviewDecision` APPROVED; zero unresolved threads; all actionable findings
+  resolved; green CI/security checks on the exact head; independent architect review; and explicit
+  PO approval. Pin the merge commit with `--match-head-commit`; never use `--admin`, `--auto`, or
+  `--delete-branch`. This is process-only because branch protection returns 403.
 - Merge gates (from [docs/03-roadmap.md](../../docs/03-roadmap.md)): typecheck, lint, unit and
   integration tests independently re-run by the reviewer; the isolation gate; the money gate; AR
   and EN UI check; log-scrub check; acceptance criteria verified against
@@ -146,4 +167,4 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Every spec, plan and review MUST include a constitution check. Deviations MUST be justified in
   the plan's complexity tracking and approved before implementation.
 
-**Version**: 1.1.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-27 (VIII: lime → emerald, D-18)
+**Version**: 1.2.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-28 (workflow governance and Frontend Design Gate, D-22)
