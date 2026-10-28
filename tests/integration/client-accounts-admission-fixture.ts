@@ -12,8 +12,11 @@ export const mac = (key: string, domain: string, ...fields: Buffer[]) =>
 const uuidBytes = (nonce: string) =>
   Buffer.from(nonce.replaceAll('-', ''), 'hex');
 export function proof(token: string, patch: Record<string, unknown> = {}) {
-  const rate = process.env.SIGNUP_RATE_KEY!,
-    attest = process.env.SIGNUP_ATTEST_KEY!;
+  const rate = process.env.SIGNUP_RATE_KEY,
+    attest = process.env.SIGNUP_ATTEST_KEY;
+  if (!rate || !attest) {
+    throw new Error('SIGNUP_* env missing; run provisioning');
+  }
   const hash = createHash('sha256').update(token).digest('hex');
   const p = {
     token,

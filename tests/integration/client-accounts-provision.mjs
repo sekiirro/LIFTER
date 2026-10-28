@@ -1,6 +1,11 @@
 /** Local-only U1 provisioning. Run after each reset, with Docker's bin on PATH. */
 import { execFileSync } from 'node:child_process';
-import { existsSync, readFileSync, writeFileSync } from 'node:fs';
+import {
+  appendFileSync,
+  existsSync,
+  readFileSync,
+  writeFileSync,
+} from 'node:fs';
 import postgres from 'postgres';
 
 const path = '.env.local';
@@ -125,6 +130,14 @@ try {
     for (const row of rows) {
       process.stdout.write(`::add-mask::${row.decrypted_secret}\n`);
     }
+    if (!process.env.GITHUB_ENV) {
+      throw new Error('GitHub Actions environment file required');
+    }
+    // Export the exact Vault values for server-side code in subsequent steps.
+    appendFileSync(
+      process.env.GITHUB_ENV,
+      rows.map((row) => `${row.name}=${row.decrypted_secret}\n`).join(''),
+    );
   }
   const retained = contents
     .split(/\r?\n/)

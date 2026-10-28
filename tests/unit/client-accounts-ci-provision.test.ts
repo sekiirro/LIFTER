@@ -47,3 +47,12 @@ it('masks provisioned keys in GitHub Actions before writing the local env file',
   expect(maskIndex).toBeGreaterThanOrEqual(0);
   expect(writeIndex).toBeGreaterThan(maskIndex);
 });
+
+it('exports the same Vault keys to later CI steps after masking them', () => {
+  const maskIndex = provisioner.indexOf('::add-mask::');
+  const exportIndex = provisioner.indexOf('appendFileSync(');
+
+  expect(provisioner).toMatch(/process\.env\.GITHUB_ENV/);
+  expect(exportIndex).toBeGreaterThan(maskIndex);
+  expect(provisioner).toContain('`${row.name}=${row.decrypted_secret}\\n`');
+});

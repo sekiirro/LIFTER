@@ -964,3 +964,46 @@ remain pending ND-F5-1; C4 hosted proof is blocked and T046 stays reserved/uncha
 No dependency, seed, capability-matrix or hosted change. Secrets stay in ignored
 `.env.local`; vector keys are explicitly synthetic. Ignored diagnostic logs were
 scanned without displaying credentials; no credential-bearing log was found.
+
+## U5-R1 — export provisioned keys to the CI test environment
+
+Started on clean `011-client-accounts` at
+`24e6d63d1a033289d9e0184f91ab414a52bfb972`. Confirmed the failure using
+`gh run view 40636637668 --log-failed`: 19 admission tests and the infrastructure
+rollback audit test failed in the fixture's `mac()` at `Buffer.from(undefined)`.
+The test step had stack endpoint credentials but no signup-key environment
+variables. Provisioning wrote matching Vault keys to `.env.local` without
+exporting them into subsequent Actions steps; the integration harness reads
+`process.env` directly.
+
+The provisioner retains the existing create-if-missing Vault behavior and local
+target checks. In Actions it masks both keys, then appends those exact validated
+Vault values to `GITHUB_ENV`, before saving the existing ignored local env copy.
+Missing Actions environment-file configuration fails explicitly. The admission
+fixture checks both env keys before deriving any proof and throws only
+`SIGNUP_* env missing; run provisioning`.
+
+RED first: the CI export contract assertion failed, and both missing-key fixture
+cases reproduced the Buffer TypeError. GREEN: all seven focused tests passed.
+`npm run typecheck`, `npm run lint`, `npm run format:check`, and `npm test` passed;
+the full unit gate contains **1,307 tests in 53 files**.
+
+Fresh-clone simulation retained at
+`C:\Users\NEW LAP\AppData\Local\Temp\LFTR-011-U5-R1-aed74f9f58d940169de2f9cf69a54175`.
+Cloned starting HEAD with no ignored files and copied only the four changed
+implementation/test files for pre-commit validation. Ran `npm ci`, the workflow's
+Unicode pin commands, its pinned local stack start command, an additional local
+`supabase@2.122.0 db reset`, the stack environment export, and the provisioning
+command with `GITHUB_ACTIONS=true` and a temporary runner environment file.
+The simulation consumed mask commands privately in memory and checked that two
+masks were emitted. A privileged local-only verification compared both exported
+values against Vault and the generated local env copy using boolean assertions;
+all copies matched. The generated `.env.local` was then renamed to
+`.env.provisioned`, so the subsequent CI commands relied on the exported runner
+environment. The explicit password-policy parity command passed **58 tests**.
+The full fresh-clone `npm run test:integration` passed **842 tests in 24 files**
+with zero failures and the existing single U4 Storage TODO (storage-api excluded),
+in 140.47 seconds. This includes all 21 admission tests and all audit tests.
+No temporary directory or existing user file was deleted. No key values were
+printed or added to versioned evidence or test artifacts. No dependency,
+migration, seed, capability matrix, hosted stack or T046 change was made.
