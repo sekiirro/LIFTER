@@ -567,6 +567,52 @@ it('invalid link precedes canonical collision locking', async () => {
   ).toEqual({ status: 'invalid' });
 });
 
+it.each([
+  ['expired', "expires_at=statement_timestamp()-interval '1 second'"],
+  ['consumed', 'consumed_at=statement_timestamp()'],
+] as const)(
+  'Q-M22 %s link uses SQLSTATE P1100 business classification before identity locking',
+  async (state, mutation) => {
+    const s = await signupFixture(f);
+    await probe(async (tx) => {
+      if (state === 'expired') {
+        await tx`alter table public.registration_links disable trigger registration_links_update_guard`;
+        await tx.unsafe(
+          `update public.registration_links set ${mutation},created_at=statement_timestamp()-interval '1 second'-interval '24 hours' where id=$1`,
+          [s.link],
+        );
+      } else {
+        await tx.unsafe(
+          `update public.registration_links set ${mutation} where id=$1`,
+          [s.link],
+        );
+      }
+      await tx`create or replace function app_private.signup_lock_identity_keys(identity_id uuid,keys text[]) returns void language plpgsql security definer set search_path='' as $$ begin raise exception 'synthetic collision lock reached' using errcode='XX000'; end $$`;
+
+      const [definition] =
+        await tx`select pg_get_functiondef('public.client_signup(text,text,uuid,jsonb)'::regprocedure) as body`;
+      expect(
+        definition!.body,
+        'expired/consumed business branch keeps the specified P1100 classification',
+      ).toContain("raise exception 'signup_invalid' using errcode='P1100'");
+      expect(
+        await signup(tx, s),
+        `${state} links are public invalid results`,
+      ).toEqual({
+        status: 'invalid',
+      });
+      expect(
+        await tx`select 1 from auth.users where email=${s.fields.email}`,
+      ).toHaveLength(0);
+      expect(
+        (
+          await tx`select redeemed_at is not null as used from app_private.signup_admission_tickets where id=${s.ticket}`
+        )[0]!.used,
+      ).toBe(true);
+    });
+  },
+);
+
 it('known GoTrue confirmed email/password markers and captured bcrypt cost are populated', async () => {
   const s = await signupFixture(f);
   expect(await signup(db, s)).toEqual({ status: 'complete' });

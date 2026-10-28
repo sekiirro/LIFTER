@@ -31,6 +31,65 @@ it('T023 public results contain only contract status, translated copy and safe f
   expect(signupResult('unavailable', 'ar').message.length).toBeGreaterThan(0);
 });
 
+it('Q-M22 infrastructure classification maps to the exact generic unavailable payload', () => {
+  const unavailable = signupResult('unavailable', 'en');
+  expect(unavailable).toEqual({
+    status: 'unavailable',
+    message: 'Please try again later.',
+  });
+  expect(Object.keys(unavailable).sort()).toEqual(['message', 'status']);
+  expect(unavailable).not.toHaveProperty('code');
+  expect(unavailable).not.toHaveProperty('token');
+  expect(unavailable).not.toHaveProperty('linkId');
+});
+
+it('Q-M22 preserves database unavailable through the signup action result mapping', async () => {
+  vi.stubEnv('SIGNUP_RATE_KEY', 'a'.repeat(64));
+  vi.stubEnv('SIGNUP_ATTEST_KEY', 'b'.repeat(64));
+  vi.stubEnv('SUPABASE_URL', 'http://127.0.0.1:54321');
+  vi.stubEnv('SUPABASE_ANON_KEY', 'unit-test-anon-key');
+  signupRpcSpy
+    .mockReset()
+    .mockResolvedValueOnce({
+      data: {
+        status: 'admitted',
+        admission_ticket: '00000000-0000-4000-8000-000000000001',
+      },
+      error: null,
+    })
+    .mockResolvedValueOnce({ data: { status: 'unavailable' }, error: null });
+  try {
+    const result = await processClientSignup({
+      token: 'A'.repeat(43),
+      requestSecret: 'B'.repeat(43),
+      fields: {
+        name: 'Example Person',
+        email: 'client@example.test',
+        phone: JSON.stringify({ country: 'EG', nationalNumber: '01012345678' }),
+        password: 'Complex!2345',
+      },
+      origin: 'https://signup.example.test',
+      expectedOrigin: 'https://signup.example.test',
+      headers: {
+        get: (name) => (name === 'CF-Connecting-IP' ? '192.0.2.1' : null),
+      },
+      signedIn: async () => false,
+      locale: 'en',
+    });
+    expect(result).toEqual({
+      status: 'unavailable',
+      message: 'Please try again later.',
+    });
+    expect(signupRpcSpy).toHaveBeenCalledTimes(2);
+    expect(signupRpcSpy.mock.calls.map(([name]) => name)).toEqual([
+      'client_signup_admit',
+      'client_signup',
+    ]);
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});
+
 it('T023 strict signup shape rejects unknown fields and accepts only the four approved fields', () => {
   const accepted = {
     name: 'Example Person',

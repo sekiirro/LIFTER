@@ -560,3 +560,31 @@ it('shared IP vectors agree with PostgreSQL canonical /64 text and HMAC encoding
     expect(digest!.valid, 'DB rate HMAC matches shared vector').toBe(true);
   }
 });
+
+it('Q-M20 stores the keyed IP evidence value and never the plaintext IP', async () => {
+  const s = await signupFixture(f);
+  const rawIp = '192.0.2.1';
+  const keyedIp = mac(
+    process.env.SIGNUP_RATE_KEY!,
+    'lifter.f11.ip.v1',
+    Buffer.from(rawIp),
+  );
+  const p = proof(s.token, { ip: keyedIp });
+  expect((await admit(db, p)).status).toBe('admitted');
+  const [definition] = await db`
+    select pg_get_functiondef(
+      'public.client_signup_admit(text,text,bytea,bytea,timestamptz,uuid,bytea)'::regprocedure
+    ) as body`;
+  expect(
+    definition!.body,
+    'IP counter write uses the verified keyed input, never an independent raw value',
+  ).toContain("values('ip',ip_key,ip_start,1,ip_start+ip_window)");
+  const [stored] = await db`
+    select key from app_private.signup_rate_counters
+    where scope='ip' and (key=${keyedIp} or position(${Buffer.from(rawIp)} in key)>0)`;
+  expect(
+    stored?.key,
+    'counter evidence is exactly the keyed HMAC and not plaintext IP bytes',
+  ).toEqual(keyedIp);
+  expect(Buffer.from(stored!.key).includes(Buffer.from(rawIp))).toBe(false);
+});
