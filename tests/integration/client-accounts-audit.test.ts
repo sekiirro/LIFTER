@@ -80,7 +80,7 @@ it('caught failure audit is outside inner rollback and remains append-only', asy
   const bad = await signupFixture(f);
   expect(
     await signup(db, { ...bad, fields: { ...bad.fields, email: f.po.email } }),
-  ).toEqual({ status: 'invalid' });
+  ).toEqual({ status: 'duplicate' });
   await expect(
     probe(async (tx) => {
       await tx`update public.audit_events set details='{}' where details->>'link_id'=${bad.link} and action='client.signup_failed'`;

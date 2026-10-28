@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+import { randomBytes, randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { anonClient } from './harness';
 import { backdated } from './registration-links-fixture';
@@ -11,9 +11,11 @@ import {
   type ClientContext,
 } from './client-accounts-fixture';
 let f: ClientContext;
+let foreign: ClientContext;
 const db = sql();
 beforeAll(async () => {
   f = await clientContext();
+  foreign = await clientContext();
 });
 afterAll(() => db.end());
 async function empty(
@@ -201,7 +203,7 @@ it('Vault/proof absence is unavailable with no redemption', async () => {
     ).toBeNull();
   });
 });
-it('invalid/consumed/duplicate and forged scope have identical secret-free results', async () => {
+it('D-08 collisions are duplicate while link-class failures remain invalid', async () => {
   const first = await signupFixture(f);
   expect(await signup(db, first)).toEqual({ status: 'complete' });
   const s = await signupFixture(f);
@@ -214,8 +216,19 @@ it('invalid/consumed/duplicate and forged scope have identical secret-free resul
     const fresh = await signupFixture(f);
     responses.push(await signup(db, fresh, fields));
   }
+  for (const result of responses)
+    expect(JSON.stringify(result)).toBe('{"status":"duplicate"}');
+  responses.length = 0;
   responses.push(await signup(db, first));
   responses.push(await signup(db, { ...s, token: 'unknown' }));
+  responses.push(
+    await signup(db, { ...s, token: randomBytes(32).toString('base64url') }),
+  );
+  responses.push(
+    await signup(db, { ...s, request: randomBytes(32).toString('base64url') }),
+  );
+  const forged = await signupFixture(f);
+  responses.push(await signup(db, { ...s, ticket: forged.ticket }));
   responses.push(
     await signup(db, s, {
       ...s.fields,
@@ -568,3 +581,55 @@ it('Q-M12: lost-response receipt binds original request/link/client and replay c
     await db`select 1 from public.audit_events where details->>'link_id'=${s.link} and action='client.signup_succeeded'`,
   ).toHaveLength(1);
 });
+
+for (const kind of ['pending', 'active', 'staff', 'archived'] as const)
+  for (const scope of ['same', 'foreign'] as const)
+    for (const field of ['email', 'phone', 'both'] as const)
+      it(`D-08 ${kind}/${scope}/${field} byte-identical with redeemed ticket and safe audit`, async () => {
+        const s = await signupFixture(f);
+        const existing = await signupFixture(scope === 'same' ? f : foreign);
+        await probe(async (tx) => {
+          // Archived state is undefined: exercise its retained canonical claim,
+          // without inventing a client state or release policy.
+          const id = randomUUID();
+          const email =
+            field === 'phone' ? existing.fields.email : s.fields.email;
+          const phone =
+            field === 'email' ? existing.fields.phone : s.fields.phone;
+          if (kind === 'pending') {
+            expect(
+              await signup(tx, existing, { ...existing.fields, email, phone }),
+            ).toEqual({ status: 'complete' });
+          } else {
+            await tx`insert into auth.users(id,email,phone,email_confirmed_at,deleted_at) values(${id},${email},${phone},clock_timestamp(),${kind === 'archived' ? new Date() : null})`;
+            if (kind === 'staff') {
+              await tx`insert into public.staff_profiles(user_id,role) values(${id},'trainer')`;
+              await tx`insert into public.workspace_memberships(workspace_id,user_id,granted_by) values(${scope === 'same' ? f.wsA.id : foreign.wsA.id},${id},${f.po.userId})`;
+            }
+          }
+          await tx`set constraints all deferred`;
+          expect(JSON.stringify(await signup(tx, s))).toBe(
+            '{"status":"duplicate"}',
+          );
+          expect(
+            (
+              await tx`select redeemed_at is not null as used from app_private.signup_admission_tickets where id=${s.ticket}`
+            )[0]!.used,
+          ).toBe(true);
+          const audits =
+            await tx`select details from public.audit_events where action='client.signup_failed' and details->>'link_id'=${s.link}`;
+          expect(audits).toHaveLength(1);
+          expect(Object.keys(audits[0]!.details).sort()).toEqual([
+            'link_id',
+            'outcome_class',
+            'timestamp',
+            'workspace_id',
+          ]);
+          expect(audits[0]!.details.outcome_class).toBe('failure');
+          await tx`alter table public.registration_links disable trigger registration_links_update_guard`;
+          await tx`update public.registration_links set expires_at=statement_timestamp()-interval '1 second',created_at=statement_timestamp()-interval '24 hours 1 second' where id=${s.link}`;
+          expect(JSON.stringify(await signup(tx, s))).toBe(
+            '{"status":"invalid"}',
+          );
+        });
+      });

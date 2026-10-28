@@ -797,3 +797,42 @@ contain only safe outcomes/column names. A stack-start CLI invocation printed
 local credentials into the tool transcript before suppression was applied;
 subsequent credential-bearing CLI output was suppressed. No credentials are
 committed. Local secret copies remain in ignored `.env.local`.
+
+## U3-R2 ? distinct D-08 result
+
+Start: clean `011-client-accounts`, `5800a485ba405299f3571a7ed8eb83880d419efb`;
+`git pull --ff-only` was already up to date. Local stack only.
+
+RED: `node --env-file=.env.local node_modules/vitest/vitest.mjs run --config
+vitest.integration.config.ts tests/integration/client-accounts-signup.test.ts -t D-08`:
+25 failing collision assertions, expected the exact JSON body with status
+`duplicate`, received status `invalid`. No implementation preceded this RED.
+
+Forward-only `20261031123500_signup_duplicate_result.sql` copies the latest
+`client_signup` body from `20261031123000_signup_password_parity.sql`. Only
+canonical email/phone unique-constraint failures select `duplicate`; other
+business failures retain `invalid`. Hashing stays before link/identity branching.
+Redemption and the generic failure-row/audit payload survive duplicate rollback.
+No field/class discriminator is persisted. Original owner, empty search_path and
+anon/authenticated-only EXECUTE are preserved. No audit trigger was changed.
+
+GREEN: signup/audit focused run: 72 passed. Full integration: 817 passed,
+3 existing TODOs (admission grants and purge in U5; Storage real-JWT in T029).
+Typecheck, lint (zero warnings), format check pass; unit suite: 1299 passed.
+No browser e2e is specified for this database review fix. Tests cover email,
+phone and both claims, pending clients in same/foreign workspaces, active Auth
+identities, staff memberships and retained soft-deleted Auth claims. Active or
+archived client lifecycle/review states remain undefined and are not invented;
+Auth-only identities have no workspace association. Link-class responses include
+unknown canonical token, malformed token, consumed replay, wrong well-shaped
+secret and forged ticket binding, all exactly invalid. Existing strict-expiry,
+link-before-uniqueness and installed hash-order proofs remain passing.
+
+During verification, fixture-only failures were corrected: multiple signup calls
+inside one rollback probe must restore deferred constraint mode; expired-link
+fixtures use a single statement timestamp to preserve the exact 24-hour CHECK.
+One overlapping integration run interfered with the global sequence timing
+probe; isolated final rerun passed. No production workaround was added.
+
+No task checkbox changed. Secrets remain in ignored `.env.local`; diagnostics
+contain only safe statuses and names. No dependencies, seeds or capabilities changed.
