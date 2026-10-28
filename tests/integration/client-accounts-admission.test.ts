@@ -45,6 +45,9 @@ it('expired, consumed and malformed-request submissions still count both windows
       }
       if (state === 'consumed')
         expect(await signup(tx, s)).toEqual({ status: 'complete' });
+      // Normalize expired global nonce/counter state before the exact snapshot;
+      // admit itself performs this cleanup for any validly attested request.
+      await tx`select app_private.purge_client_signup_attempts()`;
       const before = await countsForAdmission(tx, p, s.link);
       const globalBefore = await counts(tx);
       expect(
@@ -312,12 +315,20 @@ for (const kind of [
       if (kind === 'rate-key' || kind === 'attest-key')
         await tx`select vault.update_secret(id,${randomBytes(32).toString('hex')}) from vault.secrets where name=${kind === 'rate-key' ? 'SIGNUP_RATE_KEY' : 'SIGNUP_ATTEST_KEY'}`;
       const before = await countsForAdmission(tx, p, s.link);
+      const globalBefore = await counts(tx);
       expect(await admit(tx, p)).toEqual({ status: 'invalid' });
       const after = await countsForAdmission(tx, p, s.link);
+      const globalAfter = await counts(tx);
       expect(after!.credits).toBe(before!.credits);
       expect(after!.tickets).toBe(before!.tickets);
       expect(after!.attempts).toBe(before!.attempts);
       expect(after!.audits).toBe(before!.audits);
+      expect(globalAfter).toEqual({
+        ...globalBefore,
+        nonces:
+          globalBefore!.nonces +
+          (kind === 'binding' || kind === 'rate-key' ? 1 : 0),
+      });
     });
   });
 it('nonce is single-use; valid issuance redeems through U3 and attempt audit survives failure', async () => {
@@ -475,6 +486,7 @@ for (const [offset, accepted] of [
   it(`PO clock boundary ${offset} ms: ${accepted ? 'accepted once' : 'rejected without writes'}`, async () => {
     const s = await signupFixture(f);
     await probe(async (tx) => {
+      await tx`set transaction isolation level repeatable read`;
       const [clock] =
         await tx`select floor(extract(epoch from clock_timestamp())*1000)::bigint::text as ms`;
       const sampled = Number(clock!.ms);
@@ -496,19 +508,23 @@ for (const [offset, accepted] of [
       await freeze(sampled);
       const p = proof(s.token, { ms: sampled + offset });
       const before = await countsForAdmission(tx, p, s.link);
+      const globalBefore = await counts(tx);
       expect((await admit(tx, p)).status).toBe(
         accepted ? 'admitted' : 'invalid',
       );
       if (!accepted) {
         expect(await countsForAdmission(tx, p, s.link)).toEqual(before);
+        expect(await counts(tx)).toEqual(globalBefore);
         return;
       }
       const [expiry] =
         await tx`select expires_at=${new Date(p.ms + 60000).toISOString()}::timestamptz as covered from app_private.signup_admission_nonces where nonce=${p.nonce}`;
       expect(expiry!.covered, 'nonce covers issued_at + freshness').toBe(true);
       const after = await countsForAdmission(tx, p, s.link);
+      const globalAfter = await counts(tx);
       expect(await admit(tx, p)).toEqual({ status: 'invalid' });
       expect(await countsForAdmission(tx, p, s.link)).toEqual(after);
+      expect(await counts(tx)).toEqual(globalAfter);
       // Advance the frozen body to the last accepted instant and run cleanup.
       for (const name of [
         'public.client_signup_admit(text,text,bytea,bytea,timestamptz,uuid,bytea)',
@@ -525,8 +541,10 @@ for (const [offset, accepted] of [
       }
       await tx`select app_private.purge_client_signup_attempts()`;
       const afterPurge = await countsForAdmission(tx, p, s.link);
+      const globalAfterPurge = await counts(tx);
       expect(await admit(tx, p)).toEqual({ status: 'invalid' });
       expect(await countsForAdmission(tx, p, s.link)).toEqual(afterPurge);
+      expect(await counts(tx)).toEqual(globalAfterPurge);
     });
   });
 
