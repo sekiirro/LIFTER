@@ -21,6 +21,8 @@ the existing F4 recovery suite is unchanged here.
 
 **C4:** Option (i) verified on local stack only; hosted Supabase Auth version/DML permission and upgrade allowlist must be re-verified before any deployment (PO approval)
 
+Vault keys `SIGNUP_RATE_KEY`/`SIGNUP_ATTEST_KEY` and Vault API-role grant revocation are applied by a local-only provisioning script (supabase_admin); hosted environments need a PO-approved provisioning procedure (with C4) before deployment.
+
 ND-F11-2a phone input acceptance remains open; no phone rules were implemented.
 ND-F5-1/B4 jurisdiction/retention, archived-state/admin-review design,
 other-audit retention, inherited F4 decisions including ND-F4-5, ND-F10-4 public

@@ -156,6 +156,8 @@ No approved constitutional violation. Narrow definer public admission follows F1
 
 ## Production blockers
 
+Vault keys `SIGNUP_RATE_KEY`/`SIGNUP_ATTEST_KEY` and Vault API-role grant revocation are applied by a local-only provisioning script (supabase_admin); hosted environments need a PO-approved provisioning procedure (with C4) before deployment.
+
 Option (i) verified on local stack only; hosted Supabase Auth version/DML permission and upgrade allowlist must be re-verified before any deployment (PO approval)
 
 C1–C3 local proofs are future obligations, not completed verification. Open sub-decisions and binding C1–C4 proofs, with C1 privacy decision Decided (PO, 2026-10-28), AD-F11-2 proof obligations, B4, host log redaction, inherited gates, independent Claude audit and Analyze remain blockers. No implementation/deployment is authorized by this artifact commit.
