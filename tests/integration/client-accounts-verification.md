@@ -299,11 +299,16 @@ Restored independent UNIQUE/FK probes pass.
 
 ### Staged coverage and open decisions
 
-The following are explicit `it.todo` cases, not passing evidence:
+At the U5 checkpoint, the following were explicit `it.todo` cases, not passing evidence:
 
 - `[U3/T012 U5/T020 staged RED] public signup RPC exact anon/authenticated-only EXECUTE`.
 - `[U5/T020] narrow 30-day purge removes only old attempts and preserves audit`.
 - `[U4/T029] Storage pending real-JWT read/write denial: storage-api excluded`.
+
+U6 replaces the Storage todo with `tests/e2e/client-accounts-storage.spec.ts`.
+`scripts/test-client-accounts-storage.ps1` stops the default local stack, starts a
+Storage-enabled local stack for that single e2e, then restores the default
+`storage-api` exclusion. No hosted Storage service is used.
 
 Public attested issuance, counters/nonces, operational purge/cleanup audit and
 signup success/consumption audit remain with their assigned later units. Storage
@@ -1082,3 +1087,59 @@ loaded privately for the integration process. All 26 admission tests pass,
 including TS/DB shared vectors, exact +5000/+5001/-60000/-60001 millisecond
 boundaries, nonce coverage, immediate/edge replay, races, limits, privacy and
 rotation. Diagnostic logs were sanitized without printing credentials.
+
+## U6 SC-011 public duplicate timing differential
+
+Local loopback HTTP harness calls the production `signupResult('duplicate', 'en')` mapper for both labels. Archived-state design remains deferred on ND-F5-1, so `archived-collision-synthetic` is the approved synthetic stand-in; this measures public result serialization and equality, not database branch latency. Treat the measurement as a regression detector, not a latency SLA.
+
+- Warm-up: 20 sequential requests per label; measured trials: 200 ordinary and 200 archived stand-in, randomized and interleaved.
+- Mann-Whitney U: 19495.000; two-sided p-value: 0.662572; absolute median difference: 0.020 ms.
+- Thresholds: p >= 0.01 and |median difference| < 5 ms: PASS.
+- Each response matched status 200, identical body bytes, `Cache-Control: no-store`, `Referrer-Policy: no-referrer`, and `Content-Type: application/json; charset=utf-8`.
+- No account-existence detail is included in either response.
+
+Ordinary duplicate timings (ms):
+
+```text
+14.863, 15.550, 15.929, 16.024, 15.518, 15.251, 14.926, 16.010, 0.741, 15.708, 15.888, 15.002, 15.751, 15.982, 16.134, 15.265, 1.648, 10.647, 15.139, 15.541, 14.982, 15.334, 15.599, 15.464, 15.505, 15.176, 15.929, 15.294, 15.033, 15.338, 15.787, 15.706, 15.366, 15.051, 15.949, 15.581, 15.708, 15.977, 16.186, 15.430, 14.770, 15.873, 16.056, 15.832, 15.534, 0.474, 14.453, 15.703, 15.734, 15.647, 15.427, 15.139, 16.014, 15.030, 14.520, 0.447, 14.920, 15.529, 15.197, 14.791, 15.394, 0.493, 15.288, 15.318, 15.773, 14.864, 1.341, 15.247, 15.744, 15.471, 15.377, 15.998, 14.833, 16.093, 15.493, 15.665, 15.706, 15.046, 15.725, 15.468, 15.209, 15.339, 15.679, 15.682, 13.790, 0.825, 15.149, 14.034, 15.464, 15.468, 15.293, 15.649, 15.636, 15.811, 15.941, 15.448, 15.743, 15.311, 15.258, 15.953, 15.752, 15.180, 16.233, 15.667, 16.394, 15.239, 14.334, 15.432, 15.875, 2.821, 12.195, 15.725, 15.755, 15.899, 15.066, 15.456, 15.044, 15.421, 14.792, 15.855, 16.146, 13.026, 1.037, 0.831, 14.412, 14.716, 15.914, 16.205, 15.278, 14.877, 0.605, 15.069, 15.559, 15.833, 15.060, 15.071, 15.001, 16.087, 15.025, 14.494, 14.966, 0.583, 15.680, 15.693, 15.011, 14.975, 15.507, 15.466, 14.884, 15.180, 16.240, 14.101, 15.419, 15.893, 15.994, 15.633, 16.665, 16.567, 15.565, 14.884, 15.791, 0.594, 15.416, 0.568, 14.892, 15.953, 15.215, 15.829, 14.768, 15.987, 15.579, 15.023, 15.810, 15.805, 14.961, 15.836, 15.754, 0.754, 15.862, 15.764, 0.967, 15.773, 15.173, 16.060, 14.626, 15.114, 16.238, 15.649, 15.260, 14.968, 15.844, 0.981, 13.600, 16.180, 0.632, 15.234, 1.019, 0.966, 0.861, 0.924
+```
+
+Archived collision synthetic stand-in timings (ms):
+
+```text
+15.352, 15.108, 0.753, 14.620, 15.921, 16.001, 14.797, 15.617, 15.622, 15.458, 15.269, 16.101, 15.589, 15.142, 15.069, 15.730, 15.796, 14.145, 15.018, 15.403, 0.469, 15.582, 15.255, 15.321, 1.538, 1.404, 15.889, 15.194, 15.465, 14.715, 15.599, 16.012, 15.883, 15.738, 15.660, 16.599, 14.900, 14.913, 15.766, 16.558, 15.853, 14.575, 15.630, 15.633, 15.593, 15.267, 16.021, 15.767, 14.854, 15.707, 15.874, 15.109, 15.557, 15.587, 16.774, 15.116, 15.226, 16.090, 15.741, 15.174, 0.479, 0.483, 15.526, 14.904, 14.667, 15.817, 15.575, 14.716, 15.634, 14.519, 16.573, 15.821, 16.052, 15.359, 15.247, 15.316, 15.539, 16.319, 15.082, 15.794, 15.122, 16.088, 15.681, 15.452, 15.234, 15.654, 16.961, 1.425, 14.234, 16.278, 15.057, 15.350, 14.785, 16.211, 15.688, 1.916, 13.961, 15.369, 15.541, 1.174, 15.882, 15.705, 15.435, 16.257, 15.346, 15.387, 0.953, 15.786, 14.541, 0.890, 14.101, 15.963, 15.522, 15.595, 16.839, 14.656, 16.009, 14.949, 0.868, 14.668, 16.284, 16.304, 16.146, 14.397, 15.459, 15.362, 1.064, 0.876, 16.047, 15.057, 16.130, 16.064, 15.200, 14.558, 15.496, 15.936, 14.754, 15.762, 15.279, 15.515, 15.821, 14.779, 15.781, 15.154, 16.515, 0.691, 15.497, 15.287, 15.712, 15.513, 15.826, 15.895, 15.366, 0.575, 15.103, 15.671, 0.937, 14.694, 15.287, 15.277, 16.019, 15.391, 2.483, 13.092, 15.673, 15.387, 15.246, 16.301, 15.039, 15.861, 14.235, 15.432, 16.061, 16.166, 14.925, 0.368, 15.449, 16.192, 15.258, 16.304, 14.194, 15.732, 15.064, 15.396, 14.147, 14.500, 17.312, 15.332, 14.354, 16.245, 16.066, 0.895, 14.761, 15.624, 15.074, 15.444, 15.358, 0.570, 15.453, 1.014
+```
+
+## U6 T023�T030 implementation evidence (2026-10-28)
+
+RED was recorded before each paired implementation:
+
+- T023 ? T024: `npx vitest run tests/unit/client-accounts-actions.test.ts` had 5 failures; the first assertion reported `server action exists: expected '' not to be ''`.
+- T025 ? T026: `npx vitest run tests/unit/auth-middleware.test.ts tests/unit/client-accounts-headers.test.ts` had 11 failures because register responses lacked the required `Referrer-Policy: no-referrer` and `Cache-Control: no-store` headers, including recreated and denied responses.
+- T027 ? T028: `npx vitest run tests/unit/client-accounts-form.test.ts` had 4 failures; the phone parser/selector was absent, including the +20 default and country-specific normalization checks.
+- T029 ? T030: `CI=1 npm run e2e -- tests/e2e/client-accounts.spec.ts` initially had 1 failure at the country selector locator in `valid signup link renders a minimal form with private route headers`; the pre-implementation journey lacked the phone selector.
+
+GREEN evidence after implementation:
+
+- `npx vitest run tests/unit/client-accounts-actions.test.ts tests/unit/client-accounts-form.test.ts tests/unit/client-accounts-headers.test.ts tests/unit/auth-middleware.test.ts`: 4 files, 53 tests passed.
+- `npm test`: 56 files, 1,328 tests passed.
+- `CI=1 npm run e2e -- tests/e2e/client-accounts.spec.ts`: 11 passed. Includes provider failure followed by retry, committed response loss followed by consumed-link invalid, country selector, pending submit disabling, correction without consumption, privacy headers, signed-in manual sign-out prompt, and denied paths.
+- `npx --yes supabase@2.122.0 db reset`, `node tests/integration/client-accounts-provision.mjs`, then `npm run test:integration`: local reset and provisioning passed; 24 files, 847 tests passed, 0 pending.
+- `scripts/test-client-accounts-storage.ps1`: 1 real-JWT Storage denial test passed. The script stops the default local stack, starts an isolated stack with Storage enabled, runs only `tests/e2e/client-accounts-storage.spec.ts`, then stops it and restores the default `-x` exclusion list. Verified afterward that the default DB/Auth/REST/Kong/Inbox containers were up and the Storage container was absent; no hosted Storage was used.
+- `npm run build:edge`: passed. `node scripts/check-client-signup-edge.mjs`: passed; Worker output had production `NODE_ENV` inlined and no test-IP override branch, and the scan found no service-role key or `SIGNUP_*` values in 61 client assets.
+- `npm run size`: Worker web output 6,398.00 KiB (1,332.13 KiB gzip). Against the recorded baseline 6,121.81 KiB (1,271.97 KiB gzip), delta is +276.19 KiB uncompressed / +60.16 KiB gzip. The phone parser is server-only and absent from client assets.
+
+Final U6 gates (local):
+
+| Gate                                                    |                                 Result |
+| ------------------------------------------------------- | -------------------------------------: |
+| `npm run typecheck`                                     |                         1 check passed |
+| `npm run lint`                                          |                         1 check passed |
+| `npm run format:check`                                  |                         1 check passed |
+| `npm test`                                              |          56 files / 1,328 tests passed |
+| Local DB reset + provision + `npm run test:integration` | 24 files / 847 tests passed; 0 pending |
+| `CI=1 npm run e2e -- tests/e2e/client-accounts.spec.ts` |                              11 passed |
+| Isolated Storage real-JWT e2e                           |                               1 passed |
+| `npm run build:edge` + Worker/client asset proof        |              passed; 61 assets scanned |
+
+Transport follows the PO decision: infrastructure failures return the generic bilingual `unavailable` action payload with HTTP 200, no-store/no-referrer headers and no consumption. The action does not expose provider details and no token-bearing endpoint was added. Storage access was denied for both read and write with a real pending-client JWT. The dedicated signup RPC client uses only the anon/publishable key with persistence disabled; the action import graph does not reach the admin client or service-role key. No migration, seed, catalog, or capability-matrix changes were made.

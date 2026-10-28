@@ -177,10 +177,6 @@ it('narrow 30-day purge removes only old attempts and preserves audit and ticket
     ).toHaveLength(0);
   });
 });
-it.todo(
-  '[U4/T029] Storage pending real-JWT read/write denial: storage-api excluded',
-);
-
 it('pending synthetic JWT denies has_workspace_access and every catalog RLS table even with safe fixture grants', async () => {
   const context = await clientContext();
   await probe(async (tx) => {

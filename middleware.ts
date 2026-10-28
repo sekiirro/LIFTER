@@ -32,6 +32,7 @@ export async function middleware(request: NextRequest) {
   // check (no wider /register prefix) means a token can never fall through to a
   // login redirect with the token in `next`.
   const registrationPath = /^\/register\/[^/]+\/?$/.test(path);
+  const registrationTree = path.startsWith('/register');
   const publicPath =
     registrationPath ||
     ['/login', '/auth/recovery', '/api/health', '/print-sample'].includes(
@@ -52,17 +53,21 @@ export async function middleware(request: NextRequest) {
     // Public register paths are never fed back through `next`; for the whole
     // /register subtree this also keeps a token out of redirect URLs when the
     // requested path is not the exact public shape (nested/trailing variants).
-    if (path !== '/register' && !path.startsWith('/register/'))
+    if (!registrationTree)
       url.searchParams.set('next', `${path}${request.nextUrl.search}`);
     const redirect = NextResponse.redirect(url);
     for (const cookie of response.cookies.getAll())
       redirect.cookies.set(cookie);
+    if (registrationTree) setRegistrationPrivacyHeaders(redirect);
     return redirect;
   }
-  if (registrationPath) {
-    response.headers.set('Referrer-Policy', 'no-referrer');
-    response.headers.set('Cache-Control', 'no-store');
-  }
+  if (registrationTree) setRegistrationPrivacyHeaders(response);
+  return response;
+}
+
+function setRegistrationPrivacyHeaders(response: NextResponse) {
+  response.headers.set('Referrer-Policy', 'no-referrer');
+  response.headers.set('Cache-Control', 'no-store');
   return response;
 }
 

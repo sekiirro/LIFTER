@@ -8,7 +8,7 @@ export type SignupFields = {
   phone: string;
   password: string;
 };
-/** Storage primitive only. ND-F11-2a input parsing/country policy stays open. */
+/** Storage primitive only; U6 normalizes selected-country input server-side. */
 export function canonicalPhone(value: unknown): value is string {
   return typeof value === 'string' && /^\+[1-9][0-9]{1,14}$/.test(value);
 }
@@ -42,6 +42,30 @@ export function signupFields(value: unknown): SignupFields | null {
     email,
     phone: value.phone,
     password: value.password,
+  };
+}
+export function validateSignupFields(value: unknown): {
+  fields: SignupFields | null;
+  invalidFields: Array<keyof SignupFields>;
+} {
+  const invalidFields: Array<keyof SignupFields> = [];
+  if (!exactKeys(value, ['name', 'email', 'phone', 'password']))
+    return {
+      fields: null,
+      invalidFields: ['name', 'email', 'phone', 'password'],
+    };
+  if (typeof value.name !== 'string' || !value.name.trim())
+    invalidFields.push('name');
+  if (!normalizedEmail(value.email)) invalidFields.push('email');
+  if (!canonicalPhone(value.phone)) invalidFields.push('phone');
+  if (
+    typeof value.password !== 'string' ||
+    !validatePassword(value.password).valid
+  )
+    invalidFields.push('password');
+  return {
+    fields: invalidFields.length === 0 ? signupFields(value) : null,
+    invalidFields,
   };
 }
 type AdmissionResult =
