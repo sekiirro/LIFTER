@@ -683,3 +683,117 @@ U5/later storage coverage, as in U3. C4 hosted Auth/DML/upgrade proof still bloc
 production rollout; no hosted operation or deployment was performed. U4 C2,
 U5 admission/purge, ND-F11-2a, ND-F5-1 and the other recorded U3 blockers remain.
 This is an implementation correction for independent review, not self-approval.
+
+## U4 ? T016?T018: C2 Auth parity and C3 sign-in proofs
+
+Start: clean `011-client-accounts`, `78b99364c6b8157bbff505c0eed8d5343416ac7a`;
+`git pull --ff-only` reported already up to date. All DB/Auth operations used
+loopback ports 54322/54321 and the owned `lifter` Docker stack. No hosted proof.
+
+### RED and implementation boundary
+
+Before T017 helpers existed, ran:
+
+```text
+node --env-file=.env.local node_modules/vitest/vitest.mjs run --config vitest.integration.config.ts tests/integration/client-accounts-auth.test.ts
+```
+
+Observed **4 failed / 2 passed**: the ordinary, multibyte and 72-byte exhaustive
+pre/post lifecycle tests failed with `normalizeAuthValue is not a function`;
+`C2 normalizer preserves NULL/token/metadata differences and instance scope`
+failed with `normalize is not a function`. T017 then installed the reference,
+anon signup and strict lifecycle-normalization helpers. Existing U2 catalog HTTP
+and fixture-grant RLS probes were moved without changing their assertions into
+shared fixture helpers, used by both the original U2 tests and U4 real sessions.
+
+An earlier test-harness error appended a wrong-password suffix beyond the
+72-byte bcrypt boundary, which GoTrue ignores. Corrected that test to change the
+first character within the verified boundary. This is not a product RED or a
+hash incompatibility. Wrong passwords within the boundary now fail for all
+three cases. The initial table scan also needed a qualified SQL identifier
+correction; neither harness correction changed production behavior.
+
+No production parity differences were observed, so no compatibility migration
+was necessary. The latest U3-R1 function, all grants, audit branches and password
+policy remain intact. No older function body was copied or replaced.
+
+### Observed proofs
+
+- Official local control creation uses only
+  `auth.admin.createUser({email,password,email_confirm:true})`; signup itself
+  uses the anon SDK RPC and a synthetic pre-admitted ticket. No U5 issuer.
+- Each of ordinary, multibyte and exactly-72-UTF8-byte passwords is tested with
+  its own control and signup-created account. Signup creates zero Auth sessions.
+  The exact password signs both accounts in through real GoTrue; a wrong
+  password fails. Captured bcrypt cost matches the manifest.
+- Catalog enumeration equals the U1 manifest: **35 auth.users columns and all
+  9 auth.identities columns**, including generated columns. Every value is
+  compared before either sign-in and after one successful sign-in each.
+  Only account ids, non-NULL timestamps, password hashes and email/phone values
+  (including nested values) normalize. NULL remains NULL; empty strings remain
+  empty strings; instance scope remains exact. Metadata shape, booleans,
+  provider arrays and token markers remain exact. Differences report only column
+  names. Explicit suspects covered: `identity_data.email_verified`,
+  `raw_user_meta_data`, `raw_app_meta_data.providers`, `last_sign_in_at`,
+  `email_change_confirm_status`, and every nullable/empty-string token column.
+- Verified real JWT claims drive rollback-scoped SELECT/UPDATE probes over every
+  public RLS table with safe fixture grants. Both own/foreign
+  `has_workspace_access` checks deny access. Shared U2 HTTP probes deny catalog
+  table reads and all public RPC access. No staff profile or membership exists.
+- 73 UTF8 bytes and NUL are rejected; no Auth account persists and diagnostics
+  contain no password. PostgreSQL text cannot persist NUL. Representable positive and negative passwords are checked without row
+  output against public/Auth/private application tables, including audit and
+  receipts. Docker Auth, PostgreSQL and Kong stdout/stderr since suite start
+  are captured in memory and checked for literal/JSON-escaped plaintext.
+- Local recovery is reachable: real `resetPasswordForEmail`, server-only read of
+  the issued opaque recovery hash as a mailbox substitute, real recovery
+  `verifyOtp`, `updateUser`, and sign-in with the changed password all pass.
+  No admin recovery API, SMTP delivery dependency or U7 wiring was added.
+- Runtime is Unicode **17.0**, matching the immutable migration-header pin.
+  Both CI jobs print Node's Unicode version and execute the same assertion and
+  exhaustive category-range test. Actual remote CI execution is not claimed.
+  Injecting `process.versions.unicode = '0.0'` through an ignored preload with
+  `NODE_OPTIONS=--import=<local preload>` and `vitest --pool=forks` produces
+  **2 failures**, including `runtime drift requires architect review`:
+  expected `17.0`, received `0.0`. Removing the preload gives **2 passed**.
+  No migration or runtime configuration file was modified for this probe.
+
+### Gates and limits
+
+Final observed gates (all exit 0):
+
+| Gate                                                                               |                Pass | Fail | Deferred |
+| ---------------------------------------------------------------------------------- | ------------------: | ---: | -------: |
+| Local DB reset + provisioning                                                      |          2 commands |    0 |        0 |
+| `npm run typecheck`                                                                |             1 check |    0 |        0 |
+| `npm run lint`                                                                     | 1 check, 0 warnings |    0 |        0 |
+| `npm run format:check`                                                             |             1 check |    0 |        0 |
+| `npm test -- --reporter=json --outputFile=tmp/u4-unit.json`                        |          1299 tests |    0 |        0 |
+| `npm run test:integration -- --reporter=json --outputFile=tmp/u4-integration.json` |           793 tests |    0 |  3 TODOs |
+| Final U4-specific integration rerun                                                |             8 tests |    0 |        0 |
+| Normal-runtime Unicode/category rerun                                              |             2 tests |    0 |        0 |
+
+Integration npm inherited the privately loaded `.env.local` environment. The
+final U4-specific rerun also covers the last explicit byte-length, local-target
+and bcrypt-cost assertions. JSON reports and diagnostic logs are ignored/local
+only; no captured provider bodies or row values are included here.
+
+The three existing TODO names are:
+
+- `[U5/T020] public admission RPC exact anon/authenticated-only EXECUTE`
+- `[U5/T020] narrow 30-day purge removes only old attempts and preserves audit`
+- `[U4/T029] Storage pending real-JWT read/write denial: storage-api excluded`
+
+T016, T017 and T018 are ticked only after these observed passing proofs. U4 specifies no browser
+e2e. Existing pending Storage coverage remains deferred to T029 because the
+required local stack excludes storage-api. This is not claimed as a Storage
+proof. The existing app authorize denial tests remain part of the unit gate.
+C4 hosted compatibility, U5 admission/attempt/purge, U7 recovery wiring and the
+reserved T046 review remain outstanding. Phone-input acceptance remains open.
+
+Security: no grant, SECURITY DEFINER/search_path, RLS policy, dependency, seed or
+capability change. Safe grants used by probes roll back. Assertion diagnostics
+contain only safe outcomes/column names. A stack-start CLI invocation printed
+local credentials into the tool transcript before suppression was applied;
+subsequent credential-bearing CLI output was suppressed. No credentials are
+committed. Local secret copies remain in ignored `.env.local`.

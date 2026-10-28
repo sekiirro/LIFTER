@@ -19,6 +19,10 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Assert runtime Unicode pin
+        run: |
+          node -p process.versions.unicode
+          npx vitest run tests/unit/password-policy-unicode-ranges.test.ts
       - name: Ensure edge build native tools work
         run: |
           # npm 11 may gate native install scripts. Rebuild only if the esbuild
@@ -50,6 +54,10 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Assert runtime Unicode pin
+        run: |
+          node -p process.versions.unicode
+          npx vitest run tests/unit/password-policy-unicode-ranges.test.ts
       - uses: supabase/setup-cli@v1
         with:
           version: 2.122.0

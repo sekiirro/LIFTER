@@ -5,6 +5,8 @@ import {
   clientContext,
   modelTables,
   pending,
+  pendingHttpAccess,
+  pendingRlsAccess,
   probe,
   sql,
 } from './client-accounts-fixture';
@@ -86,38 +88,10 @@ it('pending synthetic JWT denies has_workspace_access and every catalog RLS tabl
   const context = await clientContext();
   await probe(async (tx) => {
     const c = await pending(tx, context);
-    const tables =
-      await tx`select n.nspname,c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relrowsecurity`;
-    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: c.auth_user_id, role: 'authenticated' })},true)`;
-    for (const table of tables) {
-      // The selected constant exposes no protected field. Grant SELECT on a
-      // safe UUID column to prevent missing privileges from hiding bad RLS.
-      const [column] =
-        await tx`select attname from pg_attribute where attrelid=to_regclass(${table.nspname + '.' + table.relname}) and attnum>0 and atttypid='uuid'::regtype order by attnum limit 1`;
-      if (!column) throw new Error('RLS probe needs a safe UUID column');
-      const target = '"' + table.nspname + '"."' + table.relname + '"';
-      await tx.unsafe(
-        `grant select ("${column.attname}") on ${target} to authenticated`,
-      );
-      await tx.unsafe(
-        `grant update ("${column.attname}") on ${target} to authenticated`,
-      );
-      await tx`set local role authenticated`;
-      expect(
-        await tx.unsafe(`select "${column.attname}" from ${target}`),
-        table.relname,
-      ).toHaveLength(0);
-      const changed = await tx.unsafe(
-        `update ${target} set "${column.attname}"="${column.attname}"`,
-      );
-      expect(changed.count, table.relname).toBe(0);
-      await tx`reset role`;
-    }
-    await tx`set local role authenticated`;
-    const [access] =
-      await tx`select app_private.has_workspace_access(${context.wsA.id},null) as own,app_private.has_workspace_access(${context.wsB.id},null) as foreign`;
-    expect(access).toEqual({ own: false, foreign: false });
-    await tx`reset role`;
+    await pendingRlsAccess(tx, context, {
+      sub: c.auth_user_id,
+      role: 'authenticated',
+    });
   });
 });
 it('pending client signs in later with real JWT and gets no PostgREST table or RPC access', async () => {
@@ -139,44 +113,7 @@ it('pending client signs in later with real JWT and gets no PostgREST table or R
   const signed = await client.auth.signInWithPassword({ email, password });
   expect(signed.error).toBeNull();
   expect(Boolean(signed.data.session)).toBe(true);
-  const tables =
-    await db`select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relrowsecurity`;
-  for (const table of tables) {
-    const result = await client.from(table.relname).select('*');
-    expect(
-      result.error !== null || result.data?.length === 0,
-      table.relname,
-    ).toBe(true);
-  }
-  const functions =
-    await db`select p.proname,p.proargnames,to_jsonb(array(select format_type(t,null) from unnest(p.proargtypes) t)) as types from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prokind='f'`;
-  for (const fn of functions) {
-    const args: Record<string, unknown> = {};
-    fn.types.forEach((type: string, i: number) => {
-      const values: Record<string, unknown> = {
-        uuid: context.wsA.id,
-        text: 'synthetic-invalid',
-        jsonb: null,
-        integer: 1,
-        smallint: 1,
-        bigint: 1,
-        boolean: false,
-        bytea: '\\x00',
-        'timestamp with time zone': new Date().toISOString(),
-      };
-      if (!(type in values)) throw new Error('Uncovered HTTP RPC type');
-      args[fn.proargnames[i]] = values[type];
-    });
-    const result = await client.rpc(fn.proname, args);
-    expect(
-      result.error !== null ||
-        result.data === null ||
-        result.data === false ||
-        (Array.isArray(result.data) && result.data.length === 0) ||
-        result.data?.status === 'invalid',
-      fn.proname,
-    ).toBe(true);
-  }
+  await pendingHttpAccess(client, context);
   await client.auth.signOut();
 });
 it('pending synthetic JWT cannot gain client access through ANY catalog public RPC', async () => {
