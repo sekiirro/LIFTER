@@ -184,6 +184,7 @@ Approved decisions below override conflicting clarification options.
 - **ND-F11-8 — Decided (PO, 2026-10-28)**: Signed-in users must manually sign out before registering. No automatic account linking.
 - **ND-F11-9 — Decided (PO, 2026-10-28)**: Prevent duplicate active/pending identities. Archived identities require admin review.
 - **ND-F11-10 — Decided (PO, 2026-10-28)**: Structured audit events covering attempts, success, failures, link consumption, and cleanup, without logging secrets.
+- **Pending-client recovery — Decided (PO, 2026-10-28, Option A; confirms existing F11 policy):** PO and WO of the client's workspace may issue recovery links for pending-approval clients; recovery never changes approval state; pending clients remain denied all protected resources after reset.
 
 ### Open sub-decisions and architecture items
 

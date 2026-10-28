@@ -1234,6 +1234,30 @@ No audit-body, F4 permission/rate/expiry/delivery/secret, client grant, RLS, cap
 
 The 10 full-e2e skips are the eight existing Chromium/mobile project guards, the provider-fault opt-in case, and the Storage test while the mandated stack excludes `storage-api` (probe returned HTTP 503). No migrations, dependency manifests, grants, RLS, seeds, capability matrix, catalog or application endpoints changed. The existing `unavailable` action remains HTTP 200 with privacy headers.
 
+## U7-R2 pending-client recovery keeps approval and access denied
+
+### RED / non-vacuity evidence
+
+- The new integration flow passed on its first complete run, so a local scratch negative control changed only a copy of the full `public.clients` JSON row with `jsonb_set` and compared it with the original. `npm run test:integration -- tests/integration/client-accounts-recovery.test.ts -t "negative control: the full clients-row equality"` failed as expected at `expect(after?.client_row).toEqual(before!.client_row)`: `approval_state` differed (`pending-approval` versus `active`). This proves the all-column comparison detects a state change. A direct DB update was rejected by the schema's sole allowed-state check; no client data was changed.
+
+### GREEN evidence
+
+- `npm run test:integration -- tests/integration/client-accounts-recovery.test.ts` passed 11 tests. Both the PO and a workspace-owner recovery path authorized and recorded issuance, completed local `verifyOtp` recovery, and used `updateUser` with an AUTH-PW-01-compliant password. Each path compared the complete `to_jsonb(public.clients)` row before/after, checked `pending-approval`, and found no clients-table UPDATE audit event. The new password signed in; the original password failed.
+- The post-reset JWT had no app capability for its own or a foreign workspace. `pendingRlsAccess` temporarily granted SELECT/UPDATE on one safe UUID column per protected RLS table inside a rolled-back database transaction; each SELECT returned zero rows and each UPDATE changed zero rows, establishing RLS denial independently of absent product grants. `pendingHttpAccess` probed every public RLS table and public RPC with the real JWT; reads were denied/empty and RPC results denied. The original pending-client suite retains PO/WO foreign-workspace issuance denials. The client JWT was probed against both workspaces.
+- Static checks verified `app/auth/recovery/actions.ts` and every public F4 `recovery_link_*` plus private recovery helper definition contain no `UPDATE public.clients` statement. Recovery code has no approval-state write path.
+- No migrations, application code, endpoint, grants, RLS policy, seed, capability matrix, catalog, or task checkboxes changed for U7-R2. The pending-client recovery decision is recorded once in the spec decision register.
+
+### U7-R2 gates
+
+| Gate                                                                                                             |                        Result |
+| ---------------------------------------------------------------------------------------------------------------- | ----------------------------: |
+| `npm run typecheck`                                                                                              |                1 check passed |
+| `npm run lint`                                                                                                   |                1 check passed |
+| `npm run format:check`                                                                                           |                1 check passed |
+| `npm test`                                                                                                       | 59 files / 1,348 tests passed |
+| Local DB reset + provision + `node tests/integration/client-accounts-provision.mjs` + `npm run test:integration` |   25 files / 859 tests passed |
+| `CI=1 npm run e2e -- tests/e2e/auth.spec.ts`                                                                     |                      5 passed |
+
 ### U8-R1 architect review corrections
 
 - RED: `npm test -- tests/unit/server-log-privacy.test.ts tests/unit/client-accounts-storage-result.test.ts` failed before implementation because both tested helpers were absent. The privacy test's synthetic raw line contains canary token/password/email values while a counts-only JSON summary contains none; the Storage test supplies the negative `1 skipped` result.

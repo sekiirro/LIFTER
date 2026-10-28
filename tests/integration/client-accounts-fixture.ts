@@ -160,6 +160,8 @@ export async function signup(
 export type RecoveryClientTarget = {
   userId: string;
   workspaceId: string;
+  email: string;
+  password: string;
   client: ReturnType<typeof anonClient>;
 };
 
@@ -190,6 +192,8 @@ export async function createRecoveryClientTarget(
     return {
       userId: row.auth_user_id as string,
       workspaceId: row.workspace_id as string,
+      email: fixture.fields.email,
+      password: fixture.fields.password,
       client,
     };
   } finally {

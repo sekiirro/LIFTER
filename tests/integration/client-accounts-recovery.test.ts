@@ -1,10 +1,16 @@
 import { randomUUID } from 'node:crypto';
+import { readFile } from 'node:fs/promises';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { admin, anonClient, checked, createStaff, sql } from './harness';
+import { authorize } from '../../lib/auth/authorize';
+import { loadActorRows } from '../../lib/auth/actor';
 import {
   clientContext,
   createRecoveryClientTarget,
   installedRecoveryTargetDefinition,
+  pendingHttpAccess,
+  pendingRlsAccess,
+  probe,
   restoreRecoveryTargetFixture,
   type ClientContext,
   type RecoveryClientTarget,
@@ -251,5 +257,139 @@ describe('F11 client recovery linkage', () => {
     const [lookup] =
       await db`select app_private.recovery_target_workspace(${targetA.userId}) as workspace_id`;
     expect(lookup?.workspace_id).toBe(targetA.workspaceId);
+  });
+
+  it.each([
+    ['PO', () => po],
+    ['WO', () => woA],
+  ] as const)(
+    '%s can reset a pending client password without changing approval or access',
+    async (_label, actorFactory) => {
+      const actor =
+        _label === 'PO'
+          ? actorFactory()
+          : await createStaff('workspace_owner', 'client-recovery-reset-wo');
+      if (_label === 'WO')
+        checked(
+          await admin().from('workspace_memberships').insert({
+            workspace_id: targetA.workspaceId,
+            user_id: actor.userId,
+            granted_by: po.userId,
+          }),
+        );
+      const [before] = await db`
+        select c.id, to_jsonb(c) as client_row
+        from public.clients c where c.auth_user_id=${targetA.userId}`;
+      expect(before).toBeDefined();
+      expect(
+        (
+          await actor.client.rpc('recovery_link_authorize', {
+            target: targetA.userId,
+          })
+        ).error,
+      ).toBeNull();
+      const record = await actor.client.rpc('recovery_link_record', {
+        target: targetA.userId,
+      });
+      expect(record.error).toBeNull();
+      expect(record.data).toBeTruthy();
+
+      const link = await admin().auth.admin.generateLink({
+        type: 'recovery',
+        email: targetA.email,
+      });
+      const tokenHash = link.data.properties?.hashed_token;
+      expect(link.error).toBeNull();
+      expect(tokenHash).toBeTruthy();
+      const recoveryClient = anonClient();
+      expect(
+        (
+          await recoveryClient.auth.verifyOtp({
+            type: 'recovery',
+            token_hash: tokenHash!,
+          })
+        ).error,
+      ).toBeNull();
+      const newPassword = `Pending-Recovery-${randomUUID()}-Aa1!`;
+      expect(
+        (await recoveryClient.auth.updateUser({ password: newPassword })).error,
+      ).toBeNull();
+
+      const [after] = await db`
+        select c.id, to_jsonb(c) as client_row
+        from public.clients c where c.auth_user_id=${targetA.userId}`;
+      expect(after?.client_row).toEqual(before!.client_row);
+      expect(after?.client_row.approval_state).toBe('pending-approval');
+      expect(
+        await db`select id from public.audit_events where target_table='clients' and target_id=${before!.id} and action ilike '%update%'`,
+      ).toHaveLength(0);
+
+      const oldPassword = await anonClient().auth.signInWithPassword({
+        email: targetA.email,
+        password: targetA.password,
+      });
+      expect(oldPassword.error).not.toBeNull();
+      const signedIn = anonClient();
+      const signIn = await signedIn.auth.signInWithPassword({
+        email: targetA.email,
+        password: newPassword,
+      });
+      expect(signIn.error).toBeNull();
+      expect(signIn.data.user?.id).toBe(targetA.userId);
+
+      const claims = await signedIn.auth.getClaims();
+      expect(claims.error).toBeNull();
+      expect(claims.data?.claims.sub).toBe(targetA.userId);
+      const actorRows = await loadActorRows(signedIn, targetA.userId);
+      expect(actorRows).toMatchObject({
+        userId: targetA.userId,
+        role: null,
+        activeWorkspaceIds: [],
+      });
+      const appActor = actorRows ?? {
+        userId: targetA.userId,
+        role: null,
+        activeWorkspaceIds: [],
+      };
+      expect(authorize(appActor, 'coaching_work', targetA.workspaceId)).toBe(
+        false,
+      );
+      expect(authorize(appActor, 'coaching_work', contextB.wsA.id)).toBe(false);
+      await pendingHttpAccess(signedIn, contextA);
+      await pendingHttpAccess(signedIn, contextB);
+      await probe(async (tx) => {
+        await pendingRlsAccess(tx, contextA, claims.data!.claims);
+        await pendingRlsAccess(tx, contextB, claims.data!.claims);
+      });
+    },
+  );
+
+  it('recovery code and F4 RPC definitions never update public.clients', async () => {
+    const source = await readFile('app/auth/recovery/actions.ts', 'utf8');
+    expect(source).not.toMatch(/update\s+(?:public\.)?clients\b/i);
+    const definitions = await db`
+      select pg_catalog.pg_get_functiondef(p.oid) as definition
+      from pg_catalog.pg_proc p
+      join pg_catalog.pg_namespace n on n.oid=p.pronamespace
+      where (n.nspname='public' and p.proname like 'recovery_link_%')
+        or (n.nspname='app_private' and p.proname in ('recovery_link_guard','recovery_target_workspace'))
+    `;
+    expect(definitions.length).toBeGreaterThanOrEqual(2);
+    for (const { definition } of definitions)
+      expect(definition).not.toMatch(/update\s+(?:public\.)?clients\b/i);
+  });
+
+  it('negative control: the full clients-row equality catches an approval mutation', async () => {
+    await probe(async (tx) => {
+      const [before] = await tx`
+        select to_jsonb(c) as client_row from public.clients c
+        where c.auth_user_id=${targetA.userId}`;
+      const [after] = await tx`
+        select jsonb_set(${tx.json(before!.client_row)},'{approval_state}','"active"') as client_row`;
+      expect(after?.client_row.approval_state).toBe('active');
+      expect(() =>
+        expect(after?.client_row).toEqual(before!.client_row),
+      ).toThrow();
+    });
   });
 });
