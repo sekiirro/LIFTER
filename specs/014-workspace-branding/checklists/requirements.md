@@ -28,7 +28,7 @@
 
 ## Feature Readiness
 
-- [ ] All functional requirements are unconditionally ready for implementation. **Not satisfied**: F14 decisions are recorded; Storage stack/delivery plan items require PO confirmation at plan approval.
+- [ ] All functional requirements are unconditionally ready for implementation. **Not satisfied**: F14 decisions are recorded; F14 implementation must enable and test Storage in local development and CI and verify security/workspace isolation; hosted compatibility/Storage verification remains a production blocker. Delivery and per-asset limits remain plan items for PO confirmation at plan approval.
 - [x] User scenarios cover the principal editor and visitor journeys.
 - [x] Constitution principles and the mandatory Frontend Design Gate are checked.
 - [x] DG-F14-1..3 approved layouts and color explanation are recorded.
@@ -37,7 +37,7 @@
 
 ## Notes
 
-- This checklist is not an implementation gate. ND-F14-1..7 and DG-F14-1..3 are Decided (PO, 2026-10-28); Storage stack/delivery plan items await plan approval.
+- This checklist is not an implementation gate. ND-F14-1..7 and DG-F14-1..3 are Decided (PO, 2026-10-28); Hosted Storage verification remains a production blocker; delivery and per-asset limits await plan approval. The PO-approved focused Sol Medium critique must run before plan.
 - Architect technical decisions remain distinguished from PO decisions.
 - Supabase Storage supersedes architect B′. Preserve the PNG/WebP validation, metadata stripping, animation rejection, no-SVG policy, token gate, and no-store responses.
 - All UI must follow the Frontend Design Gate linked in the spec source references and DESIGN.md. DG-F14-1..3 specify the approved layouts and accessibility explanation.

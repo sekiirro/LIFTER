@@ -125,7 +125,7 @@ As a registration visitor with a valid F10 token, I see the latest published ide
 - **FR-014**: Branding audit MUST produce exactly one `branding.published` event per successful changed publication, containing only version id, version number, source version id and changed field names. Audit MUST exclude image bytes, authored text, tokens and URLs. Failed publication MUST roll back its audit and state changes together.
 - **FR-015**: UI MUST be Arabic-first RTL and English LTR, responsive, accessible, and use existing Design System tokens and components. Editor and live preview MUST cover Registration, Staff Dashboard, and Client Portal when it exists (P4), and satisfy the Frontend Design Gate and DESIGN.md. The approved design choices are recorded as DG-F14-1..3.
 - **FR-016**: Branding changes MUST remain presentational. They MUST NOT change finance, permissions, security boundaries, signup behavior, or workspace authorization.
-- **FR-017**: No implementation plan or task breakdown is approved by this specification. The role capability and content/surface decisions are recorded below. Storage stack/delivery plan items require PO confirmation at plan approval.
+- **FR-017**: No implementation plan or task breakdown is approved by this specification. The role capability and content/surface decisions are recorded below. F14 MUST enable and test Supabase Storage in local development and CI, and verify storage security and workspace isolation. Hosted compatibility/Storage verification is a production blocker. Signed-URL versus proxy delivery and per-asset limits remain plan items for PO confirmation at plan approval. No production changes are authorized without PO approval.
 
 ### Architect Decisions (technical constraints)
 
@@ -176,14 +176,14 @@ The following technical decisions from `branding-claude-response-r1.md` remain a
 - Marketing content, including CTA, links, pricing, and contact details, in the registration banner.
 - Client Portal functionality beyond published brand data/tokens (P4), F13 freeze/renewal/refunds, F12 financial/approval behavior, and changes to signup authorization or registration-link snapshots.
 - PO approval workflow for each publication; BRD-02 says Workspace Owner publication does not require Platform Owner approval, under the approved `manage_branding` capability.
-- Implementation artifacts: migrations, application code, tests, plan.md and tasks.md. Plan/tasks require the Storage plan items and bounded Sol Medium delta critique to be completed.
+- Implementation artifacts: migrations, application code, tests, plan.md and tasks.md. Plan/tasks require remaining Storage plan items and the PO-approved focused Sol Medium delta critique to be completed.
 
 ## Constitution Check
 
 - **I — Strict Workspace Isolation**: Required. Drafts, versions and assets are workspace-bound; all reads/writes verify actual membership and scope at both authorization walls; foreign-workspace denials are acceptance criteria.
 - **II — Immutable Financial Truth**: Branding is presentation-only and cannot modify prices, commissions, payments, snapshots or ledger facts.
 - **III — Governance & Least Privilege**: ND-F14-1 approves `manage_branding` for PO platform-wide and WO within their own workspace; Sales and Trainer are denied.
-- **IV — Approved Scope Only**: Public scope is limited to token-validated registration identity. The content, capability, rollout, and design decisions are approved. Storage stack and delivery plan items remain open for PO confirmation at plan approval.
+- **IV — Approved Scope Only**: Public scope is limited to token-validated registration identity. The content, capability, rollout, and design decisions are approved. Local/CI Storage enablement is approved. Hosted Storage verification remains a production blocker; signed-URL versus proxy delivery and per-asset limits remain plan items for PO confirmation at plan approval.
 - **V — Versioned, Non-Retroactive Content**: Published identity versions are immutable; a revert produces a new publication and preserves history.
 - **VI — Human-Governed People Decisions**: Not implicated; branding does not make or automate people decisions.
 - **VII — Privacy & Health-Data Protection**: No token, asset bytes, authored text or URL in audit; no public workspace enumeration; private no-store responses and no token cache.
@@ -202,7 +202,7 @@ This is a requirements specification only. No migration, implementation, test re
 | **ND-F14-4** | **Decided (PO, 2026-10-28)** | Published branding applies to Registration and Staff Dashboard, and Client Portal when it exists (P4). F14 provides published brand data/tokens. |
 | **ND-F14-5** | **Decided (PO, 2026-10-28)** | Restoring a historical version loads it to Draft; explicit Publish is required. |
 | **ND-F14-6** | **Decided (PO, 2026-10-28)** | Keep the last 10 published versions restorable; preserve audit history permanently. Whether stored assets for older versions are deleted is a plan item. |
-| **ND-F14-7** | **Decided (PO, 2026-10-28)** | Use Supabase Storage for logos and Hero Banners with workspace isolation, secure access, file validation, and appropriate limits. This supersedes architect B′. Keep PNG/WebP structural validation, metadata stripping, animation rejection, and no SVG. Keep token-gated public reads and `private, no-store`. Per-asset size/pixel limits are plan items. **Open plan items requiring PO confirmation at plan approval:** enable `storage-api` in default local/CI stack (currently excluded by PO-approved flags); verify hosted Storage (production blocker); select signed-URL versus proxy delivery under token gate. |
+| **ND-F14-7** | **Decided (PO, 2026-10-28)** | Use Supabase Storage for logos and Hero Banners with workspace isolation, secure access, file validation, and appropriate limits. This supersedes architect B′. Keep PNG/WebP structural validation, metadata stripping, animation rejection, and no SVG. Keep token-gated public reads and `private, no-store`. Per-asset size/pixel limits are plan items. **Open plan items requiring PO confirmation at plan approval:** enable and verify Supabase Storage in local development and CI as F14 implementation work; verify storage security, workspace isolation, and hosted compatibility (hosted Storage verification is a production blocker); select signed-URL versus proxy delivery under the token gate. No production changes without PO approval. |
 
 ## Design Decisions — Decided (PO, 2026-10-28)
 
@@ -210,4 +210,4 @@ This is a requirements specification only. No migration, implementation, test re
 - **DG-F14-2 — Decided (PO, 2026-10-28)**: Split Editor + Live Preview on desktop, tabs on mobile; preview Registration, Staff Dashboard, and Client Portal surfaces.
 - **DG-F14-3 — Decided (PO, 2026-10-28)**: Show inline original-versus-adjusted brand color comparison with an accessibility explanation.
 
-**Plan gate:** The scope change to Supabase Storage, Hero Banner, and three branded surfaces warrants a bounded Sol Medium delta critique before plan; the architect will run it.
+**Plan gate:** The PO approved ONE focused Sol Medium critique of the expanded scope (Hero Banner, Supabase Storage, and branding across Registration, Staff Dashboard, and Client Portal); the architect runs it before plan.
