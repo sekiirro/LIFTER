@@ -127,6 +127,13 @@ for (const stage of [
         `create ${when} on ${table} ${stage === 'deferred' ? 'deferrable initially deferred ' : ''}for each row${condition} execute function pg_temp.u3_fail()`,
       );
       expect(await signup(tx, s)).toEqual({ status: 'invalid' });
+      const login = await anonClient().auth.signInWithPassword({
+        email: s.fields.email,
+        password: s.fields.password,
+      });
+      expect(login.error !== null, 'rolled-back user cannot sign in').toBe(
+        true,
+      );
       await empty(tx, s.fields.email, s.link);
       expect(
         (
@@ -136,15 +143,32 @@ for (const stage of [
       expect(
         await tx`select 1 from public.audit_events where details->>'link_id'=${s.link} and action='client.signup_failed'`,
       ).toHaveLength(1);
-      const login = await anonClient().auth.signInWithPassword({
-        email: s.fields.email,
-        password: s.fields.password,
-      });
-      expect(login.error !== null, 'rolled back user cannot sign in').toBe(
-        true,
-      );
     });
   });
+it('Q-M08: a committed business rollback leaves no GoTrue-usable Auth orphan', async () => {
+  const s = await signupFixture(f);
+  const result = await db.begin(async (tx) => {
+    await tx.unsafe(
+      `create function pg_temp.qm08_fail() returns trigger language plpgsql as $$ begin raise exception 'synthetic business failure' using errcode='P1100'; end $$`,
+    );
+    await tx.unsafe(
+      'create trigger qm08_fail before insert on public.clients for each row execute function pg_temp.qm08_fail()',
+    );
+    const response = await signup(tx, s);
+    await tx.unsafe('drop trigger qm08_fail on public.clients');
+    return response;
+  });
+  expect(result).toEqual({ status: 'invalid' });
+
+  const login = await anonClient().auth.signInWithPassword({
+    email: s.fields.email,
+    password: s.fields.password,
+  });
+  expect(login.error !== null, 'rolled-back user cannot sign in').toBe(true);
+  expect(
+    await db`select 1 from auth.users where email=${s.fields.email}`,
+  ).toHaveLength(0);
+});
 it('zero-row consume RETURNING rolls back all writes', async () => {
   const s = await signupFixture(f);
   await probe(async (tx) => {

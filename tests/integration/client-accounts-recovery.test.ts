@@ -355,12 +355,24 @@ describe('F11 client recovery linkage', () => {
         false,
       );
       expect(authorize(appActor, 'coaching_work', contextB.wsA.id)).toBe(false);
+      const rlsProbeResults = await Promise.all(
+        [contextA, contextB].map(async (context) => {
+          try {
+            await probe((tx) =>
+              pendingRlsAccess(tx, context, claims.data!.claims),
+            );
+            return true;
+          } catch {
+            return false;
+          }
+        }),
+      );
+      expect(
+        rlsProbeResults,
+        'safe-column RLS probes for both workspaces',
+      ).toEqual([true, true]);
       await pendingHttpAccess(signedIn, contextA);
       await pendingHttpAccess(signedIn, contextB);
-      await probe(async (tx) => {
-        await pendingRlsAccess(tx, contextA, claims.data!.claims);
-        await pendingRlsAccess(tx, contextB, claims.data!.claims);
-      });
     },
   );
 
