@@ -11,7 +11,8 @@ Append this gate to every brief for a unit that changes rendered UI. Binding PO 
    `components/ui/BrandScope.tsx` (workspace brand override), the `app/(dev)/showcase` reference
    page, `components/ui/*`, `components/shell/*`, `components/preferences/*`,
    `components/icons/*`, and i18n in `lib/i18n/`.
-3. The feature's own Spec Kit artifacts and PO decisions in `docs/SESSION_HANDOFF.md`.
+3. The feature's own Spec Kit artifacts and their PO decision registers (`specs/<feature>/spec.md`),
+   plus `docs/04-changes-and-questions.md`.
 4. The environment-local design-skills catalog (not in the repo; advisory). A skill never overrides
    1–3, never adds tokens, colors, fonts, components, motion, or dependencies on its own authority.
 
@@ -22,7 +23,7 @@ Append this gate to every brief for a unit that changes rendered UI. Binding PO 
 - Load and apply every APPLIES skill during design, implementation, and self-review. Typical web
   set: frontend-design, impeccable, better-ui, better-typography, better-colors, better-layout,
   better-accessibility, better-writing, better-interface/interface-review, emil-design-eng,
-  baseline-ui, design-taste-frontend, ui-ux-pro-max; motion skills only if the spec calls for
+  baseline-ui, ui-ux-pro-max (lookup only); motion skills only if the spec calls for
   motion.
 - Conflict between a skill and the Design System → the Design System wins; note the conflict in the
   REPORT.
