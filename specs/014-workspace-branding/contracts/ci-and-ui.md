@@ -7,6 +7,13 @@
 - Run F11 pending-client Storage denial scenarios alongside F14 bucket/path policy cases, including direct API attempts. Use isolated fixtures and restore stack state even after failure. Update F11 isolated-runner restoration assumptions as coordinated work.
 - Include unit and contract coverage for validation, state reconciliation, revision races, proxy authorization, and browser-facing surface states. DB/Storage integration work runs only on stack B.
 
+## Proxy/validator acceptance gate
+
+- Before the proxy or validator units are accepted, prove on the pinned local stack-B version that externally pre-issued restricted-role JWTs, verified request headers, transaction-local context and the exact Storage operation reach the `storage.objects` RLS policy.
+- Prove missing/spoofed context, role-only access, visitor-token-only access, pooled-connection context reuse, list/sign/transform calls and unrelated RPC/table access fail closed. Prove direct authenticated download succeeds only for the exact handle-bound object.
+- If stack B cannot prove these behaviors, stop and return to the architect. Do not fall back to anonymous SELECT, a project-wide privileged credential, signed URLs or another unapproved mechanism. Hosted compatibility remains a production blocker until separately verified.
+- The gate is a prerequisite for acceptance of U03 validator promotion, U04 validated-object policy, and U06 public image proxy work; keep test IDs and evidence linked from Q-M21..Q-M30 in [quickstart](../quickstart.md).
+
 ## UI requirements
 
 - Follow [DESIGN.md](../../../DESIGN.md), the [Frontend Design Gate](../../../docs/09-frontend-design-gate.md), and DG-F14-1..3. Existing tokens, `deriveBrand`, and `BrandScope` remain authoritative; preserve semantic success/warning/error tokens.

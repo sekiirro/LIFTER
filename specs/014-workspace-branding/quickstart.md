@@ -4,9 +4,9 @@ This document is an implementation verification recipe, not evidence that any co
 
 ## Prerequisites before any DB or Storage check
 
-1. PO approves the relevant PA-F14 items and authorizes provisioning/start of stack B.
-2. Infrastructure owner supplies the approved Storage-enabled stack-B start profile and readiness signals. Standard stack defaults do not establish Storage enablement.
-3. Use the F14-based integration line after architect review of the infra branch integration path. Select `LIFTER_SUPABASE_STACK=b`; assert project `lifter-stack-b` and ports 25420–25429 before any connection. Never use stack A or copy keys/URLs across stacks.
+1. PO approves the relevant open PA-F14 items. PO approved stack-B provisioning/start on 2026-10-29; the separate stack lane is provisioning it. F14 does not provision/start it.
+2. Infrastructure owner supplies the Storage-enabled stack-B profile and readiness signals. Standard stack defaults do not establish Storage enablement.
+3. Use the F14-based integration line after the architect decides the infra integration path from the stack agent's file list. Select `LIFTER_SUPABASE_STACK=b`; assert project `lifter-stack-b` and ports 25420–25429 before any connection. Never use stack A or copy keys/URLs across stacks.
 4. The F11/stack-B isolated runner is ready to restore state after both success and failure; F11 pending-client Storage denials are included in the required lane.
 
 ## Checks by layer
@@ -45,7 +45,30 @@ All mutation checks are future checks on an isolated stack-B fixture. Pair each 
 | Q-M18 | Exercise semantic status colors under brand override and banner backgrounds | Semantic tokens preserved; actual surface contrast passes or text stays off imagery/uses guaranteed-token scrim. |
 | Q-M19 | Storage service unavailable or readiness signal absent in CI | Required lane fails before tests; no Storage test is skipped. |
 | Q-M20 | Force a Storage test failure mid-suite | Isolated stack/fixtures restore state; no cross-run data leak; runner assumptions updated with F11 owners. |
+| Q-M21 | Attempt image resolution with only a visitor token, only a render handle, only a reader credential, or any pair missing one of the required authorities | Deny unless valid token, unexpired bound handle, enabled restricted `branding_proxy` credential and exact slot/object all agree. Positive control succeeds. |
+| Q-M22 | Swap token, handle, workspace, slot, bucket, object, or forge version/history selectors | Deny; handle remains bound to its issuance link/workspace/published version and server derives object path. Positive controls in both workspaces. |
+| Q-M23 | Consume/expire the F10 link after resolve but before Storage read; test exact grace/deadline boundaries | Subsequent request denies generically; image calls never change `opened_at` or extend grace. Already-authorized in-flight bytes follow the explicitly documented authorization point. |
+| Q-M24 | Publish between page render and image fetch, or replay an older handle | Return only that render's authorized version asset or generic failure; no current/history version selector can change binding. |
+| Q-M25 | Use `branding_proxy` to list, sign, transform, upload, overwrite, delete, call unrelated RPCs, or read unrelated tables | Deny. Exact validated-bucket download is the only allowed Storage operation; no unrelated DB access. |
+| Q-M26 | Drop/spoof context headers, forge operation headers, or reuse a pooled connection across requests | Fail closed at pinned stack B; prove exact download context reaches RLS and list/sign/transform do not. If unproven, stop and return to architect; no silent fallback. Hosted compatibility remains a production blocker. |
+| Q-M27 | Disable old credential ID during rotation or use a disabled/unknown ID | Old RPC/download fails immediately; replacement works only after enable/deploy; audit shows credential IDs/outcomes, never JWTs. |
+| Q-M28 | Owner user JWT promotes malformed bytes or fabricates validation receipt; validator attempts unrelated operations; revoke WO during upload | Owner promotion/receipt fabrication denies; authorized validator-only transition succeeds; later owner transition/attachment denies after revocation. |
+| Q-M29 | Race GC deletion claim against upload attach, publish, restore, or draft reference creation | Reference creation serializes or rejects while claim is active; referenced objects survive; retries safely reconcile claimed deletion. |
+| Q-M30 | Inspect HTML/RSC/network, error output, logs, cache/conditional/range paths, image optimizer and redirects | No credential/handle/token/path leakage, cache bypass, unauthorized bytes, upstream redirect or optimizer path; exact route has private/no-store and no-referrer. |
+
+## Q-M to implementation task mapping
+
+| Q-M checks | Owning task(s) |
+|---|---|
+| Q-M21, Q-M22, Q-M24 | T045, T046 |
+| Q-M23 | T046 |
+| Q-M25 | T047, T051 |
+| Q-M26 | T044, T046, T048 |
+| Q-M27 | T047 |
+| Q-M28 | T049 |
+| Q-M29 | T050 |
+| Q-M30 | T048 |
 
 ## Audit compatibility check
 
-Before migration implementation, compare the complete F11 `audit_row_change()` definition from the current F11 head to the proposed F14 extension. Preserve all F11 mappings and add F14 mapping(s) without removing prior behavior. Resolve migration timestamp ordering/rebase risk with the architect after F11 integration; do not guess or hand-edit an already applied timestamp.
+Architect decision: timestamp every F14 migration after every F11 migration, including review-fix migrations. Once F11 is on main, rebuild the F14 extension from the final merged F11 `audit_row_change()` body; F14 DB units that touch audit wait. Preserve every F11 mapping. Do not guess or hand-edit an already applied timestamp.

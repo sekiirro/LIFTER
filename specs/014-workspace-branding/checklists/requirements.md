@@ -33,7 +33,7 @@
 - [x] User scenarios cover the principal editor and visitor journeys.
 - [x] Constitution principles and the mandatory Frontend Design Gate are checked.
 - [x] DG-F14-1..3 approved layouts and color explanation are recorded.
-- [x] No plan.md or tasks.md is created in this spec-only delta.
+- [ ] No plan.md or tasks.md is created in this spec-only delta. **Not applicable**: this separate planning revision updates plan.md and tasks.md; it adds no implementation or test changes.
 - [x] The specification does not claim implementation, verification, or test completion.
 
 ## Notes

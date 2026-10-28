@@ -2,13 +2,13 @@
 
 **Branch**: `014-workspace-branding` | **Date**: 2026-10-29 | **Spec**: [spec.md](spec.md)
 
-**Input**: Approved specification plus accepted focused r2 critique [record](research/spec-debate-r2-scope.md). This plan and its tasks are planning artifacts only; approval items below remain open.
+**Input**: Approved specification, accepted focused r2 critique [record](research/spec-debate-r2-scope.md), and read-only proxy credential critique [record](research/proxy-credential-critique.md). This plan and its tasks are planning artifacts only; approval items below remain open.
 
 ## Summary
 
 Deliver workspace branding drafts, private preview, immutable audited publication and restore-to-draft for PO/WO; expose only published identity through F10 registration and the authorized staff surface, and through a P4-gated Client Portal token contract. Keep tenant isolation at both authorization walls and forced RLS. Process logo/banner images through private staging, authoritative PNG/WebP structural validation and metadata stripping, immutable content-addressed storage, then revision-checked attachment. Serve registration assets only through an F10-validating image proxy. Preserve the accepted r2 architecture, UI decisions, ten-version restore window, permanent audit, and all open PO decisions in [spec.md](spec.md).
 
-Implementation is contingent on PO approval of this plan's `PA-F14-*` items, the Storage-enabled stack-B profile, and architect resolution of stack/migration integration. This change does not provision or run any stack.
+Implementation is contingent on PO approval of this plan's `PA-F14-*` items, a successful pinned stack-B proof of Storage request-context and operation enforcement, and architect decisions recorded below. Stack-B provisioning/start was PO-approved on 2026-10-29 and is in progress in the separate stack lane; F14 does not provision or start it. Hosted Storage compatibility remains a production blocker.
 
 ## Technical Context
 
@@ -19,7 +19,7 @@ Implementation is contingent on PO approval of this plan's `PA-F14-*` items, the
 **Target Platform**: Next.js on Cloudflare Workers; Supabase local stack B for DB/Storage implementation verification.
 **Project Type**: Web application with server routes/actions, Postgres policies/functions, Storage, and responsive bilingual UI.
 **Performance Goals**: Complete worst-case PNG/WebP validation, full structural walk, metadata stripping and hashing inside the Workers Free request CPU budget; numeric resource/CPU acceptance criteria are PA-F14 items. No speculative latency target is added.
-**Constraints**: No client-visible signed URLs; private/no-store token responses; F10 validity including consumption on every image request without grace extension; per-request authorized workspace/version resolution; no shared actor/workspace cache; no cross-workspace deduplication; no CTA/links/pricing/contact in banner; no SVG/JPEG; preserve semantic tokens and existing D-18 contrast requirements.
+**Constraints**: No client-visible signed URLs; private/no-store token responses; F10 validity including consumption on every image request without grace extension; hashed opaque render handles bound to link and published version; restricted externally pre-issued proxy/validator JWTs with no project signing key on Workers; per-request authorized workspace/version resolution; no shared actor/workspace cache; no cross-workspace deduplication; no CTA/links/pricing/contact in banner; no SVG/JPEG; preserve semantic tokens and existing D-18 contrast requirements.
 **Scale/Scope**: One draft per workspace, immutable versions with last ten restorable, two asset roles (logo/banner), active upload staging, registration and staff surfaces, Client Portal brand contract only when P4 exists. Capacity is modeled before production use.
 
 ## Constitution Check
@@ -36,7 +36,7 @@ Implementation is contingent on PO approval of this plan's `PA-F14-*` items, the
 | VIII. Bilingual, Accessible, Design-System UI | Conditional: DESIGN.md and Frontend Design Gate govern all UI; existing tokens/semantic colors only; Arabic-first RTL and English LTR, light/dark, mobile/desktop, accessibility and state evidence required. Banner aspect/height awaits PO design decision. |
 | IX. Reliable, Idempotent Operations | Pass with verification gate: draft CAS, serialized atomic publish/audit, durable uploads and reconciliation, bounded reference-safe GC, idempotent unchanged publish. |
 
-**Gate result**: No known constitutional violation. Implementation is blocked on the explicit PO and architecture dependencies in this plan; review this table again after data-model/contracts and at implementation review.
+**Gate result**: No known constitutional violation. Implementation is blocked on the explicit PO decisions and the pinned stack-B request-context/operation proof; review this table again after data-model/contracts and at implementation review.
 
 ## Architecture and sequencing
 
@@ -52,10 +52,16 @@ Implementation is contingent on PO approval of this plan's `PA-F14-*` items, the
 2. Validate authoritatively on the server: PNG/WebP structural walk; validate magic, all chunk/container boundaries, PNG CRC/WebP RIFF sizes, dimension metadata and structural complexity; reject truncation, trailing data, animation, SVG/JPEG. Strip metadata using the precise allowed PNG/WebP structures in FR-009.
 3. Hash validated output bytes and store immutable content-addressed objects in the private validated bucket. No cross-workspace deduplication and no overwrite.
 4. Attach only after checking the submitted draft revision. Reconcile interruptions and failed/stale attachment. Bounded retryable cleanup must recheck references to current publication, draft, ten restorable versions, and active uploads before removing an object.
-- Storage policies are bucket-qualified, constrain workspace-prefixed paths, and independently check capability/scope. Anonymous listing/direct reads, cross-workspace reads and published-object mutation are denied. Test direct API attempts.
+- Owner staging, draft attachment and publication use the verified user JWT with `manage_branding`, workspace scope and upload-operation checks. Only `branding_validator` may promote validated output, and it must issue validator-only receipts; browser-supplied validation claims are never trusted.
+- Use restricted `NOLOGIN NOBYPASSRLS` roles `branding_proxy` and `branding_validator`, with only required schema/table/function privileges and no privileged memberships. Workers receive externally pre-issued expiring JWTs for those identities; project JWT signing material never enters Workers. A private credential-ID registry supports enable/disable rotation and audit. The existing Worker service-role key used by the PO-approved D-19 manual recovery route is not removed by this design; the restricted identities limit the unauthenticated public image route's authority.
+- Extend `registration_link_open(token)` to create a cryptographically unguessable bounded-lifetime opaque render handle whose hash is stored bound to the link, workspace and exact published version. Bound handle issuance by per-link active-handle and issuance-rate limits, and expire/delete handles after their short render window; exact caps are resolved before implementation, not invented here. The extension does not change F10 open semantics beyond the returned render context. Image calls never set `opened_at` and never extend grace. `registration_brand_asset_resolve(token, render_handle, slot)` is executable only by `branding_proxy`; it validates the canonical token, handle, slot, binding, current F10 predicate including consumption/deadline, and returns only derived metadata for the immutable object.
+- A private hashed credential registry validates the signed credential ID on every privileged operation. Rotation enables the replacement, deploys it, then disables the old ID; emergency disable immediately affects RPC and Storage policy decisions. Audit issuance/revocation, validation transitions, privileged cleanup and bounded access outcomes using credential/request IDs only. Never log bearer tokens, render handles, token hashes, request headers, URLs or image bytes.
+- `branding_proxy_object_read` grants SELECT only to `branding_proxy` for the exact validated-bucket download operation and only when `app_private.branding_storage_read_allowed(...)` independently repeats credential, render-handle, link/version/slot/path and live F10 checks. It grants no list, signing, transform, write or delete. Storage operation helpers and header/transaction context propagation must be verified on the pinned local stack-B version; do not infer them from upstream behavior.
+- **Hard acceptance gate**: prove that verified bearer authority and request/operation context reach the Storage RLS policy, that missing/spoofed context fails closed, and that the exact download operation is distinguishable from listing/signing/transform calls on pinned local stack B. This proof must pass before proxy or validator units are accepted. If stack B cannot prove it, stop and return to the architect; do not fall back to anonymous SELECT, project-wide credentials, signed URLs, or a different unapproved mechanism. Record hosted compatibility as a production blocker until verified.
+- All new definer functions use `SECURITY DEFINER SET search_path=''`, fully qualified references and no dynamic SQL. Explicitly name owners and grants. Revoke EXECUTE from `PUBLIC`, `anon`, `authenticated`, and `service_role` by default; regrant only the role/function combinations listed in [branding workflow contract](contracts/branding-workflow.md). Prefer a restricted no-login owner and explicit RLS predicates over postgres-owned omnipotent definers.
+- GC/reconciliation uses audited cron for destructive cleanup. A transactional deletion claim marks an object deleting; every operation that creates a draft/version/upload reference must reject or serialize against that state. Finalize deletion only after checking references and deleting Storage bytes; metadata deletion alone is not object cleanup. Retry safely and never remove a referenced asset.
 - Each image must pass limits specific to role: ingress bytes, output bytes, dimensions, pixels and structural complexity. No numeric values or validator library is selected until PO approves limits and a worst-case CPU benchmark method.
-- Public image delivery uses only the token-validating proxy; reapply F10 open validity including consumption on each request without grace extension; bind to the authorized published version for that rendered token context; return generic failures and private/no-store headers. Never expose client-visible signed URLs or arbitrary asset/history selectors.
-- Any server Storage credential exception remains undecided. Baseline architecture confines service-role to audited cron. Any exception needs explicit narrow scope, audit and architect review.
+- The proxy constructs only required Storage headers, never forwards client headers wholesale, buffers only within approved bounds, rechecks validity before emitting bytes and returns sniffed MIME, `nosniff`, `private, no-store`, and `no-referrer`. Never redirect to upstream URLs, expose client-visible signed URLs or accept arbitrary asset/history selectors. Define the authorization concurrency point; already-authorized in-flight bytes cannot be recalled.
 
 ### Version audit and migration coordination
 
@@ -63,11 +69,11 @@ Extend the full latest F11 `audit_row_change()` body read from `origin/011-clien
 
 ### Stack-B integration
 
-DB and Storage tests run only on stack B: project `lifter-stack-b`, ports `25420–25429`, selected with `LIFTER_SUPABASE_STACK=b`. The second-stack guide was read from `infra-second-stack`; that branch is based on F11 commit `440f0b2`, not F14's main-based line. Proposed path: infrastructure owner reviews the branch diff, then ports only the approved stack-B configuration as a patch/cherry-pick onto an integration branch based on F14/main. Do not merge the F11-based branch wholesale. Architect must confirm the exact path and conflict handling. Stack B must enable `storage-api` and documented dependencies in its start profile; current standard stack defaults do not establish that profile. Provisioning/start waits for PO approval. The required CI lane uses this Storage-enabled profile, readiness checks and zero permitted skips, and includes F11 pending-client Storage denial tests plus F14 bucket/path/direct-API tests. Update F11 isolated runner stack-restoration assumptions in coordination with F11 owners.
+DB and Storage tests run only on stack B: project `lifter-stack-b`, ports `25420–25429`, selected with `LIFTER_SUPABASE_STACK=b`. The second-stack guide was read from `infra-second-stack`; that branch is based on F11 commit `440f0b2`, not F14's main-based line. PO approved provisioning/start on 2026-10-29; the separate stack lane is provisioning it. F14 must not provision or start it. The stack agent's file list will inform the architect-owned integration decision recorded below; keep T003 to review that list and port only approved configuration onto an F14/main-based line. Do not merge the F11-based branch wholesale. Stack B must enable `storage-api` and documented dependencies in its start profile. The required CI lane uses that profile, readiness checks and zero permitted skips, and includes F11 pending-client Storage denial tests plus F14 bucket/path/direct-API tests. Update F11 isolated runner stack-restoration assumptions in coordination with F11 owners.
 
 ### User interfaces
 
-- All UI changes follow [DESIGN.md](../../DESIGN.md) and the [Frontend Design Gate](../../docs/09-frontend-design-gate.md) (added by branch `docs-workflow-governance`, pending merge to main). Existing tokens and `deriveBrand`/`BrandScope` remain authoritative. Keep semantic success/warning/error tokens unchanged.
+- All UI changes follow [DESIGN.md](../../DESIGN.md) and the [Frontend Design Gate](../../docs/09-frontend-design-gate.md), now merged to main. Existing tokens and `deriveBrand`/`BrandScope` remain authoritative. Keep semantic success/warning/error tokens unchanged.
 - Registration uses DG-F14-1 Premium Centered Card. Hero Banner is image-only with required bilingual alt text and fallback as in ND-F14-3, architect decision pending PO confirmation; uploader confirms identity content only; no pricing, contact, CTA, links or text fields. Controls never overlap imagery. Aspect/height, crop presentation and missing-image fallback must use approved design decisions.
 - Editor is DG-F14-2 desktop split editor/live preview and mobile tabs, previewing Registration, Staff Dashboard and Client Portal placeholder. DG-F14-3 inline original/adjusted color explanation.
 - Contrast is checked for each surface's real backgrounds and states. `deriveBrand` covers neutral surfaces only; banner text remains off image or uses guaranteed-contrast scrim from existing tokens. Resolve workspace/version per request, discard late switch responses, use neutral defaults with no scope. Client Portal is brand data/token contract only, conditional on P4.
@@ -122,33 +128,46 @@ No constitution exception is requested. The necessary additional complexity is b
 | Required Storage CI lane and stack B | Stack A is locked by F11; F14 needs isolated DB and Storage policy verification. | Running against A violates lock/isolation; silently skipped Storage tests would not verify security. |
 | Durable upload states plus reference-aware GC | Recover partial operations without deleting current/draft/restorable/active references. | Best-effort cleanup risks asset loss or permanent orphan accumulation. |
 
+## Architect decisions (2026-10-29)
+
+- **AD-F14-1 (formerly PA-F14-7) — F11/F14 migration order, decided by architect 2026-10-29**: F14 migrations are timestamped after every F11 migration, including any F11 review-fix migration. Once F11 is on main, rebuild the F14 `audit_row_change()` extension from F11's final merged body. F14 DB units that touch audit wait until that body is available.
+- **AD-F14-2 (formerly PA-F14-6) — stack-B integration path, architect-owned 2026-10-29**: The exact path is pending the stack-B agent's report/file list. Decide the integration path from that report; T003 remains and is architect-owned, not a PO item. No wholesale F11 branch merge is implied.
+
+## Related findings, not F14 scope
+
+`readServerEnv()` currently requires `SUPABASE_SERVICE_ROLE_KEY` even for session clients. A separate least-privilege hygiene follow-up is proposed to the PO. F14 must not add new code paths that depend on that requirement. The existing Worker already holds the service-role key for the PO-approved D-19 manual recovery link (authenticated, capability-scoped staff route); restricted F14 identities narrow authority for the public unauthenticated image route but do not remove that key from the Worker.
+
 ## Plan-approval items for the PO
 
-Each item remains open. Recommendations are for PO consideration only and do not approve or implement an option.
+Recommendations are for PO consideration only and do not approve or implement an option.
 
 ### PA-F14-1 — Hero Banner content model (architect decision pending PO confirmation)
 
-- **A. Image-only banner, bilingual alt text (recommended)** — confirm architect decision; one locale required and other falls back. Restricts user-authored banner content and aligns with accessibility and BRD-04.2.
-- **B. Image plus plain identity text** — preserves the broader ND-F14-2 wording; requires additional copy rules, contrast and layout decisions, with greater risk of prohibited CTA/pricing/contact content.
-- **C. Image only without requiring bilingual alt text** — simpler entry but weakens accessible image identity and contradicts the architect response.
+- **A. Image-only banner with bilingual alt text (recommended)** — confirm architect decision; one locale is required and the other falls back. Restricts user-authored banner content and aligns with accessibility and BRD-04.2.
+- **B. Image plus plain identity text** — preserves the broader ND-F14-2 wording; needs additional copy rules, contrast and layout decisions, with more risk of prohibited CTA/pricing/contact content.
+- **C. Defer the Hero Banner** — reduces design uncertainty, but narrows the PO-decided registration branding scope.
 
 ### PA-F14-2 — Banner aspect and height limits (design decision)
 
 - **A. Approve values after Frontend Design Gate prototype across Registration/editor/mobile (recommended)** — supports crop behavior, card layout and form non-overlap; requires design review before implementation.
-- **B. Approve separate responsive aspect/height ranges for desktop and mobile** — more art direction, more crop states and test burden.
-- **C. No banner or defer banner UI** — reduces design uncertainty but narrows the PO-decided registration branding scope. Do not silently substitute this option.
+- **B. Approve separate responsive aspect/height ranges for desktop and mobile** — more art direction, crop states and test burden.
+- **C. Defer banner rendering until the design values are approved** — avoids inventing a layout, but delays public banner display.
 
 ### PA-F14-3 — Separate upload limits and CPU benchmark method
 
-- **A. Approve role-specific ingress/output bytes, dimensions, pixels and structural-complexity caps after worst-case PNG/WebP walk/strip/hash benchmark in Workers Free (recommended)** — evidence-based safety/resource balance; requires fixtures and CPU measurements.
-- **B. Use one shared conservative limit for logo and banner** — simpler policy and lower capacity variance; may reject reasonable banner assets or underuse logo budget.
-- **C. Defer uploads until capacity and CPU measurements are available** — safest operationally, but postpones logo/banner delivery.
+- **A. Approve role-specific ingress/output bytes, dimensions, pixels and structural-complexity caps after worst-case PNG/WebP walk/strip/hash benchmark in Workers Free (recommended)** — evidence-based safety/resource balance; requires hostile fixtures and CPU measurements.
+- **B. Use one shared conservative limit for logo and banner** — simpler policy and lower capacity variance; may reject reasonable banner assets or underuse the logo budget.
+- **C. Defer uploads until capacity and CPU measurements are available** — avoids unmeasured resource use, but postpones logo/banner delivery.
 
-### PA-F14-4 — Server-side Storage credential exception
+### PA-F14-4 — Credentials for private branding Storage
 
-- **A. No F14 exception; retain service-role for audited cron only (recommended)** — lowest privilege; public proxy and owner operations use user-scoped authorization.
-- **B. Approve one narrowly scoped server credential for a named operation after architect review** — may support a privileged server-only Storage operation; requires explicit operation, credential scope, audit fields, rotation and tests before acceptance.
-- **C. Defer affected operation until its credential model is resolved** — avoids premature privilege but can delay upload/reconciliation.
+**A. Restricted branding service identities (recommended).** Approve externally issued, expiring credentials for public-image delivery and validated-object promotion. Workers hold no project JWT signing key. Image access requires live F10 validity and an opaque render-bound context enforced by database functions and Storage policies. Owner operations retain user-JWT authorization. Require stack-B and hosted compatibility proof, credential revocation/rotation, audit and direct-API bypass tests before release.
+
+**B. Project-wide privileged credential in the public proxy (not recommended).** Approve an explicit architecture exception for service-role/secret-key access, acknowledging project-wide RLS bypass and compromise impact. Require separate architect review and operational controls.
+
+**C. Defer public image delivery and validated promotion until A is proven.** Preserve Supabase Storage; do not substitute public buckets, client-visible signed URLs or presumed anonymous user authorization.
+
+Context: the Worker already holds the service-role key for the PO-approved D-19 manual recovery link (authenticated, capability-scoped staff route). Option A limits what the PUBLIC, unauthenticated image route can do if it has a bug or is abused; it does not remove the service-role key from the Worker.
 
 ### PA-F14-5 — Asset retention and reference-safe cleanup
 
@@ -156,31 +175,17 @@ Each item remains open. Recommendations are for PO consideration only and do not
 - **B. Retain all historical objects indefinitely** — simplest deletion semantics and maximum recovery; growing Storage/cost exposure.
 - **C. Retain fewer than ten versions' assets** — reduces storage but contradicts ten restorable versions unless the PO changes ND-F14-6 through spec review.
 
-### PA-F14-6 — Stack-B integration and Storage profile
+### PA-F14-6 — Proposed spec correction: ND-F14-7 asset delivery wording
 
-- **A. Architect/infrastructure owner reviews and ports only stack-B configuration onto an F14/main-based integration branch; enable Storage API and dependencies; no wholesale F11 branch merge (recommended)** — avoids importing F11 feature ancestry while preserving isolation; requires owner work and CI resource review.
-- **B. Rebase the infra branch onto F14/main before integration** — produces a single-line history but requires resolving/reviewing F11 deltas and migration compatibility.
-- **C. Defer DB/Storage implementation until a separately provisioned and approved stack-B integration base exists** — lowest integration risk, slower delivery.
+**Approve or decline:** Correct ND-F14-7's stale “signed URL vs proxy” phrase to the accepted r2 proxy-only decision. Approval updates the spec decision register; decline leaves its wording open for the PO while the accepted r2 architecture remains the implementation constraint.
 
-### PA-F14-7 — F11/F14 audit migration ordering
-
-- **A. After F11 lands, architect resolves timestamp ordering and rebases/retimestamps the not-yet-applied F14 migration from the complete latest F11 audit function (recommended)** — preserves all mappings and ensures deterministic migration order; requires integration coordination.
-- **B. Coordinate an explicit migration timestamp reservation before F11 lands** — can reduce retimestamping but depends on both streams and merge sequence.
-- **C. Defer the F14 audit migration until F11 integration is settled** — safest sequencing, but blocks end-to-end publish implementation.
-
-### PA-F14-8 — Public asset delivery and stale ND-F14-7 wording
-
-- **A. Follow accepted r2 proxy-only decision and update the stale signed-URL-versus-proxy phrase through a PO-approved spec correction (recommended)** — per-request F10 check, render-bound asset, no client-visible URL. Keep existing ND wording unchanged until PO approves correction.
-- **B. Reopen the spec decision register to compare proxy with signed URL** — would conflict with the accepted r2 architecture and require a new explicit PO/architect decision; adds bypass/caching risk.
-- **C. Defer public images until delivery wording is reconciled** — avoids inconsistent implementation, but banner/logo will not render publicly.
-
-### PA-F14-9 — Capacity, backup/restore and production gate
+### PA-F14-7 — Capacity, backup/restore and production gate
 
 - **A. Verify current Supabase Free allowances, measure planned asset/egress model against the 70% exit trigger, and prove Storage backup/restore before production (recommended)** — keeps the $0 initial architecture evidence-based; requires environment-specific verification and restore rehearsal.
 - **B. Adopt a PO-approved paid tier before launch** — reduces Free-tier pressure but adds recurring spend and still needs backup proof.
-- **C. Launch without Storage backup/restore proof** — faster but leaves branding assets unrecoverable; not recommended and does not satisfy the production gate.
+- **C. Defer production use until capacity and restore evidence exist** — avoids unverified recovery risk, but delays launch.
 
-### PA-F14-10 — Client Portal dependency
+### PA-F14-8 — Client Portal dependency
 
 - **A. Define only the published-brand data/token contract and preview placeholder; implement the surface when P4 exists (recommended)** — preserves ND-F14-4 while avoiding invented portal features.
 - **B. Wait for P4 before defining any portal contract** — avoids speculative contracts but will require F14 follow-up.
