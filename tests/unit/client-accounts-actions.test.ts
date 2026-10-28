@@ -1,11 +1,18 @@
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
-import { expect, it } from 'vitest';
+import { expect, it, vi } from 'vitest';
 import { signupResult } from '../../lib/client-accounts/results';
+import { processClientSignup } from '../../lib/client-accounts/service';
 import {
   signupFields,
   validateSignupFields,
 } from '../../lib/client-accounts/validation';
+
+const signupRpcSpy = vi.hoisted(() => vi.fn());
+vi.mock('server-only', () => ({}));
+vi.mock('@supabase/supabase-js', () => ({
+  createClient: vi.fn(() => ({ rpc: signupRpcSpy })),
+}));
 
 it('T023 public results contain only contract status, translated copy and safe field names', () => {
   const invalid = signupResult('invalid_input', 'en', ['email', 'phone']);
@@ -184,18 +191,123 @@ it('T023 rejects unknown payload fields and maps all database statuses safely', 
 
 it('T023 provides a production Worker and client-bundle proof for signup keys and test-IP overrides', () => {
   const proof = source('scripts/check-client-signup-edge.mjs');
+  const scanner = source('scripts/client-signup-edge-proof.mjs');
 
   expect(proof, 'build:edge proof script exists').not.toBe('');
-  expect(proof).toContain('.open-next/worker.js');
-  expect(proof).toContain('NODE_ENV');
-  expect(proof).toContain('production');
-  expect(proof).toContain('ALLOW_SIGNUP_TEST_IP_OVERRIDE');
-  expect(proof).toContain('SIGNUP_TEST_IP');
+  expect(proof).toContain('collectProductionServerOutput');
+  expect(proof).toContain('assertSignupServerOutputSafe');
+  expect(scanner).toContain('.open-next/worker.js');
+  expect(scanner).toContain('.open-next/server-functions');
+  expect(scanner).toContain('.open-next/middleware');
+  expect(scanner).toContain('client_signup_admit');
+  expect(scanner).toContain('ALLOW_SIGNUP_TEST_IP_OVERRIDE');
+  expect(scanner).toContain('SIGNUP_TEST_IP');
+  expect(scanner).toContain('process');
+  expect(scanner).toContain('NODE_ENV');
   expect(proof).toContain('SIGNUP_RATE_KEY');
   expect(proof).toContain('SIGNUP_ATTEST_KEY');
   expect(proof).toContain("name.startsWith('SIGNUP_')");
   expect(proof).toContain('.open-next/assets');
   expect(proof).toContain('.next/static');
+});
+
+it('T023 edge proof negative control rejects a live test-IP override in the signup service bundle', async () => {
+  const { assertSignupServerOutputSafe } = await import(
+    resolve('scripts/client-signup-edge-proof.mjs')
+  );
+  expect(() =>
+    assertSignupServerOutputSafe([
+      {
+        path: '.open-next/server-functions/default/signup.js',
+        contents:
+          'client_signup_admit; const mode=process.env.NODE_ENV; if(mode!=="production" && process.env.ALLOW_SIGNUP_TEST_IP_OVERRIDE==="true") process.env.SIGNUP_TEST_IP;',
+      },
+    ]),
+  ).toThrow(/override|production/i);
+});
+
+it('T023 edge proof negative control rejects an un-inlined NODE_ENV guard', async () => {
+  const { assertSignupServerOutputSafe } = await import(
+    resolve('scripts/client-signup-edge-proof.mjs')
+  );
+  expect(() =>
+    assertSignupServerOutputSafe([
+      {
+        path: '.open-next/server-functions/default/signup.js',
+        contents: 'client_signup_admit; const mode=process.env.NODE_ENV;',
+      },
+    ]),
+  ).toThrow(/NODE_ENV|override|production/i);
+});
+
+it('T023 edge proof negative control requires the signup service marker', async () => {
+  const { assertSignupServerOutputSafe } = await import(
+    resolve('scripts/client-signup-edge-proof.mjs')
+  );
+  expect(() =>
+    assertSignupServerOutputSafe([
+      {
+        path: '.open-next/server-functions/default/signup.js',
+        contents: 'export const status = "production";',
+      },
+    ]),
+  ).toThrow(/client_signup_admit|signup service/i);
+});
+
+it('U6-R1 negative control accepts only a safe production signup bundle fixture', async () => {
+  const { assertSignupServerOutputSafe } = await import(
+    resolve('scripts/client-signup-edge-proof.mjs')
+  );
+  expect(
+    assertSignupServerOutputSafe([
+      {
+        path: '.open-next/server-functions/default/signup.js',
+        contents: 'client_signup_admit; const mode="production";',
+      },
+    ]),
+  ).toEqual(['.open-next/server-functions/default/signup.js']);
+});
+
+it('U6-R1 negative control rejects an override reference split into another server bundle file', async () => {
+  const { assertSignupServerOutputSafe } = await import(
+    resolve('scripts/client-signup-edge-proof.mjs')
+  );
+  expect(() =>
+    assertSignupServerOutputSafe([
+      {
+        path: '.open-next/server-functions/default/signup.js',
+        contents: 'client_signup_admit; const mode="production";',
+      },
+      {
+        path: '.open-next/server-functions/default/trusted-ip.js',
+        contents: 'const testIp=process.env.SIGNUP_TEST_IP;',
+      },
+    ]),
+  ).toThrow(/override/i);
+});
+
+it('U6-R1 returns sign_out_required before admission or signup RPC calls', async () => {
+  signupRpcSpy.mockClear();
+  const result = await processClientSignup({
+    token: 'A'.repeat(43),
+    requestSecret: 'B'.repeat(43),
+    fields: {
+      name: 'Example Person',
+      email: 'client@example.test',
+      phone: JSON.stringify({ country: 'EG', nationalNumber: '01012345678' }),
+      password: 'Complex!2345',
+    },
+    origin: 'https://signup.example.test',
+    expectedOrigin: 'https://signup.example.test',
+    headers: { get: () => null },
+    signedIn: async () => true,
+    locale: 'en',
+  });
+  expect(result).toEqual({
+    status: 'sign_out_required',
+    message: 'Please sign out before submitting this registration request.',
+  });
+  expect(signupRpcSpy).not.toHaveBeenCalled();
 });
 
 it('T023 provides the repeatable local SC-011 public-result timing harness', () => {

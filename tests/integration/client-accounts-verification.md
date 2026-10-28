@@ -1143,3 +1143,32 @@ Final U6 gates (local):
 | `npm run build:edge` + Worker/client asset proof        |              passed; 61 assets scanned |
 
 Transport follows the PO decision: infrastructure failures return the generic bilingual `unavailable` action payload with HTTP 200, no-store/no-referrer headers and no consumption. The action does not expose provider details and no token-bearing endpoint was added. Storage access was denied for both read and write with a real pending-client JWT. The dedicated signup RPC client uses only the anon/publishable key with persistence disabled; the action import graph does not reach the admin client or service-role key. No migration, seed, catalog, or capability-matrix changes were made.
+
+## U6-R1 architect review fixes
+
+RED negative-control evidence, before the scanner fix:
+
+- `npx vitest run tests/unit/client-accounts-actions.test.ts -t "override reference split"` failed at the expected negative control: `expected [Function] to throw an error`. The pre-fix checker ignored a test-IP override placed in a separate server bundle file.
+- The initial test-first run of `npx vitest run tests/unit/client-accounts-actions.test.ts` also failed the new scanner tests because `scripts/client-signup-edge-proof.mjs` had not yet been implemented.
+
+GREEN evidence:
+
+- `npx vitest run tests/unit/client-accounts-actions.test.ts`: 15 passed, including fixtures for a live override path, an un-inlined `process.env.NODE_ENV` guard, a missing signup marker, and an override split into a second bundle file.
+- The signed-in submission test returned the exact `sign_out_required` public result and asserted the shared RPC spy was never called; therefore neither admission nor signup ran and no admission was counted.
+- `npm run build:edge` passed. `node scripts/check-client-signup-edge.mjs` scanned 1,446 production server files (`.open-next/worker.js`, all files under `.open-next/server-functions/`, and `.open-next/middleware/` when present). It found `client_signup_admit` in `.open-next/server-functions/default/.next/server/chunks/ssr/_1r0n0ei4bgsnf._.js` and `.open-next/server-functions/default/handler.mjs`; both override identifiers were absent throughout production server output, and dynamic `NODE_ENV` was absent from the service files. The client secret scan covered 61 assets under `.open-next/assets` and `.next/static` without printing secret values.
+- SignupResult now documents a signed-in visitor at submission (including a session appearing after GET) as `sign_out_required`, with generic bilingual sign-out text, no link/identity disclosure, and no admission or consumption.
+
+Final U6-R1 gates:
+
+| Gate                                                    |                                                                                       Result |
+| ------------------------------------------------------- | -------------------------------------------------------------------------------------------: |
+| `npm run typecheck`                                     |                                                                               1 check passed |
+| `npm run lint`                                          |                                                                               1 check passed |
+| `npm run format:check`                                  |                                                                               1 check passed |
+| `npm test`                                              |                                                                56 files / 1,334 tests passed |
+| Local DB reset + provision + `npm run test:integration` |                                                       24 files / 847 tests passed; 0 pending |
+| `CI=1 npm run e2e -- tests/e2e/client-accounts.spec.ts` |                                                                                    11 passed |
+| `npm run build:edge` + server/client proof              |                                      passed; 1,446 server files and 61 client assets scanned |
+| `npm run size`                                          | Worker web 6,397.98 KiB / 1,332.13 KiB gzip; change from U6 start: -0.02 KiB / 0.00 KiB gzip |
+
+No RPC, database, migration, grant, RLS, capability-matrix, seed, or catalog change was made for U6-R1.

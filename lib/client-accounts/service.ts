@@ -101,12 +101,14 @@ export async function processClientSignup(
         : process.env.NODE_ENV === 'test'
           ? 'test'
           : 'development';
+    const allowTestOverride =
+      mode !== 'production' &&
+      process.env.ALLOW_SIGNUP_TEST_IP_OVERRIDE === 'true';
+    const testIp = allowTestOverride ? process.env.SIGNUP_TEST_IP : undefined;
     const clientIp = trustedIp(input.headers, {
       mode,
-      allowTestOverride:
-        mode !== 'production' &&
-        process.env.ALLOW_SIGNUP_TEST_IP_OVERRIDE === 'true',
-      testIp: process.env.SIGNUP_TEST_IP,
+      allowTestOverride,
+      testIp,
     });
     if (!clientIp) return signupResult('unavailable', input.locale);
 

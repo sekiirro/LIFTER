@@ -1,24 +1,17 @@
 import { existsSync, readFileSync, readdirSync, statSync } from 'node:fs';
-import { join, resolve } from 'node:path';
+import { resolve } from 'node:path';
+import {
+  assertSignupServerOutputSafe,
+  collectProductionServerOutput,
+} from './client-signup-edge-proof.mjs';
 
-const workerPath = resolve('.open-next/worker.js');
-if (!existsSync(workerPath))
-  throw new Error('Missing production Worker output');
-const worker = readFileSync(workerPath, 'utf8');
-const productionInlined =
-  worker.includes('production') && !worker.includes('process.env.NODE_ENV');
-if (!productionInlined)
-  throw new Error('Worker NODE_ENV production proof failed');
-if (
-  worker.includes('ALLOW_SIGNUP_TEST_IP_OVERRIDE') ||
-  worker.includes('SIGNUP_TEST_IP')
-)
-  throw new Error('Worker still contains a signup test-IP override path');
+const serverOutput = collectProductionServerOutput();
+const signupServiceFiles = assertSignupServerOutputSafe(serverOutput);
 
 function filesUnder(path) {
   if (!existsSync(path)) return [];
   return readdirSync(path).flatMap((name) => {
-    const full = join(path, name);
+    const full = resolve(path, name);
     return statSync(full).isDirectory() ? filesUnder(full) : [full];
   });
 }
@@ -65,5 +58,5 @@ for (const file of clientFiles) {
 }
 
 console.log(
-  `Client signup edge proof passed: NODE_ENV production, override path absent, ${clientFiles.length} client assets scanned.`,
+  `Client signup edge proof passed: ${serverOutput.length} production server files scanned; signup marker in ${signupServiceFiles.join(', ')}; test-IP override identifiers absent from production server output and dynamic NODE_ENV absent from signup service output; ${clientFiles.length} client assets scanned.`,
 );
