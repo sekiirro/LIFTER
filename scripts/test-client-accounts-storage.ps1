@@ -1,6 +1,18 @@
 $ErrorActionPreference = 'Stop'
-$dockerBin = 'C:\Users\NEW LAP\AppData\Local\Programs\DockerDesktop\resources\bin'
-$env:PATH = "$dockerBin;$env:PATH"
+if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+  $dockerCandidates = @()
+  if ($env:DOCKER_BIN) { $dockerCandidates += $env:DOCKER_BIN }
+  if ($env:ProgramFiles) {
+    $dockerCandidates += Join-Path $env:ProgramFiles 'Docker\Docker\resources\bin'
+  }
+  if ($env:LOCALAPPDATA) {
+    $dockerCandidates += Join-Path $env:LOCALAPPDATA 'Programs\DockerDesktop\resources\bin'
+  }
+  $dockerBin = $dockerCandidates |
+    Where-Object { Test-Path -LiteralPath $_ -PathType Container } |
+    Select-Object -First 1
+  if ($dockerBin) { $env:PATH = "$dockerBin;$env:PATH" }
+}
 
 function Invoke-SupabaseQuietly([string[]] $arguments) {
   $u6OriginalErrorActionPreference = $ErrorActionPreference
