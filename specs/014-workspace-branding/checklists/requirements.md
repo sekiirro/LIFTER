@@ -11,12 +11,12 @@
 - [x] Written in user and stakeholder terms, with necessary security constraints stated as outcomes.
 - [x] Mandatory Spec Kit sections are present and populated.
 - [x] Scope and exclusions are explicit.
-- [ ] Contains no implementation details. **Not satisfied**: architect-mandated technical constraints are recorded explicitly and labeled as pending PO spec approval.
+- [ ] Contains no implementation details. **Not satisfied**: architect-mandated technical constraints are recorded explicitly and retained as explicit architecture constraints.
 
 ## Requirement Completeness
 
 - [x] No `[NEEDS CLARIFICATION]` placeholders remain; unresolved policy/design decisions have named ND-F14/DG-F14 IDs.
-- [ ] All requirements are fully unambiguous. **Not satisfied**: ND-F14-1..7 and DG-F14-1..3 are intentionally open.
+- [ ] All requirements are fully unambiguous. **Not satisfied**: ND-F14-1..7 and DG-F14-1..3 are decided; per-asset limits and Storage delivery choices remain plan items for PO confirmation.
 - [x] Success criteria are measurable and observable.
 - [x] Success criteria describe outcomes rather than a particular implementation stack.
 - [x] Primary user flows have acceptance scenarios, including edit, preview, publish, revert and public registration read.
@@ -24,21 +24,21 @@
 - [x] Edge cases and cross-feature boundaries are stated.
 - [x] Dependencies and assumptions are identified.
 - [x] Source material and the debate record are traceable through repository-relative links.
-- [x] Every recommendation/default tied to an open PO decision is explicitly marked not approved.
+- [x] All PO decisions are recorded with date; remaining plan items are explicitly identified.
 
 ## Feature Readiness
 
-- [ ] All functional requirements are unconditionally ready for implementation. **Not satisfied**: role, content, rollout, revert, retention, storage and design decisions require PO resolution.
+- [ ] All functional requirements are unconditionally ready for implementation. **Not satisfied**: F14 decisions are recorded; Storage stack/delivery plan items require PO confirmation at plan approval.
 - [x] User scenarios cover the principal editor and visitor journeys.
 - [x] Constitution principles and the mandatory Frontend Design Gate are checked.
-- [x] User-visible design gaps are recorded instead of invented.
+- [x] DG-F14-1..3 approved layouts and color explanation are recorded.
 - [x] No plan.md or tasks.md is created before PO decisions.
 - [x] The specification does not claim implementation, verification, or test completion.
 
 ## Notes
 
-- This checklist is intentionally not a green implementation gate. PO decisions ND-F14-1..7 and design decisions DG-F14-1..3 remain open.
-- Architect response decisions are included as `Architect Decisions (pending PO spec approval)` and are not PO approvals.
-- The logo policy is bounded to architect response constraints; storage option B′ and decoder-risk acceptance remain open under ND-F14-7.
-- All UI must follow the Frontend Design Gate linked in the spec source references and DESIGN.md. The editor/preview layout, registration layout/logo placement, and contrast-adjustment explanation remain open.
+- This checklist is not an implementation gate. ND-F14-1..7 and DG-F14-1..3 are Decided (PO, 2026-10-28); Storage stack/delivery plan items await plan approval.
+- Architect technical decisions remain distinguished from PO decisions.
+- Supabase Storage supersedes architect B′. Preserve the PNG/WebP validation, metadata stripping, animation rejection, no-SVG policy, token gate, and no-store responses.
+- All UI must follow the Frontend Design Gate linked in the spec source references and DESIGN.md. DG-F14-1..3 specify the approved layouts and accessibility explanation.
 - No application tests, Docker, Supabase, implementation changes, or implementation gates are part of this documentation-only change.

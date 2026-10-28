@@ -2,9 +2,9 @@
 
 **Feature Branch**: `014-workspace-branding`
 **Created**: 2026-10-28
-**Status**: Draft; specification only; ND-F14-1..7 and DG-F14-1..3 remain open for Product Owner decisions. No implementation or planning approval.
+**Status**: PO decisions recorded 2026-10-28; specification only; no implementation or planning approval.
 
-**Input**: BRD-02 workspace branding, BRD-04.2, PRD-01/02, DR-01, D-18, DESIGN.md, F10/F11 contracts, and the architect/critic debate record (architect v1 decisions override v0 where they differ). Architect decisions below are pending PO spec approval; the open decision register is not approval.
+**Input**: BRD-02 workspace branding, BRD-04.2, PRD-01/02, DR-01, D-18, DESIGN.md, F10/F11 contracts, and the architect/critic debate record (architect v1 decisions override v0 where they differ). Architect technical decisions below are subordinate to the PO decisions recorded in the decision register.
 
 ## Source references
 
@@ -15,13 +15,13 @@
 - F11 specification, read from `origin/011-client-accounts` at this base: `specs/011-client-accounts/spec.md`. F11 owns signup and its strict signup-validity policy; F14 does not change that policy.
 - [Constitution](../../.specify/memory/constitution.md), Principles I, III, IV, V, VII, VIII and IX.
 - [Spec debate r1](research/spec-debate-r1.md) records the architect v0 draft, the Sol Medium critique, and the architect response r1.
-- The [Frontend Design Gate](../../docs/09-frontend-design-gate.md) (added by branch `docs-workflow-governance`, pending merge to main) applies to every UI change, together with DESIGN.md. Any UI choice left unresolved there remains a design gap for PO decision.
+- The [Frontend Design Gate](../../docs/09-frontend-design-gate.md) (added by branch `docs-workflow-governance`, pending merge to main) applies to every UI change, together with DESIGN.md. The approved UI choices are recorded in DG-F14-1..3.
 
 ## User Scenarios & Testing
 
 ### User Story 1 — Edit and save a workspace identity draft (Priority: P1)
 
-As an authorized Workspace Owner, I can edit the identity fields that the PO approves for this feature and save a private draft for my workspace. The Platform Owner can perform this action platform-wide only if the capability is approved. Sales and Trainer have no branding-management authority under the proposed policy.
+As an authorized PO or WO, I can manage workspace branding: PO platform-wide and WO for their own workspace using `manage_branding`. Sales and Trainer have no branding-management authority.
 
 **Why this priority**: BRD-02 assigns workspace branding management to the Workspace Owner; the draft is the source for preview and publication.
 
@@ -32,7 +32,7 @@ As an authorized Workspace Owner, I can edit the identity fields that the PO app
 1. **Given** a signed-in actor with approved branding capability and workspace scope, **When** they save valid draft fields, **Then** the draft is saved for that workspace and reports its new revision.
 2. **Given** a draft with revision N, **When** an editor submits changes based on revision N after another edit has advanced it, **Then** the stale edit is rejected with explicit stale-edit feedback and does not overwrite the newer draft.
 3. **Given** an actor without the approved capability or workspace membership, **When** they request a draft read or write, **Then** access is denied without disclosing another workspace's branding or existence.
-4. **Given** an upload that violates the approved format, structure, dimensions, animation, or post-stripping size limit, **When** it is submitted, **Then** it is rejected, the prior logo remains intact, and no unreferenced asset is retained.
+4. **Given** an upload that violates the approved format, structure, dimensions, animation, or post-stripping size limit, **When** it is submitted, **Then** it is rejected, the prior asset remains intact, and no unreferenced asset is retained.
 
 ### User Story 2 — Preview a draft before publication (Priority: P1)
 
@@ -46,7 +46,7 @@ As an authorized editor, I can preview the draft in the approved branding surfac
 
 1. **Given** a saved draft and authorized editor, **When** the editor opens preview, **Then** the preview uses that draft and sample, non-token data and is inaccessible to unauthorized actors.
 2. **Given** a changed draft, **When** its preview is rendered, **Then** it remains private and does not change the published identity returned to a registration visitor.
-3. **Given** the preview has a contrast adjustment, **When** the editor reviews the preview, **Then** the source brand color is retained and any adjustment is explained to the editor. The explanation and presentation layout remain subject to DG-F14-1..3.
+3. **Given** the preview has a contrast adjustment, **When** the editor reviews the preview, **Then** the source brand color is retained and any adjustment is explained to the editor. The explanation and presentation layout follow DG-F14-1..3.
 
 ### User Story 3 — Publish an approved identity (Priority: P1)
 
@@ -68,7 +68,7 @@ As an authorized editor, I can publish a reviewed draft so the approved public i
 
 As an authorized editor, I can select an earlier version and use it to prepare a draft, review it, then publish through the same publication flow.
 
-**Why this priority**: Reversion supports recovery while preserving the immutable record of what was previously published. This user flow is an architect recommendation pending PO decision P5.
+**Why this priority**: Reversion supports recovery while preserving the immutable record of what was previously published. This user flow follows the PO decision in ND-F14-5.
 
 **Independent Test**: Load an older version into the draft, confirm the currently published version does not change, then publish and verify the new current version preserves the earlier identity while history remains intact.
 
@@ -79,7 +79,7 @@ As an authorized editor, I can select an earlier version and use it to prepare a
 
 ### User Story 5 — See only published identity on a valid registration link (Priority: P1)
 
-As a registration visitor with a valid F10 token, I see the latest published identity allowed by PO decision P2. A draft or unpublished edit is never public.
+As a registration visitor with a valid F10 token, I see the latest published identity . A draft or unpublished edit is never public.
 
 **Why this priority**: BRD-04.2 and PRD-02 authorize a branded registration form, not a public workspace directory or marketing surface; F10 supplies the token-validated open path.
 
@@ -98,10 +98,10 @@ As a registration visitor with a valid F10 token, I see the latest published ide
 - Two editors save against the same draft revision: only the compare-and-set winner updates it; the other receives stale-edit feedback.
 - Two publish requests race, an audit operation fails, or a publish response is retried: serialization, all-or-nothing publication, and unchanged-draft idempotency apply.
 - Cross-workspace draft/version/asset identifiers are supplied, or a caller guesses an asset hash: access is denied; hashes do not authorize reads and assets are not deduplicated across workspaces.
-- A logo has bad magic bytes, invalid structure/CRC or RIFF size, truncation, trailing bytes, unsupported type, excess pixel count, animation, or exceeds 64 KiB after metadata stripping: reject it and preserve the previous logo.
+- A logo has bad magic bytes, invalid structure/CRC or RIFF size, truncation, trailing bytes, unsupported type, excess pixel count, animation, or exceeds the per-asset size limit set during planning: reject it and preserve the previous logo.
 - A valid image renders in a browser with a decoder defect: residual browser-decoder risk is recorded for PO visibility under ND-F14-7; images are displayed only as images, never inline SVG/HTML.
-- A locale's display name is absent: the architect-proposed fallback to the other locale's text applies only if PO approves ND-F14-3; until then bilingual obligations are unresolved.
-- No version has been published: the public view uses the no-branding default proposed in the architect response (workspace name, emerald-derived tokens, no logo), subject to PO approval of the related content and rollout decisions.
+- A second locale name is absent: use the supplied required locale name as fallback.
+- No version has been published: the public view uses the decided default (workspace name, emerald-derived tokens, no logo or Hero Banner).
 - A logo processing or persistence step fails: the previous logo is preserved and no asset remains without a draft reference.
 - A valid F10 open is in grace while F11 signup is past strict expiry: F14 preserves each existing contract; it does not resolve or alter ND-F11-4a.
 
@@ -114,40 +114,40 @@ As a registration visitor with a valid F10 token, I see the latest published ide
 - **FR-003**: The public identity read MUST extend only the existing F10 token-validated open projection with published identity fields. It MUST expose no workspace selector, draft/history reader or anonymous table access. Invalid token output MUST remain byte-identical to F10's generic invalid output.
 - **FR-004**: Draft edits MUST carry a revision and use compare-and-set behavior. Stale edits MUST be rejected with explicit feedback and MUST NOT overwrite a newer revision.
 - **FR-005**: A changed publication MUST create an immutable snapshot, update the current published reference, and record its publication audit event as one atomic operation. Publication MUST be serialized per workspace, and an audit failure MUST roll back publication. Unchanged-draft publication MUST be a no-op. Version numbers MUST be unique within a workspace.
-- **FR-006**: Revert MUST preserve history. Pending the PO decision in ND-F14-5, the architect-proposed behavior is to load an older version into the draft for review and then publish through the ordinary path.
-- **FR-007**: The proposed single editable brand color MUST be a valid `#RRGGBB` value. The UI MUST reuse `deriveBrand` and `BrandScope`, retain the source color, explain any derived contrast adjustment, and MUST NOT override semantic tokens. D-18 WCAG 2.2 AA requirements apply in both light and dark modes.
-- **FR-008**: Pending PO decisions P2 and P3, the architect-proposed editable identity fields are brand color, Arabic and English display names, and logo only; no welcome line or hero/banner is assumed. The architect-proposed missing-locale fallback is the other locale's text. These are proposed defaults, not approved policy.
-- **FR-009**: Logo upload policy MUST accept PNG and WebP only. Validation MUST inspect magic bytes and walk the full structure, verify PNG chunk CRCs and WebP RIFF sizes, and reject malformed, truncated or trailing data. Dimensions MUST be read from IHDR, VP8X, VP8 or VP8L and limited to at most 1024×1024 pixels. Animation MUST be rejected (including APNG `acTL` and WebP `ANIM`). Metadata stripping MUST keep only PNG IHDR/PLTE/IDAT/IEND/tRNS chunks or WebP VP8/VP8L/VP8X without metadata flags/ALPH chunks. The stripped image MUST be no larger than 64 KiB, and its hash MUST be computed from the stripped bytes. A rejected upload MUST preserve the previous logo. JPEG and SVG are not accepted.
-- **FR-010**: Logos MUST be rendered only through an image element, never inline SVG or HTML, and responses MUST use sniffed content type and `X-Content-Type-Options: nosniff`. The browser-decoder residual risk is documented for the PO under ND-F14-7.
+- **FR-006**: Revert MUST preserve history. A restorable historical version is loaded into Draft for review, then published explicitly through the ordinary flow.
+- **FR-007**: The single editable brand color MUST be a valid `#RRGGBB` value. The UI MUST reuse `deriveBrand` and `BrandScope`, retain the source color, explain any derived contrast adjustment, and MUST NOT override semantic tokens. D-18 WCAG 2.2 AA requirements apply in both light and dark modes.
+- **FR-008**: Published branding applies to Registration and Staff Dashboard, and Client Portal when it exists (P4); F14 provides the published brand data/tokens. Registration identity includes workspace logo, names, colors, and a customizable Hero Banner. One language name is required; a second is optional and falls back to the provided name. BRD-04.2 prohibits CTA, links, pricing, or contact content in the banner; it may contain an image and, if supported by this specification, plain identity text only.
+- **FR-009**: Logo and Hero Banner uploads MUST use Supabase Storage, isolated per workspace and securely accessed. Upload policy MUST accept PNG and WebP only. Validation MUST inspect magic bytes and walk the full structure, verify PNG chunk CRCs and WebP RIFF sizes, and reject malformed, truncated or trailing data. Dimensions MUST be read from IHDR, VP8X, VP8 or VP8L; per-asset size and pixel limits are plan items. Animation MUST be rejected (including APNG `acTL` and WebP `ANIM`). Metadata stripping MUST keep only PNG IHDR/PLTE/IDAT/IEND/tRNS chunks or WebP VP8/VP8L/VP8X without metadata flags/ALPH chunks. The stripped image hash MUST be computed from the stripped bytes. File validation MUST prevent cross-workspace access and reject unsafe content. A rejected upload MUST preserve the previous asset. JPEG and SVG are not accepted.
+- **FR-010**: Logos and Hero Banners MUST be rendered only through an image element, never inline SVG or HTML, and responses MUST use sniffed content type and `X-Content-Type-Options: nosniff`. The browser-decoder residual risk is documented for the PO under ND-F14-7; retain the architect image-safety decision.
 - **FR-011**: Registration, preview and asset responses MUST use `private, no-store`, including error responses. Token responses MUST NOT be shared/CDN cached. The current published reference MUST be resolved fresh per request.
 - **FR-012**: Publication MUST NOT change signup authorization, reset already-entered registration form values, or change the F10/F11 package/workspace snapshot or validity rules. A rendered form keeps its identity until reload.
-- **FR-013**: When no published customization exists, the architect-proposed default is workspace name, emerald-derived tokens and no logo. This default remains subject to applicable PO decisions.
+- **FR-013**: When no published customization exists, use workspace name, emerald-derived tokens, and no logo or Hero Banner.
 - **FR-014**: Branding audit MUST produce exactly one `branding.published` event per successful changed publication, containing only version id, version number, source version id and changed field names. Audit MUST exclude image bytes, authored text, tokens and URLs. Failed publication MUST roll back its audit and state changes together.
-- **FR-015**: UI MUST be Arabic-first RTL and English LTR, responsive, accessible, and use existing Design System tokens and components. Editor, preview and registration page MUST satisfy the Frontend Design Gate linked in the source references and DESIGN.md. The three unresolved design choices are tracked as DG-F14-1..3 and MUST NOT be invented by this specification.
+- **FR-015**: UI MUST be Arabic-first RTL and English LTR, responsive, accessible, and use existing Design System tokens and components. Editor and live preview MUST cover Registration, Staff Dashboard, and Client Portal when it exists (P4), and satisfy the Frontend Design Gate and DESIGN.md. The approved design choices are recorded as DG-F14-1..3.
 - **FR-016**: Branding changes MUST remain presentational. They MUST NOT change finance, permissions, security boundaries, signup behavior, or workspace authorization.
-- **FR-017**: No implementation plan or task breakdown is approved by this specification. The storage choice, role capability and content/surface decisions remain blocked on the PO decisions recorded below.
+- **FR-017**: No implementation plan or task breakdown is approved by this specification. The role capability and content/surface decisions are recorded below. Storage stack/delivery plan items require PO confirmation at plan approval.
 
-### Architect Decisions (pending PO spec approval)
+### Architect Decisions (technical constraints)
 
-The following are technical decisions from `branding-claude-response-r1.md`, recorded for PO review. They are not implementation authorization and do not close ND-F14 items.
+The following technical decisions from `branding-claude-response-r1.md` remain applicable except where superseded by the PO decisions below. They are not implementation authorization.
 
-1. Every staff database operation will verify signed actor, capability, membership and workspace within the privileged database operation; use explicit workspace predicates and schema-qualified names; set an empty search path; revoke default execution and grant narrowly. If `manage_branding` is approved, the application capability matrix and database capability function must change together.
+1. Every staff database operation will verify signed actor, capability, membership and workspace within the privileged database operation; use explicit workspace predicates and schema-qualified names; set an empty search path; revoke default execution and grant narrowly. The approved `manage_branding` capability must be implemented in both application and database capability checks.
 2. Drafts and versions reference assets within the same workspace. The current published reference is workspace-bound. No hash-based authorization or cross-workspace deduplication.
 3. Public reads extend the F10 token-validated projection with published identity only. No separate public workspace selector, draft/history read, anonymous table grant or hash-addressed public asset path.
-4. Image processing uses the bounded PNG/WebP structural validation and metadata stripping in FR-009 instead of full decode/re-encode; the architect's rationale is Cloudflare Workers Free CPU budget and avoiding a new image dependency. The residual risk of a browser image-decoder bug remains visible for PO acceptance under ND-F14-7.
+4. Image processing uses the bounded PNG/WebP structural validation and metadata stripping in FR-009 instead of full decode/re-encode; the architect's rationale is Cloudflare Workers Free CPU budget and avoiding a new image dependency. The residual risk of a browser image-decoder bug remains visible for PO acceptance under ND-F14-7; retain the architect image-safety decision.
 5. Sensitive responses are `private, no-store`; public pointer resolution is fresh per request.
 6. Existing `deriveBrand` and `BrandScope` are reused; source color remains intact, contrast adjustments are explained, and semantic tokens are not overridden.
 7. Draft revisions use compare-and-set; publication is serialized per workspace; snapshot, current pointer and audit commit together; unchanged publication is a no-op; version number is unique per workspace.
-8. A rendered registration form keeps its current identity until reload. Publication does not reset inputs or change signup authorization/snapshots. The proposed no-branding default and locale fallback are recorded in FR-008/013 pending the PO decisions.
+8. A rendered registration form keeps its current identity until reload. Publication does not reset inputs or change signup authorization/snapshots. The decided no-branding default and locale fallback are recorded in FR-008/013.
 9. Extend the latest `audit_row_change()` behavior without removing any existing mapping. Exactly one publication audit event is required; audit failure aborts publication; no bytes, authored text, tokens or URLs are recorded.
-10. Uploads are staged within the draft transaction so a failed draft cannot leave unreferenced asset bytes. History retention is not chosen pending P6.
+10. Uploads are staged within the draft transaction so a failed draft cannot leave unreferenced asset bytes. Retain 10 restorable versions; older asset deletion is a plan item.
 11. Welcome text remains out of assumed scope until P2; registration identity only; no navigation is invented.
 
 ## Key Entities
 
 - **Workspace branding draft**: The editable, revisioned identity for one workspace; has an editor and update time; private until publication.
 - **Branding version**: An immutable snapshot of an identity that has been published, with workspace-scoped version number, publication actor/time and optional source version for a revert.
-- **Branding asset**: A workspace-owned, validated and metadata-stripped logo image identified within that workspace by its content hash and media type.
+- **Branding asset**: A workspace-owned, validated and metadata-stripped logo or Hero Banner image identified within that workspace by its content hash and media type.
 - **Current published reference**: The workspace-scoped reference to the latest published version; it does not grant public access by itself.
 
 ## Success Criteria
@@ -166,51 +166,48 @@ The following are technical decisions from `branding-claude-response-r1.md`, rec
 
 - F10 remains the sole public token-open path. F11 remains the signup owner and retains its own strict signup validity rules. F14 does not alter either contract.
 - D-18, DESIGN.md and the implemented Design System define color and contrast behavior. Existing `deriveBrand` and `BrandScope` are the intended shared mechanism.
-- BRD-02 gives the Workspace Owner workspace-scoped branding authority. Any new `manage_branding` capability and Platform Owner role scope still require PO approval under ND-F14-1.
-- The final editable content, public rollout surface, revert UX, history retention and logo storage require PO decisions ND-F14-2..7.
+- BRD-02 gives the Workspace Owner workspace-scoped branding authority. ND-F14-1 approves `manage_branding` for PO platform-wide and WO in their own workspace; Sales and Trainer have no grant.
+- The decided editable content, public rollout surface, revert UX, history retention, and asset storage are specified under ND-F14-2..7.
 - Acceptance scenarios and success criteria are future verification obligations, not claims of implementation or test completion.
 
 ## Out of Scope
 
 - Public marketing, landing, FAQ, price, contact, checkout, support CTA or sales-funnel pages; BRD-04.2 restricts the public experience to the registration form.
-- Hero/banner imagery, welcome text, custom fonts, per-mode brand colors, or other identity fields unless the PO adds them through ND-F14-2.
-- Branding the staff application shell in this increment; that scope remains open under ND-F14-4.
-- Client portal theming beyond shared brand tokens (P4), F13 freeze/renewal/refunds, F12 financial/approval behavior, and any changes to signup authorization or registration-link snapshots.
-- PO approval workflow for each publication; BRD-02 says Workspace Owner publication does not require Platform Owner approval, subject to the open capability decision.
-- Implementation artifacts: migrations, application code, tests, plan.md and tasks.md. Plan/tasks wait until PO decisions are resolved.
+- Marketing content, including CTA, links, pricing, and contact details, in the registration banner.
+- Client Portal functionality beyond published brand data/tokens (P4), F13 freeze/renewal/refunds, F12 financial/approval behavior, and changes to signup authorization or registration-link snapshots.
+- PO approval workflow for each publication; BRD-02 says Workspace Owner publication does not require Platform Owner approval, under the approved `manage_branding` capability.
+- Implementation artifacts: migrations, application code, tests, plan.md and tasks.md. Plan/tasks require the Storage plan items and bounded Sol Medium delta critique to be completed.
 
 ## Constitution Check
 
 - **I — Strict Workspace Isolation**: Required. Drafts, versions and assets are workspace-bound; all reads/writes verify actual membership and scope at both authorization walls; foreign-workspace denials are acceptance criteria.
 - **II — Immutable Financial Truth**: Branding is presentation-only and cannot modify prices, commissions, payments, snapshots or ledger facts.
-- **III — Governance & Least Privilege**: No new capability is effective until ND-F14-1 is approved. Proposed access is Workspace Owner for own workspace and Platform Owner platform-wide; Sales/Trainer denied.
-- **IV — Approved Scope Only**: Public scope is limited to token-validated registration identity. Unresolved content, capability, rollout, storage and design choices are explicit; no recommendation is represented as approved.
+- **III — Governance & Least Privilege**: ND-F14-1 approves `manage_branding` for PO platform-wide and WO within their own workspace; Sales and Trainer are denied.
+- **IV — Approved Scope Only**: Public scope is limited to token-validated registration identity. The content, capability, rollout, and design decisions are approved. Storage stack and delivery plan items remain open for PO confirmation at plan approval.
 - **V — Versioned, Non-Retroactive Content**: Published identity versions are immutable; a revert produces a new publication and preserves history.
 - **VI — Human-Governed People Decisions**: Not implicated; branding does not make or automate people decisions.
 - **VII — Privacy & Health-Data Protection**: No token, asset bytes, authored text or URL in audit; no public workspace enumeration; private no-store responses and no token cache.
-- **VIII — Bilingual, Accessible, Design-System UI**: Arabic-first RTL/English LTR, existing tokens and contrast guard, accessible responsive UI, DESIGN.md and mandatory Frontend Design Gate. Unresolved layout and explanation choices remain DG-F14 items.
+- **VIII — Bilingual, Accessible, Design-System UI**: Arabic-first RTL/English LTR, existing tokens and contrast guard, accessible responsive UI, DESIGN.md and mandatory Frontend Design Gate. DG-F14-1..3 specify the approved layouts and color explanation.
 - **IX — Reliable, Idempotent Operations**: Revision CAS, serialized publication, idempotent unchanged publish, atomic snapshot/reference/audit and rollback on audit failure.
 
 This is a requirements specification only. No migration, implementation, test result, plan or task approval is claimed.
 
-## PO Decision Register
+## PO Decision Register — Decided (PO, 2026-10-28)
 
-Every item below is **OPEN (PO)**. A conservative default is shown for discussion only and is explicitly **NOT approved**. An architect recommendation or technical decision does not approve policy. No plan/tasks should be written until these decisions are recorded by the PO.
+| Decision | Status | Decision |
+|---|---|---|
+| **ND-F14-1** | **Decided (PO, 2026-10-28)** | PO manages all workspace branding platform-wide. WO manages their own workspace. Approve `manage_branding` for those scopes; Sales and Trainer have none. |
+| **ND-F14-2** | **Decided (PO, 2026-10-28)** | Registration shows workspace logo, names, colors, and a customizable Hero Banner; it is not a marketing landing page. BRD-04.2 binds: no CTA, links, pricing, or contact in the banner. Banner is an image plus, only if supported by this spec, plain identity text. |
+| **ND-F14-3** | **Decided (PO, 2026-10-28)** | One language name is required; a second is optional and falls back to the provided name. |
+| **ND-F14-4** | **Decided (PO, 2026-10-28)** | Published branding applies to Registration and Staff Dashboard, and Client Portal when it exists (P4). F14 provides published brand data/tokens. |
+| **ND-F14-5** | **Decided (PO, 2026-10-28)** | Restoring a historical version loads it to Draft; explicit Publish is required. |
+| **ND-F14-6** | **Decided (PO, 2026-10-28)** | Keep the last 10 published versions restorable; preserve audit history permanently. Whether stored assets for older versions are deleted is a plan item. |
+| **ND-F14-7** | **Decided (PO, 2026-10-28)** | Use Supabase Storage for logos and Hero Banners with workspace isolation, secure access, file validation, and appropriate limits. This supersedes architect B′. Keep PNG/WebP structural validation, metadata stripping, animation rejection, and no SVG. Keep token-gated public reads and `private, no-store`. Per-asset size/pixel limits are plan items. **Open plan items requiring PO confirmation at plan approval:** enable `storage-api` in default local/CI stack (currently excluded by PO-approved flags); verify hosted Storage (production blocker); select signed-URL versus proxy delivery under token gate. |
 
-| Decision | Status | Question for PO | Conservative default for discussion — NOT approved |
-|---|---|---|---|
-| **ND-F14-1** | **OPEN (PO)** | Approve `manage_branding` capability for Workspace Owner in own workspace and Platform Owner platform-wide, with no Sales/Trainer grant? | Keep branding management unavailable until the capability is approved. This is not approval to deny BRD-02 Workspace Owner authority permanently. |
-| **ND-F14-2** | **OPEN (PO)** | Which registration identity content is permitted: color + AR/EN display names + logo only; also a short welcome line; or a hero/banner? | Limit public identity to color, AR/EN display names and logo; no welcome line or banner. This is the architect recommendation, not approval. |
-| **ND-F14-3** | **OPEN (PO)** | Must both AR and EN display names be supplied, or may a missing locale fall back to the other locale? | Require both names until the bilingual obligation is approved. The architect's proposed fallback to the other locale is recorded in FR-008 but is not approved. |
-| **ND-F14-4** | **OPEN (PO)** | Does publication affect only the registration page, or also the workspace staff app shell in this increment? | Registration page only. This is the architect recommendation, not approval. |
-| **ND-F14-5** | **OPEN (PO)** | Does revert load an older version into a draft for review before publication, or immediately republish it? | Load into the draft, require review, then publish through the normal flow. This is the architect recommendation, not approval. |
-| **ND-F14-6** | **OPEN (PO)** | Keep all published versions, or retain only the latest N versions? | Preserve all versions until the PO sets a retention bound; no deletion policy is approved. This is a conservative holding position, not approval of permanent retention. |
-| **ND-F14-7** | **OPEN (PO)** | Choose logo storage: B′ — stripped PNG/WebP up to 64 KiB in Postgres and embedded in the token-validated response; A — private Supabase Storage with token-validating proxy; or C — defer logo. Also decide whether to accept the residual browser image-decoder risk described in FR-009/010. | Defer logo support (C) until storage and residual-risk decisions are approved. Architect recommendation is B′; this is not approval. |
+## Design Decisions — Decided (PO, 2026-10-28)
 
-## Open Design Gaps
+- **DG-F14-1 — Decided (PO, 2026-10-28)**: Premium Centered Card containing Hero, Logo, and Registration Form.
+- **DG-F14-2 — Decided (PO, 2026-10-28)**: Split Editor + Live Preview on desktop, tabs on mobile; preview Registration, Staff Dashboard, and Client Portal surfaces.
+- **DG-F14-3 — Decided (PO, 2026-10-28)**: Show inline original-versus-adjusted brand color comparison with an accessibility explanation.
 
-These are **OPEN (PO design decision)** and must follow the Frontend Design Gate STOP rule. Do not invent or finalize these in implementation or design artifacts until decided.
-
-- **DG-F14-1 — OPEN (PO design decision)**: Branded registration-page layout and logo placement/size. The surface follows DESIGN.md and the Frontend Design Gate; layout choices remain for PO review.
-- **DG-F14-2 — OPEN (PO design decision)**: Workspace editor and preview layout. The editor/preview must use the existing Design System; no new layout pattern is selected here.
-- **DG-F14-3 — OPEN (PO design decision)**: How the editor explains contrast adjustments while preserving the authored source color. Existing `deriveBrand`/`BrandScope` behavior remains the reference; no explanatory copy or interaction is approved here.
+**Plan gate:** The scope change to Supabase Storage, Hero Banner, and three branded surfaces warrants a bounded Sol Medium delta critique before plan; the architect will run it.
