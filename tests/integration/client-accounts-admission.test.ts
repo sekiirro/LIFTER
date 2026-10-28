@@ -2,6 +2,7 @@ import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import { proof, admit, counts, mac } from './client-accounts-admission-fixture';
 import { anonClient } from './harness';
 import { spawnSync } from 'node:child_process';
+import { localSupabaseContainer } from './local-docker';
 
 it('admission uses only its single limits owner and unresolved limits roll back every write', async () => {
   const a = await signupFixture(f),
@@ -63,7 +64,7 @@ it('C1 mismatch emits a code/timestamp-only server event with zero database writ
   });
   const capture = spawnSync(
     'docker',
-    ['logs', '--since', since, 'supabase_db_lifter'],
+    ['logs', '--since', since, localSupabaseContainer('db')],
     { encoding: 'utf8', windowsHide: true, timeout: 10000 },
   );
   expect(capture.status === 0, 'DB log capture succeeded').toBe(true);
@@ -108,7 +109,10 @@ it('C1 privacy: attribution and credentials never enter operational/audit eviden
     safe(JSON.stringify(r!.evidence)),
     'no attribution, PII or credential in evidence',
   ).toBe(true);
-  for (const container of ['supabase_db_lifter', 'supabase_auth_lifter']) {
+  for (const container of [
+    localSupabaseContainer('db'),
+    localSupabaseContainer('auth'),
+  ]) {
     const result = spawnSync('docker', ['logs', '--since', since, container], {
       encoding: 'utf8',
       windowsHide: true,

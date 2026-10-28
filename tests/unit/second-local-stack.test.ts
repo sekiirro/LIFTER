@@ -5,6 +5,7 @@ import {
   getStackConfig,
   selectStack,
 } from '../../scripts/local-stack.mjs';
+import { localSupabaseContainer } from '../integration/local-docker';
 
 describe('isolated local Supabase stack configuration', () => {
   it('uses distinct project IDs and disjoint effective port blocks', () => {
@@ -35,6 +36,19 @@ describe('isolated local Supabase stack configuration', () => {
     expect(() => selectStack({ LIFTER_SUPABASE_STACK: 'remote' })).toThrow(
       'Unsupported local Supabase stack',
     );
+  });
+
+  it('derives local Docker container names from the selected project ID', () => {
+    const previous = process.env.LIFTER_SUPABASE_STACK;
+    try {
+      process.env.LIFTER_SUPABASE_STACK = 'b';
+      expect(localSupabaseContainer('db')).toBe('supabase_db_lifter-stack-b');
+      process.env.LIFTER_SUPABASE_STACK = 'a';
+      expect(localSupabaseContainer('auth')).toBe('supabase_auth_lifter');
+    } finally {
+      if (previous === undefined) delete process.env.LIFTER_SUPABASE_STACK;
+      else process.env.LIFTER_SUPABASE_STACK = previous;
+    }
   });
 
   it('rejects non-local hosts and endpoint ports that do not match the selected config', () => {

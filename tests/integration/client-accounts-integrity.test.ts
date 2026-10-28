@@ -12,6 +12,7 @@ import {
   type ClientContext,
 } from './client-accounts-fixture';
 import { checked, issue } from './registration-links-fixture';
+import { localSupabaseContainer } from './local-docker';
 let context: ClientContext;
 let isolated: ClientContext;
 let spareLink: string;
@@ -414,7 +415,7 @@ for (const scenario of ['collision', 'unresolved'])
       [
         'exec',
         '-i',
-        'supabase_db_lifter',
+        localSupabaseContainer('db'),
         'psql',
         '-U',
         'supabase_admin',

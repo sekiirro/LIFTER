@@ -4,6 +4,7 @@ import type { TransactionSql } from 'postgres';
 import { afterAll, expect, it } from 'vitest';
 import manifest from '../fixtures/client-accounts-auth-schema.json';
 import { sql } from './harness';
+import { localSupabaseContainer } from './local-docker';
 
 const db = sql();
 afterAll(() => db.end());
@@ -28,7 +29,7 @@ function catalogProbe(mutation: string) {
     [
       'exec',
       '-i',
-      'supabase_db_lifter',
+      localSupabaseContainer('db'),
       'psql',
       '-U',
       'supabase_admin',

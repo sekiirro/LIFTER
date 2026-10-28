@@ -4,6 +4,8 @@ import { anonClient, loadEnv } from './harness';
 import manifest from '../fixtures/client-accounts-auth-schema.json';
 import * as fixtures from './client-accounts-fixture';
 import { clientContext, signupFixture, sql } from './client-accounts-fixture';
+import { getStackConfig, selectStack } from '../../scripts/local-stack.mjs';
+import { localSupabaseContainer } from './local-docker';
 
 const db = sql();
 const capturedSecrets: string[] = [];
@@ -11,13 +13,20 @@ const captureStart = new Date().toISOString();
 let context: Awaited<ReturnType<typeof clientContext>>;
 beforeAll(async () => {
   const env = loadEnv();
-  expect(env.apiUrl === 'http://127.0.0.1:54321', 'local Auth only').toBe(true);
+  const config = getStackConfig(selectStack());
+  const api = new URL(env.apiUrl);
+  expect(
+    api.protocol === 'http:' &&
+      api.hostname === '127.0.0.1' &&
+      api.port === String(config.apiPort),
+    'local Auth only on selected stack',
+  ).toBe(true);
   const target = new URL(env.dbUrl);
   expect(
     target.hostname === '127.0.0.1' &&
-      target.port === '54322' &&
+      target.port === String(config.dbPort) &&
       target.pathname === '/postgres',
-    'local DB only',
+    'local DB only on selected stack',
   ).toBe(true);
   context = await clientContext();
 });
@@ -226,9 +235,9 @@ it('C3 captured passwords are absent from every application/Auth table and captu
     }
   }
   for (const container of [
-    'supabase_auth_lifter',
-    'supabase_db_lifter',
-    'supabase_kong_lifter',
+    localSupabaseContainer('auth'),
+    localSupabaseContainer('db'),
+    localSupabaseContainer('kong'),
   ]) {
     const captured = spawnSync(
       'docker',

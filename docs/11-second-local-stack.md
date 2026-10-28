@@ -2,7 +2,7 @@
 
 ## Current state — 2026-10-29
 
-Stack B is running and provisioned locally under project ID `lifter-stack-b`. Its API is published on `127.0.0.1:25421`, its database on `127.0.0.1:25422`, and Storage API is enabled. No cloud project or production environment was targeted. The ignored audit files are in `tmp/stack-b-audit/`; they contain command output and state snapshots and must not be committed or displayed where keys could appear.
+Stack B is running and provisioned locally under project ID `lifter-stack-b`. Its API is published on `127.0.0.1:25421`, its database on `127.0.0.1:25422`, Storage API is enabled, and Mailpit is running for local Auth recovery-email tests. No cloud project or production environment was targeted. The ignored audit files are in `tmp/stack-b-audit/`; they contain command output and state snapshots and must not be committed or displayed where keys could appear.
 
 The earlier post-start comparison was confounded: while that run was in progress, the F11 agent legitimately cycled Stack A for its Storage runner. Stack A's database container ID and Auth start time changed, so that comparison could not establish whether Stack B affected Stack A. This controlled run waited until Stack A had two identical snapshots 60 seconds apart and no other process whose command line matched both `LFTR-011` and `supabase` (the check excluded its own PowerShell process). The quiet snapshots matched, and the controlled Stack B stop/start, database reset, provisioner, integration run, and final check each left Stack A's IDs, `StartedAt`, and status byte-identical.
 
@@ -15,11 +15,15 @@ The earlier post-start comparison was confounded: while that run was in progress
 | Before → after Stack B integration verification | Yes |
 | Final Stack A snapshot | Yes |
 
-Stack A's five unchanged container IDs were `57b1c40162a1` (Kong), `6579e16ab5d0` (REST), `83d8233ec283` (database), `c1183359ab77` (Inbucket), and `f235a973bd2c` (Auth). The ignored full snapshots also include each exact start time and status.
+Stack A's five unchanged container IDs in that controlled proof were `57b1c40162a1` (Kong), `6579e16ab5d0` (REST), `83d8233ec283` (database), `c1183359ab77` (Inbucket), and `f235a973bd2c` (Auth). The ignored full snapshots also include each exact start time and status.
 
-Stack B's configured profile ran Postgres, Auth (`gotrue`), Kong, PostgREST, and `storage-api`. Studio, imgproxy, Mailpit (the CLI's Inbucket-compatible service name), edge runtime, Logflare, vector, Supavisor, Realtime, and Postgres Meta were excluded. At verification, all five Stack B containers were running; database, Auth, Storage, and Kong reported healthy. Only the B API and database ports were published (25421 and 25422).
+Stack B's configured profile runs Postgres, Auth (`gotrue`), Kong, PostgREST, `storage-api`, and Mailpit (the CLI's Inbucket-compatible service name). Studio, imgproxy, edge runtime, Logflare, vector, Supavisor, Realtime, and Postgres Meta are excluded. Mailpit is required because the recovery test asks local Auth to issue an email, even though the test reads the issued opaque token from the local database instead of an SMTP mailbox. At verification, all six Stack B containers were running; database, Auth, Storage, Kong, and Mailpit reported healthy. B's API and database use ports 25421 and 25422; Mailpit uses ports 25424–25426.
 
-The B database reset completed successfully from `supabase-stack-b`; `node tests/integration/client-accounts-provision.mjs` with `LIFTER_SUPABASE_STACK=b` exited 0. A selector-targeted read-only query returned database `postgres`, server port `5432`, and cluster `main`; Auth health returned HTTP 200 on both Stack B's 25421 endpoint and Stack A's 54321 endpoint. The integration verification ran all 25 configured files: 23 passed and 2 failed (852 tests passed, 1 failed, 8 skipped). The failures were `tests/integration/client-accounts-auth.test.ts`'s “local Auth only” assertion and `tests/integration/client-accounts-admission.test.ts`'s structured C1 server event assertion. Do not report the integration suite as passing until those failures are resolved and rerun.
+The B database reset completed successfully from `supabase-stack-b`; `node tests/integration/client-accounts-provision.mjs` with `LIFTER_SUPABASE_STACK=b` exited 0. A selector-targeted read-only query returned database `postgres`, server port `5432`, and cluster `main`; Auth health returned HTTP 200 on both Stack B's 25421 endpoint and Stack A's 54321 endpoint.
+
+The first B integration run had 23 files pass and 2 fail (852 passed, 1 failed, 8 skipped). The Auth `beforeAll` hard-coded Stack A's API/DB ports, so its eight tests were skipped after setup failed. Once those locality checks derived expected ports from the selected config, all eight tests ran. The C1 event check read Stack A's hard-coded database container logs instead of B's; changing log/exec calls to derive container names from the selected project ID fixed that target mismatch. The first actual Auth recovery test run also showed that Mailpit must be enabled for local Auth to issue a recovery email. One admission counter assertion observed cleanup of stale B counters from the previous test run; a Stack B-only database reset and reprovision gave the suite a clean starting state.
+
+After those fixes, the full Stack B integration suite passed: 25 files, 861 tests passed, 0 failed, 0 skipped. Stack A's snapshot changed during this later run: it started with six containers (including Storage) and ended with five, with container IDs and start times recreated. That matches the F11 agent's concurrent Storage-runner cycling pattern. The B tests now resolve Docker container names from `LIFTER_SUPABASE_STACK` and the selected project ID, and their HTTP/DB endpoints are validated against B's config; no command was issued against Stack A. The ignored `pre-full-integration-stack1.txt` and `post-full-integration-stack1.txt` snapshots record the difference.
 
 ## Isolation, selector, and shared migrations
 
@@ -35,7 +39,7 @@ These commands have already been run for the controlled proof above. Any future 
 
 ```powershell
 Set-Location 'C:\Users\NEW LAP\Desktop\LFTR-stack\supabase-stack-b'
-npx --yes supabase@2.122.0 start --exclude studio,imgproxy,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta --output-format json *> ..\tmp\stack-b-audit\start.json
+npx --yes supabase@2.122.0 start --exclude studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta --output-format json *> ..\tmp\stack-b-audit\start.json
 ```
 
 To apply the shared migrations to B only:
