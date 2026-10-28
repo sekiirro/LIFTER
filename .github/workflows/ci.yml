@@ -58,6 +58,8 @@ jobs:
         run: supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
       - name: Provision local Vault signup keys
         run: node tests/integration/client-accounts-provision.mjs
+      - name: Assert shared password policy DB parity
+        run: npm run test:integration -- tests/integration/password-policy-parity.test.ts
       - run: npm run test:integration
       - run: supabase stop --no-backup
         if: always()

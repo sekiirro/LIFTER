@@ -25,6 +25,21 @@ it('can source DB_URL and API_URL from the CI environment without .env.local', (
   expect(provisioner).toMatch(/process\.env\.API_URL/);
 });
 
+it('runs the shared password DB parity suite explicitly in the integration job', () => {
+  const integration = workflow.slice(workflow.indexOf('\n  integration:'));
+  const provision = integration.indexOf(
+    'node tests/integration/client-accounts-provision.mjs',
+  );
+  const parity = integration.indexOf(
+    'npm run test:integration -- tests/integration/password-policy-parity.test.ts',
+  );
+  expect(provision).toBeGreaterThanOrEqual(0);
+  expect(parity).toBeGreaterThan(provision);
+  expect(
+    integration.indexOf('- run: npm run test:integration\n'),
+  ).toBeGreaterThan(parity);
+});
+
 it('masks provisioned keys in GitHub Actions before writing the local env file', () => {
   const maskIndex = provisioner.indexOf('::add-mask::');
   const writeIndex = provisioner.indexOf('writeFileSync(');

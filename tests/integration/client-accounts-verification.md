@@ -543,3 +543,143 @@ Auth parity is U4; HTTP/action/UI privacy integration is later work. C4 hosted A
 version/DML/upgrade proof still blocks production rollout. ND-F11-2a input acceptance,
 ND-F5-1 archived-state/review and audit retention remain open; no policy was invented.
 T046 is unchanged. T010-T015 are marked complete only after observed final gates.
+
+## U3-R1 ? Claude password-policy review fix
+
+Start SHA: `5826cbbabf8232d38894d3d7cd876f83cfc40ea2`, clean
+`011-client-accounts`; `git pull --ff-only` reported already up to date.
+Only LFTR-011 and its owned loopback Docker stack were used. Commit authority
+includes push to this branch. No committed migration, shared validator behavior,
+dependency, seed, capability matrix, audit body or T046 was changed.
+
+### Tests first and explicit RED differences
+
+Created one shared fixture, `tests/fixtures/password-policy-vectors.json`, with
+55 static expected results from the existing TS semantics. Both the unit and DB
+parity suites consume it. The TS suite passed 56/56 (including its existing
+bilingual-message test) before the DB implementation. The fixture covers all
+requested cases, each of the ten Arabic-Indic and extended-Arabic digits,
+combining marks, other numbers, format/space/control characters, unassigned and
+private-use characters, original code-point counts and exact 72/73-byte limits.
+Combining marks count as symbols; ZWJ, soft hyphen and RTL mark do not. No TS
+behavior contradiction with ND-F11-1/1a was found; TS was left unchanged.
+
+Extracted the old predicate unchanged into a private helper in the uncommitted
+forward migration, and delegated the RPC to it, solely to run the new suite RED.
+No applied/committed migration was edited. The local default `en_US.UTF-8`
+matched all 55 vectors; claiming default-locale vector failures would be false.
+Adding explicit `COLLATE pg_catalog."C"` to each same helper call exposed the
+locale dependence: **27 passed / 31 failed**, all failures below. Every default
+assertion passed; each listed C assertion returned false where TS expects true.
+The Arabic/Cyrillic no-symbol vectors were correctly rejected in both locales.
+
+Initial metadata collection using SHOW failed before vector execution because
+this PostgreSQL 17.11 build reports `unrecognized configuration parameter` for
+both `SHOW lc_ctype` and `SHOW lc_collate`. Independent psql commands confirmed
+both errors. `pg_database.datctype` and `datcollate` each report `en_US.UTF-8`;
+`SHOW server_encoding` returns `UTF8`. The test now reads the locale catalog
+and reports encoding without depending on obsolete SHOW parameters.
+
+RED command (environment privately loaded from ignored `.env.local`):
+
+```text
+node --env-file=.env.local node_modules/vitest/vitest.mjs run --config vitest.integration.config.ts tests/integration/password-policy-parity.test.ts --reporter=json --outputFile=tmp/u3-r1-legacy-red.json
+```
+
+| Shared vector label              | TS expected | Legacy DB, C collation |
+| -------------------------------- | ----------- | ---------------------- |
+| astral code points               | true        | false                  |
+| Arabic-Indic digit only          | true        | false                  |
+| extended Arabic digit only       | true        | false                  |
+| Arabic question mark only symbol | true        | false                  |
+| Arabic comma only symbol         | true        | false                  |
+| Arabic semicolon only symbol     | true        | false                  |
+| euro only symbol                 | true        | false                  |
+| copyright only symbol            | true        | false                  |
+| emoji only symbol                | true        | false                  |
+| combining mark only symbol       | true        | false                  |
+| non-decimal number only symbol   | true        | false                  |
+| Arabic-Indic digit 0             | true        | false                  |
+| Arabic-Indic digit 1             | true        | false                  |
+| Arabic-Indic digit 2             | true        | false                  |
+| Arabic-Indic digit 3             | true        | false                  |
+| Arabic-Indic digit 4             | true        | false                  |
+| Arabic-Indic digit 5             | true        | false                  |
+| Arabic-Indic digit 6             | true        | false                  |
+| Arabic-Indic digit 7             | true        | false                  |
+| Arabic-Indic digit 8             | true        | false                  |
+| Arabic-Indic digit 9             | true        | false                  |
+| extended Arabic digit 0          | true        | false                  |
+| extended Arabic digit 1          | true        | false                  |
+| extended Arabic digit 2          | true        | false                  |
+| extended Arabic digit 3          | true        | false                  |
+| extended Arabic digit 4          | true        | false                  |
+| extended Arabic digit 5          | true        | false                  |
+| extended Arabic digit 6          | true        | false                  |
+| extended Arabic digit 7          | true        | false                  |
+| extended Arabic digit 8          | true        | false                  |
+| extended Arabic digit 9          | true        | false                  |
+
+### Implementation and CI enforcement
+
+New forward-only migration `20261031123000_signup_password_parity.sql` installs
+`app_private.signup_password_acceptable(text)` and replaces only the RPC password
+predicate with a helper call. The rest of the RPC, including transaction, locking,
+Auth writes, audit, strict expiry and error boundaries, is preserved. The helper
+is postgres-owned SECURITY DEFINER with `search_path=''`; EXECUTE is revoked
+from PUBLIC, anon, authenticated and service_role. Catalog tests assert every
+property, NULL rejection and actual RPC delegation. The existing exact private
+function security inventory includes the helper without relaxing its checks.
+
+The helper checks original PostgreSQL UTF8 code-point length and UTF8 byte length,
+then classifies integer Unicode code points using two immutable int4multiranges.
+No locale-sensitive classification or normalization occurs. Ranges are generated
+from the exact existing JS expressions `\p{Nd}` and
+`[^\p{L}\p{Nd}\p{Z}\p{C}\s]` on Node v24.19.0 / Unicode 17.0.
+`scripts/generate-password-unicode-ranges.mjs --check` exhaustively recomputes
+both categories over U+0000..U+10FFFF and compares the SQL constants. Its unit
+test is a CI guard against runtime Unicode-data drift; future category upgrades
+require a new forward migration, never editing an applied migration. The target
+is a UTF8 database. PostgreSQL text rejects NUL at the protocol boundary (22021),
+which the parity suite explicitly asserts without reflecting provider details.
+
+The integration job has an explicit parity-suite step after Vault provisioning,
+followed by the existing full integration run. A unit assertion verifies that
+ordering and the exact parity filename. The new suite runs all representable
+shared vectors under both the database default and explicit C collation.
+
+### Final gates
+
+The exact final migration was applied with a clean local DB reset and provisioning:
+
+```text
+npx --yes supabase@2.122.0 db reset
+node tests/integration/client-accounts-provision.mjs
+npm run test:integration -- --reporter=json --outputFile=tmp/u3-r1-integration-final.json
+```
+
+CLI reset/provision output was captured only in ignored tmp logs. The integration
+npm process received the privately loaded `.env.local` environment. An initial
+`node --run` attempt did not forward the environment and failed at suite loading
+(0 executed tests); it was replaced with an explicitly inherited npm subprocess.
+The first typecheck identified optional postgres row access in the new test;
+that test typing was corrected and typecheck rerun successfully.
+
+| Gate                                | Result                                                              |
+| ----------------------------------- | ------------------------------------------------------------------- |
+| DB reset + local Vault provisioning | Exit 0 each                                                         |
+| npm run typecheck                   | Exit 0                                                              |
+| npm run lint                        | Exit 0, no warnings                                                 |
+| npm run format:check                | Exit 0                                                              |
+| npm test                            | 1,298 passed, 0 failed, 0 skipped/todo, 51 files                    |
+| npm run test:integration            | 785 passed, 0 failed, 3 pre-existing staged todos, 22 files; exit 0 |
+| New parity suite, included above    | 58 passed, 0 failed; 55 vectors + 3 helper/RPC checks               |
+| git diff --check                    | Exit 0                                                              |
+
+Ignored evidence: `tmp/u3-r1-legacy-red.json`, `tmp/u3-r1-unit-final.json`,
+`tmp/u3-r1-parity-green.json`, `tmp/u3-r1-integration-final.json` and gate logs.
+U3 assigns no e2e spec. The pre-existing three integration todos stay staged for
+U5/later storage coverage, as in U3. C4 hosted Auth/DML/upgrade proof still blocks
+production rollout; no hosted operation or deployment was performed. U4 C2,
+U5 admission/purge, ND-F11-2a, ND-F5-1 and the other recorded U3 blockers remain.
+This is an implementation correction for independent review, not self-approval.

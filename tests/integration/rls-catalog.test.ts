@@ -10,6 +10,7 @@ const db = sql();
 const signupPrivate = [
   'signup_auth_schema_compatible',
   'signup_bcrypt_cost',
+  'signup_password_acceptable',
   'signup_link_key_matches',
   'signup_identity_normalization',
   'signup_password_policy',
