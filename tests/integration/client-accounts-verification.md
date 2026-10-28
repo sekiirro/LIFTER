@@ -345,3 +345,201 @@ credential values are included in committed artifacts or this report.
 
 T006–T009 were ticked only after the observed final-file passes. The three named
 staged cases above remain with their later owners. T046 is unchanged.
+
+## U3 - transactional signup RPC (option i), consume guard and audit
+
+Starting branch `011-client-accounts`, clean HEAD
+`e0a70823e46d90f10fb602dfaf6fb79f46fe4b2d`; `git pull --ff-only`
+reported already up to date. This is continuation of the same unit, not a new
+unit baseline. Only the owned LFTR-011 worktree and local Docker stack were used.
+No dependency, capability, seed, committed migration, protected worktree, cloud,
+deployment, PR or T046 edits occurred.
+
+### RED before implementation
+
+After the U2-only local reset and `node tests/integration/client-accounts-provision.mjs`:
+
+```text
+node --env-file=.env.local node_modules/vitest/vitest.mjs run --config vitest.integration.config.ts tests/integration/client-accounts-signup.test.ts tests/integration/client-accounts-audit.test.ts tests/integration/client-accounts-catalog.test.ts --reporter=json --outputFile=tmp/u3-red2.json
+```
+
+Observed exit 1, **20 passed / 30 failed**, before creating the signup migration.
+T010 atomic signup, rollback-stage and replay assertions and T011 success/audit
+assertions failed with sanitized `Signup SQL failed: 42883` (missing RPC).
+The exact grant assertion failed `bounded signup RPC exists: expected undefined
+to be defined`. The independent privileged strict-expiry assertion resolved
+instead of rejecting even though the unchanged F10 grace-open returned valid.
+The barrier assertion failed `signup must wait on link FOR UPDATE before inner
+writes`. Initial `tmp/u3-red.json` also predates implementation (20 passed /
+29 failed); its fixtures exposed protected-catalog permissions and F10 issuance
+limits. Those fixture issues were corrected before the second RED run.
+
+Saved ignored JSON/log evidence survived the interrupted turn and was inspected
+before continuation. The new migration therefore did not need to be removed to
+reconstruct RED. Runtime evidence never substitutes skipped/todo tests for a pass.
+
+Additional regressions were also observed RED before their fixes:
+
+- Signed-in visitor: expected invalid, received complete (`tmp/u3-extra-red.json`,
+  35 passed / 1 failed); fixed with a DB-side auth.uid() denial.
+- Known GoTrue confirmed-email markers: expected user metadata email_verified=true,
+  received empty metadata (`tmp/u3-markers-red.json`, 1 failed). The captured local
+  v2.197.0 source Confirm() and a real admin-created reference establish this marker;
+  identity email_verified remains false, matching the observed reference identity.
+  Exhaustive row parity is still U4/C2.
+- Non-printable Unicode format/private-use characters incorrectly satisfied the
+  symbol rule (`tmp/u3-unicode-red.json`, 2 passed / 2 failed). The DB now requires
+  a printable non-letter/non-digit/non-whitespace character. Multibyte fixture
+  literals use Unicode escapes to avoid Windows shell encoding substitution.
+
+### Installed behavior and security
+
+The single new forward migration is
+`supabase/migrations/20261031122000_client_accounts_signup.sql`. C1 precedes every
+write. Password/field validation uses U2 seams, and phones must already be canonical
+E.164; no parsing, trimming, country defaults or ND-F11-2a acceptance policy was added.
+The private bcrypt-cost seam is captured cost 10. Hashing precedes link/identity
+state branching, then link FOR UPDATE, then clock_timestamp(), then U2 one-use
+redemption in the outer rollback boundary. Canonical locks are sorted by U2.
+
+Auth user/identity, U2 claims, pending client, strict guarded consume RETURNING,
+immutable receipt and successful audits all share the inner subtransaction.
+SET CONSTRAINTS ALL IMMEDIATE forces U2 deferred correspondence checks before
+returning complete. Known business failures roll back the inner writes, retain
+redemption and append a separate failure attempt/audit outside that block. Failure
+audit targets an attempt UUID, never a ticket or credential. Unknown SQLSTATEs and
+unknown constraints are unavailable and roll back the outer block, including
+redemption, operational failure rows and failure audit. Vault/proof absence is
+infrastructure; C1 failure leaves all rows unchanged. No raw exception detail is
+returned, logged by the function or copied to audit.
+
+The original U3 brief's binding architect requirement overrides the older surface
+contract's separate duplicate result: invalid links, replay, forged scope and all
+identifier collisions return exactly {status:'invalid'}. No archived state/review
+workflow was invented. Archived-state/review design remains deferred on ND-F5-1;
+canonical claims reserve all existing identities without a public existence branch.
+Success is only {status:'complete'}, and infrastructure only {status:'unavailable'}.
+No session is created. Real later sign-in succeeds but pending RLS/access still denies.
+
+The RPC is postgres-owned SECURITY DEFINER with empty search_path and qualified
+schema objects. Only anon/authenticated have EXECUTE; PUBLIC/service_role are
+explicitly revoked. New private cost helper has no API/PUBLIC EXECUTE. U2 forced
+RLS, zero table/column grants, claims triggers, insert guard and receipt protections
+remain unchanged. No issuer exists in U3; tests insert synthetic pre-admitted tickets.
+
+C3 tests inject exceptions containing random plaintext/token/request-secret/hash
+canaries in message/detail/hint for both business and infrastructure classes;
+returned values, captured error messages and audit payloads contain none of them.
+PostgreSQL jsonb cannot represent NUL; the input-boundary rejection test catches
+its generic error message without printing parameters. Password code-point/UTF-8
+boundaries, Unicode digits, emoji symbols and non-printable rejection are covered.
+Secrets remain only in ignored .env.local and local owner-only Vault; no secret
+values appear in committed evidence. The initial CLI start unexpectedly emitted
+local development credentials; subsequent CLI output was captured privately.
+
+### Complete audit-body preservation
+
+Copied the complete function from `20261030120000_registration_links.sql`, including
+its owner, empty search_path, revokes, no-op returns, unmapped exception and final
+append INSERT. Diff of the copied body contains only these additive branches:
+
+```diff
++ elsif old.consumed_at is null and new.consumed_at is not null then
++   event_action := 'registration_link.consumed';
++   event_details := <outcome_class, timestamp, link_id, workspace_id>;
+
++ elsif tg_table_schema = 'public' and tg_table_name = 'clients' then
++   if tg_op <> 'INSERT' then return new; end if;
++   event_action := 'client.signup_succeeded';
++   event_target := new.id;
++   event_workspace := new.workspace_id;
++   event_details := <outcome_class, timestamp, link_id, workspace_id>;
+```
+
+The integration test strips only the two delimited additions from the installed
+pg_get_functiondef() body and compares every remaining character against the latest
+F10 body (line-ending normalization only). All nine old table branches survive:
+workspaces, staff_profiles, workspace_memberships, recovery_link_issuances, packages,
+package_versions, package_offers, registration_links and jobs. Existing suites execute
+legacy mapping/allowlist/no-op/unmapped and append-only assertions as well. The
+existing registration-link UPDATE audit trigger handles consumption, so no second
+consume trigger/manual success audit duplicates an event. Failure auditing alone is
+manual and outside the rolled-back inner block.
+
+### Mutation and restoration evidence
+
+Local function-definition scratch probes, never committed-migration edits:
+
+```text
+node --env-file=.env.local tmp/u3-mutations.mjs
+```
+
+Each probe used the relevant Vitest integration file with -t and JSON output,
+restored both function definitions in finally, and observed **0 passed / 1 failed**:
+
+| Probe                                         | Intended assertion detected                                                                                             |
+| --------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------- |
+| Q-M01 remove link FOR UPDATE                  | Ticket must remain unlocked while signup waits on link, independently of client guard                                   |
+| Q-M02 remove strict consume expiry predicate  | Expiry during client work returns invalid; update guard disabled only inside rollback to isolate RPC predicate          |
+| Q-M02 remove RETURNING-row requirement        | Zero-row update must roll back; receipt/deferred guards disabled only inside rollback to avoid masking                  |
+| Q-M06 remove jobs branch                      | Exact full legacy audit-body comparison fails                                                                           |
+| Q-M08 move Auth writes outside inner rollback | Forced client failure leaves Auth row; zero-orphan assertion fails                                                      |
+| Q-M11 use transaction-start now()             | Nontransactional synthetic sequence observes forbidden Auth INSERT after lock-wait expiry, independently of U2 rollback |
+
+Mutation script rejects unchanged/no-op patches. An initial CRLF-mismatched scratch
+patch did not apply for Q-M06/Q-M08; these were not claimed as detection. Both were
+corrected, rerun and observed failing as above. Migration SHA-256 before and after
+all six effective probes was identical:
+`b5547ebf3418067e7098a54ec6c4b8b9d5d0d56bda0166a12e69e8a7a5159a51`.
+The synthetic sequence/trigger/function used by the clock test is removed in finally.
+No password/token/hash is recorded by this probe.
+
+Q-M12 tests lost-response committed receipt request/link/client binding, exact replay,
+changed-secret and changed-identity retry with one client and one success event.
+Q-M13 scope overrides are rejected before writes, and the existing U2 isolated
+composite snapshot/FK tests remain in the full gate. F10 grace-open stays unchanged;
+strict consume rejects post-expiry, with no grace. No usable orphan remains after
+any of eight injected business failures (Auth/identity/claims/client/consume/receipt/
+audit/deferred); real later password sign-in attempts fail for rolled-back users.
+
+### Final gates and staged coverage
+
+The first full post-reset integration run observed 724 passed / 2 failed / 3 todo.
+Both failures were exact legacy security inventories missing the new private cost
+helper and client audit trigger. Their explicit expected inventories were extended
+in rls-catalog.test.ts; ownership/search_path/grant/trigger checks remain strict.
+The final run below also includes the subsequently added lost-response receipt test.
+
+Final application of the exact migration used the required local command:
+
+```text
+npx --yes supabase@2.122.0 db reset
+node tests/integration/client-accounts-provision.mjs
+npm run test:integration -- --reporter=json --outputFile=tmp/u3-integration-final.json
+```
+
+The ignored .env.local was loaded privately into the npm process environment.
+Reset and provisioning both exited 0; the full integration run exited 0.
+
+| Gate                                    | Pass | Fail | Staged | Evidence                                |
+| --------------------------------------- | ---: | ---: | -----: | --------------------------------------- |
+| Local DB reset + provisioning           |    2 |    0 |      0 | Exact final migration, exit 0 each      |
+| npm run typecheck                       |    1 |    0 |      0 | Exit 0                                  |
+| npm run lint                            |    1 |    0 |      0 | Exit 0, no warnings                     |
+| npm run format:check                    |    1 |    0 |      0 | Exit 0                                  |
+| npm test                                | 1258 |    0 |      0 | 50 files, exit 0                        |
+| npm run test:integration                |  727 |    0 |      3 | 21 files, final reset/provision, exit 0 |
+| U3 signup/audit/catalog, included above |   68 |    0 |      3 | 45 signup + 3 audit + 20 catalog        |
+| U3 e2e                                  |    0 |    0 |      0 | No spec assigned                        |
+
+Saved final integration evidence: tmp/u3-integration-final.json; unit evidence:
+tmp/u3-unit.json. These are ignored runtime artifacts, not committed credentials.
+
+No e2e spec is assigned to U3. Explicit staged cases remain admission RPC grants and
+30-day attempt-only purge/audit preservation (U5), plus real-JWT Storage denial
+assigned by the existing todo to a later unit (required stack excludes storage-api).
+Public attested admission/counters/nonces and purge cleanup are U5; exhaustive C2
+Auth parity is U4; HTTP/action/UI privacy integration is later work. C4 hosted Auth
+version/DML/upgrade proof still blocks production rollout. ND-F11-2a input acceptance,
+ND-F5-1 archived-state/review and audit retention remain open; no policy was invented.
+T046 is unchanged. T010-T015 are marked complete only after observed final gates.

@@ -9,6 +9,7 @@ import {
 const db = sql();
 const signupPrivate = [
   'signup_auth_schema_compatible',
+  'signup_bcrypt_cost',
   'signup_link_key_matches',
   'signup_identity_normalization',
   'signup_password_policy',
@@ -276,6 +277,13 @@ describe('audit security catalog (T005)', () => {
         and p.proname in ('audit_row_change', 'audit_events_immutable')
       order by t.tgname`;
     expect(triggers).toEqual([
+      {
+        tgname: 'audit_client_signup',
+        relname: 'clients',
+        type: 5,
+        tgenabled: 'O',
+        proname: 'audit_row_change',
+      },
       {
         tgname: 'audit_events_immutable',
         relname: 'audit_events',

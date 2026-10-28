@@ -61,9 +61,20 @@ it('all U2 helpers revoke API/PUBLIC EXECUTE, are postgres owned and use empty s
   }
 });
 
-it.todo(
-  '[U3/T012 U5/T020 staged RED] public signup RPC exact anon/authenticated-only EXECUTE',
-);
+it('public signup RPC exact anon/authenticated-only EXECUTE', async () => {
+  const [p] =
+    await db`select oid,prosecdef,proconfig,pg_get_userbyid(proowner) as owner from pg_proc where oid=to_regprocedure('public.client_signup(text,text,uuid,jsonb)')`;
+  expect(p, 'bounded signup RPC exists').toBeDefined();
+  expect(p).toMatchObject({ prosecdef: true, owner: 'postgres' });
+  expect(p!.proconfig).toContain('search_path=""');
+  expect(
+    await db`select rolname from pg_roles where rolname in ('anon','authenticated','service_role') and has_function_privilege(oid,${p!.oid}::oid,'execute') order by rolname`,
+  ).toEqual([{ rolname: 'anon' }, { rolname: 'authenticated' }]);
+  expect(
+    await db`select 1 from pg_proc p cross join lateral aclexplode(p.proacl) a where p.oid=${p!.oid}::oid and a.grantee=0`,
+  ).toHaveLength(0);
+});
+it.todo('[U5/T020] public admission RPC exact anon/authenticated-only EXECUTE');
 it.todo(
   '[U5/T020] narrow 30-day purge removes only old attempts and preserves audit',
 );
