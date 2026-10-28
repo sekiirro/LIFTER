@@ -63,15 +63,15 @@ PR before any merge into `main`. This process does not replace or bypass that ga
 
 Before asking the PO to approve a merge to `main`, require items 1-5 on the exact PR head:
 
-1. A completed CodeRabbit review is APPROVED, with no later CHANGES_REQUESTED or DISMISSED review.
+1. A completed CodeRabbit review is APPROVED on the exact PR head (`commit_id == headRefOid`), with no later CHANGES_REQUESTED or DISMISSED review.
 2. PR `reviewDecision` is APPROVED.
 3. There are zero unresolved review threads and all actionable findings are resolved.
-4. CI and security checks are green on that exact head.
+4. GitHub Actions CI and security checks are green on that exact PR head. GitHub Actions is the independent, non-author rerun of typecheck, lint, unit, and applicable integration/e2e gates; agent-reported local results never substitute. Claude (architect) does not run tests or git and verifies the CI result on the exact head.
 5. The architect has independently reviewed the actual diff and evidence.
 
 Then ask the PO for explicit merge approval.
 
-6. Merge only after explicit PO approval, once items 1-5 remain true, using `gh pr merge <n> --merge --match-head-commit <sha>` on the approved head.
+6. Merge only after explicit PO approval, immediately re-checking that items 1-5 remain true, including `commit_id == headRefOid`, using `gh pr merge <n> --merge --match-head-commit <sha>` on the approved head.
 
 Never use `--admin`, `--auto`, or `--delete-branch`. Branch protection returns 403 on the current private Free plan, so this gate is process-only.
 

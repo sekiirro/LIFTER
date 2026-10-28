@@ -144,18 +144,22 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Controlled Parallel Development: at most three concurrent agents. Each code-changing agent uses
   its own worktree and branch, edits disjoint files, and respects the single local-DB lock. Feature
   branches integrate sequentially, each after architect review and relevant green CI.
-- Main merge gate: before requesting PO approval, require a completed CodeRabbit review APPROVED
-  with no later CHANGES_REQUESTED or DISMISSED review; `reviewDecision` APPROVED; zero unresolved
-  threads and all actionable findings resolved; green CI/security checks on the exact PR head; and
+- Main merge gate: before requesting PO approval, require a completed CodeRabbit review APPROVED on
+  the exact PR head (`commit_id == headRefOid`), with no later CHANGES_REQUESTED or DISMISSED
+  review; `reviewDecision` APPROVED; zero unresolved threads and all actionable findings resolved;
+  green GitHub Actions CI/security checks on the exact PR head; and
   independent architect review of the diff and evidence. Intermediate sub-branch merges into a
   parent feature branch require Claude review and green relevant CI on the exact head and do not
   bypass this main merge gate (see docs/08 and D-26). Then ask the PO for explicit merge approval.
-  Merge only after that approval, once these checks remain true, using
+  Merge only after that approval, immediately re-checking that these checks remain true, including
+  `commit_id == headRefOid`, using
   `gh pr merge <n> --merge --match-head-commit <sha>` on the approved head. Never use `--admin`,
   `--auto`, or `--delete-branch`. This is process-only because branch protection returns 403.
-- Merge gates (from [docs/03-roadmap.md](../../docs/03-roadmap.md)): typecheck, lint, unit and
-  integration tests independently re-run by the reviewer; the isolation gate; the money gate; AR
-  and EN UI check; log-scrub check; acceptance criteria verified against
+- Merge gates (from [docs/03-roadmap.md](../../docs/03-roadmap.md)): GitHub Actions CI on the exact
+  PR head is the independent, non-author rerun of typecheck, lint, unit and applicable
+  integration/e2e gates; agent-reported local gate results never substitute. Claude (architect) does
+  not run tests or git and verifies the CI result on the exact head. Also require the isolation gate;
+  the money gate; AR and EN UI check; log-scrub check; acceptance criteria verified against
   [docs/01-traceability.md](../../docs/01-traceability.md).
 - Only passing, reviewed work is committed.
 
