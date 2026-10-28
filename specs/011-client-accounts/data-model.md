@@ -1,8 +1,8 @@
 # Data Model: F11 client accounts
 
-**AD-F11-1: NEEDS SOURCE CONFIRMATION — PENDING PO — architect recommendation: option (i).** All option-(i) schema, RPC, hashing, compatibility and proof details below are conditional proposals, blocked on AD-F11-1 (PENDING PO). C1–C4 are **proposed evaluation criteria**, not approved conditions; no implementation or hosted proof is claimed. Option (ii) analysis remains in research.md. ND-F11-1..10 are Decided (PO, 2026-10-28); the verbatim decisions and explicit open sub-decisions are in [spec.md](spec.md#po-decision-register-and-open-sub-decisions).
+**AD-F11-1: Decided (PO, 2026-10-28): option (i); C1–C4 binding.** PO selected direct Auth writes inside one database transaction. C1–C4 are binding conditions; options (ii) and 3b remain rejected alternatives with evidence retained in research.md. No implementation or hosted proof is claimed. ND-F11-1..10 are Decided (PO, 2026-10-28); verbatim decisions and explicit open sub-decisions are in [spec.md](spec.md#po-decision-register-and-open-sub-decisions).
 
-Design only. Future additive forward migration after `20261030120000_registration_links.sql`; never edit committed migrations. [Spec](spec.md) and [seam table](plan.md#open-decision-seams) are authoritative. Names below are proposed technical contracts, conditional on AD-F11-1 PENDING PO, architect recommendation option (i), with proposed C1–C4 and independent implementation review.
+Design only. Future additive forward migration after `20261030120000_registration_links.sql`; never edit committed migrations. [Spec](spec.md) and [seam table](plan.md#open-decision-seams) are authoritative. Names below are proposed technical contracts, under PO-approved AD-F11-1 option (i), with binding C1–C4 and independent implementation review.
 
 ## Tenant entity: public.clients
 
@@ -16,7 +16,7 @@ All columns NOT NULL unless marked nullable. No password, token, copied package 
 | registration_link_id | uuid                    | UNIQUE globally; composite FK `(workspace_id,registration_link_id)` → registration_links(workspace_id,id), ON DELETE RESTRICT        |
 | package_version_id   | uuid                    | Composite FK `(workspace_id,package_version_id)` → package_versions(workspace_id,id), ON DELETE RESTRICT; exact match to issued link |
 | email_normalized     | text                    | UNIQUE globally, nonempty; DB recomputes using ND-F11-2 seam; no ad hoc lower/trim default                                           |
-| phone_e164           | text                    | UNIQUE globally, nonempty canonical E.164 output from ND-F11-2 seam; input/country handling unresolved                               |
+| phone_e164           | text                    | UNIQUE globally, nonempty canonical E.164 output from ND-F11-2 seam; accepted input format/country handling OPEN under ND-F11-2a; E.164 storage/output remains decided                               |
 | name                 | text                    | Required signup name (ND-F11-3); no invented length bound                                                                            |
 | approval_state       | proposed representation | Initially pending-approval; no client access until admin approval (ND-F11-6); workspace PO/WO approval in F12 (ND-F11-6a)            |
 | created_at           | timestamptz             | Server insert time only                                                                                                              |
@@ -88,7 +88,7 @@ Signup requires authoritative consumption time strictly before `expires_at`, no 
 
 ## AD-F11-2 — architect decision: trusted IP and admission
 
-Technical architect decision, not PO policy approval. The C1 privacy proposal is **Decided (PO, 2026-10-28)**; Constitution unchanged. This is separate from proposed Auth compatibility criterion C1. AD-F11-1 remains PENDING PO; option (i) is a recommendation and C1–C4 are proposed evaluation criteria.
+Technical architect decision, not PO policy approval. The C1 privacy proposal is **Decided (PO, 2026-10-28)**; Constitution unchanged. The C1 privacy decision is separate from AD-F11-1 option (i) and its binding C1–C4 conditions.
 
 - U5 implements and tests a pure trusted-IP extractor: trust only `CF-Connecting-IP`, ignore `X-Forwarded-For` and all other IP headers, fail closed as unavailable when production IP is absent, and gate the explicit override to non-production. U6 wires the helper into the server action and owns the `build:edge` production-output proof.
 - U5 implements and tests pure HMAC `ip_key`/`link_key` and attestation builders at their module boundary. Secrets remain server-only; raw IP stays within the server-action boundary. U6 wires these builders into the action and proves the test override is absent from `build:edge` output.
@@ -115,4 +115,4 @@ Pending-approval clients have **zero client access** through app `authorize()`, 
 
 Coordinated rotation: SIGNUP_RATE_KEY rotation resets IP/link counters because counter keys derive from the active key. Admission uses only the current single `ip_key`, with no old-key lookup. Accept up to one extra window of attempts per key (at most 1 hour for the IP window). Rotation is rare and manual: rotate the server environment and Vault value together; old-key counters expire naturally. Never log key values or identifiers derived from IPs. Counter expiry remains aligned to fixed windows (15 minutes/link, 1 hour/IP), and every submission reaching admission counts; invalid/replayed attestations receive no counter credit or ticket.
 
-**I1 dependency:** U2 (T007/T008) owns the minimal `signup_admission_tickets` schema and internal guarded redemption primitive, including request-secret hash/link binding, one-use NULL-to-timestamp transition and business-failure/infrastructure rollback semantics. Only explicitly pre-admitted synthetic tickets are available to U3 tests. U5 (T019/T020) owns attested issuance, nonces, counters, operational purge and admission integration. The redemption primitive has no public issuer/grant and requires no U5 object at the U2/U3 exits. AD-F11-1 remains **PENDING PO**; option (i) is the recommendation and Auth criteria C1–C4 remain proposed.
+**I1 dependency:** U2 (T007/T008) owns the minimal `signup_admission_tickets` schema and internal guarded redemption primitive, including request-secret hash/link binding, one-use NULL-to-timestamp transition and business-failure/infrastructure rollback semantics. Only explicitly pre-admitted synthetic tickets are available to U3 tests. U5 (T019/T020) owns attested issuance, nonces, counters, operational purge and admission integration. The redemption primitive has no public issuer/grant and requires no U5 object at the U2/U3 exits. AD-F11-1 option (i) is PO-approved; C1–C4 are binding conditions.
