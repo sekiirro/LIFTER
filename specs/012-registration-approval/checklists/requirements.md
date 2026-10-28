@@ -5,7 +5,7 @@
 **Feature**: [spec.md](../spec.md)
 
 **Note**: This checklist records requirements review only. A checked item does not mean implementation or policy approval is complete.
-**Review Ownership**: Requirements quality review by the specification author; PO decisions remain open as marked in the spec.
+**Review Ownership**: Requirements quality review by the specification author; the explicit release-placement, sequencing, and capability questions remain open as marked in the spec.
 
 ## Scope and traceability
 
@@ -32,16 +32,16 @@
 
 ## Decisions and constitution
 
-- [x] CHK015 ND-F12-1..7 each state OPEN (PO), the question, and a separately labeled conservative default that is explicitly NOT approved.
-- [x] CHK016 DG-F12-1..4 each state OPEN (PO design decision).
+- [x] CHK015 ND-F12-1..7 each state Decided (PO, 2026-10-28) with the approved decision; ND-F12-6 release placement is explicitly an open scope question and production blocker.
+- [x] CHK016 DG-F12-1..4 each state Decided (PO, 2026-10-28); DG-F12-1 sequencing and Trainer capability questions are explicitly recorded as open.
 - [x] CHK017 Constitution I..IX are each checked against the specified scope and requirements.
-- [x] CHK018 No open policy is silently promoted to an approved default; acceptance criteria preserve the dependencies on PO decisions.
+- [x] CHK018 Decisions are distinguished from the remaining F12/F13 reversal placement and DG-F12-1 sequencing/capability questions.
 - [x] CHK019 The spec no longer depends on machine-local source or design-gate paths.
 - [x] CHK020 The in-repository debate record includes v0, the verbatim critique, architect response r1, thread id, date, models, and outcome.
 - [x] CHK021 Source review found no email addresses or secret-like assignments in the three debate texts.
 
 ## Notes
 
-- Plan/tasks and implementation verification are intentionally pending PO decisions and later Spec Kit phases.
+- Plan/tasks and implementation verification remain for later Spec Kit phases; the remaining open scope questions are recorded in the spec.
 - `docs/09-frontend-design-gate.md` is referenced as added by branch `docs-workflow-governance`, pending merge to main; it is not present in this worktree's base.
 - Gate results, if run, are repository artifact checks only; they do not close checklist items about future implementation behavior.
