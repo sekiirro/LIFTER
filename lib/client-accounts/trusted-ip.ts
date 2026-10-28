@@ -5,7 +5,7 @@ type Options = {
   testIp?: string;
 };
 
-/** Full address attribution. No proxy chain, subnet grouping or country rules. */
+/** Full address attribution; only the rate-key input groups IPv6 subnets. */
 export function trustedIp(
   headers: HeadersLike,
   options: Options = {},
@@ -34,4 +34,24 @@ export function trustedIp(
   } catch {
     return null;
   }
+}
+
+/** PO decision 2026-10-28: ASCII RFC 5952 /64 network text, no slash.
+ * trustedIp first converts mapped IPv4 to dotted-quad; IPv4 stays per address.
+ */
+export function rateIpInput(canonicalIp: string): string {
+  if (!canonicalIp.includes(':')) return canonicalIp;
+  const [left, right] = canonicalIp.split('::');
+  const head = left ? left.split(':') : [];
+  const tail = right ? right.split(':') : [];
+  const words =
+    right !== undefined
+      ? [
+          ...head,
+          ...Array<string>(8 - head.length - tail.length).fill('0'),
+          ...tail,
+        ]
+      : head;
+  const network = [...words.slice(0, 4), '0', '0', '0', '0'].join(':');
+  return new URL(`http://[${network}]/`).hostname.slice(1, -1);
 }

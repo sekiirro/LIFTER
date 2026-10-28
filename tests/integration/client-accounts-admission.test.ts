@@ -435,3 +435,82 @@ it('fixed-window expiry and coordinated rate-key rotation ignore old counters; e
     ).toHaveLength(0);
   });
 });
+
+// Freeze only this RPC's sampled clock inside a rolled-back owner probe.
+// No caller-controlled clock seam is installed by a production migration.
+for (const [offset, accepted] of [
+  [5000, true],
+  [5001, false],
+  [-60000, true],
+  [-60001, false],
+] as const)
+  it(`PO clock boundary ${offset} ms: ${accepted ? 'accepted once' : 'rejected without writes'}`, async () => {
+    const s = await signupFixture(f);
+    await probe(async (tx) => {
+      const [clock] =
+        await tx`select floor(extract(epoch from clock_timestamp())*1000)::bigint::text as ms`;
+      const sampled = Number(clock!.ms);
+      const freeze = async (ms: number) => {
+        for (const name of [
+          'public.client_signup_admit(text,text,bytea,bytea,timestamptz,uuid,bytea)',
+          'app_private.purge_client_signup_attempts()',
+        ]) {
+          const [r] =
+            await tx`select pg_get_functiondef(${name}::regprocedure) as body`;
+          await tx.unsafe(
+            (r!.body as string).replaceAll(
+              'clock_timestamp()',
+              `'${new Date(ms).toISOString()}'::timestamptz`,
+            ),
+          );
+        }
+      };
+      await freeze(sampled);
+      const p = proof(s.token, { ms: sampled + offset });
+      const before = await counts(tx);
+      expect((await admit(tx, p)).status).toBe(
+        accepted ? 'admitted' : 'invalid',
+      );
+      if (!accepted) {
+        expect(await counts(tx)).toEqual(before);
+        return;
+      }
+      const [expiry] =
+        await tx`select expires_at=${new Date(p.ms + 60000).toISOString()}::timestamptz as covered from app_private.signup_admission_nonces where nonce=${p.nonce}`;
+      expect(expiry!.covered, 'nonce covers issued_at + freshness').toBe(true);
+      const after = await counts(tx);
+      expect(await admit(tx, p)).toEqual({ status: 'invalid' });
+      expect(await counts(tx)).toEqual(after);
+      // Advance the frozen body to the last accepted instant and run cleanup.
+      for (const name of [
+        'public.client_signup_admit(text,text,bytea,bytea,timestamptz,uuid,bytea)',
+        'app_private.purge_client_signup_attempts()',
+      ]) {
+        const [r] =
+          await tx`select pg_get_functiondef(${name}::regprocedure) as body`;
+        await tx.unsafe(
+          (r!.body as string).replaceAll(
+            new Date(sampled).toISOString(),
+            new Date(p.ms + 60000).toISOString(),
+          ),
+        );
+      }
+      await tx`select app_private.purge_client_signup_attempts()`;
+      const afterPurge = await counts(tx);
+      expect(await admit(tx, p)).toEqual({ status: 'invalid' });
+      expect(await counts(tx)).toEqual(afterPurge);
+    });
+  });
+
+it('shared IP vectors agree with PostgreSQL canonical /64 text and HMAC encoding', async () => {
+  for (const v of vectors.vectors) {
+    const [r] =
+      await db`select host(case when family(${v.ip}::inet)=4 then ${v.ip}::inet when ${v.ip}::inet <<= '::ffff:0:0/96'::inet then ('0.0.0.0'::inet + (${v.ip}::inet - '::ffff:0:0'::inet)) else network(set_masklen(${v.ip}::inet,64))::inet end) as canonical`;
+    expect(r!.canonical === v.ipKeyInput, 'canonical HMAC input agrees').toBe(
+      true,
+    );
+    const [digest] =
+      await db`select extensions.hmac(convert_to('lifter.f11.ip.v1','UTF8') || decode('00','hex') || int4send(octet_length(${v.ipKeyInput}::text)) || convert_to(${v.ipKeyInput},'UTF8'),decode(${vectors.rateKey},'hex'),'sha256') = ${Buffer.from(v.ipKey, 'hex')} as valid`;
+    expect(digest!.valid, 'DB rate HMAC matches shared vector').toBe(true);
+  }
+});

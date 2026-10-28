@@ -179,3 +179,23 @@ it.each(CAPABILITIES)(
     expect(backend).not.toHaveBeenCalled();
   },
 );
+
+it('PO decision 2026-10-28: IPv6 /64 grouping and mapped IPv4 preserve rate-key boundaries', async () => {
+  vi.stubEnv('SIGNUP_RATE_KEY', vectors.rateKey);
+  vi.stubEnv('SIGNUP_ATTEST_KEY', vectors.attestKey);
+  try {
+    const keys = await Promise.all(
+      vectors.vectors.map(
+        async (v) =>
+          (await buildAdmission({ ip: v.ip, token: v.token }))!.ipKey,
+      ),
+    );
+    expect(keys[1] === keys[3], 'same /64 shares a key').toBe(true);
+    expect(keys[1] === keys[4], 'adjacent /64 separates keys').toBe(false);
+    expect(keys[0] === keys[5], 'mapped IPv4 keeps full-address key').toBe(
+      true,
+    );
+  } finally {
+    vi.unstubAllEnvs();
+  }
+});

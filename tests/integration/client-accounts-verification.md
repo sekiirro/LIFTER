@@ -1007,3 +1007,78 @@ in 140.47 seconds. This includes all 21 admission tests and all audit tests.
 No temporary directory or existing user file was deleted. No key values were
 printed or added to versioned evidence or test artifacts. No dependency,
 migration, seed, capability matrix, hosted stack or T046 change was made.
+
+## U5-R2 ? IPv6 /64 rate key and 5-second attestation skew
+
+PO decisions 2026-10-28. Started with a clean `011-client-accounts`,
+`git pull --ff-only`, and HEAD `0620b4a9c456efc030ee981bbefe06c2c50ddece`.
+GitHub CI run `40637961243` was completed/success for that exact SHA.
+
+Tests were written and executed before implementation. RED commands:
+
+- `npx vitest run tests/unit/client-accounts-admission.test.ts`: 16 passed,
+  2 failed. `shared vectors reproduce every byte...` failed its boolean
+  `ipKey` comparison; `PO decision 2026-10-28: IPv6 /64 grouping and mapped
+IPv4 preserve rate-key boundaries` failed `same /64 shares a key`
+  (expected true, received false). No key values were included in assertions.
+- After local reset/provision and loading SIGNUP_* from ignored `.env.local`,
+  `npx vitest run --config vitest.integration.config.ts tests/integration/client-accounts-admission.test.ts`:
+  25 passed, 1 failed. `PO clock boundary 5000 ms: accepted once` expected
+  admitted and received invalid. The +5001, -60000 and -60001 boundaries passed.
+  An initial test-clock correction also froze the purge clock; later the
+  cleanup assertion was corrected to compare against post-cleanup state,
+  because advancing time may legitimately expire existing rate counters.
+
+Implementation uses the existing domain/length-prefix encoding. The IPv6 input
+is ASCII RFC 5952 lowercase compressed /64 network-address text without a slash:
+first 64 bits retained, last 64 bits zeroed. Full trusted-IP extraction stays
+unchanged; mapped IPv4 normalizes to dotted-quad before rate-key derivation.
+Six shared vectors cover same-/64 equality, adjacent-/64 separation and mapped
+IPv4, with independent PostgreSQL canonicalization/HMAC and verifier checks.
+
+Forward-only `20261031123700_signup_admission_po_decisions.sql` copies the latest
+complete admission body from `20261031123600_client_accounts_admission.sql`.
+Only the timing record, private policy lookup, future comparison and nonce expiry
+expression change. Both intervals have one owner in
+`app_private.signup_attestation_timing()`. The inclusive acceptance window is
+[issued_at - 5 seconds, issued_at + 60 seconds]. Expiry remains issued_at + max_age,
+covering up to 65 seconds from first acceptance; strict nonce cleanup preserves
+the final inclusive instant. Frozen-clock probes exist only in rolled-back test
+transactions, never in the production migration. Boundary proofs verify immediate
+replay denial and replay denial after cleanup at the final accepted instant.
+
+A direct local catalog check passed: the timing seam is postgres-owned,
+SECURITY DEFINER, empty search_path, with no PUBLIC/anon/authenticated/service_role
+EXECUTE. Existing RPC grants, RLS, counter/attempt/audit behavior and every other
+branch are preserved. No raw IP enters the RPC, no logging is added, and matching
+server/Vault keys remain in ignored local environment and owner-only Vault.
+
+No tasks were newly ticked: T019?T022 were already complete. `tasks.md` and T046
+are unchanged. No e2e spec is assigned to U5-R2. The existing Storage real-JWT TODO
+remains deferred to its staged later unit because storage-api is excluded.
+No dependency, seed, catalog, capability, Auth/audit migration or hosted change.
+
+The first full integration run passed all admission tests and reported 846 passed,
+1 failed, 1 existing TODO. Its sole failure was the exhaustive private-function
+security inventory missing the new timing function. Added only that name to
+`signupPrivate` in `tests/integration/rls-catalog.test.ts`, preserving every owner,
+SECURITY DEFINER, search_path and denied-execute assertion; no product catalog or
+seed is changed. Re-ran the full gate after another local reset/provision.
+
+Final GREEN gates (local):
+
+| Command                    |                 Passed | Failed | Pending                 |
+| -------------------------- | ---------------------: | -----: | ----------------------- |
+| `npm run typecheck`        |                1 check |      0 | none                    |
+| `npm run lint`             |                1 check |      0 | none                    |
+| `npm run format:check`     |                1 check |      0 | none                    |
+| `npm test`                 | 1,308 tests / 53 files |      0 | none                    |
+| `npm run test:integration` |   847 tests / 24 files |      0 | 1 existing Storage TODO |
+| U5-R2 e2e                  |                    N/A |    N/A | no assigned spec        |
+
+Integration ran after the pinned local `db reset` and
+`node tests/integration/client-accounts-provision.mjs`, with local SIGNUP_* env
+loaded privately for the integration process. All 26 admission tests pass,
+including TS/DB shared vectors, exact +5000/+5001/-60000/-60001 millisecond
+boundaries, nonce coverage, immediate/edge replay, races, limits, privacy and
+rotation. Diagnostic logs were sanitized without printing credentials.

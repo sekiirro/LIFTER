@@ -1,5 +1,5 @@
 import 'server-only';
-import { trustedIp } from './trusted-ip';
+import { trustedIp, rateIpInput } from './trusted-ip';
 import { isUuid } from '../registration-links/validation';
 
 const utf8 = new TextEncoder();
@@ -78,7 +78,11 @@ export async function buildAdmission(input: {
   const hash = hex(
     await crypto.subtle.digest('SHA-256', utf8.encode(input.token)),
   );
-  const ipKey = await hmac(rate, 'lifter.f11.ip.v1', utf8.encode(ip));
+  const ipKey = await hmac(
+    rate,
+    'lifter.f11.ip.v1',
+    utf8.encode(rateIpInput(ip)),
+  );
   const linkKey = await hmac(rate, 'lifter.f11.link.v1', utf8.encode(hash));
   const attestation = await attestAdmission({
     ipKey,

@@ -11,27 +11,63 @@
       "linkKey": "fdc0f7245d96f755db83a5b407cc44dcd41f00e976e34bcd9f40f27abc061db7",
       "issuedAt": "1793448000000",
       "nonce": "00000000-0000-4000-8000-000000000001",
-      "attestation": "cd7f0816853829d5dfe6d4da50936ab49c4202b27da1342e1300779d2d9773a4"
+      "attestation": "cd7f0816853829d5dfe6d4da50936ab49c4202b27da1342e1300779d2d9773a4",
+      "ipKeyInput": "192.0.2.1"
     },
     {
       "token": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
       "tokenHash": "412dc46cc9e3cb26f29f7c1415c556349af62904c5d15b0a2d8cfdc5cfa22b34",
       "ip": "2001:db8::1",
-      "ipKey": "4bbbe22be68eaba68da115a15d9b0c1f4cc503788d1a7a0573ed0dd46051cff0",
+      "ipKey": "659a634d2b0de738e1fa602dc2ad88d500fb0e06d80d5dd7426a7fd8b1638d87",
       "linkKey": "9c199c2a23a61c63f1829cca77cc504801585e9abd3c3fa91b18c42dfb3cdf36",
       "issuedAt": "1793448000001",
       "nonce": "00000000-0000-4000-8000-000000000002",
-      "attestation": "fa68a9a44b628519394f767e630ac0d3dce7dd8bcb70ed6de46d26f856dd8e8d"
+      "attestation": "bdbc539b27babc30a974a23f878a969edc0c30ea95c238c880e4d47a180fdcbb",
+      "ipKeyInput": "2001:db8::"
     },
     {
       "token": "CCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCCC",
       "tokenHash": "942014af03195c97fc8a6121a03e1660b89027a538325a101eba426dacd7e587",
       "ip": "::1",
-      "ipKey": "eb98cbde41ad865647ec2659d2ca667583e4b09de8d1366f092dca910ee6e493",
+      "ipKey": "cab2a28340e2d2b12e8341808c3758ca12282abeddac21b2fd6bfbe3348344e6",
       "linkKey": "ddab5b2e497713b0cf750c09c8d59719f1284eccc4d9dde99db2216490b1c9c5",
       "issuedAt": "1793448000002",
       "nonce": "00000000-0000-4000-8000-000000000003",
-      "attestation": "24a914b96063f545aad8e7690eef3471289215bcdb28f8b1668739391496d14e"
+      "attestation": "912edf0744e0ffced6aa9a892f879747da97fd3617b987302c626a5050cd19e4",
+      "ipKeyInput": "::"
+    },
+    {
+      "token": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "tokenHash": "412dc46cc9e3cb26f29f7c1415c556349af62904c5d15b0a2d8cfdc5cfa22b34",
+      "ip": "2001:db8::abcd",
+      "ipKey": "659a634d2b0de738e1fa602dc2ad88d500fb0e06d80d5dd7426a7fd8b1638d87",
+      "linkKey": "9c199c2a23a61c63f1829cca77cc504801585e9abd3c3fa91b18c42dfb3cdf36",
+      "issuedAt": "1793448000001",
+      "nonce": "00000000-0000-4000-8000-000000000002",
+      "attestation": "bdbc539b27babc30a974a23f878a969edc0c30ea95c238c880e4d47a180fdcbb",
+      "ipKeyInput": "2001:db8::"
+    },
+    {
+      "token": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "tokenHash": "412dc46cc9e3cb26f29f7c1415c556349af62904c5d15b0a2d8cfdc5cfa22b34",
+      "ip": "2001:db8:0:1::1",
+      "ipKey": "a823926ad02bcd7b60d384abf2d66169c41efbaad25f9687d79df52cd7f97827",
+      "linkKey": "9c199c2a23a61c63f1829cca77cc504801585e9abd3c3fa91b18c42dfb3cdf36",
+      "issuedAt": "1793448000001",
+      "nonce": "00000000-0000-4000-8000-000000000002",
+      "attestation": "502b9097f40cecea331745873b5041a6997110d41d7f285b9b0aee54df309726",
+      "ipKeyInput": "2001:db8:0:1::"
+    },
+    {
+      "token": "BBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBBB",
+      "tokenHash": "412dc46cc9e3cb26f29f7c1415c556349af62904c5d15b0a2d8cfdc5cfa22b34",
+      "ip": "::ffff:192.0.2.1",
+      "ipKey": "11921d48a21fbd7c9e2090662e10dedc8827d130ec1722b2619e8ec1389cd521",
+      "linkKey": "9c199c2a23a61c63f1829cca77cc504801585e9abd3c3fa91b18c42dfb3cdf36",
+      "issuedAt": "1793448000001",
+      "nonce": "00000000-0000-4000-8000-000000000002",
+      "attestation": "7c61dac459cb957ab042f5db32abde27ca8f0861d044de2da3a4f47fe1f62a89",
+      "ipKeyInput": "192.0.2.1"
     }
   ],
   "mutations": [

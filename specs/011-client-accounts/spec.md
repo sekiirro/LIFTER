@@ -12,6 +12,8 @@ Sources: [Constitution v1.1.0](../../.specify/memory/constitution.md); [roadmap]
 
 ## Clarifications
 
+PO decision 2026-10-28: per-IP admission means per full IPv4 address (including mapped IPv4) and per IPv6 /64 network. Attestations accept issued_at up to 5 seconds ahead of DB clock_timestamp(), with an inclusive maximum age of 60 seconds. Nonces expire at issued_at + 60 seconds (up to 65 seconds after first acceptance); cleanup uses strict expiry so replay remains rejected at both inclusive edges. Timing constants have one private owner.
+
 ### Session 2026-10-28
 
 PO answers integrated on 2026-10-28. The PO's explicit definitions supersede the previously listed Q1–Q5 options and recommendations, including conflicting option wording. Those options are not approved policy.
