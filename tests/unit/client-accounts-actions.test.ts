@@ -1,10 +1,15 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { expect, it, vi } from 'vitest';
-import { signupResult } from '../../lib/client-accounts/results';
+import {
+  initialSignupResult,
+  runSignupActionSafely,
+  signupResult,
+} from '../../lib/client-accounts/results';
 import { processClientSignup } from '../../lib/client-accounts/service';
 import { getMessages } from '../../lib/i18n';
 import {
+  normalizedEmail,
   signupFields,
   validateSignupFields,
 } from '../../lib/client-accounts/validation';
@@ -14,6 +19,63 @@ vi.mock('server-only', () => ({}));
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({ rpc: signupRpcSpy })),
 }));
+
+it('rejected client action resolves to only the localized generic unavailable result', async () => {
+  const action = vi
+    .fn()
+    .mockRejectedValue(new Error('private transport detail'));
+  for (const locale of ['en', 'ar'] as const) {
+    const result = await runSignupActionSafely(
+      action,
+      initialSignupResult,
+      new FormData(),
+      locale,
+    );
+    expect(result).toEqual(signupResult('unavailable', locale));
+    expect(JSON.stringify(result)).not.toContain('private transport detail');
+  }
+  expect(action).toHaveBeenCalledTimes(2);
+});
+
+it('rejects empty email components and multiple separators through invalid field validation', () => {
+  for (const email of ['@example.test', 'person@', 'person@@example.test']) {
+    expect(normalizedEmail(email), email).toBeNull();
+    const validation = validateSignupFields({
+      name: 'Example Person',
+      email,
+      phone: '+201012345678',
+      password: 'Strong9!Password',
+    });
+    expect(validation.fields).toBeNull();
+    expect(validation.invalidFields).toContain('email');
+  }
+  expect(normalizedEmail(' Person@Example.Test ')).toBeNull();
+  expect(normalizedEmail('Person@Example.Test')).toBe('person@example.test');
+  expect(normalizedEmail('x'.repeat(250) + '@example.test')).toBeNull();
+});
+
+it('routes malformed email shapes to field validation before admission or collision mapping', async () => {
+  signupRpcSpy.mockReset();
+  const result = await processClientSignup({
+    token: 'A'.repeat(43),
+    requestSecret: 'B'.repeat(43),
+    fields: {
+      name: 'Example Person',
+      email: '@example.test',
+      phone: JSON.stringify({ country: 'EG', nationalNumber: '01012345678' }),
+      password: 'Strong9!Password',
+    },
+    origin: 'https://signup.example.test',
+    expectedOrigin: 'https://signup.example.test',
+    headers: { get: () => null },
+    signedIn: async () => false,
+    locale: 'en',
+  });
+  expect(result).toEqual(signupResult('invalid_input', 'en', ['email']));
+  expect(result.status).not.toBe('duplicate');
+  expect(result.status).not.toBe('unavailable');
+  expect(signupRpcSpy).not.toHaveBeenCalled();
+});
 
 it('T023 public results contain only contract status, translated copy and safe field names', () => {
   const invalid = signupResult('invalid_input', 'en', ['email', 'phone']);

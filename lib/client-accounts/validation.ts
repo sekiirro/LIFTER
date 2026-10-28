@@ -14,12 +14,16 @@ export function canonicalPhone(value: unknown): value is string {
 }
 /** Mirrors the captured Auth storage normalizer; no trimming or guessing. */
 export function normalizedEmail(value: unknown): string | null {
-  return typeof value === 'string' &&
-    value.includes('@') &&
-    !/\s/.test(value) &&
-    new TextEncoder().encode(value).length <= 255
-    ? value.toLowerCase()
-    : null;
+  if (typeof value !== 'string' || /\s/.test(value)) return null;
+  const separator = value.indexOf('@');
+  if (
+    separator <= 0 ||
+    separator !== value.lastIndexOf('@') ||
+    separator === value.length - 1 ||
+    new TextEncoder().encode(value).length > 255
+  )
+    return null;
+  return value.toLowerCase();
 }
 export function signupFields(value: unknown): SignupFields | null {
   if (
@@ -103,7 +107,7 @@ export async function authorizePublicClientSignup(
     typeof input.token !== 'string' ||
     !/^[A-Za-z0-9_-]{43}$/.test(input.token) ||
     typeof input.requestSecret !== 'string' ||
-    !/^[A-Za-z0-9_-]{43,}$/.test(input.requestSecret)
+    !/^[A-Za-z0-9_-]{43}$/.test(input.requestSecret)
   )
     return { status: 'invalid' };
   if (!signupFields(input.fields)) return { status: 'invalid_input' };
