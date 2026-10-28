@@ -136,6 +136,8 @@ Concurrent approval/rejection and collection/replay attempts produce one valid o
 - **FR-016**: F12 MUST expose no bulk client action. All status and financial views MUST use role- and workspace-appropriate projections; Sales sees no commission amount/rate.
 - **FR-017**: F12 user interfaces MUST follow the [Frontend Design Gate](../../docs/09-frontend-design-gate.md) (added by branch `docs-workflow-governance`, pending merge to main) and the repository [DESIGN.md](../../DESIGN.md): Arabic-first RTL and English LTR, dark/light modes, responsive and keyboard-accessible interaction, WCAG 2.2 AA contrast, and loading/empty/error/success states. The approved UI decisions are recorded as DG-F12-1..4.
 - **FR-018**: F12 MUST implement the decisions recorded in ND-F12-1..7 and DG-F12-1..4 below; no former conservative default remains in force.
+- **FR-019**: Approval MUST use a dedicated full-page client review; the payment amount MUST be automatic and read-only with explicit confirmation; status badges MUST use soft semantic Design System tokens.
+- **FR-020**: PO, WO, or an authorized Trainer MUST be able to select the form automatically assigned after client approval and shown at login. Mandatory intake requirements MUST be preserved and no temporary waiting page may be shown. This requires the P2 form engine/templates, which are not built. The sequencing choice (block F12 approval UI on P2 or ship with a seam) and Trainer capability mapping remain open planning questions.
 
 ### Key Entities
 
