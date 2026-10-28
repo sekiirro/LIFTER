@@ -147,20 +147,23 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Main merge gate: before requesting PO approval, require a completed CodeRabbit review APPROVED on
   the exact PR head (`commit_id == headRefOid`), with no later CHANGES_REQUESTED or DISMISSED
   review; `reviewDecision` APPROVED; zero unresolved threads and all actionable findings resolved;
-  green GitHub Actions CI/security checks on the exact PR head; and
+  both GitHub Actions CI runs for the PR head completed successfully and required security checks
+  are green: the `push` run has `headSha == headRefOid` and the `pull_request` run checks the merge
+  result; and
   independent architect review of the diff and evidence. Intermediate sub-branch merges into a
   parent feature branch require Claude review and green relevant CI on the exact head and do not
   bypass this main merge gate (see docs/08 and D-26). Ask the PO for explicit merge approval and
   record the approved head SHA with that approval. Merge only after that approval, immediately
   re-checking these checks remain true, including `commit_id == headRefOid` and
   `po_approved_head == headRefOid`. If the head changes after PO approval, the approval lapses;
-  re-satisfy items 1-5 on the new head and obtain new explicit PO approval. Use
+  re-satisfy these checks on the new head and obtain new explicit PO approval. Use
   `gh pr merge <n> --merge --match-head-commit <po_approved_head>`. Never use `--admin`,
   `--auto`, or `--delete-branch`. This is process-only because branch protection returns 403.
-- Merge gates (from [docs/03-roadmap.md](../../docs/03-roadmap.md)): GitHub Actions CI on the exact
-  PR head is the independent, non-author rerun of typecheck, lint, unit and applicable
-  integration/e2e gates; agent-reported local gate results never substitute. Claude (architect) does
-  not run tests or git and verifies the CI result on the exact head. Also require the isolation gate;
+- Merge gates (from [docs/03-roadmap.md](../../docs/03-roadmap.md)): the `push`-event GitHub Actions
+  CI run with `headSha == headRefOid` is the independent, non-author rerun of typecheck, lint, unit
+  and applicable integration/e2e gates; the `pull_request`-event run checks the merge result with
+  current `main`. Both runs must complete successfully; agent-reported local gate results never
+  substitute. Claude (architect) does not run tests or git and verifies both runs on that head. Also require the isolation gate;
   the money gate; AR and EN UI check; log-scrub check; acceptance criteria verified against
   [docs/01-traceability.md](../../docs/01-traceability.md).
 - Only passing, reviewed work is committed.

@@ -66,7 +66,7 @@ Before asking the PO to approve a merge to `main`, require items 1-5 on the exac
 1. A completed CodeRabbit review is APPROVED on the exact PR head (`commit_id == headRefOid`), with no later CHANGES_REQUESTED or DISMISSED review.
 2. PR `reviewDecision` is APPROVED.
 3. There are zero unresolved review threads and all actionable findings are resolved.
-4. GitHub Actions CI and security checks are green on that exact PR head. GitHub Actions is the independent, non-author rerun of typecheck, lint, unit, and applicable integration/e2e gates; agent-reported local results never substitute. Claude (architect) does not run tests or git and verifies the CI result on the exact head.
+4. Both GitHub Actions CI runs for the PR head are completed with success, and required security checks are green: the `push`-event run with `headSha == headRefOid` is the independent, non-author rerun of typecheck, lint, unit, and applicable integration/e2e gates; the `pull_request`-event run checks the merge result with current `main`. Agent-reported local results never substitute. Claude (architect) does not run tests or git and verifies both runs.
 5. The architect has independently reviewed the actual diff and evidence.
 
 Then ask the PO for explicit merge approval and record the approved head SHA with that approval.
