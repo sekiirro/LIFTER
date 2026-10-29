@@ -9,6 +9,98 @@
 - F14 migrations already exist and additional F12/F14 work is planned. F13 migration timestamps must be later than every merged or unmerged F12/F14 migration at implementation time. Rebuild shared functions from the latest integrated bodies.
 - The approved final PO decisions settle freeze duration/overlap/day counting, purchase independence, post-deactivation partial refunds and FIFO allocation. No policy branch remains open for those items.
 
+## Provisional F12/F14 branch inspection (T001/T002)
+
+**Provisional evidence only:** F12 PR #18 is not merged. These observations were read from
+`origin/012-registration-approval` at `b5898f11fa57b3cd17c52f0e7dda93d8fce96213` and
+`origin/014-workspace-branding` at `1c337e081b1eee3b5f4a4ec324df00366c0b8bbe`. Re-verify every
+signature, body, ordering and timestamp against the merged/integrated branch before F13 DB work.
+
+### F12 U2–U5 operation boundary
+
+- U3 public RPCs in `20261101121000_registration_approval_operations.sql` are
+  `registration_approve(request jsonb)`, `registration_reject(request jsonb)` and
+  `registration_reconsider(request jsonb)`. U4 public RPCs in
+  `20261101122000_payment_operations.sql` are `installment_collect(request jsonb)` and
+  `collection_correct(request jsonb)`. Each delegates to a private operation function; the public
+  wrappers are `SECURITY DEFINER`, owned by postgres, revoked from public/anon/service_role, and
+  executable by authenticated. U4 additionally exposes no refund or renewal writer.
+- Success is a wrapper object `{status:'ok', receipt:{...}}`. The U4 receipt contains `id`,
+  `operation`, `workspace_id`, `client_id`, `subscription_id`, `obligation_id`, `event_id`,
+  `installment_seq`, `revision`, `outcome`, string `amount_minor`, `currency`, nullable
+  `collected_on`, and `recorded_at`. The immutable row in
+  `app_private.registration_operations` stores actor + UUID `request_key`, operation, canonical
+  version/hash, target/revision bindings and the complete `result_receipt`; `(actor_user_id,
+  request_key)` is unique. U3 reject receipts use nullable purchase/event fields. Do not expose
+  commission in a refund receipt.
+- U4 canonical request keys are exact and operation-specific. Collection requires workspace/client,
+  request key, subscription/obligation, expected installment sequence/revision/previous event,
+  positive decimal-string expected amount, uppercase currency, ISO Cairo collection date and boolean
+  `payment_confirmed`. Correction substitutes original event and `correction_confirmed`. U4 binds a
+  fixed v1 JSON array (including actor operation and target/input fields) with SHA-256. Exact
+  authorized replay returns the stored JSON result unchanged; same actor/key with changed operation,
+  target or canonical args returns `key_conflict` without exposing the previous receipt.
+- U3 locks client → subscriptions ordered by UUID → installments ordered by subscription/sequence/ID
+  → payment events ordered by subscription/obligation/revision. U4 locks client → selected
+  subscription → its obligations ordered by sequence/ID → its ledger events ordered by obligation/
+  revision. Both then recheck locked authorization, take the actor/request-key advisory transaction
+  lock, recheck authorization after any wait, and only then read the idempotency receipt. F13 must
+  follow the integrated shared order and extend locks to all affected purchases/sources as its
+  approved ledger design requires.
+- U3/U4 authorization is checked before target/receipt disclosure and again under target locks and
+  after request-key serialization. Actor role is share-locked; workspace membership is share-locked
+  for non-PO staff. PO authorization also requires an actual workspace row. A revocation that wins
+  before the post-wait check returns generic `not_permitted`; it cannot reveal a stored receipt.
+- U3/U4 force all deferrable constraints immediate before returning both replay and new success.
+  Their exception block returns only `{status:'unavailable'}`; the PL/pgSQL exception subtransaction
+  rolls back business, audit, and receipt writes together. Existing event audit triggers write in the
+  same transaction, so an audit/constraint failure prevents acknowledgment and commits none of the
+  operation. U4 locks the shared rows before authorization/key lookup and rechecks stale expected
+  revision/tail under those locks. This serializes competing updates; an exact retry is effect-free,
+  a stale distinct request is recalculated/rejected, and changed-key intent cannot disclose the
+  stored result.
+
+### Latest observed shared migration bodies
+
+- `app_private.role_has_capability(r public.staff_role, cap text)` is most recently replaced in
+  F12 U2 `20261101120000_registration_approval_model.sql`: `record_refund` remains platform-owner
+  only; `record_payment` and `manage_freeze` map to PO/WO/Sales; registration approval is PO/WO;
+  unknown capabilities deny. F14's current branch does not replace it.
+- `app_private.has_workspace_access(ws uuid, cap text default null)` remains the
+  `20261027140000_access_capability_for_po.sql` body: requires authenticated identity, checks the
+  capability when supplied, and allows a PO or a non-revoked workspace membership. This body is
+  unchanged by observed F12 U2–U5 and F14 migrations.
+- `app_private.audit_row_change()` is most recently extended in F12 U2
+  `20261101120000_registration_approval_model.sql`, additive to F11. It audits client approval state
+  transitions from a current-transaction/actor-matched registration decision and payment-event
+  inserts (`payment.collected` / `payment.collection_corrected`) with workspace, client, subscription,
+  obligation, event, installment/revision, amount/currency, collection/effective dates and recorded
+  timestamp. The audit insert participates in the triggering transaction. No F12 U3/U4/U5 or current
+  F14 migration redefines it.
+- Latest inspected F12 guards are in U2 `20261101120000_registration_approval_model.sql` (U3
+  redefines only `f12_guard_installment()` in `20261101121000_registration_approval_operations.sql`).
+  `f12_guard_subscription()` locks the client, verifies current approval capability and that the new
+  subscription snapshot matches the immutable issued registration link. The latest
+  `f12_guard_installment()` requires an approval/reconsideration decision by the same actor in the
+  current transaction and matching subscription creator/time. `f12_guard_decision()` locks the
+  client, verifies expected state, actor, transaction/time and approval capability (PO-only for
+  reconsideration). `f12_guard_payment()` locks the subscription and checks `recorded_by = auth.uid()`,
+  timestamp bounds and current actor authorization. Deferred subscription/payment/decision validators
+  independently check issued schedule totals, immutable approval graph, event-chain, amount,
+  commission, currency, operation/actor binding and exact correction reversal. The latest
+  `f12_guard_client_transition()` allows only an approval-state-only change backed by a same-xact,
+  same-actor registration decision and current approval capability. It currently blocks other client
+  updates, including refund deactivation; F13 requires a coordinated forward amendment, never an
+  in-place edit.
+- F14 latest migration inventory on the inspected branch is
+  `20261102120000_workspace_branding_identities.sql`, `...1210000_workspace_branding_render_handles.sql`,
+  `...1220000_workspace_branding_asset_resolve.sql`, `...1230000_workspace_branding_definer_owner.sql`,
+  `...1240000_workspace_branding_validator_upload_binding.sql`,
+  `...1250000_workspace_branding_validator_binding_acl.sql`, and
+  `20261102130000_workspace_branding_remove_superseded_binding.sql`. The final migration removes the
+  superseded validator binding role/path after the ACL replacement. These are unmerged predecessors;
+  F13 migration timestamps must be re-sequenced after the actual integrated tip.
+
 ## Design decisions supported by sources
 
 1. **Partial refund ledger**: separate immutable refund header and allocation rows; retain F12's unique `reverses_event_id` exclusively for exact corrections. Enforce per-source and per-purchase cumulative principal caps under the shared financial lock, with deferred validation as an independent integrity wall.

@@ -8,6 +8,20 @@ The first successful refund atomically records allocations, cancellation, client
 
 Exact authorized replay returns the same receipt without effects; altered key binding conflicts; current authorization is checked before any receipt disclosure. Receipt and audit payload omit commission, PII, secrets and free text. PO/WO commission is read only from the separate commission projection.
 
+### Provisional F12 U4 compatibility contract (PR #18 unmerged)
+
+F12 U4 branch evidence is pinned in `research.md` under “Provisional F12/F14 branch inspection” and
+must be verified again after PR #18 merges. It uses one JSONB request argument and returns a
+`{status, receipt}` result; idempotency receipts are stored in the private
+`registration_operations` table under a unique actor/request-key pair. The canonical binding is a
+fixed v1 SHA-256 input, and exact authorized replay returns the stored JSON result unchanged.
+F13's mocked refund RPC contract must preserve those semantics while binding the refund actor,
+workspace/client, explicitly selected purchase, positive amount, external-confirmation attestation,
+and expected revisions. It must run current authorization before any receipt lookup and recheck it
+after key-lock waits. Same key with changed intent is a generic `key_conflict`; revoked replay is
+`not_permitted` without receipt disclosure. No amount-zero confirmation, unselected purchase, or
+gateway/payment credential is accepted. This subsection remains provisional until PR #18 is merged.
+
 ## Hard gates
 
 - F12 U4 merged contract and latest integrated migration bodies verified.
