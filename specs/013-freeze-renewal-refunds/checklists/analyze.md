@@ -6,7 +6,7 @@
 
 - FR-001–FR-036 are mapped to one or more named units in tasks.md; FR-034/035/036 have dedicated gate and parity coverage. SC-001–SC-013 map to the financial, freeze, renewal, calendar, authorization, audit, UI-gate and P4/P5 integration units listed there.
 - Every task names an originating FR/SC/decision, owner files, DB need, tests-first RED→GREEN evidence and a named mutation check for security/financial logic. No implementation code is included.
-- PO-1 uses atomic deactivation/outbox plus a server-side Auth Admin ban worker. The pre-worker GoTrue sign-in/refresh window remains an unresolved timing conflict. F12 U4 remains a dependency gate for shared writer/function work.
+- PO-1 uses atomic deactivation/outbox plus a synchronous Custom Access Token hook to deny new issuance; the server-side Auth Admin ban worker remains defense in depth. Stack C integration verifies sign-in/refresh denial while the worker fails. F12 U4 remains a dependency gate for shared writer/function work.
 - F13 database and Auth API verification is assigned to isolated Stack C (lifter-stack-c). Stack A/B remain prohibited targets.
 - Migrations are ordered after every F12 and F14 migration present at implementation time, including unmerged work; audit and capability shared bodies must be rebuilt from latest integrated versions.
 - Capability delta and bidirectional parity are sequenced after both F12 and F14. Cross-feature table/FK/function/i18n/dashboard/nav/CI interactions and merge ordering are stated in tasks.md.

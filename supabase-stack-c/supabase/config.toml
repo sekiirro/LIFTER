@@ -40,5 +40,9 @@ port = 35429
 enable_signup = false
 minimum_password_length = 8
 
+[auth.hook.custom_access_token]
+enabled = true
+uri = "pg-functions://postgres/public/custom_access_token_hook"
+
 [auth.email]
 otp_expiry = 3600

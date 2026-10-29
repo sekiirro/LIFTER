@@ -4,7 +4,7 @@ This document records the approved local Stack C readiness work and PO-1 support
 
 ## PO-1 policy update
 
-The binding update is quoted verbatim in spec.md. The refund transaction atomically writes client deactivation and one durable, idempotent Auth-lockout outbox row with the refund, audit and receipt. App/DB access helpers deny deactivated clients even when a valid JWT remains. A server-only worker applies the supported Auth Admin ban, retries with bounded exponential backoff, records success and raises a safe PO/WO operational alert after persistent failure. Existing JWTs may expire naturally. Do not write Auth-managed tables directly.
+The binding update is quoted verbatim in spec.md and the PO-1 follow-up appears in research.md. The refund transaction atomically writes the client deactivation fact and one durable, idempotent Auth-lockout outbox row with the refund, audit and receipt. The synchronous Custom Access Token hook checks the committed fact before token issuance, so password sign-in and refresh are denied without waiting for the worker. App/DB access helpers also deny deactivated clients even when a valid JWT remains. A server-only worker applies the supported Auth Admin ban as defense in depth, retries with bounded exponential backoff, records success and raises a safe PO/WO operational alert after persistent failure. Existing JWTs may expire naturally. Do not write Auth-managed tables directly.
 
 ## Stack C Auth API measurement
 
@@ -14,10 +14,15 @@ On 2026-10-30, using synthetic test users on project lifter-stack-c (API 35421):
 - Fresh password sign-in after the ban returned HTTP 400, User is banned.
 - Refresh with a pre-ban refresh token after the ban returned HTTP 400, Invalid Refresh Token: User Banned.
 - The ban alone denied both fresh sign-in and refresh while active; no separate sign-out call is needed for those outcomes.
+- With the Custom Access Token hook active and the worker returning `retry_scheduled`, fresh password sign-in and refresh returned HTTP 403 with message `account_unavailable`; neither response contained an access token. A rolled-back deactivation left sign-in available, and staff sign-in remained available.
+- Controlled pre-hook pause (worker failed, then held for 1,000 ms): first request was 1,005.366 ms after commit; sign-in HTTP 200 and refresh HTTP 200 issued tokens. The id-based worker ban then returned HTTP 200 at 1,118.289 ms after commit; subsequent sign-in and refresh both returned HTTP 400.
+- Hook enabled: first Auth request began 5.379 ms after commit in the final full integration run; sign-in and refresh both returned HTTP 403 with no token while worker status was `retry_scheduled`. There is no successful token issuance window after the committed fact is visible to the hook; the 5.379 ms is commit-to-probe latency, not an allowed window.
 - The documented auth.admin.signOut call requires the user's JWT and has no user-id-only form ([Supabase reference](https://supabase.com/docs/reference/javascript/auth-admin-signout)). A global sign-out is not required by the updated PO-1 policy.
 - Synthetic user cleanup via Auth Admin delete returned HTTP 500 after unban and global sign-out. No direct Auth-table cleanup was attempted.
 
-**Unresolved timing conflict:** between refund commit and the first successful worker ban, direct GoTrue sign-in and refresh remain callable and may issue tokens. App/DB deactivation checks can deny client data access but cannot intercept Auth endpoints or deny token issuance. This conflicts with an immediate reading of ?block new sign-ins and token refresh?; the outbox design does not claim to close that window.
+**Commit-to-worker window:** with the hook active, Stack C denied sign-in and refresh at the first request after the deactivation/outbox commit while the worker was failing. The measured post-hook pre-worker issuance window is 0 ms at the request boundary; already-issued JWT expiry remains accepted by PO.
+
+During the former pre-hook window, a client could call public GoTrue endpoints, including password sign-in and refresh, and receive a session (measured above). With the hook enabled, any flow requesting a new access JWT is denied for that deactivated client. Non-issuance endpoints remain callable: a client can request a password-reset email and can sign out/clear sessions; these do not grant authenticated access. Already-issued access JWTs can be presented until expiry, but app/RPC deactivation checks deny client data. Supabase documents reset-email initiation separately from token issuance ([resetPasswordForEmail](https://supabase.com/docs/reference/javascript/auth-resetpasswordforemail)) and notes that access JWTs remain valid until expiry after sign-out ([signOut](https://supabase.com/docs/reference/javascript/auth-signout)). These remaining actions do not conflict with the updated PO direction: new authentication stays controlled, while existing JWT expiry is accepted.
 
 ## Stack and execution
 

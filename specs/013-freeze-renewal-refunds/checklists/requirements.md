@@ -21,7 +21,7 @@
 
 - [x] ND-01 DECIDED 2026-10-29 (Final PO APPROVAL): Freeze duration is 1–30 calendar days; freezes do not overlap, while sequential freezes are allowed. The Apply day counts as frozen and the STOP day is excluded.
 - [x] ND-08 DECIDED 2026-10-29 (Final PO APPROVAL): Purchases remain financially independent. A refund never automatically refunds or shifts another purchase. PO-1 global client deactivation applies; any other-purchase resolution is manual.
-- [ ] Resolve GoTrue commit-to-worker timing conflict with PO: direct sign-in/refresh may succeed before the Auth Admin ban, while app/DB deactivation checks deny client data.
+- [x] Resolve PO-1 commit-to-worker token issuance window with a Stack C Custom Access Token hook: committed deactivation denies new password sign-in and refresh while the worker fails; existing JWT expiry remains accepted.
 - [x] Refund cap, proportional commission, idempotency and lock-order arguments each include a worked numeric/ordering example.
 
 ## Traceability and scope

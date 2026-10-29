@@ -8,3 +8,4 @@
 - Preserve delivered productivity after refund; no payroll reversal, fabricated productivity or automatic discipline.
 
 - Refund commits a durable idempotent Auth-lockout outbox row with deactivation. A server-only worker uses the Auth Admin API, bounded retries/backoff, completion recording, and a safe operational alert to PO/WO after persistent failure. Do not log secrets, provider messages, user identifiers or client PII.
+- The Supabase Custom Access Token hook uses invoker security, `search_path=''`, and grants limited to `supabase_auth_admin`; it rejects sign-in/refresh token issuance from committed client deactivation. The hook's error is fixed and PII-free. Existing JWT natural expiry is accepted.
