@@ -601,6 +601,39 @@ Stack A was reset using the `lifter` project and provisioned before integration 
 | Exact-value mutant changed the correction amount to one minor unit less                                                                                                         | `T019 correction negates stored original exactly`: 1 failed / 11 skipped; the inexact reversal was rejected as `unavailable`. Restored exact stored amount.                                                                                                                                                                                       |
 | PO-only mutant granted `record_refund` to workspace_owner, removed the `po_only` and explicit role checks in the local migration, and disabled the trigger's duplicate PO check | `T019 woA cannot correct`: 1 failed / 11 skipped; workspace_owner received `ok` instead of `not_permitted`. All grant and authorization mutations were restored.                                                                                                                                                                                  |
 
+## Session 13 U5 — safe readers and client self-status (T023–T027)
+
+Stack A only (`lifter`, API 54321 / DB 54322). Stack A was reset and provisioned locally; the ordered migrations ended at `20261101123000_registration_approval_reads.sql`. Stack B was not accessed. No pushed migration (`20261101120000`, `121000`, or `122000`) was edited.
+
+### RED, GREEN and security checks
+
+- RED first: the three new U5 integration files ran before the migration existed: **7 failed / 2 passed / 3 files**. Failures were missing `subscription_payment_status`, `client_self_status`, and related reader signatures/catalog entries.
+- Added the forward migration with postgres-owned SECURITY DEFINER readers, `search_path=''`, exact authenticated-only public EXECUTE grants, private helpers with browser EXECUTE revoked, role/capability checks, explicit existing workspace checks, and current membership checks for non-PO staff. Base tables remain forced-RLS with no policies or ordinary grants. No activation writer or P2 consumer was added.
+- Staff readers return column-limited JSON projections. Common payment status and approval projections omit commission; `subscription_commission` requires PO/WO. Unauthorized, foreign and nonexistent targets return the same `{status:'not_permitted'}` shape without receipt details. Client self-status accepts no arguments and exposes only the signed client's pending/approved/rejected state. The private client helper uses the indexed `auth_user_id = auth.uid()` association and approved state.
+- Activation tests create only transaction-scoped synthetic activation facts and roll them back. Later `due_on` is `NULL` before activation; afterward, the exact stored offset is added to the Cairo activation date. The default 30-day offset and custom 17/53-day offsets cross a Cairo DST transition without fixed-second arithmetic. No P4 writer or functional activation claim is made.
+- F11 pending RPC probes now allow only the exact no-argument self-status result for the authenticated client. Staff reader RPCs remain generic `not_permitted`; the exception does not open client tables, staff operations, subscriptions, payments, activation, or Storage.
+- U5 focused slice after final reader projection fixes: **7 files / 449 passed** (including `matrix-parity.test.ts`, RLS catalog, and F11 pending catalog/auth readers).
+
+### Mutations
+
+All four temporary Stack A mutants made their named detector RED; each was restored before the final clean reset and full integration run.
+
+| Mutation                                                          | Observed RED                                                                                                        |
+| ----------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- |
+| Removed reader workspace/membership authorization                 | 1 failed / 5 skipped; `T023 authorization requires an existing target workspace...`, expected false, received true. |
+| Granted `authenticated` direct SELECT on `subscriptions`          | 1 failed / 5 skipped; `T023 direct base reads...`, query unexpectedly succeeded.                                    |
+| Removed PO/WO-only commission gate                                | 1 failed / 5 skipped; Sales received commission `{status:'ok'}` instead of `not_permitted`.                         |
+| Added an authenticated `client_self_status(uuid)` target overload | 1 failed / 2 skipped; catalog asserted exactly one zero-argument status RPC and found the overload.                 |
+
+### Final gates and boundaries
+
+- `npm test`: **67 files / 1,449 passed**.
+- Full Stack A `npm run test:integration` after clean reset/provision: **38 files / 1,111 passed / 1 skipped / 0 failed** (Vitest reports 37 passed files and 1 skipped file). `matrix-parity.test.ts` passed in both directions.
+- `npm run typecheck`, `npm run lint`, Prettier checks on supported touched TS/Markdown files, and `git diff --check`: passed. Prettier has no SQL parser for the new migration; its syntax was verified by clean migration application and integration tests.
+- T023–T027 are checked in `tasks.md`. P2 remains responsible for the later consumer/assignment behavior. P4 remains responsible for the real atomic activation writer; due projections alone do not activate subscriptions.
+- Separate ordering note: T051 proposes `20261101115000_flexible_registration_link_terms.sql`, which sorts before the already-pushed `20261101120000` migration. Applying it after a database has recorded `120000` would violate chronological forward-only migration ordering; it needs a later migration version before it can be applied to already-migrated databases. No T051 file was created or changed here.
+- Runtime model routing: this session ran on GPT-6; Luna High/effort selection metadata was not available to this runtime.
+
 ### Final gates
 
 - Scoped Stack A gate after restoration: 456 passed / 7 files (schema, payments, corrections, replay, audit, client catalog, capability parity).

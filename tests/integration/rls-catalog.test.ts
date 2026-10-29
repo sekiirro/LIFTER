@@ -173,6 +173,7 @@ describe('tenancy security catalog (T007)', () => {
       [
         ...registrationPrivate,
         ...approvalFunctions.map((signature) => signature.split('(')[0]!),
+        'client_has_access',
         ...signupPrivate,
         'audit_events_immutable',
         'audit_row_change',
@@ -213,6 +214,7 @@ describe('tenancy security catalog (T007)', () => {
           ![
             'audit_events_immutable',
             'audit_row_change',
+            'client_has_access',
             'enqueue_job',
             'forbid_delete',
             'guard_package_offer_update',

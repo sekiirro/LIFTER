@@ -230,6 +230,19 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
     expect(functions.length).toBeGreaterThan(0);
     await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: c.auth_user_id, role: 'authenticated' })},true)`;
     for (const fn of functions) {
+      if (fn.proname === 'client_self_status') {
+        await tx.savepoint(async (inner) => {
+          await inner`set local role authenticated`;
+          const [row] =
+            await inner`select public.client_self_status() as result`;
+          expect(row!.result, fn.proname).toEqual({
+            status: 'ok',
+            approval_state: 'pending-approval',
+          });
+          await inner`reset role`;
+        });
+        continue;
+      }
       if ((approvalRpcNames as readonly string[]).includes(fn.proname)) {
         await tx.savepoint(async (inner) => {
           await inner`set local role authenticated`;
@@ -246,6 +259,31 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
                   : fn.proname === 'installment_collect'
                     ? await inner`select public.installment_collect(${value}) as result`
                     : await inner`select public.collection_correct(${value}) as result`;
+          expect(row!.result, fn.proname).toEqual({ status: 'not_permitted' });
+          await inner`reset role`;
+        });
+        continue;
+      }
+      if (
+        [
+          'registration_approval_queue',
+          'registration_approval_review',
+          'workspace_payment_queue',
+          'subscription_payment_status',
+          'subscription_commission',
+        ].includes(fn.proname)
+      ) {
+        const args: string[] = [];
+        for (const typeName of fn.types) {
+          const value =
+            typeName === 'integer' ? '1::integer' : `'${context.wsA.id}'::uuid`;
+          args.push(value);
+        }
+        await tx.savepoint(async (inner) => {
+          await inner`set local role authenticated`;
+          const [row] = await inner.unsafe(
+            `select public."${fn.proname}"(${args.join(',')}) as result`,
+          );
           expect(row!.result, fn.proname).toEqual({ status: 'not_permitted' });
           await inner`reset role`;
         });

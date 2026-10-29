@@ -85,11 +85,11 @@ Final F12-3 is in scope here, not a deferred F10 feature. Historical F10 spec is
 
 ## Phase 6 — Safe reads and self-status (US5/US6, U5)
 
-- [ ] T023 [US6] Write RED safe-projection, commission and foreign read tests in `tests/integration/registration-approval-reads.test.ts`; test direct RPC/PostgREST/embedding/wildcard and controlled-grant RLS, Sales commission omission, PO real workspace, no receipt disclosure. Q-V04/12/Q-M04/15.
-- [ ] T024 [US5] Write RED signed self-status/helper tests in `tests/integration/registration-approval-client-access.test.ts`: no target input, indexed self association, pending/rejected status-only exception, no cross-request cache, approved alone no other resource rights, no recursion. Q-V12/Q-M14.
-- [ ] T025 [US3] Write RED undefined-before-activation and snapshot-offset tests in `tests/integration/registration-approval-activation.test.ts`; use transaction-only synthetic activation facts, not a public writer or fake plan engine. Include default 30-calendar-day and custom offset/day-end/DST boundaries, with no fixed-second-offset normalization and no premature due date; Q-V13/Q-M16.
-- [ ] T026 [US6] Create `supabase/migrations/20261101123000_registration_approval_reads.sql` for safe role-separated readers, narrow self-status/private client helper and due projection; no base grants, no activation writer, no P2 consumer. Own this migration only; T023–T025 GREEN.
-- [ ] T027 Update `tests/integration/registration-approval-verification.md` sequentially with read/RLS/catalog inventory, full denials and activation/P2 dependency limits. Run F11 pending/recovery regressions with the intended status-only exception clearly scoped.
+- [x] T023 [US6] Write RED safe-projection, commission and foreign read tests in `tests/integration/registration-approval-reads.test.ts`; test direct RPC/PostgREST/embedding/wildcard and controlled-grant RLS, Sales commission omission, PO real workspace, no receipt disclosure. Q-V04/12/Q-M04/15.
+- [x] T024 [US5] Write RED signed self-status/helper tests in `tests/integration/registration-approval-client-access.test.ts`: no target input, indexed self association, pending/rejected status-only exception, no cross-request cache, approved alone no other resource rights, no recursion. Q-V12/Q-M14.
+- [x] T025 [US3] Write RED undefined-before-activation and snapshot-offset tests in `tests/integration/registration-approval-activation.test.ts`; use transaction-only synthetic activation facts, not a public writer or fake plan engine. Include default 30-calendar-day and custom offset/day-end/DST boundaries, with no fixed-second-offset normalization and no premature due date; Q-V13/Q-M16.
+- [x] T026 [US6] Create `supabase/migrations/20261101123000_registration_approval_reads.sql` for safe role-separated readers, narrow self-status/private client helper and due projection; no base grants, no activation writer, no P2 consumer. Own this migration only; T023–T025 GREEN.
+- [x] T027 Update `tests/integration/registration-approval-verification.md` sequentially with read/RLS/catalog inventory, full denials and activation/P2 dependency limits. Run F11 pending/recovery regressions with the intended status-only exception clearly scoped.
 
 ## Phase 7 — Server adapters and app wall (U6)
 

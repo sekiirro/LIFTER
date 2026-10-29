@@ -33,6 +33,7 @@ export const functions = [
   'f12_u4_can_pay(uuid,boolean)',
   'f12_u4_canonical(text,jsonb)',
   'f12_u4_operation(text,jsonb)',
+  'f12_u5_authorized(uuid,text,boolean)',
 ] as const;
 export type Context = Awaited<ReturnType<typeof clientContext>>;
 export { clientContext };

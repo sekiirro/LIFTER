@@ -322,6 +322,15 @@ export async function pendingHttpAccess(
     const functions =
       await db`select p.proname,p.proargnames,to_jsonb(array(select format_type(t,null) from unnest(p.proargtypes) t)) as types from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prokind='f'`;
     for (const fn of functions) {
+      if (fn.proname === 'client_self_status') {
+        const result = await client.rpc('client_self_status');
+        expect(result.error, fn.proname).toBeNull();
+        expect(result.data, fn.proname).toEqual({
+          status: 'ok',
+          approval_state: 'pending-approval',
+        });
+        continue;
+      }
       if ((approvalRpcNames as readonly string[]).includes(fn.proname)) {
         const [target] =
           await db`select id from public.clients where workspace_id=${context.wsA.id} order by created_at,id limit 1`;
@@ -334,6 +343,24 @@ export async function pendingHttpAccess(
         });
         expect(denied.error, fn.proname).toBeNull();
         expect(denied.data, fn.proname).toEqual({ status: 'not_permitted' });
+        continue;
+      }
+      if (
+        [
+          'registration_approval_queue',
+          'registration_approval_review',
+          'workspace_payment_queue',
+          'subscription_payment_status',
+          'subscription_commission',
+        ].includes(fn.proname)
+      ) {
+        const args: Record<string, unknown> = {};
+        fn.types.forEach((type: string, i: number) => {
+          args[fn.proargnames[i]] = type === 'integer' ? 1 : context.wsA.id;
+        });
+        const result = await client.rpc(fn.proname, args);
+        expect(result.error, fn.proname).toBeNull();
+        expect(result.data, fn.proname).toEqual({ status: 'not_permitted' });
         continue;
       }
       const args: Record<string, unknown> = {};
