@@ -53,8 +53,8 @@
 
 ## Cross-feature dependencies and execution order
 
-1. **F12 U4** must merge first for collection/correction RPC contract, lock/key order, authorization rechecks, receipts, audit rollback and race guarantees. Then inspect actual merged code before T010/T012/T015.
-2. **F14 migrations and permission work** must be integrated before F13 migration timestamping and shared function reconstruction. F13 migration timestamps must sort after every F12/F14 migration, including unmerged work existing when implementation starts.
+1. **F12 U4** must merge first: specifically the pending U4 T018–T022 test/contract and `20261101122000_payment_operations.sql` work, plus the planned following migration work (including `20261101123000` if it is still planned at implementation time). Reinspect the actual merged migration/RPC, lock/key order, authorization rechecks, receipts, audit rollback and race guarantees before T010/T012/T015; do not rely on the planned names if the merged shape differs.
+2. **F14** must merge its pending validator and function-privilege work (T049/T051) and all intervening migrations before F13 migration timestamping and shared function reconstruction. Recheck the actual F14 branch for additional planned migrations beyond `20261102120000`–`20261102122000`. F13 timestamps must sort after every F12/F14 migration, including unmerged work existing when implementation starts.
 3. **Shared tables/FKs**: F13 extends F12 subscriptions, obligations, payment events/operation receipts and client lifecycle, with workspace-composite FKs. Do not duplicate collection/correction truth. New refund facts have no stale-branch FK assumptions.
 4. **Shared functions**: rebuild latest `audit_row_change()`, `role_has_capability()`, `has_workspace_access()` and `f12_guard_client_transition()` bodies while preserving F12 Sales approval removal and F14 `manage_branding`. F12 parity test must land before this permission delta; verify both TS→SQL and SQL→TS.
 5. **Capability sequence**: after F12 U4/parity and F14 `manage_branding` integration, apply F13 `manage_freeze`/`record_payment` scope and PO-only `record_refund` in TS+SQL.
