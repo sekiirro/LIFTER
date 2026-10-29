@@ -272,6 +272,18 @@ Requests bind expected lifecycle/chain/tail revisions. All callers are permitted
 - RET-2=A: Purge client-specific drafts, answers, correction content and attachments; retain reusable templates and legally required minimal audit evidence.
 - RET-3=A: Maximum 30 days across ALL recoverable copies, including backups. Technical feasibility and legal exceptions require review BEFORE production.
 
+### PO Decisions — Session 13 (2026-10-29)
+
+- **PO-1=A:** Any Refund immediately blocks client login, revokes sessions, and preserves financial/audit records.
+- **PO-2=A:** Renewal installments are anchored to recording date, unaffected by service delays or Freeze.
+
+**Session 13 PO confirmations (binding)**
+- **Freeze start day:** the day a Freeze is applied counts as frozen, not consumed service.
+
+**Architect notes (not PO decisions)**
+- PO-1 resolves session-12 PO-CONFIRM 3c (refund deactivation blocks login). Design consequence: refund must atomically record the deactivation fact AND revoke all Auth sessions/refresh tokens and block new sign-in (server-side, not UI-only); financial/audit records are never deleted. Starts the RET-1 30-day clock.
+- PO-2 resolves session-12 PO-CONFIRM 3d (both questions): renewal installment due dates anchor to the renewal recording date; neither the F13-6 automatic start shift of an unstarted renewal nor any Freeze extension moves those due dates.
+
 ### Superseded by PO 2026-10-29
 
 These are architect-flagged implementation consequences, not additional PO decisions. PO confirmation is required only where explicitly marked PO-CONFIRM.
@@ -279,8 +291,8 @@ These are architect-flagged implementation consequences, not additional PO decis
 - Superseded judgment items: D-09 freeze authority, no-new-capability, full-refund-only/terminal single reversal, and D-15.
 - Capability matrix: F13-1/F13-4 give Trainer freeze/stop/remove (supersedes D-09 PO/WO/Sales); F13-11 gives Trainer renewal-installment confirmation (record_payment). Update TypeScript lib/auth/capabilities.ts and SQL app_private.role_has_capability parity after F12 (Sales approval removal) and F14 (manage_branding). F13's “no new capability” judgment is superseded.
 - Refund ledger redesign: Multiple partial refunds with proportional commission reversal supersede one terminal refund_reversal per collection using F12 reverses_event_id uniqueness. A Sol Medium architecture pass must design: DB-under-lock cumulative cap (sum of refunds ≤ unrefunded collections); deterministic proportional commission rounding with cumulative remainder (total reversed commission never exceeds stored commission); F12 correction-chain interaction; idempotency; and race fixtures. Zero-amount confirmation is rejected.
-- Refund deactivation: Any successful refund deactivates the client and removes them from Active Clients even with entitlement remaining. Add a lifecycle/deactivation fact and forward amendment of F12 f12_guard_client_transition; this starts RET-1's 30-day clock. **PO-CONFIRM:** does deactivation also block login, or only remove from Active Clients and stop plans/export? Login behavior was not stated.
-- Renewal installments reuse the existing installment workflow. The due-date anchor (renewal recording date or service start) is unstated. **PO-CONFIRM before the renewal-installment slice.** **PO-CONFIRM together:** whether F13-6 automatic shift of the one unstarted renewal also shifts its installment due dates.
+- Refund deactivation: Any successful refund deactivates the client and removes them from Active Clients even with entitlement remaining. Add a lifecycle/deactivation fact and forward amendment of F12 f12_guard_client_transition; this starts RET-1's 30-day clock. **RESOLVED 2026-10-29 by PO-1** (login blocked and sessions revoked).
+- Renewal installments reuse the existing installment workflow. **RESOLVED 2026-10-29 by PO-2** (recording-date anchor; due dates are unaffected by automatic shift of an unstarted renewal or any Freeze extension).
 - F13-3=B (STOP day is not frozen) and F13-4 REMOVE reverses the extension “as though it never happened” without rewriting delivered access. If access was delivered during the freeze window, REMOVE can pull the end date below today; the spec revision must clamp so entitlement never ends before now or delivered access.
 - F13-7/8: Refund date is the recording date (manual recording at refund time); explicitly select a purchase when multiple paid purchases exist. Refunding a future renewal also deactivates the client.
 - Retention RET-1..3: 30 days across ALL recoverable copies, including backups. Hosted Supabase backup/PITR retention may exceed 30 days and backups may not be selectively purgeable. Technical and legal feasibility review is required BEFORE production (blocks production real data, not local/CI synthetic work). Reconcile with financial-ledger/audit retention (retain minimal legally required evidence; ledger is never physically deleted) and B4/ND-F5-1/DP-01/02.
