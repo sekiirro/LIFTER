@@ -34,8 +34,6 @@ type TableRow = {
 };
 
 const restrictedFunctionOwners: Record<string, string> = {
-  'app_private.branding_validator_upload_matches(text)':
-    'branding_upload_binding_definer',
   'app_private.branding_validator_upload_binding_matches(text)':
     'branding_upload_check_definer',
 };
@@ -85,7 +83,6 @@ describe('F14 definer function privileges', () => {
     expect(functions.length).toBeGreaterThan(0);
     for (const ownerRole of [
       'branding_definer',
-      'branding_upload_binding_definer',
       'branding_upload_check_definer',
     ]) {
       const [memberships] = await db`
@@ -175,5 +172,63 @@ describe('F14 definer function privileges', () => {
       expect(table.rls_enabled, table.relation).toBe(true);
       expect(table.rls_forced, table.relation).toBe(true);
     }
+  });
+
+  it('removes the superseded validator upload binding privilege path', async () => {
+    const obsoleteFunctions = await db<{ signature: string }[]>`
+      select p.oid::regprocedure::text as signature
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'app_private'
+        and p.proname = 'branding_validator_upload_matches'
+    `;
+    expect(obsoleteFunctions).toEqual([]);
+
+    const bindingFunctions = await db<{ signature: string }[]>`
+      select p.oid::regprocedure::text as signature
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where n.nspname = 'app_private'
+        and p.proname in (
+          'branding_validator_upload_matches',
+          'branding_validator_upload_binding_matches'
+        )
+      order by signature
+    `;
+    expect(bindingFunctions).toEqual([
+      {
+        signature:
+          'app_private.branding_validator_upload_binding_matches(text)',
+      },
+    ]);
+
+    const [validatorPolicy] = await db<{ with_check: string | null }[]>`
+      select with_check
+      from pg_policies
+      where schemaname = 'storage'
+        and tablename = 'objects'
+        and policyname = 'branding_validator_insert_validated'
+    `;
+    expect(validatorPolicy?.with_check).toMatch(
+      /branding_validator_upload_binding_matches/,
+    );
+    expect(validatorPolicy?.with_check).not.toMatch(
+      /branding_validator_upload_matches\(/,
+    );
+
+    const obsoleteRole = await db<{ role: string }[]>`
+      select rolname as role from pg_roles
+      where rolname = 'branding_upload_binding_definer'
+    `;
+    expect(obsoleteRole).toEqual([]);
+
+    const obsoletePolicy = await db<{ policy: string }[]>`
+      select policyname as policy
+      from pg_policies
+      where schemaname = 'app_private'
+        and tablename = 'branding_uploads'
+        and policyname = 'branding_upload_binding_definer_internal'
+    `;
+    expect(obsoletePolicy).toEqual([]);
   });
 });

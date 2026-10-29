@@ -60,11 +60,9 @@ const brandingPrivate = [
   'branding_storage_read_allowed',
   'branding_validation_prepare',
   'branding_validation_complete',
-  'branding_validator_upload_matches',
   'branding_validator_upload_binding_matches',
 ];
 const brandingFunctionOwners: Record<string, string> = {
-  branding_validator_upload_matches: 'branding_upload_binding_definer',
   branding_validator_upload_binding_matches: 'branding_upload_check_definer',
 };
 afterAll(async () => {
