@@ -40,6 +40,18 @@ Implementation follows final PO decisions recorded in the spec. Proxy/validator 
 
 ## Architecture and sequencing
 
+### Security units T047 / T045 / T046 — architect-proposed operational defaults
+
+Session 12 security units use forward-only migrations `20261102120000`, `20261102121000`, and `20261102122000`, after the F12-owned `20261101*` range. Owners are explicitly `postgres`, per the architect's run decision; functions use empty search paths, qualified application references and narrow execution grants. No capability, workspace-access or shared audit function is changed.
+
+**ARCHITECT-PROPOSED, pending PO confirmation (not a new PO decision):** render handles contain 32 random bytes (canonical 43-character base64url), expire after at most **5 minutes** and never after the live F10 effective deadline, with **8 active handles/link** and **30 issuances/link per rolling 5 minutes**. Link-row locking serializes issuance. Exhaustion preserves the ordinary valid F10 name response without issuing another handle. Expired records younger than the rate window remain as issuance history. Issuance removes at most 30 expired/old rows for its link; an operator-only cleanup function removes 1–500 old expired rows per call (default 100) for abandoned links. These defaults must be confirmed before production use.
+
+Only private read-side publication/version and asset-binding tables needed for these units are added. They have workspace FKs/composite relationships, forced RLS, no API table grants and no owner/draft/publish/promotion mutation API. Future T008/T021/T049/T050 must integrate actual writers, immutable snapshots, validation receipts and GC claims; this run's synthetic fixtures populate the read side as postgres. No production publication is fabricated.
+
+Credentials start disabled, store only SHA-256 of a canonical random credential ID, and are managed by database-operator-only functions. External tooling under `scripts/branding/` returns an expiring restricted bearer in memory for a trusted operator secret-store consumer; it has no printing/persistence/deploy side effect. Workers only read pre-issued `BRANDING_PROXY_JWT` / `BRANDING_VALIDATOR_JWT` bindings. Rotation is register disabled → mint externally → enable → deploy → disable predecessor; emergency disable appends an immutable feature-owned event. Registry and JWT expiries are independently checked, including role and ID binding. This supplies no validator promotion authority before T049.
+
+The resolver and Storage predicate independently evaluate live credential, F10 token, hash-only render handle, workspace, current publication, slot and exact object. The Storage predicate also requires the server-defined authenticated-download operation, GET and exact authenticated route. Image calls perform no `opened_at` or grace writes. Authorization is at the database statement snapshot: a later committed consume/disable/publication invalidates subsequent statements; already-authorized in-flight bytes cannot be recalled. T048 must buffer/recheck before emitting bytes. Hosted compatibility and all existing release gates remain pending.
+
 ### Authorization and persistence
 
 - Every operation resolves signed actor and explicit workspace scope. The application `authorize()` wall and DB `has_workspace_access()`/capability wall both enforce PO-global or WO-own scope; deny by default. Forced RLS covers branding rows. Sales and Trainer have no access.

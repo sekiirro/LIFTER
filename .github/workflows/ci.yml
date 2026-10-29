@@ -45,6 +45,7 @@ jobs:
     permissions:
       contents: read
     env:
+      LIFTER_SUPABASE_STACK: b
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:
@@ -70,8 +71,14 @@ jobs:
         with:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
-      - run: supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,storage-api,postgres-meta
+      - name: Prepare isolated Storage-enabled B profile
+        run: |
+          grep -qx 'project_id = "lifter-stack-b"' supabase-stack-b/supabase/config.toml
+          ln -s "$GITHUB_WORKSPACE/supabase/migrations" supabase-stack-b/supabase/migrations
+      - run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+        working-directory: supabase-stack-b
       - name: Export local stack environment
+        working-directory: supabase-stack-b
         run: supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
       - name: Export app server environment
         run: |
@@ -89,5 +96,6 @@ jobs:
         run: npm run e2e -- --workers=1
         env:
           LOCAL_SUPABASE_PROVIDER_FAULT_TEST: 'true'
-      - run: supabase stop --no-backup
+      - run: supabase stop
+        working-directory: supabase-stack-b
         if: always()

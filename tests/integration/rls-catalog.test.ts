@@ -50,6 +50,15 @@ const registrationPrivate = [
   'validate_registration_link_schedule',
   'check_registration_link_schedule',
 ];
+const brandingPrivate = [
+  'branding_credential_event_immutable',
+  'branding_credential_register',
+  'branding_credential_set_enabled',
+  'branding_credential_allowed',
+  'branding_render_handles_cleanup',
+  'branding_asset_context',
+  'branding_storage_read_allowed',
+];
 afterAll(async () => {
   await db.end();
 });
@@ -172,6 +181,7 @@ describe('tenancy security catalog (T007)', () => {
       [
         ...registrationPrivate,
         ...signupPrivate,
+        ...brandingPrivate,
         'audit_events_immutable',
         'audit_row_change',
         'current_staff_role',
@@ -206,6 +216,7 @@ describe('tenancy security catalog (T007)', () => {
       expect(row.anon_execute).toBe(false);
       expect(row.authenticated_execute).toBe(
         !registrationPrivate.includes(row.proname) &&
+          !brandingPrivate.includes(row.proname) &&
           !signupPrivate.includes(row.proname) &&
           ![
             'audit_events_immutable',

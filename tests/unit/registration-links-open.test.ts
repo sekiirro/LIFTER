@@ -38,6 +38,17 @@ it('accepts only the exact valid payload', () => {
   });
   expect(parseOpenResult({ status: 'invalid' })).toEqual({ status: 'invalid' });
 });
+it('accepts only a canonical optional branding handle without widening the payload allowlist', () => {
+  const render_handle = 'A'.repeat(43);
+  const value = { status: 'valid', workspace_name: 'A', render_handle };
+  expect(parseOpenResult(value)).toEqual(value);
+  expect(parseOpenResult({ ...value, render_handle: 'bad' })).toEqual({
+    status: 'invalid',
+  });
+  expect(parseOpenResult({ ...value, history: 'forged' })).toEqual({
+    status: 'invalid',
+  });
+});
 it('valid name only allowlist and no actor/service dependency', async () => {
   vi.stubEnv('SUPABASE_URL', 'http://localhost:54321');
   vi.stubEnv('SUPABASE_ANON_KEY', 'test-anon');

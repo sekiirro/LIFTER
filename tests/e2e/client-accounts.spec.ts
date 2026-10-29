@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { localSupabaseContainer } from '../integration/local-docker';
 import { execFileSync } from 'node:child_process';
 import { readFile, mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -963,7 +964,9 @@ test('provider failure returns generic unavailable, then a retry can complete', 
     name: 'Example Person',
     email: `provider-${randomUUID()}@example.test`,
   });
-  execFileSync('docker', ['stop', 'supabase_kong_lifter'], { stdio: 'ignore' });
+  execFileSync('docker', ['stop', localSupabaseContainer('kong')], {
+    stdio: 'ignore',
+  });
   try {
     const unavailableResponse = page.waitForResponse(
       (response) => response.request().method() === 'POST',
@@ -979,7 +982,7 @@ test('provider failure returns generic unavailable, then a retry can complete', 
       'Please try again later.',
     );
   } finally {
-    execFileSync('docker', ['start', 'supabase_kong_lifter'], {
+    execFileSync('docker', ['start', localSupabaseContainer('kong')], {
       stdio: 'ignore',
     });
   }

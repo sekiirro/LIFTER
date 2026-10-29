@@ -2,17 +2,29 @@ import 'server-only';
 import { createClient } from '@supabase/supabase-js';
 import { isSecureUrl } from '../supabase/env';
 export type OpenResult =
-  { status: 'valid'; workspace_name: string } | { status: 'invalid' };
+  | { status: 'valid'; workspace_name: string; render_handle?: string }
+  | { status: 'invalid' };
 export function parseOpenResult(value: unknown): OpenResult {
   if (value && typeof value === 'object' && !Array.isArray(value)) {
     const row = value as Record<string, unknown>;
     if (
-      Object.keys(row).length === 2 &&
+      Object.keys(row).every((key) =>
+        ['status', 'workspace_name', 'render_handle'].includes(key),
+      ) &&
       row.status === 'valid' &&
       typeof row.workspace_name === 'string' &&
-      row.workspace_name.length > 0
+      row.workspace_name.length > 0 &&
+      (!('render_handle' in row) ||
+        (typeof row.render_handle === 'string' &&
+          /^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$/.test(row.render_handle)))
     )
-      return { status: 'valid', workspace_name: row.workspace_name };
+      return {
+        status: 'valid',
+        workspace_name: row.workspace_name,
+        ...('render_handle' in row
+          ? { render_handle: row.render_handle as string }
+          : {}),
+      };
   }
   return { status: 'invalid' };
 }
