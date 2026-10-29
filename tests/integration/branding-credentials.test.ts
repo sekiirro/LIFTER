@@ -115,7 +115,7 @@ it('feature function inventory has exact hardened ownership, search paths and ex
       await db`select prosecdef,proconfig,pg_get_userbyid(proowner) as owner from pg_proc where oid=${fn}::regprocedure`;
     expect(
       r!.prosecdef &&
-        r!.owner === 'postgres' &&
+        r!.owner === 'branding_definer' &&
         r!.proconfig.includes('search_path=""'),
     ).toBe(true);
     for (const role of [

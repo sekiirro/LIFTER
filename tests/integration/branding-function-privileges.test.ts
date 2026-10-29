@@ -1,0 +1,159 @@
+import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { selectStack } from '../../scripts/local-stack.mjs';
+import { sql } from './harness';
+
+if (selectStack() !== 'b')
+  throw new Error('Branding privilege checks require Stack B');
+
+const db = sql();
+
+type FunctionRow = {
+  signature: string;
+  owner: string;
+  owner_login: boolean;
+  owner_superuser: boolean;
+  owner_bypassrls: boolean;
+  owner_inherit: boolean;
+  owner_createdb: boolean;
+  owner_createrole: boolean;
+  security_definer: boolean;
+  search_path: string[] | null;
+  definition: string;
+  public_execute: boolean;
+  anon_execute: boolean;
+  authenticated_execute: boolean;
+  service_role_execute: boolean;
+  proxy_execute: boolean;
+  validator_execute: boolean;
+};
+
+type TableRow = {
+  relation: string;
+  rls_enabled: boolean;
+  rls_forced: boolean;
+};
+
+async function brandingFunctions() {
+  return db<FunctionRow[]>`
+    select
+      p.oid::regprocedure::text as signature,
+      owner.rolname as owner,
+      owner.rolcanlogin as owner_login,
+      owner.rolsuper as owner_superuser,
+      owner.rolbypassrls as owner_bypassrls,
+      owner.rolinherit as owner_inherit,
+      owner.rolcreatedb as owner_createdb,
+      owner.rolcreaterole as owner_createrole,
+      p.prosecdef as security_definer,
+      p.proconfig as search_path,
+      pg_get_functiondef(p.oid) as definition,
+      has_function_privilege('public', p.oid, 'EXECUTE') as public_execute,
+      has_function_privilege('anon', p.oid, 'EXECUTE') as anon_execute,
+      has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated_execute,
+      has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role_execute,
+      has_function_privilege('branding_proxy', p.oid, 'EXECUTE') as proxy_execute,
+      has_function_privilege('branding_validator', p.oid, 'EXECUTE') as validator_execute
+    from pg_proc p
+    join pg_namespace n on n.oid = p.pronamespace
+    join pg_roles owner on owner.oid = p.proowner
+    where p.prosecdef
+      and (
+        (n.nspname = 'app_private' and p.proname like 'branding_%')
+        or (n.nspname = 'public' and p.proname in ('registration_link_open', 'registration_brand_asset_resolve'))
+      )
+    order by p.oid::regprocedure::text
+  `;
+}
+
+describe('F14 definer function privileges', () => {
+  beforeAll(async () => {
+    await db`select 1`;
+  });
+  afterAll(async () => {
+    await db.end();
+  });
+
+  it('uses explicit restricted non-login owners and an empty search path', async () => {
+    const functions = await brandingFunctions();
+    expect(functions.length).toBeGreaterThan(0);
+    const [memberships] = await db`
+      select count(*)::int as n from pg_auth_members
+      where member=(select oid from pg_roles where rolname='branding_definer')`;
+    expect(memberships?.n).toBe(0);
+    for (const fn of functions) {
+      expect(fn.owner, fn.signature).toBe('branding_definer');
+      expect(fn.owner_login, fn.signature).toBe(false);
+      expect(fn.owner_superuser, fn.signature).toBe(false);
+      expect(fn.owner_bypassrls, fn.signature).toBe(false);
+      expect(fn.owner_inherit, fn.signature).toBe(false);
+      expect(fn.owner_createdb, fn.signature).toBe(false);
+      expect(fn.owner_createrole, fn.signature).toBe(false);
+      expect(fn.search_path, fn.signature).toContain('search_path=""');
+      expect(fn.definition, fn.signature).not.toMatch(
+        /\b(?:FROM|JOIN|UPDATE)\s+(?:workspaces|workspace_memberships|registration_links|branding_[a-z_]+)\b/i,
+      );
+    }
+  });
+
+  it('revokes default API/service execution and grants only the contract roles', async () => {
+    const functions = await brandingFunctions();
+    for (const fn of functions) {
+      const publicRoles = [
+        fn.public_execute,
+        fn.anon_execute,
+        fn.authenticated_execute,
+        fn.service_role_execute,
+      ];
+      if (fn.signature === 'registration_link_open(text)') {
+        expect(fn.anon_execute).toBe(true);
+        expect(fn.authenticated_execute).toBe(true);
+        expect(fn.proxy_execute).toBe(false);
+        expect(fn.validator_execute).toBe(false);
+      } else if (fn.signature.startsWith('app_private.branding_validation_')) {
+        expect(publicRoles, fn.signature).toEqual([false, false, false, false]);
+      } else {
+        expect(publicRoles, fn.signature).toEqual([false, false, false, false]);
+      }
+      if (fn.signature.startsWith('app_private.branding_validation_')) {
+        expect(fn.proxy_execute, fn.signature).toBe(false);
+        expect(fn.validator_execute, fn.signature).toBe(true);
+      } else if (
+        fn.signature === 'registration_brand_asset_resolve(text,text,text)' ||
+        fn.signature === 'app_private.branding_storage_read_allowed(text,text)'
+      ) {
+        expect(fn.proxy_execute, fn.signature).toBe(true);
+        expect(fn.validator_execute, fn.signature).toBe(false);
+      } else if (
+        fn.signature === 'app_private.branding_credential_allowed(text)'
+      ) {
+        expect(fn.proxy_execute).toBe(true);
+        expect(fn.validator_execute).toBe(true);
+      } else {
+        expect(fn.proxy_execute, fn.signature).toBe(false);
+        expect(fn.validator_execute, fn.signature).toBe(false);
+      }
+      expect(fn.definition, fn.signature).not.toMatch(
+        /\bEXECUTE\s+(?!FUNCTION\b)/i,
+      );
+    }
+  });
+
+  it('forces RLS on every private F14 branding table', async () => {
+    const tables = await db<TableRow[]>`
+      select c.oid::regclass::text as relation,
+        c.relrowsecurity as rls_enabled,
+        c.relforcerowsecurity as rls_forced
+      from pg_class c
+      join pg_namespace n on n.oid = c.relnamespace
+      where n.nspname = 'app_private'
+        and c.relkind in ('r', 'p')
+        and c.relname like 'branding_%'
+      order by c.oid::regclass::text
+    `;
+    expect(tables.length).toBeGreaterThan(0);
+    for (const table of tables) {
+      expect(table.rls_enabled, table.relation).toBe(true);
+      expect(table.rls_forced, table.relation).toBe(true);
+    }
+  });
+});

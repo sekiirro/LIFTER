@@ -58,6 +58,8 @@ const brandingPrivate = [
   'branding_render_handles_cleanup',
   'branding_asset_context',
   'branding_storage_read_allowed',
+  'branding_validation_prepare',
+  'branding_validation_complete',
 ];
 afterAll(async () => {
   await db.end();
@@ -212,7 +214,9 @@ describe('tenancy security catalog (T007)', () => {
         ].includes(row.proname),
       );
       expect(row.proconfig).toContain('search_path=""');
-      expect(row.owner).toBe('postgres');
+      expect(row.owner).toBe(
+        brandingPrivate.includes(row.proname) ? 'branding_definer' : 'postgres',
+      );
       expect(row.anon_execute).toBe(false);
       expect(row.authenticated_execute).toBe(
         !registrationPrivate.includes(row.proname) &&
@@ -635,10 +639,23 @@ describe('registration security catalog', () => {
         await db`select relrowsecurity,relforcerowsecurity from pg_class where oid=${'public.' + table}::regclass`;
       expect(r).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
       const policies =
-        await db`select cmd,qual from pg_policies where schemaname='public' and tablename=${table}`;
-      expect(policies).toHaveLength(1);
-      expect(policies[0]!.cmd).toBe('SELECT');
-      expect(policies[0]!.qual).toContain('generate_registration_link');
+        await db`select cmd,qual,roles,with_check from pg_policies where schemaname='public' and tablename=${table}`;
+      const apiPolicies = policies.filter((policy) =>
+        policy.roles.includes('authenticated'),
+      );
+      const definerPolicies = policies.filter((policy) =>
+        policy.roles.includes('branding_definer'),
+      );
+      expect(apiPolicies).toHaveLength(1);
+      expect(apiPolicies[0]!.cmd).toBe('SELECT');
+      expect(apiPolicies[0]!.qual).toContain('generate_registration_link');
+      if (table === 'registration_links') {
+        expect(definerPolicies).toHaveLength(1);
+        expect(definerPolicies[0]!.cmd).toBe('ALL');
+        expect(definerPolicies[0]!.qual).toBe('true');
+      } else {
+        expect(definerPolicies).toHaveLength(0);
+      }
       const triggers =
         await db`select tgname,tgenabled,tgdeferrable,tginitdeferred from pg_trigger where tgrelid=${'public.' + table}::regclass and not tgisinternal`;
       expect(triggers.length).toBe(table === 'registration_links' ? 7 : 5);
@@ -775,7 +792,11 @@ describe('registration security catalog', () => {
     for (const name of signatures) {
       const [r] =
         await db`select pg_get_userbyid(proowner) as owner,proconfig from pg_proc where oid=${name}::regprocedure`;
-      expect(r!.owner).toBe('postgres');
+      expect(r!.owner).toBe(
+        name === 'public.registration_link_open(text)'
+          ? 'branding_definer'
+          : 'postgres',
+      );
       expect(r!.proconfig).toContain('search_path=""');
       for (const role of ['anon', 'authenticated', 'service_role']) {
         const [g] =
