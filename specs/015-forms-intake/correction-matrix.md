@@ -1,8 +1,8 @@
 # F15-7 Correction Authorization Matrix
 
-**Status: PROPOSED — awaiting PO approval**
+**Status: APPROVED by PO 2026-10-29 (Final PO APPROVAL)**
 
-The permitted actor set is already decided by F15-7: Client, Trainer, PO and WO may correct submitted answers with authorization. This proposal defines the operation × field × scope details for PO review; it does not reopen the role decision. No correction implementation or UI may rely on this matrix until the PO approves it.
+The permitted actor set and operation × field × scope details below are approved by the PO. PO, WO, Trainer and Client have full correction permissions for submitted forms, including medical fields and attachments, subject to tenant isolation, authorized client scope, current authorization, immutable version history and audit. The post-relationship-end correction eligibility case remains OPEN and is not decided by this approval.
 
 ## Field classes
 
@@ -12,11 +12,11 @@ The permitted actor set is already decided by F15-7: Client, Trainer, PO and WO 
 | Sensitive health answer | Health, fitness, nutrition, measurement, medication, injury, or other sensitive personal answer | Sensitive health data; fail-closed audited read and no-store protections apply |
 | Correction note | Explanation accompanying a correction | Treat as sensitive client-specific Forms content; append-only, included in retention purge, never copied into logs/audit payloads |
 | Answer-version history | Prior and current values, correction actor/time, and correction note association | Contains answer content; same read authorization as the underlying field, every version access audited |
-| Attachment | File/object or attachment metadata | **Unsupported in MVP.** No upload, object, storage owner, or authorization path exists. Future support requires a new PO-approved field/operation matrix and the lifecycle details in the spec's Attachment lifecycle section. |
+| Attachment | File/object or attachment metadata | Allow wherever attachments exist, subject to the same scope rules. This approval does not define an MVP attachment feature or storage. |
 
-## Proposed operations × roles × field classes
+## Approved operations × roles × field classes
 
-Legend: **Allow** = permitted subject to the scope and audit conditions below. **Deny** = no data, existence, or mutation signal. **Unsupported** = no Forms attachment operation exists.
+Legend: **Allow** = permitted subject to the scope and audit conditions below. **Deny** = no data, existence, or mutation signal.
 
 | Operation | Client | Trainer | WO | PO | Sales |
 | --- | --- | --- | --- | --- | --- |
@@ -27,7 +27,7 @@ Legend: **Allow** = permitted subject to the scope and audit conditions below. *
 | Add correction note | Allow, own submitted form only | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny |
 | View ordinary answer-version history | Allow, own form only | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny |
 | View sensitive answer-version history | Allow, own form only | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny |
-| View/correct attachment or its metadata | Unsupported | Unsupported | Unsupported | Unsupported | Unsupported |
+| View/correct attachment or its metadata, wherever attachments exist | Allow, own submitted form only | Allow, authorized workspace | Allow, authorized workspace | Allow, explicitly selected existing workspace | Deny |
 
 ## Scope and enforcement conditions
 
@@ -39,11 +39,10 @@ Legend: **Allow** = permitted subject to the scope and audit conditions below. *
 - **Versioning:** each accepted correction appends a new immutable answer version and safe audit event. Preserve the original submission instant and deadline. Correction notes are immutable content associated with that version.
 - **Audit and response handling:** every answer/history read appends IDs-only access evidence before returning content; audit failure returns no answers. Every correction and note mutation is audited atomically. Logs, notifications, telemetry, traces, audit payloads, and job errors contain no answer or note content. Answer-bearing responses are HTTPS and `private, no-store`; no browser persistence or Realtime publication.
 - **Workspace scoping:** answer reads and writes stay on the existing audited access path, with workspace-bound relations and forced RLS. Do not expose direct table, embedding, PostgREST, or unaudited RPC access.
-- **Post-relationship-end corrections:** whether a correction may be made after Closure/Refund/Deactivation but before the 30-day purge completes is not stated by F15-7/RET-1..3. This eligibility boundary is OPEN for PO clarification; do not infer permission from the retention grace period.
-- **Attachments:** until an attachment feature is separately specified and approved, reject uploads and attachment IDs. Any future support must declare the storage owner, authorized upload/read/delete operations, metadata protection and a purge path meeting RET-2/3 before accepting data.
+- **Post-relationship-end corrections:** whether a correction may be made after Closure/Refund/Deactivation but before the 30-day purge completes is not stated by F15-7/RET-1..3. This eligibility boundary is OPEN for PO clarification; do not infer permission from the retention grace period. The Final PO APPROVAL does not decide it.
+- **Attachments:** correction permissions apply wherever attachments exist, under the same scope rules. FR-032 continues to define no MVP attachment feature or storage until separately specified. Any future support must declare the storage owner, authorized upload/read/delete operations, metadata protection and a purge path meeting RET-2/3 before accepting data.
 
 ## PO review checklist
 
-1. Confirm or adjust which authorized operations are allowed for each field class and role while preserving the F15-7 actor set.
-2. Resolve correction eligibility after relationship end and before purge.
-3. If Forms attachments are ever added, approve their storage owner and authorization/purge lifecycle before enabling upload.
+1. Resolve correction eligibility after relationship end and before purge.
+2. If Forms attachments are ever added, specify their storage owner and authorization/purge lifecycle before enabling upload.
