@@ -58,7 +58,7 @@ Because LIFTER has no outgoing email yet, an authorized staff member opens a cli
 3. **Given** a Sales user, **When** they try for a client in their own workspace, **Then** it is denied.
 4. **Given** a Trainer in the client's workspace, **When** they try, **Then** it is denied until ND-F4-1 decides which Trainers are authorized.
 5. **Given** a generated link, **When** the client opens it and sets a valid new password, **Then** they are signed in and the old password no longer works.
-6. **Given** a link that was already used, has expired, or was superseded by a newer link for the same client, **When** it is opened, **Then** it is rejected with a message to ask staff for a new link.
+6. **Given** a link that was already used, has expired, or was superseded by a newer link for the same account and purpose, **When** it is opened, **Then** it is rejected with a message to ask staff for a new link.
 7. **Given** the generation rate limit is reached, **When** another link is requested, **Then** it is refused and no link is created.
 8. **Given** the dialog showing the link is closed or the page reloaded, **When** the staff member looks again, **Then** the link cannot be displayed again; only a new generation produces a link.
 
@@ -80,7 +80,7 @@ Anonymous visitors can reach only the sign-in page, the recovery (set new passwo
 ### Edge Cases
 
 - A recovery link opened in a different browser than the staff member's still works for the client, and only for that client's account.
-- Generating a new link for the same client invalidates any earlier unused link.
+- Generating a new link for the same account and purpose invalidates any earlier unused link.
 - A staff member generating a link for their own account through the client flow is denied (staff and clients are separate identities, D-16).
 - A target whose account is closed, pseudonymized or removed cannot receive a link (applies once closure exists).
 - A recovery link must not sign the user in somewhere they cannot use: after setting a password the client lands on their own signed-in area only.
@@ -102,7 +102,7 @@ Anonymous visitors can reach only the sign-in page, the recovery (set new passwo
 - **FR-009**: Every successful generation MUST produce exactly one append-only audit event in the same unit of work, with the new action `recovery_link.generated`, the actor, the target account and workspace, and no link, token, password, email, phone or name. If the audit record cannot be written, no link is issued.
 - **FR-010**: Generation MUST be rate-limited per actor and per target. Over the limit, the request is refused and no link is created. Values: ND-F4-4.
 - **FR-011**: The link MUST be shown once to the requesting staff member, MUST never be stored by LIFTER in readable form, and MUST never be written to logs, audit details, error reports or analytics.
-- **FR-012**: A recovery link MUST be single-use, MUST expire (value: ND-F4-3), and MUST be invalidated when a newer link is generated for the same account. Its secret MUST be stored only in hashed form (Constitution VII).
+- **FR-012**: A recovery link MUST be single-use, MUST expire (value: ND-F4-3), and MUST be invalidated when a newer link is generated for the same account and purpose. Its secret MUST be stored only in hashed form (Constitution VII).
 - **FR-013**: Opening a valid recovery link MUST let the account holder set a new password (meeting the same password rules as sign-in) and then sign them in. Invalid, used or expired links MUST show a message asking the user to contact staff for a new link.
 - **FR-014**: All sign-in and recovery pages MUST be available in Arabic (RTL, default) and English (LTR), keyboard accessible, with labeled inputs, clear errors and loading states, built on the Design System.
 - **FR-015**: Negative tests MUST cover: foreign-workspace generation, Sales and Trainer denial, anonymous access to protected routes, forged actor inputs, link reuse, expired and superseded links, rate-limit refusal, absence of the privileged credential in browser bundles, and absence of links/tokens in logs and audit details.
@@ -128,7 +128,7 @@ Anonymous visitors can reach only the sign-in page, the recovery (set new passwo
 
 - **ND-F4-1 — Trainer permission.** Which Trainers may generate links: all Trainers of the workspace, only Trainers assigned to the client (assignment arrives in P4), or only Trainers granted a new per-person permission by the PO? Until decided, Trainers are denied (deny-by-default).
 - **ND-F4-2 — Delivery to the client.** How the staff member passes the link: copy to clipboard only, or also a share action (device share sheet, Telegram once P6 exists)? Until decided, the link is shown once with a copy action only.
-- **ND-F4-3 — Link expiry.** How long a link stays valid. Until decided, the platform default (60 minutes) applies in local/dev only; production requires a decision.
+- **ND-F4-3 — Link expiry.** **Decided (PO, 2026-10-29):** recovery links expire after 60 minutes in all environments, are single-use, and issuing a replacement invalidates earlier unused links for the same account and purpose. The recovery-session TTL is 15 minutes in all environments and is independent: a link verified before expiry starts a fresh 15-minute session. Password recovery never changes client approval status.
 - **ND-F4-4 — Rate-limit values.** Maximum generations per actor and per target within a time window. Until decided, the limits are configuration values with conservative placeholders used only in local/dev; production requires a decision.
 - **ND-F4-5 — Client-target sequencing.** Client accounts and client profiles are created in P1. Options: (a) F4 ships the full mechanism with client targeting enabled when P1 adds client accounts (recommended); (b) F4 adds a minimal client-account record early; (c) move generation to P1. Until decided, F4 implements (a): the generation path exists and is tested, and the client-target lookup denies every target until client accounts exist.
 - **ND-F4-6 — Staff recovery.** BRD lines 40/104/130 give the PO manual reset links without limiting them to clients. Should the PO also generate recovery links for staff accounts in F4? Not built until decided.

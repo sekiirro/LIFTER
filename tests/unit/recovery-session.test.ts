@@ -5,7 +5,7 @@ import {
 } from '../../lib/auth/recovery-session';
 
 describe('isRecoverySession', () => {
-  it('uses the 900-second technical default', () => {
+  it('uses the PO-decided 900-second (15-minute) window in all environments', () => {
     expect(RECOVERY_SESSION_MAX_AGE_SECONDS).toBe(900);
   });
   it.each(['otp', 'recovery'])(

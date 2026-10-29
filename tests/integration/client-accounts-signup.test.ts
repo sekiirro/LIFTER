@@ -516,6 +516,30 @@ it('Q-M02: strict consume predicate rejects expiry during client work independen
     await empty(tx, s.fields.email, s.link);
   });
 });
+it.each(['replayed', 'mismatched'] as const)(
+  'admission ticket %s is rejected before password hashing',
+  async (state) => {
+    const s = await signupFixture(f);
+    await probe(async (tx) => {
+      if (state === 'replayed') {
+        expect(await signup(tx, s)).toEqual({ status: 'complete' });
+      }
+      // crypt is extension-owned in Supabase, so observe its immediately
+      // preceding cost gate instead. The order test below pins cost before
+      // crypt; replacing this private helper makes a pre-redemption hash path
+      // observably return unavailable. The probe transaction rolls it back.
+      await tx`create or replace function app_private.signup_bcrypt_cost() returns integer language plpgsql volatile security definer set search_path='' as $$ begin raise exception 'hash_probe_reached'; end $$`;
+      const attempt =
+        state === 'replayed'
+          ? s
+          : { ...s, request: randomBytes(32).toString('base64url') };
+      expect(
+        await signup(tx, attempt),
+        `${state} tickets must be denied before the instrumented bcrypt function is reached`,
+      ).toEqual({ status: 'invalid' });
+    });
+  },
+);
 it('lock/hash/clock/guard order is installed in the bounded database function', async () => {
   const [row] =
     await db`select pg_get_functiondef('public.client_signup(text,text,uuid,jsonb)'::regprocedure) as body`;
@@ -523,10 +547,13 @@ it('lock/hash/clock/guard order is installed in the bounded database function', 
   const points = [
     'signup_auth_schema_compatible()',
     'signup_password_policy()',
-    'extensions.crypt(',
+    "request_secret !~ '^[A-Za-z0-9_-]{43}$'",
     'for update;',
     'sampled_at:=clock_timestamp();',
     'redeem_signup_admission_ticket(',
+    'signup_bcrypt_cost()',
+    'extensions.crypt(',
+    'if link.id is null or link.consumed_at is not null or sampled_at>=link.expires_at then',
     'signup_lock_identity_keys(',
     'insert into auth.users(',
     'insert into auth.identities(',
@@ -595,7 +622,7 @@ it.each([
       const classification =
         state === 'expired'
           ? body.slice(
-              body.indexOf('if token is null or token !~'),
+              body.indexOf('if link.id is null'),
               body.indexOf('new_user:=gen_random_uuid()'),
             )
           : body.slice(

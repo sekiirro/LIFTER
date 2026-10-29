@@ -1,6 +1,24 @@
 $ErrorActionPreference = 'Stop'
-$dockerBin = 'C:\Users\NEW LAP\AppData\Local\Programs\DockerDesktop\resources\bin'
-$env:PATH = "$dockerBin;$env:PATH"
+if (-not (Get-Command docker -ErrorAction SilentlyContinue)) {
+  $dockerCandidates = @()
+  if ($env:DOCKER_BIN) {
+    if (Test-Path -LiteralPath $env:DOCKER_BIN -PathType Leaf) {
+      $dockerCandidates += Split-Path -Parent $env:DOCKER_BIN
+    } else {
+      $dockerCandidates += $env:DOCKER_BIN
+    }
+  }
+  if ($env:ProgramFiles) {
+    $dockerCandidates += Join-Path $env:ProgramFiles 'Docker\Docker\resources\bin'
+  }
+  if ($env:LOCALAPPDATA) {
+    $dockerCandidates += Join-Path $env:LOCALAPPDATA 'Programs\DockerDesktop\resources\bin'
+  }
+  $dockerBin = $dockerCandidates |
+    Where-Object { Test-Path -LiteralPath $_ -PathType Container } |
+    Select-Object -First 1
+  if ($dockerBin) { $env:PATH = "$dockerBin;$env:PATH" }
+}
 
 function Invoke-SupabaseQuietly([string[]] $arguments) {
   $u6OriginalErrorActionPreference = $ErrorActionPreference
@@ -29,6 +47,8 @@ try {
   Invoke-SupabaseQuietly @('stop')
   Invoke-SupabaseQuietly @('start', '-x', 'studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta')
   Load-LocalEnvironment
+  $u9PreviousStorageRequirement = $env:LOCAL_SUPABASE_STORAGE_TEST
+  $env:LOCAL_SUPABASE_STORAGE_TEST = 'true'
   $env:CI = '1'
   $u6OriginalErrorActionPreference = $ErrorActionPreference
   try {
@@ -56,6 +76,11 @@ try {
   }
   Write-Output $u6StorageResultLine
 } finally {
+  if ($null -eq $u9PreviousStorageRequirement) {
+    Remove-Item Env:LOCAL_SUPABASE_STORAGE_TEST -ErrorAction SilentlyContinue
+  } else {
+    $env:LOCAL_SUPABASE_STORAGE_TEST = $u9PreviousStorageRequirement
+  }
   Invoke-SupabaseQuietly @('stop')
   Invoke-SupabaseQuietly @('start', '-x', 'studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,storage-api,postgres-meta')
 }

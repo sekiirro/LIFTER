@@ -36,7 +36,7 @@ U11 spikes and SDK dependency were only in `%TEMP%\lifter-f11-spikes\`; config w
 | Item             | Existing stack / design constraint                                                                                               |
 | ---------------- | -------------------------------------------------------------------------------------------------------------------------------- |
 | Language/version | TypeScript 6.0.3, Node 24, Next.js 16.4.3 App Router, React 19.3.1                                                               |
-| Dependencies     | supabase-js 2.118.0, supabase/ssr 0.12.7, server-only; no dependency changes                                                     |
+| Dependencies     | supabase-js 2.118.0, supabase/ssr 0.12.7, server-only; sole approved exception: exact-pin `libphonenumber-js` 1.13.15 via `libphonenumber-js/max` (PO decision ND-F11-2a, 2026-10-28); no other dependency changes |
 | Storage          | Local Supabase PostgreSQL 17.11; future additive migration after `20261030120000_registration_links.sql`; none created now       |
 | Testing          | Vitest unit/integration, signed/anon fixtures, Playwright/axe, catalog/grant parity and mutations                                |
 | Platform/type    | Existing web app, Cloudflare Workers/OpenNext 1.20.13; HTTPS RPC/API, no native bcrypt addon or DB socket                        |
@@ -105,6 +105,7 @@ Enforce both limits with durable admission accounting and attempt/failure eviden
 
 Signup requires authoritative consumption time strictly before `expires_at`, no grace. F10 open/grace behavior and contract remain unchanged: a post-expiry grace open may render valid while signup returns generic invalid. ND-F11-4a decides to preserve this mismatch and revisit with ND-F10-4. Workspace PO/WO approval ships in F12; completion is generic with no signup session and sign-in after approval (ND-F11-6a/6b); no approval UI or interim client view is invented. ND-F11-9a/9b defer state/review design on ND-F5-1; archived D-08 non-disclosure always applies. D-16 and inherited gates remain unchanged.
 
+<a id="ad-f11-2"></a>
 ## AD-F11-2 — architect decision: trusted IP and admission
 
 PO decision 2026-10-28: per-IP admission means per full IPv4 address (including mapped IPv4) and per IPv6 /64 network. Attestations accept issued_at up to 5 seconds ahead of DB clock_timestamp(), with an inclusive maximum age of 60 seconds. Nonces expire at issued_at + 60 seconds (up to 65 seconds after first acceptance); cleanup uses strict expiry so replay remains rejected at both inclusive edges. Timing constants have one private owner.

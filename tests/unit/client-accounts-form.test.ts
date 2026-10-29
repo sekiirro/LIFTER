@@ -117,3 +117,15 @@ it('T027 exposes only safe signup states, disables pending submits and prompts m
   expect(service).toContain('invalidFields');
   expect(form).not.toMatch(/data-(?:token|email|phone|name|password)=/i);
 });
+
+it('maps a rejected signup action to retryable localized unavailable and resets the submit guard', () => {
+  const form = source('app/register/[token]/SignupForm.tsx');
+  const results = source('lib/client-accounts/results.ts');
+  expect(form).toContain(
+    'runSignupActionSafely(action, previous, formData, locale)',
+  );
+  expect(results).toMatch(
+    /catch\s*\{\s*return signupResult\('unavailable',\s*locale\)/s,
+  );
+  expect(form).toMatch(/finally\s*\{\s*submittingRef\.current\s*=\s*false/);
+});

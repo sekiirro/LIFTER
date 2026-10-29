@@ -2,6 +2,7 @@ import { randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE } from '../../lib/design/preferences';
+import { storageReadinessDisposition } from './storage-readiness';
 
 const apiUrl = process.env.API_URL || process.env.SUPABASE_URL || '';
 const anonKey = process.env.ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
@@ -20,11 +21,47 @@ test('a real pending-client JWT cannot read or write Storage', async ({
     !local,
     'Requires the isolated local Storage-enabled Supabase stack.',
   );
-  const storageProbe = await fetch(`${apiUrl}/storage/v1/bucket`).catch(
-    () => null,
-  );
+  let storageDisposition: ReturnType<typeof storageReadinessDisposition> =
+    'retry';
+  let consecutiveUnavailable = 0;
+  const requireStorage = process.env.LOCAL_SUPABASE_STORAGE_TEST === 'true';
+  for (
+    let attempt = 0;
+    attempt < 40 && storageDisposition === 'retry';
+    attempt++
+  ) {
+    const storageProbe = await fetch(`${apiUrl}/storage/v1/bucket`).catch(
+      () => null,
+    );
+    let storageProbeMessage: string | null = null;
+    if (storageProbe) {
+      try {
+        const body: unknown = await storageProbe.clone().json();
+        if (
+          typeof body === 'object' &&
+          body !== null &&
+          'message' in body &&
+          typeof body.message === 'string'
+        )
+          storageProbeMessage = body.message;
+      } catch {
+        // Non-JSON responses remain unclassified and retry until the timeout.
+      }
+    }
+    consecutiveUnavailable =
+      storageProbe?.status === 503 ? consecutiveUnavailable + 1 : 0;
+    storageDisposition = storageReadinessDisposition(
+      storageProbe?.status ?? null,
+      consecutiveUnavailable,
+      requireStorage,
+      storageProbeMessage,
+    );
+    if (storageDisposition === 'retry')
+      await new Promise((resolve) => setTimeout(resolve, 250));
+  }
+  expect(storageDisposition).not.toBe('retry');
   test.skip(
-    storageProbe?.status === 503,
+    storageDisposition === 'excluded',
     'The required local Supabase stack excludes storage-api.',
   );
   const { registrationFixture, secret, issue } =

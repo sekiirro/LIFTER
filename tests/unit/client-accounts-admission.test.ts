@@ -112,7 +112,8 @@ it('shared vectors reproduce every byte and every signed-field mutation changes 
 });
 it('request secrets have at least 32 random bytes and are fresh', () => {
   const values = Array.from({ length: 100 }, () => newRequestSecret());
-  expect(values.every((v) => /^[A-Za-z0-9_-]{43,}$/.test(v))).toBe(true);
+  expect(values.every((v) => /^[A-Za-z0-9_-]{43}$/.test(v))).toBe(true);
+  expect(new Set(values.map((v) => v.length))).toEqual(new Set([43]));
   expect(new Set(values).size).toBe(100);
 });
 
@@ -137,6 +138,8 @@ it('independent app wall denies before an accepting RPC; allowed requests need f
   }));
   for (const patch of [
     { token: 'bad' },
+    { requestSecret: 'B'.repeat(42) },
+    { requestSecret: 'B'.repeat(44) },
     { workspace_id: 'forged' },
     { requestSecret: 'bad' },
     { origin: 'https://foreign.test' },

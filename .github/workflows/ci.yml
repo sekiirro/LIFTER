@@ -39,12 +39,14 @@ jobs:
       - run: npm run build:cron
       - run: npm run size
       - run: npx playwright install --with-deps chromium
-      - run: CI=1 npm run e2e
 
   integration:
     runs-on: ubuntu-latest
     permissions:
       contents: read
+    env:
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -61,13 +63,31 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 2.122.0
+      - name: Login to Docker Hub
+        if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
+        # docker/login-action v4.6.0
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
       - run: supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,storage-api,postgres-meta
       - name: Export local stack environment
         run: supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
+      - name: Export app server environment
+        run: |
+          echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+          echo "APP_ORIGIN=http://localhost:3000" >> "$GITHUB_ENV"
       - name: Provision local Vault signup keys
         run: node tests/integration/client-accounts-provision.mjs
       - name: Assert shared password policy DB parity
         run: npm run test:integration -- tests/integration/password-policy-parity.test.ts
       - run: npm run test:integration
+      - run: npx playwright install --with-deps chromium
+      - name: Run full Playwright suite against the local stack
+        run: npm run e2e -- --workers=1
+        env:
+          LOCAL_SUPABASE_PROVIDER_FAULT_TEST: 'true'
       - run: supabase stop --no-backup
         if: always()

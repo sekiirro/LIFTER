@@ -13,6 +13,8 @@ const signupPrivate = [
   'signup_attestation_timing',
   'signup_attempt_purge_proof',
   'purge_client_signup_attempts',
+  'purge_schedule_activate',
+  'purge_schedule_deactivate',
   'signup_auth_schema_compatible',
   'signup_bcrypt_cost',
   'signup_password_acceptable',
@@ -195,6 +197,8 @@ describe('tenancy security catalog (T007)', () => {
           'jobs_updated_at',
           'recovery_link_limits',
           'registration_link_limits',
+          'purge_schedule_activate',
+          'purge_schedule_deactivate',
         ].includes(row.proname),
       );
       expect(row.proconfig).toContain('search_path=""');

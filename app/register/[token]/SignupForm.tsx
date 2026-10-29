@@ -4,6 +4,7 @@ import { useActionState, useEffect, useRef, useState } from 'react';
 import { Button } from '../../../components/ui/Button';
 import {
   initialSignupResult,
+  runSignupActionSafely,
   type SignupLocale,
   type SignupPublicResult,
 } from '../../../lib/client-accounts/results';
@@ -40,7 +41,7 @@ export function SignupForm({
   const [result, formAction, pending] = useActionState(
     async (previous: SignupPublicResult, formData: FormData) => {
       try {
-        return await action(previous, formData);
+        return await runSignupActionSafely(action, previous, formData, locale);
       } finally {
         submittingRef.current = false;
       }

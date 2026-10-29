@@ -1,10 +1,15 @@
 import { existsSync, readFileSync, statSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { expect, it, vi } from 'vitest';
-import { signupResult } from '../../lib/client-accounts/results';
+import {
+  initialSignupResult,
+  runSignupActionSafely,
+  signupResult,
+} from '../../lib/client-accounts/results';
 import { processClientSignup } from '../../lib/client-accounts/service';
 import { getMessages } from '../../lib/i18n';
 import {
+  normalizedEmail,
   signupFields,
   validateSignupFields,
 } from '../../lib/client-accounts/validation';
@@ -14,6 +19,63 @@ vi.mock('server-only', () => ({}));
 vi.mock('@supabase/supabase-js', () => ({
   createClient: vi.fn(() => ({ rpc: signupRpcSpy })),
 }));
+
+it('rejected client action resolves to only the localized generic unavailable result', async () => {
+  const action = vi
+    .fn()
+    .mockRejectedValue(new Error('private transport detail'));
+  for (const locale of ['en', 'ar'] as const) {
+    const result = await runSignupActionSafely(
+      action,
+      initialSignupResult,
+      new FormData(),
+      locale,
+    );
+    expect(result).toEqual(signupResult('unavailable', locale));
+    expect(JSON.stringify(result)).not.toContain('private transport detail');
+  }
+  expect(action).toHaveBeenCalledTimes(2);
+});
+
+it('rejects empty email components and multiple separators through invalid field validation', () => {
+  for (const email of ['@example.test', 'person@', 'person@@example.test']) {
+    expect(normalizedEmail(email), email).toBeNull();
+    const validation = validateSignupFields({
+      name: 'Example Person',
+      email,
+      phone: '+201012345678',
+      password: 'Strong9!Password',
+    });
+    expect(validation.fields).toBeNull();
+    expect(validation.invalidFields).toContain('email');
+  }
+  expect(normalizedEmail(' Person@Example.Test ')).toBeNull();
+  expect(normalizedEmail('Person@Example.Test')).toBe('person@example.test');
+  expect(normalizedEmail('x'.repeat(250) + '@example.test')).toBeNull();
+});
+
+it('routes malformed email shapes to field validation before admission or collision mapping', async () => {
+  signupRpcSpy.mockReset();
+  const result = await processClientSignup({
+    token: 'A'.repeat(43),
+    requestSecret: 'B'.repeat(43),
+    fields: {
+      name: 'Example Person',
+      email: '@example.test',
+      phone: JSON.stringify({ country: 'EG', nationalNumber: '01012345678' }),
+      password: 'Strong9!Password',
+    },
+    origin: 'https://signup.example.test',
+    expectedOrigin: 'https://signup.example.test',
+    headers: { get: () => null },
+    signedIn: async () => false,
+    locale: 'en',
+  });
+  expect(result).toEqual(signupResult('invalid_input', 'en', ['email']));
+  expect(result.status).not.toBe('duplicate');
+  expect(result.status).not.toBe('unavailable');
+  expect(signupRpcSpy).not.toHaveBeenCalled();
+});
 
 it('T023 public results contain only contract status, translated copy and safe field names', () => {
   const invalid = signupResult('invalid_input', 'en', ['email', 'phone']);
@@ -378,12 +440,23 @@ it('U6-R1 returns sign_out_required before admission or signup RPC calls', async
   expect(signupRpcSpy).not.toHaveBeenCalled();
 });
 
-it('T023 provides the repeatable local SC-011 public-result timing harness', () => {
+it('T023 pins SC-011 to fresh fixtures and the real admitted signup path', () => {
   const timing = source('scripts/verify-client-signup-timing.mjs');
-  expect(timing).toContain("signupResult('duplicate', 'en')");
-  expect(timing).toContain('archived-collision-synthetic');
-  expect(timing).toContain('200');
+  const runner = source('tests/integration/client-accounts-timing.test.ts');
+  expect(timing).not.toMatch(/node:http|createServer|signupFixture|\bsignup\(/);
+  expect(timing).toContain('processClientSignup');
+  expect(timing).toContain('backdated(');
+  expect(timing).toContain("randomBytes(32).toString('base64url')");
+  expect(timing).toContain("'CF-Connecting-IP'");
+  expect(timing).toContain('freshInputs');
+  expect(timing).toContain("['client_signup_admit', 'client_signup']");
+  expect(timing).toContain('deleted_at=clock_timestamp()');
+  expect(timing).toContain('assert.deepEqual(after, before)');
+  expect(timing).toContain('assert.deepEqual(wire, expectedWire)');
+  expect(timing).toContain('assert.equal(publicBytes, expectedPublicBytes)');
   expect(timing).toContain('mannWhitney');
-  expect(timing).toContain('Cache-Control: no-store');
-  expect(timing).toContain('Referrer-Policy: no-referrer');
+  expect(timing).toMatch(/test\.p >= 0\.01\s*&&\s*medianDifference < 5/);
+  expect(timing).toContain('length: 200');
+  expect(runner).toContain('runTiming');
+  expect(runner).toContain("vi.mock('server-only'");
 });

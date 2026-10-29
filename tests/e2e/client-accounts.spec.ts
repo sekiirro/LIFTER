@@ -1471,6 +1471,18 @@ test('lost committed response leaves one identity and the link no longer opens a
     .getByRole('button', { name: 'Create registration request' })
     .click();
   await page.waitForLoadState('networkidle').catch(() => undefined);
+  await expect(page.getByRole('status')).toHaveText(
+    getMessages('en')['clientSignup.unavailable'],
+  );
+  await expect(
+    page.getByLabel(getMessages('en')['clientSignup.name']),
+  ).toHaveValue('Example Person');
+  await expect(
+    page.getByLabel(getMessages('en')['clientSignup.email']),
+  ).toHaveValue(email);
+  await expect(
+    page.getByRole('button', { name: 'Create registration request' }),
+  ).toBeEnabled();
   await page.unrouteAll();
   expect(committedResponseStatus).toBe(200);
   const db = (await import('../integration/registration-links-fixture')).sql();

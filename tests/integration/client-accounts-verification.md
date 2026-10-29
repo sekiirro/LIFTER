@@ -1094,6 +1094,8 @@ rotation. Diagnostic logs were sanitized without printing credentials.
 
 Local loopback HTTP harness calls the production `signupResult('duplicate', 'en')` mapper for both labels. Archived-state design remains deferred on ND-F5-1, so `archived-collision-synthetic` is the approved synthetic stand-in; this measures public result serialization and equality, not database branch latency. Treat the measurement as a regression detector, not a latency SLA.
 
+Run command: `npx tsx scripts/verify-client-signup-timing.mjs` from the repository root. The script imports TypeScript modules (`lib/client-accounts/results.ts`), so running it with bare `node` fails; use `tsx`.
+
 - Warm-up: 20 sequential requests per label; measured trials: 200 ordinary and 200 archived stand-in, randomized and interleaved.
 - Mann-Whitney U: 19495.000; two-sided p-value: 0.662572; absolute median difference: 0.020 ms.
 - Thresholds: p >= 0.01 and |median difference| < 5 ms: PASS.
@@ -1442,6 +1444,8 @@ The ten single-owner seams match the current decision register and implementatio
 
 Production fails closed for unavailable configuration and keeps the exact C4 blocker: hosted Auth version, required DML permission/upgrade allowlist, hosted Vault provisioning and PO deployment approval have not been verified or authorized. The phone-input sentence formerly marked open is resolved by ND-F11-2a; this file now records the selector/+20/E.164 decision. Existing action transport remains HTTP 200 `unavailable`; sign-in-required and pending-client recovery remain `sign_out_required` and Option A.
 
+Approved dependency exception clarification: PO decision ND-F11-2a (2026-10-28) approved the exact pin `libphonenumber-js` 1.13.15, imported through `libphonenumber-js/max`, for selected-country validation. This is the sole approved dependency exception; historical per-unit “no dependency” notes describe their original scope and are not rewritten. No other dependency change is authorized.
+
 ### C1-C4 proof status
 
 | Condition                         | Final local evidence                                                                                                                               | Status                                                   |
@@ -1612,3 +1616,4361 @@ All gates below ran on the no-ff merge commit after a clean local `npx --yes sup
 | `git diff --check`                          |                                     1 |    0 | Passed after this evidence update.                                   |
 
 These results are local synthetic verification. Hosted Auth compatibility and the listed production/operational blockers remain open; Auth acceptance is not complete.
+
+## CodeRabbit round 1 — admission before bcrypt (A)
+
+The forward-only `20261031125000_client_signup_admission_before_bcrypt.sql` extends the latest committed complete `public.client_signup` body in `20261031123500_signup_duplicate_result.sql`; it preserves all existing checks, exception branches, `SECURITY DEFINER`, `search_path=''`, owner, revoke, and anon/authenticated grants. The effective sequence is: field/policy/identity checks → exact 43-character token and request-secret checks → registration-link `FOR UPDATE` and keyed binding → one-use ticket redemption → bcrypt-cost validation and `extensions.crypt` → P1100 invalid-link classification → identity locks/collision handling. The password hash remains before every admitted link-state and identity/collision branch, preserving D-08 timing uniformity.
+
+The rollback-scoped detector replaces `app_private.signup_bcrypt_cost()` with a raising probe immediately before `extensions.crypt`; the order assertion independently pins cost-check-before-crypt. Replacing extension-owned `extensions.crypt` was denied to the test DB role, so the adjacent private seam is used without broadening grants. The probe transaction rolls back both helper replacement and signup writes.
+
+| Probe                                                                                                | Observed result                                                                                                                                                                                                                                                                                                                                                                                                       |
+| ---------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RED before migration: `npm run test:integration -- tests/integration/client-accounts-signup.test.ts` | `admission ticket replayed is rejected before password hashing` and `admission ticket mismatched is rejected before password hashing` both failed: expected `{status:'invalid'}`, received `{status:'unavailable'}` when the pre-redemption bcrypt-cost probe raised.                                                                                                                                                 |
+| Hash-before-redemption mutation                                                                      | A scratch local migration moved bcrypt-cost/hash ahead of redemption. After reset + provision, `npm run test:integration -- tests/integration/client-accounts-signup.test.ts -t "admission ticket"` failed both assertions at the expected invalid-result assertion (line 539), observing `unavailable`. No RLS/grant/constraint masked the probe; the ticket path reached the deliberate raising hash-adjacent seam. |
+| Restore + GREEN                                                                                      | Removed the scratch migration, ran `npx --yes supabase@2.122.0 db reset` then `node tests/integration/client-accounts-provision.mjs`, and reran `npm run test:integration -- tests/integration/client-accounts-signup.test.ts`: 74/74 passed. Expired and consumed link cases still redeemed their valid ticket, returned generic `invalid`, and retained the P1100 classification before identity locking.           |
+
+The earlier U2 chronology paragraph records the then-installed behavior and is superseded for current order by this review-round evidence; D-08 still requires hashing before every admitted link-state and identity/collision branch.
+
+## CodeRabbit round 1 — action fallback and input format (B/C)
+
+| Probe                                                                                                                                                                    | Observed result                                                                                                                                                                                                                                                                                                                                                    |
+| ------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| RED before implementation: `npm test -- tests/unit/client-accounts-form.test.ts tests/unit/client-accounts-actions.test.ts tests/unit/client-accounts-admission.test.ts` | 3 regression assertions failed: rejected-action fallback was absent; `normalizedEmail('@example.test')` was accepted instead of null; the app wall admitted a 44-character request secret.                                                                                                                                                                         |
+| B fallback-removal mutation                                                                                                                                              | Replaced the catch fallback with a synthetic throw; `npm test -- tests/unit/client-accounts-actions.test.ts -t 'rejected client action'` failed in `runSignupActionSafely` on that rejection. Restored fallback; the generic localized result unit test and existing finally guard pass.                                                                           |
+| C email-shape mutation                                                                                                                                                   | Restored the old `includes('@')` predicate; `npm test -- tests/unit/client-accounts-actions.test.ts -t 'rejects empty email components'` failed at `normalizedEmail('@example.test')`: expected null, received `@example.test`. Restored the stricter subset check.                                                                                                |
+| C request-secret mutation                                                                                                                                                | Widened the app regex from `{43}` to `{43,}`; `npm test -- tests/unit/client-accounts-admission.test.ts -t 'independent app wall'` failed because the 44-character request secret reached admission. Restored exact length.                                                                                                                                        |
+| C SQL-format mutation                                                                                                                                                    | A scratch migration widened `client_signup`'s request-secret format to `{43,}`; the focused integration ordering/format assertion failed at `offsets.every(...)` (line 566). Removed the scratch migration, ran reset + provision, then the exact-format assertion passed (1 passed, 73 filtered).                                                                 |
+| GREEN                                                                                                                                                                    | Targeted app/unit suites passed 44/44. `CI=1 npm run e2e -- tests/e2e/client-accounts.spec.ts -g "lost committed response"` passed 1/1 and verified the localized unavailable state, retained name/email, and enabled retry. The request-secret generator's 100 samples all match exactly 43 base64url characters; the source generates them from 32 random bytes. |
+
+Email normalization preserves the existing no-trim, whitespace rejection, UTF-8 byte limit and lowercase behavior. Empty local/domain parts and multiple `@` separators fail field validation before admission; they cannot reach duplicate or unavailable RPC classification. The client action fallback returns the existing localized `SignupPublicResult` and does not clear form state or skip the `finally` reset.
+
+## CodeRabbit round 1 — docs and repository hygiene (D/E)
+
+| Probe                              | Observed result                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                               |
+| ---------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| D source audit                     | Updated the U1 checklist status, normative AD-F11-2 attestation reference, shipped migration references in T012/T017/T020, ND-F11-2a phone wording in T007, and T001–T045/T046 completion inventory. The sole approved dependency exception is exact `libphonenumber-js` 1.13.15 via `libphonenumber-js/max`, authorized by PO decision ND-F11-2a on 2026-10-28; it is recorded in the plan tech table and this T043 scope-audit clarification. Earlier per-unit “no dependency” notes are historical and were not rewritten. |
+| E Docker-path RED/GREEN            | Added a static portability regression. RED: it failed because the storage runner hard-coded the developer's Docker Desktop path. GREEN: runner now uses `docker` from PATH first, then `$env:DOCKER_BIN`, `$env:ProgramFiles\Docker\Docker\resources\bin`, and `$env:LOCALAPPDATA\Programs\DockerDesktop\resources\bin`, only prepending an existing directory. The Storage runner passed exactly 1, skipped 0, failed 0, flaky 0, interrupted 0.                                                                             |
+| E password-vector source RED/GREEN | Added a code-point-based assertion over JSON input literals. RED reported raw U+0020, U+200B, U+0301, U+00A0, U+2003, U+3000, U+200D, U+00AD, U+200F, U+FEFF, U+0378, and U+E000 (U+0301 appeared twice). Replaced all targeted raw source characters with exact `\uXXXX` escapes. Parsed JSON deep equality against the pre-change `HEAD` fixture passed (`isDeepStrictEqual` true), and the source-escape regression passed.                                                                                                |
+| Focused GREEN                      | The five targeted unit files passed 103/103; the complete unit suite passed 1,360/1,360. Typecheck, lint, format check, and `git diff --check` passed after formatting.                                                                                                                                                                                                                                                                                                                                                       |
+
+The SignupForm update reuses the existing localized unavailable result, status region, form layout, and design tokens. It introduces no new visual pattern, component, color, spacing, font, motion, or dependency.
+
+The required real-render screenshot matrix was captured and reviewed against `DESIGN.md` sections 3 and 12. All eight cases passed with the existing design: [AR-RTL, EN-LTR] × [light, dark] × [390×844 mobile, 1440×900 desktop]. Screenshots are in the run's OS temp directory `C:\Users\NEWLAP~1\AppData\Local\Temp\lifter-f11-review-deYw9T` as `{ar,en}-{light,dark}-{mobile,desktop}.png`. The screenshots show the existing unavailable message with the form retained; no visual issue was found. The existing client-accounts axe matrix also covers these locale/theme/viewport combinations.
+
+## CodeRabbit round 1 — Storage gate startup regression
+
+The final clean-head browser pass exposed a local Storage preflight race, followed by a runner setup gap. RED evidence: the original full e2e suite failed `client-accounts-storage.spec.ts` at the `createdBucket.error === null` assertion after the omitted local service briefly returned HTTP 500; the subsequent stable excluded-service response was HTTP 503 with `name resolution failed`. The isolated runner returned `0 passed, 0 skipped, 1 failed` because `supabase/config.toml` had no `[storage] enabled = true`, so the Storage container was never created even in the runner's Storage-enabled start.
+
+The tests-first readiness regression initially failed because `tests/e2e/storage-readiness.ts` did not exist. Its follow-up tests failed with `expected 'retry', received 'excluded'` for a single transient 503, and `expected 'ready', received 'retry'` for the live Storage API's anonymous `400 Invalid Compact JWS` response. A source assertion also failed because local Storage was not explicitly enabled in `supabase/config.toml`. The restored design retries transient/unreachable responses; only three consecutive 503 responses classify the standard stack as intentionally excluded; the exact live anonymous response is recognized as ready; and `LOCAL_SUPABASE_STORAGE_TEST=true` prevents skips in the dedicated runner. Added `[storage] enabled = true` to local Supabase configuration while the standard stack still excludes `storage-api` explicitly. The runner verifies the enabled service, then restores the excluded stack.
+
+GREEN: readiness units passed 4/4; the dedicated Storage runner passed exactly 1, skipped 0, failed 0, flaky 0, interrupted 0. The isolated storage e2e's ordinary-stack behavior skipped only after a stable 503; with the dedicated runner flag, unavailable Storage fails after bounded retries rather than being counted as a pass.
+
+## CodeRabbit round 1 — final local gates
+
+| Gate                                        |                                                              Passed | Failed / skipped | Evidence                                                                                                                                                                                                                   |
+| ------------------------------------------- | ------------------------------------------------------------------: | ---------------: | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `npm run typecheck`                         |                                                                   1 |                0 | `tsc --noEmit` passed.                                                                                                                                                                                                     |
+| `npm run lint`                              |                                                                   1 |                0 | ESLint passed with zero warnings.                                                                                                                                                                                          |
+| `npm run format:check`                      |                                                                   1 |                0 | All matched files passed Prettier.                                                                                                                                                                                         |
+| `npm test`                                  |                                                               1,365 |                0 | 60 test files passed.                                                                                                                                                                                                      |
+| `npm run test:integration`                  |                                                                 867 |                0 | 25 files passed after local reset/provisioning. An initial invocation without loaded local env stopped at the harness precondition (25 setup errors, no tests); the rerun loaded ignored `.env.local` silently and passed. |
+| `CI=1 npm run e2e`                          |                                                                 124 |       10 skipped | Full browser suite; the 10 existing skips are outside the local fixture gate.                                                                                                                                              |
+| `scripts/test-client-accounts-storage.ps1`  |                                                                   1 |        0 skipped | Exactly 1 passed, 0 skipped/failed/flaky/interrupted.                                                                                                                                                                      |
+| `npm run build:edge`                        |                                                                   1 |                0 | OpenNext production worker bundle built.                                                                                                                                                                                   |
+| `node scripts/check-client-signup-edge.mjs` |                               1,446 server files + 61 client assets |                0 | Passed; test-IP override identifiers absent.                                                                                                                                                                               |
+| `npm run check:secrets`                     |                                                                   1 |                0 | Secret scan exited 0.                                                                                                                                                                                                      |
+| `npm run size`                              | 6,401.81 KiB web (1,331.89 KiB gzip); 2.85 KiB cron (1.25 KiB gzip) |                0 | Within 65,536 KiB limit.                                                                                                                                                                                                   |
+| SC-011 timing differential                  |                                                   200 + 200 samples |                0 | 20 warm-ups per case; p=0.152416, absolute median delta 0.072 ms, exact response/header equality. This is a local regression only, not an SLA; archived collision timing remains synthetic.                                |
+| `git diff --check`                          |                                                                   1 |                0 | Passed after evidence update.                                                                                                                                                                                              |
+
+The full integration pass followed clean local `db reset` and `node tests/integration/client-accounts-provision.mjs`; the final local reset and provision also passed after all DB-using gates. Hosted Auth acceptance remains blocked by C4 and is not claimed complete.
+
+## U6 SC-011 public duplicate timing differential
+
+Local loopback HTTP harness calls the production `signupResult('duplicate', 'en')` mapper for both labels. Archived-state design remains deferred on ND-F5-1, so `archived-collision-synthetic` is the approved synthetic stand-in; this measures public result serialization and equality, not database branch latency. Treat the measurement as a regression detector, not a latency SLA.
+
+- Warm-up: 20 sequential requests per label; measured trials: 200 ordinary and 200 archived stand-in, randomized and interleaved.
+- Mann-Whitney U: 20498.500; two-sided p-value: 0.666656; absolute median difference: 0.043 ms.
+- Thresholds: p >= 0.01 and |median difference| < 5 ms: PASS.
+- Each response matched status 200, identical body bytes, `Cache-Control: no-store`, `Referrer-Policy: no-referrer`, and `Content-Type: application/json; charset=utf-8`.
+- No account-existence detail is included in either response.
+
+Ordinary duplicate timings (ms):
+
+```text
+13.949, 15.598, 0.604, 15.556, 15.328, 15.536, 15.739, 15.977, 15.185, 15.380, 16.103, 15.820, 15.463, 16.148, 15.084, 15.607, 15.415, 16.235, 15.532, 16.068, 14.966, 15.157, 1.064, 14.895, 15.551, 15.147, 14.932, 15.455, 15.643, 15.064, 15.717, 15.206, 0.624, 15.896, 16.840, 14.808, 15.874, 0.500, 15.099, 15.626, 13.666, 16.238, 15.212, 15.625, 15.508, 15.497, 15.084, 15.718, 14.710, 15.095, 16.220, 15.226, 15.410, 15.096, 15.833, 14.838, 15.922, 15.458, 15.473, 15.630, 15.891, 15.740, 15.150, 15.970, 15.552, 16.398, 14.739, 15.312, 1.332, 14.954, 15.642, 16.007, 15.046, 15.639, 15.587, 16.393, 15.289, 0.377, 15.254, 14.356, 14.965, 15.233, 15.712, 16.000, 14.635, 15.667, 14.632, 14.092, 0.954, 1.148, 10.634, 15.479, 14.528, 15.001, 16.358, 14.186, 15.943, 15.871, 14.420, 15.317, 15.528, 15.270, 15.121, 15.192, 14.907, 15.193, 1.764, 15.243, 16.818, 6.045, 3.202, 0.583, 15.444, 15.424, 16.273, 14.566, 15.173, 16.022, 15.433, 15.103, 16.008, 16.186, 1.069, 15.093, 16.474, 15.785, 14.610, 15.429, 15.429, 0.990, 14.673, 15.912, 15.085, 17.142, 15.524, 1.226, 14.380, 16.197, 14.859, 16.160, 14.946, 15.089, 0.912, 14.959, 15.682, 15.819, 15.543, 0.640, 15.157, 14.914, 16.152, 1.020, 13.515, 15.512, 16.094, 15.651, 14.776, 16.017, 15.565, 13.646, 16.077, 15.343, 14.292, 15.594, 15.524, 15.666, 14.987, 15.527, 15.352, 14.336, 0.914, 15.840, 15.471, 15.614, 15.589, 15.565, 15.752, 15.175, 15.443, 16.302, 15.935, 14.229, 15.565, 14.277, 15.044, 15.344, 16.437, 1.074, 12.699, 15.760, 15.308, 16.018, 14.929, 15.853, 15.724, 16.084, 15.117, 14.722, 16.524, 14.453
+```
+
+Archived collision synthetic stand-in timings (ms):
+
+```text
+15.718, 16.124, 15.869, 15.398, 14.837, 0.649, 14.337, 15.333, 15.226, 15.918, 15.160, 16.027, 15.672, 14.845, 15.545, 15.296, 14.597, 15.269, 15.835, 15.228, 16.091, 15.489, 15.143, 15.302, 15.422, 15.228, 15.601, 15.749, 15.037, 15.807, 15.317, 15.793, 0.889, 15.367, 15.262, 16.317, 0.514, 14.798, 15.142, 15.348, 15.120, 15.486, 15.746, 14.990, 15.450, 15.150, 15.222, 1.149, 15.906, 15.406, 16.746, 15.794, 15.907, 0.377, 15.107, 14.926, 14.985, 15.227, 15.752, 16.055, 16.041, 16.072, 13.781, 15.451, 15.288, 15.463, 15.050, 15.270, 15.248, 16.077, 15.571, 0.681, 15.867, 15.939, 14.709, 15.741, 16.162, 15.500, 15.122, 15.973, 15.004, 17.658, 16.002, 2.582, 1.165, 0.882, 14.740, 16.010, 15.401, 15.509, 15.300, 0.936, 14.030, 0.910, 15.116, 0.849, 15.578, 15.390, 15.467, 15.677, 15.237, 15.289, 15.367, 15.697, 16.025, 14.872, 13.957, 1.288, 0.873, 1.871, 13.566, 15.217, 14.872, 15.428, 0.919, 15.610, 15.866, 15.372, 14.732, 16.294, 16.605, 15.724, 1.775, 13.855, 15.356, 14.181, 15.377, 15.937, 16.058, 1.447, 13.262, 15.384, 15.114, 0.796, 15.498, 15.366, 16.012, 15.061, 16.147, 15.500, 14.959, 14.833, 15.855, 15.302, 16.667, 13.978, 17.005, 15.376, 15.422, 15.114, 15.474, 0.822, 1.019, 13.711, 15.259, 15.345, 16.625, 15.439, 15.566, 0.891, 15.200, 15.458, 15.161, 0.558, 15.803, 16.143, 15.560, 16.940, 14.594, 15.640, 15.781, 15.821, 15.188, 15.673, 16.245, 14.921, 16.742, 14.714, 0.834, 14.402, 15.430, 14.848, 15.069, 15.671, 15.901, 14.779, 15.378, 16.362, 0.904, 14.921, 0.890, 15.375, 15.295, 15.808, 15.113, 15.364, 15.582, 14.437, 16.145, 15.571
+```
+
+## U6 SC-011 public duplicate timing differential
+
+Local loopback HTTP harness calls the production `signupResult('duplicate', 'en')` mapper for both labels. Archived-state design remains deferred on ND-F5-1, so `archived-collision-synthetic` is the approved synthetic stand-in; this measures public result serialization and equality, not database branch latency. Treat the measurement as a regression detector, not a latency SLA.
+
+- Warm-up: 20 sequential requests per label; measured trials: 200 ordinary and 200 archived stand-in, randomized and interleaved.
+- Mann-Whitney U: 21655.000; two-sided p-value: 0.152416; absolute median difference: 0.072 ms.
+- Thresholds: p >= 0.01 and |median difference| < 5 ms: PASS.
+- Each response matched status 200, identical body bytes, `Cache-Control: no-store`, `Referrer-Policy: no-referrer`, and `Content-Type: application/json; charset=utf-8`.
+- No account-existence detail is included in either response.
+
+Ordinary duplicate timings (ms):
+
+```text
+16.184, 14.844, 0.558, 15.811, 15.470, 15.969, 15.569, 15.233, 15.360, 14.813, 16.179, 15.669, 15.391, 15.706, 15.514, 15.453, 16.416, 14.750, 15.477, 15.098, 16.176, 15.319, 1.047, 14.203, 15.959, 14.938, 15.699, 14.434, 15.875, 15.506, 14.579, 14.861, 15.151, 16.525, 15.560, 15.409, 15.813, 15.596, 15.391, 15.211, 15.253, 15.262, 16.245, 16.351, 16.395, 15.147, 15.443, 14.830, 15.567, 15.736, 14.404, 15.342, 14.614, 15.642, 15.130, 14.783, 15.790, 15.077, 15.808, 15.766, 15.912, 15.198, 0.429, 15.328, 15.032, 15.761, 0.618, 15.057, 15.554, 16.052, 14.102, 15.305, 0.627, 14.853, 15.731, 15.337, 15.553, 16.111, 15.188, 14.719, 15.932, 15.302, 15.697, 15.354, 16.503, 15.206, 15.875, 15.666, 15.953, 15.076, 15.746, 15.576, 15.158, 0.739, 16.521, 0.928, 14.479, 14.844, 15.171, 15.263, 16.159, 15.381, 0.663, 1.865, 1.805, 15.068, 15.488, 15.184, 15.901, 15.681, 16.013, 14.658, 15.051, 16.183, 15.075, 15.292, 15.483, 15.038, 15.394, 0.400, 14.847, 15.007, 15.320, 15.010, 15.316, 15.525, 15.082, 15.662, 15.583, 15.772, 15.282, 15.623, 16.363, 15.873, 15.164, 16.056, 15.605, 16.072, 15.082, 16.065, 14.836, 15.887, 15.275, 15.157, 16.314, 14.818, 15.395, 16.002, 16.134, 15.492, 15.688, 16.172, 15.926, 15.771, 15.585, 16.183, 15.108, 15.382, 16.064, 15.543, 15.645, 16.297, 15.953, 15.679, 15.134, 14.892, 15.630, 16.027, 15.277, 15.185, 15.647, 14.968, 14.973, 15.078, 15.571, 14.884, 15.740, 15.491, 14.658, 15.555, 16.348, 15.041, 15.886, 16.065, 15.284, 15.692, 15.123, 15.629, 15.114, 14.983, 15.423, 14.630, 15.976, 0.662, 15.561, 15.786, 16.082, 15.868, 15.806, 15.990
+```
+
+Archived collision synthetic stand-in timings (ms):
+
+```text
+1.644, 13.076, 16.126, 15.390, 15.122, 15.105, 14.947, 16.633, 15.225, 15.044, 15.627, 15.675, 15.162, 15.214, 15.373, 15.644, 15.101, 15.726, 15.475, 15.528, 16.059, 15.295, 0.627, 14.679, 16.014, 15.180, 16.179, 15.777, 15.012, 14.671, 15.769, 15.638, 15.275, 15.756, 0.861, 15.877, 15.565, 16.315, 15.864, 15.340, 16.282, 15.211, 15.375, 15.221, 15.496, 14.731, 16.036, 14.731, 15.410, 15.686, 16.546, 15.318, 15.798, 15.386, 16.129, 15.405, 16.680, 16.628, 15.271, 15.933, 0.905, 15.202, 15.480, 16.776, 15.759, 15.858, 15.606, 15.216, 15.140, 15.152, 15.489, 15.946, 14.748, 15.952, 15.142, 16.788, 15.543, 14.929, 15.026, 15.560, 0.541, 15.344, 15.173, 15.497, 14.758, 15.376, 15.415, 1.044, 13.932, 15.373, 15.452, 14.895, 15.768, 15.334, 15.158, 16.318, 15.407, 15.141, 15.135, 15.219, 15.063, 14.901, 15.040, 15.895, 15.202, 15.301, 15.091, 14.667, 15.415, 15.476, 15.426, 16.624, 15.455, 15.669, 15.574, 1.041, 10.008, 15.750, 14.746, 0.431, 0.428, 15.399, 14.851, 15.430, 14.853, 15.568, 15.209, 16.338, 0.468, 14.805, 15.565, 15.540, 15.350, 15.071, 15.193, 14.679, 14.541, 15.326, 16.057, 14.875, 15.318, 15.415, 15.539, 14.909, 14.344, 15.652, 15.514, 15.494, 15.555, 15.489, 14.781, 14.915, 15.580, 0.400, 15.685, 15.460, 15.062, 15.865, 14.939, 16.121, 15.547, 15.365, 15.984, 15.120, 15.518, 15.208, 15.659, 15.004, 0.411, 15.833, 15.635, 15.452, 14.774, 15.313, 0.319, 15.928, 14.954, 15.628, 15.377, 15.979, 15.739, 15.345, 15.164, 15.396, 15.829, 15.284, 15.067, 15.619, 14.873, 15.612, 15.494, 16.717, 15.836, 14.616, 15.937, 15.046, 15.985, 14.599, 14.620, 15.126
+```
+
+## CodeRabbit round 2: executable DOCKER_BIN and CI timeout note
+
+- `scripts/test-client-accounts-storage.ps1`: when `$env:DOCKER_BIN` resolves to an existing file, the runner prepends its parent directory; directory values remain supported, followed by the standard Docker Desktop fallbacks. The existing script unit test was extended to assert both code paths.
+- RED: `npm test -- tests/unit/client-accounts-storage-result.test.ts` failed in `uses portable Docker path fallbacks only when docker is absent from PATH` at the leaf-path assertion: expected `Test-Path -LiteralPath $env:DOCKER_BIN -PathType Leaf`, absent in the original script (2 passed, 1 failed).
+- GREEN: the same focused command passed 3/3 after the change. The real isolated Storage runner passed exactly 1, skipped 0, failed 0, flaky 0, interrupted 0.
+- CI run 40781253931's initial push attempt timed out in `client-accounts-recovery.test.ts` test `%s can reset a pending client password without changing approval or access`; its failed-job rerun passed, as did the PR-event run on the same SHA. `vitest.integration.config.ts` sets a shared 30,000 ms test timeout and 60,000 ms hook timeout; the timed-out test has no local override and the complete CI integration job took 4m16s. It performs several sequential local GoTrue recovery calls. Review found no deterministic blocking cause; recorded as an observed CI flake, without changing the test or its assertions.
+
+## Hardening H1 - recovery flake
+
+- CI failure evidence: run 40792530137 reported the PO reset case timing out at 30,007 ms; the recovery file took 43,923 ms and the following WO variant took 9,074 ms. The failed-attempt log has no per-call timing. Run 40781253931's failed-attempt log was no longer available from `gh run view --log-failed` after the failed-job rerun passed.
+- Before fix, the complete recovery file passed 15/15 consecutive local runs at 7.08-8.50 s per file. The PO workflow measured 1,253 ms in a focused run; maximum individual steps across those runs were 528 ms for either HTTP scan and 258 ms for either RLS probe.
+- Before fix, two clean-order full integration runs passed 867/867 in 157.94 s and 152.66 s. On the first full run, cold full-catalog checks were slower: RLS probes peaked at 2,679.5 ms per workspace and HTTP scans at 2,456.5 ms per workspace; the second run's corresponding peaks were 493.3 ms and 700.6 ms. These phases account for most of the scenario's variable work. Historical CI logs contain no step timing, so a particular hung request, lock, or rate-limit cause was not observed.
+- Fix: keep the PO password-reset, row-integrity, old/new password, claims, actor, and app-authorization assertions together; run the unchanged two safe-column RLS probes in a following test and the unchanged two HTTP access probes in another. Shared in-memory authenticated client and claims carry the exact recovered session across these ordered tests. The WO journey remains intact. No assertions were removed, weakened, skipped, or caught-and-ignored.
+- After fix, the recovery file passed 20/20 consecutive runs (13 tests per file), 7.19-8.55 s per file. PO phase maxima were 380 ms (password-reset/app checks), 539 ms (both RLS probes), and 1,073 ms (both HTTP probes); each phase has its own configured 30-second test timeout.
+- Full-suite GREEN after the split: clean Stack A reset plus provision, then 25 files / 869 tests passed in 155.07 s.
+
+## Hardening H2 - local-stack Playwright lane
+
+- `.github/workflows/ci.yml` now runs Playwright once in `integration`, after the integration suite and while the local Supabase environment is exported. It installs Chromium there, opts into `LOCAL_SUPABASE_PROVIDER_FAULT_TEST=true`, and removes only the stack-less Playwright invocation from `validate`; the other validation steps and job permissions remain.
+- The fault-injection test stops `supabase_kong_lifter`. Its Docker Compose project label is `lifter`, matching `supabase/config.toml` project_id. The full e2e run uses one worker so no unrelated browser test issues requests while that shared local gateway is deliberately stopped. This retains all checks and prevents the fault test from disrupting parallel browser cases.
+- Local parallel-worker diagnosis: with the provider-fault opt-in, two full runs produced 123 passed / 9 skipped / 2 failed and 124 passed / 9 skipped / 1 failed. The failures included an a11y focus timeout and the F10 packages workspace-switch stale-status assertion; failed cases passed when rerun alone. With one worker and a clean Stack A reset/provision, the same full suite passed 125 / 125, 0 failed, 9 skipped.
+- The 9 expected skips are exactly: four mobile bottom-bar assertions run only in the Pixel 7 `mobile-chromium` project (they skip in desktop Chromium); four desktop rail/showcase assertions run only in `chromium` (they skip in `mobile-chromium`); and the pending-client Storage JWT test, because the standard Stack A profile excludes `storage-api`. The Storage assertion passes separately in the isolated Storage runner; the CI Storage lane arrives with F14 FR-017/U09.
+- Final local gates on this change: typecheck, lint, format check, and diff check passed; unit suite passed 61 files / 1,366 tests; after clean local reset and Vault provision, integration passed 25 files / 869 tests in 142.85 s. CI-equivalent local Playwright was run after a clean reset/provision with provider-fault opt-in and `--workers=1`: 125 passed, 9 skipped, 0 failed.
+- Hosted first-run diagnosis on `20c0b2d`: push CI run 40801564349 had `validate` pass and integration fail after 80 passed / 45 failed / 9 skipped; Playwright took 15.0 min and the integration job 20m24s. `local` was true from `API_URL`/`DB_URL`, but Next's `readServerEnv()` requires `SUPABASE_URL`, `SUPABASE_ANON_KEY`, `SUPABASE_SERVICE_ROLE_KEY`, and `APP_ORIGIN`; the workflow had exported only CLI names. The app consequently ran with incomplete server configuration, producing unavailable/invalid signup pages and downstream assertion failures. No application test was loosened.
+- RED: `npm test -- tests/unit/ci-local-e2e.test.ts` failed at `expect(integration).toContain('SUPABASE_URL=$API_URL')` (1 failed), proving the workflow lacked the app server environment export.
+- Fix: after exporting the local CLI values, the integration job writes the four required app aliases to `$GITHUB_ENV` (origin fixed to `http://localhost:3000`) without printing key values. The same focused unit test passed 1/1.
+- GREEN after a clean Stack A reset and provision: full integration passed 25 files / 869 tests in 144.85 s; then the full CI-equivalent serial Playwright command, with all four app aliases and provider-fault opt-in, passed 125, skipped 9, failed 0 in 2.1 min. The skips and reasons are the three categories listed above.
+- Final corrected-head CI evidence (`ac03359`): push run 40804419533 and pull_request run 40804424278 both passed. Each integration suite passed and each Playwright lane passed 125, skipped 9, failed 0; integration job durations were 8m58s and 8m38s respectively. The integration-test steps took 2m23s and 2m28s; Playwright took 3m16s and 3m21s.
+
+## Hardening H4 - credential-optional Docker Hub pulls
+
+- The integration job conditionally logs in before `supabase start` when both `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` are configured. Add them under repository Settings → Secrets and variables → Actions. `DOCKERHUB_TOKEN` should be a Docker Hub personal access token with public-repository read-only scope. No secrets are configured in this repository yet, so the login step is skipped and CI uses its existing anonymous-pull behavior.
+
+## Hardening H5 — pg_cron (deferred activation)
+
+Phase 2 (2026-10-29), after architect acceptance of phase 1 at `9fbfc74`.
+Worktree `LFTR-011-cron`, branch `011-purge-cron`; merged the advanced parent
+`a7f4190` without conflicts in merge commit `ce7a0db`. Before Stack A operations,
+process/descendant inspection found no active Supabase/test/app process from
+`LFTR-011` or `LFTR-011-audit` using it, and no established client connection to
+54321/54322. The remaining parent-worktree relay had agent/tool hosts only.
+Only Stack A (`lifter`, 54321/54322) was operated; Stack B was untouched.
+
+| Check                                    | Evidence                                                                                                                                                                                                                                                                                                                                                                                                                                                                         |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| RED without H5 migration                 | Temporarily moved only `20261031130000_purge_scheduling_pg_cron.sql` into ignored `tmp/`, reset locally, provisioned Vault, ran the complete new file: **6 failed / 1 passed / 0 skipped**, exit 1. Extension assertion observed `[]`; `cron.job` and activation helpers were missing. Restored the file in `finally`. An initial PowerShell invocation stopped on a native stderr warning before yielding results; the recorded rerun completed.                                |
+| Actual extension load                    | CLI **2.122.0**, image **supabase/postgres:17.11.0.006**. Reset applied the unchanged H5 migration successfully. Catalog: **pg_cron 1.6.4**, extension namespace **pg_catalog**, schema **cron** present. `shared_preload_libraries` includes `pg_cron`; `pg_stat_activity` reports **pg_cron launcher**. `cron.database_name=postgres`, `cron.timezone=GMT`, `cron.use_background_workers=off`: launcher uses connection-based execution, not per-job background workers.       |
+| Initial focused discovery and correction | Initial restored focused run: **38 passed / 3 failed**. Supabase's `supabase_admin` extension owner grants PUBLIC SELECT on `cron.job`; postgres cannot revoke that owner's grant. The migration's API/PUBLIC schema-USAGE revocation does prevent reads. Corrected the overly strict raw table-ACL assertion to require absent effective schema USAGE, retaining real role-switched SELECT denials (`42501`) while an owner job exists. No migration or purge behavior changed. |
+| Focused GREEN                            | `npm run test:integration -- tests/integration/client-accounts-purge-schedule.test.ts tests/integration/rls-catalog.test.ts`: **2 files / 41 passed / 0 skipped**, exit 0. Includes 7 H5 tests and 34 catalog tests.                                                                                                                                                                                                                                                             |
+| Full integration GREEN                   | `npm run test:integration`: **26 files / 876 passed / 0 skipped**, exit 0, 149.13 s. Includes existing retention, cleanup-audit and admission regressions.                                                                                                                                                                                                                                                                                                                       |
+| Auto-activation mutation                 | Added an uncommitted scratch migration `20261031130100_h5_mutation_auto_activate.sql` containing `select app_private.purge_schedule_activate();`, reset + provisioned, ran `-t 'ZERO F11 jobs'`: **1 failed**, exit 1. `client-accounts-purge-schedule.test.ts:19` expected length **0**, observed **1**. Six other cases were name-filtered. Removed the scratch file in `finally`, reset + provisioned.                                                                        |
+| EXECUTE-grant mutation                   | On the disposable DB only: `grant execute on function app_private.purge_schedule_activate() to authenticated;`. Ran `-t 'authenticated cannot'`: **1 failed**, exit 1, at `client-accounts-purge-schedule.test.ts:82`, `expect(grant!.allowed).toBe(false)` observed true. Six other cases were name-filtered.                                                                                                                                                                   |
+| Restored GREEN                           | Clean reset + Vault provision removed both mutations. Both focused files passed again: **41 passed / 0 skipped**, exit 0.                                                                                                                                                                                                                                                                                                                                                        |
+| Local owner proof                        | As postgres, activated; observed exactly `lifter-f11-purge-signup`, `0 * * * *`, `select app_private.purge_client_signup_attempts();`, username postgres, active true. Manual purge returned `{"count":0}` and emitted `client.signup_cleanup` with details `{"count":0}`. Deactivated; zero F11 jobs. This is a manual function execution proof, not an observation of the hourly scheduler firing.                                                                             |
+| Gates                                    | Typecheck, lint, format check and diff check passed. `npm test`: **61 files / 1,366 passed**, exit 0. No local e2e run was required for this DB-only change; the parent CI includes its standard e2e lane.                                                                                                                                                                                                                                                                       |
+| Final state                              | Final `db reset --local` + provisioning passed. pg_cron remains installed and **zero F11 jobs** remain. Stack A retains the standard profile (DB, REST, Auth, Kong, mail; Storage excluded). Scratch mutations removed; ignored private environment and logs were never printed or committed. Exact-head push CI is reported separately.                                                                                                                                         |
+
+Activation remains **deferred to Pre-Production**, subject to the checklist in
+`specs/011-client-accounts/research/purge-scheduling.md`. Hosted preload,
+permissions/connectivity and actual scheduled-run evidence remain that gate's
+obligations; local proof does not satisfy C4/B4 or authorize production activation.
+No new deletion logic, changed purge body, audit retention or app privilege was
+introduced. Relay launch metadata identifies **gpt-6.1-sol / medium** for this run.
+
+## ND-F4-3 recovery timers
+
+- Stack A was checked for competing Supabase, Vitest, Playwright, and psql processes from other LFTR worktrees; none were found. On `recovery-timers` at `624450296841063644c1deaa28e518e589baf2d9`, the stack was restarted with the standard profile using Supabase CLI 2.122.0: `npx --yes supabase@2.122.0 stop --no-backup`, then `npx --yes supabase@2.122.0 start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,storage-api,postgres-meta`. The profile excludes Studio, imgproxy, Inbucket, Edge Runtime, Logflare, Vector, Supavisor, Realtime, Storage API, and Postgres Meta.
+- Reset and provisioning: `npx --yes supabase@2.122.0 db reset --local`, immediately followed by `node tests/integration/client-accounts-provision.mjs`. Both completed successfully. For integration runs, `supabase status -o env` was captured and applied only to the test process; the server-only `SIGNUP_RATE_KEY` and `SIGNUP_ATTEST_KEY` were loaded from ignored `.env.local`. No environment values or keys were printed.
+- Focused runs: `npm run test:integration -- tests/integration/auth-recovery.test.ts` passed 24/24 with no skips; `npm run test:integration -- tests/integration/client-accounts-recovery.test.ts` passed 13/13 with no skips. These include single-use and replacement invalidation checks, and PO/WO pending-client password recovery with approval/access preservation.
+- Mutation RED at `otp_expiry = 7200`: restarted the stack and ran `npm run test:integration -- tests/integration/auth-recovery.test.ts -t '61 minutes'`. Expected failure: `tests/integration/auth-recovery.test.ts:397:58`, `expected null not to be null`.
+- Mutation RED at `otp_expiry = 1800`: restarted the stack and ran `npm run test:integration -- tests/integration/auth-recovery.test.ts -t '59 minutes'`. Expected failure: `tests/integration/auth-recovery.test.ts:391:54`, an expired-link `AuthApiError` was returned. Restored `otp_expiry = 3600`, restarted the standard profile, and ran `npm run test:integration -- tests/integration/auth-recovery.test.ts -t '59 minutes|61 minutes'`: 2 passed, 22 filtered out.
+- Initial full-suite attempts exposed local setup requirements: focused runs leave fixtures on the database, and admission tests need the provisioned signup keys loaded into their process environment (CI uses `GITHUB_ENV`). After reset/provisioning and loading the expected local environment privately, `npm run test:integration` passed 25 files / 872 tests, 0 failed, 0 skipped, in 148.95 seconds.
+- Hosted Auth was not changed or contacted. `supabase/config.toml` configures local Auth; confirm the hosted Email OTP Expiration value is 3600 seconds in every deployed environment. This setting governs other email OTP/link flows as well as password recovery.
+
+## SC-011 real-path timing differential (supersedes the earlier fixed-response serialization runs)
+
+Earlier SC-011 runs measured only response serialization and are superseded. Regression detector, not a guarantee.
+
+Command: `node --env-file=.env.local scripts/verify-client-signup-timing.mjs`.
+Layer: production processClientSignup in-process, real anonymous Supabase HTTP clients, real client_signup_admit then client_signup for every request. Next exposes a Server Action rather than a standalone JSON endpoint; the stable service entry point avoids framework action IDs/React transport. Only the server-only import guard is mocked by Vitest. Anonymous session and same-origin Headers are supplied explicitly.
+Fixture: shared registrationFixture/backdated helpers; two real admitted client accounts, second marked auth.users.deleted_at only in test setup, retaining canonical identity claims (ND-F5-1). Both conditions collide on email; a separate valid submitted phone avoids cross-condition phone collision. Every setup/warm-up/trial receives a new link, random request secret and unique IPv6 /64 through CF-Connecting-IP, asserted unique. Provisioning is outside timing.
+20 warm-up requests per condition, then 200 randomized interleaved pairs (200 per condition). Timing includes validation/HMAC, both HTTP RPCs and result mapping. Equality asserts public D-08 JSON bytes and real signup RPC bytes/status/all stable headers, excluding Date, X-Kong-Proxy-Latency, X-Kong-Upstream-Latency and X-Request-Id (volatile gateway metadata). Outer Next Server Action transport headers are not measured. Mann-Whitney: tie correction, continuity-corrected two-sided normal approximation; thresholds p >= 0.01 and absolute median delta < 5 ms.
+Account counts bracket all warm-up/measured collisions after creating the two fixtures. Cleanup: script resets Stack A and runs provisioning after worker exit, including on failure.
+
+```text
+{
+  "run": "6ca99554-43e4-41e3-a928-7e2afe4e6846",
+  "verdict": "FAIL",
+  "failure": "Path, fixture or response equality check failed",
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "win32",
+    "api": "127.0.0.1:54321",
+    "db": "127.0.0.1:54322"
+  },
+  "before": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  },
+  "after": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  },
+  "n": [
+    0,
+    0
+  ],
+  "u": null,
+  "p": null,
+  "medians": [
+    null,
+    null
+  ],
+  "medianDifference": null,
+  "expectedPublicBytes": "{\"status\":\"duplicate\",\"message\":\"This email is already registered. Contact support.\"}",
+  "warmup": [
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.88689999999997
+    }
+  ],
+  "timings": []
+}
+```
+
+## SC-011 real-path timing differential (supersedes the earlier fixed-response serialization runs)
+
+Earlier SC-011 runs measured only response serialization and are superseded. Regression detector, not a guarantee.
+
+Command: `node --env-file=.env.local scripts/verify-client-signup-timing.mjs`.
+Layer: production processClientSignup in-process, real anonymous Supabase HTTP clients, real client_signup_admit then client_signup for every request. Next exposes a Server Action rather than a standalone JSON endpoint; the stable service entry point avoids framework action IDs/React transport. Only the server-only import guard is mocked by Vitest. Anonymous session and same-origin Headers are supplied explicitly.
+Fixture: shared registrationFixture/backdated helpers; two real admitted client accounts, second marked auth.users.deleted_at only in test setup, retaining canonical identity claims (ND-F5-1). Both conditions collide on email; a separate valid submitted phone avoids cross-condition phone collision. Every setup/warm-up/trial receives a new link, random request secret and unique IPv6 /64 through CF-Connecting-IP, asserted unique. Provisioning is outside timing.
+20 warm-up requests per condition, then 200 randomized interleaved pairs (200 per condition). Timing includes validation/HMAC, both HTTP RPCs and result mapping. Equality asserts public D-08 JSON bytes and real signup RPC bytes/status/all stable headers, excluding Date, X-Kong-Proxy-Latency, X-Kong-Upstream-Latency and X-Request-Id (volatile gateway metadata). Outer Next Server Action transport headers are not measured. Mann-Whitney: tie correction, continuity-corrected two-sided normal approximation; thresholds p >= 0.01 and absolute median delta < 5 ms.
+Account counts bracket all warm-up/measured collisions after creating the two fixtures. Cleanup: script resets Stack A and runs provisioning after worker exit, including on failure.
+
+```text
+{
+  "run": "64b0344b-b47f-42ab-9375-ae8a2e64c776",
+  "verdict": "FAIL",
+  "failure": "Path, fixture or response equality check failed",
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "win32",
+    "api": "127.0.0.1:54321",
+    "db": "127.0.0.1:54322"
+  },
+  "before": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  },
+  "after": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  },
+  "n": [
+    19,
+    20
+  ],
+  "u": 211,
+  "p": 0.5646149086525867,
+  "medians": [
+    null,
+    94.92675000000008
+  ],
+  "medianDifference": null,
+  "expectedPublicBytes": "{\"status\":\"duplicate\",\"message\":\"This email is already registered. Contact support.\"}",
+  "signupRpc": {
+    "status": 200,
+    "headers": [
+      [
+        "access-control-allow-origin",
+        "*"
+      ],
+      [
+        "connection",
+        "keep-alive"
+      ],
+      [
+        "content-length",
+        "23"
+      ],
+      [
+        "content-profile",
+        "public"
+      ],
+      [
+        "content-range",
+        "0-0/*"
+      ],
+      [
+        "content-type",
+        "application/json; charset=utf-8"
+      ],
+      [
+        "server",
+        "postgrest/16.5"
+      ],
+      [
+        "vary",
+        "Accept, Prefer, Range"
+      ],
+      [
+        "via",
+        "kong/2.8.1"
+      ]
+    ],
+    "bytes": "7b22737461747573223a20226475706c6963617465227d"
+  },
+  "warmup": [
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.47419999999966
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.30090000000018
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.64940000000024
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.00229999999965
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.45449999999983
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.39310000000023
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 88.22339999999986
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.24420000000009
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.81890000000021
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 76.52149999999983
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.88310000000001
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.16619999999966
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.92409999999973
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.5021999999999
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.26949999999988
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 90.85079999999971
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 109.35129999999981
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.78940000000057
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.26189999999951
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.37760000000071
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.76569999999992
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 86.34040000000005
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.28499999999985
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.24079999999958
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.87970000000041
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.02829999999994
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 84.75680000000011
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.08330000000024
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.52109999999993
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.58669999999984
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 87.87830000000031
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.15920000000006
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 87.44350000000031
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.17199999999957
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.51779999999962
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.94800000000032
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.56720000000041
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.21079999999984
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.66549999999916
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.23149999999987
+    }
+  ],
+  "timings": [
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.76929999999993
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.1235999999999
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.33600000000024
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.02599999999984
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.73990000000049
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.72990000000027
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.44530000000032
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.13159999999971
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 73.73170000000027
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.42950000000019
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.78239999999914
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.72379999999976
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.8203999999987
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.26980000000003
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.07819999999992
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 82.19120000000112
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.89919999999984
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 65.1293999999998
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.22350000000006
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.71780000000035
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.96559999999954
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.21630000000005
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.90290000000095
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.88780000000042
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.40120000000024
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 84.78369999999995
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 68.67309999999998
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.68449999999939
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.85800000000017
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.20160000000033
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.87439999999879
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.77690000000075
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.6309999999994
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.0573000000004
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.14810000000034
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.13910000000033
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.28049999999894
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.0684999999994
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 60.97810000000027
+    }
+  ]
+}
+```
+
+## SC-011 real-path timing differential (supersedes the earlier fixed-response serialization runs)
+
+Earlier SC-011 runs measured only response serialization and are superseded. Regression detector, not a guarantee.
+
+Command: `node --env-file=.env.local scripts/verify-client-signup-timing.mjs`.
+Layer: production processClientSignup in-process, real anonymous Supabase HTTP clients, real client_signup_admit then client_signup for every request. Next exposes a Server Action rather than a standalone JSON endpoint; the stable service entry point avoids framework action IDs/React transport. Only the server-only import guard is mocked by Vitest. Anonymous session and same-origin Headers are supplied explicitly.
+Fixture: shared registrationFixture/backdated helpers; two real admitted client accounts, second marked auth.users.deleted_at only in test setup, retaining canonical identity claims (ND-F5-1). Both conditions collide on email; a separate valid submitted phone avoids cross-condition phone collision. Every setup/warm-up/trial receives a new link, random request secret and unique IPv6 /64 through CF-Connecting-IP, asserted unique. Provisioning is outside timing.
+20 warm-up requests per condition, then 200 randomized interleaved pairs (200 per condition). Timing includes validation/HMAC, both HTTP RPCs and result mapping. Equality asserts public D-08 JSON bytes and real signup RPC bytes/status/all stable end-to-end headers, excluding hop-by-hop Connection/Keep-Alive/Transfer-Encoding and Date, X-Kong-Proxy-Latency, X-Kong-Upstream-Latency and X-Request-Id (volatile gateway metadata). Outer Next Server Action transport headers are not measured. Mann-Whitney: tie correction, continuity-corrected two-sided normal approximation; thresholds p >= 0.01 and absolute median delta < 5 ms.
+Account counts bracket all warm-up/measured collisions after creating the two fixtures. Cleanup: script resets Stack A and runs provisioning after worker exit, including on failure.
+
+```text
+{
+  "run": "a11b9a7d-c06a-4343-bb33-e8533122cd39",
+  "verdict": "PASS",
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "win32",
+    "api": "127.0.0.1:54321",
+    "db": "127.0.0.1:54322"
+  },
+  "before": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  },
+  "after": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  },
+  "n": [
+    200,
+    200
+  ],
+  "u": 20180,
+  "p": 0.8766182029652609,
+  "medians": [
+    96.19150000000172,
+    96.07115000000158
+  ],
+  "medianDifference": 0.12035000000014406,
+  "expectedPublicBytes": "{\"status\":\"duplicate\",\"message\":\"This email is already registered. Contact support.\"}",
+  "signupRpc": {
+    "status": 200,
+    "headers": [
+      [
+        "access-control-allow-origin",
+        "*"
+      ],
+      [
+        "content-length",
+        "23"
+      ],
+      [
+        "content-profile",
+        "public"
+      ],
+      [
+        "content-range",
+        "0-0/*"
+      ],
+      [
+        "content-type",
+        "application/json; charset=utf-8"
+      ],
+      [
+        "server",
+        "postgrest/16.5"
+      ],
+      [
+        "vary",
+        "Accept, Prefer, Range"
+      ],
+      [
+        "via",
+        "kong/2.8.1"
+      ]
+    ],
+    "bytes": "7b22737461747573223a20226475706c6963617465227d"
+  },
+  "warmup": [
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.20980000000009
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 82.00199999999995
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.05690000000004
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.81219999999985
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.36160000000018
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.72620000000006
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 83.03410000000031
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.28970000000027
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 83.70269999999982
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.69469999999956
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.80200000000013
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 88.25549999999976
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 83.58369999999968
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.18849999999975
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.1871000000001
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.53420000000006
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.57739999999967
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.77520000000004
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.4381000000003
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.76940000000013
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.7552999999998
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.45389999999952
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 82.39570000000003
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.83410000000003
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.62790000000041
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.51859999999942
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.80279999999948
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 85.80299999999988
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.67799999999988
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.03989999999976
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.38559999999961
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.23820000000069
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.42519999999968
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.97630000000026
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 76.51760000000013
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.28880000000026
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.84860000000026
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 90.96120000000064
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.70139999999992
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 101.4922000000006
+    }
+  ],
+  "timings": [
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.45350000000053
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.41340000000037
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.33889999999974
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.32240000000002
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.12700000000041
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.47460000000046
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.30000000000018
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.10819999999967
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.88000000000011
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.05159999999978
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.08800000000065
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.80789999999979
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.34050000000025
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.1923999999999
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.44750000000022
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 89.70499999999993
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.11169999999947
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.20960000000014
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 90.19360000000052
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.00749999999971
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 85.70010000000002
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 76.72969999999987
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.3173999999999
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.41939999999886
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.1752000000015
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.17100000000028
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.84000000000015
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 59.64550000000054
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.20700000000033
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.08399999999892
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.46529999999984
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.84770000000026
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.04110000000037
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.65800000000127
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.82190000000082
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.1908999999996
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.31049999999959
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 84.91000000000167
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 69.8242999999984
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.94210000000021
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.09130000000005
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.16209999999955
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.89339999999902
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 83.27739999999903
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.27059999999983
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.51480000000083
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 87.54279999999926
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.76620000000003
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.80719999999928
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.18329999999878
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.5030999999999
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.83259999999973
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.06139999999868
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.46819999999934
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 87.28909999999996
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.81470000000081
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.4369000000006
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.15250000000015
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.15419999999904
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 84.61989999999969
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.34760000000097
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.26530000000093
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.5005000000001
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.79049999999916
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.7489999999998
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.19360000000052
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.57690000000002
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.65350000000035
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.97179999999935
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 76.3773000000001
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.1906999999992
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 86.90530000000035
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.42609999999877
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 84.27199999999903
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.11299999999937
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.45999999999913
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 108.96159999999873
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.09010000000126
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.60729999999967
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.1848000000009
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.52460000000065
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.60940000000119
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.25330000000031
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.09969999999885
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.63930000000255
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.39329999999973
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.43910000000324
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.03820000000269
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.81909999999698
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.60099999999875
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.6909999999989
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.53729999999996
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.03009999999995
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.56039999999848
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.97849999999744
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.01740000000063
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.81140000000232
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 67.32140000000072
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.9375
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 85.88190000000031
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.1114000000016
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 109.62909999999829
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.30349999999817
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.20030000000042
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.45620000000054
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 76.14919999999984
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.79430000000139
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.5007000000005
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.36509999999907
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.00729999999749
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 108.08099999999831
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.33250000000044
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.96960000000036
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.4278000000013
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.34370000000126
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.38420000000042
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.0044999999991
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.22079999999914
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 85.83749999999782
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.03090000000157
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.97370000000228
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.09850000000006
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.00979999999981
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.25860000000102
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 86.02639999999883
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.64800000000105
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.73730000000069
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.37630000000354
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.23419999999896
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.3148000000001
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 85.71770000000106
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.86539999999877
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.56450000000041
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.71069999999963
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.67859999999928
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.60069999999905
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 108.30080000000089
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 108.64280000000144
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 70.34729999999763
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 84.87640000000101
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.87869999999748
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.65650000000096
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 108.08020000000033
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.89069999999992
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.85480000000098
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 84.65499999999884
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.73319999999876
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.92770000000019
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.3695000000007
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 110.20200000000114
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.6697000000022
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.6294999999991
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.27440000000206
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.48530000000028
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.03220000000147
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.29389999999694
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.57589999999982
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.64390000000276
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.5007000000005
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.1185000000005
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 74.87419999999838
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.84219999999914
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.76290000000154
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.01090000000113
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.31450000000041
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.33770000000004
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.96869999999763
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 84.47290000000066
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.09340000000157
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.20560000000114
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.41259999999966
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.92150000000038
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.77720000000045
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 83.42109999999957
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 75.41530000000057
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.60410000000047
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.43739999999889
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 70.46510000000126
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.40789999999834
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 85.48149999999805
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.14099999999962
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 89.94050000000061
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.94050000000061
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.26390000000174
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 88.23849999999948
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.04239999999845
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.32190000000264
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.23340000000098
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.13350000000355
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 76.03779999999824
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.17510000000038
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.12790000000314
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.75820000000022
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.5023000000001
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 82.22489999999743
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.70539999999892
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.32450000000244
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.02880000000005
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.97320000000036
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.72260000000097
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.2938000000031
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.6313999999984
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.92410000000018
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.22290000000066
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.20319999999992
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.297300000002
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 83.26190000000133
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.51559999999881
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.3064000000013
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.95670000000246
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.6903999999995
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 73.83620000000155
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.22580000000016
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.29030000000057
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.44839999999749
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.35680000000139
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.30130000000645
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.07640000000538
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.01720000000205
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.02599999999802
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.84679999999935
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.62569999999687
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.22939999999653
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.14839999999822
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.07680000000255
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.04000000000087
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.30949999999575
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 84.12930000000051
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.47090000000026
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 75.3489000000045
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.96860000000015
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.77119999999559
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.57459999999992
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.5147999999972
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.28579999999783
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.37099999999919
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.72910000000411
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.44150000000081
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 82.76640000000043
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 71.61849999999686
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.03549999999814
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.16909999999916
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.02909999999974
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.77049999999872
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.94079999999667
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 76.324099999998
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.43880000000354
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.06000000000495
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.68039999999746
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.75859999999375
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.83750000000146
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.27959999999439
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.87619999999879
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.87840000000142
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.67240000000311
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.92149999999674
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 88.64489999999932
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.73809999999503
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.01019999999698
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.0219999999972
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.55849999999919
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.57979999999952
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 76.84109999999782
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.2094999999972
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.96289999999863
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.24379999999655
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.59719999999652
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.28919999999925
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 82.43970000000263
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 82.30810000000201
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 56.078300000001036
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 76.81999999999971
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.24330000000191
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.38130000000092
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.32430000000022
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.71229999999923
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.38000000000466
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 108.98539999999775
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.33350000000064
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.1298999999999
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.35990000000311
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 89.57819999999629
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.68619999999646
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 86.58839999999327
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.91739999999845
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.66820000000007
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.62600000000384
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.17409999999654
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.22060000000056
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.09470000000147
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.19090000000142
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.95720000000438
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.40819999999803
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.14630000000034
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.54650000000402
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.95620000000054
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.35909999999421
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.77670000000217
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.11770000000251
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.4635999999955
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.21010000000388
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.4716000000044
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.71699999999691
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 87.27399999999761
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 90.96630000000005
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.08559999999852
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.40869999999995
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.10959999999614
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.18689999999333
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.36729999999807
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.10939999999391
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 75.14890000000014
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.01030000000173
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.38709999999992
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.2731000000058
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.9551999999967
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.48059999999532
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.82779999999912
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.04950000000099
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.79699999999866
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.69200000000274
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.91599999999744
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.67079999999987
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.67980000000534
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.66900000000169
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.14489999999932
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.86869999999908
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.4082999999955
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.3660000000018
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.61249999999563
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.71159999999509
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.82150000000547
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.55509999999776
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 76.53579999999783
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.88040000000183
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.06689999999799
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.6811000000016
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.9887000000017
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.7841999999946
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 82.34499999999389
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.6840000000011
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.75110000000132
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.17740000000049
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.68630000000121
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.16530000000057
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.27560000000085
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.49590000000171
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.5879000000059
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 108.38899999999558
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.20110000000568
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 74.41760000000068
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.85889999999927
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 88.6278999999995
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 86.05069999999978
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.53220000000147
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.58009999999922
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.20890000000509
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 101.53510000000097
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.33600000000297
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.47720000000118
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 74.05709999999817
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 108.22920000000158
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.90469999999914
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.07820000000356
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.86529999999766
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.18940000000293
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.58889999999519
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.43220000000292
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.7676999999967
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.64059999999881
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.48479999999836
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 101.95380000000296
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.52060000000347
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.4143999999942
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.03659999999945
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.89770000000135
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.16820000000007
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.05800000000454
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.2277000000031
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.4149000000034
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.26710000000458
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 109.130799999999
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.45910000000003
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.4311000000016
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.43860000000132
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.18600000000151
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 68.76090000000113
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.24330000000191
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.23040000000037
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.36820000000444
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 71.24590000000171
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.55789999999979
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.9664000000048
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.08939999999711
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 52.30019999999786
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.66679999999906
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.74689999999828
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.68920000000071
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.57660000000033
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 73.1021999999939
+    }
+  ]
+}
+```
+
+## SC-011 real-path timing differential (supersedes the earlier fixed-response serialization runs)
+
+Earlier SC-011 runs measured only response serialization and are superseded. Regression detector, not a guarantee.
+
+Command: `node --env-file=.env.local scripts/verify-client-signup-timing.mjs`.
+Layer: production processClientSignup in-process, real anonymous Supabase HTTP clients, real client_signup_admit then client_signup for every request. Next exposes a Server Action rather than a standalone JSON endpoint; the stable service entry point avoids framework action IDs/React transport. Only the server-only import guard is mocked by Vitest. Anonymous session and same-origin Headers are supplied explicitly.
+Fixture: shared registrationFixture/backdated helpers; two real admitted client accounts, second marked auth.users.deleted_at only in test setup, retaining canonical identity claims (ND-F5-1). Both conditions collide on email; a separate valid submitted phone avoids cross-condition phone collision. Every setup/warm-up/trial receives a new link, random request secret and unique IPv6 /64 through CF-Connecting-IP, asserted unique. Provisioning is outside timing.
+20 warm-up requests per condition, then 200 randomized interleaved pairs (200 per condition). Timing includes validation/HMAC, both HTTP RPCs and result mapping. Equality asserts public D-08 JSON bytes and real signup RPC bytes/status/all stable end-to-end headers, excluding hop-by-hop Connection/Keep-Alive/Transfer-Encoding and Date, X-Kong-Proxy-Latency, X-Kong-Upstream-Latency and X-Request-Id (volatile gateway metadata). Outer Next Server Action transport headers are not measured. Mann-Whitney: tie correction, continuity-corrected two-sided normal approximation; thresholds p >= 0.01 and absolute median delta < 5 ms.
+Account counts bracket all warm-up/measured collisions after creating the two fixtures. Cleanup: script resets Stack A and runs provisioning after worker exit, including on failure.
+
+```text
+{
+  "run": "281bb294-ba10-406a-ad22-37e01d9242ab",
+  "verdict": "PASS",
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "win32",
+    "api": "127.0.0.1:54321",
+    "db": "127.0.0.1:54322"
+  },
+  "before": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  },
+  "after": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  },
+  "n": [
+    200,
+    200
+  ],
+  "u": 20743,
+  "p": 0.5207291875360459,
+  "medians": [
+    96.24709999999823,
+    95.68119999999908
+  ],
+  "medianDifference": 0.5658999999991465,
+  "expectedPublicBytes": "{\"status\":\"duplicate\",\"message\":\"This email is already registered. Contact support.\"}",
+  "signupRpc": {
+    "status": 200,
+    "headers": [
+      [
+        "access-control-allow-origin",
+        "*"
+      ],
+      [
+        "content-length",
+        "23"
+      ],
+      [
+        "content-profile",
+        "public"
+      ],
+      [
+        "content-range",
+        "0-0/*"
+      ],
+      [
+        "content-type",
+        "application/json; charset=utf-8"
+      ],
+      [
+        "server",
+        "postgrest/16.5"
+      ],
+      [
+        "vary",
+        "Accept, Prefer, Range"
+      ],
+      [
+        "via",
+        "kong/2.8.1"
+      ]
+    ],
+    "bytes": "7b22737461747573223a20226475706c6963617465227d"
+  },
+  "warmup": [
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.66859999999997
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.70200000000023
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.45460000000003
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.50720000000001
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.18949999999995
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.92450000000008
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.95209999999997
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 66.32109999999966
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.86290000000008
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 69.65170000000035
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.68420000000015
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.26700000000028
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.77209999999968
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.41999999999962
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.17880000000014
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.90129999999999
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 82.43499999999995
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.92699999999968
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.73659999999927
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.32409999999982
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.41029999999955
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.0006000000003
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.65499999999975
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 76.08250000000044
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.35229999999956
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 85.8777
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.39160000000084
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.13079999999991
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.09320000000025
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.39269999999942
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.20669999999973
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 75.73710000000028
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.66459999999915
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 82.91160000000036
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.29050000000007
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.53639999999996
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.22770000000037
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 74.68099999999959
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.45399999999972
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.89530000000013
+    }
+  ],
+  "timings": [
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.4390000000003
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.59429999999975
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 76.8114999999998
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.45470000000023
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.97779999999966
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 84.06910000000062
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.09389999999985
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.25759999999991
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.08390000000054
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.34690000000046
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.65899999999965
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.96909999999843
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.45019999999931
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.04539999999906
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.20190000000002
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.40090000000055
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.560300000001
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 86.04550000000017
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.37790000000132
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.26469999999972
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 74.89240000000063
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 83.07769999999982
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.63780000000042
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.99830000000111
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.66380000000026
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.28889999999956
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.31139999999868
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.16130000000157
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.91200000000026
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.21059999999852
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.79860000000008
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.38529999999992
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.10789999999906
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.3701000000001
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 66.19480000000112
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.10449999999946
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.48430000000008
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.60299999999916
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.96180000000095
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 67.98419999999896
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.95529999999962
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.29889999999978
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 83.83549999999923
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 88.8132999999998
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.96039999999994
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 89.56670000000122
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.34180000000015
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 83.09159999999974
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 87.47729999999865
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 90.3081000000002
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.2547999999988
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.64589999999953
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.86199999999917
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.67840000000069
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 84.89559999999983
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.61119999999937
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.63510000000133
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.44750000000022
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.66719999999987
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.00119999999879
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.08920000000035
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.94890000000123
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.7531999999992
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.29849999999897
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.46519999999873
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.95309999999881
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.0645999999997
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.15720000000147
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.61700000000019
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.22370000000046
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.83670000000166
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.64910000000054
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.44410000000062
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.43109999999979
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.22560000000158
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.08269999999902
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.50820000000022
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.96219999999994
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 82.36529999999948
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.41970000000038
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 90.45140000000174
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.9411
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.92569999999978
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.62289999999848
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 84.10289999999804
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.00110000000132
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.47839999999997
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.08699999999953
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.76450000000114
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.40740000000005
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.78559999999925
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 88.75150000000212
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.27800000000207
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.10310000000027
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.68579999999929
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.57650000000285
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.21220000000176
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.15439999999944
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 90.73449999999866
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.85020000000077
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.01959999999963
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.36439999999857
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.0086999999985
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 87.39229999999952
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 83.24409999999989
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.36290000000008
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.51619999999821
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.00820000000022
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.90160000000105
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.71819999999934
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.43559999999707
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.38330000000133
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.5731999999989
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.52260000000024
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 109.51530000000275
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.72779999999693
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.24370000000272
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.43240000000151
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.47629999999845
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.23659999999654
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.22949999999764
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.62580000000162
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.09049999999843
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.90889999999854
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.57289999999921
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 110.29219999999987
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.94190000000162
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.23869999999806
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.69889999999941
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 89.62970000000132
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.72070000000167
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.64919999999984
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.73159999999916
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.14300000000003
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 87.96619999999893
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.27560000000085
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.41239999999743
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 84.2925000000032
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.10729999999967
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.73950000000332
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.66589999999997
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.11179999999877
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.90830000000278
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.25950000000012
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.70300000000134
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.01430000000255
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.18020000000251
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.34549999999945
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.54550000000017
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.44220000000132
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.96280000000115
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.35519999999815
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.90979999999763
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.02590000000055
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.63240000000224
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.39929999999731
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.45149999999921
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.9390999999996
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.06949999999779
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.27260000000024
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.98879999999917
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.02120000000286
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.41730000000098
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.19679999999789
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.1880999999994
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.86700000000201
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.32419999999911
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.31790000000183
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.74339999999938
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.32179999999789
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.67429999999877
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.45259999999689
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.85719999999856
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 88.1890999999996
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.94430000000284
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.75510000000213
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.15279999999984
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.35810000000129
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.3784999999989
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 82.65149999999994
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.6974999999984
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.10870000000068
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.90580000000045
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.13639999999941
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.28700000000026
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.50820000000022
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.35060000000158
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.96010000000024
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.42559999999867
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.10349999999744
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 82.91489999999976
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.32990000000063
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.6826000000001
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.68319999999949
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.04129999999714
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.35910000000149
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.4339
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.70030000000042
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.11930000000211
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 61.85359999999855
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.37480000000141
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.15109999999913
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.78410000000076
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.55299999999988
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.47119999999995
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 76.90210000000297
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.28359999999884
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.24560000000201
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.26850000000195
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.86729999999807
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.7365000000027
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.23099999999977
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.60350000000108
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.97439999999915
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.90590000000157
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.35100000000239
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 57.061799999995856
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.73490000000311
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 74.53680000000168
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 113.5434000000023
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.03570000000036
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 83.12570000000414
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.79760000000533
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 76.88980000000447
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 84.79579999999987
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 88.23530000000028
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.2387000000017
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.67889999999898
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.97520000000077
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 85.79790000000503
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.91640000000189
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.84810000000289
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.98219999999856
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.35740000000078
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.01889999999548
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.25170000000071
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.7193999999945
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 75.51989999999932
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.00159999999596
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.25130000000354
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.49150000000373
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.80010000000038
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.08080000000336
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.51819999999861
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.14909999999509
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.88390000000072
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.82570000000123
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.67829999999958
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.02330000000075
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.92309999999998
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.86800000000221
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 75.65170000000217
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.02799999999843
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.63199999999779
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.52269999999407
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.06130000000121
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.60659999999916
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.12910000000556
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.12000000000262
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.47069999999803
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.5428000000029
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.40449999999691
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.67039999999542
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.76860000000306
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 101.98530000000028
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.27019999999902
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.40480000000389
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.40520000000106
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.8839999999982
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 88.47449999999662
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.8122000000003
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 82.47980000000098
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.9861000000019
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.50550000000658
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.2864000000045
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.71319999999832
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 83.23280000000523
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.44739999999729
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.41450000000623
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.82419999999547
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 90.0341999999946
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.7167000000045
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.27459999999701
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.59360000000015
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.79200000000128
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.18499999999767
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.9262000000017
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 110.43970000000263
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.29710000000341
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.96620000000257
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.53570000000036
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 111.12859999999637
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.5902999999962
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 109.16259999999602
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.05189999999857
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.98140000000421
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.68149999999878
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.9797000000035
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 108.3801999999996
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 108.77390000000014
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.26889999999548
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.82830000000104
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 90.96410000000469
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.26509999999689
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.05030000000261
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.30889999999636
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 108.9997000000003
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.15980000000127
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 75.1849000000002
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.28920000000653
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.12629999999626
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 85.86260000000038
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.24180000000342
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.85399999999936
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.05750000000262
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.04609999999957
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.84670000000187
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.47879999999714
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.4123000000036
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.57040000000416
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.7505999999994
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.73379999999452
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 72.49330000000191
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.90329999999813
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.63870000000315
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.07329999999638
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.55030000000261
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.55479999999807
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.05629999999655
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.85719999999856
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.54759999999806
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.9945000000007
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.07860000000073
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.35490000000573
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.11059999999998
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.14250000000175
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.98739999999816
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 75.6582999999955
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 75.76020000000426
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 85.89020000000164
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.2094999999972
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 84.97379999999976
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.08269999999902
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 76.41799999999785
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.7864000000045
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.20969999999943
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.84429999999702
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 109.58060000000114
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.58929999999964
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.37670000000071
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.27709999999934
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.26110000000335
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.37279999999737
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.50409999999829
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.83179999999993
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.07519999999931
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 75.64919999999984
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.50690000000031
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.93669999999838
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.41120000000228
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.80519999999524
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.7531999999992
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.25130000000354
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.70079999999871
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.3243999999977
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.07399999999325
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.24109999999928
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.4513999999981
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.08280000000377
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 74.55599999999686
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.34440000000177
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.05540000000474
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.97989999999845
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.67500000000291
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.47050000000309
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.04270000000542
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.92989999999554
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 109.76539999999659
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.9794000000038
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.74119999999675
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.63179999999556
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.16569999999774
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.72810000000027
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.57910000000265
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.87370000000374
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.54660000000149
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.8801999999996
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.04320000000007
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.86789999999746
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.27139999999781
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.81319999999687
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.81179999999586
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 68.27279999999882
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.2905000000028
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.84629999999743
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.93620000000374
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.19660000000295
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 82.14990000000398
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 82.4976999999999
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.0679999999993
+    }
+  ]
+}
+```
+
+## SC-011 real-path run reconciliation and validation
+
+The two complete independent runs are `a11b9a7d-c06a-4343-bb33-e8533122cd39` and `281bb294-ba10-406a-ad22-37e01d9242ab`, each starting from a reset/provisioned Stack A. Both used Supabase CLI 2.122.0 on Windows with Node v24.19.0 and the provisioned `.env.local` loaded privately. No production source or migration changed.
+
+| Run      | n ordinary / archived | Two-sided Mann-Whitney p | Ordinary median (ms) | Archived median (ms) | Absolute delta (ms) | Verdict |
+| -------- | --------------------- | ------------------------ | -------------------- | -------------------- | ------------------- | ------- |
+| a11b9a7d | 200 / 200             | 0.8766182029652609       | 96.19150000000172    | 96.07115000000158    | 0.12035000000014406 | PASS    |
+| 281bb294 | 200 / 200             | 0.5207291875360459       | 96.24709999999823    | 95.68119999999908    | 0.5658999999991465  | PASS    |
+
+Each complete run recorded 20 warm-ups per condition plus the 400 measured samples above, in chronological randomized interleaved order. Counts before/after collisions were identical in both: Auth users 12/12, identities 12/12, clients 2/2. The two ordinary account fixtures were created before those counts; the trials created zero accounts. Signup RPC responses were HTTP 200 with identical body bytes and stable end-to-end headers; the public mapped result matched the exact generic D-08 bytes on every trial. Hop-by-hop and volatile gateway metadata are excluded explicitly in the harness; the Next Server Action envelope is outside this measurement layer.
+
+Harness-development attempts are retained above for transparency and do not count as either full run: `6ca99554` stopped at the first warm-up because an expected RPC JSON string assumed compact whitespace; the actual PostgREST JSON uses whitespace. The baseline now validates the duplicate object and then compares actual byte strings between all conditions. `64b0344b` stopped after 19/20 measured samples on the original combined path/response assertion; that version did not retain the failed response and cannot identify the differing field. Detailed failed-trial capture and explicit exclusion of hop-by-hop transport metadata were added before the two complete runs. Its odd-sized median was also unsupported by the original helper; the final median helper supports odd partial samples. These incomplete attempts provide no SC-011 pass evidence.
+
+RED proof: with the exact final T023 test in place, temporarily substituted the original `96dc6bb` timing script and ran `node node_modules/vitest/vitest.mjs run tests/unit/client-accounts-actions.test.ts -t "T023 pins SC-011"`: exit 1, one failed test, at the prohibition on `node:http`/`createServer`. Restored the final script immediately; the focused unit file passed 20/20. This mutation changed no production file.
+
+Validation: `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm test` (63 files, 1372 tests), focused integration signup/admission (2 files, 101 tests), and `git diff --check` passed. The opt-in timing integration runner itself passed in both full script runs. No hosted CI was awaited. The original evidence prefix from `96dc6bb` was verified unchanged; all evidence additions are appended.

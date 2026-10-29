@@ -15,6 +15,22 @@ export type SignupPublicResult = {
   invalidFields?: Array<keyof SignupFields>;
 };
 
+export async function runSignupActionSafely(
+  action: (
+    previous: SignupPublicResult,
+    formData: FormData,
+  ) => Promise<SignupPublicResult>,
+  previous: SignupPublicResult,
+  formData: FormData,
+  locale: SignupLocale,
+): Promise<SignupPublicResult> {
+  try {
+    return await action(previous, formData);
+  } catch {
+    return signupResult('unavailable', locale);
+  }
+}
+
 export function signupResult(
   status: SignupStatus,
   locale: SignupLocale,

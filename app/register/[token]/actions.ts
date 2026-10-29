@@ -1,6 +1,7 @@
 'use server';
 
 import { cookies, headers } from 'next/headers';
+import { isAuthSessionMissingError } from '@supabase/supabase-js';
 import { createPublicSessionClient } from '../../../lib/supabase/public-session';
 import { processClientSignup } from '../../../lib/client-accounts/service';
 import {
@@ -31,13 +32,13 @@ export async function submitClientSignup(
     }
     const sessionState = async () => {
       const sessionClient = await createPublicSessionClient();
-      if (!sessionClient) return false;
-      try {
-        const { data, error } = await sessionClient.auth.getUser();
-        return !error && !!data.user;
-      } catch {
-        return false;
+      if (!sessionClient) throw new Error('Public session client unavailable');
+      const { data, error } = await sessionClient.auth.getUser();
+      if (error) {
+        if (isAuthSessionMissingError(error)) return false;
+        throw error;
       }
+      return !!data.user;
     };
     return await processClientSignup({
       token,
