@@ -136,7 +136,7 @@ Shared prerequisites block all story implementation. Tests exercise decided requ
 
 **Boundary**: Claude independent audit only. **Exit**: independent verdict and required reruns; unavailable here. Not executed by this agent. PR creation is a separate later unit, outside this task list and authorization.
 
-- [ ] T046 PLACEHOLDER ONLY — Claude independently audit `specs/011-client-accounts/tasks.md`, `specs/011-client-accounts/plan.md` and `tests/integration/client-accounts-verification.md`, diff, red/green evidence, C1–C4, all mutations and ND blocks; independently rerun gates and record verdict. This agent must not execute/check off this task.
+- [x] T046 PLACEHOLDER ONLY — Claude independently audit `specs/011-client-accounts/tasks.md`, `specs/011-client-accounts/plan.md` and `tests/integration/client-accounts-verification.md`, diff, red/green evidence, C1–C4, all mutations and ND blocks; independently rerun gates and record verdict. This agent must not execute/check off this task. **PO APPROVED — PASS (2026-10-29, session 11):** Claude's independent audit (session 10 at ac50a64; delta re-review of ac50a64..12036e2 incl. SC-011 real-path timing, both runs PASS) recommended PASS; the PO formally approved T046 PASS and the merge of PR #14 at 12036e26fb5e23da22af4ddf0e8d33de800779a2 (merge commit 1f4d2359bbfcef605e371e29b81a59b2a48d8ed4). F11 is merge-approved, NOT production-ready; production blockers are tracked in docs/10 and docs/13.
 
 ## Model constraint checklist — owned by T007/T008
 
