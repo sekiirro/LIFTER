@@ -7,8 +7,15 @@ import {
   writeFileSync,
 } from 'node:fs';
 import postgres from 'postgres';
+import {
+  assertLocalStackTarget,
+  getStackConfig,
+  selectStack,
+} from '../../scripts/local-stack.mjs';
 
-const path = '.env.local';
+const stack = selectStack();
+const config = getStackConfig(stack);
+const path = config.envFile;
 function parseEnv(contents) {
   const normalized = contents
     .replace(/^\uFEFF/, '')
@@ -30,6 +37,7 @@ function stackEndpointsFromStatus() {
         encoding: 'utf8',
         stdio: ['ignore', 'pipe', 'ignore'],
         shell: process.platform === 'win32',
+        cwd: config.workdir,
       },
     );
     return parseEnv(status);
@@ -62,21 +70,7 @@ if (existsSync(path)) {
   contents = `DB_URL="${env.DB_URL}"\nAPI_URL="${env.API_URL}"\n`;
 }
 
-let target;
-try {
-  target = new URL(env.DB_URL);
-} catch {
-  throw new Error('Local stack required');
-}
-if (
-  target.hostname !== '127.0.0.1' ||
-  target.port !== '54322' ||
-  target.pathname !== '/postgres' ||
-  env.API_URL !== 'http://127.0.0.1:54321' ||
-  !/^project_id = "lifter"$/m.test(readFileSync('supabase/config.toml', 'utf8'))
-) {
-  throw new Error('Local stack required');
-}
+assertLocalStackTarget({ stack, apiUrl: env.API_URL, dbUrl: env.DB_URL });
 
 // The extension owner is supabase_admin; postgres cannot revoke its grants.
 // No secrets are passed in command arguments, input, output or diagnostics.
@@ -85,7 +79,7 @@ execFileSync(
   [
     'exec',
     '-i',
-    'supabase_db_lifter',
+    `supabase_db_${config.projectId}`,
     'psql',
     '-U',
     'supabase_admin',

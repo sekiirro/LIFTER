@@ -1,3 +1,4 @@
+import { localSupabaseContainer } from './local-docker';
 import { spawnSync } from 'node:child_process';
 import { createHmac, randomBytes } from 'node:crypto';
 import type { TransactionSql } from 'postgres';
@@ -28,7 +29,7 @@ function catalogProbe(mutation: string) {
     [
       'exec',
       '-i',
-      'supabase_db_lifter',
+      localSupabaseContainer('db'),
       'psql',
       '-U',
       'supabase_admin',

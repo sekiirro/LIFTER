@@ -1,3 +1,5 @@
+import { getStackConfig, selectStack } from '../../scripts/local-stack.mjs';
+import { localSupabaseContainer } from './local-docker';
 import { spawnSync } from 'node:child_process';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { anonClient, loadEnv } from './harness';
@@ -11,11 +13,15 @@ const captureStart = new Date().toISOString();
 let context: Awaited<ReturnType<typeof clientContext>>;
 beforeAll(async () => {
   const env = loadEnv();
-  expect(env.apiUrl === 'http://127.0.0.1:54321', 'local Auth only').toBe(true);
+  const config = getStackConfig(selectStack());
+  expect(
+    env.apiUrl === `http://127.0.0.1:${config.apiPort}`,
+    'local Auth only',
+  ).toBe(true);
   const target = new URL(env.dbUrl);
   expect(
     target.hostname === '127.0.0.1' &&
-      target.port === '54322' &&
+      target.port === String(config.dbPort) &&
       target.pathname === '/postgres',
     'local DB only',
   ).toBe(true);
@@ -226,9 +232,9 @@ it('C3 captured passwords are absent from every application/Auth table and captu
     }
   }
   for (const container of [
-    'supabase_auth_lifter',
-    'supabase_db_lifter',
-    'supabase_kong_lifter',
+    localSupabaseContainer('auth'),
+    localSupabaseContainer('db'),
+    localSupabaseContainer('kong'),
   ]) {
     const captured = spawnSync(
       'docker',
