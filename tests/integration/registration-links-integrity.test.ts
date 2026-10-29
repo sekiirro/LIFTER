@@ -427,8 +427,14 @@ it('DELETE/TRUNCATE guards independently reject privileged DML without FK maskin
       for (const op of ['delete', 'truncate']) {
         await expect(
           db.begin(async (tx) => {
-            if (table === 'registration_links')
-              await tx`alter table public.registration_link_installments drop constraint registration_link_installments_workspace_id_link_id_fkey`;
+            if (table === 'registration_links') {
+              // Isolate the existing no-delete/no-truncate guards from every
+              // incoming FK, including later features. Entire probe rolls back.
+              const incoming =
+                await tx`select format('alter table %s drop constraint %I',conrelid::regclass,conname) as ddl from pg_constraint where contype='f' and confrelid='public.registration_links'::regclass`;
+              for (const constraint of incoming)
+                await tx.unsafe(constraint.ddl);
+            }
             if (table === 'registration_link_installments' && op === 'delete') {
               await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
               const [row] =
