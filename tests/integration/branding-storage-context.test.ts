@@ -10,6 +10,15 @@ const config = getStackConfig('b');
 if (config.projectId !== 'lifter-stack-b')
   throw new Error('T044 target mismatch');
 const env = loadEnv();
+// Opt-in only for the architect-approved temporary B profile. A config mismatch
+// fails before connecting, so the opt-in cannot silently skip an enabled profile.
+const transformsEnabled = process.env.T044_TRANSFORMS_ENABLED === 'true';
+const configuredTransforms =
+  /\[storage\.image_transformation\]\s*\nenabled\s*=\s*true/.test(
+    config.configText,
+  );
+if (transformsEnabled !== configuredTransforms)
+  throw new Error('T044 transform mode must match the selected B config');
 const secret = process.env.JWT_SECRET;
 if (!secret) throw new Error('T044 requires local JWT_SECRET in selected env');
 const db = sql();
@@ -101,8 +110,10 @@ async function request(
   // Never return/print upstream bodies, signed URLs, JWTs or request headers.
   const data = Buffer.from(await response.arrayBuffer());
   let signedAllDenied = false;
+  let genericNotFound = false;
   try {
     const parsed = JSON.parse(data.toString());
+    genericNotFound = parsed.message === 'Object not found';
     signedAllDenied =
       Array.isArray(parsed) &&
       parsed.length === 1 &&
@@ -122,10 +133,12 @@ async function request(
     bytesMatch: data.equals(bytes),
     emptyList: data.toString() === '[]',
     signedAllDenied,
+    genericNotFound,
     observations: rows,
   };
 }
 const download = `/object/authenticated/${bucket}/${object}`;
+const transform = `/render/image/authenticated/${bucket}/${object}?width=1`;
 const listed = `/object/list/${bucket}`;
 let bucketCreated = false;
 let rolesCreated = false;
@@ -153,7 +166,10 @@ beforeAll(async () => {
       correct_role boolean := current_user='${role}' and current_setting('request.jwt.claim.role',true)='${role}';
       correct_claims boolean := c->>'role'='${role}' and c->>'sub'='${subject}' and c->>'credential_id'='${credentialId}';
       correct_context boolean := h->>'x-t044-context'='${context}';
-      correct_path boolean := current_setting('request.path',true)='/object/authenticated/${bucket}/${object}';
+      -- Both paths pass this independent predicate: only storage.operation may
+      -- distinguish transform from download in this proof-only policy.
+      correct_path boolean := current_setting('request.path',true) in (
+        '${download}','${transform}');
     begin
       insert into ${schema}.observations(request_id,role_ok,claims_ok,context_ok,operation,method,path_ok,pid,tx)
       values(h->>'x-t044-request',correct_role,correct_claims,coalesce(correct_context,false),op,verb,coalesce(correct_path,false),pg_backend_pid(),pg_current_xact_id()::text);
@@ -286,11 +302,6 @@ const operations = [
     operation: 'storage.object.sign_many',
   },
   {
-    name: 'transform',
-    route: `/render/image/authenticated/${bucket}/${object}?width=1`,
-    operation: 'storage.render.image_authenticated',
-  },
-  {
     name: 'upload',
     route: `/object/${bucket}/new.png`,
     method: 'POST',
@@ -324,6 +335,80 @@ const operations = [
     body: { bucketId: bucket, sourceKey: object, destinationKey: 'copied.png' },
   },
 ] as const;
+
+it.skipIf(transformsEnabled)(
+  'disabled-profile: transform route is unavailable (404); runs when T044_TRANSFORMS_ENABLED is unset',
+  async () => {
+    const result = await request(transform, { spoof: true });
+    expect(result.status).toBe(404);
+    expect(result.observations).toHaveLength(0);
+    expect(result.bytesMatch).toBe(false);
+    expect((await request(download)).bytesMatch).toBe(true);
+    console.log('T044 disabled transform', {
+      status: result.status,
+      policyEvaluations: result.observations.length,
+    });
+  },
+);
+
+it.skipIf(!transformsEnabled)(
+  'enabled-profile proof: transform reaches RLS and is denied by operation alone (requires T044_TRANSFORMS_ENABLED=true and temporary enabled B config; skipped only on disabled profile)',
+  async () => {
+    const result = await request(transform, { spoof: true });
+    expect(
+      result.observations.length > 0,
+      'enabled transform actually reaches RLS',
+    ).toBe(true);
+    expect(
+      result.observations.every(
+        (o) =>
+          o.role_ok &&
+          o.claims_ok &&
+          o.context_ok &&
+          o.path_ok &&
+          o.method === 'GET',
+      ),
+      'all non-operation policy predicates match for transform',
+    ).toBe(true);
+    expect(
+      result.observations.every(
+        (o) => o.operation === 'storage.render.image_authenticated',
+      ),
+    ).toBe(true);
+    expect(result.observations.map((o) => o.operation)).not.toContain(
+      'storage.object.get_authenticated',
+    );
+    expect(result.status >= 400, 'download-only policy denies transform').toBe(
+      true,
+    );
+    expect(result.genericNotFound, 'generic object-not-found failure').toBe(
+      true,
+    );
+    expect(result.bytesMatch).toBe(false);
+    const allowed = await request(download);
+    expect(allowed.status).toBe(200);
+    expect(allowed.bytesMatch).toBe(true);
+    expect(
+      allowed.observations.every(
+        (o) => o.operation === 'storage.object.get_authenticated',
+      ),
+    ).toBe(true);
+    console.log('T044 enabled transform proof', {
+      transformStatus: result.status,
+      policyEvaluations: result.observations.length,
+      genericNotFound: result.genericNotFound,
+      transformOperations: [
+        ...new Set(result.observations.map((o) => o.operation)),
+      ],
+      downloadStatus: allowed.status,
+      downloadOperations: [
+        ...new Set(allowed.observations.map((o) => o.operation)),
+      ],
+      bytesMatch: allowed.bytesMatch,
+    });
+  },
+);
+
 for (const op of operations)
   it(`c/d: ${op.name} cannot borrow download context, even with forged operation headers`, async () => {
     const result = await request(op.route, { ...op, spoof: true });
