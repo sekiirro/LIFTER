@@ -1,6 +1,9 @@
 import type { ar } from './ar';
 
 export const en: Record<keyof typeof ar, string> = {
+  'forms.counter': 'Characters: {used} of {limit}; {remaining} remaining',
+  'forms.limitReached': 'Character limit reached.',
+  'forms.answerTooLong': 'This answer exceeds the character limit.',
   'registration.title': 'Registration links',
   'registration.intro':
     'Issue a registration link using the approved package terms.',

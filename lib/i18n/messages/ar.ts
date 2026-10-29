@@ -1,4 +1,7 @@
 export const ar = {
+  'forms.counter': 'الأحرف: {used} من {limit}، المتبقي {remaining}',
+  'forms.limitReached': 'وصلت إلى الحد الأقصى للأحرف.',
+  'forms.answerTooLong': 'الإجابة تتجاوز الحد الأقصى للأحرف.',
   'registration.title': 'روابط التسجيل',
   'registration.intro': 'أصدر رابط تسجيل بالشروط المعتمدة للباقة.',
   'registration.workspace': 'مساحة العمل',
