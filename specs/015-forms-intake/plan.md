@@ -85,7 +85,7 @@ Merge readiness of F12 and F14 is not asserted by this plan; their latest integr
 | Authoritative P4 first-pair delivery and responsible-Trainer coverage | T016 synthetic alert engine can proceed; T017 real-data scheduler activation and T025 production readiness stay blocked. |
 | Future attachment storage lifecycle | No MVP attachment task is authorized. FR-032 remains no attachment feature/storage until separately specified; future attachment implementation requires a new scoped decision/design and RET-2/3 proof. |
 | Q2 removal from already-submitted answer history/audit | Only the affected branch-history removal/projection sub-case in T011/T013/T020; do not erase records pending PO resolution. |
-| Q3/Q4 unstated operational details | Only recurrence resumption after freeze, no-Trainer initial alert routing, and whether reassignment restarts the 24-hour clock; T023 otherwise proceeds. |
+| Q3/Q4 unstated operational details | Only recurrence resumption after freeze, no-Trainer initial alert routing, and whether reassignment restarts the 24-hour clock; escalation behavior for unavailable/revoked owners; T023 otherwise proceeds. |
 
 ## Project Structure
 

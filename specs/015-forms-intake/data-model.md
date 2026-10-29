@@ -46,7 +46,7 @@ Workspace ── Form ── FormVersion
 
 ## Open model details
 
-- Q3/Q4 leave these operational details unstated: whether recurrence resumes after freeze ends; initial alert recipient when no Trainer is assigned; whether reassignment restarts the 24-hour clock.
+- Q3/Q4 leave these operational details unstated: whether recurrence resumes after freeze ends; initial alert recipient when no Trainer is assigned; whether reassignment restarts the 24-hour clock; behavior when either escalation owner is unavailable or revoked.
 - Q2 branch removal from already-submitted answer versions/history and audit is blocked pending PO resolution; requiredness bypass remains prohibited.
 - No role may correct after Closure, Refund or Deactivation (Q1), even before purge.
 - Mandatory Intake question entities/content are seeded only after the PO supplies them at the named task.
