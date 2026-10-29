@@ -26,6 +26,10 @@ let po: Awaited<ReturnType<typeof createStaff>>;
 let woA: Awaited<ReturnType<typeof createStaff>>;
 let trainerA: Awaited<ReturnType<typeof createStaff>>;
 let salesA: Awaited<ReturnType<typeof createStaff>>;
+let poRecoverySession: {
+  client: ReturnType<typeof anonClient>;
+  claims: object;
+} | null = null;
 
 beforeAll(async () => {
   contextA = await clientContext();
@@ -260,122 +264,222 @@ describe('F11 client recovery linkage', () => {
     expect(lookup?.workspace_id).toBe(targetA.workspaceId);
   });
 
-  it.each([
-    ['PO', () => po],
-    ['WO', () => woA],
-  ] as const)(
-    '%s can reset a pending client password without changing approval or access',
-    async (_label, actorFactory) => {
-      const actor =
-        _label === 'PO'
-          ? actorFactory()
-          : await createStaff('workspace_owner', 'client-recovery-reset-wo');
-      if (_label === 'WO')
-        checked(
-          await admin().from('workspace_memberships').insert({
-            workspace_id: targetA.workspaceId,
-            user_id: actor.userId,
-            granted_by: po.userId,
-          }),
-        );
-      const [before] = await db`
+  it('PO can reset a pending client password without changing approval or access', async () => {
+    const actor = po;
+    const [before] = await db`
         select c.id, to_jsonb(c) as client_row
         from public.clients c where c.auth_user_id=${targetA.userId}`;
-      expect(before).toBeDefined();
-      expect(
-        (
-          await actor.client.rpc('recovery_link_authorize', {
-            target: targetA.userId,
-          })
-        ).error,
-      ).toBeNull();
-      const record = await actor.client.rpc('recovery_link_record', {
-        target: targetA.userId,
-      });
-      expect(record.error).toBeNull();
-      expect(record.data).toBeTruthy();
+    expect(before).toBeDefined();
+    expect(
+      (
+        await actor.client.rpc('recovery_link_authorize', {
+          target: targetA.userId,
+        })
+      ).error,
+    ).toBeNull();
+    const record = await actor.client.rpc('recovery_link_record', {
+      target: targetA.userId,
+    });
+    expect(record.error).toBeNull();
+    expect(record.data).toBeTruthy();
 
-      const link = await admin().auth.admin.generateLink({
-        type: 'recovery',
-        email: targetA.email,
-      });
-      const tokenHash = link.data.properties?.hashed_token;
-      expect(link.error).toBeNull();
-      expect(tokenHash).toBeTruthy();
-      const recoveryClient = anonClient();
-      expect(
-        (
-          await recoveryClient.auth.verifyOtp({
-            type: 'recovery',
-            token_hash: tokenHash!,
-          })
-        ).error,
-      ).toBeNull();
-      const newPassword = `Pending-Recovery-${randomUUID()}-Aa1!`;
-      expect(
-        (await recoveryClient.auth.updateUser({ password: newPassword })).error,
-      ).toBeNull();
+    const link = await admin().auth.admin.generateLink({
+      type: 'recovery',
+      email: targetA.email,
+    });
+    const tokenHash = link.data.properties?.hashed_token;
+    expect(link.error).toBeNull();
+    expect(tokenHash).toBeTruthy();
+    const recoveryClient = anonClient();
+    expect(
+      (
+        await recoveryClient.auth.verifyOtp({
+          type: 'recovery',
+          token_hash: tokenHash!,
+        })
+      ).error,
+    ).toBeNull();
+    const newPassword = `Pending-Recovery-${randomUUID()}-Aa1!`;
+    expect(
+      (await recoveryClient.auth.updateUser({ password: newPassword })).error,
+    ).toBeNull();
 
-      const [after] = await db`
+    const [after] = await db`
         select c.id, to_jsonb(c) as client_row
         from public.clients c where c.auth_user_id=${targetA.userId}`;
-      expect(after?.client_row).toEqual(before!.client_row);
-      expect(after?.client_row.approval_state).toBe('pending-approval');
-      expect(
-        await db`select id from public.audit_events where target_table='clients' and target_id=${before!.id} and action ilike '%update%'`,
-      ).toHaveLength(0);
+    expect(after?.client_row).toEqual(before!.client_row);
+    expect(after?.client_row.approval_state).toBe('pending-approval');
+    expect(
+      await db`select id from public.audit_events where target_table='clients' and target_id=${before!.id} and action ilike '%update%'`,
+    ).toHaveLength(0);
 
-      const oldPassword = await anonClient().auth.signInWithPassword({
-        email: targetA.email,
-        password: targetA.password,
-      });
-      expect(oldPassword.error).not.toBeNull();
-      const signedIn = anonClient();
-      const signIn = await signedIn.auth.signInWithPassword({
-        email: targetA.email,
-        password: newPassword,
-      });
-      expect(signIn.error).toBeNull();
-      expect(signIn.data.user?.id).toBe(targetA.userId);
+    const oldPassword = await anonClient().auth.signInWithPassword({
+      email: targetA.email,
+      password: targetA.password,
+    });
+    expect(oldPassword.error).not.toBeNull();
+    const signedIn = anonClient();
+    const signIn = await signedIn.auth.signInWithPassword({
+      email: targetA.email,
+      password: newPassword,
+    });
+    expect(signIn.error).toBeNull();
+    expect(signIn.data.user?.id).toBe(targetA.userId);
 
-      const claims = await signedIn.auth.getClaims();
-      expect(claims.error).toBeNull();
-      expect(claims.data?.claims.sub).toBe(targetA.userId);
-      const actorRows = await loadActorRows(signedIn, targetA.userId);
-      expect(actorRows).toMatchObject({
-        userId: targetA.userId,
-        role: null,
-        activeWorkspaceIds: [],
-      });
-      const appActor = actorRows ?? {
-        userId: targetA.userId,
-        role: null,
-        activeWorkspaceIds: [],
-      };
-      expect(authorize(appActor, 'coaching_work', targetA.workspaceId)).toBe(
-        false,
-      );
-      expect(authorize(appActor, 'coaching_work', contextB.wsA.id)).toBe(false);
-      const rlsProbeResults: boolean[] = [];
-      for (const context of [contextA, contextB]) {
-        try {
-          await probe((tx) =>
-            pendingRlsAccess(tx, context, claims.data!.claims),
-          );
-          rlsProbeResults.push(true);
-        } catch (error) {
-          if (!(error instanceof PendingRlsAccessDenied)) throw error;
-          rlsProbeResults.push(false);
-        }
+    const claims = await signedIn.auth.getClaims();
+    expect(claims.error).toBeNull();
+    expect(claims.data?.claims.sub).toBe(targetA.userId);
+    const actorRows = await loadActorRows(signedIn, targetA.userId);
+    expect(actorRows).toMatchObject({
+      userId: targetA.userId,
+      role: null,
+      activeWorkspaceIds: [],
+    });
+    const appActor = actorRows ?? {
+      userId: targetA.userId,
+      role: null,
+      activeWorkspaceIds: [],
+    };
+    expect(authorize(appActor, 'coaching_work', targetA.workspaceId)).toBe(
+      false,
+    );
+    expect(authorize(appActor, 'coaching_work', contextB.wsA.id)).toBe(false);
+    poRecoverySession = { client: signedIn, claims: claims.data!.claims };
+  });
+
+  it('PO recovery remains denied by safe-column RLS probes in both workspaces', async () => {
+    const session = poRecoverySession;
+    if (!session) throw new Error('PO recovery session setup did not complete');
+    const rlsProbeResults: boolean[] = [];
+    for (const context of [contextA, contextB]) {
+      try {
+        await probe((tx) => pendingRlsAccess(tx, context, session.claims));
+        rlsProbeResults.push(true);
+      } catch (error) {
+        if (!(error instanceof PendingRlsAccessDenied)) throw error;
+        rlsProbeResults.push(false);
       }
-      expect(
-        rlsProbeResults,
-        'safe-column RLS probes for both workspaces',
-      ).toEqual([true, true]);
-      await pendingHttpAccess(signedIn, contextA);
-      await pendingHttpAccess(signedIn, contextB);
-    },
-  );
+    }
+    expect(
+      rlsProbeResults,
+      'safe-column RLS probes for both workspaces',
+    ).toEqual([true, true]);
+  });
+
+  it('PO recovery remains denied by HTTP access probes in both workspaces', async () => {
+    const session = poRecoverySession;
+    if (!session) throw new Error('PO recovery session setup did not complete');
+    await pendingHttpAccess(session.client, contextA);
+    await pendingHttpAccess(session.client, contextB);
+  });
+
+  it('WO can reset a pending client password without changing approval or access', async () => {
+    const actor = await createStaff(
+      'workspace_owner',
+      'client-recovery-reset-wo',
+    );
+    checked(
+      await admin().from('workspace_memberships').insert({
+        workspace_id: targetA.workspaceId,
+        user_id: actor.userId,
+        granted_by: po.userId,
+      }),
+    );
+    const [before] = await db`
+      select c.id, to_jsonb(c) as client_row
+      from public.clients c where c.auth_user_id=${targetA.userId}`;
+    expect(before).toBeDefined();
+    expect(
+      (
+        await actor.client.rpc('recovery_link_authorize', {
+          target: targetA.userId,
+        })
+      ).error,
+    ).toBeNull();
+    const record = await actor.client.rpc('recovery_link_record', {
+      target: targetA.userId,
+    });
+    expect(record.error).toBeNull();
+    expect(record.data).toBeTruthy();
+
+    const link = await admin().auth.admin.generateLink({
+      type: 'recovery',
+      email: targetA.email,
+    });
+    const tokenHash = link.data.properties?.hashed_token;
+    expect(link.error).toBeNull();
+    expect(tokenHash).toBeTruthy();
+    const recoveryClient = anonClient();
+    expect(
+      (
+        await recoveryClient.auth.verifyOtp({
+          type: 'recovery',
+          token_hash: tokenHash!,
+        })
+      ).error,
+    ).toBeNull();
+    const newPassword = `Pending-Recovery-${randomUUID()}-Aa1!`;
+    expect(
+      (await recoveryClient.auth.updateUser({ password: newPassword })).error,
+    ).toBeNull();
+
+    const [after] = await db`
+      select c.id, to_jsonb(c) as client_row
+      from public.clients c where c.auth_user_id=${targetA.userId}`;
+    expect(after?.client_row).toEqual(before!.client_row);
+    expect(after?.client_row.approval_state).toBe('pending-approval');
+    expect(
+      await db`select id from public.audit_events where target_table='clients' and target_id=${before!.id} and action ilike '%update%'`,
+    ).toHaveLength(0);
+
+    const oldPassword = await anonClient().auth.signInWithPassword({
+      email: targetA.email,
+      password: targetA.password,
+    });
+    expect(oldPassword.error).not.toBeNull();
+    const signedIn = anonClient();
+    const signIn = await signedIn.auth.signInWithPassword({
+      email: targetA.email,
+      password: newPassword,
+    });
+    expect(signIn.error).toBeNull();
+    expect(signIn.data.user?.id).toBe(targetA.userId);
+
+    const claims = await signedIn.auth.getClaims();
+    expect(claims.error).toBeNull();
+    expect(claims.data?.claims.sub).toBe(targetA.userId);
+    const actorRows = await loadActorRows(signedIn, targetA.userId);
+    expect(actorRows).toMatchObject({
+      userId: targetA.userId,
+      role: null,
+      activeWorkspaceIds: [],
+    });
+    const appActor = actorRows ?? {
+      userId: targetA.userId,
+      role: null,
+      activeWorkspaceIds: [],
+    };
+    expect(authorize(appActor, 'coaching_work', targetA.workspaceId)).toBe(
+      false,
+    );
+    expect(authorize(appActor, 'coaching_work', contextB.wsA.id)).toBe(false);
+    const rlsProbeResults: boolean[] = [];
+    for (const context of [contextA, contextB]) {
+      try {
+        await probe((tx) => pendingRlsAccess(tx, context, claims.data!.claims));
+        rlsProbeResults.push(true);
+      } catch (error) {
+        if (!(error instanceof PendingRlsAccessDenied)) throw error;
+        rlsProbeResults.push(false);
+      }
+    }
+    expect(
+      rlsProbeResults,
+      'safe-column RLS probes for both workspaces',
+    ).toEqual([true, true]);
+    await pendingHttpAccess(signedIn, contextA);
+    await pendingHttpAccess(signedIn, contextB);
+  });
 
   it('recovery code and F4 RPC definitions never update public.clients', async () => {
     const source = await readFile('app/auth/recovery/actions.ts', 'utf8');
