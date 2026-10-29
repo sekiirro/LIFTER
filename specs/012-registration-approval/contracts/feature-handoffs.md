@@ -1,6 +1,6 @@
 # Contract: F12 handoffs to P2, P4, F13 and stack B
 
-**Status**: Proposed technical seam, 2026-10-29. Consumer features remain separate. [Plan approval register](../plan.md#plan-approval-items-for-the-po) owns open decisions.
+**Status**: Proposed technical seam, 2026-10-29. Consumer features remain separate. [Plan approval register](../plan.md#plan-approval-items-for-the-po) records final PO decisions and Architect items.
 
 ## P2 — REQ-P2-01 registration approved
 
@@ -16,7 +16,7 @@ F12 owns immutable subscription/obligations and an initially empty activation-fa
 
 P4 transaction must lock client → subscription → obligations/ledger in the F12 order before appending one activation fact, delivering both plans and creating one productivity unit. Any failure rolls them all back. Unique subscription activation permits safe replay, not a second start. Activation cannot be created from F12 approval, collection, queue rendering or a cron estimate.
 
-Before that fact, due_on for installment 2+ is null/undefined. After activation, intended due calculation uses its Cairo date and issued day offsets. D-11's month is 30 days. ND-F12-2's fixed month-one second installment conflicts with non-30 F10 second offsets; PA-F12-3 must reconcile them and PA-F12-8 must settle date cutoff. Neither F12 nor P4 may silently rewrite issued terms. First installment is collected at approval even for a nonzero issued first offset. Early later payments/order require PA-F12-2, independently of whether a due date exists.
+Before that fact, due_on for installment n>=2 is undefined and later installment collection is denied. After activation, due_on = the Africa/Cairo activation calendar date + the exact issued offset days; payment is through that day's end, represented as the exclusive following Cairo midnight without hard-coded UTC offsets. Default remainder offset is 30 calendar days, not 720 elapsed hours or adding a calendar month. Preserve all custom schedules and second offsets other than 30 unchanged. First installment is upfront at approval even if its historical stored first offset is nonzero; preserve that raw value. Later collections/recollections require activation and all earlier obligations currently paid; early payment before due is permitted after activation. Correction of an earlier obligation restores it to unpaid without undoing later immutable events; subsequent new collection follows sequence again.
 
 P4 owns overdue restrictions, notices, expiry and reporting; F12 does not claim these work because the seam exists. Future readers must distinguish unknown due date from not-yet-due or paid.
 
@@ -32,4 +32,12 @@ Inspected preparation: `infra-second-stack` revision `75d4a40def664f0a2cbbd836c5
 
 AI-F12-1 recommends integrating the infrastructure after it lands by reviewed non-rebase merge of updated main into F12. Include the selector-aware integration harness and F11 provisioner, not config alone. Verify the e2e server receives B URLs/keys as well as the integration runner. Stop before opening any connection if selector is not b, env/config is absent, endpoint is non-loopback or ports do not match B. No fallback or credentials copied from A. Treat stack-B config and selected URLs as a checked tuple; do not log keys/status output.
 
-U0 must record the landed infrastructure SHA and authorized provisioned B availability, including B-specific lock ownership. Future migrations/tests need that lock; A's lock neither authorizes nor protects B. Provisioning is separate work, not authorized by this plan-writing unit. The current unit executes no stack command. CI uses isolated runner-local infrastructure and its own credentials, never the developer's A or B stack.
+U0 must record the landed infrastructure SHA and authorized provisioned B availability, including B-specific lock ownership. Future migrations/tests need that lock; A's lock neither authorizes nor protects B. Provisioning is separate work, not authorized by this plan-writing unit. The final 2026-10-29 source records B provisioning/start complete with isolation and 861/861 integration at short infrastructure SHA d498800. This checkout has not integrated or independently re-verified those changes; record the full landed SHA and ownership before future DB work. The current unit executes no stack command. CI uses isolated runner-local infrastructure and its own credentials, never the developer's A or B stack.
+
+## Correction-month accounting boundary
+
+F12 recording correction is effective on the Cairo date of its recording instant; its exact negative amount/commission is attributed to that correction month. Never restate or edit the original collection's recorded_at/collected_on/amount/commission. Receipt replay across month boundaries returns the original correction receipt, not a new effective date. F13 refunds remain a separate full-refund contract.
+
+## Existing route boundary
+
+F12 owns standalone status and bounded detection/navigation now; P2 owns only intake/assignment presentation. Recommend a server-checked `/` fallback until a real authorized P2 route exists. Root is already present and permits signed client role-null identities; it must not imply activation. Never redirect clients to staff approval/payment paths or a guessed future form route.

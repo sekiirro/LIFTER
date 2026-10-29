@@ -4,11 +4,11 @@
 
 **Created**: 2026-10-28
 
-**Status**: PO decisions recorded 2026-10-28; specification only; no plan, tasks, or implementation approval.
+**Status**: FINAL PO policy reconciled 2026-10-29 with the 2026-10-28 decisions. Plan/tasks are proposed artifacts; implementation approval remains separate.
 
 **Input**: F12 registration approval, rejection, initial subscription snapshot, installment obligations, and confirmed payment recording, based on F11 client accounts and F10 issued registration-link snapshots.
 
-**Sources**: [Spec debate r1](research/spec-debate-r1.md) (architect v0, Sol Medium critique round 1, and architect response r1); [Constitution v1.1.0](../../.specify/memory/constitution.md); [BRD/PRD](../../LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md) BRD-03/04, PRD-02/07/14, DR-01/02; [decision register](../../docs/04-changes-and-questions.md) D-08..D-17; [F9 package spec](../009-packages/spec.md) and [data model](../009-packages/data-model.md); [F10 registration-link spec](../010-registration-links/spec.md) and [data model](../010-registration-links/data-model.md); [F11 client-account spec](../011-client-accounts/spec.md) and [data model](../011-client-accounts/data-model.md).
+**Sources**: [Spec debate r1](research/spec-debate-r1.md) (architect v0, Sol Medium critique round 1, and architect response r1); [Constitution v1.2.1](../../.specify/memory/constitution.md); [BRD/PRD](../../LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md) BRD-03/04, PRD-02/07/14, DR-01/02; [decision register](../../docs/04-changes-and-questions.md) D-08..D-17; [F9 package spec](../009-packages/spec.md) and [data model](../009-packages/data-model.md); [F10 registration-link spec](../010-registration-links/spec.md) and [data model](../010-registration-links/data-model.md); [F11 client-account spec](../011-client-accounts/spec.md) and [data model](../011-client-accounts/data-model.md).
 
 ## User Scenarios & Testing
 
@@ -29,7 +29,7 @@ A workspace PO or WO reviews a client who completed F11 signup, collects the fir
 
 ### User Story 2 — Reject an ineligible pending registration (Priority: P1)
 
-An authorized staff member rejects a pending registration when it should not proceed. The rejection is an auditable terminal outcome and does not create subscription or collection history.
+An authorized staff member rejects a pending registration when it should not proceed. The rejection is an auditable decision with PO-only reconsideration and does not create subscription or collection history.
 
 **Why this priority**: The workflow needs a safe resolution for registrations that cannot be approved, while maintaining the F11 no-access boundary and preventing an ambiguous pending queue.
 
@@ -37,7 +37,7 @@ An authorized staff member rejects a pending registration when it should not pro
 
 **Acceptance Scenarios**:
 
-1. **Given** a pending client and a PO or WO using a defined rejection reason code, **When** rejection is recorded, **Then** the client becomes rejected, the decision is audited without free-text PII, and no subscription, obligation, or payment event is created.
+1. **Given** a pending client and a PO or WO using the single rejection code `registration_rejected`, **When** rejection is recorded, **Then** the client becomes rejected, the decision is audited without free-text PII, and no subscription, obligation, or payment event is created.
 2. **Given** an already approved or rejected client, **When** another approve or reject action is attempted, **Then** the state is not changed and no duplicate transition audit is emitted.
 3. **Given** a rejected client, **When** the client attempts to use protected client resources, **Then** access remains denied. Only the PO may reconsider a rejected client by changing rejected to approved; this transition is fully audited. Identity release and recovery behavior remain outside F12.
 
@@ -83,6 +83,9 @@ A client who signed in while pending can learn that approval has taken effect th
 1. **Given** a pending client session, **When** status is checked, **Then** only that client's narrow approval status is returned and all other protected resources remain denied.
 2. **Given** that same session after an authorized approval commits, **When** the status is refreshed or polled, **Then** approved status becomes visible without re-login.
 3. **Given** a client from another workspace, a forged client identifier, or an unauthenticated caller, **When** status is requested, **Then** the request is denied without revealing another client's existence or status.
+4. **Given** the standalone pending page is visible, **When** bounded automatic status requests detect approval, **Then** the Auth/self mapping is rechecked and navigation uses an actually existing authorized route, without implying activation or plan availability.
+5. **Given** the page is hidden/offline, its automatic budget is exhausted, Auth expires or redirect fails, **When** the state is presented, **Then** automatic work stops/pauses safely and authenticated Manual Refresh/manual-navigation recovery remains available; no Realtime or unbounded retry is required.
+6. **Given** a directly opened Approved or Rejected state, **When** rendered, **Then** its standalone state remains understandable, uses existing semantic tokens, and exposes no fabricated plan/intake route or staff-only data.
 
 ### User Story 6 — Preserve tenant isolation and deny unapproved roles (Priority: P1)
 
@@ -116,6 +119,21 @@ Concurrent approval/rejection and collection/replay attempts produce one valid o
 4. **Given** audit recording fails, **When** an approval, rejection, or collection transaction completes, **Then** the business change rolls back with the audit failure.
 5. **Given** an exact retry after a lost response, **When** it is re-authorized and replayed, **Then** it returns the identical receipt without a second financial or audit event.
 
+### User Story 8 - Configure flexible payment terms on link creation (Priority: P1)
+
+Authorized PO/WO/Sales configure the upfront amount, total payment count, individual exact amounts and timing when issuing the F10 link. Terms become immutable at issuance and are honored at approval/activation.
+
+**Why this priority**: Final CUSTOM F12-3 makes agreement configuration part of F12's financial contract; historic agreements must survive the extension.
+
+**Independent Test**: With a synthetic priced offer, issue a default upfront/remainder agreement and a custom multi-payment agreement, then compare immutable issued rows and exact totals through approval and synthetic activation projection.
+
+**Acceptance Scenarios**:
+
+1. **Given** a chosen upfront below the price, **When** the default split is constructed and confirmed, **Then** upfront is collected at approval and the exact remainder is due 30 Cairo calendar days after activation, through day-end; the amounts total the price.
+2. **Given** custom positive amounts and ordered offsets or an already-issued agreement, **When** the extension is applied or approval proceeds, **Then** every issued amount/offset stays unchanged; installment n>=2 uses Cairo activation date plus its own issued offset, including a non-30 second offset.
+3. **Given** mismatched upfront/count/rows/total, a Trainer attempting to configure terms, or foreign scope, **When** issuance is requested, **Then** independent app/database checks reject it without a partial agreement or success audit; existing permitted full-payment issuance remains available.
+4. **Given** activation and the earliest unpaid obligation, **When** its full collection is confirmed before its due date, **Then** early sequential collection succeeds; without activation or with an earlier unpaid obligation, later collection is denied.
+
 ### Edge Cases
 
 - F10 link expiry/consumption, offer disablement, or a newer package version after signup must not replace a committed client-to-link-to-version snapshot.
@@ -125,7 +143,7 @@ Concurrent approval/rejection and collection/replay attempts produce one valid o
 - Integer minor-unit amounts beyond JavaScript's exact integer range, calculation overflow, and commission rounding ties must retain exactness; money is not transported or calculated through imprecise JavaScript `number` values.
 - Cairo collection date is distinct from server recording time. Any historical date is allowed; future dates are prohibited. Corrections use the PO-only append-only reversal defined in F12; this capability must be operational before real financial use.
 - A partial amount is rejected; payment method and free-text reference fields do not exist. F10 due-date offsets for installments 2+ begin only at activation; due dates do not exist before activation.
-- Rejection never grants client access or creates a subscription/payment event. Reconsideration, recovery, and identity/link release are not inferred.
+- Rejection never grants client access or creates a subscription/payment event. Only PO may reconsider rejected to approved; recovery and identity/link release remain outside F12.
 - UI screens and components must cover loading, empty, error, and success states and satisfy the Frontend Design Gate and DESIGN.md in both Arabic RTL and English LTR.
 
 ## Requirements
@@ -135,7 +153,7 @@ Concurrent approval/rejection and collection/replay attempts produce one valid o
 - **FR-001**: F12 MUST allow only the workspace PO and WO to approve or reject a pending-approval client, applying ND-F11-6a and current workspace authorization. The capability matrix removes `approve_registration` from Sales; Sales may record payments but cannot approve or reject.
 - **FR-002**: Approval MUST use the client’s committed F10 registration-link and package-version binding. Link expiry/consumption, later offer disablement, or newer versions MUST NOT rewrite or invalidate that binding. Broken or cross-workspace relations MUST fail closed.
 - **FR-003**: Approval MUST create the initial subscription snapshot and installment obligations from the issued terms, with one initial subscription per client under the initial-subscription scope. Renewal behavior remains F13. Subscription price, currency, duration, commission rate, and schedule remain immutable snapshots.
-- **FR-004**: External payment confirmation MUST precede any record represented as collected. Only a confirmed collection may earn commission, at its purchase-time rate and attributed to its collection month in Africa/Cairo. Unpaid balances earn no commission. The first full installment is collected at approval; partial payments are prohibited. Installment 2 is due at the end of month one from activation. Activation occurs on delivery of the initial workout and nutrition plan pair (P4). F10 day offsets for installments 2 and later are anchored to activation and have no due date until activation exists.
+- **FR-004**: External payment confirmation MUST precede any record represented as collected. Only a confirmed collection may earn commission, at its purchase-time rate and attributed to its collection month in Africa/Cairo. Unpaid balances earn no commission. The first full installment is collected at approval; partial payments are prohibited. The default remainder is due 30 Cairo calendar days after activation; all issued custom offsets are preserved. Later installments are payable only after activation, sequentially, with early payment allowed. Activation occurs on delivery of the initial workout and nutrition plan pair (P4). F10 day offsets for installments 2 and later are anchored to activation and have no due date until activation exists.
 - **FR-005**: Installment obligations MUST be immutable. Payment history MUST be an append-only unified event ledger supporting collection and reversal events that reference originals. A PO-only correction reversal in F12 MUST reverse the original event exact stored amount and commission, restore the obligation to unpaid, and leave the original unchanged. Paid status is derived from unreversed collection events; no mutable paid-event pointer is authoritative.
 - **FR-006**: Every tenant-owned F12 record and relationship MUST be workspace-scoped, with same-workspace tenant relations. Approval, rejection, status, payment, commission, and audit surfaces MUST enforce both application authorization and independent database authorization, deny by default, and avoid foreign-record existence disclosure.
 - **FR-007**: Client authorization MUST use a path separate from staff `authorize()`, exposing only a narrow self-status projection resolved by the authenticated user's client association. Current state MUST be checked per request; caches may last only for that request. An already-open pending client page MUST be able to refresh/poll status without requiring re-login. Detailed design is deferred to plan phase.
@@ -151,10 +169,18 @@ Concurrent approval/rejection and collection/replay attempts produce one valid o
 - **FR-016**: Approval/rejection transitions and financial events MUST be audited through the existing audit model. Extend the latest `audit_row_change()` body for client approval/rejection UPDATE transitions; audit failure MUST roll back the change. The event details MUST avoid PII/free text, and replay MUST NOT create duplicate audit events. Preserve PO/WO audit visibility.
 - **FR-017**: Unauthorized, foreign, nonexistent, or revoked targets MUST receive a generic non-disclosing denial. Stale already-decided client states MUST not be changed. Authorization MUST precede any replay or state disclosure.
 - **FR-018**: F12 MUST expose no bulk client action. All status and financial views MUST use role- and workspace-appropriate projections; Sales sees no commission amount/rate.
-- **FR-019**: F12 user interfaces MUST follow the [Frontend Design Gate](../../docs/09-frontend-design-gate.md) (added by branch `docs-workflow-governance`, pending merge to main) and the repository [DESIGN.md](../../DESIGN.md): Arabic-first RTL and English LTR, dark/light modes, responsive and keyboard-accessible interaction, WCAG 2.2 AA contrast, and loading/empty/error/success states. The approved UI decisions are recorded as DG-F12-1..4.
-- **FR-020**: F12 MUST implement the decisions recorded in ND-F12-1..7 and DG-F12-1..4 below; no former conservative default remains in force.
+- **FR-019**: F12 user interfaces MUST follow the [Frontend Design Gate](../../docs/09-frontend-design-gate.md) and the repository [DESIGN.md](../../DESIGN.md): Arabic-first RTL and English LTR, dark/light modes, responsive and keyboard-accessible interaction, WCAG 2.2 AA contrast, and loading/empty/error/success states. The approved UI decisions are recorded as DG-F12-1..4.
+- **FR-020**: F12 MUST implement the decisions recorded in ND-F12-1..7 and DG-F12-1..4 below; the final 2026-10-29 record also applies; no former conservative default remains in force.
 - **FR-021**: Approval MUST use a dedicated full-page client review; the payment amount MUST be automatic and read-only with explicit confirmation; status badges MUST use soft semantic Design System tokens.
-- **FR-022**: F12 MUST emit an approved-registration event for P2 to consume, including the approved client and workspace identity. F12 MUST NOT include form selection, assignment, templates, or intake UI; post-approval automatic form assignment and client login presentation are delivered by P2 per REQ-P2-01. P2 must preserve mandatory Basic/Workout/Nutrition intake and workspace authorization. The capability that authorizes Trainer form selection remains open for the P2 spec.
+- **FR-022**: F12 MUST emit an approved-registration event for P2 to consume, including the approved client and workspace identity. F12 MUST NOT include form selection, assignment, templates, or intake UI; post-approval automatic form assignment and intake presentation on client login are delivered by P2 per REQ-P2-01. P2 must preserve mandatory Basic/Workout/Nutrition intake and workspace authorization. The capability that authorizes Trainer form selection remains open for the P2 spec.
+
+- **FR-023**: F12 MUST extend F10 link creation with explicit Upfront amount, installment count, individual amounts and due timing. Existing schedule storage and exact-total enforcement are reused. Default timing is upfront at approval and remainder at offset 30 from Cairo activation date; no default upfront amount/percentage is invented. Every issued link/agreement, amount and custom offset remains immutable. See the [F10 reconciliation addendum](../010-registration-links/addendum-f12-flexible-installments.md).
+- **FR-024**: F12 MUST provide an authenticated standalone Pending/Approved/Rejected page with lightweight automatic approval detection and safe redirect, Manual Refresh and manual-navigation fallback. Only existing authorized routes may be used; approval MUST NOT imply activation or plan availability. The safe self-status reader is the only pending/rejected data exception.
+- **FR-025**: A correction reversal MUST have effective_on equal to the Africa/Cairo date of its correction recording, so its financial effect belongs to the correction month. The original collection date, amount, commission and event remain unchanged.
+- **FR-026**: Rejection MUST use only `registration_rejected`, without free text. Only PO may reconsider; no identity/link release or recovery policy is added.
+- **FR-027**: Later installment collection (including recollection after reversal) MUST require an activation fact and all earlier obligations currently paid. It MAY occur before its due date after activation. A correction restores its obligation to unpaid without changing later paid events; subsequent collections must again respect sequence.
+- **FR-028**: Approvals and Payments links MUST be added to existing authorized staff dashboards according to their capabilities. No navigation redesign or new role tabs are introduced.
+- **FR-029**: On uncertain payment outcome, the UI MUST retain the same canonical request and idempotency key, show a warning and permit safe retry; it MUST NOT generate a new payment intent or falsely assert success/failure.
 
 ### Key Entities
 
@@ -179,6 +205,10 @@ Concurrent approval/rejection and collection/replay attempts produce one valid o
 - **SC-007**: Failed audit, invalid authorization, invalid snapshot, mismatched amount/currency, replay mismatch, or stale state yields no partial business or financial change.
 - **SC-008**: Approval, rejection, collection, and correction-reversal interfaces satisfy the Frontend Design Gate and DESIGN.md for Arabic RTL and English LTR, keyboard use, responsive states, and contrast/accessibility review.
 
+- **SC-009**: Flexible link issuance captures the chosen upfront/count/individual amounts/timing, rejects an inexact total and preserves all pre-existing agreement fingerprints unchanged.
+- **SC-010**: Pending approval detection stays within its documented bounded request budget, redirects only to an existing authorized route, and always retains Manual Refresh/navigation recovery without implying activation.
+- **SC-011**: Correction across a Cairo month boundary books the exact reversal in the correction month and leaves original event bytes and original collection month unchanged.
+
 ## Assumptions
 
 - F11 creates pending-approval clients and denies all client-scoped access until approval; ND-F11-6a sets the approver boundary to workspace PO/WO.
@@ -190,7 +220,7 @@ Concurrent approval/rejection and collection/replay attempts produce one valid o
 ## Out of Scope
 
 - **F13**: Subscription freeze, renewal, full refunds (D-15), expiry policy, overdue enforcement, notifications, and related workflows. F12 includes only the minimum PO-only correction reversal of a collection event; F13 full refunds remain separate.
-- **P2**: Building the intake form engine/templates, form-selection and assignment UI, and client login presentation. F12 emits the approval event P2 hooks; REQ-P2-01 carries the approved post-approval assignment requirement. No partial form engine or form UI is in F12.
+- **P2**: Building the intake form engine/templates, form-selection and assignment UI, and intake presentation on client login. F12 emits the approval event P2 hooks; REQ-P2-01 carries the approved post-approval assignment requirement. No partial form engine or form UI is in F12.
 - **P4**: Installment overdue restriction/notices, expiry enforcement/notifications, and finance reporting. Activation is delivery of the initial workout and nutrition plan pair; later installment due dates do not exist until activation.
 - Payment gateway, online checkout, in-app payment processing, or LIFTER commission settlement; bulk actions; client closure/deletion; changing F11 recovery, Auth identity, or consumed-link behavior.
 - Payment methods, free-text payment references, and partial installment collections.
@@ -212,15 +242,15 @@ These ten technical outcomes are adopted from architect response r1 and supersed
 
 ## PO Decision Register — Decided (PO, 2026-10-28)
 
-| ID | Status | Decision |
-|---|---|---|
-| **ND-F12-1** | **Decided (PO, 2026-10-28)** | Only PO/WO may approve or reject registrations. Sales may record payments but may not approve; remove `approve_registration` from Sales in the capability matrix. |
-| **ND-F12-2** | **Decided (PO, 2026-10-28)** | Collect installment 1 at approval. Installment 2 is due at the end of month one from subscription activation. Activation is delivery of the initial workout + nutrition plan pair (P4). F10 offsets for installments 2+ are anchored to activation; due dates are undefined until activation exists. |
-| **ND-F12-3** | **Decided (PO, 2026-10-28)** | Commission uses Round Half Up with exact integer arithmetic. |
-| **ND-F12-4** | **Decided (PO, 2026-10-28)** | Record amount, collection date, responsible staff, and audit metadata. Do not record payment method or free-text reference. |
-| **ND-F12-5** | **Decided (PO, 2026-10-28)** | PO/WO may reject using defined reason codes. Only PO may reconsider (rejected → approved). All decisions and reconsiderations are fully audited. |
-| **ND-F12-6** | **Decided (PO, 2026-10-28)** | Any historical collection date is allowed; future dates are prohibited. Correction is by a minimum safe PO-only, fully audited, append-only reversal within F12; it references the original collection, reverses its exact stored amount and commission, restores the obligation to unpaid, is idempotent through operation receipts, does not update or delete the original, and must be operational before real financial use. Partial reversal is unsupported. |
-| **ND-F12-7** | **Decided (PO, 2026-10-28)** | Full installments only; no partial payments. |
+| ID           | Status                                           | Decision                                                                                                                                                                                                                                                                                                                                                                                                                                                          |
+| ------------ | ------------------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| **ND-F12-1** | **Decided (PO, 2026-10-28)**                     | Only PO/WO may approve or reject registrations. Sales may record payments but may not approve; remove `approve_registration` from Sales in the capability matrix.                                                                                                                                                                                                                                                                                                 |
+| **ND-F12-2** | **Decided (PO, 2026-10-28; refined 2026-10-29)** | Installment 1 is upfront at approval. For installment n>=2, due = Cairo activation date + its issued offset days, payable through Cairo day-end. Default remainder offset is 30; all custom issued agreements/offsets remain unchanged. Later installments require activation and sequential collection; early payment is allowed.                                                                                                                                |
+| **ND-F12-3** | **Decided (PO, 2026-10-28)**                     | Commission uses Round Half Up with exact integer arithmetic.                                                                                                                                                                                                                                                                                                                                                                                                      |
+| **ND-F12-4** | **Decided (PO, 2026-10-28)**                     | Record amount, collection date, responsible staff, and audit metadata. Do not record payment method or free-text reference.                                                                                                                                                                                                                                                                                                                                       |
+| **ND-F12-5** | **Decided (PO, 2026-10-28)**                     | PO/WO may reject using the single code `registration_rejected`. Only PO may reconsider (rejected → approved). All decisions and reconsiderations are fully audited.                                                                                                                                                                                                                                                                                               |
+| **ND-F12-6** | **Decided (PO, 2026-10-28)**                     | Any historical collection date is allowed; future dates are prohibited. Correction is by a minimum safe PO-only, fully audited, append-only reversal within F12; it references the original collection, reverses its exact stored amount and commission, restores the obligation to unpaid, is idempotent through operation receipts, does not update or delete the original, and must be operational before real financial use. Partial reversal is unsupported. |
+| **ND-F12-7** | **Decided (PO, 2026-10-28)**                     | Full installments only; no partial payments.                                                                                                                                                                                                                                                                                                                                                                                                                      |
 
 ## Design Decisions — Decided (PO, 2026-10-28)
 
@@ -238,7 +268,25 @@ These ten technical outcomes are adopted from architect response r1 and supersed
 - **V — Versioned, Non-Retroactive Content**: Approval uses the committed F10 version and financial snapshot; later catalog changes cannot rewrite issued terms.
 - **VI — Human-Governed People Decisions**: No automated discipline, incentives, or trainer compensation decision is added.
 - **VII — Privacy & Health-Data Protection**: No P2 health/intake data is added; audit details avoid PII/free text; role-based projections protect commission and client state.
-- **VIII — Bilingual, Accessible, Design-System UI**: FR-017 requires the Frontend Design Gate and DESIGN.md; DG-F12-1..4 record the approved UI direction.
+- **VIII — Bilingual, Accessible, Design-System UI**: FR-019 requires the Frontend Design Gate and DESIGN.md; DG-F12-1..4 record the approved UI direction.
 - **IX — Reliable, Idempotent Operations**: Explicit installment identity, serialized state changes, re-authorization after waits, operation receipts, independent obligation uniqueness, and audit rollback behavior are specified.
 
-**Workflow status**: PO decisions are recorded 2026-10-28. F12 includes the minimum PO-only correction reversal. DG-F12-1 is handed off to P2 per REQ-P2-01; only Trainer capability mapping remains open in the P2 specification. No plan.md or tasks.md is created. Acceptance criteria are future verification requirements and are not claims of implementation or test completion.
+**Workflow status**: PO decisions are recorded 2026-10-28. F12 includes the minimum PO-only correction reversal. DG-F12-1 is handed off to P2 per REQ-P2-01; only Trainer capability mapping remains open in the P2 specification. Plan/tasks artifacts exist and require independent approval before implementation. Acceptance criteria are future verification requirements and are not claims of implementation or test completion.
+
+## Final PO decision record (2026-10-29)
+
+Source: FINAL PO DECISIONS, session 10, dated 2026-10-29. The complete F12 block below is recorded verbatim. These final decisions supersede conflicting earlier proposals and refine the 2026-10-28 register; they do not authorize implementation.
+
+F12 (registration approval & payments)
+
+- F12-1: One generic rejection code: `registration_rejected`.
+- F12-2: Later installments only after activation, sequentially; early payment allowed.
+- F12-3 (CUSTOM): Flexible Installments configured when creating an F10 Registration Link. Support Upfront amount, installment count, individual amounts and due timing. Default: Upfront at approval, remainder 30 Cairo calendar days after activation. Preserve all issued agreements and custom offsets; installments must total the exact price. Reconcile F10/F12 specifications.
+- F12-4: Payment corrections recorded in the correction month; original records remain immutable, with linked append-only reversals.
+- F12-5: Status Badges using existing Design System semantic tokens.
+- F12-6 (CUSTOM): Standalone Pending/Approved/Rejected page, lightweight automatic approval detection and redirect, plus Manual Refresh and manual-navigation fallback. Respect Auth and actual available routes; approval ≠ activation.
+- F12-7: Approvals/Payments links from existing authorized staff dashboards; no navigation redesign.
+- F12-8: Default due date = Cairo activation date + 30 calendar days, payable through day-end. Preserve custom installment schedules.
+- F12-9: On uncertain payment outcome, retain the same request/idempotency key, show warning and permit safe retry without duplicate payment.
+
+The previous fixed second-offset-30 interpretation is superseded: 30 is the default remainder offset, never a normalization of custom issued terms. P2 still owns form assignment/intake; F12 now explicitly owns the standalone status page and its safe automatic/manual navigation. All PA-F12-1..9 policy entries are Decided; remaining technical refinements are Architect items in [plan.md](plan.md#architect-items).

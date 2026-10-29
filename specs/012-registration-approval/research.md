@@ -6,7 +6,7 @@
 
 Read [final spec](spec.md), [debate record](research/spec-debate-r1.md), Constitution 1.2.1, architecture, D-01..D-26, docs/08–12, DESIGN.md, environment Frontend Design Gate, F11 plan/model/contract and installed `20261031*` migrations. Current F11 implementation baseline is `7a1350467cb9cbfd4a5e037d0b0324ecea255f4c`. Stack-B documentation was inspected using `git show origin/infra-second-stack:docs/11-second-local-stack.md` at `75d4a40def664f0a2cbbd836c593f235ef624e01`; its selector changes are not merged here.
 
-Final spec/PO decisions override historical v0 and architect r1 where PO subsequently added F12 correction reversal, reconsideration and full installments. D-23 and ND-F12-1 override old D-09/architecture Sales-approval wording. Do not silently update those shared governance documents in this unit.
+The final 2026-10-29 F12 block is copied verbatim into spec.md. Its decisions override earlier PA recommendations (now all Decided), historical v0 and architect r1 where PO subsequently added F12 correction reversal, reconsideration and full installments. D-23 and ND-F12-1 override old D-09/architecture Sales-approval wording. Do not silently update those shared governance documents in this unit.
 
 ## R1 — Installed F11 constraints and permitted changes
 
@@ -32,7 +32,7 @@ For example, A=1 and R=5000 produces commission 1; A=3 and R=5000 produces 2. R=
 
 `collected_on` is a finite ISO date, any supported historical date through fresh Cairo today; no signup lower bound. `recorded_at` is DB time and `recorded_by`/responsible staff is the signed actor, not a caller override. Avoid a time-dependent CHECK tied to transaction-start date: mutation guard checks fresh Cairo date after lock waits. Reject invalid/non-finite date inputs and future dates. Calendar presentation must allow typing historical dates.
 
-Missing policy: correction effective reporting month, early collection/order and offset reconciliation are PA-F12-2..4/8. Technical representation does not decide them. Full-only correction does not refund cash, cancel subscription/obligations or revoke approval.
+Final policy: correction effective_on is the Cairo date of correction recording, booked in the correction month. Later installments require activation and sequential payment, early allowed. Default remainder offset is 30 Cairo calendar days through day-end; every custom issued offset is retained. Full-only correction does not refund cash, cancel subscription/obligations or revoke approval.
 
 ## R4 — Bound replay and non-disclosure
 
@@ -54,13 +54,13 @@ Alternative rejected: app-only permission, broad service role, unqualified defin
 
 Decision: self-status RPC takes no target/workspace ID; resolves by signed auth.uid and unique client association, returns only state. App helper binds the same signed user and does not use staff `requireActor()`. Future client policies call a narrow private helper with direct indexed association lookup, preventing recursive clients-table RLS. Pending/rejected users gain only this status exception to F11 denial. Approved state alone grants no plan/intake/storage rights. Refresh/poll uses fresh requests and no shared cache; pause background polling while hidden and handle sign-out.
 
-An immutable approval fact is inserted atomically once per initial subscription, including reconsideration's first successful approval. P2 later adds an idempotent consumer/inbox or job delivery keyed by event ID. Durable facts permit backfill; an unknown generic job is not enqueued now. Alternatives: browser redirect/event only is lossy; F12 partial form assignment duplicates P2 policy; an unhandled outbox job drains before P2. Client fallback presentation is PA-F12-6, not approval to invent onboarding content.
+An immutable approval fact is inserted atomically once per initial subscription, including reconsideration's first successful approval. P2 later adds an idempotent consumer/inbox or job delivery keyed by event ID. Durable facts permit backfill; an unknown generic job is not enqueued now. Alternatives: browser redirect/event only is lossy; F12 partial form assignment duplicates P2 policy; an unhandled outbox job drains before P2. The standalone three-state page, automatic detection/redirect, Manual Refresh and navigation fallback are final policy. The surface contract recommends bounded no-Realtime polling and an authenticated allowlisted `/` fallback, with no invented intake route or activation implication.
 
 ## R7 — P4 activation seam and schedule conflict
 
 Decision: immutable subscription snapshot and separate append-only activation fact, unique per subscription; no public activation writer in F12. P4 will append its fact in the same transaction as both initial plans and productivity credit. Due projection stays undefined for installment 2+ until that fact exists. P4 must use the same subscription serialization and be reviewed before adding write grants.
 
-D-11 defines month as 30 days, not calendar-month arithmetic. ND-F12-2 says installment 2 is due at month-one end, while F10 permits any nonnegative strictly increasing offsets and has no first-offset-zero requirement. Thus no safe silent normalization can reconcile all historical schedules. PA-F12-3 and PA-F12-8 are explicit blockers to the affected due projection/approvals. No restriction, notification, expiration, renewal, or freeze algorithm is implemented in F12.
+Final F12-3/F12-8 resolve the older fixed-offset interpretation: default remainder is 30 Cairo calendar days, but each custom issued offset is authoritative and never normalized. Seq1 is upfront at approval; seq>=2 due date is Cairo activation date plus its issued offset, payable through the entire due day. This uses calendar-date arithmetic, not 720 elapsed hours, including DST. Later collections and recollections require activation and all earlier obligations currently paid. Correction of an earlier row leaves later immutable events unchanged; sequence is re-evaluated for the next collection.
 
 ## R8 — Audit source and transaction guard
 
@@ -70,19 +70,24 @@ Audit is trigger-owned once per actual transition/event. No manual RPC duplicate
 
 ## R9 — Stack-B and verification constraints
 
-Inspected preparation identifies `lifter-stack-b`, explicit ports 25420–25429, `LIFTER_SUPABASE_STACK=b`, ignored `.env.stack-b`, one canonical migrations directory, and a later approved junction into stack-B config. Its harness/provisioner fail before connections for non-loopback/mismatched selected endpoints. The current branch lacks those changes. AI-F12-1 requires reviewed integration after the infrastructure lands; do not cherry-pick only a config while keeping the A-only harness. E2E app env and provisioner must select the same B endpoints; never default to A when B is missing. F11 Vault compatibility provisioning is required for real signup fixtures on B, without copying A's keys.
+Inspected preparation identifies `lifter-stack-b`, explicit ports 25420–25429, `LIFTER_SUPABASE_STACK=b`, ignored `.env.stack-b`, one canonical migrations directory, and a later approved junction into stack-B config. Its harness/provisioner fail before connections for non-loopback/mismatched selected endpoints. The final source records provisioning/start complete, isolation proven and 861/861 integration on B at short infrastructure SHA d498800. This branch still lacks those selector/harness changes and this unit does not independently verify or restart B. AI-F12-1 requires reviewed integration after the infrastructure lands; do not cherry-pick only a config while keeping the A-only harness. E2E app env and provisioner must select the same B endpoints; never default to A when B is missing. F11 Vault compatibility provisioning is required for real signup fixtures on B, without copying A's keys.
 
 No Docker, Supabase CLI, DB connection, test authoring, integration/e2e, provisioning or migration occurred in this unit. Future units must own the B lock and explicit provisioning authorization. Mutation checks operate only on disposable B data/catalog inside rollback or a reviewed restore procedure, never by editing historical migrations. CI runners use their own isolated ephemeral stack; they do not touch the local lock.
 
-## R10 — UI authority and unresolved design
+## R10 - UI authority and final workflow
 
-Use the approved full-page review, automatic read-only amounts/confirmation and existing semantic token family. Exact badge mapping/component, role navigation, interim self-status content and network-uncertainty interaction remain PA items. No actual rendered UI, screenshot or skill-based design selection is claimed in this artifact unit. Future UI tasks must apply the full Frontend Design Gate, including catalog applicability, bilingual copy, eight rendered matrix cells and retained evidence. Repo gate's retained CI evidence is authoritative over the older local brief's temp-path suggestion.
+Final policy fixes the standalone Pending/Approved/Rejected page and automatic/manual navigation, existing semantic status tokens, staff dashboard links only and identical-key uncertain-outcome retry. Recommend visibility-aware 15-second-minimum polling, maximum 12 automatic attempts per mount, one in flight, no Realtime; details and server-checked existing-root navigation are in the contract. Approved is not activated and no route/copy may promise plan access. Exact control/copy/focus details remain Architect items under DESIGN.md and docs/09, not open F12 policy. All future issuing/approval/status UI units carry the full gate and retained AR/EN light/dark mobile/desktop evidence; none is rendered in this unit.
 
-## Conflicts / drift to report
+## R11 - F10 reconciliation and chosen extension
 
-- Old D-09/architecture grants Sales approval; D-23/final F12 removes it. Plan follows the later decision and includes both-wall parity tests; shared doc correction waits for its authorized owner.
-- F12 US2 calls rejection terminal and scenario 2 denies repeat approve, while ND-F12-5/US2 scenario 3 explicitly permit PO reconsideration. Plan uses a distinct reconsider operation; generic approve remains stale for rejected clients.
-- F12 US7 and some historical text say one collection ever; FR-009/ND-F12-6/SC-002 require one active unreversed collection and recollection after correction. The latter explicit policy controls.
-- Installment 2 month-one rule versus arbitrary issued F10 offset is unresolved PA-F12-3; no schedule rewrite is inferred.
-- Spec sources mention Constitution 1.1.0 and a pending governance merge, and workflow text says no plan/tasks exist. This plan uses merged Constitution 1.2.1 and current docs/09; final input spec is left unchanged for its owner to update.
-- Rejection code values, early payments/order, correction month, due-day cutoff and residual UI choices are not decided by the final spec. Plan records them rather than using v0 defaults.
+Read the merged main F10 artifacts and installed schedule/issuer SQL, action/service/validator, dialog/manager, and actual root/Auth route behavior. Git comparison to origin/main `30399301f0f046e78f951aba1cdb564678f6cea5` showed no differences for the relevant F10 paths. The [F10 addendum](../010-registration-links/addendum-f12-flexible-installments.md) records the supported/missing/work table without rewriting its historical spec.
+
+Already supported: immutable positive bigint schedule amounts, contiguous row count, arbitrary ordered nonnegative offsets, UI add/remove rows, live BigInt sum and authoritative/deferred exact-total enforcement. Missing: explicit upfront/count UX, default remainder construction and approval/activation/date-end semantics. Select a new hardened issuance wrapper plus existing UI/action changes, F12-owned U1F, rather than a new schedule store, historical UPDATE, or broad rewrite of the old issuer. Reuse its offer lock/snapshot/rate/token/audit invariants; validate upfront/count correspondence and capabilities independently. Keep legacy callers/issued agreements valid. Default staff-chosen upfront has no guessed percentage; one remainder uses exact residual and offset 30. More payments require explicit custom values.
+
+Alternatives rejected: normalizing old offsets changes contracts; silently treating all second payments as offset 30 ignores final policy; only renaming existing fields fails the explicit upfront/count workflow; duplicate mutable terms tables create competing financial truth. No data migration is needed merely to restate existing rows. The future forward migration adds the wrapper/function grants, with new table RLS obligations only if a separately reviewed design actually introduces a table.
+
+## Architect items and conflicts
+
+AI-F12-1..7 in plan.md are the complete remaining technical/dependency register with recommendations: stack integration, count/editor mechanics, design details, polling/route safeguards, F11/audit reconciliation, P4/P2 handoffs and production evidence. No PA-F12 policy remains open. Source workflows approve B provisioning already; integration availability in this checkout remains an architect dependency, not a new PO provisioning question.
+
+Conflicts for PO: none requiring new policy. Final decisions expressly settle custom-offset/default, correction-month and F12 status/P2 intake boundaries. Existing older Sales-approval wording is superseded by ND-F12-1/D-23. Historical debate text stays historical; former PA alternatives are not approved or executable defaults. F11 PR #14 is not merged in this session.

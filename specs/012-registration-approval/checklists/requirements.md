@@ -13,7 +13,7 @@
 - [x] CHK002 F13, P2, and P4 exclusions are stated.
 - [x] CHK003 Business requirements trace to BRD/PRD, D-08..D-17, constitution, and F9/F10/F11 artifacts.
 - [x] CHK004 Architect r1 supersedes v0 on conflicts and its ten technical outcomes are represented.
-- [x] CHK005 Specification clearly states it is not implementation approval and creates no plan/tasks.
+- [x] CHK005 Specification and proposed plan/tasks distinguish final policy from implementation approval.
 
 ## User stories and acceptance criteria
 
@@ -28,20 +28,24 @@
 - [x] CHK011 Requirements use clear normative language and identify relevant role, scope, and failure conditions.
 - [x] CHK012 Key entities describe business meaning without prescribing SQL or migration implementation.
 - [x] CHK013 Security, privacy, money integrity, idempotency, and live status requirements are explicit.
-- [x] CHK014 UI requirements reference the Frontend Design Gate and DESIGN.md; the gate document's pending-merge status is stated in the spec.
+- [x] CHK014 UI requirements reference the Frontend Design Gate and DESIGN.md; the repository gate document is present after the previously authorized main merge.
 
 ## Decisions and constitution
 
 - [x] CHK015 ND-F12-1..7 each state Decided (PO, 2026-10-28); ND-F12-6 correction reversal is within F12 and is a production blocker until operational.
-- [x] CHK016 DG-F12-1..4 each state Decided (PO, 2026-10-28); DG-F12-1 is handed to P2 via REQ-P2-01 and Trainer capability mapping remains open in the P2 spec.
+- [x] CHK016 DG-F12-1..4 each state Decided (PO, 2026-10-28); intake assignment remains P2 via REQ-P2-01, while final F12-6 assigns standalone status/detection/navigation to F12; Trainer capability mapping remains P2.
 - [x] CHK017 Constitution I..IX are each checked against the specified scope and requirements.
 - [x] CHK018 Decisions are distinguished from the remaining P2 Trainer capability question.
 - [x] CHK019 The spec no longer depends on machine-local source or design-gate paths.
 - [x] CHK020 The in-repository debate record includes v0, the verbatim critique, architect response r1, thread id, date, models, and outcome.
 - [x] CHK021 Source review found no email addresses or secret-like assignments in the three debate texts.
 
+- [x] CHK022 All nine final F12 decisions are copied verbatim from the 2026-10-29 record; PA entries are Decided, with only Architect items remaining.
+- [x] CHK023 F10 supported/missing/F12-owned gaps and immutable custom-agreement preservation are documented in an additive cross-reference.
+- [x] CHK024 Correction-month accounting and bounded Auth-safe standalone status navigation are explicit, with future task and mutation coverage.
+
 ## Notes
 
-- Plan/tasks and implementation verification remain for later Spec Kit phases; the carried P2 Trainer capability question is recorded in the spec.
-- `docs/09-frontend-design-gate.md` is referenced as added by branch `docs-workflow-governance`, pending merge to main; it is not present in this worktree's base.
+- Plan/tasks exist as proposed artifacts; implementation verification remains future work and P2 Trainer capability remains carried.
+- `docs/09-frontend-design-gate.md` is present; DESIGN.md remains authoritative and rendered UI evidence is not claimed by documentation checks.
 - Gate results, if run, are repository artifact checks only; they do not close checklist items about future implementation behavior.
