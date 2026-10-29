@@ -10,9 +10,7 @@ applies to every unit that changes rendered UI.
   manages dependencies and merge order, reviews actual diffs and evidence, and presents unresolved
   product or design decisions to the PO. Claude does not code or run Git, tests, or Docker; read-only
   `gh` inspection is allowed.
-- **Codex - implementer and Git operator.** Owns bounded implementation, authorized Git operations,
-  and checks. It may delegate eligible low-risk work through OpenCode; writers do not approve their
-  own work.
+- **Delegated agents (Codex, or OpenCode for the GLM tier) own implementation and Git operations.** They own bounded implementation and checks. Codex may delegate eligible low-risk work through OpenCode; writers do not approve their own work.
 
 ## Adaptive Model Routing
 
@@ -28,8 +26,7 @@ or high-risk task.
 - **Sol Medium:** `gpt-6.1-sol` at `medium` is for complex, security-sensitive, or otherwise high-risk
   work, including spec-debate critiques. Record a one-line reason for each Sol dispatch.
 - **Prohibited:** Sol High and any `xhigh` effort. The maximum tier is Sol Medium.
-- Record selected and actual model, effort, task class, escalation, and outcome in a dated
-  performance-log entry in the task handoff. Verify actual model and effort in each delegation result.
+- The architect maintains `~/.lifter/model-performance-log.md` outside the repository, with one row per delegation: model, effort, task class, outcome, review notes, and cost. Verify actual model and effort in each delegation result.
 
 ## Mandatory Spec Debate
 
@@ -44,7 +41,7 @@ or high-risk task.
 
 ## Controlled Parallel Development
 
-- Use no more than six concurrent agents total, including architects and reviewers.
+- Use at most six concurrent delegated agents (the orchestrating architect is not counted).
 - Each writer gets an isolated worktree and branch. Writers edit disjoint files and do not share a
   branch.
 - Only one writer may hold a stack lock for Docker or Supabase operations that start, stop, restart,

@@ -134,21 +134,19 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Every feature follows Spec Kit: Specify → Clarify (only if blocking) → Plan → Tasks → Analyze,
   before any code.
 - Claude is the architect/orchestrator and independent reviewer; Claude does not code or run Git,
-  tests, or Docker (read-only `gh` is allowed). Codex owns implementation and Git operations.
+  tests, or Docker (read-only `gh` is allowed). Delegated agents (Codex, or OpenCode for the GLM tier) own implementation and Git operations.
   Adaptive model routing uses the cheapest capable reliable model allowed for task risk and
   sensitivity, as specified in [docs/08-agent-workflow.md](../../docs/08-agent-workflow.md).
   GLM 5.3 Flash is limited to simple, low-risk, non-sensitive work; it is prohibited for secrets or
   `.env`, Auth, RLS, SECURITY DEFINER, migrations, admission, Storage policies, financial logic, CI,
   Docker, Supabase, DB work, or unreviewed pushes. Escalation is GLM 5.3 Flash -> Luna High -> Sol
-  Medium. Sol High and any xhigh effort are prohibited. Record model, effort, task class, escalation,
-  and outcome in a dated performance-log entry in the task handoff.
+  Medium. Sol High and any xhigh effort are prohibited. The architect maintains `~/.lifter/model-performance-log.md` outside the repository, with one row per delegation: model, effort, task class, outcome, review notes, and cost.
 - Mandatory Spec Debate: the architect drafts the spec and architecture; an independent Sol Medium
   critique follows; by default there is one response round, with more rounds only for significant
   unresolved issues. The architect incorporates critique and presents unresolved product/design
   decisions to the PO. Implementation starts only after PO approval and a completed plan/tasks.
   AI agreement never replaces PO approval; the architect remains the final technical authority.
-- Controlled Parallel Development: at most six concurrent agents total, including architects and
-  reviewers. Each writer uses an isolated worktree and branch and edits disjoint files. Only one
+- Controlled Parallel Development: at most six concurrent delegated agents (the orchestrating architect is not counted). Each writer uses an isolated worktree and branch and edits disjoint files. Only one
   writer may hold a stack lock for Docker or Supabase operations that start, stop, restart, reset,
   provision, migrate, seed, or write shared DB state; other writers stay out of that stack while the
   lock is held. Use one DB user per stack. Feature branches integrate sequentially, each after
