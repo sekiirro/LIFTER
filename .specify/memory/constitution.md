@@ -197,7 +197,7 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Every spec, plan and review MUST include a constitution check. Deviations MUST be justified in
   the plan's complexity tracking and approved before implementation.
 
-**Version**: 1.4.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-30 (D1 privacy-erasure exception, D-29; prior amendment D-27 and earlier D-22 and D-26)
+**Version**: 1.4.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-30 (D1 privacy-erasure exception, D-29; prior amendments D-27 and D-28, earlier D-22 and D-26)
 
 ### Sync impact report and amendment note - 2026-10-29 (D-27)
 

@@ -13,7 +13,8 @@ This is a logical model, not a schema migration. Tenant-owned records carry `wor
 | Assignment | Workspace/client/initial subscription/form-version obligation | Captures immutable independent snapshot; initial assignment unique by `(workspace_id,subscription_id)`. |
 | ClientSubmissionDeadline | One deadline per assignment/recurrence occurrence | Calculated from assignment instant using Cairo calendar dates: Mandatory Intake day 0 + 3 dates; other forms 1-14 days, default 3. Deadline ends at 23:59:59.999 Cairo. Separate from the D-03 Trainer delivery SLA. |
 | AnswerDraft | Current acknowledged draft revision for assignment | Client-specific sensitive data; save is expected-revision checked; partial drafts allowed. |
-| AnswerRevision | Submission or correction version | Same-workspace assignment FK; values readable only through audited reader. Corrections denied after Closure/Refund/Deactivation (Q1). Final Q2=C/D1=B requires inapplicable answers deleted from all versions; implementation blocked pending approved Constitution VII amendment and security review. |
+| AnswerRevision | Submission or correction version | Same-workspace assignment FK; values readable only through audited reader. Corrections denied after Closure/Refund/Deactivation (Q1). D-29 permits automatic server-validated deletion only for answer values proven newly inapplicable, across every version. |
+| AnswerErasureControl | Append-only evidence for completed/deferred automatic erasure | Counts only; no operation, tenant, actor, assignment, question, answer or audit-row IDs, no content. Legal hold records defer/count outcome and alert without deletion targets. |
 | Submission | Original accepted complete submission | Exactly one per initial obligation; immutable original instant and answer revision. |
 | SlaObligation | Frozen D-03 start/day-five/deadline facts | Starts at first accepted complete Mandatory Intake submission; correction never resets; rule ID `cairo-d03-v1`. This is the Trainer delivery deadline, distinct from each assignment?s client-submission deadline. |
 | ProcessingJob | Bounded assignment/backfill/alert/purge work item | Narrow internal authority, idempotent state, safe error code only; no raw error/body/answer. |
@@ -49,7 +50,8 @@ Workspace ── Form ── FormVersion
 ## Open model details
 
 - D4 and F1 close recurrence and alert timing. At delivery, recheck authorization and notify whichever PO/WO remains authorized (A3).
-- D1 deletion of inapplicable answers from all versions and related audit records is blocked pending PO approval of the Constitution VII amendment and security review; requiredness bypass remains prohibited.
+- D-29 approved the Constitution VII exception and security/DB design (design only). A validated branch-change fact must prove the answer moved from applicable to inapplicable; deletion spans that answer's values in every version plus only its answer-change and access-view audit rows. Financial, authentication, authorization, security, unrelated-client, other-tenant and unrelated audit rows are never targets. A legal hold defers with alert and no targets. Selection is tenant-isolated, idempotent and fail-closed. The control record contains counts only, with no IDs; no answer content enters logs. RET-3 requires purge across all recoverable copies within 30 days.
+- The exact migration/function remains DB-blocked until F12/F14 merge and verified Stack C. No SQL is part of this plan. No human role or service-role caller has a direct delete or trigger path.
 - No role may correct after Closure, Refund or Deactivation (Q1), even before purge.
 - Mandatory Intake question entities/content are seeded only after the PO supplies them at the named task.
 - Retention legal/technical feasibility for every hosted recoverable copy is a pre-production gate.
