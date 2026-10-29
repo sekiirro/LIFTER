@@ -106,8 +106,11 @@ body remains `20261031122000_client_accounts_signup.sql`; no later migration
 redefines it. Preserve every existing workspace/staff/membership/recovery/package/
 offer/link/signup/job branch, including F11 consumption. The new admission-before-bcrypt
 and purge scheduling migrations introduce no replacement audit body. Latest main migration:
-`20261031130000_purge_scheduling_pg_cron.sql`. Planned F12 model migration
-`20261101120000_registration_approval_model.sql` sorts strictly after it.
+`20261031130000_purge_scheduling_pg_cron.sql`. The four U2–U5 F12 migrations run
+from `20261101120000_registration_approval_model.sql` through
+`20261101123000_registration_approval_reads.sql`, strictly after it. The planned
+U1F wrapper migration is `20261101124000_flexible_registration_link_terms.sql`,
+after those four migrations.
 
 Session-12 architect/user instruction supersedes historical Stack-B prerequisites:
 use default Stack A (`lifter`, API 54321 / DB 54322), no selector variable; never
