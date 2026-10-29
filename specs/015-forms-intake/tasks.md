@@ -2,12 +2,15 @@
 
 **Input**: [spec.md](spec.md), [plan.md](plan.md), [data-model.md](data-model.md), [contracts/](contracts/)
 
+**Plan status**: Plan APPROVED by PO 2026-10-29 (session 13).
+**T015 integration note**: The private F15 `lib/forms/cairo-deadline.ts` helper and F13 `lib/time/cairo-calendar.ts` helper are consolidated at integration.
+
 **Execution rule**: This is a future implementation plan. Every implementation unit writes its focused tests first and records RED, then implements and records GREEN. No task may use Stack A or Stack B. Each DB task requires a verified NEW isolated stack; until assigned and verified, it is blocked. Mutation evidence is required for every security, authorization, audit, idempotency and retention task. No implementation begins before PO plan approval.
 
 ## Phase 0: Stack and shared-contract prerequisites
 
 - [ ] T001 [FR-020/022/024] Verify F12/F14 full migration/function/capability heads and provision/assign a NEW isolated F15 stack. Record project identity, ports, isolation proof and lock owner. Recheck F12 timestamps `20261101120000`, `121000`, `122000`, planned `123000`/`124000`, F14 `20261102120000`–`122000` and all later merged fixes before timestamp allocation. **Owner files**: `specs/015-forms-intake/quickstart.md`. **DB: NEW isolated stack — needs verified isolated stack, not yet assigned; no A/B.**
-- [ ] T002 [P] [FR-022/024] Add RED parity/compatibility contract tests against latest integrated F12/F14 capability and audit function bodies; then extend both capability matrices with `assign_intake_form` and rebuild the full audit function preserving every mapping. Include PO/WO/Trainer allow, Sales deny, known/unknown strings in BOTH TS→SQL and SQL→TS directions. Mutation evidence: remove each role grant, restore Sales grant, omit one direction, drop an audit mapping, and prove each mutant is detected. **Owner files**: `lib/auth/capabilities.ts`, `supabase/migrations/<timestamp>_f15_capability_audit.sql`, `tests/unit/auth/capabilities.test.ts`, `tests/integration/forms-capability-parity.test.ts`, `tests/integration/forms-audit-compatibility.test.ts`. **DB: NEW isolated stack — needs verified isolated stack, not yet assigned; no A/B.**
+- [ ] T002 [P] [FR-022/024] Add RED parity/compatibility contract tests against latest integrated F12/F14 capability and audit function bodies; then extend both capability matrices with `assign_intake_form` and rebuild the full audit function preserving every mapping. Include PO/WO/Trainer allow, Sales deny, known/unknown strings in BOTH TS→SQL and SQL→TS directions. Mutation evidence: remove each role grant, restore Sales grant, omit one direction, drop an audit mapping, and prove each mutant is detected. **Owner files**: `lib/auth/capabilities.ts`, `supabase/migrations/<timestamp>_f15_capability_audit.sql`, `tests/unit/auth/capabilities.test.ts`, `tests/integration/matrix-parity.test.ts`, `tests/integration/forms-audit-compatibility.test.ts`. **DB: NEW isolated stack — needs verified isolated stack, not yet assigned; no A/B.**
 
 ## Phase 1: Foundational tenant schema, authorization and audited readers
 
