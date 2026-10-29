@@ -30,6 +30,9 @@ export const functions = [
   'f12_u3_canonical(text,jsonb)',
   'f12_u3_purchase(uuid,uuid,uuid,uuid,text,date,timestamp with time zone)',
   'f12_u3_operation(text,jsonb)',
+  'f12_u4_can_pay(uuid,boolean)',
+  'f12_u4_canonical(text,jsonb)',
+  'f12_u4_operation(text,jsonb)',
 ] as const;
 export type Context = Awaited<ReturnType<typeof clientContext>>;
 export { clientContext };

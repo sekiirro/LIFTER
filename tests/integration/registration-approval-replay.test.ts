@@ -1,6 +1,12 @@
 ﻿import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import {
+  bought,
+  paymentRequest,
+  pay,
+  sqlPay,
+} from './registration-approval-payment-fixture';
+import {
   clientContext,
   registered,
   request,
@@ -15,6 +21,138 @@ import {
   type Result,
 } from './registration-approval-operations-fixture';
 const db = sql();
+it('T020 distinct-key concurrent correction serializes to one success and one stale', async () => {
+  const p = await bought(f);
+  const results = await Promise.all([
+    pay(f.po.client, 'correct', paymentRequest(f, p, 'correct')),
+    pay(f.po.client, 'correct', paymentRequest(f, p, 'correct')),
+  ]);
+  expect(results.map((r) => r.status).sort()).toEqual(['ok', 'stale_state']);
+});
+it('T020 exact correction replay is stable; intent drift conflicts; collection namespace is shared', async () => {
+  const p = await bought(f);
+  const input = paymentRequest(f, p, 'correct');
+  const r = await pay(f.po.client, 'correct', input);
+  expect(r.status).toBe('ok');
+  const before = await state(db, p.t);
+  expect(await pay(f.po.client, 'correct', input)).toEqual(r);
+  expect(
+    await pay(f.po.client, 'correct', { ...input, expected_revision: 2 }),
+  ).toEqual({ status: 'key_conflict' });
+  expect(
+    await pay(
+      f.po.client,
+      'collect',
+      paymentRequest(f, p, 'collect', { request_key: input.request_key }),
+    ),
+  ).toEqual({ status: 'key_conflict' });
+  expect(await state(db, p.t)).toEqual(before);
+  expect(JSON.stringify(r)).not.toMatch(
+    /commission|rate|phone|email|token|hash|secret/,
+  );
+});
+it('T020 concurrent recollection and repeated correction share subscription serialization', async () => {
+  const p = await bought(f);
+  const reversed = await pay(
+    f.po.client,
+    'correct',
+    paymentRequest(f, p, 'correct'),
+  );
+  expect(reversed.status).toBe('ok');
+  const input = paymentRequest(f, p, 'collect', {
+    obligation_id: p.rows[0]!.id,
+    expected_installment_seq: 1,
+    expected_revision: 2,
+    expected_previous_event_id: reversed.receipt!.event_id,
+  });
+  const results = await Promise.all([
+    pay(f.po.client, 'collect', input),
+    pay(f.salesA.client, 'collect', { ...input, request_key: randomUUID() }),
+  ]);
+  expect(results.map((r) => r.status).sort()).toEqual(['ok', 'stale_state']);
+  expect(
+    await pay(f.po.client, 'correct', paymentRequest(f, p, 'correct')),
+  ).toEqual({ status: 'stale_state' });
+  const result = results.find((r) => r.status === 'ok')!;
+  expect(
+    (
+      await pay(
+        f.po.client,
+        'correct',
+        paymentRequest(f, p, 'correct', {
+          expected_revision: 3,
+          expected_previous_event_id: result.receipt!.event_id,
+          original_event_id: result.receipt!.event_id,
+        }),
+      )
+    ).status,
+  ).toBe('ok');
+});
+it('T020 subscription lock blocks cross-obligation operations', async () => {
+  const p = await bought(f),
+    label = 'u4-lock-' + randomUUID(),
+    pending = worker(label),
+    blocker = sql();
+  let flight: Promise<Result> | undefined;
+  try {
+    await blocker.begin(async (tx) => {
+      await tx`select id from public.subscriptions where id=${p.sid} for update`;
+      flight = pending.begin((tx) =>
+        sqlPay(tx, f.po.userId, 'correct', paymentRequest(f, p, 'correct')),
+      ) as unknown as Promise<Result>;
+      void flight.catch(() => undefined);
+      expect(await waitForLock(db, label)).toBe(true);
+    });
+    expect((await flight)!.status).toBe('ok');
+  } finally {
+    if (flight) await flight.catch(() => undefined);
+    await pending.end();
+    await blocker.end();
+  }
+});
+it.each(['role', 'membership'] as const)(
+  'T020 collection replay denies revocation after target wait: %s',
+  async (mode) => {
+    const actor = await approver(f),
+      p = await bought(f);
+    const reversal = await pay(
+      f.po.client,
+      'correct',
+      paymentRequest(f, p, 'correct'),
+    );
+    expect(reversal.status).toBe('ok');
+    const input = paymentRequest(f, p, 'collect', {
+      obligation_id: p.rows[0]!.id,
+      expected_installment_seq: 1,
+      expected_revision: 2,
+      expected_previous_event_id: reversal.receipt!.event_id,
+    });
+    expect((await pay(actor.client, 'collect', input)).status).toBe('ok');
+    const label = 'u4-revoke-' + randomUUID(),
+      pending = worker(label),
+      blocker = sql();
+    let flight: Promise<Result> | undefined;
+    try {
+      await blocker.begin(async (tx) => {
+        await tx`select id from public.clients where id=${p.t.id} for update`;
+        flight = pending.begin((tx) =>
+          sqlPay(tx, actor.userId, 'collect', input),
+        ) as unknown as Promise<Result>;
+        void flight.catch(() => undefined);
+        expect(await waitForLock(db, label)).toBe(true);
+        if (mode === 'role')
+          await db`update public.staff_profiles set role='trainer' where user_id=${actor.userId}`;
+        else
+          await db`update public.workspace_memberships set revoked_at=now(),revoked_by=${f.po.userId} where workspace_id=${f.wsA.id} and user_id=${actor.userId} and revoked_at is null`;
+      });
+      expect(await flight).toEqual({ status: 'not_permitted' });
+    } finally {
+      if (flight) await flight.catch(() => undefined);
+      await pending.end();
+      await blocker.end();
+    }
+  },
+);
 let f: Context;
 beforeAll(async () => {
   f = await clientContext();

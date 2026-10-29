@@ -258,12 +258,33 @@ export const approvalRpcNames = [
   'registration_approve',
   'registration_reject',
   'registration_reconsider',
+  'installment_collect',
+  'collection_correct',
 ] as const;
 export function approvalDenialRequest(
   context: ClientContext,
   name: string,
   clientId: string,
 ) {
+  if (name === 'installment_collect' || name === 'collection_correct')
+    return {
+      workspace_id: context.wsA.id,
+      client_id: clientId,
+      request_key: randomUUID(),
+      subscription_id: randomUUID(),
+      obligation_id: randomUUID(),
+      expected_installment_seq: 1,
+      expected_revision: 1,
+      expected_previous_event_id: randomUUID(),
+      ...(name === 'collection_correct'
+        ? { original_event_id: randomUUID(), correction_confirmed: true }
+        : {
+            expected_amount_minor: '1200',
+            currency: 'XTS',
+            collected_on: '1900-01-01',
+            payment_confirmed: true,
+          }),
+    };
   return {
     workspace_id: context.wsA.id,
     client_id: clientId,

@@ -241,7 +241,11 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
               ? await inner`select public.registration_approve(${value}) as result`
               : fn.proname === 'registration_reject'
                 ? await inner`select public.registration_reject(${value}) as result`
-                : await inner`select public.registration_reconsider(${value}) as result`;
+                : fn.proname === 'registration_reconsider'
+                  ? await inner`select public.registration_reconsider(${value}) as result`
+                  : fn.proname === 'installment_collect'
+                    ? await inner`select public.installment_collect(${value}) as result`
+                    : await inner`select public.collection_correct(${value}) as result`;
           expect(row!.result, fn.proname).toEqual({ status: 'not_permitted' });
           await inner`reset role`;
         });

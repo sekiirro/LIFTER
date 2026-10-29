@@ -5,6 +5,13 @@ import {
   state,
 } from './registration-approval-operations-fixture';
 import { readFileSync } from 'node:fs';
+import {
+  bought,
+  paymentRequest,
+  pay,
+  sqlPay,
+  activate,
+} from './registration-approval-payment-fixture';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import {
   sql,
@@ -15,6 +22,55 @@ import {
   type Context,
 } from './registration-approval-fixture';
 const db = sql();
+it('T022 collection and correction each emit one safe audit; replay and stale emit none', async () => {
+  const p = await bought(f);
+  await probe(async (tx) => {
+    await activate(tx, f, p);
+    const input = paymentRequest(f, p);
+    const collected = await sqlPay(tx, f.salesA.userId, 'collect', input);
+    expect(collected.status).toBe('ok');
+    const correction = paymentRequest(f, p, 'correct', {
+      obligation_id: p.rows[1]!.id,
+      expected_installment_seq: 2,
+      original_event_id: collected.receipt!.event_id,
+      expected_previous_event_id: collected.receipt!.event_id,
+    });
+    const reversed = await sqlPay(tx, f.po.userId, 'correct', correction);
+    expect(reversed.status).toBe('ok');
+    const rows =
+      await tx`select action,actor_user_id,details from public.audit_events where target_id in (${collected.receipt!.event_id as string},${reversed.receipt!.event_id as string}) order by action`;
+    expect(rows.map((r) => r.action)).toEqual([
+      'payment.collected',
+      'payment.collection_corrected',
+    ]);
+    expect(rows.map((r) => r.actor_user_id)).toEqual([
+      f.salesA.userId,
+      f.po.userId,
+    ]);
+    expect(JSON.stringify(rows)).not.toMatch(
+      /commission|rate|phone|email|token|hash|secret|method|reference/,
+    );
+    const before = await tx`select count(*)::int as n from public.audit_events`;
+    expect(await sqlPay(tx, f.salesA.userId, 'collect', input)).toEqual(
+      collected,
+    );
+    expect(await sqlPay(tx, f.po.userId, 'correct', correction)).toEqual(
+      reversed,
+    );
+    expect(
+      await sqlPay(tx, f.po.userId, 'correct', {
+        ...correction,
+        request_key: crypto.randomUUID(),
+      }),
+    ).toEqual({ status: 'stale_state' });
+    expect(
+      await tx`select count(*)::int as n from public.audit_events`,
+    ).toEqual(before);
+  });
+  expect(
+    await pay(f.woA.client, 'correct', paymentRequest(f, p, 'correct')),
+  ).toEqual({ status: 'not_permitted' });
+});
 let f: Context;
 beforeAll(async () => {
   f = await clientContext();

@@ -49,7 +49,7 @@ it.each(tables)(
       expect(triggers.map((r) => r.tgname)).toContain('f12_' + suffix);
   },
 );
-it('T008 exact private function inventory; U4 RPCs remain unavailable', async () => {
+it('T008 exact private function inventory; U4 RPCs have narrow grants', async () => {
   const rows =
     await db`select p.oid::regprocedure::text as signature,prosecdef,proconfig,pg_get_userbyid(proowner) as owner,prosrc from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='app_private' and proname like 'f12_%'`;
   expect(rows.map((r) => r.signature).sort()).toEqual(
@@ -67,9 +67,30 @@ it('T008 exact private function inventory; U4 RPCs remain unavailable', async ()
     }
   }
   for (const name of ['installment_collect', 'collection_correct'])
-    expect(
-      await db`select oid from pg_proc where proname=${name}`,
-    ).toHaveLength(0);
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      const [r] =
+        await db`select prosecdef,proconfig,pg_get_userbyid(proowner) as owner,has_function_privilege(${role},oid,'EXECUTE') as allowed from pg_proc where oid=to_regprocedure(${'public.' + name + '(jsonb)'})`;
+      expect(r).toEqual({
+        prosecdef: true,
+        proconfig: ['search_path=""'],
+        owner: 'postgres',
+        allowed: role === 'authenticated',
+      });
+    }
+});
+it('T020 U4 shares the client/subscription/obligation/ledger/key lock order', async () => {
+  const [row] =
+    await db`select prosrc from pg_proc where oid='app_private.f12_u4_operation(text,jsonb)'::regprocedure`;
+  const source = row!.prosrc as string;
+  const stages = [
+    /select \* into c from public\.clients[^;]*for update;/,
+    /select \* into s from public\.subscriptions[^;]*for update;/,
+    /perform x\.id from public\.subscription_installments[^;]*for update;/,
+    /perform e\.id from public\.payment_events[^;]*for update;/,
+    /perform pg_advisory_xact_lock\(/,
+  ].map((pattern) => source.search(pattern));
+  expect(stages.every((position) => position >= 0)).toBe(true);
+  expect(stages).toEqual([...stages].sort((left, right) => left - right));
 });
 it('T008 controlled grants independently exercise RLS on populated tenant rows', async () => {
   await probe(async (tx) => {
