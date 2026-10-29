@@ -13,6 +13,13 @@ it('runs the full Playwright suite after local-stack integration tests', () => {
   );
   expect(integration).toContain('run: npm run e2e -- --workers=1');
   expect(integration).toContain("LOCAL_SUPABASE_PROVIDER_FAULT_TEST: 'true'");
+  expect(integration).toContain('SUPABASE_URL=$API_URL');
+  expect(integration).toContain('SUPABASE_ANON_KEY=$ANON_KEY');
+  expect(integration).toContain('SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY');
+  expect(integration).toContain('APP_ORIGIN=http://localhost:3000');
+  expect(integration.indexOf('Export app server environment')).toBeLessThan(
+    integration.indexOf('run: npm run e2e -- --workers=1'),
+  );
   expect(integration.indexOf('run: npm run test:integration')).toBeLessThan(
     integration.indexOf('run: npx playwright install --with-deps chromium'),
   );
