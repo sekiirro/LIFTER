@@ -29,6 +29,7 @@
 ## Phase 3: Drafts, conditional progression, submission and corrections
 
 - [ ] T011 [P] [FR-007/008/026] RED test typed applicability, answer validation, safe bounds, one applicable question at a time, backward review and deterministic branch recomputation. GREEN with bounded pure evaluator and client progression model. Hidden-answer persistence/clearing/projection stays blocked for that edge until PO clarifies; requiredness cannot be bypassed. Mutation evidence: alter applicability, inject unknown IDs/types, cyclic rules or hidden required values. **Owner files**: `lib/forms/progression.ts`, `lib/forms/validation.ts`, `components/forms/QuestionFlow.tsx`, `tests/unit/forms-progression.test.ts`, `tests/unit/forms-validation.test.ts`. **DB: none for evaluator/component tests; DB NEW isolated stack — needs verified isolated stack, not yet assigned for persisted contract.**
+  T011 partial evidence: RED 2 suites failed before modules existed (0 tests); GREEN 15/15. Mutations killed 5/5 (applicability, unknown ID, unknown type, cycle, hidden-answer applicability). Still [ ]: hidden-answer PO disposition and QuestionFlow UI after Design Gate; the evaluator passes hidden values through unchanged without making them applicable or satisfying requiredness. Proposed numeric bounds require review before publication. Full unit suite: 66 files, 1,395 passed, 0 failed, 0 skipped; typecheck and lint passed.
 - [ ] T012 [P] [FR-009/010/011/023/024] RED test autosave acknowledgements, intent-key replay, stale revision conflict, late acknowledgement, cross-device resume and safe network failure. GREEN with revision-checked server writes and measured/reviewed debounce/max-unsaved behavior. Mutation evidence: ignore expected revision, reuse key with altered intent, duplicate mutation audit or return raw errors; every mutant must be caught. **Owner files**: `lib/forms/drafts.ts`, `app/api/forms/assignments/[assignmentId]/draft/route.ts`, `components/forms/useDraftAutosave.ts`, `supabase/migrations/<timestamp>_f15_answer_revisions.sql`, `tests/unit/forms-drafts.test.ts`, `tests/integration/forms-draft-concurrency.test.ts`. **DB: NEW isolated stack — needs verified isolated stack, not yet assigned; no A/B.**
 - [ ] T013 [FR-006/008/011/013/014/015/016/024] RED test incomplete/empty submission denial, complete submission atomic revision+submission+audit+SLA, exactly one original submission, frozen D-03 facts and audit rollback. GREEN with submission validation requiring all applicable questions and substantive Basic/Workout/Nutrition. Mutation evidence: bypass requiredness/section completeness, permit duplicate submission, alter original deadline on replay/correction, or fail audit; zero partial facts may remain. Hidden-answer treatment remains blocked only for the unresolved inapplicable-answer disposition. **Owner files**: `lib/forms/submissions.ts`, `lib/forms/sla.ts`, `supabase/migrations/<timestamp>_f15_submission_sla.sql`, `tests/integration/forms-submission.test.ts`, `tests/integration/forms-submission-races.test.ts`. **DB: NEW isolated stack — needs verified isolated stack, not yet assigned; no A/B.**
 - [ ] T014 [P] [FR-013/021/024] RED authorization matrix tests for answer correction and history reads/writes for Client self-only, Trainer/WO current workspace, PO explicit existing workspace, Sales denied; include ordinary/sensitive fields and attachment permission where attachments exist (no MVP attachment feature). Test every answer/current/correction/history read against audited-reader path and fail-closed audit errors. GREEN with immutable correction versions and atomic IDs-only audit. Mutation evidence: cross-client IDs, foreign workspace, nonmember staff, nonexistent PO workspace, Sales grant, mutable history, missing audit, audit outage; tests detect every mutant and return zero data/change on denial. Post-end correction mutation is blocked only for relationship-ended clients pending clarification. **Owner files**: `lib/forms/corrections.ts`, `app/api/forms/assignments/[assignmentId]/corrections/route.ts`, `app/api/forms/assignments/[assignmentId]/history/route.ts`, `supabase/migrations/<timestamp>_f15_corrections.sql`, `tests/unit/forms-correction-authorization.test.ts`, `tests/integration/forms-corrections.test.ts`, `tests/integration/forms-history-read.test.ts`. **DB: NEW isolated stack — needs verified isolated stack, not yet assigned; no A/B.**
@@ -36,7 +37,7 @@
 ## Phase 4: Cairo deadline, delay detection and alerts
 
 - [x] T015 [P] [FR-015/016] RED pure calendar fixtures for D-03 Thursday 18:00, Friday, day-five, month/year, leap, holiday-as-working-day, Cairo spring-forward gap and overlap. GREEN with `Africa/Cairo`, fixed `cairo-d03-v1`, local-date counting and first valid instant of following date. Mutation evidence: fixed UTC offset, five 24-hour arithmetic, `>` instead of `>=`, or wrong gap handling; every mutant must fail. **Owner files**: `lib/forms/cairo-deadline.ts`, `tests/unit/forms-cairo-deadline.test.ts`. **DB: none.**
-  Evidence: RED failed before helper existed (0 tests; missing module); GREEN 8/8. Mutations killed 4/4 (fixed timezone, five 24-hour arithmetic, > cutoff, wrong DST gap). Full unit suite: 64 files / 1,380 tests passed; typecheck and lint passed.
+      Evidence: RED failed before helper existed (0 tests; missing module); GREEN 8/8. Mutations killed 4/4 (fixed timezone, five 24-hour arithmetic, > cutoff, wrong DST gap). Full unit suite: 64 files / 1,380 tests passed; typecheck and lint passed.
 - [ ] T016 [FR-017/018/019/024/025] RED synthetic alert tests for on-time vs late races, Trainer→PO initial choice, two-hour WO+PO escalation, dedupe/restart/concurrency, current authorization, no stale actionable alert and IDs-only safe errors. GREEN with alert state machine and safe exception handling; do not invent OPEN catch-up/reassignment/unavailable-recipient policy. Mutation evidence: duplicate recipient/stage, race detector ahead of delivery, send to revoked recipient, add answer text to alert/job/audit, or omit dedupe lock. **Owner files**: `lib/forms/alerts.ts`, `supabase/migrations/<timestamp>_f15_alerts.sql`, `tests/unit/forms-alerts.test.ts`, `tests/integration/forms-alert-races.test.ts`, `tests/integration/forms-alert-privacy.test.ts`. **DB: NEW isolated stack — needs verified isolated stack, not yet assigned; no A/B.**
 - [ ] T017 [FR-019/024] RED scheduler privilege/activation tests; GREEN only with the approved owner-only F11 `pg_cron` pattern (`SECURITY INVOKER`, empty search path, postgres check, advisory lock, restricted grants, owner-only activate/deactivate, no migration activation). Keep production activation blocked until authoritative P4 coverage and OPEN alert operations are resolved. Mutation evidence: scheduler activation in migration, non-owner activation, missing advisory lock or broad cron grant must fail. **Owner files**: `supabase/migrations/<timestamp>_f15_alert_schedule.sql`, `tests/integration/forms-alert-scheduler.test.ts`, `specs/015-forms-intake/quickstart.md`. **DB: NEW isolated stack — needs verified isolated stack, not yet assigned; no A/B.**
 
@@ -69,41 +70,41 @@
 
 ## Coverage index
 
-| FRs | Tasks |
-| --- | --- |
-| FR-001 | T009, T024 |
-| FR-002 | T008 |
-| FR-003 | T010, T023 |
-| FR-004 | T006, T009 |
-| FR-005 | T007 |
-| FR-006 | T009, T013 |
-| FR-007 | T006, T011 |
-| FR-008 | T011, T013 |
-| FR-009 | T012, T020 |
-| FR-010 | T012 |
-| FR-011 | T008, T012, T013 |
-| FR-012 | T018, T019, T025 |
-| FR-013 | T013, T014, T020 |
-| FR-014 | T013 |
-| FR-015 | T015 |
-| FR-016 | T013, T015 |
-| FR-017 | T016, T025 |
-| FR-018 | T016 |
-| FR-019 | T016, T017, T025 |
-| FR-020 | T002, T003, T007, T008, T024 |
-| FR-021 | T003, T014 |
-| FR-022 | T002, T003 |
-| FR-023 | T005, T012, T019, T020 |
+| FRs    | Tasks                             |
+| ------ | --------------------------------- |
+| FR-001 | T009, T024                        |
+| FR-002 | T008                              |
+| FR-003 | T010, T023                        |
+| FR-004 | T006, T009                        |
+| FR-005 | T007                              |
+| FR-006 | T009, T013                        |
+| FR-007 | T006, T011                        |
+| FR-008 | T011, T013                        |
+| FR-009 | T012, T020                        |
+| FR-010 | T012                              |
+| FR-011 | T008, T012, T013                  |
+| FR-012 | T018, T019, T025                  |
+| FR-013 | T013, T014, T020                  |
+| FR-014 | T013                              |
+| FR-015 | T015                              |
+| FR-016 | T013, T015                        |
+| FR-017 | T016, T025                        |
+| FR-018 | T016                              |
+| FR-019 | T016, T017, T025                  |
+| FR-020 | T002, T003, T007, T008, T024      |
+| FR-021 | T003, T014                        |
+| FR-022 | T002, T003                        |
+| FR-023 | T005, T012, T019, T020            |
 | FR-024 | T002, T004, T008, T012–T018, T024 |
-| FR-025 | T005, T016 |
-| FR-026 | T011, T020, T021 |
-| FR-027 | T021 |
-| FR-028 | T022 |
-| FR-029 | T020–T022, T024 |
-| FR-030 | T006, T021 |
-| FR-031 | T010, T023 |
-| FR-032 | T006, T014, T018 |
-| FR-033 | T018, T019, T025 |
+| FR-025 | T005, T016                        |
+| FR-026 | T011, T020, T021                  |
+| FR-027 | T021                              |
+| FR-028 | T022                              |
+| FR-029 | T020–T022, T024                   |
+| FR-030 | T006, T021                        |
+| FR-031 | T010, T023                        |
+| FR-032 | T006, T014, T018                  |
+| FR-033 | T018, T019, T025                  |
 
 ## Implementation strategy
 
