@@ -6,6 +6,8 @@ This document records the approved local Stack C readiness work and PO-1 support
 
 The binding update is quoted verbatim in spec.md and the PO-1 follow-up appears in research.md. The refund transaction atomically writes the client deactivation fact and one durable, idempotent Auth-lockout outbox row with the refund, audit and receipt. The synchronous Custom Access Token hook checks the committed fact before token issuance, so password sign-in and refresh are denied without waiting for the worker. App/DB access helpers also deny deactivated clients even when a valid JWT remains. A server-only worker applies the supported Auth Admin ban as defense in depth, retries with bounded exponential backoff, records success and raises a safe PO/WO operational alert after persistent failure. Existing JWTs may expire naturally. Do not write Auth-managed tables directly.
 
+Supabase permits one `custom_access_token` hook per project. Any future claim customization must be composed into `custom_access_token_hook`; tests assert claims pass through unchanged for staff and active clients. A hook error (including malformed event data) fails token issuance closed. Hosted Supabase requires enabling the Custom Access Token hook in the dashboard. First enable and verify it on a non-production hosted project; production enablement is a production change requiring PO approval. Root `supabase/config.toml` and Stack C config carry the same local hook block; this config parity change does not operate Stack A.
+
 ## Stack C Auth API measurement
 
 On 2026-10-30, using synthetic test users on project lifter-stack-c (API 35421):
@@ -17,6 +19,7 @@ On 2026-10-30, using synthetic test users on project lifter-stack-c (API 35421):
 - With the Custom Access Token hook active and the worker returning `retry_scheduled`, fresh password sign-in and refresh returned HTTP 403 with message `account_unavailable`; neither response contained an access token. A rolled-back deactivation left sign-in available, and staff sign-in remained available.
 - Controlled pre-hook pause (worker failed, then held for 1,000 ms): first request was 1,005.366 ms after commit; sign-in HTTP 200 and refresh HTTP 200 issued tokens. The id-based worker ban then returned HTTP 200 at 1,118.289 ms after commit; subsequent sign-in and refresh both returned HTTP 400.
 - Hook enabled: first Auth request began 5.379 ms after commit in the final full integration run; sign-in and refresh both returned HTTP 403 with no token while worker status was `retry_scheduled`. There is no successful token issuance window after the committed fact is visible to the hook; the 5.379 ms is commit-to-probe latency, not an allowed window.
+- Follow-up after the clean Stack C reset and migration rename: first Auth request began 4.411 ms after commit; sign-in and refresh both returned HTTP 403 with no token while worker status was `retry_scheduled`. Allowed issuance window remains 0 ms at the request boundary.
 - The documented auth.admin.signOut call requires the user's JWT and has no user-id-only form ([Supabase reference](https://supabase.com/docs/reference/javascript/auth-admin-signout)). A global sign-out is not required by the updated PO-1 policy.
 - Synthetic user cleanup via Auth Admin delete returned HTTP 500 after unban and global sign-out. No direct Auth-table cleanup was attempted.
 
@@ -29,6 +32,8 @@ During the former pre-hook window, a client could call public GoTrue endpoints, 
 Stack C is project lifter-stack-c, API 35421, DB 35422, full port block 35420-35429. The observed Docker container names used separate lifter, lifter-stack-b and lifter-stack-c projects. Stacks A/B were not targets. Stack C's env file is .env.stack-c; do not inspect or print its values. Use the stack-aware integration harness, which validates Stack C API/DB ports before opening sockets.
 
 F12 U4 and latest F12/F14 migrations remain dependencies for full refund ledger implementation. T012-T015 own that ledger; the current worker/outbox module is a minimal proof only. Retention across backups remains a production blocker.
+
+**Migration timestamp exception (architect-authorized once):** the original proof migration was renamed with normal `git mv` from `20261031140000_refund_auth_lockout_hook.sql` to `20261103120000_refund_auth_lockout_hook.sql` so it sorts after the stated F12 migrations through `20261101124000` and F14 through `20261102130000`. This applies only to the unmerged F13 branch and its F13-owned Stack C; no history was rewritten.
 
 ## Gates
 

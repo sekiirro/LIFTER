@@ -10,6 +10,8 @@
 
 Implement F13 as a forward-only extension of F12's immutable subscription and payment model. Preserve Cairo-day freeze and renewal projections, serialize same-client lifecycle and financial writes, and model partial refunds as append-only allocations under a capped aggregate operation. The first refund transaction atomically records client deactivation and one durable idempotent Auth-lockout outbox row. A synchronous Custom Access Token Postgres hook checks the committed deactivation fact before every token issuance, blocking sign-in and refresh without a commit-to-worker issuance window. App/RPC access helpers deny deactivated clients. A server-side worker retains the supported Auth Admin ban with retry/backoff, records success, and raises a safe PO/WO alert after persistent failure. Existing JWTs may remain valid until natural expiry. Never write Auth-managed tables directly.
 
+Supabase allows one `custom_access_token` hook per project; all future claim customization must compose into this function, whose unchanged-claims behavior is covered for staff and active clients. Hook errors fail token issuance closed. Hosted Supabase requires enabling the hook in project dashboard settings and verifying it on a non-production hosted project before production; production enablement is a change requiring PO approval.
+
 ## Technical Context
 
 **Language/Version**: TypeScript, Next.js and PostgreSQL/Supabase as established by the repository.

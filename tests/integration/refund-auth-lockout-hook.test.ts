@@ -162,6 +162,15 @@ it('does not change staff sign-in and restricts hook execution to supabase_auth_
   });
   expect(signed.error).toBeNull();
   expect(signed.data.session).not.toBeNull();
+  const staffClaims = {
+    sub: created.data.user!.id,
+    role: 'authenticated',
+    user_metadata: { marker: 'staff-pass-through' },
+  };
+  const [staffHook] = await db`
+    select public.custom_access_token_hook(${db.json({ user_id: created.data.user!.id, claims: staffClaims })}::jsonb) as output
+  `;
+  expect(staffHook!.output).toEqual({ claims: staffClaims });
   const [acl] = await db`
     select p.prosecdef as security_definer, p.proconfig,
       has_function_privilege('supabase_auth_admin','public.custom_access_token_hook(jsonb)','execute') as auth_admin,
@@ -188,6 +197,25 @@ it('does not change staff sign-in and restricts hook execution to supabase_auth_
     state_read_anon: false,
     state_read_service_role: false,
   });
+});
+
+it('passes claims through unchanged for an active client and fails closed for malformed hook events', async () => {
+  const client = await createRecoveryClientTarget(await clientContext());
+  const claims = {
+    sub: client.userId,
+    role: 'authenticated',
+    user_metadata: { marker: 'active-client-pass-through' },
+  };
+  const [clientHook] = await db`
+    select public.custom_access_token_hook(${db.json({ user_id: client.userId, claims })}::jsonb) as output
+  `;
+  expect(clientHook!.output).toEqual({ claims });
+
+  await expect(db`
+    select public.custom_access_token_hook(
+      jsonb_build_object('user_id', 'not-a-uuid', 'claims', '{}'::jsonb)
+    )
+  `).rejects.toThrow();
 });
 
 it('denies issuance for a client whose deactivation check is bypassed by the hook', async () => {
