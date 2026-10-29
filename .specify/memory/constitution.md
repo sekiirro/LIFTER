@@ -133,16 +133,22 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 
 - Every feature follows Spec Kit: Specify → Clarify (only if blocking) → Plan → Tasks → Analyze,
   before any code.
-- Claude is the architect/orchestrator/reviewer; Codex implements bounded tasks. There are no
-  fallback agents or automatic model substitutions. On quota or capacity limits, work stops and the
-  PO is asked. Operational model routing is in [docs/08-agent-workflow.md](../../docs/08-agent-workflow.md).
+- Claude is the architect/orchestrator and independent reviewer; Claude does not code or run Git,
+  tests, or Docker (read-only `gh` is allowed). Codex owns implementation and Git operations.
+  Adaptive model routing uses the cheapest capable reliable model allowed for task risk and
+  sensitivity, as specified in [docs/08-agent-workflow.md](../../docs/08-agent-workflow.md).
+  GLM 5.3 Flash is limited to simple, low-risk, non-sensitive work; it is prohibited for secrets or
+  `.env`, Auth, RLS, SECURITY DEFINER, migrations, admission, Storage policies, financial logic, CI,
+  Docker, Supabase, DB work, or unreviewed pushes. Escalation is GLM 5.3 Flash -> Luna High -> Sol
+  Medium. Sol High and any xhigh effort are prohibited. Record model, effort, task class, escalation,
+  and outcome in a dated performance-log entry in the task handoff.
 - Mandatory Spec Debate: the architect drafts the spec and architecture; an independent Sol Medium
   critique follows; by default there is one response round, with more rounds only for significant
   unresolved issues. The architect incorporates critique and presents unresolved product/design
   decisions to the PO. Implementation starts only after PO approval and a completed plan/tasks.
   AI agreement never replaces PO approval; the architect remains the final technical authority.
-- Controlled Parallel Development: at most three concurrent agents. Each code-changing agent uses
-  its own worktree and branch, edits disjoint files, and respects the single local-DB lock. Feature
+- Controlled Parallel Development: at most six concurrent agents. Each writer uses an isolated
+  worktree and branch, edits disjoint files, and respects one DB user/lock owner per stack. Feature
   branches integrate sequentially, each after architect review and relevant green CI.
 - Main merge gate: before requesting PO approval, require a completed CodeRabbit review APPROVED on
   the exact PR head (`commit_id == headRefOid`), with no later CHANGES_REQUESTED or DISMISSED
@@ -180,4 +186,8 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Every spec, plan and review MUST include a constitution check. Deviations MUST be justified in
   the plan's complexity tracking and approved before implementation.
 
-**Version**: 1.2.1 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-28 (workflow governance and Frontend Design Gate, D-22; intermediate sub-branch merge clarification, D-26)
+**Version**: 1.3.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-29 (adaptive model routing and six-agent limit, D-27; prior amendments D-22 and D-26)
+
+### Sync impact report and amendment note - 2026-10-29 (D-27)
+
+Adaptive Model Routing and the six-agent concurrency limit were approved by the PO (sessions 10 + 11). Sync impact: `docs/08-agent-workflow.md` mirrors model eligibility, escalation, performance logging, worktree isolation, and concurrency. Tests-first, CI push + pull_request, CodeRabbit approval on the final head, resolved threads, exact-head checks, and explicit PO merge approval are unchanged. No product or feature requirements changed.
