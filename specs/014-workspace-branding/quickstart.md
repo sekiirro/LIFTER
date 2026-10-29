@@ -1,6 +1,6 @@
 # F14 Verification Quickstart (future implementation work)
 
-This document is an implementation verification recipe, not evidence that any command has been run. This planning unit is DB-free. Never run Docker, Supabase, local database, integration, or e2e commands as part of this unit. F11 owns stack A's database lock; F14 DB/Storage verification is assigned to stack B only after provisioning and the approvals below.
+The original planning sections below are an implementation verification recipe, not execution evidence. The Session 12 sections record the later explicitly authorized merge and Stack-B T044 run. Stack A belongs to its concurrent lane; F14 DB/Storage verification uses only Stack B.
 
 ## Prerequisites before any DB or Storage check
 
@@ -91,6 +91,22 @@ Mutation probes were run locally without a database: bypassing the injected auth
 ## Audit compatibility check
 
 Architect decision: timestamp every F14 migration after every F11 migration, including review-fix migrations. Once F11 is on main, rebuild the F14 extension from the final merged F11 `audit_row_change()` body; F14 DB units that touch audit wait. Preserve every F11 mapping. Do not guess or hand-edit an already applied timestamp.
+
+### Session 12: F11 merge prerequisite (AD-F14-1)
+
+F11 PR #14 head `12036e2` merged as `1f4d235`; the verified main integration point is `a8c7ae569e1ae1380740230b90817679b22d465b`. Session 12 merged `origin/main` into this branch with no conflicts as `30efad9fa4dc2be19033b9ca9a38b0a5c6bddd75` and pushed that merge. The local `main` ref was `79b8ed8`; it was not moved. `rg -n audit_row_change supabase/migrations` confirms the latest complete function body is `supabase/migrations/20261031122000_client_accounts_signup.sql:32` (through line 146). It includes registration-link consumption and `client.signup_succeeded` alongside all earlier mappings. This makes the final F11 body available for later T022; no audit function or F14 migration was changed here. Every future F14 migration must still sort after all F11 migrations, including `20261031130000_purge_scheduling_pg_cron.sql`.
+
+### T044: Session 12 hard gate — STOP, not accepted
+
+The proof-only suite is `tests/integration/branding-storage-context.test.ts`; detailed evidence and pinned source links are in `tests/integration/branding-storage-verification.md`. Run only with `LIFTER_SUPABASE_STACK=b`. The test rejects any other stack before opening its database connection. It creates disposable no-login/no-bypass roles, a private bucket and an invoker policy probe, then removes its fixtures. JWTs are pre-issued in the test process using the selected local environment's signing secret; no signing code is added to Workers. Service-role is used only for fixture upload/bucket creation and cleanup, never for the read path under test.
+
+Initial deny-all policy: **13 failed / 0 passed** (plus a cleanup error subsequently repaired and cleaned up). With the proof predicate: **12 passed / 1 failed / 0 skipped**. Restricted authority, request claims/headers/path/method, exact download operation, negative credentials/context, unrelated mutations, and actual pooled backend reuse pass. The transform contract remains deliberately failing: authenticated image transformation returns **404**, with **0** object-policy evaluations. B's running Storage has `ENABLE_IMAGE_TRANSFORMATION=false`; the installed router exits before registering transform routes. This is fail-closed HTTP behavior, but does not prove transform-vs-download discrimination inside RLS. T044 remains unticked and U03 validator promotion/U04 validated-policy/U06 proxy acceptance remain blocked. T045–T051 and T014 were not started. Hosted compatibility remains a separate production gate.
+
+Pinned runtime: Supabase CLI **2.122.0**, Storage image **public.ecr.aws/supabase/storage-api:v1.84.19** (upstream tag commit `872757184c35626fef3d84f35e0b3c4fa82af1b6`), PostgreSQL **17.11** (image `17.11.0.006`), PostgREST **16.5**. The working mechanism is Storage's own transaction-local `set_config(..., true)` for the effective role, `request.jwt.claims`, `request.jwt.claim.role`, `request.headers`, `request.method`, `request.path`, and `storage.operation`; it is not a caller-supplied operation header. The positive policy requires `storage.object.get_authenticated`, GET, exact path/bucket/object, restricted role, signed proof credential/subject and independently matched opaque context.
+
+After merging F11, its provisioner and four integration test files needed selector-only updates to avoid hard-coded Stack A Docker access. These preserve F11 assertions, SQL and feature behavior. B alone was reset from this worktree's B workdir with the migrations junction targeting this worktree, then provisioned through the selector. The Stack A container IDs and start times matched the baseline after T044, reset and provisioning. The post-full-integration snapshot differed: A's DB ID changed and Auth restarted; unchanged-state isolation across that interval cannot be claimed. The final verbose B probe also completed in the batch that printed this mismatch; further DB/Storage work then stopped. All issued mutation/exec targets were B. Stack B stays running. No production migration, capability or `has_capability` change was made.
+
+Session 12 gates on the publishable state (without local RED `33fd95a`): typecheck, lint and format passed; `npm test` passed **67 files / 1,401 tests**; focused stack-selector unit passed **1 file / 5 tests**. T044 passed **12/13**, with the transform contract failing and zero skipped. Full B integration: **26 files passed / 1 failed / 1 skipped; 891 tests passed / 1 failed / 1 skipped (893 total)**. The skipped test is existing `client-accounts-timing.test.ts`, guarded by `SC011_TIMING_RUN`; it was not excluded by the command. No Storage case was skipped. `git diff --check` passed. Detailed gate/isolation evidence is in the verification document.
 
 ## Production blockers
 
