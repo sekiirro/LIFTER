@@ -253,6 +253,56 @@ export async function anonSignup(s: SignupFixture) {
   expect(result.data).toEqual({ status: 'complete' });
 }
 
+// F12 RPC denials need well-shaped requests: invalid JSON is not authorization proof.
+export const approvalRpcNames = [
+  'registration_approve',
+  'registration_reject',
+  'registration_reconsider',
+  'installment_collect',
+  'collection_correct',
+] as const;
+export function approvalDenialRequest(
+  context: ClientContext,
+  name: string,
+  clientId: string,
+) {
+  if (name === 'installment_collect' || name === 'collection_correct')
+    return {
+      workspace_id: context.wsA.id,
+      client_id: clientId,
+      request_key: randomUUID(),
+      subscription_id: randomUUID(),
+      obligation_id: randomUUID(),
+      expected_installment_seq: 1,
+      expected_revision: 1,
+      expected_previous_event_id: randomUUID(),
+      ...(name === 'collection_correct'
+        ? { original_event_id: randomUUID(), correction_confirmed: true }
+        : {
+            expected_amount_minor: '1200',
+            currency: 'XTS',
+            collected_on: '1900-01-01',
+            payment_confirmed: true,
+          }),
+    };
+  return {
+    workspace_id: context.wsA.id,
+    client_id: clientId,
+    request_key: randomUUID(),
+    expected_state:
+      name === 'registration_reconsider' ? 'rejected' : 'pending-approval',
+    ...(name === 'registration_reject'
+      ? { reason_code: 'registration_rejected' }
+      : {
+          expected_installment_seq: 1,
+          expected_amount_minor: '1200',
+          currency: 'XTS',
+          collected_on: '1900-01-01',
+          payment_confirmed: true,
+        }),
+  };
+}
+
 // Shared U2 catalog probes, now also applied to the signup-created real session.
 export async function pendingHttpAccess(
   client: SupabaseClient,
@@ -272,6 +322,47 @@ export async function pendingHttpAccess(
     const functions =
       await db`select p.proname,p.proargnames,to_jsonb(array(select format_type(t,null) from unnest(p.proargtypes) t)) as types from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prokind='f'`;
     for (const fn of functions) {
+      if (fn.proname === 'client_self_status') {
+        const result = await client.rpc('client_self_status');
+        expect(result.error, fn.proname).toBeNull();
+        expect(result.data, fn.proname).toEqual({
+          status: 'ok',
+          approval_state: 'pending-approval',
+        });
+        continue;
+      }
+      if ((approvalRpcNames as readonly string[]).includes(fn.proname)) {
+        const [target] =
+          await db`select id from public.clients where workspace_id=${context.wsA.id} order by created_at,id limit 1`;
+        if (!target)
+          throw new Error(
+            'Pending HTTP approval probe needs a committed target',
+          );
+        const denied = await client.rpc(fn.proname, {
+          request: approvalDenialRequest(context, fn.proname, target.id),
+        });
+        expect(denied.error, fn.proname).toBeNull();
+        expect(denied.data, fn.proname).toEqual({ status: 'not_permitted' });
+        continue;
+      }
+      if (
+        [
+          'registration_approval_queue',
+          'registration_approval_review',
+          'workspace_payment_queue',
+          'subscription_payment_status',
+          'subscription_commission',
+        ].includes(fn.proname)
+      ) {
+        const args: Record<string, unknown> = {};
+        fn.types.forEach((type: string, i: number) => {
+          args[fn.proargnames[i]] = type === 'integer' ? 1 : context.wsA.id;
+        });
+        const result = await client.rpc(fn.proname, args);
+        expect(result.error, fn.proname).toBeNull();
+        expect(result.data, fn.proname).toEqual({ status: 'not_permitted' });
+        continue;
+      }
       const args: Record<string, unknown> = {};
       fn.types.forEach((type: string, i: number) => {
         const values: Record<string, unknown> = {

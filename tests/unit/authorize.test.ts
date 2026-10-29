@@ -13,7 +13,7 @@ const expected: Record<Capability, readonly boolean[]> = {
   set_package_pricing: [true, false, false, false],
   generate_registration_link: [true, true, true, true],
   configure_installment_schedule: [true, true, false, true],
-  approve_registration: [true, true, false, true],
+  approve_registration: [true, true, false, false],
   record_payment: [true, true, false, true],
   manage_freeze: [true, true, false, true],
   record_refund: [true, false, false, false],
