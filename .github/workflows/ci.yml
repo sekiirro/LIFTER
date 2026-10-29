@@ -39,7 +39,6 @@ jobs:
       - run: npm run build:cron
       - run: npm run size
       - run: npx playwright install --with-deps chromium
-      - run: CI=1 npm run e2e
 
   integration:
     runs-on: ubuntu-latest
@@ -69,5 +68,10 @@ jobs:
       - name: Assert shared password policy DB parity
         run: npm run test:integration -- tests/integration/password-policy-parity.test.ts
       - run: npm run test:integration
+      - run: npx playwright install --with-deps chromium
+      - name: Run full Playwright suite against the local stack
+        run: npm run e2e -- --workers=1
+        env:
+          LOCAL_SUPABASE_PROVIDER_FAULT_TEST: 'true'
       - run: supabase stop --no-backup
         if: always()
