@@ -1,0 +1,15 @@
+# Registration approval verification
+
+## U1 — exact money, validation and Sales approval denial (T004–T007)
+
+### Architect sequencing decision
+
+Split the unit into two commits to keep push CI aligned with the SQL matrix. Commit A pushes exact money and request validation only; it contains no TypeScript capability change or capability-denial tests, and the full unit suite must pass on that commit. Commit B locally removes Sales approval in the TS matrix and adds its capability test plus the existing `authorize.test.ts` matrix-oracle correction. Commit B remains the unpushed branch tip and must be pushed together with U2's SQL matrix and matrix-parity update. T004/T005 are ticked after Commit A; T006/T007 remain unticked until the denial slice is integrated with U2 parity.
+
+- RED: first focused run before implementation: `npx vitest run tests/unit/registration-approval-money.test.ts tests/unit/registration-approval-validation.test.ts tests/unit/registration-approval-capabilities.test.ts`; 1 capability test failed because Sales still had `approve_registration`, while the money/validation modules did not yet exist. After test-first failing stubs were added, the same command reported 12 failed and 20 passed across 32 tests, including the half-minor rounding, bounds, shape, safe-result, and Sales-denial assertions. The combined-state full-suite diagnostic then showed the known stale-matrix conflict; the B-only capability change/test/oracle edit were removed from Commit A's working state per architect sequencing.
+- GREEN: the same focused Vitest command after implementation: 3 files passed, 32 tests passed.
+- Commit A gates on the capability-baseline file set: `npm test` passed 61 files / 1,385 tests; `npm run typecheck`, `npm run lint`, `npm run format:check`, and `git diff --check` passed. `npm run test:unit` is not defined in this checkout; `npm test` uses the configured `tests/unit/**/*.test.ts` suite.
+- Q-M01 mutation: temporarily restored Sales `approve_registration` in the TS capability list. `npx vitest run tests/unit/registration-approval-capabilities.test.ts` failed at the denial assertion (`expected true to be false`). The mutation was reverted.
+- Q-M07 mutation: temporarily changed the commission rounding addend from `5000n` to `4999n`. `npx vitest run tests/unit/registration-approval-money.test.ts -t 'rounds half-minor ties up'` failed at the first tie (`expected '0' to be '1'`). The mutation was reverted.
+- Gates: Commit A has the passing results above. The earlier combined-state diagnostic invoked all 62 files and got 1,385 passed / 1 failed in the existing `tests/unit/authorize.test.ts` matrix oracle, which expected Sales `approve_registration` true after the B-only TS capability removal. The oracle is corrected only in local Commit B, and its push waits for U2 SQL parity.
+- Scope note: the authorization to update `tests/unit/authorize.test.ts` applies only to local Commit B. Commit A has the baseline TS matrix and no capability-denial test, so its full unit suite is run independently below. T006/T007 remain unticked until Commit B is locally green and later integrated with U2 parity.

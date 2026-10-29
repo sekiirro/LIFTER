@@ -37,10 +37,12 @@ Every DB unit must use the landed selector/harness with explicit `LIFTER_SUPABAS
 
 ## Phase 2 — Exact money, request validation and app matrix (U1)
 
-- [ ] T004 [P] [US3] Write RED vectors in `tests/unit/registration-approval-money.test.ts` for Round Half Up, 0/100%, ties, bigint extremes, bounds, no JS-number money and exact display-string transformation. Own this test file only; Q-V02/Q-M07.
-- [ ] T005 [US3] Implement pure BigInt/decimal-string helpers in `lib/registration-approval/money.ts` to turn T004 GREEN, without new dependencies or currency policy. Test results are strings, no float conversion.
+- [x] T004 [P] [US3] Write RED vectors in `tests/unit/registration-approval-money.test.ts` for Round Half Up, 0/100%, ties, bigint extremes, bounds, no JS-number money and exact display-string transformation. Own this test file only; Q-V02/Q-M07.
+- [x] T005 [US3] Implement pure BigInt/decimal-string helpers in `lib/registration-approval/money.ts` to turn T004 GREEN, without new dependencies or currency policy. Test results are strings, no float conversion.
 - [ ] T006 [US6] Write RED role/shape/result tests in `tests/unit/registration-approval-validation.test.ts` and `tests/unit/registration-approval-capabilities.test.ts`; reject method/free text/numeric money/actor/time overrides and deny Sales approval while preserving payment. Own both test files; Q-V03/Q-M01.
 - [ ] T007 [US6] Remove Sales approval in `lib/auth/capabilities.ts` only and implement `lib/registration-approval/validation.ts` / `results.ts` against the approved contracts; T006 GREEN. No SQL/matrix-helper changes in this DB-free unit.
+
+Sales-denial work for T006/T007 lands with the U2 SQL capability and matrix-parity change; do not push the TS matrix removal alone.
 
 ## F12-owned F10 extension (U1F, T049-T054, before U2)
 
