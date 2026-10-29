@@ -11,9 +11,9 @@ Route names below are proposed ownership seams, not implemented interfaces. Requ
 | Read assignment/answer/history | Client own assignment; staff workspace; PO explicit existing workspace | Audited reader before any sensitive content; no-store; generic denial |
 | Save draft | Client own assignment | Expected revision and stable intent key; partial answer set allowed; shared server validator checks snapshot/types/applicability, short/long Unicode code point limits (150/1,000, or lower published per-question limit), independent 4,096-byte UTF-8 answer safety cap, and 262,144-byte answer-value payload cap |
 | Submit | Client own assignment | Shared server validator applies the same text and payload caps, plus complete applicable requirements and substantive three sections; one immutable accepted submission and original SLA |
-| Correct submitted answers | Client self-only, Trainer/WO current workspace, PO explicit existing workspace | Approved matrix while client relationship remains active; deny every role after Closure/Refund/Deactivation (Q1). Append immutable revision + atomic safe audit; no deadline reset. Q2 removal from existing history is blocked pending PO resolution. |
+| Correct submitted answers | Client self-only, Trainer/WO current workspace, PO explicit existing workspace | Approved matrix while client relationship remains active; deny every role after Closure/Refund/Deactivation (Q1). Append immutable revision + atomic safe audit; correction does not reset the D-03 Trainer deadline. Client submission deadline is per assignment under D2/D3. D1 deletion across all versions and related audit records is blocked pending PO approval of constitutional amendment and security review. |
 | Read correction history | Same as answer access | Every revision audited; fail closed on audit error |
-| Detect/resolve alert | Narrow worker and authorized recipients | IDs-only alert state; dedup; reauthorize at delivery/read; real data requires complete P4 facts |
+| Detect/resolve alert | Narrow worker and currently authorized recipients | Separate client-late (+24h Trainer, +48h PO+WO) from D-03 Trainer-late (existing Q4 rules); reassignment never resets client-late clock; IDs-only state; dedup; real data requires authoritative facts |
 
 ## Write preconditions
 

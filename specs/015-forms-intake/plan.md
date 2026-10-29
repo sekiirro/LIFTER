@@ -8,7 +8,7 @@
 
 ## Summary
 
-Build a tenant-scoped Forms/Intake engine around immutable published form versions and assignment snapshots, conflict-safe drafts, immutable submissions/corrections, Cairo D-03 delivery obligations, and ID-only in-app alerts. Authorization is enforced in TypeScript and PostgreSQL. Every answer read is audited before data is returned, and failures fail closed. Implement Q3 audience/recurrence policies, with one-time per-client delivery available as an initial slice. Only Q2 removal from already-submitted history/audit is blocked pending PO resolution; no role may correct after Closure/Refund/Deactivation (Q1). Q4 specifies assigned-Trainer alerts, seven-day catch-up, deduplication/reassignment, and simultaneous WO+PO escalation after 24 hours unresolved. No MVP attachment feature or storage is introduced. Real client data and scheduler activation remain gated by retention feasibility/legal review and authoritative P4 facts.
+Build a tenant-scoped Forms/Intake engine around immutable published form versions and assignment snapshots, conflict-safe drafts, immutable submissions/corrections, distinct client-submission and D-03 Trainer-delivery deadlines, and ID-only alerts. Implement approved audiences/recurrence; recurrence resumes after freeze without catch-up (F1). D1 deletion from all answer versions and related audit records alone is blocked pending PO approval of the Constitution VII amendment and security review. Client-late alerts are Trainer at deadline+24h and PO+WO at +48h; no Trainer routes to PO+WO; reassignment transfers without clock reset; deliver to currently authorized owners. Preserve D-03 Trainer-late Q4 rules exactly. No role may correct after relationship end (Q1). No MVP attachment feature/storage. Real data and scheduler remain gated by retention review and authoritative P4 facts.
 
 ## Technical Context
 
@@ -71,7 +71,7 @@ Use the existing F12 order whenever F12 rows are involved: **client → subscrip
 | i18n | `lib/i18n/messages/ar.ts`, `lib/i18n/messages/en.ts` | Coordinate shared-file ownership; bilingual authored form content is separate from UI strings. |
 | Dashboard/nav | `app/(app)/page.tsx`, authorized dashboard routes, `app/(client)/account/status/`, future intake routes | F12 status navigation remains intact; F15 registers only an existing authorized route, no guessed route or staff redirect. |
 | Branding | F14-8 published workspace brand contract | F14 merge first; per-request scope, neutral fallback, no shared actor/workspace cache. No editor/storage copied into F15. |
-| Alerts/delivery | P4 authoritative first-pair delivery and responsible-Trainer facts; F15 Q4 timing/recipient policy | Synthetic fixtures first; real-data classification/alerts blocked until complete authoritative coverage and Q4 details left unstated are resolved. |
+| Alerts/delivery | P4 authoritative first-pair delivery and responsible-Trainer facts; D4 client-late and existing Q4 D-03 Trainer-late policies | Synthetic fixtures first; real-data classification/alerts are blocked until complete authoritative coverage; recheck current authorization at delivery (A3). |
 | Retention/CI | F11 owner-only `pg_cron` pattern; docs/13 readiness gates; encrypted backups | Reuse pattern without activation in migration. 30-day legal/technical review and backup/PITR evidence block production real data. Private CI billing remains an external gate; do not change visibility. |
 
 Merge readiness of F12 and F14 is not asserted by this plan; their latest integrated source must be revalidated at implementation time.
@@ -84,8 +84,7 @@ Merge readiness of F12 and F14 is not asserted by this plan; their latest integr
 | 30-day retention technical/legal review (including backup/PITR and exceptions) | T019 evidence gathering and T025 production readiness for real client data and purge acceptance against hosted recoverable copies. Synthetic local/CI work may continue. |
 | Authoritative P4 first-pair delivery and responsible-Trainer coverage | T016 synthetic alert engine can proceed; T017 real-data scheduler activation and T025 production readiness stay blocked. |
 | Future attachment storage lifecycle | No MVP attachment task is authorized. FR-032 remains no attachment feature/storage until separately specified; future attachment implementation requires a new scoped decision/design and RET-2/3 proof. |
-| Q2 removal from already-submitted answer history/audit | Only the affected branch-history removal/projection sub-case in T011/T013/T020; do not erase records pending PO resolution. |
-| Q3/Q4 unstated operational details | Only recurrence resumption after freeze, no-Trainer initial alert routing, and whether reassignment restarts the 24-hour clock; escalation behavior for unavailable/revoked owners; T023 otherwise proceeds. |
+| D1 deletion of inapplicable answers from every version and related audit records | Only the dedicated deletion task T026 is blocked pending PO approval of the Constitution VII amendment and security review; all other form work proceeds. |
 
 ## Project Structure
 
@@ -117,4 +116,4 @@ tests/e2e/                         # rendered user journeys and Design Gate
 
 ## Complexity Tracking
 
-No constitution deviation is proposed. The separate verified F15 stack is a resource prerequisite, not an architecture exception. Any missing DESIGN.md decision stops only its rendered-UI unit and is escalated through the Frontend Design Gate.
+A Constitution VII amendment is proposed solely to enable the D1 deletion mechanism; it is not approved. The separate verified F15 stack is a resource prerequisite. Any missing DESIGN.md decision stops only its rendered-UI unit and is escalated through the Frontend Design Gate.

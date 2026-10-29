@@ -11,12 +11,13 @@ This is a logical model, not a schema migration. Tenant-owned records carry `wor
 | FormSelection | Workspace/client/form/version trigger, audience and recurrence configuration | Q3 audiences include all active clients, joining/onboarding clients, searched specific clients, and custom recurring schedules; renewal trigger uses actual F13 service start including freeze shifts. Stop while frozen/inactive. |
 | ApprovalConsumption | Private F12 event identity plus F15 consumer state | Consumes only committed `registration.approved` v1 fact; no PII/form data in shared fact. Idempotent by event identity. |
 | Assignment | Workspace/client/initial subscription/form-version obligation | Captures immutable independent snapshot; initial assignment unique by `(workspace_id,subscription_id)`. |
+| ClientSubmissionDeadline | One deadline per assignment/recurrence occurrence | Calculated from assignment instant using Cairo calendar dates: Mandatory Intake day 0 + 3 dates; other forms 1-14 days, default 3. Deadline ends at 23:59:59.999 Cairo. Separate from the D-03 Trainer delivery SLA. |
 | AnswerDraft | Current acknowledged draft revision for assignment | Client-specific sensitive data; save is expected-revision checked; partial drafts allowed. |
-| AnswerRevision | Immutable submission or correction version | Append-only; same-workspace assignment FK; values readable only through audited reader. Corrections denied after Closure/Refund/Deactivation (Q1). Q2 removal from existing history is blocked pending PO resolution. |
+| AnswerRevision | Submission or correction version | Same-workspace assignment FK; values readable only through audited reader. Corrections denied after Closure/Refund/Deactivation (Q1). Final Q2=C/D1=B requires inapplicable answers deleted from all versions; implementation blocked pending approved Constitution VII amendment and security review. |
 | Submission | Original accepted complete submission | Exactly one per initial obligation; immutable original instant and answer revision. |
-| SlaObligation | Frozen D-03 start/day-five/deadline facts | Starts at first accepted complete Mandatory Intake submission; correction never resets; rule ID `cairo-d03-v1`. |
+| SlaObligation | Frozen D-03 start/day-five/deadline facts | Starts at first accepted complete Mandatory Intake submission; correction never resets; rule ID `cairo-d03-v1`. This is the Trainer delivery deadline, distinct from each assignment?s client-submission deadline. |
 | ProcessingJob | Bounded assignment/backfill/alert/purge work item | Narrow internal authority, idempotent state, safe error code only; no raw error/body/answer. |
-| DelayOccurrence | Logical late interval tied to SLA and authoritative P4 delivery facts | No real classification without complete P4 coverage; synthetic facts allowed. |
+| DelayOccurrence | Logical late interval tied to client-submission assignment or D-03 SLA | Client-late: Trainer at deadline+24h; PO+WO at +48h, reassignment transfers without reset, and no Trainer routes to PO+WO. Trainer-late D-03 preserves existing Q4 rules. Current authorization is checked at delivery. |
 | AlertDelivery | Recipient/stage delivery state | IDs only; dedup occurrence × stage × recipient; reauthorize at delivery/read. |
 | Audit evidence | Append-only safe access/mutation facts | Identifiers and allow-listed codes only; no answer/authored text/note/PII. Read audit failure blocks data return. |
 
@@ -47,8 +48,8 @@ Workspace ── Form ── FormVersion
 
 ## Open model details
 
-- Q3/Q4 leave these operational details unstated: whether recurrence resumes after freeze ends; initial alert recipient when no Trainer is assigned; whether reassignment restarts the 24-hour clock; behavior when either escalation owner is unavailable or revoked.
-- Q2 branch removal from already-submitted answer versions/history and audit is blocked pending PO resolution; requiredness bypass remains prohibited.
+- D4 and F1 close recurrence and alert timing. At delivery, recheck authorization and notify whichever PO/WO remains authorized (A3).
+- D1 deletion of inapplicable answers from all versions and related audit records is blocked pending PO approval of the Constitution VII amendment and security review; requiredness bypass remains prohibited.
 - No role may correct after Closure, Refund or Deactivation (Q1), even before purge.
 - Mandatory Intake question entities/content are seeded only after the PO supplies them at the named task.
 - Retention legal/technical feasibility for every hosted recoverable copy is a pre-production gate.
