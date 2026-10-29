@@ -16,6 +16,40 @@ import {
 } from './registration-links-fixture';
 
 const db = sql();
+// Catalog-derived candidates, never a second hand-maintained capability list.
+// Evaluate literals across all roles: this excludes role names and other SQL
+// strings while retaining capabilities that exist only in the SQL grant matrix.
+const sources =
+  await db`select prosrc from pg_proc where oid in ('app_private.role_has_capability(public.staff_role,text)'::regprocedure,'app_private.has_workspace_access(uuid,text)'::regprocedure)`;
+const candidates = [
+  ...new Set(
+    sources.flatMap((row) =>
+      [...(row.prosrc as string).matchAll(/'((?:''|[^'])*)'/g)].map((match) =>
+        match[1]!.replaceAll("''", "'"),
+      ),
+    ),
+  ),
+];
+const sqlCapabilities: string[] = [];
+for (const candidate of candidates) {
+  const rows =
+    await db`select app_private.role_has_capability(r,${candidate}) as allowed from unnest(enum_range(null::public.staff_role)) r`;
+  if (rows.some((row) => row.allowed)) sqlCapabilities.push(candidate);
+}
+// Include ungranted literals too: a has_workspace_access-only special case must
+// be exercised even if role_has_capability would deny that literal.
+const parityCapabilities = [
+  ...new Set<string>([
+    ...CAPABILITIES,
+    ...sqlCapabilities,
+    ...candidates,
+    'unknown',
+    'toString',
+  ]),
+];
+it('bidirectional catalog capability names equal TypeScript exactly', () => {
+  expect([...sqlCapabilities].sort()).toEqual([...CAPABILITIES].sort());
+});
 afterAll(async () => {
   await db.end();
 });
@@ -206,7 +240,6 @@ it('keeps the role and capability definitions unchanged', () => {
     sales: [
       'generate_registration_link',
       'configure_installment_schedule',
-      'approve_registration',
       'record_payment',
       'manage_freeze',
     ],
@@ -214,7 +247,7 @@ it('keeps the role and capability definitions unchanged', () => {
 });
 
 for (const role of ROLES) {
-  for (const capability of [...CAPABILITIES, 'unknown', 'toString']) {
+  for (const capability of parityCapabilities) {
     it(`T010 parity: ${role} / ${capability}`, async () => {
       const [row] =
         await db`select app_private.role_has_capability(${role}::public.staff_role, ${capability}) as allowed`;
@@ -224,7 +257,7 @@ for (const role of ROLES) {
 }
 
 it('null role denies every known capability', async () => {
-  for (const capability of CAPABILITIES) {
+  for (const capability of parityCapabilities) {
     const [row] =
       await db`select app_private.role_has_capability(null::public.staff_role, ${capability}) as allowed`;
     expect(row?.allowed).toBe(false);
@@ -282,7 +315,11 @@ describe('has_workspace_access parity', () => {
 
   for (const identity of identities) {
     for (const workspace of ['wsA', 'wsB'] as const) {
-      for (const capability of [...CAPABILITIES, 'typo_capability', null]) {
+      for (const capability of [
+        ...parityCapabilities,
+        'typo_capability',
+        null,
+      ]) {
         it(`${identity} / ${workspace} / ${capability}`, async () => {
           const actor = actors[identity];
           const workspaceId = f[workspace].id;

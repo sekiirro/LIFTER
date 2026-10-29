@@ -48,6 +48,11 @@ it('expired, consumed and malformed-request submissions still count both windows
       // Normalize expired global nonce/counter state before the exact snapshot;
       // admit itself performs this cleanup for any validly attested request.
       await tx`select app_private.purge_client_signup_attempts()`;
+      // Isolate this rolled-back link-state probe from unrelated fixture TTLs
+      // crossing expiry between the purge snapshot and admit's fresh clock.
+      // New nonce/counter expiry and the production cleanup rules stay real.
+      await tx`update app_private.signup_admission_nonces set expires_at=greatest(expires_at,clock_timestamp()+interval '10 minutes')`;
+      await tx`update app_private.signup_rate_counters set expires_at=greatest(expires_at,clock_timestamp()+interval '10 minutes')`;
       const before = await countsForAdmission(tx, p, s.link);
       const globalBefore = await counts(tx);
       expect(
@@ -56,6 +61,7 @@ it('expired, consumed and malformed-request submissions still count both windows
       const after = await countsForAdmission(tx, p, s.link);
       const globalAfter = await counts(tx);
       expect(after!.credits - before!.credits).toBe(2);
+      expect(after!.nonces - before!.nonces).toBe(1);
       expect(after!.tickets).toBe(before!.tickets);
       expect(after!.attempts - before!.attempts).toBe(1);
       expect(after!.audits - before!.audits).toBe(2);
