@@ -60,6 +60,9 @@ All mutation checks are future checks on an isolated stack-B fixture. Pair each 
 
 | Q-M checks | Owning task(s) |
 |---|---|
+| Q-M01, Q-M02, Q-M04 (app-layer predicate only) | T007 unit slice; T005 remains pending for the real application matrix. |
+| Q-M05, Q-M06, Q-M08, Q-M09 (pure service behavior only) | T007 unit slice; repository/DB atomicity and GC races remain pending. |
+| Q-M18 (input boundary only) | T007 unit slice; UI surface contrast remains pending. |
 | Q-M21, Q-M22 | T045, T046 |
 | Q-M23 | T046 |
 | Q-M09 | T021, T024, T050 |
@@ -70,6 +73,20 @@ All mutation checks are future checks on an isolated stack-B fixture. Pair each 
 | Q-M28 | T049 |
 | Q-M29 | T050 |
 | Q-M30 | T048 |
+
+### DB-free application-layer evidence (batch 2)
+
+These unit results exercise the pure service and validator boundary only. The injected authorization predicate is mocked; they do not verify the real `manage_branding` matrix, SQL capability parity, forced RLS, or Stack-B behavior. Those checks remain with the deferred DB unit and Stack-B lane.
+
+| Q-M checks | Unit evidence in this batch | Remaining verification |
+|---|---|---|
+| Q-M01, Q-M02, Q-M04 | `tests/unit/branding-service.test.ts`: foreign scope, denied Sales/Trainer predicate results, and missing explicit scope stop before repository access. | T005 real application matrix and T006/T010 database wall on Stack B. |
+| Q-M05, Q-M06, Q-M08, Q-M09 | `tests/unit/branding-service.test.ts`: stale draft/publish CAS, unchanged publication no-op, workspace-local sequences, and current-only publication result. | Repository transaction/unique constraint and publication/GC races on Stack B. |
+| Q-M18 | `tests/unit/branding-validation.test.ts`: unknown/semantic-token fields reject; the pure mutation probe below confirms the assertion detects an allowlist regression. | Surface-specific visual contrast remains a UI/Frontend Design Gate check. |
+
+RED was recorded before implementation: the validation, service, and portal-contract suites each failed to load their not-yet-created module (zero tests collected). After implementation, all three focused suites passed: 10 validation tests, 12 service tests, and 2 portal-contract tests (24 total).
+
+Mutation probes were run locally without a database: bypassing the injected authorization predicate caused 4 service tests to fail (7 passed), including foreign-scope and Sales/Trainer denial checks; allowing `semanticTokens` through the validator field allowlist caused 1 validation test to fail (9 passed). Both mutations were restored, then the focused suites passed again. This is application-unit evidence only, not completion of the Q-M stack checks.
 
 ## Audit compatibility check
 

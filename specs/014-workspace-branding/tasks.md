@@ -39,12 +39,12 @@
 
 - [ ] T005 [P] [U01] Add unit denial matrix for PO platform scope, WO own scope, WO foreign scope, Sales, Trainer, missing actor, and missing workspace; run and record RED. **Owner files**: `tests/unit/branding-authorization.test.ts`. **DB: none; Storage: none; Stack: none.**
 - [ ] T006 [P] [U01] Add DB policy contract tests for both authorization walls, forced RLS, workspace-qualified draft/version/asset relations, and direct cross-workspace probes; run on isolated B and record RED. **Owner files**: `tests/integration/branding-rls.test.ts`. **DB: B; Storage: no object calls yet; Stack: B.**
-- [ ] T007 [U02] Add failing unit/contract tests for field normalization, required locale/fallback, color validation, draft CAS, unique per-workspace publication sequence and current-only retention semantics. **Owner files**: `tests/unit/branding-validation.test.ts`, `tests/unit/branding-service.test.ts`, `tests/contract/branding-workflow.contract.test.ts`. **DB: none for unit/contract; B for repository contract; Storage: none.**
+- [ ] T007 [U02] Add failing unit/contract tests for field normalization, required locale/fallback, color validation, draft CAS, unique per-workspace publication sequence and current-only retention semantics. **Owner files**: `tests/unit/branding-validation.test.ts`, `tests/unit/branding-service.test.ts`, `tests/contract/branding-workflow.contract.test.ts`. **DB: none for unit/contract; B for repository contract; Storage: none.** DB-free unit slice is GREEN; repository contract test B remains pending, so this task is not marked complete.
 
 ### Implementation — GREEN
 
 - [ ] T008 [U01] Implement capability and explicit-scope checks; persist required schema with forced RLS, workspace-scoped relationships, and the two independent walls. Run narrow tests GREEN. **Owner files**: `lib/branding/authorization.ts`, `supabase/migrations/<approved timestamp>_workspace_branding.sql`. **DB: B; Storage: no object calls; Stack: B.**
-- [ ] T009 [U02] Implement draft/version validation and repository/service CAS; enforce one required name locale and fallback, `#RRGGBB`, no semantic-token edits, unique sequence and latest-only long-term publication retention. No restore/rollback API. **Owner files**: `lib/branding/validation.ts`, `lib/branding/repository.ts`, `lib/branding/service.ts`. **DB: B for persistence; Storage: none; Stack: B.**
+- [ ] T009 [U02] Implement draft/version validation and repository/service CAS; enforce one required name locale and fallback, `#RRGGBB`, no semantic-token edits, unique sequence and latest-only long-term publication retention. No restore/rollback API. **Owner files**: `lib/branding/validation.ts`, `lib/branding/repository.ts`, `lib/branding/service.ts`. **DB: B for persistence; Storage: none; Stack: B.** Pure service logic and repository interface are present; the DB repository/transaction contract remains pending.
 - [ ] T010 [U01/U02] Verify the complete app+DB role/workspace matrix, forced RLS and stale-edit races on isolated B, including denied direct DB/API paths. **Owner files**: `tests/integration/branding-rls.test.ts`, `tests/integration/branding-draft.test.ts`. **DB: B; Storage: none; Stack: B.**
 
 ## Phase 3: Secure asset pipeline (US1, P1)
@@ -120,7 +120,7 @@
 
 ## Phase 8: Conditional P4 contract and final integration
 
-- [ ] T042 [U10] Add the brand data/token contract test first (RED), then implement only the contract definition and nonfunctional Client Portal preview placeholder. Do not implement or modify P4/Client Portal behavior even if P4 exists. **Owner files**: `lib/branding/portal-contract.ts`, associated contract tests and placeholder component only. **DB: none beyond authorized projection contract; Storage: none; Stack: none.**
+- [ ] T042 [U10] Add the brand data/token contract test first (RED), then implement only the contract definition and nonfunctional Client Portal preview placeholder. Do not implement or modify P4/Client Portal behavior even if P4 exists. **Owner files**: `lib/branding/portal-contract.ts`, associated contract tests and placeholder component only. **DB: none beyond authorized projection contract; Storage: none; Stack: none.** Contract test and pure contract are GREEN; UI placeholder is deferred to U08 because it is a surface/UI artifact.
 - [ ] T043 [U00/U09] Reconcile final F11 changes and migration order; rerun required stack-B Storage lane with no skips, UI gate, format/lint and `git diff --check`; collect run IDs and evidence before production approval. **Owner files**: feature-owned integration and evidence files. **DB: B; Storage: enabled; Stack: B.**
 
 ## Phase 9: Restricted Storage identities and proxy acceptance gates
