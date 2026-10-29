@@ -193,7 +193,7 @@ These are technical recommendations or external dependencies, not unresolved PO 
 None requiring a new PO decision. Final F12-3/F12-8 explicitly refine the older fixed second-offset-30 wording into a default while preserving custom offsets. F12-4 explicitly selects correction-month accounting over the earlier original-month recommendation. F12-6 assigns the standalone status flow to F12 without transferring P2 intake/assignment. Old D-09/architecture Sales approval is superseded by ND-F12-1/D-23. These are documented precedence resolutions, not reasons to reopen final policy.
 
 
-## Session 12 ? final F11 reconciliation (T001)
+## Session 12 — final F11 reconciliation (T001)
 
 PR #14 reviewed head `12036e26fb5e23da22af4ddf0e8d33de800779a2` merged as
 `1f4d2359bbfcef605e371e29b81a59b2a48d8ed4`; fetched main is
