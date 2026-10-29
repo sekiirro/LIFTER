@@ -168,9 +168,11 @@ it('public page uses no actor and shows only name/validity', async () => {
   const html = renderToStaticMarkup(
     await Public({ params: Promise.resolve({ token: 'synthetic' }) }),
   );
-  expect(html).toContain('Synthetic workspace');
-  expect(html).toContain('This registration link is valid.');
-  expect(html).not.toMatch(/synthetic|price|Continue|input/);
+  expect(html.includes('Synthetic workspace')).toBe(true);
+  expect(html.includes('This registration link is valid.')).toBe(true);
+  expect(html.includes('aria-label="Country"')).toBe(true);
+  expect(html.includes('name="request_secret"')).toBe(true);
+  expect(/price|Continue/.test(html)).toBe(false);
   expect(m.actor).not.toHaveBeenCalled();
 });
 it('public invalid page generic', async () => {

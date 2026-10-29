@@ -11,14 +11,20 @@ import {
   sql,
   twoWorkspaceFixture,
 } from './harness';
+import {
+  installedRecoveryTargetDefinition,
+  restoreRecoveryTargetFixture,
+} from './client-accounts-fixture';
 
 const db = sql();
 let f: Awaited<ReturnType<typeof twoWorkspaceFixture>>;
 let cA: Awaited<ReturnType<typeof createStaff>>;
 let cB: Awaited<ReturnType<typeof createStaff>>;
 let closedError: { message: string; code: string } | null;
+let installedRecoveryTarget: string | null = null;
 
 beforeAll(async () => {
+  installedRecoveryTarget = await installedRecoveryTargetDefinition(db);
   f = await twoWorkspaceFixture();
   cA = await createStaff(null, 'recovery-client-a');
   cB = await createStaff(null, 'recovery-client-b');
@@ -35,8 +41,8 @@ beforeAll(async () => {
 
 afterAll(async () => {
   try {
-    await db`create or replace function app_private.recovery_target_workspace(target uuid) returns uuid
-      language sql stable security definer set search_path = '' as $$ select null::uuid; $$`;
+    if (installedRecoveryTarget)
+      await restoreRecoveryTargetFixture(db, installedRecoveryTarget);
   } finally {
     try {
       await db`drop table if exists public.test_recovery_targets`;
@@ -98,6 +104,28 @@ describe('recovery', () => {
       code: '42501',
       message: 'not_permitted',
     });
+  });
+
+  it('locks target before actor and repeats the guard before inserting', async () => {
+    const [row] =
+      await db`select pg_catalog.pg_get_functiondef('public.recovery_link_record(uuid)'::regprocedure) as definition`;
+    const definition = row!.definition as string;
+    const targetLock = definition.indexOf(
+      'pg_advisory_xact_lock(hashtextextended(target::text, 0))',
+    );
+    const actorLock = definition.indexOf(
+      'pg_advisory_xact_lock(hashtextextended(auth.uid()::text, 0))',
+    );
+    const repeatedGuard = definition.indexOf(
+      'app_private.recovery_link_guard(target)',
+    );
+    const insert = definition.indexOf(
+      'insert into public.recovery_link_issuances',
+    );
+    expect(targetLock).toBeGreaterThanOrEqual(0);
+    expect(targetLock).toBeLessThan(actorLock);
+    expect(actorLock).toBeLessThan(repeatedGuard);
+    expect(repeatedGuard).toBeLessThan(insert);
   });
 
   for (const [identity, workspace, allowed] of [
@@ -355,5 +383,33 @@ describe('provider lifecycle', () => {
     const hash = await hashedToken(user.email);
     await db`update auth.users set recovery_sent_at = now() - interval '2 days' where id = ${user.userId}`;
     expect((await verify(anonClient(), hash)).error).not.toBeNull();
+  });
+  it('accepts a link verified 59 minutes after it was issued', async () => {
+    const user = await createStaff(null, 'recovery-window-59');
+    const hash = await hashedToken(user.email);
+    await db`update auth.users set recovery_sent_at = now() - interval '59 minutes' where id = ${user.userId}`;
+    expect((await verify(anonClient(), hash)).error).toBeNull();
+  });
+  it('rejects a link verified 61 minutes after it was issued', async () => {
+    const user = await createStaff(null, 'recovery-window-61');
+    const hash = await hashedToken(user.email);
+    await db`update auth.users set recovery_sent_at = now() - interval '61 minutes' where id = ${user.userId}`;
+    expect((await verify(anonClient(), hash)).error).not.toBeNull();
+  });
+  it('a link verified near expiry starts a fresh 15-minute session', async () => {
+    const user = await createStaff(null, 'recovery-window-session');
+    const hash = await hashedToken(user.email);
+    const client = anonClient();
+    await db`update auth.users set recovery_sent_at = now() - interval '50 minutes' where id = ${user.userId}`;
+    expect((await verify(client, hash)).error).toBeNull();
+    const claims = await latestAmrMethod(client);
+    const latest = Math.max(
+      ...claims.amr.map((e) => (typeof e === 'object' ? e.timestamp : 0)),
+    );
+    expect(isRecoverySession(claims.amr, Math.floor(Date.now() / 1000))).toBe(
+      true,
+    );
+    expect(isRecoverySession(claims.amr, latest + 900)).toBe(true);
+    expect(isRecoverySession(claims.amr, latest + 901)).toBe(false);
   });
 });

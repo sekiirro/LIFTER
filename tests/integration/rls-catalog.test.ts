@@ -7,6 +7,40 @@ import {
 } from './registration-links-fixture';
 
 const db = sql();
+const signupPrivate = [
+  'signup_constant_time_equal',
+  'signup_attestation_matches',
+  'signup_attestation_timing',
+  'signup_attempt_purge_proof',
+  'purge_client_signup_attempts',
+  'purge_schedule_activate',
+  'purge_schedule_deactivate',
+  'signup_auth_schema_compatible',
+  'signup_bcrypt_cost',
+  'signup_password_acceptable',
+  'signup_link_key_matches',
+  'signup_identity_normalization',
+  'signup_password_policy',
+  'signup_field_contract',
+  'signup_consumption_policy',
+  'client_signup_limits',
+  'signup_completion_policy',
+  'signup_retention_policy',
+  'signup_authenticated_visitor_policy',
+  'signup_identifier_scope_policy',
+  'client_signup_audit_contract',
+  'signup_lock_identity_keys',
+  'signup_guard_claim_write',
+  'sync_account_identifier_claims',
+  'guard_account_identity_kind',
+  'guard_client_signup_insert',
+  'check_client_signup_integrity',
+  'guard_client_signup_operation',
+  'signup_ticket_redemption_proof',
+  'signup_guard_ticket_update',
+  'redeem_signup_admission_ticket',
+  'signup_guard_attempt_delete',
+];
 const registrationPrivate = [
   'registration_link_is_valid',
   'registration_link_limits',
@@ -137,6 +171,7 @@ describe('tenancy security catalog (T007)', () => {
     expect(rows.map((row) => row.proname).sort()).toEqual(
       [
         ...registrationPrivate,
+        ...signupPrivate,
         'audit_events_immutable',
         'audit_row_change',
         'current_staff_role',
@@ -162,6 +197,8 @@ describe('tenancy security catalog (T007)', () => {
           'jobs_updated_at',
           'recovery_link_limits',
           'registration_link_limits',
+          'purge_schedule_activate',
+          'purge_schedule_deactivate',
         ].includes(row.proname),
       );
       expect(row.proconfig).toContain('search_path=""');
@@ -169,6 +206,7 @@ describe('tenancy security catalog (T007)', () => {
       expect(row.anon_execute).toBe(false);
       expect(row.authenticated_execute).toBe(
         !registrationPrivate.includes(row.proname) &&
+          !signupPrivate.includes(row.proname) &&
           ![
             'audit_events_immutable',
             'audit_row_change',
@@ -249,6 +287,13 @@ describe('audit security catalog (T005)', () => {
         and p.proname in ('audit_row_change', 'audit_events_immutable')
       order by t.tgname`;
     expect(triggers).toEqual([
+      {
+        tgname: 'audit_client_signup',
+        relname: 'clients',
+        type: 5,
+        tgenabled: 'O',
+        proname: 'audit_row_change',
+      },
       {
         tgname: 'audit_events_immutable',
         relname: 'audit_events',
@@ -357,6 +402,13 @@ describe('audit security catalog (T005)', () => {
       {
         tgname: 'registration_link_installments_no_update',
         relname: 'registration_link_installments',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'signup_no_update',
+        relname: 'clients',
         type: 19,
         tgenabled: 'O',
         proname: 'audit_events_immutable',

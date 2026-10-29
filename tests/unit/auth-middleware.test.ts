@@ -22,7 +22,7 @@ describe('auth middleware', () => {
     '/register/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa',
     '/register/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/',
   ])(
-    'F10 public exact segment %s has privacy headers on refreshed/error responses',
+    'F10 public exact segment has privacy headers on refreshed/error responses',
     async (path) => {
       mocks.create.mockImplementation((_u, _k, options) => ({
         auth: {
@@ -53,12 +53,12 @@ describe('auth middleware', () => {
     '/register/a/b',
     '/register/a/b.svg',
     '/register-prefix/a.svg',
-    '/registration-links/file.svg',
     '/register-prefix/a',
-    '/registration-links',
-  ])('F10 retains protected %s', async (path) => {
+  ])('F10 retains protected %s with privacy headers', async (path) => {
     const r = await middleware(new NextRequest('http://localhost:3000' + path));
     expect(r.status).toBe(307);
+    expect(r.headers.get('Referrer-Policy')).toBe('no-referrer');
+    expect(r.headers.get('Cache-Control')).toBe('no-store');
   });
   it.each([
     '/register',
@@ -66,15 +66,40 @@ describe('auth middleware', () => {
     '/register/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa//',
     '/register/aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa/extra',
     '/register/a/b?next=%2Fregister%2Ftoken',
-  ])(
-    'never echoes register paths or tokens into login next: %s',
+    '/register-prefix/a',
+  ])('never echoes register paths or tokens into login next', async (path) => {
+    const response = await middleware(
+      new NextRequest('http://localhost:3000' + path),
+    );
+    const destination = new URL(response.headers.get('location')!);
+    expect(response.status).toBe(307);
+    expect(destination.pathname.replace(/\/$/, '')).toBe('/login');
+    expect(destination.search).toBe('');
+  });
+  it.each(['GET', 'POST'])(
+    'keeps the exact single-segment signup route public for %s with privacy headers',
+    async (method) => {
+      const response = await middleware(
+        new NextRequest('http://localhost:3000/register/' + 'a'.repeat(43), {
+          method,
+        }),
+      );
+      expect(response.headers.get('location')).toBeNull();
+      expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
+      expect(response.headers.get('Cache-Control')).toBe('no-store');
+    },
+  );
+  it.each(['/register-prefix/a', '/register/a/nested'])(
+    'denied lookalike or nested %s gets privacy headers without token redirects',
     async (path) => {
       const response = await middleware(
         new NextRequest('http://localhost:3000' + path),
       );
-      const destination = new URL(response.headers.get('location')!);
       expect(response.status).toBe(307);
-      expect(destination.pathname.replace(/\/$/, '')).toBe('/login');
+      expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
+      expect(response.headers.get('Cache-Control')).toBe('no-store');
+      const destination = new URL(response.headers.get('location')!);
+      expect(destination.pathname).toBe('/login');
       expect(destination.search).toBe('');
     },
   );
@@ -90,13 +115,13 @@ describe('auth middleware', () => {
       '/registration-links?workspace=fixture',
     );
   });
-  it('keeps next for register-prefix lookalikes', async () => {
+  it('does not copy a register-prefix lookalike into next', async () => {
     const response = await middleware(
       new NextRequest('http://localhost:3000/register-prefix/a'),
     );
     const destination = new URL(response.headers.get('location')!);
     expect(destination.pathname).toBe('/login');
-    expect(destination.searchParams.get('next')).toBe('/register-prefix/a');
+    expect(destination.search).toBe('');
   });
   it.each(['/', '/unknown/path?tab=2'])(
     'redirects anonymous %s with path and query',

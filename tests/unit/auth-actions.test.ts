@@ -5,6 +5,8 @@ import {
   verifyRecovery,
   setNewPassword,
 } from '../../app/auth/recovery/actions';
+import { ar } from '../../lib/i18n/messages/ar';
+import { en } from '../../lib/i18n/messages/en';
 
 const mocks = vi.hoisted(() => ({
   factory: vi.fn(),
@@ -123,6 +125,7 @@ describe('sign-in and sign-out actions', () => {
 });
 
 describe('recovery actions', () => {
+  const compliantPassword = 'Recovery-Valid-9!';
   it('does not call the provider without a hash', async () => {
     expect(await verifyRecovery(null, form({}))).toEqual({
       status: 'invalid_link',
@@ -161,7 +164,11 @@ describe('recovery actions', () => {
     expect(
       await setNewPassword(
         null,
-        form({ password: 'secret', confirm: 'secret', userId: 'forged' }),
+        form({
+          password: compliantPassword,
+          confirm: compliantPassword,
+          userId: 'forged',
+        }),
       ),
     ).toEqual({ status: 'invalid_link' });
     expect(mocks.updateUser).not.toHaveBeenCalled();
@@ -186,7 +193,7 @@ describe('recovery actions', () => {
     expect(
       await setNewPassword(
         null,
-        form({ password: 'secret', confirm: 'secret' }),
+        form({ password: compliantPassword, confirm: compliantPassword }),
       ),
     ).toEqual({ status: 'invalid_link' });
     expect(mocks.updateUser).not.toHaveBeenCalled();
@@ -205,7 +212,7 @@ describe('recovery actions', () => {
     expect(
       await setNewPassword(
         null,
-        form({ password: 'secret', confirm: 'secret' }),
+        form({ password: compliantPassword, confirm: compliantPassword }),
       ),
     ).toEqual({ status: 'invalid_link' });
     expect(mocks.updateUser).not.toHaveBeenCalled();
@@ -227,7 +234,7 @@ describe('recovery actions', () => {
       expect(
         await setNewPassword(
           null,
-          form({ password: 'secret', confirm: 'secret' }),
+          form({ password: compliantPassword, confirm: compliantPassword }),
         ),
       ).toEqual({ status: 'invalid_link' });
       expect(mocks.updateUser).not.toHaveBeenCalled();
@@ -243,7 +250,7 @@ describe('recovery actions', () => {
     expect(
       await setNewPassword(
         null,
-        form({ password: 'secret', confirm: 'secret' }),
+        form({ password: compliantPassword, confirm: compliantPassword }),
       ),
     ).toEqual({ status });
   });
@@ -251,10 +258,48 @@ describe('recovery actions', () => {
     await expect(
       setNewPassword(
         null,
-        form({ password: 'secret', confirm: 'secret', userId: 'forged' }),
+        form({
+          password: compliantPassword,
+          confirm: compliantPassword,
+          userId: 'forged',
+        }),
       ),
     ).rejects.toThrow('redirect');
-    expect(mocks.updateUser).toHaveBeenCalledWith({ password: 'secret' });
+    const updatedPassword = mocks.updateUser.mock.calls[0]?.[0]?.password;
+    expect(updatedPassword === compliantPassword).toBe(true);
     expect(mocks.redirect).toHaveBeenCalledWith('/');
+  });
+  it.each([
+    ['under eight code points', 'Abc1!'],
+    ['missing a digit', 'Abcdefg!'],
+    ['missing a symbol', 'Abcdefg1'],
+    ['whitespace as the only symbol', 'Abcdef1 '],
+    ['a non-printable symbol', 'Abcdef1\u0001'],
+    ['more than 72 UTF-8 bytes', 'é'.repeat(36) + '1!'],
+    ['a NUL character', 'Abcdef1!\0'],
+  ])('rejects %s before contacting GoTrue', async (_label, password) => {
+    let result: unknown;
+    try {
+      result = await setNewPassword(
+        null,
+        form({ password, confirm: password }),
+      );
+    } catch {
+      // The pre-fix action reaches its success redirect after calling GoTrue.
+    }
+    expect(mocks.factory.mock.calls.length).toBe(0);
+    expect(mocks.getUser.mock.calls.length).toBe(0);
+    expect(mocks.getClaims.mock.calls.length).toBe(0);
+    expect(mocks.updateUser.mock.calls.length).toBe(0);
+    const status =
+      result && typeof result === 'object' && 'status' in result
+        ? result.status
+        : undefined;
+    expect(status).toBe('weak_password');
+    expect(JSON.stringify(result ?? {}).includes(password)).toBe(false);
+  });
+  it('keeps the existing English and Arabic weak-password messages', async () => {
+    expect(en['auth.weak_password']).toBeTruthy();
+    expect(ar['auth.weak_password']).toBeTruthy();
   });
 });

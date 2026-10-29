@@ -1,4 +1,4 @@
-# LIFTER — Agent Workflow (PO-approved 2026-10-28)
+# LIFTER - Agent Workflow (PO-approved 2026-10-28; adaptive routing amended 2026-10-29, D-27)
 
 These rules govern agent dispatch, design/spec work, parallel development, and merge preparation.
 The Constitution remains authoritative. The [Frontend Design Gate](09-frontend-design-gate.md)
@@ -6,22 +6,32 @@ applies to every unit that changes rendered UI.
 
 ## Roles
 
-- **Claude — architect, orchestrator, reviewer.** Drafts briefs and technical designs, manages
-  dependencies and merge order, reviews actual diffs and evidence, and presents unresolved product
-  or design decisions to the PO. Claude does not code or run git, tests, or Docker.
-- **Codex — implementer and git operator.** Implements bounded approved tasks and runs the
-  authorized git commands and relevant checks. Coders do not plan or approve their own work.
+- **Claude - architect, orchestrator, independent reviewer.** Drafts briefs and technical designs,
+  manages dependencies and merge order, reviews actual diffs and evidence, and presents unresolved
+  product or design decisions to the PO. Claude does not code or run Git, tests, or Docker; read-only
+  `gh` inspection is allowed.
+- **Delegated agents (Codex, or OpenCode for the GLM tier) own implementation and Git operations.** They own bounded implementation and checks. Codex may delegate eligible low-risk work through OpenCode; writers do not approve their own work.
 
-## Model routing
+## Adaptive Model Routing
 
-- **Default:** Luna High (`gpt-6-luna`, effort `high`, including subagents) for implementation,
-  including frontend work.
-- **Sol Medium:** `gpt-6.1-sol`, effort `medium`, only for complex architecture, security, and
-  mandatory spec debates. Every Sol dispatch includes a one-line reason.
-- **Prohibited:** Sol High and any Extra High/`xhigh` effort. No exceptions and no automatic
-  escalation. There are no fallback agents or automatic model substitutions. On quota or capacity
-  limits, stop work and ask the PO.
-- Verify model and effort in every relay `result.json`.
+Choose the cheapest capable reliable model allowed by the task's risk and sensitivity. Escalate
+GLM -> Luna -> Sol when capability or reliability evidence requires it; do not down-route a sensitive
+or high-risk task.
+
+- **GLM 5.3 Flash free:** `opencode/glm-5.3-flash-free` through OpenCode using the
+  `opencode-delegate` skill. Eligible for documentation, implementation, CI workflows, configuration
+  and other low- to moderate-risk tasks when complexity, risk, cost and the performance log support
+  it; give it fully specified briefs. The architect independently reviews every GLM change, and an
+  agent proves the relevant tests and checks pass before it is committed or merged. Route genuinely
+  high-risk security, Auth, RLS, SECURITY DEFINER, migrations, admission, Storage policies and
+  financial logic to Luna High or Sol Medium. Never give a third-party-routed model secrets or `.env`
+  values.
+- **Luna High:** `gpt-6-luna` at `high` is the standard for moderate work and tasks not suited to GLM.
+- **Sol Medium:** `gpt-6.1-sol` at `medium` is for complex, security-sensitive, or otherwise high-risk
+  work, including spec-debate critiques. Record a one-line reason for each Sol dispatch.
+- **Prohibited:** Sol High and any `xhigh` effort. The maximum tier is Sol Medium.
+- **No permitted tier available:** if every permitted tier is unavailable or at capacity, the architect stops the delegation and asks the PO for direction; it never retries without limit or substitutes a model outside the permitted tiers.
+- The architect maintains `~/.lifter/model-performance-log.md` outside the repository, with one row per delegation: model, effort, task class, outcome, review notes, and cost. Verify actual model and effort in each delegation result.
 
 ## Mandatory Spec Debate
 
@@ -36,11 +46,12 @@ applies to every unit that changes rendered UI.
 
 ## Controlled Parallel Development
 
-- Use no more than three concurrent agents.
-- Each code-changing agent gets its own worktree and branch. Agents edit disjoint files and do not
-  share a branch.
-- Only one agent at a time may use Docker or the local Supabase stack. Other parallel work stays
-  DB-free while that lock is held.
+- Use at most six concurrent delegated agents (the orchestrating architect is not counted).
+- Each writer gets an isolated worktree and branch. Writers edit disjoint files and do not share a
+  branch.
+- Only one writer may hold a stack lock for Docker or Supabase operations that start, stop, restart,
+  reset, provision, migrate, seed, or write shared DB state. Other writers stay out of that stack while
+  the lock is held. Use one DB user per stack.
 - Integrate feature branches sequentially. Each integration requires architect review and relevant
   green CI.
 
