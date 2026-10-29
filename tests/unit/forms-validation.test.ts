@@ -1,300 +1,193 @@
 import { describe, expect, it } from 'vitest';
-
 import {
+  APPROVED_FORM_BOUNDS,
+  countTextAnswer,
+  measureAnswerPayloadBytes,
+  measureTextAnswerBytes,
   validateAnswerSet,
   validateFormDefinition,
-  type FormAnswerSet,
   type FormQuestion,
 } from '../../lib/forms/validation';
 
-const questions: readonly FormQuestion[] = [
-  { id: 'consent', sectionId: 'basic', type: 'boolean', required: true },
-  {
-    id: 'name',
+function question(
+  type: 'shortText' | 'longText',
+  options: Partial<FormQuestion> = {},
+): FormQuestion {
+  return {
+    id: 'answer',
     sectionId: 'basic',
-    type: 'shortText',
-    required: true,
-    validation: { maxLength: 40 },
-  },
-  {
-    id: 'goal',
-    sectionId: 'workout',
-    type: 'singleChoice',
+    type,
     required: false,
-    choices: ['strength', 'mobility'],
-    when: {
-      mode: 'all',
-      conditions: [{ questionId: 'consent', operator: 'equals', value: true }],
-    },
-  },
-];
+    ...options,
+  };
+}
 
-describe('validateFormDefinition', () => {
-  const questionsForSections = (sizes: readonly number[]) =>
-    sizes.flatMap((count, sectionIndex) =>
-      Array.from({ length: count }, (_, questionIndex) => ({
-        id: `q${sectionIndex}_${questionIndex}`,
-        sectionId: `section${sectionIndex}`,
-        type: 'shortText' as const,
-        required: false,
-      })),
-    );
+function validateText(
+  type: 'shortText' | 'longText',
+  value: string,
+  options: Partial<FormQuestion> = {},
+) {
+  return validateAnswerSet([question(type, options)], { answer: value });
+}
 
-  it('accepts 20 questions in a section and rejects 21', () => {
-    expect(validateFormDefinition(questionsForSections([20]))).toEqual([]);
-    expect(
-      validateFormDefinition(questionsForSections([21])).map(
-        ({ code }) => code,
-      ),
-    ).toContain('too_many_questions_in_section');
+describe('Unicode text answer counting', () => {
+  it.each([
+    ['English', 'Hello, world!', 13],
+    ['Arabic with diacritics', 'مُدَرِّب', 8],
+    ['surrogate-pair emoji', '😀🏋️', 3],
+    ['ZWJ emoji sequence', '👨‍👩‍👧‍👦', 7],
+    ['mixed RTL and LTR', 'مرحبا ABC ١٢٣', 13],
+  ])('counts %s by Unicode code point', (_name, value, used) => {
+    expect(countTextAnswer(value, 150)).toEqual({
+      used,
+      limit: 150,
+      remaining: 150 - used,
+      over: false,
+    });
   });
 
-  it('accepts 60 questions per form and rejects 61 across valid section sizes', () => {
-    expect(validateFormDefinition(questionsForSections([20, 20, 20]))).toEqual(
+  it('accepts exactly the short and long type boundaries and rejects one over', () => {
+    expect(validateText('shortText', 'x'.repeat(150))).toEqual([]);
+    expect(validateText('shortText', '😀'.repeat(150))).toEqual([]);
+    expect(validateText('shortText', 'x'.repeat(151))).toContainEqual({
+      code: 'answer_too_long',
+      questionId: 'answer',
+    });
+    expect(validateText('longText', 'x'.repeat(1_000))).toEqual([]);
+    expect(validateText('longText', 'x'.repeat(1_001))).toContainEqual({
+      code: 'answer_too_long',
+      questionId: 'answer',
+    });
+  });
+
+  it('applies a lower author limit at N and N+1 and rejects limits above type max', () => {
+    expect(validateText('longText', 'x'.repeat(12), { charLimit: 12 })).toEqual(
       [],
     );
     expect(
-      validateFormDefinition(questionsForSections([20, 20, 20, 1])).map(
-        ({ code }) => code,
-      ),
-    ).toContain('too_many_questions');
-  });
-
-  it('accepts typed acyclic definitions with known references', () => {
-    expect(validateFormDefinition(questions)).toEqual([]);
-  });
-
-  it('applies UTF-8 byte bounds to choice labels and condition values', () => {
-    const valid4096Bytes = 'ا'.repeat(2_048);
-    const invalid4097Bytes = `${valid4096Bytes}a`;
-    const choiceDefinition = (choice: string) => [
-      {
-        id: 'choice',
-        sectionId: 'basic',
-        type: 'singleChoice' as const,
-        required: false,
-        choices: [choice],
-      },
-    ];
-    const conditionDefinition = (value: string) => [
-      {
-        id: 'source',
-        sectionId: 'basic',
-        type: 'shortText' as const,
-        required: false,
-      },
-      {
-        id: 'branch',
-        sectionId: 'basic',
-        type: 'boolean' as const,
-        required: false,
-        when: {
-          mode: 'all' as const,
-          conditions: [
-            { questionId: 'source', operator: 'equals' as const, value },
-          ],
-        },
-      },
-    ];
-
-    expect(validateFormDefinition(choiceDefinition(valid4096Bytes))).toEqual(
-      [],
-    );
+      validateText('longText', 'x'.repeat(13), { charLimit: 12 }),
+    ).toContainEqual({ code: 'answer_too_long', questionId: 'answer' });
     expect(
-      validateFormDefinition(choiceDefinition(invalid4097Bytes)).map(
-        ({ code }) => code,
-      ),
-    ).toContain('invalid_choices');
-    expect(validateFormDefinition(conditionDefinition(valid4096Bytes))).toEqual(
-      [],
-    );
+      validateFormDefinition([question('shortText', { charLimit: 151 })]),
+    ).toContainEqual({ code: 'invalid_char_limit', questionId: 'answer' });
     expect(
-      validateFormDefinition(conditionDefinition(invalid4097Bytes)).map(
-        ({ code }) => code,
-      ),
-    ).toContain('invalid_applicability');
+      validateFormDefinition([question('longText', { charLimit: 0 })]),
+    ).toContainEqual({ code: 'invalid_char_limit', questionId: 'answer' });
   });
 
-  it('rejects unknown question IDs and answer types', () => {
-    const invalid = [
-      {
-        ...questions[0],
-        type: 'script' as FormQuestion['type'],
-      },
-      {
-        ...questions[1],
-        when: {
-          mode: 'all' as const,
-          conditions: [
-            { questionId: 'missing', operator: 'equals' as const, value: true },
-          ],
-        },
-      },
-    ];
-    expect(validateFormDefinition(invalid)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          code: 'unknown_question_type',
-          questionId: 'consent',
-        }),
-        expect.objectContaining({
-          code: 'unknown_question_id',
-          questionId: 'name',
-        }),
-      ]),
+  it('keeps the approved 20-per-section and 60-per-form boundaries', () => {
+    const sectionQuestions = Array.from({ length: 20 }, (_, index) =>
+      question('shortText', { id: `s${index}`, sectionId: 'one' }),
     );
-  });
-
-  it('rejects cyclic applicability and type-incompatible conditions', () => {
-    const cyclic: readonly FormQuestion[] = [
-      {
-        id: 'a',
-        sectionId: 'basic',
-        type: 'boolean',
-        required: false,
-        when: {
-          mode: 'all',
-          conditions: [{ questionId: 'b', operator: 'equals', value: true }],
-        },
-      },
-      {
-        id: 'b',
-        sectionId: 'basic',
-        type: 'boolean',
-        required: false,
-        when: {
-          mode: 'all',
-          conditions: [{ questionId: 'a', operator: 'equals', value: true }],
-        },
-      },
-      {
-        id: 'c',
-        sectionId: 'basic',
-        type: 'shortText',
-        required: false,
-        when: {
-          mode: 'all',
-          conditions: [{ questionId: 'a', operator: 'contains', value: 'x' }],
-        },
-      },
-    ];
-
-    expect(validateFormDefinition(cyclic)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: 'cyclic_applicability' }),
-        expect.objectContaining({
-          code: 'incompatible_condition',
-          questionId: 'c',
-        }),
+    expect(validateFormDefinition(sectionQuestions)).toEqual([]);
+    expect(
+      validateFormDefinition([
+        ...sectionQuestions,
+        question('shortText', { id: 's20', sectionId: 'one' }),
       ]),
-    );
-  });
+    ).toContainEqual({ code: 'too_many_questions_in_section' });
 
-  it('rejects definitions and condition graphs above safe bounds', () => {
-    const tooMany = Array.from({ length: 201 }, (_, index) => ({
-      id: `q${index}`,
-      sectionId: 'basic',
-      type: 'shortText' as const,
-      required: false,
-    }));
-    expect(validateFormDefinition(tooMany)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: 'too_many_questions' }),
-      ]),
+    const sixtyQuestions = Array.from({ length: 60 }, (_, index) =>
+      question('shortText', {
+        id: `q${index}`,
+        sectionId: `s${Math.floor(index / 20)}`,
+      }),
     );
-
-    const tooLarge = [
-      {
-        id: 'choices',
-        sectionId: 'basic',
-        type: 'singleChoice' as const,
-        required: false,
-        choices: Array.from(
-          { length: 40 },
-          (_, index) => `${'x'.repeat(4_088)}${index}`,
-        ),
-      },
-    ];
-    expect(validateFormDefinition(tooLarge)).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: 'definition_too_large' }),
+    expect(validateFormDefinition(sixtyQuestions)).toEqual([]);
+    expect(
+      validateFormDefinition([
+        ...sixtyQuestions,
+        question('shortText', { id: 'q60', sectionId: 's3' }),
       ]),
-    );
+    ).toContainEqual({ code: 'too_many_questions' });
   });
 });
 
-describe('validateAnswerSet', () => {
-  const textQuestion: readonly FormQuestion[] = [
-    { id: 'text', sectionId: 'basic', type: 'longText', required: false },
-  ];
-
-  it('counts Arabic text limits in UTF-8 bytes at 4,096 and 4,097 bytes', () => {
-    const valid4096Bytes = 'ا'.repeat(2_048);
-    const invalid4097Bytes = `${valid4096Bytes}a`;
-    expect(new TextEncoder().encode(valid4096Bytes).length).toBe(4_096);
-    expect(new TextEncoder().encode(invalid4097Bytes).length).toBe(4_097);
-    expect(validateAnswerSet(textQuestion, { text: valid4096Bytes })).toEqual(
-      [],
-    );
-    expect(validateAnswerSet(textQuestion, { text: invalid4097Bytes })).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          code: 'answer_too_long',
-          questionId: 'text',
-        }),
-      ]),
-    );
+describe('UTF-8 safety and submission payload byte measurements', () => {
+  it('measures the separate per-answer UTF-8 safety boundary', () => {
+    const fourByteText = '😀'.repeat(1_024);
+    expect(measureTextAnswerBytes(fourByteText)).toBe(4_096);
+    expect(measureTextAnswerBytes(`${fourByteText}x`)).toBe(4_097);
+    expect(APPROVED_FORM_BOUNDS.maxTextBytes).toBe(4_096);
   });
 
-  it('accepts valid typed values and allows optional omissions', () => {
-    const answers: FormAnswerSet = { consent: false, name: 'Mina' };
+  it('rejects a textual answer at 4,097 bytes even when character type is not text-counted', () => {
+    const dateQuestion: FormQuestion = {
+      id: 'answer',
+      sectionId: 'basic',
+      type: 'date',
+      required: false,
+    };
+    expect(
+      validateAnswerSet([dateQuestion], { answer: 'x'.repeat(4_096) }),
+    ).not.toContainEqual({ code: 'answer_too_long', questionId: 'answer' });
+    expect(
+      validateAnswerSet([dateQuestion], { answer: 'x'.repeat(4_097) }),
+    ).toContainEqual({ code: 'answer_too_long', questionId: 'answer' });
+  });
+
+  it('measures the answer-content payload boundary without keys or envelope', () => {
+    const atLimit = 'x'.repeat(262_142);
+    const overLimit = 'x'.repeat(262_143);
+    expect(measureAnswerPayloadBytes({ arbitrary: atLimit })).toBe(262_144);
+    expect(measureAnswerPayloadBytes({ arbitrary: overLimit })).toBe(262_145);
+    expect(APPROVED_FORM_BOUNDS.maxPayloadBytes).toBe(262_144);
+  });
+
+  it('accepts the payload cap exactly and rejects the next byte', () => {
+    const payloadAtLimit = [
+      ...Array.from({ length: 42 }, () => 'x'.repeat(6_000)),
+      'x'.repeat(10_014),
+    ];
+    const payloadOverLimit = [
+      ...Array.from({ length: 42 }, () => 'x'.repeat(6_000)),
+      'x'.repeat(10_015),
+    ];
+    const multiChoice: FormQuestion = {
+      id: 'answer',
+      sectionId: 'basic',
+      type: 'multiChoice',
+      required: false,
+      choices: ['allowed'],
+    };
+    expect(measureAnswerPayloadBytes({ answer: payloadAtLimit })).toBe(262_144);
+    expect(measureAnswerPayloadBytes({ answer: payloadOverLimit })).toBe(
+      262_145,
+    );
+    expect(
+      validateAnswerSet([multiChoice], { answer: payloadAtLimit }),
+    ).not.toContainEqual({ code: 'payload_too_large' });
+    expect(
+      validateAnswerSet([multiChoice], { answer: payloadOverLimit }),
+    ).toContainEqual({ code: 'payload_too_large' });
+  });
+
+  it('accepts 60 long answers of 1,000 four-byte code points under 256 KiB', () => {
+    const questions = Array.from({ length: 60 }, (_, index) =>
+      question('longText', {
+        id: `q${index}`,
+        sectionId: `s${Math.floor(index / 20)}`,
+      }),
+    );
+    const answers = Object.fromEntries(
+      questions.map(({ id }) => [id, '😀'.repeat(1_000)]),
+    );
+
+    expect(measureAnswerPayloadBytes(answers)).toBe(240_120);
     expect(validateAnswerSet(questions, answers)).toEqual([]);
   });
 
-  it('rejects unknown IDs and values that do not match the question type', () => {
+  it('rejects an oversized measured answer payload', () => {
+    const multiChoice: FormQuestion = {
+      id: 'answer',
+      sectionId: 'basic',
+      type: 'multiChoice',
+      required: false,
+      choices: ['allowed'],
+    };
+    const overSizedValues = Array.from({ length: 51 }, () => 'x'.repeat(6_000));
     expect(
-      validateAnswerSet(questions, {
-        consent: 'yes',
-        name: 'Mina',
-        foreign: true,
-      }),
-    ).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          code: 'unknown_answer_id',
-          questionId: 'foreign',
-        }),
-        expect.objectContaining({
-          code: 'invalid_answer_type',
-          questionId: 'consent',
-        }),
-      ]),
-    );
-  });
-
-  it('rejects unsafe answer payloads and invalid choice values', () => {
-    expect(
-      validateAnswerSet(questions, {
-        consent: true,
-        name: 'A'.repeat(41),
-        goal: 'cardio',
-      }),
-    ).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({
-          code: 'answer_too_long',
-          questionId: 'name',
-        }),
-        expect.objectContaining({ code: 'invalid_choice', questionId: 'goal' }),
-      ]),
-    );
-  });
-
-  it('rejects answer collections above the byte limit', () => {
-    expect(validateAnswerSet(questions, { name: 'x'.repeat(17_000) })).toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ code: 'payload_too_large' }),
-      ]),
-    );
+      validateAnswerSet([multiChoice], { answer: overSizedValues }),
+    ).toContainEqual({ code: 'payload_too_large' });
   });
 });

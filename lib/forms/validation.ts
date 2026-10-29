@@ -5,8 +5,8 @@ export const APPROVED_FORM_BOUNDS = {
   maxConditionsPerQuestion: 16,
   maxEvaluationSteps: 4_000,
   maxDefinitionBytes: 131_072,
-  // pending PO: must accommodate all valid forms
-  maxPayloadBytes: 16_384,
+  // Serialized answer values only; see measureAnswerPayloadBytes below.
+  maxPayloadBytes: 262_144,
   maxTextBytes: 4_096,
   maxChoices: 50,
 } as const;
@@ -17,6 +17,43 @@ function utf8ByteLength(value: string): number {
   return UTF8_ENCODER.encode(value).length;
 }
 
+/** UTF-8 byte length of a textual answer, independent of its character limit. */
+export function measureTextAnswerBytes(value: string): number {
+  return utf8ByteLength(value);
+}
+
+/**
+ * Count serialized answer-content bytes only: sum UTF-8 bytes of each JSON
+ * serialized answer value. Question IDs/object keys, request envelope fields,
+ * JSON object punctuation between fields, and transport framing are excluded.
+ */
+export function measureAnswerPayloadBytes(
+  answers: Readonly<Record<string, unknown>>,
+): number {
+  let bytes = 0;
+  for (const answer of Object.values(answers)) {
+    let serialized: string | undefined;
+    try {
+      serialized = JSON.stringify(answer);
+    } catch {
+      return APPROVED_FORM_BOUNDS.maxPayloadBytes + 1;
+    }
+    if (serialized === undefined)
+      return APPROVED_FORM_BOUNDS.maxPayloadBytes + 1;
+    bytes += utf8ByteLength(serialized);
+  }
+  return bytes;
+}
+
+/** Shared code-point counter used by validation and the live UI counter. */
+export function countTextAnswer(
+  value: string,
+  limit: number,
+): { used: number; limit: number; remaining: number; over: boolean } {
+  const used = [...value].length;
+  return { used, limit, remaining: limit - used, over: used > limit };
+}
+
 export type FormAnswerType =
   | 'shortText'
   | 'longText'
@@ -25,6 +62,12 @@ export type FormAnswerType =
   | 'multiChoice'
   | 'boolean'
   | 'date';
+
+function textTypeLimit(type: FormAnswerType): number | undefined {
+  if (type === 'shortText') return 150;
+  if (type === 'longText') return 1_000;
+  return undefined;
+}
 
 export type FormAnswer = string | number | boolean | readonly string[];
 export type FormAnswerSet = Readonly<Record<string, FormAnswer>>;
@@ -49,6 +92,7 @@ export type FormQuestion = {
   sectionId: string;
   type: FormAnswerType;
   required: boolean;
+  charLimit?: number;
   choices?: readonly string[];
   validation?: {
     minLength?: number;
@@ -79,6 +123,7 @@ const QUESTION_KEYS = new Set([
   'sectionId',
   'type',
   'required',
+  'charLimit',
   'choices',
   'validation',
   'when',
@@ -219,6 +264,21 @@ export function validateFormDefinition(input: unknown): FormValidationIssue[] {
     if (typeof candidate.required !== 'boolean') {
       issues.push({ code: 'invalid_required_flag', questionId });
     }
+    if (candidate.charLimit !== undefined) {
+      const maximum =
+        typeof candidate.type === 'string' &&
+        ANSWER_TYPES.has(candidate.type as FormAnswerType)
+          ? textTypeLimit(candidate.type as FormAnswerType)
+          : undefined;
+      if (
+        maximum === undefined ||
+        !Number.isSafeInteger(candidate.charLimit) ||
+        Number(candidate.charLimit) < 1 ||
+        Number(candidate.charLimit) > maximum
+      ) {
+        issues.push({ code: 'invalid_char_limit', questionId });
+      }
+    }
 
     let choices: readonly string[] | undefined;
     if (candidate.choices !== undefined) {
@@ -306,6 +366,9 @@ export function validateFormDefinition(input: unknown): FormValidationIssue[] {
         sectionId: candidate.sectionId,
         type: candidate.type as FormAnswerType,
         required: candidate.required,
+        ...(Number.isSafeInteger(candidate.charLimit)
+          ? { charLimit: candidate.charLimit as number }
+          : {}),
         ...(choices === undefined ? {} : { choices }),
         ...(validation === undefined ? {} : { validation }),
         ...(when === undefined ? {} : { when }),
@@ -406,40 +469,6 @@ function isPlainAnswerRecord(value: unknown): value is Record<string, unknown> {
   return isPlainRecord(value) && hasOnlyDataProperties(value);
 }
 
-function answerPayloadBytes(answers: Record<string, unknown>): number {
-  const encoder = new TextEncoder();
-  let bytes = 2;
-  for (const [index, [questionId, answer]] of Object.entries(
-    answers,
-  ).entries()) {
-    if (index > 0) bytes += 1;
-    bytes += encoder.encode(JSON.stringify(questionId)).length + 1;
-    if (Array.isArray(answer)) {
-      if (answer.length > APPROVED_FORM_BOUNDS.maxChoices) {
-        return APPROVED_FORM_BOUNDS.maxPayloadBytes + 1;
-      }
-      bytes += 2;
-      answer.forEach((item, itemIndex) => {
-        if (itemIndex > 0) bytes += 1;
-        bytes +=
-          typeof item === 'string'
-            ? encoder.encode(JSON.stringify(item)).length
-            : APPROVED_FORM_BOUNDS.maxPayloadBytes + 1;
-      });
-    } else if (typeof answer === 'string') {
-      if (utf8ByteLength(answer) > APPROVED_FORM_BOUNDS.maxTextBytes) {
-        return APPROVED_FORM_BOUNDS.maxPayloadBytes + 1;
-      }
-      bytes += encoder.encode(JSON.stringify(answer)).length;
-    } else if (typeof answer === 'number' || typeof answer === 'boolean') {
-      bytes += String(answer).length;
-    } else {
-      bytes += APPROVED_FORM_BOUNDS.maxPayloadBytes + 1;
-    }
-  }
-  return bytes;
-}
-
 function isAnswerType(type: FormAnswerType, value: unknown): boolean {
   switch (type) {
     case 'shortText':
@@ -487,12 +516,21 @@ export function validateAnswerSet(
       continue;
     }
     if (typeof value === 'string') {
+      const typeLimit = textTypeLimit(question.type);
       const maxLength =
-        question.validation?.maxLength ?? APPROVED_FORM_BOUNDS.maxTextBytes;
-      const minLength = question.validation?.minLength ?? 0;
-      const bytes = utf8ByteLength(value);
-      const characters = Array.from(value).length;
-      if (bytes > APPROVED_FORM_BOUNDS.maxTextBytes || characters > maxLength) {
+        typeLimit === undefined
+          ? Number.POSITIVE_INFINITY
+          : Math.min(
+              question.charLimit ?? typeLimit,
+              question.validation?.maxLength ?? typeLimit,
+            );
+      const minLength =
+        typeLimit === undefined ? 0 : (question.validation?.minLength ?? 0);
+      const { used: characters, over } = countTextAnswer(value, maxLength);
+      if (
+        measureTextAnswerBytes(value) > APPROVED_FORM_BOUNDS.maxTextBytes ||
+        (typeLimit !== undefined && over)
+      ) {
         issues.push({ code: 'answer_too_long', questionId });
       }
       if (characters < minLength)
@@ -531,7 +569,9 @@ export function validateAnswerSet(
     }
   }
 
-  if (answerPayloadBytes(answers) > APPROVED_FORM_BOUNDS.maxPayloadBytes) {
+  if (
+    measureAnswerPayloadBytes(answers) > APPROVED_FORM_BOUNDS.maxPayloadBytes
+  ) {
     issues.push({ code: 'payload_too_large' });
   }
   return issues;
