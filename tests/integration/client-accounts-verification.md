@@ -1094,6 +1094,8 @@ rotation. Diagnostic logs were sanitized without printing credentials.
 
 Local loopback HTTP harness calls the production `signupResult('duplicate', 'en')` mapper for both labels. Archived-state design remains deferred on ND-F5-1, so `archived-collision-synthetic` is the approved synthetic stand-in; this measures public result serialization and equality, not database branch latency. Treat the measurement as a regression detector, not a latency SLA.
 
+Run command: `npx tsx scripts/verify-client-signup-timing.mjs` from the repository root. The script imports TypeScript modules (`lib/client-accounts/results.ts`), so running it with bare `node` fails; use `tsx`.
+
 - Warm-up: 20 sequential requests per label; measured trials: 200 ordinary and 200 archived stand-in, randomized and interleaved.
 - Mann-Whitney U: 19495.000; two-sided p-value: 0.662572; absolute median difference: 0.020 ms.
 - Thresholds: p >= 0.01 and |median difference| < 5 ms: PASS.
