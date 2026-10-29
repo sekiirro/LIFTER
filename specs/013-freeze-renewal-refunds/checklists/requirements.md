@@ -19,8 +19,8 @@
 
 ## Remaining decisions and confidence
 
-- [ ] ND-01 freeze duration bounds and overlap policy remain open.
-- [ ] ND-08 behavior for other/dependent purchases after refund remains open.
+- [x] ND-01 DECIDED 2026-10-29 (Final PO APPROVAL): Freeze duration is 1–30 calendar days; freezes do not overlap, while sequential freezes are allowed. The Apply day counts as frozen and the STOP day is excluded.
+- [x] ND-08 DECIDED 2026-10-29 (Final PO APPROVAL): Purchases remain financially independent. A refund never automatically refunds or shifts another purchase. PO-1 global client deactivation applies; any other-purchase resolution is manual.
 - [ ] NEEDS-SOL-REVIEW? Auth session revocation must be proved transaction-safe with the server-side login block.
 - [ ] NEEDS-SOL-REVIEW? Later partial refunds after PO-1 deactivation need confirmation.
 - [ ] NEEDS-SOL-REVIEW? FIFO allocation across multiple collection events needs confirmation as a technical policy.
