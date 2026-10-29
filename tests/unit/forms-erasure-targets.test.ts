@@ -120,7 +120,7 @@ describe('selectFormErasureTargets', () => {
     expect(result.auditRowIds).toEqual(['audit-change-v1', 'audit-view-v2']);
   });
 
-  it('leaves still-applicable answers and answers that were already inapplicable untouched', () => {
+  it('selects currently inapplicable answers while leaving still-applicable answers untouched', () => {
     const result = select({
       branchChange: {
         ...branchChange,
@@ -132,8 +132,9 @@ describe('selectFormErasureTargets', () => {
       },
     });
 
-    expect(result.answerIds).toEqual([]);
-    expect(result.auditRowIds).toEqual([]);
+    expect(result.answerIds).toEqual(['answer-injury-v1', 'answer-injury-v2']);
+    expect(result.answerIds).not.toContain('answer-goal-v1');
+    expect(result.auditRowIds).toEqual(['audit-change-v1', 'audit-view-v2']);
   });
 
   it('selects answer-change and access-view rows for target answer rows only', () => {
@@ -202,6 +203,56 @@ describe('selectFormErasureTargets', () => {
     expect(result.auditRowIds).toEqual([]);
     expect(result.defer).toBe(true);
     expect(result.alert).toBe(true);
+  });
+
+  it('selects still-inapplicable answers when a legal hold is released without a new branch change', () => {
+    const unchangedBranch = {
+      ...branchChange,
+      previousAnswers: branchChange.currentAnswers,
+    };
+    const deferred = select({ branchChange: unchangedBranch, legalHold: true });
+    const resumed = select({ branchChange: unchangedBranch, legalHold: false });
+
+    expect(deferred.answerIds).toEqual([]);
+    expect(deferred.defer).toBe(true);
+    expect(resumed.answerIds).toEqual(['answer-injury-v1', 'answer-injury-v2']);
+    expect(resumed.auditRowIds).toEqual(['audit-change-v1', 'audit-view-v2']);
+  });
+
+  it('selects a pre-existing inapplicable answer even when the prior and current states match', () => {
+    const earlierInapplicableState = {
+      ...branchChange,
+      previousAnswers: branchChange.currentAnswers,
+    };
+    const result = select({ branchChange: earlierInapplicableState });
+
+    expect(result.answerIds).toEqual(['answer-injury-v1', 'answer-injury-v2']);
+    expect(result.auditRowIds).toEqual(['audit-change-v1', 'audit-view-v2']);
+  });
+
+  it('keeps every version of a currently applicable question untouched', () => {
+    const currentlyApplicableState = {
+      ...branchChange,
+      previousAnswers: {
+        'has-injury': false,
+        'injury-detail': 'answer from when this question was hidden',
+        'training-goal': 'strength',
+      },
+      currentAnswers: {
+        'has-injury': true,
+        'injury-detail': 'current answer',
+        'training-goal': 'strength',
+      },
+    };
+    const result = select({ branchChange: currentlyApplicableState });
+
+    expect(result.answerIds).toEqual([]);
+    expect(result.auditRowIds).toEqual([]);
+    expect(result.controlRecord).toEqual({
+      answerCount: 0,
+      answerChangeAuditCount: 0,
+      accessViewAuditCount: 0,
+    });
   });
 
   it('returns no targets on an idempotent rerun after target rows are gone', () => {

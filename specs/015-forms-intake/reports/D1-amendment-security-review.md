@@ -34,7 +34,7 @@ No existing migration should be edited. After approval, a new forward migration 
 
 Recommended design for PO review:
 
-- **Who may run it:** an automatic server-validated erasure worker/function only, invoked after a persisted branch recomputation proves the answer became inapplicable. No human trigger is allowed; PO, WO, Trainer, Client, Sales, browser and service-role callers receive no direct delete or trigger privilege.
+- **Who may run it:** an automatic server-validated erasure worker/function only, invoked against the current authoritative answers. It selects every answer whose question is currently inapplicable, including pre-existing hidden values and values deferred by legal hold. No human trigger is allowed; PO, WO, Trainer, Client, Sales, browser and service-role callers receive no direct delete or trigger privilege.
 - **Authorization:** derive tenant, assignment, answer, actor, and branch revision from trusted database rows and the authenticated operation context; accept no caller-supplied tenant or client identity as authority. Recheck membership/relationship and branch applicability after acquiring locks.
 - **Audit:** in one transaction, delete only the answer value from all extant versions and the answer's answer-change and access-view audit rows, then append a counts-only deletion-control record with no IDs. If deletion or the control record fails, roll back the operation. Do not log answer values or labels.
 - **Idempotency:** require a unique operation key bound to the canonical assignment, question, branch revision and policy version. A retry returns the prior safe result and cannot broaden the target set.

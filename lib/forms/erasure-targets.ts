@@ -92,23 +92,24 @@ export function selectFormErasureTargets(
     return emptySelection();
   }
 
-  const before = evaluateProgression({
+  const previousState = evaluateProgression({
     questions: formDefinition.questions,
     answers: branchChange.previousAnswers,
   });
-  const after = evaluateProgression({
+  const currentState = evaluateProgression({
     questions: formDefinition.questions,
     answers: branchChange.currentAnswers,
   });
-  if (before.errors.length > 0 || after.errors.length > 0)
+  if (previousState.errors.length > 0 || currentState.errors.length > 0)
     return emptySelection();
 
-  const wasApplicable = new Set(before.applicableQuestionIds);
-  const isApplicable = new Set(after.applicableQuestionIds);
-  const newlyInapplicable = new Set(
-    [...wasApplicable].filter((questionId) => !isApplicable.has(questionId)),
+  const currentlyApplicable = new Set(currentState.applicableQuestionIds);
+  const currentlyInapplicable = new Set(
+    formDefinition.questions
+      .map(({ id }) => id)
+      .filter((questionId) => !currentlyApplicable.has(questionId)),
   );
-  if (newlyInapplicable.size === 0) return emptySelection();
+  if (currentlyInapplicable.size === 0) return emptySelection();
 
   const answerIds = [
     ...new Set(
@@ -117,7 +118,7 @@ export function selectFormErasureTargets(
           (answer) =>
             answer.workspaceId === formDefinition.workspaceId &&
             answer.assignmentId === branchChange.assignmentId &&
-            newlyInapplicable.has(answer.questionId),
+            currentlyInapplicable.has(answer.questionId),
         )
         .map(({ id }) => id),
     ),
