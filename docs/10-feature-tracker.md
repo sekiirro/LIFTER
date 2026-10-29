@@ -1,4 +1,6 @@
-﻿# LIFTER feature tracker
+# LIFTER feature tracker
+
+Current production blockers and Go-Live gates are consolidated in [docs/13-production-readiness.md](13-production-readiness.md).
 
 The branch, SHA, PR and CI columns contain facts verified from GitHub/Git. `pending` means not yet verified or no record exists. State, dependency, DB-lock and open-item fields come from feature specifications, `docs/04-changes-and-questions.md`, and the PO decision record. Branch SHAs are remote heads as of 2026-10-28 unless noted.
 
