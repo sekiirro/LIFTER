@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { sql } from './harness';
+import { functions as approvalFunctions } from './registration-approval-fixture';
 import {
   registrationFixture,
   issue,
@@ -186,6 +187,8 @@ describe('tenancy security catalog (T007)', () => {
     expect(rows.map((row) => row.proname).sort()).toEqual(
       [
         ...registrationPrivate,
+        ...approvalFunctions.map((signature) => signature.split('(')[0]!),
+        'client_has_access',
         ...signupPrivate,
         ...brandingPrivate,
         'audit_events_immutable',
@@ -226,12 +229,14 @@ describe('tenancy security catalog (T007)', () => {
       );
       expect(row.anon_execute).toBe(false);
       expect(row.authenticated_execute).toBe(
-        !registrationPrivate.includes(row.proname) &&
+        !row.proname.startsWith('f12_') &&
+          !registrationPrivate.includes(row.proname) &&
           !brandingPrivate.includes(row.proname) &&
           !signupPrivate.includes(row.proname) &&
           ![
             'audit_events_immutable',
             'audit_row_change',
+            'client_has_access',
             'enqueue_job',
             'forbid_delete',
             'guard_package_offer_update',
@@ -307,8 +312,15 @@ describe('audit security catalog (T005)', () => {
       join pg_catalog.pg_proc p on p.oid = t.tgfoid
       where n.nspname = 'public' and not t.tgisinternal
         and p.proname in ('audit_row_change', 'audit_events_immutable')
-      order by t.tgname`;
+      order by t.tgname,c.relname`;
     expect(triggers).toEqual([
+      {
+        tgname: 'audit_client_approval',
+        relname: 'clients',
+        type: 17,
+        tgenabled: 'O',
+        proname: 'audit_row_change',
+      },
       {
         tgname: 'audit_client_signup',
         relname: 'clients',
@@ -359,6 +371,13 @@ describe('audit security catalog (T005)', () => {
         proname: 'audit_row_change',
       },
       {
+        tgname: 'audit_payment_events',
+        relname: 'payment_events',
+        type: 5,
+        tgenabled: 'O',
+        proname: 'audit_row_change',
+      },
+      {
         tgname: 'audit_recovery_link_issuances',
         relname: 'recovery_link_issuances',
         type: 5,
@@ -401,6 +420,34 @@ describe('audit security catalog (T005)', () => {
         proname: 'audit_row_change',
       },
       {
+        tgname: 'f12_no_update',
+        relname: 'payment_events',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f12_no_update',
+        relname: 'subscription_activations',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f12_no_update',
+        relname: 'subscription_installments',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f12_no_update',
+        relname: 'subscriptions',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
         tgname: 'package_versions_no_update',
         relname: 'package_versions',
         type: 19,
@@ -424,13 +471,6 @@ describe('audit security catalog (T005)', () => {
       {
         tgname: 'registration_link_installments_no_update',
         relname: 'registration_link_installments',
-        type: 19,
-        tgenabled: 'O',
-        proname: 'audit_events_immutable',
-      },
-      {
-        tgname: 'signup_no_update',
-        relname: 'clients',
         type: 19,
         tgenabled: 'O',
         proname: 'audit_events_immutable',

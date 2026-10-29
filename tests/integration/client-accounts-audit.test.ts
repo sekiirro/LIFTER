@@ -36,6 +36,7 @@ it('complete latest F10 audit body is preserved verbatim except the two additive
     )
     .replace(/\r/g, '');
   const stripped = after
+    .replace(/  -- F12 extension begin[\s\S]*?  -- F12 extension end\n/, '')
     .replace(
       /    -- U3 consumption addition begin[\s\S]*?    -- U3 consumption addition end\n/,
       '',
