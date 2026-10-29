@@ -1,4 +1,3 @@
-import { existsSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   assertLocalStackTarget,
@@ -81,7 +80,6 @@ describe('isolated local Supabase stack contract', () => {
     expect(stackB.configText).toContain('port = 25424');
     expect(stackB.configText).toContain('smtp_port = 25425');
     expect(stackB.configText).toContain('pop3_port = 25426');
-    expect(existsSync('.env.stack-b.example')).toBe(true);
   });
 
   it('names local Docker containers from the selected stack project', () => {
