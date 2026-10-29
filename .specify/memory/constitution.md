@@ -143,7 +143,7 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   high-risk security, Auth, RLS, SECURITY DEFINER, migrations, admission, Storage policies and
   financial logic go to Luna High or Sol Medium, and no third-party-routed model ever receives
   secrets or `.env` values. Escalation is GLM 5.3 Flash -> Luna High -> Sol
-  Medium. Sol High and any xhigh effort are prohibited. The architect maintains `~/.lifter/model-performance-log.md` outside the repository, with one row per delegation: model, effort, task class, outcome, review notes, and cost.
+  Medium. Sol High and any xhigh effort are prohibited. If every permitted tier is unavailable or at capacity, the architect stops the delegation and asks the PO for direction; it never retries without limit or substitutes a model outside the permitted tiers. The architect maintains `~/.lifter/model-performance-log.md` outside the repository, with one row per delegation: model, effort, task class, outcome, review notes, and cost.
 - Mandatory Spec Debate: the architect drafts the spec and architecture; an independent Sol Medium
   critique follows; by default there is one response round, with more rounds only for significant
   unresolved issues. The architect incorporates critique and presents unresolved product/design

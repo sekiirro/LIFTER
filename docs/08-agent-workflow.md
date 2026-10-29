@@ -30,6 +30,7 @@ or high-risk task.
 - **Sol Medium:** `gpt-6.1-sol` at `medium` is for complex, security-sensitive, or otherwise high-risk
   work, including spec-debate critiques. Record a one-line reason for each Sol dispatch.
 - **Prohibited:** Sol High and any `xhigh` effort. The maximum tier is Sol Medium.
+- **No permitted tier available:** if every permitted tier is unavailable or at capacity, the architect stops the delegation and asks the PO for direction; it never retries without limit or substitutes a model outside the permitted tiers.
 - The architect maintains `~/.lifter/model-performance-log.md` outside the repository, with one row per delegation: model, effort, task class, outcome, review notes, and cost. Verify actual model and effort in each delegation result.
 
 ## Mandatory Spec Debate
