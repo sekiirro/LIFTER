@@ -3,6 +3,7 @@
 .env.*
 !.env.example
 !.env.template
+!.env.stack-b.example
 .netrc
 .npmrc
 .pypirc
@@ -64,6 +65,9 @@ venv/
 *.sqlite3
 *.db
 *.log
+/supabase-stack-b/supabase/.branches/
+/supabase-stack-b/supabase/.temp/
+/supabase-stack-b/supabase/migrations/
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*

@@ -4,7 +4,7 @@ This document is an implementation verification recipe, not evidence that any co
 
 ## Prerequisites before any DB or Storage check
 
-1. Final PO decisions F14-1..8 are recorded in the spec. Stack-B provisioning/start was PO-approved and completed by the separate stack lane; F14 does not provision/start it.
+1. Final PO decisions F14-1..8 are recorded in the spec. The PO approved Stack-B provisioning/start on 2026-10-29; the separate stack lane report at `infra-second-stack` commit `d49880010e70ac03c4a264fc19610dfc443d7c55` records isolation proven and 861/861 integration checks on B. F14 does not provision/start it. This reference is historical evidence, not a request to start or touch Stack B in the current run.
 2. Use the AD-F14-2 approved F14-based port from `infra-second-stack` head `d49880010e70ac03c4a264fc19610dfc443d7c55`; do not port F11's provisioner or unrelated files. The Stack-B profile includes `storage-api` and Mailpit.
 3. Select `LIFTER_SUPABASE_STACK=b`; assert project `lifter-stack-b` and ports 25420–25429 before any connection. Never use stack A or copy keys/URLs across stacks.
 4. The F11/stack-B isolated runner is ready to restore state after both success and failure; F11 pending-client Storage denials are included in the required lane.
