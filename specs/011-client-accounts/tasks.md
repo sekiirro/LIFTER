@@ -136,7 +136,7 @@ Shared prerequisites block all story implementation. Tests exercise decided requ
 
 **Boundary**: Claude independent audit only. **Exit**: independent verdict and required reruns; unavailable here. Not executed by this agent. PR creation is a separate later unit, outside this task list and authorization.
 
-- [ ] T046 PLACEHOLDER ONLY — Claude independently audit `specs/011-client-accounts/tasks.md`, `specs/011-client-accounts/plan.md` and `tests/integration/client-accounts-verification.md`, diff, red/green evidence, C1–C4, all mutations and ND blocks; independently rerun gates and record verdict. This agent must not execute/check off this task.
+- [x] T046 PLACEHOLDER ONLY — Claude independently audit `specs/011-client-accounts/tasks.md`, `specs/011-client-accounts/plan.md` and `tests/integration/client-accounts-verification.md`, diff, red/green evidence, C1–C4, all mutations and ND blocks; independently rerun gates and record verdict. This agent must not execute/check off this task. **PO APPROVED — PASS (2026-10-29, session 11):** Claude's independent audit (session 10 at ac50a64; delta re-review of ac50a64..12036e2 incl. SC-011 real-path timing, both runs PASS) recommended PASS; the PO formally approved T046 PASS and the merge of PR #14 at 12036e26fb5e23da22af4ddf0e8d33de800779a2 (merge commit 1f4d2359bbfcef605e371e29b81a59b2a48d8ed4). F11 is merge-approved, NOT production-ready; production blockers are tracked in docs/10 and docs/13.
 
 ## Model constraint checklist — owned by T007/T008
 
@@ -177,9 +177,9 @@ Base ND-F11-1..10 are decided; tasks use approved values while unresolved sub-de
 
 ## Completion inventory
 
-46 tasks: Setup 2, Foundation 7, US1 9, US2 12, US3 4, US4 4, cross-cutting verification 7, independent placeholder 1. Every task has checkbox, sequential T0nn, story labels in story phases, exact files; only independent tests have [P]. T001–T045 are checked off with evidence; T046 remains PO-reserved and unchecked.
+46 tasks: Setup 2, Foundation 7, US1 9, US2 12, US3 4, US4 4, cross-cutting verification 7, independent placeholder 1. Every task has checkbox, sequential T0nn, story labels in story phases, exact files; only independent tests have [P]. T001–T045 are checked off with evidence; T046 is checked off as PO-approved PASS (2026-10-29, session 11; see T046).
 
-Constitution: tenant/composite constraints, independent walls, unchanged roles/capabilities, immutable issued terms, no finance, secret-safe append-only audit, bilingual DS and authoritative-time atomicity are covered. ND/B4/hosted/inherited blockers are not waived. User expressly authorized decision recording/tasks and commit/push; this is neither self-approval nor implementation authority. Later Analyze and Claude independent audit remain required.
+Constitution: tenant/composite constraints, independent walls, unchanged roles/capabilities, immutable issued terms, no finance, secret-safe append-only audit, bilingual DS and authoritative-time atomicity are covered. ND/B4/hosted/inherited blockers are not waived. User expressly authorized decision recording/tasks and commit/push; this is neither self-approval nor implementation authority. Claude's independent audit (T046) was completed and the PO approved it as PASS on 2026-10-29.
 
 ## Unit handoff table
 
