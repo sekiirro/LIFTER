@@ -70,6 +70,8 @@ pnpm-debug.log*
 tmp/
 temp/
 supabase-stack-c/supabase/migrations/
+supabase-stack-c/supabase/.branches/
+supabase-stack-c/supabase/.temp/
 
 # Editor and operating system files
 .vscode/
