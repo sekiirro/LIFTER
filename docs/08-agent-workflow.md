@@ -19,9 +19,13 @@ GLM -> Luna -> Sol when capability or reliability evidence requires it; do not d
 or high-risk task.
 
 - **GLM 5.3 Flash free:** `opencode/glm-5.3-flash-free` through OpenCode using the
-  `opencode-delegate` skill, only for simple, low-risk, non-sensitive tasks. Never use it for secrets
-  or `.env`, Auth, RLS, SECURITY DEFINER, migrations, admission, Storage policies, financial logic,
-  CI configuration, Docker, Supabase, DB work, or unreviewed pushes.
+  `opencode-delegate` skill. Eligible for documentation, implementation, CI workflows, configuration
+  and other low- to moderate-risk tasks when complexity, risk, cost and the performance log support
+  it; give it fully specified briefs. The architect independently reviews every GLM change, and an
+  agent proves the relevant tests and checks pass before it is committed or merged. Route genuinely
+  high-risk security, Auth, RLS, SECURITY DEFINER, migrations, admission, Storage policies and
+  financial logic to Luna High or Sol Medium. Never give a third-party-routed model secrets or `.env`
+  values.
 - **Luna High:** `gpt-6-luna` at `high` is the standard for moderate work and tasks not suited to GLM.
 - **Sol Medium:** `gpt-6.1-sol` at `medium` is for complex, security-sensitive, or otherwise high-risk
   work, including spec-debate critiques. Record a one-line reason for each Sol dispatch.

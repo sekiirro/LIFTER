@@ -137,9 +137,12 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   tests, or Docker (read-only `gh` is allowed). Delegated agents (Codex, or OpenCode for the GLM tier) own implementation and Git operations.
   Adaptive model routing uses the cheapest capable reliable model allowed for task risk and
   sensitivity, as specified in [docs/08-agent-workflow.md](../../docs/08-agent-workflow.md).
-  GLM 5.3 Flash is limited to simple, low-risk, non-sensitive work; it is prohibited for secrets or
-  `.env`, Auth, RLS, SECURITY DEFINER, migrations, admission, Storage policies, financial logic, CI,
-  Docker, Supabase, DB work, or unreviewed pushes. Escalation is GLM 5.3 Flash -> Luna High -> Sol
+  GLM 5.3 Flash may take implementation, CI workflow, configuration and other low- to moderate-risk
+  work when complexity, risk, cost and logged performance support it; the architect independently
+  reviews every GLM change and an agent proves the relevant tests pass before it lands. Genuinely
+  high-risk security, Auth, RLS, SECURITY DEFINER, migrations, admission, Storage policies and
+  financial logic go to Luna High or Sol Medium, and no third-party-routed model ever receives
+  secrets or `.env` values. Escalation is GLM 5.3 Flash -> Luna High -> Sol
   Medium. Sol High and any xhigh effort are prohibited. The architect maintains `~/.lifter/model-performance-log.md` outside the repository, with one row per delegation: model, effort, task class, outcome, review notes, and cost.
 - Mandatory Spec Debate: the architect drafts the spec and architecture; an independent Sol Medium
   critique follows; by default there is one response round, with more rounds only for significant
@@ -191,4 +194,4 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 
 ### Sync impact report and amendment note - 2026-10-29 (D-27)
 
-Adaptive Model Routing and the six-agent concurrency limit were approved by the PO (sessions 10 + 11). Sync impact: `docs/08-agent-workflow.md` mirrors model eligibility, escalation, performance logging, worktree isolation, and concurrency. Tests-first, CI push + pull_request, CodeRabbit approval on the final head, resolved threads, exact-head checks, and explicit PO merge approval are unchanged. No product or feature requirements changed.
+Adaptive Model Routing and the six-agent concurrency limit were approved by the PO (sessions 10 + 11). Sync impact: `docs/08-agent-workflow.md` mirrors model eligibility, escalation, performance logging, worktree isolation, and concurrency. Tests-first, CI push + pull_request, CodeRabbit approval on the final head, resolved threads, exact-head checks, and explicit PO merge approval are unchanged. No product or feature requirements changed. The PO later expanded the GLM tier (2026-10-29) from documentation-only to implementation, CI workflows, configuration and moderate-risk work under mandatory architect review and passing tests, while reserving genuinely high-risk security, Auth, RLS, migration and financial work for Luna High or Sol Medium.
