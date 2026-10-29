@@ -11,13 +11,13 @@
 
 - Before the proxy or validator units are accepted, prove on the pinned local stack-B version that externally pre-issued restricted-role JWTs, verified request headers, transaction-local context and the exact Storage operation reach the `storage.objects` RLS policy.
 - Prove missing/spoofed context, role-only access, visitor-token-only access, pooled-connection context reuse, list/sign/transform calls and unrelated RPC/table access fail closed. Prove direct authenticated download succeeds only for the exact handle-bound object.
-- If stack B cannot prove these behaviors, stop and return to the architect. Do not fall back to anonymous SELECT, a project-wide privileged credential, signed URLs or another unapproved mechanism. Hosted compatibility remains a production blocker until separately verified.
+- If stack B cannot prove these behaviors, stop and return to the architect. Do not fall back to anonymous SELECT or a project-wide credential; no service-role fallback is permitted for public images. Hosted-infrastructure proof is required before Production.
 - The gate is a prerequisite for acceptance of U03 validator promotion, U04 validated-object policy, and U06 public image proxy work; keep test IDs and evidence linked from Q-M21..Q-M30 in [quickstart](../quickstart.md).
 
 ## UI requirements
 
 - Follow [DESIGN.md](../../../DESIGN.md), the [Frontend Design Gate](../../../docs/09-frontend-design-gate.md), and DG-F14-1..3. Existing tokens, `deriveBrand`, and `BrandScope` remain authoritative; preserve semantic success/warning/error tokens.
-- Registration uses the Premium Centered Card. Banner is image-only pending PO confirmation, with one required alt-text locale and fallback; form controls never overlap imagery. No CTA, links, pricing, contact details, or banner text fields. Aspect/height values are open PO design inputs.
+- Registration uses the Premium Centered Card. Banner is PO-decided image-only, with AR/EN alt text and locale fallback; form controls never overlap imagery. No CTA, links, pricing, contact details, or banner text fields. Final aspect/height values follow the Frontend Design Gate prototype.
 - Editor is Split Editor + Live Preview on desktop and tabs on mobile. Preview registration, staff dashboard, and portal placeholder surfaces.
 - Show original versus adjusted brand color inline with accessibility explanation. Check contrast on each real surface background/state; `deriveBrand` covers neutral surfaces only. Keep text off banner imagery or use a guaranteed-contrast scrim from existing tokens.
 - Per-request scope resolution, late-response discard and neutral no-scope behavior are part of the surface contract.
