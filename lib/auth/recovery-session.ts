@@ -1,4 +1,4 @@
-// Technical default: a recovery session may set a password only shortly after the link was verified.
+// PO ND-F4-3 (2026-10-29): a recovery session may set a password for 15 minutes after link verification, in all environments; independent of the 60-minute link expiry.
 export const RECOVERY_SESSION_MAX_AGE_SECONDS = 900;
 
 export function isRecoverySession(amr: unknown, nowSeconds: number): boolean {
