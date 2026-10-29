@@ -1802,3 +1802,4175 @@ introduced. Relay launch metadata identifies **gpt-6.1-sol / medium** for this r
 - Mutation RED at `otp_expiry = 1800`: restarted the stack and ran `npm run test:integration -- tests/integration/auth-recovery.test.ts -t '59 minutes'`. Expected failure: `tests/integration/auth-recovery.test.ts:391:54`, an expired-link `AuthApiError` was returned. Restored `otp_expiry = 3600`, restarted the standard profile, and ran `npm run test:integration -- tests/integration/auth-recovery.test.ts -t '59 minutes|61 minutes'`: 2 passed, 22 filtered out.
 - Initial full-suite attempts exposed local setup requirements: focused runs leave fixtures on the database, and admission tests need the provisioned signup keys loaded into their process environment (CI uses `GITHUB_ENV`). After reset/provisioning and loading the expected local environment privately, `npm run test:integration` passed 25 files / 872 tests, 0 failed, 0 skipped, in 148.95 seconds.
 - Hosted Auth was not changed or contacted. `supabase/config.toml` configures local Auth; confirm the hosted Email OTP Expiration value is 3600 seconds in every deployed environment. This setting governs other email OTP/link flows as well as password recovery.
+
+## SC-011 real-path timing differential (supersedes the earlier fixed-response serialization runs)
+
+Earlier SC-011 runs measured only response serialization and are superseded. Regression detector, not a guarantee.
+
+Command: `node --env-file=.env.local scripts/verify-client-signup-timing.mjs`.
+Layer: production processClientSignup in-process, real anonymous Supabase HTTP clients, real client_signup_admit then client_signup for every request. Next exposes a Server Action rather than a standalone JSON endpoint; the stable service entry point avoids framework action IDs/React transport. Only the server-only import guard is mocked by Vitest. Anonymous session and same-origin Headers are supplied explicitly.
+Fixture: shared registrationFixture/backdated helpers; two real admitted client accounts, second marked auth.users.deleted_at only in test setup, retaining canonical identity claims (ND-F5-1). Both conditions collide on email; a separate valid submitted phone avoids cross-condition phone collision. Every setup/warm-up/trial receives a new link, random request secret and unique IPv6 /64 through CF-Connecting-IP, asserted unique. Provisioning is outside timing.
+20 warm-up requests per condition, then 200 randomized interleaved pairs (200 per condition). Timing includes validation/HMAC, both HTTP RPCs and result mapping. Equality asserts public D-08 JSON bytes and real signup RPC bytes/status/all stable headers, excluding Date, X-Kong-Proxy-Latency, X-Kong-Upstream-Latency and X-Request-Id (volatile gateway metadata). Outer Next Server Action transport headers are not measured. Mann-Whitney: tie correction, continuity-corrected two-sided normal approximation; thresholds p >= 0.01 and absolute median delta < 5 ms.
+Account counts bracket all warm-up/measured collisions after creating the two fixtures. Cleanup: script resets Stack A and runs provisioning after worker exit, including on failure.
+
+```text
+{
+  "run": "6ca99554-43e4-41e3-a928-7e2afe4e6846",
+  "verdict": "FAIL",
+  "failure": "Path, fixture or response equality check failed",
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "win32",
+    "api": "127.0.0.1:54321",
+    "db": "127.0.0.1:54322"
+  },
+  "before": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  },
+  "after": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  },
+  "n": [
+    0,
+    0
+  ],
+  "u": null,
+  "p": null,
+  "medians": [
+    null,
+    null
+  ],
+  "medianDifference": null,
+  "expectedPublicBytes": "{\"status\":\"duplicate\",\"message\":\"This email is already registered. Contact support.\"}",
+  "warmup": [
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.88689999999997
+    }
+  ],
+  "timings": []
+}
+```
+
+## SC-011 real-path timing differential (supersedes the earlier fixed-response serialization runs)
+
+Earlier SC-011 runs measured only response serialization and are superseded. Regression detector, not a guarantee.
+
+Command: `node --env-file=.env.local scripts/verify-client-signup-timing.mjs`.
+Layer: production processClientSignup in-process, real anonymous Supabase HTTP clients, real client_signup_admit then client_signup for every request. Next exposes a Server Action rather than a standalone JSON endpoint; the stable service entry point avoids framework action IDs/React transport. Only the server-only import guard is mocked by Vitest. Anonymous session and same-origin Headers are supplied explicitly.
+Fixture: shared registrationFixture/backdated helpers; two real admitted client accounts, second marked auth.users.deleted_at only in test setup, retaining canonical identity claims (ND-F5-1). Both conditions collide on email; a separate valid submitted phone avoids cross-condition phone collision. Every setup/warm-up/trial receives a new link, random request secret and unique IPv6 /64 through CF-Connecting-IP, asserted unique. Provisioning is outside timing.
+20 warm-up requests per condition, then 200 randomized interleaved pairs (200 per condition). Timing includes validation/HMAC, both HTTP RPCs and result mapping. Equality asserts public D-08 JSON bytes and real signup RPC bytes/status/all stable headers, excluding Date, X-Kong-Proxy-Latency, X-Kong-Upstream-Latency and X-Request-Id (volatile gateway metadata). Outer Next Server Action transport headers are not measured. Mann-Whitney: tie correction, continuity-corrected two-sided normal approximation; thresholds p >= 0.01 and absolute median delta < 5 ms.
+Account counts bracket all warm-up/measured collisions after creating the two fixtures. Cleanup: script resets Stack A and runs provisioning after worker exit, including on failure.
+
+```text
+{
+  "run": "64b0344b-b47f-42ab-9375-ae8a2e64c776",
+  "verdict": "FAIL",
+  "failure": "Path, fixture or response equality check failed",
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "win32",
+    "api": "127.0.0.1:54321",
+    "db": "127.0.0.1:54322"
+  },
+  "before": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  },
+  "after": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  },
+  "n": [
+    19,
+    20
+  ],
+  "u": 211,
+  "p": 0.5646149086525867,
+  "medians": [
+    null,
+    94.92675000000008
+  ],
+  "medianDifference": null,
+  "expectedPublicBytes": "{\"status\":\"duplicate\",\"message\":\"This email is already registered. Contact support.\"}",
+  "signupRpc": {
+    "status": 200,
+    "headers": [
+      [
+        "access-control-allow-origin",
+        "*"
+      ],
+      [
+        "connection",
+        "keep-alive"
+      ],
+      [
+        "content-length",
+        "23"
+      ],
+      [
+        "content-profile",
+        "public"
+      ],
+      [
+        "content-range",
+        "0-0/*"
+      ],
+      [
+        "content-type",
+        "application/json; charset=utf-8"
+      ],
+      [
+        "server",
+        "postgrest/16.5"
+      ],
+      [
+        "vary",
+        "Accept, Prefer, Range"
+      ],
+      [
+        "via",
+        "kong/2.8.1"
+      ]
+    ],
+    "bytes": "7b22737461747573223a20226475706c6963617465227d"
+  },
+  "warmup": [
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.47419999999966
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.30090000000018
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.64940000000024
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.00229999999965
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.45449999999983
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.39310000000023
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 88.22339999999986
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.24420000000009
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.81890000000021
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 76.52149999999983
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.88310000000001
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.16619999999966
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.92409999999973
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.5021999999999
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.26949999999988
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 90.85079999999971
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 109.35129999999981
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.78940000000057
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.26189999999951
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.37760000000071
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.76569999999992
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 86.34040000000005
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.28499999999985
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.24079999999958
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.87970000000041
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.02829999999994
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 84.75680000000011
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.08330000000024
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.52109999999993
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.58669999999984
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 87.87830000000031
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.15920000000006
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 87.44350000000031
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.17199999999957
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.51779999999962
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.94800000000032
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.56720000000041
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.21079999999984
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.66549999999916
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.23149999999987
+    }
+  ],
+  "timings": [
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.76929999999993
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.1235999999999
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.33600000000024
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.02599999999984
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.73990000000049
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.72990000000027
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.44530000000032
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.13159999999971
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 73.73170000000027
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.42950000000019
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.78239999999914
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.72379999999976
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.8203999999987
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.26980000000003
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.07819999999992
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 82.19120000000112
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.89919999999984
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 65.1293999999998
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.22350000000006
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.71780000000035
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.96559999999954
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.21630000000005
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.90290000000095
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.88780000000042
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.40120000000024
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 84.78369999999995
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 68.67309999999998
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.68449999999939
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.85800000000017
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.20160000000033
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.87439999999879
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.77690000000075
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.6309999999994
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.0573000000004
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.14810000000034
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.13910000000033
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.28049999999894
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.0684999999994
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 60.97810000000027
+    }
+  ]
+}
+```
+
+## SC-011 real-path timing differential (supersedes the earlier fixed-response serialization runs)
+
+Earlier SC-011 runs measured only response serialization and are superseded. Regression detector, not a guarantee.
+
+Command: `node --env-file=.env.local scripts/verify-client-signup-timing.mjs`.
+Layer: production processClientSignup in-process, real anonymous Supabase HTTP clients, real client_signup_admit then client_signup for every request. Next exposes a Server Action rather than a standalone JSON endpoint; the stable service entry point avoids framework action IDs/React transport. Only the server-only import guard is mocked by Vitest. Anonymous session and same-origin Headers are supplied explicitly.
+Fixture: shared registrationFixture/backdated helpers; two real admitted client accounts, second marked auth.users.deleted_at only in test setup, retaining canonical identity claims (ND-F5-1). Both conditions collide on email; a separate valid submitted phone avoids cross-condition phone collision. Every setup/warm-up/trial receives a new link, random request secret and unique IPv6 /64 through CF-Connecting-IP, asserted unique. Provisioning is outside timing.
+20 warm-up requests per condition, then 200 randomized interleaved pairs (200 per condition). Timing includes validation/HMAC, both HTTP RPCs and result mapping. Equality asserts public D-08 JSON bytes and real signup RPC bytes/status/all stable end-to-end headers, excluding hop-by-hop Connection/Keep-Alive/Transfer-Encoding and Date, X-Kong-Proxy-Latency, X-Kong-Upstream-Latency and X-Request-Id (volatile gateway metadata). Outer Next Server Action transport headers are not measured. Mann-Whitney: tie correction, continuity-corrected two-sided normal approximation; thresholds p >= 0.01 and absolute median delta < 5 ms.
+Account counts bracket all warm-up/measured collisions after creating the two fixtures. Cleanup: script resets Stack A and runs provisioning after worker exit, including on failure.
+
+```text
+{
+  "run": "a11b9a7d-c06a-4343-bb33-e8533122cd39",
+  "verdict": "PASS",
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "win32",
+    "api": "127.0.0.1:54321",
+    "db": "127.0.0.1:54322"
+  },
+  "before": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  },
+  "after": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  },
+  "n": [
+    200,
+    200
+  ],
+  "u": 20180,
+  "p": 0.8766182029652609,
+  "medians": [
+    96.19150000000172,
+    96.07115000000158
+  ],
+  "medianDifference": 0.12035000000014406,
+  "expectedPublicBytes": "{\"status\":\"duplicate\",\"message\":\"This email is already registered. Contact support.\"}",
+  "signupRpc": {
+    "status": 200,
+    "headers": [
+      [
+        "access-control-allow-origin",
+        "*"
+      ],
+      [
+        "content-length",
+        "23"
+      ],
+      [
+        "content-profile",
+        "public"
+      ],
+      [
+        "content-range",
+        "0-0/*"
+      ],
+      [
+        "content-type",
+        "application/json; charset=utf-8"
+      ],
+      [
+        "server",
+        "postgrest/16.5"
+      ],
+      [
+        "vary",
+        "Accept, Prefer, Range"
+      ],
+      [
+        "via",
+        "kong/2.8.1"
+      ]
+    ],
+    "bytes": "7b22737461747573223a20226475706c6963617465227d"
+  },
+  "warmup": [
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.20980000000009
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 82.00199999999995
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.05690000000004
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.81219999999985
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.36160000000018
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.72620000000006
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 83.03410000000031
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.28970000000027
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 83.70269999999982
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.69469999999956
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.80200000000013
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 88.25549999999976
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 83.58369999999968
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.18849999999975
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.1871000000001
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.53420000000006
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.57739999999967
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.77520000000004
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.4381000000003
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.76940000000013
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.7552999999998
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.45389999999952
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 82.39570000000003
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.83410000000003
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.62790000000041
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.51859999999942
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.80279999999948
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 85.80299999999988
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.67799999999988
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.03989999999976
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.38559999999961
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.23820000000069
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.42519999999968
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.97630000000026
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 76.51760000000013
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.28880000000026
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.84860000000026
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 90.96120000000064
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.70139999999992
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 101.4922000000006
+    }
+  ],
+  "timings": [
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.45350000000053
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.41340000000037
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.33889999999974
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.32240000000002
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.12700000000041
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.47460000000046
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.30000000000018
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.10819999999967
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.88000000000011
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.05159999999978
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.08800000000065
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.80789999999979
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.34050000000025
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.1923999999999
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.44750000000022
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 89.70499999999993
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.11169999999947
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.20960000000014
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 90.19360000000052
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.00749999999971
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 85.70010000000002
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 76.72969999999987
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.3173999999999
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.41939999999886
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.1752000000015
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.17100000000028
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.84000000000015
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 59.64550000000054
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.20700000000033
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.08399999999892
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.46529999999984
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.84770000000026
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.04110000000037
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.65800000000127
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.82190000000082
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.1908999999996
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.31049999999959
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 84.91000000000167
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 69.8242999999984
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.94210000000021
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.09130000000005
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.16209999999955
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.89339999999902
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 83.27739999999903
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.27059999999983
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.51480000000083
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 87.54279999999926
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.76620000000003
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.80719999999928
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.18329999999878
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.5030999999999
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.83259999999973
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.06139999999868
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.46819999999934
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 87.28909999999996
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.81470000000081
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.4369000000006
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.15250000000015
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.15419999999904
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 84.61989999999969
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.34760000000097
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.26530000000093
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.5005000000001
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.79049999999916
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.7489999999998
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.19360000000052
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.57690000000002
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.65350000000035
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.97179999999935
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 76.3773000000001
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.1906999999992
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 86.90530000000035
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.42609999999877
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 84.27199999999903
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.11299999999937
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.45999999999913
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 108.96159999999873
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.09010000000126
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.60729999999967
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.1848000000009
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.52460000000065
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.60940000000119
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.25330000000031
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.09969999999885
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.63930000000255
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.39329999999973
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.43910000000324
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.03820000000269
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.81909999999698
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.60099999999875
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.6909999999989
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.53729999999996
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.03009999999995
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.56039999999848
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.97849999999744
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.01740000000063
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.81140000000232
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 67.32140000000072
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.9375
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 85.88190000000031
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.1114000000016
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 109.62909999999829
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.30349999999817
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.20030000000042
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.45620000000054
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 76.14919999999984
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.79430000000139
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.5007000000005
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.36509999999907
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.00729999999749
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 108.08099999999831
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.33250000000044
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.96960000000036
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.4278000000013
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.34370000000126
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.38420000000042
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.0044999999991
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.22079999999914
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 85.83749999999782
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.03090000000157
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.97370000000228
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.09850000000006
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.00979999999981
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.25860000000102
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 86.02639999999883
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.64800000000105
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.73730000000069
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.37630000000354
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.23419999999896
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.3148000000001
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 85.71770000000106
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.86539999999877
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.56450000000041
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.71069999999963
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.67859999999928
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.60069999999905
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 108.30080000000089
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 108.64280000000144
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 70.34729999999763
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 84.87640000000101
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.87869999999748
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.65650000000096
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 108.08020000000033
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.89069999999992
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.85480000000098
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 84.65499999999884
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.73319999999876
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.92770000000019
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.3695000000007
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 110.20200000000114
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.6697000000022
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.6294999999991
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.27440000000206
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.48530000000028
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.03220000000147
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.29389999999694
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.57589999999982
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.64390000000276
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.5007000000005
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.1185000000005
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 74.87419999999838
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.84219999999914
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.76290000000154
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.01090000000113
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.31450000000041
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.33770000000004
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.96869999999763
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 84.47290000000066
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.09340000000157
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.20560000000114
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.41259999999966
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.92150000000038
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.77720000000045
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 83.42109999999957
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 75.41530000000057
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.60410000000047
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.43739999999889
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 70.46510000000126
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.40789999999834
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 85.48149999999805
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.14099999999962
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 89.94050000000061
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.94050000000061
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.26390000000174
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 88.23849999999948
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.04239999999845
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.32190000000264
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.23340000000098
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.13350000000355
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 76.03779999999824
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.17510000000038
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.12790000000314
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.75820000000022
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.5023000000001
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 82.22489999999743
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.70539999999892
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.32450000000244
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.02880000000005
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.97320000000036
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.72260000000097
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.2938000000031
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.6313999999984
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.92410000000018
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.22290000000066
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.20319999999992
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.297300000002
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 83.26190000000133
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.51559999999881
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.3064000000013
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.95670000000246
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.6903999999995
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 73.83620000000155
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.22580000000016
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.29030000000057
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.44839999999749
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.35680000000139
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.30130000000645
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.07640000000538
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.01720000000205
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.02599999999802
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.84679999999935
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.62569999999687
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.22939999999653
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.14839999999822
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.07680000000255
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.04000000000087
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.30949999999575
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 84.12930000000051
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.47090000000026
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 75.3489000000045
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.96860000000015
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.77119999999559
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.57459999999992
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.5147999999972
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.28579999999783
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.37099999999919
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.72910000000411
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.44150000000081
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 82.76640000000043
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 71.61849999999686
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.03549999999814
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.16909999999916
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.02909999999974
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.77049999999872
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.94079999999667
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 76.324099999998
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.43880000000354
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.06000000000495
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.68039999999746
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.75859999999375
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.83750000000146
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.27959999999439
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.87619999999879
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.87840000000142
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.67240000000311
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.92149999999674
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 88.64489999999932
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.73809999999503
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.01019999999698
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.0219999999972
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.55849999999919
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.57979999999952
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 76.84109999999782
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.2094999999972
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.96289999999863
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.24379999999655
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.59719999999652
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.28919999999925
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 82.43970000000263
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 82.30810000000201
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 56.078300000001036
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 76.81999999999971
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.24330000000191
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.38130000000092
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.32430000000022
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.71229999999923
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.38000000000466
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 108.98539999999775
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.33350000000064
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.1298999999999
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.35990000000311
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 89.57819999999629
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.68619999999646
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 86.58839999999327
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.91739999999845
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.66820000000007
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.62600000000384
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.17409999999654
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.22060000000056
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.09470000000147
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.19090000000142
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.95720000000438
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.40819999999803
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.14630000000034
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.54650000000402
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.95620000000054
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.35909999999421
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.77670000000217
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.11770000000251
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.4635999999955
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.21010000000388
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.4716000000044
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.71699999999691
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 87.27399999999761
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 90.96630000000005
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.08559999999852
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.40869999999995
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.10959999999614
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.18689999999333
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.36729999999807
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.10939999999391
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 75.14890000000014
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.01030000000173
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.38709999999992
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.2731000000058
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.9551999999967
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.48059999999532
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.82779999999912
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.04950000000099
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.79699999999866
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.69200000000274
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.91599999999744
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.67079999999987
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.67980000000534
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.66900000000169
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.14489999999932
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.86869999999908
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.4082999999955
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.3660000000018
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.61249999999563
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.71159999999509
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.82150000000547
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.55509999999776
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 76.53579999999783
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.88040000000183
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.06689999999799
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.6811000000016
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.9887000000017
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.7841999999946
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 82.34499999999389
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.6840000000011
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.75110000000132
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.17740000000049
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.68630000000121
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.16530000000057
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.27560000000085
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.49590000000171
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.5879000000059
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 108.38899999999558
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.20110000000568
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 74.41760000000068
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.85889999999927
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 88.6278999999995
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 86.05069999999978
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.53220000000147
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.58009999999922
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.20890000000509
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 101.53510000000097
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.33600000000297
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.47720000000118
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 74.05709999999817
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 108.22920000000158
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.90469999999914
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.07820000000356
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.86529999999766
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.18940000000293
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.58889999999519
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.43220000000292
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.7676999999967
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.64059999999881
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.48479999999836
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 101.95380000000296
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.52060000000347
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.4143999999942
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.03659999999945
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.89770000000135
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.16820000000007
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.05800000000454
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.2277000000031
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.4149000000034
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.26710000000458
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 109.130799999999
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.45910000000003
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.4311000000016
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.43860000000132
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.18600000000151
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 68.76090000000113
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.24330000000191
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.23040000000037
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.36820000000444
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 71.24590000000171
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.55789999999979
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.9664000000048
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.08939999999711
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 52.30019999999786
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.66679999999906
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.74689999999828
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.68920000000071
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.57660000000033
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 73.1021999999939
+    }
+  ]
+}
+```
+
+## SC-011 real-path timing differential (supersedes the earlier fixed-response serialization runs)
+
+Earlier SC-011 runs measured only response serialization and are superseded. Regression detector, not a guarantee.
+
+Command: `node --env-file=.env.local scripts/verify-client-signup-timing.mjs`.
+Layer: production processClientSignup in-process, real anonymous Supabase HTTP clients, real client_signup_admit then client_signup for every request. Next exposes a Server Action rather than a standalone JSON endpoint; the stable service entry point avoids framework action IDs/React transport. Only the server-only import guard is mocked by Vitest. Anonymous session and same-origin Headers are supplied explicitly.
+Fixture: shared registrationFixture/backdated helpers; two real admitted client accounts, second marked auth.users.deleted_at only in test setup, retaining canonical identity claims (ND-F5-1). Both conditions collide on email; a separate valid submitted phone avoids cross-condition phone collision. Every setup/warm-up/trial receives a new link, random request secret and unique IPv6 /64 through CF-Connecting-IP, asserted unique. Provisioning is outside timing.
+20 warm-up requests per condition, then 200 randomized interleaved pairs (200 per condition). Timing includes validation/HMAC, both HTTP RPCs and result mapping. Equality asserts public D-08 JSON bytes and real signup RPC bytes/status/all stable end-to-end headers, excluding hop-by-hop Connection/Keep-Alive/Transfer-Encoding and Date, X-Kong-Proxy-Latency, X-Kong-Upstream-Latency and X-Request-Id (volatile gateway metadata). Outer Next Server Action transport headers are not measured. Mann-Whitney: tie correction, continuity-corrected two-sided normal approximation; thresholds p >= 0.01 and absolute median delta < 5 ms.
+Account counts bracket all warm-up/measured collisions after creating the two fixtures. Cleanup: script resets Stack A and runs provisioning after worker exit, including on failure.
+
+```text
+{
+  "run": "281bb294-ba10-406a-ad22-37e01d9242ab",
+  "verdict": "PASS",
+  "environment": {
+    "node": "v24.19.0",
+    "platform": "win32",
+    "api": "127.0.0.1:54321",
+    "db": "127.0.0.1:54322"
+  },
+  "before": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  },
+  "after": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  },
+  "n": [
+    200,
+    200
+  ],
+  "u": 20743,
+  "p": 0.5207291875360459,
+  "medians": [
+    96.24709999999823,
+    95.68119999999908
+  ],
+  "medianDifference": 0.5658999999991465,
+  "expectedPublicBytes": "{\"status\":\"duplicate\",\"message\":\"This email is already registered. Contact support.\"}",
+  "signupRpc": {
+    "status": 200,
+    "headers": [
+      [
+        "access-control-allow-origin",
+        "*"
+      ],
+      [
+        "content-length",
+        "23"
+      ],
+      [
+        "content-profile",
+        "public"
+      ],
+      [
+        "content-range",
+        "0-0/*"
+      ],
+      [
+        "content-type",
+        "application/json; charset=utf-8"
+      ],
+      [
+        "server",
+        "postgrest/16.5"
+      ],
+      [
+        "vary",
+        "Accept, Prefer, Range"
+      ],
+      [
+        "via",
+        "kong/2.8.1"
+      ]
+    ],
+    "bytes": "7b22737461747573223a20226475706c6963617465227d"
+  },
+  "warmup": [
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.66859999999997
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.70200000000023
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.45460000000003
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.50720000000001
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.18949999999995
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.92450000000008
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.95209999999997
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 66.32109999999966
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.86290000000008
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 69.65170000000035
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.68420000000015
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.26700000000028
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.77209999999968
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.41999999999962
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.17880000000014
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.90129999999999
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 82.43499999999995
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.92699999999968
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.73659999999927
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.32409999999982
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.41029999999955
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.0006000000003
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.65499999999975
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 76.08250000000044
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.35229999999956
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 85.8777
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.39160000000084
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.13079999999991
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.09320000000025
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.39269999999942
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.20669999999973
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 75.73710000000028
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.66459999999915
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 82.91160000000036
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.29050000000007
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.53639999999996
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.22770000000037
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 74.68099999999959
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.45399999999972
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.89530000000013
+    }
+  ],
+  "timings": [
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.4390000000003
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.59429999999975
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 76.8114999999998
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.45470000000023
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.97779999999966
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 84.06910000000062
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.09389999999985
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.25759999999991
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.08390000000054
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.34690000000046
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.65899999999965
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.96909999999843
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.45019999999931
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.04539999999906
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.20190000000002
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.40090000000055
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.560300000001
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 86.04550000000017
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.37790000000132
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 77.26469999999972
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 74.89240000000063
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 83.07769999999982
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.63780000000042
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.99830000000111
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.66380000000026
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.28889999999956
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.31139999999868
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.16130000000157
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.91200000000026
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.21059999999852
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.79860000000008
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.38529999999992
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.10789999999906
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.3701000000001
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 66.19480000000112
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.10449999999946
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.48430000000008
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.60299999999916
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.96180000000095
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 67.98419999999896
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.95529999999962
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.29889999999978
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 83.83549999999923
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 88.8132999999998
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.96039999999994
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 89.56670000000122
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.34180000000015
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 83.09159999999974
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 87.47729999999865
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 90.3081000000002
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.2547999999988
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.64589999999953
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.86199999999917
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.67840000000069
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 84.89559999999983
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.61119999999937
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.63510000000133
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.44750000000022
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.66719999999987
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.00119999999879
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.08920000000035
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.94890000000123
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.7531999999992
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.29849999999897
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.46519999999873
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.95309999999881
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.0645999999997
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.15720000000147
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.61700000000019
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.22370000000046
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.83670000000166
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.64910000000054
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.44410000000062
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.43109999999979
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.22560000000158
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.08269999999902
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.50820000000022
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.96219999999994
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 82.36529999999948
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.41970000000038
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 90.45140000000174
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.9411
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.92569999999978
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.62289999999848
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 84.10289999999804
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.00110000000132
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.47839999999997
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.08699999999953
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.76450000000114
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.40740000000005
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.78559999999925
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 88.75150000000212
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.27800000000207
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.10310000000027
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.68579999999929
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.57650000000285
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.21220000000176
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.15439999999944
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 90.73449999999866
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.85020000000077
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.01959999999963
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.36439999999857
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.0086999999985
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 87.39229999999952
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 83.24409999999989
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.36290000000008
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.51619999999821
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.00820000000022
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.90160000000105
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.71819999999934
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.43559999999707
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.38330000000133
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.5731999999989
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.52260000000024
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 109.51530000000275
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.72779999999693
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.24370000000272
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.43240000000151
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.47629999999845
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.23659999999654
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.22949999999764
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.62580000000162
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.09049999999843
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.90889999999854
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.57289999999921
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 110.29219999999987
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.94190000000162
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.23869999999806
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.69889999999941
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 89.62970000000132
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.72070000000167
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.64919999999984
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.73159999999916
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.14300000000003
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 87.96619999999893
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.27560000000085
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.41239999999743
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 84.2925000000032
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.10729999999967
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.73950000000332
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.66589999999997
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.11179999999877
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.90830000000278
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.25950000000012
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.70300000000134
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.01430000000255
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.18020000000251
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.34549999999945
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.54550000000017
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.44220000000132
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.96280000000115
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.35519999999815
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.90979999999763
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.02590000000055
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.63240000000224
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.39929999999731
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.45149999999921
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.9390999999996
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.06949999999779
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.27260000000024
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.98879999999917
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.02120000000286
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.41730000000098
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.19679999999789
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.1880999999994
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.86700000000201
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.32419999999911
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.31790000000183
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.74339999999938
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.32179999999789
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.67429999999877
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.45259999999689
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.85719999999856
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 88.1890999999996
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.94430000000284
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.75510000000213
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.15279999999984
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.35810000000129
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.3784999999989
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 82.65149999999994
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.6974999999984
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.10870000000068
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.90580000000045
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.13639999999941
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.28700000000026
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 101.50820000000022
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.35060000000158
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 78.96010000000024
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.42559999999867
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.10349999999744
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 82.91489999999976
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.32990000000063
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.6826000000001
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.68319999999949
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.04129999999714
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.35910000000149
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.4339
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.70030000000042
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.11930000000211
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 61.85359999999855
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.37480000000141
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.15109999999913
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.78410000000076
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.55299999999988
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.47119999999995
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 76.90210000000297
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.28359999999884
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.24560000000201
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.26850000000195
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.86729999999807
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.7365000000027
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.23099999999977
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.60350000000108
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 91.97439999999915
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.90590000000157
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.35100000000239
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 57.061799999995856
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.73490000000311
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 74.53680000000168
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 113.5434000000023
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.03570000000036
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 83.12570000000414
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.79760000000533
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 76.88980000000447
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 84.79579999999987
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 88.23530000000028
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.2387000000017
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.67889999999898
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.97520000000077
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 85.79790000000503
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.91640000000189
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.84810000000289
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.98219999999856
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.35740000000078
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.01889999999548
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.25170000000071
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.7193999999945
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 75.51989999999932
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.00159999999596
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.25130000000354
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.49150000000373
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.80010000000038
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 100.08080000000336
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.51819999999861
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.14909999999509
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.88390000000072
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.82570000000123
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.67829999999958
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.02330000000075
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.92309999999998
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.86800000000221
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 75.65170000000217
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.02799999999843
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.63199999999779
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.52269999999407
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.06130000000121
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.60659999999916
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.12910000000556
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.12000000000262
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.47069999999803
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.5428000000029
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.40449999999691
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.67039999999542
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.76860000000306
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 101.98530000000028
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.27019999999902
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.40480000000389
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.40520000000106
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.8839999999982
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 88.47449999999662
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.8122000000003
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 82.47980000000098
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.9861000000019
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 80.50550000000658
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.2864000000045
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.71319999999832
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 83.23280000000523
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.44739999999729
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.41450000000623
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.82419999999547
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 90.0341999999946
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.7167000000045
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.27459999999701
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.59360000000015
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.79200000000128
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.18499999999767
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.9262000000017
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 110.43970000000263
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.29710000000341
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.96620000000257
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.53570000000036
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 111.12859999999637
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.5902999999962
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 109.16259999999602
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 107.05189999999857
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 102.98140000000421
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.68149999999878
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.9797000000035
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 108.3801999999996
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 108.77390000000014
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.26889999999548
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 81.82830000000104
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 90.96410000000469
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.26509999999689
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 77.05030000000261
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.30889999999636
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 108.9997000000003
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.15980000000127
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 75.1849000000002
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.28920000000653
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.12629999999626
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 85.86260000000038
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.24180000000342
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 100.85399999999936
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.05750000000262
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.04609999999957
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.84670000000187
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.47879999999714
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.4123000000036
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.57040000000416
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 103.7505999999994
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.73379999999452
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 72.49330000000191
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.90329999999813
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.63870000000315
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 105.07329999999638
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.55030000000261
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.55479999999807
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.05629999999655
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.85719999999856
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 98.54759999999806
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.9945000000007
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.07860000000073
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.35490000000573
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.11059999999998
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.14250000000175
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.98739999999816
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 75.6582999999955
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 75.76020000000426
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 85.89020000000164
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 79.2094999999972
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 84.97379999999976
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 80.08269999999902
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 76.41799999999785
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.7864000000045
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 91.20969999999943
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.84429999999702
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 109.58060000000114
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.58929999999964
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.37670000000071
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 94.27709999999934
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.26110000000335
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.37279999999737
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 81.50409999999829
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 107.83179999999993
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 105.07519999999931
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 75.64919999999984
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 78.50690000000031
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 93.93669999999838
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 103.41120000000228
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 106.80519999999524
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.7531999999992
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 89.25130000000354
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 79.70079999999871
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.3243999999977
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.07399999999325
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 99.24109999999928
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 104.4513999999981
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.08280000000377
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 74.55599999999686
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 97.34440000000177
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.05540000000474
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.97989999999845
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.67500000000291
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.47050000000309
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.04270000000542
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 92.92989999999554
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 109.76539999999659
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.9794000000038
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 97.74119999999675
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 92.63179999999556
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.16569999999774
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 104.72810000000027
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 106.57910000000265
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.87370000000374
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 99.54660000000149
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.8801999999996
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.04320000000007
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.86789999999746
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 95.27139999999781
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 102.81319999999687
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 96.81179999999586
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 68.27279999999882
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 93.2905000000028
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 96.84629999999743
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 94.93620000000374
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 95.19660000000295
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 82.14990000000398
+    },
+    {
+      "category": "ordinary-duplicate",
+      "ms": 82.4976999999999
+    },
+    {
+      "category": "archived-collision-synthetic",
+      "ms": 98.0679999999993
+    }
+  ]
+}
+```
+
+## SC-011 real-path run reconciliation and validation
+
+The two complete independent runs are `a11b9a7d-c06a-4343-bb33-e8533122cd39` and `281bb294-ba10-406a-ad22-37e01d9242ab`, each starting from a reset/provisioned Stack A. Both used Supabase CLI 2.122.0 on Windows with Node v24.19.0 and the provisioned `.env.local` loaded privately. No production source or migration changed.
+
+| Run      | n ordinary / archived | Two-sided Mann-Whitney p | Ordinary median (ms) | Archived median (ms) | Absolute delta (ms) | Verdict |
+| -------- | --------------------- | ------------------------ | -------------------- | -------------------- | ------------------- | ------- |
+| a11b9a7d | 200 / 200             | 0.8766182029652609       | 96.19150000000172    | 96.07115000000158    | 0.12035000000014406 | PASS    |
+| 281bb294 | 200 / 200             | 0.5207291875360459       | 96.24709999999823    | 95.68119999999908    | 0.5658999999991465  | PASS    |
+
+Each complete run recorded 20 warm-ups per condition plus the 400 measured samples above, in chronological randomized interleaved order. Counts before/after collisions were identical in both: Auth users 12/12, identities 12/12, clients 2/2. The two ordinary account fixtures were created before those counts; the trials created zero accounts. Signup RPC responses were HTTP 200 with identical body bytes and stable end-to-end headers; the public mapped result matched the exact generic D-08 bytes on every trial. Hop-by-hop and volatile gateway metadata are excluded explicitly in the harness; the Next Server Action envelope is outside this measurement layer.
+
+Harness-development attempts are retained above for transparency and do not count as either full run: `6ca99554` stopped at the first warm-up because an expected RPC JSON string assumed compact whitespace; the actual PostgREST JSON uses whitespace. The baseline now validates the duplicate object and then compares actual byte strings between all conditions. `64b0344b` stopped after 19/20 measured samples on the original combined path/response assertion; that version did not retain the failed response and cannot identify the differing field. Detailed failed-trial capture and explicit exclusion of hop-by-hop transport metadata were added before the two complete runs. Its odd-sized median was also unsupported by the original helper; the final median helper supports odd partial samples. These incomplete attempts provide no SC-011 pass evidence.
+
+RED proof: with the exact final T023 test in place, temporarily substituted the original `96dc6bb` timing script and ran `node node_modules/vitest/vitest.mjs run tests/unit/client-accounts-actions.test.ts -t "T023 pins SC-011"`: exit 1, one failed test, at the prohibition on `node:http`/`createServer`. Restored the final script immediately; the focused unit file passed 20/20. This mutation changed no production file.
+
+Validation: `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm test` (63 files, 1372 tests), focused integration signup/admission (2 files, 101 tests), and `git diff --check` passed. The opt-in timing integration runner itself passed in both full script runs. No hosted CI was awaited. The original evidence prefix from `96dc6bb` was verified unchanged; all evidence additions are appended.

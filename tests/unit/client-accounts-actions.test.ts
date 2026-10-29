@@ -440,12 +440,23 @@ it('U6-R1 returns sign_out_required before admission or signup RPC calls', async
   expect(signupRpcSpy).not.toHaveBeenCalled();
 });
 
-it('T023 provides the repeatable local SC-011 public-result timing harness', () => {
+it('T023 pins SC-011 to fresh fixtures and the real admitted signup path', () => {
   const timing = source('scripts/verify-client-signup-timing.mjs');
-  expect(timing).toContain("signupResult('duplicate', 'en')");
-  expect(timing).toContain('archived-collision-synthetic');
-  expect(timing).toContain('200');
+  const runner = source('tests/integration/client-accounts-timing.test.ts');
+  expect(timing).not.toMatch(/node:http|createServer|signupFixture|\bsignup\(/);
+  expect(timing).toContain('processClientSignup');
+  expect(timing).toContain('backdated(');
+  expect(timing).toContain("randomBytes(32).toString('base64url')");
+  expect(timing).toContain("'CF-Connecting-IP'");
+  expect(timing).toContain('freshInputs');
+  expect(timing).toContain("['client_signup_admit', 'client_signup']");
+  expect(timing).toContain('deleted_at=clock_timestamp()');
+  expect(timing).toContain('assert.deepEqual(after, before)');
+  expect(timing).toContain('assert.deepEqual(wire, expectedWire)');
+  expect(timing).toContain('assert.equal(publicBytes, expectedPublicBytes)');
   expect(timing).toContain('mannWhitney');
-  expect(timing).toContain('Cache-Control: no-store');
-  expect(timing).toContain('Referrer-Policy: no-referrer');
+  expect(timing).toMatch(/test\.p >= 0\.01\s*&&\s*medianDifference < 5/);
+  expect(timing).toContain('length: 200');
+  expect(runner).toContain('runTiming');
+  expect(runner).toContain("vi.mock('server-only'");
 });
