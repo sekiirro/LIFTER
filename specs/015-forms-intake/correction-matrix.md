@@ -1,8 +1,8 @@
 # F15-7 Correction Authorization Matrix
 
-**Status: APPROVED by PO 2026-10-29 (Final PO APPROVAL)**
+**Status: APPROVED by PO 2026-10-29 (Final PO APPROVAL); Q1 relationship-end denial confirmed 2026-10-30**
 
-The permitted actor set and operation × field × scope details below are approved by the PO. PO, WO, Trainer and Client have full correction permissions for submitted forms, including medical fields and attachments, subject to tenant isolation, authorized client scope, current authorization, immutable version history and audit. The post-relationship-end correction eligibility case remains OPEN and is not decided by this approval.
+The permitted actor set and operation-by-field-by-scope details below are approved by the PO. PO, WO, Trainer and Client may correct submitted forms, including medical fields and attachments, while the client relationship is active, subject to tenant isolation, authorized client scope, current authorization, immutable version history and audit. Q1 is final: no role may correct after Closure, Refund or Deactivation.
 
 ## Field classes
 
@@ -31,18 +31,17 @@ Legend: **Allow** = permitted subject to the scope and audit conditions below. *
 
 ## Scope and enforcement conditions
 
-- **Client:** derive client/workspace identity from the signed Auth association; accept no client or workspace target parameters. Allow only the client's own assigned form while the client is authorized for that path. Never expose another client's answer, history, metadata, or existence.
+- **Client:** derive client/workspace identity from the signed Auth association; accept no client or workspace target parameters. Allow only the client's own assigned form while the client is authorized for that path and the relationship remains active. Never expose another client's answer, history, metadata, or existence.
 - **Trainer and WO:** require current membership and capability in the answer's workspace for every operation. Coaching reads are workspace-wide and do not require responsible-Trainer assignment. Do not permit cross-workspace IDs or stale membership.
 - **PO:** platform oversight is permitted only for an explicitly selected, existing `public.workspaces` row. Reject nonexistent workspace identifiers with the same generic denial shape as foreign targets.
 - **Sales:** deny all answer, correction, note, and history operations. Payment or registration-link capabilities confer no Forms access.
 - **Field scope:** this proposal permits the decided correction roles to correct both ordinary and sensitive answer fields. It does not permit changing form definitions through a correction operation, replacing an assignment, deleting prior versions, or editing the original submission/deadline.
-- **Versioning:** each accepted correction appends a new immutable answer version and safe audit event. Preserve the original submission instant and deadline. Correction notes are immutable content associated with that version.
+- **Versioning:** each accepted correction appends a new immutable answer version and safe audit event while the relationship is active. Preserve the original submission instant and deadline. Correction notes are immutable content associated with that version. The Q2 branch-answer removal conflict blocks only removal from already-submitted versions/history and audit; see [PO conflicts awaiting resolution](spec.md#po-conflicts-awaiting-resolution).
 - **Audit and response handling:** every answer/history read appends IDs-only access evidence before returning content; audit failure returns no answers. Every correction and note mutation is audited atomically. Logs, notifications, telemetry, traces, audit payloads, and job errors contain no answer or note content. Answer-bearing responses are HTTPS and `private, no-store`; no browser persistence or Realtime publication.
 - **Workspace scoping:** answer reads and writes stay on the existing audited access path, with workspace-bound relations and forced RLS. Do not expose direct table, embedding, PostgREST, or unaudited RPC access.
-- **Post-relationship-end corrections:** whether a correction may be made after Closure/Refund/Deactivation but before the 30-day purge completes is not stated by F15-7/RET-1..3. This eligibility boundary is OPEN for PO clarification; do not infer permission from the retention grace period. The Final PO APPROVAL does not decide it.
+- **Post-relationship-end corrections (Q1):** deny every correction role after Closure, Refund or Deactivation, including during the 30-day retention period. Retention does not authorize a correction.
 - **Attachments:** correction permissions apply wherever attachments exist, under the same scope rules. FR-032 continues to define no MVP attachment feature or storage until separately specified. Any future support must declare the storage owner, authorized upload/read/delete operations, metadata protection and a purge path meeting RET-2/3 before accepting data.
 
 ## PO review checklist
 
-1. Resolve correction eligibility after relationship end and before purge.
-2. If Forms attachments are ever added, specify their storage owner and authorization/purge lifecycle before enabling upload.
+1. If Forms attachments are ever added, specify their storage owner and authorization/purge lifecycle before enabling upload.

@@ -8,11 +8,11 @@ This is a logical model, not a schema migration. Tenant-owned records carry `wor
 | --- | --- | --- |
 | Form | Platform-global or workspace-owned template identity | Global mutation is PO-only. Workspace actions follow approved F15-1 matrix. No cross-workspace answer access. |
 | FormVersion | Immutable published authored content and declarative rules | Stable section/question IDs; separate AR/EN content; edit means new version. No executable rules. |
-| FormSelection | Workspace/client/form/version trigger, audience and recurrence configuration | Current authorized actor; first implementation is one-time per-client. Cohort eligibility remains open. |
+| FormSelection | Workspace/client/form/version trigger, audience and recurrence configuration | Q3 audiences include all active clients, joining/onboarding clients, searched specific clients, and custom recurring schedules; renewal trigger uses actual F13 service start including freeze shifts. Stop while frozen/inactive. |
 | ApprovalConsumption | Private F12 event identity plus F15 consumer state | Consumes only committed `registration.approved` v1 fact; no PII/form data in shared fact. Idempotent by event identity. |
 | Assignment | Workspace/client/initial subscription/form-version obligation | Captures immutable independent snapshot; initial assignment unique by `(workspace_id,subscription_id)`. |
 | AnswerDraft | Current acknowledged draft revision for assignment | Client-specific sensitive data; save is expected-revision checked; partial drafts allowed. |
-| AnswerRevision | Immutable submission or correction version | Append-only; same-workspace assignment FK; values readable only through audited reader. |
+| AnswerRevision | Immutable submission or correction version | Append-only; same-workspace assignment FK; values readable only through audited reader. Corrections denied after Closure/Refund/Deactivation (Q1). Q2 removal from existing history is blocked pending PO resolution. |
 | Submission | Original accepted complete submission | Exactly one per initial obligation; immutable original instant and answer revision. |
 | SlaObligation | Frozen D-03 start/day-five/deadline facts | Starts at first accepted complete Mandatory Intake submission; correction never resets; rule ID `cairo-d03-v1`. |
 | ProcessingJob | Bounded assignment/backfill/alert/purge work item | Narrow internal authority, idempotent state, safe error code only; no raw error/body/answer. |
@@ -46,8 +46,8 @@ Workspace ── Form ── FormVersion
 
 ## Open model details
 
-- Cohort membership snapshot timing, eligibility and recurrence termination block cohort/recurrence implementation.
-- Hidden-answer retain/clear/project behavior is undecided; requiredness bypass remains prohibited.
-- Post-relationship-end correction eligibility before purge is undecided; active-relationship corrections follow the approved matrix.
+- Q3/Q4 leave these operational details unstated: whether recurrence resumes after freeze ends; initial alert recipient when no Trainer is assigned; whether reassignment restarts the 24-hour clock.
+- Q2 branch removal from already-submitted answer versions/history and audit is blocked pending PO resolution; requiredness bypass remains prohibited.
+- No role may correct after Closure, Refund or Deactivation (Q1), even before purge.
 - Mandatory Intake question entities/content are seeded only after the PO supplies them at the named task.
 - Retention legal/technical feasibility for every hosted recoverable copy is a pre-production gate.

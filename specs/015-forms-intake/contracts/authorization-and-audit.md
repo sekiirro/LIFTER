@@ -26,7 +26,7 @@ Audit failure returns no answer bytes. Current answer and every history revision
 
 ## Mutation contract
 
-Mutations recheck current authorization after lock waits. Form publication, selection, assignment, draft, submission, correction, SLA, alert and purge state changes append safe audit evidence atomically. Replays of an accepted canonical intent do not duplicate state or mutation audit. Corrections append immutable versions; they never alter the original submission instant or SLA deadline. Post-relationship-end correction eligibility remains open and blocks only that edge case.
+Mutations recheck current authorization after lock waits. Form publication, selection, assignment, draft, submission, correction, SLA, alert and purge state changes append safe audit evidence atomically. Replays of an accepted canonical intent do not duplicate state or mutation audit. Corrections append immutable versions while the relationship is active; they never alter the original submission instant or SLA deadline. Q1 denies all roles after Closure/Refund/Deactivation. Q2 removal from already-submitted history remains blocked only for its conflict sub-case.
 
 Answer-bearing responses require HTTPS and `Cache-Control: private, no-store`; no shared cache, browser persistence, Realtime or service-role answer path is allowed. Errors map to allow-listed codes; raw DB/provider errors are neither returned nor logged.
 

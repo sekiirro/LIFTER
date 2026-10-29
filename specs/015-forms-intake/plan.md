@@ -8,7 +8,7 @@
 
 ## Summary
 
-Build a tenant-scoped Forms/Intake engine around immutable published form versions and assignment snapshots, conflict-safe drafts, immutable submissions/corrections, Cairo D-03 delivery obligations, and ID-only in-app alerts. Authorization is enforced in TypeScript and PostgreSQL. Every answer read is audited before data is returned, and failures fail closed. Implement one-time per-client assignment first. Cohort recurrence, ambiguous alert recovery cases, hidden-answer disposition and post-relationship-end corrections remain blocked at their named slices until clarified. No MVP attachment feature or storage is introduced. Real client data and scheduler activation remain gated by retention feasibility/legal review and authoritative P4 facts.
+Build a tenant-scoped Forms/Intake engine around immutable published form versions and assignment snapshots, conflict-safe drafts, immutable submissions/corrections, Cairo D-03 delivery obligations, and ID-only in-app alerts. Authorization is enforced in TypeScript and PostgreSQL. Every answer read is audited before data is returned, and failures fail closed. Implement Q3 audience/recurrence policies, with one-time per-client delivery available as an initial slice. Only Q2 removal from already-submitted history/audit is blocked pending PO resolution; no role may correct after Closure/Refund/Deactivation (Q1). Q4 specifies assigned-Trainer alerts, seven-day catch-up, deduplication/reassignment, and simultaneous WO+PO escalation after 24 hours unresolved. No MVP attachment feature or storage is introduced. Real client data and scheduler activation remain gated by retention feasibility/legal review and authoritative P4 facts.
 
 ## Technical Context
 
@@ -18,9 +18,9 @@ Build a tenant-scoped Forms/Intake engine around immutable published form versio
 **Testing**: Vitest unit/contract; isolated Supabase integration tests; Playwright/axe and rendered screenshots for UI. Tests are written first and observed RED before implementation.
 **Target Platform**: LIFTER web application and PostgreSQL-backed Supabase deployment
 **Project Type**: Next.js web application with SQL/RLS backend
-**Performance Goals**: No numeric product latency promises. Measure and review autosave debounce/max-unsaved behavior and rule/payload evaluation limits before UI/publication ships.
+**Performance Goals**: No numeric product latency promises. Approved bounds: 20 questions per section, 60 per form, 400 conditions, 16 per-question conditions, 4,000 evaluation steps, 131,072 definition bytes, 4,096 UTF-8 text bytes, and 50 choices. The 16,384-byte `maxPayloadBytes` remains pending PO: must accommodate all valid forms; the recorded worst-case valid form exceeds it. Measure and review autosave debounce/max-unsaved behavior before UI/publication ships.
 **Constraints**: Sensitive health data; forced tenant RLS; two authorization walls; audited fail-closed reads; append-only versioning; no browser persistence, cache, Realtime or service-role answer path; fixed Cairo D-03 calendar; no real-data alerting without complete P4 facts.
-**Scale/Scope**: Six user stories, FR-001–FR-033; initial one-time per-client assignment slice precedes audience/cohort recurrence.
+**Scale/Scope**: Six user stories, FR-001-FR-033; Q3 audiences include all active workspace clients, joining/onboarding clients, searched specific clients, custom recurrence, and renewal actual-start triggers.
 
 ## Constitution Check
 
@@ -65,13 +65,13 @@ Use the existing F12 order whenever F12 rows are involved: **client → subscrip
 
 | Area | F15 dependency / owner seam | Required order / guard |
 | --- | --- | --- |
-| Shared tables/FKs | F11 client/Auth binding; F12 clients, subscriptions, approval event; P2-owned workspace-bound templates, assignments, answers, SLA, jobs and alerts | F11 identity and F12 schema/functions must be merged and inspected before DB design is finalized. No financial payload reads. |
+| Shared tables/FKs | F11 client/Auth binding; F12 clients, subscriptions, approval event; P2-owned workspace-bound templates, assignments, answers, SLA, jobs and alerts | F11 identity and F12 schema/functions must be merged and inspected before DB design is finalized. Consume F13 entitlement projection for actual renewed-subscription service start (including freeze shifts) and frozen/inactive state. No financial payload reads. |
 | Shared functions | `audit_row_change`, `role_has_capability`, `has_workspace_access`, F12 client guards/access helpers | F12 then F14 latest bodies first; F15 adds forward extensions only. |
 | Capability TS/SQL | `lib/auth/capabilities.ts`, SQL `app_private.role_has_capability`; add `assign_intake_form` | Sequence after F12 Sales removal and F14 branding addition; F12 bidirectional parity test available and passes. |
 | i18n | `lib/i18n/messages/ar.ts`, `lib/i18n/messages/en.ts` | Coordinate shared-file ownership; bilingual authored form content is separate from UI strings. |
 | Dashboard/nav | `app/(app)/page.tsx`, authorized dashboard routes, `app/(client)/account/status/`, future intake routes | F12 status navigation remains intact; F15 registers only an existing authorized route, no guessed route or staff redirect. |
 | Branding | F14-8 published workspace brand contract | F14 merge first; per-request scope, neutral fallback, no shared actor/workspace cache. No editor/storage copied into F15. |
-| Alerts/delivery | P4 authoritative first-pair delivery and responsible-Trainer facts | Synthetic fixtures first; real-data classification/alerts blocked until complete authoritative coverage and open catch-up/recipient details resolved. |
+| Alerts/delivery | P4 authoritative first-pair delivery and responsible-Trainer facts; F15 Q4 timing/recipient policy | Synthetic fixtures first; real-data classification/alerts blocked until complete authoritative coverage and Q4 details left unstated are resolved. |
 | Retention/CI | F11 owner-only `pg_cron` pattern; docs/13 readiness gates; encrypted backups | Reuse pattern without activation in migration. 30-day legal/technical review and backup/PITR evidence block production real data. Private CI billing remains an external gate; do not change visibility. |
 
 Merge readiness of F12 and F14 is not asserted by this plan; their latest integrated source must be revalidated at implementation time.
@@ -80,14 +80,12 @@ Merge readiness of F12 and F14 is not asserted by this plan; their latest integr
 
 | OPEN item | What it blocks |
 | --- | --- |
-| Cohort eligibility, membership snapshot timing, recurrence bounds/termination | T023 cohort/recurrence execution and cohort acceptance fixtures only. T010 one-time per-client assignment proceeds first. |
-| Alert catch-up target, reassignment after initial alert, unavailable/revoked escalation recipients | T017 scheduler activation and T025 real-data readiness. T016 may implement the decided Trainer-or-PO then WO+PO sequence with safe operational exceptions; do not invent replacement rules. |
-| Hidden-answer retention/clearing/projection when a branch becomes inapplicable | T011 hidden-answer persistence/projection for the affected branch, T013 submission behavior for that case, and the affected T020 UI acceptance case. Safe validation and other branches proceed, but no product disposition is inferred. |
-| Post-relationship-end correction eligibility | T014 correction mutations and the affected T020 UI case only for clients after Closure/Refund/Deactivation and before purge. Active-relationship corrections under the approved matrix proceed. |
 | Mandatory Intake name and actual questions (PO supplies when task reached) | T009 seeding/publication of the initial Mandatory Intake content and related question-specific fixtures. Build engine and placeholder beforehand; ask PO at T009. |
 | 30-day retention technical/legal review (including backup/PITR and exceptions) | T019 evidence gathering and T025 production readiness for real client data and purge acceptance against hosted recoverable copies. Synthetic local/CI work may continue. |
 | Authoritative P4 first-pair delivery and responsible-Trainer coverage | T016 synthetic alert engine can proceed; T017 real-data scheduler activation and T025 production readiness stay blocked. |
 | Future attachment storage lifecycle | No MVP attachment task is authorized. FR-032 remains no attachment feature/storage until separately specified; future attachment implementation requires a new scoped decision/design and RET-2/3 proof. |
+| Q2 removal from already-submitted answer history/audit | Only the affected branch-history removal/projection sub-case in T011/T013/T020; do not erase records pending PO resolution. |
+| Q3/Q4 unstated operational details | Only recurrence resumption after freeze, no-Trainer initial alert routing, and whether reassignment restarts the 24-hour clock; T023 otherwise proceeds. |
 
 ## Project Structure
 

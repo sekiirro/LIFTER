@@ -11,8 +11,8 @@
 ## Alerts
 
 - Alert state contains IDs and allow-listed codes only. Names resolve at read time after current authorization.
-- Initial alert: responsible Trainer, otherwise PO. If Trainer is assigned and delay persists, exactly one escalation after two hours to workspace WO and PO.
+- Initial alert: assigned Trainer. Apply seven-day catch-up, deduplication and reassignment handling. If unresolved after 24 hours, escalate simultaneously to both Platform Owner and Workspace Owner (Q4; supersedes F15-5).
 - Deduplicate logical occurrence × stage × recipient across retries, restarts and concurrent workers. Serialize against authoritative delivery timestamps to avoid false late alerts and suppress obsolete actionable alerts after resolution.
 - Missing P4 delivery/responsible-Trainer evidence creates a safe operational exception, never a real late classification.
-- OPEN: alert catch-up target, reassignment after initial alert, and behavior when escalation recipients are unavailable/revoked. Do not send to revoked recipients or invent a replacement rule; safe exception only. These details block real-data alert activation.
+- Q4 leaves unstated: the initial alert recipient when no Trainer is assigned, and whether reassignment restarts the 24-hour clock. Do not invent these semantics. Recheck authorization and do not send to revoked recipients; real-data activation remains blocked on P4 coverage and genuinely open Q4 details.
 - No email/SMS/Telegram, strikes, deductions, firing or compensation changes.
