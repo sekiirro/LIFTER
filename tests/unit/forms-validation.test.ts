@@ -30,8 +30,89 @@ const questions: readonly FormQuestion[] = [
 ];
 
 describe('validateFormDefinition', () => {
+  const questionsForSections = (sizes: readonly number[]) =>
+    sizes.flatMap((count, sectionIndex) =>
+      Array.from({ length: count }, (_, questionIndex) => ({
+        id: `q${sectionIndex}_${questionIndex}`,
+        sectionId: `section${sectionIndex}`,
+        type: 'shortText' as const,
+        required: false,
+      })),
+    );
+
+  it('accepts 20 questions in a section and rejects 21', () => {
+    expect(validateFormDefinition(questionsForSections([20]))).toEqual([]);
+    expect(
+      validateFormDefinition(questionsForSections([21])).map(
+        ({ code }) => code,
+      ),
+    ).toContain('too_many_questions_in_section');
+  });
+
+  it('accepts 60 questions per form and rejects 61 across valid section sizes', () => {
+    expect(validateFormDefinition(questionsForSections([20, 20, 20]))).toEqual(
+      [],
+    );
+    expect(
+      validateFormDefinition(questionsForSections([20, 20, 20, 1])).map(
+        ({ code }) => code,
+      ),
+    ).toContain('too_many_questions');
+  });
+
   it('accepts typed acyclic definitions with known references', () => {
     expect(validateFormDefinition(questions)).toEqual([]);
+  });
+
+  it('applies UTF-8 byte bounds to choice labels and condition values', () => {
+    const valid4096Bytes = 'ا'.repeat(2_048);
+    const invalid4097Bytes = `${valid4096Bytes}a`;
+    const choiceDefinition = (choice: string) => [
+      {
+        id: 'choice',
+        sectionId: 'basic',
+        type: 'singleChoice' as const,
+        required: false,
+        choices: [choice],
+      },
+    ];
+    const conditionDefinition = (value: string) => [
+      {
+        id: 'source',
+        sectionId: 'basic',
+        type: 'shortText' as const,
+        required: false,
+      },
+      {
+        id: 'branch',
+        sectionId: 'basic',
+        type: 'boolean' as const,
+        required: false,
+        when: {
+          mode: 'all' as const,
+          conditions: [
+            { questionId: 'source', operator: 'equals' as const, value },
+          ],
+        },
+      },
+    ];
+
+    expect(validateFormDefinition(choiceDefinition(valid4096Bytes))).toEqual(
+      [],
+    );
+    expect(
+      validateFormDefinition(choiceDefinition(invalid4097Bytes)).map(
+        ({ code }) => code,
+      ),
+    ).toContain('invalid_choices');
+    expect(validateFormDefinition(conditionDefinition(valid4096Bytes))).toEqual(
+      [],
+    );
+    expect(
+      validateFormDefinition(conditionDefinition(invalid4097Bytes)).map(
+        ({ code }) => code,
+      ),
+    ).toContain('invalid_applicability');
   });
 
   it('rejects unknown question IDs and answer types', () => {
@@ -143,6 +224,28 @@ describe('validateFormDefinition', () => {
 });
 
 describe('validateAnswerSet', () => {
+  const textQuestion: readonly FormQuestion[] = [
+    { id: 'text', sectionId: 'basic', type: 'longText', required: false },
+  ];
+
+  it('counts Arabic text limits in UTF-8 bytes at 4,096 and 4,097 bytes', () => {
+    const valid4096Bytes = 'ا'.repeat(2_048);
+    const invalid4097Bytes = `${valid4096Bytes}a`;
+    expect(new TextEncoder().encode(valid4096Bytes).length).toBe(4_096);
+    expect(new TextEncoder().encode(invalid4097Bytes).length).toBe(4_097);
+    expect(validateAnswerSet(textQuestion, { text: valid4096Bytes })).toEqual(
+      [],
+    );
+    expect(validateAnswerSet(textQuestion, { text: invalid4097Bytes })).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          code: 'answer_too_long',
+          questionId: 'text',
+        }),
+      ]),
+    );
+  });
+
   it('accepts valid typed values and allows optional omissions', () => {
     const answers: FormAnswerSet = { consent: false, name: 'Mina' };
     expect(validateAnswerSet(questions, answers)).toEqual([]);

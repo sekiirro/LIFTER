@@ -1,13 +1,21 @@
-export const PROPOSED_FORM_BOUNDS = {
-  maxQuestions: 200,
+export const APPROVED_FORM_BOUNDS = {
+  maxQuestionsPerSection: 20,
+  maxQuestionsPerForm: 60,
   maxConditions: 400,
   maxConditionsPerQuestion: 16,
   maxEvaluationSteps: 4_000,
   maxDefinitionBytes: 131_072,
+  // pending PO: must accommodate all valid forms
   maxPayloadBytes: 16_384,
   maxTextBytes: 4_096,
   maxChoices: 50,
 } as const;
+
+const UTF8_ENCODER = new TextEncoder();
+
+function utf8ByteLength(value: string): number {
+  return UTF8_ENCODER.encode(value).length;
+}
 
 export type FormAnswerType =
   | 'shortText'
@@ -147,7 +155,7 @@ function isCondition(value: unknown): value is ApplicabilityCondition {
   }
   const validValue =
     (typeof value.value === 'string' &&
-      value.value.length <= PROPOSED_FORM_BOUNDS.maxTextBytes) ||
+      utf8ByteLength(value.value) <= APPROVED_FORM_BOUNDS.maxTextBytes) ||
     (typeof value.value === 'number' && Number.isFinite(value.value)) ||
     typeof value.value === 'boolean';
   return Object.keys(value).length === 3 && validValue;
@@ -172,7 +180,7 @@ export function validateFormDefinition(input: unknown): FormValidationIssue[] {
   const issues: FormValidationIssue[] = [];
   if (!Array.isArray(input)) return [{ code: 'invalid_question_list' }];
   if (input.length === 0) return [{ code: 'no_questions' }];
-  if (input.length > PROPOSED_FORM_BOUNDS.maxQuestions) {
+  if (input.length > APPROVED_FORM_BOUNDS.maxQuestionsPerForm) {
     issues.push({ code: 'too_many_questions' });
     return issues;
   }
@@ -217,12 +225,12 @@ export function validateFormDefinition(input: unknown): FormValidationIssue[] {
       if (
         !Array.isArray(candidate.choices) ||
         candidate.choices.length === 0 ||
-        candidate.choices.length > PROPOSED_FORM_BOUNDS.maxChoices ||
+        candidate.choices.length > APPROVED_FORM_BOUNDS.maxChoices ||
         candidate.choices.some((choice) =>
           typeof choice !== 'string'
             ? true
             : choice.length === 0 ||
-              choice.length > PROPOSED_FORM_BOUNDS.maxTextBytes,
+              utf8ByteLength(choice) > APPROVED_FORM_BOUNDS.maxTextBytes,
         ) ||
         new Set(candidate.choices).size !== candidate.choices.length
       ) {
@@ -276,7 +284,7 @@ export function validateFormDefinition(input: unknown): FormValidationIssue[] {
         !Array.isArray(candidate.when.conditions) ||
         candidate.when.conditions.length === 0 ||
         candidate.when.conditions.length >
-          PROPOSED_FORM_BOUNDS.maxConditionsPerQuestion ||
+          APPROVED_FORM_BOUNDS.maxConditionsPerQuestion ||
         !candidate.when.conditions.every(isCondition)
       ) {
         issues.push({ code: 'invalid_applicability', questionId });
@@ -331,10 +339,18 @@ export function validateFormDefinition(input: unknown): FormValidationIssue[] {
     }
   });
 
-  if (conditionCount > PROPOSED_FORM_BOUNDS.maxConditions) {
+  if (conditionCount > APPROVED_FORM_BOUNDS.maxConditions) {
     issues.push({ code: 'too_many_conditions' });
   }
-  if (input.length + conditionCount > PROPOSED_FORM_BOUNDS.maxEvaluationSteps) {
+  const sectionCounts = new Map<string, number>();
+  for (const question of questions) {
+    const count = (sectionCounts.get(question.sectionId) ?? 0) + 1;
+    sectionCounts.set(question.sectionId, count);
+    if (count === APPROVED_FORM_BOUNDS.maxQuestionsPerSection + 1) {
+      issues.push({ code: 'too_many_questions_in_section' });
+    }
+  }
+  if (input.length + conditionCount > APPROVED_FORM_BOUNDS.maxEvaluationSteps) {
     issues.push({ code: 'evaluation_work_too_large' });
   }
 
@@ -378,7 +394,7 @@ export function validateFormDefinition(input: unknown): FormValidationIssue[] {
     const definitionBytes = new TextEncoder().encode(
       JSON.stringify(input),
     ).length;
-    if (definitionBytes > PROPOSED_FORM_BOUNDS.maxDefinitionBytes) {
+    if (definitionBytes > APPROVED_FORM_BOUNDS.maxDefinitionBytes) {
       issues.push({ code: 'definition_too_large' });
     }
   }
@@ -399,8 +415,8 @@ function answerPayloadBytes(answers: Record<string, unknown>): number {
     if (index > 0) bytes += 1;
     bytes += encoder.encode(JSON.stringify(questionId)).length + 1;
     if (Array.isArray(answer)) {
-      if (answer.length > PROPOSED_FORM_BOUNDS.maxChoices) {
-        return PROPOSED_FORM_BOUNDS.maxPayloadBytes + 1;
+      if (answer.length > APPROVED_FORM_BOUNDS.maxChoices) {
+        return APPROVED_FORM_BOUNDS.maxPayloadBytes + 1;
       }
       bytes += 2;
       answer.forEach((item, itemIndex) => {
@@ -408,17 +424,17 @@ function answerPayloadBytes(answers: Record<string, unknown>): number {
         bytes +=
           typeof item === 'string'
             ? encoder.encode(JSON.stringify(item)).length
-            : PROPOSED_FORM_BOUNDS.maxPayloadBytes + 1;
+            : APPROVED_FORM_BOUNDS.maxPayloadBytes + 1;
       });
     } else if (typeof answer === 'string') {
-      if (answer.length > PROPOSED_FORM_BOUNDS.maxTextBytes) {
-        return PROPOSED_FORM_BOUNDS.maxPayloadBytes + 1;
+      if (utf8ByteLength(answer) > APPROVED_FORM_BOUNDS.maxTextBytes) {
+        return APPROVED_FORM_BOUNDS.maxPayloadBytes + 1;
       }
       bytes += encoder.encode(JSON.stringify(answer)).length;
     } else if (typeof answer === 'number' || typeof answer === 'boolean') {
       bytes += String(answer).length;
     } else {
-      bytes += PROPOSED_FORM_BOUNDS.maxPayloadBytes + 1;
+      bytes += APPROVED_FORM_BOUNDS.maxPayloadBytes + 1;
     }
   }
   return bytes;
@@ -472,17 +488,11 @@ export function validateAnswerSet(
     }
     if (typeof value === 'string') {
       const maxLength =
-        question.validation?.maxLength ?? PROPOSED_FORM_BOUNDS.maxTextBytes;
+        question.validation?.maxLength ?? APPROVED_FORM_BOUNDS.maxTextBytes;
       const minLength = question.validation?.minLength ?? 0;
-      const isClearlyOverBound =
-        value.length > PROPOSED_FORM_BOUNDS.maxTextBytes;
-      const bytes = isClearlyOverBound
-        ? PROPOSED_FORM_BOUNDS.maxTextBytes + 1
-        : new TextEncoder().encode(value).length;
-      const characters = isClearlyOverBound
-        ? PROPOSED_FORM_BOUNDS.maxTextBytes + 1
-        : Array.from(value).length;
-      if (bytes > PROPOSED_FORM_BOUNDS.maxTextBytes || characters > maxLength) {
+      const bytes = utf8ByteLength(value);
+      const characters = Array.from(value).length;
+      if (bytes > APPROVED_FORM_BOUNDS.maxTextBytes || characters > maxLength) {
         issues.push({ code: 'answer_too_long', questionId });
       }
       if (characters < minLength)
@@ -512,7 +522,7 @@ export function validateAnswerSet(
     } else if (Array.isArray(value)) {
       const unique = new Set(value);
       if (
-        value.length > PROPOSED_FORM_BOUNDS.maxChoices ||
+        value.length > APPROVED_FORM_BOUNDS.maxChoices ||
         unique.size !== value.length ||
         value.some((choice) => !question.choices?.includes(choice))
       ) {
@@ -521,7 +531,7 @@ export function validateAnswerSet(
     }
   }
 
-  if (answerPayloadBytes(answers) > PROPOSED_FORM_BOUNDS.maxPayloadBytes) {
+  if (answerPayloadBytes(answers) > APPROVED_FORM_BOUNDS.maxPayloadBytes) {
     issues.push({ code: 'payload_too_large' });
   }
   return issues;
