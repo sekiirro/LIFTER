@@ -384,4 +384,32 @@ describe('provider lifecycle', () => {
     await db`update auth.users set recovery_sent_at = now() - interval '2 days' where id = ${user.userId}`;
     expect((await verify(anonClient(), hash)).error).not.toBeNull();
   });
+  it('accepts a link verified 59 minutes after it was issued', async () => {
+    const user = await createStaff(null, 'recovery-window-59');
+    const hash = await hashedToken(user.email);
+    await db`update auth.users set recovery_sent_at = now() - interval '59 minutes' where id = ${user.userId}`;
+    expect((await verify(anonClient(), hash)).error).toBeNull();
+  });
+  it('rejects a link verified 61 minutes after it was issued', async () => {
+    const user = await createStaff(null, 'recovery-window-61');
+    const hash = await hashedToken(user.email);
+    await db`update auth.users set recovery_sent_at = now() - interval '61 minutes' where id = ${user.userId}`;
+    expect((await verify(anonClient(), hash)).error).not.toBeNull();
+  });
+  it('a link verified near expiry starts a fresh 15-minute session', async () => {
+    const user = await createStaff(null, 'recovery-window-session');
+    const hash = await hashedToken(user.email);
+    const client = anonClient();
+    await db`update auth.users set recovery_sent_at = now() - interval '50 minutes' where id = ${user.userId}`;
+    expect((await verify(client, hash)).error).toBeNull();
+    const claims = await latestAmrMethod(client);
+    const latest = Math.max(
+      ...claims.amr.map((e) => (typeof e === 'object' ? e.timestamp : 0)),
+    );
+    expect(isRecoverySession(claims.amr, Math.floor(Date.now() / 1000))).toBe(
+      true,
+    );
+    expect(isRecoverySession(claims.amr, latest + 900)).toBe(true);
+    expect(isRecoverySession(claims.amr, latest + 901)).toBe(false);
+  });
 });

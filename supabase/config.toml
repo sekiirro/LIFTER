@@ -4,5 +4,9 @@ project_id = "lifter"
 enable_signup = false
 minimum_password_length = 8
 
+[auth.email]
+# PO ND-F4-3 (2026-10-29): local email OTPs and links, including recovery, expire after 60 minutes.
+otp_expiry = 3600
+
 [storage]
 enabled = true
