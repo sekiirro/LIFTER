@@ -1,4 +1,4 @@
-# LIFTER — Decision Register (FINAL, PO 2026-10-27; amended 2026-10-28 (D-22..D-26))
+# LIFTER — Decision Register (FINAL, PO 2026-10-27; amended 2026-10-28 (D-22..D-26) and 2026-10-29 (D-27))
 
 Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede earlier ones (DR-03). Binding together with BRD DR-01.
 

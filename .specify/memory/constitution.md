@@ -148,8 +148,10 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   decisions to the PO. Implementation starts only after PO approval and a completed plan/tasks.
   AI agreement never replaces PO approval; the architect remains the final technical authority.
 - Controlled Parallel Development: at most six concurrent agents. Each writer uses an isolated
-  worktree and branch, edits disjoint files, and respects one DB user/lock owner per stack. Feature
-  branches integrate sequentially, each after architect review and relevant green CI.
+  worktree and branch and edits disjoint files. Only one writer may hold a stack lock for Docker or
+  Supabase operations that start, stop, restart, reset, provision, or modify services; others stay
+  out of that stack while the lock is held. Use one DB user per stack. Feature branches integrate
+  sequentially, each after architect review and relevant green CI.
 - Main merge gate: before requesting PO approval, require a completed CodeRabbit review APPROVED on
   the exact PR head (`commit_id == headRefOid`), with no later CHANGES_REQUESTED or DISMISSED
   review; `reviewDecision` APPROVED; zero unresolved threads and all actionable findings resolved;

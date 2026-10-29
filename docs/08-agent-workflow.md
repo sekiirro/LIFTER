@@ -47,8 +47,9 @@ or high-risk task.
 - Use no more than six concurrent agents.
 - Each writer gets an isolated worktree and branch. Writers edit disjoint files and do not share a
   branch.
-- Only one DB user/lock owner may use each stack at a time. Other parallel work stays DB-free while
-  that stack lock is held.
+- Only one writer may hold a stack lock for Docker or Supabase operations that start, stop, restart,
+  reset, provision, or modify services. Other writers stay out of that stack while the lock is held.
+  Use one DB user per stack.
 - Integrate feature branches sequentially. Each integration requires architect review and relevant
   green CI.
 

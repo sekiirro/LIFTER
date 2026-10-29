@@ -4,19 +4,19 @@
 
 This is the single current register of Production Blockers and Go-Live gates for LIFTER. It covers production with real client data, hosted operation, and the separately approved deployment action. A `Done` row closes only that row's evidence requirement; it does not imply that the system is Production Ready. Local development and ordinary PR merges remain governed by their own gates.
 
-Review this register before any pre-production exercise or Go-Live decision. Keep the source link and evidence current. Anything not verified is `Open`. Items from unmerged feature branches are labeled `(pending merge of <branch>)`; their source is pinned to the observed remote head.
+Review this register before any pre-production exercise or Go-Live decision. Keep the source link and evidence current. Anything without complete evidence is not `Done`. Use `Prepared` only when setup/design and the evidence plan are complete and only a named external approval, secret, hosted verification, or controlled execution remains; otherwise use `Open`. Items from unmerged feature branches are labeled `(pending merge of <branch>)`; their source is pinned to the observed remote head.
 
 ### Status legend
 
-- **Open** - evidence, decision, or sign-off is missing or unverified.
-- **Prepared** - setup or design is ready, but a named approval, secret, hosted proof, or execution remains.
+- **Open** - a substantive decision, implementation step, or evidence requirement remains incomplete.
+- **Prepared** - setup/design and the evidence plan are complete; only a named external approval, secret, hosted verification, or controlled execution remains.
 - **Done** - the specific requirement has verified evidence. Other rows may still block release.
 
 ## Platform / Infrastructure
 
 | ID | Blocker / gate | Source | Owner | Evidence required | Status | Phase |
 |---|---|---|---|---|---|---|
-| PI-01 | Approved hosting targets and region | [D-20/D-21](04-changes-and-questions.md); [architecture](02-architecture.md) | PO + platform | Confirm exact target/region and current approval in the release record; target selection alone is not deployment approval. | Prepared | Pre-Production |
+| PI-01 | Approved hosting targets and region | [D-20/D-21](04-changes-and-questions.md); [architecture](02-architecture.md) | PO + platform | D-20/D-21 record the approved Frankfurt region and LIFTER Free targets; re-check if the target or scope changes. Target approval is not deployment approval. | Done | Pre-Production |
 | PI-02 | Explicit approval for the specific deployment, cloud migration, or paid service | [D-20/D-21 and ND-F8-2](07-production-readiness.md) | PO | Written PO approval naming the action, target, and release head before it occurs. | Open | Go-Live |
 | PI-03 | Pilot volumes and production capacity validated | [ND-F8-1](07-production-readiness.md); [F8 validation spec](../specs/008-free-tier-validation/spec.md) | PO + platform | PO-approved clients/workspaces/staff/plans/versions volumes and a dated measurement at those volumes. | Open | Pre-Production |
 | PI-04 | Production measurement run authorized | [ND-F8-2](07-production-readiness.md); [F8 validation spec](../specs/008-free-tier-validation/spec.md) | PO + platform | Explicit approval for the measured run against an approved target; measurements and limits recorded without secrets. | Open | Pre-Production |
