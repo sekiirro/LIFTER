@@ -1,7 +1,10 @@
 import { createHash } from 'node:crypto';
 import { deflateSync } from 'node:zlib';
 import { describe, expect, it } from 'vitest';
-import { validateBrandingImage } from '../../lib/branding/image-validation';
+import {
+  BRANDING_IMAGE_LIMITS,
+  validateBrandingImage,
+} from '../../lib/branding/image-validation';
 
 const PNG_SIGNATURE = Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]);
 const LIMITS = {
@@ -41,8 +44,10 @@ function pngFixture(
     metadata?: boolean;
     animation?: boolean;
     corruptCrc?: boolean;
+    corruptIdatCrc?: boolean;
     chunks?: number;
     trailing?: boolean;
+    inflateTrailing?: boolean;
   } = {},
 ): Buffer {
   const width = options.width ?? 1;
@@ -61,9 +66,24 @@ function pngFixture(
   }
   const pixels = Buffer.alloc(width * height * 4 + height);
   for (let row = 0; row < height; row += 1) pixels[row * (width * 4 + 1)] = 0;
-  chunks.push(pngChunk('IDAT', deflateSync(pixels)));
+  const compressed = deflateSync(pixels);
+  chunks.push(
+    pngChunk(
+      'IDAT',
+      options.inflateTrailing
+        ? Buffer.concat([compressed, Buffer.from([0xde, 0xad])])
+        : compressed,
+    ),
+  );
   chunks.push(pngChunk('IEND', Buffer.alloc(0)));
-  if (options.corruptCrc) chunks[1][chunks[1].length - 1] ^= 0xff;
+  if (options.corruptCrc) {
+    const target = chunks[1]!;
+    target[target.length - 1] = target[target.length - 1]! ^ 0xff;
+  }
+  if (options.corruptIdatCrc) {
+    const target = chunks[chunks.length - 2]!;
+    target[target.length - 1] = target[target.length - 1]! ^ 0xff;
+  }
   return Buffer.concat([
     PNG_SIGNATURE,
     ...chunks,
@@ -88,6 +108,9 @@ function webpFixture(
     animation?: boolean;
     badRiffSize?: boolean;
     truncate?: boolean;
+    badFrameHeader?: boolean;
+    mismatchedDimensions?: boolean;
+    extraChunks?: number;
   } = {},
 ): Buffer {
   const vp8x = Buffer.alloc(10);
@@ -103,8 +126,23 @@ function webpFixture(
     chunks.push(webpChunk('ANIM', Buffer.alloc(6)));
     chunks.push(webpChunk('ANMF', Buffer.alloc(16)));
   } else {
-    chunks.push(webpChunk('VP8 ', Buffer.from([0x2f, 0x01, 0x00, 0x00])));
+    const frame = Buffer.from([
+      0x10,
+      0,
+      0,
+      0x9d,
+      0x01,
+      0x2a,
+      options.mismatchedDimensions ? 2 : 1,
+      0,
+      1,
+      0,
+    ]);
+    if (options.badFrameHeader) frame[3] = 0;
+    chunks.push(webpChunk('VP8 ', frame));
   }
+  for (let index = 0; index < (options.extraChunks ?? 0); index += 1)
+    chunks.push(webpChunk('XMP ', Buffer.from('x')));
   const body = Buffer.concat([Buffer.from('WEBP'), ...chunks]);
   const riffSize = Buffer.alloc(4);
   riffSize.writeUInt32LE(body.length + (options.badRiffSize ? 1 : 0));
@@ -117,6 +155,25 @@ function validate(bytes: Uint8Array) {
 }
 
 describe('branding image validation contract', () => {
+  it('uses separately benchmarked role caps', () => {
+    expect(BRANDING_IMAGE_LIMITS.logo).toEqual({
+      maxIngressBytes: 4 * 1024 * 1024,
+      maxOutputBytes: 4 * 1024 * 1024,
+      maxWidth: 2048,
+      maxHeight: 2048,
+      maxPixels: 1_000_000,
+      maxChunks: 96,
+    });
+    expect(BRANDING_IMAGE_LIMITS.banner).toEqual({
+      maxIngressBytes: 8 * 1024 * 1024,
+      maxOutputBytes: 8 * 1024 * 1024,
+      maxWidth: 4096,
+      maxHeight: 2048,
+      maxPixels: 4_000_000,
+      maxChunks: 192,
+    });
+  });
+
   it('walks PNG structure, strips metadata, reports dimensions and hashes output bytes', () => {
     const withMetadata = pngFixture({ metadata: true });
     const expected = pngFixture();
@@ -141,7 +198,7 @@ describe('branding image validation contract', () => {
     expect(normalized).toEqual(expected);
     expect(normalized.includes(Buffer.from('EXIF'))).toBe(false);
     expect(normalized.includes(Buffer.from('XMP '))).toBe(false);
-    expect(normalized[20] & 0x0c).toBe(0);
+    expect(normalized[20]! & 0x0c).toBe(0);
     expect(result.mediaType).toBe('image/webp');
     expect(result.contentHash).toBe(
       createHash('sha256').update(expected).digest('hex'),
@@ -158,8 +215,10 @@ describe('branding image validation contract', () => {
 
   it('rejects bad PNG CRC, truncated chunks and trailing data', () => {
     expect(() => validate(pngFixture({ corruptCrc: true }))).toThrow();
+    expect(() => validate(pngFixture({ corruptIdatCrc: true }))).toThrow();
     expect(() => validate(pngFixture().subarray(0, -5))).toThrow();
     expect(() => validate(pngFixture({ trailing: true }))).toThrow();
+    expect(() => validate(pngFixture({ inflateTrailing: true }))).toThrow();
   });
 
   it('rejects bad WebP RIFF bounds, truncation and trailing bytes', () => {
@@ -168,6 +227,14 @@ describe('branding image validation contract', () => {
     expect(() =>
       validate(Buffer.concat([webpFixture(), Buffer.from([1])])),
     ).toThrow();
+  });
+
+  it('rejects malformed WebP frame headers, inconsistent dimensions and complexity', () => {
+    expect(() => validate(webpFixture({ badFrameHeader: true }))).toThrow();
+    expect(() =>
+      validate(webpFixture({ mismatchedDimensions: true })),
+    ).toThrow();
+    expect(() => validate(webpFixture({ extraChunks: 24 }))).toThrow();
   });
 
   it('rejects dimensions and pixel counts over the supplied role limit', () => {

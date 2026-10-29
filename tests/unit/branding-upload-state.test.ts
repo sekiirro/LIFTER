@@ -1,11 +1,12 @@
+import { createHash } from 'node:crypto';
 import { describe, expect, it, vi } from 'vitest';
 import {
   createBrandingUpload,
   interruptBrandingUpload,
   isBrandingUploadReferenceActive,
-  reconcileBrandingUpload,
   transitionBrandingUpload,
 } from '../../lib/branding/upload-state';
+import { reconcileBrandingUpload } from '../../lib/branding/reconciliation';
 
 function startUpload() {
   return createBrandingUpload({
@@ -17,7 +18,13 @@ function startUpload() {
   });
 }
 
-function advanceTo(stage: 'validation' | 'promotion' | 'attachment') {
+function contentHash(bytes: Uint8Array) {
+  return createHash('sha256').update(bytes).digest('hex');
+}
+
+function advanceTo(
+  stage: 'staging' | 'validation' | 'promotion' | 'attachment',
+) {
   let upload = startUpload();
   if (
     stage === 'validation' ||
@@ -30,14 +37,14 @@ function advanceTo(stage: 'validation' | 'promotion' | 'attachment') {
     upload = transitionBrandingUpload(upload, {
       type: 'validation_succeeded',
       validatedBytes: new Uint8Array([1, 2, 3]),
-      contentHash: 'a'.repeat(64),
+      contentHash: contentHash(new Uint8Array([1, 2, 3])),
     });
     upload = transitionBrandingUpload(upload, { type: 'promotion_started' });
   }
   if (stage === 'attachment') {
     upload = transitionBrandingUpload(upload, {
       type: 'promotion_succeeded',
-      validatedObjectKey: 'workspace-a/validated/logo/a'.concat('a'.repeat(64)),
+      validatedObjectKey: `workspace-a/validated/logo/${contentHash(new Uint8Array([1, 2, 3]))}`,
     });
     upload = transitionBrandingUpload(upload, { type: 'attachment_started' });
   }
@@ -75,17 +82,16 @@ describe('branding upload state and reconciliation contract', () => {
         {
           type: 'validation_succeeded',
           validatedBytes: new Uint8Array([1, 2, 3]),
-          contentHash: 'b'.repeat(64),
+          contentHash: contentHash(new Uint8Array([1, 2, 3])),
         },
       ),
-      {
-        type: 'promotion_succeeded',
-        validatedObjectKey: 'workspace-a/validated/logo/'.concat(
-          'b'.repeat(64),
-        ),
-      },
+      { type: 'promotion_started' },
     );
-    const result = transitionBrandingUpload(validated, {
+    const promoted = transitionBrandingUpload(validated, {
+      type: 'promotion_succeeded',
+      validatedObjectKey: `workspace-a/validated/logo/${contentHash(new Uint8Array([1, 2, 3]))}`,
+    });
+    const result = transitionBrandingUpload(promoted, {
       type: 'attach',
       expectedDraftRevision: 4,
       currentDraftRevision: 5,
@@ -94,6 +100,26 @@ describe('branding upload state and reconciliation contract', () => {
     expect(result.status).toBe('attachment_failed_stale');
     expect(result.draftRevision).toBe(4);
     expect(result.attachedAssetId).toBeUndefined();
+  });
+
+  it('rejects a validator receipt when its claimed hash does not match bounded bytes', () => {
+    const validating = transitionBrandingUpload(startUpload(), {
+      type: 'validation_started',
+    });
+    expect(() =>
+      transitionBrandingUpload(validating, {
+        type: 'validation_succeeded',
+        validatedBytes: new Uint8Array([1, 2, 3]),
+        contentHash: 'a'.repeat(64),
+      }),
+    ).toThrow();
+    expect(() =>
+      transitionBrandingUpload(validating, {
+        type: 'validation_succeeded',
+        validatedBytes: new Uint8Array(4 * 1024 * 1024 + 1),
+        contentHash: contentHash(new Uint8Array(0)),
+      }),
+    ).toThrow();
   });
 
   it('protects references held by active uploads until attachment or cleanup completes', () => {
