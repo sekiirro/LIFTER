@@ -1,9 +1,9 @@
 # F12 Spec Debate — Round 1
 
-**Date**: 2026-10-28  
-**Architect**: Claude Opus 5.5  
-**Critic**: gpt-6.1-sol medium (read-only)  
-**Codex thread**: `01a183d4-033c-7a43-8074-f7963dc20bec`  
+**Date**: 2026-10-28<br>
+**Architect**: Claude Opus 5.5<br>
+**Critic**: gpt-6.1-sol medium (read-only)<br>
+**Codex thread**: `01a183d4-033c-7a43-8074-f7963dc20bec`<br>
 **Outcome**: closed after one round; 10/10 accepted (#1 with qualification).
 
 This file preserves the full debate record for traceability. The architect response r1 supersedes the v0 draft where they conflict.
