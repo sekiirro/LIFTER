@@ -1,14 +1,15 @@
 # F13 implementation and verification quickstart
 
-This document is a future execution checklist, not authorization to implement or use a database. The current planning run is DB-free.
+This document records the approved local Stack C readiness work and the remaining F13 execution gates. It is not authorization to use production data or infrastructure.
 
 ## Before implementation
 
 1. Obtain PO approval for the complete plan/tasks/analyze package and slice-specific implementation brief.
 2. Verify F12 U4 is merged; inspect final migration/RPC, lock order, authorization, receipts, audit rollback and races. Verify current F12/F14 migration heads and all pending migrations.
-3. Prove a supported PO-1 sign-in block plus full session/refresh revocation primitive shares the refund transaction on a verified isolated stack. If proof fails, stop and request revised PO design.
-4. Assign a newly verified isolated F13 stack; do not borrow Stack A or Stack B. Set every F13 migration timestamp after all integrated F12/F14 migrations.
-5. Resolve the technical/legal retention gate before any production real-data use.
+3. T003 investigation (2026-10-30): no documented Supabase primitive atomically combines the supported Auth Admin ban/sign-out APIs with an application refund transaction. Admin [`ban_duration`](https://supabase.com/docs/reference/javascript/auth-admin-updateuserbyid) blocks sign-in, but a temporary ban does not revoke existing sessions ([User Management](https://supabase.com/docs/guides/auth/managing-user-data)). Global [sign-out](https://supabase.com/docs/guides/auth/signout) revokes refresh tokens but is a separate Auth API request. Auth access tokens are stateless and remain usable until `exp` unless the app/DB checks the JWT `session_id` against `auth.sessions` on every protected path; Supabase documents that check for sensitive operations ([User sessions](https://supabase.com/docs/guides/auth/sessions)). Direct writes to Auth-managed tables are not a supported stable interface: Supabase warns that managed columns/objects may change ([User Management](https://supabase.com/docs/guides/auth/managing-user-data)). A Postgres function writing `auth.users`, `auth.sessions`, or `auth.refresh_tokens` would therefore rely on internal Auth storage and is not accepted as proof of a supported atomic primitive. T003 remains blocked; do not implement a refund/Auth function until the PO resolves the options below.
+4. PO options for T003: (A) explicitly approve a tightly scoped Postgres function that writes Auth-managed rows, accepting schema-version coupling and requiring hosted compatibility evidence; (B) change PO-1 to permit a non-atomic Auth API workflow with a defined failure/recovery state; or (C) request a Supabase-supported transaction hook/API for the combined operation. No option is selected here.
+5. Stack C was provisioned locally for F13 on 2026-10-30: project `lifter-stack-c`, API `35421`, DB `35422`, full port block `35420–35429`; migrations are sourced from this branch's `supabase/migrations`. T004 readiness and wrong-project/A-port mutation checks pass. The full unit suite passes (68 files, 1,421 passed, 0 failed, 0 skipped). The full Stack C integration run is not green (28 files; 750 passed, 117 failed, 14 skipped) and must be rerun after its required local F11 test-key provisioning is available. A/B were never test targets. However, the final read-only check found Stack A's DB container ID differed from the initial snapshot (`07f9b4320912` → `2ac57b3ac360`), while its 54321/54322 ports were unchanged; Stack B's container IDs/ports were unchanged. Stack A's vector container was unhealthy/restarting both before and after. Therefore A same-ID/untouched proof is not established. F13 migration work still waits for the F12/F14 integration dependencies in `tasks.md`.
+6. Resolve the technical/legal retention gate before any production real-data use.
 
 ## Per-unit test protocol
 

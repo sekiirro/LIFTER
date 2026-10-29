@@ -69,6 +69,7 @@ yarn-debug.log*
 pnpm-debug.log*
 tmp/
 temp/
+supabase-stack-c/supabase/migrations/
 
 # Editor and operating system files
 .vscode/

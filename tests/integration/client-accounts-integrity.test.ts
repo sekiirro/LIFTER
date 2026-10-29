@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { localSupabaseContainer } from '../../scripts/local-stack.mjs';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import {
   clientContext,
@@ -414,7 +415,7 @@ for (const scenario of ['collision', 'unresolved'])
       [
         'exec',
         '-i',
-        'supabase_db_lifter',
+        localSupabaseContainer('db'),
         'psql',
         '-U',
         'supabase_admin',
