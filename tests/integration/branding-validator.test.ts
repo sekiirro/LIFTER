@@ -1,7 +1,7 @@
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import type { TransactionSql } from 'postgres';
-import { credential, brandingFixture } from './branding-security-fixture';
-import { sql, twoWorkspaceFixture } from './harness';
+import { credential, brandingFixture, hash } from './branding-security-fixture';
+import { admin, checked, sql, twoWorkspaceFixture } from './harness';
 
 const db = sql();
 let fixture: Awaited<ReturnType<typeof brandingFixture>>;
@@ -70,6 +70,9 @@ it('T049 creates durable uploads and validator-only receipts with forced RLS', a
   expect(policy?.cmd).toBe('INSERT');
   expect(policy?.with_check).toMatch(/branding-validated/);
   expect(policy?.with_check).toMatch(/branding_credential_allowed/);
+  expect(policy?.with_check).toMatch(
+    /branding_validator_upload_binding_matches/,
+  );
 });
 
 it('T049 accepts, validates, and idempotently records a receipt bound to upload, objects, hash, and enabled credential', async () => {
@@ -149,6 +152,88 @@ it('T049 denies owner or stale credentials and rejects mismatched staging/output
         tx`select app_private.branding_validation_prepare(${uploadId})`,
     ),
   );
+});
+
+it('T049 binds validated Storage inserts to a matching validating upload', async () => {
+  const c = await credential(db, 'branding_validator');
+  const workspaceC = checked(
+    await admin()
+      .from('workspaces')
+      .insert({
+        name: `Fixture validator-${crypto.randomUUID()}`,
+        slug: `f3-validator-${crypto.randomUUID()}`,
+        created_by: fixture.po.userId,
+      })
+      .select('id')
+      .single(),
+  ).id;
+  const path = (workspaceId: string, role: string, hashValue: string) =>
+    `${workspaceId}/validated/${role}/${hashValue}.png`;
+  const upload = async (input: {
+    workspaceId: string;
+    role: 'logo' | 'banner';
+    status: 'staging' | 'validating';
+    id?: string;
+  }) => {
+    const id = input.id ?? crypto.randomUUID();
+    await db`insert into app_private.branding_uploads(
+      id,workspace_id,role,draft_revision,staging_bucket,staging_object,status,validator_credential_hash
+    ) values(
+      ${id},${input.workspaceId},${input.role},0,'branding-staging',
+      ${`${input.workspaceId}/staging/${id}`},${input.status},
+      ${input.status === 'validating' ? hash(c.id) : null}
+    )`;
+    return id;
+  };
+  const matchingUpload = await upload({
+    workspaceId: fixture.wsA.id,
+    role: 'logo',
+    status: 'validating',
+  });
+  await upload({
+    workspaceId: fixture.wsA.id,
+    role: 'banner',
+    status: 'validating',
+  });
+  await upload({
+    workspaceId: fixture.wsB.id,
+    role: 'banner',
+    status: 'validating',
+  });
+  await upload({
+    workspaceId: workspaceC,
+    role: 'logo',
+    status: 'staging',
+  });
+  const image = Buffer.from('validator storage binding probe');
+  const attempt = async (objectName: string) =>
+    c.client.storage
+      .from('branding-validated')
+      .upload(objectName, image, { contentType: 'image/png' });
+
+  for (const objectName of [
+    path(crypto.randomUUID(), 'banner', 'a'.repeat(64)), // No matching upload.
+    path(workspaceC, 'banner', 'b'.repeat(64)), // Upload is bound to another workspace.
+    path(fixture.wsB.id, 'logo', 'd'.repeat(64)), // Matching upload is for banner.
+    path(workspaceC, 'logo', 'e'.repeat(64)), // Matching upload is still staging.
+  ]) {
+    const result = await attempt(objectName);
+    if (!result.error) {
+      const cleanup = await admin()
+        .storage.from('branding-validated')
+        .remove([objectName]);
+      expect(cleanup.error).toBeNull();
+    }
+    expect(result.error, objectName).toBeTruthy();
+  }
+
+  const allowed = await attempt(path(fixture.wsA.id, 'logo', 'c'.repeat(64)));
+  expect(allowed.error).toBeNull();
+  const cleanup = await admin()
+    .storage.from('branding-validated')
+    .remove([path(fixture.wsA.id, 'logo', 'c'.repeat(64))]);
+  expect(cleanup.error).toBeNull();
+  expect(matchingUpload).toBeTruthy();
 });
 
 it('T051 keeps PO global authority and requires active own-workspace membership for WO', async () => {

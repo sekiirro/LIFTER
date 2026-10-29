@@ -60,7 +60,13 @@ const brandingPrivate = [
   'branding_storage_read_allowed',
   'branding_validation_prepare',
   'branding_validation_complete',
+  'branding_validator_upload_matches',
+  'branding_validator_upload_binding_matches',
 ];
+const brandingFunctionOwners: Record<string, string> = {
+  branding_validator_upload_matches: 'branding_upload_binding_definer',
+  branding_validator_upload_binding_matches: 'branding_upload_check_definer',
+};
 afterAll(async () => {
   await db.end();
 });
@@ -215,7 +221,10 @@ describe('tenancy security catalog (T007)', () => {
       );
       expect(row.proconfig).toContain('search_path=""');
       expect(row.owner).toBe(
-        brandingPrivate.includes(row.proname) ? 'branding_definer' : 'postgres',
+        brandingFunctionOwners[row.proname] ??
+          (brandingPrivate.includes(row.proname)
+            ? 'branding_definer'
+            : 'postgres'),
       );
       expect(row.anon_execute).toBe(false);
       expect(row.authenticated_execute).toBe(

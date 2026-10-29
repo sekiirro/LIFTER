@@ -33,6 +33,13 @@ type TableRow = {
   rls_forced: boolean;
 };
 
+const restrictedFunctionOwners: Record<string, string> = {
+  'app_private.branding_validator_upload_matches(text)':
+    'branding_upload_binding_definer',
+  'app_private.branding_validator_upload_binding_matches(text)':
+    'branding_upload_check_definer',
+};
+
 async function brandingFunctions() {
   return db<FunctionRow[]>`
     select
@@ -76,12 +83,20 @@ describe('F14 definer function privileges', () => {
   it('uses explicit restricted non-login owners and an empty search path', async () => {
     const functions = await brandingFunctions();
     expect(functions.length).toBeGreaterThan(0);
-    const [memberships] = await db`
-      select count(*)::int as n from pg_auth_members
-      where member=(select oid from pg_roles where rolname='branding_definer')`;
-    expect(memberships?.n).toBe(0);
+    for (const ownerRole of [
+      'branding_definer',
+      'branding_upload_binding_definer',
+      'branding_upload_check_definer',
+    ]) {
+      const [memberships] = await db`
+        select count(*)::int as n from pg_auth_members
+        where member=(select oid from pg_roles where rolname=${ownerRole})`;
+      expect(memberships?.n, ownerRole).toBe(0);
+    }
     for (const fn of functions) {
-      expect(fn.owner, fn.signature).toBe('branding_definer');
+      const expectedOwner =
+        restrictedFunctionOwners[fn.signature] ?? 'branding_definer';
+      expect(fn.owner, fn.signature).toBe(expectedOwner);
       expect(fn.owner_login, fn.signature).toBe(false);
       expect(fn.owner_superuser, fn.signature).toBe(false);
       expect(fn.owner_bypassrls, fn.signature).toBe(false);
@@ -115,6 +130,11 @@ describe('F14 definer function privileges', () => {
         expect(publicRoles, fn.signature).toEqual([false, false, false, false]);
       }
       if (fn.signature.startsWith('app_private.branding_validation_')) {
+        expect(fn.proxy_execute, fn.signature).toBe(false);
+        expect(fn.validator_execute, fn.signature).toBe(true);
+      } else if (
+        fn.signature.startsWith('app_private.branding_validator_upload_')
+      ) {
         expect(fn.proxy_execute, fn.signature).toBe(false);
         expect(fn.validator_execute, fn.signature).toBe(true);
       } else if (
