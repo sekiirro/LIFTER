@@ -94,7 +94,7 @@ Used `DESIGN.md`, `specs/002-design-system/`, design tokens, existing `Field`/`B
 - Payload measurements use UTF-8 bytes of each answer value's JSON serialization, summed; question IDs, object keys, envelope, and transport framing are excluded.
 - Synthetic realistic payloads: EN short 54 bytes; AR long 102 bytes; emoji-heavy 376 bytes. Worst valid form: 60 × 1,000 four-byte code points = 240,120 answer-value JSON bytes including quotes; passes 262,144.
 - Validation tests cover English, Arabic with diacritics, emoji including surrogate pairs and a ZWJ sequence (multiple code points), mixed RTL/LTR, all requested boundaries, and the 20/section and 60/form caps.
-- Mutation checks: 8/8 killed (UTF-16 counting; short/long type caps; author cap; section/form count caps; answer-byte safety; payload-byte cap).
+- Mutation checks: 25/25 killed (UTF-16 counting; short/long type caps; author cap; section/form count caps; answer-byte safety; payload-byte cap; known references; choice/condition UTF-8 bounds; unknown type/reference handling; cycle and condition compatibility; total/per-question condition, choice, definition-byte, and evaluation-work bounds; optional omission; unknown answer ID/type; unsafe answer; invalid choice; oversized answer collection).
 - Final full suite: 67 files, 1,404 passed, 0 failed, 0 skipped. Typecheck, lint, Prettier, and `git diff --check` passed. `npm run build:edge` completed; Windows emitted the repository tool's WSL compatibility warning.
 - No Docker, Supabase, database, or integration run was performed.
 
