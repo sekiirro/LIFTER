@@ -1761,6 +1761,7 @@ Archived collision synthetic stand-in timings (ms):
 ## Hardening H4 - credential-optional Docker Hub pulls
 
 - The integration job conditionally logs in before `supabase start` when both `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` are configured. Add them under repository Settings → Secrets and variables → Actions. `DOCKERHUB_TOKEN` should be a Docker Hub personal access token with public-repository read-only scope. No secrets are configured in this repository yet, so the login step is skipped and CI uses its existing anonymous-pull behavior.
+
 ## ND-F4-3 recovery timers
 
 - Stack A was checked for competing Supabase, Vitest, Playwright, and psql processes from other LFTR worktrees; none were found. On `recovery-timers` at `624450296841063644c1deaa28e518e589baf2d9`, the stack was restarted with the standard profile using Supabase CLI 2.122.0: `npx --yes supabase@2.122.0 stop --no-backup`, then `npx --yes supabase@2.122.0 start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,storage-api,postgres-meta`. The profile excludes Studio, imgproxy, Inbucket, Edge Runtime, Logflare, Vector, Supavisor, Realtime, Storage API, and Postgres Meta.
