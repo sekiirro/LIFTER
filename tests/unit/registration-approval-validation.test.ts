@@ -49,7 +49,7 @@ describe('registration approval request validation', () => {
     },
   );
 
-  it.each(['2026-02-30', '2026-2-03', 'not-a-date', ''])(
+  it.each(['2026-02-30', '2026-2-03', '0000-01-01', 'not-a-date', ''])(
     'rejects invalid collection date %s',
     (collectedOn) => {
       expect(parseApprovalInput({ ...validApproval, collectedOn })).toBeNull();
@@ -109,5 +109,47 @@ describe('registration approval safe results', () => {
     expect(JSON.stringify(mapRegistrationApprovalError(error))).not.toMatch(
       /private|PII|secret/,
     );
+  });
+});
+
+describe('approval boundary vectors', () => {
+  it.each(['1900-02-29', '2026-04-31', '2026-00-01', '2026-01-00'])(
+    'rejects nonexistent date %s',
+    (collectedOn) => {
+      expect(parseApprovalInput({ ...validApproval, collectedOn })).toBeNull();
+    },
+  );
+  it.each(['2000-02-29', '1900-01-01', '0001-01-01'])(
+    'accepts historical finite date %s without a signup lower bound',
+    (collectedOn) => {
+      expect(
+        parseApprovalInput({ ...validApproval, collectedOn })?.collectedOn,
+      ).toBe(collectedOn);
+    },
+  );
+  it.each(['workspaceId', 'clientId', 'requestKey'])(
+    'rejects malformed %s',
+    (field) => {
+      expect(
+        parseApprovalInput({ ...validApproval, [field]: 'not-a-uuid' }),
+      ).toBeNull();
+    },
+  );
+  it('does not echo unknown SQL detail or unapproved result fields', () => {
+    expect(
+      mapRegistrationApprovalError({
+        code: '22023',
+        message: 'secret constraint',
+      }),
+    ).toEqual({ status: 'unavailable' });
+    expect(
+      registrationApprovalResult('invalid_input', [
+        'currency',
+        'currency',
+        'email',
+        'phone',
+        'token',
+      ]),
+    ).toEqual({ status: 'invalid_input', fields: ['currency'] });
   });
 });

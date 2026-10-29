@@ -206,7 +206,6 @@ it('keeps the role and capability definitions unchanged', () => {
     sales: [
       'generate_registration_link',
       'configure_installment_schedule',
-      'approve_registration',
       'record_payment',
       'manage_freeze',
     ],

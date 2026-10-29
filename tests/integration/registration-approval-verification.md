@@ -30,3 +30,261 @@ Executed 2026-10-29 on `012-registration-approval`, based on origin `c5a12f96d47
 - Gates on the pushable capability-baseline state: `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm test` (**62 files / 1,418 tests**), and `git diff --check` passed. Initial typecheck identified two unchecked array accesses; both were corrected and the check rerun successfully. No gate was waived.
 - Sales-state rehearsal: applied original local Sales commit `faf21f3` with `git cherry-pick --no-commit`, ran the same five gates successfully (**63 files / 1,419 tests**), then restored only its four paths before preparing this pushable commit. After committing U1F, rerun gates on that exact commit, cherry-pick `faf21f3` as the final local-only tip and rerun all five gates; push only the U1F parent SHA. Final SHA/state and exact-commit gate results are reported with the delivery, so this evidence does not invent a self-referential commit SHA.
 - Policy: no new split percentage, business count maximum, currency, normalization or policy decision was introduced. Independent U10 review and later DB/UI/CI evidence remain outstanding; this unit is not acceptance of the whole feature.
+
+## Session 12 lane 1 - T001, U1 completion and U2
+
+### Stack and merge authority
+
+The session-12 architect/user instruction substitutes **Stack A for every B-only
+instruction in the historical F12 artifacts**. This run uses project `lifter`,
+API `http://127.0.0.1:54321`, DB `127.0.0.1:54322`, default harness selection,
+and no `LIFTER_SUPABASE_STACK`. Stack B, its containers and ports 25420-25429
+were not operated. This is the explicit A-for-B substitution; it does not claim
+that the B selector infrastructure was integrated or tested.
+
+Start `05f219c6064c63e3baf126999bcf2246290d5ce8`; fetched feature remote
+`89fe2a86e302df0ce585213071cdd26a39884077`; fetched main
+`a8c7ae569e1ae1380740230b90817679b22d465b`. Created `s12-sales-backup`, reset
+the current feature branch to its remote, and merged main without conflicts.
+Merge `ea5e872816244579285f7fefc59834c2ea57d399` was pushed after `npm ci`,
+typecheck, lint, format and **66 unit files / 1,436 tests** passed. Then
+`git cherry-pick 05f219c` produced local `59f206b`; no standalone Sales-denial
+push was made. Its final delivery includes U2 SQL parity.
+
+F11 PR #14 head `12036e26fb5e23da22af4ddf0e8d33de800779a2` is an ancestor
+of main (git exit 0), merge `1f4d2359bbfcef605e371e29b81a59b2a48d8ed4`.
+Grep confirms the latest complete audit body is still
+`20261031122000_client_accounts_signup.sql`; no later redefinition precedes
+this migration. The last main migration is
+`20261031130000_purge_scheduling_pg_cron.sql`; the only new file,
+`20261101120000_registration_approval_model.sql`, sorts after it. No committed
+migration was edited.
+
+### Tests first and observed failures
+
+- U1/T006: `node node_modules/vitest/vitest.mjs run tests/unit/registration-approval-validation.test.ts tests/unit/registration-approval-capabilities.test.ts`
+  produced **1 failed / 38 passed**. At validation test line 55, `0000-01-01`
+  returned an approval object instead of null. T007 adds the finite positive-year
+  check; the same command then passed **39/39**. Existing safe results and the
+  cherry-picked Sales denial are retained, without duplicate implementations.
+  Prior U1 RED and Sales restoration evidence remains above.
+- U2/T008-T010: after privately loading ignored `.env.local` and capturing local
+  CLI status in-process, `node tmp/run-integration.mjs tests/integration/registration-approval-schema.test.ts tests/integration/registration-approval-integrity.test.ts tests/integration/registration-approval-audit.test.ts tests/integration/matrix-parity.test.ts`
+  produced **42 failed / 278 passed**, four files. T008 forced-RLS assertions
+  received no catalog rows; exact private function inventory was `[]` instead of
+  twelve signatures. T009 reported missing `app_private.registration_operations`
+  and `app_private.f12_commission_minor(bigint,integer)` rather than satisfying
+  graph/commission assertions. T010 audit body lacked `payment.collection_corrected`,
+  UPDATE audit trigger inventory was incomplete, and SQL Sales approval was
+  `true` against TS `false` at both direct role parity and salesA/wsA scope parity.
+- The first invocation with only `.env.local` stopped at the harness environment
+  precondition (no tests); it is not RED evidence. The scratch runner captures
+  status without printing keys, validates exact A loopback endpoints, adds the
+  API/DB test environment, and invokes Vitest or `npm run test:integration`.
+- Reset used `npx --yes supabase@2.122.0 db reset`, never linked/cloud. Every reset
+  was followed by `node tests/integration/client-accounts-provision.mjs`. The first
+  provision attempt rejected the copied env because it lacked local endpoint
+  entries. Added only the known A endpoint entries in ignored `.env.local`,
+  reran provisioning, and observed `Local Vault provisioned; two matching
+server-only env copies saved.` Subsequent resets/provisioning completed.
+- The first implementation run caught exact numeric division rounding at the
+  maximum bigint. Replaced rounded numeric `/` with exact `div()`; SQL now agrees
+  with BigInt at 0/17/5000/10000 basis points, ties and bigint bounds. Other first
+  run failures exposed fixture masking (pending-trigger DDL, missing temporary
+  schema usage), line-ending comparison and stale catalog expectations. These
+  were corrected; no guard requirement was waived.
+- Scoped GREEN before the final additional integrity/role vectors:
+  `node tmp/run-integration.mjs tests/integration/registration-approval-schema.test.ts tests/integration/registration-approval-integrity.test.ts tests/integration/registration-approval-audit.test.ts tests/integration/matrix-parity.test.ts tests/integration/rls-catalog.test.ts`
+  passed **5 files / 353 tests**. The expanded integrity file then passed **29/29**,
+  including existing same-workspace wrong parents, initial uniqueness, immutable
+  identity, and valid exact copying of first/second issued offsets 2/12.
+
+### Model and security inventory (T011)
+
+Seven tables: `public.subscriptions`, `public.subscription_installments`,
+`public.payment_events`, `app_private.registration_decisions`,
+`app_private.registration_operations`, `app_private.registration_approval_events`,
+`public.subscription_activations`. All are postgres-owned, ENABLE/FORCE RLS,
+zero policies (default deny), zero base privileges for PUBLIC/anon/authenticated/
+service_role. Rolled-back SELECT/schema grants test populated rows with every
+fixture identity, including foreign, revoked, no-profile, client and anon.
+
+All tables reject UPDATE, DELETE and TRUNCATE through enabled guards. Tenant FKs
+include workspace plus subscription/obligation/client correspondence, RESTRICT
+and deferred receipt cycles. Initial uniqueness is a partial index. Independent
+unique ledger indexes enforce root, revision, predecessor successor and original
+reversal uniqueness. Deferred checks enforce the initial decision/purchase graph,
+issued snapshot/sequence/exact wide sum, stream alternation/contiguous revision,
+full amount/currency/commission, exact-original reversal and operation binding.
+Current actors and decision transaction identity are checked independently of
+caller GUC claims. Client UPDATE can change only approval_state with a matching
+current-transaction authorized decision; F11 INSERT/identity/consumption and
+DELETE/TRUNCATE behavior remains.
+
+Private function inventory (all SECURITY DEFINER, postgres owner,
+`SET search_path=''`, no dynamic SQL, no EXECUTE for PUBLIC/anon/authenticated/
+service_role):
+
+- `f12_commission_minor(bigint,integer)`
+- `f12_actor_allowed(uuid,text,boolean)`
+- `f12_guard_subscription()` / `f12_guard_installment()`
+- `f12_validate_subscription(uuid,uuid)` / `f12_check_subscription()`
+- `f12_validate_payment(uuid,uuid)` / `f12_check_payment()` / `f12_guard_payment()`
+- `f12_guard_decision()` / `f12_guard_client_transition()` / `f12_check_decision()`
+
+`role_has_capability(staff_role,text)` is replaced only to move
+approve_registration into PO/WO. It is SECURITY DEFINER, postgres-owned,
+empty search_path; all execution is revoked, then authenticated alone receives
+EXECUTE, preserving its existing policy-helper API. Sales payment remains.
+`audit_row_change()` has the same hardened definer attributes and no API EXECUTE.
+Existing invoker immutable/delete guards retain their existing attributes.
+No public U3+ financial operation, reader, activation writer or consumer is added.
+
+### Audit old - new body diff
+
+The T010 test compares the complete installed body to the latest F11 source after
+removing only the marked F12 addition and normalizing CRLF/LF. Every legacy
+statement, including signup and consumption, is preserved. No old body line is
+removed. New payload keys are explicit IDs/states/controlled reason, exact money
+text, currency, sequence/revision and dates; no new PII, secret or commission.
+
+```diff
+--- F11 20261031122000 audit body
++++ F12 20261101120000 audit body
+@@ -87,4 +87,24 @@
+     else return new;
+     end if;
++  -- F12 extension begin
++  elsif tg_table_schema = 'public' and tg_table_name = 'clients' and tg_op = 'UPDATE' then
++    event_target := new.id;
++    event_workspace := new.workspace_id;
++    select case d.kind when 'approve' then 'client.approved' when 'reject' then 'client.rejected' when 'reconsider' then 'client.reconsidered' end,
++      jsonb_strip_nulls(jsonb_build_object('decision_id',d.id,'client_id',new.id,'from_state',old.approval_state,'to_state',new.approval_state,'reason_code',d.rejection_reason_code))
++      into event_action,event_details
++      from app_private.registration_decisions d where d.workspace_id=new.workspace_id and d.client_id=new.id
++        and d.transaction_id=pg_current_xact_id() and d.actor_user_id=auth.uid() and d.from_state=old.approval_state and d.to_state=new.approval_state;
++    if not found then raise exception 'invalid_client_transition' using errcode='23514'; end if;
++  elsif tg_table_schema = 'public' and tg_table_name = 'payment_events' then
++    if tg_op <> 'INSERT' then return new; end if;
++    event_action := case new.kind when 'collection' then 'payment.collected' when 'correction_reversal' then 'payment.collection_corrected' end;
++    event_target := new.id;
++    event_workspace := new.workspace_id;
++    event_details := jsonb_build_object('client_id',(select s.client_id from public.subscriptions s where s.workspace_id=new.workspace_id and s.id=new.subscription_id),
++      'subscription_id',new.subscription_id,'obligation_id',new.obligation_id,'event_id',new.id,
++      'installment_seq',new.installment_seq,'revision',new.revision,'amount_minor',new.amount_minor::text,
++      'currency',new.currency,'collected_on',new.collected_on,'effective_on',new.effective_on,'recorded_at',new.recorded_at);
++  -- F12 extension end
+   -- U3 client addition begin
+   elsif tg_table_schema = 'public' and tg_table_name = 'clients' then
+```
+
+### Disposable mutation evidence
+
+Each command is `node tmp/u2-mutations.mjs <ID>`. The ignored scratch driver
+changes only the disposable A catalog, runs the indicated repository test source,
+restores catalog in `finally`, then runs the identical detector GREEN. No mutant
+or scratch driver is staged. Filtered tests are not claimed as passing.
+
+| ID    | Mutant / detector                                                                                                    | Observed RED assertion                                                        | Restored GREEN                                |
+| ----- | -------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- | --------------------------------------------- |
+| Q-M03 | Remove payment/obligation composite FK; schema `-t 'composite tenant'`                                               | schema line 120: expected length 4, got 3                                     | 1 passed / 9 filtered                         |
+| Q-M04 | NO FORCE RLS on subscriptions; schema `-t 'forced RLS.*public.subscriptions'`                                        | schema line 23: relforcerowsecurity false vs true                             | 1 passed / 9 filtered                         |
+| Q-M05 | Drop f12_payment_root; integrity `-t 'unique root/revision'`                                                         | integrity line 115: expected index names to include f12_payment_root          | 1 passed / 28 filtered                        |
+| Q-M06 | Disable subscriptions UPDATE guard; integrity `-t 'privileged UPDATE/DELETE/TRUNCATE guard: public.subscriptions'`   | integrity line 168: promise resolved undefined instead of rejecting           | 1 passed / 24 filtered (before added vectors) |
+| Q-M12 | Disable both subscription and installment deferred total triggers; integrity `-t 'deferred schedule correspondence'` | integrity line 94: malformed 1199-vs-1200 total resolved instead of rejecting | 1 passed / 28 filtered                        |
+| Q-M13 | Install the unextended F11 audit body; audit `-t 'complete latest F11'`                                              | audit line 30: missing payment.collection_corrected                           | 1 passed / 3 filtered                         |
+
+Q-M06 baseline also exercises DELETE/TRUNCATE independently of incoming-FK
+masking for postgres and temporary-granted service_role on every new table.
+Q-M12 baseline also exercises malformed reversal commission with the immediate
+payment actor guard disabled, proving the deferred chain detector independently.
+A subsequent full reset/provision discarded all disposable mutation state.
+
+### Scope and outstanding work
+
+T001 and the requested U1/U2 slice are the only session-12 completion claims.
+T002/T003 remain unticked infrastructure/planning records; the explicit A override
+unblocks this execution without claiming B readiness. T050/T051 (flexible wrapper
+SQL), T053/T054 (editor UI), U3-U10 and public RPC/read/UI/concurrency/replay,
+P2 consumer/P4 activation writer, production rollout and independent acceptance
+remain pending. Existing U1 money and DB-free flexible terms tasks stay checked.
+No new PO policy was invented. No F11 product-behavior conflict was found; stale
+unmerged-F11/B-only plan assumptions are superseded explicitly above. CI billing
+remains external; no CI repair, PR creation, main merge or deployment was attempted.
+
+### Installed catalog capture
+
+`node tmp/u2-inventory.mjs` observed seven postgres-owned forced-RLS tables,
+all with only `{postgres=arwdDxtm/postgres}` ACLs. Constraint counts on those
+seven tables: **32 CHECK, 29 FK, 7 primary key, 19 UNIQUE, 4 constraint triggers**;
+five additional partial/ledger unique indexes enforce initial/root/revision/
+successor/reversal protection. Enabled non-internal trigger counts:
+approval_events 3, decisions 5, operations 3, payment_events 6, activations 3,
+installments 5, subscriptions 5. Every `f12_*` helper and audit emitter showed
+SECURITY DEFINER, postgres owner, `search_path=""`, ACL `{postgres=X/postgres}`.
+The role matrix helper alone additionally grants authenticated EXECUTE. Installed
+Sales capability query returned `sales_approval:false, sales_payment:true`.
+
+Full-suite first attempt: **921 passed / 1 failed / 1 skipped, 30 files**.
+The sole failure was F11's legacy-body assertion, which removes the two F11
+additions before comparing the F10 source. Updated that assertion only to also
+remove the marked F12 additive block. The original exact F10 body comparison
+and every F11 runtime assertion remain. The other shared-test adaptation is the
+exact rls-catalog inventory: new emitters/helpers/immutable guards and removal
+of the deliberately replaced clients signup_no_update entry. These are test
+inventory changes, with no F11 source behavior overwritten.
+
+### Final session-12 gates (T012)
+
+Following the final `npx --yes supabase@2.122.0 db reset` and immediate
+`node tests/integration/client-accounts-provision.mjs`, ran
+`node tmp/full-with-timing.mjs`. This ignored wrapper privately loads local
+status/env and invokes **`npm run test:integration`** with
+`SC011_TIMING_RUN=true`. Observed **30 files / 923 tests passed, zero failed,
+zero skipped**, duration 223.86s. This includes the F11 timing test, every
+F11/F9/F10/matrix/catalog/audit/recovery integration regression and all U2 tests.
+
+The timing harness automatically appends generated F11 evidence. The scratch
+wrapper verified the original file prefix byte-for-byte, retained only its new
+suffix under ignored `tmp/f11-timing-generated.md`, and restored the original
+F11 evidence file; no generated F11 report is staged. Its observed summary:
+
+```json
+{
+  "run": "2c6ef3d8-a693-47fa-bc7a-7b9f35274e48",
+  "verdict": "PASS",
+  "n": [200, 200],
+  "p": 0.8291407889969358,
+  "medians": [97.51209999999628, 98.23845000000074],
+  "medianDifference": 0.7263500000044587,
+  "before": {
+    "auth_users": 605,
+    "clients": 22,
+    "identities": 601
+  },
+  "after": {
+    "auth_users": 605,
+    "clients": 22,
+    "identities": 601
+  }
+}
+```
+
+| Gate                                                   | Observed result                                     |
+| ------------------------------------------------------ | --------------------------------------------------- |
+| `npm ci` before merge push                             | Exit 0, 669 packages added                          |
+| `npm run typecheck`                                    | Exit 0                                              |
+| `npm run lint`                                         | Exit 0, max warnings 0                              |
+| `npm run format:check`                                 | All matched files use Prettier style                |
+| `npm test`                                             | 67 files / 1,449 tests passed                       |
+| `npm run test:integration`, local env + timing enabled | 30 files / 923 tests passed; no skipped/todo/failed |
+| `git diff --check`                                     | Exit 0                                              |
+
+Checked only T001, T006, T007, T008, T009, T010, T011 and T012 in this session.
+No pending F12 public-operation/UI/e2e assertion is represented as a passing U2
+check. No U3+ RPC was written. Production, P2/P4, U1F wrapper/UI and independent
+acceptance remain pending as listed above. Docker inspection shows the Stack A
+DB, Auth and API gateway running/healthy on ports 54322/54321; leave A running.
+No Stack B operation was performed. Runtime-specific model/effort metadata is
+not exposed by the available tools, so the requested Sol Medium routing cannot
+be independently verified from this session.

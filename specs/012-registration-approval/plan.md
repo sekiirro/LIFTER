@@ -191,3 +191,34 @@ These are technical recommendations or external dependencies, not unresolved PO 
 ## Conflicts for PO
 
 None requiring a new PO decision. Final F12-3/F12-8 explicitly refine the older fixed second-offset-30 wording into a default while preserving custom offsets. F12-4 explicitly selects correction-month accounting over the earlier original-month recommendation. F12-6 assigns the standalone status flow to F12 without transferring P2 intake/assignment. Old D-09/architecture Sales approval is superseded by ND-F12-1/D-23. These are documented precedence resolutions, not reasons to reopen final policy.
+
+
+## Session 12 ? final F11 reconciliation (T001)
+
+PR #14 reviewed head `12036e26fb5e23da22af4ddf0e8d33de800779a2` merged as
+`1f4d2359bbfcef605e371e29b81a59b2a48d8ed4`; fetched main is
+`a8c7ae569e1ae1380740230b90817679b22d465b`. The no-conflict F12 merge is
+`ea5e872816244579285f7fefc59834c2ea57d399`, pushed before the local Sales
+cherry-pick. Merge gates: typecheck/lint/format passed; unit 66 files / 1,436 tests.
+
+Grep across all migrations confirms the latest complete `app_private.audit_row_change()`
+body remains `20261031122000_client_accounts_signup.sql`; no later migration
+redefines it. Preserve every existing workspace/staff/membership/recovery/package/
+offer/link/signup/job branch, including F11 consumption. The new admission-before-bcrypt
+and purge scheduling migrations introduce no replacement audit body. Latest main migration:
+`20261031130000_purge_scheduling_pg_cron.sql`. Planned F12 model migration
+`20261101120000_registration_approval_model.sql` sorts strictly after it.
+
+Session-12 architect/user instruction supersedes historical Stack-B prerequisites:
+use default Stack A (`lifter`, API 54321 / DB 54322), no selector variable; never
+operate Stack B. The A-for-B substitution and actual checks are recorded in
+`tests/integration/registration-approval-verification.md`. U1F SQL/UI remain separate
+pending tasks; the current instruction explicitly authorizes U2 model work now.
+
+Installed guard reconciliation: F11 clients have a pending-only CHECK and an
+unconditional `signup_no_update`; U2 intentionally widens only that CHECK and
+replaces only that UPDATE trigger with a transaction-bound decision guard. F11
+INSERT, deferred identity/consumption correspondence, DELETE/TRUNCATE, Auth,
+admission and recovery behavior remain authoritative. No new F11/F12 product
+policy conflict was found; the historical claim that PR #14 is unmerged and the
+B-only execution assumption above are superseded by these recorded facts.

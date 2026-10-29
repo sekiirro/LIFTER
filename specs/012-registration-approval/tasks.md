@@ -2,7 +2,7 @@
 
 **Input**: [plan](plan.md), [spec](spec.md), [research](research.md), [model](data-model.md), [surface contract](contracts/registration-approval-surface.md), [handoffs](contracts/feature-handoffs.md), [verification](quickstart.md).
 
-**Status**: Future task list only, 2026-10-29. All tasks remain unchecked. No implementation, migration, test authoring, provisioning or runtime verification is included in the current plan/tasks unit. PA-F12-1..9 are Decided (2026-10-29); complete architect/PO technical plan review and Spec Kit Analyze, resolving affected Architect items first.
+**Status**: Execution in progress, 2026-10-29. Session 12 completed T001 and T006-T012 with observed evidence in `tests/integration/registration-approval-verification.md`; previously completed U1 money and DB-free flexible terms tasks remain checked. All other tasks remain pending. Session-12 architect/user instructions explicitly substitute Stack A for the historical B requirements below. PA-F12-1..9 are Decided; independent review and later feature acceptance remain outstanding.
 
 ## Task format, ownership and execution rules
 
@@ -31,7 +31,7 @@ Every DB unit must use the landed selector/harness with explicit `LIFTER_SUPABAS
 
 ## Phase 1 — Setup and foundational readiness (U0)
 
-- [ ] T001 Record final F11/infrastructure merge SHA and installed guard/audit diff in `specs/012-registration-approval/research.md` and `plan.md`; resolve source conflicts through architect review, never auto-merge conflicting F11 behavior. Depends on final F11 PR #14 review; no source code ownership.
+- [x] T001 Record final F11/infrastructure merge SHA and installed guard/audit diff in `specs/012-registration-approval/research.md` and `plan.md`; resolve source conflicts through architect review, never auto-merge conflicting F11 behavior. Depends on final F11 PR #14 review; no source code ownership.
 - [ ] T002 Verify the verbatim final PO decisions and their Decided PA-F12-1..9 mapping, and record architect AI-F12-1 integration choice in `specs/012-registration-approval/plan.md`; propagate approved refinements into `data-model.md`, both `contracts/*.md`, `quickstart.md` and `tasks.md` before affected work. Do not reopen final policy or substitute prior recommendations.
 - [ ] T003 After separately approved infrastructure integration, record landed selector/harness/provisioner/e2e routing and B readiness evidence in `specs/012-registration-approval/research.md`; verify Q-V01's pre-connection guards under its separate infrastructure tests. This task owns documentation only: do not edit `infra-second-stack` files or start/provision B. Stop until the integrated infrastructure owner supplies that evidence.
 
@@ -39,8 +39,8 @@ Every DB unit must use the landed selector/harness with explicit `LIFTER_SUPABAS
 
 - [x] T004 [P] [US3] Write RED vectors in `tests/unit/registration-approval-money.test.ts` for Round Half Up, 0/100%, ties, bigint extremes, bounds, no JS-number money and exact display-string transformation. Own this test file only; Q-V02/Q-M07.
 - [x] T005 [US3] Implement pure BigInt/decimal-string helpers in `lib/registration-approval/money.ts` to turn T004 GREEN, without new dependencies or currency policy. Test results are strings, no float conversion.
-- [ ] T006 [US6] Write RED role/shape/result tests in `tests/unit/registration-approval-validation.test.ts` and `tests/unit/registration-approval-capabilities.test.ts`; reject method/free text/numeric money/actor/time overrides and deny Sales approval while preserving payment. Own both test files; Q-V03/Q-M01.
-- [ ] T007 [US6] Remove Sales approval in `lib/auth/capabilities.ts` only and implement `lib/registration-approval/validation.ts` / `results.ts` against the approved contracts; T006 GREEN. No SQL/matrix-helper changes in this DB-free unit.
+- [x] T006 [US6] Write RED role/shape/result tests in `tests/unit/registration-approval-validation.test.ts` and `tests/unit/registration-approval-capabilities.test.ts`; reject method/free text/numeric money/actor/time overrides and deny Sales approval while preserving payment. Own both test files; Q-V03/Q-M01.
+- [x] T007 [US6] Remove Sales approval in `lib/auth/capabilities.ts` only and implement `lib/registration-approval/validation.ts` / `results.ts` against the approved contracts; T006 GREEN. No SQL/matrix-helper changes in this DB-free unit.
 
 Sales-denial work for T006/T007 lands with the U2 SQL capability and matrix-parity change; do not push the TS matrix removal alone.
 
@@ -57,11 +57,11 @@ Final F12-3 is in scope here, not a deferred F10 feature. Historical F10 spec is
 
 ## Phase 3 — Tenant model and immutable integrity (U2, blocking foundation)
 
-- [ ] T008 [US6] Write RED model/catalog/RLS tests in `tests/integration/registration-approval-schema.test.ts` and synthetic helpers in `tests/integration/registration-approval-fixture.ts`. Enumerate every new table's forced RLS, grants, composite FKs, guard and exact function inventory; controlled-grant role tests independent of grants. B lock required; Q-V04/Q-M03..06/12.
-- [ ] T009 [US7] Write RED chain/snapshot/deferral/commission tests in `tests/integration/registration-approval-integrity.test.ts`; raw different-key roots/branches/revisions, reversal equality, recollection, overflow and exact totals fail independently of RPC. No public operation assumptions at U2 exit.
-- [ ] T010 [US6] Extend `tests/integration/matrix-parity.test.ts` and write `tests/integration/registration-approval-audit.test.ts` RED assertions for complete latest audit branch inventory, client UPDATE trigger, no duplicate signup INSERT audit, new financial events and grants. B lock required; Q-V03/11/Q-M02/13.
-- [ ] T011 [US7] Create only new forward `supabase/migrations/20261101120000_registration_approval_model.sql`: all planned tables/constraints/append-only guards, narrow clients approval guard/decision correspondence, DB Sales capability removal, integer-money helper, and complete latest audit body extension. Own this migration exclusively; preserve F11 Auth/consumption/recovery and all historical mappings. T008–T010 model/catalog assertions GREEN; RPC-specific assertions are authored in their later units.
-- [ ] T012 Record U2 RED→GREEN commands and pending surfaces in `tests/integration/registration-approval-verification.md`; run scoped B catalog/integrity/audit and existing F11/F9/F10/matrix regressions as required by the later brief. Own evidence file after prior owner releases it; no full-release claim.
+- [x] T008 [US6] Write RED model/catalog/RLS tests in `tests/integration/registration-approval-schema.test.ts` and synthetic helpers in `tests/integration/registration-approval-fixture.ts`. Enumerate every new table's forced RLS, grants, composite FKs, guard and exact function inventory; controlled-grant role tests independent of grants. B lock required; Q-V04/Q-M03..06/12.
+- [x] T009 [US7] Write RED chain/snapshot/deferral/commission tests in `tests/integration/registration-approval-integrity.test.ts`; raw different-key roots/branches/revisions, reversal equality, recollection, overflow and exact totals fail independently of RPC. No public operation assumptions at U2 exit.
+- [x] T010 [US6] Extend `tests/integration/matrix-parity.test.ts` and write `tests/integration/registration-approval-audit.test.ts` RED assertions for complete latest audit branch inventory, client UPDATE trigger, no duplicate signup INSERT audit, new financial events and grants. B lock required; Q-V03/11/Q-M02/13.
+- [x] T011 [US7] Create only new forward `supabase/migrations/20261101120000_registration_approval_model.sql`: all planned tables/constraints/append-only guards, narrow clients approval guard/decision correspondence, DB Sales capability removal, integer-money helper, and complete latest audit body extension. Own this migration exclusively; preserve F11 Auth/consumption/recovery and all historical mappings. T008–T010 model/catalog assertions GREEN; RPC-specific assertions are authored in their later units.
+- [x] T012 Record U2 RED→GREEN commands and pending surfaces in `tests/integration/registration-approval-verification.md`; run scoped B catalog/integrity/audit and existing F11/F9/F10/matrix regressions as required by the later brief. Own evidence file after prior owner releases it; no full-release claim.
 
 ## Phase 4 — Approve, reject, reconsider (US1/US2, U3)
 
