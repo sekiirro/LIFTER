@@ -35,13 +35,6 @@ begin
     raise exception 'Superseded branding upload binding role still owns objects';
   end if;
 
-  if exists (
-    select 1
-    from pg_catalog.pg_auth_members m
-    where m.roleid = binding_role or m.member = binding_role
-  ) then
-    raise exception 'Superseded branding upload binding role still has memberships';
-  end if;
 end;
 $$;
 
