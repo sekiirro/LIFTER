@@ -6,3 +6,5 @@
 - Rebuild shared `audit_row_change()` and `app_private.role_has_capability()` from the latest integrated F12/F14 bodies. Audit failures roll back business writes. Audit includes only allow-listed identifiers, bounded codes, revisions, dates, minor-unit strings, currency and correlation IDs.
 - No raw errors, SQL/messages, payloads, PII, secrets, commission or free text in logs, audit/jobs fields, receipts or client views.
 - Preserve delivered productivity after refund; no payroll reversal, fabricated productivity or automatic discipline.
+
+- Refund commits a durable idempotent Auth-lockout outbox row with deactivation. A server-only worker uses the Auth Admin API, bounded retries/backoff, completion recording, and a safe operational alert to PO/WO after persistent failure. Do not log secrets, provider messages, user identifiers or client PII.

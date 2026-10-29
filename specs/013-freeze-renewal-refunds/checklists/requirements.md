@@ -21,10 +21,7 @@
 
 - [x] ND-01 DECIDED 2026-10-29 (Final PO APPROVAL): Freeze duration is 1–30 calendar days; freezes do not overlap, while sequential freezes are allowed. The Apply day counts as frozen and the STOP day is excluded.
 - [x] ND-08 DECIDED 2026-10-29 (Final PO APPROVAL): Purchases remain financially independent. A refund never automatically refunds or shifts another purchase. PO-1 global client deactivation applies; any other-purchase resolution is manual.
-- [ ] NEEDS-SOL-REVIEW? Auth session revocation must be proved transaction-safe with the server-side login block.
-- [ ] NEEDS-SOL-REVIEW? Later partial refunds after PO-1 deactivation need confirmation.
-- [ ] NEEDS-SOL-REVIEW? FIFO allocation across multiple collection events needs confirmation as a technical policy.
-- [ ] NEEDS-SOL-REVIEW? F12 U4's final RPC, receipt and lock implementation must be reviewed after merge.
+- [ ] Resolve GoTrue commit-to-worker timing conflict with PO: direct sign-in/refresh may succeed before the Auth Admin ban, while app/DB deactivation checks deny client data.
 - [x] Refund cap, proportional commission, idempotency and lock-order arguments each include a worked numeric/ordering example.
 
 ## Traceability and scope

@@ -8,7 +8,7 @@
 
 ## Summary
 
-Implement F13 as a forward-only extension of F12's immutable subscription and payment model. Preserve Cairo-day freeze and renewal projections, serialize same-client lifecycle and financial writes, and model partial refunds as append-only allocations under a capped aggregate operation. The first refund must atomically deactivate the client and satisfy PO-1 login/session revocation. That Auth transaction boundary is an explicit investigation gate; no refund implementation that assumes unsupported Auth writes may proceed.
+Implement F13 as a forward-only extension of F12's immutable subscription and payment model. Preserve Cairo-day freeze and renewal projections, serialize same-client lifecycle and financial writes, and model partial refunds as append-only allocations under a capped aggregate operation. The first refund transaction atomically records client deactivation and one durable idempotent Auth-lockout outbox row. App/RPC access helpers deny deactivated clients. A server-side worker applies the supported Auth Admin ban with retry/backoff, records success, and raises a safe PO/WO alert after persistent failure. Existing JWTs may remain valid until natural expiry. The interval before the worker succeeds leaves direct GoTrue sign-in/refresh available; this conflicts with an immediate reading of PO-1 and remains an explicit technical issue for PO resolution. Never write Auth-managed tables directly.
 
 ## Technical Context
 

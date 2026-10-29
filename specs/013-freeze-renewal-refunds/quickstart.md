@@ -1,22 +1,30 @@
 # F13 implementation and verification quickstart
 
-This document records the approved local Stack C readiness work and the remaining F13 execution gates. It is not authorization to use production data or infrastructure.
+This document records the approved local Stack C readiness work and PO-1 supported API evidence. It is not authorization to use production data or infrastructure.
 
-## Before implementation
+## PO-1 policy update
 
-1. Obtain PO approval for the complete plan/tasks/analyze package and slice-specific implementation brief.
-2. Verify F12 U4 is merged; inspect final migration/RPC, lock order, authorization, receipts, audit rollback and races. Verify current F12/F14 migration heads and all pending migrations.
-3. T003 investigation (2026-10-30): no documented Supabase primitive atomically combines the supported Auth Admin ban/sign-out APIs with an application refund transaction. Admin [`ban_duration`](https://supabase.com/docs/reference/javascript/auth-admin-updateuserbyid) blocks sign-in, but a temporary ban does not revoke existing sessions ([User Management](https://supabase.com/docs/guides/auth/managing-user-data)). Global [sign-out](https://supabase.com/docs/guides/auth/signout) revokes refresh tokens but is a separate Auth API request. Auth access tokens are stateless and remain usable until `exp` unless the app/DB checks the JWT `session_id` against `auth.sessions` on every protected path; Supabase documents that check for sensitive operations ([User sessions](https://supabase.com/docs/guides/auth/sessions)). Direct writes to Auth-managed tables are not a supported stable interface: Supabase warns that managed columns/objects may change ([User Management](https://supabase.com/docs/guides/auth/managing-user-data)). A Postgres function writing `auth.users`, `auth.sessions`, or `auth.refresh_tokens` would therefore rely on internal Auth storage and is not accepted as proof of a supported atomic primitive. T003 remains blocked; do not implement a refund/Auth function until the PO resolves the options below.
-4. PO options for T003: (A) explicitly approve a tightly scoped Postgres function that writes Auth-managed rows, accepting schema-version coupling and requiring hosted compatibility evidence; (B) change PO-1 to permit a non-atomic Auth API workflow with a defined failure/recovery state; or (C) request a Supabase-supported transaction hook/API for the combined operation. No option is selected here.
-5. Stack C was provisioned locally for F13 on 2026-10-30: project `lifter-stack-c`, API `35421`, DB `35422`, full port block `35420–35429`; migrations are sourced from this branch's `supabase/migrations`. T004 readiness and wrong-project/A-port mutation checks pass. The full unit suite passes (68 files, 1,421 passed, 0 failed, 0 skipped). The first Stack C integration run recorded 28 files / 750 passed / 117 failed / 14 skipped; after Stack-C-only Vault provisioning, the suite result is recorded in item 8. Stacks A/B were never test targets. Architect clarification confirmed Stack A's DB container ID change was caused by the F12 owner's own reset, not an isolation breach. F13 migration work still waits for the F12/F14 integration dependencies in `tasks.md`.
-6. Resolve the technical/legal retention gate before any production real-data use.
-7. After re-establishing Stack C isolation, provision the F11 local test keys with `LIFTER_SUPABASE_STACK=c node tests/integration/client-accounts-provision.mjs` (PowerShell: `$env:LIFTER_SUPABASE_STACK='c'; node tests/integration/client-accounts-provision.mjs`). The provisioner validates Stack C's configured API/DB ports and uses only its `supabase_db_lifter-stack-c` container and ignored `.env.stack-c` file. Then run integration tests with `LIFTER_SUPABASE_STACK=c`; never reuse `.env.local` for Stack C.
-8. Stack C integration verification after stack-aware provisioning (2026-10-30): PowerShell `$env:LIFTER_SUPABASE_STACK='c'; node tests/integration/client-accounts-provision.mjs`, then `$env:LIFTER_SUPABASE_STACK='c'; npm run test:integration` completed **28 files / 880 passed / 0 failed / 1 skipped**. The previous recorded run was **28 files / 750 passed / 117 failed / 14 skipped**; the reported environment cause was missing local F11 test keys. The provisioned rerun removes the failures, confirming the Stack C key setup as their shared root cause; no individual failure list was retained to subdivide them. The sole remaining skip is `SC-011 measures the real admitted production signup path`, gated by `SC011_TIMING_RUN === 'true'` in `tests/integration/client-accounts-timing.test.ts`; it was skipped because the opt-in variable was not set. The previous run's 14 skip reasons are not available in its retained summary.
+The binding update is quoted verbatim in spec.md. The refund transaction atomically writes client deactivation and one durable, idempotent Auth-lockout outbox row with the refund, audit and receipt. App/DB access helpers deny deactivated clients even when a valid JWT remains. A server-only worker applies the supported Auth Admin ban, retries with bounded exponential backoff, records success and raises a safe PO/WO operational alert after persistent failure. Existing JWTs may expire naturally. Do not write Auth-managed tables directly.
 
-## Per-unit test protocol
+## Stack C Auth API measurement
 
-For each task, write its unit/contract/integration tests first, capture the failing RED output, implement only the bounded unit, capture GREEN output, then run the named mutation check to prove the security/financial assertion detects the targeted fault. Keep DB-dependent tests on the assigned isolated stack. Never report unrun results. Required refund race fixtures and all eight fixtures in `ledger-architecture.md` are named in tasks.md.
+On 2026-10-30, using synthetic test users on project lifter-stack-c (API 35421):
 
-## Final checks
+- Auth Admin updateUserById with ban_duration 876000h returned HTTP 200.
+- Fresh password sign-in after the ban returned HTTP 400, User is banned.
+- Refresh with a pre-ban refresh token after the ban returned HTTP 400, Invalid Refresh Token: User Banned.
+- The ban alone denied both fresh sign-in and refresh while active; no separate sign-out call is needed for those outcomes.
+- The documented auth.admin.signOut call requires the user's JWT and has no user-id-only form ([Supabase reference](https://supabase.com/docs/reference/javascript/auth-admin-signout)). A global sign-out is not required by the updated PO-1 policy.
+- Synthetic user cleanup via Auth Admin delete returned HTTP 500 after unban and global sign-out. No direct Auth-table cleanup was attempted.
 
-Run project-required formatting/type/lint/unit checks and isolated-stack integration checks for the completed unit; verify bidirectional TS↔SQL capability parity; inspect migration ordering and integrated shared-function bodies; capture outputs and SHAs. No production deployment or merge approval is implied.
+**Unresolved timing conflict:** between refund commit and the first successful worker ban, direct GoTrue sign-in and refresh remain callable and may issue tokens. App/DB deactivation checks can deny client data access but cannot intercept Auth endpoints or deny token issuance. This conflicts with an immediate reading of ?block new sign-ins and token refresh?; the outbox design does not claim to close that window.
+
+## Stack and execution
+
+Stack C is project lifter-stack-c, API 35421, DB 35422, full port block 35420-35429. The observed Docker container names used separate lifter, lifter-stack-b and lifter-stack-c projects. Stacks A/B were not targets. Stack C's env file is .env.stack-c; do not inspect or print its values. Use the stack-aware integration harness, which validates Stack C API/DB ports before opening sockets.
+
+F12 U4 and latest F12/F14 migrations remain dependencies for full refund ledger implementation. T012-T015 own that ledger; the current worker/outbox module is a minimal proof only. Retention across backups remains a production blocker.
+
+## Gates
+
+Run the unit suite, Stack C integration suite with LIFTER_SUPABASE_STACK=c, typecheck, lint, Prettier checks on changed files, and git diff --check. Record exact pass/fail/skip counts and final/pushed SHAs. Never use production credentials or Stack A/B.

@@ -28,7 +28,7 @@ function valueFor(configText, section, key) {
   return match ? Number(match[1]) : undefined;
 }
 
-/** @param {{ LIFTER_SUPABASE_STACK?: string }} [env] */
+/** @param {Record<string, string | undefined>} [env] */
 export function selectStack(env = process.env) {
   const requested = env.LIFTER_SUPABASE_STACK || 'a';
   if (requested !== 'a' && requested !== 'b' && requested !== 'c')
