@@ -217,11 +217,15 @@ export async function runTiming() {
   } catch {
     failure = 'Path, fixture or response equality check failed';
   } finally {
-    after = await accountCounts();
     try {
-      assert.deepEqual(after, before);
+      after = await accountCounts();
+      try {
+        assert.deepEqual(after, before);
+      } catch {
+        failure ??= 'Account count changed during collision trials';
+      }
     } catch {
-      failure ??= 'Account count changed during collision trials';
+      failure ??= 'Unable to read account counts';
     }
     const ordinary = timings
       .filter((r) => r.category === categories[0])
