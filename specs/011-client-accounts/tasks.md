@@ -177,9 +177,9 @@ Base ND-F11-1..10 are decided; tasks use approved values while unresolved sub-de
 
 ## Completion inventory
 
-46 tasks: Setup 2, Foundation 7, US1 9, US2 12, US3 4, US4 4, cross-cutting verification 7, independent placeholder 1. Every task has checkbox, sequential T0nn, story labels in story phases, exact files; only independent tests have [P]. T001–T045 are checked off with evidence; T046 remains PO-reserved and unchecked.
+46 tasks: Setup 2, Foundation 7, US1 9, US2 12, US3 4, US4 4, cross-cutting verification 7, independent placeholder 1. Every task has checkbox, sequential T0nn, story labels in story phases, exact files; only independent tests have [P]. T001–T045 are checked off with evidence; T046 is checked off as PO-approved PASS (2026-10-29, session 11; see T046).
 
-Constitution: tenant/composite constraints, independent walls, unchanged roles/capabilities, immutable issued terms, no finance, secret-safe append-only audit, bilingual DS and authoritative-time atomicity are covered. ND/B4/hosted/inherited blockers are not waived. User expressly authorized decision recording/tasks and commit/push; this is neither self-approval nor implementation authority. Later Analyze and Claude independent audit remain required.
+Constitution: tenant/composite constraints, independent walls, unchanged roles/capabilities, immutable issued terms, no finance, secret-safe append-only audit, bilingual DS and authoritative-time atomicity are covered. ND/B4/hosted/inherited blockers are not waived. User expressly authorized decision recording/tasks and commit/push; this is neither self-approval nor implementation authority. Claude's independent audit (T046) was completed and the PO approved it as PASS on 2026-10-29.
 
 ## Unit handoff table
 
