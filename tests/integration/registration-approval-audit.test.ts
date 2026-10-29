@@ -1,4 +1,10 @@
-﻿import { readFileSync } from 'node:fs';
+import {
+  registered,
+  request,
+  call,
+  state,
+} from './registration-approval-operations-fixture';
+import { readFileSync } from 'node:fs';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import {
   sql,
@@ -119,4 +125,95 @@ it('T010 audit insertion failure aborts graph; no partial financial rows survive
   expect(
     await db`select (select count(*) from public.clients)::text as clients,(select count(*) from public.payment_events)::text as events`,
   ).toEqual(before);
+});
+
+it('T017 real approval RPC emits exactly one safe approval fact and two success audits; replay/denial emit none', async () => {
+  const t = await registered(f),
+    input = request(f, t),
+    result = await call(f.po.client, 'approve', input);
+  expect(result.status).toBe('ok');
+  const facts =
+    await db`select kind,schema_version,workspace_id,client_id,subscription_id from app_private.registration_approval_events where client_id=${t.id}`;
+  expect(facts).toEqual([
+    {
+      kind: 'registration.approved',
+      schema_version: 1,
+      workspace_id: f.wsA.id,
+      client_id: t.id,
+      subscription_id: result.receipt!.subscription_id,
+    },
+  ]);
+  const events =
+    await db`select action,actor_user_id,details from public.audit_events where target_id=${t.id} or (action='payment.collected' and details->>'client_id'=${t.id}) order by action`;
+  expect(events.map((r) => r.action)).toEqual([
+    'client.approved',
+    'client.signup_succeeded',
+    'payment.collected',
+  ]);
+  for (const row of events.filter(
+    (r) => r.action !== 'client.signup_succeeded',
+  ))
+    expect(row.actor_user_id).toBe(f.po.userId);
+  expect(Object.keys(events[0]!.details).sort()).toEqual([
+    'client_id',
+    'decision_id',
+    'from_state',
+    'to_state',
+  ]);
+  expect(JSON.stringify(events.map((r) => r.details))).not.toMatch(
+    /commission|rate|email|phone|password|token|hash|secret|method|reference|U3 synthetic/,
+  );
+  const before = await state(db, t);
+  expect(await call(f.po.client, 'approve', input)).toEqual(result);
+  expect(await call(f.woA.client, 'approve', request(f, t))).toEqual({
+    status: 'stale_state',
+  });
+  expect(await call(f.salesA.client, 'approve', input)).toEqual({
+    status: 'not_permitted',
+  });
+  expect(await state(db, t)).toEqual(before);
+});
+it('T017 rejection has no approval fact; reconsideration creates exactly one fact and owner-scoped audits', async () => {
+  const t = await registered(f),
+    rejection = request(f, t, 'reject');
+  const rejected = await call(f.woA.client, 'reject', rejection);
+  expect(rejected.status).toBe('ok');
+  expect(await state(db, t)).toMatchObject({
+    facts: 0,
+    payments: 0,
+    audits: 1,
+  });
+  const [event] =
+    await db`select details from public.audit_events where target_id=${t.id} and action='client.rejected'`;
+  expect(event!.details).toMatchObject({
+    reason_code: 'registration_rejected',
+    from_state: 'pending-approval',
+    to_state: 'rejected',
+  });
+  const reconsideration = request(f, t, 'reconsider'),
+    result = await call(f.po.client, 'reconsider', reconsideration);
+  expect(result.status).toBe('ok');
+  expect(await call(f.po.client, 'reconsider', reconsideration)).toEqual(
+    result,
+  );
+  // The original rejection receipt remains identical after reconsideration.
+  expect(await call(f.woA.client, 'reject', rejection)).toEqual(rejected);
+  expect(await state(db, t)).toMatchObject({
+    facts: 1,
+    payments: 1,
+    audits: 3,
+    activations: 0,
+  });
+  for (const role of ['po', 'woA', 'salesA', 'trainerA', 'woB'] as const) {
+    const rows = await f.actors[role].client
+      .from('audit_events')
+      .select('action')
+      .eq('target_id', t.id);
+    expect(rows.error).toBeNull();
+    expect(rows.data?.map((r) => r.action).sort()).toEqual(
+      role === 'po' || role === 'woA'
+        ? ['client.reconsidered', 'client.rejected', 'client.signup_succeeded']
+        : [],
+    );
+  }
 });

@@ -122,3 +122,36 @@ INSERT, deferred identity/consumption correspondence, DELETE/TRUNCATE, Auth,
 admission and recovery behavior remain authoritative. No new F11/F12 product
 policy conflict was found; the historical claim that PR #14 is unmerged and the
 B-only execution assumption above are superseded by these recorded facts.
+
+
+## U3 architect carry-forward (accepted U2)
+
+`f12_guard_client_transition` intentionally blocks every clients UPDATE except
+an authorized approval-state transition with a matching decision. Keep it intact.
+F13 closure/pseudonymization and other later client lifecycle writers require a
+separately reviewed forward amendment; U3 adds no bypass or caller-writable flag.
+
+The installed SQL capability helpers are `app_private.role_has_capability` and
+`app_private.has_workspace_access`; earlier shorthand `has_capability` refers to
+these functions. PO's global membership bypass does not prove workspace existence.
+Every U3 authorization path joins an existing `public.workspaces` row, and returns
+the same `not_permitted` response for nonexistent and foreign targets. Authorization
+is repeated after target and operation-key waits before any receipt disclosure.
+
+
+### U3 observed U2 subtransaction compatibility correction
+
+The first implementation run returned `unavailable` on approvals. A disposable,
+rolled-back diagnostic rethrow identified SQLSTATE 23514,
+`immutable_installment_schedule`: subscriptions inserted within the operation's
+exception subtransaction have a sub-XID xmin, not `pg_current_xact_id()`'s top XID.
+An exception boundary is needed to return a generic result while rolling back the
+entire financial graph. The new U3 migration therefore forward-replaces only
+`f12_guard_installment`: require the immutable private approve/reconsider decision
+for this subscription's client, current top transaction and signed actor, plus
+matching subscription creator/transaction timestamp. The decision insert guard
+and deferred exact schedule/total checks remain. No GUC or supplied boolean grants
+insertion, and an explicit fresh-transaction late-obligation probe remains denied.
+The accepted client UPDATE guard, base grants, RLS, audit body and financial
+immutability guards are unchanged. This is a technical compatibility correction,
+not an amendment to a PO decision or a historical migration.

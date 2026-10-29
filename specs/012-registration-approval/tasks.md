@@ -2,7 +2,7 @@
 
 **Input**: [plan](plan.md), [spec](spec.md), [research](research.md), [model](data-model.md), [surface contract](contracts/registration-approval-surface.md), [handoffs](contracts/feature-handoffs.md), [verification](quickstart.md).
 
-**Status**: Execution in progress, 2026-10-29. Session 12 completed T001 and T006-T012 with observed evidence in `tests/integration/registration-approval-verification.md`; previously completed U1 money and DB-free flexible terms tasks remain checked. All other tasks remain pending. Session-12 architect/user instructions explicitly substitute Stack A for the historical B requirements below. PA-F12-1..9 are Decided; independent review and later feature acceptance remain outstanding.
+**Status**: Execution in progress, 2026-10-29. Session 12 completed T001 and T006-T012 with observed evidence in `tests/integration/registration-approval-verification.md`; previously completed U1 money and DB-free flexible terms tasks remain checked. U3 T013-T017 are also complete with observed operation, replay, concurrency, audit and full regression evidence. All other tasks remain pending. Session-12 architect/user instructions explicitly substitute Stack A for the historical B requirements below. PA-F12-1..9 are Decided; independent review and later feature acceptance remain outstanding.
 
 ## Task format, ownership and execution rules
 
@@ -67,11 +67,11 @@ Final F12-3 is in scope here, not a deferred F10 feature. Historical F10 spec is
 
 **Independent slice**: From real synthetic F11 signup, approve once with installment 1 and immutable terms; separately reject a pending fixture, then PO-reconsider it using the same initial purchase invariant.
 
-- [ ] T013 [US1] Write RED success/rollback/history-binding tests in `tests/integration/registration-approval-operations.test.ts`: committed binding after link expiry/consumption/disablement/new version, no schedule full price, exact copied schedule, initial uniqueness, audit/deferred failure zero partial graph; Q-V05.
-- [ ] T014 [US2] Write RED rejection/reconsideration tests in `tests/integration/registration-approval-decisions.test.ts`: approved code list only, no free text, PO/WO reject, PO-only rejected→approved, stale normal approve, no identity/link/recovery change; Q-V06.
-- [ ] T015 [US7] Write RED bound-receipt/concurrency/revocation tests in `tests/integration/registration-approval-replay.test.ts`; authorization before replay/stale disclosure, identical safe receipt, different intent conflict, same-client races and role/membership changes after waits. Q-V09/10/Q-M10/11.
-- [ ] T016 [US1] Create `supabase/migrations/20261101121000_registration_approval_operations.sql` with hardened approve/reject/reconsider operations and private authorization/receipt/first-collection primitives. Atomically append approval fact, decision/client transition, subscription/obligations, first collection, audit and receipt; force deferred checks. Own this migration only; reuse model constraints; T013–T015 GREEN.
-- [ ] T017 [US1] Extend `tests/integration/registration-approval-audit.test.ts` and `registration-approval-verification.md` for exact transition/collection/fact counts, failed/rejected/replayed event absence, safe audit payload and F11 regressions; Q-V11/13/Q-M13/17. Sequential ownership after U2.
+- [x] T013 [US1] Write RED success/rollback/history-binding tests in `tests/integration/registration-approval-operations.test.ts`: committed binding after link expiry/consumption/disablement/new version, no schedule full price, exact copied schedule, initial uniqueness, audit/deferred failure zero partial graph; Q-V05.
+- [x] T014 [US2] Write RED rejection/reconsideration tests in `tests/integration/registration-approval-decisions.test.ts`: approved code list only, no free text, PO/WO reject, PO-only rejected→approved, stale normal approve, no identity/link/recovery change; Q-V06.
+- [x] T015 [US7] Write RED bound-receipt/concurrency/revocation tests in `tests/integration/registration-approval-replay.test.ts`; authorization before replay/stale disclosure, identical safe receipt, different intent conflict, same-client races and role/membership changes after waits. Q-V09/10/Q-M10/11.
+- [x] T016 [US1] Create `supabase/migrations/20261101121000_registration_approval_operations.sql` with hardened approve/reject/reconsider operations and private authorization/receipt/first-collection primitives. Atomically append approval fact, decision/client transition, subscription/obligations, first collection, audit and receipt; force deferred checks. Own this migration only; reuse model constraints; T013–T015 GREEN.
+- [x] T017 [US1] Extend `tests/integration/registration-approval-audit.test.ts` and `registration-approval-verification.md` for exact transition/collection/fact counts, failed/rejected/replayed event absence, safe audit payload and F11 regressions; Q-V11/13/Q-M13/17. Sequential ownership after U2.
 
 ## Phase 5 — Later collection and correction (US3/US4, U4)
 

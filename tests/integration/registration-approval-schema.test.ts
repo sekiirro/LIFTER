@@ -49,7 +49,7 @@ it.each(tables)(
       expect(triggers.map((r) => r.tgname)).toContain('f12_' + suffix);
   },
 );
-it('T008 exact private function inventory, no exposed U3 RPCs', async () => {
+it('T008 exact private function inventory; U4 RPCs remain unavailable', async () => {
   const rows =
     await db`select p.oid::regprocedure::text as signature,prosecdef,proconfig,pg_get_userbyid(proowner) as owner,prosrc from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='app_private' and proname like 'f12_%'`;
   expect(rows.map((r) => r.signature).sort()).toEqual(
@@ -66,13 +66,7 @@ it('T008 exact private function inventory, no exposed U3 RPCs', async () => {
       expect(g!.allowed).toBe(false);
     }
   }
-  for (const name of [
-    'registration_approve',
-    'registration_reject',
-    'registration_reconsider',
-    'installment_collect',
-    'collection_correct',
-  ])
+  for (const name of ['installment_collect', 'collection_correct'])
     expect(
       await db`select oid from pg_proc where proname=${name}`,
     ).toHaveLength(0);

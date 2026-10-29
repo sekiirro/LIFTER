@@ -288,3 +288,298 @@ DB, Auth and API gateway running/healthy on ports 54322/54321; leave A running.
 No Stack B operation was performed. Runtime-specific model/effort metadata is
 not exposed by the available tools, so the requested Sol Medium routing cannot
 be independently verified from this session.
+
+## U3 - approve, reject and reconsider (T013-T017)
+
+### Starting state and scope
+
+Verified clean HEAD and origin at
+`50cc77e8a0090f3baa716c3e4656b216db0983dd` after `git fetch origin`.
+A continuation after a usage interruption began with `git status --short` and
+`git log -3 --oneline`: the same U2 head plus four untracked mid-edit U3 test/helper
+files, no U3 commit and no migration. Reviewed and retained those files; fixed
+an insert fixture that incorrectly required returned data, then resumed the
+original brief. No reset of source, force push, other-worktree git or Stack B
+operation occurred.
+
+Stack rules remain the explicit session-12 **A-for-B substitution**: project
+`lifter`, API 54321 / DB 54322, default selector, no LIFTER_SUPABASE_STACK.
+`supabase@2.122.0 start` used only the prescribed A exclusion list; CLI output
+was captured privately. Every local `db reset` was followed immediately by
+`node tests/integration/client-accounts-provision.mjs`. Ignored `.env.local`
+was loaded privately; keys, scratch drivers and generated evidence are untracked.
+
+No U4 later collection/correction, U5 reader, app/UI, activation writer or P2
+consumer is implemented. Architect carry-forward is in research.md: retain the
+narrow clients UPDATE guard; F13 closure/pseudonymization needs a later forward
+amendment. Use actual role_has_capability/has_workspace_access helpers, and
+explicitly require an existing workspace even for PO.
+
+### Tests first: observed RED and GREEN
+
+Before the migration, ran:
+
+```text
+node tmp/run-integration.mjs tests/integration/registration-approval-operations.test.ts tests/integration/registration-approval-decisions.test.ts tests/integration/registration-approval-replay.test.ts
+```
+
+Observed **3 files / 45 failed**. T013 success expected `ok`, received `rpc_error`;
+SQL rollback probes reported missing `public.registration_approve(jsonb)`.
+T014 PO/WO rejection expected `ok`, received `rpc_error`; role/shape assertions
+received rpc_error instead of not_permitted/invalid_input. T015 concurrent results
+were rpc_error/rpc_error instead of ok/stale_state or key_conflict/ok; function
+catalog entries were undefined instead of hardened definitions. After correcting
+the fixture's missing `.select().single()`, replay-only RED still had **10 failed**,
+including the intended `rpc_error` versus `ok` and missing-function assertions.
+The helper setup failure is not counted as policy RED.
+
+Fixtures issue real F10 links, obtain real HMAC-attested F11 admission over
+anonymous PostgREST, and call the installed real signup RPC. Auth identities,
+claims, consumption and pending clients commit before approval tests. No mocked
+financial backend or privileged financial writer substitutes for public RPCs;
+SQL role/claim seams are limited to disposable fault and blocking probes.
+
+First implementation run: **17 failed / 28 passed**. A rolled-back diagnostic
+rethrow identified SQLSTATE 23514 `immutable_installment_schedule`: U2 compared
+subscription xmin to the top XID, but the operation's exception block inserts
+within a subtransaction. Added the forward-only guard compatibility fix below,
+retaining all committed model constraints. Also corrected JSON double-encoding
+in the SQL-only helper. A subsequent scoped run had **123 passed / 2 failed**:
+one fixture reached F10's unchanged 20-link actor limit, and the inventory expected
+the timestamptz alias rather than pg_proc's canonical timestamp-with-time-zone
+text. Used a fresh synthetic context and corrected the type spelling; no policy
+or limiter was changed.
+
+Then ran:
+
+```text
+node tmp/run-integration.mjs tests/integration/registration-approval-operations.test.ts tests/integration/registration-approval-decisions.test.ts tests/integration/registration-approval-replay.test.ts tests/integration/registration-approval-audit.test.ts tests/integration/registration-approval-schema.test.ts tests/integration/registration-approval-integrity.test.ts tests/integration/rls-catalog.test.ts
+```
+
+Observed **7 files / 125 passed**. Includes exact full/scheduled/high-bigint
+approval; raw offsets 2/17/44; committed expired/consumed/disabled/superseded binding;
+initial uniqueness and approve/reject races; generic audit/deferred rollback with
+zero partial graph; single rejection code/free-text denial; PO-only reconsider;
+identity/link/Auth/claims/recovery fingerprints unchanged; existing/nonexistent
+PO workspace parity for every U3 RPC; exact safe replay, intent/actor/target binding;
+cross-target same-key race; current role/membership revocation while blocked on
+the target; grants/owner/search_path; audit/fact cardinality, failed/stale/denied/
+replayed absence and owner/foreign audit RLS. No activation fact is written.
+
+### Migration, grants and transaction inventory
+
+Only new migration:
+`supabase/migrations/20261101121000_registration_approval_operations.sql`, sorting
+after committed U2 `20261101120000`. No historical migration is edited; no table,
+RLS policy or base-table grant is added or widened.
+
+All functions below are postgres-owned SECURITY DEFINER with `search_path=''`
+and schema-qualified application references, no dynamic SQL. Explicitly revoke
+EXECUTE from PUBLIC/anon/authenticated/service_role before narrow grants.
+
+| Function                                                               | Final EXECUTE beyond postgres |
+| ---------------------------------------------------------------------- | ----------------------------- |
+| public.registration_approve(jsonb)                                     | authenticated only            |
+| public.registration_reject(jsonb)                                      | authenticated only            |
+| public.registration_reconsider(jsonb)                                  | authenticated only            |
+| app_private.f12_u3_can_decide(uuid,boolean)                            | none                          |
+| app_private.f12_u3_lock_authorization(uuid,boolean)                    | none                          |
+| app_private.f12_u3_canonical(text,jsonb)                               | none                          |
+| app_private.f12_u3_purchase(uuid,uuid,uuid,uuid,text,date,timestamptz) | none                          |
+| app_private.f12_u3_operation(text,jsonb)                               | none                          |
+| app_private.f12_guard_installment() - forward replacement              | none                          |
+
+`node tmp/u3-inventory.mjs` confirmed these exact owner/definer/settings/ACL
+attributes, `audit_body_unchanged_from_U2:true`, and `U4_RPCs:[]`.
+Existing U2 catalog inventory now includes the five new sealed helpers and
+leaves U4 RPC absence asserted; the public U3 grants are checked separately.
+
+Authorization precedence: existing workspace plus current signed PO/WO role,
+role_has_capability and has_workspace_access before target/receipt lookup;
+PO-only reconsider is explicit. Minimal UUID parsing precedes authorization;
+detailed input/canonical parsing follows it. Target absence/foreign scope returns
+the identical not_permitted union. No stale/key/receipt disclosure precedes
+permission. Unknown keys, numeric/noncanonical/overflow money, invalid dates,
+method/reference/actor/time overrides, false fresh confirmation and wrong first
+amount/currency/sequence fail without writes. Historical finite dates remain
+allowed; future Cairo dates are checked using fresh clock time after waits.
+
+Lock order: **client -> subscription(s) -> obligations by sequence -> ledger by
+obligation/revision -> current staff profile -> active membership -> actor/key**.
+The actor and membership rows are re-read with SHARE locks after all target waits
+and held until commit. A transaction-scoped advisory lock on the fixed namespace
+`lifter.f12.operation:<actor UUID>:<request UUID>` serializes cross-target key reuse
+after target locks; hash collisions only add serialization. Recheck authorization
+again after that possible wait, before any immutable receipt lookup. Future U4
+writers must preserve the same target order and actor/key namespace.
+
+Canonical v1 hashing uses a fixed ordered typed JSON array containing operation,
+normalized workspace/client, expected state/sequence/revision, amount text,
+currency/date/confirmation/reason and explicit null future-operation fields.
+The stored actor/key namespace binds actor independently; UUID spelling normalizes.
+Exact authorized replay returns the stored complete result unchanged; changed
+intent is key_conflict. Receipt has only the contract's fourteen fields, never
+PII, commission/rate, request arguments, token, secret or raw provider diagnostics.
+
+One exception subtransaction encloses all new graph/audit/receipt writes. Approval
+and reconsideration create the private decision, immutable issued subscription,
+exact obligations, first full collection, durable approval fact, guarded client
+transition and bound receipt. Rejection creates only decision/state/audit/receipt.
+Cyclic relations are deferred during construction, then **SET CONSTRAINTS ALL
+IMMEDIATE** is executed before either new success or exact replay returns.
+Unexpected failure rolls the entire subtransaction back and returns unavailable.
+No approval-time activation, due-date normalization or manual duplicate audit.
+
+### Forward guard and audit preservation
+
+The installment guard now accepts the current transaction's guarded immutable
+approve/reconsider decision for the same subscription client, signed actor and
+matching creator/transaction timestamp. There is no caller GUC or boolean bypass.
+The decision insert and deferred graph/snapshot/total checks remain. A separate
+fresh-transaction late obligation test still gets `immutable_installment_schedule`.
+The client transition guard itself is unchanged and still blocks every other UPDATE.
+
+```diff
+--- U2 installment guard
++++ U3 forward replacement
+@@ -1,7 +1,12 @@
+-create function app_private.f12_guard_installment() returns trigger
++create or replace function app_private.f12_guard_installment() returns trigger
+ language plpgsql security definer set search_path='' as $$
+ begin
+-  if not exists(select 1 from public.subscriptions s where s.workspace_id=new.workspace_id and s.id=new.subscription_id and s.xmin::text=pg_current_xact_id()::xid::text) then
++  if not exists(select 1 from public.subscriptions s
++    join app_private.registration_decisions d on d.workspace_id=s.workspace_id and d.client_id=s.client_id
++    where s.workspace_id=new.workspace_id and s.id=new.subscription_id
++      and d.transaction_id=pg_current_xact_id() and d.actor_user_id=auth.uid()
++      and d.kind in ('approve','reconsider') and d.to_state='approved'
++      and s.created_by=d.actor_user_id and s.created_at=now()) then
+     raise exception 'immutable_installment_schedule' using errcode='23514';
+   end if;
+   return new;
+```
+
+Audit body U2 -> U3: **no diff**. U3 contains no audit_row_change definition,
+confirmed by source inspection and the installed normalized-body comparison.
+The U2 complete F11-body preservation assertion and all existing branch tests
+remain. T017 real-RPC assertions prove one signup INSERT audit, one approved/
+rejected/reconsidered transition, one first collection, zero duplicate replay
+success events, exactly one approval fact, and no PII/commission in new details.
+
+### Disposable mutation evidence
+
+Commands: `node tmp/u3-mutations.mjs <ID>`. The ignored driver captures the installed
+function, installs only a disposable catalog mutant, runs the exact detector,
+restores in finally, then reruns it GREEN. No mutant or driver is staged.
+
+| ID    | Mutant and detector                                                                                 | Observed RED                                                                                              | Restored GREEN        |
+| ----- | --------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------- | --------------------- |
+| Q-M10 | Skip receipt canonical-hash comparison; replay `-t 'replay key is bound'`                           | replay line 70: received ok receipt instead of key_conflict                                               | 1 passed / 9 filtered |
+| Q-M11 | Make post-wait authorization return true; replay `-t 'revocation during target wait denies replay'` | replay line 194: received ok receipt instead of not_permitted, both role and membership                   | 2 passed / 8 filtered |
+| Q-M17 | Omit approval fact insert; audit `-t 'T017 real approval RPC emits'`                                | audit line 134: unavailable instead of ok because forced U2 graph correspondence rejects the missing fact | 1 passed / 5 filtered |
+
+The final local reset/provision discarded all mutation state before the full gate.
+
+### F11 regression-probe contract adaptation
+
+The first full U3 integration gate completed **964 passed / 7 failed, 33 files**,
+with timing enabled. All seven failures were existing F11 catalog/Auth/recovery
+probes that enumerated every public RPC, supplied null for JSON requests, and
+recognized only F11's `invalid` result. They rejected the new F12 `invalid_input`
+shape; this was not evidence of protected data or a successful client operation.
+
+Updated only test helpers/catalog probes: for the three named U3 RPCs, supply a
+complete valid request against an existing committed workspace/client target and
+require **exactly `{status:'not_permitted'}`**, with no receipt/extra field. Both
+real recovered JWT HTTP probes and the synthetic signed SQL catalog probe use
+this strict denial. Existing F11 function checks and all RLS/identity/recovery
+assertions remain. No production F11 source or permission was changed.
+
+Scoped rerun:
+
+```text
+node tmp/run-integration.mjs tests/integration/client-accounts-recovery.test.ts tests/integration/client-accounts-catalog.test.ts tests/integration/client-accounts-auth.test.ts tests/integration/registration-approval-audit.test.ts
+```
+
+Observed **4 files / 49 passed**. T017 additionally proves that a stored rejection
+receipt replays identically after a later reconsideration has approved the client,
+without another decision, collection, fact or audit.
+
+A second full run after the probe adaptation observed **970 passed / 1 failed**,
+33 files, with timing enabled. The sole failure was the existing F11 recovery
+case `WO can reset a pending client password without changing approval or access`
+at its unchanged 30,000ms timeout; no assertion detail or SQL error was reported.
+Read-only pg_stat_activity inspection returned no active queries or blockers at
+inspection time. This run is not claimed GREEN and its timeout is retained here;
+no timeout, retry setting, production behavior or assertion was relaxed.
+
+Without any code, assertion or timeout change, reran
+`node tmp/run-integration.mjs tests/integration/client-accounts-recovery.test.ts`:
+**1 file / 13 passed**, 11.85s. The full gate was then rerun after another local
+reset and immediate provisioning; final results follow below.
+
+The next full run observed **970 passed / 1 failed**, with the recovery timeout
+not recurring. The sole failure was F11 admission's exact global count assertion:
+expected 14 nonces, received 13, while the target credits/attempt/audit checks
+passed. Admission and the preceding purge sample different fresh clock instants,
+so an unrelated fixture nonce crossed expiry between their snapshots. Isolated
+only this rolled-back link-state test by advancing preexisting unrelated nonce/
+counter expiries within its probe before taking the baseline. Added the explicit
+per-request nonce +1 assertion and retained every exact global count assertion.
+The newly inserted nonce/counters use real production expiry; no production
+TTL, migration, limits owner, historical guard or assertion was relaxed.
+
+The isolated nonce/counter fixture correction passed
+`node tmp/run-integration.mjs tests/integration/client-accounts-admission.test.ts`:
+**27/27 tests**, 7.23s. Full regression was restarted after reset/provisioning,
+without a production code, TTL, rate-limit or timeout change.
+
+### Final U3 gates and task exit
+
+After the final local reset and immediate provisioning,
+`node tmp/full-with-timing.mjs` invoked **npm run test:integration** with privately
+loaded Stack A env and `SC011_TIMING_RUN=true`. Observed **33 files / 971 tests
+passed**, zero failed/skipped/todo. The earlier unchanged F11 timeout did not
+reproduce in this full run. No retry setting or timeout was changed.
+
+Timing summary (the wrapper verified/restored the original F11 evidence prefix
+and retained only its generated suffix under ignored tmp):
+
+```json
+{
+  "run": "3dae7cfc-fa94-4bbc-bc7d-a4e15ae6f634",
+  "verdict": "PASS",
+  "n": [200, 200],
+  "p": 0.8460348756511494,
+  "medians": [94.7371500000013, 94.41780000000108],
+  "medianDifference": 0.3193500000002132,
+  "before": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  },
+  "after": {
+    "auth_users": 12,
+    "clients": 2,
+    "identities": 12
+  }
+}
+```
+
+| Gate                                         | Final observed result                       |
+| -------------------------------------------- | ------------------------------------------- |
+| npm run typecheck                            | Exit 0                                      |
+| npm run lint                                 | Exit 0, max warnings 0                      |
+| npm run format:check                         | All matched files use Prettier style        |
+| npm test                                     | 67 files / 1,449 passed                     |
+| npm run test:integration, timing enabled     | 33 files / 971 passed; no failures or skips |
+| git diff --check and staged whitespace check | Exit 0                                      |
+
+Only T013, T014, T015, T016 and T017 are newly checked. Prior U2 acceptance is
+retained; U3 independent architect acceptance remains external. T018-T048,
+T002/T003 and pending U1F SQL/UI tasks remain unticked. No P2/P4/production release
+claim, PR, main merge, force push or CI/billing repair. The one observed full-run
+F11 timeout and the forward subtransaction guard fix are explicitly retained for
+review. Runtime-specific model/effort metadata is not exposed, so Sol Medium
+routing is not independently verified. Stack A remains running; Stack B was not
+operated. All scratch/mutation/env files remain outside the staged paths.

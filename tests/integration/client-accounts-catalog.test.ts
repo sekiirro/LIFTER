@@ -3,6 +3,8 @@ import { randomBytes, randomUUID } from 'node:crypto';
 import { admin, anonClient } from './harness';
 import {
   clientContext,
+  approvalRpcNames,
+  approvalDenialRequest,
   modelTables,
   pending,
   pendingHttpAccess,
@@ -228,6 +230,23 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
     expect(functions.length).toBeGreaterThan(0);
     await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: c.auth_user_id, role: 'authenticated' })},true)`;
     for (const fn of functions) {
+      if ((approvalRpcNames as readonly string[]).includes(fn.proname)) {
+        await tx.savepoint(async (inner) => {
+          await inner`set local role authenticated`;
+          const value = inner.json(
+            approvalDenialRequest(context, fn.proname, c.id as string),
+          );
+          const [row] =
+            fn.proname === 'registration_approve'
+              ? await inner`select public.registration_approve(${value}) as result`
+              : fn.proname === 'registration_reject'
+                ? await inner`select public.registration_reject(${value}) as result`
+                : await inner`select public.registration_reconsider(${value}) as result`;
+          expect(row!.result, fn.proname).toEqual({ status: 'not_permitted' });
+          await inner`reset role`;
+        });
+        continue;
+      }
       const args: string[] = [];
       for (const typeName of fn.types) {
         const values: Record<string, string> = {
