@@ -1,0 +1,113 @@
+﻿version: 2.1
+
+commands:
+  setup-node:
+    steps:
+      - run:
+          name: Install Node from .nvmrc
+          command: |
+            nvm install "$(cat .nvmrc)"
+            nvm alias default "$(cat .nvmrc)"
+            echo "export NVM_DIR=\"$NVM_DIR\"" >> "$BASH_ENV"
+            echo '. "$NVM_DIR/nvm.sh" && nvm use default >/dev/null' >> "$BASH_ENV"
+            node --version
+            npm --version
+      - restore_cache:
+          keys:
+            - npm-v1-{{ arch }}-{{ checksum ".nvmrc" }}-{{ checksum "package-lock.json" }}
+      - run:
+          name: Install dependencies
+          command: npm ci
+      - save_cache:
+          key: npm-v1-{{ arch }}-{{ checksum ".nvmrc" }}-{{ checksum "package-lock.json" }}
+          paths:
+            - ~/.npm
+
+jobs:
+  validate:
+    machine:
+      image: ubuntu-2404:current
+    steps:
+      - checkout
+      - setup-node
+      - run:
+          name: Ensure edge build native tools work
+          command: |
+            # npm 11 may gate native install scripts. Rebuild only if the esbuild
+            # or workerd binaries needed by build:edge fail their local checks.
+            if ! node -e "require('esbuild').transformSync('const x = 1')" || ! npx --no-install workerd --version; then
+              npm rebuild esbuild workerd
+            fi
+      - run:
+          name: Typecheck
+          command: npm run typecheck
+      - run:
+          name: Lint
+          command: npm run lint
+      - run:
+          name: Format check
+          command: npm run format:check
+      - run:
+          name: Unit tests
+          command: npm test
+      - run:
+          name: Build edge
+          command: npm run build:edge
+      - run:
+          name: Check secrets
+          command: npm run check:secrets
+      - run:
+          name: Build cron
+          command: npm run build:cron
+      - run:
+          name: Size report
+          command: npm run size
+      - run:
+          name: Install Playwright Chromium
+          command: npx playwright install --with-deps chromium
+      - run:
+          name: End-to-end tests
+          command: CI=1 npm run e2e
+      - run:
+          name: Ensure Playwright artifact paths exist
+          command: mkdir -p playwright-report test-results
+          when: always
+      - store_artifacts:
+          path: playwright-report
+      - store_artifacts:
+          path: test-results
+
+  integration:
+    machine:
+      image: ubuntu-2404:current
+    steps:
+      - checkout
+      - setup-node
+      - run:
+          name: Install Supabase CLI 2.122.0
+          command: |
+            curl -fsSL "https://github.com/supabase/cli/releases/download/v2.122.0/supabase_2.122.0_linux_amd64.tar.gz" -o /tmp/supabase_2.122.0_linux_amd64.tar.gz
+            echo "59ed066847b98d7461c60e9109d40cab6b9756177ce06ebb05b51338519f5136  /tmp/supabase_2.122.0_linux_amd64.tar.gz" | sha256sum -c -
+            mkdir -p /tmp/supabase-2.122.0
+            tar -xzf /tmp/supabase_2.122.0_linux_amd64.tar.gz -C /tmp/supabase-2.122.0
+            sudo install /tmp/supabase-2.122.0/supabase /usr/local/bin/supabase
+            supabase --version
+      - run:
+          name: Start local Supabase stack
+          command: supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,storage-api,postgres-meta
+      - run:
+          name: Export local stack environment
+          command: supabase status -o env | sed -E 's/^([A-Za-z_][A-Za-z0-9_]*)="(.*)"$/export \1="\2"/' >> "$BASH_ENV"
+      - run:
+          name: Integration tests
+          command: npm run test:integration
+      - run:
+          name: Stop local Supabase stack
+          command: supabase stop --no-backup
+          when: always
+
+workflows:
+  ci:
+    jobs:
+      - validate
+      - integration
