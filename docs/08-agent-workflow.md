@@ -44,12 +44,12 @@ or high-risk task.
 
 ## Controlled Parallel Development
 
-- Use no more than six concurrent agents.
+- Use no more than six concurrent agents total, including architects and reviewers.
 - Each writer gets an isolated worktree and branch. Writers edit disjoint files and do not share a
   branch.
 - Only one writer may hold a stack lock for Docker or Supabase operations that start, stop, restart,
-  reset, provision, or modify services. Other writers stay out of that stack while the lock is held.
-  Use one DB user per stack.
+  reset, provision, migrate, seed, or write shared DB state. Other writers stay out of that stack while
+  the lock is held. Use one DB user per stack.
 - Integrate feature branches sequentially. Each integration requires architect review and relevant
   green CI.
 
