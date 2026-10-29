@@ -20,9 +20,18 @@ it('runs Vault provisioning after local stack export and before integration test
 });
 
 it('can source DB_URL and API_URL from the CI environment without .env.local', () => {
-  expect(provisioner).toMatch(/existsSync\(path\)/);
+  expect(provisioner).toMatch(/existsSync\(envPath\)/);
   expect(provisioner).toMatch(/process\.env\.DB_URL/);
   expect(provisioner).toMatch(/process\.env\.API_URL/);
+});
+
+it('provisions the explicitly selected stack into its own ignored env file', () => {
+  expect(provisioner).toContain('const stack = selectStack();');
+  expect(provisioner).toContain('const envPath = config.envFile;');
+  expect(provisioner).toContain(
+    'assertLocalStackTarget({ stack, apiUrl, dbUrl });',
+  );
+  expect(provisioner).toContain("localSupabaseContainer('db', stack)");
 });
 
 it('runs the shared password DB parity suite explicitly in the integration job', () => {
