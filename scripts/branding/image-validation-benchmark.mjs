@@ -27,31 +27,24 @@ function chunk(type, data) {
   return Buffer.concat([header, crcInput, checksum]);
 }
 
-function png(width, height, metadataLength = 0) {
+function png(width, height, metadataLength = 0, metadataChunks = 0) {
   const ihdr = Buffer.alloc(13);
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
   ihdr[8] = 16;
   ihdr[9] = 6;
   const rows = Buffer.alloc((width * 8 + 1) * height);
+  const chunks = [signature, chunk('IHDR', ihdr)];
   if (metadataLength) {
     const metadata = Buffer.alloc(metadataLength);
     metadata[0] = 107;
     metadata[1] = 0;
-    return Buffer.concat([
-      signature,
-      chunk('IHDR', ihdr),
-      chunk('tEXt', metadata),
-      chunk('IDAT', deflateSync(rows)),
-      chunk('IEND', Buffer.alloc(0)),
-    ]);
+    chunks.push(chunk('tEXt', metadata));
   }
-  return Buffer.concat([
-    signature,
-    chunk('IHDR', ihdr),
-    chunk('IDAT', deflateSync(rows)),
-    chunk('IEND', Buffer.alloc(0)),
-  ]);
+  for (let i = 0; i < metadataChunks; i += 1)
+    chunks.push(chunk('tEXt', Buffer.from([107, 0])));
+  chunks.push(chunk('IDAT', deflateSync(rows)), chunk('IEND', Buffer.alloc(0)));
+  return Buffer.concat(chunks);
 }
 
 function webp(size) {
@@ -109,11 +102,17 @@ const logo = BRANDING_IMAGE_LIMITS.logo;
 const banner = BRANDING_IMAGE_LIMITS.banner;
 const cases = [
   ['logo metadata CRC walk', png(1, 1, logo.maxIngressBytes - 82), 'logo'],
+  ['logo maximum chunk complexity', png(1, 1, 0, logo.maxChunks - 3), 'logo'],
   ['logo retained output and hash', webp(logo.maxIngressBytes), 'logo'],
   ['logo max pixel expansion', png(1000, 1000), 'logo'],
   [
     'banner metadata CRC walk',
     png(1, 1, banner.maxIngressBytes - 82),
+    'banner',
+  ],
+  [
+    'banner maximum chunk complexity',
+    png(1, 1, 0, banner.maxChunks - 3),
     'banner',
   ],
   ['banner retained output and hash', webp(banner.maxIngressBytes), 'banner'],

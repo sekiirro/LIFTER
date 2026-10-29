@@ -146,16 +146,18 @@ Prove request/operation context on pinned Stack B before accepting proxy/validat
 
 `lib/branding/image-validation.ts` accepts PNG and WebP only. PNG parsing checks bounded chunk lengths before slicing, CRCs, ordering, dimensions, pixel count, zlib stream consumption/length and row filters; rejects unknown critical chunks, APNG and trailing bytes; and strips ancillary chunks before hashing. WebP parsing checks exact RIFF size, bounded padded chunk lengths, zero padding, image headers/dimensions and chunk count; rejects animation, unsupported chunks and trailing bytes; removes EXIF/XMP/ICCP chunks and matching flags before hashing. Input and output are capped before buffers are copied. Limits also bound image dimensions, total pixels and container chunks.
 
-Reproduce with `node --experimental-strip-types scripts/branding/image-validation-benchmark.mjs` on Node `v24.19.0` / Windows x64. Each case has 2 warmups and 7 measured synchronous validations. It uses synthetic 16-bit RGBA PNGs at each role's pixel cap, PNGs with near-cap removable `tEXt` metadata to maximize CRC-walk work, and structurally bounded WebP fixtures at the exact ingress/output byte cap to stress retained-byte copying and SHA-256. Timings report median and slowest elapsed time. RSS values are incremental high-water deltas in the listed sequential run (zero means no new process peak); this is process-level evidence, not an isolated Worker memory profiler.
+Reproduce with `node --experimental-strip-types scripts/branding/image-validation-benchmark.mjs` on Node `v24.19.0` / Windows x64. Each case has 2 warmups and 7 measured synchronous validations. It uses synthetic 16-bit RGBA PNGs at each role's pixel cap, PNGs with near-cap removable `tEXt` metadata to maximize CRC-walk work, PNGs with the role's maximum chunk count, and structurally bounded WebP fixtures at the exact ingress/output byte cap to stress retained-byte copying and SHA-256. Timings report median and slowest elapsed time. RSS values are incremental high-water deltas in the listed sequential run (zero means no new process peak); this is process-level evidence, not an isolated Worker memory profiler.
 
 | Role / stress path                         | Ingress bytes | Median elapsed | Slowest of 7 | Incremental RSS high-water delta |
 | ------------------------------------------ | ------------: | -------------: | -----------: | -------------------------------: |
-| Logo: metadata CRC walk                    |     4,194,302 |       11.88 ms |     15.35 ms |                            0 MiB |
-| Logo: retained output and hash             |     4,194,304 |        2.60 ms |      2.71 ms |                            0 MiB |
-| Logo: 1,000,000-pixel 16-bit PNG inflate   |         7,845 |        6.30 ms |      9.37 ms |                          5.1 MiB |
-| Banner: metadata CRC walk                  |     8,388,606 |       15.78 ms |     16.59 ms |                            0 MiB |
-| Banner: retained output and hash           |     8,388,608 |        5.27 ms |      6.30 ms |                            0 MiB |
-| Banner: 4,000,000-pixel 16-bit PNG inflate |        31,177 |       24.26 ms |     26.67 ms |                         40.4 MiB |
+| Logo: metadata CRC walk                    |     4,194,302 |       11.94 ms |     14.92 ms |                            0 MiB |
+| Logo: maximum 96-chunk complexity          |         1,370 |        0.10 ms |      0.12 ms |                            0 MiB |
+| Logo: retained output and hash             |     4,194,304 |        2.68 ms |      3.76 ms |                            0 MiB |
+| Logo: 1,000,000-pixel 16-bit PNG inflate   |         7,845 |        4.94 ms |      7.07 ms |                          3.2 MiB |
+| Banner: metadata CRC walk                  |     8,388,606 |       15.59 ms |     16.48 ms |                            0 MiB |
+| Banner: maximum 192-chunk complexity       |         2,714 |        0.04 ms |      0.05 ms |                            0 MiB |
+| Banner: retained output and hash           |     8,388,608 |        5.67 ms |      6.87 ms |                            0 MiB |
+| Banner: 4,000,000-pixel 16-bit PNG inflate |        31,177 |       22.77 ms |     28.38 ms |                         34.9 MiB |
 
 Chosen separate role limits in `BRANDING_IMAGE_LIMITS`: Logo ingress/output **4/4 MiB**, max **2048×2048**, **1,000,000 pixels**, **96 chunks**; Banner ingress/output **8/8 MiB**, max **4096×2048**, **4,000,000 pixels**, **192 chunks**. Maximum bounded payload allocations are approximately 20 MiB for Logo and 56 MiB for Banner before runtime overhead (input + bounded compressed copy + output + up to 8 bytes/pixel for 16-bit RGBA PNG). The generated WebP benchmark stresses container and hash handling; full VP8 entropy decoding is not performed here. Hosted Worker CPU/memory compatibility remains to be proven before production.
 
