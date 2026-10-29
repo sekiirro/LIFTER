@@ -40,11 +40,11 @@ Implementation follows final PO decisions recorded in the spec. Proxy/validator 
 
 ## Architecture and sequencing
 
-### Security units T047 / T045 / T046 — architect-proposed operational defaults
+### Security units T047 / T045 / T046 — approved caps and architect implementation details
 
 Session 12 security units use forward-only migrations `20261102120000`, `20261102121000`, and `20261102122000`, after the F12-owned `20261101*` range. Owners are explicitly `postgres`, per the architect's run decision; functions use empty search paths, qualified application references and narrow execution grants. No capability, workspace-access or shared audit function is changed.
 
-**ARCHITECT-PROPOSED, pending PO confirmation (not a new PO decision):** render handles contain 32 random bytes (canonical 43-character base64url), expire after at most **5 minutes** and never after the live F10 effective deadline, with **8 active handles/link** and **30 issuances/link per rolling 5 minutes**. Link-row locking serializes issuance. Exhaustion preserves the ordinary valid F10 name response without issuing another handle. Expired records younger than the rate window remain as issuance history. Issuance removes at most 30 expired/old rows for its link; an operator-only cleanup function removes 1–500 old expired rows per call (default 100) for abandoned links. These defaults must be confirmed before production use.
+**PO-approved (F14-1 render-handle caps, session 13):** render handles expire after at most **5 minutes** and never after the live F10 effective deadline, with **8 active handles/link** and **30 issuances/link per rolling 5 minutes**. Architect implementation details remain: handles contain 32 random bytes (canonical 43-character base64url); link-row locking serializes issuance; exhaustion preserves the ordinary valid F10 name response without issuing another handle; expired records younger than the rate window remain as issuance history; issuance removes at most 30 expired/old rows for its link; and an operator-only cleanup function removes 1–500 old expired rows per call (default 100) for abandoned links.
 
 Only private read-side publication/version and asset-binding tables needed for these units are added. They have workspace FKs/composite relationships, forced RLS, no API table grants and no owner/draft/publish/promotion mutation API. Future T008/T021/T049/T050 must integrate actual writers, immutable snapshots, validation receipts and GC claims; this run's synthetic fixtures populate the read side as postgres. No production publication is fabricated.
 

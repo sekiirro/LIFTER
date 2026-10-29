@@ -230,6 +230,7 @@ The following decisions are recorded verbatim from the final PO decision source 
 - F14-6: Correct ND-F14-7 to Proxy-only; remove obsolete Signed URL alternative.
 - F14-7: Verify Storage/Egress capacity, 70% exit trigger and actual Backup/Restore before Production.
 - F14-8: Client Portal branding contract, tokens and nonfunctional preview only; no P4 implementation.
+- **F14-1 (render-handle caps, PO session 13, 2026-10-29):** “F14-1=A: Render handles: 5-min expiry, 8 active/link, 30 per rolling 5 min.” This is distinct from F14-1 above (Hero Banner).
 
 **ND-F14-7 (corrected per F14-6)**: Use private Supabase Storage for branding assets with workspace isolation, structural validation, metadata stripping, animation rejection, no SVG, and token-validating proxy-only public delivery. Each image request re-applies F10 validity including consumption without extending grace. No client-visible Storage URL or arbitrary asset/version selector is exposed. Stack B and hosted-infrastructure proof are required gates; no service-role fallback for public images.
 

@@ -47,7 +47,7 @@ begin
   result:=jsonb_build_object('status','valid','workspace_name',workspace_name);
   select p.version_id into v from app_private.branding_current_publications p where p.workspace_id=link.workspace_id;
   if not found then return result; end if;
-  -- ARCHITECT-PROPOSED pending PO: TTL 5m, active 8/link, 30 issues/5m/link.
+  -- PO-approved F14-1 (render-handle caps, session 13): TTL 5m, active 8/link, 30 issues/5m/link.
   -- Per-link row lock serializes issuance. Keep recent expired rows for rate history.
   delete from app_private.branding_render_handles h where h.handle_hash in (
     select x.handle_hash from app_private.branding_render_handles x
