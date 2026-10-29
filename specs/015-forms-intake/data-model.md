@@ -7,7 +7,7 @@ This is a logical model, not a schema migration. Tenant-owned records carry `wor
 | Entity | Scope and lifecycle | Key invariants |
 | --- | --- | --- |
 | Form | Platform-global or workspace-owned template identity | Global mutation is PO-only. Workspace actions follow approved F15-1 matrix. No cross-workspace answer access. |
-| FormVersion | Immutable published authored content and declarative rules | Stable section/question IDs; separate AR/EN content; edit means new version. No executable rules. |
+| FormVersion | Immutable published authored content and declarative rules | Stable section/question IDs; separate AR/EN content; edit means new version. Text questions use 150/1,000 Unicode code point type maxima and may carry an integer per-question `charLimit` from 1 through the type maximum. No executable rules. |
 | FormSelection | Workspace/client/form/version trigger, audience and recurrence configuration | Q3 audiences include all active clients, joining/onboarding clients, searched specific clients, and custom recurring schedules; renewal trigger uses actual F13 service start including freeze shifts. Stop while frozen/inactive. |
 | ApprovalConsumption | Private F12 event identity plus F15 consumer state | Consumes only committed `registration.approved` v1 fact; no PII/form data in shared fact. Idempotent by event identity. |
 | Assignment | Workspace/client/initial subscription/form-version obligation | Captures immutable independent snapshot; initial assignment unique by `(workspace_id,subscription_id)`. |
@@ -38,6 +38,7 @@ Workspace ── Form ── FormVersion
 
 - Tenant FKs are composite and same-workspace. Client ownership is derived from signed Auth identity and approved F12 association; request bodies do not accept client/workspace targets.
 - Assignment snapshot contains the exact published content/rules applicable at assignment time. Later source changes do not affect it.
+- Draft/submission validation applies a 4,096-byte UTF-8 cap per textual answer and a 262,144-byte cap on the sum of UTF-8 JSON-serialized answer values, excluding question IDs, object keys, envelope fields and transport framing. Every server write path calls the shared pure validator; T012/T013 add database-level enforcement with their schema migrations.
 - Draft revision updates require expected-current revision. Submission/correction adds immutable revisions; original submission and SLA facts do not change.
 - Unique constraints independently enforce one initial assignment and one original submission/SLA, even when operation keys differ.
 - Answer content has no Realtime, browser storage, shared framework cache or service-role path.

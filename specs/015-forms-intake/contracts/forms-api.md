@@ -9,8 +9,8 @@ Route names below are proposed ownership seams, not implemented interfaces. Requ
 | Select/configure form | PO/WO/Trainer authorized workspace | Current capability/membership; eligible published version; no Sales access; first slice one-time client |
 | Consume approval / resolve self-intake | Narrow internal worker / approved client | Consume committed F12 event and valid selection atomically; idempotent; never select arbitrary fallback |
 | Read assignment/answer/history | Client own assignment; staff workspace; PO explicit existing workspace | Audited reader before any sensitive content; no-store; generic denial |
-| Save draft | Client own assignment | Expected revision and stable intent key; partial answer set allowed; server validates snapshot/types/applicability/bounds |
-| Submit | Client own assignment | Complete applicable requirements and substantive three sections; one immutable accepted submission and original SLA |
+| Save draft | Client own assignment | Expected revision and stable intent key; partial answer set allowed; shared server validator checks snapshot/types/applicability, short/long Unicode code point limits (150/1,000, or lower published per-question limit), independent 4,096-byte UTF-8 answer safety cap, and 262,144-byte answer-value payload cap |
+| Submit | Client own assignment | Shared server validator applies the same text and payload caps, plus complete applicable requirements and substantive three sections; one immutable accepted submission and original SLA |
 | Correct submitted answers | Client self-only, Trainer/WO current workspace, PO explicit existing workspace | Approved matrix while client relationship remains active; deny every role after Closure/Refund/Deactivation (Q1). Append immutable revision + atomic safe audit; no deadline reset. Q2 removal from existing history is blocked pending PO resolution. |
 | Read correction history | Same as answer access | Every revision audited; fail closed on audit error |
 | Detect/resolve alert | Narrow worker and authorized recipients | IDs-only alert state; dedup; reauthorize at delivery/read; real data requires complete P4 facts |
@@ -21,6 +21,7 @@ Route names below are proposed ownership seams, not implemented interfaces. Requ
 - Require `expected_revision` for drafts and canonical intent binding for retry keys. A reused key with changed intent fails safely.
 - Reject stale authorization after any lock wait. Preserve the F12 lock order and P2 extension in plan.md.
 - Return only safe allow-listed errors; never expose raw constraint/provider errors.
+- Server draft and submission handlers (including future RPCs) MUST call `lib/forms/validation.ts`; client validation is supplemental only. Reject an over-limit textual answer or payload before any write with an allow-listed `answer_too_long` or `payload_too_large` error. The database migrations in T012/T013 add equivalent defense-in-depth enforcement when the answer schema exists.
 
 ## Response and caching
 
