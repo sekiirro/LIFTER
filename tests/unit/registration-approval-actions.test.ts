@@ -303,4 +303,54 @@ describe('registration approval server action boundary', () => {
       expect(rpc.mock.calls[0]?.[0]).toBe(rpcName);
     },
   );
+
+  it('scrubs provider details from returned failures and application logs', async () => {
+    const error = {
+      code: 'XX000',
+      message: 'provider raw-input-canary private@example.test',
+    };
+    const rpc = vi.fn().mockResolvedValue({ data: null, error });
+    createSessionClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: 'staff-user' } },
+          error: null,
+        }),
+      },
+      rpc,
+    });
+    const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      const result = await approveRegistrationAction(approval);
+      expect(result).toEqual({ status: 'unavailable' });
+      expect(
+        JSON.stringify(result) + JSON.stringify(log.mock.calls),
+      ).not.toMatch(/raw-input-canary|private@example|provider/);
+    } finally {
+      log.mockRestore();
+    }
+  });
+
+  it('does not log caller input when an unexpected RPC exception occurs', async () => {
+    const rpc = vi.fn().mockRejectedValue(new Error('private provider detail'));
+    createSessionClient.mockResolvedValue({
+      auth: {
+        getUser: vi.fn().mockResolvedValue({
+          data: { user: { id: 'staff-user' } },
+          error: null,
+        }),
+      },
+      rpc,
+    });
+    const log = vi.spyOn(console, 'error').mockImplementation(() => undefined);
+    try {
+      expect(await approveRegistrationAction(approval)).toEqual({
+        status: 'unavailable',
+      });
+      expect(log).not.toHaveBeenCalled();
+      expect(JSON.stringify(log.mock.calls)).not.toContain(requestKey);
+    } finally {
+      log.mockRestore();
+    }
+  });
 });

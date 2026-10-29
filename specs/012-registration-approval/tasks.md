@@ -93,11 +93,11 @@ Final F12-3 is in scope here, not a deferred F10 feature. Historical F10 spec is
 
 ## Phase 7 — Server adapters and app wall (U6)
 
-- [ ] T028 [US6] Write RED accepting-backend-mock tests in `tests/unit/registration-approval-actions.test.ts`: each role/scope, PO-only correction/reconsideration, CSRF/shape, exact replay request retention and generic failures; a permissive mocked RPC must not bypass app denial. Q-M09/18.
-- [ ] T029 [P] [US6] Write RED reader/projection/request-memoization tests in `tests/unit/registration-approval-read.test.ts` and `tests/unit/client-access.test.ts`; no service-role import, shared cache, or commission in safe results.
-- [ ] T030 [US1] Implement `lib/registration-approval/service.ts`, `read.ts` and `app/(app)/registration-approvals/actions.ts` using signed session client and app authorize before one bounded RPC; normalize only safe result codes. T028 GREEN; DB-free mocked calls only in U6.
-- [ ] T031 [US5] Implement `lib/client-access/authorize.ts` and `lib/client-access/status.ts` with signed self association, separate client path and per-request memoization; T029 GREEN. No staff helper widening or Storage grant.
-- [ ] T032 [US6] Add log-scrub result/action cases to `tests/unit/registration-approval-actions.test.ts`; extend `tests/integration/registration-approval-verification.md` with mock-only limits, no raw input/provider output. Sequential ownership after T028/U5; final real wiring waits U9.
+- [x] T028 [US6] Write RED accepting-backend-mock tests in `tests/unit/registration-approval-actions.test.ts`: each role/scope, PO-only correction/reconsideration, CSRF/shape, exact replay request retention and generic failures; a permissive mocked RPC must not bypass app denial. Q-M09/18. Evidence: U6 section in `tests/integration/registration-approval-verification.md`; focused actions suite passed 33 tests.
+- [x] T029 [P] [US6] Write RED reader/projection/request-memoization tests in `tests/unit/registration-approval-read.test.ts` and `tests/unit/client-access.test.ts`; no service-role import, shared cache, or commission in safe results. Evidence: U6 section; focused reader/client suites passed 15 tests.
+- [x] T030 [US1] Implement `lib/registration-approval/service.ts`, `read.ts` and `app/(app)/registration-approvals/actions.ts` using signed session client and app authorize before one bounded RPC; normalize only safe result codes. T028 GREEN; DB-free mocked calls only in U6. Evidence: U6 section; role-denial, single-RPC names, projection and safe-result mocks passed.
+- [x] T031 [US5] Implement `lib/client-access/authorize.ts` and `lib/client-access/status.ts` with signed self association, separate client path and per-request memoization; T029 GREEN. No staff helper widening or Storage grant. Evidence: U6 section; signed no-argument self-status and request-isolation tests passed.
+- [x] T032 [US6] Add log-scrub result/action cases to `tests/unit/registration-approval-actions.test.ts`; extend `tests/integration/registration-approval-verification.md` with mock-only limits, no raw input/provider output. Sequential ownership after T028/U5; final real wiring waits U9. Evidence: U6 section; thrown-provider and returned-error log-scrub tests passed; all four required mutations were detected and restored.
 
 ## Phase 8 — Staff UI (US1/2/3/4/6, U7)
 
