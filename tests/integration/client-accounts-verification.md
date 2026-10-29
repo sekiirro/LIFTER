@@ -1757,3 +1757,7 @@ Archived collision synthetic stand-in timings (ms):
 - Fix: after exporting the local CLI values, the integration job writes the four required app aliases to `$GITHUB_ENV` (origin fixed to `http://localhost:3000`) without printing key values. The same focused unit test passed 1/1.
 - GREEN after a clean Stack A reset and provision: full integration passed 25 files / 869 tests in 144.85 s; then the full CI-equivalent serial Playwright command, with all four app aliases and provider-fault opt-in, passed 125, skipped 9, failed 0 in 2.1 min. The skips and reasons are the three categories listed above.
 - Final corrected-head CI evidence (`ac03359`): push run 40804419533 and pull_request run 40804424278 both passed. Each integration suite passed and each Playwright lane passed 125, skipped 9, failed 0; integration job durations were 8m58s and 8m38s respectively. The integration-test steps took 2m23s and 2m28s; Playwright took 3m16s and 3m21s.
+
+## Hardening H4 - credential-optional Docker Hub pulls
+
+- The integration job conditionally logs in before `supabase start` when both `DOCKERHUB_USERNAME` and `DOCKERHUB_TOKEN` are configured. Add them under repository Settings → Secrets and variables → Actions. `DOCKERHUB_TOKEN` should be a Docker Hub personal access token with public-repository read-only scope. No secrets are configured in this repository yet, so the login step is skipped and CI uses its existing anonymous-pull behavior.
