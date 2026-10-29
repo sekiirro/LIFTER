@@ -88,7 +88,10 @@ for (const role of ['anon', 'authenticated', 'service_role']) {
         ).rejects.toMatchObject({ code: '42501' });
       }
       const [grant] =
-        await tx`select has_table_privilege(${role},'cron.job','SELECT') as allowed`;
+        await tx`select has_schema_privilege(${role},'cron','USAGE') as allowed`;
+      // Supabase owns cron.job as supabase_admin and grants PUBLIC SELECT.
+      // Postgres cannot revoke that owner's grant. Deny schema USAGE and
+      // prove the real SELECT below fails, even with an existing owner job.
       expect(grant!.allowed).toBe(false);
       await expect(
         tx.savepoint(async (inner) => {
