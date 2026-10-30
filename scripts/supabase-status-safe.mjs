@@ -135,7 +135,7 @@ function portFromUrl(value, name) {
     throw new Error(`${name} is missing or invalid`);
   }
   const authority = value.match(/^[a-z][a-z\d+.-]*:\/\/([^/?#]*)/i)?.[1];
-  const host = authority?.slice((authority.lastIndexOf('@') ?? -1) + 1);
+  const host = authority?.slice(authority.lastIndexOf('@') + 1);
   const explicitPort = host?.startsWith('[')
     ? host.match(/\]:(\d+)$/)?.[1]
     : host?.match(/:(\d+)$/)?.[1];
@@ -160,7 +160,7 @@ function safeApiUrl(value, port) {
   return `${parsed.protocol}//${parsed.hostname}:${port}`;
 }
 
-/** Validate identity and return only fields that are safe to print. */
+/** Validate identity and return only apiUrl, dbPort, and projectId. */
 export function validateAndRedactStatus(status, expected) {
   if (
     !expected ||
@@ -205,7 +205,6 @@ export function validateAndRedactStatus(status, expected) {
     apiUrl,
     dbPort: observedDbPort,
     projectId,
-    serviceHealth: {},
   };
 }
 

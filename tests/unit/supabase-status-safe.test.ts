@@ -49,7 +49,6 @@ describe('safe Supabase status projection', () => {
       apiUrl: 'http://127.0.0.1:54321',
       dbPort: 54322,
       projectId: 'lifter',
-      serviceHealth: {},
     });
   });
 
@@ -110,7 +109,6 @@ describe('safe Supabase status projection', () => {
       apiUrl: 'http://127.0.0.1:80',
       dbPort: 5432,
       projectId: 'lifter',
-      serviceHealth: {},
     });
   });
 
