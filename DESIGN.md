@@ -226,7 +226,7 @@
 | 52 | B: Smart Validation: validate on blur, live correction afterward, full validation on Submit (including server-side). **PO-approved, session 14, 2026-10-30** |
 | 53 | B: Contextual Hybrid: Modals for short actions, Side Drawers for selection/preview, Full Screen for complex editing, Mobile Bottom Sheets where appropriate. **PO-approved, session 14, 2026-10-30** |
 | 54 | B: Smart Exit Protection: warn on unsaved/pending changes, offer Stay/Discard and Save Draft when supported; browser close/reload warning where possible. **PO-approved, session 14, 2026-10-30** |
-| 55 | B: Essential Shortcuts: Ctrl/Cmd+S immediately saves pending changes in autosaving editors, with “Saved” only after server confirmation; in editors without autosave, it acts as Save Draft. Ctrl/Cmd+K (Quick Search), Esc (close Modal). Respect browser conflicts and unsaved changes. **PO, session 14, 2026-10-30** |
+| 55 | B: Essential Shortcuts: Ctrl/Cmd+S (Save Draft), Ctrl/Cmd+K (Quick Search), Esc (close Modal). Respect browser conflicts and unsaved changes. **PO-approved, session 14, 2026-10-30** |
 | 56 | A: Always reset list Filters/Sorting on reopening. No Saved Views or remembered filters. **PO-approved, session 14, 2026-10-30** |
 | 57 | B: Flexible Dashboard: Drag & Drop widget ordering, show/hide optional widgets, persist per-user preferences. Preserve mandatory widgets and role/tenant permissions. **PO-approved, session 14, 2026-10-30** |
 | 58 | **Unanswered — not approved** |
