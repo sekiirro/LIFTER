@@ -1,0 +1,16 @@
+{
+  "project_id": "lifter",
+  "API_URL": "http://127.0.0.1:54321",
+  "DB_URL": "postgresql://postgres:fake-password@127.0.0.1:54322/postgres",
+  "ANON_KEY": "fake-anon-jwt",
+  "SERVICE_ROLE_KEY": "fake-service-role-jwt",
+  "JWT_SECRET": "fake-jwt-secret",
+  "secret": "fake-secret-value",
+  "S3_PROTOCOL_ACCESS_KEY_ID": "fake-s3-key-id",
+  "S3_PROTOCOL_ACCESS_KEY_SECRET": "fake-s3-key-secret",
+  "services": {
+    "api": "healthy",
+    "db": "healthy",
+    "storage": "healthy"
+  }
+}

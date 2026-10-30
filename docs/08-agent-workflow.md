@@ -70,6 +70,8 @@ independent review of the actual diff and green relevant CI on the exact head; n
 gate is required. The content must still pass the complete main merge gate below in the parent feature
 PR before any merge into `main`. This process does not replace or bypass that gate (D-26).
 
+- For local Supabase status checks, use [scripts/supabase-status-safe.mjs](../scripts/supabase-status-safe.mjs) with an absolute `--workdir` and expected project/API/DB values; never print raw status output.
+
 ## Main merge gate
 
 Before asking the PO to approve a merge to `main`, require items 1-5 on the exact PR head:
