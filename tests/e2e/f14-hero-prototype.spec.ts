@@ -774,6 +774,46 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
       group: 'extras',
     });
     await close();
+
+    const narrow = await openPrototype(browser, {
+      locale: 'en',
+      theme,
+      width: 360,
+      height: 780,
+      material: 'B',
+      effect: 'blur',
+    });
+    const narrowGeometry = await narrow.page.evaluate(() => {
+      const art = document
+        .querySelector<HTMLImageElement>('[data-hero-image]')!
+        .getBoundingClientRect();
+      const card = document
+        .querySelector<HTMLElement>('[data-testid="hero-glass-card"]')!
+        .getBoundingClientRect();
+      return {
+        artHeight: art.height,
+        cardTop: card.top,
+        cardTopArtRatio: card.top / art.height,
+        visibleBandHeight: art.bottom - card.top,
+        bandAboveCardHeight: Math.max(
+          0,
+          card.top - (art.top + art.height * 0.65),
+        ),
+      };
+    });
+    expect(narrowGeometry.artHeight).toBeCloseTo(480, 0);
+    expect(narrowGeometry.cardTopArtRatio).toBeGreaterThanOrEqual(0.7);
+    expect(narrowGeometry.cardTopArtRatio).toBeLessThanOrEqual(0.8);
+    expect(narrowGeometry.visibleBandHeight).toBeLessThanOrEqual(0.3 * 480);
+    expect(narrowGeometry.bandAboveCardHeight).toBeLessThanOrEqual(0.1 * 480);
+    measurements.push({
+      label: `mobile-geometry-${theme}-360`,
+      ...narrowGeometry,
+    });
+    console.log(
+      `MOBILE_GEOMETRY ${theme} 360 ${JSON.stringify(narrowGeometry)}`,
+    );
+    await narrow.close();
   }
 
   for (const theme of ['light', 'dark'] as const) {
@@ -854,15 +894,60 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
       if (!art || !card) throw new Error('Mobile artwork or card missing');
       const imageRect = art.getBoundingClientRect();
       const cardRect = card.getBoundingClientRect();
+      const stage = art.closest<HTMLElement>('[data-testid="hero-prototype"]');
+      if (!stage) throw new Error('Mobile hero stage missing');
+      const readColor = (value: string) => {
+        const sampler = document.createElement('canvas');
+        sampler.width = 1;
+        sampler.height = 1;
+        const context = sampler.getContext('2d', { willReadFrequently: true });
+        if (!context) throw new Error('Mobile fade color sampler unavailable');
+        context.fillStyle = value;
+        context.fillRect(0, 0, 1, 1);
+        const [red, green, blue] = context.getImageData(0, 0, 1, 1).data;
+        return [red, green, blue];
+      };
+      const colorProbe = document.createElement('span');
+      colorProbe.style.position = 'absolute';
+      colorProbe.style.visibility = 'hidden';
+      stage.append(colorProbe);
+      const colorAt = (value: string) => {
+        colorProbe.style.backgroundColor = value;
+        return readColor(getComputedStyle(colorProbe).backgroundColor);
+      };
+      const bottomAverage = getComputedStyle(stage)
+        .getPropertyValue('--hero-bottom-average')
+        .trim();
+      const firstMidStop = colorAt(
+        'color-mix(in oklab, var(--hero-bottom-average) 88%, var(--color-bg))',
+      );
+      const secondMidStop = colorAt('var(--hero-mobile-mid)');
+      colorProbe.remove();
       return {
         imageHeight: imageRect.height,
+        cardTop: cardRect.top,
+        cardTopArtRatio: cardRect.top / imageRect.height,
+        visibleBandHeight: Math.max(0, imageRect.bottom - cardRect.top),
+        bandAboveCardHeight: Math.max(
+          0,
+          cardRect.top - (imageRect.top + imageRect.height * 0.65),
+        ),
         objectPosition: getComputedStyle(art).objectPosition,
         overlap: imageRect.bottom - cardRect.top,
+        bottomAverage,
+        midStopRgb: [firstMidStop, secondMidStop],
       };
     });
     expect(measurementsForBand.imageHeight).toBeCloseTo(520, 0);
     expect(measurementsForBand.objectPosition).toContain('30%');
-    expect(measurementsForBand.overlap).toBeCloseTo(32, 0);
+    expect(measurementsForBand.cardTopArtRatio).toBeGreaterThanOrEqual(0.7);
+    expect(measurementsForBand.cardTopArtRatio).toBeLessThanOrEqual(0.8);
+    expect(measurementsForBand.visibleBandHeight).toBeLessThanOrEqual(
+      0.3 * 520,
+    );
+    expect(measurementsForBand.bandAboveCardHeight).toBeLessThanOrEqual(
+      0.1 * 520,
+    );
     const gradient = await measureMobileGradient(page);
     measurements.push({
       label: `mobile-gradient-${theme}`,
@@ -1265,9 +1350,27 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
     const country = page.getByRole('combobox', {
       name: locale === 'ar' ? 'الدولة' : 'Country',
     });
+    await expect(country).toHaveValue(locale === 'ar' ? 'مصر' : 'Egypt');
     await country.focus();
     await expect(page.getByRole('listbox')).toBeVisible();
-    await checkAxe(page, `country-open-${locale}`);
+    await expect(page.getByRole('option').first()).toHaveAttribute(
+      'aria-selected',
+      'true',
+    );
+    await expect(country).toHaveAttribute(
+      'aria-activedescendant',
+      'hero-country-options-EG',
+    );
+    const popupBounds = await page.getByRole('listbox').boundingBox();
+    const cardBounds = await page.getByTestId('hero-glass-card').boundingBox();
+    if (!popupBounds || !cardBounds)
+      throw new Error('Open country list or card bounds unavailable');
+    expect(popupBounds.y + popupBounds.height).toBeLessThanOrEqual(900);
+    expect(popupBounds.y).toBeGreaterThanOrEqual(cardBounds.y);
+    await expect(page.getByTestId('hero-glass-card')).toHaveCSS(
+      'overflow',
+      'visible',
+    );
     const label = `country-open-${locale}`;
     const path = join(output, `${label}.png`);
     await page.screenshot({
@@ -1278,6 +1381,53 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
       style: 'nextjs-portal{display:none!important}',
     });
     screenshots.push({ path, label, group: 'extras' });
+    await checkAxe(page, `country-open-${locale}`);
+    await close();
+  }
+
+  {
+    const { page, close } = await openPrototype(browser, {
+      locale: 'en',
+      theme: 'light',
+      width: 390,
+      height: 844,
+      material: 'B',
+      effect: 'blur',
+    });
+    const country = page.getByRole('combobox', { name: 'Country' });
+    await expect(country).toHaveValue('Egypt');
+    await country.scrollIntoViewIfNeeded();
+    await country.evaluate((input) => {
+      const rect = input.getBoundingClientRect();
+      window.scrollBy(0, rect.top - 690);
+    });
+    await country.focus();
+    const list = page.getByRole('listbox');
+    await expect(list).toBeVisible();
+    await expect(list).toHaveAttribute('data-placement', 'above');
+    const bounds = await list.boundingBox();
+    const fieldBounds = await country.boundingBox();
+    if (!bounds || !fieldBounds)
+      throw new Error('Bottom country popup bounds unavailable');
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(fieldBounds.y);
+    expect(bounds.y).toBeGreaterThanOrEqual(0);
+    expect(bounds.y + bounds.height).toBeLessThanOrEqual(844);
+    const label = 'country-flip-bottom-en-390';
+    const path = join(output, `${label}.png`);
+    await page.screenshot({
+      path,
+      scale: 'device',
+      animations: 'disabled',
+      style: 'nextjs-portal{display:none!important}',
+    });
+    screenshots.push({ path, label, group: 'extras' });
+    await checkAxe(page, 'country-flip-bottom-en-390');
+    measurements.push({
+      label,
+      popup: bounds,
+      field: fieldBounds,
+      scrollY: await page.evaluate(() => window.scrollY),
+    });
     await close();
   }
 

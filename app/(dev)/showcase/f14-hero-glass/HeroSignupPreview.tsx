@@ -3,6 +3,7 @@
 import {
   useMemo,
   useEffect,
+  useLayoutEffect,
   useRef,
   useState,
   type FormEvent,
@@ -31,9 +32,12 @@ export function HeroSignupPreview({
   validatePreviewPhone: PreviewPhoneValidator;
 }) {
   const formRef = useRef<HTMLFormElement>(null);
+  const countryPickerRef = useRef<HTMLDivElement>(null);
+  const countryListRef = useRef<HTMLUListElement>(null);
   const [country, setCountry] = useState('EG');
   const [nationalNumber, setNationalNumber] = useState('');
   const [countryOpen, setCountryOpen] = useState(false);
+  const [countryOpensAbove, setCountryOpensAbove] = useState(false);
   const [countryQuery, setCountryQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
   const [phoneError, setPhoneError] = useState(false);
@@ -45,17 +49,32 @@ export function HeroSignupPreview({
     phoneCountries.find((option) => option.code === 'EG');
   const countryName = selectedCountry?.name ?? 'Egypt';
   const search = countryQuery.normalize('NFKC').toLocaleLowerCase(locale);
-  const filteredCountries = useMemo(
-    () =>
-      phoneCountries.filter((option) =>
-        option.name
-          .normalize('NFKC')
-          .toLocaleLowerCase(locale)
-          .includes(search),
-      ),
-    [locale, phoneCountries, search],
-  );
+  const filteredCountries = useMemo(() => {
+    const matching = phoneCountries.filter((option) =>
+      option.name.normalize('NFKC').toLocaleLowerCase(locale).includes(search),
+    );
+    if (search) return matching;
+    return matching.sort((left, right) => {
+      if (left.code === selectedCountry?.code) return -1;
+      if (right.code === selectedCountry?.code) return 1;
+      return 0;
+    });
+  }, [locale, phoneCountries, search, selectedCountry?.code]);
   const optionsId = 'hero-country-options';
+
+  function openCountryList() {
+    setCountryOpen(true);
+  }
+
+  useLayoutEffect(() => {
+    if (!countryOpen) return;
+    const pickerBounds = countryPickerRef.current?.getBoundingClientRect();
+    const listBounds = countryListRef.current?.getBoundingClientRect();
+    if (!pickerBounds || !listBounds) return;
+    const below = window.innerHeight - pickerBounds.bottom;
+    const above = pickerBounds.top;
+    setCountryOpensAbove(below < listBounds.height && above > below);
+  }, [countryOpen, filteredCountries.length]);
 
   useEffect(() => {
     const preview = formRef.current?.closest<HTMLElement>(
@@ -68,6 +87,7 @@ export function HeroSignupPreview({
     setCountry(option.code);
     setCountryQuery('');
     setCountryOpen(false);
+    setCountryOpensAbove(false);
     setActiveIndex(0);
     setPhoneError(false);
     setValidatedPhone('');
@@ -78,7 +98,7 @@ export function HeroSignupPreview({
       event.preventDefault();
       if (!countryOpen) {
         setCountryQuery('');
-        setCountryOpen(true);
+        openCountryList();
         setActiveIndex(0);
       } else {
         setActiveIndex((current) =>
@@ -91,8 +111,8 @@ export function HeroSignupPreview({
       event.preventDefault();
       if (!countryOpen) {
         setCountryQuery('');
-        setCountryOpen(true);
-        setActiveIndex(Math.max(filteredCountries.length - 1, 0));
+        openCountryList();
+        setActiveIndex(0);
       } else {
         setActiveIndex((current) => Math.max(current - 1, 0));
       }
@@ -110,6 +130,7 @@ export function HeroSignupPreview({
     if (event.key === 'Escape' && countryOpen) {
       event.preventDefault();
       setCountryOpen(false);
+      setCountryOpensAbove(false);
       setCountryQuery('');
       setActiveIndex(0);
     }
@@ -172,6 +193,7 @@ export function HeroSignupPreview({
               {messages['clientSignup.country']}
             </label>
             <div
+              ref={countryPickerRef}
               className={prototypeStyles.countryPicker}
               dir={locale === 'ar' ? 'rtl' : 'ltr'}
             >
@@ -191,12 +213,12 @@ export function HeroSignupPreview({
                 value={countryOpen ? countryQuery : countryName}
                 onFocus={() => {
                   setCountryQuery('');
-                  setCountryOpen(true);
+                  openCountryList();
                   setActiveIndex(0);
                 }}
                 onChange={(event) => {
                   setCountryQuery(event.currentTarget.value);
-                  setCountryOpen(true);
+                  openCountryList();
                   setActiveIndex(0);
                 }}
                 onKeyDown={onCountryKeyDown}
@@ -208,19 +230,15 @@ export function HeroSignupPreview({
                 }}
                 disabled={pending}
               />
-              <span
-                className={prototypeStyles.callingCode}
-                data-testid="country-calling-code"
-              >
-                <Bidi dir="ltr">+{selectedCountry?.callingCode ?? '20'}</Bidi>
-              </span>
               {countryOpen && (
                 <ul
+                  ref={countryListRef}
                   id={optionsId}
                   role="listbox"
                   dir={locale === 'ar' ? 'rtl' : 'ltr'}
-                  className={prototypeStyles.countryList}
+                  className={`${prototypeStyles.countryList} ${countryOpensAbove ? prototypeStyles.countryListAbove : ''}`}
                   data-testid="country-options"
+                  data-placement={countryOpensAbove ? 'above' : 'below'}
                 >
                   {filteredCountries.map((option, index) => (
                     <li
@@ -248,7 +266,7 @@ export function HeroSignupPreview({
           <label className={styles.field}>
             <span>{messages['clientSignup.phone']}</span>
             <span className={styles.phoneNumber}>
-              <span aria-hidden="true">
+              <span aria-hidden="true" data-testid="country-calling-code">
                 <Bidi dir="ltr">+{selectedCountry?.callingCode ?? '20'}</Bidi>
               </span>
               <input
