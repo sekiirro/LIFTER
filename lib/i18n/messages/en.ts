@@ -293,6 +293,8 @@ export const en: Record<keyof typeof ar, string> = {
   'registrationApproval.keyConflict':
     'A previous request cannot be reused with different details.',
   'registrationApproval.success': 'Payment recorded.',
+  'registrationApproval.rejectSuccess': 'Registration rejected.',
+  'registrationApproval.nextPage': 'Next page',
   'registrationApproval.dashboardApprovals': 'Approvals',
   'registrationApproval.dashboardPayments': 'Payments',
   'registrationApproval.clientStatus': 'Registration status',

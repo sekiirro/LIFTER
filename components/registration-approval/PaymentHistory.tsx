@@ -22,7 +22,7 @@ type Obligation = {
   amount_minor: string;
   currency: string;
   due_on: string | null;
-  paid: boolean;
+  paid: boolean | null;
   collected_on: string | null;
   obligation_id?: string;
   revision?: number;
@@ -176,11 +176,13 @@ export function PaymentHistory({
                 </Bidi>
               </td>
               <td>
-                <StatusBadge
-                  status={obligation.paid ? 'paid' : 'unpaid'}
-                  messages={messages}
-                />
-                {!obligation.paid && obligation.obligation_id && (
+                {obligation.paid !== null && (
+                  <StatusBadge
+                    status={obligation.paid ? 'paid' : 'unpaid'}
+                    messages={messages}
+                  />
+                )}
+                {obligation.paid === false && obligation.obligation_id && (
                   <div className={styles.actions}>
                     <Field
                       label={messages['registrationApproval.paymentDate']}
@@ -213,7 +215,7 @@ export function PaymentHistory({
                   </div>
                 )}
                 {role === 'platform_owner' &&
-                  obligation.paid &&
+                  obligation.paid === true &&
                   obligation.kind === 'collection' &&
                   obligation.obligation_id &&
                   obligation.tail_event_id && (

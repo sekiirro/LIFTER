@@ -265,7 +265,7 @@ test('client status updates after PO rejection and reconsideration without signi
       .getByRole('button', { name: messages['registrationApproval.reject'] })
       .click();
     await expect(
-      staffPage.getByText(messages['registrationApproval.success']),
+      staffPage.getByText(messages['registrationApproval.rejectSuccess']),
     ).toBeVisible();
 
     await clientPage

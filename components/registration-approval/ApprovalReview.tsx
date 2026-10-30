@@ -95,7 +95,13 @@ export function ApprovalReview({
                 reasonCode: 'registration_rejected',
               });
       if (result.status === 'ok')
-        setNotice(messages['registrationApproval.success']);
+        setNotice(
+          messages[
+            action === 'reject'
+              ? 'registrationApproval.rejectSuccess'
+              : 'registrationApproval.success'
+          ],
+        );
       else if (result.status === 'stale_state')
         setNotice(messages['registrationApproval.stale']);
       else if (result.status === 'key_conflict')
@@ -199,7 +205,9 @@ export function ApprovalReview({
             amount_minor: row.amount_minor,
             currency: row.currency,
             due_on: null,
-            paid: correction !== undefined,
+            paid: correctionContext?.subscriptionId
+              ? correction !== undefined
+              : null,
             collected_on: null,
             obligation_id: correction?.obligationId,
             revision: correction?.revision,

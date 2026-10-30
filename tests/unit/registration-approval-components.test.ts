@@ -93,6 +93,18 @@ describe('registration approval controls', () => {
     expect(html).not.toContain('reconsider');
     expect(html).not.toContain('correct');
   });
+  it('does not guess installment paid state when the PO-only projection is unavailable', () => {
+    const html = renderToStaticMarkup(
+      createElement(ApprovalReview, {
+        item: { ...item, approval_state: 'approved' },
+        workspaceId: '00000000-0000-0000-0000-000000000001',
+        role: 'workspace_owner',
+        messages: getMessages('en'),
+      }),
+    );
+    expect(html).not.toContain('data-status="unpaid"');
+    expect(html).not.toContain('data-status="paid"');
+  });
   it('requires explicit confirmation and preserves the request key when retrying uncertainty', () => {
     const submit = vi.fn();
     const html = renderToStaticMarkup(

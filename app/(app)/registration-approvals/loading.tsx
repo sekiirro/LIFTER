@@ -2,6 +2,7 @@ import { cookies } from 'next/headers';
 import { LOCALE_COOKIE, parseLocale } from '../../../lib/design/preferences';
 import { getMessages } from '../../../lib/i18n';
 import { Skeleton } from '../../../components/ui/States';
+import buttonStyles from '../../../components/ui/Button.module.css';
 import styles from '../packages/packages.module.css';
 
 export default async function Loading() {
@@ -11,7 +12,9 @@ export default async function Loading() {
     <main className={styles.main}>
       <h1>{m['registrationApproval.title']}</h1>
       <div role="status" aria-busy="true">
-        <span className="sr-only">{m['registrationApproval.loading']}</span>
+        <span className={buttonStyles.srOnly}>
+          {m['registrationApproval.loading']}
+        </span>
         <Skeleton shape="card" />
       </div>
     </main>

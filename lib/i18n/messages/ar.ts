@@ -281,6 +281,8 @@ export const ar = {
   'registrationApproval.keyConflict':
     'تعذر إعادة استخدام طلب سابق بتفاصيل مختلفة.',
   'registrationApproval.success': 'تم تسجيل الدفعة.',
+  'registrationApproval.rejectSuccess': 'تم رفض طلب التسجيل.',
+  'registrationApproval.nextPage': 'الصفحة التالية',
   'registrationApproval.dashboardApprovals': 'الموافقات',
   'registrationApproval.dashboardPayments': 'الدفعات',
   'registrationApproval.clientStatus': 'حالة التسجيل',

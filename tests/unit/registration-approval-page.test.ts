@@ -6,6 +6,8 @@ import Review from '../../app/(app)/registration-approvals/[clientId]/page';
 import PaymentPage from '../../app/(app)/payments/page';
 import PaymentDetail from '../../app/(app)/payments/[subscriptionId]/page';
 import Loading from '../../app/(app)/registration-approvals/loading';
+import PaymentLoading from '../../app/(app)/payments/loading';
+import ClientStatusLoading from '../../app/(client)/account/status/loading';
 import ErrorPage from '../../app/(app)/registration-approvals/error';
 
 const mock = vi.hoisted(() => ({
@@ -130,7 +132,10 @@ describe('registration approval and payment pages', () => {
       await Page({ searchParams: Promise.resolve({ workspace }) }),
     );
     expect(queue).toContain('data-testid="approval-queue"');
-    expect(mock.approvalQueue).toHaveBeenCalledWith({ workspaceId: workspace });
+    expect(mock.approvalQueue).toHaveBeenCalledWith({
+      workspaceId: workspace,
+      cursorId: null,
+    });
     const review = renderToStaticMarkup(
       await Review({
         params: Promise.resolve({ clientId: client }),
@@ -148,6 +153,84 @@ describe('registration approval and payment pages', () => {
       workspaceId: workspace,
       clientId: client,
     });
+  });
+  it('lets users submit workspace selection and follow validated queue cursors', async () => {
+    const cursor = '00000000-0000-4000-8000-000000000004';
+    mock.approvalQueue.mockResolvedValue({
+      ...pending,
+      next_cursor: cursor,
+    });
+    mock.paymentQueue.mockResolvedValue({
+      status: 'ok',
+      items: [],
+      next_cursor: cursor,
+    });
+
+    const approvals = renderToStaticMarkup(
+      await Page({ searchParams: Promise.resolve({ workspace }) }),
+    );
+    expect(approvals).toContain('type="submit"');
+    expect(approvals).toContain(getMessages('en')['packages.select']);
+    expect(approvals).toContain(`name="cursor" value="${cursor}"`);
+    expect(mock.approvalQueue).toHaveBeenCalledWith({
+      workspaceId: workspace,
+      cursorId: null,
+    });
+
+    const nextApprovals = renderToStaticMarkup(
+      await Page({ searchParams: Promise.resolve({ workspace, cursor }) }),
+    );
+    expect(nextApprovals).toContain(
+      getMessages('en')['registrationApproval.nextPage'],
+    );
+    expect(mock.approvalQueue).toHaveBeenLastCalledWith({
+      workspaceId: workspace,
+      cursorId: cursor,
+    });
+
+    const payments = renderToStaticMarkup(
+      await PaymentPage({ searchParams: Promise.resolve({ workspace }) }),
+    );
+    expect(payments).toContain('type="submit"');
+    expect(payments).toContain(getMessages('en')['packages.select']);
+    expect(payments).toContain(`name="cursor" value="${cursor}"`);
+    expect(mock.paymentQueue).toHaveBeenCalledWith({
+      workspaceId: workspace,
+      cursorId: null,
+    });
+
+    await PaymentPage({
+      searchParams: Promise.resolve({ workspace, cursor }),
+    });
+    expect(mock.paymentQueue).toHaveBeenLastCalledWith({
+      workspaceId: workspace,
+      cursorId: cursor,
+    });
+  });
+  it('rejects malformed queue cursors before reading either queue', async () => {
+    await expect(
+      Page({ searchParams: Promise.resolve({ workspace, cursor: 'bad' }) }),
+    ).rejects.toThrow('404');
+    await expect(
+      PaymentPage({
+        searchParams: Promise.resolve({ workspace, cursor: 'bad' }),
+      }),
+    ).rejects.toThrow('404');
+    expect(mock.approvalQueue).not.toHaveBeenCalled();
+    expect(mock.paymentQueue).not.toHaveBeenCalled();
+  });
+  it('uses the shared visually-hidden utility in all loading shells', async () => {
+    const shells = await Promise.all([
+      Loading(),
+      PaymentLoading(),
+      ClientStatusLoading(),
+    ]);
+    for (const shell of shells) {
+      const html = renderToStaticMarkup(shell);
+      expect(html).toContain('aria-busy="true"');
+      expect(html).not.toContain('class="sr-only"');
+      expect(html).toMatch(/class="[^"]*srOnly/);
+    }
   });
   it.each(['sales', 'trainer', null])(
     'denies %s from approval queue before loading',

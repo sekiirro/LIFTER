@@ -3,6 +3,18 @@ import { ar } from '../../lib/i18n/messages/ar';
 import { en } from '../../lib/i18n/messages/en';
 
 describe('registration approval message parity and semantics', () => {
+  it('has a rejection success message distinct from payment success in both locales', () => {
+    const enMessages = en as Record<string, string>;
+    const arMessages = ar as Record<string, string>;
+    expect(enMessages['registrationApproval.rejectSuccess']).toBeTruthy();
+    expect(arMessages['registrationApproval.rejectSuccess']).toBeTruthy();
+    expect(enMessages['registrationApproval.rejectSuccess']).not.toBe(
+      enMessages['registrationApproval.success'],
+    );
+    expect(arMessages['registrationApproval.rejectSuccess']).not.toBe(
+      arMessages['registrationApproval.success'],
+    );
+  });
   it('has identical Arabic and English message keys with non-empty values', () => {
     expect(Object.keys(ar).sort()).toEqual(Object.keys(en).sort());
     for (const key of Object.keys(ar) as (keyof typeof ar)[]) {

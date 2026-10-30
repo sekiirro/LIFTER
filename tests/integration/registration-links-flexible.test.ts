@@ -91,6 +91,43 @@ it.each([
       ],
     },
   ],
+  [
+    'offsets are not strictly increasing',
+    {
+      installments: [
+        { seq: 1, amount_minor: '400', due_offset_days: 12 },
+        { seq: 2, amount_minor: '800', due_offset_days: 12 },
+      ],
+    },
+  ],
+  [
+    'sequence has a gap',
+    {
+      installments: [
+        { seq: 1, amount_minor: '400', due_offset_days: 2 },
+        { seq: 3, amount_minor: '800', due_offset_days: 12 },
+      ],
+    },
+  ],
+  [
+    'amount_minor is a JSON number',
+    {
+      installments: [
+        { seq: 1, amount_minor: 400, due_offset_days: 2 },
+        { seq: 2, amount_minor: '800', due_offset_days: 12 },
+      ],
+    },
+  ],
+  [
+    'installment has an extra key',
+    {
+      installments: [
+        { seq: 1, amount_minor: '400', due_offset_days: 2, extra: true },
+        { seq: 2, amount_minor: '800', due_offset_days: 12 },
+      ],
+    },
+  ],
+  ['token hash is malformed', { token_hash: 'not-a-hash' }],
 ])('T050 rejects %s without an issued row or audit', async (_label, patch) => {
   const beforeLinks =
     await db`select count(*)::int as n from public.registration_links where workspace_id=${f.wsA.id}`;

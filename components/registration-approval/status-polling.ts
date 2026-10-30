@@ -70,7 +70,8 @@ export function createStatusPoller({
   let unsubscribe: (() => void) | undefined;
   let inFlight = false;
   let disposed = false;
-  let automaticStopped = initialState !== 'pending-approval';
+  let automaticStopped =
+    initialState !== 'pending-approval' && initialState !== 'unavailable';
   let authLost = false;
   let currentState = initialState;
   let automaticAttempts = 0;

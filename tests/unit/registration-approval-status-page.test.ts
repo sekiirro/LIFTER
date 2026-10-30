@@ -124,6 +124,25 @@ describe('client registration status refresh', () => {
     poller.stop();
   });
 
+  it('resumes bounded automatic polling when an unavailable initial state refreshes to pending', async () => {
+    vi.useFakeTimers();
+    const load = vi.fn().mockResolvedValue(pending);
+    const poller = createStatusPoller({
+      runtime: runtime(),
+      load,
+      initialState: 'unavailable',
+    });
+    poller.start();
+    await expect(poller.refresh()).resolves.toBe(true);
+    expect(load).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(14_999);
+    expect(load).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(load).toHaveBeenCalledTimes(2);
+    expect(poller.attempts).toBe(1);
+    poller.stop();
+  });
+
   it.each(['approved', 'rejected'] as const)(
     'stops automatic checks on %s',
     async (approval_state) => {

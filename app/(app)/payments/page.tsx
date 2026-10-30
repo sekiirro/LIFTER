@@ -7,14 +7,19 @@ import { readWorkspacePaymentQueue } from '../../../lib/registration-approval/re
 import { LOCALE_COOKIE, parseLocale } from '../../../lib/design/preferences';
 import { getMessages } from '../../../lib/i18n';
 import { Alert } from '../../../components/ui/Alert';
+import { Button } from '../../../components/ui/Button';
 import { EmptyState } from '../../../components/ui/States';
 import { PaymentQueue } from '../../../components/registration-approval/PaymentQueue';
+import { isUuid } from '../../../lib/registration-links/validation';
 import styles from '../packages/packages.module.css';
 
 export default async function PaymentsPage({
   searchParams,
 }: {
-  searchParams: Promise<{ workspace?: string | string[] }>;
+  searchParams: Promise<{
+    workspace?: string | string[];
+    cursor?: string | string[];
+  }>;
 }) {
   const actor = await requireActor();
   if (!actor.role || !roleHasCapability(actor.role, 'record_payment'))
@@ -36,14 +41,21 @@ export default async function PaymentsPage({
     );
   if (!workspaces.length)
     return main(<EmptyState title={m['registrationApproval.noWorkspace']} />);
-  const requested = (await searchParams).workspace;
+  const query = await searchParams;
+  const requested = query.workspace;
   const workspaceId = requested ?? workspaces[0]!.id;
   if (
     typeof workspaceId !== 'string' ||
     !workspaces.some((workspace) => workspace.id === workspaceId)
   )
     notFound();
-  const result = await readWorkspacePaymentQueue({ workspaceId });
+  const cursor = query.cursor;
+  if (cursor !== undefined && (typeof cursor !== 'string' || !isUuid(cursor)))
+    notFound();
+  const result = await readWorkspacePaymentQueue({
+    workspaceId,
+    cursorId: cursor ?? null,
+  });
   if (result.status !== 'ok')
     return main(
       <Alert
@@ -58,6 +70,10 @@ export default async function PaymentsPage({
       />,
     );
   const items = (result as { items?: never[] }).items ?? [];
+  const nextCursor =
+    'next_cursor' in result && typeof result.next_cursor === 'string'
+      ? result.next_cursor
+      : null;
   return main(
     <>
       <form method="get">
@@ -69,9 +85,21 @@ export default async function PaymentsPage({
             </option>
           ))}
         </select>
+        <Button type="submit" variant="secondary">
+          {m['packages.select']}
+        </Button>
       </form>
       <p>{m['registrationApproval.paymentIntro']}</p>
       <PaymentQueue items={items} workspaceId={workspaceId} messages={m} />
+      {nextCursor && (
+        <form method="get">
+          <input type="hidden" name="workspace" value={workspaceId} />
+          <input type="hidden" name="cursor" value={nextCursor} />
+          <Button type="submit" variant="secondary">
+            {m['registrationApproval.nextPage']}
+          </Button>
+        </form>
+      )}
     </>,
   );
 }
