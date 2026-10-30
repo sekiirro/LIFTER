@@ -829,7 +829,13 @@ No `20261101124000_flexible_registration_link_terms.sql` or `20261102120000` F14
 - Stack A `supabase db reset` from the checked-out migration chain applied the new migration; `supabase migration up` then reported `applied: []`. No manual DB edits were made. After reset, the approved unmodified `client-accounts-provision.mjs` was run with explicit Stack A endpoint environment; secrets were not printed or committed.
 - The existing bidirectional TypeScript↔SQL capability parity suite passed in the full unit/integration gates; the capability matrix itself was unchanged.
 
-### Remaining open F12 tasks
+### Historical task snapshot (superseded by the S14 continuation below)
+
+The statuses below were recorded before the preserved U8 implementation and the
+session-14 Stack A rulings. They are retained as historical context only; use the
+current S14 continuation below for present status.
+
+### Remaining open F12 tasks (historical)
 
 - T002 — U0 decision/PA mapping documentation remains a separate plan/spec synchronization task.
 - T003 — waiting for the infrastructure owner’s Stack B selector, harness, provisioner, and e2e readiness evidence; Stack B is outside this lane.
@@ -850,3 +856,144 @@ No `20261101124000_flexible_registration_link_terms.sql` or `20261102120000` F14
 - T054 — flexible-link UI implementation remains open; requires T053 and Stack B.
 
 - Runtime identifies GPT-6; effort-selection metadata is unavailable, so Luna High could not be independently verified.
+
+## Session 14 continuation — T035 ambiguity fix and U8 status page (2026-10-30)
+
+### Stack A ownership and migration chain
+
+- Read-only config check: `project_id=lifter`, API `54321`, DB `54322`; filtered local status later confirmed those endpoints. Local DB password classification: **default**. No status/env raw output or password value was emitted.
+- RED setup: `npx --yes supabase@2.122.0 db reset --workdir <absolute-worktree> --local --version 20261101125000` exited 0 and applied migrations through immutable `20261101125000_registration_approval_correction_read.sql`. Stack A ownership was checked immediately before the command (`project_id=lifter`, API 54321, DB 54322).
+- T035 RED: `npx vitest run --config vitest.integration.config.ts tests/integration/registration-approval-correction-ambiguity.test.ts` yielded 1 failed / 0 passed. The 125000-only function returned `status: "ok"` with arbitrary correction identifiers for two approved subscriptions; the test expected exactly `{status:"unavailable"}`.
+- Forward-only GREEN: `npx --yes supabase@2.122.0 migration up --workdir <absolute-worktree> --local` applied only `20261101130000_registration_approval_correction_ambiguity.sql`; the same focused Vitest command yielded 1 passed / 0 failed. The function returns the documented fixed generic ambiguity result without selecting an arbitrary subscription or exposing identifiers. Its probe transaction rolls back the temporary index/trigger changes.
+- After that proof, a fresh Stack A `db reset --workdir <absolute-worktree> --local` exited 0 and applied the full migration chain through 130000. Stack A ownership was checked immediately before each Supabase command. No pushed migration (including 124000/125000) was edited.
+- New forward migration: `20261101130000_registration_approval_correction_ambiguity.sql`. It follows `20261101125000_registration_approval_correction_read.sql`, is later than the reserved `20261101124000` timestamp, and sorts before F14's `20261102120000` boundary. The existing 20261101125000 migration and migrations on main were not edited.
+- Current migration timestamps, in order: `20261027120000`, `20261027130000`, `20261027140000`, `20261027150000`, `20261027150100`, `20261027160000`, `20261027160100`, `20261028120000`, `20261029120000`, `20261030120000`, `20261031120000`, `20261031121000`, `20261031122000`, `20261031123000`, `20261031123500`, `20261031123600`, `20261031123700`, `20261031124000`, `20261031125000`, `20261031130000`, `20261101120000`, `20261101121000`, `20261101122000`, `20261101123000`, `20261101125000`, `20261101130000`.
+- The approved, unmodified `node tests/integration/client-accounts-provision.mjs` exited 0 after the fresh reset (`Local Vault provisioned; two matching server-only env copies saved.`). No secret value was emitted by the run.
+
+### RED / GREEN and integration evidence
+
+- T035 uses the fixed ambiguity policy: multiple valid approval event/subscription pairs return exactly `{status:"unavailable"}`; no latest-subscription order is inferred from incomplete history.
+- U8 T038 test RED before poller implementation: focused unit failed to resolve the missing `status-polling` module. U8 T040 parity RED before messages: Arabic `registrationApproval.statusPending` was missing. After implementation, focused status/page/message/access tests passed `4 files / 19 tests`.
+- Full unit after preserved U8 work: `npm test` — 75 files passed, 1,533 passed / 0 failed.
+- Full Stack-A integration after reset/provisioning: `npm run test:integration` finished `39 files / 27 passed / 11 failed / 1 skipped`; `1,114 tests / 991 passed / 81 failed / 42 skipped`. All 81 failures were setup failures reporting `SIGNUP_* env missing; run provisioning`; no assertion failure was observed in those tests. The provisioner succeeded, but does not export the values to the parent process; the current harness reads those values from `process.env`. No file or Vault value was loaded/exported by this run. The full integration gate is therefore blocked, not green.
+- Read-only Stack A password classification: `default` (reported without emitting the password or raw status output).
+- U9 Playwright attempt: route rendered, but signup returned the generic “Please try again later.” Direct integration-fixture import also failed because it imports Vitest into Playwright CJS. No authenticated session or screenshots were produced; there was no manual database change.
+- T042 source review: the operations suite uses real signup and staff RPC clients, but has no Auth sign-in/refresh/session-revocation or Storage assertions. The client-access suite relies on SQL `probe()`/synthetic JWT claims and controlled grants; it is not a real signed-session/PostgREST denial proof. The replay suite tests post-wait role/membership changes, not revocation of an actual session. New real-session coverage remains open because its signup fixture requires `SIGNUP_*` process values, and no allowed in-memory setup path has been established.
+- Gates: typecheck PASS; lint PASS; touched-file Prettier PASS; edge build PASS and generated the `/(client)/account/status/page` route in `.next/server/app-paths-manifest.json`; `npm run size` PASS at web `7,215.89 KiB` (`1,484.29 KiB gzip`) and cron `2.85 KiB` (`1.25 KiB gzip`), each below 65,536 KiB.
+
+### U8 implementation and review
+
+`/account/status` now reads only `getClientSelfStatus()` for the authenticated session; the refresh action has no caller-supplied IDs. The page uses the existing login layout, Card, Button, StatusBadge, Skeleton, ErrorState, fonts and semantic tokens. Pending checks wait 15 seconds, cap at 12 automatic attempts, pause while hidden/offline, resume without an immediate request, and share a one-in-flight guard with manual refresh. Approved-transition navigation rechecks the session/status and only permits `/`; direct approved states retain a manual home link. Rejected copy is generic and approved copy says approval is not activation. No P2 form UI or Realtime path was added.
+
+Cross-feature/finance/isolation review notes: the new SQL count is scoped by workspace/client and the composite subscription/client join; ambiguous history returns only `{status:"unavailable"}`. The function retains SECURITY DEFINER, empty search path, postgres ownership, revoked public/anon/service-role execute and authenticated execute grants. The client status path accepts no target IDs, relies on the self-status RPC/session association, does not expose ledger or commission fields, and introduces no cross-request cache. P2 form assignment and P4 activation remain outside the UI.
+
+### Frontend Design Gate
+
+Skill catalog read in full (55 entries). Skill review (APPLIES / NOT APPLICABLE; one-line reason):
+
+| Skill | Status | Reason |
+|---|---|---|
+| apple-design | NOT APPLICABLE | This is not an Apple-native surface and no motion direction was requested. |
+| ui-ux-pro-max | APPLIES ? lookup only | Searched UX guidance for status refresh; no generated design system or persisted output used. |
+| impeccable | APPLIES | Loaded incumbent context, craft floor and one post-edit detector pass. |
+| frontend-design | APPLIES | Applied production UI guidance; DS overrides its font, palette and motion suggestions. |
+| baseline-ui | APPLIES | Reused existing primitives; its Tailwind requirement conflicts with this CSS-module project and was not adopted. |
+| design-dna | NOT APPLICABLE | No brand/system extraction or rebrand was requested. |
+| genjutsu | NOT APPLICABLE | No canvas or authored motion work is in scope. |
+| emil-design-eng | APPLIES | Applied interaction-feedback and restraint guidance to the status controls. |
+| animate | NOT APPLICABLE | The status flow specifies no authored animation. |
+| animate-expo | NOT APPLICABLE | This is a Next.js web app, not Expo. |
+| review-animations | NOT APPLICABLE | No new animation code was added. |
+| improve-animations | NOT APPLICABLE | No existing animation was changed. |
+| find-animation-opportunities | NOT APPLICABLE | The approved flow does not call for motion. |
+| animation-vocabulary | NOT APPLICABLE | No motion direction needed translation. |
+| animation-performance | NOT APPLICABLE | No authored motion to optimize. |
+| prototype | NOT APPLICABLE | The brief fixes one approved status flow; no alternatives were requested. |
+| mobile-native | APPLIES | Reviewed the 390px/touch surface; existing Button meets the project touch token. Physical-device testing remains unavailable. |
+| pick-ui-library | NOT APPLICABLE | Existing Design System components cover the surface; no library choice is needed. |
+| ask-sonner | NOT APPLICABLE | The flow uses inline status feedback, not toasts. |
+| write-swift | NOT APPLICABLE | No Swift/native code is in scope. |
+| break-ui | APPLIES | Added tests for offline/hidden, unavailable, budget exhaustion and concurrent refresh cases. |
+| better-ui | APPLIES | Reused established page and component patterns. |
+| better-typography | APPLIES | Uses root Geist/IBM Plex Sans Arabic font setup and existing hierarchy. |
+| better-colors | APPLIES | Uses existing semantic badge and surface tokens only. |
+| better-accessibility | APPLIES | Native buttons/links, stable polite status region, alert denial and visible shared focus treatment. |
+| better-layout | APPLIES | Reuses the existing narrow login layout and responsive card behavior. |
+| better-interface | APPLIES | Reviewed the changed route/component and its callers; full U9 screenshot review remains open. |
+| better-writing | APPLIES | Added concise bilingual state copy, with no activation or rejection-reason claims. |
+| interface-review | APPLIES | Reviewed the changed UI diff and status flows; axe/rendered evidence remains open. |
+| visual-style-presets | NOT APPLICABLE | Presets cannot override the approved LIFTER Design System. |
+| glass-dark-ui | NOT APPLICABLE | Glass effects are outside the approved visual language. |
+| progressive-blur | NOT APPLICABLE | No blur effect is needed. |
+| motion-design | NOT APPLICABLE | No motion is specified. |
+| css-animation | NOT APPLICABLE | No authored CSS animation was added. |
+| remotion-motion-graphics | NOT APPLICABLE | This is not a video composition. |
+| gsap-core | NOT APPLICABLE | No GSAP animation is used. |
+| threejs-fundamentals | NOT APPLICABLE | No 3D scene is used. |
+| threejs-animation | NOT APPLICABLE | No 3D animation is used. |
+| threejs-geometry | NOT APPLICABLE | No 3D geometry is needed. |
+| threejs-interaction | NOT APPLICABLE | No 3D interaction is needed. |
+| threejs-lighting | NOT APPLICABLE | No 3D lighting is needed. |
+| threejs-loaders | NOT APPLICABLE | No 3D assets are loaded. |
+| threejs-materials | NOT APPLICABLE | No 3D materials are used. |
+| threejs-postprocessing | NOT APPLICABLE | No 3D postprocessing is used. |
+| threejs-shaders | NOT APPLICABLE | No shader work is in scope. |
+| threejs-textures | NOT APPLICABLE | No 3D textures are used. |
+| gsap-frameworks | NOT APPLICABLE | The app uses React and no GSAP or non-React framework. |
+| gsap-performance | NOT APPLICABLE | No GSAP code is used. |
+| gsap-plugins | NOT APPLICABLE | No GSAP plugins are used. |
+| gsap-react | NOT APPLICABLE | No GSAP integration is used. |
+| gsap-scrolltrigger | NOT APPLICABLE | No scroll animation is specified. |
+| gsap-timeline | NOT APPLICABLE | No animation timeline is specified. |
+| gsap-utils | NOT APPLICABLE | No GSAP utilities are used. |
+| lottie | NOT APPLICABLE | No Lottie asset or runtime is used. |
+| remotion-to-hyperframes | NOT APPLICABLE | No Remotion-to-video port is requested. |
+
+Design authority conflict: frontend-design recommends custom fonts/colors and motion; baseline-ui recommends Tailwind. `DESIGN.md`, existing tokens/components and CSS modules take precedence. No token, dependency, or motion change was made.
+
+Checklist (PASS/FAIL with evidence):
+- PASS ? Tokens/brand: no new color, spacing, radius or font values; existing semantic status tokens are retained.
+- PASS ? Typography/direction: root Geist and IBM Plex Sans Arabic; page direction follows locale; no mixed-direction values need Bidi.
+- PASS ? Layout/components: existing login layout, Card, Button, StatusBadge, Skeleton and ErrorState reused.
+- FAIL ? Contrast in rendered light/dark/sample brand colors: not rendered in this run.
+- PASS ? Keyboard/focus/touch by code: native Link/Button, shared visible focus, touch-min Button; reduced-motion behavior unchanged because no motion was added.
+- FAIL ? Axe and rendered screen-reader verification: not run.
+- PASS ? States/copy: pending, approved, rejected, denied, unavailable, loading, disabled/refreshing, exhausted budget and fallback are represented; Arabic/English parity test passes.
+- FAIL ? Screenshot matrix {AR-RTL, EN-LTR} ? {light,dark} ? {390px,1440px} for every F12 screen: no screenshots produced. `%TEMP%\lifter-f12-u9\` contains no evidence from this run.
+- PASS ? Dependencies/size: no dependency added; `npm run size` passed within the configured limit.
+
+### Earlier remaining-gate snapshot (superseded by S14 addenda below)
+
+At this snapshot, T042 real signup/session coverage, T043 Playwright/axe and the eight-cell screenshot matrix, T044 Q-M01..Q-M24, T045 full gates, T046 traceability review, T047 retained artifacts/CI, and T048 independent review were open. The latest S14 addenda complete the T043 UI matrix and focused journeys; T042 real F11 signup/session coverage, T044 Q-M01..Q-M24, the full integration and broad E2E gates, T046 traceability review, T047 CI evidence, and T048 independent review remain open. T003/T043/T044/T050..T054 run on Stack A under the session-14 ruling.
+
+## Design-skill applicability record end
+
+### S14 UI evidence addendum (latest; supersedes the earlier U9 attempt and rendered-UI FAIL rows above)
+
+- T043 focused Playwright rerun: `npx playwright test tests/e2e/registration-approval-a11y.spec.ts tests/e2e/registration-approval.spec.ts --workers=1` — **4 passed / 0 failed**. Stack A remained the verified `lifter` project (API 54321 / DB 54322); Playwright and Stack A were released after the run.
+- Axe ran on 11 rendered states: eight pending-status AR/EN × light/dark × mobile 390/desktop 1440 matrix cells, PO review, payment history/correction, and approved client status. **0 serious and 0 critical violations** in every scan. Rejected status was exercised but not separately axe-scanned.
+- Journey coverage: client/trainer staff-dashboard denials; Sales approval denial while payment capability remains; PO approval confirmation uses the first issued installment (400 XTS rather than 1,200 XTS total); client approved status; pre-activation second-installment collection guard; PO correction of the recorded first installment with WO correction unavailable; rejected status and PO reconsideration reflected on the same signed client session after manual refresh. T042 real F11 signup is still separately blocked by the integration harness requiring `SIGNUP_*`; these UI sessions use synthetic local fixture users and do not prove F11 signup. P4 activation/writer is outside scope, so successful collection after activation is not covered.
+- The PO review showed 400 XTS and the two installment amounts. The first payment screenshot captured a loading state; the rerun added settled-state waits and the final payment screenshot now shows the loaded history, recorded 400 XTS installment, correction control, and unpaid 800 XTS installment. Visual review of all eight status cells plus review and payment screenshots found no clipping, overflow, contrast, direction, or hierarchy issues. A visible duplicate pending label was found in the live region. An initial attempt used an undefined global class and did not hide it; the final fix imports `buttonStyles.srOnly` from `components/ui/Button.module.css`, preserving announcement semantics without a third visible label. The corrected matrix and staff states were rerun: 4 passed / 0 failed, with 11 axe scans and 0 serious/critical violations; the refreshed 10 PNGs replaced the prior copies in both evidence locations.
+- OS-temp screenshots: `%TEMP%\lifter-f12-u9`. Retained evidence: `tests/integration/evidence/f12-u9/` (10 PNGs):
+  - `registration-status-ar-light-mobile390.png`
+  - `registration-status-ar-light-desktop1440.png`
+  - `registration-status-ar-dark-mobile390.png`
+  - `registration-status-ar-dark-desktop1440.png`
+  - `registration-status-en-light-mobile390.png`
+  - `registration-status-en-light-desktop1440.png`
+  - `registration-status-en-dark-mobile390.png`
+  - `registration-status-en-dark-desktop1440.png`
+  - `registration-review-en-light-desktop1440.png`
+  - `registration-payment-correction-en-light-desktop1440.png`
+- UI verification checklist update: PASS — existing token/component usage, Geist/IBM Plex Sans Arabic, locale direction, responsive layouts, keyboard names/roles and focus, live region, bilingual copy/state handling; axe and screenshot review as above. PARTIAL — contrast with a sample workspace brand override was not separately captured; no tablet viewport was captured. No new dependency, motion, or token was added.
+- Focused source checks after the final UI changes: `npx vitest run tests/unit/registration-approval-status-page.test.ts tests/unit/registration-approval-components.test.ts` — 2 files / 17 tests passed; `npx tsc --noEmit` passed. Broad non-DB gates are owned by specs_gates.
+
+### S14 final-source gate rerun
+
+- Final-source non-DB gates passed: `npm run lint`; `npm run typecheck`; `npm test` — 75 files / 1,534 tests passed; `npm run build`; `npm run size`; and `npm run check:secrets`. Final web size: 7,216.38 KiB uncompressed / 1,497.23 KiB upload gzip (1,484.39 KiB worker gzip, within 65,536 KiB); cron worker: 2.85 KiB / 1.25 KiB gzip. Next.js emitted its existing middleware-to-proxy deprecation warning.
+- `npm run build:edge` also passed before the final `.srOnly` UI correction; the final-source `npm run build` passed after that correction. The edge build was not rerun on the final correction.
+- Final-source T043 focused run: 4 passed / 0 failed; 11 axe scans had 0 serious / 0 critical violations. Ten refreshed screenshots are retained at `%TEMP%\lifter-f12-u9\` and `tests/integration/evidence/f12-u9/` (eight status cells plus review and payment screens; filenames listed above).
+- Broad `npm run e2e` first failed during spec collection because the integration harness had no process-local API/DB credentials. It was rerun after a filtered, read-only Stack A status check (`project_id=lifter`, API 54321, DB 54322); only `API_URL`, `ANON_KEY`, `SERVICE_ROLE_KEY`, and `DB_URL` were passed to that child process. No `SIGNUP_*` values were supplied, and no raw status/env output or key was printed. Playwright reported 138 total: **80 passed / 39 failed / 8 skipped / 11 did not run**. U9 approval/status cases and signup-dependent client-account/registration-link journeys failed because the signup form fixtures did not initialize; this is not a green broad E2E gate.
+- Fresh Stack A full integration after reset/provisioning: `npm run test:integration` — **39 files; 991 passed / 81 failed / 42 skipped**. All 81 failures were setup errors because the child process lacked `SIGNUP_*`; the provisioner does not export values to its parent. No assertion failures were observed in those setup-failing tests. No secret value was read, copied, or emitted. The integration gate remains blocked.
+- Stack A DB password classification: `default` (classification only; no password value recorded).
+- Remaining verification: resolve the approved non-printing child-process provisioning path for `SIGNUP_*`, rerun full integration and broad E2E, complete T042 real F11 signup/session coverage and T044 Q-M01–Q-M24 mutation checks, then finish T045–T048 review/evidence. No merge/PR is authorized by this record.
