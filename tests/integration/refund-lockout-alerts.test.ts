@@ -1,15 +1,17 @@
 import { afterAll, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import { admin, createStaff } from './harness';
+import { admin, anonClient, createStaff } from './harness';
 import { clientContext, graph, sql } from './registration-approval-fixture';
 
 const db = sql();
 afterAll(async () => db.end());
 
 async function lockoutFixture() {
+  const email = `refund-alert-${randomUUID()}@example.test`;
+  const password = randomUUID();
   const authUser = await admin().auth.admin.createUser({
-    email: `refund-alert-${randomUUID()}@example.test`,
-    password: randomUUID(),
+    email,
+    password,
     email_confirm: true,
   });
   expect(authUser.error).toBeNull();
@@ -43,6 +45,48 @@ async function lockoutFixture() {
     deactivatedAt: row.deactivated_at as Date,
   };
 }
+
+it('fails closed for a non-staff client even when a crafted alert names them as recipient', async () => {
+  const f = await lockoutFixture();
+  const alertId = randomUUID();
+  const clientEmail = `refund-alert-reader-${randomUUID()}@example.test`;
+  const clientPassword = randomUUID();
+  const clientUser = await admin().auth.admin.createUser({
+    email: clientEmail,
+    password: clientPassword,
+    email_confirm: true,
+  });
+  expect(clientUser.error).toBeNull();
+  const clientUserId = clientUser.data.user!.id;
+
+  // This deliberately violates normal recipient policy to exercise the reader boundary.
+  await db`insert into app_private.refund_auth_lockout_alerts(
+    id,lockout_id,workspace_id,recipient_user_ids,reason,safe_error_code,attempts
+  ) values(
+    ${alertId},${f.outboxId},${f.workspaceId},array[${clientUserId}]::uuid[],
+    'failure_threshold','provider_unavailable',3
+  )`;
+
+  const client = anonClient();
+  const signedIn = await client.auth.signInWithPassword({
+    email: clientEmail,
+    password: clientPassword,
+  });
+  expect(signedIn.error).toBeNull();
+  const result = await client.rpc('read_refund_auth_lockout_alerts', {
+    p_limit: 10,
+  });
+  expect(result.error).toBeNull();
+  expect(result.data).toEqual([]);
+
+  const [definition] = await db`
+    select pg_catalog.pg_get_functiondef(
+      'public.read_refund_auth_lockout_alerts(integer)'::regprocedure
+    ) as body`;
+  expect(definition!.body).toMatch(
+    /actor_role\s+is\s+null\s+or\s+actor_role\s+not\s+in\s*\(/i,
+  );
+});
 
 async function addWorkspaceOwner(workspaceId: string, revoked = false) {
   const staff = await createStaff(
