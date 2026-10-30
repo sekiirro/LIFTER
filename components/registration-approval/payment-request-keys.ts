@@ -4,8 +4,12 @@ export function createPaymentRequestKeyStore(
   generateKey: () => string = () => crypto.randomUUID(),
 ) {
   const keys = new Map<string, string>();
-  return (operation: PaymentRequestOperation, obligationId: string) => {
-    const keyId = `${operation}:${obligationId}`;
+  return (
+    operation: PaymentRequestOperation,
+    obligationId: string,
+    stateKey = 'initial',
+  ) => {
+    const keyId = `${operation}:${obligationId}:${stateKey}`;
     let key = keys.get(keyId);
     if (!key) {
       key = generateKey();

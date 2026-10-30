@@ -15,3 +15,22 @@ it('reuses uncertain collection and correction keys per obligation and operation
   expect(requestKey('collection', 'obligation-b')).toBe('other-collection-key');
   expect(generateKey).toHaveBeenCalledTimes(3);
 });
+
+it('creates a fresh key when a payment obligation advances to a new state', () => {
+  const generateKey = vi
+    .fn<() => string>()
+    .mockReturnValueOnce('first-collection')
+    .mockReturnValueOnce('corrected-collection');
+  const requestKey = createPaymentRequestKeyStore(generateKey);
+
+  expect(requestKey('collection', 'obligation-a', 'revision-1')).toBe(
+    'first-collection',
+  );
+  expect(requestKey('collection', 'obligation-a', 'revision-1')).toBe(
+    'first-collection',
+  );
+  expect(requestKey('collection', 'obligation-a', 'revision-3')).toBe(
+    'corrected-collection',
+  );
+  expect(generateKey).toHaveBeenCalledTimes(2);
+});

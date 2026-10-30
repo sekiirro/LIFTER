@@ -72,13 +72,18 @@ export function PaymentHistory({
       return;
     setPendingRequest(`correction:${correcting.obligation_id}`);
     try {
+      const paymentState = `${correcting.revision ?? 0}:${correcting.tail_event_id}`;
       const result = await correctCollectionAction({
         workspaceId,
         clientId,
         subscriptionId,
         obligationId: correcting.obligation_id,
         originalEventId: correcting.tail_event_id,
-        requestKey: requestKey('correction', correcting.obligation_id),
+        requestKey: requestKey(
+          'correction',
+          correcting.obligation_id,
+          paymentState,
+        ),
         expectedInstallmentSeq: correcting.seq,
         expectedRevision: correcting.revision,
         expectedPreviousEventId: correcting.tail_event_id,
@@ -115,12 +120,17 @@ export function PaymentHistory({
     }
     setPendingRequest(`collection:${obligation.obligation_id}`);
     try {
+      const paymentState = `${obligation.revision ?? 0}:${obligation.tail_event_id ?? 'none'}`;
       const result = await recordInstallmentAction({
         workspaceId,
         clientId,
         subscriptionId,
         obligationId: obligation.obligation_id,
-        requestKey: requestKey('collection', obligation.obligation_id),
+        requestKey: requestKey(
+          'collection',
+          obligation.obligation_id,
+          paymentState,
+        ),
         expectedInstallmentSeq: obligation.seq,
         expectedRevision: obligation.revision ?? 0,
         expectedPreviousEventId: obligation.tail_event_id ?? null,
