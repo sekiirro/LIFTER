@@ -303,9 +303,7 @@ it('T023 keeps tokens and submitted identity values out of public result code an
   expect(results).toContain("'duplicate'");
   expect(results).toContain('getMessages');
   expect(results).toContain('clientSignup.duplicate');
-  expect(results).not.toContain(
-    'This email is already registered. Contact support.',
-  );
+  expect(results).not.toMatch(/clientSignup\.duplicate\s*:\s*['"]/);
   expect(getMessages('en')['clientSignup.duplicate']).toBe(
     'We could not complete this registration with these details. Contact your coach or support.',
   );

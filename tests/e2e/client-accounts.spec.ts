@@ -19,13 +19,16 @@ const origin = 'http://localhost:3000';
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
+
+function hasDuplicateSignupMessage(text: string, locale: 'ar' | 'en') {
+  return text.includes(getMessages(locale)['clientSignup.duplicate']);
+}
 let validToken: string;
 let pendingToken: string;
 let duplicateToken: string;
 let providerToken: string;
 let expiredToken: string;
 let knownStaffEmail: string;
-let collisionPhoneSequence = 0;
 let fixture: Awaited<
   ReturnType<
     typeof import('../integration/registration-links-fixture').registrationFixture
@@ -432,7 +435,7 @@ async function fillSignup(
     .getByRole('textbox', { name: m['clientSignup.phone'] })
     .fill(
       values.phone ??
-        `0101234${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
+        `010${String(parseInt(randomUUID().slice(0, 8), 16) % 100_000_000).padStart(8, '0')}`,
     );
   await page
     .getByLabel(m['clientSignup.password'], { exact: true })
@@ -735,6 +738,7 @@ test('valid signup link renders a minimal form with private route headers', asyn
   context,
 }) => {
   test.skip(!local, 'Requires the disposable local Supabase stack.');
+  const m = getMessages('en');
   await context.addCookies([{ name: LOCALE_COOKIE, value: 'en', url: origin }]);
   const response = await page.goto(`/register/${validToken}`);
   expect(response?.status()).toBe(200);
@@ -746,10 +750,18 @@ test('valid signup link renders a minimal form with private route headers', asyn
     }),
   ).toBeVisible();
   await expect(page.getByLabel('Country')).toHaveValue('EG');
-  await expect(page.getByLabel('Phone number')).toBeVisible();
-  await expect(page.getByLabel('Name')).toBeVisible();
-  await expect(page.getByLabel('Email')).toBeVisible();
-  await expect(page.getByLabel('Password')).toBeVisible();
+  await expect(
+    page.getByLabel(m['clientSignup.phone'], { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel(m['clientSignup.name'], { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel(m['clientSignup.email'], { exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByLabel(m['clientSignup.password'], { exact: true }),
+  ).toBeVisible();
   await expect(page.locator('input[name="token"]')).toHaveCount(0);
   expect(await page.locator('main').innerText()).not.toContain(validToken);
 });
@@ -1053,27 +1065,27 @@ test('committed signup retry returns invalid and never creates a second identity
   expect(retryResponse.status()).toBe(200);
   expect(retryResponse.headers()['referrer-policy']).toBe('no-referrer');
   expect(retryResponse.headers()['cache-control']).toContain('no-store');
-  const retryView = await page.locator('main').evaluate((element) => {
-    const main = element as HTMLElement;
-    const text = main.innerText;
-    return {
-      invalid: text.includes(
-        'This registration link is invalid or no longer available.',
-      ),
-      complete: text.includes(
-        'Thank you. Your registration request is complete.',
-      ),
-      unavailable: text.includes('Please try again later.'),
-      duplicate: text.includes(
-        'This email is already registered. Contact support.',
-      ),
-      invalidInput: text.includes(
-        'Check the highlighted fields and try again.',
-      ),
-      signedIn: text.includes('Please sign out before submitting'),
-      form: !!main.querySelector('form'),
-    };
-  });
+  const retryView = await page
+    .locator('main')
+    .evaluate((element, duplicateMessage) => {
+      const main = element as HTMLElement;
+      const text = main.innerText;
+      return {
+        invalid: text.includes(
+          'This registration link is invalid or no longer available.',
+        ),
+        complete: text.includes(
+          'Thank you. Your registration request is complete.',
+        ),
+        unavailable: text.includes('Please try again later.'),
+        duplicate: text.includes(duplicateMessage),
+        invalidInput: text.includes(
+          'Check the highlighted fields and try again.',
+        ),
+        signedIn: text.includes('Please sign out before submitting'),
+        form: !!main.querySelector('form'),
+      };
+    }, getMessages('en')['clientSignup.duplicate']);
   expect(retryView).toEqual({
     invalid: true,
     complete: false,
@@ -1162,6 +1174,9 @@ test('identity collision keeps the neutral duplicate wording without field detai
   await expect(page.getByRole('status')).toHaveText(
     getMessages('en')['clientSignup.duplicate'],
   );
+  expect(
+    hasDuplicateSignupMessage(await page.locator('main').innerText(), 'en'),
+  ).toBe(true);
   const duplicateMessage = await page.getByRole('status').textContent();
   expect(duplicateMessage?.includes(knownStaffEmail) ?? false).toBe(false);
 });
@@ -1193,7 +1208,7 @@ for (const locale of ['ar', 'en'] as const) {
       kind: 'pending' | 'active' | 'staff' | 'archived',
     ) => {
       const email = `u8-${kind}-${randomUUID()}@example.test`;
-      const phone = `0105678${String(++collisionPhoneSequence).padStart(4, '0')}`;
+      const phone = `010${String(parseInt(randomUUID().slice(0, 8), 16) % 100_000_000).padStart(8, '0')}`;
       const phoneE164 = `+20${phone.slice(1)}`;
       const username =
         kind === 'pending'
@@ -1504,10 +1519,10 @@ test('lost committed response leaves one identity and the link no longer opens a
     getMessages('en')['clientSignup.unavailable'],
   );
   await expect(
-    page.getByLabel(getMessages('en')['clientSignup.name']),
-  ).toHaveValue('Example Person');
+    page.getByLabel(getMessages('en')['clientSignup.name'], { exact: true }),
+  ).toHaveValue('Example Person Client');
   await expect(
-    page.getByLabel(getMessages('en')['clientSignup.email']),
+    page.getByLabel(getMessages('en')['clientSignup.email'], { exact: true }),
   ).toHaveValue(email);
   await expect(
     page.getByRole('button', { name: 'Create registration request' }),

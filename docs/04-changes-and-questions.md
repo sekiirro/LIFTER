@@ -11,7 +11,7 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 | D-05 | Freeze | Pauses and extends entitlement, with a configurable duration. Stop keeps elapsed frozen days; Remove reverses the effect. Every change audited. |
 | D-06 | Hosting | Next.js + Cloudflare + serverless, $0 recurring initially, Supabase Free validated in P0 |
 | D-07 | Scope | All approved features preserved; the pilot sequences and never removes Full Launch scope. P0 includes the Design System. |
-| D-08 | Accounts | Client email and phone globally unique. Duplicate → only "This email is already registered. Contact support." No verification code, no workspace disclosure, no merge or transfer. |
+| D-08 | Accounts | Client email and phone globally unique. Email/phone/username collisions → one field-neutral duplicate response (PO s15 Q2 B; wording DRAFT pending PO approval, see `specs/015-forms-intake/reports/S16-q2-duplicate-copy-draft.md`). No verification code, no workspace disclosure, token not consumed, no merge or transfer. |
 | D-09 | Permissions | PO, WO, Sales: approve registrations, record renewals and installment payments, manage freezes, configure installment schedules on links. Trainers: generate links with approved settings. |
 | D-10 | Refunds & deletion | Platform Owner only |
 | D-11 | Pricing & durations | Only PO sets/changes prices and durations. 1/3/6/8/12 months (month = 30 days) or custom days. |
