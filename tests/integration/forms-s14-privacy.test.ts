@@ -127,6 +127,7 @@ describe('T048 personal-data authorization and erasure', () => {
       join pg_catalog.pg_namespace n on n.oid=p.pronamespace
       where n.nspname='public'
         and p.oid <> to_regprocedure('public.read_form_answer(uuid,uuid)')
+        and p.oid <> to_regprocedure('public.read_form_answer(uuid,uuid,text)')
         and has_function_privilege('authenticated',p.oid,'execute')
         and (p.prosrc ilike '%form_answer_revisions%'
           or p.prosrc ilike '%form_answer_drafts%')
@@ -170,15 +171,15 @@ describe('T048 personal-data authorization and erasure', () => {
 
   it('provides a single audited reader before answer data can be returned', async () => {
     const rows = await db`
-      select to_regprocedure('public.read_form_answer(uuid,uuid)') is not null as present,
+      select to_regprocedure('public.read_form_answer(uuid,uuid,text)') is not null as present,
         p.prosrc as body
       from (select 1) seed
-      left join pg_catalog.pg_proc p on p.oid=to_regprocedure('public.read_form_answer(uuid,uuid)')
+      left join pg_catalog.pg_proc p on p.oid=to_regprocedure('public.read_form_answer(uuid,uuid,text)')
     `;
     expect(rows[0]?.present).toBe(true);
     const body = rows[0]?.body as string;
     const auditInsert = body.indexOf('insert into public.audit_events');
-    const answerReturn = body.indexOf('return revision_row.answer_values');
+    const answerReturn = body.lastIndexOf('return answer_result');
     expect(auditInsert).toBeGreaterThanOrEqual(0);
     expect(answerReturn).toBeGreaterThan(auditInsert);
     const auditValues = body.slice(
