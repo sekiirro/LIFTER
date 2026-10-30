@@ -159,6 +159,7 @@ export async function signup(
 
 export type RecoveryClientTarget = {
   userId: string;
+  clientId: string;
   workspaceId: string;
   email: string;
   password: string;
@@ -175,7 +176,7 @@ export async function createRecoveryClientTarget(
     if (result.status !== 'complete')
       throw new Error('Committed recovery client fixture failed');
     const [row] =
-      await connection`select auth_user_id,workspace_id,approval_state from public.clients where registration_link_id=${fixture.link}`;
+      await connection`select id,auth_user_id,workspace_id,approval_state from public.clients where registration_link_id=${fixture.link}`;
     if (
       !row ||
       row.workspace_id !== context.wsA.id ||
@@ -191,6 +192,7 @@ export async function createRecoveryClientTarget(
       throw new Error('Recovery client sign-in fixture failed');
     return {
       userId: row.auth_user_id as string,
+      clientId: row.id as string,
       workspaceId: row.workspace_id as string,
       email: fixture.fields.email,
       password: fixture.fields.password,
