@@ -36,6 +36,7 @@ if (isFirstEvaluation) {
     serverLogSummaryPath,
     JSON.stringify({
       totalLines: 0,
+      captureStarted: false,
       stdoutLines: 0,
       stderrLines: 0,
       registrationRelatedLines: 0,

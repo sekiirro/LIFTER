@@ -130,6 +130,24 @@ for (const locale of ['ar', 'en'] as const) {
           { name: LOCALE_COOKIE, value: locale, url: origin },
           { name: THEME_COOKIE, value: theme, url: origin },
         ]);
+        await page.addInitScript(() => {
+          const browserWindow = window as Window & {
+            __f14Shifts?: number;
+            __f14ShiftObserverInstalled?: boolean;
+          };
+          browserWindow.__f14Shifts = 0;
+          new PerformanceObserver((list) => {
+            for (const entry of list.getEntries()) {
+              const shift = entry as PerformanceEntry & {
+                value: number;
+                hadRecentInput: boolean;
+              };
+              if (!shift.hadRecentInput)
+                browserWindow.__f14Shifts! += shift.value;
+            }
+          }).observe({ type: 'layout-shift', buffered: true });
+          browserWindow.__f14ShiftObserverInstalled = true;
+        });
         await page.goto(`/register/${token}`);
         await expect(page.locator('html')).toHaveAttribute('lang', locale);
         await expect(page.locator('html')).toHaveAttribute(
@@ -185,19 +203,15 @@ for (const locale of ['ar', 'en'] as const) {
         expect(form!.y).toBeGreaterThanOrEqual(
           bannerBox!.y + bannerBox!.height,
         );
-        const cls = await page.evaluate(() =>
-          performance
-            .getEntriesByType('layout-shift')
-            .filter(
-              (entry) =>
-                (entry as PerformanceEntry & { hadRecentInput?: boolean })
-                  .hadRecentInput !== true,
-            )
-            .reduce(
-              (total, entry) =>
-                total + (entry as PerformanceEntry & { value?: number }).value!,
-              0,
-            ),
+        expect(
+          await page.evaluate(
+            () =>
+              (window as Window & { __f14ShiftObserverInstalled?: boolean })
+                .__f14ShiftObserverInstalled,
+          ),
+        ).toBe(true);
+        const cls = await page.evaluate(
+          () => (window as Window & { __f14Shifts?: number }).__f14Shifts ?? 0,
         );
         expect(cls).toBe(0);
         geometryEvidence.push({
