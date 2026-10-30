@@ -277,7 +277,9 @@ export const ar = {
   'branding.colorField': 'لون العلامة',
   'branding.registrationSurface': 'التسجيل',
   'branding.staffSurface': 'لوحة الفريق',
-  'branding.portalSurface': 'معاينة بوابة العميل',
+  'branding.portalSurface': 'مسودة: معاينة بوابة العميل فقط',
+  'branding.portalPreviewNotice':
+    'مسودة: تعرض هذه المعاينة العلامة المنشورة فقط. وظائف بوابة العميل غير متاحة هنا.',
   'branding.colorSource': 'لون العلامة الأصلي',
   'branding.colorAdjusted': 'معالجة اللون للوضوح',
   'branding.lightTreatment': 'المظهر الفاتح',

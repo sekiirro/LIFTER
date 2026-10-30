@@ -335,13 +335,17 @@ export function BrandEditor({
                 data-preview-surface={item}
               >
                 <div className={styles.surfaceIdentity}>
-                  <h3>{displayName}</h3>
+                  <h3>
+                    <Bidi>{displayName}</Bidi>
+                  </h3>
                   <span aria-hidden="true" className={styles.sampleButton}>
                     {surfaces[item]}
                   </span>
                 </div>
                 {item === 'portal-placeholder' && (
-                  <p>{surfaces['portal-placeholder']}</p>
+                  <p data-portal-preview-notice="">
+                    {surfaces['portal-placeholder']}
+                  </p>
                 )}
               </section>
             </BrandScopeProvider>

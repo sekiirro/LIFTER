@@ -38,6 +38,21 @@ describe('branding editor presentation contract', () => {
     expect(html).toContain('dir="rtl"');
   });
 
+  it('keeps the portal preview static and labels its copy as draft', () => {
+    const html = renderToStaticMarkup(
+      createElement(BrandEditor, {
+        locale: 'en',
+        projection,
+      }),
+    );
+    const portal = html.match(
+      /<section[^>]*data-preview-surface="portal-placeholder"[^>]*>[\s\S]*?<\/section>/,
+    )?.[0];
+    expect(portal).toContain('data-portal-preview-notice');
+    expect(portal).toContain('DRAFT:');
+    expect(portal).not.toMatch(/<(?:button|a|form|input)\b/i);
+  });
+
   it('explains source and accessible adjusted colors, keeps draft identity isolated, and omits history controls', () => {
     const html = renderToStaticMarkup(
       createElement(BrandEditor, {

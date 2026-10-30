@@ -1,8 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { copyFile, mkdir, writeFile } from 'node:fs/promises';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
@@ -131,16 +131,9 @@ for (const locale of ['ar', 'en'] as const) {
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
         await expectAxeClean(page);
         const screenshot = `banner-loaded-${locale}-${theme}-${viewport.name}.png`;
-        const committed = join(
-          process.cwd(),
-          'tests/integration/evidence/f14-ui',
-          screenshot,
-        );
         const temporary = join(temporaryDir, screenshot);
         await mkdir(temporaryDir, { recursive: true });
-        await mkdir(dirname(committed), { recursive: true });
         await page.screenshot({ path: temporary, fullPage: true });
-        await copyFile(temporary, committed);
         measurements.push({
           locale,
           theme,

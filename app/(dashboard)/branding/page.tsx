@@ -3,6 +3,7 @@ import { notFound } from 'next/navigation';
 import { requireActor } from '../../../lib/auth/actor';
 import { authorize } from '../../../lib/auth/authorize';
 import { createSupabaseBrandingRepository } from '../../../lib/branding/repository';
+import { createPortalBrandContract } from '../../../lib/branding/portal-contract';
 import { createSessionClient } from '../../../lib/supabase/server';
 import { getMessages } from '../../../lib/i18n';
 import { LOCALE_COOKIE, parseLocale } from '../../../lib/design/preferences';
@@ -12,6 +13,7 @@ import { Alert } from '../../../components/ui/Alert';
 import { BrandScope } from '../../../components/ui/BrandScope';
 import { saveBrandingAction, publishBrandingAction } from './actions';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
+import { ClientPortalBrandPreview } from '../../../components/branding/ClientPortalBrandPreview';
 import styles from './branding.module.css';
 
 export default async function WorkspaceBrandingPage({
@@ -48,6 +50,14 @@ export default async function WorkspaceBrandingPage({
   const draft = await repository.getDraft(workspaceId);
   if (!draft) notFound();
   const current = await repository.getCurrentPublication(workspaceId);
+  const portalBrand = current
+    ? createPortalBrandContract({
+        workspaceName:
+          current.fields.names[locale] ||
+          current.fields.names[locale === 'ar' ? 'en' : 'ar'],
+        color: current.fields.color,
+      })
+    : null;
   const statusMessage =
     query.status === 'stale'
       ? m['branding.staleRevision']
@@ -140,6 +150,11 @@ export default async function WorkspaceBrandingPage({
           <Button type="button">{m['branding.staffSurface']}</Button>
         </BrandScope>
       </section>
+      <ClientPortalBrandPreview
+        locale={locale}
+        messages={m}
+        contract={portalBrand}
+      />
     </main>
   );
 }

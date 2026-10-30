@@ -1,10 +1,12 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { copyFile, mkdir } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { mkdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const temporaryDir = join(tmpdir(), `lifter-f14-ui-${process.pid}`);
 
 async function expectAxeClean(page: Page) {
   const report = await new AxeBuilder({ page })
@@ -23,8 +25,9 @@ for (const locale of ['ar', 'en'] as const) {
       test(`${locale}/${theme}/${viewport.name}: editor and live preview`, async ({
         page,
         context,
-      }, testInfo) => {
+      }) => {
         await page.setViewportSize(viewport);
+        await page.emulateMedia({ reducedMotion: 'reduce' });
         await context.addCookies([
           { name: LOCALE_COOKIE, value: locale, url: origin },
           { name: THEME_COOKIE, value: theme, url: origin },
@@ -100,6 +103,22 @@ for (const locale of ['ar', 'en'] as const) {
           await expect(
             page.locator('[data-preview-surface="registration"]'),
           ).toBeVisible();
+          await page.locator('[data-preview-tab="portal-placeholder"]').click();
+          const portal = page.locator(
+            '[data-preview-surface="portal-placeholder"]',
+          );
+          await expect(portal).toBeVisible();
+          await expect(
+            portal.locator('[data-portal-preview-notice]'),
+          ).toContainText(locale === 'ar' ? 'مسودة:' : 'DRAFT:');
+          await expect(portal.locator('button, a, form, input')).toHaveCount(0);
+          await expectAxeClean(page);
+          const portalScreenshot = join(
+            temporaryDir,
+            `portal-preview-${locale}-${theme}-${viewport.name}.png`,
+          );
+          await mkdir(temporaryDir, { recursive: true });
+          await page.screenshot({ path: portalScreenshot, fullPage: true });
         }
         if (viewport.width <= 640) {
           await expect(page.locator('[data-mobile-editor-tabs]')).toBeVisible();
@@ -132,20 +151,12 @@ for (const locale of ['ar', 'en'] as const) {
             locale === 'ar' ? 'النادي المنشور' : 'Published Club',
           );
           await expectAxeClean(page);
-          const previewCommitted = join(
-            process.cwd(),
-            'tests',
-            'integration',
-            'evidence',
-            'f14-ui',
+          const previewTemporary = join(
+            temporaryDir,
             `editor-preview-${locale}-${theme}-${viewport.name}.png`,
           );
-          const previewTemporary = testInfo.outputPath(
-            `editor-preview-${locale}-${theme}-${viewport.name}.png`,
-          );
-          await mkdir(dirname(previewCommitted), { recursive: true });
+          await mkdir(temporaryDir, { recursive: true });
           await page.screenshot({ path: previewTemporary, fullPage: true });
-          await copyFile(previewTemporary, previewCommitted);
           const staffTab = page.locator('[data-preview-tab="staff"]');
           await staffTab.click();
           await expect(
@@ -160,25 +171,31 @@ for (const locale of ['ar', 'en'] as const) {
           await expect(
             page.locator('[data-preview-surface="portal-placeholder"]'),
           ).toBeVisible();
+          const portal = page.locator(
+            '[data-preview-surface="portal-placeholder"]',
+          );
+          await expect(
+            portal.locator('[data-portal-preview-notice]'),
+          ).toContainText(locale === 'ar' ? 'مسودة:' : 'DRAFT:');
+          await expect(portal.locator('button, a, form, input')).toHaveCount(0);
+          await expectAxeClean(page);
+          const portalScreenshot = join(
+            temporaryDir,
+            `portal-preview-${locale}-${theme}-${viewport.name}.png`,
+          );
+          await mkdir(temporaryDir, { recursive: true });
+          await page.screenshot({ path: portalScreenshot, fullPage: true });
           await page.locator('#branding-mobile-tab-editor').click();
           await expect(localName).toHaveValue(localDraftName);
         }
         await expectAxeClean(page);
 
-        const committed = join(
-          process.cwd(),
-          'tests',
-          'integration',
-          'evidence',
-          'f14-ui',
+        const temporary = join(
+          temporaryDir,
           `editor-${locale}-${theme}-${viewport.name}.png`,
         );
-        const temporary = testInfo.outputPath(
-          `editor-${locale}-${theme}-${viewport.name}.png`,
-        );
-        await mkdir(dirname(committed), { recursive: true });
+        await mkdir(temporaryDir, { recursive: true });
         await page.screenshot({ path: temporary, fullPage: true });
-        await copyFile(temporary, committed);
       });
     }
   }

@@ -286,7 +286,9 @@ export const en: Record<keyof typeof ar, string> = {
   'branding.colorField': 'Brand color',
   'branding.registrationSurface': 'Registration',
   'branding.staffSurface': 'Staff dashboard',
-  'branding.portalSurface': 'Client Portal placeholder',
+  'branding.portalSurface': 'DRAFT: Client Portal preview only',
+  'branding.portalPreviewNotice':
+    'DRAFT: This preview shows published branding only. Client Portal behavior is not included.',
   'branding.colorSource': 'Original brand color',
   'branding.colorAdjusted': 'Accessible color treatment',
   'branding.lightTreatment': 'Light theme',

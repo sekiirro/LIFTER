@@ -1,8 +1,8 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { copyFile, mkdir } from 'node:fs/promises';
+import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
-import { dirname, join } from 'node:path';
+import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 
@@ -83,6 +83,17 @@ for (const locale of ['ar', 'en'] as const) {
           page.getByRole('button', { name: /history|restore/i }),
         ).toHaveCount(0);
         await expect(page.locator('[data-current-published]')).toBeVisible();
+        const portalPreview = page.locator('[data-client-portal-preview]');
+        await expect(portalPreview).toBeVisible();
+        await expect(
+          portalPreview.getByRole('heading', { level: 2 }),
+        ).toHaveText(getMessages(locale)['branding.portalSurface']);
+        await expect(
+          portalPreview.locator('button, a, form, input'),
+        ).toHaveCount(0);
+        await expect(portalPreview).toContainText(
+          getMessages(locale)['branding.portalPreviewNotice'],
+        );
         const noMotion = await page
           .locator('[data-branding-private-preview]')
           .evaluate((root) => {
@@ -130,16 +141,9 @@ for (const locale of ['ar', 'en'] as const) {
         await expect(page.locator(':focus-visible')).toHaveCount(1);
         await axe(page);
         const name = `production-editor-${locale}-${theme}-${viewport.name}.png`;
-        const committed = join(
-          process.cwd(),
-          'tests/integration/evidence/f14-ui',
-          name,
-        );
         const temporary = join(temporaryDir, name);
         await mkdir(temporaryDir, { recursive: true });
-        await mkdir(dirname(committed), { recursive: true });
         await page.screenshot({ path: temporary, fullPage: true });
-        await copyFile(temporary, committed);
       });
 
       test(`${locale}/${theme}/${viewport.name}: published staff brand scope`, async ({
@@ -180,16 +184,9 @@ for (const locale of ['ar', 'en'] as const) {
         expect(tokens.error).not.toBe('');
         await axe(page);
         const name = `production-staff-${locale}-${theme}-${viewport.name}.png`;
-        const committed = join(
-          process.cwd(),
-          'tests/integration/evidence/f14-ui',
-          name,
-        );
         const temporary = join(temporaryDir, name);
         await mkdir(temporaryDir, { recursive: true });
-        await mkdir(dirname(committed), { recursive: true });
         await page.screenshot({ path: temporary, fullPage: true });
-        await copyFile(temporary, committed);
       });
     }
   }
