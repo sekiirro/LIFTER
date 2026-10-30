@@ -4,7 +4,10 @@ import { writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const serverLogRunId = randomUUID();
+const isFirstEvaluation = !process.env.U8_SERVER_LOG_RUN_ID;
+const serverLogRunId =
+  process.env.U8_SERVER_LOG_RUN_ID ??
+  (process.env.U8_SERVER_LOG_RUN_ID = randomUUID());
 const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 const serverLogManifestPath = join(
   tmpdir(),
@@ -19,28 +22,30 @@ process.env.U8_SERVER_LOG_MANIFEST_PATH = serverLogManifestPath;
 // Test modules read this manifest while Playwright collects tests, before its
 // webServer wrapper is guaranteed to have started. The wrapper replaces this
 // bootstrap manifest with the same paths once it is running.
-writeFileSync(
-  serverLogManifestPath,
-  JSON.stringify({
-    rawPath: serverLogRawPath,
-    summaryPath: serverLogSummaryPath,
-  }),
-  'utf8',
-);
-writeFileSync(serverLogRawPath, '', 'utf8');
-writeFileSync(
-  serverLogSummaryPath,
-  JSON.stringify({
-    totalLines: 0,
-    stdoutLines: 0,
-    stderrLines: 0,
-    registrationRelatedLines: 0,
-    errorLikeLines: 0,
-    storedPayload: 'scrubbed counts only',
-    rawLogDeleted: false,
-  }),
-  'utf8',
-);
+if (isFirstEvaluation) {
+  writeFileSync(
+    serverLogManifestPath,
+    JSON.stringify({
+      rawPath: serverLogRawPath,
+      summaryPath: serverLogSummaryPath,
+    }),
+    'utf8',
+  );
+  writeFileSync(serverLogRawPath, '', 'utf8');
+  writeFileSync(
+    serverLogSummaryPath,
+    JSON.stringify({
+      totalLines: 0,
+      stdoutLines: 0,
+      stderrLines: 0,
+      registrationRelatedLines: 0,
+      errorLikeLines: 0,
+      storedPayload: 'scrubbed counts only',
+      rawLogDeleted: false,
+    }),
+    'utf8',
+  );
+}
 export default defineConfig({
   globalTeardown: './tests/e2e/server-log-global-teardown.ts',
   testDir: './tests/e2e',
