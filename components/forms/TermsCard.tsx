@@ -72,7 +72,9 @@ export function TermsCard({
       {policy.sections.map((section) => (
         <section key={section.title}>
           <h2>{section.title}</h2>
-          <p>{section.body}</p>
+          <p>
+            <Bidi>{section.body}</Bidi>
+          </p>
         </section>
       ))}
       <p>

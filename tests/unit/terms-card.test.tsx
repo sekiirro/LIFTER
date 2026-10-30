@@ -10,7 +10,7 @@ const policy = {
   sections: [
     {
       title: 'Account use',
-      body: 'Draft policy text for the test fixture.',
+      body: 'Draft policy text for LIFTER, 30 days.',
     },
   ],
 };
@@ -53,6 +53,9 @@ describe('TermsCard', () => {
 
     expect(html).toContain(policy.sections[0]!.title);
     expect(html).toContain(policy.sections[0]!.body);
+    expect(html).toContain(
+      '<bdi dir="auto">Draft policy text for LIFTER, 30 days.</bdi>',
+    );
   });
 });
 
