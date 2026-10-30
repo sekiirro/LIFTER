@@ -50,6 +50,16 @@ const registrationPrivate = [
   'guard_registration_installment_insert',
   'validate_registration_link_schedule',
   'check_registration_link_schedule',
+  'f13_audit_freeze',
+  'f13_audit_refund_ledger',
+  'f13_check_freeze',
+  'f13_check_refund_ledger',
+  'f13_freeze_contribution',
+  'f13_freeze_event_guard',
+  'f13_freeze_guard',
+  'f13_guard_terminal_payment',
+  'f13_validate_freeze',
+  'f13_validate_refund_ledger',
 ];
 afterAll(async () => {
   await db.end();
@@ -426,6 +436,41 @@ describe('audit security catalog (T005)', () => {
         proname: 'audit_events_immutable',
       },
       {
+        tgname: 'f13_no_update',
+        relname: 'refund_allocation_events',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'refund_operations',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'subscription_freeze_events',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'subscription_freezes',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'subscription_obligation_cancellations',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
         tgname: 'package_versions_no_update',
         relname: 'package_versions',
         type: 19,
@@ -787,19 +832,31 @@ describe('registration security catalog', () => {
   });
   it('hardens complete F10 function inventory and pgcrypto schema/vector', async () => {
     const signatures = [
-      ...registrationPrivate.map(
-        (n) =>
-          'app_private.' +
-          n +
-          (n === 'registration_link_is_valid'
-            ? '(timestamptz,timestamptz,timestamptz,timestamptz)'
-            : n === 'validate_registration_link_schedule'
-              ? '(uuid,uuid)'
-              : '()'),
-      ),
+      ...registrationPrivate
+        .filter((name) => !name.startsWith('f13_'))
+        .map(
+          (n) =>
+            'app_private.' +
+            n +
+            (n === 'registration_link_is_valid'
+              ? '(timestamptz,timestamptz,timestamptz,timestamptz)'
+              : n === 'validate_registration_link_schedule'
+                ? '(uuid,uuid)'
+                : '()'),
+        ),
       'public.issue_registration_link(uuid,uuid,text,jsonb)',
       'public.registration_link_open(text)',
       'public.get_registration_link_commissions(uuid)',
+      'app_private.f13_audit_freeze()',
+      'app_private.f13_audit_refund_ledger()',
+      'app_private.f13_check_freeze()',
+      'app_private.f13_check_refund_ledger()',
+      'app_private.f13_freeze_contribution(uuid,uuid,uuid)',
+      'app_private.f13_freeze_event_guard()',
+      'app_private.f13_freeze_guard()',
+      'app_private.f13_guard_terminal_payment()',
+      'app_private.f13_validate_freeze(uuid,uuid)',
+      'app_private.f13_validate_refund_ledger(uuid,uuid)',
     ];
     for (const name of signatures) {
       const [r] =

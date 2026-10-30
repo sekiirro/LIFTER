@@ -12,6 +12,46 @@ export type FreezeApplication = {
   removed?: boolean;
 };
 
+export type FreezeApplyFact = {
+  id: string;
+  applied_on: string;
+  duration_days: number;
+};
+
+export type FreezeEventFact = {
+  freeze_id: string;
+  kind: 'stop' | 'remove';
+  effective_on: string;
+};
+
+/** Maps immutable DB facts into the pure entitlement projection input. */
+export function freezeApplicationsFromFacts(
+  applications: readonly FreezeApplyFact[],
+  events: readonly FreezeEventFact[],
+): FreezeApplication[] {
+  const byId = new Map<string, FreezeApplication>();
+  for (const fact of applications) {
+    if (byId.has(fact.id))
+      throw new RangeError('Freeze application IDs must be unique');
+    byId.set(fact.id, {
+      id: fact.id,
+      applyDate: fact.applied_on,
+      durationDays: fact.duration_days,
+    });
+  }
+  const seen = new Set<string>();
+  for (const event of events) {
+    const application = byId.get(event.freeze_id);
+    const key = `${event.freeze_id}:${event.kind}`;
+    if (!application || seen.has(key))
+      throw new RangeError('Freeze event must match one immutable application');
+    seen.add(key);
+    if (event.kind === 'stop') application.stopDate = event.effective_on;
+    else application.removed = true;
+  }
+  return [...byId.values()];
+}
+
 const FREEZE_ROLES = new Set<FreezeRole>([
   'platform_owner',
   'workspace_owner',

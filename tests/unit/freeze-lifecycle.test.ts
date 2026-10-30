@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   canManageFreeze,
   calculateFreezeContribution,
+  freezeApplicationsFromFacts,
   projectFreezeEnd,
   projectFreezeRemoval,
   validateFreezeApply,
@@ -142,6 +143,32 @@ describe('pure freeze lifecycle validation', () => {
 });
 
 describe('freeze entitlement projections', () => {
+  it('maps immutable Apply, Stop and Remove facts into entitlement projection input', () => {
+    const projected = freezeApplicationsFromFacts(
+      [
+        { id: 'a', applied_on: '2026-11-01', duration_days: 10 },
+        { id: 'b', applied_on: '2026-11-11', duration_days: 3 },
+      ],
+      [
+        { freeze_id: 'a', kind: 'stop', effective_on: '2026-11-03' },
+        { freeze_id: 'b', kind: 'remove', effective_on: '2026-11-12' },
+      ],
+    );
+    expect(projected).toEqual([
+      {
+        id: 'a',
+        applyDate: '2026-11-01',
+        durationDays: 10,
+        stopDate: '2026-11-03',
+      },
+      { id: 'b', applyDate: '2026-11-11', durationDays: 3, removed: true },
+    ]);
+    expect(projectFreezeEnd('2026-11-20', projected)).toEqual({
+      effectiveEndExclusive: '2026-11-22',
+      extensionDays: 2,
+    });
+  });
+
   it('projects planned contribution, stopped contribution, and removed contribution without editing facts', () => {
     const stopped = { ...application, stopDate: '2026-11-03' };
     const original = Object.freeze({ ...stopped });

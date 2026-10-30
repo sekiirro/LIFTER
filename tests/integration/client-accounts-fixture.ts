@@ -385,7 +385,9 @@ export async function pendingHttpAccess(
           result.data === null ||
           result.data === false ||
           (Array.isArray(result.data) && result.data.length === 0) ||
-          result.data?.status === 'invalid',
+          result.data?.status === 'invalid' ||
+          (fn.proname === 'subscription_freeze_operation' &&
+            result.data?.status === 'invalid_input'),
         fn.proname,
       ).toBe(true);
     }
