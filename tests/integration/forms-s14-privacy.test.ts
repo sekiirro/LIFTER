@@ -128,9 +128,9 @@ describe('T048 personal-data authorization and erasure', () => {
       where n.nspname='public'
         and p.oid <> to_regprocedure('public.read_form_answer(uuid,uuid)')
         and p.oid <> to_regprocedure('public.read_form_answer(uuid,uuid,text)')
-        -- T012 writer returns only status/revision/intent; its focused test asserts
-        -- the exact response shape and proves that no answer bytes are returned.
-        and p.proname <> 'save_form_draft'
+        -- T012/T013 writers return only allow-listed acknowledgement metadata;
+        -- their focused tests assert exact shapes and no answer bytes.
+        and p.proname not in ('save_form_draft','submit_form_assignment')
         and has_function_privilege('authenticated',p.oid,'execute')
         and (p.prosrc ilike '%form_answer_revisions%'
           or p.prosrc ilike '%form_answer_drafts%')
