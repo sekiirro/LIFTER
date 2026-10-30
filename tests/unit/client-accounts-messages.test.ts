@@ -24,7 +24,7 @@ const signupKeys = [
   'clientSignup.signOutRequired',
 ];
 
-it('T035 has matching Arabic and English signup message keys and no Telegram copy', () => {
+it('T035 has matching Arabic and English signup message keys and scoped Telegram copy', () => {
   const en = getMessages('en') as Record<string, string>;
   const ar = getMessages('ar') as Record<string, string>;
   expect(Object.keys(en).sort()).toEqual(Object.keys(ar).sort());
@@ -32,13 +32,17 @@ it('T035 has matching Arabic and English signup message keys and no Telegram cop
     expect(en[key], `${key} in English`).toBeTruthy();
     expect(ar[key], `${key} in Arabic`).toBeTruthy();
   }
-  expect(Object.keys(en).some((key) => /telegram/i.test(key))).toBe(false);
-  expect(Object.values(en).some((value) => /telegram/i.test(value))).toBe(
-    false,
-  );
-  expect(Object.values(ar).some((value) => /telegram/i.test(value))).toBe(
-    false,
-  );
+  // S14 canonical copy (2026-10-30, line 213) makes Telegram optional.
+  const telegramCopyAllowlist = ['clientSignup.telegramUsername'] as const;
+  for (const messages of [en, ar]) {
+    const telegramEntries = Object.entries(messages)
+      .filter(([key, value]) =>
+        /telegram|تيليجرام|تليجرام|تلغرام|تيلجرام/i.test(`${key} ${value}`),
+      )
+      .map(([key]) => key)
+      .sort();
+    expect(telegramEntries).toEqual([...telegramCopyAllowlist]);
+  }
 });
 
 it('T035 preserves D-08 and unavailable wording and keeps completion generic', () => {

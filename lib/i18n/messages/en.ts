@@ -256,7 +256,7 @@ export const en: Record<keyof typeof ar, string> = {
   'showcase.disabled': 'Unavailable',
   'showcase.retryCount': 'Retry count',
   'showcase.print': 'Print sample',
-  'clientSignup.name': 'Name',
+  'clientSignup.name': 'Full name',
   'clientSignup.email': 'Email',
   'clientSignup.country': 'Country',
   'clientSignup.phone': 'Phone number',
@@ -275,6 +275,15 @@ export const en: Record<keyof typeof ar, string> = {
   'clientSignup.invalidInput': 'Check the highlighted fields and try again.',
   'clientSignup.signOutRequired':
     'Please sign out before submitting this registration request.',
+  'clientSignup.dateOfBirth': 'Date of birth',
+  'clientSignup.username': 'Username',
+  'clientSignup.telegramUsername': 'Telegram username',
+  'clientSignup.optional': 'Optional',
+  'forms.termsCardTitle': 'Terms and conditions',
+  'forms.healthDataNoticeTitle': 'Health and personal information',
+  'forms.healthDataNoticeBody':
+    'We will ask for health and fitness information to prepare and manage your plan. Access follows approved permissions, and sensitive access is recorded for review.',
+  'forms.copyDraft': 'Draft',
   'forms.staffTitle': 'Staff forms',
   'forms.staffDescription':
     'Build bilingual forms and review mock intake deadlines.',
