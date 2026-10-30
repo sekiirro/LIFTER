@@ -1,5 +1,8 @@
 import { expect, it, vi } from 'vitest';
-import { createPaymentRequestKeyStore } from '../../components/registration-approval/payment-request-keys';
+import {
+  collectionPaymentStateKey,
+  createPaymentRequestKeyStore,
+} from '../../components/registration-approval/payment-request-keys';
 
 it('reuses uncertain collection and correction keys per obligation and operation', () => {
   const generateKey = vi
@@ -33,4 +36,13 @@ it('creates a fresh key when a payment obligation advances to a new state', () =
     'corrected-collection',
   );
   expect(generateKey).toHaveBeenCalledTimes(2);
+});
+
+it('includes the submitted collection date in payment request state', () => {
+  expect(collectionPaymentStateKey(2, 'event-a', '2026-10-29')).toBe(
+    '2:event-a:2026-10-29',
+  );
+  expect(collectionPaymentStateKey(2, 'event-a', '2026-10-29')).not.toBe(
+    collectionPaymentStateKey(2, 'event-a', '2026-10-30'),
+  );
 });

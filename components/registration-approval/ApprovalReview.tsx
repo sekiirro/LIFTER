@@ -15,6 +15,7 @@ import { Field } from '../ui/Field';
 import { Alert } from '../ui/Alert';
 import { PaymentConfirmation } from './PaymentConfirmation';
 import { PaymentHistory } from './PaymentHistory';
+import { createApprovalRequestKeyStore } from './approval-request-keys';
 import styles from './registration-approval.module.css';
 
 type Item = {
@@ -61,19 +62,15 @@ export function ApprovalReview({
   const [notice, setNotice] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
   const [pending, setPending] = useState(false);
-  const keys = useRef(new Map<string, string>());
-  const requestKey = (action: string) => {
-    const existing = keys.current.get(action);
-    if (existing) return existing;
-    const key = crypto.randomUUID();
-    keys.current.set(action, key);
-    return key;
-  };
+  const requestKey = useRef(createApprovalRequestKeyStore()).current;
   const owner = role === 'platform_owner';
   const run = async (action: 'approve' | 'reject' | 'reconsider') => {
     setPending(true);
     try {
-      const key = requestKey(action);
+      const key = requestKey(
+        action,
+        action === 'reject' ? undefined : paymentDate,
+      );
       const input = {
         workspaceId,
         clientId: item.client_id,

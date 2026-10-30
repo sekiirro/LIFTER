@@ -14,7 +14,10 @@ import { Alert } from '../ui/Alert';
 import { Field } from '../ui/Field';
 import { PaymentConfirmation } from './PaymentConfirmation';
 import { StatusBadge } from './StatusBadge';
-import { createPaymentRequestKeyStore } from './payment-request-keys';
+import {
+  collectionPaymentStateKey,
+  createPaymentRequestKeyStore,
+} from './payment-request-keys';
 import styles from './registration-approval.module.css';
 
 type Obligation = {
@@ -120,7 +123,11 @@ export function PaymentHistory({
     }
     setPendingRequest(`collection:${obligation.obligation_id}`);
     try {
-      const paymentState = `${obligation.revision ?? 0}:${obligation.tail_event_id ?? 'none'}`;
+      const paymentState = collectionPaymentStateKey(
+        obligation.revision ?? 0,
+        obligation.tail_event_id,
+        paymentDate,
+      );
       const result = await recordInstallmentAction({
         workspaceId,
         clientId,

@@ -1,5 +1,13 @@
 export type PaymentRequestOperation = 'collection' | 'correction';
 
+export function collectionPaymentStateKey(
+  revision: number,
+  tailEventId: string | null | undefined,
+  collectedOn: string,
+) {
+  return `${revision}:${tailEventId ?? 'none'}:${collectedOn}`;
+}
+
 export function createPaymentRequestKeyStore(
   generateKey: () => string = () => crypto.randomUUID(),
 ) {

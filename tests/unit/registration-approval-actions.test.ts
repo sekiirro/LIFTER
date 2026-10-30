@@ -99,6 +99,20 @@ describe('registration approval server action boundary', () => {
     setActor('platform_owner');
   });
 
+  it('revalidates approval detail and payment pages after a successful mutation', async () => {
+    setBackend();
+
+    expect(await approveRegistrationAction(approval)).toEqual({
+      status: 'ok',
+      receipt,
+    });
+    expect(mocks.revalidatePath.mock.calls).toEqual([
+      ['/registration-approvals'],
+      ['/registration-approvals/[clientId]', 'page'],
+      ['/payments/[subscriptionId]', 'page'],
+    ]);
+  });
+
   it.each([
     ['platform_owner', [ws], 'approve', true],
     ['platform_owner', [ws], 'reject', true],

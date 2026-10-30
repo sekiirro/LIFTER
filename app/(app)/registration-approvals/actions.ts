@@ -15,7 +15,11 @@ async function mutation(
   input: unknown,
 ) {
   const result = await executeRegistrationApprovalAction(operation, input);
-  if (result.status === 'ok') revalidatePath('/registration-approvals');
+  if (result.status === 'ok') {
+    revalidatePath('/registration-approvals');
+    revalidatePath('/registration-approvals/[clientId]', 'page');
+    revalidatePath('/payments/[subscriptionId]', 'page');
+  }
   return result;
 }
 
