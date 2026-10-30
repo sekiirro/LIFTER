@@ -1,0 +1,312 @@
+.main {
+  inline-size: calc(100% - var(--space-6));
+  max-inline-size: 76rem;
+  margin-inline: auto;
+  padding-block: var(--space-8);
+  color: var(--color-text);
+}
+
+.pageHeader,
+.sectionHeader,
+.formHeader,
+.assignmentHeader,
+.builderActions,
+.viewPicker {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.pageHeader {
+  margin-block-end: var(--space-6);
+}
+
+.pageHeader h1,
+.sectionHeader h2,
+.section h3,
+.assignment h3,
+.policySection h3 {
+  margin: 0;
+}
+
+.pageHeader h1 {
+  font-size: var(--text-2xl);
+}
+
+.pageHeader p,
+.sectionHeader p {
+  margin: var(--space-2) 0 0;
+  color: var(--color-text-muted);
+}
+
+.roleField,
+.field {
+  display: grid;
+  gap: var(--space-2);
+  font-weight: 600;
+}
+
+.roleField select,
+.field input,
+.field select {
+  inline-size: 100%;
+  min-block-size: var(--touch-min);
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-button);
+  background: var(--color-card);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.roleField select {
+  min-inline-size: 12rem;
+}
+
+.field input:disabled,
+.field select:disabled {
+  background: var(--color-bg);
+  color: var(--color-text-disabled);
+}
+
+.previewNotice {
+  margin: 0 0 var(--space-5);
+  padding-block: var(--space-3);
+  border-block: 1px solid var(--color-border);
+  color: var(--color-text-muted);
+}
+
+.viewPicker {
+  justify-content: flex-start;
+  margin-block-end: var(--space-6);
+}
+
+.activeView {
+  background: var(--color-card);
+  border-color: var(--brand-ring);
+  color: var(--color-text);
+}
+
+.panel {
+  display: grid;
+  gap: var(--space-6);
+  padding: var(--space-6);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+}
+
+.sectionHeader {
+  align-items: flex-start;
+}
+
+.builder,
+.sections {
+  display: grid;
+  gap: var(--space-5);
+}
+
+.formHeader {
+  padding-block-end: var(--space-3);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.statusLine,
+.countLine,
+.hint,
+.error,
+.success {
+  margin: 0;
+}
+
+.countLine {
+  color: var(--color-text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.localizedFields {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-4);
+}
+
+.hint {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.builderActions {
+  justify-content: flex-start;
+}
+
+.section,
+.options {
+  min-inline-size: 0;
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+}
+
+.section legend,
+.options legend {
+  padding-inline: var(--space-2);
+  font-weight: 600;
+}
+
+.questionList,
+.assignmentList,
+.formList {
+  display: grid;
+  gap: var(--space-4);
+  margin: 0;
+  padding-inline-start: var(--space-5);
+}
+
+.question {
+  display: grid;
+  gap: var(--space-4);
+  min-inline-size: 0;
+}
+
+.questionSettings {
+  display: flex;
+  align-items: flex-end;
+  gap: var(--space-4);
+  flex-wrap: wrap;
+}
+
+.questionSettings .field {
+  min-inline-size: 12rem;
+}
+
+.checkField {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-block-size: var(--touch-min);
+}
+
+.checkField input {
+  inline-size: var(--space-4);
+  block-size: var(--space-4);
+}
+
+.emptyState {
+  padding-block: var(--space-5);
+  border-block: 1px solid var(--color-border);
+}
+
+.emptyState h3 {
+  margin: 0 0 var(--space-2);
+}
+
+.emptyState p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.error {
+  color: var(--color-error-fg);
+}
+
+.success {
+  color: var(--color-success-fg);
+}
+
+.assignment {
+  display: grid;
+  gap: var(--space-3);
+  padding-block: var(--space-4);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.assignmentHeader {
+  justify-content: flex-start;
+}
+
+.statusTag {
+  padding: var(--space-1) var(--space-2);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-button);
+  font-size: var(--text-sm);
+}
+
+.details,
+.details > div {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.details {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--space-3) var(--space-5);
+  margin: 0;
+}
+
+.details dt {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
+.details dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.policySection {
+  display: grid;
+  gap: var(--space-3);
+  padding-block: var(--space-5);
+  border-block-start: 1px solid var(--color-border);
+}
+
+.policySection p {
+  margin: 0;
+}
+
+.timeline,
+.scheduleList {
+  display: grid;
+  gap: var(--space-3);
+  margin: 0;
+  padding-inline-start: var(--space-5);
+}
+
+.timeline li,
+.scheduleList li {
+  display: grid;
+  gap: var(--space-1);
+}
+
+.formList {
+  grid-auto-flow: column;
+  grid-auto-columns: max-content;
+  overflow-x: auto;
+  padding-block: var(--space-1);
+}
+
+@media (max-width: 40rem) {
+  .main {
+    inline-size: calc(100% - var(--space-4));
+    padding-block: var(--space-5);
+  }
+
+  .panel {
+    padding: var(--space-4);
+  }
+
+  .localizedFields,
+  .details {
+    grid-template-columns: minmax(0, 1fr);
+  }
+
+  .formList {
+    grid-auto-flow: row;
+    grid-auto-columns: auto;
+  }
+}
