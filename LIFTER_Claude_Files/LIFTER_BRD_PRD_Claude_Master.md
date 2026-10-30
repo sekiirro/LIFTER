@@ -30,7 +30,7 @@ The service is **not** an open consumer marketplace, public storefront, CRM or i
 2. **Platform Owner is the governance authority:** creates workspaces, manages staff access and permissions, determines packages, prices, commission and salary/incentive decisions.
 3. **External collection:** workspaces receive client payments directly. LIFTER calculates its *earned/owed* commission, **not** cash physically received.
 4. **Historical financial truth:** purchase-time prices, tier and commission snapshots and immutable payment/refund ledger events must not be rewritten by later settings changes.
-5. **Registration is post-sale only:** no public marketing landing pages, checkout, pre-sales CRM or self-service purchase inside LIFTER.
+5. **Registration is post-sale only:** client registration remains invitation-only; no checkout, pre-sales CRM or self-service purchase inside LIFTER. A public premium marketing Landing Page for prospective Workspace Owners (services overview; Login, Work With Us and Apply CTAs) is approved as a **deferred feature after core platform completion** (PO, session 14, 2026-10-30).
 6. **Activation of a first subscription requires delivery of both initial plans**, not merely account creation or payment.
 7. **Existing decisions outrank suggestions:** Claude may challenge or propose changes, but must label them as proposals, not silently redefine scope.
 
@@ -124,7 +124,7 @@ Workspace Owner can edit logo, color theme, visual identity, hero/branding eleme
 **Required**
 - One-time, package-bound, workspace-bound post-payment registration tokens, 24-hour validity and 30-minute in-progress grace.
 - Token replay prevention, safe concurrent signup behavior and no accidental token consumption on failed form submission.
-- Branded bilingual **registration form only**, with no public marketing pages, pre-sale chat button or checkout.
+- Branded bilingual **registration form only**, with no public marketing pages in the client registration flow, pre-sale chat button or checkout. A public premium marketing Landing Page for prospective Workspace Owners (services overview; Login, Work With Us and Apply CTAs) is approved as a **deferred feature after core platform completion** (PO, session 14, 2026-10-30); invitation-only client registration remains unchanged.
 - Unique account identity according to workspace separation and approved email/phone collision policy; safe rejection and deletion handling.
 - Email/password sign-in; **no mandatory two-factor authentication**. Multiple simultaneous devices are allowed; **no special device/session management screen**.
 - Self-service email password reset and Platform Owner manual reset links, with secure expiry, single-use properties and audit.
@@ -142,7 +142,7 @@ Workspace Owner can edit logo, color theme, visual identity, hero/branding eleme
 - Weekly check-ins recur every seven days from subscription activation, including Fridays; freeze pauses scheduling and resume continues according to approved schedule behavior. Previously outstanding forms remain visible.
 - Check-in reminders align to the assigned form's day; Telegram bot may send configured day/time/text/repetition when the recipient has linked the bot, alongside appropriate website notifications.
 - Submission histories and coach processing states are recorded. Weekly check-in completion is **not** a login gate.
-- Trainer-facing body-fat information appears as a numerical percentage, not an unsolicited visual body-fat image selector.
+- Client intake uses visual body-fat image cards (F15, PO, session 14, 2026-10-30); Trainer-facing body-fat display remains a numerical percentage.
 
 **Acceptance checks**
 - Initial form autosave survives navigation; conditional questions render correctly; correcting answers does not reset first-delivery SLA.
@@ -239,7 +239,7 @@ Workspace Owner can edit logo, color theme, visual identity, hero/branding eleme
 ## PRD-12. Explicit exclusions and deferred scope
 
 **Do not implement or plan as approved scope:**
-- Public marketing/landing pages per workspace, price pages, testimonials, FAQ or pre-sale lead CRM in LIFTER.
+- Public marketing/landing pages per workspace, price pages, testimonials, FAQ or pre-sale lead CRM in LIFTER remain excluded. A public premium marketing Landing Page introducing LIFTER to prospective Workspace Owners (services overview; Login, Work With Us and Apply CTAs) is approved only as a **deferred feature after core platform completion** (PO, session 14, 2026-10-30); invitation-only client registration remains unchanged.
 - Integrated payment gateway or platform collection of customer payments.
 - Tracking cash settlements/transfers of LIFTER commissions from workspaces.
 - In-app direct messaging, helpdesk tickets, support buttons, mass broadcasts or in-app renewal requests.
@@ -290,7 +290,7 @@ Workspace Owner can edit logo, color theme, visual identity, hero/branding eleme
 
 | Area | Binding choice |
 |---|---|
-| Public experience | Post-payment branded bilingual registration form only; no marketing pages |
+| Public experience | Invitation-only post-payment branded bilingual client registration; public premium marketing Landing Page for prospective Workspace Owners is approved as deferred until after core platform completion (PO, session 14, 2026-10-30) |
 | Sales & renewals | Payment and customer communication external; no payment gateway or in-app renewal request |
 | Registration | One-time 24h link, +30min grace for started forms, package/workspace bound |
 | Activation | First subscription starts when both initial plans are delivered |
