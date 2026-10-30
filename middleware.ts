@@ -33,8 +33,13 @@ export async function middleware(request: NextRequest) {
   // login redirect with the token in `next`.
   const registrationPath = /^\/register\/[^/]+\/?$/.test(path);
   const registrationTree = path.startsWith('/register');
+  const brandingProxyTree = path.startsWith('/api/branding');
+  const brandingProxyPath = /^\/api\/branding\/[^/]+\/(?:logo|banner)$/.test(
+    path,
+  );
   const publicPath =
     registrationPath ||
+    brandingProxyPath ||
     ['/login', '/auth/recovery', '/api/health', '/print-sample'].includes(
       path,
     ) ||
@@ -53,15 +58,17 @@ export async function middleware(request: NextRequest) {
     // Public register paths are never fed back through `next`; for the whole
     // /register subtree this also keeps a token out of redirect URLs when the
     // requested path is not the exact public shape (nested/trailing variants).
-    if (!registrationTree)
+    if (!registrationTree && !brandingProxyTree)
       url.searchParams.set('next', `${path}${request.nextUrl.search}`);
     const redirect = NextResponse.redirect(url);
     for (const cookie of response.cookies.getAll())
       redirect.cookies.set(cookie);
-    if (registrationTree) setRegistrationPrivacyHeaders(redirect);
+    if (registrationTree || brandingProxyTree)
+      setRegistrationPrivacyHeaders(redirect);
     return redirect;
   }
-  if (registrationTree) setRegistrationPrivacyHeaders(response);
+  if (registrationTree || brandingProxyTree)
+    setRegistrationPrivacyHeaders(response);
   return response;
 }
 

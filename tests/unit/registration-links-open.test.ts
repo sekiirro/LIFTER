@@ -38,6 +38,32 @@ it('accepts only the exact valid payload', () => {
   });
   expect(parseOpenResult({ status: 'invalid' })).toEqual({ status: 'invalid' });
 });
+it('accepts only published identity fields and rejects URLs, paths, history and selectors', () => {
+  const branding = {
+    name: { ar: 'الهوية', en: 'Identity' },
+    color: '#123456',
+    bannerAlt: { ar: 'لافتة', en: 'Banner' },
+    logo: true,
+    banner: false,
+  };
+  expect(
+    parseOpenResult({ status: 'valid', workspace_name: 'A', branding }),
+  ).toEqual({ status: 'valid', workspace_name: 'A', branding });
+  for (const unsafe of [
+    { ...branding, logo: 'https://example.test/logo.png' },
+    { ...branding, asset: 'workspace/validated/logo/hash.png' },
+    { ...branding, history: [] },
+    { ...branding, version_id: 'private-id' },
+    { ...branding, color: 'var(--brand)' },
+  ])
+    expect(
+      parseOpenResult({
+        status: 'valid',
+        workspace_name: 'A',
+        branding: unsafe,
+      }),
+    ).toEqual({ status: 'invalid' });
+});
 it('accepts only a canonical optional branding handle without widening the payload allowlist', () => {
   const render_handle = 'A'.repeat(43);
   const value = { status: 'valid', workspace_name: 'A', render_handle };
