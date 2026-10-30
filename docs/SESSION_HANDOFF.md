@@ -142,6 +142,7 @@ Docker snapshot: A lifter (54321/54322), no DB container, stopped/free. B lifter
 ### S17 PO decisions in force
 - F14 PR scope: Core + CI; T019-T023, T042, T004/T037, T038 before PR; T039-T041/T043 production blockers.
 - Banner-only blend approval is historical after the full-viewport hero superseded it.
+- Earlier S17 instruction: hero approval was provisional, English in-card guidance approved and Arabic revision requested, both F15 failing tests had to be fixed before PR readiness, and repeated local-key exposure had to be investigated. Later cinematic direction superseded the conflicting layout/copy; current separate-art guidance remains pending.
 - Hero: desktop full viewport, subject left/card right; mobile natural art above card with 35% fade into --color-bg; separate desktop/mobile art; eight variants before PO review.
 - Liquid Glass: official Apple guidance, distinguish Apple behavior from web approximation. Workflow: prototypes, PO visual approval, skills review, present proposals, PO approval, implementation.
 - F15 Your First Step is ordinary editable Forms default; WO can edit/replace/select; prior questions are optional starter content; Q3=D timing per form; no standalone health notice, only minimal contextual guidance if useful.
@@ -149,6 +150,7 @@ Docker snapshot: A lifter (54321/54322), no DB container, stopped/free. B lifter
 PO answer (verbatim): "Core + CI lane (Recommended)"
 
 Verbatim PO headings:
+## Session 17 PO decisions — F14 hero direction, guidance, F15 tests, security (2026-10-30, verbatim)
 ## Session 17 PO decision — F14 PR-blocking scope (2026-10-30)
 ## Session 17 PO decisions — F14 banner blend APPROVED (2026-10-30, verbatim)
 ## Session 17 PO decision — F14 cinematic hero direction (2026-10-30, verbatim; given as the answer to the architect's hero-size/fade-target questions)
