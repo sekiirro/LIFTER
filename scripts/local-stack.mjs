@@ -28,24 +28,52 @@ function valueFor(configText, section, key) {
   return match ? Number(match[1]) : undefined;
 }
 
-/** @param {{ LIFTER_SUPABASE_STACK?: string }} [env] */
-export function selectStack(env = process.env) {
-  const requested = env.LIFTER_SUPABASE_STACK || 'a';
-  if (requested !== 'a' && requested !== 'b')
+/** @param {{ LIFTER_SUPABASE_STACK?: string, API_URL?: string, SUPABASE_URL?: string, DB_URL?: string, SUPABASE_DB_URL?: string }} [env] */
+export function selectStack(env = process.env, root = process.cwd()) {
+  const requested = env.LIFTER_SUPABASE_STACK;
+  if (requested && !['a', 'b', 'c', 'd'].includes(requested))
     throw new Error('Unsupported local Supabase stack');
-  return requested;
+  if (requested) return requested;
+
+  const apiUrl = env.API_URL || env.SUPABASE_URL;
+  const dbUrl = env.DB_URL || env.SUPABASE_DB_URL;
+  if (apiUrl && dbUrl) {
+    try {
+      const api = new URL(apiUrl);
+      const db = new URL(dbUrl);
+      for (const candidate of ['a', 'b', 'c', 'd']) {
+        try {
+          const config = getStackConfig(candidate, root);
+          if (
+            api.protocol === 'http:' &&
+            api.hostname === '127.0.0.1' &&
+            api.port === String(config.apiPort) &&
+            db.hostname === '127.0.0.1' &&
+            db.port === String(config.dbPort) &&
+            db.pathname === '/postgres'
+          )
+            return candidate;
+        } catch {
+          // A stack without a checked-in local profile cannot be selected here.
+        }
+      }
+    } catch {
+      // The selected-stack target validator reports malformed endpoints.
+    }
+  }
+  return 'a';
 }
 
 export function getStackConfig(stack = 'a', root = process.cwd()) {
-  if (stack !== 'a' && stack !== 'b')
+  if (!['a', 'b', 'c', 'd'].includes(stack))
     throw new Error('Unsupported local Supabase stack');
   const configPath =
     stack === 'a'
       ? path.join(root, 'supabase', 'config.toml')
-      : path.join(root, 'supabase-stack-b', 'supabase', 'config.toml');
+      : path.join(root, `supabase-stack-${stack}`, 'supabase', 'config.toml');
   const configText = readFileSync(configPath, 'utf8');
   const projectId = configText.match(/^project_id\s*=\s*"([^"]+)"/m)?.[1];
-  const expectedProjectId = stack === 'a' ? 'lifter' : 'lifter-stack-b';
+  const expectedProjectId = stack === 'a' ? 'lifter' : `lifter-stack-${stack}`;
   const ports = PORT_KEYS.map(
     ([section, key], index) =>
       valueFor(configText, section, key) ??
@@ -61,11 +89,11 @@ export function getStackConfig(stack = 'a', root = process.cwd()) {
     projectId,
     configPath,
     configText,
-    workdir: stack === 'a' ? root : path.join(root, 'supabase-stack-b'),
+    workdir: stack === 'a' ? root : path.join(root, `supabase-stack-${stack}`),
     envFile:
       stack === 'a'
         ? path.join(root, '.env.local')
-        : path.join(root, '.env.stack-b'),
+        : path.join(root, `.env.stack-${stack}`),
     apiPort: ports[0],
     dbPort: ports[1],
     ports,
@@ -94,11 +122,9 @@ export function assertLocalStackTarget({
     throw new Error('Local Supabase target required');
   }
   const validApi =
-    stack === 'a'
-      ? apiUrl === 'http://127.0.0.1:54321'
-      : api.protocol === 'http:' &&
-        api.hostname === '127.0.0.1' &&
-        api.port === String(config.apiPort);
+    api.protocol === 'http:' &&
+    api.hostname === '127.0.0.1' &&
+    api.port === String(config.apiPort);
   const validDb =
     db.hostname === '127.0.0.1' &&
     db.port === String(config.dbPort) &&
@@ -119,6 +145,6 @@ export function loadSelectedStackEnv(env = process.env, root = process.cwd()) {
   }
   for (const line of contents.replace(/^\uFEFF/, '').split(/\r?\n/)) {
     const match = line.match(/^([A-Z][A-Z0-9_]*)="?([^"\r\n]*)"?$/);
-    if (match) env[match[1]] = match[2];
+    if (match && env[match[1]] === undefined) env[match[1]] = match[2];
   }
 }

@@ -5,20 +5,24 @@ import { getStackConfig, selectStack } from '../../scripts/local-stack.mjs';
 
 // T044 only: no application migration, production role or Worker signing code.
 // JWTs are pre-issued in this test process; none are saved or reported.
-if (selectStack() !== 'b') throw new Error('T044 requires explicit Stack B');
-const config = getStackConfig('b');
-if (config.projectId !== 'lifter-stack-b')
-  throw new Error('T044 target mismatch');
+const selectedStack = selectStack();
+const config = getStackConfig(selectedStack);
+if (
+  selectedStack === 'b' &&
+  (config.projectId !== 'lifter-stack-b' || config.apiPort !== 25421)
+)
+  throw new Error('T044 Stack B target mismatch');
 const env = loadEnv();
-// Opt-in only for the architect-approved temporary B profile. A config mismatch
-// fails before connecting, so the opt-in cannot silently skip an enabled profile.
-const transformsEnabled = process.env.T044_TRANSFORMS_ENABLED === 'true';
 const configuredTransforms =
   /\[storage\.image_transformation\]\s*\nenabled\s*=\s*true/.test(
     config.configText,
   );
-if (transformsEnabled !== configuredTransforms)
-  throw new Error('T044 transform mode must match the selected B config');
+const transformsEnabled = configuredTransforms;
+if (
+  process.env.T044_TRANSFORMS_ENABLED !== undefined &&
+  (process.env.T044_TRANSFORMS_ENABLED === 'true') !== transformsEnabled
+)
+  throw new Error('T044 transform mode must match the selected profile');
 const secret = process.env.JWT_SECRET;
 if (!secret) throw new Error('T044 requires local JWT_SECRET in selected env');
 const db = sql();
@@ -336,25 +340,9 @@ const operations = [
   },
 ] as const;
 
-it.skipIf(transformsEnabled)(
-  'disabled-profile: transform route is unavailable (404); runs when T044_TRANSFORMS_ENABLED is unset',
-  async () => {
-    const result = await request(transform, { spoof: true });
-    expect(result.status).toBe(404);
-    expect(result.observations).toHaveLength(0);
-    expect(result.bytesMatch).toBe(false);
-    expect((await request(download)).bytesMatch).toBe(true);
-    console.log('T044 disabled transform', {
-      status: result.status,
-      policyEvaluations: result.observations.length,
-    });
-  },
-);
-
-it.skipIf(!transformsEnabled)(
-  'enabled-profile proof: transform reaches RLS and is denied by operation alone (requires T044_TRANSFORMS_ENABLED=true and temporary enabled B config; skipped only on disabled profile)',
-  async () => {
-    const result = await request(transform, { spoof: true });
+it('selected profile: transform behavior matches Storage configuration and remains download-only', async () => {
+  const result = await request(transform, { spoof: true });
+  if (transformsEnabled) {
     expect(
       result.observations.length > 0,
       'enabled transform actually reaches RLS',
@@ -378,12 +366,8 @@ it.skipIf(!transformsEnabled)(
     expect(result.observations.map((o) => o.operation)).not.toContain(
       'storage.object.get_authenticated',
     );
-    expect(result.status >= 400, 'download-only policy denies transform').toBe(
-      true,
-    );
-    expect(result.genericNotFound, 'generic object-not-found failure').toBe(
-      true,
-    );
+    expect(result.status >= 400).toBe(true);
+    expect(result.genericNotFound).toBe(true);
     expect(result.bytesMatch).toBe(false);
     const allowed = await request(download);
     expect(allowed.status).toBe(200);
@@ -393,21 +377,13 @@ it.skipIf(!transformsEnabled)(
         (o) => o.operation === 'storage.object.get_authenticated',
       ),
     ).toBe(true);
-    console.log('T044 enabled transform proof', {
-      transformStatus: result.status,
-      policyEvaluations: result.observations.length,
-      genericNotFound: result.genericNotFound,
-      transformOperations: [
-        ...new Set(result.observations.map((o) => o.operation)),
-      ],
-      downloadStatus: allowed.status,
-      downloadOperations: [
-        ...new Set(allowed.observations.map((o) => o.operation)),
-      ],
-      bytesMatch: allowed.bytesMatch,
-    });
-  },
-);
+    return;
+  }
+  expect(result.status).toBe(404);
+  expect(result.observations).toHaveLength(0);
+  expect(result.bytesMatch).toBe(false);
+  expect((await request(download)).bytesMatch).toBe(true);
+});
 
 for (const op of operations)
   it(`c/d: ${op.name} cannot borrow download context, even with forged operation headers`, async () => {

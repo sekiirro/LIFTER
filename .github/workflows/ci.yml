@@ -45,7 +45,6 @@ jobs:
     permissions:
       contents: read
     env:
-      LIFTER_SUPABASE_STACK: b
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:
@@ -71,14 +70,8 @@ jobs:
         with:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
-      - name: Prepare isolated Storage-enabled B profile
-        run: |
-          grep -qx 'project_id = "lifter-stack-b"' supabase-stack-b/supabase/config.toml
-          ln -s "$GITHUB_WORKSPACE/supabase/migrations" supabase-stack-b/supabase/migrations
-      - run: supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
-        working-directory: supabase-stack-b
+      - run: supabase start -x studio,inbucket,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
       - name: Export local stack environment
-        working-directory: supabase-stack-b
         run: supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
       - name: Export app server environment
         run: |
@@ -97,8 +90,7 @@ jobs:
         env:
           LOCAL_SUPABASE_STORAGE_TEST: 'true'
           LOCAL_SUPABASE_PROVIDER_FAULT_TEST: 'true'
-      - run: supabase stop
-        working-directory: supabase-stack-b
+      - run: supabase stop --no-backup
         if: always()
 
   storage:
@@ -106,7 +98,6 @@ jobs:
     permissions:
       contents: read
     env:
-      LIFTER_SUPABASE_STACK: b
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:
@@ -128,14 +119,8 @@ jobs:
         with:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
-      - name: Prepare isolated Storage-enabled B profile
-        run: |
-          grep -qx 'project_id = "lifter-stack-b"' supabase-stack-b/supabase/config.toml
-          ln -s "$GITHUB_WORKSPACE/supabase/migrations" supabase-stack-b/supabase/migrations
-      - run: supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
-        working-directory: supabase-stack-b
+      - run: supabase start -x studio,inbucket,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
       - name: Export local stack environment
-        working-directory: supabase-stack-b
         run: supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
       - name: Export app server environment
         run: |
@@ -148,19 +133,25 @@ jobs:
       - name: Provision local Vault signup keys
         run: node tests/integration/client-accounts-provision.mjs
       - run: npx playwright install --with-deps chromium
-      - name: Run required pending-client Storage denial with zero skips
+      - name: Run all F14 Storage integrations with zero skips
+        run: |
+          npm run test:integration -- \
+            tests/integration/branding-banner-pipeline.test.ts \
+            tests/integration/branding-owner-gc.test.ts \
+            tests/integration/branding-proxy-resolution.test.ts \
+            tests/integration/branding-storage-context.test.ts \
+            tests/integration/branding-storage-policy.test.ts \
+            tests/integration/branding-upload-recovery.test.ts \
+            tests/integration/branding-validator.test.ts \
+            --reporter=json --outputFile="$RUNNER_TEMP/branding-storage-integration.json"
+          node scripts/assert-storage-suite-zero-skips.mjs integration "$RUNNER_TEMP/branding-storage-integration.json"
+      - name: Run F14 banner and F11 pending-client Storage browser tests with zero skips
         shell: bash
         run: |
-          set +e
-          npm run e2e -- tests/e2e/client-accounts-storage.spec.ts --reporter=line > "$RUNNER_TEMP/storage-test.log" 2>&1
-          test_status=$?
-          set -e
-          summary=$(U8_STORAGE_RESULT_INPUT="$(cat "$RUNNER_TEMP/storage-test.log")" node scripts/client-accounts-storage-result.mjs)
-          printf '%s\n' "$summary"
-          node -e 'if (!JSON.parse(process.argv[1]).acceptable) process.exit(1)' "$summary"
-          exit "$test_status"
+          PLAYWRIGHT_JSON_OUTPUT_NAME="$RUNNER_TEMP/branding-storage-playwright.json" \
+            npm run e2e -- tests/e2e/branding-banner-loaded.spec.ts tests/e2e/client-accounts-storage.spec.ts --reporter=json --workers=1
+          node scripts/assert-storage-suite-zero-skips.mjs playwright "$RUNNER_TEMP/branding-storage-playwright.json"
         env:
           LOCAL_SUPABASE_STORAGE_TEST: 'true'
-      - run: supabase stop
-        working-directory: supabase-stack-b
+      - run: supabase stop --no-backup
         if: always()

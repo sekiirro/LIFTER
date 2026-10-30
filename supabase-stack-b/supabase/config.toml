@@ -14,6 +14,9 @@ shadow_port = 25420
 [storage]
 enabled = true
 
+[storage.image_transformation]
+enabled = true
+
 [studio]
 enabled = true
 port = 25423
@@ -39,3 +42,6 @@ port = 25429
 [auth]
 enable_signup = false
 minimum_password_length = 8
+
+[auth.email]
+otp_expiry = 3600

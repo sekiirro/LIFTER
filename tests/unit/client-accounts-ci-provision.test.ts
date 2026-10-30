@@ -40,16 +40,14 @@ it('runs the shared password DB parity suite explicitly in the integration job',
   ).toBeGreaterThan(parity);
 });
 
-it('requires a selected Storage-ready B stack in the integration e2e gate', () => {
+it('uses the root profile for the Storage-ready integration e2e gate', () => {
   const integration = workflow.slice(workflow.indexOf('\n  integration:'));
   const storageE2e = integration.slice(
     integration.indexOf('Run full Playwright suite against the local stack'),
   );
 
-  expect(integration).toMatch(/LIFTER_SUPABASE_STACK:\s*b/);
-  expect(integration).toContain(
-    'grep -qx \'project_id = "lifter-stack-b"\' supabase-stack-b/supabase/config.toml',
-  );
+  expect(integration).not.toMatch(/LIFTER_SUPABASE_STACK:\s*b/);
+  expect(integration).not.toContain('working-directory: supabase-stack-b');
   expect(storageE2e).toContain("LOCAL_SUPABASE_STORAGE_TEST: 'true'");
 });
 

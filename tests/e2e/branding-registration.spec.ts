@@ -124,7 +124,7 @@ for (const locale of ['ar', 'en'] as const) {
         page,
         context,
       }, testInfo) => {
-        test.skip(!local, 'Requires the disposable local Stack-B database.');
+        test.skip(!local, 'Requires the selected disposable local database.');
         await page.setViewportSize(viewport);
         await context.addCookies([
           { name: LOCALE_COOKIE, value: locale, url: origin },

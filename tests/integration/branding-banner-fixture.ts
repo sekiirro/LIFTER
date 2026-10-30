@@ -1,6 +1,5 @@
 import { deflateSync } from 'node:zlib';
 import { validateBrandingImage } from '../../lib/branding/image-validation';
-import { selectStack } from '../../scripts/local-stack.mjs';
 import { admin, sql } from './harness';
 import {
   registrationFixture,
@@ -55,7 +54,6 @@ export function bannerPng(width = 316, height = 158): Buffer {
 }
 
 export async function createPublishedBannerFixture() {
-  if (selectStack() !== 'b') throw new Error('Banner fixture requires Stack B');
   const db = sql();
   const fixture = await registrationFixture();
   const token = secret();

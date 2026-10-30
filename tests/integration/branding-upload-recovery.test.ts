@@ -1,13 +1,9 @@
 import { afterAll, beforeAll, expect, it } from 'vitest';
-import { selectStack } from '../../scripts/local-stack.mjs';
 import { admin, loadEnv, sql, twoWorkspaceFixture } from './harness';
 import {
   createBrandingGc,
   runBrandingGc,
 } from '../../workers/cron/src/branding-gc';
-
-if (selectStack() !== 'b')
-  throw new Error('Branding upload recovery requires Stack B');
 
 const db = sql();
 let fixture: Awaited<ReturnType<typeof twoWorkspaceFixture>>;

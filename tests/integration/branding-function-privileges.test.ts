@@ -1,9 +1,5 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { selectStack } from '../../scripts/local-stack.mjs';
 import { anonClient, createStaff, sql } from './harness';
-
-if (selectStack() !== 'b')
-  throw new Error('Branding privilege checks require Stack B');
 
 const db = sql();
 const mutateSchemaUsage = process.env.F14_GC_SCHEMA_USAGE_MUTATION === 'grant';

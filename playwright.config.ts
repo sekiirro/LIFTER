@@ -60,9 +60,11 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run build && node tests/e2e/start-server-capture.mjs',
+    command:
+      'npm run build && node scripts/branding/start-playwright-server.mjs',
     url: new URL('/api/health', baseURL).toString(),
     env: {
+      ...process.env,
       LIFTER_SHOWCASE: '1',
       APP_ORIGIN: process.env.APP_ORIGIN ?? new URL(baseURL).origin,
       U8_SERVER_LOG_MANIFEST_PATH: serverLogManifestPath,

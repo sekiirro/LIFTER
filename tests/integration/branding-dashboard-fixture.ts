@@ -1,9 +1,5 @@
 import { randomUUID } from 'node:crypto';
 import { admin, anonClient, checked, sql } from './harness';
-import { selectStack } from '../../scripts/local-stack.mjs';
-
-if (selectStack() !== 'b')
-  throw new Error('Dashboard fixture requires Stack B');
 
 async function createWorkspaceOwner(label: string, workspaceCount: number) {
   const email = `f14-dashboard-${label}-${randomUUID()}@example.test`;
@@ -74,8 +70,6 @@ async function createWorkspaceOwner(label: string, workspaceCount: number) {
 }
 
 export async function createBrandingDashboardFixtures() {
-  if (selectStack() !== 'b')
-    throw new Error('Dashboard fixture requires Stack B');
   const editor = await createWorkspaceOwner('editor', 2);
   const staff = await createWorkspaceOwner('staff', 1);
   return {

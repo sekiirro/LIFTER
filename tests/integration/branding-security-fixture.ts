@@ -6,11 +6,8 @@ import {
   registrationFixture,
   secret,
 } from './registration-links-fixture';
-import { selectStack } from '../../scripts/local-stack.mjs';
 import { issueBrandingCredential } from '../../scripts/branding/issue-credential.mjs';
 
-if (selectStack() !== 'b')
-  throw new Error('Branding security checks require B');
 export const env = loadEnv();
 export const hash = (s: string) => createHash('sha256').update(s).digest('hex');
 export const opaque = () => randomBytes(32).toString('base64url');
