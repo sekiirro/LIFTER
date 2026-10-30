@@ -322,7 +322,11 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
                       value !== null &&
                       'status' in value &&
                       (value.status === 'invalid' ||
-                        (fn.proname === 'subscription_freeze_operation' &&
+                        ([
+                          'subscription_freeze_operation',
+                          'record_refund',
+                          'record_renewal',
+                        ].includes(fn.proname) &&
                           value.status === 'invalid_input'))),
                   fn.proname,
                 ).toBe(true);

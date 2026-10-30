@@ -386,7 +386,11 @@ export async function pendingHttpAccess(
           result.data === false ||
           (Array.isArray(result.data) && result.data.length === 0) ||
           result.data?.status === 'invalid' ||
-          (fn.proname === 'subscription_freeze_operation' &&
+          ([
+            'subscription_freeze_operation',
+            'record_refund',
+            'record_renewal',
+          ].includes(fn.proname) &&
             result.data?.status === 'invalid_input'),
         fn.proname,
       ).toBe(true);

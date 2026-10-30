@@ -115,10 +115,10 @@ it('T010 reuses F12 installment snapshots and anchors renewal dues to its record
       effective_end_exclusive: expect.any(String),
       coverage_end_exclusive: receipt.service_end_exclusive,
     });
-    expect(
-      (projection!.projection as Record<string, string>)
-        .effective_end_exclusive! < (receipt.service_start_date as string),
-    ).toBe(true);
+    const predecessorEnd = (projection!.projection as Record<string, string>)
+      .effective_end_exclusive!;
+    expect(predecessorEnd <= (receipt.service_start_date as string)).toBe(true);
+    expect(predecessorEnd).toBe(receipt.service_start_date);
   });
 });
 
