@@ -152,35 +152,17 @@ export function HeroStage({
       3,
     );
     if (!cardPhoto || !bottomEdge) return;
-    const isLight = document.documentElement.dataset.theme === 'light';
-    const fillAlpha = isLight
-      ? cardPhoto.luminance > 0.58
-        ? 12
+    const photoTone =
+      cardPhoto.luminance > 0.58
+        ? 'bright'
         : cardPhoto.luminance > 0.34
-          ? 16
-          : 20
-      : cardPhoto.luminance > 0.58
-        ? 23
-        : cardPhoto.luminance > 0.34
-          ? 27
-          : 31;
-    const formPlateAlpha = isLight
-      ? cardPhoto.luminance > 0.58
-        ? 38
-        : cardPhoto.luminance > 0.34
-          ? 42
-          : 46
-      : cardPhoto.luminance > 0.58
-        ? 74
-        : cardPhoto.luminance > 0.34
-          ? 60
-          : 54;
+          ? 'mid'
+          : 'dim';
     stage.style.setProperty(
       '--hero-photo-luminance',
       cardPhoto.luminance.toFixed(4),
     );
-    stage.style.setProperty('--hero-glass-tint-alpha', `${fillAlpha}%`);
-    stage.style.setProperty('--hero-form-plate-alpha', `${formPlateAlpha}%`);
+    stage.dataset.photoTone = photoTone;
     stage.style.setProperty(
       '--hero-bottom-average',
       `rgb(${bottomEdge.red} ${bottomEdge.green} ${bottomEdge.blue})`,

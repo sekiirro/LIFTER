@@ -368,6 +368,8 @@
 }
 
 [data-theme='light'] .glassCard {
+  --hero-glass-tint-alpha: 20%;
+  --hero-form-plate-alpha: 46%;
   --hero-glass-rim: color-mix(in srgb, var(--color-text) 14%, transparent);
   --hero-glass-edge: color-mix(in srgb, white 70%, transparent);
   --hero-glass-highlight: color-mix(in srgb, white 34%, transparent);
@@ -383,6 +385,8 @@
 
 [data-theme='dark'] .glassCard,
 html:not([data-theme='light']) .glassCard {
+  --hero-glass-tint-alpha: 31%;
+  --hero-form-plate-alpha: 54%;
   --hero-glass-rim: color-mix(in srgb, white 19%, transparent);
   --hero-glass-edge: color-mix(in srgb, white 24%, transparent);
   --hero-glass-highlight: color-mix(in srgb, white 40%, transparent);
@@ -394,6 +398,38 @@ html:not([data-theme='light']) .glassCard {
   --hero-inset-top: color-mix(in srgb, white 26%, transparent);
   --hero-inset-bottom: color-mix(in srgb, black 22%, transparent);
   --hero-pointer-light: color-mix(in srgb, white 24%, transparent);
+}
+
+[data-theme='light']
+  .stage[data-photo-tone='bright']
+  .glassCard[data-material='B'] {
+  --hero-glass-tint-alpha: 12%;
+  --hero-form-plate-alpha: 38%;
+}
+
+[data-theme='light']
+  .stage[data-photo-tone='mid']
+  .glassCard[data-material='B'] {
+  --hero-glass-tint-alpha: 16%;
+  --hero-form-plate-alpha: 42%;
+}
+
+[data-theme='dark']
+  .stage[data-photo-tone='bright']
+  .glassCard[data-material='B'],
+html:not([data-theme='light'])
+  .stage[data-photo-tone='bright']
+  .glassCard[data-material='B'] {
+  --hero-glass-tint-alpha: 23%;
+  --hero-form-plate-alpha: 74%;
+}
+
+[data-theme='dark'] .stage[data-photo-tone='mid'] .glassCard[data-material='B'],
+html:not([data-theme='light'])
+  .stage[data-photo-tone='mid']
+  .glassCard[data-material='B'] {
+  --hero-glass-tint-alpha: 27%;
+  --hero-form-plate-alpha: 60%;
 }
 
 .glassCard[data-material='B'] .glassRim {
