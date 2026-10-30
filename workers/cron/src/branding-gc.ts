@@ -65,6 +65,7 @@ export function createBrandingGc(env: {
       redirect: 'manual',
       headers,
       body: JSON.stringify(args),
+      signal: AbortSignal.timeout(30_000),
     });
     if (!response.ok) throw new Error(`branding_gc_rpc_${response.status}`);
     return response.json() as Promise<T>;
@@ -77,6 +78,7 @@ export function createBrandingGc(env: {
         redirect: 'manual',
         headers,
         body: JSON.stringify({ prefixes: [objectName] }),
+        signal: AbortSignal.timeout(30_000),
       });
       // Missing bytes are already in the desired state after an interrupted pass.
       if (!response.ok && response.status !== 404)

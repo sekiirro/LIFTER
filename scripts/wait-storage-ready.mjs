@@ -12,6 +12,7 @@ for (let attempt = 0; attempt < 40; attempt += 1) {
   try {
     const response = await fetch(`${apiUrl}/storage/v1/bucket`, {
       headers: { apikey: anonKey, authorization: `Bearer ${anonKey}` },
+      signal: AbortSignal.timeout(1000),
     });
     let message = '';
     if (response.status === 400) {

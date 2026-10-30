@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '../../../components/ui/Button';
 import type { Locale } from '../../../lib/design/preferences';
 import { getMessages } from '../../../lib/i18n';
-import { hasWorkspaceDraftEnvelope } from '../../../lib/branding/workspace-response';
+import { hasWorkspaceDraftResponse } from '../../../lib/branding/workspace-response';
 import styles from './branding.module.css';
 
 export function WorkspaceSwitcher({
@@ -43,7 +43,7 @@ export function WorkspaceSwitcher({
       const draft: unknown = await response.json();
       if (currentId !== requestId.current || nextController.signal.aborted)
         return;
-      if (!response.ok || !hasWorkspaceDraftEnvelope(draft, workspaceId)) {
+      if (!response.ok || !hasWorkspaceDraftResponse(draft, workspaceId)) {
         setFailed(true);
         setPending(false);
         setRequestedWorkspace(selected);

@@ -35,6 +35,40 @@ describe('F14 Storage CI lane contract', () => {
     expect(runner).not.toContain('service_role');
   });
 
+  it('derives the Next.js listener port from a custom Playwright origin', () => {
+    const config = readFileSync('playwright.config.ts', 'utf8');
+    expect(config).toMatch(/PORT:\s*process\.env\.PORT\s*\?\?/);
+    expect(config).toMatch(/new URL\(baseURL\)\.port/);
+  });
+
+  it('bounds each Storage readiness request', () => {
+    const readiness = readFileSync('scripts/wait-storage-ready.mjs', 'utf8');
+    expect(readiness).toContain('signal: AbortSignal.timeout(');
+  });
+
+  it('rejects todo assertions in the required Storage suites', () => {
+    const script = readFileSync(
+      'scripts/assert-storage-suite-zero-skips.mjs',
+      'utf8',
+    );
+    expect(script).toContain("'todo'");
+  });
+
+  it('does not overwrite UI geometry evidence when no local cases ran', () => {
+    const registration = readFileSync(
+      'tests/e2e/branding-registration.spec.ts',
+      'utf8',
+    );
+    const loadedBanner = readFileSync(
+      'tests/e2e/branding-banner-loaded.spec.ts',
+      'utf8',
+    );
+    expect(registration).toContain(
+      'if (geometryEvidence.length === 0) return;',
+    );
+    expect(loadedBanner).toContain('if (measurements.length === 0) return;');
+  });
+
   it('fails if any required branding Storage integration is omitted or skipped', () => {
     const files = [
       'branding-banner-pipeline.test.ts',
@@ -66,6 +100,14 @@ describe('F14 Storage CI lane contract', () => {
     expect(() =>
       assertVitestStorageReport({ testResults: mutated }, files),
     ).toThrow(/skipped|pending/i);
+    const todoOnlyFile = files.map((file, index) => ({
+      name: `/repo/tests/integration/${file}`,
+      status: 'passed',
+      assertionResults: [{ status: index === 3 ? 'todo' : 'passed' }],
+    }));
+    expect(() =>
+      assertVitestStorageReport({ testResults: todoOnlyFile }, files),
+    ).toThrow(/skipped|noPassed/i);
   });
 
   it('fails if the F11 denial or any F14 banner browser test is skipped', () => {

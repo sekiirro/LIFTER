@@ -217,6 +217,27 @@ describe('cron edge wiring', () => {
     }
   });
 
+  it('bounds both branding GC RPC and Storage requests', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json([]))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const gc = createBrandingGc({
+        SUPABASE_URL: 'https://example.test',
+        SUPABASE_SERVICE_ROLE_KEY: 'test-runtime-key',
+      });
+      await gc.claim(1);
+      await gc.remove('branding-staging', 'workspace/staging/upload');
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      for (const [, init] of fetchMock.mock.calls)
+        expect(init?.signal).toBeInstanceOf(AbortSignal);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it.each([
     'http://127.0.0.1:54321',
     'http://localhost:54321',
@@ -303,9 +324,7 @@ describe('cron edge wiring', () => {
         { waitUntil },
       );
       expect(waitUntil).toHaveBeenCalledTimes(2);
-      await Promise.allSettled(
-        waitUntil.mock.calls.map(([promise]) => promise),
-      );
+      await Promise.all(waitUntil.mock.calls.map(([promise]) => promise));
     } finally {
       vi.unstubAllGlobals();
     }

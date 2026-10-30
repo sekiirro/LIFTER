@@ -16,7 +16,9 @@ const browserFiles = [
 ];
 
 function skippedStatus(status) {
-  return ['pending', 'skipped', 'skip'].includes(String(status).toLowerCase());
+  return ['pending', 'skipped', 'skip', 'todo'].includes(
+    String(status).toLowerCase(),
+  );
 }
 
 export function assertVitestStorageReport(
@@ -41,10 +43,17 @@ export function assertVitestStorageReport(
     skippedStatus(test.status),
   ).length;
   const failed = assertions.filter((test) => test.status === 'failed').length;
-  const passed = assertions.filter((test) => test.status === 'passed').length;
-  if (missing.length || skipped || failed || !passed)
+  const passedTests = assertions.filter((test) => test.status === 'passed');
+  const passed = passedTests.length;
+  const noPassedFiles = requiredFiles.filter(
+    (file) =>
+      !matched
+        .get(file)
+        ?.assertionResults?.some((test) => test.status === 'passed'),
+  );
+  if (missing.length || skipped || failed || noPassedFiles.length)
     throw new Error(
-      `Storage integration guard failed: missing=${missing.join(',') || 'none'} skipped=${skipped} failed=${failed} passed=${passed}`,
+      `Storage integration guard failed: missing=${missing.join(',') || 'none'} skipped=${skipped} failed=${failed} noPassed=${noPassedFiles.join(',') || 'none'} passed=${passed}`,
     );
   return { files: matched.size, passed, skipped, failed };
 }

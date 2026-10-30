@@ -69,6 +69,7 @@ it('parent and child force RLS with scoped SELECT-only policies', async () => {
     expect(row).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
     const policies =
       await db`select cmd,qual,roles,with_check from pg_policies where schemaname='public' and tablename=${table}`;
+    expect(policies).toHaveLength(table === 'registration_links' ? 2 : 1);
     const apiPolicies = policies.filter((policy) =>
       policy.roles.includes('authenticated'),
     );

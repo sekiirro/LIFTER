@@ -10,3 +10,10 @@ export function hasWorkspaceDraftEnvelope(
     value.workspaceId === workspaceId
   );
 }
+
+export function hasWorkspaceDraftResponse(
+  value: unknown,
+  workspaceId: string,
+): boolean {
+  return value === null || hasWorkspaceDraftEnvelope(value, workspaceId);
+}

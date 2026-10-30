@@ -5,7 +5,7 @@
 - A required CI lane enables Storage and waits for explicit readiness checks before running any Storage test.
 - Zero Storage-related skips are permitted. A missing service, missing readiness signal, or skipped security case fails the lane.
 - Run F11 pending-client Storage denial scenarios alongside F14 bucket/path policy cases, including direct API attempts. Use isolated fixtures and restore stack state even after failure. Update F11 isolated-runner restoration assumptions as coordinated work.
-- Include unit and contract coverage for validation, state reconciliation, revision races, proxy authorization, and browser-facing surface states. DB/Storage integration work runs only on stack B.
+- Include unit and contract coverage for validation, state reconciliation, revision races, proxy authorization, and browser-facing surface states. Required CI integration and Storage jobs use the root Supabase profile; local DB/Storage integration verification for this lane uses Stack B.
 
 ## Proxy/validator acceptance gate
 

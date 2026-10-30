@@ -41,6 +41,7 @@ test.afterEach(async () => {
 });
 
 test.afterAll(async () => {
+  if (measurements.length === 0) return;
   const evidence = join(process.cwd(), 'tests/integration/evidence/f14-ui');
   await mkdir(evidence, { recursive: true });
   await writeFile(
