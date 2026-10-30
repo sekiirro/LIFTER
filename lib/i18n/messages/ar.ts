@@ -297,6 +297,7 @@ export const ar = {
   'branding.publishedNotice': 'مسودة: تم نشر العلامة الحالية.',
   'branding.noPublished': 'مسودة: لم يتم نشر شيء بعد',
   'branding.genericUnavailable': 'مسودة: العلامة غير متاحة. حاول مرة أخرى.',
+  'branding.workspaceLoading': 'مسودة: جارٍ تحميل علامة مساحة العمل…',
   'registrationApproval.title': 'مراجعة طلبات التسجيل',
   'registrationApproval.intro':
     'راجع الطلبات وشروطها المسجلة قبل اتخاذ القرار.',

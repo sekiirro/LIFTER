@@ -306,6 +306,7 @@ export const en: Record<keyof typeof ar, string> = {
   'branding.publishedNotice': 'DRAFT: Current branding published.',
   'branding.noPublished': 'DRAFT: Nothing published yet',
   'branding.genericUnavailable': 'DRAFT: Branding is unavailable. Try again.',
+  'branding.workspaceLoading': 'DRAFT: Loading workspace branding…',
   'registrationApproval.title': 'Registration approvals',
   'registrationApproval.intro':
     'Review submitted requests and issued terms before deciding.',

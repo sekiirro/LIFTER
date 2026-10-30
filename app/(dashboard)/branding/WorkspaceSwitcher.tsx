@@ -83,7 +83,7 @@ export function WorkspaceSwitcher({
         ))}
       </select>
       {pending && (
-        <span role="status">{messages['registrationApproval.loading']}</span>
+        <span role="status">{messages['branding.workspaceLoading']}</span>
       )}
       {failed && (
         <span id="branding-workspace-error" role="alert">
