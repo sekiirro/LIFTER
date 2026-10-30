@@ -29,7 +29,7 @@ During the former pre-hook window, a client could call public GoTrue endpoints, 
 
 ## Stack and execution
 
-Stack C is project lifter-stack-c, API 35421, DB 35422, full port block 35420-35429. The observed Docker container names used separate lifter, lifter-stack-b and lifter-stack-c projects. Stacks A/B were not targets. Stack C's env file is .env.stack-c; do not inspect or print its values. Use the stack-aware integration harness, which validates Stack C API/DB ports before opening sockets.
+Stack C is project lifter-stack-c, API 35421, DB 35422, full port block 35420-35429. The observed Docker container names used separate lifter, lifter-stack-b and lifter-stack-c projects. Stacks A/B were not targets. Never open or print `.env*`; use the stack-aware integration harness, which infers the selected stack from generic CI endpoints or validates an explicit stack before opening sockets. The F14 core merges before F13 because its migration timestamps sort earlier. After F14, F13 migration `20261103129200_f13_f14_capability_reconciliation.sql` is the final capability writer and preserves F14 `manage_branding` alongside F12/F13 grants. It does not replace F14's registration-link wrapper.
 
 F12 U4 and latest F12/F14 migrations remain dependencies for full refund ledger implementation. T012-T015 own that ledger; although the scheduled Auth-lockout drain and durable PO/WO alert runtime are now implemented on Stack C, T015 remains incomplete until the integrated ledger acceptance and named R1-R8 race fixtures are complete. Alert rendering is deferred to the notifications feature. Retention across backups remains a production blocker.
 
@@ -37,4 +37,4 @@ F12 U4 and latest F12/F14 migrations remain dependencies for full refund ledger 
 
 ## Gates
 
-Run the unit suite, Stack C integration suite with LIFTER_SUPABASE_STACK=c, typecheck, lint, Prettier checks on changed files, and git diff --check. Record exact pass/fail/skip counts and final/pushed SHAs. Never use production credentials or Stack A/B.
+Run the unit suite, Stack C integration suite with LIFTER_SUPABASE_STACK=c and CI-shaped generic endpoints, typecheck, lint, build, build:edge, size, Prettier checks on changed files, and git diff --check. Record exact pass/fail/skip counts and final/pushed SHAs. Never use production credentials or Stacks A/B/D.

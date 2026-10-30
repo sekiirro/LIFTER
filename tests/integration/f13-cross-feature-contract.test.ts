@@ -1,6 +1,7 @@
 import { readdirSync } from 'node:fs';
 import { afterAll, expect, it } from 'vitest';
 import {
+  CAPABILITIES,
   MATRIX,
   ROLES,
   roleHasCapability,
@@ -87,6 +88,33 @@ it(`T017 expectation set ${expectationSet}: SQL capability union`, async () => {
       [...requiredCapabilities[role]].sort(),
     );
   }
+});
+
+it(`T017 expectation set ${expectationSet}: bidirectional parity across the complete capability catalog`, async () => {
+  for (const role of ROLES) {
+    for (const capability of CAPABILITIES) {
+      const [row] = await db`
+        select app_private.role_has_capability(${role}::public.staff_role, ${capability}) as allowed
+      `;
+      expect(
+        row?.allowed,
+        `${role}.${capability} SQL and TypeScript parity`,
+      ).toBe(roleHasCapability(role, capability));
+    }
+  }
+});
+
+it('T017 preserves the F14 registration-link wrapper and its F10 base', async () => {
+  const [wrapper] = await db`
+    select pg_get_functiondef('public.registration_link_open(text)'::regprocedure) as definition
+  `;
+  const [base] = await db`
+    select pg_get_functiondef('public.registration_link_open_f10_base(text)'::regprocedure) as definition
+  `;
+  expect(wrapper?.definition).toContain('registration_link_open_f10_base');
+  expect(wrapper?.definition).toContain('render_handle');
+  expect(wrapper?.definition).toContain('branding');
+  expect(base?.definition).toContain('render_handle');
 });
 
 it('T017 F13 audit mappings retain freeze and refund ledger actions', async () => {
