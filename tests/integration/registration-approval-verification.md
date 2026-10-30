@@ -662,3 +662,115 @@ Worktree `LFTR-012b`, branch `012-registration-approval-stage2`, based on stage 
 - Focused final GREEN: `npx vitest run tests/unit/registration-approval-actions.test.ts tests/unit/registration-approval-read.test.ts tests/unit/client-access.test.ts` passed **3 files / 48 tests**. Full `npm test` passed **70 files / 1,497 tests**; `npm run typecheck`, `npm run lint`, the explicit touched-file `npx prettier --check`, and `git diff --check` passed.
 - Tests validate the app wall and projection logic only; DB U5 remains the authority for SQL authorization and row-level behavior. The stage 1 base SHA and PR #18 head were never edited by this unit.
 - Runtime model: GPT-6; effort metadata is unavailable in this runtime, so Luna High could not be selected or independently confirmed here.
+
+## Session 13 U7 — T033–T037 (2026-10-30)
+
+### Scope and result
+
+Worktree `LFTR-012b`, branch `012-registration-approval-stage2`. DB-free mock renders only; no Docker, Supabase CLI, integration run, or authenticated U9 screenshot route was used. Staff approval and separate payment list/detail pages, role-gated dashboard links, collection confirmation/history, semantic status badges, and bilingual copy were implemented. T035 remains open for the correction action placement described below.
+
+Commits: T033 RED tests `6b2b224`; T036 messages/parity `53d5669`, `1a32598`; T034 pages `d2991b7`; T035 payment components `487a06f`.
+
+### RED → GREEN and mutations
+
+- T033 tests ran before page/components/feature messages existed: 3 test files failed (2 missing-module suites and message semantics found missing copy keys).
+- T036 parity test preceded strings; afterward `npx vitest run tests/unit/registration-approval-messages.test.ts` passed 1 file / 2 tests. AR/EN key and non-empty value parity is asserted.
+- T035 correction UI test was extended, then a temporary role-gate mutant produced 1 failed / 6 skipped; restoring the PO gate yielded 1 file / 7 tests passed.
+- Mutation M1: rendering commission payloads to Sales produced 1 failed / 5 skipped. Restored PO/WO gate.
+- Mutation M2: removing the wrapping checkbox label produced 1 failed / 5 skipped. Restored the label.
+- Mutation M3: returning a raw i18n key for badge text produced 1 failed / 5 skipped. Restored translated fallback.
+- Each temporary mutant was restored immediately. Final full suite: `npm test` — 73 files passed / 1,512 tests passed.
+
+### Design Gate checklist
+
+| Check                                                    | Result        | Evidence / limit                                                                                                                                                                                        |
+| -------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tokens and workspace brand                               | PASS (source) | Feature CSS uses existing color, spacing and radius variables; semantic status tokens remain separate from brand overrides.                                                                             |
+| Typography and mixed direction                           | PASS (source) | Root font preferences are inherited; money, dates, sequence numbers and rejection code use `Bidi`. Arabic shaping was not screenshot-reviewed.                                                          |
+| Spacing/layout/components                                | PASS (source) | Logical table layout, existing page container and UI primitives; no new breakpoint, font, token or dependency.                                                                                          |
+| Contrast, light/dark and sample brand                    | NOT VERIFIED  | Semantic tokens are used, but no rendered matrix or contrast tool run is claimed.                                                                                                                       |
+| Accessibility                                            | PARTIAL       | Labeled date/checkbox inputs, native controls, shared Button/Field/ConfirmDialog/Skeleton/ErrorState and accessible-name assertions. Keyboard walkthrough, screen-reader behavior and axe were not run. |
+| Loading/empty/error/success/disabled/pending/interaction | PARTIAL       | Loading/empty/error branches and pending/confirmation/success/failure markup exist; no browser interaction/hover/focus screenshots.                                                                     |
+| AR/EN copy                                               | PASS          | Exact key parity and non-empty value test; feature strings are in `lib/i18n/messages/ar.ts` and `en.ts`.                                                                                                |
+| Rendered matrix / screenshots                            | NOT RUN       | U7 task defers matrix PASS until U9 authenticated B screenshots. No screenshot files/paths were produced in this unit.                                                                                  |
+| Unit tests / size                                        | PASS          | `npm test`: 73 files / 1,512 passed. Web worker 7,165.20 KiB (10.93% / 65,536 KiB); cron 2.85 KiB. Axe was not run.                                                                                     |
+
+Source review found no hard-coded colors, fonts, radii or spacing in the feature stylesheet. Payment controls use native labels/buttons and the shared confirmation dialog. Impeccable detector returned an empty findings array for changed UI targets.
+
+### T035 dependency gap — correction on approval review
+
+Exact gap: `readRegistrationApprovalReview` returns a safe projection without `subscription_id`, `obligation_id`, `revision` or `tail_event_id`. `correctCollectionAction` requires those identifiers and expected revision. This affects `app/(app)/registration-approvals/[clientId]/page.tsx` and `ApprovalReview`. Correction is therefore available only on the separate Payments detail, where U5 returns the required event fields.
+
+Options: (1) extend U5's review reader with a separately authorized, column-limited correction projection; this preserves the approved T035 placement but requires review/change to U5's SQL/read contract. (2) approve moving correction placement to Payments detail; narrower and already implemented, but changes task wording. (3) defer review-page correction to a later approved slice; lowest immediate scope, leaves T035 incomplete. Recommendation: option 1, owned by the U5/DB review lane, then wire the existing PO-only UI action. No reader contract or database work changed here.
+
+### Skill applicability
+
+Conflicts: catalog entries marked `CONFLICT - PO decision` are advisory; `DESIGN.md`, F2 implementation and F12 decisions took precedence over conflicting styling, font, palette or motion suggestions. No alternative design system was generated or persisted.
+
+| Skill                          | Applicability and one-line reason                                                                                                              |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apple-design`                 | NOT APPLICABLE — No alternative visual direction is requested; the approved design remains in force.                                           |
+| `ui-ux-pro-max`                | APPLIES — lookup-only UX search returned confirmation/loading feedback and visible keyboard focus guidance; no design-system output was saved. |
+| `impeccable`                   | APPLIES — existing-surface refinement; context and final detector were run.                                                                    |
+| `frontend-design`              | APPLIES — retained the approved LIFTER direction; visual suggestions stayed subordinate to DESIGN.md.                                          |
+| `baseline-ui`                  | APPLIES — reused existing Field, Button, ConfirmDialog and State primitives; added no motion or library.                                       |
+| `design-dna`                   | NOT APPLICABLE — No reusable system or new dependency is being selected.                                                                       |
+| `genjutsu`                     | NOT APPLICABLE — No reusable system or new dependency is being selected.                                                                       |
+| `emil-design-eng`              | APPLIES — restraint and existing interaction primitives; no motion or alternative visual language.                                             |
+| `animate`                      | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `animate-expo`                 | NOT APPLICABLE — This is a Next.js web app, not a native app.                                                                                  |
+| `review-animations`            | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `improve-animations`           | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `find-animation-opportunities` | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `animation-vocabulary`         | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `animation-performance`        | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `prototype`                    | NOT APPLICABLE — No alternative visual direction is requested; the approved design remains in force.                                           |
+| `mobile-native`                | NOT APPLICABLE — This is a Next.js web app, not a native app.                                                                                  |
+| `pick-ui-library`              | NOT APPLICABLE — No new component or toast library is being selected.                                                                          |
+| `ask-sonner`                   | NOT APPLICABLE — No new component or toast library is being selected.                                                                          |
+| `write-swift`                  | NOT APPLICABLE — This is a Next.js web app, not a native app.                                                                                  |
+| `break-ui`                     | APPLIES — tested denied roles, empty/error states, safe projections and targeted UI mutants in mock renders.                                   |
+| `better-ui`                    | APPLIES — retained existing components/tokens and avoided added effects; conflict-marked styling was not authority.                            |
+| `better-typography`            | APPLIES — inherited approved fonts and isolated mixed-direction values with Bidi.                                                              |
+| `better-colors`                | APPLIES — semantic Design System status tokens only; no palette or rendered contrast claim.                                                    |
+| `better-accessibility`         | APPLIES — visible labels, native controls, shared focus/dialog primitives and accessible names reviewed; axe remains pending U9.               |
+| `better-layout`                | APPLIES — logical flow and spacing tokens; no new breakpoint token.                                                                            |
+| `better-interface`             | APPLIES — consolidated source review across layout, color, copy and accessibility; render evidence deferred.                                   |
+| `better-writing`               | APPLIES — authored concise AR/EN labels and states, checked parity and safe errors.                                                            |
+| `interface-review`             | APPLIES — reviewed changed screens and direct dashboard consumers.                                                                             |
+| `visual-style-presets`         | NOT APPLICABLE — No alternative visual direction is requested; the approved design remains in force.                                           |
+| `glass-dark-ui`                | NOT APPLICABLE — The target does not use this skill’s specialized platform or content type.                                                    |
+| `progressive-blur`             | NOT APPLICABLE — The target does not use this skill’s specialized platform or content type.                                                    |
+| `motion-design`                | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `css-animation`                | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `remotion-motion-graphics`     | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `gsap-core`                    | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `threejs-fundamentals`         | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `threejs-animation`            | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `threejs-geometry`             | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `threejs-interaction`          | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `threejs-lighting`             | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `threejs-loaders`              | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `threejs-materials`            | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `threejs-postprocessing`       | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `threejs-shaders`              | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `threejs-textures`             | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `gsap-frameworks`              | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `gsap-performance`             | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `gsap-plugins`                 | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `gsap-react`                   | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `gsap-scrolltrigger`           | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `gsap-timeline`                | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `gsap-utils`                   | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `lottie`                       | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `remotion-to-hyperframes`      | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+
+### Gates
+
+- `npx prettier --check` on changed UI, i18n, tests and tasks: PASS.
+- `npm run typecheck`: PASS.
+- `npm run lint`: PASS.
+- `git diff --check`: PASS.
+- `npm run build:edge`: PASS; OpenNext build complete, routes include `/registration-approvals` and `/payments`.
+- `npm run size`: PASS; web 7,165.20 KiB / 65,536 KiB, cron 2.85 KiB / 65,536 KiB.
+- Runtime identifies GPT-6; effort-selection metadata is unavailable, so Luna High could not be independently verified.
