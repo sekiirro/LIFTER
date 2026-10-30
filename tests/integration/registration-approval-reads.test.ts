@@ -126,6 +126,22 @@ it('T023 authorizes PO only for a real workspace, owners by active membership, S
   }
 });
 
+it('T023 represents obligations without a collection event as unpaid', async () => {
+  const result = await f.actors.po.client.rpc('subscription_payment_status', {
+    workspace_id: f.wsA.id,
+    client_id: p.t.id,
+    subscription_id: p.sid,
+  });
+
+  expect(result.error).toBeNull();
+  expect(result.data).toMatchObject({ status: 'ok' });
+  expect(
+    (
+      result.data as { obligations: Array<{ paid: boolean | null }> }
+    ).obligations.map((obligation) => obligation.paid),
+  ).toEqual([true, false, false]);
+});
+
 it('T023 all queue and review projections enforce their role gates and omit commission', async () => {
   for (const name of ['po', 'woA'] as const) {
     const queue = await f.actors[name].client.rpc(
