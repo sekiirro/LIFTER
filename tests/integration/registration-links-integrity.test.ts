@@ -68,10 +68,23 @@ it('parent and child force RLS with scoped SELECT-only policies', async () => {
       await db`select relrowsecurity,relforcerowsecurity from pg_class where oid=${'public.' + table}::regclass`;
     expect(row).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
     const policies =
-      await db`select cmd,qual from pg_policies where schemaname='public' and tablename=${table}`;
-    expect(policies).toHaveLength(1);
-    expect(policies[0]!.cmd).toBe('SELECT');
-    expect(policies[0]!.qual).toContain('generate_registration_link');
+      await db`select cmd,qual,roles,with_check from pg_policies where schemaname='public' and tablename=${table}`;
+    const apiPolicies = policies.filter((policy) =>
+      policy.roles.includes('authenticated'),
+    );
+    const definerPolicies = policies.filter((policy) =>
+      policy.roles.includes('branding_definer'),
+    );
+    expect(apiPolicies).toHaveLength(1);
+    expect(apiPolicies[0]!.cmd).toBe('SELECT');
+    expect(apiPolicies[0]!.qual).toContain('generate_registration_link');
+    if (table === 'registration_links') {
+      expect(definerPolicies).toHaveLength(1);
+      expect(definerPolicies[0]!.cmd).toBe('ALL');
+      expect(definerPolicies[0]!.qual).toBe('true');
+    } else {
+      expect(definerPolicies).toHaveLength(0);
+    }
   }
 });
 it('fresh insert guard enforces exact snapshot, server time and NULL markers', async () => {

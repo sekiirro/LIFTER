@@ -1,0 +1,37 @@
+.scope {
+  display: block;
+}
+
+.preview {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.preview h2,
+.preview p {
+  margin: 0;
+}
+
+.preview h2 {
+  font-size: var(--text-lg);
+  line-height: var(--line-height-heading);
+}
+
+.notice {
+  color: var(--color-text-muted);
+}
+
+.identity {
+  display: flex;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.swatch {
+  inline-size: var(--space-4);
+  block-size: var(--space-4);
+  flex: none;
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-sm);
+  background: var(--brand-fill);
+}

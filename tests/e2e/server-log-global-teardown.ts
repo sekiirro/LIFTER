@@ -12,7 +12,9 @@ import { serverLogRawPath, serverLogSummaryPath } from './server-log-capture';
 export default async function verifyServerLogCleanup() {
   const rawPath = serverLogRawPath;
   const summaryPath = serverLogSummaryPath;
-  const manifestPath = join(tmpdir(), 'lftr-u8-server-log-current.json');
+  const manifestPath =
+    process.env.U8_SERVER_LOG_MANIFEST_PATH ??
+    join(tmpdir(), `lftr-u8-${process.pid}-manifest.json`);
   if (!rawPath || !summaryPath)
     throw new Error('Server log cleanup verification failed.');
   try {
@@ -42,8 +44,13 @@ export default async function verifyServerLogCleanup() {
     }
     try {
       unlinkSync(manifestPath);
-    } catch {
-      process.exitCode = 1;
+    } catch (error) {
+      if (!(
+        error instanceof Error &&
+        'code' in error &&
+        error.code === 'ENOENT'
+      ))
+        process.exitCode = 1;
     }
   });
 }

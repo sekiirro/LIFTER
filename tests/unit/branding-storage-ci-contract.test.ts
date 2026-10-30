@@ -1,0 +1,110 @@
+import { readFileSync } from 'node:fs';
+import { describe, expect, it } from 'vitest';
+import {
+  assertPlaywrightStorageReport,
+  assertVitestStorageReport,
+} from '../../scripts/assert-storage-suite-zero-skips.mjs';
+
+describe('F14 Storage CI lane contract', () => {
+  it('requires a root-profile Storage job, readiness gate, and F14 zero-skip guard', () => {
+    const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
+    expect(workflow).toMatch(/\n  storage:\n/);
+    expect(workflow).not.toContain('LIFTER_SUPABASE_STACK: b');
+    expect(workflow).not.toContain('working-directory: supabase-stack-b');
+    expect(workflow).toContain('node scripts/wait-storage-ready.mjs');
+    expect(workflow).toContain('scripts/assert-storage-suite-zero-skips.mjs');
+    expect(workflow).toContain('tests/e2e/client-accounts-storage.spec.ts');
+    expect(workflow).toContain('tests/e2e/branding-banner-loaded.spec.ts');
+    expect(workflow).toContain(
+      'tests/integration/branding-storage-context.test.ts',
+    );
+  });
+
+  it('forwards the selected local Supabase and branding proxy credentials to the app server', () => {
+    const config = readFileSync('playwright.config.ts', 'utf8');
+    expect(config).toMatch(/webServer:[\s\S]*?env:\s*\{\s*\.\.\.process\.env/);
+    expect(config).toContain(
+      'node scripts/branding/start-playwright-server.mjs',
+    );
+    const runner = readFileSync(
+      'scripts/branding/local-playwright-credential.mjs',
+      'utf8',
+    );
+    expect(runner).toContain("'branding_proxy'");
+    expect(runner).toContain('assertLocalStackTarget');
+    expect(runner).not.toContain('service_role');
+  });
+
+  it('fails if any required branding Storage integration is omitted or skipped', () => {
+    const files = [
+      'branding-banner-pipeline.test.ts',
+      'branding-owner-gc.test.ts',
+      'branding-proxy-resolution.test.ts',
+      'branding-storage-context.test.ts',
+      'branding-storage-policy.test.ts',
+      'branding-upload-recovery.test.ts',
+      'branding-validator.test.ts',
+    ];
+    expect(() =>
+      assertVitestStorageReport(
+        {
+          testResults: files.map((file) => ({
+            name: `/repo/tests/integration/${file}`,
+            status: 'passed',
+            assertionResults: [{ status: 'passed' }],
+          })),
+        },
+        files,
+      ),
+    ).not.toThrow();
+    const mutated = files.map((file) => ({
+      name: `/repo/tests/integration/${file}`,
+      status: 'passed',
+      assertionResults: [{ status: 'passed' }],
+    }));
+    mutated[3]!.assertionResults[0]!.status = 'pending';
+    expect(() =>
+      assertVitestStorageReport({ testResults: mutated }, files),
+    ).toThrow(/skipped|pending/i);
+  });
+
+  it('fails if the F11 denial or any F14 banner browser test is skipped', () => {
+    const report = {
+      stats: { expected: 13, skipped: 0, unexpected: 0, flaky: 0 },
+      suites: [
+        { file: 'tests/e2e/branding-banner-loaded.spec.ts', specs: [] },
+        { file: 'tests/e2e/client-accounts-storage.spec.ts', specs: [] },
+      ],
+    };
+    expect(() =>
+      assertPlaywrightStorageReport(report, [
+        'branding-banner-loaded.spec.ts',
+        'client-accounts-storage.spec.ts',
+      ]),
+    ).not.toThrow();
+    expect(() =>
+      assertPlaywrightStorageReport(
+        { ...report, stats: { ...report.stats, skipped: 1, expected: 12 } },
+        ['branding-banner-loaded.spec.ts', 'client-accounts-storage.spec.ts'],
+      ),
+    ).toThrow(/skip/i);
+  });
+
+  it('keeps the required pending-client read and write denials covered by the F11 test', () => {
+    const pendingStorageTest = readFileSync(
+      'tests/e2e/client-accounts-storage.spec.ts',
+      'utf8',
+    );
+    expect(pendingStorageTest).toContain(
+      'a real pending-client JWT cannot read or write Storage',
+    );
+    expect(pendingStorageTest).toContain('.download(');
+    expect(pendingStorageTest).toContain('.upload(');
+    expect(pendingStorageTest).toContain(
+      'expect(read.error !== null).toBe(true)',
+    );
+    expect(pendingStorageTest).toContain(
+      'expect(write.error !== null).toBe(true)',
+    );
+  });
+});

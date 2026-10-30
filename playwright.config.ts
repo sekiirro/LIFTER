@@ -1,19 +1,51 @@
 import { defineConfig, devices } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
+import { writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const serverLogRunId = randomUUID();
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const serverLogManifestPath = join(
+  tmpdir(),
+  `lftr-u8-${serverLogRunId}.manifest.json`,
+);
 const serverLogRawPath = join(tmpdir(), `lftr-u8-${serverLogRunId}.server.log`);
 const serverLogSummaryPath = join(
   tmpdir(),
   `lftr-u8-${serverLogRunId}.summary.json`,
 );
+process.env.U8_SERVER_LOG_MANIFEST_PATH = serverLogManifestPath;
+// Test modules read this manifest while Playwright collects tests, before its
+// webServer wrapper is guaranteed to have started. The wrapper replaces this
+// bootstrap manifest with the same paths once it is running.
+writeFileSync(
+  serverLogManifestPath,
+  JSON.stringify({
+    rawPath: serverLogRawPath,
+    summaryPath: serverLogSummaryPath,
+  }),
+  'utf8',
+);
+writeFileSync(serverLogRawPath, '', 'utf8');
+writeFileSync(
+  serverLogSummaryPath,
+  JSON.stringify({
+    totalLines: 0,
+    stdoutLines: 0,
+    stderrLines: 0,
+    registrationRelatedLines: 0,
+    errorLikeLines: 0,
+    storedPayload: 'scrubbed counts only',
+    rawLogDeleted: false,
+  }),
+  'utf8',
+);
 export default defineConfig({
   globalTeardown: './tests/e2e/server-log-global-teardown.ts',
   testDir: './tests/e2e',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL,
   },
   projects: [
     {
@@ -28,10 +60,14 @@ export default defineConfig({
     },
   ],
   webServer: {
-    command: 'npm run build && node tests/e2e/start-server-capture.mjs',
-    url: 'http://localhost:3000/api/health',
+    command:
+      'npm run build && node scripts/branding/start-playwright-server.mjs',
+    url: new URL('/api/health', baseURL).toString(),
     env: {
+      ...process.env,
       LIFTER_SHOWCASE: '1',
+      APP_ORIGIN: process.env.APP_ORIGIN ?? new URL(baseURL).origin,
+      U8_SERVER_LOG_MANIFEST_PATH: serverLogManifestPath,
       U8_SERVER_LOG_RAW_PATH: serverLogRawPath,
       U8_SERVER_LOG_SUMMARY_PATH: serverLogSummaryPath,
     },

@@ -2,6 +2,7 @@ import { drain } from './drain';
 import { handlers } from './handlers';
 import { createRpc, type Env } from './rpc';
 import { drainRefundAuthLockouts } from './refund-auth-lockout';
+import { createBrandingGc, runBrandingGc } from './branding-gc';
 import type { ExecutionContext, ScheduledController } from './types';
 
 type ScheduledJob = {
@@ -32,6 +33,10 @@ const worker = {
     ctx.waitUntil(
       runScheduledJobs([
         { name: 'jobs', run: () => drain({ rpc: createRpc(env), handlers }) },
+        {
+          name: 'branding_gc',
+          run: () => runBrandingGc(createBrandingGc(env)),
+        },
         {
           name: 'refund_auth_lockouts',
           run: () => drainRefundAuthLockouts(env),

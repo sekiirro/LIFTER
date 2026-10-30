@@ -28,45 +28,40 @@ function valueFor(configText, section, key) {
   return match ? Number(match[1]) : undefined;
 }
 
-/** @param {Record<string, string | undefined>} [env] */
+/** @param {{ LIFTER_SUPABASE_STACK?: string, API_URL?: string, SUPABASE_URL?: string, DB_URL?: string, SUPABASE_DB_URL?: string }} [env] */
 export function selectStack(env = process.env, root = process.cwd()) {
-  const requested =
-    env.LIFTER_SUPABASE_STACK || inferStackFromEndpoints(env, root) || 'a';
-  if (!['a', 'b', 'c', 'd'].includes(requested))
+  const requested = env.LIFTER_SUPABASE_STACK;
+  if (requested && !['a', 'b', 'c', 'd'].includes(requested))
     throw new Error('Unsupported local Supabase stack');
-  return requested;
+  if (requested) return requested;
+  return inferStackFromEndpoints(env, root) || 'a';
 }
 
 function inferStackFromEndpoints(env, root) {
   const apiValue = env.API_URL || env.SUPABASE_URL;
   const dbValue = env.DB_URL || env.SUPABASE_DB_URL;
   if (!apiValue || !dbValue) return undefined;
-  let api;
-  let db;
   try {
-    api = new URL(apiValue);
-    db = new URL(dbValue);
+    const api = new URL(apiValue);
+    const db = new URL(dbValue);
+    for (const candidate of ['a', 'b', 'c', 'd']) {
+      try {
+        const config = getStackConfig(candidate, root);
+        if (
+          api.protocol === 'http:' &&
+          api.hostname === '127.0.0.1' &&
+          api.port === String(config.apiPort) &&
+          db.hostname === '127.0.0.1' &&
+          db.port === String(config.dbPort) &&
+          db.pathname === '/postgres'
+        )
+          return candidate;
+      } catch {
+        // Only checked-in profiles can be selected by endpoint inference.
+      }
+    }
   } catch {
     return undefined;
-  }
-  if (
-    !['127.0.0.1', 'localhost', '[::1]'].includes(api.hostname) ||
-    !['127.0.0.1', 'localhost', '[::1]'].includes(db.hostname) ||
-    db.pathname !== '/postgres'
-  )
-    return undefined;
-  for (const stack of ['a', 'b', 'c', 'd']) {
-    let config;
-    try {
-      config = getStackConfig(stack, root);
-    } catch {
-      continue;
-    }
-    if (
-      api.port === String(config.apiPort) &&
-      db.port === String(config.dbPort)
-    )
-      return stack;
   }
   return undefined;
 }
@@ -152,7 +147,7 @@ export function loadSelectedStackEnv(env = process.env, root = process.cwd()) {
   }
   for (const line of contents.replace(/^\uFEFF/, '').split(/\r?\n/)) {
     const match = line.match(/^([A-Z][A-Z0-9_]*)="?([^"\r\n]*)"?$/);
-    if (match) env[match[1]] = match[2];
+    if (match && env[match[1]] === undefined) env[match[1]] = match[2];
   }
 }
 

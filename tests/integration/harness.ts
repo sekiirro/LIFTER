@@ -9,8 +9,8 @@ import {
 } from '../../scripts/local-stack.mjs';
 
 export function loadEnv() {
-  const stack = selectStack(process.env);
-  if (stack !== 'c') loadSelectedStackEnv();
+  const stack = selectStack();
+  loadSelectedStackEnv();
   const apiUrl = process.env.API_URL || process.env.SUPABASE_URL;
   const anonKey = process.env.ANON_KEY || process.env.SUPABASE_ANON_KEY;
   const serviceRoleKey =
@@ -28,7 +28,7 @@ export function loadEnv() {
       'Integration env missing: run `supabase start` and export `supabase status -o env`',
     );
   }
-  if (stack === 'c') assertLocalStackTarget({ stack, apiUrl, dbUrl });
+  assertLocalStackTarget({ stack, apiUrl, dbUrl });
   return { apiUrl, anonKey, serviceRoleKey, dbUrl };
 }
 
