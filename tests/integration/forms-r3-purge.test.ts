@@ -45,6 +45,18 @@ it('T018 purges all answer-bearing lifecycle rows after the source event + 30 da
         values(${context.wsA.id},${assignmentId},1,${tx.json({ q1: 'synthetic draft' })})
       `;
       await tx`
+        insert into public.form_answer_revisions(workspace_id,assignment_id,revision,answer_values)
+        values(${context.wsA.id},${assignmentId},2,${tx.json({ q1: 'synthetic correction' })})
+      `;
+      await tx`
+        insert into app_private.form_corrections(workspace_id,assignment_id,revision,actor_user_id,correction_note)
+        values(${context.wsA.id},${assignmentId},2,${client.userId},'synthetic correction note')
+      `;
+      await tx`
+        insert into app_private.form_correction_intents(workspace_id,assignment_id,intent_key,request_hash,result)
+        values(${context.wsA.id},${assignmentId},${randomUUID()},decode(repeat('cd',32),'hex'),${tx.json({ status: 'corrected' })})
+      `;
+      await tx`
         insert into app_private.form_submissions(workspace_id,assignment_id,revision,submitted_at)
         values(${context.wsA.id},${assignmentId},1,clock_timestamp())
       `;
@@ -66,7 +78,7 @@ it('T018 purges all answer-bearing lifecycle rows after the source event + 30 da
       expect(
         await tx`select app_private.purge_ended_form_answers(${context.wsA.id},${client.id}) as result`,
       ).toMatchObject([
-        { result: { status: 'purged', revisions: 1, drafts: 1 } },
+        { result: { status: 'purged', revisions: 2, drafts: 1 } },
       ]);
       for (const table of [
         'public.form_answer_revisions',
@@ -74,6 +86,8 @@ it('T018 purges all answer-bearing lifecycle rows after the source event + 30 da
         'app_private.form_submissions',
         'app_private.form_submission_slas',
         'app_private.form_submission_intents',
+        'app_private.form_corrections',
+        'app_private.form_correction_intents',
       ]) {
         const [row] = await tx.unsafe(
           `select count(*)::int as count from ${table} where workspace_id=$1 and assignment_id=$2`,
