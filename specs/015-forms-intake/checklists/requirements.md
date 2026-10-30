@@ -50,3 +50,12 @@
 - Former Q4 calendar and Q11 navigation are removed as policy votes; F12 FINAL F12-6 remains binding. Former Q6 cadence is engineering work and its retention is merged into final Q8. General replacement is deferred. Final questions map former Q1/Q2/Q3/Q5/Q7/Q8/Q9/Q10 to sequential Q1–Q8.
 - REQ-P2-01 remains verbatim FR-001; roadmap scope remains quoted. Requested F12/F14 source pins are refreshed; future migrations must follow the sets actually merged at implementation, with latest integrated audit/capability definitions and known/unknown-string parity.
 - Spec Debate is complete; eight PO decisions remain open. Only specification, checklist and debate Markdown changed; no code, migration, DB, Docker, plan or tasks. Existing B4/DP-01/02 retention gates block production real data only, not local/CI synthetic work. No deployment/merge/production approval is implied.
+
+## S14 Copy Approval Package
+
+The following copy must remain unchecked until the PO reviews and approves it. Source paths are listed in [the draft-copy review package](../reports/S14-terms-draft.md#awaiting-po-approval).
+
+- [ ] T&C Arabic and English.
+- [ ] Health notice Arabic and English; display it before health questions without an acknowledgment checkbox or consent record.
+- [ ] Sex question and labels in Arabic and English.
+- [ ] Authored EN intake and option translations.

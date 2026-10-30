@@ -1,0 +1,495 @@
+{
+  "schemaVersion": 1,
+  "sourceRoot": "C:/Users/NEW LAP/Desktop/YBS SYSTEM/public/body-fat/",
+  "generator": "scripts/media/optimize-body-fat-assets.mjs",
+  "formats": ["webp", "avif"],
+  "maxDisplayWidth": 384,
+  "maxWidth": 768,
+  "sizeBudgetBytes": 150000,
+  "seriesBySexAnswer": {
+    "male": "male",
+    "female": "female"
+  },
+  "unusedSeries": ["male-cinematic"],
+  "series": {
+    "male": [
+      {
+        "percentage": 10,
+        "source": "male/10.png",
+        "sourceSha256": "aa77d8d455e34473589a1b400f22dd3375e3a88fd30cc5f7c0f3868fc4eee496",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/male-10.webp",
+            "bytes": 20380,
+            "sha256": "5362af19215e73212712b174ac56769d552d5b29812f9a966384059039f44f37"
+          },
+          "avif": {
+            "path": "public/images/body-fat/male-10.avif",
+            "bytes": 9992,
+            "sha256": "d531dc34b36edf960a0a1fea6e8adea2e1d548e02cc5296b7fefe03a508062f3"
+          }
+        }
+      },
+      {
+        "percentage": 12,
+        "source": "male/12.png",
+        "sourceSha256": "dc01e02ef390da55040f3dc5a650ca52c1dbc69be8420c97b043b6ba9632939c",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/male-12.webp",
+            "bytes": 15438,
+            "sha256": "8ab3aad52ac1ced3c2fd08a6c01bb7a32e4a05b4340b2bbab2304bae0b90b4e2"
+          },
+          "avif": {
+            "path": "public/images/body-fat/male-12.avif",
+            "bytes": 7852,
+            "sha256": "8e51ed8b1b39325368190165b2a9928f228f0b66781cfe601372428855b94330"
+          }
+        }
+      },
+      {
+        "percentage": 15,
+        "source": "male/15.png",
+        "sourceSha256": "686b03b08bf740e74cf2fa2068d27413ef7e1aaeae2fb9733a07817a993b8951",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/male-15.webp",
+            "bytes": 14808,
+            "sha256": "d244a26de4ea9ab2832ae413f63bdebd44268d36caad4866cc1ced4b87fddc1f"
+          },
+          "avif": {
+            "path": "public/images/body-fat/male-15.avif",
+            "bytes": 7753,
+            "sha256": "4178abda285ef017d5a0b802ae97139d92f1264a6ad640af4f45acee39bba9b5"
+          }
+        }
+      },
+      {
+        "percentage": 18,
+        "source": "male/18.png",
+        "sourceSha256": "821b8468afbfb2609fd3f1076be9bd9527d9bb1233a63ac6e4af1ceb6acead31",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/male-18.webp",
+            "bytes": 13980,
+            "sha256": "9b8a99ce46e4de8e4d63880019708a7b0ca5fbb336f9ae1f9c46f8b19b3e6b52"
+          },
+          "avif": {
+            "path": "public/images/body-fat/male-18.avif",
+            "bytes": 7129,
+            "sha256": "519d8863e0aae434038753406e1600ed75ae94b48d8b1cb31fdd3802cc494704"
+          }
+        }
+      },
+      {
+        "percentage": 20,
+        "source": "male/20.png",
+        "sourceSha256": "f88dd85af14d8aebab73805da7b24e6c35739027203fd08c0dd98791aa5f7659",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/male-20.webp",
+            "bytes": 14832,
+            "sha256": "d52159322b6123ecfce3ef7246f8b03a1a000a3247691b78ffac9117fa49c816"
+          },
+          "avif": {
+            "path": "public/images/body-fat/male-20.avif",
+            "bytes": 7783,
+            "sha256": "37b3a4a1bc1285fc28c074abf0a02d7599dd825e8bef65164d37334222baafe1"
+          }
+        }
+      },
+      {
+        "percentage": 22,
+        "source": "male/22.png",
+        "sourceSha256": "f80704e8de5a15f0d0b0d16d9415e71700f5ba927c09725092d43e6fc38aacbd",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/male-22.webp",
+            "bytes": 15004,
+            "sha256": "a5a71e1e21a08453400148bf55acca523c7c3adaff1a39d50b3be6fffd43ebd8"
+          },
+          "avif": {
+            "path": "public/images/body-fat/male-22.avif",
+            "bytes": 7250,
+            "sha256": "596eb2faa05706b58958aa33179b6b1cef557a2c9950f7f8ab6411613c525159"
+          }
+        }
+      },
+      {
+        "percentage": 25,
+        "source": "male/25.png",
+        "sourceSha256": "f59a9d52a9ec5a65005b33dec88d81d8ffc80beb027111f4e687021ca81e58e2",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/male-25.webp",
+            "bytes": 14092,
+            "sha256": "73d7707fddb20d65ef03cb9ebf2c994a888735bf946bc6a9a077a6f41d7a4697"
+          },
+          "avif": {
+            "path": "public/images/body-fat/male-25.avif",
+            "bytes": 7243,
+            "sha256": "4eb613c8be03b2f863574e5504fd8f9bf098a3660981095a4ab3dc6ff395fec3"
+          }
+        }
+      },
+      {
+        "percentage": 28,
+        "source": "male/28.png",
+        "sourceSha256": "4c097afe2e3a7177c6954ea1effd6c4fe8ce478ce0f68d145d02419d547e35d4",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/male-28.webp",
+            "bytes": 15472,
+            "sha256": "19b8a10b0b0c608a5cf3ee79b3730ab15d5ec5194af2731a305aa0d61966c35b"
+          },
+          "avif": {
+            "path": "public/images/body-fat/male-28.avif",
+            "bytes": 7816,
+            "sha256": "c465c68c7a1cf60d73a5ff4db1a82872f693abd56586b3ffacf846b850b65d8e"
+          }
+        }
+      },
+      {
+        "percentage": 30,
+        "source": "male/30.png",
+        "sourceSha256": "91764a6d3420a8f80a53b82b72740f169df2f55d4e52b9cfc75f1c48b8543700",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/male-30.webp",
+            "bytes": 17436,
+            "sha256": "ec069f72609484780bd0530fbedc652251dc261fecd902e8a3eb4a684995e50d"
+          },
+          "avif": {
+            "path": "public/images/body-fat/male-30.avif",
+            "bytes": 8264,
+            "sha256": "65372e05cdb5f132a0e8565f208e0a1172302e406325a41f224b2be17892d824"
+          }
+        }
+      },
+      {
+        "percentage": 32,
+        "source": "male/32.png",
+        "sourceSha256": "379c81ae60213e0bfef4eb0f383dad2cbdc36523b14d5145e77fe45e2d225c70",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/male-32.webp",
+            "bytes": 15936,
+            "sha256": "910990f8a7e8f9c4260689c008cb92b2d97e6c69a5d0dfcf9f32d6300781ffba"
+          },
+          "avif": {
+            "path": "public/images/body-fat/male-32.avif",
+            "bytes": 7775,
+            "sha256": "10f15b92d481e2c75de277d2532b2f82493d51d38de8449918fdd52e05f5b40e"
+          }
+        }
+      },
+      {
+        "percentage": 35,
+        "source": "male/35.png",
+        "sourceSha256": "2e665355a41f20ce398e1eac78ad860d5dd1b2d59258c1e2f2dc9a8b275ba8db",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/male-35.webp",
+            "bytes": 16560,
+            "sha256": "75e1504131852fa4bd5712f01755fe8c7346ce43f41bff4b4c18ea69f16b344d"
+          },
+          "avif": {
+            "path": "public/images/body-fat/male-35.avif",
+            "bytes": 8097,
+            "sha256": "c5293cefe400f36d024bb337785cbd6b8d4caa47ad4734242c0dc30595610e40"
+          }
+        }
+      },
+      {
+        "percentage": 40,
+        "source": "male/40.png",
+        "sourceSha256": "894bc7ec31e0bef7933b15f2abd475e9dc554b2692684224a8d176c2299802dc",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/male-40.webp",
+            "bytes": 16028,
+            "sha256": "168657ed7446aa07d1f71d0134119bd14feb0484734b8cab318309c0df996257"
+          },
+          "avif": {
+            "path": "public/images/body-fat/male-40.avif",
+            "bytes": 8149,
+            "sha256": "ab7385aa65c40572839ba5726262cef70fdf795bdc60a66b464baaaf72fbe4ec"
+          }
+        }
+      }
+    ],
+    "female": [
+      {
+        "percentage": 18,
+        "source": "female/18.png",
+        "sourceSha256": "1009ca1d22759b3abfd96ff68311e9903c6f414dfd398476a4af7d61a493a9cc",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/female-18.webp",
+            "bytes": 15472,
+            "sha256": "e0ae350eb9c667fa826149b4ec843fb19003ce5b72c1b9497265134c24175499"
+          },
+          "avif": {
+            "path": "public/images/body-fat/female-18.avif",
+            "bytes": 6896,
+            "sha256": "af543a6970b732c1edbe915d47560c3a7816d879757b04623f78bb6cd7555c95"
+          }
+        }
+      },
+      {
+        "percentage": 20,
+        "source": "female/20.png",
+        "sourceSha256": "48ba791dd86b81dec0076ab85679f7e4ce7e93a722d569d018ecf30cacdbece5",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/female-20.webp",
+            "bytes": 14132,
+            "sha256": "a34236e06bd9ff400c9dcf1fd6eee06d576fd06871a1ccc97f247077c0fdb7d5"
+          },
+          "avif": {
+            "path": "public/images/body-fat/female-20.avif",
+            "bytes": 6744,
+            "sha256": "439668efed5826caf0a5ba3f84ab92fde2e2f4d0b385e49b766027d849edeb6c"
+          }
+        }
+      },
+      {
+        "percentage": 22,
+        "source": "female/22.png",
+        "sourceSha256": "01a01acd515f718b589012965a27d03985544a4b72348fbf80e614ba9ac68cdd",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/female-22.webp",
+            "bytes": 14290,
+            "sha256": "a802144d9f587995986d543316339f45c7af4de871ca9fbf8e3e5cb7b13e2e15"
+          },
+          "avif": {
+            "path": "public/images/body-fat/female-22.avif",
+            "bytes": 6956,
+            "sha256": "688e5ff3d5dbb5df475cb578a5cae9fa1d8195e470f3b09f7efd6b48b96b17d4"
+          }
+        }
+      },
+      {
+        "percentage": 25,
+        "source": "female/25.png",
+        "sourceSha256": "bd8032bc107f334b50c4c6a0db44f4b7a3c154ca4b47aac3344497208bfaa13e",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/female-25.webp",
+            "bytes": 14538,
+            "sha256": "6aca255441b9a789b832bad1cec793bde3548640adbcc79bdd6f5a550ca41b71"
+          },
+          "avif": {
+            "path": "public/images/body-fat/female-25.avif",
+            "bytes": 7027,
+            "sha256": "7389af14e6365e0f015c6fc443328138971ce11f0cfa9a90e77850d653c57f8f"
+          }
+        }
+      },
+      {
+        "percentage": 28,
+        "source": "female/28.png",
+        "sourceSha256": "6d0752b1a73ada46b5a3d20370c284251f8f597e318d1cc2f4648ded5f676ff9",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/female-28.webp",
+            "bytes": 13550,
+            "sha256": "7220e2f53846e275ca96e01d59fec59e0b7bd565a727b07e81ad50245d016ac8"
+          },
+          "avif": {
+            "path": "public/images/body-fat/female-28.avif",
+            "bytes": 6640,
+            "sha256": "c88b11a488f7089f8d48d9bb791bd71487eb24c0d7a06ac5f4967e40d87a44a5"
+          }
+        }
+      },
+      {
+        "percentage": 30,
+        "source": "female/30.png",
+        "sourceSha256": "9b48b0e6034a0d83570d4d8151c3ba2650dd1b5b4aa376e3b7f94e56c746bfc9",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/female-30.webp",
+            "bytes": 16148,
+            "sha256": "4264889f6d54ccaf2cf3b8a8dd7cbf6263eb5acfe8f90eb136dd5a5d9427cb5b"
+          },
+          "avif": {
+            "path": "public/images/body-fat/female-30.avif",
+            "bytes": 7572,
+            "sha256": "fee8ddce9dc434ef953b7f8a5ea48e0ce8efa24d35a1e3f45386367b677a5e59"
+          }
+        }
+      },
+      {
+        "percentage": 32,
+        "source": "female/32.png",
+        "sourceSha256": "028f41ec73ce06729c4b1e01b6895329b4c60301aa4e2d0ee0bd3b7822549d75",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/female-32.webp",
+            "bytes": 15362,
+            "sha256": "0a7324a59d260d5b49d728bcc34e52037109a1aadeb9021eeaf0fc05c634dc61"
+          },
+          "avif": {
+            "path": "public/images/body-fat/female-32.avif",
+            "bytes": 7462,
+            "sha256": "99cd99293bb320792ed2d24c49fd2d65cadd543be3035fead006895e3313f3e9"
+          }
+        }
+      },
+      {
+        "percentage": 35,
+        "source": "female/35.png",
+        "sourceSha256": "d1952ea113aa703fd692d8f2e944e6aef644123485b588cc0f49543ff9234fc0",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/female-35.webp",
+            "bytes": 14336,
+            "sha256": "60c7714b7a507fbb89febc461e931593cfede90036ed3e5075f60f5e9dfa39df"
+          },
+          "avif": {
+            "path": "public/images/body-fat/female-35.avif",
+            "bytes": 6923,
+            "sha256": "1f036b85bac9b411c198c72858ffd3e08efd98bfc1cf909f8ec03625f63cf4c7"
+          }
+        }
+      },
+      {
+        "percentage": 38,
+        "source": "female/38.png",
+        "sourceSha256": "51b677f19f43544f04210758a6b94f33ee4987eaa83414c7da8b49edbdee1f52",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/female-38.webp",
+            "bytes": 13284,
+            "sha256": "05b13dd4c133fc8e07c9e30bb5b051cecfa359b6059bcff79117fa4a078d1b7f"
+          },
+          "avif": {
+            "path": "public/images/body-fat/female-38.avif",
+            "bytes": 6386,
+            "sha256": "8bf0cd4ace709c240655d63a314d5b16f6aaa1fd69c26ea733c96d5b2e63a4ac"
+          }
+        }
+      },
+      {
+        "percentage": 40,
+        "source": "female/40.png",
+        "sourceSha256": "f1d57857f505c18e3c5a61153aff84a001dc185d147116a87dee28d04f18c08b",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/female-40.webp",
+            "bytes": 15202,
+            "sha256": "0e917bfe87e692c1acff1737fc998c94e94122c88e113ae4b75b4d4a0db50dde"
+          },
+          "avif": {
+            "path": "public/images/body-fat/female-40.avif",
+            "bytes": 6985,
+            "sha256": "99502837746bfa2a3b37e9b7b76d4627294b7a435119e210060051ecc1458e92"
+          }
+        }
+      },
+      {
+        "percentage": 42,
+        "source": "female/42.png",
+        "sourceSha256": "a748358f1fcb2ba87675ca33e283c68993f4167a6d5d831a76f7c362109ac298",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/female-42.webp",
+            "bytes": 13728,
+            "sha256": "ff8ac2e73f0b0ddea0c0e9e1ddf835c88709536df6d5a75493e2bea73794071d"
+          },
+          "avif": {
+            "path": "public/images/body-fat/female-42.avif",
+            "bytes": 6917,
+            "sha256": "eee82a6cb9fc66b4b518da1caeef63948be11862a2d20dc4f23667c1e53cb6ef"
+          }
+        }
+      },
+      {
+        "percentage": 45,
+        "source": "female/45.png",
+        "sourceSha256": "43fb7102998490217dfbc1586e249a58b05d52a7b919cddc32e967e94c7a8837",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/female-45.webp",
+            "bytes": 14404,
+            "sha256": "310ed7c5114c9524a45afa96450a7979bfc18014805746ba0f9c1ee396a4c7d3"
+          },
+          "avif": {
+            "path": "public/images/body-fat/female-45.avif",
+            "bytes": 6895,
+            "sha256": "3c9b7f341c08d80935239fb04c37822d6811801d1cb481c3ad190446100303c3"
+          }
+        }
+      },
+      {
+        "percentage": 50,
+        "source": "female/50.png",
+        "sourceSha256": "25e2af7e2172cad36154eefb111acd5e2e31a6afbf95b7c9d94b7937ecdcbff9",
+        "width": 768,
+        "height": 658,
+        "derivatives": {
+          "webp": {
+            "path": "public/images/body-fat/female-50.webp",
+            "bytes": 12640,
+            "sha256": "2b14d8b89be4a88060df7bb473596c2e536221a11d721937ccd5cf99699860e4"
+          },
+          "avif": {
+            "path": "public/images/body-fat/female-50.avif",
+            "bytes": 6260,
+            "sha256": "f7fdd7b3f7ee9d8a6f1833986dfd7b8d231f7a86f359baaa6ac706c081d52355"
+          }
+        }
+      }
+    ]
+  }
+}

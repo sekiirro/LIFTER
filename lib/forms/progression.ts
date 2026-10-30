@@ -27,6 +27,46 @@ export type ProgressionResult = {
   complete: boolean;
 };
 
+const N7_FIXED_TIMING_OPTIONS = ['before-first', 'no-fixed-time'] as const;
+
+/** N7 uses the PO-approved 2–5 meal selection and derives the meal choices. */
+export function deriveMealTimingOptions(
+  selectedMealCount: number | string,
+): string[] {
+  const mealCount =
+    typeof selectedMealCount === 'number'
+      ? selectedMealCount
+      : /^[2-5]$/.test(selectedMealCount)
+        ? Number(selectedMealCount)
+        : Number.NaN;
+  if (!Number.isInteger(mealCount) || mealCount < 2 || mealCount > 5) {
+    return [];
+  }
+  return [
+    ...Array.from({ length: mealCount }, (_, index) => `meal-${index + 1}`),
+    ...N7_FIXED_TIMING_OPTIONS,
+  ];
+}
+
+/** Drop a saved derived value when its parent selection no longer allows it. */
+export function reconcileDerivedChoice(
+  selected: string | undefined,
+  allowed: readonly string[],
+): string | undefined {
+  return selected !== undefined && allowed.includes(selected)
+    ? selected
+    : undefined;
+}
+
+/** Sensitive sex data is used only to select the approved N12 image series. */
+export function resolveN12ImageSeries(
+  sex: string | undefined,
+): 'male' | 'female' | null {
+  if (sex === 'male') return 'male';
+  if (sex === 'female') return 'female';
+  return null;
+}
+
 function conditionMatches(
   condition: ApplicabilityCondition,
   answers: FormAnswerSet,

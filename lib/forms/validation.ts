@@ -1,3 +1,24 @@
+import type {
+  ApplicabilityCondition,
+  ApplicabilityRule,
+  FormAnswer,
+  FormQuestion,
+  FormAnswerType,
+} from './types';
+export type {
+  ApplicabilityCondition,
+  ApplicabilityRule,
+  AnswerableFormType,
+  ConditionValue,
+  FormAnswer,
+  FormAnswerSet,
+  FormAnswerType,
+  FormFeedbackBand,
+  FormQuestion,
+  FormValidationRules,
+  LocalizedFormText,
+} from './types';
+
 export const APPROVED_FORM_BOUNDS = {
   maxQuestionsPerSection: 20,
   maxQuestionsPerForm: 60,
@@ -54,54 +75,11 @@ export function countTextAnswer(
   return { used, limit, remaining: limit - used, over: used > limit };
 }
 
-export type FormAnswerType =
-  | 'shortText'
-  | 'longText'
-  | 'number'
-  | 'singleChoice'
-  | 'multiChoice'
-  | 'boolean'
-  | 'date';
-
 function textTypeLimit(type: FormAnswerType): number | undefined {
   if (type === 'shortText') return 150;
   if (type === 'longText') return 1_000;
   return undefined;
 }
-
-export type FormAnswer = string | number | boolean | readonly string[];
-export type FormAnswerSet = Readonly<Record<string, FormAnswer>>;
-export type ConditionValue = string | number | boolean;
-
-export type ApplicabilityCondition =
-  | {
-      questionId: string;
-      operator: 'equals' | 'notEquals';
-      value: ConditionValue;
-    }
-  | { questionId: string; operator: 'contains'; value: string }
-  | { questionId: string; operator: 'isAnswered' };
-
-export type ApplicabilityRule = {
-  mode: 'all' | 'any';
-  conditions: readonly ApplicabilityCondition[];
-};
-
-export type FormQuestion = {
-  id: string;
-  sectionId: string;
-  type: FormAnswerType;
-  required: boolean;
-  charLimit?: number;
-  choices?: readonly string[];
-  validation?: {
-    minLength?: number;
-    maxLength?: number;
-    min?: number;
-    max?: number;
-  };
-  when?: ApplicabilityRule;
-};
 
 export type FormValidationIssue = {
   code: string;
@@ -116,6 +94,19 @@ const ANSWER_TYPES = new Set<FormAnswerType>([
   'multiChoice',
   'boolean',
   'date',
+  'slider',
+  'imageChoice',
+  'mealCount',
+  'derivedChoice',
+  'displayOnly',
+  'profileText',
+  'computedAge',
+]);
+
+const NON_ANSWER_TYPES = new Set<FormAnswerType>([
+  'displayOnly',
+  'profileText',
+  'computedAge',
 ]);
 
 const QUESTION_KEYS = new Set([
@@ -127,14 +118,111 @@ const QUESTION_KEYS = new Set([
   'choices',
   'validation',
   'when',
+  'privacy',
+  'purpose',
+  'unit',
+  'labels',
+  'feedbackBands',
+  'assetReferences',
+  'displayText',
+  'profileField',
+  'dateOfBirthField',
+  'derivedOptions',
 ]);
-const VALIDATION_KEYS = new Set(['minLength', 'maxLength', 'min', 'max']);
+const VALIDATION_KEYS = new Set([
+  'minLength',
+  'maxLength',
+  'min',
+  'max',
+  'step',
+]);
 
 function isPlainRecord(value: unknown): value is Record<string, unknown> {
   if (typeof value !== 'object' || value === null || Array.isArray(value))
     return false;
   const prototype = Object.getPrototypeOf(value);
   return prototype === Object.prototype || prototype === null;
+}
+
+function isLocalizedText(value: unknown): value is { en: string; ar: string } {
+  return (
+    isPlainRecord(value) &&
+    hasOnlyDataProperties(value) &&
+    Object.keys(value).length === 2 &&
+    typeof value.en === 'string' &&
+    typeof value.ar === 'string' &&
+    utf8ByteLength(value.en) <= APPROVED_FORM_BOUNDS.maxTextBytes &&
+    utf8ByteLength(value.ar) <= APPROVED_FORM_BOUNDS.maxTextBytes
+  );
+}
+
+function isFeedbackBands(
+  value: unknown,
+): value is NonNullable<FormQuestion['feedbackBands']> {
+  return (
+    Array.isArray(value) &&
+    value.length > 0 &&
+    value.every(
+      (band) =>
+        isPlainRecord(band) &&
+        hasOnlyDataProperties(band) &&
+        typeof band.min === 'number' &&
+        Number.isFinite(band.min) &&
+        typeof band.max === 'number' &&
+        Number.isFinite(band.max) &&
+        band.min <= band.max &&
+        typeof band.text === 'string' &&
+        band.text.length > 0 &&
+        utf8ByteLength(band.text) <= APPROVED_FORM_BOUNDS.maxTextBytes,
+    )
+  );
+}
+
+function isSliderLabels(
+  value: unknown,
+): value is NonNullable<FormQuestion['labels']> {
+  return (
+    isPlainRecord(value) &&
+    hasOnlyDataProperties(value) &&
+    Object.keys(value).every((key) =>
+      ['minimum', 'middle', 'maximum'].includes(key),
+    ) &&
+    ['minimum', 'middle', 'maximum'].every(
+      (key) =>
+        typeof value[key] === 'string' &&
+        value[key].length > 0 &&
+        utf8ByteLength(value[key] as string) <=
+          APPROVED_FORM_BOUNDS.maxTextBytes,
+    )
+  );
+}
+
+function isValidSliderConfiguration(question: FormQuestion): boolean {
+  const minimum = question.validation?.min;
+  const maximum = question.validation?.max;
+  const step = question.validation?.step;
+  const bands = question.feedbackBands;
+  if (
+    typeof minimum !== 'number' ||
+    typeof maximum !== 'number' ||
+    typeof step !== 'number' ||
+    !isSliderLabels(question.labels) ||
+    !isFeedbackBands(bands) ||
+    bands[0]?.min !== minimum ||
+    bands.at(-1)?.max !== maximum
+  ) {
+    return false;
+  }
+  return bands.every((band, index) => {
+    const previous = bands[index - 1];
+    return (
+      band.min >= minimum &&
+      band.max <= maximum &&
+      band.min <= band.max &&
+      (previous === undefined ||
+        Math.abs(band.min - (previous.max + step)) <= 1e-9)
+    );
+  });
 }
 
 function hasOnlyDataProperties(value: Record<string, unknown>): boolean {
@@ -153,7 +241,7 @@ function allowedKeys(
 }
 
 function validId(value: unknown): value is string {
-  return typeof value === 'string' && /^[a-zA-Z0-9_-]{1,64}$/.test(value);
+  return typeof value === 'string' && /^[a-zA-Z0-9_.-]{1,64}$/.test(value);
 }
 
 function compatibleCondition(
@@ -173,17 +261,25 @@ function compatibleCondition(
     case 'shortText':
     case 'longText':
     case 'singleChoice':
+    case 'imageChoice':
+    case 'mealCount':
+    case 'derivedChoice':
     case 'date':
       return typeof condition.value === 'string';
     case 'number':
+    case 'slider':
       return (
         typeof condition.value === 'number' && Number.isFinite(condition.value)
       );
     case 'boolean':
       return typeof condition.value === 'boolean';
     case 'multiChoice':
+    case 'displayOnly':
+    case 'profileText':
+    case 'computedAge':
       return false;
   }
+  return false;
 }
 
 function isCondition(value: unknown): value is ApplicabilityCondition {
@@ -309,7 +405,7 @@ export function validateFormDefinition(input: unknown): FormValidationIssue[] {
       ) {
         issues.push({ code: 'invalid_validation', questionId });
       } else {
-        const { minLength, maxLength, min, max } = candidate.validation;
+        const { minLength, maxLength, min, max, step } = candidate.validation;
         const validLengths =
           (minLength === undefined ||
             (Number.isSafeInteger(minLength) && Number(minLength) >= 0)) &&
@@ -323,6 +419,8 @@ export function validateFormDefinition(input: unknown): FormValidationIssue[] {
             (typeof min === 'number' && Number.isFinite(min))) &&
           (max === undefined ||
             (typeof max === 'number' && Number.isFinite(max))) &&
+          (step === undefined ||
+            (typeof step === 'number' && Number.isFinite(step) && step > 0)) &&
           (min === undefined ||
             max === undefined ||
             Number(min) <= Number(max));
@@ -372,13 +470,135 @@ export function validateFormDefinition(input: unknown): FormValidationIssue[] {
         ...(choices === undefined ? {} : { choices }),
         ...(validation === undefined ? {} : { validation }),
         ...(when === undefined ? {} : { when }),
+        ...(isSliderLabels(candidate.labels)
+          ? { labels: candidate.labels as FormQuestion['labels'] }
+          : {}),
+        ...(isFeedbackBands(candidate.feedbackBands)
+          ? {
+              feedbackBands:
+                candidate.feedbackBands as FormQuestion['feedbackBands'],
+            }
+          : {}),
+        ...(Array.isArray(candidate.assetReferences) &&
+        candidate.assetReferences.every((asset) => typeof asset === 'string')
+          ? { assetReferences: candidate.assetReferences as readonly string[] }
+          : {}),
+        ...(isLocalizedText(candidate.unit)
+          ? { unit: candidate.unit as FormQuestion['unit'] }
+          : {}),
+        ...(candidate.privacy === 'personal' || candidate.privacy === 'health'
+          ? { privacy: candidate.privacy }
+          : {}),
+        ...(candidate.purpose === 'n12-series'
+          ? { purpose: candidate.purpose }
+          : {}),
+        ...(isLocalizedText(candidate.displayText)
+          ? {
+              displayText: candidate.displayText as FormQuestion['displayText'],
+            }
+          : {}),
+        ...(typeof candidate.profileField === 'string'
+          ? {
+              profileField:
+                candidate.profileField as FormQuestion['profileField'],
+            }
+          : {}),
+        ...(typeof candidate.dateOfBirthField === 'string'
+          ? {
+              dateOfBirthField:
+                candidate.dateOfBirthField as FormQuestion['dateOfBirthField'],
+            }
+          : {}),
+        ...(candidate.derivedOptions &&
+        typeof candidate.derivedOptions === 'object'
+          ? {
+              derivedOptions:
+                candidate.derivedOptions as FormQuestion['derivedOptions'],
+            }
+          : {}),
       };
       if (
         (question.type === 'singleChoice' ||
-          question.type === 'multiChoice') !==
+          question.type === 'multiChoice' ||
+          question.type === 'imageChoice' ||
+          question.type === 'mealCount' ||
+          question.type === 'derivedChoice') !==
         (question.choices !== undefined)
       ) {
         issues.push({ code: 'choices_required_for_type', questionId });
+      }
+      if (question.type === 'displayOnly') {
+        if (question.required || !isLocalizedText(question.displayText)) {
+          issues.push({ code: 'invalid_display_only_question', questionId });
+        }
+      }
+      if (
+        question.type === 'profileText' &&
+        (question.required || question.profileField !== 'fullName')
+      ) {
+        issues.push({ code: 'invalid_profile_bound_question', questionId });
+      }
+      if (
+        question.type === 'computedAge' &&
+        (question.required || question.dateOfBirthField !== 'dateOfBirth')
+      ) {
+        issues.push({ code: 'invalid_computed_question', questionId });
+      }
+      if (
+        candidate.privacy !== undefined &&
+        candidate.privacy !== 'personal' &&
+        candidate.privacy !== 'health'
+      ) {
+        issues.push({ code: 'invalid_privacy_classification', questionId });
+      }
+      if (
+        candidate.purpose !== undefined &&
+        candidate.purpose !== 'n12-series'
+      ) {
+        issues.push({ code: 'invalid_question_purpose', questionId });
+      }
+      if (
+        question.purpose === 'n12-series' &&
+        (question.id !== 'sex' ||
+          question.type !== 'singleChoice' ||
+          question.required !== true ||
+          question.privacy !== 'personal' ||
+          question.choices?.length !== 2 ||
+          !question.choices.includes('male') ||
+          !question.choices.includes('female'))
+      ) {
+        issues.push({ code: 'invalid_n12_series_selector', questionId });
+      }
+      if (question.type === 'slider' && !isValidSliderConfiguration(question)) {
+        issues.push({ code: 'invalid_slider_configuration', questionId });
+      }
+      if (
+        question.type === 'imageChoice' &&
+        (question.assetReferences === undefined ||
+          question.assetReferences.length !== question.choices?.length ||
+          question.assetReferences.some(
+            (asset) =>
+              !asset.startsWith('/images/body-fat/') || asset.includes('..'),
+          ))
+      ) {
+        issues.push({ code: 'invalid_image_choice_assets', questionId });
+      }
+      if (
+        question.type === 'mealCount' &&
+        (question.id !== 'N07.meal_count' ||
+          JSON.stringify(question.choices) !==
+            JSON.stringify(['2', '3', '4', '5']))
+      ) {
+        issues.push({ code: 'invalid_meal_count_range', questionId });
+      }
+      if (
+        question.type === 'derivedChoice' &&
+        (question.id !== 'N07.training_timing' ||
+          question.derivedOptions?.sourceQuestionId !== 'N07.meal_count' ||
+          !Array.isArray(question.derivedOptions?.fixedChoices) ||
+          question.derivedOptions?.fixedChoices.length !== 2)
+      ) {
+        issues.push({ code: 'invalid_derived_options', questionId });
       }
       if (
         question.type !== 'shortText' &&
@@ -390,6 +610,7 @@ export function validateFormDefinition(input: unknown): FormValidationIssue[] {
       }
       if (
         question.type !== 'number' &&
+        question.type !== 'slider' &&
         (question.validation?.min !== undefined ||
           question.validation?.max !== undefined)
       ) {
@@ -474,9 +695,13 @@ function isAnswerType(type: FormAnswerType, value: unknown): boolean {
     case 'shortText':
     case 'longText':
     case 'singleChoice':
+    case 'imageChoice':
+    case 'mealCount':
+    case 'derivedChoice':
     case 'date':
       return typeof value === 'string';
     case 'number':
+    case 'slider':
       return typeof value === 'number' && Number.isFinite(value);
     case 'boolean':
       return typeof value === 'boolean';
@@ -484,7 +709,12 @@ function isAnswerType(type: FormAnswerType, value: unknown): boolean {
       return (
         Array.isArray(value) && value.every((item) => typeof item === 'string')
       );
+    case 'displayOnly':
+    case 'profileText':
+    case 'computedAge':
+      return false;
   }
+  return false;
 }
 
 function isEmptyAnswer(value: unknown): boolean {
@@ -511,7 +741,10 @@ export function validateAnswerSet(
       issues.push({ code: 'unknown_answer_id', questionId });
       continue;
     }
-    if (!isAnswerType(question.type, value)) {
+    if (
+      NON_ANSWER_TYPES.has(question.type) ||
+      !isAnswerType(question.type, value)
+    ) {
       issues.push({ code: 'invalid_answer_type', questionId });
       continue;
     }
@@ -536,7 +769,15 @@ export function validateAnswerSet(
       if (characters < minLength)
         issues.push({ code: 'answer_too_short', questionId });
       if (
-        question.type === 'singleChoice' &&
+        (question.type === 'singleChoice' ||
+          question.type === 'mealCount' ||
+          question.type === 'derivedChoice') &&
+        !question.choices?.includes(value)
+      ) {
+        issues.push({ code: 'invalid_choice', questionId });
+      }
+      if (
+        question.type === 'imageChoice' &&
         !question.choices?.includes(value)
       ) {
         issues.push({ code: 'invalid_choice', questionId });
@@ -554,6 +795,19 @@ export function validateAnswerSet(
           value < question.validation.min) ||
         (question.validation?.max !== undefined &&
           value > question.validation.max)
+      ) {
+        issues.push({ code: 'number_out_of_range', questionId });
+      }
+      if (
+        question.type === 'slider' &&
+        question.validation?.step !== undefined &&
+        question.validation.min !== undefined &&
+        Math.abs(
+          (value - question.validation.min) / question.validation.step -
+            Math.round(
+              (value - question.validation.min) / question.validation.step,
+            ),
+        ) > 1e-9
       ) {
         issues.push({ code: 'number_out_of_range', questionId });
       }
@@ -579,4 +833,35 @@ export function validateAnswerSet(
 
 export function isAnswered(value: FormAnswer | undefined): boolean {
   return value !== undefined && !isEmptyAnswer(value);
+}
+
+/** Calculate an age against the current civil date in Africa/Cairo. */
+export function calculateAgeInCairo(
+  dateOfBirth: string,
+  now: Date,
+): number | null {
+  if (!isValidCalendarDate(dateOfBirth) || Number.isNaN(now.getTime())) {
+    return null;
+  }
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: 'Africa/Cairo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now);
+  const current = Object.fromEntries(
+    parts.map(({ type, value }) => [type, value]),
+  );
+  const year = Number(current.year);
+  const month = Number(current.month);
+  const day = Number(current.day);
+  const [birthYear, birthMonth, birthDay] = dateOfBirth
+    .split('-')
+    .map(Number) as [number, number, number];
+  if (birthYear > year) return null;
+  return (
+    year -
+    birthYear -
+    (month < birthMonth || (month === birthMonth && day < birthDay) ? 1 : 0)
+  );
 }
