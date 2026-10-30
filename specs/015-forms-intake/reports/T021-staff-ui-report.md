@@ -116,3 +116,7 @@ Screenshots saved under C:\Users\NEW LAP\AppData\Local\Temp:
 - npm run build:edge passed. OpenNext reported its existing Windows compatibility advisory and Next.js reported the middleware deprecation notice; build completed.
 - npm run size passed: web worker 6,942.65 KiB uncompressed / 1,436.82 KiB gzip (65,536 KiB limit); cron worker 2.85 KiB / 1.25 KiB gzip (65,536 KiB limit).
 - No dependency added. Commit/push SHA will be recorded in the completion report.
+
+## S17 default-template clarification (2026-10-30)
+
+The empty mocked showcase state is not the product default. Product Forms provides the editable default onboarding form Your First Step («خطوتك الأولى»), with previously supplied intake questions as optional editable starter content. Workspace Owners may edit, replace, or select another onboarding form. This clarifies product direction without changing the recorded showcase test evidence.

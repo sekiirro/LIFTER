@@ -35,6 +35,8 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 | D-29 | F15 D1 privacy-erasure exception (PO, 2026-10-30) | “1=A: Approve narrowly scoped Privacy Erasure exception. 2=B: Delete related answer-change AND access-view audit records. 3=B: Deletion log retains counts only, no IDs. 4=A: Automatic server-validated deletion only. 5=A: Respect Legal Holds; defer deletion and alert. 6=A: Approve security review and DB change plan. Strictly limit deletion to inapplicable answers and authorized related records. Preserve all Financial, Security and Unrelated Audit Records. Update constitution, specs and tests. Independently review security implications. Escalate genuine conflicts without inventing policy. Design approval only — NOT merge approval. Preserve all CI, CodeRabbit and PO merge gates.” Constitution VII allows only this narrow answer-erasure exception; migration work remains gated by F12/F14 merge and Stack C. |
 | — | Architecture | [02-architecture.md](02-architecture.md) v3 APPROVED (R1, R2, R4, R5, R6, R7 adopted) |
 
+| D-30 | F15 S17 default onboarding form (PO, 2026-10-30) | Your First Step («خطوتك الأولى») is the default ordinary editable onboarding template in Forms; Workspace Owners may edit, replace, or select another. Existing intake questions are editable starter content, not a fixed catalog. Audience, assignment and timing are configured per form under Q3=D. No standalone health notice; use «عن بياناتك الصحية» / “About your health data” only as minimal context where genuinely useful. Published versions and assignment snapshots remain immutable. Terms Card consent is unchanged. See s17 PO decisions, section 3 and “F15 default form Arabic title”. |
+
 ## Superseded
 
 | Item | Superseded by |
@@ -56,9 +58,9 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 - Outstanding production gates: [07-production-readiness.md](07-production-readiness.md). Per the PO (2026-10-27), these do not block local development or PR merges.
 - Phase-gated, no defaults approved:
   - check-in anchor (C1, P5)
-  - form-builder permission matrix (P2)
+  - General form-builder permission matrix outside the approved workspace onboarding-form rights (P2); Your First Step edit/replace/select rights are settled by S17.
   - secondary-muscle credit (P3)
-  - catalog edit/merge rights (P3)
+  - Platform-global catalog edit/merge rights (P3); does not reopen the approved workspace onboarding-form rights.
   - Telegram reminder defaults (P6)
   - deadline instant on day 5 (P2)
   - Sales coaching rights

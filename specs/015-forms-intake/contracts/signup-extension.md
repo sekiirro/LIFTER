@@ -25,7 +25,7 @@ This is a cross-feature logical contract. F11 remains the owner of invitation-to
 
 ## Post-approval journey
 
-After approval status is resolved, assign the Mandatory Intake under the existing F12/F15 approval event contract. Journey order is Basic → Training → Nutrition → Terms Card → new LIFTER Welcome page. Forms questions requiring health information are unavailable before approval. Terms publication and acceptance are versioned; changes after publication create a new policy version and do not rewrite prior receipts.
+After approval status is resolved, assign the selected onboarding form (Your First Step by default, unless the Workspace Owner selects another form) under the existing F12/F15 approval event contract. Journey order follows the selected form’s authored sections, then the post-Nutrition Terms Card and new LIFTER Welcome page. Forms questions requiring health information are unavailable before approval. Terms publication and acceptance are versioned; changes after publication create a new policy version and do not rewrite prior receipts.
 
 The binding session-14 decision places T&C consent only at the post-Nutrition Terms Card. Signup creates the pending account without T&C consent. Terms acceptance is required to complete intake; optional marketing consent is separate.
 

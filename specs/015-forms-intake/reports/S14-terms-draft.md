@@ -57,26 +57,26 @@ Freezes last 1–30 calendar days, cannot overlap, and may be consecutive. The s
 
 Account details are required to manage identity and access. Email addresses and phone numbers are unique across LIFTER; accounts are not merged or transferred between clients. At the Terms Card after Nutrition, the required terms checkbox remains unchecked until you choose it. Accepting the terms is required to complete intake after Nutrition. We record the terms version and server acceptance time at the Terms Card. Marketing consent is separate, optional and not required for signup.
 
-## PO review required
+## PO review required: Terms and copy still in scope
 
 - Approve, edit or reject each policy sentence in both languages before publication.
-- The PO decided to show a separate health-data notice immediately before health questions without a checkbox or consent receipt. Draft AR/EN copy is in `fixtures/s14-po-decisions.json` and requires PO approval.
+- Historical S14 decision: a separate health-data notice appeared immediately before health questions without a checkbox or consent receipt. S17 supersedes the standalone UI; that draft is provenance only, not a pending ship approval. Minimal contextual guidance may use the PO-approved phrase only where genuinely useful.
 - Confirm whether the user-facing retention sentence should state the 30-day maximum while legal/technical all-copy retention remains a production gate.
 - Architect default: use existing premium card/checkbox components for the Terms Card; do not borrow YBS styling.
 
 
-## Separate health-data notice - draft copy
+## Superseded: separate health-data notice draft copy
 
-The notice appears immediately before the health questions. It has no acknowledgment checkbox, button or consent record. Copy is DRAFT pending PO approval and is sourced from the approved health/privacy policies; the proposed AR/EN text is tracked in `../fixtures/s14-po-decisions.json`.
+Superseded by S17: this historical draft is not a required standalone UI or a pending ship deliverable. The former S14 display was immediately before health questions and had no acknowledgment checkbox or consent record. Where a form question makes brief health-data context genuinely useful, minimal contextual guidance may use «عن بياناتك الصحية» / “About your health data”. Do not add acknowledgment or consent. Terms Card text and consent policy remain unchanged.
 
 ## Awaiting PO approval
 
-All items below remain **DRAFT — pending PO approval**. The paths identify the exact source files for PO review; this inventory is not an approval record.
+Terms AR/EN, sex labels and EN intake translations remain **DRAFT — pending PO approval**. Health-notice entries below are historical S14 draft provenance; standalone notice translation is superseded and is not a ship blocker. The paths identify the exact source files for PO review; this inventory is not an approval record.
 
 - **T&C Arabic** — this report: `specs/015-forms-intake/reports/S14-terms-draft.md` (Draft Egyptian Arabic).
 - **T&C English** — this report: `specs/015-forms-intake/reports/S14-terms-draft.md` (Draft English).
-- **Health notice Arabic** — `specs/015-forms-intake/fixtures/s14-po-decisions.json` (`P2_health_notice.ar`).
-- **Health notice English** — `specs/015-forms-intake/fixtures/s14-po-decisions.json` (`P2_health_notice.en`). It appears immediately before health questions, with no acknowledgment checkbox or consent record.
+- **Health notice Arabic** — historical S14 draft in `specs/015-forms-intake/fixtures/s14-po-decisions.json` (`P2_health_notice.ar`); standalone UI superseded by S17, contextual-only where useful.
+- **Health notice English** — historical S14 draft in `specs/015-forms-intake/fixtures/s14-po-decisions.json` (`P2_health_notice.en`); standalone UI superseded by S17, contextual-only where useful.
 - **Sex question and labels Arabic** — `specs/015-forms-intake/fixtures/s14-po-decisions.json` (`P1_sex.ar`).
 - **Sex question and labels English** — `specs/015-forms-intake/fixtures/s14-po-decisions.json` (`P1_sex.en`).
 - **EN intake translations** — `specs/015-forms-intake/spec.md` (EN translation and EN option translations tables). These authored translations are pending PO review before publication.

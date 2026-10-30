@@ -23,6 +23,7 @@
     }
   },
   "P2_health_notice": {
+    "s17_supersession": "Standalone UI superseded; use minimal contextual health guidance only where genuinely useful. No acknowledgment or consent receipt.",
     "position": "immediately before health questions",
     "acknowledgment_checkbox": false,
     "consent_record": false,

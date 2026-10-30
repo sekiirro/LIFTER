@@ -99,9 +99,13 @@ The architect resolved the design defaults for this implementation plan: Terms C
 ## Session-14 PO answers applied
 
 - Body-fat: add sex to Basic; use standard `male` and `female` N12 series, leave `male-cinematic` unused. The AR/EN selector copy is DRAFT pending PO approval.
-- Health notice: separate notice before health questions; no tick and no consent record. Draft AR/EN wording requires PO approval.
+- Health guidance: S17 supersedes the separate pre-question notice. Use minimal contextual guidance only where genuinely useful; do not add an acknowledgment or consent record.
 - Consent point: post-Nutrition Terms Card with unchecked required T&C checkbox, policy version and timestamp; separate optional marketing consent. Signup creates the pending account without T&C consent.
 - Maximum meals: 5. N7 is an explicit PO-approved deviation; remove six-plus and exact-number entry while keeping the canonical Arabic source unchanged.
 - Reserved usernames and design defaults follow the Architect interpretation appended to the PO decision record.
 
 No decision on goals/options is requested: D-S14-4 settles T01 as short text without choice cards. The 256 KiB submission cap and F11/F12 authorization boundaries are not reopened.
+
+### S17 supersession note (2026-10-30)
+
+Your First Step is the default ordinary editable onboarding form in Forms; previously supplied intake questions are optional editable starter content, not a fixed catalog. Workspace Owners may edit, replace, or select another onboarding form; per-form audience and timing follow Q3=D. The standalone health notice is superseded. Use «عن بياناتك الصحية» / “About your health data” only as minimal contextual guidance where useful. This note corrects forward-looking recommendations and does not alter the historical review evidence.
