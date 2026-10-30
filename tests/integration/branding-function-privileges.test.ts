@@ -1,6 +1,6 @@
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { selectStack } from '../../scripts/local-stack.mjs';
-import { sql } from './harness';
+import { anonClient, createStaff, sql } from './harness';
 
 if (selectStack() !== 'b')
   throw new Error('Branding privilege checks require Stack B');
@@ -244,6 +244,26 @@ describe('F14 definer function privileges', () => {
         authenticated_execute: false,
       },
     ]);
+  });
+
+  it('denies anon and authenticated callers the public GC wrappers', async () => {
+    const authenticated = await createStaff(
+      'platform_owner',
+      'gc-wrapper-denial',
+    );
+    const callers = [anonClient(), authenticated.client];
+    for (const caller of callers) {
+      expect(
+        (await caller.rpc('branding_gc_claim', { batch_size: 1 })).error,
+      ).toBeTruthy();
+      expect(
+        (
+          await caller.rpc('branding_gc_finalize', {
+            claim_id: crypto.randomUUID(),
+          })
+        ).error,
+      ).toBeTruthy();
+    }
   });
 
   it('forces RLS on every private F14 branding table', async () => {
