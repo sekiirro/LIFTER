@@ -254,6 +254,16 @@ export const ar = {
     'تم التحقق من النموذج محليًا. لم تُرسل أي بيانات تسجيل.',
   'f14Banner.prototypeNotice':
     'نموذج بوابة التصميم · اختيار الأبعاد بانتظار مالك المنتج.',
+  'f14Hero.desktopLabel': 'صورة سطح المكتب:',
+  'f14Hero.desktopDimensions': '2560 × 1440 px (16:9)',
+  'f14Hero.desktopAdviceBefore': 'اجعل الشخصية ضمن الجهة اليسرى بنسبة ',
+  'f14Hero.desktopPercent': 'نحو 40%',
+  'f14Hero.desktopAdviceAfter': '، واترك مساحة هادئة على اليمين للبطاقة.',
+  'f14Hero.mobileLabel': 'صورة الهاتف:',
+  'f14Hero.mobileDimensions': '1080 × 1440 px (3:4)',
+  'f14Hero.mobileAdviceBefore': 'اجعل الشخصية ضمن الجزء العلوي بنسبة ',
+  'f14Hero.mobilePercent': 'نحو 60%',
+  'f14Hero.mobileAdviceAfter': '، واترك الأسفل يتلاشى إلى الصفحة.',
   'f14Banner.alt': 'صورة لافتة محايدة لمقارنة اقتصاص اللافتات.',
   'f14Banner.fallbackAlt': 'سطح محايد للافتة يظهر لعدم ضبط صورة.',
   // DRAFT (PO Q4): branding editor interface copy pending separate approval.

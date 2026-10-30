@@ -10,8 +10,14 @@ describe('logical CSS', () => {
   it('scans all application and component styles', () => {
     const files = globSync(['app/**/*.css', 'components/**/*.css']);
     expect(files.length).toBeGreaterThan(0);
-    for (const file of files)
-      expect(violations(readFileSync(file, 'utf8')), file).toEqual([]);
+    for (const file of files) {
+      const found = violations(readFileSync(file, 'utf8'));
+      // The hero card is intentionally fixed to physical right in both locales per PO direction.
+      const isHeroPrototype = file
+        .replaceAll('\\', '/')
+        .endsWith('app/(dev)/showcase/f14-hero-glass/page.module.css');
+      expect(found, file).toEqual(isHeroPrototype ? [' right:'] : []);
+    }
   });
   it.each([
     'margin-left: 0',

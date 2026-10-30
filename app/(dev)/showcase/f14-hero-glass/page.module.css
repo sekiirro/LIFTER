@@ -1,0 +1,412 @@
+.stage {
+  position: relative;
+  min-block-size: 100svh;
+  overflow: hidden;
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.artwork {
+  position: absolute;
+  z-index: 0;
+  inset: 0 0 auto;
+  display: block;
+  inline-size: 100%;
+  block-size: min(78svh, 133.333vw);
+  overflow: hidden;
+  background: var(--color-bg);
+}
+
+.artwork img {
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+  object-fit: cover;
+  object-position: var(--mobile-focal-x, 50%) 30%;
+}
+
+.mobileFade {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: calc(min(78svh, 133.333vw) * 0.65);
+  inset-inline: 0;
+  block-size: calc(min(78svh, 133.333vw) * 0.35);
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in oklab, var(--color-bg) 32%, transparent) 48%,
+    color-mix(in oklab, var(--color-bg) 76%, transparent) 78%,
+    var(--color-bg) 100%
+  );
+  pointer-events: none;
+}
+
+.glassFrame {
+  position: relative;
+  z-index: 2;
+  inline-size: calc(100% - 2 * var(--space-4));
+  margin-inline: auto;
+  margin-block-start: calc(min(78svh, 133.333vw) - var(--space-8));
+}
+
+.glassCard {
+  position: relative;
+  isolation: isolate;
+  display: block;
+  inline-size: 100%;
+  max-block-size: calc(100svh - var(--space-8));
+  overflow: auto;
+  overscroll-behavior: contain;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-card);
+  background: transparent;
+  color: var(--color-text);
+  box-shadow: none;
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+.glassCard::before,
+.glassCard::after {
+  position: absolute;
+  z-index: 0;
+  inset: 0;
+  border-radius: inherit;
+  content: '';
+  pointer-events: none;
+}
+
+.glassCard::before {
+  border: 1px solid var(--hero-glass-rim);
+  background: var(--hero-glass-tint);
+  box-shadow:
+    var(--hero-glass-shadow),
+    inset 0 1px 0 var(--hero-glass-edge);
+  backdrop-filter: blur(20px) saturate(1.24);
+  -webkit-backdrop-filter: blur(20px) saturate(1.24);
+}
+
+.glassCard::after {
+  z-index: 2;
+  background: radial-gradient(
+    19rem circle at var(--pointer-x, 52%) var(--pointer-y, 0%),
+    var(--hero-glass-highlight),
+    transparent 72%
+  );
+  opacity: 0.22;
+  transition: opacity 160ms ease-out;
+}
+
+.webglLens,
+.svgLens {
+  position: absolute;
+  z-index: 1;
+  inset: 0;
+  inline-size: 100%;
+  block-size: 100%;
+  border-radius: inherit;
+  opacity: 0.12;
+  pointer-events: none;
+}
+
+.webglLens {
+  mix-blend-mode: screen;
+}
+
+.svgLens {
+  backdrop-filter: url('#hero-glass-displacement') blur(20px) saturate(1.24);
+  -webkit-backdrop-filter: url('#hero-glass-displacement') blur(20px)
+    saturate(1.24);
+}
+
+.filterDefinitions {
+  position: absolute;
+  inline-size: 0;
+  block-size: 0;
+  overflow: hidden;
+}
+
+.glassContent {
+  position: relative;
+  z-index: 3;
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+}
+
+.glassContent > :global(.hero-signup-preview) {
+  display: contents;
+}
+
+.glassContent > h1 {
+  margin-block: var(--space-2) 0;
+  font-size: var(--text-lg);
+  line-height: var(--line-height-heading);
+}
+
+.brandScope :global([data-registration-banner-fallback]) {
+  display: none;
+}
+
+.brandScope :global([data-brand-name]) {
+  font-size: var(--text-xl);
+  font-weight: 600;
+}
+
+.brandScope :global(form) {
+  display: grid;
+  gap: var(--space-3);
+  max-inline-size: none;
+  margin-block-start: 0;
+}
+
+.brandScope :global(form > label) {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.brandScope :global(form input),
+.brandScope :global(form select) {
+  min-block-size: var(--touch-min);
+  border-color: var(--brand-ring);
+  border-radius: calc(var(--radius-card) - var(--space-3));
+  background: var(--color-card);
+  color: var(--color-text);
+}
+
+.brandScope :global(form input:focus-visible),
+.brandScope :global(form select:focus-visible) {
+  outline-color: var(--brand-ring);
+}
+
+.brandScope :global(form > button) {
+  inline-size: 100%;
+  border-radius: calc(var(--radius-card) - var(--space-3));
+  box-shadow: 0 7px 18px color-mix(in srgb, var(--brand-fill) 24%, transparent);
+}
+
+.previewNote {
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--line-height-body);
+}
+
+.prototypeGuidance {
+  display: none;
+}
+
+.mobileOnly,
+.noArtwork {
+  background:
+    linear-gradient(
+      148deg,
+      color-mix(in oklab, var(--brand-fill) 9%, transparent),
+      transparent 42%
+    ),
+    var(--color-bg);
+}
+
+.noArtwork .mobileFade {
+  display: none;
+}
+
+.noArtwork .glassFrame {
+  margin-block-start: var(--space-8);
+}
+
+.srOnly {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+@media (min-width: 48rem) {
+  .stage {
+    block-size: 100svh;
+  }
+
+  .artwork {
+    block-size: 100%;
+  }
+
+  .artwork img {
+    object-position: var(--hero-focal-x, 32%) center;
+  }
+
+  .mobileFade {
+    display: none;
+  }
+
+  .glassFrame {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: auto;
+    right: clamp(1.5rem, 4vw, 4rem);
+    inline-size: min(28rem, calc(100vw - 3rem));
+    margin-inline: 0;
+    max-block-size: calc(100svh - var(--space-8));
+    margin: 0;
+    transform: translateY(-50%);
+  }
+
+  .glassCard {
+    max-block-size: calc(100svh - var(--space-8));
+  }
+
+  .mobileOnly .artwork {
+    inline-size: min(42vw, 36rem);
+  }
+
+  .mobileOnly .artwork img {
+    object-position: center top;
+  }
+
+  .noArtwork .glassFrame {
+    margin-block-start: 0;
+  }
+}
+
+[data-theme='light'] .glassCard {
+  --hero-glass-tint: color-mix(in srgb, var(--color-card) 94%, transparent);
+  --hero-glass-rim: color-mix(in srgb, var(--color-text) 14%, transparent);
+  --hero-glass-edge: color-mix(in srgb, white 70%, transparent);
+  --hero-glass-highlight: color-mix(in srgb, white 34%, transparent);
+  --hero-glass-shadow: 0 24px 68px color-mix(in srgb, #0b1017 24%, transparent);
+}
+
+[data-theme='dark'] .glassCard,
+html:not([data-theme='light']) .glassCard {
+  --hero-glass-tint: color-mix(in srgb, var(--color-card) 91%, transparent);
+  --hero-glass-rim: color-mix(in srgb, white 19%, transparent);
+  --hero-glass-edge: color-mix(in srgb, white 24%, transparent);
+  --hero-glass-highlight: color-mix(in srgb, white 40%, transparent);
+  --hero-glass-shadow: 0 26px 74px color-mix(in srgb, black 42%, transparent);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .glassCard:hover::after,
+  .glassCard:focus-within::after {
+    opacity: 0.48;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .glassCard::after {
+    opacity: 0;
+    transition: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce) {
+  .glassCard::before {
+    background: var(--color-card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .webglLens,
+  .svgLens {
+    display: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .glassCard {
+    --hero-glass-tint: color-mix(in srgb, var(--color-card) 98%, transparent);
+  }
+
+  .glassCard::before {
+    border: 2px solid var(--color-text);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .webglLens,
+  .svgLens {
+    display: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .stage,
+  .mobileOnly,
+  .noArtwork {
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .artwork,
+  .mobileFade,
+  .webglLens,
+  .svgLens,
+  .glassCard::before,
+  .glassCard::after {
+    display: none;
+  }
+
+  .glassCard {
+    border: 1px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+  }
+
+  .brandScope :global(form > label),
+  .brandScope :global(form span[aria-hidden='true']),
+  .previewNote {
+    color: CanvasText;
+  }
+
+  .brandScope :global(form input),
+  .brandScope :global(form select) {
+    border-color: FieldText;
+    background: Field;
+    color: FieldText;
+  }
+
+  .brandScope :global(form > button) {
+    border-color: ButtonText;
+    background: ButtonFace;
+    color: ButtonText;
+    box-shadow: none;
+  }
+}
+
+@media print {
+  .artwork,
+  .mobileFade,
+  .webglLens,
+  .svgLens,
+  .glassCard::before,
+  .glassCard::after {
+    display: none;
+  }
+
+  .stage {
+    overflow: visible;
+    background: var(--color-print-bg);
+    color: var(--color-print-text);
+  }
+
+  .glassFrame {
+    position: static;
+    inline-size: 100%;
+    margin: 0;
+    transform: none;
+  }
+
+  .glassCard {
+    max-block-size: none;
+    overflow: visible;
+    border: 1px solid currentColor;
+    background: var(--color-print-bg);
+    color: var(--color-print-text);
+    box-shadow: none;
+  }
+}

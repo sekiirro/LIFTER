@@ -1,0 +1,19 @@
+.guidance {
+  display: grid;
+  gap: var(--space-5);
+  inline-size: min(100% - var(--space-6), 48rem);
+  margin-inline: auto;
+  padding-block: var(--space-8);
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  line-height: var(--line-height-body);
+}
+
+.srOnly {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}

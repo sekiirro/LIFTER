@@ -155,6 +155,18 @@ function validate(bytes: Uint8Array) {
 }
 
 describe('branding image validation contract', () => {
+  it('keeps proposed F14 desktop and mobile hero art inside the existing banner limits', () => {
+    const limits = BRANDING_IMAGE_LIMITS.banner;
+    for (const size of [
+      { width: 2560, height: 1440 },
+      { width: 1080, height: 1440 },
+    ]) {
+      expect(size.width).toBeLessThanOrEqual(limits.maxWidth);
+      expect(size.height).toBeLessThanOrEqual(limits.maxHeight);
+      expect(size.width * size.height).toBeLessThanOrEqual(limits.maxPixels);
+    }
+  });
+
   it('uses separately benchmarked role caps', () => {
     expect(BRANDING_IMAGE_LIMITS.logo).toEqual({
       maxIngressBytes: 4 * 1024 * 1024,

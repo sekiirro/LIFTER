@@ -262,6 +262,16 @@ export const en: Record<keyof typeof ar, string> = {
     'Sample checked locally. No registration data was sent.',
   'f14Banner.prototypeNotice':
     'Design-gate prototype · dimensions remain pending PO selection.',
+  'f14Hero.desktopLabel': 'Desktop artwork:',
+  'f14Hero.desktopDimensions': '2560 × 1440 px (16:9)',
+  'f14Hero.desktopAdviceBefore': 'Keep the subject in the left ',
+  'f14Hero.desktopPercent': '~40%',
+  'f14Hero.desktopAdviceAfter': ', with calm space on the right for the card.',
+  'f14Hero.mobileLabel': 'Mobile artwork:',
+  'f14Hero.mobileDimensions': '1080 × 1440 px (3:4)',
+  'f14Hero.mobileAdviceBefore': 'Keep the subject in the upper ',
+  'f14Hero.mobilePercent': '~60%',
+  'f14Hero.mobileAdviceAfter': '; the bottom fades into the page.',
   'f14Banner.alt': 'Neutral sample hero image for comparing banner crops.',
   'f14Banner.fallbackAlt':
     'Neutral hero banner surface shown because no image is configured.',
