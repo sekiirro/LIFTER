@@ -44,6 +44,7 @@ export const BRANDING_IMAGE_LIMITS: Record<
 };
 
 const PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
+const RENDER_REQUIRED_PNG_ANCILLARY = new Set(['tRNS']);
 const WEBP_RIFF = [82, 73, 70, 70];
 const crcTable = new Uint32Array(256);
 for (let n = 0; n < 256; n += 1) {
@@ -94,6 +95,8 @@ function png(
   let bitDepth = 0;
   let sawHeader = false;
   let sawPalette = false;
+  let paletteEntries = 0;
+  let sawTransparency = false;
   let sawData = false;
   let endedData = false;
   let sawEnd = false;
@@ -175,6 +178,21 @@ function png(
       )
         fail();
       sawPalette = true;
+      paletteEntries = length / 3;
+      if (colorType === 3 && paletteEntries > 2 ** bitDepth) fail();
+      kept.push(bytes.subarray(offset, end));
+    } else if (RENDER_REQUIRED_PNG_ANCILLARY.has(type)) {
+      if (sawTransparency || sawData) fail();
+      if (
+        (colorType === 3 &&
+          (!sawPalette || length < 1 || length > paletteEntries)) ||
+        (colorType === 0 && length !== 2) ||
+        (colorType === 2 && length !== 6) ||
+        colorType === 4 ||
+        colorType === 6
+      )
+        fail();
+      sawTransparency = true;
       kept.push(bytes.subarray(offset, end));
     } else if (type === 'IDAT') {
       if (
@@ -194,6 +212,8 @@ function png(
       kept.push(bytes.subarray(offset, end));
     } else {
       if (sawData) endedData = true;
+      // tRNS is the only render-required ancillary chunk. All other ancillary
+      // chunks are stripped, including text, timestamps, and EXIF metadata.
       if ((bytes[typeAt]! & 0x20) === 0) fail(); // Unknown critical chunks are not safe to discard.
     }
     if (type !== 'IDAT' && sawData && type !== 'IEND') endedData = true;
@@ -327,7 +347,13 @@ function webp(
   }
   if (!sawImage || offset !== bytes.length || (extended && !vp8xChunk)) fail();
   if (extended) {
-    if (imageKind === 'VP8L' && (vp8xChunk![8]! & 0x10) !== 0) fail();
+    if (
+      imageKind === 'VP8L' &&
+      retained.some(
+        (chunk) => String.fromCharCode(...chunk.subarray(0, 4)) === 'ALPH',
+      )
+    )
+      fail();
     const declaredWidth =
       1 + vp8xChunk![12]! + (vp8xChunk![13]! << 8) + (vp8xChunk![14]! << 16);
     const declaredHeight =

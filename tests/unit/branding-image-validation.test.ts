@@ -48,6 +48,9 @@ function pngFixture(
     chunks?: number;
     trailing?: boolean;
     inflateTrailing?: boolean;
+    colorType?: number;
+    transparency?: Uint8Array;
+    paletteEntries?: number;
   } = {},
 ): Buffer {
   const width = options.width ?? 1;
@@ -56,16 +59,24 @@ function pngFixture(
   ihdr.writeUInt32BE(width, 0);
   ihdr.writeUInt32BE(height, 4);
   ihdr[8] = 8;
-  ihdr[9] = 6;
+  const colorType = options.colorType ?? 6;
+  ihdr[9] = colorType;
   const chunks = [pngChunk('IHDR', ihdr)];
+  if (colorType === 3) {
+    const palette = Buffer.alloc((options.paletteEntries ?? 2) * 3);
+    chunks.push(pngChunk('PLTE', palette));
+  }
+  if (options.transparency) chunks.push(pngChunk('tRNS', options.transparency));
   if (options.animation) chunks.push(pngChunk('acTL', Buffer.alloc(8)));
   if (options.metadata)
     chunks.push(pngChunk('tEXt', Buffer.from('Comment\0private')));
   for (let index = 0; index < (options.chunks ?? 0); index += 1) {
     chunks.push(pngChunk('tEXt', Buffer.from(`k${index}\0v`)));
   }
-  const pixels = Buffer.alloc(width * height * 4 + height);
-  for (let row = 0; row < height; row += 1) pixels[row * (width * 4 + 1)] = 0;
+  const channels: Record<number, number> = { 0: 1, 2: 3, 3: 1, 4: 2, 6: 4 };
+  const pixels = Buffer.alloc(width * height * channels[colorType]! + height);
+  for (let row = 0; row < height; row += 1)
+    pixels[row * (width * channels[colorType]! + 1)] = 0;
   const compressed = deflateSync(pixels);
   chunks.push(
     pngChunk(
@@ -111,14 +122,23 @@ function webpFixture(
     badFrameHeader?: boolean;
     mismatchedDimensions?: boolean;
     extraChunks?: number;
+    lossless?: boolean;
+    alpha?: boolean;
   } = {},
 ): Buffer {
   const vp8x = Buffer.alloc(10);
-  vp8x[0] = options.animation ? 0x02 : options.metadata ? 0x0c : 0;
+  vp8x[0] = options.animation
+    ? 0x02
+    : options.metadata
+      ? 0x2c | (options.alpha ? 0x10 : 0)
+      : options.alpha
+        ? 0x10
+        : 0;
   vp8x.writeUIntLE(0, 4, 3);
   vp8x.writeUIntLE(0, 7, 3);
   const chunks = [webpChunk('VP8X', vp8x)];
   if (options.metadata) {
+    chunks.push(webpChunk('ICCP', Buffer.from('profile')));
     chunks.push(webpChunk('EXIF', Buffer.from('Exif\0\0metadata')));
     chunks.push(webpChunk('XMP ', Buffer.from('<x:xmpmeta/>')));
   }
@@ -139,7 +159,9 @@ function webpFixture(
       0,
     ]);
     if (options.badFrameHeader) frame[3] = 0;
-    chunks.push(webpChunk('VP8 ', frame));
+    if (options.lossless)
+      chunks.push(webpChunk('VP8L', Buffer.from([0x2f, 0, 0, 0, 0x10])));
+    else chunks.push(webpChunk('VP8 ', frame));
   }
   for (let index = 0; index < (options.extraChunks ?? 0); index += 1)
     chunks.push(webpChunk('XMP ', Buffer.from('x')));
@@ -195,6 +217,39 @@ describe('branding image validation contract', () => {
     expect(result.contentHash).toBe(
       createHash('sha256').update(expected).digest('hex'),
     );
+  });
+
+  it('preserves validated palette transparency and strips other ancillary metadata', () => {
+    const input = pngFixture({
+      colorType: 3,
+      transparency: Buffer.from([0, 128]),
+      metadata: true,
+    });
+    const output = validate(input).bytes;
+    expect(output.includes(Buffer.from('tRNS'))).toBe(true);
+    expect(output.includes(Buffer.from('tEXt'))).toBe(false);
+    expect(output.includes(Buffer.from('private'))).toBe(false);
+  });
+
+  it('rejects malformed palette transparency lengths', () => {
+    expect(() =>
+      validate(
+        pngFixture({ colorType: 3, transparency: Buffer.from([0, 1, 2]) }),
+      ),
+    ).toThrow('Invalid branding image');
+  });
+
+  it('accepts VP8X alpha on lossless VP8L while stripping ICC and EXIF metadata', () => {
+    const input = webpFixture({
+      lossless: true,
+      alpha: true,
+      metadata: true,
+      metadataKinds: true,
+    });
+    const output = validate(input).bytes;
+    expect(output.includes(Buffer.from('VP8L'))).toBe(true);
+    expect(output.includes(Buffer.from('ICCP'))).toBe(false);
+    expect(output.includes(Buffer.from('EXIF'))).toBe(false);
   });
 
   it('walks WebP RIFF chunks, removes metadata flags/chunks and hashes stripped bytes', () => {
