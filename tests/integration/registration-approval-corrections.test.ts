@@ -5,6 +5,7 @@ import {
   paymentRequest,
   pay,
   sqlPay,
+  publish,
   probe,
   sql,
   state,
@@ -59,6 +60,45 @@ it('T019 correction negates stored original exactly, books fresh Cairo month, pr
       collected_on: null,
       revision: 2,
     });
+  });
+});
+it('Q-M08 correction uses original commission after the current catalog rate changes', async () => {
+  const fresh = await clientContext();
+  const purchase = await bought(fresh);
+  const published = await publish(fresh, fresh.p.id, {
+    commission_rate_bp: 5000,
+  });
+  expect(published.error).toBeNull();
+
+  const result = await pay(
+    fresh.po.client,
+    'correct',
+    paymentRequest(fresh, purchase, 'correct'),
+  );
+  expect(result.status).toBe('ok');
+  const [events] = await db`
+    select original.commission_minor::text as original_commission,
+      reversal.commission_minor::text as reversal_commission,
+      current_version.commission_rate_bp as current_rate,
+      subscription.commission_rate_bp as snapshot_rate
+    from public.payment_events original
+    join public.payment_events reversal on reversal.reverses_event_id=original.id
+      and reversal.workspace_id=original.workspace_id
+    join public.subscriptions subscription on subscription.workspace_id=original.workspace_id
+      and subscription.id=original.subscription_id
+    join public.package_offers offer on offer.workspace_id=original.workspace_id
+      and offer.id=(select version.offer_id from public.package_versions version
+        where version.workspace_id=original.workspace_id
+          and version.id=subscription.package_version_id)
+    join public.package_versions current_version on current_version.workspace_id=offer.workspace_id
+      and current_version.id=offer.current_version_id
+    where original.id=${purchase.approved.receipt!.event_id as string}
+      and reversal.id=${result.receipt!.event_id as string}`;
+  expect(events).toEqual({
+    original_commission: '1',
+    reversal_commission: '-1',
+    current_rate: 5000,
+    snapshot_rate: 17,
   });
 });
 for (const who of ['woA', 'salesA', 'trainerA'] as const)

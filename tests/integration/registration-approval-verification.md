@@ -644,3 +644,396 @@ All four temporary Stack A mutants made their named detector RED; each was resto
 - Corrections remain PO-only exact-value append-only reversals. No F13 refund cap, refund cardinality, commission-refund behavior, or renewal due-date policy was added.
 - Replay returns the stored receipt unchanged, and tests assert equality on replay. A wall-clock month transition was not simulated; the test suite verifies fresh Cairo correction booking and immutable replay receipt behavior.
 - Runtime model shown to this session: GPT-6; effort metadata is not exposed here. The requested Luna High routing could not be selected from this runtime.
+
+## Session 13 U6 — DB-free Server Actions and client authorization (T028–T032)
+
+Worktree `LFTR-012b`, branch `012-registration-approval-stage2`, based on stage 1 head `8d54abe97679b69d9f75aaaedb1cfa68faa174d5`. All results below use unit mocks only. No Docker, Supabase CLI, SQL, integration, e2e, or rendered UI route was used. No service-role client/import was added. The action tests use a permissive or failure-configured mocked RPC and do not claim database behavior.
+
+- Tests first RED: `npx vitest run tests/unit/registration-approval-actions.test.ts tests/unit/registration-approval-read.test.ts tests/unit/client-access.test.ts` initially reported **3 failed files / 0 tests** because the service, reader, and client-access modules were not yet implemented. The tests were added before those source modules.
+- GREEN focused: after T028–T032 source wiring and the final T032 log cases, the same command passed **3 files / 48 tests**.
+- Mutation checks (each mutant was reverted immediately after its detector failed):
+  - M1, authorize after RPC: `npx vitest run tests/unit/registration-approval-actions.test.ts -t "scope gates"` reported **9 failed / 10 passed / 14 skipped**; denied roles reached the permissive RPC mock.
+  - M2, add `commission_minor` to the safe queue projection: `npx vitest run tests/unit/registration-approval-read.test.ts -t "column-limited projections"` reported **1 failed / 7 skipped** and showed the leaked field.
+  - M3, move client memo state to a module-level shared promise: `npx vitest run tests/unit/client-access.test.ts -t "memoizes only inside a reader instance"` reported **1 failed / 5 skipped**; the second request received the first request's pending state.
+  - M4, log caller input from the error catch: `npx vitest run tests/unit/registration-approval-actions.test.ts -t "does not log caller input"` reported **1 failed / 32 skipped** and exposed the request object in `console.error`.
+- Wired mutation RPCs from the stage 1 migration signatures: `registration_approve(jsonb)`, `registration_reject(jsonb)`, `registration_reconsider(jsonb)`, `installment_collect(jsonb)`, and `collection_correct(jsonb)`. Each action validates an exact allow-listed request, uses `getUser()` and app role/workspace authorization before one RPC on the same signed session client, and returns only allow-listed result fields/statuses. Reconsideration and correction require PO; approval/rejection require PO/WO; collection follows `record_payment`.
+- Wired staff readers to the stage 1 reader RPCs with bounded page size and explicit field projections. Ordinary approval/payment results discard commission even if a mock includes it; commission uses a separate PO/WO-gated projection. Client status uses zero-argument `client_self_status()` after signed `getUser()`, with a React request cache and no caller ID, staff helper, shared result map, or Storage permission.
+- CSRF coverage rejects mismatched Origin/Host before RPC; the Next Server Action runtime retains its framework Origin/Host enforcement. Shape, uncertain-key retry, generic provider failure, error-log scrubbing, role/scope, commission projection, and isolated-request memoization cases are covered by unit mocks.
+- Focused final GREEN: `npx vitest run tests/unit/registration-approval-actions.test.ts tests/unit/registration-approval-read.test.ts tests/unit/client-access.test.ts` passed **3 files / 48 tests**. Full `npm test` passed **70 files / 1,497 tests**; `npm run typecheck`, `npm run lint`, the explicit touched-file `npx prettier --check`, and `git diff --check` passed.
+- Tests validate the app wall and projection logic only; DB U5 remains the authority for SQL authorization and row-level behavior. The stage 1 base SHA and PR #18 head were never edited by this unit.
+- Runtime model: GPT-6; effort metadata is unavailable in this runtime, so Luna High could not be selected or independently confirmed here.
+
+## Session 13 U7 — T033–T037 (2026-10-30)
+
+### Scope and result
+
+Worktree `LFTR-012b`, branch `012-registration-approval-stage2`. DB-free mock renders only; no Docker, Supabase CLI, integration run, or authenticated U9 screenshot route was used. Staff approval and separate payment list/detail pages, role-gated dashboard links, collection confirmation/history, semantic status badges, and bilingual copy were implemented. T035 remains open for the correction action placement described below.
+
+Commits: T033 RED tests `6b2b224`; T036 messages/parity `53d5669`, `1a32598`; T034 pages `d2991b7`; T035 payment components `487a06f`.
+
+### RED → GREEN and mutations
+
+- T033 tests ran before page/components/feature messages existed: 3 test files failed (2 missing-module suites and message semantics found missing copy keys).
+- T036 parity test preceded strings; afterward `npx vitest run tests/unit/registration-approval-messages.test.ts` passed 1 file / 2 tests. AR/EN key and non-empty value parity is asserted.
+- T035 correction UI test was extended, then a temporary role-gate mutant produced 1 failed / 6 skipped; restoring the PO gate yielded 1 file / 7 tests passed.
+- Mutation M1: rendering commission payloads to Sales produced 1 failed / 5 skipped. Restored PO/WO gate.
+- Mutation M2: removing the wrapping checkbox label produced 1 failed / 5 skipped. Restored the label.
+- Mutation M3: returning a raw i18n key for badge text produced 1 failed / 5 skipped. Restored translated fallback.
+- Each temporary mutant was restored immediately. Final full suite: `npm test` — 73 files passed / 1,512 tests passed.
+
+### Design Gate checklist
+
+| Check                                                    | Result        | Evidence / limit                                                                                                                                                                                        |
+| -------------------------------------------------------- | ------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Tokens and workspace brand                               | PASS (source) | Feature CSS uses existing color, spacing and radius variables; semantic status tokens remain separate from brand overrides.                                                                             |
+| Typography and mixed direction                           | PASS (source) | Root font preferences are inherited; money, dates, sequence numbers and rejection code use `Bidi`. Arabic shaping was not screenshot-reviewed.                                                          |
+| Spacing/layout/components                                | PASS (source) | Logical table layout, existing page container and UI primitives; no new breakpoint, font, token or dependency.                                                                                          |
+| Contrast, light/dark and sample brand                    | NOT VERIFIED  | Semantic tokens are used, but no rendered matrix or contrast tool run is claimed.                                                                                                                       |
+| Accessibility                                            | PARTIAL       | Labeled date/checkbox inputs, native controls, shared Button/Field/ConfirmDialog/Skeleton/ErrorState and accessible-name assertions. Keyboard walkthrough, screen-reader behavior and axe were not run. |
+| Loading/empty/error/success/disabled/pending/interaction | PARTIAL       | Loading/empty/error branches and pending/confirmation/success/failure markup exist; no browser interaction/hover/focus screenshots.                                                                     |
+| AR/EN copy                                               | PASS          | Exact key parity and non-empty value test; feature strings are in `lib/i18n/messages/ar.ts` and `en.ts`.                                                                                                |
+| Rendered matrix / screenshots                            | NOT RUN       | U7 task defers matrix PASS until U9 authenticated B screenshots. No screenshot files/paths were produced in this unit.                                                                                  |
+| Unit tests / size                                        | PASS          | `npm test`: 73 files / 1,512 passed. Web worker 7,165.20 KiB (10.93% / 65,536 KiB); cron 2.85 KiB. Axe was not run.                                                                                     |
+
+Source review found no hard-coded colors, fonts, radii or spacing in the feature stylesheet. Payment controls use native labels/buttons and the shared confirmation dialog. Impeccable detector returned an empty findings array for changed UI targets.
+
+### T035 dependency gap — correction on approval review
+
+Exact gap: `readRegistrationApprovalReview` returns a safe projection without `subscription_id`, `obligation_id`, `revision` or `tail_event_id`. `correctCollectionAction` requires those identifiers and expected revision. This affects `app/(app)/registration-approvals/[clientId]/page.tsx` and `ApprovalReview`. Correction is therefore available only on the separate Payments detail, where U5 returns the required event fields.
+
+Options: (1) extend U5's review reader with a separately authorized, column-limited correction projection; this preserves the approved T035 placement but requires review/change to U5's SQL/read contract. (2) approve moving correction placement to Payments detail; narrower and already implemented, but changes task wording. (3) defer review-page correction to a later approved slice; lowest immediate scope, leaves T035 incomplete. Recommendation: option 1, owned by the U5/DB review lane, then wire the existing PO-only UI action. No reader contract or database work changed here.
+
+### Skill applicability
+
+Conflicts: catalog entries marked `CONFLICT - PO decision` are advisory; `DESIGN.md`, F2 implementation and F12 decisions took precedence over conflicting styling, font, palette or motion suggestions. No alternative design system was generated or persisted.
+
+| Skill                          | Applicability and one-line reason                                                                                                              |
+| ------------------------------ | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `apple-design`                 | NOT APPLICABLE — No alternative visual direction is requested; the approved design remains in force.                                           |
+| `ui-ux-pro-max`                | APPLIES — lookup-only UX search returned confirmation/loading feedback and visible keyboard focus guidance; no design-system output was saved. |
+| `impeccable`                   | APPLIES — existing-surface refinement; context and final detector were run.                                                                    |
+| `frontend-design`              | APPLIES — retained the approved LIFTER direction; visual suggestions stayed subordinate to DESIGN.md.                                          |
+| `baseline-ui`                  | APPLIES — reused existing Field, Button, ConfirmDialog and State primitives; added no motion or library.                                       |
+| `design-dna`                   | NOT APPLICABLE — No reusable system or new dependency is being selected.                                                                       |
+| `genjutsu`                     | NOT APPLICABLE — No reusable system or new dependency is being selected.                                                                       |
+| `emil-design-eng`              | APPLIES — restraint and existing interaction primitives; no motion or alternative visual language.                                             |
+| `animate`                      | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `animate-expo`                 | NOT APPLICABLE — This is a Next.js web app, not a native app.                                                                                  |
+| `review-animations`            | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `improve-animations`           | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `find-animation-opportunities` | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `animation-vocabulary`         | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `animation-performance`        | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `prototype`                    | NOT APPLICABLE — No alternative visual direction is requested; the approved design remains in force.                                           |
+| `mobile-native`                | NOT APPLICABLE — This is a Next.js web app, not a native app.                                                                                  |
+| `pick-ui-library`              | NOT APPLICABLE — No new component or toast library is being selected.                                                                          |
+| `ask-sonner`                   | NOT APPLICABLE — No new component or toast library is being selected.                                                                          |
+| `write-swift`                  | NOT APPLICABLE — This is a Next.js web app, not a native app.                                                                                  |
+| `break-ui`                     | APPLIES — tested denied roles, empty/error states, safe projections and targeted UI mutants in mock renders.                                   |
+| `better-ui`                    | APPLIES — retained existing components/tokens and avoided added effects; conflict-marked styling was not authority.                            |
+| `better-typography`            | APPLIES — inherited approved fonts and isolated mixed-direction values with Bidi.                                                              |
+| `better-colors`                | APPLIES — semantic Design System status tokens only; no palette or rendered contrast claim.                                                    |
+| `better-accessibility`         | APPLIES — visible labels, native controls, shared focus/dialog primitives and accessible names reviewed; axe remains pending U9.               |
+| `better-layout`                | APPLIES — logical flow and spacing tokens; no new breakpoint token.                                                                            |
+| `better-interface`             | APPLIES — consolidated source review across layout, color, copy and accessibility; render evidence deferred.                                   |
+| `better-writing`               | APPLIES — authored concise AR/EN labels and states, checked parity and safe errors.                                                            |
+| `interface-review`             | APPLIES — reviewed changed screens and direct dashboard consumers.                                                                             |
+| `visual-style-presets`         | NOT APPLICABLE — No alternative visual direction is requested; the approved design remains in force.                                           |
+| `glass-dark-ui`                | NOT APPLICABLE — The target does not use this skill’s specialized platform or content type.                                                    |
+| `progressive-blur`             | NOT APPLICABLE — The target does not use this skill’s specialized platform or content type.                                                    |
+| `motion-design`                | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `css-animation`                | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `remotion-motion-graphics`     | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `gsap-core`                    | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `threejs-fundamentals`         | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `threejs-animation`            | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `threejs-geometry`             | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `threejs-interaction`          | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `threejs-lighting`             | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `threejs-loaders`              | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `threejs-materials`            | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `threejs-postprocessing`       | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `threejs-shaders`              | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `threejs-textures`             | NOT APPLICABLE — No Three.js scene, asset or interaction is in scope.                                                                          |
+| `gsap-frameworks`              | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `gsap-performance`             | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `gsap-plugins`                 | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `gsap-react`                   | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `gsap-scrolltrigger`           | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `gsap-timeline`                | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `gsap-utils`                   | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `lottie`                       | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+| `remotion-to-hyperframes`      | NOT APPLICABLE — No motion is specified; no animation was added.                                                                               |
+
+### Gates
+
+- `npx prettier --check` on changed UI, i18n, tests and tasks: PASS.
+- `npm run typecheck`: PASS.
+- `npm run lint`: PASS.
+- `git diff --check`: PASS.
+- `npm run build:edge`: PASS; OpenNext build complete, routes include `/registration-approvals` and `/payments`.
+- `npm run size`: PASS; web 7,165.20 KiB / 65,536 KiB, cron 2.85 KiB / 65,536 KiB.
+- Runtime identifies GPT-6; effort-selection metadata is unavailable, so Luna High could not be independently verified.
+
+## S14 — U7 T035 continuation (2026-10-30)
+
+Starting feature head was `d56897bb9244b377e13a8c44cbf63753bc93039f`; merged `origin/main` with `--no-ff` as `ee41742`. The protected `012-registration-approval` branch was not checked out. Stack A only was used: project `lifter`, API `127.0.0.1:54321`, DB `127.0.0.1:54322`. Stacks B and C were not accessed.
+
+Architect accepted option 1 for T035. Added one forward-only migration, `supabase/migrations/20261101125000_registration_approval_correction_read.sql`. Its separate authenticated RPC checks `platform_owner`, `approve_registration`, workspace and client association; it returns only `subscription_id` and correctionable rows containing `obligation_id`, `revision`, and `tail_event_id`. The installment sequence is the JSON object key so the page can match those identifiers to the already safe issued schedule without adding a returned data column. WO, Trainer, Sales, clients, unknown targets, and foreign-workspace targets receive `{status: "not_permitted"}`. Existing review RPC remains unchanged.
+
+The workspace membership check in `app/(app)/registration-approvals/[clientId]/page.tsx` now runs before `readRegistrationApprovalReview`, preserving generic `notFound`. The review page reads the new correction projection only for a platform owner and passes the minimal context into the existing PaymentHistory/ConfirmDialog correction control. No new style, token, color, font, dependency, or motion was added. Components continue to use existing semantic status and focus treatments; static UI tests cover PO visibility and the confirmation dialog. Axe and the rendered AR/EN × light/dark × mobile/desktop screenshots remain deferred to U9’s authenticated B gate; no screenshot path or axe result is claimed here.
+
+### Migration order
+
+Sorted migration files at this head (timestamp — file):
+
+- `20261027120000` — `tenancy.sql`
+- `20261027130000` — `workspaces_update_columns.sql`
+- `20261027140000` — `access_capability_for_po.sql`
+- `20261027150000` — `audit_log.sql`
+- `20261027150100` — `audited_tables_no_delete.sql`
+- `20261027160000` — `jobs.sql`
+- `20261027160100` — `audit_jobs.sql`
+- `20261028120000` — `auth_recovery_links.sql`
+- `20261029120000` — `packages.sql`
+- `20261030120000` — `registration_links.sql`
+- `20261031120000` — `client_accounts.sql`
+- `20261031121000` — `client_accounts_model.sql`
+- `20261031122000` — `client_accounts_signup.sql`
+- `20261031123000` — `signup_password_parity.sql`
+- `20261031123500` — `signup_duplicate_result.sql`
+- `20261031123600` — `client_accounts_admission.sql`
+- `20261031123700` — `signup_admission_po_decisions.sql`
+- `20261031124000` — `client_accounts_recovery.sql`
+- `20261031125000` — `client_signup_admission_before_bcrypt.sql`
+- `20261031130000` — `purge_scheduling_pg_cron.sql`
+- `20261101120000` — `registration_approval_model.sql`
+- `20261101121000` — `registration_approval_operations.sql`
+- `20261101122000` — `payment_operations.sql`
+- `20261101123000` — `registration_approval_reads.sql`
+- `20261101125000` — `registration_approval_correction_read.sql` (new)
+
+No `20261101124000_flexible_registration_link_terms.sql` or `20261102120000` F14 migration file exists in this merged tree. The new timestamp is ordered after the reserved T051 timestamp `20261101124000` and before F14’s specified `20261102120000`; no migration already on main was edited.
+
+### RED / GREEN and mutations
+
+- Before implementation, the three focused UI/read suites reported 7 failed / 21 passed: the correction reader/UI was absent and the page ordering assertion was not met.
+- Stack A RED after reset from merged-main migrations: read-projection integration reported 2 failed / 6 passed because the new RPC did not exist.
+- M1, grant projection to WO: integration assertion failed for `woA` (1 failed / 7 passed). Restored PO-only role check.
+- M2, remove workspace predicate: foreign-workspace call returned the other tenant’s subscription (1 failed / 7 passed). Restored the tenant predicate.
+- M3, add `amount_minor`: exact projection assertion caught the extra column (1 failed / 7 passed). Removed the field.
+- Final focused unit suites: 3 files / 28 tests passed. Registration-approval read integration: 1 file / 8 tests passed.
+- Final full unit: `npm test` — 73 files passed, 1,518 passed.
+- Final full Stack A integration: 37 files passed, 1 skipped; 1,112 passed, 1 skipped, 0 failed.
+- `npm run typecheck`, `npm run lint`, `npm run format:check`, and `npm run build:edge`: PASS. Edge build includes `/registration-approvals/[clientId]` and completed successfully.
+- Stack A `supabase db reset` from the checked-out migration chain applied the new migration; `supabase migration up` then reported `applied: []`. No manual DB edits were made. After reset, the approved unmodified `client-accounts-provision.mjs` was run with explicit Stack A endpoint environment; secrets were not printed or committed.
+- The existing bidirectional TypeScript↔SQL capability parity suite passed in the full unit/integration gates; the capability matrix itself was unchanged.
+
+### Historical task snapshot (superseded by the S14 continuation below)
+
+The statuses below were recorded before the preserved U8 implementation and the
+session-14 Stack A rulings. They are retained as historical context only; use the
+current S14 continuation below for present status.
+
+### Remaining open F12 tasks (historical)
+
+- T002 — U0 decision/PA mapping documentation remains a separate plan/spec synchronization task.
+- T003 — waiting for the infrastructure owner’s Stack B selector, harness, provisioner, and e2e readiness evidence; Stack B is outside this lane.
+- T038 — U8 status-page RED coverage remains unimplemented; next authorized U8 slice.
+- T039 — U8 client status UI remains unimplemented; depends on T038.
+- T040 — U8 status copy/parity remains unimplemented; depends on T038 and U7 message release.
+- T041 — U8 mock/render evidence remains unrecorded; depends on T038–T040 and U9 B proof.
+- T042 — U9 real signup/session integration coverage remains open; requires the assigned integration/B lane.
+- T043 — U9 e2e, axe, and retained eight-cell screenshot journeys remain open; requires authenticated B session and U8.
+- T044 — full Q-M01..Q-M24 U9 mutations remain open; requires disposable B/module fixtures.
+- T045 — U9 aggregate gates/finance/isolation/log-scrub review remains open; requires U9 scope and evidence.
+- T046 — final traceability reconciliation remains open; depends on U9 evidence.
+- T047 — retained artifacts and exact-head CI evidence remain open; requires the later authorized staging/push evidence. No PR was created here.
+- T048 — independent U10 architect review remains open; it is not self-approvable.
+- T050 — flexible-link RED/history tests remain open; requires Stack B.
+- T051 — flexible-link wrapper migration remains open; requires T050 and Stack B; migration timestamp `20261101124000` remains reserved.
+- T053 — flexible-link UI RED coverage remains open; requires T050/T051 and Stack B.
+- T054 — flexible-link UI implementation remains open; requires T053 and Stack B.
+
+- Runtime identifies GPT-6; effort-selection metadata is unavailable, so Luna High could not be independently verified.
+
+## Session 14 continuation — T035 ambiguity fix and U8 status page (2026-10-30)
+
+### Stack A ownership and migration chain
+
+- Read-only config check: `project_id=lifter`, API `54321`, DB `54322`; filtered local status later confirmed those endpoints. Local DB password classification: **default**. No status/env raw output or password value was emitted.
+- RED setup: `npx --yes supabase@2.122.0 db reset --workdir <absolute-worktree> --local --version 20261101125000` exited 0 and applied migrations through immutable `20261101125000_registration_approval_correction_read.sql`. Stack A ownership was checked immediately before the command (`project_id=lifter`, API 54321, DB 54322).
+- T035 RED: `npx vitest run --config vitest.integration.config.ts tests/integration/registration-approval-correction-ambiguity.test.ts` yielded 1 failed / 0 passed. The 125000-only function returned `status: "ok"` with arbitrary correction identifiers for two approved subscriptions; the test expected exactly `{status:"unavailable"}`.
+- Forward-only GREEN: `npx --yes supabase@2.122.0 migration up --workdir <absolute-worktree> --local` applied only `20261101130000_registration_approval_correction_ambiguity.sql`; the same focused Vitest command yielded 1 passed / 0 failed. The function returns the documented fixed generic ambiguity result without selecting an arbitrary subscription or exposing identifiers. Its probe transaction rolls back the temporary index/trigger changes.
+- After that proof, a fresh Stack A `db reset --workdir <absolute-worktree> --local` exited 0 and applied the full migration chain through 130000. Stack A ownership was checked immediately before each Supabase command. No pushed migration (including 124000/125000) was edited.
+- New forward migration: `20261101130000_registration_approval_correction_ambiguity.sql`. It follows `20261101125000_registration_approval_correction_read.sql`, is later than the reserved `20261101124000` timestamp, and sorts before F14's `20261102120000` boundary. The existing 20261101125000 migration and migrations on main were not edited.
+- Current migration timestamps, in order: `20261027120000`, `20261027130000`, `20261027140000`, `20261027150000`, `20261027150100`, `20261027160000`, `20261027160100`, `20261028120000`, `20261029120000`, `20261030120000`, `20261031120000`, `20261031121000`, `20261031122000`, `20261031123000`, `20261031123500`, `20261031123600`, `20261031123700`, `20261031124000`, `20261031125000`, `20261031130000`, `20261101120000`, `20261101121000`, `20261101122000`, `20261101123000`, `20261101125000`, `20261101130000`.
+- The approved, unmodified `node tests/integration/client-accounts-provision.mjs` exited 0 after the fresh reset (`Local Vault provisioned; two matching server-only env copies saved.`). No secret value was emitted by the run.
+
+### RED / GREEN and integration evidence
+
+- T035 uses the fixed ambiguity policy: multiple valid approval event/subscription pairs return exactly `{status:"unavailable"}`; no latest-subscription order is inferred from incomplete history.
+- U8 T038 test RED before poller implementation: focused unit failed to resolve the missing `status-polling` module. U8 T040 parity RED before messages: Arabic `registrationApproval.statusPending` was missing. After implementation, focused status/page/message/access tests passed `4 files / 19 tests`.
+- Full unit after preserved U8 work: `npm test` — 75 files passed, 1,533 passed / 0 failed.
+- Full Stack-A integration after reset/provisioning: `npm run test:integration` finished `39 files / 27 passed / 11 failed / 1 skipped`; `1,114 tests / 991 passed / 81 failed / 42 skipped`. All 81 failures were setup failures reporting `SIGNUP_* env missing; run provisioning`; no assertion failure was observed in those tests. The provisioner succeeded, but does not export the values to the parent process; the current harness reads those values from `process.env`. No file or Vault value was loaded/exported by this run. The full integration gate is therefore blocked, not green.
+- Read-only Stack A password classification: `default` (reported without emitting the password or raw status output).
+- U9 Playwright attempt: route rendered, but signup returned the generic “Please try again later.” Direct integration-fixture import also failed because it imports Vitest into Playwright CJS. No authenticated session or screenshots were produced; there was no manual database change.
+- T042 source review: the operations suite uses real signup and staff RPC clients, but has no Auth sign-in/refresh/session-revocation or Storage assertions. The client-access suite relies on SQL `probe()`/synthetic JWT claims and controlled grants; it is not a real signed-session/PostgREST denial proof. The replay suite tests post-wait role/membership changes, not revocation of an actual session. New real-session coverage remains open because its signup fixture requires `SIGNUP_*` process values, and no allowed in-memory setup path has been established.
+- Gates: typecheck PASS; lint PASS; touched-file Prettier PASS; edge build PASS and generated the `/(client)/account/status/page` route in `.next/server/app-paths-manifest.json`; `npm run size` PASS at web `7,215.89 KiB` (`1,484.29 KiB gzip`) and cron `2.85 KiB` (`1.25 KiB gzip`), each below 65,536 KiB.
+
+### U8 implementation and review
+
+`/account/status` now reads only `getClientSelfStatus()` for the authenticated session; the refresh action has no caller-supplied IDs. The page uses the existing login layout, Card, Button, StatusBadge, Skeleton, ErrorState, fonts and semantic tokens. Pending checks wait 15 seconds, cap at 12 automatic attempts, pause while hidden/offline, resume without an immediate request, and share a one-in-flight guard with manual refresh. Approved-transition navigation rechecks the session/status and only permits `/`; direct approved states retain a manual home link. Rejected copy is generic and approved copy says approval is not activation. No P2 form UI or Realtime path was added.
+
+Cross-feature/finance/isolation review notes: the new SQL count is scoped by workspace/client and the composite subscription/client join; ambiguous history returns only `{status:"unavailable"}`. The function retains SECURITY DEFINER, empty search path, postgres ownership, revoked public/anon/service-role execute and authenticated execute grants. The client status path accepts no target IDs, relies on the self-status RPC/session association, does not expose ledger or commission fields, and introduces no cross-request cache. P2 form assignment and P4 activation remain outside the UI.
+
+### Frontend Design Gate
+
+Skill catalog read in full (55 entries). Skill review (APPLIES / NOT APPLICABLE; one-line reason):
+
+| Skill                        | Status                | Reason                                                                                                                        |
+| ---------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| apple-design                 | NOT APPLICABLE        | This is not an Apple-native surface and no motion direction was requested.                                                    |
+| ui-ux-pro-max                | APPLIES ? lookup only | Searched UX guidance for status refresh; no generated design system or persisted output used.                                 |
+| impeccable                   | APPLIES               | Loaded incumbent context, craft floor and one post-edit detector pass.                                                        |
+| frontend-design              | APPLIES               | Applied production UI guidance; DS overrides its font, palette and motion suggestions.                                        |
+| baseline-ui                  | APPLIES               | Reused existing primitives; its Tailwind requirement conflicts with this CSS-module project and was not adopted.              |
+| design-dna                   | NOT APPLICABLE        | No brand/system extraction or rebrand was requested.                                                                          |
+| genjutsu                     | NOT APPLICABLE        | No canvas or authored motion work is in scope.                                                                                |
+| emil-design-eng              | APPLIES               | Applied interaction-feedback and restraint guidance to the status controls.                                                   |
+| animate                      | NOT APPLICABLE        | The status flow specifies no authored animation.                                                                              |
+| animate-expo                 | NOT APPLICABLE        | This is a Next.js web app, not Expo.                                                                                          |
+| review-animations            | NOT APPLICABLE        | No new animation code was added.                                                                                              |
+| improve-animations           | NOT APPLICABLE        | No existing animation was changed.                                                                                            |
+| find-animation-opportunities | NOT APPLICABLE        | The approved flow does not call for motion.                                                                                   |
+| animation-vocabulary         | NOT APPLICABLE        | No motion direction needed translation.                                                                                       |
+| animation-performance        | NOT APPLICABLE        | No authored motion to optimize.                                                                                               |
+| prototype                    | NOT APPLICABLE        | The brief fixes one approved status flow; no alternatives were requested.                                                     |
+| mobile-native                | APPLIES               | Reviewed the 390px/touch surface; existing Button meets the project touch token. Physical-device testing remains unavailable. |
+| pick-ui-library              | NOT APPLICABLE        | Existing Design System components cover the surface; no library choice is needed.                                             |
+| ask-sonner                   | NOT APPLICABLE        | The flow uses inline status feedback, not toasts.                                                                             |
+| write-swift                  | NOT APPLICABLE        | No Swift/native code is in scope.                                                                                             |
+| break-ui                     | APPLIES               | Added tests for offline/hidden, unavailable, budget exhaustion and concurrent refresh cases.                                  |
+| better-ui                    | APPLIES               | Reused established page and component patterns.                                                                               |
+| better-typography            | APPLIES               | Uses root Geist/IBM Plex Sans Arabic font setup and existing hierarchy.                                                       |
+| better-colors                | APPLIES               | Uses existing semantic badge and surface tokens only.                                                                         |
+| better-accessibility         | APPLIES               | Native buttons/links, stable polite status region, alert denial and visible shared focus treatment.                           |
+| better-layout                | APPLIES               | Reuses the existing narrow login layout and responsive card behavior.                                                         |
+| better-interface             | APPLIES               | Reviewed the changed route/component and its callers; full U9 screenshot review remains open.                                 |
+| better-writing               | APPLIES               | Added concise bilingual state copy, with no activation or rejection-reason claims.                                            |
+| interface-review             | APPLIES               | Reviewed the changed UI diff and status flows; axe/rendered evidence remains open.                                            |
+| visual-style-presets         | NOT APPLICABLE        | Presets cannot override the approved LIFTER Design System.                                                                    |
+| glass-dark-ui                | NOT APPLICABLE        | Glass effects are outside the approved visual language.                                                                       |
+| progressive-blur             | NOT APPLICABLE        | No blur effect is needed.                                                                                                     |
+| motion-design                | NOT APPLICABLE        | No motion is specified.                                                                                                       |
+| css-animation                | NOT APPLICABLE        | No authored CSS animation was added.                                                                                          |
+| remotion-motion-graphics     | NOT APPLICABLE        | This is not a video composition.                                                                                              |
+| gsap-core                    | NOT APPLICABLE        | No GSAP animation is used.                                                                                                    |
+| threejs-fundamentals         | NOT APPLICABLE        | No 3D scene is used.                                                                                                          |
+| threejs-animation            | NOT APPLICABLE        | No 3D animation is used.                                                                                                      |
+| threejs-geometry             | NOT APPLICABLE        | No 3D geometry is needed.                                                                                                     |
+| threejs-interaction          | NOT APPLICABLE        | No 3D interaction is needed.                                                                                                  |
+| threejs-lighting             | NOT APPLICABLE        | No 3D lighting is needed.                                                                                                     |
+| threejs-loaders              | NOT APPLICABLE        | No 3D assets are loaded.                                                                                                      |
+| threejs-materials            | NOT APPLICABLE        | No 3D materials are used.                                                                                                     |
+| threejs-postprocessing       | NOT APPLICABLE        | No 3D postprocessing is used.                                                                                                 |
+| threejs-shaders              | NOT APPLICABLE        | No shader work is in scope.                                                                                                   |
+| threejs-textures             | NOT APPLICABLE        | No 3D textures are used.                                                                                                      |
+| gsap-frameworks              | NOT APPLICABLE        | The app uses React and no GSAP or non-React framework.                                                                        |
+| gsap-performance             | NOT APPLICABLE        | No GSAP code is used.                                                                                                         |
+| gsap-plugins                 | NOT APPLICABLE        | No GSAP plugins are used.                                                                                                     |
+| gsap-react                   | NOT APPLICABLE        | No GSAP integration is used.                                                                                                  |
+| gsap-scrolltrigger           | NOT APPLICABLE        | No scroll animation is specified.                                                                                             |
+| gsap-timeline                | NOT APPLICABLE        | No animation timeline is specified.                                                                                           |
+| gsap-utils                   | NOT APPLICABLE        | No GSAP utilities are used.                                                                                                   |
+| lottie                       | NOT APPLICABLE        | No Lottie asset or runtime is used.                                                                                           |
+| remotion-to-hyperframes      | NOT APPLICABLE        | No Remotion-to-video port is requested.                                                                                       |
+
+Design authority conflict: frontend-design recommends custom fonts/colors and motion; baseline-ui recommends Tailwind. `DESIGN.md`, existing tokens/components and CSS modules take precedence. No token, dependency, or motion change was made.
+
+Checklist (PASS/FAIL with evidence):
+
+- PASS ? Tokens/brand: no new color, spacing, radius or font values; existing semantic status tokens are retained.
+- PASS ? Typography/direction: root Geist and IBM Plex Sans Arabic; page direction follows locale; no mixed-direction values need Bidi.
+- PASS ? Layout/components: existing login layout, Card, Button, StatusBadge, Skeleton and ErrorState reused.
+- FAIL ? Contrast in rendered light/dark/sample brand colors: not rendered in this run.
+- PASS ? Keyboard/focus/touch by code: native Link/Button, shared visible focus, touch-min Button; reduced-motion behavior unchanged because no motion was added.
+- FAIL ? Axe and rendered screen-reader verification: not run.
+- PASS ? States/copy: pending, approved, rejected, denied, unavailable, loading, disabled/refreshing, exhausted budget and fallback are represented; Arabic/English parity test passes.
+- FAIL ? Screenshot matrix {AR-RTL, EN-LTR} ? {light,dark} ? {390px,1440px} for every F12 screen: no screenshots produced. `%TEMP%\lifter-f12-u9\` contains no evidence from this run.
+- PASS ? Dependencies/size: no dependency added; `npm run size` passed within the configured limit.
+
+### Earlier remaining-gate snapshot (superseded by S14 addenda below)
+
+At this snapshot, T042 real signup/session coverage, T043 Playwright/axe and the eight-cell screenshot matrix, T044 Q-M01..Q-M24, T045 full gates, T046 traceability review, T047 retained artifacts/CI, and T048 independent review were open. The latest S14 addenda complete the T043 UI matrix and focused journeys; T042 real F11 signup/session coverage, T044 Q-M01..Q-M24, the full integration and broad E2E gates, T046 traceability review, T047 CI evidence, and T048 independent review remain open. T003/T043/T044/T050..T054 run on Stack A under the session-14 ruling.
+
+## Design-skill applicability record end
+
+### S14 UI evidence addendum (latest; supersedes the earlier U9 attempt and rendered-UI FAIL rows above)
+
+- T043 focused Playwright rerun: `npx playwright test tests/e2e/registration-approval-a11y.spec.ts tests/e2e/registration-approval.spec.ts --workers=1` — **4 passed / 0 failed**. Stack A remained the verified `lifter` project (API 54321 / DB 54322); Playwright and Stack A were released after the run.
+- Axe ran on 11 rendered states: eight pending-status AR/EN × light/dark × mobile 390/desktop 1440 matrix cells, PO review, payment history/correction, and approved client status. **0 serious and 0 critical violations** in every scan. Rejected status was exercised but not separately axe-scanned.
+- Journey coverage: client/trainer staff-dashboard denials; Sales approval denial while payment capability remains; PO approval confirmation uses the first issued installment (400 XTS rather than 1,200 XTS total); client approved status; pre-activation second-installment collection guard; PO correction of the recorded first installment with WO correction unavailable; rejected status and PO reconsideration reflected on the same signed client session after manual refresh. T042 real F11 signup is still separately blocked by the integration harness requiring `SIGNUP_*`; these UI sessions use synthetic local fixture users and do not prove F11 signup. P4 activation/writer is outside scope, so successful collection after activation is not covered.
+- The PO review showed 400 XTS and the two installment amounts. The first payment screenshot captured a loading state; the rerun added settled-state waits and the final payment screenshot now shows the loaded history, recorded 400 XTS installment, correction control, and unpaid 800 XTS installment. Visual review of all eight status cells plus review and payment screenshots found no clipping, overflow, contrast, direction, or hierarchy issues. A visible duplicate pending label was found in the live region. An initial attempt used an undefined global class and did not hide it; the final fix imports `buttonStyles.srOnly` from `components/ui/Button.module.css`, preserving announcement semantics without a third visible label. The corrected matrix and staff states were rerun: 4 passed / 0 failed, with 11 axe scans and 0 serious/critical violations; the refreshed 10 PNGs replaced the prior copies in both evidence locations.
+- OS-temp screenshots: `%TEMP%\lifter-f12-u9`. Retained evidence: `tests/integration/evidence/f12-u9/` (10 PNGs):
+  - `registration-status-ar-light-mobile390.png`
+  - `registration-status-ar-light-desktop1440.png`
+  - `registration-status-ar-dark-mobile390.png`
+  - `registration-status-ar-dark-desktop1440.png`
+  - `registration-status-en-light-mobile390.png`
+  - `registration-status-en-light-desktop1440.png`
+  - `registration-status-en-dark-mobile390.png`
+  - `registration-status-en-dark-desktop1440.png`
+  - `registration-review-en-light-desktop1440.png`
+  - `registration-payment-correction-en-light-desktop1440.png`
+- UI verification checklist update: PASS — existing token/component usage, Geist/IBM Plex Sans Arabic, locale direction, responsive layouts, keyboard names/roles and focus, live region, bilingual copy/state handling; axe and screenshot review as above. PARTIAL — contrast with a sample workspace brand override was not separately captured; no tablet viewport was captured. No new dependency, motion, or token was added.
+- Focused source checks after the final UI changes: `npx vitest run tests/unit/registration-approval-status-page.test.ts tests/unit/registration-approval-components.test.ts` — 2 files / 17 tests passed; `npx tsc --noEmit` passed. Broad non-DB gates are owned by specs_gates.
+
+### S14 final-source gate rerun
+
+- Final-source non-DB gates passed: `npm run lint`; `npm run typecheck`; `npm test` — 75 files / 1,534 tests passed; `npm run build`; `npm run size`; and `npm run check:secrets`. Final web size: 7,216.38 KiB uncompressed / 1,497.23 KiB upload gzip (1,484.39 KiB worker gzip, within 65,536 KiB); cron worker: 2.85 KiB / 1.25 KiB gzip. Next.js emitted its existing middleware-to-proxy deprecation warning.
+- `npm run build:edge` also passed before the final `.srOnly` UI correction; the final-source `npm run build` passed after that correction. The edge build was not rerun on the final correction.
+- Final-source T043 focused run: 4 passed / 0 failed; 11 axe scans had 0 serious / 0 critical violations. Ten refreshed screenshots are retained at `%TEMP%\lifter-f12-u9\` and `tests/integration/evidence/f12-u9/` (eight status cells plus review and payment screens; filenames listed above).
+- Broad `npm run e2e` first failed during spec collection because the integration harness had no process-local API/DB credentials. It was rerun after a filtered, read-only Stack A status check (`project_id=lifter`, API 54321, DB 54322); only `API_URL`, `ANON_KEY`, `SERVICE_ROLE_KEY`, and `DB_URL` were passed to that child process. No `SIGNUP_*` values were supplied, and no raw status/env output or key was printed. Playwright reported 138 total: **80 passed / 39 failed / 8 skipped / 11 did not run**. U9 approval/status cases and signup-dependent client-account/registration-link journeys failed because the signup form fixtures did not initialize; this is not a green broad E2E gate.
+- Fresh Stack A full integration after reset/provisioning: `npm run test:integration` — **39 files; 991 passed / 81 failed / 42 skipped**. All 81 failures were setup errors because the child process lacked `SIGNUP_*`; the provisioner does not export values to its parent. No assertion failures were observed in those setup-failing tests. No secret value was read, copied, or emitted. The integration gate remains blocked.
+- Stack A DB password classification: `default` (classification only; no password value recorded).
+- Remaining verification: resolve the approved non-printing child-process provisioning path for `SIGNUP_*`, rerun full integration and broad E2E, complete T042 real F11 signup/session coverage and T044 Q-M01–Q-M24 mutation checks, then finish T045–T048 review/evidence. No merge/PR is authorized by this record.
+
+### S14 follow-up mutation evidence (DB-free)
+
+- Q-M14 client-status cache mutation: changed `lib/client-access/status.ts` temporarily to use a module-global cached promise across requests instead of the request-scoped reader. Detector: `npx vitest run tests/unit/client-access.test.ts`. RED: 3 failed / 3 passed; approved and rejected status reads returned stale `pending-approval`, and the anonymous read returned the cached pending result instead of `not_permitted`. The original request-scoped implementation was restored immediately. GREEN: 1 file / 6 tests passed.
+- Q-M24 payment request-key mutation: extracted the existing operation-and-obligation keyed retry store to `components/registration-approval/payment-request-keys.ts` and added `tests/unit/registration-approval-payment-request-keys.test.ts`. Contract from `quickstart.md`: retries for the same collection/correction and obligation must retain the canonical request key; different actions or obligations get distinct keys. Mutant returned a newly generated key on every call. Detector: `npx vitest run tests/unit/registration-approval-payment-request-keys.test.ts`. RED: 1 failed; the retry for the same collection expected `collection-key` but received the subsequent `correction-key`. The stable keyed map implementation was restored. GREEN: `npx vitest run tests/unit/registration-approval-payment-request-keys.test.ts tests/unit/registration-approval-components.test.ts` passed 2 files / 10 tests; `npx tsc --noEmit` passed.
+- Scope: these are DB-free unit mutations. Stack A Q-M cases are not represented as newly completed by this addendum. Existing DB-backed Q-M rows recorded above are historical evidence only; remaining Stack A mutations require the authorized Stack A fixture and a passing `SIGNUP_*` setup. No Stack B/C or `.env*` access was used.
+
+### Final-source non-DB gates at 19c1d1d
+
+- Reverified on HEAD `19c1d1de10749b97ab2cd11b7c3be935ae2ac386`, branch `012-registration-approval-stage2`: `npm run lint`, `npm run typecheck`, `npm test` (**76 files / 1,535 tests passed**), `npm run build`, `npm run size`, and `npm run check:secrets` all passed.
+- Size result: web 7,216.38 KiB uncompressed / 1,497.23 KiB upload gzip (1,484.39 KiB worker gzip; 65,536 KiB limit); cron 2.85 KiB / 1.25 KiB gzip. Build emitted the existing Next.js middleware-to-proxy deprecation warning.
+- These final-source checks did not run integration or E2E and did not read/load `.env*` files. Earlier integration and broad E2E outcomes remain as recorded above.
+
+### S14 Stack A Q-M mutation evidence
+
+Each database mutation below ran serially on verified Stack A (`lifter`, API 54321 / DB 54322). Before each mutation phase, a filtered read-only `supabase status -o json` check verified API/DB ports; the process-only env loader supplied integration credentials without displaying values. Each canonical function was restored in `finally`, then its focused detector was rerun GREEN. No migration file was edited for a mutation.
+
+| Mutation | Reversible defect                                                                                                                                             | RED detector                                                                                                                                                                                    | Restored GREEN        |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| M08      | Paired operation and validator mutant recalculated reversal commission using current catalog rate after publishing rate 5,000 over the issued 17 bp snapshot. | `registration-approval-corrections.test.ts`, Q-M08: 1 failed / 12 skipped; expected reversal commission `-1`, received `-200`.                                                                  | 1 passed / 12 skipped |
+| M09      | Paired role capability, actor authorization, and U4 correction gate mutants allowed workspace-owner correction.                                               | `registration-approval-corrections.test.ts -t 'T019 woA cannot correct'`: 1 failed / 12 skipped; returned `ok` instead of `not_permitted`.                                                      | 1 passed / 12 skipped |
+| M15      | Safe payment-status projection exposed `commission_rate_bp` from the subscription.                                                                            | `registration-approval-reads.test.ts -t 'Sales without commission'`: 1 failed / 7 skipped at sensitive-field assertion.                                                                         | 1 passed / 7 skipped  |
+| M16a     | Pre-activation projection derived later due dates from subscription creation time.                                                                            | `registration-approval-activation.test.ts -t 'later due dates are undefined'`: 1 failed / 1 skipped; dates appeared before activation.                                                          | 1 passed / 1 skipped  |
+| M16b     | Projection replaced issued custom offsets with `(seq-1)*30`.                                                                                                  | `registration-approval-activation.test.ts -t 'exact custom offsets'`: 1 failed / 1 skipped; projected November 24 / December 24 instead of November 11 / December 17.                           | 1 passed / 1 skipped  |
+| M19      | Flexible RPC omitted upfront-to-row-one and declared-count-to-array-length checks while retaining authoritative total check.                                  | `registration-links-flexible.test.ts -t 'T050 rejects'`: 2 failed / 1 passed / 2 skipped; invalid upfront and count requests were accepted.                                                     | 3 passed / 2 skipped  |
+| M21      | Collection operation omitted the earlier-installment-currently-paid guard while retaining activation check.                                                   | `registration-approval-payments.test.ts -t 'later sequence requires every earlier obligation currently paid'`: 1 failed / 18 skipped; seq 3 was collected before earlier obligations were paid. | 1 passed / 18 skipped |
+| M22a     | Paired operation and deferred-validator mutant booked correction in the original collection month.                                                            | `registration-approval-corrections.test.ts -t 'correction negates stored original exactly'`: 1 failed / 12 skipped; effective date `1900-01-01` instead of fresh Cairo date `2026-10-30`.       | 1 passed / 12 skipped |
+| M22b     | Exact replay mutant regenerated event ID and returned a receipt timestamp one month later.                                                                    | `registration-approval-replay.test.ts -t 'exact correction replay is stable'`: 1 failed / 16 skipped; replay returned November 30 instead of original October 30 receipt.                       | 1 passed / 16 skipped |
+
+M22b simulates the next-month replay response by shifting the stored receipt timestamp; the local integration test does not advance the database wall clock across a month boundary. The existing assertion checks byte-for-byte replay stability and database state. M19 uses forward migration `20261101131000_flexible_registration_link_terms_forward.sql`: the T051 planned timestamp `20261101124000` conflicts with the binding immutable-pushed-migrations rule, so the wrapper follows the existing pushed `20261101130000` migration. The wrapper contract is explicit in the F12 flexible-installment addendum; no additional migration was required.
+
+### Final S14 combined-worktree verification
+
+- Full latest-source integration: **39 files passed / 1 skipped; 1,122 tests passed / 1 skipped / 0 failed**. Full broad E2E: **129 passed / 9 skipped / 0 failed**. T042 real signup/session focused coverage: **45 / 45 passed**. Stack A only (`lifter`, API 54321 / DB 54322); password classification: **default**.
+- Final-source non-DB gates on the combined worktree at HEAD `0cde120dd66e23d9c438784b8b758862363d46af`: `npm run lint`, `npm run typecheck`, `npm test` (**76 files / 1,535 tests passed**), `npm run build`, `npm run size`, and `npm run check:secrets` all passed. Web size: 7,216.38 KiB uncompressed / 1,497.23 KiB upload gzip (1,484.39 KiB worker gzip; 65,536 KiB limit); cron: 2.85 KiB / 1.25 KiB gzip. The existing middleware-to-proxy deprecation warning remains.
+- U9 tablet and workspace-brand visual/accessibility coverage: **32 / 32 passed**; axe and contrast checks passed. The earlier 11 axe scans recorded 0 serious / 0 critical findings. Brand contrast now has rendered evidence. Screenshots are stored under `%TEMP%\lifter-f12-u9\` and retained in `tests/integration/evidence/f12-u9/`: eight mobile/desktop status images, four 768×1024 tablet status images, four workspace-brand AR/EN light/dark images, and the review/payment images. New retained paths: `tests/integration/evidence/f12-u9/registration-status-ar-light-tablet768x1024.png`, `registration-status-ar-dark-tablet768x1024.png`, `registration-status-en-light-tablet768x1024.png`, `registration-status-en-dark-tablet768x1024.png`, `workspace-brand-ar-light.png`, `workspace-brand-ar-dark.png`, `workspace-brand-en-light.png`, and `workspace-brand-en-dark.png`. The retained directory contains 18 PNGs.
+- Mutation coverage recorded across this report: M08, M09, M14, M15, M16a/b, M19, M21, M22a/b, and M24 each produced a failing detector under the documented mutant and were restored to GREEN; Stack A DB mutation details remain in the earlier mutation tables/addenda. No live mutant remains.
+- Migration names/status: `20261101124000_flexible_registration_link_terms.sql` is the reserved/planned timestamp and was not edited; immutable `20261101125000_registration_approval_correction_read.sql` remains unchanged; `20261101130000_registration_approval_correction_ambiguity.sql` implements the fixed ambiguity result; `20261101131000_flexible_registration_link_terms_forward.sql` is the additive wrapper migration. No historical migration was modified.
+- This addendum records full latest-source integration, broad E2E, T042, tablet/brand, mutation, and non-DB coverage and supersedes earlier S14 setup-blocker counts for those gates. No `.env*` file was manually opened, displayed, copied, or staged; the integration process loaded the provisioned stack env in-process, with values redacted from output. Final commits and push follow this review.

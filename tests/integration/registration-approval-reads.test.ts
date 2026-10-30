@@ -22,6 +22,7 @@ it('T023 exposes only narrow, owned, search-path-pinned RPC readers', async () =
   const expected = [
     'registration_approval_queue(uuid,uuid,integer)',
     'registration_approval_review(uuid,uuid)',
+    'registration_approval_correction(uuid,uuid)',
     'workspace_payment_queue(uuid,uuid,integer)',
     'subscription_payment_status(uuid,uuid,uuid)',
     'subscription_commission(uuid,uuid)',
@@ -43,6 +44,51 @@ it('T023 exposes only narrow, owned, search-path-pinned RPC readers', async () =
       auth_exec: true,
       service_exec: false,
     });
+  }
+});
+
+it('T035 exposes a PO-only column-limited correction projection for the initial subscription', async () => {
+  const result = await f.actors.po.client.rpc(
+    'registration_approval_correction',
+    { workspace_id: f.wsA.id, client_id: p.t.id },
+  );
+  expect(result.error).toBeNull();
+  expect(result.data).toEqual({
+    status: 'ok',
+    subscription_id: p.sid,
+    corrections: {
+      '1': {
+        obligation_id: expect.any(String),
+        revision: expect.any(Number),
+        tail_event_id: expect.any(String),
+      },
+    },
+  });
+  expect(JSON.stringify(result.data)).not.toMatch(
+    /email|name|amount|currency|commission|recorded_by|kind/i,
+  );
+  for (const [name, actor] of Object.entries(f.actors)) {
+    if (name === 'po' || name === 'anon' || !actor.client) continue;
+    const denied = await actor.client.rpc('registration_approval_correction', {
+      workspace_id: f.wsA.id,
+      client_id: p.t.id,
+    });
+    expect(denied.error, name).toBeNull();
+    expect(denied.data, name).toEqual({ status: 'not_permitted' });
+  }
+  for (const target of [
+    { workspace_id: f.wsB.id, client_id: p.t.id },
+    {
+      workspace_id: f.wsA.id,
+      client_id: '00000000-0000-0000-0000-000000000000',
+    },
+  ]) {
+    const denied = await f.actors.po.client.rpc(
+      'registration_approval_correction',
+      target,
+    );
+    expect(denied.error).toBeNull();
+    expect(denied.data).toEqual({ status: 'not_permitted' });
   }
 });
 
@@ -78,6 +124,22 @@ it('T023 authorizes PO only for a real workspace, owners by active membership, S
     });
     expect(result.data).toEqual({ status: 'not_permitted' });
   }
+});
+
+it('T023 represents obligations without a collection event as unpaid', async () => {
+  const result = await f.actors.po.client.rpc('subscription_payment_status', {
+    workspace_id: f.wsA.id,
+    client_id: p.t.id,
+    subscription_id: p.sid,
+  });
+
+  expect(result.error).toBeNull();
+  expect(result.data).toMatchObject({ status: 'ok' });
+  expect(
+    (
+      result.data as { obligations: Array<{ paid: boolean | null }> }
+    ).obligations.map((obligation) => obligation.paid),
+  ).toEqual([true, false, false]);
 });
 
 it('T023 all queue and review projections enforce their role gates and omit commission', async () => {

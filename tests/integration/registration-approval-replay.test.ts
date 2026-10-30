@@ -1,5 +1,7 @@
 ﻿import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, expect, it } from 'vitest';
+import { createRecoveryClientTarget } from './client-accounts-fixture';
+import { admin } from './harness';
 import {
   bought,
   paymentRequest,
@@ -22,6 +24,17 @@ import {
   type Result,
 } from './registration-approval-operations-fixture';
 const db = sql();
+it('T042 global Auth revocation prevents a real F11 client session from refreshing', async () => {
+  const context = await clientContext();
+  const target = await createRecoveryClientTarget(context);
+  const session = await target.client.auth.getSession();
+  const accessToken = session.data.session?.access_token;
+  expect(accessToken).toBeTruthy();
+  const revoked = await admin().auth.admin.signOut(accessToken!, 'global');
+  expect(revoked.error).toBeNull();
+  const refresh = await target.client.auth.refreshSession();
+  expect(refresh.error).not.toBeNull();
+});
 it('T020 distinct-key concurrent correction serializes to one success and one stale', async () => {
   const p = await bought(f);
   const results = await Promise.all([
