@@ -12,13 +12,13 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 | D-06 | Hosting | Next.js + Cloudflare + serverless, $0 recurring initially, Supabase Free validated in P0 |
 | D-07 | Scope | All approved features preserved; the pilot sequences and never removes Full Launch scope. P0 includes the Design System. |
 | D-08 | Accounts | Client email and phone globally unique. Duplicate → only "This email is already registered. Contact support." No verification code, no workspace disclosure, no merge or transfer. |
-| D-09 | Permissions | PO, WO, Sales: approve registrations, record renewals and installment payments, manage freezes, configure installment schedules on links. Trainers: generate links with approved settings. Superseded by F13-1/F13-4 (s13 PO decisions, §3(a)). |
+| D-09 | Permissions | PO, WO, Sales: approve registrations, record renewals and installment payments, manage freezes, configure installment schedules on links. Trainers: generate links with approved settings. Superseded in part by PO decisions Session 12 (2026-10-29) F13-1 and F13-4=A (Trainer may Freeze and STOP/REMOVE). |
 | D-10 | Refunds & deletion | Platform Owner only |
 | D-11 | Pricing & durations | Only PO sets/changes prices and durations. 1/3/6/8/12 months (month = 30 days) or custom days. |
 | D-12 | Installments | Schedule configured on the link (PO/WO/Sales). Overdue → plans restricted, login kept, notices sent, access resumes on confirmed payment. |
 | D-13 | Commission | Earned per confirmed collected payment at the purchase-time rate and price snapshot. Unpaid balance earns nothing. Payment belongs to its collection month. |
 | D-14 | Backups | Encrypted local DB + storage exports with restore testing, $0 |
-| D-15 | Refunds | **Full refund only** = 100% of the amount actually collected. Reverse all collected revenue and commission, cancel unpaid installments, keep immutable history. No partial refunds. Superseded by the F13 refund ledger redesign (s13 PO decisions, §3(b)). |
+| D-15 | Refunds | **Full refund only** = 100% of the amount actually collected. Reverse all collected revenue and commission, cancel unpaid installments, keep immutable history. No partial refunds. Superseded by PO decisions Session 12 (2026-10-29): multiple legitimate partial refunds allowed, cumulative refunds capped at actual unrefunded collections; refined by Session 13 Final PO APPROVAL (FIFO allocation; further partial refunds after deactivation). |
 | D-16 | Identities | Staff and client accounts use separate emails. No dual-role accounts. |
 | D-17 | Installment total | Installment amounts must sum exactly to the PO-approved price |
 | D-18 | Design System | [DESIGN.md](../DESIGN.md) approved (2026-10-27): emerald `#059669` default brand (not lime), workspace-customizable colors with WCAG 2.2 AA contrast guard, dark + light modes (device first, manual choice persisted). Constitution VIII amended to v1.1.0. Open items in DESIGN.md §11 stay open. |
