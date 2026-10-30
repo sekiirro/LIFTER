@@ -33,7 +33,12 @@
       "specs/015-forms-intake/contracts/retention-and-alerts.md"
     ],
     "ar": "هنطلب منك بيانات صحية ولياقة عشان إعداد ومتابعة خطتك. الوصول للبيانات بيكون حسب الصلاحيات المعتمدة، وعمليات الاطلاع الحساسة بتتسجل للمراجعة.",
-    "en": "We will ask for health and fitness information to prepare and manage your plan. Access follows approved permissions, and sensitive access is recorded for review."
+    "en": "We will ask for health and fitness information to prepare and manage your plan. Access follows approved permissions, and sensitive access is recorded for review.",
+    "title_status": "DRAFT — proposed title pending PO approval",
+    "title": {
+      "ar": "عن بياناتك الصحية",
+      "en": "About your health data"
+    }
   },
   "P3_consent": {
     "signup": "creates pending account without T&C consent",
