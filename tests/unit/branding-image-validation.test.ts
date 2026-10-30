@@ -150,6 +150,14 @@ function webpFixture(
   return options.truncate ? result.subarray(0, result.length - 2) : result;
 }
 
+function simpleWebpFixture(): Buffer {
+  const frame = Buffer.from([0x10, 0, 0, 0x9d, 0x01, 0x2a, 1, 0, 1, 0]);
+  const body = Buffer.concat([Buffer.from('WEBP'), webpChunk('VP8 ', frame)]);
+  const riffSize = Buffer.alloc(4);
+  riffSize.writeUInt32LE(body.length);
+  return Buffer.concat([Buffer.from('RIFF'), riffSize, body]);
+}
+
 function validate(bytes: Uint8Array) {
   return validateBrandingImage(bytes, { role: 'logo', limits: LIMITS });
 }
@@ -203,6 +211,16 @@ describe('branding image validation contract', () => {
     expect(result.contentHash).toBe(
       createHash('sha256').update(expected).digest('hex'),
     );
+  });
+
+  it('preserves the image chunk in a simple WebP without VP8X', () => {
+    const expected = simpleWebpFixture();
+    const result = validate(expected);
+
+    expect(Buffer.from(result.bytes)).toEqual(expected);
+    expect(result.bytes.length).toBeGreaterThan(12);
+    expect(result.width).toBe(1);
+    expect(result.height).toBe(1);
   });
 
   it('rejects invalid magic, unsupported formats and SVG', () => {

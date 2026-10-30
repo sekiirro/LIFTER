@@ -270,7 +270,7 @@ describe('cron edge wiring', () => {
     }
   });
 
-  it('registers the scheduled drain with waitUntil', async () => {
+  it('registers the drain and branding garbage collection independently', async () => {
     vi.stubGlobal(
       'fetch',
       vi.fn<typeof fetch>().mockImplementation(async () => Response.json([])),
@@ -285,8 +285,10 @@ describe('cron edge wiring', () => {
         },
         { waitUntil },
       );
-      expect(waitUntil).toHaveBeenCalledOnce();
-      await waitUntil.mock.calls[0]?.[0];
+      expect(waitUntil).toHaveBeenCalledTimes(2);
+      await Promise.allSettled(
+        waitUntil.mock.calls.map(([promise]) => promise),
+      );
     } finally {
       vi.unstubAllGlobals();
     }

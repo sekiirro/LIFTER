@@ -6,12 +6,8 @@ import type { ExecutionContext, ScheduledController } from './types';
 
 const worker = {
   scheduled(_event: ScheduledController, env: Env, ctx: ExecutionContext) {
-    ctx.waitUntil(
-      Promise.all([
-        drain({ rpc: createRpc(env), handlers }),
-        runBrandingGc(createBrandingGc(env)),
-      ]),
-    );
+    ctx.waitUntil(drain({ rpc: createRpc(env), handlers }));
+    ctx.waitUntil(runBrandingGc(createBrandingGc(env)));
   },
 };
 

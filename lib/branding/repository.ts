@@ -123,8 +123,7 @@ export function createSupabaseBrandingRepository(
       if (!current)
         throw new Error('Branding publication missing after publish');
       const previous = asVersion(workspaceId, before.current_publication);
-      return previous &&
-        JSON.stringify(previous.fields) === JSON.stringify(current.fields)
+      return previous && previous.sequence === current.sequence
         ? { status: 'unchanged', current }
         : { status: 'published', current };
     },

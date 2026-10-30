@@ -338,8 +338,8 @@ function webp(
       cleanExtended[8] = cleanExtended[8]! & ~0x2c;
       kept.push(cleanExtended);
     } else kept.push(vp8xChunk!);
-    kept.push(...retained);
   }
+  kept.push(...retained);
   return result(
     bytes,
     kept,
