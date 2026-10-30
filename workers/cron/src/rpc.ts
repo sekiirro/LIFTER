@@ -5,7 +5,7 @@ export type Env = {
   SUPABASE_SERVICE_ROLE_KEY: string;
 };
 
-export function createRpc(env: Env): Rpc {
+export function createRpc(env: Env, fetcher: typeof fetch = fetch): Rpc {
   let url: URL;
   try {
     url = new URL(env.SUPABASE_URL);
@@ -23,7 +23,7 @@ export function createRpc(env: Env): Rpc {
   }
 
   return async (name, args) => {
-    const response = await fetch(
+    const response = await fetcher(
       `${env.SUPABASE_URL.replace(/\/$/, '')}/rest/v1/rpc/${name}`,
       {
         method: 'POST',

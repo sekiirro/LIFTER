@@ -1,9 +1,11 @@
 import 'server-only';
 import { createAdminClient } from '../supabase/admin';
 import { createServerAuthLockoutStore } from './refund-auth-lockout-store';
-
-const BAN_DURATION = '876000h';
-const MAX_BACKOFF_MS = 24 * 60 * 60 * 1000;
+import {
+  AUTH_LOCKOUT_BAN_DURATION,
+  authLockoutRetryAt,
+  authLockoutSafeErrorCode,
+} from './refund-auth-lockout-policy';
 
 export type AuthLockoutJob = {
   id: string;
@@ -39,17 +41,6 @@ export type AuthLockoutResult =
   | { status: 'already_succeeded' }
   | { status: 'retry_scheduled'; attempt: number };
 
-function safeErrorCode(error: unknown): string {
-  if (
-    typeof error === 'object' &&
-    error !== null &&
-    'code' in error &&
-    (error as { code?: unknown }).code === 'provider_unavailable'
-  )
-    return 'provider_unavailable';
-  return 'auth_admin_unavailable';
-}
-
 /** Applies the retryable Supabase Auth lockout after its refund transaction commits. */
 export async function runAuthLockout(
   job: AuthLockoutJob,
@@ -65,19 +56,19 @@ export async function runAuthLockout(
 
   try {
     const result = await deps.authAdmin.updateUserById(job.authUserId, {
-      ban_duration: BAN_DURATION,
+      ban_duration: AUTH_LOCKOUT_BAN_DURATION,
     });
     if (result.error) throw result.error;
     await deps.store.markSucceeded(job.id, deps.now());
     return { status: 'succeeded' };
   } catch (error) {
     const attempt = job.attempts + 1;
-    const backoffMs = Math.min(2 ** attempt * 60_000, MAX_BACKOFF_MS);
+    const attemptAt = deps.now();
     await deps.store.markRetry({
       id: job.id,
       attempt,
-      retryAt: new Date(deps.now().getTime() + backoffMs),
-      safeErrorCode: safeErrorCode(error),
+      retryAt: authLockoutRetryAt(attempt, attemptAt),
+      safeErrorCode: authLockoutSafeErrorCode(error),
     });
     if (attempt >= deps.alertAfterAttempts)
       await deps.alert?.({

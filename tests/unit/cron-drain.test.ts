@@ -1,4 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
+import { readFileSync } from 'node:fs';
 import {
   drain,
   JobError,
@@ -7,6 +8,12 @@ import {
 } from '../../workers/cron/src/drain';
 import { createRpc } from '../../workers/cron/src/rpc';
 import worker from '../../workers/cron/src';
+import { drainRefundAuthLockouts } from '../../workers/cron/src/refund-auth-lockout';
+import {
+  AUTH_LOCKOUT_BAN_DURATION,
+  authLockoutRetryAt,
+  authLockoutSafeErrorCode,
+} from '../../lib/payments/refund-auth-lockout-policy';
 
 const job = (id: string, kind = 'system.noop'): Job => ({
   id,
@@ -172,6 +179,14 @@ describe('cron drain (T004)', () => {
 });
 
 describe('cron edge wiring', () => {
+  it('configures the existing cron Worker for a one-minute tick', () => {
+    const config = readFileSync(
+      new URL('../../workers/cron/wrangler.jsonc', import.meta.url),
+      'utf8',
+    );
+    expect(config).toMatch(/"crons"\s*:\s*\[\s*"\* \* \* \* \*"\s*\]/);
+  });
+
   it.each(['http://example.test', 'not a url', 'ftp://example.test', ''])(
     'rejects insecure RPC URL %s before fetching',
     (url) => {
@@ -271,10 +286,14 @@ describe('cron edge wiring', () => {
   });
 
   it('registers the scheduled drain with waitUntil', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn<typeof fetch>().mockResolvedValue(Response.json([])),
-    );
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async (input) =>
+        String(input).includes('alert_expired_refund_auth_lockouts')
+          ? Response.json(0)
+          : Response.json([]),
+      );
+    vi.stubGlobal('fetch', fetchMock);
     const waitUntil = vi.fn<(promise: Promise<unknown>) => void>();
     try {
       worker.scheduled(
@@ -289,6 +308,143 @@ describe('cron edge wiring', () => {
       await waitUntil.mock.calls[0]?.[0];
     } finally {
       vi.unstubAllGlobals();
+    }
+  });
+
+  it('runs the bounded refund lockout drain and five-minute alert sweep on every tick', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async (input) =>
+        String(input).includes('alert_expired_refund_auth_lockouts')
+          ? Response.json(0)
+          : Response.json([]),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const result = await drainRefundAuthLockouts(
+        {
+          SUPABASE_URL: 'https://example.test',
+          SUPABASE_SERVICE_ROLE_KEY: 'test-runtime-key',
+        },
+        { limit: 7, now: () => new Date('2026-10-30T12:05:00.000Z') },
+      );
+      expect(result).toEqual({ alerted: 0, claimed: 0, failed: 0 });
+      expect(
+        fetchMock.mock.calls.map(([url, init]) => [url, init?.body]),
+      ).toEqual([
+        [
+          'https://example.test/rest/v1/rpc/alert_expired_refund_auth_lockouts',
+          '{"p_limit":7,"p_checked_at":"2026-10-30T12:05:00.000Z"}',
+        ],
+        [
+          'https://example.test/rest/v1/rpc/claim_refund_auth_lockout_jobs',
+          '{"p_limit":7}',
+        ],
+      ]);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('records only an allow-listed retry code when Auth Admin returns private provider text', async () => {
+    const bodies: string[] = [];
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async (input, init) => {
+        const url = String(input);
+        const body = String(init?.body ?? '');
+        if (url.includes('/rpc/alert_expired_refund_auth_lockouts'))
+          return Response.json(0);
+        if (url.includes('/rpc/claim_refund_auth_lockout_jobs'))
+          return Response.json([
+            {
+              id: '00000000-0000-4000-8000-000000000001',
+              auth_user_id: '00000000-0000-4000-8000-000000000002',
+              attempts: 0,
+              status: 'pending',
+            },
+          ]);
+        if (url.includes('/auth/v1/admin/users/'))
+          return new Response('private provider error email@example.test', {
+            status: 503,
+          });
+        bodies.push(body);
+        return Response.json(true);
+      });
+    const result = await drainRefundAuthLockouts(
+      {
+        SUPABASE_URL: 'https://example.test',
+        SUPABASE_SERVICE_ROLE_KEY: 'test-runtime-key',
+      },
+      { now: () => new Date('2026-10-30T12:00:00.000Z'), fetcher: fetchMock },
+    );
+
+    expect(result).toEqual({ alerted: 0, claimed: 1, failed: 1 });
+    expect(bodies).toContain(
+      '{"p_id":"00000000-0000-4000-8000-000000000001","p_attempt":1,"p_retry_at":"2026-10-30T12:02:00.000Z","p_safe_error_code":"provider_unavailable"}',
+    );
+    expect(JSON.stringify(bodies)).not.toContain('private provider error');
+    expect(JSON.stringify(bodies)).not.toContain('email@example.test');
+  });
+
+  it('uses the same Auth lockout ban, safe-error and exponential-backoff policy as the server worker', () => {
+    expect(AUTH_LOCKOUT_BAN_DURATION).toBe('876000h');
+    expect(authLockoutRetryAt(1, new Date('2026-10-30T12:00:00.000Z'))).toEqual(
+      new Date('2026-10-30T12:02:00.000Z'),
+    );
+    expect(authLockoutRetryAt(3, new Date('2026-10-30T12:00:00.000Z'))).toEqual(
+      new Date('2026-10-30T12:08:00.000Z'),
+    );
+    expect(authLockoutSafeErrorCode({ code: 'provider_unavailable' })).toBe(
+      'provider_unavailable',
+    );
+    expect(
+      authLockoutSafeErrorCode({ message: 'secret provider payload' }),
+    ).toBe('auth_admin_unavailable');
+  });
+
+  it('schedules both drains for every minute tick with a bounded Auth batch', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async (input) =>
+        String(input).includes('alert_expired_refund_auth_lockouts')
+          ? Response.json(0)
+          : Response.json([]),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    vi.useFakeTimers();
+    vi.setSystemTime(new Date('2026-10-30T12:00:00.000Z'));
+    const waitUntil = vi.fn<(promise: Promise<unknown>) => void>();
+    try {
+      worker.scheduled(
+        { scheduledTime: 0, cron: '* * * * *', noRetry() {} },
+        {
+          SUPABASE_URL: 'https://example.test',
+          SUPABASE_SERVICE_ROLE_KEY: 'test-runtime-key',
+        },
+        { waitUntil },
+      );
+      expect(waitUntil).toHaveBeenCalledOnce();
+      await waitUntil.mock.calls[0]?.[0];
+      const rpcCalls = fetchMock.mock.calls.map(([url, init]) => [
+        url,
+        init?.body,
+      ]);
+      expect(rpcCalls).toContainEqual([
+        'https://example.test/rest/v1/rpc/alert_expired_refund_auth_lockouts',
+        '{"p_limit":25,"p_checked_at":"2026-10-30T12:00:00.000Z"}',
+      ]);
+      expect(rpcCalls).toContainEqual([
+        'https://example.test/rest/v1/rpc/claim_refund_auth_lockout_jobs',
+        '{"p_limit":25}',
+      ]);
+      expect(rpcCalls).toContainEqual([
+        'https://example.test/rest/v1/rpc/jobs_claim',
+        '{"batch":25}',
+      ]);
+    } finally {
+      vi.unstubAllGlobals();
+      vi.useRealTimers();
     }
   });
 });
