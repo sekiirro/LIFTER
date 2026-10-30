@@ -153,9 +153,15 @@ export function BrandEditor({
             {m['branding.uploadGuidancePrefix']}
             <Bidi dir="ltr">{m['branding.uploadGuidanceFormats']}</Bidi>{' '}
             {m['branding.uploadDimensionPrefix']}
-            <Bidi dir="ltr">2100 × 1050 px</Bidi>
+            <Bidi dir="ltr">1600 × 800 px</Bidi>
+            {m['branding.uploadDimensionRatioPrefix']}
+            <Bidi dir="ltr">2:1</Bidi>
             {m['branding.uploadDimensionSuffix']}
-            <Bidi dir="ltr">3.63:1</Bidi>
+            <Bidi dir="ltr">cover</Bidi>
+            {m['branding.uploadCoverSuffix']}
+            <Bidi dir="ltr">630 × 288 px</Bidi>
+            {m['branding.uploadGuidanceRatioPrefix']}
+            <Bidi dir="ltr">2.19:1</Bidi>
             {m['branding.uploadGuidanceSuffix']}
           </p>
           <div className={styles.fields}>

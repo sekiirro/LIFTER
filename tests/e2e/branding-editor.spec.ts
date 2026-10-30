@@ -1,10 +1,12 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { copyFile, mkdir } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { mkdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const screenshotDirectory = join(tmpdir(), `lifter-f14-editor-${process.pid}`);
 
 async function expectAxeClean(page: Page) {
   const report = await new AxeBuilder({ page })
@@ -23,7 +25,7 @@ for (const locale of ['ar', 'en'] as const) {
       test(`${locale}/${theme}/${viewport.name}: editor and live preview`, async ({
         page,
         context,
-      }, testInfo) => {
+      }) => {
         await page.setViewportSize(viewport);
         await context.addCookies([
           { name: LOCALE_COOKIE, value: locale, url: origin },
@@ -57,7 +59,7 @@ for (const locale of ['ar', 'en'] as const) {
         );
         await expect(
           page.locator('[data-upload-guidance-draft] bdi'),
-        ).toHaveCount(3);
+        ).toHaveCount(6);
         await expect(
           page.locator('[data-upload-guidance-draft] bdi').first(),
         ).toHaveAttribute('dir', 'ltr');
@@ -132,20 +134,15 @@ for (const locale of ['ar', 'en'] as const) {
             locale === 'ar' ? 'النادي المنشور' : 'Published Club',
           );
           await expectAxeClean(page);
-          const previewCommitted = join(
-            process.cwd(),
-            'tests',
-            'integration',
-            'evidence',
-            'f14-ui',
+          const previewTemporary = join(
+            screenshotDirectory,
             `editor-preview-${locale}-${theme}-${viewport.name}.png`,
           );
-          const previewTemporary = testInfo.outputPath(
-            `editor-preview-${locale}-${theme}-${viewport.name}.png`,
-          );
-          await mkdir(dirname(previewCommitted), { recursive: true });
+          await mkdir(screenshotDirectory, { recursive: true });
+          await page.addStyleTag({
+            content: 'nextjs-portal { display: none !important; }',
+          });
           await page.screenshot({ path: previewTemporary, fullPage: true });
-          await copyFile(previewTemporary, previewCommitted);
           const staffTab = page.locator('[data-preview-tab="staff"]');
           await staffTab.click();
           await expect(
@@ -165,20 +162,15 @@ for (const locale of ['ar', 'en'] as const) {
         }
         await expectAxeClean(page);
 
-        const committed = join(
-          process.cwd(),
-          'tests',
-          'integration',
-          'evidence',
-          'f14-ui',
+        const temporary = join(
+          screenshotDirectory,
           `editor-${locale}-${theme}-${viewport.name}.png`,
         );
-        const temporary = testInfo.outputPath(
-          `editor-${locale}-${theme}-${viewport.name}.png`,
-        );
-        await mkdir(dirname(committed), { recursive: true });
+        await mkdir(screenshotDirectory, { recursive: true });
+        await page.addStyleTag({
+          content: 'nextjs-portal { display: none !important; }',
+        });
         await page.screenshot({ path: temporary, fullPage: true });
-        await copyFile(temporary, committed);
       });
     }
   }

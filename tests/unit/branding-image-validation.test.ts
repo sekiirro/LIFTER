@@ -174,6 +174,25 @@ describe('branding image validation contract', () => {
     });
   });
 
+  it('accepts the recommended 1600 by 800 banner without changing banner limits', () => {
+    const result = validateBrandingImage(
+      pngFixture({ width: 1600, height: 800 }),
+      {
+        role: 'banner',
+      },
+    );
+
+    expect(result).toMatchObject({ width: 1600, height: 800 });
+    expect(BRANDING_IMAGE_LIMITS.banner).toEqual({
+      maxIngressBytes: 8 * 1024 * 1024,
+      maxOutputBytes: 8 * 1024 * 1024,
+      maxWidth: 4096,
+      maxHeight: 2048,
+      maxPixels: 4_000_000,
+      maxChunks: 192,
+    });
+  });
+
   it('walks PNG structure, strips metadata, reports dimensions and hashes output bytes', () => {
     const withMetadata = pngFixture({ metadata: true });
     const expected = pngFixture();

@@ -38,19 +38,22 @@ export function RegistrationBrand({
       className={styles.identity}
     >
       {brand?.banner && handle ? (
-        <Image
-          className={styles.banner}
-          src={brandingAssetUrl(token, handle, 'banner')}
-          width={1152}
-          height={576}
-          unoptimized
-          alt={
-            brand.bannerAlt[locale] ||
-            brand.bannerAlt[locale === 'ar' ? 'en' : 'ar']
-          }
-          data-registration-banner=""
-          decoding="async"
-        />
+        <div className={styles.bannerFrame} data-registration-banner-frame="">
+          <Image
+            className={styles.bannerImage}
+            src={brandingAssetUrl(token, handle, 'banner')}
+            width={1600}
+            height={800}
+            unoptimized
+            alt={
+              brand.bannerAlt[locale] ||
+              brand.bannerAlt[locale === 'ar' ? 'en' : 'ar']
+            }
+            data-registration-banner=""
+            loading="eager"
+            decoding="async"
+          />
+        </div>
       ) : (
         <div
           className={styles.bannerFallback}

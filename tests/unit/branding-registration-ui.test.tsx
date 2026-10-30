@@ -99,6 +99,22 @@ describe('published registration brand', () => {
     expect(html).not.toContain('--color-error');
   });
 
+  it('reserves a 2:1 banner frame around an image with intrinsic size hints', () => {
+    const html = renderToStaticMarkup(
+      createElement(RegistrationBrand, {
+        brand,
+        locale: 'en',
+        token,
+        renderHandle: token,
+        fallbackName: 'Workspace',
+      }),
+    );
+
+    expect(html).toMatch(
+      /<div class="[^"]*" data-registration-banner-frame=""><img\b(?=[^>]*\bwidth="1600")(?=[^>]*\bheight="800")(?=[^>]*data-registration-banner="")[^>]*\/><\/div>/,
+    );
+  });
+
   it('uses a neutral localized fallback hero when no banner is published', () => {
     const html = renderToStaticMarkup(
       createElement(RegistrationBrand, {

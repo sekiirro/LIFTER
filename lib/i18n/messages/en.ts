@@ -273,12 +273,16 @@ export const en: Record<keyof typeof ar, string> = {
   'branding.previewTab': 'Preview',
   'branding.localOnly':
     'Unsaved sample controls update this preview only. Nothing is saved.',
-  'branding.uploadGuidancePrefix': 'Draft upload guidance: ',
+  'branding.uploadGuidancePrefix': 'Recommended banner image: ',
   'branding.uploadGuidanceFormats': 'PNG or WebP',
-  'branding.uploadDimensionPrefix': 'about ',
-  'branding.uploadDimensionSuffix':
-    ' px. Keep important content inside a generous center-safe margin; the desktop banner is capped at about ',
-  'branding.uploadGuidanceSuffix': '.',
+  'branding.uploadDimensionPrefix': '— ',
+  'branding.uploadDimensionRatioPrefix': ' (',
+  'branding.uploadDimensionSuffix': '), shown cropped to fill (',
+  'branding.uploadCoverSuffix':
+    ') and centered. The bottom part fades into the form, and the edges may be trimmed slightly on wider screens (desktop box ',
+  'branding.uploadGuidanceRatioPrefix': ' ≈',
+  'branding.uploadGuidanceSuffix':
+    '), so keep important content centered in the upper two-thirds. Do not put text in the image.',
   'branding.nameArabic': 'Workspace name in Arabic',
   'branding.nameEnglish': 'Workspace name in English',
   'branding.bannerAltArabic': 'Banner description in Arabic',

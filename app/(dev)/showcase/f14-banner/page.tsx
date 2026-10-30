@@ -3,6 +3,7 @@ import Image from 'next/image';
 import type { CSSProperties } from 'react';
 import { notFound } from 'next/navigation';
 import { BrandScope } from '../../../../components/ui/BrandScope';
+import { RegistrationBrand } from '../../../../components/branding/RegistrationBrand';
 import { Bidi } from '../../../../components/ui/Bidi';
 import { Card } from '../../../../components/ui/Card';
 import { LanguageSwitcher } from '../../../../components/preferences/LanguageSwitcher';
@@ -17,6 +18,9 @@ import { isShowcaseEnabled } from '../../../../lib/design/showcase';
 import { getMessages } from '../../../../lib/i18n';
 import { PreviewForm } from './PreviewForm';
 import styles from './page.module.css';
+import registrationStyles from '../../../../components/registration-links/registration-links.module.css';
+import signupStyles from '../../../register/[token]/signup.module.css';
+import type { PublicBrandingProjection } from '../../../../lib/registration-links/open';
 
 type Variant = 'a' | 'b' | 'c';
 
@@ -38,11 +42,14 @@ export default async function BannerPrototypePage({
     variant?: string | string[];
     image?: string | string[];
     brand?: string | string[];
+    real?: string | string[];
+    source?: string | string[];
   }>;
 }) {
   if (!isShowcaseEnabled(process.env)) notFound();
 
   const [preferences, query] = await Promise.all([cookies(), searchParams]);
+  if (query.real === '1' && process.env.NODE_ENV === 'production') notFound();
   const locale = parseLocale(preferences.get(LOCALE_COOKIE)?.value);
   const theme = parseTheme(preferences.get(THEME_COOKIE)?.value);
   const m = getMessages(locale);
@@ -50,6 +57,57 @@ export default async function BannerPrototypePage({
   const missingImage = query.image === 'missing';
   const branded = query.brand === '1';
   const candidate = variants[variant];
+  if (query.real === '1') {
+    const allowedBrandColors = [
+      '#FFFF00',
+      '#111111',
+      '#2563EB',
+      '#FF00FF',
+    ] as const;
+    const brandColor =
+      allowedBrandColors.find((color) => color === query.brand) ?? '#2563EB';
+    const realBrand: PublicBrandingProjection = {
+      name: { ar: 'مساحة تجريبية', en: 'Fixture workspace' },
+      color: brandColor,
+      bannerAlt: { ar: 'صورة اختبار للافتة', en: 'Banner test image' },
+      logo: false,
+      banner: query.image !== 'missing',
+    };
+    const token = 'F'.repeat(43);
+
+    return (
+      <main
+        className={registrationStyles.main}
+        data-testid="real-banner-fixture"
+      >
+        <Card
+          as="article"
+          className={signupStyles.registrationCard}
+          data-registration-card="premium-centered"
+        >
+          <RegistrationBrand
+            brand={realBrand}
+            locale={locale}
+            token={token}
+            renderHandle={token}
+            fallbackName="Fixture workspace"
+          />
+          <h1>{m['f14Banner.registrationTitle']}</h1>
+          <PreviewForm
+            labels={{
+              name: m['clientSignup.name'],
+              email: m['clientSignup.email'],
+              password: m['clientSignup.password'],
+              submit: m['clientSignup.submit'],
+              previewNote: m['f14Banner.previewNote'],
+              complete: m['f14Banner.previewComplete'],
+            }}
+          />
+        </Card>
+      </main>
+    );
+  }
+
   const variantLabels: Record<Variant, string> = {
     a: m['f14Banner.variantA'],
     b: m['f14Banner.variantB'],

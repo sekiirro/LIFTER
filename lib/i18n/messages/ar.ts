@@ -264,12 +264,16 @@ export const ar = {
   'branding.previewTab': 'معاينة',
   'branding.localOnly':
     'تحدّث عناصر العينة غير المحفوظة هذه المعاينة فقط. لا يتم حفظ أي تغيير.',
-  'branding.uploadGuidancePrefix': 'إرشادات تحميل أولية: ',
+  'branding.uploadGuidancePrefix': 'الصورة الموصى بها للافتة: ',
   'branding.uploadGuidanceFormats': 'PNG أو WebP',
-  'branding.uploadDimensionPrefix': 'نحو ',
-  'branding.uploadDimensionSuffix':
-    ' بكسل. أبقِ العناصر المهمة داخل هامش آمن واسع في الوسط؛ ويُحدد عرض اللافتة على سطح المكتب بنسبة تقارب ',
-  'branding.uploadGuidanceSuffix': '.',
+  'branding.uploadDimensionPrefix': '— ',
+  'branding.uploadDimensionRatioPrefix': ' (',
+  'branding.uploadDimensionSuffix': ')، وتُعرض بعد قصّها لملء المساحة (',
+  'branding.uploadCoverSuffix':
+    ') ومتمركزة. يتلاشى الجزء السفلي تدريجيًا مع خلفية النموذج، وقد تُقص الحواف قليلًا على الشاشات الأوسع (مقاس مساحة اللافتة على سطح المكتب ',
+  'branding.uploadGuidanceRatioPrefix': ' ≈',
+  'branding.uploadGuidanceSuffix':
+    ')، لذا أبقِ المحتوى المهم في وسط الثلثين العلويين، ولا تضع نصًا داخل الصورة.',
   'branding.nameArabic': 'اسم مساحة العمل بالعربية',
   'branding.nameEnglish': 'اسم مساحة العمل بالإنجليزية',
   'branding.bannerAltArabic': 'وصف اللافتة بالعربية',
