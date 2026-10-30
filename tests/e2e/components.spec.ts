@@ -1,4 +1,8 @@
 import { expect, test, type Locator } from '@playwright/test';
+import AxeBuilder from '@axe-core/playwright';
+import { copyFile, mkdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import { contrastRatio, type Hex } from '../../lib/design/color';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
@@ -42,6 +46,33 @@ for (const locale of ['ar', 'en'] as const) {
             outside,
           );
         }
+        const violations = (
+          await new AxeBuilder({ page })
+            .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+            .analyze()
+        ).violations;
+        expect(
+          violations.filter((violation) =>
+            ['serious', 'critical'].includes(violation.impact ?? ''),
+          ),
+        ).toEqual([]);
+        const scope = page.getByTestId('brand-FFFF00');
+        const screenshots = join(tmpdir(), 'lifter-f12-u9');
+        await mkdir(screenshots, { recursive: true });
+        const screenshot = join(
+          screenshots,
+          `workspace-brand-${locale}-${theme}.png`,
+        );
+        await scope.screenshot({ path: screenshot });
+        const evidenceDirectory = join(
+          process.cwd(),
+          'tests/integration/evidence/f12-u9',
+        );
+        await mkdir(evidenceDirectory, { recursive: true });
+        await copyFile(
+          screenshot,
+          join(evidenceDirectory, `workspace-brand-${locale}-${theme}.png`),
+        );
       });
 
       test('Tab reaches the primary button with a visible focus indicator', async ({

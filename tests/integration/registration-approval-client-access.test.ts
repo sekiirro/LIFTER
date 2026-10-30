@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
+import { createRecoveryClientTarget } from './client-accounts-fixture';
+import { admin } from './harness';
 import {
   clientContext,
   probe,
@@ -20,6 +22,47 @@ let f: Context;
 afterAll(() => db.end());
 beforeAll(async () => {
   f = await clientContext();
+});
+
+it('T042 real F11 client JWT is limited to self-status and denied client data and private Storage', async () => {
+  const client = await createRecoveryClientTarget(f);
+  const session = await client.client.auth.getSession();
+  expect(session.data.session?.user.id).toBe(client.userId);
+  expect(session.data.session?.access_token).toBeTruthy();
+
+  const status = await client.client.rpc('client_self_status');
+  expect(status.error).toBeNull();
+  expect(status.data).toEqual({
+    status: 'ok',
+    approval_state: 'pending-approval',
+  });
+  for (const table of ['clients', 'subscriptions', 'payment_events']) {
+    const read = await client.client.from(table).select('*').limit(1);
+    expect(read.error).not.toBeNull();
+  }
+
+  const bucket = `t042-${randomUUID().replaceAll('-', '')}`;
+  const objectPath = 'private/probe.txt';
+  const created = await admin().storage.createBucket(bucket, { public: false });
+  expect(created.error).toBeNull();
+  try {
+    const uploaded = await admin()
+      .storage.from(bucket)
+      .upload(objectPath, new Uint8Array([84, 52, 50]), {
+        contentType: 'text/plain',
+      });
+    expect(uploaded.error).toBeNull();
+    const downloaded = await client.client.storage
+      .from(bucket)
+      .download(objectPath);
+    expect(downloaded.error).not.toBeNull();
+    const deniedUpload = await client.client.storage
+      .from(bucket)
+      .upload('private/client.txt', new Uint8Array([120]));
+    expect(deniedUpload.error).not.toBeNull();
+  } finally {
+    await admin().storage.deleteBucket(bucket);
+  }
 });
 
 it('T024 zero-argument self status returns only the signed client state', async () => {

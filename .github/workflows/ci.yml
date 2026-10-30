@@ -75,7 +75,7 @@ jobs:
         run: |
           grep -qx 'project_id = "lifter-stack-b"' supabase-stack-b/supabase/config.toml
           ln -s "$GITHUB_WORKSPACE/supabase/migrations" supabase-stack-b/supabase/migrations
-      - run: supabase start -x studio,imgproxy,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+      - run: supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
         working-directory: supabase-stack-b
       - name: Export local stack environment
         working-directory: supabase-stack-b

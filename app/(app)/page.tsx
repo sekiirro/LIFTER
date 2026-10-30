@@ -1,5 +1,6 @@
 import { roleHasCapability } from '../../lib/auth/capabilities';
 import { cookies } from 'next/headers';
+import Link from 'next/link';
 import { requireActor } from '../../lib/auth/actor';
 import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, parseLocale } from '../../lib/design/preferences';
@@ -21,6 +22,24 @@ export default async function HomePage() {
         roleHasCapability(actor.role, 'generate_registration_link') && (
           <a href="/registration-links">{m['registration.title']}</a>
         )}
+      {actor.role &&
+        roleHasCapability(actor.role, 'approve_registration') &&
+        (actor.role === 'platform_owner' ||
+          actor.role === 'workspace_owner') && (
+          <Link href="/registration-approvals">
+            {m['registrationApproval.dashboardApprovals']}
+          </Link>
+        )}
+      {actor.role && roleHasCapability(actor.role, 'record_payment') && (
+        <Link href="/payments">
+          {m['registrationApproval.dashboardPayments']}
+        </Link>
+      )}
+      {actor.role === null && (
+        <Link href="/account/status">
+          {m['registrationApproval.clientStatus']}
+        </Link>
+      )}
       <form action={signOut}>
         <Button type="submit">{m['auth.signOut']}</Button>
       </form>
