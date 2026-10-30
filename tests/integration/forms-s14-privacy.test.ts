@@ -1,7 +1,11 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import { clientContext, pending } from './client-accounts-fixture';
-import { sql } from './harness';
+import {
+  clientContext,
+  createRecoveryClientTarget,
+  pending,
+} from './client-accounts-fixture';
+import { createStaff, sql } from './harness';
 
 const db = sql();
 
@@ -27,6 +31,107 @@ describe('T048 personal-data authorization and erasure', () => {
           row.direct_select_denied,
       ),
     ).toBe(true);
+  });
+
+  it('has no direct answer-table SELECT policies', async () => {
+    const policies = await db`
+      select tablename, policyname
+      from pg_catalog.pg_policies
+      where schemaname='public'
+        and tablename in ('form_answer_revisions','form_answer_drafts')
+    `;
+
+    expect(policies).toEqual([]);
+  });
+
+  it('denies raw answer reads and embeds for Client, Trainer, WO, PO, and Sales JWTs', async () => {
+    const context = await clientContext();
+    const clientTarget = await createRecoveryClientTarget(context);
+    const trainer = await createStaff('trainer', 'f15-answer-reader-trainer');
+    const owner = await createStaff('workspace_owner', 'f15-answer-reader-wo');
+    const platformOwner = await createStaff(
+      'platform_owner',
+      'f15-answer-reader-po',
+    );
+    const sales = await createStaff('sales', 'f15-answer-reader-sales');
+    const policy = `s17-r18-${randomUUID()}`;
+    const formId = randomUUID();
+    const assignmentId = randomUUID();
+    const workspaceId = clientTarget.workspaceId;
+    const answer = { ordinary: 'synthetic answer', health: 'synthetic value' };
+
+    await db.begin(async (tx) => {
+      await tx`
+        insert into app_private.terms_policy_versions(version,policy_kind,status)
+        values(${policy},'terms','published')
+      `;
+      await tx`
+        insert into public.forms(id,workspace_id,name)
+        values(${formId},${workspaceId},'R18 synthetic form')
+      `;
+      await tx`
+        insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
+        values(${workspaceId},${formId},1,${policy},${tx.json({ questions: [] })},'published')
+      `;
+      await tx`
+        insert into public.form_assignments(id,workspace_id,client_id,form_id,version_number,terms_policy_version,version_snapshot)
+        values(${assignmentId},${workspaceId},${clientTarget.clientId},${formId},1,${policy},${tx.json({ questions: [] })})
+      `;
+      await tx`
+        insert into public.form_answer_revisions(workspace_id,assignment_id,revision,answer_values)
+        values(${workspaceId},${assignmentId},1,${tx.json(answer)})
+      `;
+      await tx`
+        insert into public.form_answer_drafts(workspace_id,assignment_id,revision,answer_values)
+        values(${workspaceId},${assignmentId},1,${tx.json(answer)})
+      `;
+    });
+
+    const actors = [
+      ['Client', clientTarget.client],
+      ['Trainer', trainer.client],
+      ['WO', owner.client],
+      ['PO', platformOwner.client],
+      ['Sales', sales.client],
+    ] as const;
+
+    for (const [label, actor] of actors) {
+      for (const table of ['form_answer_revisions', 'form_answer_drafts']) {
+        const result = await actor.from(table).select('answer_values');
+        expect(result.error, `${label} direct ${table} read`).not.toBeNull();
+        expect(JSON.stringify(result.data)).not.toContain('synthetic answer');
+        expect(JSON.stringify(result.data)).not.toContain('synthetic value');
+      }
+
+      const embedded = await actor
+        .from('form_assignments')
+        .select('id,form_answer_revisions(answer_values)')
+        .eq('id', assignmentId);
+      expect(embedded.error, `${label} assignment answer embed`).not.toBeNull();
+      expect(JSON.stringify(embedded.data)).not.toContain('synthetic answer');
+      expect(JSON.stringify(embedded.data)).not.toContain('synthetic value');
+
+      for (const table of ['forms', 'form_versions', 'form_assignments']) {
+        const result = await actor.from(table).select('*');
+        expect(
+          result.error,
+          `${label} direct ${table} read without grants`,
+        ).not.toBeNull();
+        expect(result.data).toBeNull();
+      }
+    }
+
+    const callableAnswerRpcs = await db`
+      select p.proname
+      from pg_catalog.pg_proc p
+      join pg_catalog.pg_namespace n on n.oid=p.pronamespace
+      where n.nspname='public'
+        and p.oid <> to_regprocedure('public.read_form_answer(uuid,uuid)')
+        and has_function_privilege('authenticated',p.oid,'execute')
+        and (p.prosrc ilike '%form_answer_revisions%'
+          or p.prosrc ilike '%form_answer_drafts%')
+    `;
+    expect(callableAnswerRpcs).toEqual([]);
   });
 
   it('requires the shared Forms answer-read capability and denies Sales/unknown', async () => {

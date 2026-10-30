@@ -67,6 +67,15 @@ Use the existing F12 order whenever F12 rows are involved: **client → subscrip
 - F15 DB work uses the PO-approved Stack D exception only, after verifying isolation from Stacks A/B/C and the latest F12/F14 shared contracts. Never use Stack A, Stack B or Stack C for this lane.
 - Rebuild the full latest `audit_row_change()` body after F12 and F14 integration, preserving all mappings and scrubbed allow-lists; never copy a stale function body.
 - Extend SQL `app_private.role_has_capability` and TypeScript `lib/auth/capabilities.ts` only after F12's Sales `approve_registration` removal and F14's `manage_branding` change are integrated. Add `assign_intake_form` for PO/WO/Trainer, deny Sales, and require bidirectional parity for known and unknown strings.
+- Capability additions approved by architect; keep their shared SQL/TypeScript mappings pending final F14/F13 reconciliation:
+
+  | Capability | Staff roles | Source and scope |
+  | --- | --- | --- |
+  | `assign_intake_form` | PO, WO, Trainer | F15-3; `spec.md` FR-022 and SC-017. Sales and unknown capabilities deny. |
+  | `author_forms` | PO, WO, Trainer | F15-1; `spec.md` FR-004/030, SC-017, and the approved workspace builder operation matrix. Trainers may publish and retire workspace forms. Workspace membership is a separate check; global template governance is PO-only. |
+  | `read_form_answers` | PO, WO, Trainer | `correction-matrix.md`, “Approved operations × roles × field classes”: current ordinary/sensitive answers and version history allow these staff roles in authorized workspace scope; Sales denies. PO scope requires an explicitly existing workspace. Clients read only their own assigned form through the client authorization path and are not granted this staff capability. PO final correction approval (2026-10-29) and Q1 relationship-end denial also apply. |
+
+  These capability names and role sets are approved, but do not edit `role_has_capability` or `lib/auth/capabilities.ts` until F14 and F13 have merged and the full matrices can be reconciled.
 - Extend `app_private.has_workspace_access` only from its latest integrated definition. PO global authority must additionally join a real existing workspace for workspace-scoped F15 actions.
 - Preserve F12 `f12_guard_client_transition`, private approval-event contract, `client_self_status()`/client access contracts and F14 branding contract. Use forward-only migrations; do not replace shared functions from stale branches.
 

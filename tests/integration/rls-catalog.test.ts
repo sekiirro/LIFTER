@@ -202,6 +202,7 @@ describe('tenancy security catalog (T007)', () => {
         'recovery_target_workspace',
         'role_has_capability',
         'stamp_form_purge_deadline',
+        'signup_auth_identity_column',
       ].sort(),
     );
     for (const row of rows) {
@@ -242,6 +243,7 @@ describe('tenancy security catalog (T007)', () => {
             'recovery_link_guard',
             'recovery_link_limits',
             'recovery_target_workspace',
+            'signup_auth_identity_column',
             'stamp_form_purge_deadline',
           ].includes(row.proname),
       );

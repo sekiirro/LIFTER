@@ -41,6 +41,20 @@ describe('T047 forms persistence', () => {
         }),
       ]),
     );
+
+    const policies = await db`
+      select tablename, policyname
+      from pg_catalog.pg_policies
+      where schemaname='public'
+        and tablename in ('forms','form_versions','form_assignments')
+    `;
+    expect(policies).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ tablename: 'forms' }),
+        expect.objectContaining({ tablename: 'form_versions' }),
+        expect.objectContaining({ tablename: 'form_assignments' }),
+      ]),
+    );
   });
 
   it('keeps the PO, WO, and Trainer assignment capability in parity and denies Sales/unknown', async () => {

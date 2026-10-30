@@ -55,3 +55,20 @@ retention worker uses immutable 30-day source windows, active legal holds, and
 counts-only erasure controls; lifecycle writers still need to bind the
 authoritative F12 closure/refund/deactivation facts after those contracts
 merge.
+
+### Capability additions and read paths
+
+| Capability | Staff role set | Authority and scope |
+| --- | --- | --- |
+| `assign_intake_form` | PO, WO, Trainer | F15-3; `spec.md` FR-022 and SC-017. Sales and unknown capabilities deny. |
+| `author_forms` | PO, WO, Trainer | F15-1; `spec.md` FR-004/030, SC-017, and the approved workspace builder operation matrix. Trainers may publish and retire workspace forms. Workspace membership is checked separately; global reusable-template governance remains PO-only. |
+| `read_form_answers` | PO, WO, Trainer | `correction-matrix.md`, “Approved operations × roles × field classes”: staff current ordinary/sensitive answers and history are allowed in authorized workspace scope; Sales denies. PO must select an existing workspace. Clients read only their own assignment through the separate client path and are not granted this staff capability. PO final correction approval (2026-10-29) and Q1 relationship-end denial apply. |
+
+`public.forms` and `public.form_versions` are read through the authorized
+server-side Builder/catalog adapter; `public.form_assignments` is read through
+the authorized assignment adapter (client self-scope or staff workspace
+scope). These relations are not direct PostgREST data APIs: their RLS policies
+remain installed, but table grants stay revoked. Answer revisions and drafts
+are returned only by `public.read_form_answer`, which checks scope and appends
+the access audit before returning answer values. Direct table reads, embedded
+answer reads, and other answer-bearing RPCs are not an alternate path.
