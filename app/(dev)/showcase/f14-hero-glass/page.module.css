@@ -3,8 +3,38 @@
   display: flow-root;
   min-block-size: 100svh;
   overflow: visible;
-  background: var(--color-bg);
-  color: var(--color-text);
+  background: var(--hero-toned-substrate, var(--color-bg));
+  color: #fff;
+  --hero-toned-substrate: color-mix(
+    in srgb,
+    var(--hero-bottom-average, rgb(54 48 41)) 28%,
+    #000
+  );
+}
+
+.brandScope :global([data-registration-banner-fallback]) {
+  display: none;
+}
+
+.brandScope {
+  min-inline-size: 0;
+}
+
+:global([data-theme='light']) .stage {
+  --hero-toned-substrate: color-mix(
+    in srgb,
+    var(--hero-bottom-average, rgb(54 48 41)) 28%,
+    #000
+  );
+}
+
+:global([data-theme='dark']) .stage,
+:global(html:not([data-theme='light'])) .stage {
+  --hero-toned-substrate: color-mix(
+    in srgb,
+    var(--hero-bottom-average, rgb(54 48 41)) 18%,
+    #000
+  );
 }
 
 .artwork {
@@ -15,7 +45,7 @@
   inline-size: 100%;
   block-size: min(78svh, 133.333vw);
   overflow: hidden;
-  background: var(--color-bg);
+  background: var(--hero-bottom-average, var(--color-bg));
 }
 
 .artwork img {
@@ -35,35 +65,15 @@
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    color-mix(
-        in oklab,
-        var(--hero-bottom-average, var(--color-bg)) 88%,
-        var(--color-bg)
-      )
-      34%,
-    var(--hero-mobile-mid, var(--color-bg)) 62%,
-    color-mix(
-        in oklab,
-        var(--hero-bottom-average, var(--color-bg)) 20%,
-        var(--color-bg)
-      )
-      82%,
-    var(--color-bg) 100%
+    color-mix(in srgb, var(--hero-bottom-average, #363029) 22%, transparent) 26%,
+    color-mix(in srgb, var(--hero-bottom-average, #363029) 76%, #000) 58%,
+    var(--hero-toned-substrate) 100%
   );
   pointer-events: none;
 }
 
-.glassFrame {
+.glassCard.glassCard {
   position: relative;
-  z-index: 2;
-  inline-size: calc(100% - 2 * var(--space-4));
-  margin-inline: auto;
-  margin-block-start: calc(min(78svh, 133.333vw) * 0.74);
-}
-
-.glassCard {
-  position: relative;
-  isolation: isolate;
   display: block;
   inline-size: 100%;
   max-block-size: none;
@@ -72,74 +82,12 @@
   padding: 0;
   border: 0;
   border-radius: var(--radius-card);
-  background: transparent;
-  color: var(--color-text);
-  box-shadow: none;
-  scrollbar-color: var(--color-border-strong) transparent;
-}
-
-.glassShell,
-.webglLens,
-.glassRim,
-.glassDepth,
-.glassInteraction {
-  position: absolute;
-  inset: 0;
-  border-radius: inherit;
-  pointer-events: none;
-}
-
-.glassShell {
-  z-index: 0;
-  background: var(--hero-glass-fill);
-  box-shadow: var(--hero-glass-shadow);
-  backdrop-filter: blur(20px) saturate(1.24);
-  -webkit-backdrop-filter: blur(20px) saturate(1.24);
-}
-
-.glassCard[data-material='B'] .glassShell {
-  background: color-mix(
-    in srgb,
-    var(--color-card) var(--hero-glass-tint-alpha, 20%),
-    transparent
-  );
-  backdrop-filter: blur(26px) saturate(1.55);
-  -webkit-backdrop-filter: blur(26px) saturate(1.55);
-}
-
-.webglLens {
-  z-index: 1;
-  inline-size: 100%;
-  block-size: 100%;
-  opacity: 0.92;
-}
-
-.glassRim {
-  z-index: 2;
-  inset: 0;
-  padding: 1px;
-  background: linear-gradient(
-    132deg,
-    var(--hero-rim-lit),
-    var(--hero-rim-soft) 42%,
-    var(--hero-rim-low) 78%,
-    var(--hero-rim-soft)
-  );
-  -webkit-mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  -webkit-mask-composite: xor;
-  mask:
-    linear-gradient(#fff 0 0) content-box,
-    linear-gradient(#fff 0 0);
-  mask-composite: exclude;
-}
-
-.glassDepth {
-  z-index: 3;
+  background: rgba(255, 255, 255, 0.01);
+  color: #fff;
   box-shadow:
-    inset 0 1px 0 var(--hero-inset-top),
-    inset 0 -1px 1px var(--hero-inset-bottom);
+    inset 0 1px 1px rgba(255, 255, 255, 0.1),
+    0 24px 64px rgba(0, 0, 0, 0.28);
+  scrollbar-color: rgba(255, 255, 255, 0.45) transparent;
 }
 
 .glassContent {
@@ -154,26 +102,46 @@
   display: contents;
 }
 
-.brandScope :global([data-registration-banner-fallback]) {
-  display: none;
-}
-
-.glassContent > :global([data-brand-name]) {
+.glassContent :global([data-brand-name]) {
+  color: #fff;
   font-size: var(--text-xl);
   font-weight: 600;
 }
 
 .formPlate {
   position: relative;
+  isolation: isolate;
   display: grid;
   gap: var(--space-3);
   padding: var(--space-3);
   border-radius: calc(var(--radius-card) - var(--space-2));
-  background: transparent;
+  color: #fff;
+}
+
+.formPlate::before {
+  position: absolute;
+  z-index: -1;
+  inset: -0.75rem;
+  border-radius: inherit;
+  background: radial-gradient(
+    ellipse at center,
+    rgba(0, 0, 0, 0.88) 0%,
+    rgba(0, 0, 0, 0.86) 65%,
+    rgba(0, 0, 0, 0.82) 90%,
+    transparent 100%
+  );
+  content: '';
+  opacity: 0.08;
+  pointer-events: none;
+}
+
+.stage[data-photo-tone='bright'] .formPlate::before {
+  opacity: 1;
 }
 
 .formPlate h1 {
   margin-block: 0;
+  color: #fff;
   font-size: var(--text-lg);
   line-height: var(--line-height-heading);
 }
@@ -183,32 +151,81 @@
   gap: var(--space-3);
   max-inline-size: none;
   margin-block-start: 0;
+  color: #fff;
 }
 
 .brandScope :global(form > label),
 .countryField {
   display: grid;
   gap: var(--space-1);
-  color: var(--color-text);
+  color: #fff;
   font-size: var(--text-sm);
   font-weight: 600;
+}
+
+.fieldControl,
+.countryPicker {
+  position: relative;
+  display: flex;
+  min-inline-size: 0;
+  min-block-size: var(--touch-min);
+  align-items: center;
+  border-radius: calc(var(--radius-card) - var(--space-3));
+  color: #fff;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.fieldControl:focus-within,
+.countryPicker:focus-within {
+  outline: 2px solid var(--brand-ring);
+  outline-offset: 0;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.1),
+    0 0 0 4px var(--color-bg);
 }
 
 .brandScope :global(form input),
 .brandScope :global(form select),
 .brandScope :global(.countryPicker input) {
+  min-inline-size: 0;
   min-block-size: var(--touch-min);
-  border: 1px solid var(--color-border-strong);
-  border-radius: calc(var(--radius-card) - var(--space-3));
-  background: var(--color-card);
-  color: var(--color-text);
+  flex: 1;
+  padding: var(--space-2) var(--space-3);
+  border: 0 !important;
+  border-radius: inherit;
+  outline: 0;
+  background: transparent !important;
+  color: #fff !important;
+  font: inherit;
+  font-weight: 400;
+}
+
+.brandScope :global(form input::placeholder),
+.brandScope :global(.countryPicker input::placeholder) {
+  color: rgba(255, 255, 255, 0.8);
+  opacity: 1;
 }
 
 .brandScope :global(form input:focus-visible),
 .brandScope :global(form select:focus-visible),
 .brandScope :global(.countryPicker input:focus-visible) {
-  outline: 2px solid var(--brand-ring);
+  outline: 0;
+}
+
+.brandScope :global(form input:disabled),
+.brandScope :global(form select:disabled) {
+  color: rgba(255, 255, 255, 0.68) !important;
+  opacity: 0.76;
+}
+
+.fieldControl[data-error='true'] {
+  outline: 2px solid color-mix(in srgb, var(--color-error-fg) 40%, #fff);
   outline-offset: 2px;
+}
+
+.brandScope :global(form input[aria-invalid='true']) {
+  color: #fff !important;
 }
 
 .brandScope :global(form > button) {
@@ -222,35 +239,26 @@
 }
 
 .countryPicker {
-  position: relative;
-  min-inline-size: 0;
-}
-
-.countryPicker input {
   inline-size: 100%;
-  padding-inline: var(--space-3);
 }
 
-.countryList {
-  position: absolute;
-  z-index: 10;
-  inset-block-start: calc(100% + var(--space-1));
-  inset-inline: 0;
-  max-block-size: 14rem;
+.brandScope :global([data-testid='country-calling-code']) {
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.countryList.countryList {
+  position: fixed;
+  z-index: 1000;
+  box-sizing: border-box;
+  max-block-size: min(14rem, calc(100dvh - 1rem));
   overflow: auto;
   margin: 0;
   padding: var(--space-1);
-  border: 1px solid var(--color-border-strong);
   border-radius: calc(var(--radius-card) - var(--space-3));
-  background: var(--color-card);
-  color: var(--color-text);
-  box-shadow: var(--shadow-md);
+  color: #fff;
+  background: rgba(0, 0, 0, 0.58);
   list-style: none;
-}
-
-.countryListAbove {
-  inset-block-start: auto;
-  inset-block-end: calc(100% + var(--space-1));
 }
 
 .countryList li {
@@ -266,29 +274,20 @@
 
 .activeOption,
 .countryList li:hover {
-  background: var(--color-card-raised);
+  background: rgba(255, 255, 255, 0.16);
+}
+
+.brandScope :global(#hero-phone-error) {
+  color: color-mix(in srgb, var(--color-error-fg) 20%, #fff);
+  font-size: var(--text-sm);
+  font-weight: 600;
 }
 
 .previewNote {
   margin: 0;
-  color: var(--color-text-muted);
+  color: rgba(255, 255, 255, 0.92);
   font-size: var(--text-sm);
   line-height: var(--line-height-body);
-}
-
-.glassCard[data-material='B'] .previewNote {
-  color: var(--color-text);
-}
-
-.glassInteraction {
-  z-index: 5;
-  background: radial-gradient(
-    18rem circle at var(--pointer-x, 52%) var(--pointer-y, 0%),
-    var(--hero-pointer-light),
-    transparent 72%
-  );
-  opacity: 0;
-  transition: opacity 160ms ease-out;
 }
 
 .prototypeGuidance {
@@ -297,13 +296,7 @@
 
 .mobileOnly,
 .noArtwork {
-  background:
-    linear-gradient(
-      148deg,
-      color-mix(in oklab, var(--brand-fill) 5%, transparent),
-      transparent 42%
-    ),
-    var(--color-bg);
+  background: var(--color-bg);
 }
 
 .noArtwork .mobileFade {
@@ -312,6 +305,51 @@
 
 .noArtwork .glassFrame {
   margin-block-start: var(--space-8);
+}
+
+.noArtwork .glassCard.glassCard {
+  background: var(--color-card);
+  color: var(--color-text);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.1),
+    0 24px 64px rgba(0, 0, 0, 0.28);
+}
+
+.countryList[data-no-artwork='true'] {
+  background: var(--color-card);
+  color: var(--color-text);
+}
+
+.noArtwork .formPlate,
+.noArtwork .formPlate h1,
+.noArtwork .glassContent :global(.countryField),
+.noArtwork .glassContent :global([data-brand-name]),
+.noArtwork .glassContent :global(form > label),
+.noArtwork .previewNote {
+  color: var(--color-text);
+}
+
+.noArtwork .formPlate::before {
+  display: none;
+}
+
+.noArtwork .fieldControl,
+.noArtwork .countryPicker {
+  background: var(--color-card-raised);
+  color: var(--color-text);
+}
+
+.noArtwork .glassContent :global(form input),
+.noArtwork .glassContent :global(.countryPicker input) {
+  color: var(--color-text) !important;
+}
+
+.noArtwork .glassContent :global(form input::placeholder) {
+  color: var(--color-text-muted);
+}
+
+.noArtwork .glassContent :global([data-testid='country-calling-code']) {
+  color: var(--color-text);
 }
 
 .srOnly {
@@ -326,6 +364,7 @@
 @media (min-width: 48rem) {
   .stage {
     block-size: 100svh;
+    min-block-size: 0;
     overflow: hidden;
   }
 
@@ -343,11 +382,11 @@
 
   .glassFrame {
     position: absolute;
+    z-index: 2;
     inset-block-start: 50%;
     inset-inline-start: auto;
     right: clamp(1.5rem, 4vw, 4rem);
     inline-size: min(28rem, calc(100vw - 3rem));
-    margin: 0;
     transform: translateY(-50%);
   }
 
@@ -365,195 +404,61 @@
 }
 
 @media (max-width: 47.999rem) {
-  .glassCard {
-    max-block-size: none;
-    overflow: visible;
+  .glassFrame {
+    position: relative;
+    z-index: 2;
+    inline-size: calc(100% - 2 * var(--space-4));
+    margin-inline: auto;
+    margin-block-start: calc(min(78svh, 133.333vw) * 0.74);
+  }
+
+  .glassContent {
+    padding: var(--space-4);
+  }
+
+  .noArtwork .glassFrame {
+    margin-block-start: var(--space-8);
   }
 }
 
-[data-theme='light'] .glassCard {
-  --hero-glass-tint-alpha: 20%;
-  --hero-form-plate-alpha: 46%;
-  --hero-glass-rim: color-mix(in srgb, var(--color-text) 14%, transparent);
-  --hero-glass-edge: color-mix(in srgb, white 70%, transparent);
-  --hero-glass-highlight: color-mix(in srgb, white 34%, transparent);
-  --hero-glass-fill: color-mix(in srgb, var(--color-card) 94%, transparent);
-  --hero-glass-shadow: 0 24px 68px color-mix(in srgb, black 24%, transparent);
-  --hero-rim-lit: color-mix(in srgb, white 60%, transparent);
-  --hero-rim-soft: color-mix(in srgb, var(--color-text) 12%, transparent);
-  --hero-rim-low: color-mix(in srgb, var(--color-text) 5%, transparent);
-  --hero-inset-top: color-mix(in srgb, white 58%, transparent);
-  --hero-inset-bottom: color-mix(in srgb, black 10%, transparent);
-  --hero-pointer-light: color-mix(in srgb, white 20%, transparent);
-}
-
-[data-theme='dark'] .glassCard,
-html:not([data-theme='light']) .glassCard {
-  --hero-glass-tint-alpha: 31%;
-  --hero-form-plate-alpha: 54%;
-  --hero-glass-rim: color-mix(in srgb, white 19%, transparent);
-  --hero-glass-edge: color-mix(in srgb, white 24%, transparent);
-  --hero-glass-highlight: color-mix(in srgb, white 40%, transparent);
-  --hero-glass-fill: color-mix(in srgb, var(--color-card) 91%, transparent);
-  --hero-glass-shadow: 0 26px 74px color-mix(in srgb, black 42%, transparent);
-  --hero-rim-lit: color-mix(in srgb, white 42%, transparent);
-  --hero-rim-soft: color-mix(in srgb, white 13%, transparent);
-  --hero-rim-low: color-mix(in srgb, white 5%, transparent);
-  --hero-inset-top: color-mix(in srgb, white 26%, transparent);
-  --hero-inset-bottom: color-mix(in srgb, black 22%, transparent);
-  --hero-pointer-light: color-mix(in srgb, white 24%, transparent);
-}
-
-[data-theme='light']
-  .stage[data-photo-tone='bright']
-  .glassCard[data-material='B'] {
-  --hero-glass-tint-alpha: 12%;
-  --hero-form-plate-alpha: 38%;
-}
-
-[data-theme='light']
-  .stage[data-photo-tone='mid']
-  .glassCard[data-material='B'] {
-  --hero-glass-tint-alpha: 16%;
-  --hero-form-plate-alpha: 42%;
-}
-
-[data-theme='dark']
-  .stage[data-photo-tone='bright']
-  .glassCard[data-material='B'],
-html:not([data-theme='light'])
-  .stage[data-photo-tone='bright']
-  .glassCard[data-material='B'] {
-  --hero-glass-tint-alpha: 23%;
-  --hero-form-plate-alpha: 74%;
-}
-
-[data-theme='dark'] .stage[data-photo-tone='mid'] .glassCard[data-material='B'],
-html:not([data-theme='light'])
-  .stage[data-photo-tone='mid']
-  .glassCard[data-material='B'] {
-  --hero-glass-tint-alpha: 27%;
-  --hero-form-plate-alpha: 60%;
-}
-
-.glassCard[data-material='B'] .glassRim {
-  padding: 1.5px;
-}
-
-.glassCard:not([data-material='B']) .glassRim {
-  padding: 0;
-  border: 1px solid var(--hero-glass-rim);
-  background: none;
-  -webkit-mask: none;
-  mask: none;
-}
-
-.glassCard:not([data-material='B']) .glassDepth {
-  box-shadow: inset 0 1px 0 var(--hero-glass-edge);
-}
-
-.glassCard:not([data-material='B']) .glassInteraction {
-  background: radial-gradient(
-    19rem circle at var(--pointer-x, 52%) var(--pointer-y, 0%),
-    var(--hero-glass-highlight),
-    transparent 72%
-  );
-  opacity: 0.22;
-}
-
-[data-theme='light'] .glassCard[data-material='B'] {
-  --hero-form-plate-background: color-mix(
-    in srgb,
-    var(--color-card) var(--hero-form-plate-alpha, 58%),
-    transparent
-  );
-  --hero-glass-shadow: 0 30px 82px color-mix(in srgb, black 38%, transparent);
-  --hero-rim-lit: color-mix(in srgb, white 88%, transparent);
-  --hero-rim-soft: color-mix(in srgb, white 34%, transparent);
-  --hero-rim-low: color-mix(in srgb, var(--color-text) 8%, transparent);
-  --hero-inset-top: color-mix(in srgb, white 72%, transparent);
-  --hero-inset-bottom: color-mix(in srgb, black 12%, transparent);
-  --hero-pointer-light: color-mix(in srgb, white 38%, transparent);
-}
-
-[data-theme='dark'] .glassCard[data-material='B'],
-html:not([data-theme='light']) .glassCard[data-material='B'] {
-  --hero-form-plate-background: color-mix(
-    in srgb,
-    var(--color-card) var(--hero-form-plate-alpha, 66%),
-    transparent
-  );
-  --hero-glass-shadow: 0 32px 88px color-mix(in srgb, black 54%, transparent);
-  --hero-rim-lit: color-mix(in srgb, white 72%, transparent);
-  --hero-rim-soft: color-mix(in srgb, white 32%, transparent);
-  --hero-rim-low: color-mix(in srgb, white 8%, transparent);
-  --hero-inset-top: color-mix(in srgb, white 52%, transparent);
-  --hero-inset-bottom: color-mix(in srgb, black 30%, transparent);
-  --hero-pointer-light: color-mix(in srgb, white 34%, transparent);
-}
-
-.glassCard[data-material='B'] .formPlate {
-  background: var(--hero-form-plate-background);
-}
-
-@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
-  .glassCard:not([data-material='B']):hover .glassInteraction,
-  .glassCard:not([data-material='B']):focus-within .glassInteraction {
-    opacity: 0.48;
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .stage {
+    color: var(--color-text);
   }
 
-  .glassCard:hover .glassInteraction,
-  .glassCard:focus-within .glassInteraction {
-    opacity: 0.28;
+  .glassCard,
+  .formPlate,
+  .formPlate h1,
+  .glassContent :global([data-brand-name]),
+  .glassContent :global(form > label),
+  .previewNote,
+  .fieldControl,
+  .countryPicker,
+  .countryList {
+    color: var(--color-text);
   }
-}
 
-@media (prefers-reduced-motion: reduce) {
-  .glassInteraction {
-    opacity: 0;
-    transition: none;
-  }
-}
-
-@supports not (
-  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
-) {
-  .glassShell {
+  .fieldControl,
+  .countryPicker,
+  .countryList {
     background: var(--color-card);
   }
-}
 
-@media (prefers-reduced-transparency: reduce) {
-  .glassShell {
-    background: var(--color-card);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
-  }
-
-  .webglLens,
-  .glassRim,
-  .glassDepth,
-  .glassInteraction {
+  .formPlate::before {
     display: none;
   }
-}
 
-@media (prefers-contrast: more) {
-  .glassCard {
-    border: 2px solid var(--color-text);
+  .glassContent :global(form input),
+  .glassContent :global(.countryPicker input) {
+    color: var(--color-text) !important;
   }
 
-  .glassShell {
-    background: var(--color-card);
-    backdrop-filter: none;
-    -webkit-backdrop-filter: none;
+  .brandScope :global([data-testid='country-calling-code']) {
+    color: var(--color-text);
   }
 
-  .webglLens,
-  .glassRim,
-  .glassDepth,
-  .glassInteraction {
-    display: none;
+  .brandScope :global(#hero-phone-error) {
+    color: var(--color-error-fg);
   }
 }
 
@@ -567,46 +472,53 @@ html:not([data-theme='light']) .glassCard[data-material='B'] {
 
   .artwork,
   .mobileFade,
-  .webglLens,
-  .glassRim,
-  .glassDepth,
-  .glassInteraction,
-  .glassShell {
+  .formPlate::before {
     display: none;
   }
 
-  .glassCard {
-    border: 1px solid CanvasText;
+  .glassCard,
+  .formPlate,
+  .formPlate h1,
+  .glassContent :global([data-brand-name]),
+  .glassContent :global(form > label),
+  .previewNote,
+  .fieldControl,
+  .countryPicker,
+  .countryList {
     background: Canvas;
     color: CanvasText;
+  }
+
+  .fieldControl:focus-within,
+  .countryPicker:focus-within {
+    outline-color: Highlight;
     box-shadow: none;
   }
 
-  .formPlate,
-  .brandScope :global(form input),
-  .brandScope :global(.countryPicker input) {
-    background: Canvas;
-    color: CanvasText;
+  .fieldControl,
+  .countryPicker,
+  .countryList {
+    border: 1px solid FieldText;
   }
 
-  .brandScope :global(form input),
-  .brandScope :global(.countryPicker input) {
-    border-color: FieldText;
+  .glassContent :global(form > button[type='submit']) {
+    border: 2px solid ButtonText;
+    background: ButtonFace !important;
+    color: ButtonText !important;
+    box-shadow: none;
+    forced-color-adjust: auto;
   }
 }
 
 @media print {
   .artwork,
   .mobileFade,
-  .webglLens,
-  .glassRim,
-  .glassDepth,
-  .glassInteraction,
-  .glassShell {
+  .formPlate::before {
     display: none;
   }
 
   .stage {
+    min-block-size: 0;
     overflow: visible;
     background: var(--color-print-bg);
     color: var(--color-print-text);
@@ -619,12 +531,11 @@ html:not([data-theme='light']) .glassCard[data-material='B'] {
     transform: none;
   }
 
-  .glassCard {
-    max-block-size: none;
-    overflow: visible;
-    border: 1px solid currentColor;
-    background: var(--color-print-bg);
+  .glassCard,
+  .formPlate,
+  .formPlate h1,
+  .brandScope :global(form > label),
+  .previewNote {
     color: var(--color-print-text);
-    box-shadow: none;
   }
 }

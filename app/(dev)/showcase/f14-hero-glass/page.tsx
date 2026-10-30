@@ -14,12 +14,7 @@ import {
 import type { PublicBrandingProjection } from '../../../../lib/registration-links/open';
 import { createF14HeroArtwork } from '../../../../tests/fixtures/f14-hero-artwork';
 import { HeroGlassCard } from './HeroGlassCard';
-import {
-  HeroStage,
-  type GlassEffect,
-  type HeroArtwork,
-  type HeroFixture,
-} from './HeroStage';
+import { HeroStage, type HeroArtwork, type HeroFixture } from './HeroStage';
 import { HeroSignupPreview } from './HeroSignupPreview';
 import styles from './page.module.css';
 
@@ -39,19 +34,6 @@ function parseFixture(value: QueryValue): HeroFixture {
     : 'dark';
 }
 
-function parseEffect(value: QueryValue): GlassEffect {
-  const candidate = first(value);
-  return candidate === 'webgl' || candidate === 'blur' || candidate === 'none'
-    ? candidate
-    : 'blur';
-}
-
-type HeroMaterial = 'A' | 'B';
-
-function parseMaterial(value: QueryValue): HeroMaterial {
-  return first(value)?.toLowerCase() === 'b' ? 'B' : 'A';
-}
-
 async function validatePreviewPhone(country: string, nationalNumber: string) {
   'use server';
   if (!isShowcaseEnabled(process.env) || process.env.NODE_ENV === 'production')
@@ -64,8 +46,6 @@ export default async function HeroPrototypePage({
 }: {
   searchParams: Promise<{
     fixture?: QueryValue;
-    effect?: QueryValue;
-    material?: QueryValue;
   }>;
 }) {
   if (!isShowcaseEnabled(process.env) || process.env.NODE_ENV === 'production')
@@ -74,12 +54,6 @@ export default async function HeroPrototypePage({
   const locale = parseLocale(preferences.get(LOCALE_COOKIE)?.value);
   const messages = getMessages(locale);
   const fixture = parseFixture(query.fixture);
-  const material = parseMaterial(query.material);
-  const effect = query.effect
-    ? parseEffect(query.effect)
-    : material === 'B'
-      ? 'webgl'
-      : 'blur';
   const tone = fixture === 'bright' ? 'bright' : 'dark';
   let artwork: HeroArtwork = {};
   if (fixture === 'desktop-only') {
@@ -122,14 +96,9 @@ export default async function HeroPrototypePage({
       className={styles.brandScope}
       data-testid="hero-brand-scope"
     >
-      <HeroStage
-        fixture={fixture}
-        effect={effect}
-        material={material}
-        artwork={artwork}
-      >
+      <HeroStage fixture={fixture} artwork={artwork}>
         <section data-testid="registration-panel">
-          <HeroGlassCard effect={effect} locale={locale} material={material}>
+          <HeroGlassCard locale={locale}>
             <div className={styles.formPlate} data-testid="hero-content-plate">
               <RegistrationBrand
                 brand={brand}

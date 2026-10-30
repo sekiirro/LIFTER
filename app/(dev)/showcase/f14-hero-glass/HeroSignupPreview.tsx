@@ -9,6 +9,7 @@ import {
   type FormEvent,
   type KeyboardEvent,
 } from 'react';
+import { createPortal } from 'react-dom';
 import { Button } from '../../../../components/ui/Button';
 import { Bidi } from '../../../../components/ui/Bidi';
 import type { SignupLocale } from '../../../../lib/client-accounts/results';
@@ -16,6 +17,7 @@ import type { PhoneCountryOption } from '../../../../lib/client-accounts/phone';
 import { getMessages } from '../../../../lib/i18n';
 import styles from '../../../register/[token]/signup.module.css';
 import prototypeStyles from './page.module.css';
+import glass from './liquid-glass.module.css';
 
 type PreviewPhoneValidator = (
   country: string,
@@ -33,13 +35,18 @@ export function HeroSignupPreview({
 }) {
   const formRef = useRef<HTMLFormElement>(null);
   const countryPickerRef = useRef<HTMLDivElement>(null);
-  const countryListRef = useRef<HTMLUListElement>(null);
   const [country, setCountry] = useState('EG');
   const [nationalNumber, setNationalNumber] = useState('');
   const [countryOpen, setCountryOpen] = useState(false);
-  const [countryOpensAbove, setCountryOpensAbove] = useState(false);
   const [countryQuery, setCountryQuery] = useState('');
   const [activeIndex, setActiveIndex] = useState(0);
+  const [countryListPlacement, setCountryListPlacement] = useState<{
+    top: number;
+    left: number;
+    width: number;
+    maxHeight: number;
+    above: boolean;
+  } | null>(null);
   const [phoneError, setPhoneError] = useState(false);
   const [pending, setPending] = useState(false);
   const [validatedPhone, setValidatedPhone] = useState('');
@@ -69,11 +76,36 @@ export function HeroSignupPreview({
   useLayoutEffect(() => {
     if (!countryOpen) return;
     const pickerBounds = countryPickerRef.current?.getBoundingClientRect();
-    const listBounds = countryListRef.current?.getBoundingClientRect();
-    if (!pickerBounds || !listBounds) return;
-    const below = window.innerHeight - pickerBounds.bottom;
-    const above = pickerBounds.top;
-    setCountryOpensAbove(below < listBounds.height && above > below);
+    if (!pickerBounds) return;
+    const gap = 8;
+    const viewportWidth = Math.min(
+      document.documentElement.clientWidth,
+      window.visualViewport?.width ?? window.innerWidth,
+    );
+    const desiredHeight = Math.min(224, filteredCountries.length * 48 + 8);
+    const below = Math.max(0, window.innerHeight - pickerBounds.bottom - gap);
+    const above = Math.max(0, pickerBounds.top - gap);
+    const opensAbove = below < desiredHeight && above > below;
+    const available = opensAbove ? above : below;
+    const maxHeight = Math.max(96, Math.min(desiredHeight, available));
+    const width = Math.min(pickerBounds.width, viewportWidth - gap * 2);
+    const left = Math.max(
+      gap,
+      Math.min(pickerBounds.left, viewportWidth - width - gap),
+    );
+    const top = opensAbove
+      ? Math.max(gap, pickerBounds.top - maxHeight - gap)
+      : Math.min(
+          window.innerHeight - maxHeight - gap,
+          pickerBounds.bottom + gap,
+        );
+    setCountryListPlacement({
+      top,
+      left,
+      width,
+      maxHeight,
+      above: opensAbove,
+    });
   }, [countryOpen, filteredCountries.length]);
 
   useEffect(() => {
@@ -87,7 +119,7 @@ export function HeroSignupPreview({
     setCountry(option.code);
     setCountryQuery('');
     setCountryOpen(false);
-    setCountryOpensAbove(false);
+    setCountryListPlacement(null);
     setActiveIndex(0);
     setPhoneError(false);
     setValidatedPhone('');
@@ -130,7 +162,7 @@ export function HeroSignupPreview({
     if (event.key === 'Escape' && countryOpen) {
       event.preventDefault();
       setCountryOpen(false);
-      setCountryOpensAbove(false);
+      setCountryListPlacement(null);
       setCountryQuery('');
       setActiveIndex(0);
     }
@@ -169,23 +201,31 @@ export function HeroSignupPreview({
       >
         <label className={styles.field}>
           <span>{messages['clientSignup.name']}</span>
-          <input
-            name="name"
-            type="text"
-            autoComplete="name"
-            required
-            disabled={pending}
-          />
+          <span
+            className={`${prototypeStyles.fieldControl} ${glass.liquidGlass}`}
+          >
+            <input
+              name="name"
+              type="text"
+              autoComplete="name"
+              required
+              disabled={pending}
+            />
+          </span>
         </label>
         <label className={styles.field}>
           <span>{messages['clientSignup.email']}</span>
-          <input
-            name="email"
-            type="email"
-            autoComplete="email"
-            required
-            disabled={pending}
-          />
+          <span
+            className={`${prototypeStyles.fieldControl} ${glass.liquidGlass}`}
+          >
+            <input
+              name="email"
+              type="email"
+              autoComplete="email"
+              required
+              disabled={pending}
+            />
+          </span>
         </label>
         <div className={styles.phoneFields}>
           <div className={`${styles.field} ${prototypeStyles.countryField}`}>
@@ -194,7 +234,7 @@ export function HeroSignupPreview({
             </label>
             <div
               ref={countryPickerRef}
-              className={prototypeStyles.countryPicker}
+              className={`${prototypeStyles.countryPicker} ${glass.liquidGlass}`}
               dir={locale === 'ar' ? 'rtl' : 'ltr'}
             >
               <input
@@ -230,42 +270,61 @@ export function HeroSignupPreview({
                 }}
                 disabled={pending}
               />
-              {countryOpen && (
-                <ul
-                  ref={countryListRef}
-                  id={optionsId}
-                  role="listbox"
-                  dir={locale === 'ar' ? 'rtl' : 'ltr'}
-                  className={`${prototypeStyles.countryList} ${countryOpensAbove ? prototypeStyles.countryListAbove : ''}`}
-                  data-testid="country-options"
-                  data-placement={countryOpensAbove ? 'above' : 'below'}
-                >
-                  {filteredCountries.map((option, index) => (
-                    <li
-                      id={`${optionsId}-${option.code}`}
-                      key={option.code}
-                      role="option"
-                      aria-selected={option.code === selectedCountry?.code}
-                      className={
-                        index === activeIndex
-                          ? prototypeStyles.activeOption
-                          : undefined
-                      }
-                      onMouseDown={(event) => event.preventDefault()}
-                      onMouseMove={() => setActiveIndex(index)}
-                      onClick={() => chooseCountry(option)}
-                    >
-                      <span>{option.name}</span>
-                      <Bidi dir="ltr">+{option.callingCode}</Bidi>
-                    </li>
-                  ))}
-                </ul>
-              )}
+              {countryOpen &&
+                countryListPlacement &&
+                typeof document !== 'undefined' &&
+                createPortal(
+                  <ul
+                    id={optionsId}
+                    role="listbox"
+                    dir={locale === 'ar' ? 'rtl' : 'ltr'}
+                    className={`${prototypeStyles.countryList} ${glass.liquidGlassStrong}`}
+                    data-testid="country-options"
+                    data-no-artwork={
+                      document.querySelector('[data-fixture="none"]')
+                        ? 'true'
+                        : undefined
+                    }
+                    data-placement={
+                      countryListPlacement.above ? 'above' : 'below'
+                    }
+                    style={{
+                      top: countryListPlacement.top,
+                      left: countryListPlacement.left,
+                      width: countryListPlacement.width,
+                      maxHeight: countryListPlacement.maxHeight,
+                    }}
+                  >
+                    {filteredCountries.map((option, index) => (
+                      <li
+                        id={`${optionsId}-${option.code}`}
+                        key={option.code}
+                        role="option"
+                        aria-selected={option.code === selectedCountry?.code}
+                        className={
+                          index === activeIndex
+                            ? prototypeStyles.activeOption
+                            : undefined
+                        }
+                        onMouseDown={(event) => event.preventDefault()}
+                        onMouseMove={() => setActiveIndex(index)}
+                        onClick={() => chooseCountry(option)}
+                      >
+                        <span>{option.name}</span>
+                        <Bidi dir="ltr">+{option.callingCode}</Bidi>
+                      </li>
+                    ))}
+                  </ul>,
+                  document.querySelector('main') ?? document.body,
+                )}
             </div>
           </div>
           <label className={styles.field}>
             <span>{messages['clientSignup.phone']}</span>
-            <span className={styles.phoneNumber}>
+            <span
+              className={`${styles.phoneNumber} ${prototypeStyles.fieldControl} ${glass.liquidGlass}`}
+              data-error={phoneError || undefined}
+            >
               <span aria-hidden="true" data-testid="country-calling-code">
                 <Bidi dir="ltr">+{selectedCountry?.callingCode ?? '20'}</Bidi>
               </span>
@@ -296,13 +355,17 @@ export function HeroSignupPreview({
         </div>
         <label className={styles.field}>
           <span>{messages['clientSignup.password']}</span>
-          <input
-            name="password"
-            type="password"
-            autoComplete="new-password"
-            required
-            disabled={pending}
-          />
+          <span
+            className={`${prototypeStyles.fieldControl} ${glass.liquidGlass}`}
+          >
+            <input
+              name="password"
+              type="password"
+              autoComplete="new-password"
+              required
+              disabled={pending}
+            />
+          </span>
         </label>
         <Button type="submit" variant="primary" disabled={pending}>
           {pending

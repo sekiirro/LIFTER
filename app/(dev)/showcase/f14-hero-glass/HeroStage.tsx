@@ -15,8 +15,6 @@ import styles from './page.module.css';
 
 export type HeroFixture =
   'dark' | 'bright' | 'none' | 'desktop-only' | 'mobile-only';
-export type GlassEffect = 'webgl' | 'blur' | 'none';
-export type HeroMaterial = 'A' | 'B';
 export type HeroArtwork = Partial<Record<HeroArtOrientation, string>>;
 
 function linear(channel: number): number {
@@ -75,14 +73,10 @@ function sampleAverage(
 export function HeroStage({
   children,
   fixture,
-  effect,
-  material,
   artwork,
 }: {
   children: ReactNode;
   fixture: HeroFixture;
-  effect: GlassEffect;
-  material: HeroMaterial;
   artwork: HeroArtwork;
 }) {
   const stageRef = useRef<HTMLElement>(null);
@@ -192,13 +186,8 @@ export function HeroStage({
   const sourceStyle = {
     '--hero-focal-x': mobileOnly ? '50%' : '32%',
     '--mobile-focal-x': desktopOnly ? '19%' : '50%',
-    '--hero-effect': effect,
     '--hero-bottom-average':
       tone === 'dark' ? 'rgb(54 48 41)' : 'rgb(189 184 173)',
-    '--hero-mobile-mid':
-      tone === 'dark'
-        ? 'color-mix(in oklab, rgb(54 48 41) 62%, var(--color-bg))'
-        : 'color-mix(in oklab, rgb(189 184 173) 62%, var(--color-bg))',
   } as CSSProperties;
 
   return (
@@ -207,8 +196,6 @@ export function HeroStage({
       className={`${styles.stage} ${mobileOnly ? styles.mobileOnly : ''} ${fixture === 'none' ? styles.noArtwork : ''}`}
       data-testid="hero-prototype"
       data-fixture={fixture}
-      data-effect={effect}
-      data-material={material.toLowerCase()}
       data-art-tone={tone}
       style={sourceStyle}
     >
@@ -230,7 +217,11 @@ export function HeroStage({
           />
         </picture>
       )}
-      <div className={styles.mobileFade} aria-hidden="true" />
+      <div
+        className={styles.mobileFade}
+        data-testid="hero-mobile-fade"
+        aria-hidden="true"
+      />
       {children}
     </main>
   );
