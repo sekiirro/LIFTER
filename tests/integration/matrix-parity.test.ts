@@ -50,6 +50,22 @@ const parityCapabilities = [
 it('bidirectional catalog capability names equal TypeScript exactly', () => {
   expect([...sqlCapabilities].sort()).toEqual([...CAPABILITIES].sort());
 });
+
+it('preserves the approved Trainer payment and freeze grants in both matrices', async () => {
+  for (const capability of ['record_payment', 'manage_freeze'] as const) {
+    expect(roleHasCapability('trainer', capability)).toBe(true);
+    const [row] = await db`
+      select app_private.role_has_capability('trainer'::public.staff_role, ${capability}) as allowed
+    `;
+    expect(row?.allowed).toBe(true);
+  }
+  expect(roleHasCapability('trainer', 'record_refund')).toBe(false);
+  const [refund] = await db`
+    select app_private.role_has_capability('trainer'::public.staff_role, 'record_refund') as allowed
+  `;
+  expect(refund?.allowed).toBe(false);
+});
+
 afterAll(async () => {
   await db.end();
 });

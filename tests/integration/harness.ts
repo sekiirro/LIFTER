@@ -9,18 +9,25 @@ import {
 } from '../../scripts/local-stack.mjs';
 
 export function loadEnv() {
-  loadSelectedStackEnv();
+  const stack = selectStack(process.env);
+  if (stack !== 'c') loadSelectedStackEnv();
   const apiUrl = process.env.API_URL || process.env.SUPABASE_URL;
   const anonKey = process.env.ANON_KEY || process.env.SUPABASE_ANON_KEY;
   const serviceRoleKey =
     process.env.SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   const dbUrl = process.env.DB_URL || process.env.SUPABASE_DB_URL;
+  const hasCompleteEnvironment = Boolean(
+    apiUrl && anonKey && serviceRoleKey && dbUrl,
+  );
+  if (stack === 'c' && !hasCompleteEnvironment)
+    throw new Error(
+      'Integration env missing: inject Stack C status environment',
+    );
   if (!apiUrl || !anonKey || !serviceRoleKey || !dbUrl) {
     throw new Error(
       'Integration env missing: run `supabase start` and export `supabase status -o env`',
     );
   }
-  const stack = selectStack(process.env);
   if (stack === 'c') assertLocalStackTarget({ stack, apiUrl, dbUrl });
   return { apiUrl, anonKey, serviceRoleKey, dbUrl };
 }
