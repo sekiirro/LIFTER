@@ -1,6 +1,10 @@
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { brandingFixture, credential } from './branding-security-fixture';
-import { admin, sql } from './harness';
+import { admin, loadEnv, sql } from './harness';
+import {
+  createBrandingGc,
+  runBrandingGc,
+} from '../../workers/cron/src/branding-gc';
 
 const db = sql();
 let fixture: Awaited<ReturnType<typeof brandingFixture>>;
@@ -190,29 +194,29 @@ it('T049 stages, attaches, and publishes only within current manage_branding sco
   });
   expect(oldRead.error).toBeNull();
   expect((oldRead.data as { status: string }).status).toBe('invalid');
-  const oldClaims = await admin().rpc('branding_gc_claim', { batch_size: 50 });
-  expect(oldClaims.error).toBeNull();
-  const oldClaim = (
-    oldClaims.data as { id: string; object_name: string }[]
-  ).find((row) => row.object_name === validatedObject);
+  const workerEnv = loadEnv();
+  await runBrandingGc(
+    createBrandingGc({
+      SUPABASE_URL: workerEnv.apiUrl,
+      SUPABASE_SERVICE_ROLE_KEY: workerEnv.serviceRoleKey,
+    }),
+    50,
+  );
+  const [oldClaim] = await db<{ id: string }[]>`
+    select target_id::text as id from public.audit_events
+    where workspace_id=${fixture.wsA.id} and action='branding.gc_claimed'
+    order by occurred_at desc limit 1
+  `;
   expect(oldClaim?.id).toBeTruthy();
   const claimAudit = await f.po.client
     .from('audit_events')
     .select('action,details')
     .eq('target_id', oldClaim!.id)
+    .eq('action', 'branding.gc_claimed')
     .single();
   expect(claimAudit.error).toBeNull();
   expect(claimAudit.data?.action).toBe('branding.gc_claimed');
   expect(claimAudit.data?.details).toEqual({ lease_seconds: 300 });
-  const oldBytes = await admin()
-    .storage.from('branding-validated')
-    .remove([validatedObject]);
-  expect(oldBytes.error).toBeNull();
-  const oldFinalized = await admin().rpc('branding_gc_finalize', {
-    claim_id: oldClaim!.id,
-  });
-  expect(oldFinalized.error).toBeNull();
-  expect(oldFinalized.data).toBe(true);
   const finalizeAudit = await f.po.client
     .from('audit_events')
     .select('action,details')
@@ -286,6 +290,19 @@ it('T049 stages, attaches, and publishes only within current manage_branding sco
     .storage.from('branding-staging')
     .remove([stagingObject]);
   expect(removedStaging.error).toBeNull();
+});
+
+it('denies anon and authenticated callers access to the service GC wrappers', async () => {
+  for (const actor of [fixture.actors.anon, fixture.actors.woA]) {
+    await denied(() =>
+      actor.client.rpc('branding_gc_claim', { batch_size: 1 }),
+    );
+    await denied(() =>
+      actor.client.rpc('branding_gc_finalize', {
+        claim_id: crypto.randomUUID(),
+      }),
+    );
+  }
 });
 
 it('T050 claims only unreferenced assets, blocks new references, and requires a live claim to finalize', async () => {

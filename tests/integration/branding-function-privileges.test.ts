@@ -6,6 +6,7 @@ if (selectStack() !== 'b')
   throw new Error('Branding privilege checks require Stack B');
 
 const db = sql();
+const mutateSchemaUsage = process.env.F14_GC_SCHEMA_USAGE_MUTATION === 'grant';
 
 type FunctionRow = {
   signature: string;
@@ -26,6 +27,8 @@ type FunctionRow = {
   proxy_execute: boolean;
   validator_execute: boolean;
 };
+
+type ServiceRoleAppPrivatePath = { signature: string };
 
 type TableRow = {
   relation: string;
@@ -64,7 +67,7 @@ async function brandingFunctions() {
     where p.prosecdef
       and (
         (n.nspname = 'app_private' and p.proname like 'branding_%')
-        or (n.nspname = 'public' and p.proname in ('registration_link_open', 'registration_brand_asset_resolve'))
+        or (n.nspname = 'public' and p.proname in ('registration_link_open', 'registration_brand_asset_resolve', 'branding_gc_claim', 'branding_gc_finalize'))
       )
     order by p.oid::regprocedure::text
   `;
@@ -73,8 +76,14 @@ async function brandingFunctions() {
 describe('F14 definer function privileges', () => {
   beforeAll(async () => {
     await db`select 1`;
+    if (mutateSchemaUsage)
+      await db`grant usage on schema app_private to service_role`;
   });
   afterAll(async () => {
+    if (mutateSchemaUsage) {
+      await db`revoke usage on schema app_private from service_role`;
+      console.log('F14 schema usage mutation restored');
+    }
     await db.end();
   });
 
@@ -137,6 +146,13 @@ describe('F14 definer function privileges', () => {
       ) {
         expect(publicRoles, fn.signature).toEqual([false, false, false, true]);
       } else if (
+        fn.signature === 'branding_gc_claim(integer)' ||
+        fn.signature === 'branding_gc_finalize(uuid)' ||
+        fn.signature === 'public.branding_gc_claim(integer)' ||
+        fn.signature === 'public.branding_gc_finalize(uuid)'
+      ) {
+        expect(publicRoles, fn.signature).toEqual([false, false, false, true]);
+      } else if (
         fn.signature ===
         'app_private.branding_staging_upload_allowed(text,text)'
       ) {
@@ -171,6 +187,63 @@ describe('F14 definer function privileges', () => {
         /\bEXECUTE\s+(?!FUNCTION\b)/i,
       );
     }
+  });
+
+  it('keeps app_private schema usage away from service_role', async () => {
+    const [row] = await db<{ has_usage: boolean }[]>`
+      select has_schema_privilege('service_role', 'app_private', 'USAGE') as has_usage
+    `;
+    expect(row?.has_usage).toBe(false);
+  });
+
+  it('limits service-role app_private call paths to the two public GC wrappers', async () => {
+    const paths = await db<ServiceRoleAppPrivatePath[]>`
+      select format('%I.%I(%s)', n.nspname, p.proname,
+        oidvectortypes(p.proargtypes)) as signature
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where has_function_privilege('service_role', p.oid, 'EXECUTE')
+        and p.prokind = 'f'
+        and has_schema_privilege('service_role', n.oid, 'USAGE')
+        and pg_get_functiondef(p.oid) ilike '%app_private.%'
+      order by signature
+    `;
+    expect(paths).toEqual([
+      { signature: 'public.branding_gc_claim(integer)' },
+      { signature: 'public.branding_gc_finalize(uuid)' },
+    ]);
+
+    const deniedRoles = await db<
+      {
+        signature: string;
+        anon_execute: boolean;
+        authenticated_execute: boolean;
+      }[]
+    >`
+      select format('%I.%I(%s)', n.nspname, p.proname,
+        oidvectortypes(p.proargtypes)) as signature,
+        has_function_privilege('anon', p.oid, 'EXECUTE') as anon_execute,
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated_execute
+      from pg_proc p
+      join pg_namespace n on n.oid = p.pronamespace
+      where p.oid in (
+        'public.branding_gc_claim(integer)'::regprocedure,
+        'public.branding_gc_finalize(uuid)'::regprocedure
+      )
+      order by signature
+    `;
+    expect(deniedRoles).toEqual([
+      {
+        signature: 'public.branding_gc_claim(integer)',
+        anon_execute: false,
+        authenticated_execute: false,
+      },
+      {
+        signature: 'public.branding_gc_finalize(uuid)',
+        anon_execute: false,
+        authenticated_execute: false,
+      },
+    ]);
   });
 
   it('forces RLS on every private F14 branding table', async () => {
