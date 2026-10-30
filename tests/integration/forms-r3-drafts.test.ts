@@ -63,18 +63,22 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
         tx`select public.save_form_draft(${context.wsA.id},${assignmentId},${expectedRevision},${key},${tx.json(values)}) as result`;
       const first = (await save(0, selectionKey, { q1: 'first draft' }))[0]
         ?.result;
-      expect(first).toMatchObject({ status: 'saved', revision: 1 });
+      expect(first).toEqual({
+        status: 'saved',
+        revision: 1,
+        intent_key: selectionKey,
+      });
       expect(await save(0, selectionKey, { q1: 'first draft' })).toEqual([
         { result: first },
       ]);
       expect(await save(0, changedKey, { q1: 'changed intent' })).toEqual([
         {
-          result: expect.objectContaining({ status: 'conflict', revision: 1 }),
+          result: { status: 'conflict', revision: 1 },
         },
       ]);
       expect(await save(0, staleKey, { q1: 'stale write' })).toEqual([
         {
-          result: expect.objectContaining({ status: 'conflict', revision: 1 }),
+          result: { status: 'conflict', revision: 1 },
         },
       ]);
       await tx`reset role`;
@@ -86,10 +90,14 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
 
       const second = (await save(1, nextKey, { q1: 'second draft' }))[0]
         ?.result;
-      expect(second).toMatchObject({ status: 'saved', revision: 2 });
+      expect(second).toEqual({
+        status: 'saved',
+        revision: 2,
+        intent_key: nextKey,
+      });
       expect(await save(1, lateKey, { q1: 'late acknowledgement' })).toEqual([
         {
-          result: expect.objectContaining({ status: 'conflict', revision: 2 }),
+          result: { status: 'conflict', revision: 2 },
         },
       ]);
       expect(
