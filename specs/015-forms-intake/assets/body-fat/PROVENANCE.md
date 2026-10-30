@@ -49,3 +49,11 @@
 | `male/32.png` | 916738 | `379c81ae60213e0bfef4eb0f383dad2cbdc36523b14d5145e77fe45e2d225c70` |
 | `male/35.png` | 1143434 | `2e665355a41f20ce398e1eac78ad860d5dd1b2d59258c1e2f2dc9a8b275ba8db` |
 | `male/40.png` | 981945 | `894bc7ec31e0bef7933b15f2abd475e9dc554b2692684224a8d176c2299802dc` |
+
+## S14 derivative verification
+
+- Generator: `scripts/media/optimize-body-fat-assets.mjs`; source inventory and every byte length/SHA-256 above are checked before encoding. The full source inventory (including the unused `male-cinematic/` files) was verified: 40/40 files matched.
+- Encoder runtime: FFmpeg `9.0.2-full_build-www.gyan.dev`, with `libwebp` and `libaom-av1` plus the WebP/AVIF muxers available. Single-thread encoding, stripped metadata, fixed scaling and fixed quality steps keep repeated runs deterministic on this encoder build.
+- Derivative settings: maximum image display width 384 CSS pixels, maximum source width 768 pixels (2x), preserved aspect ratio, and a 150,000-byte budget per file. Only `female/` and standard `male/` sources are emitted; `male-cinematic/` is hash-checked but never emitted.
+- Verified output: 25 standard-series sources produced 25 WebP and 25 AVIF files at 768 × 658. Each is below 150,000 bytes; smallest 6,260 bytes, largest 20,380 bytes. The catalog records each derivative SHA-256 and its matching source SHA-256.
+- The tracked asset set contains only optimized `.webp`/`.avif` derivatives under `public/images/body-fat/`; original binaries remain outside this repository.
