@@ -1,7 +1,10 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
+  parseStatusOutput,
+  reportCliError,
   redactSensitiveFields,
+  runSupabaseCommand,
   validateAndRedactStatus,
 } from '../../scripts/supabase-status-safe.mjs';
 
@@ -82,5 +85,85 @@ describe('safe Supabase status projection', () => {
         expected,
       ),
     ).toThrow(/port/i);
+  });
+});
+
+describe('safe Supabase CLI boundary', () => {
+  it('does not expose fake credentials from invalid JSON in thrown or printed errors', () => {
+    const secret = 'fake-anon-jwt-123';
+    const raw = `ANON_KEY=${secret}`;
+    let caught: Error | undefined;
+    try {
+      parseStatusOutput(raw);
+    } catch (error) {
+      if (error instanceof Error) caught = error;
+    }
+
+    expect(caught).toBeInstanceOf(Error);
+    if (!caught) throw new Error('expected JSON parse failure');
+    expect(caught.message).toBe('invalid JSON from Supabase status');
+    expect(caught.message).not.toContain(secret);
+    expect(reportCliError(caught)).toBe(
+      'supabase-status-safe: invalid JSON from Supabase status\n',
+    );
+    expect(reportCliError(caught)).not.toContain(secret);
+  });
+
+  it('prints only a generic line for unexpected errors containing fake secrets', () => {
+    const message = reportCliError(new Error('Unexpected fake-anon-jwt-123'));
+
+    expect(message).toBe('supabase-status-safe: failed\n');
+    expect(message).not.toContain('fake-anon-jwt-123');
+  });
+
+  it.each([
+    {
+      platform: 'win32',
+      workdir: 'C:\\workspace\\LIFTER',
+      executable: 'C:\\Program Files\\nodejs\\node.exe',
+      npxCliPath:
+        'C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js',
+      argvPrefix: [
+        'C:\\Program Files\\nodejs\\node_modules\\npm\\bin\\npx-cli.js',
+      ],
+    },
+    {
+      platform: 'posix',
+      workdir: '/workspace/LIFTER',
+      executable: 'npx',
+      npxCliPath: undefined,
+      argvPrefix: [],
+    },
+  ])('passes pinned Supabase arguments as an array on $platform', (setup) => {
+    let call:
+      { file: string; args: readonly string[]; options: unknown } | undefined;
+    const output = runSupabaseCommand(setup.workdir, {
+      platform: setup.platform as NodeJS.Platform,
+      execPath: 'C:\\Program Files\\nodejs\\node.exe',
+      npxCliPath: setup.npxCliPath,
+      execFile: ((file: string, args: readonly string[], options: unknown) => {
+        call = { file, args, options };
+        return '{}';
+      }) as never,
+    });
+
+    expect(output).toBe('{}');
+    if (!call) throw new Error('expected injected exec function to run');
+    expect(call.file).toBe(setup.executable);
+    expect(call.args).toEqual([
+      ...setup.argvPrefix,
+      '--yes',
+      'supabase@2.122.0',
+      'status',
+      '-o',
+      'json',
+      '--workdir',
+      setup.workdir,
+    ]);
+    expect(call.options).toMatchObject({
+      encoding: 'utf8',
+      shell: false,
+      stdio: ['ignore', 'pipe', 'ignore'],
+    });
   });
 });

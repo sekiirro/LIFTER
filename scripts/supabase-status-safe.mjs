@@ -1,6 +1,6 @@
 #!/usr/bin/env node
 import { execFileSync } from 'node:child_process';
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -15,6 +15,28 @@ const SAFE_HEALTH = new Set([
   'up',
 ]);
 const SECRET_FIELD = /(?:jwt|token|key|secret|password|credential|db[_-]?url)/i;
+const SAFE_ERROR_MESSAGES = new Set([
+  '--workdir must be an absolute path',
+  '--expected-api-port must be a valid TCP port',
+  '--expected-db-port must be a valid TCP port',
+  '--workdir is required',
+  '--expected-project-id is required',
+  '--expected-api-port is required',
+  '--expected-db-port is required',
+  'Unknown argument',
+  'Expected project id does not match the workdir Supabase config',
+  'Expected API or DB port does not match the workdir Supabase config',
+  'Supabase status project id does not match the expected project',
+  'Supabase status API URL is missing or invalid',
+  'Supabase status API URL must use HTTP or HTTPS',
+  'Supabase status API URL has no explicit port',
+  'Supabase status DB URL is missing or invalid',
+  'Supabase status DB URL has no explicit port',
+  'Supabase status API or DB port does not match the expected port',
+  'Supabase project id must exist in supabase/config.toml',
+  'invalid JSON from Supabase status',
+  'npx-cli.js could not be resolved for Windows',
+]);
 
 /** Return a deep copy with credential-bearing fields removed. */
 export function redactSensitiveFields(value) {
@@ -27,10 +49,90 @@ export function redactSensitiveFields(value) {
   );
 }
 
+export function parseStatusOutput(raw) {
+  try {
+    return JSON.parse(raw);
+  } catch {
+    throw new Error('invalid JSON from Supabase status');
+  }
+}
+
+export function reportCliError(error) {
+  const message =
+    error instanceof Error && SAFE_ERROR_MESSAGES.has(error.message)
+      ? error.message
+      : 'failed';
+  return `supabase-status-safe: ${message}\n`;
+}
+
+function isAbsoluteForPlatform(workdir, platform) {
+  return platform === 'win32'
+    ? path.win32.isAbsolute(workdir)
+    : path.posix.isAbsolute(workdir);
+}
+
+function resolveNpxCliPath(execPath, env = process.env) {
+  const winPath = path.win32;
+  const npmExecPath = env.npm_execpath;
+  const candidates = [
+    ...(npmExecPath && /npm-cli\.js$/i.test(npmExecPath)
+      ? [winPath.join(winPath.dirname(npmExecPath), 'npx-cli.js')]
+      : []),
+    winPath.join(
+      winPath.dirname(execPath),
+      'node_modules',
+      'npm',
+      'bin',
+      'npx-cli.js',
+    ),
+  ];
+  const result = candidates.find((candidate) => existsSync(candidate));
+  if (!result) throw new Error('npx-cli.js could not be resolved for Windows');
+  return result;
+}
+
+/**
+ * @param {string} workdir
+ * @param {{ platform?: NodeJS.Platform, execFile?: typeof execFileSync, execPath?: string, npxCliPath?: string }} options
+ */
+export function runSupabaseCommand(
+  workdir,
+  {
+    platform = process.platform,
+    execFile = execFileSync,
+    execPath = process.execPath,
+    npxCliPath,
+  } = {},
+) {
+  if (!isAbsoluteForPlatform(workdir, platform)) {
+    throw new Error('--workdir must be an absolute path');
+  }
+  const supabaseArgs = [
+    '--yes',
+    'supabase@2.122.0',
+    'status',
+    '-o',
+    'json',
+    '--workdir',
+    workdir,
+  ];
+  const executable = platform === 'win32' ? execPath : 'npx';
+  const args =
+    platform === 'win32'
+      ? [npxCliPath ?? resolveNpxCliPath(execPath), ...supabaseArgs]
+      : supabaseArgs;
+  return execFile(executable, args, {
+    encoding: 'utf8',
+    shell: false,
+    stdio: ['ignore', 'pipe', 'ignore'],
+  });
+}
+
 function requiredPort(value, name) {
   const port = Number(value);
   if (!Number.isInteger(port) || port < 1 || port > 65535) {
-    throw new Error(`${name} must be a valid TCP port`);
+    const option = name === '--expected-api-port' ? name : '--expected-db-port';
+    throw new Error(`${option} must be a valid TCP port`);
   }
   return port;
 }
@@ -158,7 +260,7 @@ function parseArgs(args) {
         '--expected-db-port',
       ].includes(name)
     ) {
-      throw new Error(`Unknown argument: ${name}`);
+      throw new Error('Unknown argument');
     }
     const value = args[index + 1];
     if (!value || value.startsWith('--'))
@@ -193,20 +295,8 @@ function parseArgs(args) {
 function run() {
   const expected = parseArgs(process.argv.slice(2));
   expected.config = readConfig(expected.workdir);
-  const raw = execFileSync(
-    'npx',
-    [
-      '--yes',
-      'supabase@2.122.0',
-      'status',
-      '-o',
-      'json',
-      '--workdir',
-      expected.workdir,
-    ],
-    { encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] },
-  );
-  const status = JSON.parse(raw);
+  const raw = runSupabaseCommand(expected.workdir);
+  const status = parseStatusOutput(raw);
   process.stdout.write(
     `${JSON.stringify(validateAndRedactStatus(status, expected), null, 2)}\n`,
   );
@@ -219,7 +309,7 @@ if (
   try {
     run();
   } catch (error) {
-    process.stderr.write(`supabase-status-safe: ${error.message}\n`);
+    process.stderr.write(reportCliError(error));
     process.exitCode = 1;
   }
 }
