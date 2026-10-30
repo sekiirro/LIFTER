@@ -11,6 +11,11 @@ it('runs the full Playwright suite after local-stack integration tests', () => {
 
   expect(validate).not.toMatch(/run:\s*CI=1 npm run e2e/);
   if (!integration) throw new Error('CI integration job is missing');
+  const supabaseStart = integration.match(
+    /^ {6}- run: supabase start .*$/m,
+  )?.[0];
+  expect(supabaseStart).toBeDefined();
+  expect(supabaseStart).not.toMatch(/-x[^\n]*\bstorage-api\b/);
   expect(integration).toMatch(FULL_INTEGRATION_RUN);
   expect(integration).toContain(
     'run: npx playwright install --with-deps chromium',

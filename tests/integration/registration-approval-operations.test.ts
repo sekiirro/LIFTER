@@ -1,5 +1,6 @@
 ﻿import { afterAll, beforeAll, expect, it } from 'vitest';
 import { calculateCommissionMinor } from '../../lib/registration-approval/money';
+import { createRecoveryClientTarget } from './client-accounts-fixture';
 import {
   clientContext,
   registered,
@@ -189,5 +190,33 @@ it('T013 committed approval cannot acquire late obligations from a new transacti
   ).rejects.toMatchObject({
     code: '23514',
     message: 'immutable_installment_schedule',
+  });
+});
+
+it('T042 real F11 client session observes pending then approved status without signing in again', async () => {
+  const client = await createRecoveryClientTarget(f);
+  const session = await client.client.auth.getSession();
+  expect(session.error).toBeNull();
+  expect(session.data.session?.user.id).toBe(client.userId);
+  const target = {
+    id: client.clientId,
+    userId: client.userId,
+    link: f.link,
+    rows: null,
+  };
+  const pending = await client.client.rpc('client_self_status');
+  expect(pending.error).toBeNull();
+  expect(pending.data).toEqual({
+    status: 'ok',
+    approval_state: 'pending-approval',
+  });
+  expect((await call(f.po.client, 'approve', request(f, target))).status).toBe(
+    'ok',
+  );
+  const refreshed = await client.client.rpc('client_self_status');
+  expect(refreshed.error).toBeNull();
+  expect(refreshed.data).toEqual({
+    status: 'ok',
+    approval_state: 'approved',
   });
 });
