@@ -229,7 +229,7 @@
 | 55 | B: Essential Shortcuts: Ctrl/Cmd+S (Save Draft), Ctrl/Cmd+K (Quick Search), Esc (close Modal). Respect browser conflicts and unsaved changes. **PO-approved, session 14, 2026-10-30** |
 | 56 | A: Always reset list Filters/Sorting on reopening. No Saved Views or remembered filters. **PO-approved, session 14, 2026-10-30** |
 | 57 | B: Flexible Dashboard: Drag & Drop widget ordering, show/hide optional widgets, persist per-user preferences. Preserve mandatory widgets and role/tenant permissions. **PO-approved, session 14, 2026-10-30** |
-| 58 | unanswered; not approved | Not approved |
+| 58 | **Unanswered — not approved** |
 
 **تصحيح مهم:** سؤال 39 سابق عن زر «أدوات» **أُلغي** لأنه كرر سؤال 36؛ مداخل النموذج والحاسبة تظل تحت مرحلة «الخطط» كما سبق. وسؤال 29 سابق عن تحديث خطة العميل أثناء استخدامه لها **لم يُعتمد**؛ لا تُنشئ قرارًا باسمه. رقم 29 في السجل أعلاه هو سؤال اللون الأخضر النهائي فقط.
 
