@@ -140,8 +140,8 @@ for (const locale of ['ar', 'en'] as const) {
         await expect(
           page.locator('[data-registration-card="premium-centered"]'),
         ).toBeVisible();
-        await expect(page.locator('[data-brand-scope] h2')).toBeVisible();
-        await expect(page.locator('[data-brand-scope] h2')).toHaveText(
+        await expect(page.locator('[data-brand-name]')).toBeVisible();
+        await expect(page.locator('[data-brand-name]')).toHaveText(
           locale === 'ar' ? 'النادي المنشور' : 'Published Club',
         );
         await expect(page.locator('main')).not.toContainText(

@@ -6,7 +6,7 @@
   text-align: center;
 }
 
-.identity h2 {
+.name {
   max-inline-size: 100%;
   overflow-wrap: anywhere;
   font-size: var(--text-xl);

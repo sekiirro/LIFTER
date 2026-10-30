@@ -289,6 +289,12 @@ export const ar = {
   'branding.currentPublished': 'المنشور حاليًا',
   'branding.showcaseNotice':
     'معاينة ببيانات تجريبية فقط. لا تُحفظ التغييرات. جميع نصوص العلامة بانتظار المراجعة.',
+  'branding.saveDraft': 'مسودة: حفظ المسودة',
+  'branding.publishCurrent': 'مسودة: نشر المسودة الحالية',
+  'branding.savedDraft': 'مسودة: تم حفظ المسودة.',
+  'branding.publishedNotice': 'مسودة: تم نشر العلامة الحالية.',
+  'branding.noPublished': 'مسودة: لم يتم نشر شيء بعد',
+  'branding.genericUnavailable': 'مسودة: العلامة غير متاحة. حاول مرة أخرى.',
   'registrationApproval.title': 'مراجعة طلبات التسجيل',
   'registrationApproval.intro':
     'راجع الطلبات وشروطها المسجلة قبل اتخاذ القرار.',

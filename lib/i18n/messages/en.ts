@@ -298,6 +298,12 @@ export const en: Record<keyof typeof ar, string> = {
   'branding.currentPublished': 'Currently published',
   'branding.showcaseNotice':
     'Sample preview only. Changes are not saved. All branding copy is awaiting review.',
+  'branding.saveDraft': 'DRAFT: Save draft',
+  'branding.publishCurrent': 'DRAFT: Publish current draft',
+  'branding.savedDraft': 'DRAFT: Draft saved.',
+  'branding.publishedNotice': 'DRAFT: Current branding published.',
+  'branding.noPublished': 'DRAFT: Nothing published yet',
+  'branding.genericUnavailable': 'DRAFT: Branding is unavailable. Try again.',
   'registrationApproval.title': 'Registration approvals',
   'registrationApproval.intro':
     'Review submitted requests and issued terms before deciding.',

@@ -71,7 +71,9 @@ export function RegistrationBrand({
           decoding="async"
         />
       )}
-      <h2>{name}</h2>
+      <p className={styles.name} data-brand-name="">
+        {name}
+      </p>
     </BrandScope>
   );
 }

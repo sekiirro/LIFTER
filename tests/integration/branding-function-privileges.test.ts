@@ -136,6 +136,8 @@ describe('F14 definer function privileges', () => {
         fn.signature ===
           'app_private.branding_upload_begin(uuid,text,bigint)' ||
         fn.signature === 'app_private.branding_draft_save(uuid,bigint,jsonb)' ||
+        fn.signature === 'app_private.branding_draft_read(uuid)' ||
+        fn.signature === 'app_private.branding_current_read(uuid)' ||
         fn.signature === 'app_private.branding_asset_attach(uuid,bigint)' ||
         fn.signature === 'app_private.branding_publish(uuid,bigint)'
       ) {

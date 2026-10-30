@@ -58,6 +58,8 @@ const brandingPrivate = [
   'branding_credential_register',
   'branding_credential_set_enabled',
   'branding_credential_allowed',
+  'branding_current_read',
+  'branding_draft_read',
   'branding_draft_save',
   'branding_gc_claim',
   'branding_gc_finalize',
@@ -246,6 +248,8 @@ describe('tenancy security catalog (T007)', () => {
           'branding_draft_save',
           'branding_asset_attach',
           'branding_publish',
+          'branding_current_read',
+          'branding_draft_read',
           'branding_staging_upload_allowed',
         ].includes(row.proname) ||
           (!row.proname.startsWith('f12_') &&
