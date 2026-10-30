@@ -194,6 +194,7 @@ describe('tenancy security catalog (T007)', () => {
         'current_staff_role',
         'enqueue_job',
         'forbid_delete',
+        'f13_actor_preflight',
         'f13_materialize_entitlement',
         'f13_project_entitlement',
         'f13_audit_client_deactivation',

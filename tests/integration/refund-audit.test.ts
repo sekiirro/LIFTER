@@ -67,7 +67,10 @@ it('audits refund, allocation, cancellations and deactivation with allow-listed 
     });
 
     const rows = await tx`
-      select action,details from public.audit_events
+      select action,details,
+        (details->>'deactivated_at')::timestamptz =
+          (select deactivated_at from public.clients where id=${ids.client}) as deactivation_timestamp_matches
+      from public.audit_events
       where workspace_id=${f.wsA.id} and (
         (action='client.deactivated' and target_id=${ids.client})
         or details->>'subscription_id'=${ids.subscription}
@@ -80,6 +83,10 @@ it('audits refund, allocation, cancellations and deactivation with allow-listed 
         'payment.obligation_cancelled',
       ]),
     );
+    const deactivationAudit = rows.find(
+      (row) => row.action === 'client.deactivated',
+    );
+    expect(deactivationAudit?.deactivation_timestamp_matches).toBe(true);
     const details = JSON.stringify(rows.map((row) => row.details));
     expect(details).not.toContain('auth_user_id');
     expect(details).not.toContain('email');
