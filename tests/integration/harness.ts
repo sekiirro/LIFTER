@@ -2,6 +2,11 @@ import { randomUUID } from 'node:crypto';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import postgres from 'postgres';
 import type { Role } from '../../lib/auth/capabilities';
+import {
+  assertLocalStackTarget,
+  getStackConfig,
+  selectStack,
+} from '../../scripts/local-stack.mjs';
 
 export function loadEnv() {
   const apiUrl = process.env.API_URL || process.env.SUPABASE_URL;
@@ -10,11 +15,12 @@ export function loadEnv() {
     process.env.SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   const dbUrl = process.env.DB_URL || process.env.SUPABASE_DB_URL;
   if (!apiUrl || !anonKey || !serviceRoleKey || !dbUrl) {
-    throw new Error(
-      'Integration env missing: run `supabase start` and export `supabase status -o env`',
-    );
+    throw new Error('Integration env missing for selected local stack');
   }
-  return { apiUrl, anonKey, serviceRoleKey, dbUrl };
+  const stack = selectStack();
+  const config = getStackConfig(stack);
+  assertLocalStackTarget({ stack, apiUrl, dbUrl });
+  return { apiUrl, anonKey, serviceRoleKey, dbUrl, stack, config };
 }
 
 // Fail before opening any sockets when the local stack environment is missing.

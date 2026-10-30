@@ -4,6 +4,7 @@
 
 **Plan status**: Plan APPROVED by PO 2026-10-29 (session 13).
 **T015 integration note**: The private F15 `lib/forms/cairo-deadline.ts` helper and F13 `lib/time/cairo-calendar.ts` helper are consolidated at integration.
+**Stack D provisioner note**: This branch ports the stack-aware F13 provisioner from `013-freeze-renewal-refunds` commit `afd5bf3`; F14 commit `c0b878c` carries a divergent stack-aware version. Reconcile the two implementations at merge, preserving target guards, absolute status workdirs, and selected-stack env isolation.
 
 **Execution rule**: This is a future implementation plan. Every implementation unit writes its focused tests first and records RED, then implements and records GREEN. No task may use Stack A or Stack B. Each DB task requires a verified NEW isolated stack; until assigned and verified, it is blocked. Mutation evidence is required for every security, authorization, audit, idempotency and retention task. No implementation begins before PO plan approval.
 

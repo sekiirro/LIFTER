@@ -1,3 +1,4 @@
+import { localSupabaseContainer } from './local-docker';
 import { randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { afterAll, beforeAll, expect, it } from 'vitest';
@@ -414,7 +415,7 @@ for (const scenario of ['collision', 'unresolved'])
       [
         'exec',
         '-i',
-        'supabase_db_lifter',
+        localSupabaseContainer('db'),
         'psql',
         '-U',
         'supabase_admin',
