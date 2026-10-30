@@ -18,6 +18,27 @@ function readResult(sequence: number) {
 }
 
 describe('Supabase branding repository publication result', () => {
+  it('returns null for an upload-created draft with no persisted names', async () => {
+    const rpc = vi.fn().mockResolvedValueOnce({
+      data: {
+        workspace_id: 'workspace-a',
+        revision: 1,
+        fields: {
+          name: { ar: '', en: '' },
+          bannerAlt: { ar: '', en: '' },
+          color: '#059669',
+        },
+        current_publication: null,
+      },
+      error: null,
+    });
+    const repository = createSupabaseBrandingRepository({
+      rpc,
+    } as unknown as SupabaseClient);
+
+    await expect(repository.getDraft('workspace-a')).resolves.toBeNull();
+  });
+
   it('reports an asset-only publication as changed when SQL advances the version sequence', async () => {
     const rpc = vi
       .fn()

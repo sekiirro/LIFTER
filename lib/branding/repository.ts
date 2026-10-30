@@ -30,7 +30,19 @@ function readResult(value: unknown): ReadResult {
   return value as ReadResult;
 }
 
-function asDraft(result: ReadResult): BrandingDraft {
+function hasPersistedName(fields: unknown): boolean {
+  if (!fields || typeof fields !== 'object' || Array.isArray(fields))
+    return false;
+  const name = (fields as { name?: unknown }).name;
+  if (!name || typeof name !== 'object' || Array.isArray(name)) return false;
+  return ['ar', 'en'].some((locale) => {
+    const text = (name as Record<string, unknown>)[locale];
+    return typeof text === 'string' && text.trim().length > 0;
+  });
+}
+
+function asDraft(result: ReadResult): BrandingDraft | null {
+  if (!hasPersistedName(result.fields)) return null;
   return {
     workspaceId: result.workspace_id,
     revision: result.revision,
