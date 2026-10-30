@@ -36,3 +36,22 @@ Route names below are proposed ownership seams, not implemented interfaces. Requ
 - No CDN, ISR, framework shared cache, Realtime publication, browser storage or service-role response.
 - Denial response shape is indistinguishable for foreign/nonexistent/unauthorized targets except incidental request ID.
 - Success acknowledgement means durable accepted revision only. Network uncertainty remains unsaved/unknown until reconciliation.
+
+## S17 persistence slice
+
+The F15-owned relations are `public.forms`, `public.form_versions`, and
+`public.form_assignments`. Every tenant relationship carries `workspace_id` in
+its key and foreign keys. Published form versions and assignment snapshots are
+immutable. A version and its assignment bind the latest published row in
+`app_private.terms_policy_versions`; the migration seeds no published T&C
+copy. Tests publish synthetic policy rows inside rollback-scoped fixtures.
+
+Direct table grants remain revoked. Forced RLS policies call the shared
+capability and workspace helpers; the `author_forms`, `assign_intake_form`,
+and `read_form_answers` capability mappings are pending the final shared
+function reconciliation. `public.read_form_answer` appends an IDs-only
+`form.answer_viewed` audit event before returning answer values. The private
+retention worker uses immutable 30-day source windows, active legal holds, and
+counts-only erasure controls; lifecycle writers still need to bind the
+authoritative F12 closure/refund/deactivation facts after those contracts
+merge.
