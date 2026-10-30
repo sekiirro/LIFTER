@@ -134,6 +134,7 @@ export function ApprovalReview({
             amountMinor={item.price_minor}
             currency={item.currency}
             requestKey=""
+            pending={pending}
             onConfirm={(confirmed) => {
               if (confirmed && paymentDate) void run('approve');
               else setNotice(messages['registrationApproval.paymentDateHint']);
@@ -154,6 +155,7 @@ export function ApprovalReview({
           amountMinor={item.price_minor}
           currency={item.currency}
           requestKey=""
+          pending={pending}
           submitLabel={messages['registrationApproval.reconsider']}
           onConfirm={(confirmed) => {
             if (confirmed && paymentDate) void run('reconsider');

@@ -7,6 +7,13 @@ import { StatusBadge } from '../../components/registration-approval/StatusBadge'
 import { PaymentHistory } from '../../components/registration-approval/PaymentHistory';
 import { getMessages } from '../../lib/i18n';
 
+vi.mock('../../app/(app)/registration-approvals/actions', () => ({
+  approveRegistrationAction: vi.fn(),
+  reconsiderRegistrationAction: vi.fn(),
+  rejectRegistrationAction: vi.fn(),
+  correctCollectionAction: vi.fn(),
+}));
+
 const item = {
   client_id: '00000000-0000-0000-0000-000000000002',
   name: 'Mina',
@@ -37,12 +44,11 @@ describe('registration approval controls', () => {
       }),
     );
     expect(html).toContain('120000');
-    expect(html).toContain('readonly');
+    expect(html).toContain('readOnly=""');
     expect(html).toContain('type="date"');
     expect(html).toContain('registration_rejected');
-    expect(html).toContain('reconsider');
-    expect(html).toContain('correct');
-    expect(html).toContain('aria-label=');
+    expect(html).toContain('Reconsider');
+    expect(html).toContain('<label');
   });
   it('hides correction and reconsideration controls from non-PO staff', () => {
     const html = renderToStaticMarkup(
@@ -87,12 +93,7 @@ describe('registration approval controls', () => {
             currency: 'EGP',
             due_on: '2026-11-01',
             paid: false,
-            revision: 0,
-            tail_event_id: null,
-            kind: null,
             collected_on: null,
-            effective_on: null,
-            recorded_by: null,
           },
         ],
         workspaceId: '00000000-0000-0000-0000-000000000001',
@@ -103,6 +104,86 @@ describe('registration approval controls', () => {
       }),
     );
     expect(badge).toContain('data-status="approved"');
+    expect(badge).toContain('Approved');
     expect(history).toContain('dir="auto"');
+  });
+  it('never renders commission to Sales even if an overbroad payload is supplied', () => {
+    const html = renderToStaticMarkup(
+      createElement(PaymentHistory, {
+        obligations: [
+          {
+            seq: 1,
+            amount_minor: '120000',
+            currency: 'EGP',
+            due_on: '2026-11-01',
+            paid: true,
+            collected_on: '2026-11-01',
+          },
+        ],
+        role: 'sales',
+        messages: getMessages('en'),
+        commissionEvents: [
+          { installment_seq: 1, commission_minor: '99000', rate_bp: 825 },
+        ],
+      }),
+    );
+    expect(html).not.toContain('99000');
+    expect(html).not.toContain('Commission');
+  });
+  it('associates a visible label with the payment confirmation checkbox', () => {
+    const html = renderToStaticMarkup(
+      createElement(PaymentConfirmation, {
+        amountMinor: '120000',
+        currency: 'EGP',
+        requestKey: '00000000-0000-4000-8000-000000000004',
+        onConfirm: vi.fn(),
+        messages: getMessages('en'),
+      }),
+    );
+    expect(html).toContain('<label');
+    expect(html).toContain('type="checkbox"');
+    expect(html).toContain(
+      'I confirm this amount was received outside LIFTER.',
+    );
+    expect(html).toMatch(/<label[^>]*>.*<input type="checkbox".*<span>/);
+  });
+  it('limits collection correction to the PO and requires a confirmation dialog', () => {
+    const obligations = [
+      {
+        seq: 1,
+        amount_minor: '120000',
+        currency: 'EGP',
+        due_on: '2026-11-01',
+        paid: true,
+        collected_on: '2026-11-01',
+        obligation_id: '00000000-0000-0000-0000-000000000005',
+        revision: 1,
+        tail_event_id: '00000000-0000-0000-0000-000000000006',
+        kind: 'collection',
+      },
+    ];
+    const po = renderToStaticMarkup(
+      createElement(PaymentHistory, {
+        obligations,
+        role: 'platform_owner',
+        workspaceId: '00000000-0000-0000-0000-000000000001',
+        clientId: item.client_id,
+        subscriptionId: '00000000-0000-0000-0000-000000000003',
+        messages: getMessages('en'),
+      }),
+    );
+    const sales = renderToStaticMarkup(
+      createElement(PaymentHistory, {
+        obligations,
+        role: 'sales',
+        workspaceId: '00000000-0000-0000-0000-000000000001',
+        clientId: item.client_id,
+        subscriptionId: '00000000-0000-0000-0000-000000000003',
+        messages: getMessages('en'),
+      }),
+    );
+    expect(po).toContain('data-testid="correction-action"');
+    expect(po).toContain('data-testid="confirm-dialog"');
+    expect(sales).not.toContain('data-testid="correction-action"');
   });
 });
