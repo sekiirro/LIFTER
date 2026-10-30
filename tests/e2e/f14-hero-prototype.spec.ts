@@ -757,6 +757,50 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
     await close();
   }
 
+  for (const theme of ['light', 'dark'] as const) {
+    const { page, close } = await open(browser, {
+      width: 390,
+      height: 844,
+      theme,
+      fixture: 'dark',
+    });
+    await page.locator('input[name="phone-national"]').fill('123');
+    await page.locator('form button[type="submit"]').click();
+    await expect(page.locator('input[name="phone-national"]')).toHaveAttribute(
+      'aria-invalid',
+      'true',
+    );
+    await axe(page, `dark-error-state-${theme}-mobile`);
+    await page.evaluate(() => window.scrollTo(0, 0));
+    await measureTextContrast(page, `error-dark-art-${theme}-mobile`);
+    await close();
+  }
+
+  for (const theme of ['light', 'dark'] as const) {
+    for (const viewport of [
+      { name: 'mobile', width: 390, height: 844 },
+      { name: 'desktop', width: 1440, height: 900 },
+    ]) {
+      const { page, close } = await open(browser, {
+        ...viewport,
+        theme,
+        fixture: 'bright',
+      });
+      await page.locator('input[name="phone-national"]').fill('123');
+      await page.locator('form button[type="submit"]').click();
+      await expect(
+        page.locator('input[name="phone-national"]'),
+      ).toHaveAttribute('aria-invalid', 'true');
+      await axe(page, `bright-error-state-${theme}-${viewport.name}`);
+      await page.evaluate(() => window.scrollTo(0, 0));
+      await measureTextContrast(
+        page,
+        `error-bright-art-${theme}-${viewport.name}`,
+      );
+      await close();
+    }
+  }
+
   for (const locale of ['ar', 'en'] as const) {
     const { page, close } = await open(browser, {
       width: 390,
