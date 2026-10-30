@@ -4,9 +4,9 @@
 
 ## Confirmed repository contracts
 
-- F12 owns subscription snapshots, installment obligations, collections, exact correction reversals, operation receipts and the collection/correction writer. F13 must extend these contracts after U4 merges, not create a competing payment writer.
-- F12 U4 is a hard integration gate: re-read its final migration, RPC signatures, operation receipt shape, authorization rechecks, advisory-key lock position, audit rollback and lock order before final implementation design.
-- F14 migrations already exist and additional F12/F14 work is planned. F13 migration timestamps must be later than every merged or unmerged F12/F14 migration at implementation time. Rebuild shared functions from the latest integrated bodies.
+- F12 owns subscription snapshots, installment obligations, collections, exact correction reversals, operation receipts and the collection/correction writer. F13 extends these merged contracts without creating a competing payment writer.
+- F12 U4 is merged on `origin/main` as PR #18 (`e3a2534`). Its final migration, RPC signatures, receipt shape, authorization rechecks, advisory-key lock position, audit rollback, lock order and race guarantees are recorded below from merged source.
+- F14 is not merged. F13 migration timestamps must follow the actual integrated F12/F14 migration chain when F14 merges; rebuild shared functions from the latest integrated bodies then.
 - The approved final PO decisions settle freeze duration/overlap/day counting, purchase independence, post-deactivation partial refunds and FIFO allocation. No policy branch remains open for those items.
 
 ## F12 merged contract and provisional F14 inventory (T001/T002)
@@ -130,6 +130,6 @@ integration work (T017).
 ## Unresolved technical gates (not policy decisions)
 
 - PO-1 token issuance timing is closed by the tested Custom Access Token hook. The hook does not revoke already-issued JWTs; PO accepted their natural expiry.
-- **F12 U4 integration shape — DEPENDENCY GATE**: final RPC, locks and receipt integration are unknown until F12 U4 merges and is reviewed. Blocks refund, renewal/payment integration and any shared-function amendment.
+- **F14 integration — dependency gate**: refresh F14's full migration inventory and shared-function bodies after F14 merges (T017), before final F13 timestamping and cross-feature reconciliation.
 - **Verified isolated stack ? Stack C assigned**: F13 uses lifter-stack-c only (API 35421, DB 35422). Never use Stack A or B.
 - **Retention — PRE-PRODUCTION BLOCKER**: technical feasibility across all recoverable copies including backups and applicable legal exceptions must be resolved before real client data/production.
