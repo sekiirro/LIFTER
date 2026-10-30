@@ -2,7 +2,7 @@
 
 **Status: APPROVED by PO 2026-10-29 (Final PO APPROVAL); Q1 relationship-end denial confirmed 2026-10-30**
 
-The permitted actor set and operation-by-field-by-scope details below are approved by the PO. PO, WO, Trainer and Client may correct submitted forms, including medical fields and attachments, while the client relationship is active, subject to tenant isolation, authorized client scope, current authorization, immutable version history and audit. Q1 is final: no role may correct after Closure, Refund or Deactivation. D1 is approved under D-29 for automatic server-validated erasure of answer values currently inapplicable under the authoritative answer state, across versions and only their answer-change/access-view audit rows. No human or service-role direct delete/trigger path exists. Its pure selector is DB-free; exact migration waits for F12/F14 merge and verified Stack C.
+The permitted actor set and operation-by-field-by-scope details below are approved by the PO. PO, WO, Trainer and Client may correct submitted forms, including medical fields and attachments, while the client relationship is active, subject to tenant isolation, authorized client scope, current authorization, immutable version history and audit. Q1 is final: no role may correct after Closure, Refund or Deactivation. D1 is approved under D-29 for automatic server-validated erasure of answer values currently inapplicable under the authoritative answer state, across versions and only their answer-change/access-view audit rows. No human or service-role direct delete/trigger path exists. Its pure selector is DB-free; exact migration waits for F12/F14 merge and verified Stack D.
 
 ## Field classes
 

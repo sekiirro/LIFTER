@@ -2,13 +2,13 @@
 
 **Branch**: `015-forms-intake` | **Date**: 2026-10-29 | **Spec**: [spec.md](spec.md)
 
-**Plan status**: Plan APPROVED by PO 2026-10-29 (session 13).
+**Plan status**: Base plan approved by PO 2026-10-29 (session 13); S14 amendment reflects binding decisions dated 2026-10-30. This documentation update is not a new implementation/merge approval.
 
 **Input**: Feature specification from `specs/015-forms-intake/spec.md`. This is a plan, not implementation authorization; implementation starts only after PO plan approval.
 
 ## Summary
 
-Build a tenant-scoped Forms/Intake engine around immutable published form versions and assignment snapshots, conflict-safe drafts, immutable submissions/corrections, distinct client-submission and D-03 Trainer-delivery deadlines, and ID-only alerts. Implement approved audiences/recurrence; recurrence resumes after freeze without catch-up (F1). D1 design/security is approved by D-29: automatic server-validated erasure selects every answer value whose question is currently inapplicable under authoritative answers, across versions and its answer-change/access-view audit rows; legal hold defers and alerts; the process is idempotent, tenant-isolated, fail-closed, emits counts only to its control record, and never logs answer content. No person or service-role caller can directly trigger/delete. RET-3 requires all-copy purge within 30 days. The exact database migration remains blocked pending F12/F14 merge and verified Stack C. Client-late alerts are Trainer at deadline+24h and PO+WO at +48h; no Trainer routes to PO+WO; reassignment transfers without clock reset; deliver to currently authorized owners. Preserve D-03 Trainer-late Q4 rules exactly. No role may correct after relationship end (Q1). No MVP attachment feature/storage. Real data and scheduler remain gated by retention review and authoritative P4 facts.
+Build a tenant-scoped Forms/Intake engine around immutable published form versions and assignment snapshots, conflict-safe drafts, immutable submissions/corrections, distinct client-submission and D-03 Trainer-delivery deadlines, and ID-only alerts. S14 adds the 26-parent Mandatory Intake catalog with stable child IDs, canonical fixture copy, reviewed English translations, fully editable Builder behavior, sex-based N12 image series, read-only-source media derivatives, signup extension without T&C consent, post-Nutrition Terms consent, health-data notice, and Welcome flow. Implement approved audiences/recurrence; recurrence resumes after freeze without catch-up (F1). D1 design/security is approved by D-29: automatic server-validated erasure selects every answer value whose question is currently inapplicable under authoritative answers, across versions and its answer-change/access-view audit rows; legal hold defers and alerts; the process is idempotent, tenant-isolated, fail-closed, emits counts only to its control record, and never logs answer content. No person or service-role caller can directly trigger/delete. RET-3 requires all-copy purge within 30 days. The exact database migration remains blocked pending F12/F14 integration and verified Stack D. Client-late alerts are Trainer at deadline+24h and PO+WO at +48h; no Trainer routes to PO+WO; reassignment transfers without clock reset; deliver to currently authorized owners. Preserve D-03 Trainer-late Q4 rules exactly. No role may correct after relationship end (Q1). No MVP attachment feature/storage. Real data and scheduler remain gated by retention review and authoritative P4 facts.
 
 ## Technical Context
 
@@ -18,7 +18,7 @@ Build a tenant-scoped Forms/Intake engine around immutable published form versio
 **Testing**: Vitest unit/contract; isolated Supabase integration tests; Playwright/axe and rendered screenshots for UI. Tests are written first and observed RED before implementation.
 **Target Platform**: LIFTER web application and PostgreSQL-backed Supabase deployment
 **Project Type**: Next.js web application with SQL/RLS backend
-**Performance Goals**: No numeric product latency promises. Approved bounds: 20 questions per section, 60 per form, 400 conditions, 16 per-question conditions, 4,000 evaluation steps, 131,072 definition bytes, 4,096 UTF-8 bytes per textual answer, 50 choices, and 262,144 answer-value JSON UTF-8 bytes per draft/submission. Short/long text maxima are 150/1,000 Unicode code points; a per-question `charLimit` may lower but never exceed its type maximum. Payload bytes sum serialized answer values only, excluding keys, envelope fields and transport framing. The worst-case valid form of 60 long answers × 1,000 four-byte code points measures 240,120 serialized bytes including the JSON string quotes and fits. Measure and review autosave debounce/max-unsaved behavior before UI/publication ships.
+**Performance Goals**: No numeric product latency promises. Approved bounds: 20 questions per section, 60 per form, 400 conditions, 16 per-question conditions, 4,000 evaluation steps, 131,072 definition bytes, 4,096 UTF-8 bytes per textual answer, 50 choices, and 262,144 answer-value JSON UTF-8 bytes per draft/submission. Short/long text maxima are 150/1,000 Unicode code points; a per-question `charLimit` may lower but never exceed its type maximum. Payload bytes sum serialized answer values only, excluding keys, envelope fields and transport framing. The worst-case valid form of 60 long answers × 1,000 four-byte code points measures 240,120 serialized bytes including the JSON string quotes and fits. New answer types and N7/N8 derived options remain subject to the same bounds; profile-bound and computed values are not client-editable answers. Measure and review autosave debounce/max-unsaved behavior before UI/publication ships.
 **Constraints**: Sensitive health data; forced tenant RLS; two authorization walls; audited fail-closed reads; append-only versioning except the D-29 erasure exception; no browser persistence, cache, Realtime or service-role answer path; fixed Cairo D-03 calendar; no real-data alerting without complete P4 facts. D1 erasure is automatic and server-validated only; no human trigger or direct PO/WO/Trainer/Client/service-role delete. It deletes inapplicable answer values across versions and their answer-change/access-view audit rows only, never financial/authentication/authorization/security/unrelated audit; it is legal-hold defer+alert, idempotent, tenant-isolated and fail-closed. The control record stores counts only with no IDs; answer content is never logged; RET-3 purges all recoverable copies within 30 days.
 **Scale/Scope**: Six user stories, FR-001-FR-033; Q3 audiences include all active workspace clients, joining/onboarding clients, searched specific clients, custom recurrence, and renewal actual-start triggers.
 
@@ -38,7 +38,16 @@ All checks are design requirements; none is runtime-verified by this DB-free pla
 
 ## Architecture and Unit Boundaries
 
-The detailed ownership and DB classification is in [tasks.md](tasks.md). DB-dependent F15 units require a **NEW isolated stack**: “needs verified isolated stack, not yet assigned.” F15 may not use Stack A or Stack B. Pure helpers, policy logic and component tests use no DB. No F15 integration run, migration, Docker or Supabase operation is part of this planning lane.
+The detailed ownership and DB classification is in [tasks.md](tasks.md). Body-fat source originals are read-only at `C:/Users/NEW LAP/Desktop/YBS SYSTEM/public/body-fat/`; reproducible derivatives go under `public/images/body-fat/` (WebP/AVIF, max 2x display width, target <=150 KB). Original binaries are never committed. DB-dependent F15 units require the PO-approved **Stack D**, verified isolated from Stacks A/B/C and against latest merged F12/F14. Pure helpers, policy logic, media and component tests use no DB. No F15 integration run, migration, Docker or Supabase operation is part of this specification amendment.
+
+### S14 mandatory intake and signup plan
+
+- Import the 26-parent Basic/Training/Nutrition inventory and stable child IDs from `spec.md`; exact Arabic copy is the byte-preserved `fixtures/mandatory-intake-copy-ar.md`. The fixture test plan requires extraction/diff equality and structured coverage of every conditional, derived option and ordering rule before implementation.
+- Replace T009's old “wait for PO-supplied inventory” gate: content and rules are now specified. T009 remains dependent on the approved Builder/version pipeline and immutable assignment snapshots. Configure N7 maximum five meals and meal-timing choices as dependent data, N8 budget food lists as editable versioned options, N11 slider with 150-250ms motion and reduced-motion bypass, and N12 image cards last. The P4 N7 maximum-five rule is an explicit PO-approved deviation; canonical Arabic source remains unchanged.
+- Every Mandatory Intake remains editable in the same Builder as other forms. Authors can add/remove/reorder sections and questions, edit AR/EN copy/options/types/conditions/food lists/assets, and publish through Draft → Preview → Publish. Published versions and assignment snapshots are immutable; edits create a new version. No “locked” or hardcoded Mandatory Intake exception is permitted.
+- Signup is an F11 surface extension delivered by F15: preserve transactional Auth/link consumption, pending approval, no-session signup, and all existing F11 protections. Add DOB, three-part name, workspace-scoped unique normalized username, optional Telegram and sex as personal data. Signup creates the pending account without T&C consent; the unchecked required T&C consent with policy version/server timestamp is captured only at the post-Nutrition Terms Card; marketing remains separate and optional. The detailed cross-feature contract is `contracts/signup-extension.md`.
+- Terms and the separate pre-health notice are sourced drafts, not approved ship text. The notice has no acknowledgment checkbox or consent record. Sex question labels and health notice copy are DRAFT pending PO approval. `reports/S14-terms-draft.md` contains sourced copy from approved LIFTER policies. The architect defaults resolve the Terms Card and N11 motion design gaps.
+- New F15 migration timestamps must be `20261104000000` or later, and strictly later than the complete F12/F14 migration sets actually merged at implementation time. This lower bound does not remove the requirement to re-inspect merged history. DB work uses Stack D only, after Stack D isolation and F12/F14 integration are verified; all other new S14 units are DB-free.
 
 ### Data/security boundaries
 
@@ -54,8 +63,8 @@ Use the existing F12 order whenever F12 rows are involved: **client → subscrip
 
 ## Migration and Shared-Function Ordering
 
-- F15 migrations must be strictly later than every F12 and F14 migration actually merged at implementation time, including unmerged review-fix/planned migrations. Known F12 timestamps include `20261101120000`, `20261101121000`, `20261101122000`, and planned `20261101123000`/`20261101124000`. Known F14 timestamps include `20261102120000`–`20261102122000`, with further migrations planned. Reinspect both full branches and all timestamps before assigning any F15 timestamp; do not allocate one in this plan.
-- F15 cannot use Stack A (F12) or Stack B (F14). Provision and verify a separate isolated stack before any DB-dependent task; ownership is currently unassigned.
+- F15 migrations must be `20261104000000` or later and strictly later than every F12 and F14 migration actually merged at implementation time, including later review fixes. Reinspect both full integrated histories before allocating any exact timestamp; this plan creates none.
+- F15 DB work uses the PO-approved Stack D exception only, after verifying isolation from Stacks A/B/C and the latest F12/F14 shared contracts. Never use Stack A, Stack B or Stack C for this lane.
 - Rebuild the full latest `audit_row_change()` body after F12 and F14 integration, preserving all mappings and scrubbed allow-lists; never copy a stale function body.
 - Extend SQL `app_private.role_has_capability` and TypeScript `lib/auth/capabilities.ts` only after F12's Sales `approve_registration` removal and F14's `manage_branding` change are integrated. Add `assign_intake_form` for PO/WO/Trainer, deny Sales, and require bidirectional parity for known and unknown strings.
 - Extend `app_private.has_workspace_access` only from its latest integrated definition. PO global authority must additionally join a real existing workspace for workspace-scoped F15 actions.
@@ -68,7 +77,7 @@ Use the existing F12 order whenever F12 rows are involved: **client → subscrip
 | Shared tables/FKs | F11 client/Auth binding; F12 clients, subscriptions, approval event; P2-owned workspace-bound templates, assignments, answers, SLA, jobs and alerts | F11 identity and F12 schema/functions must be merged and inspected before DB design is finalized. Consume F13 entitlement projection for actual renewed-subscription service start (including freeze shifts) and frozen/inactive state. No financial payload reads. |
 | Shared functions | `audit_row_change`, `role_has_capability`, `has_workspace_access`, F12 client guards/access helpers | F12 then F14 latest bodies first; F15 adds forward extensions only. |
 | Capability TS/SQL | `lib/auth/capabilities.ts`, SQL `app_private.role_has_capability`; add `assign_intake_form` | Sequence after F12 Sales removal and F14 branding addition; F12 bidirectional parity test available and passes. |
-| i18n | `lib/i18n/messages/ar.ts`, `lib/i18n/messages/en.ts` | Coordinate shared-file ownership; bilingual authored form content is separate from UI strings. |
+| i18n | `lib/i18n/messages/ar.ts`, `lib/i18n/messages/en.ts` | One i18n copy owner owns both shared message files; bilingual authored form content and the canonical Arabic fixture remain separate from UI chrome strings. |
 | Dashboard/nav | `app/(app)/page.tsx`, authorized dashboard routes, `app/(client)/account/status/`, future intake routes | F12 status navigation remains intact; F15 registers only an existing authorized route, no guessed route or staff redirect. |
 | Branding | F14-8 published workspace brand contract | F14 merge first; per-request scope, neutral fallback, no shared actor/workspace cache. No editor/storage copied into F15. |
 | Alerts/delivery | P4 authoritative first-pair delivery and responsible-Trainer facts; D4 client-late and existing Q4 D-03 Trainer-late policies | Synthetic fixtures first; real-data classification/alerts are blocked until complete authoritative coverage; recheck current authorization at delivery (A3). |
@@ -80,11 +89,11 @@ Merge readiness of F12 and F14 is not asserted by this plan; their latest integr
 
 | OPEN item | What it blocks |
 | --- | --- |
-| Mandatory Intake name and actual questions (PO supplies when task reached) | T009 seeding/publication of the initial Mandatory Intake content and related question-specific fixtures. Build engine and placeholder beforehand; ask PO at T009. |
+| Draft copy approval | Terms publication and its rendered UI: PO approval of sex labels, health-data notice and Terms AR/EN wording; the notice has no acknowledgment. Architect defaults close the Terms Card and N11 motion design gaps. |
 | 30-day retention technical/legal review (including backup/PITR and exceptions) | T019 evidence gathering and T025 production readiness for real client data and purge acceptance against hosted recoverable copies. Synthetic local/CI work may continue. |
 | Authoritative P4 first-pair delivery and responsible-Trainer coverage | T016 synthetic alert engine can proceed; T017 real-data scheduler activation and T025 production readiness stay blocked. |
 | Future attachment storage lifecycle | No MVP attachment task is authorized. FR-032 remains no attachment feature/storage until separately specified; future attachment implementation requires a new scoped decision/design and RET-2/3 proof. |
-| D1 exact deletion migration | DB-dependent implementation task T029 is blocked pending F12/F14 merge and verified Stack C. The pure DB-free selector task T026 is unblocked under D-29; no SQL or database operation is part of this lane. |
+| D1 exact deletion migration | DB-dependent implementation task T029 is blocked pending F12/F14 merge and verified Stack D. The pure DB-free selector task T026 is unblocked under D-29; no SQL or database operation is part of this lane. |
 
 ## Project Structure
 
@@ -96,7 +105,11 @@ specs/015-forms-intake/
 ├── contracts/
 │   ├── authorization-and-audit.md
 │   ├── forms-api.md
-│   └── retention-and-alerts.md
+│   ├── retention-and-alerts.md
+│   └── signup-extension.md
+├── fixtures/mandatory-intake-copy-ar.md
+├── assets/body-fat/PROVENANCE.md
+└── reports/S14-terms-draft.md
 ├── quickstart.md
 ├── tasks.md
 └── checklists/analyze.md
@@ -116,4 +129,4 @@ tests/e2e/                         # rendered user journeys and Design Gate
 
 ## Complexity Tracking
 
-D-29 approves a material Constitution VII expansion; the MINOR version bump to 1.4.0 follows the Constitution's semantic-version rule. D1's accepted loss of who-viewed evidence for the erased answer is recorded as a security consequence. The exact migration still requires F12/F14 merge and verified Stack C. Any missing DESIGN.md decision stops only its rendered-UI unit and is escalated through the Frontend Design Gate.
+D-29 approves a material Constitution VII expansion; the MINOR version bump to 1.4.0 follows the Constitution's semantic-version rule. D1's accepted loss of who-viewed evidence for the erased answer is recorded as a security consequence. The exact migration still requires F12/F14 merge and verified Stack D. Any missing DESIGN.md decision stops only its rendered-UI unit and is escalated through the Frontend Design Gate.
