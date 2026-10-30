@@ -4,16 +4,22 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
 const serverLogRunId = randomUUID();
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const serverLogManifestPath = join(
+  tmpdir(),
+  `lftr-u8-${serverLogRunId}.manifest.json`,
+);
 const serverLogRawPath = join(tmpdir(), `lftr-u8-${serverLogRunId}.server.log`);
 const serverLogSummaryPath = join(
   tmpdir(),
   `lftr-u8-${serverLogRunId}.summary.json`,
 );
+process.env.U8_SERVER_LOG_MANIFEST_PATH = serverLogManifestPath;
 export default defineConfig({
   globalTeardown: './tests/e2e/server-log-global-teardown.ts',
   testDir: './tests/e2e',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL,
   },
   projects: [
     {
@@ -29,9 +35,10 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npm run build && node tests/e2e/start-server-capture.mjs',
-    url: 'http://localhost:3000/api/health',
+    url: new URL('/api/health', baseURL).toString(),
     env: {
       LIFTER_SHOWCASE: '1',
+      U8_SERVER_LOG_MANIFEST_PATH: serverLogManifestPath,
       U8_SERVER_LOG_RAW_PATH: serverLogRawPath,
       U8_SERVER_LOG_SUMMARY_PATH: serverLogSummaryPath,
     },

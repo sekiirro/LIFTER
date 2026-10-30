@@ -18,7 +18,9 @@ const rawPath =
 const summaryPath =
   process.env.U8_SERVER_LOG_SUMMARY_PATH ??
   join(tmpdir(), `lftr-u8-${process.pid}-summary.json`);
-const activePath = join(tmpdir(), 'lftr-u8-server-log-current.json');
+const activePath =
+  process.env.U8_SERVER_LOG_MANIFEST_PATH ??
+  join(tmpdir(), `lftr-u8-${process.pid}-manifest.json`);
 const temporaryPath = `${summaryPath}.tmp`;
 const summary = {
   totalLines: 0,
