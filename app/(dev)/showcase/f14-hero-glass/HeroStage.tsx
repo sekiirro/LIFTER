@@ -11,6 +11,7 @@ import styles from './page.module.css';
 export type HeroFixture =
   'dark' | 'bright' | 'none' | 'desktop-only' | 'mobile-only';
 export type GlassEffect = 'webgl' | 'svg' | 'blur';
+export type HeroMaterial = 'A' | 'B';
 
 type ArtworkSet = Partial<Record<HeroArtOrientation, string>>;
 
@@ -18,10 +19,12 @@ export function HeroStage({
   children,
   fixture,
   effect,
+  material,
 }: {
   children: ReactNode;
   fixture: HeroFixture;
   effect: GlassEffect;
+  material: HeroMaterial;
 }) {
   const [artwork, setArtwork] = useState<ArtworkSet>({});
   const tone: HeroArtTone = fixture === 'bright' ? 'bright' : 'dark';
@@ -69,6 +72,7 @@ export function HeroStage({
       data-testid="hero-prototype"
       data-fixture={fixture}
       data-effect={effect}
+      data-material={material}
       style={sourceStyle}
     >
       {imageLoaded && (

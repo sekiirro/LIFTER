@@ -86,6 +86,11 @@
   -webkit-backdrop-filter: blur(20px) saturate(1.24);
 }
 
+.glassCard[data-material='B']::before {
+  backdrop-filter: blur(32px) saturate(1.55);
+  -webkit-backdrop-filter: blur(32px) saturate(1.55);
+}
+
 .glassCard::after {
   z-index: 2;
   background: radial-gradient(
@@ -113,10 +118,32 @@
   mix-blend-mode: screen;
 }
 
+.glassCard[data-material='B'] .webglLens {
+  opacity: 0.62;
+  mix-blend-mode: normal;
+  mask-image: radial-gradient(
+    ellipse 78% 82% at center,
+    transparent 72%,
+    #000 100%
+  );
+}
+
 .svgLens {
   backdrop-filter: url('#hero-glass-displacement') blur(20px) saturate(1.24);
   -webkit-backdrop-filter: url('#hero-glass-displacement') blur(20px)
     saturate(1.24);
+}
+
+.glassCard[data-material='B'] .svgLens {
+  opacity: 0.52;
+  backdrop-filter: url('#hero-glass-displacement-b') blur(32px) saturate(1.55);
+  -webkit-backdrop-filter: url('#hero-glass-displacement-b') blur(32px)
+    saturate(1.55);
+  mask-image: radial-gradient(
+    ellipse 78% 82% at center,
+    transparent 72%,
+    #000 100%
+  );
 }
 
 .filterDefinitions {
@@ -128,10 +155,21 @@
 
 .glassContent {
   position: relative;
+  isolation: isolate;
   z-index: 3;
   display: grid;
   gap: var(--space-3);
   padding: var(--space-5);
+}
+
+.glassCard[data-material='B'] .glassContent::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0.75rem;
+  border-radius: calc(var(--radius-card) - var(--space-2));
+  background: var(--hero-glass-legibility);
+  content: '';
+  pointer-events: none;
 }
 
 .glassContent > :global(.hero-signup-preview) {
@@ -160,6 +198,10 @@
   margin-block-start: 0;
 }
 
+.brandScope {
+  --hero-focus-ring: var(--color-focus-ring, var(--color-border-strong));
+}
+
 .brandScope :global(form > label) {
   display: grid;
   gap: var(--space-1);
@@ -171,15 +213,17 @@
 .brandScope :global(form input),
 .brandScope :global(form select) {
   min-block-size: var(--touch-min);
-  border-color: var(--brand-ring);
+  border: 1px solid var(--color-border-strong);
   border-radius: calc(var(--radius-card) - var(--space-3));
   background: var(--color-card);
   color: var(--color-text);
 }
 
-.brandScope :global(form input:focus-visible),
-.brandScope :global(form select:focus-visible) {
-  outline-color: var(--brand-ring);
+.brandScope :global(.hero-signup-preview form input:focus-visible),
+.brandScope :global(.hero-signup-preview form select:focus-visible) {
+  outline: 2px solid
+    var(--hero-focus-ring, var(--color-focus-ring, var(--color-border-strong)));
+  outline-offset: 2px;
 }
 
 .brandScope :global(form > button) {
@@ -192,6 +236,10 @@
   color: var(--color-text-muted);
   font-size: var(--text-sm);
   line-height: var(--line-height-body);
+}
+
+.glassCard[data-material='B'] .previewNote {
+  color: var(--color-text);
 }
 
 .prototypeGuidance {
@@ -280,6 +328,19 @@
   --hero-glass-shadow: 0 24px 68px color-mix(in srgb, #0b1017 24%, transparent);
 }
 
+[data-theme='light'] .glassCard[data-material='B'] {
+  --hero-glass-tint: color-mix(in srgb, var(--color-card) 62%, transparent);
+  --hero-glass-legibility: color-mix(
+    in srgb,
+    var(--color-card) 28%,
+    transparent
+  );
+  --hero-glass-rim: color-mix(in srgb, white 82%, transparent);
+  --hero-glass-edge: color-mix(in srgb, white 94%, transparent);
+  --hero-glass-highlight: color-mix(in srgb, white 62%, transparent);
+  --hero-glass-shadow: 0 30px 86px color-mix(in srgb, #0b1017 36%, transparent);
+}
+
 [data-theme='dark'] .glassCard,
 html:not([data-theme='light']) .glassCard {
   --hero-glass-tint: color-mix(in srgb, var(--color-card) 91%, transparent);
@@ -287,6 +348,20 @@ html:not([data-theme='light']) .glassCard {
   --hero-glass-edge: color-mix(in srgb, white 24%, transparent);
   --hero-glass-highlight: color-mix(in srgb, white 40%, transparent);
   --hero-glass-shadow: 0 26px 74px color-mix(in srgb, black 42%, transparent);
+}
+
+[data-theme='dark'] .glassCard[data-material='B'],
+html:not([data-theme='light']) .glassCard[data-material='B'] {
+  --hero-glass-tint: color-mix(in srgb, var(--color-card) 55%, transparent);
+  --hero-glass-legibility: color-mix(
+    in srgb,
+    var(--color-card) 56%,
+    transparent
+  );
+  --hero-glass-rim: color-mix(in srgb, white 58%, transparent);
+  --hero-glass-edge: color-mix(in srgb, white 76%, transparent);
+  --hero-glass-highlight: color-mix(in srgb, white 64%, transparent);
+  --hero-glass-shadow: 0 32px 90px color-mix(in srgb, black 54%, transparent);
 }
 
 @media (hover: hover) and (pointer: fine) {
@@ -345,6 +420,7 @@ html:not([data-theme='light']) .glassCard {
   .mobileFade,
   .webglLens,
   .svgLens,
+  .glassContent::before,
   .glassCard::before,
   .glassCard::after {
     display: none;
@@ -383,6 +459,7 @@ html:not([data-theme='light']) .glassCard {
   .mobileFade,
   .webglLens,
   .svgLens,
+  .glassContent::before,
   .glassCard::before,
   .glassCard::after {
     display: none;

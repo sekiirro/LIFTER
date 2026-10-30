@@ -30,7 +30,7 @@ const measurements: Array<Record<string, unknown>> = [];
 const screenshots: Array<{
   path: string;
   label: string;
-  group: 'required' | 'extras';
+  group: 'required' | 'extras' | 'comparison';
 }> = [];
 
 async function openPrototype(
@@ -42,6 +42,7 @@ async function openPrototype(
     height: number;
     fixture?: string;
     effect?: string;
+    material?: 'A' | 'B';
     reducedMotion?: boolean;
     forcedColors?: 'active' | 'none';
     cdpFeatures?: Array<{ name: string; value: string }>;
@@ -66,7 +67,7 @@ async function openPrototype(
     });
   }
   await page.goto(
-    `/showcase/f14-hero-glass?fixture=${options.fixture ?? 'dark'}&effect=${options.effect ?? 'svg'}`,
+    `/showcase/f14-hero-glass?fixture=${options.fixture ?? 'dark'}&material=${options.material ?? 'A'}&effect=${options.effect ?? (options.material === 'B' ? 'webgl' : 'svg')}`,
     { waitUntil: 'domcontentloaded' },
   );
   await expect(page.getByTestId('hero-prototype')).toBeVisible();
@@ -82,6 +83,13 @@ async function openPrototype(
     await page
       .locator('[data-hero-image]')
       .evaluate((image) => (image as HTMLImageElement).decode());
+  }
+  if (options.material === 'B' && options.effect === 'webgl') {
+    await expect(page.getByTestId('hero-glass-card')).toHaveAttribute(
+      'data-effect-active',
+      'webgl',
+      { timeout: 10_000 },
+    );
   }
   await page.evaluate(() => document.fonts.ready);
   return { page, close: () => context.close() };
@@ -100,7 +108,7 @@ async function capture(
   browser: Browser,
   options: Parameters<typeof openPrototype>[1] & {
     label: string;
-    group: 'required' | 'extras';
+    group: 'required' | 'extras' | 'comparison';
     screenshotName: string;
     fullPage?: boolean;
   },
@@ -120,12 +128,12 @@ async function capture(
 
 async function buildContactSheet(
   browser: Browser,
-  group: 'required' | 'extras',
+  group: 'required' | 'extras' | 'comparison',
 ) {
   const items = screenshots.filter((item) => item.group === group);
-  const columns = group === 'required' ? 4 : 4;
-  const tileWidth = 520;
-  const tileHeight = 330;
+  const columns = group === 'required' ? 4 : group === 'comparison' ? 2 : 4;
+  const tileWidth = group === 'comparison' ? 560 : 520;
+  const tileHeight = group === 'comparison' ? 380 : 330;
   const labelHeight = 34;
   const rows = Math.ceil(items.length / columns);
   const width = columns * tileWidth;
@@ -203,6 +211,7 @@ async function measureContrast(
   theme: string,
   fixture: string,
 ) {
+  await page.keyboard.press('Tab');
   const result = await page.evaluate(() => {
     const card = document.querySelector<HTMLElement>(
       '[data-testid="hero-glass-card"]',
@@ -236,6 +245,13 @@ async function measureContrast(
     };
     const surfaceStyle = getComputedStyle(card, '::before');
     const tint = parse(surfaceStyle.backgroundColor);
+    const legibility = parse(
+      getComputedStyle(
+        card.querySelector<HTMLElement>('[data-testid="hero-glass-content"]')!,
+        '::before',
+      ).backgroundColor,
+    );
+    const material = card.dataset.material ?? 'A';
     const cardBounds = card.getBoundingClientRect();
     const imageBounds = image.getBoundingClientRect();
     const scale = Math.max(
@@ -279,13 +295,20 @@ async function measureContrast(
         );
       }
     }
-    const composite = behind.map((pixel) =>
-      [0, 1, 2].map(
+    const composite = behind.map((pixel) => {
+      const shell = [0, 1, 2].map(
         (channel) =>
           tint[channel]! * (tint[3]! / 255) +
           pixel[channel]! * (1 - tint[3]! / 255),
-      ),
-    );
+      );
+      return material === 'B'
+        ? [0, 1, 2].map(
+            (channel) =>
+              legibility[channel]! * (legibility[3]! / 255) +
+              shell[channel]! * (1 - legibility[3]! / 255),
+          )
+        : shell;
+    });
     const textTargets = Array.from(
       card.querySelectorAll<HTMLElement>('[data-brand-name], h1, label, p'),
     );
@@ -325,6 +348,8 @@ async function measureContrast(
     return {
       tint: surfaceStyle.backgroundColor,
       alpha: tint[3]! / 255,
+      legibilityAlpha: legibility[3]! / 255,
+      material,
       worstBackground: composite.reduce(
         (worst, color) => (luminance(color) < luminance(worst) ? color : worst),
         composite[0]!,
@@ -339,6 +364,9 @@ async function measureContrast(
     };
   });
   measurements.push({ locale, theme, fixture, contrast: result });
+  console.log(
+    `CONTRAST_CELL ${JSON.stringify({ locale, theme, fixture, contrast: result })}`,
+  );
   expect(
     result.minimumText,
     `${locale}/${theme}/${fixture} text`,
@@ -369,11 +397,61 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
     await capture(browser, {
       ...variant,
       fixture: 'dark',
-      effect: 'svg',
+      material: 'B',
+      effect: 'webgl',
       label: `${variant.name}-image`,
       group: 'required',
       screenshotName: `${variant.name}-image.png`,
     });
+  }
+
+  for (const variant of requiredVariants.filter(
+    ({ width }) => width === 1440,
+  )) {
+    for (const material of ['A', 'B'] as const) {
+      await capture(browser, {
+        ...variant,
+        material,
+        fixture: 'dark',
+        effect: material === 'B' ? 'webgl' : 'svg',
+        label: `${material} | ${variant.locale.toUpperCase()} ${variant.theme}`,
+        group: 'comparison',
+        screenshotName: `compare-${material}-${variant.locale}-${variant.theme}.png`,
+      });
+    }
+  }
+
+  for (const material of ['A', 'B'] as const) {
+    for (const theme of ['light', 'dark'] as const) {
+      const { page, close } = await openPrototype(browser, {
+        locale: 'en',
+        theme,
+        width: 1440,
+        height: 900,
+        material,
+        effect: material === 'B' ? 'webgl' : 'svg',
+      });
+      const bounds = await page.getByTestId('hero-glass-card').boundingBox();
+      if (!bounds) throw new Error('Glass card bounds unavailable for crop');
+      const path = join(output, `edge-${material}-${theme}-1440.png`);
+      await page.screenshot({
+        path,
+        clip: {
+          x: Math.max(0, bounds.x + bounds.width - 150),
+          y: Math.max(0, bounds.y + bounds.height - 170),
+          width: 146,
+          height: 170,
+        },
+        animations: 'disabled',
+        style: 'nextjs-portal{display:none!important}',
+      });
+      screenshots.push({
+        path,
+        label: `edge-${material}-${theme}`,
+        group: 'extras',
+      });
+      await close();
+    }
   }
 
   for (const variant of requiredVariants.filter(({ width }) => width === 390)) {
@@ -487,6 +565,8 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
   ]) {
     await capture(browser, {
       ...variant,
+      material: variant.name === 'tablet-ar-light-768' ? 'B' : 'A',
+      effect: variant.name === 'tablet-ar-light-768' ? 'webgl' : 'svg',
       label: variant.name,
       group: 'extras',
       screenshotName: `${variant.name}.png`,
@@ -581,45 +661,42 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
     screenshotName: 'mobile-only-art-desktop-panel-1440.png',
   });
 
-  for (const locale of ['ar', 'en'] as const) {
-    for (const theme of ['light', 'dark'] as const) {
-      for (const fixture of ['dark', 'bright'] as const) {
-        const { page, close } = await openPrototype(browser, {
-          locale,
-          theme,
-          width: 1440,
-          height: 900,
-          fixture,
-          effect: 'svg',
-        });
-        await measureContrast(page, locale, theme, fixture);
-        await close();
+  for (const material of ['A', 'B'] as const) {
+    for (const locale of ['ar', 'en'] as const) {
+      for (const theme of ['light', 'dark'] as const) {
+        for (const fixture of ['dark', 'bright'] as const) {
+          const { page, close } = await openPrototype(browser, {
+            locale,
+            theme,
+            width: 1440,
+            height: 900,
+            fixture,
+            material,
+            effect: material === 'B' ? 'webgl' : 'svg',
+          });
+          await measureContrast(page, locale, theme, fixture);
+          await close();
+        }
       }
     }
   }
 
-  for (const effect of ['svg', 'webgl'] as const) {
+  for (const throttle of [1, 4] as const) {
     const { page, close } = await openPrototype(browser, {
       locale: 'en',
       theme: 'dark',
       width: 1440,
       height: 900,
-      effect,
+      effect: 'webgl',
+      material: 'B',
     });
     const activeEffect = page.getByTestId('hero-glass-card');
-    if (effect === 'webgl') {
-      await expect(activeEffect).toHaveAttribute(
-        'data-effect-active',
-        /^(webgl|css-fallback)$/,
-      );
-    } else {
-      await expect(activeEffect).toHaveAttribute(
-        'data-effect-active',
-        'svg-filter-or-css-fallback',
-      );
-    }
+    await expect(activeEffect).toHaveAttribute(
+      'data-effect-active',
+      /^(webgl|css-fallback)$/,
+    );
     const cdp = await page.context().newCDPSession(page);
-    await cdp.send('Emulation.setCPUThrottlingRate', { rate: 4 });
+    await cdp.send('Emulation.setCPUThrottlingRate', { rate: throttle });
     const frameStats = await page.evaluate(async () => {
       const frames: number[] = [];
       let previous = performance.now();
@@ -660,9 +737,10 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
       };
     });
     measurements.push({
-      effect,
+      material: 'B',
+      effect: 'webgl',
       activeEffect: await activeEffect.getAttribute('data-effect-active'),
-      throttle: '4x CPU',
+      throttle: throttle === 1 ? 'none' : '4x CPU',
       viewport: '1440x900',
       frameStats,
       platformSupport,
@@ -704,6 +782,7 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
 
   await buildContactSheet(browser, 'required');
   await buildContactSheet(browser, 'extras');
+  await buildContactSheet(browser, 'comparison');
   const metricsPath = join(output, 'measurements.json');
   await writeFile(
     metricsPath,
@@ -753,6 +832,99 @@ test('forced colors removes glass treatment and retains a system-colored card', 
     .disableRules(['color-contrast'])
     .analyze();
   expect(forcedColorAxe.violations).toEqual([]);
+  await context.close();
+});
+
+test('A and B keep token field borders; B lenses only the rim and respects motion input settings', async ({
+  browser,
+}) => {
+  for (const material of ['A', 'B'] as const) {
+    const { page, close } = await openPrototype(browser, {
+      locale: 'en',
+      theme: 'light',
+      width: 1440,
+      height: 900,
+      material,
+      effect: material === 'B' ? 'svg' : 'svg',
+    });
+    const field = page.locator('input:not([type=hidden])').first();
+    await page.keyboard.press('Tab');
+    await expect(field).toBeFocused();
+    const fieldStyles = await field.evaluate((input) => {
+      const style = getComputedStyle(input);
+      const scope = input.closest<HTMLElement>('[data-brand-scope]');
+      if (!scope) throw new Error('Brand scope unavailable around form field');
+      const scopeStyle = getComputedStyle(scope);
+      const context = document.createElement('canvas').getContext('2d');
+      if (!context) throw new Error('Color normalizer unavailable');
+      const normalize = (color: string) => {
+        context.fillStyle = color;
+        return context.fillStyle;
+      };
+      return {
+        border: normalize(style.borderTopColor),
+        focus: normalize(style.outlineColor),
+        borderToken: normalize(
+          scopeStyle.getPropertyValue('--color-border-strong'),
+        ),
+        focusToken: normalize(
+          scopeStyle.getPropertyValue('--color-focus-ring'),
+        ),
+        borderWidth: style.borderTopWidth,
+        outlineWidth: style.outlineWidth,
+        outlineOffset: style.outlineOffset,
+        focusVisible: input.matches(':focus-visible'),
+      };
+    });
+    expect(fieldStyles.border).toBe(fieldStyles.borderToken);
+    expect(fieldStyles.focus).toBe(fieldStyles.focusToken);
+    expect(fieldStyles.borderWidth).toBe('1px');
+    expect(fieldStyles.outlineWidth).toBe('2px');
+    expect(fieldStyles.outlineOffset).toBe('2px');
+    expect(fieldStyles.focusVisible).toBe(true);
+    if (material === 'B') {
+      const lens = await page.getByTestId('svg-lens').evaluate((node) => ({
+        mask: getComputedStyle(node).maskImage,
+        filter: getComputedStyle(node).backdropFilter,
+      }));
+      const scale = await page
+        .locator('#hero-glass-displacement-b feDisplacementMap')
+        .getAttribute('scale');
+      expect(lens.mask).toContain('radial-gradient');
+      expect(lens.filter).toContain('hero-glass-displacement-b');
+      expect(scale).toBe('22');
+    }
+    await close();
+  }
+
+  const context = await browser.newContext({
+    viewport: { width: 390, height: 844 },
+    deviceScaleFactor: 2,
+    isMobile: true,
+    hasTouch: true,
+    reducedMotion: 'reduce',
+  });
+  await context.addCookies([
+    { name: LOCALE_COOKIE, value: 'en', url: origin },
+    { name: THEME_COOKIE, value: 'dark', url: origin },
+  ]);
+  const page = await context.newPage();
+  await page.goto('/showcase/f14-hero-glass?material=B');
+  const card = page.getByTestId('hero-glass-card');
+  await card.dispatchEvent('pointermove', { clientX: 100, clientY: 100 });
+  const motionState = await card.evaluate((element) => ({
+    pointerX: (element as HTMLElement).style.getPropertyValue('--pointer-x'),
+    highlightOpacity: getComputedStyle(element, '::after').opacity,
+    coarse: matchMedia('(hover: hover) and (pointer: fine)').matches,
+    reduced: matchMedia('(prefers-reduced-motion: reduce)').matches,
+  }));
+  expect(motionState.coarse).toBe(false);
+  expect(motionState.reduced).toBe(true);
+  expect(motionState.pointerX).toBe('');
+  expect(motionState.highlightOpacity).toBe('0');
+  await expect(new AxeBuilder({ page }).analyze()).resolves.toMatchObject({
+    violations: [],
+  });
   await context.close();
 });
 

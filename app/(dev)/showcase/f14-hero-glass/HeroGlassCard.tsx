@@ -3,7 +3,7 @@
 import { useEffect, useRef, type ReactNode } from 'react';
 import { Card } from '../../../../components/ui/Card';
 import styles from './page.module.css';
-import type { GlassEffect } from './HeroStage';
+import type { GlassEffect, HeroMaterial } from './HeroStage';
 
 const vertexShader = `
   attribute vec2 a_position;
@@ -27,9 +27,11 @@ const fragmentShader = `
       gl_FragColor = vec4(0.0);
       return;
     }
-    vec2 lens = vec2(sin(v_uv.y * 18.0) * 0.003, cos(v_uv.x * 15.0) * 0.002);
+    float edge = min(min(v_uv.x, 1.0 - v_uv.x), min(v_uv.y, 1.0 - v_uv.y));
+    float rim = 1.0 - smoothstep(0.035, 0.19, edge);
+    vec2 lens = vec2(sin(v_uv.y * 18.0) * 0.016, cos(v_uv.x * 15.0) * 0.012) * rim;
     vec3 color = texture2D(u_image, clamp(uv + lens, 0.002, 0.998)).rgb;
-    gl_FragColor = vec4(color, 1.0);
+    gl_FragColor = vec4(color, rim * 0.7);
   }
 `;
 
@@ -53,10 +55,12 @@ export function HeroGlassCard({
   children,
   effect,
   locale,
+  material,
 }: {
   children: ReactNode;
   effect: GlassEffect;
   locale: 'ar' | 'en';
+  material: HeroMaterial;
 }) {
   const cardRef = useRef<HTMLDivElement>(null);
   const lensRef = useRef<HTMLCanvasElement>(null);
@@ -69,7 +73,9 @@ export function HeroGlassCard({
     const canvas = lensRef.current;
     if (!frame || !card || !canvas) return;
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
-    let animationFrame = 0;
+    const pointerMotion = window.matchMedia(
+      '(hover: hover) and (pointer: fine)',
+    );
     let gl: WebGLRenderingContext | null = null;
     let texture: WebGLTexture | null = null;
     let program: WebGLProgram | null = null;
@@ -221,22 +227,19 @@ export function HeroGlassCard({
       const bounds = card.getBoundingClientRect();
       card.style.setProperty('--pointer-x', `${event.clientX - bounds.left}px`);
       card.style.setProperty('--pointer-y', `${event.clientY - bounds.top}px`);
-      cancelAnimationFrame(animationFrame);
-      animationFrame = requestAnimationFrame(draw);
     };
     const clearPointer = () => {
       card.style.removeProperty('--pointer-x');
       card.style.removeProperty('--pointer-y');
     };
-    if (!reducedMotion.matches) {
+    if (!reducedMotion.matches && pointerMotion.matches) {
       card.addEventListener('pointermove', pointerMove);
       card.addEventListener('pointerleave', clearPointer);
-      window.addEventListener('resize', draw);
     }
+    window.addEventListener('resize', draw);
     return () => {
       active = false;
       artworkObserver?.disconnect();
-      cancelAnimationFrame(animationFrame);
       card.removeEventListener('pointermove', pointerMove);
       card.removeEventListener('pointerleave', clearPointer);
       window.removeEventListener('resize', draw);
@@ -252,6 +255,7 @@ export function HeroGlassCard({
         className={styles.glassCard}
         data-testid="hero-glass-card"
         data-effect={effect}
+        data-material={material}
         data-effect-active={
           effect === 'webgl'
             ? 'initializing'
@@ -282,7 +286,11 @@ export function HeroGlassCard({
           focusable="false"
         >
           <filter
-            id="hero-glass-displacement"
+            id={
+              material === 'B'
+                ? 'hero-glass-displacement-b'
+                : 'hero-glass-displacement'
+            }
             x="-10%"
             y="-10%"
             width="120%"
@@ -296,13 +304,15 @@ export function HeroGlassCard({
             />
             <feDisplacementMap
               in="SourceGraphic"
-              scale="4"
+              scale={material === 'B' ? '22' : '4'}
               xChannelSelector="R"
               yChannelSelector="G"
             />
           </filter>
         </svg>
-        <div className={styles.glassContent}>{children}</div>
+        <div className={styles.glassContent} data-testid="hero-glass-content">
+          {children}
+        </div>
       </Card>
     </div>
   );

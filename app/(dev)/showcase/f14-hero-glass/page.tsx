@@ -33,10 +33,20 @@ function parseEffect(value: QueryValue): GlassEffect {
   return candidate === 'webgl' || candidate === 'blur' ? candidate : 'svg';
 }
 
+type HeroMaterial = 'A' | 'B';
+
+function parseMaterial(value: QueryValue): HeroMaterial {
+  return first(value)?.toUpperCase() === 'B' ? 'B' : 'A';
+}
+
 export default async function HeroPrototypePage({
   searchParams,
 }: {
-  searchParams: Promise<{ fixture?: QueryValue; effect?: QueryValue }>;
+  searchParams: Promise<{
+    fixture?: QueryValue;
+    effect?: QueryValue;
+    material?: QueryValue;
+  }>;
 }) {
   if (!isShowcaseEnabled(process.env) || process.env.NODE_ENV === 'production')
     notFound();
@@ -44,7 +54,12 @@ export default async function HeroPrototypePage({
   const locale = parseLocale(preferences.get(LOCALE_COOKIE)?.value);
   const messages = getMessages(locale);
   const fixture = parseFixture(query.fixture);
-  const effect = parseEffect(query.effect);
+  const material = parseMaterial(query.material);
+  const effect = query.effect
+    ? parseEffect(query.effect)
+    : material === 'B'
+      ? 'webgl'
+      : 'svg';
   const token = 'F'.repeat(43);
   const brand: PublicBrandingProjection = {
     name: { ar: 'مساحة تجريبية', en: 'Fixture workspace' },
@@ -60,9 +75,9 @@ export default async function HeroPrototypePage({
       className={styles.brandScope}
       data-testid="hero-brand-scope"
     >
-      <HeroStage fixture={fixture} effect={effect}>
+      <HeroStage fixture={fixture} effect={effect} material={material}>
         <section data-testid="registration-panel">
-          <HeroGlassCard effect={effect} locale={locale}>
+          <HeroGlassCard effect={effect} locale={locale} material={material}>
             <RegistrationBrand
               brand={brand}
               locale={locale}
