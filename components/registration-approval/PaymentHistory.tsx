@@ -178,7 +178,10 @@ export function PaymentHistory({
                 </Bidi>
               </td>
               <td>
-                <Bidi>{obligation.due_on ?? '—'}</Bidi>
+                <Bidi>
+                  {obligation.due_on ??
+                    messages['registrationApproval.notAvailable']}
+                </Bidi>
               </td>
               <td>
                 <StatusBadge

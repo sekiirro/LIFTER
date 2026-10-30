@@ -263,6 +263,7 @@ export const ar = {
   'registrationApproval.paymentIntro':
     'سجّل تأكيد الدفعات الخارجية للاشتراكات.',
   'registrationApproval.paymentEmpty': 'لا توجد دفعات بانتظار التسجيل.',
+  'registrationApproval.notAvailable': 'غير متاح',
   'registrationApproval.history': 'سجل الدفعات',
   'registrationApproval.installment': 'الدفعة',
   'registrationApproval.dueOn': 'تاريخ الاستحقاق',

@@ -1,6 +1,7 @@
 import type { Messages } from '../../lib/i18n';
 import { Bidi } from '../ui/Bidi';
 import { EmptyState } from '../ui/States';
+import { StatusBadge } from './StatusBadge';
 import styles from './registration-approval.module.css';
 
 type Item = {
@@ -46,7 +47,7 @@ export function PaymentQueue({
                 </a>
               </td>
               <td>
-                <Bidi>{item.approval_state}</Bidi>
+                <StatusBadge status={item.approval_state} messages={messages} />
               </td>
               <td>
                 <Bidi>

@@ -275,6 +275,7 @@ export const en: Record<keyof typeof ar, string> = {
     'Record confirmation of external subscription payments.',
   'registrationApproval.paymentEmpty':
     'No payments are waiting to be recorded.',
+  'registrationApproval.notAvailable': 'Not available',
   'registrationApproval.history': 'Payment history',
   'registrationApproval.installment': 'Installment',
   'registrationApproval.dueOn': 'Due date',
