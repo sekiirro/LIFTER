@@ -11,13 +11,23 @@ describe('HealthDataNotice', () => {
     const html = renderToStaticMarkup(
       createElement(
         HealthDataNotice,
-        { locale: 'ar', copy, draftLabel: 'مسودة — تتطلب موافقة مالك المنتج' },
+        {
+          locale: 'ar',
+          copy,
+          title: 'Health data notice',
+          draftLabel: 'DRAFT',
+        },
         createElement('h2', null, 'Health question'),
       ),
     );
 
     expect(html.indexOf(copy.ar)).toBeGreaterThanOrEqual(0);
     expect(html.indexOf(copy.ar)).toBeLessThan(html.indexOf('Health question'));
+    expect(html).toContain('aria-labelledby="health-data-notice-title"');
+    expect(html).toContain(
+      '<h2 id="health-data-notice-title">Health data notice</h2>',
+    );
+    expect(html).not.toContain('aria-label="DRAFT"');
   });
 
   it('is informational only and exposes no consent or acknowledgment controls', () => {
@@ -25,6 +35,7 @@ describe('HealthDataNotice', () => {
       createElement(HealthDataNotice, {
         locale: 'en',
         copy,
+        title: 'Health data notice',
         draftLabel: 'DRAFT — PO approval required',
       }),
     );
