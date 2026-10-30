@@ -296,4 +296,22 @@ export const en: Record<keyof typeof ar, string> = {
   'registrationApproval.dashboardApprovals': 'Approvals',
   'registrationApproval.dashboardPayments': 'Payments',
   'registrationApproval.clientStatus': 'Registration status',
+  'registrationApproval.statusLoading': 'Loading registration status…',
+  'registrationApproval.statusPending': 'Pending review',
+  'registrationApproval.statusPendingDetail':
+    'Your registration is waiting for review.',
+  'registrationApproval.statusApproved': 'Approved',
+  'registrationApproval.statusApprovedDetail':
+    'Your registration is approved. This does not mean your subscription is active or plans are available.',
+  'registrationApproval.statusRejected': 'Not approved',
+  'registrationApproval.statusRejectedDetail':
+    'This registration was not approved.',
+  'registrationApproval.statusRefresh': 'Refresh status',
+  'registrationApproval.statusRefreshing': 'Refreshing status…',
+  'registrationApproval.statusContinue': 'Continue',
+  'registrationApproval.statusBudgetReached':
+    'Automatic checks have stopped. Refresh to check again.',
+  'registrationApproval.statusDenied': 'This status page is not available.',
+  'registrationApproval.statusRedirectFallback':
+    'Automatic navigation did not complete. Continue to the home page.',
 };

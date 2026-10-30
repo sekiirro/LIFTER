@@ -55,6 +55,9 @@ export function ApprovalReview({
   messages: Messages;
   correctionContext?: CorrectionContext | null;
 }) {
+  const firstInstallment = item.installments[0];
+  const amountDue = firstInstallment?.amount_minor ?? item.price_minor;
+  const currencyDue = firstInstallment?.currency ?? item.currency;
   const [notice, setNotice] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
   const [pending, setPending] = useState(false);
@@ -75,8 +78,8 @@ export function ApprovalReview({
         workspaceId,
         clientId: item.client_id,
         requestKey: key,
-        expectedAmountMinor: item.price_minor,
-        currency: item.currency,
+        expectedAmountMinor: amountDue,
+        currency: currencyDue,
         collectedOn: paymentDate,
         paymentConfirmed: true,
       };
@@ -125,7 +128,7 @@ export function ApprovalReview({
       <Field
         label={messages['registrationApproval.amount']}
         inputProps={{
-          value: `${item.price_minor} ${item.currency}`,
+          value: `${amountDue} ${currencyDue}`,
           readOnly: true,
         }}
       />
@@ -142,8 +145,8 @@ export function ApprovalReview({
       {item.approval_state === 'pending-approval' && (
         <div className={styles.actions}>
           <PaymentConfirmation
-            amountMinor={item.price_minor}
-            currency={item.currency}
+            amountMinor={amountDue}
+            currency={currencyDue}
             requestKey=""
             pending={pending}
             onConfirm={(confirmed) => {
@@ -163,8 +166,8 @@ export function ApprovalReview({
       )}
       {item.approval_state === 'rejected' && owner && (
         <PaymentConfirmation
-          amountMinor={item.price_minor}
-          currency={item.currency}
+          amountMinor={amountDue}
+          currency={currencyDue}
           requestKey=""
           pending={pending}
           submitLabel={messages['registrationApproval.reconsider']}

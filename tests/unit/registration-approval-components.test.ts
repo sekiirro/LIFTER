@@ -50,6 +50,37 @@ describe('registration approval controls', () => {
     expect(html).toContain('Reconsider');
     expect(html).toContain('<label');
   });
+  it('confirms and records the first issued installment as due at approval', () => {
+    const html = renderToStaticMarkup(
+      createElement(ApprovalReview, {
+        item: {
+          ...item,
+          approval_state: 'pending-approval',
+          price_minor: '1200',
+          currency: 'XTS',
+          installments: [
+            {
+              seq: 1,
+              amount_minor: '400',
+              currency: 'XTS',
+              issued_day_offset: 7,
+            },
+            {
+              seq: 2,
+              amount_minor: '800',
+              currency: 'XTS',
+              issued_day_offset: 37,
+            },
+          ],
+        },
+        workspaceId: '00000000-0000-0000-0000-000000000001',
+        role,
+        messages: getMessages('en'),
+      }),
+    );
+    expect(html).toContain('400 XTS');
+    expect(html).not.toContain('1200 XTS');
+  });
   it('hides correction and reconsideration controls from non-PO staff', () => {
     const html = renderToStaticMarkup(
       createElement(ApprovalReview, {

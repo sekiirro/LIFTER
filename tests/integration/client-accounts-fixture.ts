@@ -1,8 +1,8 @@
 import { randomBytes, randomUUID } from 'node:crypto';
+import assert from 'node:assert/strict';
 import type { TransactionSql } from 'postgres';
 import { admin, anonClient } from './harness';
 import type { SupabaseClient } from '@supabase/supabase-js';
-import { expect } from 'vitest';
 import { sql } from './harness';
 import {
   checked,
@@ -249,8 +249,8 @@ export async function anonSignup(s: SignupFixture) {
     admission_ticket: s.ticket,
     fields: s.fields,
   });
-  expect(result.error === null, 'anon signup transport').toBe(true);
-  expect(result.data).toEqual({ status: 'complete' });
+  assert.equal(result.error, null, 'anon signup transport');
+  assert.deepEqual(result.data, { status: 'complete' });
 }
 
 // F12 RPC denials need well-shaped requests: invalid JSON is not authorization proof.
@@ -314,18 +314,18 @@ export async function pendingHttpAccess(
       await db`select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relrowsecurity`;
     for (const table of tables) {
       const result = await client.from(table.relname).select('*');
-      expect(
+      assert.ok(
         result.error !== null || result.data?.length === 0,
         table.relname,
-      ).toBe(true);
+      );
     }
     const functions =
       await db`select p.proname,p.proargnames,to_jsonb(array(select format_type(t,null) from unnest(p.proargtypes) t)) as types from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prokind='f'`;
     for (const fn of functions) {
       if (fn.proname === 'client_self_status') {
         const result = await client.rpc('client_self_status');
-        expect(result.error, fn.proname).toBeNull();
-        expect(result.data, fn.proname).toEqual({
+        assert.equal(result.error, null, fn.proname);
+        assert.deepEqual(result.data, {
           status: 'ok',
           approval_state: 'pending-approval',
         });
@@ -341,8 +341,8 @@ export async function pendingHttpAccess(
         const denied = await client.rpc(fn.proname, {
           request: approvalDenialRequest(context, fn.proname, target.id),
         });
-        expect(denied.error, fn.proname).toBeNull();
-        expect(denied.data, fn.proname).toEqual({ status: 'not_permitted' });
+        assert.equal(denied.error, null, fn.proname);
+        assert.deepEqual(denied.data, { status: 'not_permitted' }, fn.proname);
         continue;
       }
       if (
@@ -360,8 +360,8 @@ export async function pendingHttpAccess(
           args[fn.proargnames[i]] = type === 'integer' ? 1 : context.wsA.id;
         });
         const result = await client.rpc(fn.proname, args);
-        expect(result.error, fn.proname).toBeNull();
-        expect(result.data, fn.proname).toEqual({ status: 'not_permitted' });
+        assert.equal(result.error, null, fn.proname);
+        assert.deepEqual(result.data, { status: 'not_permitted' }, fn.proname);
         continue;
       }
       const args: Record<string, unknown> = {};
@@ -381,14 +381,14 @@ export async function pendingHttpAccess(
         args[fn.proargnames[i]] = values[type];
       });
       const result = await client.rpc(fn.proname, args);
-      expect(
+      assert.ok(
         result.error !== null ||
           result.data === null ||
           result.data === false ||
           (Array.isArray(result.data) && result.data.length === 0) ||
           result.data?.status === 'invalid',
         fn.proname,
-      ).toBe(true);
+      );
     }
   } finally {
     await db.end();

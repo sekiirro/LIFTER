@@ -26,4 +26,30 @@ describe('registration approval message parity and semantics', () => {
       /stack|database|provider/i,
     );
   });
+  it('provides bilingual standalone client status and refresh messages', () => {
+    for (const key of [
+      'registrationApproval.statusPending',
+      'registrationApproval.statusPendingDetail',
+      'registrationApproval.statusApproved',
+      'registrationApproval.statusApprovedDetail',
+      'registrationApproval.statusRejected',
+      'registrationApproval.statusRejectedDetail',
+      'registrationApproval.statusRefresh',
+      'registrationApproval.statusRefreshing',
+      'registrationApproval.statusContinue',
+      'registrationApproval.statusBudgetReached',
+      'registrationApproval.statusDenied',
+      'registrationApproval.statusRedirectFallback',
+      'registrationApproval.statusLoading',
+    ] as const) {
+      expect(ar[key], `Arabic ${key}`).toBeTruthy();
+      expect(en[key], `English ${key}`).toBeTruthy();
+    }
+    expect(en['registrationApproval.statusApprovedDetail']).toMatch(
+      /not.*active|does not mean.*active/i,
+    );
+    expect(en['registrationApproval.statusRejectedDetail']).not.toMatch(
+      /reason|contact|support/i,
+    );
+  });
 });

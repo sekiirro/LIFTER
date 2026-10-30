@@ -284,4 +284,21 @@ export const ar = {
   'registrationApproval.dashboardApprovals': 'الموافقات',
   'registrationApproval.dashboardPayments': 'الدفعات',
   'registrationApproval.clientStatus': 'حالة التسجيل',
+  'registrationApproval.statusLoading': 'جارٍ تحميل حالة التسجيل…',
+  'registrationApproval.statusPending': 'قيد المراجعة',
+  'registrationApproval.statusPendingDetail': 'طلب التسجيل قيد المراجعة.',
+  'registrationApproval.statusApproved': 'تمت الموافقة',
+  'registrationApproval.statusApprovedDetail':
+    'تمت الموافقة على طلب التسجيل. هذا لا يعني أن الاشتراك أصبح نشطًا أو أن الخطط متاحة.',
+  'registrationApproval.statusRejected': 'لم تتم الموافقة',
+  'registrationApproval.statusRejectedDetail':
+    'لم تتم الموافقة على طلب التسجيل.',
+  'registrationApproval.statusRefresh': 'تحديث الحالة',
+  'registrationApproval.statusRefreshing': 'جارٍ تحديث الحالة…',
+  'registrationApproval.statusContinue': 'متابعة',
+  'registrationApproval.statusBudgetReached':
+    'توقفت عمليات التحقق التلقائية. حدّث الحالة للتحقق مرة أخرى.',
+  'registrationApproval.statusDenied': 'صفحة الحالة هذه غير متاحة.',
+  'registrationApproval.statusRedirectFallback':
+    'لم يكتمل الانتقال التلقائي. يمكنك المتابعة إلى الصفحة الرئيسية.',
 } as const;
