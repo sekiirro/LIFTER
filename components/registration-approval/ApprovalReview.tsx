@@ -32,17 +32,28 @@ type Item = {
     issued_day_offset: number | null;
   }[];
 };
+type CorrectionContext = {
+  subscriptionId: string | null;
+  corrections: {
+    seq: number;
+    obligationId: string;
+    revision: number;
+    tailEventId: string;
+  }[];
+};
 
 export function ApprovalReview({
   item,
   workspaceId,
   role,
   messages,
+  correctionContext = null,
 }: {
   item: Item;
   workspaceId: string;
   role: Role;
   messages: Messages;
+  correctionContext?: CorrectionContext | null;
 }) {
   const [notice, setNotice] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
@@ -176,16 +187,32 @@ export function ApprovalReview({
       )}
       {notice && <Alert tone="error" title={notice} />}
       <PaymentHistory
-        obligations={item.installments.map((row) => ({
-          seq: row.seq,
-          amount_minor: row.amount_minor,
-          currency: row.currency,
-          due_on: null,
-          paid: false,
-          collected_on: null,
-        }))}
+        obligations={item.installments.map((row) => {
+          const correction = correctionContext?.corrections.find(
+            (candidate) => candidate.seq === row.seq,
+          );
+          return {
+            seq: row.seq,
+            amount_minor: row.amount_minor,
+            currency: row.currency,
+            due_on: null,
+            paid: correction !== undefined,
+            collected_on: null,
+            obligation_id: correction?.obligationId,
+            revision: correction?.revision,
+            tail_event_id: correction?.tailEventId,
+            kind: correction ? 'collection' : null,
+          };
+        })}
         role={role}
         messages={messages}
+        workspaceId={
+          correctionContext?.subscriptionId ? workspaceId : undefined
+        }
+        clientId={
+          correctionContext?.subscriptionId ? item.client_id : undefined
+        }
+        subscriptionId={correctionContext?.subscriptionId ?? undefined}
       />
       <input type="hidden" value={workspaceId} readOnly aria-hidden="true" />
     </section>

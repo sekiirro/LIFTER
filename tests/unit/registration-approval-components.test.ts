@@ -186,4 +186,27 @@ describe('registration approval controls', () => {
     expect(po).toContain('data-testid="confirm-dialog"');
     expect(sales).not.toContain('data-testid="correction-action"');
   });
+  it('wires the PO correction projection into the review history', () => {
+    const html = renderToStaticMarkup(
+      createElement(ApprovalReview, {
+        item: { ...item, approval_state: 'approved' },
+        workspaceId: '00000000-0000-0000-0000-000000000001',
+        role,
+        messages: getMessages('en'),
+        correctionContext: {
+          subscriptionId: '00000000-0000-0000-0000-000000000003',
+          corrections: [
+            {
+              seq: 1,
+              obligationId: '00000000-0000-0000-0000-000000000005',
+              revision: 1,
+              tailEventId: '00000000-0000-0000-0000-000000000006',
+            },
+          ],
+        },
+      }),
+    );
+    expect(html).toContain('data-testid="correction-action"');
+    expect(html).toContain('data-testid="confirm-dialog"');
+  });
 });

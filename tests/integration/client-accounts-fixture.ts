@@ -349,6 +349,7 @@ export async function pendingHttpAccess(
         [
           'registration_approval_queue',
           'registration_approval_review',
+          'registration_approval_correction',
           'workspace_payment_queue',
           'subscription_payment_status',
           'subscription_commission',

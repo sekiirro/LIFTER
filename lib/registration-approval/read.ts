@@ -230,6 +230,86 @@ export async function readRegistrationApprovalReview(
   return { status: 'ok', item };
 }
 
+export async function readRegistrationApprovalCorrection(
+  input: unknown,
+): Promise<
+  | {
+      status: 'ok';
+      subscriptionId: string | null;
+      corrections: {
+        seq: number;
+        obligationId: string;
+        revision: number;
+        tailEventId: string;
+      }[];
+    }
+  | ReadFailure
+> {
+  if (
+    !object(input) ||
+    !uuid(input.workspaceId) ||
+    !uuid(input.clientId) ||
+    Object.keys(input).some((key) => !['workspaceId', 'clientId'].includes(key))
+  )
+    return { status: 'not_permitted' };
+  const session = await signedSession();
+  if (
+    !session ||
+    session.actor.role !== 'platform_owner' ||
+    !authorize(session.actor, 'approve_registration', input.workspaceId)
+  )
+    return { status: 'not_permitted' };
+  try {
+    const { data, error } = await session.client.rpc(
+      'registration_approval_correction',
+      { workspace_id: input.workspaceId, client_id: input.clientId },
+    );
+    if (error) return { status: 'unavailable' };
+    if (object(data) && data.status === 'not_permitted')
+      return { status: 'not_permitted' };
+    if (
+      !object(data) ||
+      data.status !== 'ok' ||
+      !(data.subscription_id === null || uuid(data.subscription_id)) ||
+      !object(data.corrections)
+    )
+      return { status: 'unavailable' };
+    const corrections: {
+      seq: number;
+      obligationId: string;
+      revision: number;
+      tailEventId: string;
+    }[] = [];
+    for (const [sequence, row] of Object.entries(data.corrections)) {
+      if (
+        !/^[1-9]\d*$/.test(sequence) ||
+        !Number.isSafeInteger(Number(sequence)) ||
+        !object(row) ||
+        !uuid(row.obligation_id) ||
+        !Number.isSafeInteger(row.revision) ||
+        Number(row.revision) < 1 ||
+        !uuid(row.tail_event_id)
+      )
+        return { status: 'unavailable' };
+      corrections.push({
+        seq: Number(sequence),
+        obligationId: row.obligation_id,
+        revision: Number(row.revision),
+        tailEventId: row.tail_event_id,
+      });
+    }
+    if (data.subscription_id === null && corrections.length > 0)
+      return { status: 'unavailable' };
+    return {
+      status: 'ok',
+      subscriptionId: data.subscription_id,
+      corrections,
+    };
+  } catch {
+    return { status: 'unavailable' };
+  }
+}
+
 export async function readWorkspacePaymentQueue(
   input: unknown,
 ): Promise<SafeResult | ReadFailure> {

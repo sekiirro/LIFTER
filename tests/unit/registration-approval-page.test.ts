@@ -15,6 +15,7 @@ const mock = vi.hoisted(() => ({
   notFound: vi.fn(),
   approvalQueue: vi.fn(),
   approvalReview: vi.fn(),
+  approvalCorrection: vi.fn(),
   paymentQueue: vi.fn(),
   paymentStatus: vi.fn(),
 }));
@@ -28,6 +29,7 @@ vi.mock('../../lib/supabase/server', () => ({
 vi.mock('../../lib/registration-approval/read', () => ({
   readRegistrationApprovalQueue: mock.approvalQueue,
   readRegistrationApprovalReview: mock.approvalReview,
+  readRegistrationApprovalCorrection: mock.approvalCorrection,
   readWorkspacePaymentQueue: mock.paymentQueue,
   readSubscriptionPaymentStatus: mock.paymentStatus,
 }));
@@ -113,6 +115,11 @@ beforeEach(() => {
       installments: [{ seq: 1, amount_minor: '120000', currency: 'EGP' }],
     },
   });
+  mock.approvalCorrection.mockResolvedValue({
+    status: 'ok',
+    subscriptionId: subscription,
+    corrections: [],
+  });
   mock.paymentQueue.mockResolvedValue({ status: 'ok', items: [] });
   mock.paymentStatus.mockResolvedValue({ status: 'ok', obligations: [] });
 });
@@ -132,6 +139,15 @@ describe('registration approval and payment pages', () => {
     );
     expect(review).toContain('data-testid="approval-review"');
     expect(review).toContain('120000');
+    const membershipOrder = mock.session.mock.invocationCallOrder[0];
+    const reviewOrder = mock.approvalReview.mock.invocationCallOrder[0];
+    expect(membershipOrder).toBeDefined();
+    expect(reviewOrder).toBeDefined();
+    expect(membershipOrder!).toBeLessThan(reviewOrder!);
+    expect(mock.approvalCorrection).toHaveBeenCalledWith({
+      workspaceId: workspace,
+      clientId: client,
+    });
   });
   it.each(['sales', 'trainer', null])(
     'denies %s from approval queue before loading',
@@ -166,6 +182,29 @@ describe('registration approval and payment pages', () => {
         }),
       ),
     ).toContain('data-testid="payment-history"');
+    await expect(
+      Review({
+        params: Promise.resolve({ clientId: client }),
+        searchParams: Promise.resolve({ workspace }),
+      }),
+    ).rejects.toThrow('404');
+    expect(mock.approvalReview).not.toHaveBeenCalled();
+  });
+  it('returns generic notFound for a nonmember before reading the client review', async () => {
+    mock.actor.mockResolvedValue({
+      userId: client,
+      role: 'workspace_owner',
+      activeWorkspaceIds: [],
+    });
+    mock.session.mockResolvedValue({
+      from: () => ({
+        select: () => ({
+          order: () => ({
+            in: async () => ({ data: [], error: null }),
+          }),
+        }),
+      }),
+    });
     await expect(
       Review({
         params: Promise.resolve({ clientId: client }),

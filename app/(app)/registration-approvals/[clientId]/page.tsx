@@ -3,7 +3,10 @@ import { notFound } from 'next/navigation';
 import { requireActor } from '../../../../lib/auth/actor';
 import { roleHasCapability } from '../../../../lib/auth/capabilities';
 import { createSessionClient } from '../../../../lib/supabase/server';
-import { readRegistrationApprovalReview } from '../../../../lib/registration-approval/read';
+import {
+  readRegistrationApprovalCorrection,
+  readRegistrationApprovalReview,
+} from '../../../../lib/registration-approval/read';
 import { LOCALE_COOKIE, parseLocale } from '../../../../lib/design/preferences';
 import { getMessages } from '../../../../lib/i18n';
 import { Alert } from '../../../../components/ui/Alert';
@@ -27,6 +30,10 @@ export default async function RegistrationApprovalReviewPage({
   const { clientId } = await params;
   const workspace = (await searchParams).workspace;
   if (typeof workspace !== 'string') notFound();
+  const data = await loadWorkspaces(
+    actor.role === 'platform_owner' ? undefined : actor.activeWorkspaceIds,
+  );
+  if (!data || !data.some((item) => item.id === workspace)) notFound();
   const store = await cookies();
   const m = getMessages(parseLocale(store.get(LOCALE_COOKIE)?.value));
   const result = await readRegistrationApprovalReview({
@@ -49,10 +56,13 @@ export default async function RegistrationApprovalReviewPage({
         />
       </main>
     );
-  const data = await loadWorkspaces(
-    actor.role === 'platform_owner' ? undefined : actor.activeWorkspaceIds,
-  );
-  if (!data || !data.some((item) => item.id === workspace)) notFound();
+  const correctionResult =
+    actor.role === 'platform_owner'
+      ? await readRegistrationApprovalCorrection({
+          workspaceId: workspace,
+          clientId,
+        })
+      : null;
   return (
     <main className={styles.main}>
       <h1>{m['registrationApproval.review']}</h1>
@@ -61,6 +71,9 @@ export default async function RegistrationApprovalReviewPage({
         workspaceId={workspace}
         role={actor.role}
         messages={m}
+        correctionContext={
+          correctionResult?.status === 'ok' ? correctionResult : null
+        }
       />
     </main>
   );

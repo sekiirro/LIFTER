@@ -11,6 +11,7 @@ vi.mock('server-only', () => ({}));
 
 import {
   readRegistrationApprovalQueue,
+  readRegistrationApprovalCorrection,
   readRegistrationApprovalReview,
   readSubscriptionCommission,
   readSubscriptionPaymentStatus,
@@ -244,4 +245,61 @@ describe('registration approval safe readers', () => {
       /\b(new Map|globalThis|let cached|const cache\s*=)/,
     );
   });
+
+  it('reads only PO correction identifiers and drops extra backend columns', async () => {
+    const rpc = setBackend({
+      status: 'ok',
+      subscription_id: subscriptionId,
+      corrections: {
+        '1': {
+          obligation_id: '00000000-0000-0000-0000-000000000004',
+          revision: 1,
+          tail_event_id: '00000000-0000-0000-0000-000000000005',
+          amount_minor: '1200',
+          email: 'private@example.test',
+        },
+      },
+      email: 'private@example.test',
+    });
+    const result = await readRegistrationApprovalCorrection({
+      workspaceId: ws,
+      clientId,
+    });
+    expect(rpc).toHaveBeenCalledWith('registration_approval_correction', {
+      workspace_id: ws,
+      client_id: clientId,
+    });
+    expect(result).toEqual({
+      status: 'ok',
+      subscriptionId,
+      corrections: [
+        {
+          seq: 1,
+          obligationId: '00000000-0000-0000-0000-000000000004',
+          revision: 1,
+          tailEventId: '00000000-0000-0000-0000-000000000005',
+        },
+      ],
+    });
+    expect(JSON.stringify(result)).not.toMatch(/email|amount_minor|private@/);
+  });
+
+  it.each(['workspace_owner', 'trainer', 'sales', null] as const)(
+    'does not call the correction reader for %s',
+    async (role) => {
+      setActor(role);
+      const rpc = setBackend({
+        status: 'ok',
+        subscription_id: subscriptionId,
+        corrections: {},
+      });
+      expect(
+        await readRegistrationApprovalCorrection({
+          workspaceId: ws,
+          clientId,
+        }),
+      ).toEqual({ status: 'not_permitted' });
+      expect(rpc).not.toHaveBeenCalled();
+    },
+  );
 });
