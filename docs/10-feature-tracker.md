@@ -14,3 +14,9 @@ The branch, SHA, PR and CI columns contain facts verified from GitHub/Git. `pend
 | P2 Forms/Intake | Not started | pending | pending | pending | F12 approval event; P2 templates/assignment | pending | REQ-P2-01 post-approval automatic form assignment (must copy into P2 FRs); decide Trainer authorization capability in P2 spec |
 | Governance | PR open | `docs-workflow-governance` @ pending (this commit) | #13 open | pending | None | No - DB-free | CodeRabbit review, green CI; explicit PO merge approval |
 | Second local Supabase stack | Preparation only | `infra-second-stack` @ `75d4a40def664f0a2cbbd836c593f235ef624e01` | pending | CI 40757475223 success | None | No - preparation only | Configuration/verification only; PO approval required before provisioning or starting |
+
+## Deferred roadmap
+
+| Feature | State | Branch@SHA | PR | CI | Depends on | DB lock | Open items |
+|---|---|---|---|---|---|---|---|
+| Public premium marketing Landing Page for prospective Workspace Owners | Deferred until after core platform completion (PO, session 14, 2026-10-30) | pending | pending | pending | Core platform completion | No | Services overview with Login, Work With Us and Apply CTAs; do not implement now; current invitation-only client registration flow remains unchanged |
