@@ -231,4 +231,29 @@ export const ar = {
   'clientSignup.invalidInput': 'يرجى مراجعة الحقول المحددة والمحاولة مرة أخرى.',
   'clientSignup.signOutRequired':
     'يرجى تسجيل الخروج قبل إرسال طلب التسجيل هذا.',
+  'f14Banner.pageTitle': 'مقارنة لافتة صفحة التسجيل',
+  'f14Banner.pageIntro':
+    'قارن ثلاثة أشكال للافتة صورية فقط. هذه الأبعاد المتجاوبة مقترحات لمراجعة مالك المنتج.',
+  'f14Banner.controls': 'عناصر تحكم النموذج الأولي',
+  'f14Banner.variantLabel': 'خيار اللافتة',
+  'f14Banner.variants': 'خيارات نسبة اللافتة وارتفاعها',
+  'f14Banner.variantA': 'أ · عريضة ٣:١',
+  'f14Banner.variantB': 'ب · ١٦:٩',
+  'f14Banner.variantC': 'ج · ٢:١ بحد أقصى',
+  'f14Banner.brandOverrideOn': 'تخصيص مساحة العمل: مفعّل',
+  'f14Banner.brandOverrideOff': 'معاينة تخصيص مساحة العمل',
+  'f14Banner.showImage': 'عرض الصورة',
+  'f14Banner.showFallback': 'معاينة غياب الصورة',
+  'f14Banner.registrationPreview': 'معاينة التسجيل',
+  'f14Banner.measurement': 'نسبة العرض إلى الارتفاع · حدود الارتفاع المتجاوبة',
+  'f14Banner.registrationTitle': 'أنشئ حسابك',
+  'f14Banner.registrationIntro': 'انضم إلى مساحة العمل وابدأ التدريب.',
+  'f14Banner.previewNote':
+    'نموذج أولي فقط. لن يرسل هذا النموذج بيانات التسجيل.',
+  'f14Banner.previewComplete':
+    'تم التحقق من النموذج محليًا. لم تُرسل أي بيانات تسجيل.',
+  'f14Banner.prototypeNotice':
+    'نموذج بوابة التصميم · اختيار الأبعاد بانتظار مالك المنتج.',
+  'f14Banner.alt': 'صورة لافتة محايدة لمقارنة اقتصاص اللافتات.',
+  'f14Banner.fallbackAlt': 'سطح محايد للافتة يظهر لعدم ضبط صورة.',
 } as const;

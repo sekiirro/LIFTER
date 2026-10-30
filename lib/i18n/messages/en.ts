@@ -239,4 +239,30 @@ export const en: Record<keyof typeof ar, string> = {
   'clientSignup.invalidInput': 'Check the highlighted fields and try again.',
   'clientSignup.signOutRequired':
     'Please sign out before submitting this registration request.',
+  'f14Banner.pageTitle': 'Registration banner comparison',
+  'f14Banner.pageIntro':
+    'Compare three image-only hero banner shapes. These responsive dimensions are proposals for PO review.',
+  'f14Banner.controls': 'Prototype controls',
+  'f14Banner.variantLabel': 'Banner candidate',
+  'f14Banner.variants': 'Banner aspect and height candidates',
+  'f14Banner.variantA': 'A · 3:1 wide',
+  'f14Banner.variantB': 'B · 16:9',
+  'f14Banner.variantC': 'C · 2:1 capped',
+  'f14Banner.brandOverrideOn': 'Workspace brand override: on',
+  'f14Banner.brandOverrideOff': 'Preview workspace brand override',
+  'f14Banner.showImage': 'Show image',
+  'f14Banner.showFallback': 'Preview missing-image fallback',
+  'f14Banner.registrationPreview': 'Registration preview',
+  'f14Banner.measurement': 'Aspect ratio · responsive height bounds',
+  'f14Banner.registrationTitle': 'Create your account',
+  'f14Banner.registrationIntro': 'Join the workspace to start training.',
+  'f14Banner.previewNote':
+    'Prototype only. Submitting this sample does not send registration data.',
+  'f14Banner.previewComplete':
+    'Sample checked locally. No registration data was sent.',
+  'f14Banner.prototypeNotice':
+    'Design-gate prototype · dimensions remain pending PO selection.',
+  'f14Banner.alt': 'Neutral sample hero image for comparing banner crops.',
+  'f14Banner.fallbackAlt':
+    'Neutral hero banner surface shown because no image is configured.',
 };
