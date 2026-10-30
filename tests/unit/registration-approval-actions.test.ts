@@ -128,7 +128,8 @@ describe('registration approval server action boundary', () => {
     ['sales', [ws], 'collect', true],
     ['workspace_owner', [ws], 'collect', true],
     ['platform_owner', [ws], 'collect', true],
-    ['trainer', [ws], 'collect', false],
+    // PO session 14: Trainers may confirm all installments, including renewals.
+    ['trainer', [ws], 'collect', true],
     ['sales', [ws], 'reconsider', false],
     ['workspace_owner', [ws], 'reconsider', false],
     ['sales', [ws], 'correct', false],
