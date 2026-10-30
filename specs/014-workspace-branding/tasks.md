@@ -29,7 +29,7 @@
 - [x] T001 [U00] Record the 2026-10-29 PO approval and separate stack lane's completed provisioning/isolation/profile report; F14 performs no provisioning/start. **Owner files**: `specs/014-workspace-branding/quickstart.md`. **DB: none; Storage: profile documented only; Stack: B managed by separate lane.**
 - [x] T002 [U00] Add failing stack-selection/loopback/port/project and readiness contract cases before porting; record the pre-port module-missing RED, then run only this unit file to GREEN after the port without opening a DB connection. **Owner files**: `tests/unit/second-local-stack.test.ts`. **DB: no connection; Storage: readiness contract only; Stack: B configuration.**
 - [x] T003 [U00, architect-owned] Port only the AD-F14-2 approved files/hunks from `infra-second-stack` head `d49880010e70ac03c4a264fc19610dfc443d7c55` onto the F14/main-based line: `scripts/local-stack.mjs`, `supabase-stack-b/supabase/config.toml`, `.env.stack-b.example`, `.gitignore` hunk, `tests/unit/second-local-stack.test.ts`, `tests/integration/local-docker.ts`, and only the stack-selector hunk of `tests/integration/harness.ts`. Exclude F11 feature files, provisioner and migration payload. Profile includes `storage-api` and Mailpit. **DB: no connection; Storage: readiness only; Stack: B config only.**
-- [ ] T004 [U00] Coordinate F11 runner restoration assumptions and required pending-client Storage denials with F11 owners; do not edit F11-owned files as part of F14. **Owner files**: `specs/014-workspace-branding/quickstart.md` handoff/evidence requirements only; F11 owners retain ownership of their runner/test files. **DB: B only in future lane; Storage: enabled; Stack: B.**
+- [x] T004 [U00] Coordinate F11 runner restoration assumptions and required pending-client Storage denials with F11 owners; do not edit F11-owned files as part of F14. **Owner files**: `specs/014-workspace-branding/quickstart.md` handoff/evidence requirements only; F11 owners retain ownership of their runner/test files. **DB: B only in future lane; Storage: enabled; Stack: B.** Evidence: F14-owned `tests/unit/branding-storage-ci-contract.test.ts` proves the required F11 denial test and result runner are present; no F11-owned file changed. See [s17-r3-implementation-evidence.md](reports/s17-r3-implementation-evidence.md).
 
 ## Phase 2: Authorization and data foundation (blocks user stories)
 
@@ -67,14 +67,14 @@
 
 ### Tests first — RED
 
-- [ ] T019 [P] [U05] Add failing tests for serialized publication, stale publish, unchanged-draft no-op, rollback on audit failure, immutable snapshots and exactly one changed-publication event. **Owner files**: `tests/integration/branding-publish.test.ts`. **DB: B; Storage: validated references only; Stack: B.**
-- [ ] T020 [P] [U05] Add audit compatibility test asserting all latest F11 `audit_row_change()` mappings remain and F14 event excludes bytes, authored text, tokens and URLs; record RED. **Owner files**: `tests/integration/branding-audit.test.ts`. **DB: B; Storage: none; Stack: B.**
-- [ ] T021 [P] [U05] Add failing tests proving audit rows are permanent and independent when the previous version/assets are collected, with no FK or stored object bytes/URLs. **Owner files**: `tests/integration/branding-audit.test.ts`. **DB: B; Storage: none; Stack: B.**
+- [x] T019 [P] [U05] Add failing tests for serialized publication, stale publish, unchanged-draft no-op, rollback on audit failure, immutable snapshots and exactly one changed-publication event. **Owner files**: `tests/integration/branding-publish.test.ts`. **DB: B; Storage: validated references only; Stack: B.** Evidence: RED before `20261102139000`; GREEN in final Stack B integration (1,217/0/2). Mutation results in the evidence report.
+- [x] T020 [P] [U05] Add audit compatibility test asserting all latest F11 `audit_row_change()` mappings remain and F14 event excludes bytes, authored text, tokens and URLs; record RED. **Owner files**: `tests/integration/branding-audit.test.ts`. **DB: B; Storage: none; Stack: B.** Evidence: compatibility test RED on missing F14 mapping before migration; GREEN after it; enumerated current mappings and mutation evidence in report.
+- [x] T021 [P] [U05] Add failing tests proving audit rows are permanent and independent when the previous version/assets are collected, with no FK or stored object bytes/URLs. **Owner files**: `tests/integration/branding-audit.test.ts`. **DB: B; Storage: none; Stack: B.** Evidence: RED before migration; GREEN on final fresh Stack B reset and integration. Audit schema has no version/asset FK; event stores publication sequence only.
 
 ### Implementation — GREEN
 
-- [ ] T022 [U05] After F11 is on main, timestamp after every F11 migration including review fixes and rebuild the extension from F11's final merged audit function without dropping mappings; add the F14 publication event and permanent retention. **Owner files**: `supabase/migrations/<timestamp after all F11 migrations>_workspace_branding_audit.sql`, `lib/branding/publish.ts`. **DB: B; Storage: none; Stack: B.**
-- [ ] T023 [U05] Implement atomic serialized changed publish, current pointer update, audit event, no-op unchanged publish and rollback on audit failure. **Owner files**: `lib/branding/publish.ts`, `tests/integration/branding-publish.test.ts`, `tests/integration/branding-audit.test.ts`. **DB: B; Storage: reads validated refs only; Stack: B.**
+- [x] T022 [U05] After F11 is on main, timestamp after every F11 migration including review fixes and rebuild the extension from F11's final merged audit function without dropping mappings; add the F14 publication event and permanent retention. **Owner files**: `supabase/migrations/<timestamp after all F11 migrations>_workspace_branding_audit.sql`, `lib/branding/publish.ts`. **DB: B; Storage: none; Stack: B.** Evidence: migration `20261102139000_workspace_branding_audit_extension.sql` follows main max `20261101132000`; mapping compatibility passes and is mutation-tested.
+- [x] T023 [U05] Implement atomic serialized changed publish, current pointer update, audit event, no-op unchanged publish and rollback on audit failure. **Owner files**: `lib/branding/publish.ts`, `tests/integration/branding-publish.test.ts`, `tests/integration/branding-audit.test.ts`. **DB: B; Storage: reads validated refs only; Stack: B.** Evidence: final fresh Stack B reset and integration pass; lock/CAS/no-op/rollback mutations each fail their targeted assertion (report).
 - [x] T024 [U04/U05] Implement and verify publish replacement makes the previous snapshot/assets GC-eligible once current, draft and active-upload references are absent; retain detached permanent audit. **Owner files**: `lib/branding/publish.ts`, `lib/branding/reconciliation.ts`, `tests/integration/branding-publish.test.ts`, `tests/integration/branding-gc-race.test.ts`. **DB: B; Storage: enabled for object cleanup; Stack: B.** GREEN: T049/T050 publication replacement makes the prior version/assets collectible after draft/current references move; cleanup removes bytes, finalizes claims, and preserves detached audit events. Verified in full Stack-B integration.
 
 ## Phase 5: Public projection and token-validating proxy (US5, P1)
@@ -109,18 +109,18 @@
 ### Tests first — RED
 
 - [x] T036 [P] [U09] Add CI contract/readiness tests that fail when Storage is missing, not ready, skipped, or stack selector/ports/project mismatch; prove required status behavior. **Owner files**: `.github/workflows/ci.yml`, `tests/unit/client-accounts-ci-provision.test.ts`, `tests/unit/client-accounts-storage-readiness.test.ts`, `tests/unit/second-local-stack.test.ts`. **DB: none for config checks; Storage: readiness required; Stack: B.** RED: new workflow contract failed because CI could skip the pending-client Storage test when the API stayed unavailable. GREEN: the Stack-B e2e step now sets `LOCAL_SUPABASE_STORAGE_TEST: 'true'`; readiness behavior fails after bounded retries instead of skipping. Existing readiness and stack unit contracts cover unavailable responses, explicit stack selection and port/project mismatch. Focused result: 3 files / 15 passed.
-- [ ] T037 [P] [U09] Coordinate the F11 owner change that adds pending-client Storage denials and updates isolated-runner restoration assumptions; verify the F14 lane contract fails (RED) when the required F11 job/report is absent. **Owner files**: F14 owns `.github/workflows/ci.yml` and `tests/integration/branding-storage-verification.md`; F11 owners own their pending-client tests and runner files. **DB: B; Storage: enabled; Stack: B.**
+- [x] T037 [P] [U09] Coordinate the F11 owner change that adds pending-client Storage denials and updates isolated-runner restoration assumptions; verify the F14 lane contract fails (RED) when the required F11 job/report is absent. **Owner files**: F14 owns `.github/workflows/ci.yml` and `tests/integration/branding-storage-verification.md`; F11 owners own their pending-client tests and runner files. **DB: B; Storage: enabled; Stack: B.** Evidence: contract test was RED when lane/denial assertions were absent, then GREEN; F11-owned files remain unchanged.
 
 ### Implementation and release evidence — GREEN
 
-- [ ] T038 [U09] Configure required Storage-enabled CI lane with readiness gate, direct API bucket/path tests, isolated fixtures, zero allowed skips, and F11 denial coverage. **Owner files**: `.github/workflows/ci.yml`, agreed runner/config paths. **DB: B; Storage: enabled; Stack: B.**
+- [x] T038 [U09] Configure required Storage-enabled CI lane with readiness gate, direct API bucket/path tests, isolated fixtures, zero allowed skips, and F11 denial coverage. **Owner files**: `.github/workflows/ci.yml`, agreed runner/config paths. **DB: B; Storage: enabled; Stack: B.** Evidence: CI job reuses main's Stack B pattern, gates Storage readiness, runs F11's pending-client test and enforces 1 pass/0 skips; local forced-skip mutation fails the guard. Hosted CI is unavailable while the repo is private.
 - [ ] T039 [U09] Run capacity model for up to two current assets/workspace, draft/staging, workspace count and no-store egress against verified Storage allowances and 70% exit trigger; benchmark worst-case CPU/memory and record source/evidence. **Owner files**: `specs/014-workspace-branding/quickstart.md`, approved evidence artifact path. **DB: none; Storage: estimates; Stack: none.**
 - [ ] T040 [U09] Demonstrate Storage backup/restore and independently verify audit retention; retain results as production-blocker evidence. **Owner files**: approved recovery evidence artifact only. **DB: B for linked metadata/audit checks; Storage: enabled and restored; Stack: B.**
 - [ ] T041 [U09] Run the complete Q-M01..Q-M30 matrix from quickstart on isolated stack B, confirm zero skipped Storage checks, state restoration, and collect CI run IDs/evidence. **Owner files**: `tests/integration/branding-storage-verification.md`, test result artifacts. **DB: B; Storage: enabled; Stack: B.**
 
 ## Phase 8: Conditional P4 contract and final integration
 
-- [ ] T042 [U10] Add the brand data/token contract test first (RED), then implement only the contract definition and nonfunctional Client Portal preview placeholder. Do not implement or modify P4/Client Portal behavior even if P4 exists. **Owner files**: `lib/branding/portal-contract.ts`, associated contract tests and placeholder component only. **DB: none beyond authorized projection contract; Storage: none; Stack: none.** Contract test and pure contract are GREEN; UI placeholder is deferred to U08 because it is a surface/UI artifact.
+- [x] T042 [U10] Add the brand data/token contract test first (RED), then implement only the contract definition and nonfunctional Client Portal preview placeholder. Do not implement or modify P4/Client Portal behavior even if P4 exists. **Owner files**: `lib/branding/portal-contract.ts`, associated contract tests and placeholder component only. **DB: none beyond authorized projection contract; Storage: none; Stack: none.** Evidence: contract/placeholder tests RED before component existed, then GREEN; preview is static, published-only, no Client Portal behavior. Design gate evidence in report.
 - [ ] T043 [U00/U09] Reconcile final F11 changes and migration order; rerun required stack-B Storage lane with no skips, UI gate, format/lint and `git diff --check`; collect run IDs and evidence before production approval. **Owner files**: feature-owned integration and evidence files. **DB: B; Storage: enabled; Stack: B.**
 
 ## Phase 9: Restricted Storage identities and proxy acceptance gates
@@ -157,22 +157,22 @@
 
 | Task | Blocker / remaining work |
 | --- | --- |
-| T004 | F11 owners have not merged the pending-client Storage denials and runner restoration changes; do not edit their files. |
-| T019 | Dedicated publication RED tests for serialization, no-op and audit rollback are absent; publish service/test scope remains. |
-| T020 | F11 final merged audit function is not on main; compatibility tests cannot lock the final mapping yet. |
-| T021 | Permanent detached-audit retention tests are absent; F11 audit baseline and T023 publication event remain prerequisites. |
-| T022 | Explicit F11 dependency: wait for F11 and review fixes to merge, then choose a later migration timestamp and rebase the audit extension. |
-| T023 | SQL-backed publication service and atomic audit contract are absent; also depends on T022's final F11 body. |
+| T004 | Complete: F14-owned CI contract tests cover required F11 denial runner/report; no F11-owned files changed. |
+| T019 | Complete: publication RED/GREEN and six required reversible mutations are recorded in s17-r3 evidence. |
+| T020 | Complete: current F11 audit mapping compatibility RED/GREEN and mapping-drop mutation are recorded in s17-r3 evidence. |
+| T021 | Complete: permanent detached audit retention and privacy tests pass on fresh Stack B. |
+| T022 | Complete: extension migration `20261102139000` is after main's final migration and preserves F11 mappings. |
+| T023 | Complete: serialized, CAS-checked atomic publish/no-op/rollback behavior and mutations pass on fresh Stack B. |
 | T027 | Green published-only implementation evidence is recorded. RED evidence is unit-level, not Stack-B integration; see report. Function-body mutation was denied by function ownership and was not attempted with elevated grants. |
 | T030 | Green component/Stack-B fallback contracts and 12 geometry/axe cases are recorded. The observed RED was module/import resolution, not an assertion failure; loaded-image geometry lacks an approved validated-asset fixture or upload service adapter. |
 | T031 | Green local-only unsaved editor presentation and unit/e2e contracts are recorded. The observed RED was module/import resolution, not an assertion failure. It does not claim persistence or a connected private editor. |
-| T037 | F11 runner and denial job/report are external dependencies; coordinate with F11 owners after merge. |
-| T038 | Required Storage CI lane and F11 denial coverage are not configured; depends on T036/T037. |
+| T037 | Complete: F14 contract requires the F11 Storage denial test/report; no F11-owned file changed. |
+| T038 | Complete locally: readiness-gated Storage CI lane, isolated Stack B profile, and hard zero-skip check; hosted execution unavailable while repository is private. |
 | T039 | Verified Storage plan allowances and capacity source/evidence are missing; no allowance values are assumed. |
 | T040 | Approved recovery-evidence artifact path and Stack-B Storage backup/restore proof are missing. |
 | T041 | The complete Q-M01..Q-M30 acceptance matrix and recorded CI/run artifacts are not complete; the broad integration suite is not a substitute for this matrix. |
-| T042 | Pure portal contract is green; the nonfunctional placeholder is deferred to U08 and needs the frontend design gate. |
-| T043 | Final F11 migration/runner reconciliation and complete Storage/UI release evidence depend on T022/T037/T035/T041. |
+| T042 | Complete: static published-brand placeholder and contract pass; see T035 design-gate evidence in s17-r3 report. |
+| T043 | Production/release blocker: full Q-M01..Q-M30 isolated Storage matrix, hosted CI run IDs, complete state restoration, and backup/restore evidence are not available; related T039–T041 remain open. |
 
 ### F13 reconciliation plan (deferred until F13 is merged)
 
