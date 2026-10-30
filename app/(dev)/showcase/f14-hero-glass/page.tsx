@@ -1,14 +1,25 @@
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
+import { preload } from 'react-dom';
 import { RegistrationBrand } from '../../../../components/branding/RegistrationBrand';
 import { BrandScope } from '../../../../components/ui/BrandScope';
-import { getMessages } from '../../../../lib/i18n';
-import { phoneCountryOptions } from '../../../../lib/client-accounts/phone';
-import type { PublicBrandingProjection } from '../../../../lib/registration-links/open';
+import { DEFAULT_BRAND } from '../../../../lib/design/color';
 import { LOCALE_COOKIE, parseLocale } from '../../../../lib/design/preferences';
 import { isShowcaseEnabled } from '../../../../lib/design/showcase';
+import { getMessages } from '../../../../lib/i18n';
+import {
+  normalizePhone,
+  phoneCountryOptions,
+} from '../../../../lib/client-accounts/phone';
+import type { PublicBrandingProjection } from '../../../../lib/registration-links/open';
+import { createF14HeroArtwork } from '../../../../tests/fixtures/f14-hero-artwork';
 import { HeroGlassCard } from './HeroGlassCard';
-import { HeroStage, type GlassEffect, type HeroFixture } from './HeroStage';
+import {
+  HeroStage,
+  type GlassEffect,
+  type HeroArtwork,
+  type HeroFixture,
+} from './HeroStage';
 import { HeroSignupPreview } from './HeroSignupPreview';
 import styles from './page.module.css';
 
@@ -30,13 +41,22 @@ function parseFixture(value: QueryValue): HeroFixture {
 
 function parseEffect(value: QueryValue): GlassEffect {
   const candidate = first(value);
-  return candidate === 'webgl' || candidate === 'blur' ? candidate : 'svg';
+  return candidate === 'webgl' || candidate === 'blur' || candidate === 'none'
+    ? candidate
+    : 'blur';
 }
 
 type HeroMaterial = 'A' | 'B';
 
 function parseMaterial(value: QueryValue): HeroMaterial {
-  return first(value)?.toUpperCase() === 'B' ? 'B' : 'A';
+  return first(value)?.toLowerCase() === 'b' ? 'B' : 'A';
+}
+
+async function validatePreviewPhone(country: string, nationalNumber: string) {
+  'use server';
+  if (!isShowcaseEnabled(process.env) || process.env.NODE_ENV === 'production')
+    notFound();
+  return normalizePhone(JSON.stringify({ country, nationalNumber }));
 }
 
 export default async function HeroPrototypePage({
@@ -59,11 +79,38 @@ export default async function HeroPrototypePage({
     ? parseEffect(query.effect)
     : material === 'B'
       ? 'webgl'
-      : 'svg';
+      : 'blur';
+  const tone = fixture === 'bright' ? 'bright' : 'dark';
+  let artwork: HeroArtwork = {};
+  if (fixture === 'desktop-only') {
+    artwork = { desktop: createF14HeroArtwork('desktop', tone) };
+  } else if (fixture === 'mobile-only') {
+    artwork = { mobile: createF14HeroArtwork('mobile', tone) };
+  } else if (fixture !== 'none') {
+    artwork = {
+      desktop: createF14HeroArtwork('desktop', tone),
+      mobile: createF14HeroArtwork('mobile', tone),
+    };
+  }
+  const desktopArtwork = artwork.desktop ?? artwork.mobile;
+  const mobileArtwork = artwork.mobile ?? artwork.desktop;
+  if (desktopArtwork)
+    preload(desktopArtwork, {
+      as: 'image',
+      fetchPriority: 'high',
+      media: '(min-width: 48rem)',
+    });
+  if (mobileArtwork)
+    preload(mobileArtwork, {
+      as: 'image',
+      fetchPriority: 'high',
+      media: '(max-width: 47.999rem)',
+    });
+
   const token = 'F'.repeat(43);
   const brand: PublicBrandingProjection = {
     name: { ar: 'مساحة تجريبية', en: 'Fixture workspace' },
-    color: '#2563EB',
+    color: DEFAULT_BRAND,
     bannerAlt: { ar: 'عمل فني تجريبي', en: 'Prototype artwork' },
     logo: false,
     banner: false,
@@ -71,28 +118,36 @@ export default async function HeroPrototypePage({
 
   return (
     <BrandScope
-      color={brand.color}
+      color={DEFAULT_BRAND}
       className={styles.brandScope}
       data-testid="hero-brand-scope"
     >
-      <HeroStage fixture={fixture} effect={effect} material={material}>
+      <HeroStage
+        fixture={fixture}
+        effect={effect}
+        material={material}
+        artwork={artwork}
+      >
         <section data-testid="registration-panel">
           <HeroGlassCard effect={effect} locale={locale} material={material}>
-            <RegistrationBrand
-              brand={brand}
-              locale={locale}
-              token={token}
-              renderHandle={token}
-              fallbackName={brand.name[locale]}
-            />
-            <h1>{messages['registration.publicValid']}</h1>
-            <HeroSignupPreview
-              locale={locale}
-              phoneCountries={phoneCountryOptions(locale)}
-            />
-            <p className={styles.previewNote}>
-              {messages['f14Banner.previewNote']}
-            </p>
+            <div className={styles.formPlate} data-testid="hero-content-plate">
+              <RegistrationBrand
+                brand={brand}
+                locale={locale}
+                token={token}
+                renderHandle={token}
+                fallbackName={brand.name[locale]}
+              />
+              <h1>{messages['registration.publicValid']}</h1>
+              <HeroSignupPreview
+                locale={locale}
+                phoneCountries={phoneCountryOptions(locale)}
+                validatePreviewPhone={validatePreviewPhone}
+              />
+              <p className={styles.previewNote}>
+                {messages['f14Banner.previewNote']}
+              </p>
+            </div>
           </HeroGlassCard>
         </section>
       </HeroStage>

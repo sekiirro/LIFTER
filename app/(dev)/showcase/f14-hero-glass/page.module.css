@@ -28,14 +28,25 @@
 .mobileFade {
   position: absolute;
   z-index: 1;
-  inset-block-start: calc(min(78svh, 133.333vw) * 0.65);
+  inset-block-start: calc(min(78svh, 133.333vw) * 0.58);
   inset-inline: 0;
-  block-size: calc(min(78svh, 133.333vw) * 0.35);
+  block-size: calc(min(78svh, 133.333vw) * 0.42);
   background: linear-gradient(
     to bottom,
     transparent 0%,
-    color-mix(in oklab, var(--color-bg) 32%, transparent) 48%,
-    color-mix(in oklab, var(--color-bg) 76%, transparent) 78%,
+    color-mix(
+        in oklab,
+        var(--hero-bottom-average, var(--color-bg)) 88%,
+        var(--color-bg)
+      )
+      28%,
+    color-mix(
+        in oklab,
+        var(--hero-mobile-mid, var(--color-bg)) 68%,
+        var(--color-bg)
+      )
+      58%,
+    color-mix(in oklab, var(--color-bg) 78%, transparent) 82%,
     var(--color-bg) 100%
   );
   pointer-events: none;
@@ -66,129 +77,104 @@
   scrollbar-color: var(--color-border-strong) transparent;
 }
 
-.glassCard::before,
-.glassCard::after {
+.glassShell,
+.webglLens,
+.glassRim,
+.glassDepth,
+.glassInteraction {
   position: absolute;
-  z-index: 0;
   inset: 0;
   border-radius: inherit;
-  content: '';
   pointer-events: none;
 }
 
-.glassCard::before {
-  border: 1px solid var(--hero-glass-rim);
-  background: var(--hero-glass-tint);
-  box-shadow:
-    var(--hero-glass-shadow),
-    inset 0 1px 0 var(--hero-glass-edge);
+.glassShell {
+  z-index: 0;
+  background: var(--hero-glass-fill);
+  box-shadow: var(--hero-glass-shadow);
   backdrop-filter: blur(20px) saturate(1.24);
   -webkit-backdrop-filter: blur(20px) saturate(1.24);
 }
 
-.glassCard[data-material='B']::before {
-  backdrop-filter: blur(32px) saturate(1.55);
-  -webkit-backdrop-filter: blur(32px) saturate(1.55);
-}
-
-.glassCard::after {
-  z-index: 2;
-  background: radial-gradient(
-    19rem circle at var(--pointer-x, 52%) var(--pointer-y, 0%),
-    var(--hero-glass-highlight),
-    transparent 72%
+.glassCard[data-material='B'] .glassShell {
+  background: color-mix(
+    in srgb,
+    var(--color-card) var(--hero-glass-tint-alpha, 20%),
+    transparent
   );
-  opacity: 0.22;
-  transition: opacity 160ms ease-out;
-}
-
-.webglLens,
-.svgLens {
-  position: absolute;
-  z-index: 1;
-  inset: 0;
-  inline-size: 100%;
-  block-size: 100%;
-  border-radius: inherit;
-  opacity: 0.12;
-  pointer-events: none;
+  backdrop-filter: blur(26px) saturate(1.55);
+  -webkit-backdrop-filter: blur(26px) saturate(1.55);
 }
 
 .webglLens {
-  mix-blend-mode: screen;
+  z-index: 1;
+  inline-size: 100%;
+  block-size: 100%;
+  opacity: 0.92;
 }
 
-.glassCard[data-material='B'] .webglLens {
-  opacity: 0.62;
-  mix-blend-mode: normal;
-  mask-image: radial-gradient(
-    ellipse 78% 82% at center,
-    transparent 72%,
-    #000 100%
+.glassRim {
+  z-index: 2;
+  inset: 0;
+  padding: 1px;
+  background: linear-gradient(
+    132deg,
+    var(--hero-rim-lit),
+    var(--hero-rim-soft) 42%,
+    var(--hero-rim-low) 78%,
+    var(--hero-rim-soft)
   );
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
 }
 
-.svgLens {
-  backdrop-filter: url('#hero-glass-displacement') blur(20px) saturate(1.24);
-  -webkit-backdrop-filter: url('#hero-glass-displacement') blur(20px)
-    saturate(1.24);
-}
-
-.glassCard[data-material='B'] .svgLens {
-  opacity: 0.52;
-  backdrop-filter: url('#hero-glass-displacement-b') blur(32px) saturate(1.55);
-  -webkit-backdrop-filter: url('#hero-glass-displacement-b') blur(32px)
-    saturate(1.55);
-  mask-image: radial-gradient(
-    ellipse 78% 82% at center,
-    transparent 72%,
-    #000 100%
-  );
-}
-
-.filterDefinitions {
-  position: absolute;
-  inline-size: 0;
-  block-size: 0;
-  overflow: hidden;
+.glassDepth {
+  z-index: 3;
+  box-shadow:
+    inset 0 1px 0 var(--hero-inset-top),
+    inset 0 -1px 1px var(--hero-inset-bottom);
 }
 
 .glassContent {
   position: relative;
-  isolation: isolate;
-  z-index: 3;
+  z-index: 4;
   display: grid;
   gap: var(--space-3);
   padding: var(--space-5);
-}
-
-.glassCard[data-material='B'] .glassContent::before {
-  position: absolute;
-  z-index: -1;
-  inset: 0.75rem;
-  border-radius: calc(var(--radius-card) - var(--space-2));
-  background: var(--hero-glass-legibility);
-  content: '';
-  pointer-events: none;
 }
 
 .glassContent > :global(.hero-signup-preview) {
   display: contents;
 }
 
-.glassContent > h1 {
-  margin-block: var(--space-2) 0;
-  font-size: var(--text-lg);
-  line-height: var(--line-height-heading);
-}
-
 .brandScope :global([data-registration-banner-fallback]) {
   display: none;
 }
 
-.brandScope :global([data-brand-name]) {
+.glassContent > :global([data-brand-name]) {
   font-size: var(--text-xl);
   font-weight: 600;
+}
+
+.formPlate {
+  position: relative;
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: calc(var(--radius-card) - var(--space-2));
+  background: transparent;
+}
+
+.formPlate h1 {
+  margin-block: 0;
+  font-size: var(--text-lg);
+  line-height: var(--line-height-heading);
 }
 
 .brandScope :global(form) {
@@ -198,11 +184,8 @@
   margin-block-start: 0;
 }
 
-.brandScope {
-  --hero-focus-ring: var(--color-focus-ring, var(--color-border-strong));
-}
-
-.brandScope :global(form > label) {
+.brandScope :global(form > label),
+.countryField {
   display: grid;
   gap: var(--space-1);
   color: var(--color-text);
@@ -211,7 +194,8 @@
 }
 
 .brandScope :global(form input),
-.brandScope :global(form select) {
+.brandScope :global(form select),
+.brandScope :global(.countryPicker input) {
   min-block-size: var(--touch-min);
   border: 1px solid var(--color-border-strong);
   border-radius: calc(var(--radius-card) - var(--space-3));
@@ -219,10 +203,10 @@
   color: var(--color-text);
 }
 
-.brandScope :global(.hero-signup-preview form input:focus-visible),
-.brandScope :global(.hero-signup-preview form select:focus-visible) {
-  outline: 2px solid
-    var(--hero-focus-ring, var(--color-focus-ring, var(--color-border-strong)));
+.brandScope :global(form input:focus-visible),
+.brandScope :global(form select:focus-visible),
+.brandScope :global(.countryPicker input:focus-visible) {
+  outline: 2px solid var(--brand-ring);
   outline-offset: 2px;
 }
 
@@ -232,7 +216,65 @@
   box-shadow: 0 7px 18px color-mix(in srgb, var(--brand-fill) 24%, transparent);
 }
 
+.countryField {
+  min-inline-size: 0;
+}
+
+.countryPicker {
+  position: relative;
+  min-inline-size: 0;
+}
+
+.callingCode {
+  position: absolute;
+  inset-block-start: 50%;
+  inset-inline-end: var(--space-3);
+  transform: translateY(-50%);
+  color: var(--color-text-muted);
+  font-weight: 500;
+  pointer-events: none;
+}
+
+.countryPicker input {
+  inline-size: 100%;
+  padding-inline: var(--space-3) 4rem;
+}
+
+.countryList {
+  position: absolute;
+  z-index: 10;
+  inset-block-start: calc(100% + var(--space-1));
+  inset-inline: 0;
+  max-block-size: 14rem;
+  overflow: auto;
+  margin: 0;
+  padding: var(--space-1);
+  border: 1px solid var(--color-border-strong);
+  border-radius: calc(var(--radius-card) - var(--space-3));
+  background: var(--color-card);
+  color: var(--color-text);
+  box-shadow: var(--shadow-md);
+  list-style: none;
+}
+
+.countryList li {
+  display: flex;
+  min-block-size: var(--touch-min);
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding-inline: var(--space-3);
+  border-radius: calc(var(--radius-card) - var(--space-3));
+  cursor: pointer;
+}
+
+.activeOption,
+.countryList li:hover {
+  background: var(--color-card-raised);
+}
+
 .previewNote {
+  margin: 0;
   color: var(--color-text-muted);
   font-size: var(--text-sm);
   line-height: var(--line-height-body);
@@ -240,6 +282,17 @@
 
 .glassCard[data-material='B'] .previewNote {
   color: var(--color-text);
+}
+
+.glassInteraction {
+  z-index: 5;
+  background: radial-gradient(
+    18rem circle at var(--pointer-x, 52%) var(--pointer-y, 0%),
+    var(--hero-pointer-light),
+    transparent 72%
+  );
+  opacity: 0;
+  transition: opacity 160ms ease-out;
 }
 
 .prototypeGuidance {
@@ -251,7 +304,7 @@
   background:
     linear-gradient(
       148deg,
-      color-mix(in oklab, var(--brand-fill) 9%, transparent),
+      color-mix(in oklab, var(--brand-fill) 5%, transparent),
       transparent 42%
     ),
     var(--color-bg);
@@ -297,14 +350,8 @@
     inset-inline-start: auto;
     right: clamp(1.5rem, 4vw, 4rem);
     inline-size: min(28rem, calc(100vw - 3rem));
-    margin-inline: 0;
-    max-block-size: calc(100svh - var(--space-8));
     margin: 0;
     transform: translateY(-50%);
-  }
-
-  .glassCard {
-    max-block-size: calc(100svh - var(--space-8));
   }
 
   .mobileOnly .artwork {
@@ -321,89 +368,151 @@
 }
 
 [data-theme='light'] .glassCard {
-  --hero-glass-tint: color-mix(in srgb, var(--color-card) 94%, transparent);
   --hero-glass-rim: color-mix(in srgb, var(--color-text) 14%, transparent);
   --hero-glass-edge: color-mix(in srgb, white 70%, transparent);
   --hero-glass-highlight: color-mix(in srgb, white 34%, transparent);
-  --hero-glass-shadow: 0 24px 68px color-mix(in srgb, #0b1017 24%, transparent);
-}
-
-[data-theme='light'] .glassCard[data-material='B'] {
-  --hero-glass-tint: color-mix(in srgb, var(--color-card) 62%, transparent);
-  --hero-glass-legibility: color-mix(
-    in srgb,
-    var(--color-card) 28%,
-    transparent
-  );
-  --hero-glass-rim: color-mix(in srgb, white 82%, transparent);
-  --hero-glass-edge: color-mix(in srgb, white 94%, transparent);
-  --hero-glass-highlight: color-mix(in srgb, white 62%, transparent);
-  --hero-glass-shadow: 0 30px 86px color-mix(in srgb, #0b1017 36%, transparent);
+  --hero-glass-fill: color-mix(in srgb, var(--color-card) 94%, transparent);
+  --hero-glass-shadow: 0 24px 68px color-mix(in srgb, black 24%, transparent);
+  --hero-rim-lit: color-mix(in srgb, white 60%, transparent);
+  --hero-rim-soft: color-mix(in srgb, var(--color-text) 12%, transparent);
+  --hero-rim-low: color-mix(in srgb, var(--color-text) 5%, transparent);
+  --hero-inset-top: color-mix(in srgb, white 58%, transparent);
+  --hero-inset-bottom: color-mix(in srgb, black 10%, transparent);
+  --hero-pointer-light: color-mix(in srgb, white 20%, transparent);
 }
 
 [data-theme='dark'] .glassCard,
 html:not([data-theme='light']) .glassCard {
-  --hero-glass-tint: color-mix(in srgb, var(--color-card) 91%, transparent);
   --hero-glass-rim: color-mix(in srgb, white 19%, transparent);
   --hero-glass-edge: color-mix(in srgb, white 24%, transparent);
   --hero-glass-highlight: color-mix(in srgb, white 40%, transparent);
+  --hero-glass-fill: color-mix(in srgb, var(--color-card) 91%, transparent);
   --hero-glass-shadow: 0 26px 74px color-mix(in srgb, black 42%, transparent);
+  --hero-rim-lit: color-mix(in srgb, white 42%, transparent);
+  --hero-rim-soft: color-mix(in srgb, white 13%, transparent);
+  --hero-rim-low: color-mix(in srgb, white 5%, transparent);
+  --hero-inset-top: color-mix(in srgb, white 26%, transparent);
+  --hero-inset-bottom: color-mix(in srgb, black 22%, transparent);
+  --hero-pointer-light: color-mix(in srgb, white 24%, transparent);
+}
+
+.glassCard[data-material='B'] .glassRim {
+  padding: 1.5px;
+}
+
+.glassCard:not([data-material='B']) .glassRim {
+  padding: 0;
+  border: 1px solid var(--hero-glass-rim);
+  background: none;
+  -webkit-mask: none;
+  mask: none;
+}
+
+.glassCard:not([data-material='B']) .glassDepth {
+  box-shadow: inset 0 1px 0 var(--hero-glass-edge);
+}
+
+.glassCard:not([data-material='B']) .glassInteraction {
+  background: radial-gradient(
+    19rem circle at var(--pointer-x, 52%) var(--pointer-y, 0%),
+    var(--hero-glass-highlight),
+    transparent 72%
+  );
+  opacity: 0.22;
+}
+
+[data-theme='light'] .glassCard[data-material='B'] {
+  --hero-form-plate-background: color-mix(
+    in srgb,
+    var(--color-card) var(--hero-form-plate-alpha, 58%),
+    transparent
+  );
+  --hero-glass-shadow: 0 30px 82px color-mix(in srgb, black 38%, transparent);
+  --hero-rim-lit: color-mix(in srgb, white 88%, transparent);
+  --hero-rim-soft: color-mix(in srgb, white 34%, transparent);
+  --hero-rim-low: color-mix(in srgb, var(--color-text) 8%, transparent);
+  --hero-inset-top: color-mix(in srgb, white 72%, transparent);
+  --hero-inset-bottom: color-mix(in srgb, black 12%, transparent);
+  --hero-pointer-light: color-mix(in srgb, white 38%, transparent);
 }
 
 [data-theme='dark'] .glassCard[data-material='B'],
 html:not([data-theme='light']) .glassCard[data-material='B'] {
-  --hero-glass-tint: color-mix(in srgb, var(--color-card) 55%, transparent);
-  --hero-glass-legibility: color-mix(
+  --hero-form-plate-background: color-mix(
     in srgb,
-    var(--color-card) 56%,
+    var(--color-card) var(--hero-form-plate-alpha, 66%),
     transparent
   );
-  --hero-glass-rim: color-mix(in srgb, white 58%, transparent);
-  --hero-glass-edge: color-mix(in srgb, white 76%, transparent);
-  --hero-glass-highlight: color-mix(in srgb, white 64%, transparent);
-  --hero-glass-shadow: 0 32px 90px color-mix(in srgb, black 54%, transparent);
+  --hero-glass-shadow: 0 32px 88px color-mix(in srgb, black 54%, transparent);
+  --hero-rim-lit: color-mix(in srgb, white 72%, transparent);
+  --hero-rim-soft: color-mix(in srgb, white 32%, transparent);
+  --hero-rim-low: color-mix(in srgb, white 8%, transparent);
+  --hero-inset-top: color-mix(in srgb, white 52%, transparent);
+  --hero-inset-bottom: color-mix(in srgb, black 30%, transparent);
+  --hero-pointer-light: color-mix(in srgb, white 34%, transparent);
 }
 
-@media (hover: hover) and (pointer: fine) {
-  .glassCard:hover::after,
-  .glassCard:focus-within::after {
+.glassCard[data-material='B'] .formPlate {
+  background: var(--hero-form-plate-background);
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .glassCard:not([data-material='B']):hover .glassInteraction,
+  .glassCard:not([data-material='B']):focus-within .glassInteraction {
     opacity: 0.48;
+  }
+
+  .glassCard:hover .glassInteraction,
+  .glassCard:focus-within .glassInteraction {
+    opacity: 0.28;
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .glassCard::after {
+  .glassInteraction {
     opacity: 0;
     transition: none;
   }
 }
 
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .glassShell {
+    background: var(--color-card);
+  }
+}
+
 @media (prefers-reduced-transparency: reduce) {
-  .glassCard::before {
+  .glassShell {
     background: var(--color-card);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
 
   .webglLens,
-  .svgLens {
+  .glassRim,
+  .glassDepth,
+  .glassInteraction {
     display: none;
   }
 }
 
 @media (prefers-contrast: more) {
   .glassCard {
-    --hero-glass-tint: color-mix(in srgb, var(--color-card) 98%, transparent);
+    border: 2px solid var(--color-text);
   }
 
-  .glassCard::before {
-    border: 2px solid var(--color-text);
+  .glassShell {
+    background: var(--color-card);
     backdrop-filter: none;
     -webkit-backdrop-filter: none;
   }
 
   .webglLens,
-  .svgLens {
+  .glassRim,
+  .glassDepth,
+  .glassInteraction {
     display: none;
   }
 }
@@ -419,10 +528,10 @@ html:not([data-theme='light']) .glassCard[data-material='B'] {
   .artwork,
   .mobileFade,
   .webglLens,
-  .svgLens,
-  .glassContent::before,
-  .glassCard::before,
-  .glassCard::after {
+  .glassRim,
+  .glassDepth,
+  .glassInteraction,
+  .glassShell {
     display: none;
   }
 
@@ -433,24 +542,16 @@ html:not([data-theme='light']) .glassCard[data-material='B'] {
     box-shadow: none;
   }
 
-  .brandScope :global(form > label),
-  .brandScope :global(form span[aria-hidden='true']),
-  .previewNote {
+  .formPlate,
+  .brandScope :global(form input),
+  .brandScope :global(.countryPicker input) {
+    background: Canvas;
     color: CanvasText;
   }
 
   .brandScope :global(form input),
-  .brandScope :global(form select) {
+  .brandScope :global(.countryPicker input) {
     border-color: FieldText;
-    background: Field;
-    color: FieldText;
-  }
-
-  .brandScope :global(form > button) {
-    border-color: ButtonText;
-    background: ButtonFace;
-    color: ButtonText;
-    box-shadow: none;
   }
 }
 
@@ -458,10 +559,10 @@ html:not([data-theme='light']) .glassCard[data-material='B'] {
   .artwork,
   .mobileFade,
   .webglLens,
-  .svgLens,
-  .glassContent::before,
-  .glassCard::before,
-  .glassCard::after {
+  .glassRim,
+  .glassDepth,
+  .glassInteraction,
+  .glassShell {
     display: none;
   }
 

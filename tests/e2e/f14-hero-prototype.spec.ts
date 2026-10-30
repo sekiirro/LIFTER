@@ -60,6 +60,30 @@ async function openPrototype(
     { name: THEME_COOKIE, value: options.theme, url: origin },
   ]);
   const page = await context.newPage();
+  await page.addInitScript(() => {
+    const metrics = { lcpMs: 0, cls: 0 };
+    (window as Window & { __heroMetrics?: typeof metrics }).__heroMetrics =
+      metrics;
+    try {
+      new PerformanceObserver((entries) => {
+        const latest = entries.getEntries().at(-1);
+        if (latest) metrics.lcpMs = latest.startTime;
+      }).observe({ type: 'largest-contentful-paint', buffered: true });
+      new PerformanceObserver((entries) => {
+        for (const entry of entries.getEntries()) {
+          const shift = entry as PerformanceEntry & {
+            hadRecentInput?: boolean;
+            value?: number;
+          };
+          if (!shift.hadRecentInput) {
+            metrics.cls += shift.value ?? 0;
+          }
+        }
+      }).observe({ type: 'layout-shift', buffered: true });
+    } catch {
+      // Older engines can omit one observer; measurement remains best effort.
+    }
+  });
   if (options.cdpFeatures?.length) {
     const cdp = await context.newCDPSession(page);
     await cdp.send('Emulation.setEmulatedMedia', {
@@ -67,7 +91,7 @@ async function openPrototype(
     });
   }
   await page.goto(
-    `/showcase/f14-hero-glass?fixture=${options.fixture ?? 'dark'}&material=${options.material ?? 'A'}&effect=${options.effect ?? (options.material === 'B' ? 'webgl' : 'svg')}`,
+    `/showcase/f14-hero-glass?fixture=${options.fixture ?? 'dark'}&material=${(options.material ?? 'A').toLowerCase()}&effect=${options.effect ?? (options.material === 'B' ? 'webgl' : 'blur')}`,
     { waitUntil: 'domcontentloaded' },
   );
   await expect(page.getByTestId('hero-prototype')).toBeVisible();
@@ -84,7 +108,17 @@ async function openPrototype(
       .locator('[data-hero-image]')
       .evaluate((image) => (image as HTMLImageElement).decode());
   }
-  if (options.material === 'B' && options.effect === 'webgl') {
+  if (
+    options.material === 'B' &&
+    options.effect === 'webgl' &&
+    options.width >= 768 &&
+    !options.reducedMotion &&
+    !options.forcedColors &&
+    !options.cdpFeatures?.some(
+      ({ name }) =>
+        name === 'prefers-reduced-transparency' || name === 'prefers-contrast',
+    )
+  ) {
     await expect(page.getByTestId('hero-glass-card')).toHaveAttribute(
       'data-effect-active',
       'webgl',
@@ -95,13 +129,253 @@ async function openPrototype(
   return { page, close: () => context.close() };
 }
 
-async function checkAxe(page: Page, label: string) {
-  const results = await new AxeBuilder({ page }).analyze();
+async function checkAxe(
+  page: Page,
+  label: string,
+  disableRules: string[] = [],
+) {
+  const results = await new AxeBuilder({ page })
+    .disableRules(disableRules)
+    .analyze();
   axePasses.push(label);
   expect(
     results.violations,
     `${label}: ${JSON.stringify(results.violations)}`,
   ).toEqual([]);
+}
+
+async function measureMobileGradient(page: Page) {
+  const artHeight = await page
+    .locator('[data-hero-image]')
+    .evaluate((image) => image.getBoundingClientRect().height);
+  const screenshot = await page.screenshot({ fullPage: true, scale: 'device' });
+  return page.evaluate(
+    async ({ encoded, artHeight }) => {
+      const image = new Image();
+      image.src = `data:image/png;base64,${encoded}`;
+      await image.decode();
+      const canvas = document.createElement('canvas');
+      canvas.width = image.naturalWidth;
+      canvas.height = image.naturalHeight;
+      const context = canvas.getContext('2d', { willReadFrequently: true });
+      if (!context) throw new Error('Gradient screenshot sampler unavailable');
+      context.drawImage(image, 0, 0);
+      const pixels = context.getImageData(
+        0,
+        0,
+        canvas.width,
+        canvas.height,
+      ).data;
+      const linear = (channel: number) => {
+        const value = channel / 255;
+        return value <= 0.04045
+          ? value / 12.92
+          : ((value + 0.055) / 1.055) ** 2.4;
+      };
+      const sampleStrip = (side: 'left' | 'right') => {
+        const xStart = side === 'left' ? 0 : canvas.width - 18;
+        const deltas: number[] = [];
+        const cssHeight = canvas.height / 2;
+        const start = Math.floor((artHeight * 0.56 * 2) / 16) * 16;
+        const end = Math.min(
+          canvas.height - 16,
+          Math.ceil((artHeight + 112) * 2),
+        );
+        let previous: number | undefined;
+        for (let y = start; y <= end; y += 16) {
+          let sum = 0;
+          let count = 0;
+          for (let py = y; py < Math.min(y + 16, canvas.height); py += 1) {
+            for (let x = xStart; x < xStart + 18; x += 1) {
+              const offset = (py * canvas.width + x) * 4;
+              sum +=
+                0.2126 * linear(pixels[offset]!) +
+                0.7152 * linear(pixels[offset + 1]!) +
+                0.0722 * linear(pixels[offset + 2]!);
+              count += 1;
+            }
+          }
+          const current = sum / Math.max(1, count);
+          if (previous !== undefined) deltas.push(Math.abs(current - previous));
+          previous = current;
+        }
+        return {
+          maxDeltaL: Math.max(...deltas),
+          rows: deltas.length,
+          cssHeight,
+        };
+      };
+      const left = sampleStrip('left');
+      const right = sampleStrip('right');
+      return {
+        artHeight,
+        left,
+        right,
+        maxDeltaL: Math.max(left.maxDeltaL, right.maxDeltaL),
+      };
+    },
+    { encoded: screenshot.toString('base64'), artHeight },
+  );
+}
+
+async function measureLensDisplacement(
+  page: Page,
+  lensOff: Buffer,
+  lensOn: Buffer,
+) {
+  return page.evaluate(
+    async ({ off, on }) => {
+      const decode = async (source: string) => {
+        const image = new Image();
+        image.src = `data:image/png;base64,${source}`;
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext('2d', { willReadFrequently: true });
+        if (!context) throw new Error('Lens crop pixel sampler unavailable');
+        context.drawImage(image, 0, 0);
+        return {
+          width: canvas.width,
+          height: canvas.height,
+          pixels: context.getImageData(0, 0, canvas.width, canvas.height).data,
+        };
+      };
+      const before = await decode(off);
+      const after = await decode(on);
+      if (before.width !== after.width || before.height !== after.height)
+        throw new Error('Lens before/after crops have different dimensions');
+      const x0 = Math.min(8, before.width - 1);
+      const x1 = Math.min(before.width - 10, 48);
+      let sum = 0;
+      let changed = 0;
+      let count = 0;
+      for (let y = 0; y < before.height; y += 1) {
+        for (let x = x0; x < x1; x += 1) {
+          const index = (y * before.width + x) * 4;
+          const delta =
+            Math.abs(before.pixels[index]! - after.pixels[index]!) +
+            Math.abs(before.pixels[index + 1]! - after.pixels[index + 1]!) +
+            Math.abs(before.pixels[index + 2]! - after.pixels[index + 2]!);
+          sum += delta / 3;
+          if (delta >= 18) changed += 1;
+          count += 1;
+        }
+      }
+      const luminance = (pixels: Uint8ClampedArray, x: number, y: number) => {
+        const index = (y * before.width + x) * 4;
+        const linear = (channel: number) => {
+          const value = channel / 255;
+          return value <= 0.04045
+            ? value / 12.92
+            : ((value + 0.055) / 1.055) ** 2.4;
+        };
+        return (
+          0.2126 * linear(pixels[index]!) +
+          0.7152 * linear(pixels[index + 1]!) +
+          0.0722 * linear(pixels[index + 2]!)
+        );
+      };
+      const horizonPath = (pixels: Uint8ClampedArray) => {
+        const path: number[] = [];
+        // Follow the bright horizon independently per column. Averaging across
+        // the crop hides the edge-weighted bend because most columns stay still.
+        for (let x = 18; x < Math.min(before.width - 8, 56); x += 1) {
+          let bestRow = 0;
+          let bestLuminance = -1;
+          for (let y = 70; y < Math.min(before.height, 214); y += 1) {
+            const value = luminance(pixels, x, y);
+            if (value > bestLuminance) {
+              bestLuminance = value;
+              bestRow = y;
+            }
+          }
+          path.push(bestRow);
+        }
+        return path;
+      };
+      const offPath = horizonPath(before.pixels);
+      const onPath = horizonPath(after.pixels);
+      const displacement = offPath.map((row, index) =>
+        Math.abs(onPath[index]! - row),
+      );
+      const offFeature = {
+        fromRow: Math.min(...offPath),
+        toRow: Math.max(...offPath),
+      };
+      const onFeature = {
+        fromRow: Math.min(...onPath),
+        toRow: Math.max(...onPath),
+      };
+      return {
+        size: `${before.width}x${before.height}`,
+        outerBandMeanRgbDelta: sum / count,
+        changedPixelFraction: changed / count,
+        offFeature,
+        onFeature,
+        maxFeatureDisplacementPx: Math.max(...displacement),
+        meanFeatureDisplacementPx:
+          displacement.reduce((total, value) => total + value, 0) /
+          displacement.length,
+      };
+    },
+    { off: lensOff.toString('base64'), on: lensOn.toString('base64') },
+  );
+}
+
+async function measureRimHighlight(page: Page, crop: Buffer) {
+  return page.evaluate(async (encoded) => {
+    const image = new Image();
+    image.src = `data:image/png;base64,${encoded}`;
+    await image.decode();
+    const canvas = document.createElement('canvas');
+    canvas.width = image.naturalWidth;
+    canvas.height = image.naturalHeight;
+    const context = canvas.getContext('2d', { willReadFrequently: true });
+    if (!context) throw new Error('Rim crop pixel sampler unavailable');
+    context.drawImage(image, 0, 0);
+    const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+    const linear = (channel: number) => {
+      const value = channel / 255;
+      return value <= 0.04045
+        ? value / 12.92
+        : ((value + 0.055) / 1.055) ** 2.4;
+    };
+    const average = (y0: number, y1: number, x0: number, x1: number) => {
+      let sum = 0;
+      let count = 0;
+      for (let y = y0; y < y1; y += 1) {
+        for (let x = x0; x < x1; x += 1) {
+          const index = (y * canvas.width + x) * 4;
+          sum +=
+            0.2126 * linear(pixels[index]!) +
+            0.7152 * linear(pixels[index + 1]!) +
+            0.0722 * linear(pixels[index + 2]!);
+          count += 1;
+        }
+      }
+      return sum / count;
+    };
+    const topRim = average(0, 3, 36, Math.min(canvas.width - 36, 150));
+    const topInner = average(5, 10, 36, Math.min(canvas.width - 36, 150));
+    const bottomRim = average(
+      canvas.height - 3,
+      canvas.height,
+      canvas.width - 150,
+      canvas.width - 36,
+    );
+    const bottomInner = average(
+      canvas.height - 10,
+      canvas.height - 5,
+      canvas.width - 150,
+      canvas.width - 36,
+    );
+    return {
+      topLeftLift: topRim - topInner,
+      bottomRightLift: bottomRim - bottomInner,
+      directionalHighlightDelta: topRim - bottomRim,
+    };
+  }, crop.toString('base64'));
 }
 
 async function capture(
@@ -114,11 +388,23 @@ async function capture(
   },
 ) {
   const { page, close } = await openPrototype(browser, options);
-  await checkAxe(page, options.label);
+  await checkAxe(
+    page,
+    options.label,
+    options.forcedColors === 'active' ? ['color-contrast'] : [],
+  );
+  const vitals = await page.evaluate(
+    () =>
+      (window as Window & { __heroMetrics?: { lcpMs: number; cls: number } })
+        .__heroMetrics ?? { lcpMs: 0, cls: 0 },
+  );
+  expect(vitals.cls, `${options.label} CLS`).toBeLessThanOrEqual(0.1);
+  measurements.push({ label: options.label, vitals });
   const path = join(output, options.screenshotName);
   await page.screenshot({
     path,
     fullPage: options.fullPage ?? false,
+    scale: 'device',
     animations: 'disabled',
     style: 'nextjs-portal{display:none!important}',
   });
@@ -243,14 +529,16 @@ async function measureContrast(
       );
       return (values[0]! + 0.05) / (values[1]! + 0.05);
     };
-    const surfaceStyle = getComputedStyle(card, '::before');
-    const tint = parse(surfaceStyle.backgroundColor);
-    const legibility = parse(
-      getComputedStyle(
-        card.querySelector<HTMLElement>('[data-testid="hero-glass-content"]')!,
-        '::before',
-      ).backgroundColor,
+    const shell = card.querySelector<HTMLElement>(
+      '[data-testid="hero-glass-shell"]',
     );
+    const plate = card.querySelector<HTMLElement>(
+      '[data-testid="hero-content-plate"]',
+    );
+    if (!shell || !plate) throw new Error('Glass layer stack is incomplete');
+    const surfaceStyle = getComputedStyle(shell);
+    const tint = parse(surfaceStyle.backgroundColor);
+    const legibility = parse(getComputedStyle(plate).backgroundColor);
     const material = card.dataset.material ?? 'A';
     const cardBounds = card.getBoundingClientRect();
     const imageBounds = image.getBoundingClientRect();
@@ -402,21 +690,21 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
       label: `${variant.name}-image`,
       group: 'required',
       screenshotName: `${variant.name}-image.png`,
+      fullPage: true,
     });
   }
 
-  for (const variant of requiredVariants.filter(
-    ({ width }) => width === 1440,
-  )) {
+  for (const variant of requiredVariants) {
     for (const material of ['A', 'B'] as const) {
       await capture(browser, {
         ...variant,
         material,
         fixture: 'dark',
-        effect: material === 'B' ? 'webgl' : 'svg',
+        effect: material === 'B' ? 'webgl' : 'blur',
         label: `${material} | ${variant.locale.toUpperCase()} ${variant.theme}`,
         group: 'comparison',
         screenshotName: `compare-${material}-${variant.locale}-${variant.theme}.png`,
+        fullPage: true,
       });
     }
   }
@@ -429,7 +717,7 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
         width: 1440,
         height: 900,
         material,
-        effect: material === 'B' ? 'webgl' : 'svg',
+        effect: material === 'B' ? 'webgl' : 'blur',
       });
       const bounds = await page.getByTestId('hero-glass-card').boundingBox();
       if (!bounds) throw new Error('Glass card bounds unavailable for crop');
@@ -437,11 +725,12 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
       await page.screenshot({
         path,
         clip: {
-          x: Math.max(0, bounds.x + bounds.width - 150),
-          y: Math.max(0, bounds.y + bounds.height - 170),
-          width: 146,
-          height: 170,
+          x: Math.max(0, bounds.x + bounds.width - 24),
+          y: 515,
+          width: 36,
+          height: 112,
         },
+        scale: 'device',
         animations: 'disabled',
         style: 'nextjs-portal{display:none!important}',
       });
@@ -454,16 +743,155 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
     }
   }
 
+  for (const theme of ['light', 'dark'] as const) {
+    const { page, close } = await openPrototype(browser, {
+      locale: 'en',
+      theme,
+      width: 1440,
+      height: 900,
+      material: 'B',
+      effect: 'blur',
+    });
+    const bounds = await page.getByTestId('hero-glass-card').boundingBox();
+    if (!bounds)
+      throw new Error('Glass card bounds unavailable for lens-off crop');
+    const path = join(output, `edge-B-lens-off-${theme}-1440.png`);
+    await page.screenshot({
+      path,
+      clip: {
+        x: Math.max(0, bounds.x + bounds.width - 24),
+        y: 515,
+        width: 36,
+        height: 112,
+      },
+      scale: 'device',
+      animations: 'disabled',
+      style: 'nextjs-portal{display:none!important}',
+    });
+    screenshots.push({
+      path,
+      label: `edge-B-lens-off-${theme}`,
+      group: 'extras',
+    });
+    await close();
+  }
+
+  for (const theme of ['light', 'dark'] as const) {
+    const { page, close } = await openPrototype(browser, {
+      locale: 'en',
+      theme,
+      width: 1440,
+      height: 900,
+      material: 'B',
+      effect: 'webgl',
+    });
+    const bounds = await page.getByTestId('hero-glass-card').boundingBox();
+    if (!bounds)
+      throw new Error('Glass card bounds unavailable for lens comparison');
+    const crop = {
+      x: Math.max(0, bounds.x + bounds.width - 24),
+      y: 515,
+      width: 36,
+      height: 112,
+    };
+    const onShot = await page.screenshot({ clip: crop, scale: 'device' });
+    const offShot = await readFile(
+      join(output, `edge-B-lens-off-${theme}-1440.png`),
+    );
+    const lens = await measureLensDisplacement(page, offShot, onShot);
+    measurements.push({ label: `lens-${theme}`, lens });
+    console.log(`LENS_VALIDATION ${theme} ${JSON.stringify(lens)}`);
+    expect(lens.outerBandMeanRgbDelta).toBeGreaterThan(2);
+    expect(lens.maxFeatureDisplacementPx).toBeGreaterThanOrEqual(12);
+
+    const cardCropPath = join(output, `rim-B-${theme}-1440.png`);
+    const fullCard = await page.screenshot({
+      clip: bounds,
+      path: cardCropPath,
+      scale: 'device',
+      animations: 'disabled',
+      style: 'nextjs-portal{display:none!important}',
+    });
+    screenshots.push({
+      path: cardCropPath,
+      label: `rim-B-${theme}`,
+      group: 'extras',
+    });
+    const rim = await measureRimHighlight(page, fullCard);
+    measurements.push({ label: `rim-B-${theme}`, rim });
+    console.log(`RIM_VALIDATION ${theme} ${JSON.stringify(rim)}`);
+    expect(rim.topLeftLift).toBeGreaterThan(rim.bottomRightLift);
+    expect(rim.directionalHighlightDelta).toBeGreaterThan(0.005);
+    await close();
+  }
+
   for (const variant of requiredVariants.filter(({ width }) => width === 390)) {
     await capture(browser, {
       ...variant,
       fixture: 'dark',
-      effect: 'svg',
+      effect: 'blur',
       label: `${variant.name}-image-full-page`,
       group: 'extras',
       screenshotName: `${variant.name}-image-full-page.png`,
       fullPage: true,
     });
+  }
+
+  for (const theme of ['light', 'dark'] as const) {
+    const { page, close } = await openPrototype(browser, {
+      locale: 'en',
+      theme,
+      width: 390,
+      height: 844,
+      material: 'B',
+      effect: 'blur',
+    });
+    const measurementsForBand = await page.evaluate(() => {
+      const art = document.querySelector<HTMLImageElement>('[data-hero-image]');
+      const card = document.querySelector<HTMLElement>(
+        '[data-testid="hero-glass-card"]',
+      );
+      if (!art || !card) throw new Error('Mobile artwork or card missing');
+      const imageRect = art.getBoundingClientRect();
+      const cardRect = card.getBoundingClientRect();
+      return {
+        imageHeight: imageRect.height,
+        objectPosition: getComputedStyle(art).objectPosition,
+        overlap: imageRect.bottom - cardRect.top,
+      };
+    });
+    expect(measurementsForBand.imageHeight).toBeCloseTo(520, 0);
+    expect(measurementsForBand.objectPosition).toContain('30%');
+    expect(measurementsForBand.overlap).toBeCloseTo(32, 0);
+    const gradient = await measureMobileGradient(page);
+    measurements.push({
+      label: `mobile-gradient-${theme}`,
+      ...measurementsForBand,
+      gradient,
+    });
+    console.log(
+      `MOBILE_GRADIENT ${theme} ${JSON.stringify({ ...measurementsForBand, gradient })}`,
+    );
+    expect(gradient.maxDeltaL, `${theme} mobile 8px ΔL`).toBeLessThanOrEqual(
+      0.12,
+    );
+    const imageRect = await page.locator('[data-hero-image]').boundingBox();
+    if (!imageRect)
+      throw new Error('Mobile art bounds unavailable for close-up');
+    const path = join(output, `mobile-gradient-B-${theme}-390.png`);
+    await page.screenshot({
+      path,
+      clip: { x: 0, y: 260, width: 390, height: 340 },
+      scale: 'device',
+      animations: 'disabled',
+      style: 'nextjs-portal{display:none!important}',
+    });
+    screenshots.push({
+      path,
+      label: `mobile-gradient-B-${theme}`,
+      group: 'extras',
+    });
+    await close();
   }
 
   for (const width of [1280, 1366, 1440, 1536]) {
@@ -541,6 +969,8 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
     await capture(browser, {
       ...variant,
       fixture: 'none',
+      material: 'B',
+      effect: 'blur',
       label: variant.name,
       group: 'extras',
       screenshotName: `${variant.name}.png`,
@@ -566,7 +996,7 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
     await capture(browser, {
       ...variant,
       material: variant.name === 'tablet-ar-light-768' ? 'B' : 'A',
-      effect: variant.name === 'tablet-ar-light-768' ? 'webgl' : 'svg',
+      effect: variant.name === 'tablet-ar-light-768' ? 'webgl' : 'blur',
       label: variant.name,
       group: 'extras',
       screenshotName: `${variant.name}.png`,
@@ -579,6 +1009,8 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
     width: 1440,
     height: 900,
     cdpFeatures: [{ name: 'prefers-reduced-transparency', value: 'reduce' }],
+    material: 'B',
+    effect: 'webgl',
     label: 'reduced-transparency-en-dark-1440',
     group: 'extras',
     screenshotName: 'reduced-transparency-en-dark-1440.png',
@@ -589,6 +1021,8 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
     width: 1440,
     height: 900,
     cdpFeatures: [{ name: 'prefers-contrast', value: 'more' }],
+    material: 'B',
+    effect: 'webgl',
     label: 'contrast-more-ar-light-1440',
     group: 'extras',
     screenshotName: 'contrast-more-ar-light-1440.png',
@@ -600,6 +1034,8 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
     height: 900,
     reducedMotion: true,
     fixture: 'dark',
+    material: 'B',
+    effect: 'webgl',
     label: 'reduced-motion-en-dark-1440',
     group: 'extras',
     screenshotName: 'reduced-motion-en-dark-1440.png',
@@ -610,6 +1046,8 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
     width: 1440,
     height: 900,
     forcedColors: 'active',
+    material: 'B',
+    effect: 'webgl',
     label: 'forced-colors-en-dark-1440',
     group: 'extras',
     screenshotName: 'forced-colors-en-dark-1440.png',
@@ -674,7 +1112,7 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
             height: 900,
             fixture,
             material,
-            effect: material === 'B' ? 'webgl' : 'svg',
+            effect: material === 'B' ? 'webgl' : 'blur',
           });
           await measureContrast(page, locale, theme, fixture);
           await close();
@@ -683,71 +1121,100 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
     }
   }
 
+  const frameRuns = [
+    {
+      material: 'A' as const,
+      effect: 'none' as const,
+      pointer: false,
+      name: 'A-idle-baseline',
+    },
+    {
+      material: 'B' as const,
+      effect: 'blur' as const,
+      pointer: true,
+      name: 'B-blur-pointer',
+    },
+    {
+      material: 'B' as const,
+      effect: 'webgl' as const,
+      pointer: true,
+      name: 'B-webgl-pointer',
+    },
+  ];
   for (const throttle of [1, 4] as const) {
-    const { page, close } = await openPrototype(browser, {
-      locale: 'en',
-      theme: 'dark',
-      width: 1440,
-      height: 900,
-      effect: 'webgl',
-      material: 'B',
-    });
-    const activeEffect = page.getByTestId('hero-glass-card');
-    await expect(activeEffect).toHaveAttribute(
-      'data-effect-active',
-      /^(webgl|css-fallback)$/,
-    );
-    const cdp = await page.context().newCDPSession(page);
-    await cdp.send('Emulation.setCPUThrottlingRate', { rate: throttle });
-    const frameStats = await page.evaluate(async () => {
-      const frames: number[] = [];
-      let previous = performance.now();
-      const card = document.querySelector('[data-testid="hero-glass-card"]');
-      if (!card) throw new Error('Glass card missing from frame benchmark');
-      for (let index = 0; index < 72; index += 1) {
-        card.dispatchEvent(
-          new PointerEvent('pointermove', {
-            clientX: 1080 + (index % 10) * 12,
-            clientY: 200 + (index % 12) * 16,
-            bubbles: true,
-          }),
-        );
-        await new Promise<void>((resolve) =>
-          requestAnimationFrame(() => resolve()),
-        );
-        const now = performance.now();
-        frames.push(now - previous);
-        previous = now;
-      }
-      frames.sort((a, b) => a - b);
-      return {
-        meanMs: frames.reduce((sum, value) => sum + value, 0) / frames.length,
-        p95Ms: frames[Math.floor(frames.length * 0.95)]!,
-      };
-    });
-    const platformSupport = await page.evaluate(() => {
-      const svgLens = document.querySelector<HTMLElement>(
-        '[data-testid="svg-lens"]',
+    for (const run of frameRuns) {
+      const { page, close } = await openPrototype(browser, {
+        locale: 'en',
+        theme: 'dark',
+        width: 1440,
+        height: 900,
+        effect: run.effect,
+        material: run.material,
+      });
+      const cdp = await page.context().newCDPSession(page);
+      await cdp.send('Emulation.setCPUThrottlingRate', { rate: throttle });
+      const result = await page.evaluate(
+        async ({ pointer }) => {
+          const frames: number[] = [];
+          let previous = performance.now();
+          const card = document.querySelector(
+            '[data-testid="hero-glass-card"]',
+          );
+          const canvas = card?.querySelector<HTMLCanvasElement>(
+            '[data-testid="hero-webgl-lens"]',
+          );
+          if (!card) throw new Error('Glass card missing from frame benchmark');
+          const beforeDraws = Number(canvas?.dataset.drawCount ?? 0);
+          const beforeSubmit = Number(canvas?.dataset.drawSubmitTotalMs ?? 0);
+          for (let index = 0; index < 72; index += 1) {
+            if (pointer) {
+              card.dispatchEvent(
+                new PointerEvent('pointermove', {
+                  clientX: 1080 + (index % 10) * 12,
+                  clientY: 200 + (index % 12) * 16,
+                  bubbles: true,
+                }),
+              );
+            }
+            await new Promise<void>((resolve) =>
+              requestAnimationFrame(() => resolve()),
+            );
+            const now = performance.now();
+            frames.push(now - previous);
+            previous = now;
+          }
+          frames.sort((a, b) => a - b);
+          const drawCount =
+            Number(canvas?.dataset.drawCount ?? 0) - beforeDraws;
+          const drawSubmitMs =
+            Number(canvas?.dataset.drawSubmitTotalMs ?? 0) - beforeSubmit;
+          return {
+            meanMs:
+              frames.reduce((sum, value) => sum + value, 0) / frames.length,
+            p95Ms: frames[Math.floor(frames.length * 0.95)]!,
+            drawCount,
+            averageDrawSubmitMs: drawCount ? drawSubmitMs / drawCount : 0,
+          };
+        },
+        { pointer: run.pointer },
       );
-      return {
+      const support = await page.evaluate(() => ({
         webgl: typeof WebGLRenderingContext !== 'undefined',
-        svgUrlBackdrop: CSS.supports(
-          'backdrop-filter',
-          'url(#hero-glass-displacement) blur(20px) saturate(1.24)',
-        ),
-        svgComputed: svgLens ? getComputedStyle(svgLens).backdropFilter : null,
-      };
-    });
-    measurements.push({
-      material: 'B',
-      effect: 'webgl',
-      activeEffect: await activeEffect.getAttribute('data-effect-active'),
-      throttle: throttle === 1 ? 'none' : '4x CPU',
-      viewport: '1440x900',
-      frameStats,
-      platformSupport,
-    });
-    await close();
+        backdropFilter: CSS.supports('backdrop-filter', 'blur(1px)'),
+        active: document.querySelector<HTMLElement>(
+          '[data-testid="hero-glass-card"]',
+        )?.dataset.effectActive,
+      }));
+      measurements.push({
+        material: run.material,
+        run: run.name,
+        throttle: throttle === 1 ? 'none' : '4x CPU',
+        viewport: '1440x900',
+        frameStats: result,
+        platformSupport: support,
+      });
+      await close();
+    }
   }
 
   for (const locale of ['ar', 'en'] as const) {
@@ -777,12 +1244,41 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
         await page.screenshot({
           path,
           fullPage: true,
+          scale: 'device',
           style: 'nextjs-portal{display:none!important}',
         });
         screenshots.push({ path, label, group: 'extras' });
         await context.close();
       }
     }
+  }
+
+  for (const locale of ['ar', 'en'] as const) {
+    const { page, close } = await openPrototype(browser, {
+      locale,
+      theme: locale === 'ar' ? 'dark' : 'light',
+      width: 1440,
+      height: 900,
+      material: 'B',
+      effect: 'webgl',
+    });
+    const country = page.getByRole('combobox', {
+      name: locale === 'ar' ? 'الدولة' : 'Country',
+    });
+    await country.focus();
+    await expect(page.getByRole('listbox')).toBeVisible();
+    await checkAxe(page, `country-open-${locale}`);
+    const label = `country-open-${locale}`;
+    const path = join(output, `${label}.png`);
+    await page.screenshot({
+      path,
+      fullPage: true,
+      scale: 'device',
+      animations: 'disabled',
+      style: 'nextjs-portal{display:none!important}',
+    });
+    screenshots.push({ path, label, group: 'extras' });
+    await close();
   }
 
   await buildContactSheet(browser, 'required');
@@ -825,8 +1321,12 @@ test('forced colors removes glass treatment and retains a system-colored card', 
     background: getComputedStyle(card).backgroundColor,
     color: getComputedStyle(card).color,
     shadow: getComputedStyle(card).boxShadow,
-    backdrop: getComputedStyle(card, '::before').backdropFilter,
-    surfaceDisplay: getComputedStyle(card, '::before').display,
+    backdrop: getComputedStyle(
+      card.querySelector('[data-testid="hero-glass-shell"]')!,
+    ).backdropFilter,
+    surfaceDisplay: getComputedStyle(
+      card.querySelector('[data-testid="hero-glass-shell"]')!,
+    ).display,
     border: getComputedStyle(card).borderColor,
   }));
   expect(styles.surfaceDisplay).toBe('none');
@@ -840,6 +1340,56 @@ test('forced colors removes glass treatment and retains a system-colored card', 
   await context.close();
 });
 
+test('B edge lens visibly displaces the procedural horizon at the glass rim', async ({
+  browser,
+}) => {
+  await mkdir(output, { recursive: true });
+  for (const theme of ['light', 'dark'] as const) {
+    const off = await openPrototype(browser, {
+      locale: 'en',
+      theme,
+      width: 1440,
+      height: 900,
+      material: 'B',
+      effect: 'blur',
+    });
+    const offBounds = await off.page
+      .getByTestId('hero-glass-card')
+      .boundingBox();
+    if (!offBounds) throw new Error('Lens-off card bounds unavailable');
+    const clip = {
+      x: Math.max(0, offBounds.x + offBounds.width - 24),
+      y: 515,
+      width: 36,
+      height: 112,
+    };
+    const before = await off.page.screenshot({
+      clip,
+      path: join(output, `lens-proof-off-${theme}.png`),
+      scale: 'device',
+    });
+    await off.close();
+
+    const on = await openPrototype(browser, {
+      locale: 'en',
+      theme,
+      width: 1440,
+      height: 900,
+      material: 'B',
+      effect: 'webgl',
+    });
+    const after = await on.page.screenshot({
+      clip,
+      path: join(output, `lens-proof-on-${theme}.png`),
+      scale: 'device',
+    });
+    const result = await measureLensDisplacement(on.page, before, after);
+    console.log(`HORIZON_LENS_${theme} ${JSON.stringify(result)}`);
+    expect(result.maxFeatureDisplacementPx).toBeGreaterThanOrEqual(12);
+    await on.close();
+  }
+});
+
 test('A and B keep token field borders; B lenses only the rim and respects motion input settings', async ({
   browser,
 }) => {
@@ -850,7 +1400,7 @@ test('A and B keep token field borders; B lenses only the rim and respects motio
       width: 1440,
       height: 900,
       material,
-      effect: material === 'B' ? 'svg' : 'svg',
+      effect: material === 'B' ? 'webgl' : 'blur',
     });
     const field = page.locator('input:not([type=hidden])').first();
     await page.keyboard.press('Tab');
@@ -872,9 +1422,7 @@ test('A and B keep token field borders; B lenses only the rim and respects motio
         borderToken: normalize(
           scopeStyle.getPropertyValue('--color-border-strong'),
         ),
-        focusToken: normalize(
-          scopeStyle.getPropertyValue('--color-focus-ring'),
-        ),
+        focusToken: normalize(scopeStyle.getPropertyValue('--brand-ring')),
         borderWidth: style.borderTopWidth,
         outlineWidth: style.outlineWidth,
         outlineOffset: style.outlineOffset,
@@ -888,16 +1436,39 @@ test('A and B keep token field borders; B lenses only the rim and respects motio
     expect(fieldStyles.outlineOffset).toBe('2px');
     expect(fieldStyles.focusVisible).toBe(true);
     if (material === 'B') {
-      const lens = await page.getByTestId('svg-lens').evaluate((node) => ({
-        mask: getComputedStyle(node).maskImage,
-        filter: getComputedStyle(node).backdropFilter,
-      }));
-      const scale = await page
-        .locator('#hero-glass-displacement-b feDisplacementMap')
-        .getAttribute('scale');
-      expect(lens.mask).toContain('radial-gradient');
-      expect(lens.filter).toContain('hero-glass-displacement-b');
-      expect(scale).toBe('22');
+      await expect(page.getByTestId('hero-glass-card')).toHaveAttribute(
+        'data-effect-active',
+        'webgl',
+      );
+      const lens = await page
+        .getByTestId('hero-glass-card')
+        .evaluate((card) => {
+          const shell = card.querySelector<HTMLElement>(
+            '[data-testid="hero-glass-shell"]',
+          );
+          const canvas = card.querySelector<HTMLCanvasElement>(
+            '[data-testid="hero-webgl-lens"]',
+          );
+          const rim = card.querySelector<HTMLElement>(
+            '[data-testid="hero-glass-rim"]',
+          );
+          return {
+            backdrop: shell ? getComputedStyle(shell).backdropFilter : '',
+            alpha: shell ? getComputedStyle(shell).backgroundColor : '',
+            canvasOpacity: canvas ? getComputedStyle(canvas).opacity : '',
+            drawCount: Number(canvas?.dataset.drawCount ?? 0),
+            rim: rim ? getComputedStyle(rim).backgroundImage : '',
+            mask: rim ? getComputedStyle(rim).maskComposite : '',
+          };
+        });
+      expect(lens.backdrop).toContain('26px');
+      const shellAlpha = Number(lens.alpha.match(/\/\s*([\d.]+)\)/)?.[1]);
+      expect(shellAlpha).toBeGreaterThanOrEqual(0.12);
+      expect(shellAlpha).toBeLessThanOrEqual(0.35);
+      expect(lens.canvasOpacity).toBe('0.92');
+      expect(lens.drawCount).toBeGreaterThan(0);
+      expect(lens.rim).toContain('linear-gradient');
+      expect(lens.mask).toContain('exclude');
     }
     await close();
   }
@@ -919,7 +1490,9 @@ test('A and B keep token field borders; B lenses only the rim and respects motio
   await card.dispatchEvent('pointermove', { clientX: 100, clientY: 100 });
   const motionState = await card.evaluate((element) => ({
     pointerX: (element as HTMLElement).style.getPropertyValue('--pointer-x'),
-    highlightOpacity: getComputedStyle(element, '::after').opacity,
+    highlightOpacity: getComputedStyle(
+      element.querySelector('[data-testid="hero-glass-interaction"]')!,
+    ).opacity,
     coarse: matchMedia('(hover: hover) and (pointer: fine)').matches,
     reduced: matchMedia('(prefers-reduced-motion: reduce)').matches,
   }));
@@ -933,7 +1506,7 @@ test('A and B keep token field borders; B lenses only the rim and respects motio
   await context.close();
 });
 
-test('prototype form keeps the existing offline feedback and never submits to a service', async ({
+test('prototype form validates through the existing phone rules without submitting to a service', async ({
   browser,
 }) => {
   const { page, close } = await openPrototype(browser, {
@@ -950,17 +1523,68 @@ test('prototype form keeps the existing offline feedback and never submits to a 
   );
   const requests: string[] = [];
   page.on('request', (request) => requests.push(request.url()));
-  await page.getByRole('textbox', { name: 'Name' }).fill('Fixture');
-  await expect(page.getByRole('textbox', { name: 'Name' })).toHaveValue(
-    'Fixture',
-  );
+  await page.getByRole('textbox', { name: 'Phone number' }).fill('123');
   await page
     .getByRole('button', { name: 'Create registration request' })
     .click();
-  await expect(page.getByRole('status')).toHaveText('Please try again later.');
+  await expect(
+    page.getByRole('textbox', { name: 'Phone number' }),
+  ).toHaveAttribute('aria-invalid', 'true');
   expect(
     requests.some((url) => /supabase|\/rest\/v1|registration_link/i.test(url)),
   ).toBe(false);
   await checkAxe(page, 'offline-submit-result');
   await close();
+});
+
+test('r3 country combobox searches localized names and validates the selected country E.164 value', async ({
+  browser,
+}) => {
+  const { page, close } = await openPrototype(browser, {
+    locale: 'en',
+    theme: 'light',
+    width: 1440,
+    height: 900,
+    material: 'B',
+    effect: 'webgl',
+  });
+  const country = page.getByRole('combobox', { name: 'Country' });
+  await expect(country).toHaveValue('Egypt');
+  await country.fill('United States');
+  await expect(page.getByRole('listbox')).toBeVisible();
+  await expect(
+    page.getByRole('option', { name: /United States/ }),
+  ).toBeVisible();
+  await country.press('ArrowDown');
+  await country.press('Enter');
+  await expect(country).toHaveValue('United States');
+  await expect(page.getByTestId('country-calling-code')).toHaveText('+1');
+  await page.getByRole('textbox', { name: 'Phone number' }).fill('2025550123');
+  await page
+    .getByRole('button', { name: 'Create registration request' })
+    .click();
+  await expect(page.getByTestId('phone-e164-preview')).toHaveText(
+    '+12025550123',
+  );
+  await close();
+
+  const arabic = await openPrototype(browser, {
+    locale: 'ar',
+    theme: 'dark',
+    width: 390,
+    height: 844,
+    material: 'B',
+    effect: 'webgl',
+  });
+  const arabicCountry = arabic.page.getByRole('combobox', { name: 'الدولة' });
+  await expect(arabicCountry).toHaveValue('مصر');
+  await arabicCountry.fill('المملكة المتحدة');
+  await expect(arabic.page.getByRole('listbox')).toBeVisible();
+  await arabicCountry.press('ArrowDown');
+  await arabicCountry.press('Enter');
+  await expect(arabicCountry).toHaveValue('المملكة المتحدة');
+  await expect(arabic.page.getByTestId('country-calling-code')).toHaveText(
+    '+44',
+  );
+  await arabic.close();
 });

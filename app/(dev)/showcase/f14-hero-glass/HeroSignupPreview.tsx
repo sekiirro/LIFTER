@@ -1,47 +1,306 @@
 'use client';
 
-import { useEffect, useRef } from 'react';
-import { SignupForm } from '../../../register/[token]/SignupForm';
 import {
-  signupResult,
-  type SignupLocale,
-  type SignupPublicResult,
-} from '../../../../lib/client-accounts/results';
+  useMemo,
+  useEffect,
+  useRef,
+  useState,
+  type FormEvent,
+  type KeyboardEvent,
+} from 'react';
+import { Button } from '../../../../components/ui/Button';
+import { Bidi } from '../../../../components/ui/Bidi';
+import type { SignupLocale } from '../../../../lib/client-accounts/results';
 import type { PhoneCountryOption } from '../../../../lib/client-accounts/phone';
+import { getMessages } from '../../../../lib/i18n';
+import styles from '../../../register/[token]/signup.module.css';
+import prototypeStyles from './page.module.css';
+
+type PreviewPhoneValidator = (
+  country: string,
+  nationalNumber: string,
+) => Promise<string | null>;
 
 export function HeroSignupPreview({
   locale,
   phoneCountries,
+  validatePreviewPhone,
 }: {
   locale: SignupLocale;
   phoneCountries: PhoneCountryOption[];
+  validatePreviewPhone: PreviewPhoneValidator;
 }) {
-  const hostRef = useRef<HTMLDivElement>(null);
+  const formRef = useRef<HTMLFormElement>(null);
+  const [country, setCountry] = useState('EG');
+  const [nationalNumber, setNationalNumber] = useState('');
+  const [countryOpen, setCountryOpen] = useState(false);
+  const [countryQuery, setCountryQuery] = useState('');
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [phoneError, setPhoneError] = useState(false);
+  const [pending, setPending] = useState(false);
+  const [validatedPhone, setValidatedPhone] = useState('');
+  const messages = getMessages(locale);
+  const selectedCountry =
+    phoneCountries.find((option) => option.code === country) ??
+    phoneCountries.find((option) => option.code === 'EG');
+  const countryName = selectedCountry?.name ?? 'Egypt';
+  const search = countryQuery.normalize('NFKC').toLocaleLowerCase(locale);
+  const filteredCountries = useMemo(
+    () =>
+      phoneCountries.filter((option) =>
+        option.name
+          .normalize('NFKC')
+          .toLocaleLowerCase(locale)
+          .includes(search),
+      ),
+    [locale, phoneCountries, search],
+  );
+  const optionsId = 'hero-country-options';
 
   useEffect(() => {
-    if (hostRef.current) hostRef.current.dataset.hydrated = 'true';
+    const preview = formRef.current?.closest<HTMLElement>(
+      '[data-testid="hero-signup-preview"]',
+    );
+    if (preview) preview.dataset.hydrated = 'true';
   }, []);
 
-  async function showOfflineResult(
-    _previous: SignupPublicResult,
-    _formData: FormData,
-  ): Promise<SignupPublicResult> {
-    void _previous;
-    void _formData;
-    return signupResult('unavailable', locale);
+  function chooseCountry(option: PhoneCountryOption) {
+    setCountry(option.code);
+    setCountryQuery('');
+    setCountryOpen(false);
+    setActiveIndex(0);
+    setPhoneError(false);
+    setValidatedPhone('');
+  }
+
+  function onCountryKeyDown(event: KeyboardEvent<HTMLInputElement>) {
+    if (event.key === 'ArrowDown') {
+      event.preventDefault();
+      if (!countryOpen) {
+        setCountryQuery('');
+        setCountryOpen(true);
+        setActiveIndex(0);
+      } else {
+        setActiveIndex((current) =>
+          Math.min(current + 1, filteredCountries.length - 1),
+        );
+      }
+      return;
+    }
+    if (event.key === 'ArrowUp') {
+      event.preventDefault();
+      if (!countryOpen) {
+        setCountryQuery('');
+        setCountryOpen(true);
+        setActiveIndex(Math.max(filteredCountries.length - 1, 0));
+      } else {
+        setActiveIndex((current) => Math.max(current - 1, 0));
+      }
+      return;
+    }
+    if (
+      event.key === 'Enter' &&
+      countryOpen &&
+      filteredCountries[activeIndex]
+    ) {
+      event.preventDefault();
+      chooseCountry(filteredCountries[activeIndex]!);
+      return;
+    }
+    if (event.key === 'Escape' && countryOpen) {
+      event.preventDefault();
+      setCountryOpen(false);
+      setCountryQuery('');
+      setActiveIndex(0);
+    }
+  }
+
+  async function submitPreview(event: FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+    if (pending) return;
+    setPending(true);
+    setPhoneError(false);
+    setValidatedPhone('');
+    try {
+      const value = await validatePreviewPhone(country, nationalNumber);
+      if (!value) {
+        setPhoneError(true);
+        formRef.current
+          ?.querySelector<HTMLInputElement>('[name="phone-national"]')
+          ?.focus();
+      } else {
+        setValidatedPhone(value);
+        if (formRef.current) formRef.current.dataset.validatedPhone = value;
+      }
+    } finally {
+      setPending(false);
+    }
   }
 
   return (
-    <div
-      ref={hostRef}
-      className="hero-signup-preview"
-      data-testid="hero-signup-preview"
-    >
-      <SignupForm
-        action={showOfflineResult}
-        locale={locale}
-        phoneCountries={phoneCountries}
-      />
+    <div className="hero-signup-preview" data-testid="hero-signup-preview">
+      <form
+        ref={formRef}
+        className={styles.form}
+        onSubmit={submitPreview}
+        noValidate
+        data-validated-phone={validatedPhone || undefined}
+      >
+        <label className={styles.field}>
+          <span>{messages['clientSignup.name']}</span>
+          <input
+            name="name"
+            type="text"
+            autoComplete="name"
+            required
+            disabled={pending}
+          />
+        </label>
+        <label className={styles.field}>
+          <span>{messages['clientSignup.email']}</span>
+          <input
+            name="email"
+            type="email"
+            autoComplete="email"
+            required
+            disabled={pending}
+          />
+        </label>
+        <div className={styles.phoneFields}>
+          <div className={`${styles.field} ${prototypeStyles.countryField}`}>
+            <label htmlFor="hero-country-input">
+              {messages['clientSignup.country']}
+            </label>
+            <div
+              className={prototypeStyles.countryPicker}
+              dir={locale === 'ar' ? 'rtl' : 'ltr'}
+            >
+              <input
+                id="hero-country-input"
+                role="combobox"
+                aria-label={messages['clientSignup.country']}
+                aria-autocomplete="list"
+                aria-expanded={countryOpen}
+                aria-controls={optionsId}
+                aria-activedescendant={
+                  countryOpen
+                    ? `${optionsId}-${filteredCountries[activeIndex]?.code}`
+                    : undefined
+                }
+                autoComplete="off"
+                value={countryOpen ? countryQuery : countryName}
+                onFocus={() => {
+                  setCountryQuery('');
+                  setCountryOpen(true);
+                  setActiveIndex(0);
+                }}
+                onChange={(event) => {
+                  setCountryQuery(event.currentTarget.value);
+                  setCountryOpen(true);
+                  setActiveIndex(0);
+                }}
+                onKeyDown={onCountryKeyDown}
+                onBlur={() => {
+                  window.setTimeout(() => {
+                    setCountryOpen(false);
+                    setCountryQuery('');
+                  }, 100);
+                }}
+                disabled={pending}
+              />
+              <span
+                className={prototypeStyles.callingCode}
+                data-testid="country-calling-code"
+              >
+                <Bidi dir="ltr">+{selectedCountry?.callingCode ?? '20'}</Bidi>
+              </span>
+              {countryOpen && (
+                <ul
+                  id={optionsId}
+                  role="listbox"
+                  dir={locale === 'ar' ? 'rtl' : 'ltr'}
+                  className={prototypeStyles.countryList}
+                  data-testid="country-options"
+                >
+                  {filteredCountries.map((option, index) => (
+                    <li
+                      id={`${optionsId}-${option.code}`}
+                      key={option.code}
+                      role="option"
+                      aria-selected={option.code === selectedCountry?.code}
+                      className={
+                        index === activeIndex
+                          ? prototypeStyles.activeOption
+                          : undefined
+                      }
+                      onMouseDown={(event) => event.preventDefault()}
+                      onMouseMove={() => setActiveIndex(index)}
+                      onClick={() => chooseCountry(option)}
+                    >
+                      <span>{option.name}</span>
+                      <Bidi dir="ltr">+{option.callingCode}</Bidi>
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
+          </div>
+          <label className={styles.field}>
+            <span>{messages['clientSignup.phone']}</span>
+            <span className={styles.phoneNumber}>
+              <span aria-hidden="true">
+                <Bidi dir="ltr">+{selectedCountry?.callingCode ?? '20'}</Bidi>
+              </span>
+              <input
+                name="phone-national"
+                aria-label={messages['clientSignup.phone']}
+                aria-describedby={phoneError ? 'hero-phone-error' : undefined}
+                aria-invalid={phoneError || undefined}
+                type="tel"
+                inputMode="tel"
+                autoComplete="tel-national"
+                required
+                disabled={pending}
+                value={nationalNumber}
+                onChange={(event) => {
+                  setNationalNumber(event.currentTarget.value);
+                  setPhoneError(false);
+                  setValidatedPhone('');
+                }}
+              />
+            </span>
+            {phoneError && (
+              <span id="hero-phone-error" className={styles.fieldError}>
+                {messages['clientSignup.fieldError']}
+              </span>
+            )}
+          </label>
+        </div>
+        <label className={styles.field}>
+          <span>{messages['clientSignup.password']}</span>
+          <input
+            name="password"
+            type="password"
+            autoComplete="new-password"
+            required
+            disabled={pending}
+          />
+        </label>
+        <Button type="submit" variant="primary" disabled={pending}>
+          {pending
+            ? messages['clientSignup.pending']
+            : messages['clientSignup.submit']}
+        </Button>
+        {validatedPhone && (
+          <p
+            role="status"
+            className={prototypeStyles.srOnly}
+            data-testid="phone-e164-preview"
+          >
+            {validatedPhone}
+          </p>
+        )}
+      </form>
     </div>
   );
 }

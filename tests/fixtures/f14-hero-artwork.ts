@@ -1,340 +1,77 @@
 export type HeroArtTone = 'dark' | 'bright';
 export type HeroArtOrientation = 'desktop' | 'mobile';
 
-function seededRandom(seed: number): () => number {
-  let state = seed >>> 0;
-  return () => {
-    state = (Math.imul(state, 1664525) + 1013904223) >>> 0;
-    return state / 0x100000000;
-  };
-}
-
-function pathPolygon(
-  context: CanvasRenderingContext2D,
-  points: Array<[number, number]>,
-  fill: string | CanvasGradient,
-) {
-  context.beginPath();
-  points.forEach(([x, y], index) => {
-    if (index === 0) context.moveTo(x, y);
-    else context.lineTo(x, y);
-  });
-  context.closePath();
-  context.fillStyle = fill;
-  context.fill();
-}
-
-function drawCharacter(
-  context: CanvasRenderingContext2D,
-  width: number,
-  height: number,
-  orientation: HeroArtOrientation,
-  tone: HeroArtTone,
-) {
-  const scale = height / 1440;
-  const centerX = width * (orientation === 'desktop' ? 0.32 : 0.5);
-  const helmetY = height * (orientation === 'desktop' ? 0.27 : 0.19);
-  const helmetRx = width * (orientation === 'desktop' ? 0.078 : 0.18);
-  const helmetRy = height * (orientation === 'desktop' ? 0.12 : 0.12);
-  const rim = tone === 'dark' ? '#e8ac6a' : '#9e603c';
-  const silhouette = tone === 'dark' ? '#090d13' : '#18212a';
-
-  const halo = context.createRadialGradient(
-    centerX,
-    helmetY + helmetRy * 0.52,
-    helmetRy * 0.08,
-    centerX,
-    helmetY + helmetRy * 0.52,
-    width * (orientation === 'desktop' ? 0.27 : 0.55),
-  );
-  halo.addColorStop(
-    0,
-    tone === 'dark' ? 'rgba(237,166,94,.22)' : 'rgba(255,244,218,.58)',
-  );
-  halo.addColorStop(1, 'rgba(255,255,255,0)');
-  context.fillStyle = halo;
-  context.fillRect(0, 0, width, height);
-
-  // Broad shoulders and back form one readable silhouette, with a warm edge light.
-  context.save();
-  context.lineJoin = 'round';
-  context.lineCap = 'round';
-  context.shadowColor = rim;
-  context.shadowBlur = 20 * scale;
-  context.strokeStyle =
-    tone === 'dark' ? 'rgba(240,178,108,.62)' : 'rgba(138,77,49,.62)';
-  context.lineWidth = 3.2 * scale;
-  context.beginPath();
-  context.moveTo(centerX - helmetRx * 0.25, helmetY + helmetRy * 1.5);
-  context.bezierCurveTo(
-    centerX - helmetRx * 0.5,
-    height * 0.4,
-    centerX - width * 0.13,
-    height * 0.36,
-    centerX - width * (orientation === 'desktop' ? 0.18 : 0.46),
-    height * 0.48,
-  );
-  context.lineTo(
-    centerX - width * (orientation === 'desktop' ? 0.24 : 0.5),
-    height * 0.82,
-  );
-  context.lineTo(
-    centerX + width * (orientation === 'desktop' ? 0.22 : 0.5),
-    height * 0.82,
-  );
-  context.lineTo(
-    centerX + width * (orientation === 'desktop' ? 0.17 : 0.46),
-    height * 0.49,
-  );
-  context.bezierCurveTo(
-    centerX + helmetRx * 0.5,
-    height * 0.36,
-    centerX + helmetRx * 0.5,
-    height * 0.4,
-    centerX + helmetRx * 0.25,
-    helmetY + helmetRy * 1.5,
-  );
-  context.closePath();
-  context.fillStyle = silhouette;
-  context.fill();
-  context.stroke();
-  context.restore();
-
-  // Helmet shell: faceted crown, recessed visor, and a narrow illuminated rim.
-  context.save();
-  context.shadowColor = rim;
-  context.shadowBlur = 14 * scale;
-  context.fillStyle = tone === 'dark' ? '#101720' : '#263541';
-  context.strokeStyle = rim;
-  context.lineWidth = 4 * scale;
-  context.beginPath();
-  context.moveTo(centerX - helmetRx * 0.94, helmetY + helmetRy * 0.36);
-  context.quadraticCurveTo(
-    centerX - helmetRx * 0.8,
-    helmetY - helmetRy * 0.95,
-    centerX,
-    helmetY - helmetRy,
-  );
-  context.quadraticCurveTo(
-    centerX + helmetRx * 0.9,
-    helmetY - helmetRy * 0.9,
-    centerX + helmetRx,
-    helmetY + helmetRy * 0.36,
-  );
-  context.quadraticCurveTo(
-    centerX + helmetRx * 0.88,
-    helmetY + helmetRy * 1.02,
-    centerX,
-    helmetY + helmetRy * 1.1,
-  );
-  context.quadraticCurveTo(
-    centerX - helmetRx * 0.9,
-    helmetY + helmetRy * 0.98,
-    centerX - helmetRx * 0.94,
-    helmetY + helmetRy * 0.36,
-  );
-  context.closePath();
-  context.fill();
-  context.stroke();
-  context.restore();
-
-  const visor = context.createLinearGradient(
-    centerX - helmetRx,
-    helmetY,
-    centerX + helmetRx,
-    helmetY + helmetRy * 0.5,
-  );
-  visor.addColorStop(0, '#101a25');
-  visor.addColorStop(0.5, tone === 'dark' ? '#263746' : '#455865');
-  visor.addColorStop(1, '#111923');
-  context.fillStyle = visor;
-  context.beginPath();
-  context.moveTo(centerX - helmetRx * 0.81, helmetY + helmetRy * 0.12);
-  context.quadraticCurveTo(
-    centerX,
-    helmetY - helmetRy * 0.06,
-    centerX + helmetRx * 0.81,
-    helmetY + helmetRy * 0.12,
-  );
-  context.lineTo(centerX + helmetRx * 0.65, helmetY + helmetRy * 0.56);
-  context.quadraticCurveTo(
-    centerX,
-    helmetY + helmetRy * 0.73,
-    centerX - helmetRx * 0.66,
-    helmetY + helmetRy * 0.53,
-  );
-  context.closePath();
-  context.fill();
-  context.strokeStyle =
-    tone === 'dark' ? 'rgba(246,192,129,.76)' : 'rgba(88,56,41,.64)';
-  context.lineWidth = 2 * scale;
-  context.stroke();
-
-  // Back plate, shoulder seams, and pack give the figure depth without text or logos.
-  const pack = context.createLinearGradient(
-    centerX - width * 0.12,
-    height * 0.43,
-    centerX + width * 0.12,
-    height * 0.75,
-  );
-  pack.addColorStop(0, tone === 'dark' ? '#202a35' : '#47525a');
-  pack.addColorStop(0.55, silhouette);
-  pack.addColorStop(1, tone === 'dark' ? '#111820' : '#202a31');
-  pathPolygon(
-    context,
-    [
-      [centerX - width * 0.095, height * 0.43],
-      [centerX + width * 0.095, height * 0.43],
-      [centerX + width * 0.13, height * 0.74],
-      [centerX - width * 0.13, height * 0.74],
-    ],
-    pack,
-  );
-  context.strokeStyle =
-    tone === 'dark' ? 'rgba(236,173,107,.48)' : 'rgba(105,74,54,.48)';
-  context.lineWidth = 2.2 * scale;
-  context.beginPath();
-  context.moveTo(centerX - width * 0.15, height * 0.49);
-  context.lineTo(centerX - width * 0.09, height * 0.73);
-  context.moveTo(centerX + width * 0.15, height * 0.49);
-  context.lineTo(centerX + width * 0.09, height * 0.73);
-  context.stroke();
-  context.fillStyle =
-    tone === 'dark' ? 'rgba(241,181,116,.58)' : 'rgba(116,70,47,.52)';
-  context.fillRect(centerX - 2 * scale, height * 0.5, 4 * scale, height * 0.16);
-}
-
+/** Procedural SVG photo-study fixture; never fetched from an external source. */
 export function createF14HeroArtwork(
   orientation: HeroArtOrientation,
   tone: HeroArtTone,
-): Promise<string> {
+): string {
   const width = orientation === 'desktop' ? 2560 : 1080;
   const height = 1440;
-  const canvas = document.createElement('canvas');
-  canvas.width = width;
-  canvas.height = height;
-  const context = canvas.getContext('2d');
-  if (!context) return Promise.reject(new Error('Canvas 2D is unavailable'));
-
-  const base = context.createLinearGradient(0, 0, width * 0.72, height);
-  if (tone === 'dark') {
-    base.addColorStop(0, '#09111b');
-    base.addColorStop(0.3, '#263746');
-    base.addColorStop(0.62, '#6e5b50');
-    base.addColorStop(1, '#121a21');
-  } else {
-    base.addColorStop(0, '#e2e8ec');
-    base.addColorStop(0.28, '#d8d2c8');
-    base.addColorStop(0.61, '#f0cfa7');
-    base.addColorStop(1, '#d6d8d4');
-  }
-  context.fillStyle = base;
-  context.fillRect(0, 0, width, height);
-
-  const light = context.createRadialGradient(
-    width * (orientation === 'desktop' ? 0.61 : 0.52),
-    height * 0.34,
-    0,
-    width * (orientation === 'desktop' ? 0.61 : 0.52),
-    height * 0.34,
-    width * 0.46,
-  );
-  light.addColorStop(
-    0,
-    tone === 'dark' ? 'rgba(234,176,117,.55)' : 'rgba(255,249,233,.88)',
-  );
-  light.addColorStop(
-    0.32,
-    tone === 'dark' ? 'rgba(222,154,99,.2)' : 'rgba(246,222,184,.38)',
-  );
-  light.addColorStop(1, 'rgba(255,255,255,0)');
-  context.fillStyle = light;
-  context.fillRect(0, 0, width, height);
-
-  // Layered distant ridges and an atmospheric horizon keep the right side calm.
-  const distant = tone === 'dark' ? '#18232c' : '#aeb8b7';
-  const near = tone === 'dark' ? '#111820' : '#657276';
-  pathPolygon(
-    context,
-    [
-      [0, height * 0.59],
-      [width * 0.12, height * 0.52],
-      [width * 0.24, height * 0.57],
-      [width * 0.38, height * 0.48],
-      [width * 0.55, height * 0.58],
-      [width * 0.72, height * 0.53],
-      [width * 0.88, height * 0.58],
-      [width, height * 0.54],
-      [width, height],
-      [0, height],
-    ],
-    distant,
-  );
-  pathPolygon(
-    context,
-    [
-      [0, height * 0.72],
-      [width * 0.16, height * 0.67],
-      [width * 0.31, height * 0.73],
-      [width * 0.48, height * 0.65],
-      [width * 0.68, height * 0.72],
-      [width * 0.83, height * 0.67],
-      [width, height * 0.7],
-      [width, height],
-      [0, height],
-    ],
-    near,
-  );
-
-  const random = seededRandom(orientation === 'desktop' ? 87129 : 44127);
-  for (let index = 0; index < 380; index += 1) {
-    const x = random() * width;
-    const y = random() * height * 0.72;
-    const radius = (0.5 + random() * 2.4) * (width / 2560);
-    context.beginPath();
-    context.arc(x, y, Math.max(0.55, radius), 0, Math.PI * 2);
-    context.fillStyle =
-      tone === 'dark'
-        ? `rgba(255,218,172,${0.08 + random() * 0.26})`
-        : `rgba(77,89,93,${0.06 + random() * 0.15})`;
-    context.fill();
-  }
-
-  // A small deterministic grain tile gives the painted layers surface texture.
-  const grainCanvas = document.createElement('canvas');
-  grainCanvas.width = 256;
-  grainCanvas.height = 256;
-  const grainContext = grainCanvas.getContext('2d');
-  if (!grainContext)
-    return Promise.reject(new Error('Canvas grain is unavailable'));
-  const grain = grainContext.createImageData(
-    grainCanvas.width,
-    grainCanvas.height,
-  );
-  for (let index = 0; index < grain.data.length; index += 4) {
-    const value = Math.floor(random() * 255);
-    grain.data[index] = value;
-    grain.data[index + 1] = value;
-    grain.data[index + 2] = value;
-    grain.data[index + 3] = tone === 'dark' ? 16 : 12;
-  }
-  grainContext.putImageData(grain, 0, 0);
-  context.globalCompositeOperation = 'soft-light';
-  const grainPattern = context.createPattern(grainCanvas, 'repeat');
-  if (grainPattern) {
-    context.fillStyle = grainPattern;
-    context.fillRect(0, 0, width, height);
-  }
-  context.globalCompositeOperation = 'source-over';
-  drawCharacter(context, width, height, orientation, tone);
-
-  return new Promise((resolve, reject) => {
-    canvas.toBlob((blob) => {
-      if (!blob) {
-        reject(new Error('Could not encode procedural artwork'));
-        return;
-      }
-      resolve(URL.createObjectURL(blob));
-    }, 'image/png');
-  });
+  const centerX = orientation === 'desktop' ? 820 : 540;
+  const helmetY = orientation === 'desktop' ? 375 : 282;
+  const helmetRx = orientation === 'desktop' ? 198 : 194;
+  const helmetRy = orientation === 'desktop' ? 176 : 173;
+  const dark = tone === 'dark';
+  const stops = dark
+    ? ['#171918', '#37342f', '#645546', '#292a27']
+    : ['#d8d8d2', '#b9b2a6', '#eee1c8', '#c7c7c0'];
+  const horizon = dark ? '#f1c28b' : '#786c5b';
+  const silhouette = dark ? '#101211' : '#33342f';
+  const helmet = dark ? '#272722' : '#5b574f';
+  const visor = dark ? '#33332d' : '#787165';
+  const skyGlow = dark ? '#efb878' : '#fff5df';
+  const ridge = dark ? '#2e302c' : '#a8a69e';
+  const foreground = dark ? '#20221f' : '#85857d';
+  const texture = Array.from({ length: 14 }, (_, index) => {
+    const x = (index * 37 + 5) % 64;
+    const y = (index * 53 + 11) % 64;
+    const radius = index % 4 === 0 ? 1.4 : 0.7;
+    return `<circle cx="${x}" cy="${y}" r="${radius}" fill="${index % 2 ? '#fff' : '#000'}" fill-opacity="${index % 2 ? '.12' : '.08'}"/>`;
+  }).join('');
+  const characterPath = `M ${centerX - helmetRx * 0.34} ${helmetY + helmetRy * 1.3}
+    C ${centerX - helmetRx * 0.5} 590 ${centerX - width * 0.2} 520 ${centerX - width * 0.3} 700
+    L ${centerX - width * 0.38} 1180 L ${centerX + width * 0.38} 1180
+    L ${centerX + width * 0.3} 700 C ${centerX + helmetRx * 0.5} 520 ${centerX + helmetRx * 0.4} 590 ${centerX + helmetRx * 0.34} ${helmetY + helmetRy * 1.3} Z`;
+  const helmetPath = `M ${centerX - helmetRx} ${helmetY + 24}
+    Q ${centerX - helmetRx * 0.83} ${helmetY - helmetRy * 0.9} ${centerX} ${helmetY - helmetRy}
+    Q ${centerX + helmetRx * 0.86} ${helmetY - helmetRy * 0.91} ${centerX + helmetRx} ${helmetY + 24}
+    Q ${centerX + helmetRx * 0.78} ${helmetY + helmetRy * 0.97} ${centerX} ${helmetY + helmetRy}
+    Q ${centerX - helmetRx * 0.82} ${helmetY + helmetRy * 0.92} ${centerX - helmetRx} ${helmetY + 24} Z`;
+  const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="${width}" height="${height}" viewBox="0 0 ${width} ${height}">
+    <defs>
+      <linearGradient id="landscape" x1="0" y1="0" x2="0.72" y2="1">
+        <stop offset="0" stop-color="${stops[0]}"/><stop offset=".31" stop-color="${stops[1]}"/>
+        <stop offset=".63" stop-color="${stops[2]}"/><stop offset="1" stop-color="${stops[3]}"/>
+      </linearGradient>
+      <radialGradient id="glow" cx="${orientation === 'desktop' ? '31%' : '50%'}" cy="${orientation === 'desktop' ? '30%' : '23%'}" r="${orientation === 'desktop' ? '44%' : '62%'}">
+        <stop offset="0" stop-color="${skyGlow}" stop-opacity="${dark ? '.38' : '.72'}"/>
+        <stop offset=".35" stop-color="${skyGlow}" stop-opacity="${dark ? '.16' : '.27'}"/><stop offset="1" stop-color="${skyGlow}" stop-opacity="0"/>
+      </radialGradient>
+      <linearGradient id="visor" x1="0" y1="0" x2="1" y2=".8">
+        <stop stop-color="${visor}"/><stop offset=".5" stop-color="${dark ? '#5a5144' : '#938875'}"/><stop offset="1" stop-color="${silhouette}"/>
+      </linearGradient>
+      <linearGradient id="rim" x1="0" y1="0" x2="1" y2="1">
+        <stop stop-color="${dark ? '#f6d29c' : '#6f5841'}" stop-opacity=".92"/>
+        <stop offset=".48" stop-color="${horizon}" stop-opacity=".5"/><stop offset="1" stop-color="${horizon}" stop-opacity=".16"/>
+      </linearGradient>
+      <pattern id="grain" width="64" height="64" patternUnits="userSpaceOnUse">${texture}</pattern>
+    </defs>
+    <rect width="${width}" height="${height}" fill="url(#landscape)"/>
+    <rect width="${width}" height="${height}" fill="url(#glow)"/>
+    <path d="M0 790 L310 720 L610 770 L930 665 L1260 770 L1600 700 L1940 766 L2240 690 L2560 754 L2560 1440 L0 1440Z" fill="${ridge}" opacity=".78"/>
+    <path d="M0 975 L360 900 L700 970 L1050 858 L1410 970 L1780 900 L2140 965 L2560 875 L2560 1440 L0 1440Z" fill="${foreground}" opacity=".84"/>
+    <path d="M${width * 0.57} ${height * 0.61} C ${width * 0.69} ${height * 0.585}, ${width * 0.82} ${height * 0.625}, ${width} ${height * 0.592}" fill="none" stroke="${horizon}" stroke-width="${dark ? 7 : 5}" stroke-opacity="${dark ? '.78' : '.58'}"/>
+    <path d="M${width * 0.61} ${height * 0.617} C ${width * 0.73} ${height * 0.601}, ${width * 0.86} ${height * 0.633}, ${width} ${height * 0.608}" fill="none" stroke="${skyGlow}" stroke-width="12" stroke-opacity="${dark ? '.18' : '.16'}"/>
+    <g>
+      <path d="${characterPath}" fill="${silhouette}" stroke="url(#rim)" stroke-width="${dark ? 16 : 12}"/>
+      <path d="M${centerX - width * 0.105} 720 L${centerX - width * 0.16} 1120 M${centerX + width * 0.105} 720 L${centerX + width * 0.16} 1120" fill="none" stroke="${horizon}" stroke-opacity=".46" stroke-width="${orientation === 'desktop' ? 10 : 6}"/>
+      <path d="${helmetPath}" fill="${helmet}" stroke="url(#rim)" stroke-width="${dark ? 12 : 9}"/>
+      <path d="M${centerX - helmetRx * 0.79} ${helmetY + helmetRy * 0.12} Q${centerX} ${helmetY - helmetRy * 0.02} ${centerX + helmetRx * 0.79} ${helmetY + helmetRy * 0.12} L${centerX + helmetRx * 0.62} ${helmetY + helmetRy * 0.55} Q${centerX} ${helmetY + helmetRy * 0.77} ${centerX - helmetRx * 0.62} ${helmetY + helmetRy * 0.54} Z" fill="url(#visor)"/>
+      <path d="M${centerX - helmetRx * 0.73} ${helmetY + helmetRy * 0.08} Q${centerX} ${helmetY - helmetRy * 0.15} ${centerX + helmetRx * 0.73} ${helmetY + helmetRy * 0.08}" fill="none" stroke="${skyGlow}" stroke-opacity=".8" stroke-width="${dark ? 10 : 7}"/>
+      <path d="M${centerX - width * 0.13} 735 L${centerX - width * 0.08} 1080 M${centerX + width * 0.13} 735 L${centerX + width * 0.08} 1080" stroke="${horizon}" stroke-opacity=".39" stroke-width="${orientation === 'desktop' ? 8 : 5}"/>
+    </g>
+    <rect width="${width}" height="${height}" fill="url(#grain)" opacity=".48"/>
+  </svg>`;
+  return `data:image/svg+xml;charset=utf-8,${encodeURIComponent(svg)}`;
 }
