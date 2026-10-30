@@ -63,6 +63,43 @@ it('T014 appends a client self-correction without changing the original or loggi
         insert into app_private.form_submissions(workspace_id,assignment_id,revision,submitted_at)
         values(${context.wsA.id},${assignmentId},1,clock_timestamp())
       `;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`
+            update public.form_answer_revisions set answer_values=${sp.json({ ordinary: 'mutated original' })}
+            where workspace_id=${context.wsA.id} and assignment_id=${assignmentId} and revision=1
+          `;
+        }),
+      ).rejects.toThrow('form answer revisions are immutable');
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`
+            delete from public.form_answer_revisions
+            where workspace_id=${context.wsA.id} and assignment_id=${assignmentId} and revision=1
+          `;
+        }),
+      ).rejects.toThrow('form answer revisions are immutable');
+      let revisionMutationKilled = false;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp.unsafe(
+            'drop trigger form_answer_revisions_immutable on public.form_answer_revisions',
+          );
+          const [mutated] = await sp`
+            update public.form_answer_revisions
+            set answer_values=${sp.json({ ordinary: 'guard mutant' })}
+            where workspace_id=${context.wsA.id} and assignment_id=${assignmentId} and revision=1
+            returning revision
+          `;
+          try {
+            expect(mutated).toBeUndefined();
+          } catch {
+            revisionMutationKilled = true;
+          }
+          throw rollback;
+        }),
+      ).rejects.toBe(rollback);
+      expect(revisionMutationKilled).toBe(true);
       await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: client.userId, role: 'authenticated' })},true)`;
       await tx`set local role authenticated`;
       const [result] = await tx`
