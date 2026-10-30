@@ -21,7 +21,18 @@ import {
 } from '../../lib/forms/validation';
 import styles from './StaffForms.module.css';
 
-const types: readonly FormAnswerType[] = [
+type ExistingEditorAnswerType = Extract<
+  FormAnswerType,
+  | 'shortText'
+  | 'longText'
+  | 'number'
+  | 'singleChoice'
+  | 'multiChoice'
+  | 'boolean'
+  | 'date'
+>;
+
+const types: readonly ExistingEditorAnswerType[] = [
   'shortText',
   'longText',
   'number',
