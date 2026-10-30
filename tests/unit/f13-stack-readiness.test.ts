@@ -8,11 +8,27 @@ import {
 describe('F13 isolated Stack C contract', () => {
   it('selects only Stack C when explicitly requested', () => {
     expect(selectStack({ LIFTER_SUPABASE_STACK: 'c' })).toBe('c');
+    expect(selectStack({ LIFTER_SUPABASE_STACK: 'd' })).toBe('d');
     for (const invalid of ['C', 'remote']) {
       expect(() => selectStack({ LIFTER_SUPABASE_STACK: invalid })).toThrow(
         'Unsupported local Supabase stack',
       );
     }
+  });
+
+  it('infers the selected stack from generic CI endpoint variables', () => {
+    expect(
+      selectStack({
+        API_URL: 'http://127.0.0.1:35421',
+        DB_URL: 'postgres://postgres:postgres@127.0.0.1:35422/postgres',
+      }),
+    ).toBe('c');
+    expect(
+      selectStack({
+        API_URL: 'http://127.0.0.1:54321',
+        DB_URL: 'postgres://postgres:postgres@127.0.0.1:54322/postgres',
+      }),
+    ).toBe('a');
   });
 
   it('binds Stack C to its own project and full distinct port block', () => {

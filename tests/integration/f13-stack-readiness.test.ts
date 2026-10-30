@@ -4,23 +4,27 @@ import { afterAll, expect, it } from 'vitest';
 import { getStackConfig, selectStack } from '../../scripts/local-stack.mjs';
 import { loadEnv, sql } from './harness';
 
-if (selectStack(process.env) !== 'c') {
-  throw new Error('F13 integration suite requires LIFTER_SUPABASE_STACK=c');
-}
-
+const stack = selectStack(process.env);
 const target = loadEnv();
-const config = getStackConfig('c');
+const config = getStackConfig(stack);
 const db = sql();
 
 afterAll(() => db.end());
 
-it('has the F13 project identity, API/DB ports, and complete branch migration baseline', async () => {
-  expect(config.projectId).toBe('lifter-stack-c');
-  expect(target.apiUrl).toBe('http://127.0.0.1:35421');
+it(`has the selected project identity, API/DB ports, and complete migration baseline (${stack})`, async () => {
+  expect(config.name).toBe(stack);
+  expect(target.apiUrl).toBe(`http://127.0.0.1:${config.apiPort}`);
   const dbUrl = new URL(target.dbUrl);
   expect(dbUrl.hostname).toBe('127.0.0.1');
-  expect(dbUrl.port).toBe('35422');
+  expect(dbUrl.port).toBe(String(config.dbPort));
   expect(dbUrl.pathname).toBe('/postgres');
+
+  if (stack === 'c') {
+    expect(config.projectId).toBe('lifter-stack-c');
+    expect(config.apiPort).toBe(35421);
+    expect(config.dbPort).toBe(35422);
+    expect(config.workdir.endsWith('supabase-stack-c')).toBe(true);
+  }
 
   const expected = readdirSync(
     path.join(process.cwd(), 'supabase', 'migrations'),

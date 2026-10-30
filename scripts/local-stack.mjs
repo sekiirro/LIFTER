@@ -29,15 +29,50 @@ function valueFor(configText, section, key) {
 }
 
 /** @param {Record<string, string | undefined>} [env] */
-export function selectStack(env = process.env) {
-  const requested = env.LIFTER_SUPABASE_STACK || 'a';
-  if (requested !== 'a' && requested !== 'b' && requested !== 'c')
+export function selectStack(env = process.env, root = process.cwd()) {
+  const requested =
+    env.LIFTER_SUPABASE_STACK || inferStackFromEndpoints(env, root) || 'a';
+  if (!['a', 'b', 'c', 'd'].includes(requested))
     throw new Error('Unsupported local Supabase stack');
   return requested;
 }
 
+function inferStackFromEndpoints(env, root) {
+  const apiValue = env.API_URL || env.SUPABASE_URL;
+  const dbValue = env.DB_URL || env.SUPABASE_DB_URL;
+  if (!apiValue || !dbValue) return undefined;
+  let api;
+  let db;
+  try {
+    api = new URL(apiValue);
+    db = new URL(dbValue);
+  } catch {
+    return undefined;
+  }
+  if (
+    !['127.0.0.1', 'localhost', '[::1]'].includes(api.hostname) ||
+    !['127.0.0.1', 'localhost', '[::1]'].includes(db.hostname) ||
+    db.pathname !== '/postgres'
+  )
+    return undefined;
+  for (const stack of ['a', 'b', 'c', 'd']) {
+    let config;
+    try {
+      config = getStackConfig(stack, root);
+    } catch {
+      continue;
+    }
+    if (
+      api.port === String(config.apiPort) &&
+      db.port === String(config.dbPort)
+    )
+      return stack;
+  }
+  return undefined;
+}
+
 export function getStackConfig(stack = 'a', root = process.cwd()) {
-  if (stack !== 'a' && stack !== 'b' && stack !== 'c')
+  if (!['a', 'b', 'c', 'd'].includes(stack))
     throw new Error('Unsupported local Supabase stack');
   const configPath =
     stack === 'a'
