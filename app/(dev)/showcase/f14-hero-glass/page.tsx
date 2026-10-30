@@ -61,7 +61,7 @@ export default async function HeroPrototypePage({
       data-testid="hero-brand-scope"
     >
       <HeroStage fixture={fixture} effect={effect}>
-        <section className={styles.glassFrame} data-testid="registration-panel">
+        <section data-testid="registration-panel">
           <HeroGlassCard effect={effect} locale={locale}>
             <RegistrationBrand
               brand={brand}
