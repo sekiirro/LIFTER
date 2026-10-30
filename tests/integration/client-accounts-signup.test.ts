@@ -1,5 +1,7 @@
 import { randomBytes, randomUUID } from 'node:crypto';
-import { afterAll, beforeAll, expect, it } from 'vitest';
+import { afterAll, beforeAll, expect, it, vi } from 'vitest';
+vi.mock('server-only', () => ({}));
+import { processClientSignup } from '../../lib/client-accounts/service';
 import { anonClient } from './harness';
 import { backdated } from './registration-links-fixture';
 import {
@@ -240,19 +242,123 @@ it('Vault/proof absence is unavailable with no redemption', async () => {
 });
 it('D-08 collisions are duplicate while link-class failures remain invalid', async () => {
   const first = await signupFixture(f);
+  first.fields.phone = `+2010${String(Math.floor(Math.random() * 100_000_000)).padStart(8, '0')}`;
   expect(await signup(db, first)).toEqual({ status: 'complete' });
   const s = await signupFixture(f);
   const responses = [];
-  for (const fields of [
+  const collisions = [
     { ...s.fields, email: first.fields.email },
     { ...s.fields, phone: first.fields.phone },
     { ...s.fields, email: first.fields.email, phone: first.fields.phone },
-  ]) {
+    {
+      ...s.fields,
+      username: first.fields.username
+        .toUpperCase()
+        .replace(/[A-Z0-9-]/g, (character) =>
+          String.fromCodePoint(character.charCodeAt(0) + 0xfee0),
+        ),
+    },
+  ];
+  const collisionPii = collisions.flatMap((fields) =>
+    [
+      fields.name,
+      fields.email,
+      fields.phone,
+      fields.password,
+      fields.username,
+    ].filter((value): value is string => typeof value === 'string'),
+  );
+  for (const fields of collisions) {
     const fresh = await signupFixture(f);
     responses.push(await signup(db, fresh, fields));
+    expect(
+      await db`select 1 from public.clients where registration_link_id=${fresh.link}`,
+    ).toHaveLength(0);
+    expect(
+      await db`select 1 from app_private.client_signup_operations where registration_link_id=${fresh.link}`,
+    ).toHaveLength(0);
+    expect(
+      await db`select 1 from public.registration_links where id=${fresh.link} and consumed_at is not null`,
+    ).toHaveLength(0);
   }
   for (const result of responses)
     expect(JSON.stringify(result)).toBe('{"status":"duplicate"}');
+  const actionResults = [];
+  const actionPii: string[] = [];
+  for (const index of [0, 1, 3]) {
+    const fields = collisions[index]!;
+    const fresh = await signupFixture(f);
+    const localPhone =
+      index === 1
+        ? `0${first.fields.phone.slice(3)}`
+        : `010${String(Math.floor(Math.random() * 100_000_000)).padStart(8, '0')}`;
+    actionPii.push(
+      fields.name!,
+      fields.email!,
+      localPhone,
+      fields.password!,
+      fields.username!,
+    );
+    const result = await processClientSignup({
+      token: fresh.token,
+      requestSecret: fresh.request,
+      fields: {
+        name: fields.name,
+        email: fields.email!,
+        phone: JSON.stringify({ country: 'EG', nationalNumber: localPhone }),
+        password: fields.password!,
+        dateOfBirth: fields.date_of_birth!,
+        username: fields.username!,
+        telegramUsername: fields.telegram_username ?? '',
+      },
+      origin: 'https://signup.example.test',
+      expectedOrigin: 'https://signup.example.test',
+      headers: {
+        get: (name) =>
+          name === 'CF-Connecting-IP'
+            ? `198.51.100.${actionResults.length + 10}`
+            : null,
+      },
+      signedIn: async () => false,
+      locale: 'en',
+    });
+    actionResults.push(result);
+    expect(result).toEqual({
+      status: 'duplicate',
+      message:
+        'We could not complete this registration with these details. Contact your coach or support.',
+    });
+    expect(result).not.toHaveProperty('invalidFields');
+    expect(
+      await db`select 1 from public.clients where registration_link_id=${fresh.link}`,
+    ).toHaveLength(0);
+    expect(
+      await db`select 1 from public.registration_links where id=${fresh.link} and consumed_at is not null`,
+    ).toHaveLength(0);
+  }
+  for (const result of actionResults.slice(1))
+    expect(result).toEqual(actionResults[0]);
+  const crossWorkspaceEmail = await signupFixture(foreign);
+  const crossWorkspacePhone = await signupFixture(foreign);
+  expect(
+    await signup(db, crossWorkspaceEmail, {
+      ...crossWorkspaceEmail.fields,
+      email: first.fields.email,
+    }),
+  ).toEqual({ status: 'duplicate' });
+  expect(
+    await signup(db, crossWorkspacePhone, {
+      ...crossWorkspacePhone.fields,
+      phone: first.fields.phone,
+    }),
+  ).toEqual({ status: 'duplicate' });
+  const workspaceScopedUsername = await signupFixture(foreign);
+  expect(
+    await signup(db, workspaceScopedUsername, {
+      ...workspaceScopedUsername.fields,
+      username: first.fields.username,
+    }),
+  ).toEqual({ status: 'complete' });
   responses.length = 0;
   responses.push(await signup(db, first));
   responses.push(await signup(db, { ...s, token: 'unknown' }));
@@ -281,10 +387,20 @@ it('D-08 collisions are duplicate while link-class failures remain invalid', asy
     first.hash,
     first.request,
     first.fields.password,
+    first.fields.email,
+    first.fields.name,
+    first.fields.username,
+    first.fields.phone,
     s.token,
     s.hash,
     s.request,
     s.fields.password,
+    s.fields.email,
+    s.fields.name,
+    s.fields.username,
+    s.fields.phone,
+    ...collisionPii,
+    ...actionPii,
   ];
   expect(
     forbidden.some((value) => payload.includes(value)),

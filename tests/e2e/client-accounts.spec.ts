@@ -412,13 +412,19 @@ test.afterEach(async ({ page, context }, testInfo) => {
 
 async function fillSignup(
   page: import('@playwright/test').Page,
-  values: { name: string; email: string; phone?: string },
+  values: { name: string; email: string; phone?: string; username?: string },
   locale: 'ar' | 'en' = 'en',
 ) {
   const m = getMessages(locale);
   await page
     .getByLabel(m['clientSignup.name'], { exact: true })
-    .fill(values.name);
+    .fill(`${values.name} Client`);
+  await page
+    .getByLabel(m['clientSignup.dateOfBirth'], { exact: true })
+    .fill('1990-04-12');
+  await page
+    .getByLabel(m['clientSignup.username'], { exact: true })
+    .fill(values.username ?? `member-${randomUUID().slice(0, 8)}`);
   await page
     .getByLabel(m['clientSignup.email'], { exact: true })
     .fill(values.email);
@@ -1138,7 +1144,7 @@ for (const locale of ['ar', 'en'] as const) {
   });
 }
 
-test('identity collision keeps the contract duplicate wording without field details', async ({
+test('identity collision keeps the neutral duplicate wording without field details', async ({
   page,
   context,
 }) => {
@@ -1154,7 +1160,7 @@ test('identity collision keeps the contract duplicate wording without field deta
     .getByRole('button', { name: 'Create registration request' })
     .click();
   await expect(page.getByRole('status')).toHaveText(
-    'This email is already registered. Contact support.',
+    getMessages('en')['clientSignup.duplicate'],
   );
   const duplicateMessage = await page.getByRole('status').textContent();
   expect(duplicateMessage?.includes(knownStaffEmail) ?? false).toBe(false);
@@ -1171,10 +1177,10 @@ for (const locale of ['ar', 'en'] as const) {
     const database = dbModule.sql();
     const identities: Record<
       'pending' | 'active' | 'staff' | 'archived',
-      { email: string; phone: string }
+      { email: string; phone: string; username?: string }
     > = {} as Record<
       'pending' | 'active' | 'staff' | 'archived',
-      { email: string; phone: string }
+      { email: string; phone: string; username?: string }
     >;
     await context.addCookies([
       { name: LOCALE_COOKIE, value: locale, url: origin },
@@ -1189,6 +1195,10 @@ for (const locale of ['ar', 'en'] as const) {
       const email = `u8-${kind}-${randomUUID()}@example.test`;
       const phone = `0105678${String(++collisionPhoneSequence).padStart(4, '0')}`;
       const phoneE164 = `+20${phone.slice(1)}`;
+      const username =
+        kind === 'pending'
+          ? `collision-${randomUUID().slice(0, 8)}`
+          : undefined;
       if (kind === 'pending') {
         const token = await issueSignupToken(locale === 'en');
         await page.goto(`/register/${token}`);
@@ -1197,7 +1207,7 @@ for (const locale of ['ar', 'en'] as const) {
         );
         await fillSignup(
           page,
-          { name: 'Collision Example', email, phone },
+          { name: 'Collision Example', email, phone, username },
           locale,
         );
         await page
@@ -1217,7 +1227,7 @@ for (const locale of ['ar', 'en'] as const) {
           }
         });
       }
-      identities[kind] = { email, phone };
+      identities[kind] = { email, phone, username };
     };
 
     const captures: Array<{
@@ -1231,15 +1241,21 @@ for (const locale of ['ar', 'en'] as const) {
 
       const tokenByCollision = Object.fromEntries(
         await Promise.all(
-          (['email', 'phone', 'both'] as const).map(async (collision) => [
-            collision,
-            await issueSignupToken(locale === 'en'),
-          ]),
+          (['email', 'phone', 'both', 'username'] as const).map(
+            async (collision) => [
+              collision,
+              await issueSignupToken(locale === 'en'),
+            ],
+          ),
         ),
       );
 
       for (const kind of ['pending', 'active', 'staff', 'archived'] as const) {
-        for (const collision of ['email', 'phone', 'both'] as const) {
+        const collisionTypes =
+          kind === 'pending'
+            ? (['email', 'phone', 'both', 'username'] as const)
+            : (['email', 'phone', 'both'] as const);
+        for (const collision of collisionTypes) {
           const token = tokenByCollision[collision];
           await page.goto(`/register/${token}`);
           await expect(
@@ -1294,10 +1310,19 @@ for (const locale of ['ar', 'en'] as const) {
             {
               name: 'Collision Example',
               email:
-                collision === 'phone'
+                collision === 'phone' || collision === 'username'
                   ? `new-${randomUUID()}@example.test`
                   : identity.email,
-              ...(collision === 'email'
+              ...(collision === 'username'
+                ? {
+                    username: identity
+                      .username!.toUpperCase()
+                      .replace(/[A-Z0-9-]/g, (character) =>
+                        String.fromCodePoint(character.charCodeAt(0) + 0xfee0),
+                      ),
+                  }
+                : {}),
+              ...(collision === 'email' || collision === 'username'
                 ? {}
                 : {
                     phone:
@@ -1318,6 +1343,10 @@ for (const locale of ['ar', 'en'] as const) {
             page.getByRole('status'),
             `${kind}/${collision} returns duplicate`,
           ).toHaveText(m['clientSignup.duplicate']);
+          await expect(
+            page.locator('input[aria-invalid="true"]'),
+            `${kind}/${collision} highlights no field`,
+          ).toHaveCount(0);
           expect(actionCapture?.status).toBe(200);
           captures.push(actionCapture!);
           await page.unroute(`**/register/${token}`);
@@ -1328,7 +1357,7 @@ for (const locale of ['ar', 'en'] as const) {
     }
 
     const first = captures[0];
-    expect(captures).toHaveLength(12);
+    expect(captures).toHaveLength(13);
     const stableHeaders = (headers: Record<string, string>) =>
       Object.fromEntries(
         Object.entries(headers)

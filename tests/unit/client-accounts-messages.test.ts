@@ -45,15 +45,20 @@ it('T035 has matching Arabic and English signup message keys and scoped Telegram
   }
 });
 
-it('T035 preserves D-08 and unavailable wording and keeps completion generic', () => {
+it('T035 keeps duplicate wording field-neutral and completion generic', () => {
   const en = getMessages('en') as Record<string, string>;
   const ar = getMessages('ar') as Record<string, string>;
+  // PO Q2 B: every identity collision uses one neutral response.
   expect(en['clientSignup.duplicate']).toBe(
-    'This email is already registered. Contact support.',
+    'We could not complete this registration with these details. Contact your coach or support.',
   );
   expect(ar['clientSignup.duplicate']).toBe(
-    'هذا البريد الإلكتروني مسجّل بالفعل. يُرجى التواصل مع الدعم.',
+    '\u062a\u0639\u0630\u0651\u0631 \u0625\u0643\u0645\u0627\u0644 \u0627\u0644\u062a\u0633\u062c\u064a\u0644 \u0628\u0647\u0630\u0647 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a. \u064a\u064f\u0631\u062c\u0649 \u0627\u0644\u062a\u0648\u0627\u0635\u0644 \u0645\u0639 \u0645\u062f\u0631\u0651\u0628\u0643 \u0623\u0648 \u0627\u0644\u062f\u0639\u0645.',
   );
+  expect(ar['clientSignup.duplicate']).not.toMatch(
+    /\u0627\u0644\u0628\u0631\u064a\u062f|\u0627\u0644\u0647\u0627\u062a\u0641|\u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645/,
+  );
+  expect(en['clientSignup.duplicate']).not.toMatch(/email|phone|username/i);
   expect(en['clientSignup.unavailable']).toBe('Please try again later.');
   expect(ar['clientSignup.unavailable']).toBe('يرجى المحاولة مرة أخرى لاحقًا.');
   expect(en['clientSignup.complete']).toBeTruthy();

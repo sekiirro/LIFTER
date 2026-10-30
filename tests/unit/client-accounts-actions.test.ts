@@ -93,9 +93,15 @@ it('T023 public results contain only contract status, translated copy and safe f
   const duplicate = signupResult('duplicate', 'en');
   expect(duplicate).toEqual({
     status: 'duplicate',
-    message: 'This email is already registered. Contact support.',
+    message:
+      'We could not complete this registration with these details. Contact your coach or support.',
   });
   expect(Object.keys(duplicate).sort()).toEqual(['message', 'status']);
+  expect(signupResult('duplicate', 'ar')).toEqual({
+    status: 'duplicate',
+    message:
+      'تعذّر إكمال التسجيل بهذه البيانات. يُرجى التواصل مع مدرّبك أو الدعم.',
+  });
   expect(signupResult('unavailable', 'ar').message.length).toBeGreaterThan(0);
 });
 
@@ -301,7 +307,7 @@ it('T023 keeps tokens and submitted identity values out of public result code an
     'This email is already registered. Contact support.',
   );
   expect(getMessages('en')['clientSignup.duplicate']).toBe(
-    'This email is already registered. Contact support.',
+    'We could not complete this registration with these details. Contact your coach or support.',
   );
   expect(getMessages('ar')['clientSignup.unavailable']).toBe(
     'يرجى المحاولة مرة أخرى لاحقًا.',

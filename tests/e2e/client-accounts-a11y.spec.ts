@@ -1,6 +1,10 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
+import { validateSignupIdentity } from '../../app/register/[token]/schema';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 
 const origin = 'http://localhost:3000';
 const local = Boolean(
@@ -56,11 +60,100 @@ for (const locale of ['ar', 'en'] as const) {
         const results = await new AxeBuilder({ page })
           .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
           .analyze();
-        expect(
-          results.violations.filter((violation) =>
-            ['serious', 'critical'].includes(violation.impact ?? ''),
-          ),
-        ).toEqual([]);
+        expect(results.violations).toEqual([]);
+      });
+
+      test(`${locale} ${theme} ${viewport.name} duplicate error renders neutrally and is axe clean`, async ({
+        page,
+        context,
+      }, testInfo) => {
+        test.skip(!local, 'Requires the disposable local Supabase stack.');
+        const m = getMessages(locale);
+        const { secret, issue, checked } =
+          await import('../integration/registration-links-fixture');
+        const issued = secret();
+        checked(
+          await issue(fixture, fixture.woA.client, {
+            token_hash: issued.hash,
+          }),
+        );
+        await page.setViewportSize({
+          width: viewport.width,
+          height: viewport.height,
+        });
+        await context.addCookies([
+          { name: LOCALE_COOKIE, value: locale, url: origin },
+          { name: THEME_COOKIE, value: theme, url: origin },
+        ]);
+        await page.setExtraHTTPHeaders({
+          'CF-Connecting-IP': `203.0.113.${Math.floor(40 + Math.random() * 200)}`,
+        });
+        await page.goto(`/register/${issued.token}`);
+        await page
+          .getByLabel(m['clientSignup.name'], { exact: true })
+          .fill('Duplicate Example Person');
+        await page
+          .getByLabel(m['clientSignup.dateOfBirth'], { exact: true })
+          .fill('1990-04-12');
+        await page
+          .getByLabel(m['clientSignup.username'], { exact: true })
+          .fill(`member-${issued.token.slice(0, 8)}`);
+        await page
+          .getByLabel(m['clientSignup.email'], { exact: true })
+          .fill(fixture.po.email);
+        await page
+          .getByRole('textbox', { name: m['clientSignup.phone'] })
+          .fill('01012345678');
+        await page
+          .getByLabel(m['clientSignup.password'], { exact: true })
+          .fill('Complex!2345');
+        const identityFields = await page
+          .locator('form')
+          .evaluate((element) => {
+            const data = new FormData(element as HTMLFormElement);
+            return {
+              name: data.get('name'),
+              dateOfBirth: data.get('dateOfBirth'),
+              username: data.get('username'),
+              telegramUsername: data.get('telegramUsername'),
+            };
+          });
+        expect(validateSignupIdentity(identityFields).invalidFields).toEqual(
+          [],
+        );
+        const responsePromise = page.waitForResponse(
+          (response) => response.request().method() === 'POST',
+        );
+        await page
+          .getByRole('button', { name: m['clientSignup.submit'] })
+          .click();
+        expect((await responsePromise).status()).toBe(200);
+        const status = page.getByRole('status');
+        await expect(status).toHaveText(m['clientSignup.duplicate']);
+        await expect(status).toBeVisible();
+        await expect(status).toBeFocused();
+        for (const field of ['email', 'phone', 'username'] as const) {
+          const control = page.getByLabel(m[`clientSignup.${field}`], {
+            exact: true,
+          });
+          if (await control.count()) {
+            await expect(control).not.toHaveAttribute('aria-invalid', 'true');
+          }
+        }
+        const results = await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+          .analyze();
+        expect(results.violations).toEqual([]);
+        const screenshotPath = join(
+          tmpdir(),
+          `lifter-s16-q2-${locale}-${theme}-${viewport.name}-${testInfo.workerIndex}.png`,
+        );
+        await page.screenshot({ path: screenshotPath, fullPage: true });
+        testInfo.attachments.push({
+          name: 'duplicate-error-screenshot',
+          path: screenshotPath,
+          contentType: 'image/png',
+        });
       });
     }
   }
