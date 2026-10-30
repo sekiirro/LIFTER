@@ -1,7 +1,12 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, expect, it } from 'vitest';
 import type { JSONValue, TransactionSql } from 'postgres';
-import { bought, activate, sql } from './registration-approval-payment-fixture';
+import {
+  bought,
+  activate,
+  sql,
+  sqlPay,
+} from './registration-approval-payment-fixture';
 import {
   clientContext,
   probe,
@@ -119,6 +124,81 @@ it('T010 reuses F12 installment snapshots and anchors renewal dues to its record
       .effective_end_exclusive!;
     expect(predecessorEnd <= (receipt.service_start_date as string)).toBe(true);
     expect(predecessorEnd).toBe(receipt.service_start_date);
+  });
+});
+
+it('Q2 Trainer may collect a renewal installment in its authorized workspace', async () => {
+  const { f, purchase, offerId } = await fixture();
+  await probe(async (tx) => {
+    await activate(tx, f, purchase);
+    const renewed = await renewal(tx, f.po.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      renewal_confirmed: true,
+      installments: [
+        { amount_minor: '600', due_offset_days: 0 },
+        { amount_minor: '600', due_offset_days: 30 },
+      ],
+    });
+    expect(renewed.status).toBe('ok');
+    const receipt = renewed.receipt as Record<string, unknown>;
+    const renewalId = receipt.subscription_id as string;
+    await activate(tx, f, { ...purchase, sid: renewalId });
+    const obligations = await tx`
+      select id,seq from public.subscription_installments
+      where subscription_id=${renewalId} order by seq
+    `;
+    expect(obligations).toHaveLength(2);
+    const collect = (seq: 1 | 2, previous: string | null) =>
+      sqlPay(tx, f.trainerA.userId, 'collect', {
+        workspace_id: f.wsA.id,
+        client_id: purchase.t.id,
+        request_key: randomUUID(),
+        subscription_id: renewalId,
+        obligation_id: obligations[seq - 1]!.id as string,
+        expected_installment_seq: seq,
+        expected_revision: 0,
+        expected_previous_event_id: previous,
+        expected_amount_minor: '600',
+        currency: 'XTS',
+        collected_on: '1900-01-01',
+        payment_confirmed: true,
+      });
+    const first = await collect(1, null);
+    expect(first.status).toBe('ok');
+    const result = await collect(2, null);
+    expect(result.status).toBe('ok');
+    expect(result.receipt).toMatchObject({
+      operation: 'collect',
+      outcome: 'collected',
+      installment_seq: 2,
+      amount_minor: '600',
+    });
+  });
+});
+
+it('Q2 Trainer cannot configure a multi-installment renewal schedule', async () => {
+  const { f, purchase, offerId } = await fixture();
+  await probe(async (tx) => {
+    await activate(tx, f, purchase);
+    const denied = await renewal(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      renewal_confirmed: true,
+      installments: [
+        { amount_minor: '600', due_offset_days: 0 },
+        { amount_minor: '600', due_offset_days: 30 },
+      ],
+    });
+    expect(denied.status).toBe('not_permitted');
   });
 });
 

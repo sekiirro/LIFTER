@@ -94,7 +94,7 @@ async function renewalTx(
   }
 }
 
-it('serializes distinct partial refunds and never exceeds the collected residual', async () => {
+it('R1 serializes distinct partial refunds and rejects the stale second refund before exceeding residual', async () => {
   const { f, ids } = await seed();
   const results = await Promise.all([
     refund(f, ids, '700'),
@@ -119,7 +119,7 @@ it('serializes distinct partial refunds and never exceeds the collected residual
   });
 });
 
-it('returns one byte-identical receipt for concurrent exact idempotency replays', async () => {
+it('R4 exact replay is byte-identical, changed intent conflicts, and revoked actor cannot replay the receipt', async () => {
   const { f, ids } = await seed();
   const requestKey = randomUUID();
   const results = await Promise.all([
@@ -129,12 +129,40 @@ it('returns one byte-identical receipt for concurrent exact idempotency replays'
 
   expect(results[0]).toEqual(results[1]);
   expect(results[0]!.status).toBe('ok');
-  const [counts] = await db`
-    select
-      (select count(*)::int from public.refund_operations where subscription_id=${ids.subscription}) as refunds,
-      (select count(*)::int from public.refund_allocation_events where subscription_id=${ids.subscription}) as allocations,
-      (select count(*)::int from app_private.refund_auth_lockouts where client_id=${ids.client}) as lockouts`;
-  expect(counts).toEqual({ refunds: 1, allocations: 1, lockouts: 1 });
+  const changedIntent = await refund(f, ids, '501', requestKey);
+  expect(changedIntent.status).toBe('key_conflict');
+
+  // Refunds are PO-only, so first demote the original PO to a scoped owner and
+  // then revoke that workspace membership before asking for the old receipt.
+  await db.begin(async (tx) => {
+    await tx`update public.staff_profiles set role='workspace_owner'
+      where user_id=${f.po.userId}`;
+    await tx`insert into public.workspace_memberships
+      (workspace_id,user_id,granted_by)
+      values(${f.wsA.id},${f.po.userId},${f.po.userId})`;
+    await tx`update public.workspace_memberships
+      set revoked_at=now(),revoked_by=${f.po.userId}
+      where workspace_id=${f.wsA.id} and user_id=${f.po.userId}`;
+  });
+  try {
+    const revokedReplay = await refund(f, ids, '500', requestKey);
+    expect(revokedReplay.status).toBe('not_permitted');
+    const [membership] = await db`
+      select revoked_at is not null as revoked from public.workspace_memberships
+      where workspace_id=${f.wsA.id} and user_id=${f.po.userId}`;
+    expect(membership).toEqual({ revoked: true });
+    const [counts] = await db`
+      select
+        (select count(*)::int from public.refund_operations where subscription_id=${ids.subscription}) as refunds,
+        (select count(*)::int from public.refund_allocation_events where subscription_id=${ids.subscription}) as allocations,
+        (select count(*)::int from app_private.refund_auth_lockouts where client_id=${ids.client}) as lockouts`;
+    expect(counts).toEqual({ refunds: 1, allocations: 1, lockouts: 1 });
+  } finally {
+    await db.begin(async (tx) => {
+      await tx`update public.staff_profiles set role='platform_owner'
+        where user_id=${f.po.userId}`;
+    });
+  }
 });
 
 it('allows a second capped partial refund after deactivation without re-enqueueing lockout', async () => {

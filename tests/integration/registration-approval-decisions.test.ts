@@ -138,3 +138,15 @@ it('T014 PO targets must exist; foreign/nonexistent workspace and target denial 
     receipts: 0,
   });
 });
+
+it('Q2 F12 approval-screen collection denies an approver outside the target workspace', async () => {
+  const foreign = await clientContext();
+  const target = await registered(foreign, [
+    { seq: 1, amount_minor: '1200', due_offset_days: 0 },
+  ]);
+  const before = await state(db, target);
+  expect(
+    await call(f.actors.woA.client, 'approve', request(foreign, target)),
+  ).toEqual({ status: 'not_permitted' });
+  expect(await state(db, target)).toEqual(before);
+});

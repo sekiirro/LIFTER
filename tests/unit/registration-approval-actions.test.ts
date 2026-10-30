@@ -25,6 +25,7 @@ import {
 } from '../../app/(app)/registration-approvals/actions';
 
 const ws = '00000000-0000-0000-0000-000000000001';
+const foreignWs = '00000000-0000-0000-0000-000000000099';
 const clientId = '00000000-0000-0000-0000-000000000002';
 const requestKey = '00000000-0000-0000-0000-000000000003';
 const approval = {
@@ -186,6 +187,29 @@ describe('registration approval server action boundary', () => {
       }
     },
   );
+
+  it('denies Trainer approval-screen collection outside the active workspace before RPC', async () => {
+    setActor('trainer', [ws]);
+    const rpc = setBackend();
+
+    const result = await recordInstallmentAction({
+      workspaceId: foreignWs,
+      clientId,
+      subscriptionId: receipt.subscription_id,
+      obligationId: receipt.obligation_id,
+      requestKey,
+      expectedInstallmentSeq: 2,
+      expectedRevision: 1,
+      expectedPreviousEventId: receipt.event_id,
+      expectedAmountMinor: '50',
+      currency: 'USD',
+      collectedOn: '2026-10-29',
+      paymentConfirmed: true,
+    });
+
+    expect(rpc).not.toHaveBeenCalled();
+    expect(result).toEqual({ status: 'not_permitted' });
+  });
 
   it.each([
     ['reconsider', 'workspace_owner', true],
