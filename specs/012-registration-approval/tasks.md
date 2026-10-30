@@ -2,7 +2,7 @@
 
 **Input**: [plan](plan.md), [spec](spec.md), [research](research.md), [model](data-model.md), [surface contract](contracts/registration-approval-surface.md), [handoffs](contracts/feature-handoffs.md), [verification](quickstart.md).
 
-**Status**: Execution in progress, 2026-10-29. Session 12 completed T001 and T006-T012 with observed evidence in `tests/integration/registration-approval-verification.md`; previously completed U1 money and DB-free flexible terms tasks remain checked. U3 T013-T017 are also complete with observed operation, replay, concurrency, audit and full regression evidence. All other tasks remain pending. Session-12 architect/user instructions explicitly substitute Stack A for the historical B requirements below. PA-F12-1..9 are Decided; independent review and later feature acceptance remain outstanding.
+**Status**: Execution in progress, 2026-10-29. Session 12 completed T001 and T006-T012 with observed evidence in `tests/integration/registration-approval-verification.md`; previously completed U1 money and DB-free flexible terms tasks remain checked. U3 T013-T017, U4 T018-T022 and U5 T023-T027 are also complete with observed operation, replay, concurrency, audit, safe-reader and full regression evidence in `tests/integration/registration-approval-verification.md`. All other tasks remain pending. Session-12 architect/user instructions explicitly substitute Stack A for the historical B requirements below. PA-F12-1..9 are Decided; independent review and later feature acceptance remain outstanding.
 
 ## Task format, ownership and execution rules
 

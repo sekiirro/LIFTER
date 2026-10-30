@@ -631,7 +631,7 @@ All four temporary Stack A mutants made their named detector RED; each was resto
 - Full Stack A `npm run test:integration` after clean reset/provision: **38 files / 1,111 passed / 1 skipped / 0 failed** (Vitest reports 37 passed files and 1 skipped file). `matrix-parity.test.ts` passed in both directions.
 - `npm run typecheck`, `npm run lint`, Prettier checks on supported touched TS/Markdown files, and `git diff --check`: passed. Prettier has no SQL parser for the new migration; its syntax was verified by clean migration application and integration tests.
 - T023–T027 are checked in `tasks.md`. P2 remains responsible for the later consumer/assignment behavior. P4 remains responsible for the real atomic activation writer; due projections alone do not activate subscriptions.
-- Separate ordering note: T051 proposes `20261101115000_flexible_registration_link_terms.sql`, which sorts before the already-pushed `20261101120000` migration. Applying it after a database has recorded `120000` would violate chronological forward-only migration ordering; it needs a later migration version before it can be applied to already-migrated databases. No T051 file was created or changed here.
+- Migration-ordering note: T051 plans `20261101124000_flexible_registration_link_terms.sql`, which sorts after the already-pushed `20261101120000` migration and preserves chronological forward-only migration ordering. No T051 file was created or changed here.
 - Runtime model routing: this session ran on GPT-6; Luna High/effort selection metadata was not available to this runtime.
 
 ### Final gates

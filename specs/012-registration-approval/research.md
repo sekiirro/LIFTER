@@ -93,7 +93,7 @@ AI-F12-1..7 in plan.md are the complete remaining technical/dependency register 
 Conflicts for PO: none requiring new policy. Final decisions expressly settle custom-offset/default, correction-month and F12 status/P2 intake boundaries. Existing older Sales-approval wording is superseded by ND-F12-1/D-23. Historical debate text stays historical; former PA alternatives are not approved or executable defaults. F11 PR #14 is not merged in this session.
 
 
-## Session 12 ? final F11 reconciliation (T001)
+## Session 12 — final F11 reconciliation (T001)
 
 PR #14 reviewed head `12036e26fb5e23da22af4ddf0e8d33de800779a2` merged as
 `1f4d2359bbfcef605e371e29b81a59b2a48d8ed4`; fetched main is
