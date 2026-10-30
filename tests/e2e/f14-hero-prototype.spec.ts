@@ -701,9 +701,9 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
         material,
         fixture: 'dark',
         effect: material === 'B' ? 'webgl' : 'blur',
-        label: `${material} | ${variant.locale.toUpperCase()} ${variant.theme}`,
+        label: `${material} | ${variant.locale.toUpperCase()} ${variant.theme} ${variant.width}px`,
         group: 'comparison',
-        screenshotName: `compare-${material}-${variant.locale}-${variant.theme}.png`,
+        screenshotName: `compare-${material}-${variant.locale}-${variant.theme}-${variant.width}.png`,
         fullPage: true,
       });
     }
