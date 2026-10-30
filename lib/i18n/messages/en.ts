@@ -239,4 +239,81 @@ export const en: Record<keyof typeof ar, string> = {
   'clientSignup.invalidInput': 'Check the highlighted fields and try again.',
   'clientSignup.signOutRequired':
     'Please sign out before submitting this registration request.',
+  'registrationApproval.title': 'Registration approvals',
+  'registrationApproval.intro':
+    'Review submitted requests and issued terms before deciding.',
+  'registrationApproval.workspace': 'Workspace',
+  'registrationApproval.empty': 'No registrations are waiting for review.',
+  'registrationApproval.noWorkspace': 'No workspaces are available.',
+  'registrationApproval.loading': 'Loading registrations…',
+  'registrationApproval.unavailable':
+    'Unable to load the data. Please try again.',
+  'registrationApproval.notPermitted': 'This action is not permitted.',
+  'registrationApproval.stale':
+    'The registration changed. Refresh before reviewing.',
+  'registrationApproval.retry': 'Retry',
+  'registrationApproval.review': 'Review registration',
+  'registrationApproval.name': 'Client name',
+  'registrationApproval.signupTime': 'Signup time',
+  'registrationApproval.offer': 'Issued offer',
+  'registrationApproval.amount': 'Amount due',
+  'registrationApproval.paymentDate': 'Payment recording date',
+  'registrationApproval.paymentDateHint':
+    'Choose a valid date for recording the external payment.',
+  'registrationApproval.confirmPayment':
+    'I confirm this amount was received outside LIFTER.',
+  'registrationApproval.approve': 'Approve registration',
+  'registrationApproval.reject': 'Reject registration',
+  'registrationApproval.reconsider': 'Reconsider registration',
+  'registrationApproval.correct': 'Correct payment record',
+  'registrationApproval.pending': 'Pending review',
+  'registrationApproval.approved': 'Approved',
+  'registrationApproval.rejected': 'Rejected',
+  'registrationApproval.registration_rejected': 'General rejection decision',
+  'registrationApproval.paymentTitle': 'Record payments',
+  'registrationApproval.paymentIntro':
+    'Record confirmation of external subscription payments.',
+  'registrationApproval.paymentEmpty':
+    'No payments are waiting to be recorded.',
+  'registrationApproval.notAvailable': 'Not available',
+  'registrationApproval.history': 'Payment history',
+  'registrationApproval.installment': 'Installment',
+  'registrationApproval.dueOn': 'Due date',
+  'registrationApproval.unpaid': 'Unpaid',
+  'registrationApproval.paid': 'Recorded',
+  'registrationApproval.commission': 'Commission',
+  'registrationApproval.confirmTitle': 'Confirm payment recording',
+  'registrationApproval.confirmDescription':
+    'Check the amount and date before confirming the record.',
+  'registrationApproval.submit': 'Confirm payment',
+  'registrationApproval.cancel': 'Cancel',
+  'registrationApproval.pendingAction': 'Recording…',
+  'registrationApproval.uncertain':
+    'We could not confirm the result. Retry with the same request.',
+  'registrationApproval.keyConflict':
+    'A previous request cannot be reused with different details.',
+  'registrationApproval.success': 'Payment recorded.',
+  'registrationApproval.rejectSuccess': 'Registration rejected.',
+  'registrationApproval.nextPage': 'Next page',
+  'registrationApproval.dashboardApprovals': 'Approvals',
+  'registrationApproval.dashboardPayments': 'Payments',
+  'registrationApproval.clientStatus': 'Registration status',
+  'registrationApproval.statusLoading': 'Loading registration status…',
+  'registrationApproval.statusPending': 'Pending review',
+  'registrationApproval.statusPendingDetail':
+    'Your registration is waiting for review.',
+  'registrationApproval.statusApproved': 'Approved',
+  'registrationApproval.statusApprovedDetail':
+    'Your registration is approved. This does not mean your subscription is active or plans are available.',
+  'registrationApproval.statusRejected': 'Not approved',
+  'registrationApproval.statusRejectedDetail':
+    'This registration was not approved.',
+  'registrationApproval.statusRefresh': 'Refresh status',
+  'registrationApproval.statusRefreshing': 'Refreshing status…',
+  'registrationApproval.statusContinue': 'Continue',
+  'registrationApproval.statusBudgetReached':
+    'Automatic checks have stopped. Refresh to check again.',
+  'registrationApproval.statusDenied': 'This status page is not available.',
+  'registrationApproval.statusRedirectFallback':
+    'Automatic navigation did not complete. Continue to the home page.',
 };
