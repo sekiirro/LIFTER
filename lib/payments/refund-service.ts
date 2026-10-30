@@ -20,6 +20,7 @@ export type RefundInput = {
   requestKey: unknown;
   amountMinor: unknown;
   externalConfirmation: unknown;
+  expectedRevision?: unknown;
 };
 
 export type RefundReceipt = {
@@ -33,10 +34,18 @@ export type RefundReceipt = {
 
 export type RefundResult =
   | { status: 'ok'; receipt: RefundReceipt }
-  | { status: 'not_permitted' | 'invalid_input' | 'conflict' | 'unavailable' };
+  | {
+      status:
+        | 'not_permitted'
+        | 'invalid_input'
+        | 'conflict'
+        | 'stale_state'
+        | 'unavailable';
+    };
 
 const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 const MINOR_UNITS = /^[1-9][0-9]{0,17}$/;
+const MAX_EXPECTED_REVISION = 999_999_999;
 const RECEIPT_KEYS = [
   'operation_id',
   'workspace_id',
@@ -62,7 +71,12 @@ function validInput(input: RefundInput): boolean {
     UUID.test(input.requestKey) &&
     typeof input.amountMinor === 'string' &&
     MINOR_UNITS.test(input.amountMinor) &&
-    input.externalConfirmation === true
+    input.externalConfirmation === true &&
+    (input.expectedRevision === undefined ||
+      (typeof input.expectedRevision === 'number' &&
+        Number.isInteger(input.expectedRevision) &&
+        input.expectedRevision >= 0 &&
+        input.expectedRevision <= MAX_EXPECTED_REVISION))
   );
 }
 
@@ -119,6 +133,9 @@ export async function recordRefund(
         request_key: input.requestKey,
         amount_minor: input.amountMinor,
         external_confirmation: true,
+        ...(input.expectedRevision === undefined
+          ? {}
+          : { expected_revision: input.expectedRevision }),
       },
     });
     if (result.error) return { status: 'unavailable' };
@@ -128,6 +145,7 @@ export async function recordRefund(
     if (response.status === 'not_permitted') return { status: 'not_permitted' };
     if (response.status === 'invalid_input') return { status: 'invalid_input' };
     if (response.status === 'key_conflict') return { status: 'conflict' };
+    if (response.status === 'stale_state') return { status: 'stale_state' };
     if (response.status !== 'ok') return { status: 'unavailable' };
     const receipt = safeReceipt(response.receipt);
     if (

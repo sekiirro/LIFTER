@@ -57,6 +57,42 @@ describe('refund service', () => {
     });
   });
 
+  it('forwards an optional expected revision to the refund RPC', async () => {
+    const client = rpc({ status: 'ok', receipt });
+    await expect(
+      recordRefund({ ...input, expectedRevision: 7 }, { actor: po, client }),
+    ).resolves.toMatchObject({ status: 'ok' });
+    expect(client.rpc).toHaveBeenCalledWith('record_refund', {
+      request: {
+        workspace_id: workspaceId,
+        client_id: clientId,
+        purchase_id: purchaseId,
+        request_key: requestKey,
+        amount_minor: '1250',
+        external_confirmation: true,
+        expected_revision: 7,
+      },
+    });
+  });
+
+  it.each([
+    { expectedRevision: null, caseName: 'rejects null' },
+    { expectedRevision: -1, caseName: 'rejects negative revisions' },
+    { expectedRevision: 1.5, caseName: 'rejects fractional revisions' },
+    {
+      expectedRevision: 1_000_000_000,
+      caseName: 'rejects revisions above SQL range',
+    },
+    { expectedRevision: '1', caseName: 'rejects string revisions' },
+    { expectedRevision: Number.NaN, caseName: 'rejects non-finite revisions' },
+  ])('$caseName for expected revision', async ({ expectedRevision }) => {
+    const client = rpc({ status: 'ok', receipt });
+    await expect(
+      recordRefund({ ...input, expectedRevision }, { actor: po, client }),
+    ).resolves.toMatchObject({ status: 'invalid_input' });
+    expect(client.rpc).not.toHaveBeenCalled();
+  });
+
   it.each([
     { role: 'workspace_owner', name: 'workspace owner' },
     { role: 'trainer', name: 'trainer' },
@@ -122,6 +158,13 @@ describe('refund service', () => {
     const client = rpc({ status: 'key_conflict' });
     await expect(recordRefund(input, { actor: po, client })).resolves.toEqual({
       status: 'conflict',
+    });
+  });
+
+  it('preserves stale preview status for the caller', async () => {
+    const client = rpc({ status: 'stale_state' });
+    await expect(recordRefund(input, { actor: po, client })).resolves.toEqual({
+      status: 'stale_state',
     });
   });
 

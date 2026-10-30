@@ -1,5 +1,6 @@
 import 'server-only';
 import { createAdminClient } from '../supabase/admin';
+import { createServerAuthLockoutStore } from './refund-auth-lockout-store';
 
 const BAN_DURATION = '876000h';
 const MAX_BACKOFF_MS = 24 * 60 * 60 * 1000;
@@ -131,4 +132,33 @@ export function runServerAuthLockout(
       ...deps,
     });
   return runAuthLockout(job, { authAdmin: admin.auth.admin, ...deps });
+}
+
+/**
+ * Server-only drain seam for a scheduled caller. A caller must provide the
+ * safe operational alert transport; this module does not invent recipients or
+ * credentials for one.
+ */
+export async function drainServerAuthLockouts(deps: {
+  limit: number;
+  now: () => Date;
+  alertAfterAttempts: number;
+  alert: Alert;
+}): Promise<{ claimed: number; results: AuthLockoutResult[] }> {
+  const store = createServerAuthLockoutStore();
+  if (!store) return { claimed: 0, results: [] };
+
+  const jobs = await store.claimDue(deps.limit);
+  const results: AuthLockoutResult[] = [];
+  for (const job of jobs) {
+    results.push(
+      await runServerAuthLockout(job, {
+        store,
+        now: deps.now,
+        alertAfterAttempts: deps.alertAfterAttempts,
+        alert: deps.alert,
+      }),
+    );
+  }
+  return { claimed: jobs.length, results };
 }
