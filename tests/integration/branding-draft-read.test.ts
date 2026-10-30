@@ -81,3 +81,50 @@ it('denies a workspace after the caller membership is revoked', async () => {
   });
   expect(result.error).not.toBeNull();
 });
+
+it('reads an empty draft as revision zero without creating a draft row', async () => {
+  const before = await db<{ count: number }[]>`
+    select count(*)::int as count from app_private.branding_drafts
+    where workspace_id=${fixture.wsA.id}
+  `;
+  expect(before[0]?.count).toBe(0);
+
+  const result = await fixture.woA.client.rpc('branding_draft_read', {
+    workspace_id: fixture.wsA.id,
+  });
+
+  expect(result.error).toBeNull();
+  expect(result.data).toEqual({
+    workspace_id: fixture.wsA.id,
+    revision: 0,
+    fields: { name: null, bannerAlt: null, color: null },
+    current_publication: null,
+  });
+  const after = await db<{ count: number }[]>`
+    select count(*)::int as count from app_private.branding_drafts
+    where workspace_id=${fixture.wsA.id}
+  `;
+  expect(after[0]?.count).toBe(0);
+});
+
+it('allows the first save after an empty read using the returned revision', async () => {
+  const read = await fixture.woA.client.rpc('branding_draft_read', {
+    workspace_id: fixture.wsA.id,
+  });
+  expect(read.error).toBeNull();
+
+  const saved = await fixture.woA.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: read.data?.revision,
+    fields: {
+      name: { ar: '', en: 'First save' },
+      bannerAlt: { ar: '', en: '' },
+      color: '#2563EB',
+      logo: null,
+      banner: null,
+    },
+  });
+
+  expect(saved.error).toBeNull();
+  expect(saved.data).toBe(1);
+});
