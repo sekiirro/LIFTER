@@ -1,0 +1,177 @@
+import { randomUUID } from 'node:crypto';
+import { afterAll, expect, it } from 'vitest';
+import { calculateCairoD03Deadline } from '../../lib/forms/cairo-deadline';
+import { sql } from './harness';
+import {
+  clientContext,
+  registered,
+  request,
+  sqlCall,
+} from './registration-approval-operations-fixture';
+
+const db = sql();
+afterAll(() => db.end());
+const rollback = new Error('rollback T013 synthetic submission fixture');
+const completionMutationRollback = new Error(
+  'rollback T013 completeness mutation',
+);
+
+it('T013 commits one complete original, revision, audit, and frozen D-03 SLA', async () => {
+  const context = await clientContext();
+  const client = await registered(context);
+  const formId = randomUUID();
+  const assignmentId = randomUUID();
+  const policy = `t013-${randomUUID()}`;
+  const intentKey = randomUUID();
+  const answers = {
+    basic: 'basic',
+    training: 'training',
+    nutrition: 'nutrition',
+  };
+  const definition = {
+    questions: [
+      { id: 'basic', sectionId: 'basic', type: 'shortText', required: true },
+      {
+        id: 'training',
+        sectionId: 'training',
+        type: 'shortText',
+        required: true,
+      },
+      {
+        id: 'nutrition',
+        sectionId: 'nutrition',
+        type: 'shortText',
+        required: true,
+      },
+    ],
+  };
+
+  await expect(
+    db.begin(async (tx) => {
+      expect(
+        (
+          await sqlCall(
+            tx,
+            context.po.userId,
+            'approve',
+            request(context, client),
+          )
+        ).status,
+      ).toBe('ok');
+      await tx`
+        insert into app_private.terms_policy_versions(version,policy_kind,status)
+        values(${policy},'terms','published')
+      `;
+      await tx`insert into public.forms(id,workspace_id,name)
+        values(${formId},${context.wsA.id},'T013 synthetic submission')`;
+      await tx`
+        insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
+        values(${context.wsA.id},${formId},1,${policy},${tx.json(definition)},'published')
+      `;
+      await tx`
+        insert into public.form_assignments(id,workspace_id,client_id,form_id,version_number,terms_policy_version,version_snapshot)
+        values(${assignmentId},${context.wsA.id},${client.id},${formId},1,${policy},${tx.json(definition)})
+      `;
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: client.userId, role: 'authenticated' })},true)`;
+      await tx`set local role authenticated`;
+      const save = (revision: number, values: Record<string, string>) =>
+        tx`select public.save_form_draft(${context.wsA.id},${assignmentId},${revision},${randomUUID()},${tx.json(values)}) as result`;
+      expect((await save(0, {}))[0]?.result).toMatchObject({
+        status: 'saved',
+        revision: 1,
+      });
+      const [incomplete] = await tx`
+        select public.submit_form_assignment(${context.wsA.id},${assignmentId},1,${randomUUID()}) as result
+      `;
+      expect(incomplete?.result).toEqual({ status: 'incomplete' });
+      await tx`reset role`;
+      let completionMutationKilled = false;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp.unsafe(`create or replace function app_private.f15_submission_complete(p_snapshot jsonb,p_answers jsonb)
+            returns boolean language sql immutable set search_path = '' as $$ select true $$`);
+          await sp`set local role authenticated`;
+          const [mutated] = await sp`
+            select public.submit_form_assignment(${context.wsA.id},${assignmentId},1,${randomUUID()}) as result
+          `;
+          try {
+            expect(mutated?.result).toEqual({ status: 'incomplete' });
+          } catch {
+            completionMutationKilled = true;
+          }
+          throw completionMutationRollback;
+        }),
+      ).rejects.toBe(completionMutationRollback);
+      expect(completionMutationKilled).toBe(true);
+      await tx`set local role authenticated`;
+      expect((await save(1, answers))[0]?.result).toMatchObject({
+        status: 'saved',
+        revision: 2,
+      });
+
+      await tx`reset role`;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp.unsafe(`create function app_private.t013_fail_submission_audit() returns trigger
+            language plpgsql set search_path = '' as $$ begin
+              if new.action='form.submitted' then raise exception 'synthetic audit failure'; end if;
+              return new;
+            end $$`);
+          await sp.unsafe(`create trigger t013_fail_submission_audit
+            before insert on public.audit_events for each row
+            execute function app_private.t013_fail_submission_audit()`);
+          await sp`set local role authenticated`;
+          await sp`
+            select public.submit_form_assignment(${context.wsA.id},${assignmentId},2,${randomUUID()})
+          `;
+        }),
+      ).rejects.toThrow('synthetic audit failure');
+      expect(
+        await tx`select
+          (select count(*)::int from app_private.form_submissions where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as submissions,
+          (select count(*)::int from public.form_answer_revisions where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as revisions,
+          (select count(*)::int from app_private.form_submission_slas where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as slas`,
+      ).toEqual([{ submissions: 0, revisions: 0, slas: 0 }]);
+      await tx`set local role authenticated`;
+
+      const [submitted] = await tx`
+        select public.submit_form_assignment(${context.wsA.id},${assignmentId},2,${intentKey}) as result
+      `;
+      expect(submitted?.result).toMatchObject({
+        status: 'submitted',
+        revision: 3,
+      });
+      const result = submitted?.result as {
+        submitted_at: string;
+        start_date: string;
+        day_five_date: string;
+        deadline_at: string;
+      };
+      const expectedSla = calculateCairoD03Deadline(result.submitted_at);
+      expect(result).toMatchObject({
+        start_date: expectedSla.startDate,
+        day_five_date: expectedSla.dayFiveDate,
+      });
+      expect(new Date(result.deadline_at).toISOString()).toBe(
+        expectedSla.deadlineAt,
+      );
+      expect(
+        await tx`select public.submit_form_assignment(${context.wsA.id},${assignmentId},2,${intentKey}) as result`,
+      ).toEqual([{ result: submitted?.result }]);
+      expect(
+        await tx`select public.submit_form_assignment(${context.wsA.id},${assignmentId},2,${randomUUID()}) as result`,
+      ).toEqual([{ result: { status: 'already_submitted' } }]);
+
+      await tx`reset role`;
+      expect(
+        await tx`select
+          (select count(*)::int from app_private.form_submissions where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as submissions,
+          (select count(*)::int from public.form_answer_revisions where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as revisions,
+          (select count(*)::int from app_private.form_submission_slas where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as slas,
+          (select count(*)::int from public.audit_events where action='form.submitted' and target_id=${assignmentId}) as audits`,
+      ).toEqual([{ submissions: 1, revisions: 1, slas: 1, audits: 1 }]);
+      expect(completionMutationKilled).toBe(true);
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
