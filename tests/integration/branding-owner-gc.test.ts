@@ -423,3 +423,36 @@ it('T050 claims only unreferenced assets, blocks new references, and requires a 
   );
   await db`delete from app_private.branding_gc_claims where id=${attachClaimId}`;
 });
+
+it('T050 collects a stale attached upload after its asset references disappear', async () => {
+  const [draft] = await db<{ revision: number }[]>`
+    select revision from app_private.branding_drafts where workspace_id=${fixture.wsB.id}
+  `;
+  const started = await fixture.actors.woB.client.rpc('branding_upload_begin', {
+    workspace_id: fixture.wsB.id,
+    role: 'logo',
+    expected_revision: draft?.revision ?? 0,
+  });
+  expect(started.error).toBeNull();
+  const uploadId = started.data as string;
+  const validatedObject = `${fixture.wsB.id}/validated/logo/${'a'.repeat(64)}.png`;
+  await db`update app_private.branding_uploads
+    set status='attached', validated_bucket='branding-validated',
+      validated_object=${validatedObject}, validated_sha256=${'a'.repeat(64)},
+      validated_size=32, validator_credential_hash=${'b'.repeat(64)},
+      updated_at=statement_timestamp()-interval '31 minutes'
+    where id=${uploadId}`;
+
+  const claims = await db`select * from app_private.branding_gc_claim(50)`;
+  const claim = claims.find(
+    (row) => row.object_name === `${fixture.wsB.id}/staging/${uploadId}`,
+  );
+  expect(claim).toBeDefined();
+  const finalized =
+    await db`select app_private.branding_gc_finalize(${claim!.id}::uuid) as cleaned`;
+  expect(finalized[0]?.cleaned).toBe(true);
+  const [upload] = await db<{ status: string }[]>`
+    select status from app_private.branding_uploads where id=${uploadId}
+  `;
+  expect(upload?.status).toBe('cleaned');
+});
