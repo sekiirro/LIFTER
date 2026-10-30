@@ -68,3 +68,15 @@ Account details are required to manage identity and access. Email addresses and 
 ## Separate health-data notice - draft copy
 
 The notice appears immediately before the health questions. It has no acknowledgment checkbox, button or consent record. Copy is DRAFT pending PO approval and is sourced from the approved health/privacy policies; the proposed AR/EN text is tracked in `../fixtures/s14-po-decisions.json`.
+
+## Awaiting PO approval
+
+All items below remain **DRAFT — pending PO approval**. The paths identify the exact source files for PO review; this inventory is not an approval record.
+
+- **T&C Arabic** — this report: `specs/015-forms-intake/reports/S14-terms-draft.md` (Draft Egyptian Arabic).
+- **T&C English** — this report: `specs/015-forms-intake/reports/S14-terms-draft.md` (Draft English).
+- **Health notice Arabic** — `specs/015-forms-intake/fixtures/s14-po-decisions.json` (`P2_health_notice.ar`).
+- **Health notice English** — `specs/015-forms-intake/fixtures/s14-po-decisions.json` (`P2_health_notice.en`). It appears immediately before health questions, with no acknowledgment checkbox or consent record.
+- **Sex question and labels Arabic** — `specs/015-forms-intake/fixtures/s14-po-decisions.json` (`P1_sex.ar`).
+- **Sex question and labels English** — `specs/015-forms-intake/fixtures/s14-po-decisions.json` (`P1_sex.en`).
+- **EN intake translations** — `specs/015-forms-intake/spec.md` (EN translation and EN option translations tables). These authored translations are pending PO review before publication.
