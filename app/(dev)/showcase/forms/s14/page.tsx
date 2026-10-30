@@ -3,6 +3,7 @@ import { join } from 'node:path';
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { S14ConsentDemo } from '../../../../../components/forms/S14ConsentDemo';
+import { BrandScope } from '../../../../../components/ui/BrandScope';
 import {
   LOCALE_COOKIE,
   parseLocale,
@@ -22,19 +23,30 @@ function policySections(report: string, locale: 'ar' | 'en') {
   ].map(([, title, text]) => ({ title: title!.trim(), body: text!.trim() }));
 }
 
-export default async function S14ConsentShowcasePage() {
+export default async function S14ConsentShowcasePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ brand?: string; welcome?: string }>;
+}) {
   if (!isShowcaseEnabled(process.env)) notFound();
+  const query = await searchParams;
   const preferences = await cookies();
   const locale = parseLocale(preferences.get(LOCALE_COOKIE)?.value);
   const report = await readFile(
     join(process.cwd(), 'specs/015-forms-intake/reports/S14-terms-draft.md'),
     'utf8',
   );
-  return (
+  const demo = (
     <S14ConsentDemo
       locale={locale}
       sections={policySections(report, locale)}
       notice={decisions.P2_health_notice}
+      view={query.welcome === '1' ? 'welcome' : 'terms'}
     />
+  );
+  return query.brand === 'sample' ? (
+    <BrandScope color="#7C3AED">{demo}</BrandScope>
+  ) : (
+    demo
   );
 }

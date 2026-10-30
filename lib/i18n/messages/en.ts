@@ -284,6 +284,18 @@ export const en: Record<keyof typeof ar, string> = {
   'forms.healthDataNoticeBody':
     'We will ask for health and fitness information to prepare and manage your plan. Access follows approved permissions, and sensitive access is recorded for review.',
   'forms.copyDraft': 'Draft',
+  'forms.requiredTerms': 'I accept the terms and conditions',
+  'forms.optionalMarketing': 'I agree to receive marketing updates',
+  'forms.acceptTerms': 'Continue',
+  'forms.draftAcceptanceUnavailable':
+    'This draft policy cannot be accepted in production.',
+  'forms.draftAcceptanceMock': 'Draft acceptance reached the mock adapter.',
+  'forms.healthQuestionExample': 'Health question example',
+  'forms.welcomeTitle': 'Welcome to LIFTER',
+  'forms.welcomeBody':
+    'Your intake is complete. You can continue to your plan.',
+  'forms.welcomeDraftStatus': 'DRAFT — Welcome copy pending PO approval',
+  'forms.intakeIncomplete': 'Intake is incomplete until you accept the terms.',
   'forms.staffTitle': 'Staff forms',
   'forms.staffDescription':
     'Build bilingual forms and review mock intake deadlines.',

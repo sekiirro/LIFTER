@@ -275,6 +275,17 @@ export const ar = {
   'forms.healthDataNoticeBody':
     'هنطلب منك بيانات صحية ولياقة عشان إعداد ومتابعة خطتك. الوصول للبيانات بيكون حسب الصلاحيات المعتمدة، وعمليات الاطلاع الحساسة بتتسجل للمراجعة.',
   'forms.copyDraft': 'مسودة',
+  'forms.requiredTerms': 'أوافق على الشروط والأحكام',
+  'forms.optionalMarketing': 'أوافق على تلقي تحديثات تسويقية',
+  'forms.acceptTerms': 'متابعة',
+  'forms.draftAcceptanceUnavailable':
+    'لا يمكن قبول نسخة الشروط المسودة في بيئة الإنتاج.',
+  'forms.draftAcceptanceMock': 'وصل قبول المسودة إلى المحول الوهمي.',
+  'forms.healthQuestionExample': 'مثال على سؤال صحي',
+  'forms.welcomeTitle': 'أهلًا بك',
+  'forms.welcomeBody': 'اكتمل نموذجك. يمكنك المتابعة إلى خطتك.',
+  'forms.welcomeDraftStatus': 'مسودة — نص الترحيب بانتظار موافقة مالك المنتج',
+  'forms.intakeIncomplete': 'النموذج غير مكتمل حتى توافق على الشروط.',
   'forms.staffTitle': 'استمارات الموظفين',
   'forms.staffDescription': 'أنشئ استمارات ثنائية اللغة وراجع المهل التجريبية.',
   'forms.staffLoading': 'جارٍ تحميل معاينة الموظفين…',

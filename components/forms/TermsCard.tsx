@@ -1,10 +1,18 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import {
+  useCallback,
+  useState,
+  useSyncExternalStore,
+  type FormEvent,
+  type ReactNode,
+} from 'react';
 import type { Locale } from '../../lib/design/preferences';
 import { Bidi } from '../ui/Bidi';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
+
+const mockAcceptanceEvent = 'f15-mock-acceptance-change';
 
 export type TermsPolicy = {
   version: string;
@@ -39,13 +47,50 @@ export function TermsCard({
   policy,
   labels,
   onAccept,
+  acceptedContent,
+  pendingMessage,
+  mockAcceptanceKey,
 }: {
   locale: Locale;
   policy: TermsPolicy;
   labels: TermsCardLabels;
   onAccept: (acceptance: TermsAcceptance) => void | Promise<void>;
+  acceptedContent?: ReactNode;
+  pendingMessage?: string;
+  mockAcceptanceKey?: string;
 }) {
   const [unavailable, setUnavailable] = useState(false);
+  const subscribe = useCallback(
+    (notify: () => void) => {
+      if (!mockAcceptanceKey || process.env.NODE_ENV === 'production')
+        return () => undefined;
+      window.addEventListener('storage', notify);
+      window.addEventListener(mockAcceptanceEvent, notify);
+      return () => {
+        window.removeEventListener('storage', notify);
+        window.removeEventListener(mockAcceptanceEvent, notify);
+      };
+    },
+    [mockAcceptanceKey],
+  );
+  const getAcceptanceSnapshot = useCallback(() => {
+    if (!mockAcceptanceKey || process.env.NODE_ENV === 'production')
+      return false;
+    try {
+      const stored = window.sessionStorage.getItem(mockAcceptanceKey);
+      const acceptance = stored
+        ? (JSON.parse(stored) as TermsAcceptance)
+        : null;
+      return acceptance?.policyVersion === policy.version;
+    } catch {
+      return false;
+    }
+  }, [mockAcceptanceKey, policy.version]);
+  const accepted = useSyncExternalStore(
+    subscribe,
+    getAcceptanceSnapshot,
+    () => false,
+  );
 
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
@@ -57,11 +102,21 @@ export function TermsCard({
     }
 
     setUnavailable(false);
-    void onAccept({
+    const acceptance = {
       policyVersion: policy.version,
       marketingAccepted: form.get('marketing') === 'accepted',
-    });
+    };
+    void onAccept(acceptance);
+    if (mockAcceptanceKey && process.env.NODE_ENV !== 'production') {
+      window.sessionStorage.setItem(
+        mockAcceptanceKey,
+        JSON.stringify(acceptance),
+      );
+      window.dispatchEvent(new Event(mockAcceptanceEvent));
+    }
   }
+
+  if (accepted && acceptedContent) return acceptedContent;
 
   return (
     <Card as="section" aria-labelledby="terms-card-title" lang={locale}>
@@ -81,6 +136,7 @@ export function TermsCard({
         <Bidi dir="ltr">{policy.version}</Bidi>
       </p>
       <form onSubmit={submit}>
+        {pendingMessage && <p role="status">{pendingMessage}</p>}
         <fieldset>
           <legend>{labels.title}</legend>
           <label>
