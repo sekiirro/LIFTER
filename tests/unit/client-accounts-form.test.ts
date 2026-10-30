@@ -112,7 +112,8 @@ it('T027 exposes only safe signup states, disables pending submits and prompts m
   for (const status of ['unavailable', 'duplicate', 'complete'])
     expect(results).toContain(`'${status}'`);
   expect(form).toContain('newRequestSecret');
-  expect(validation).toContain("['name', 'email', 'phone', 'password']");
+  expect(validation).toContain("'dateOfBirth'");
+  expect(validation).toContain("'telegramUsername'");
   expect(service).toContain('validateSignupFields');
   expect(service).toContain('invalidFields');
   expect(form).not.toMatch(/data-(?:token|email|phone|name|password)=/i);

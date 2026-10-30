@@ -84,7 +84,7 @@ for (const field of [
 const db = sql();
 afterAll(() => db.end());
 
-it('clients: every required field is NOT NULL, generated id/time and pending-only state', async () => {
+it('clients: preserves required F11 fields and allows legacy rows without F15 profile fields', async () => {
   const columns =
     await db`select attname,attnotnull from pg_attribute where attrelid=to_regclass('public.clients') and attnum>0 and not attisdropped order by attnum`;
   expect(columns.map((c) => c.attname).sort()).toEqual(
@@ -99,9 +99,26 @@ it('clients: every required field is NOT NULL, generated id/time and pending-onl
       'name',
       'approval_state',
       'created_at',
+      'date_of_birth',
+      'username_normalized',
+      'telegram_username',
     ].sort(),
   );
-  expect(columns.every((c) => c.attnotnull)).toBe(true);
+  const nullableProfileFields = new Set([
+    'date_of_birth',
+    'username_normalized',
+    'telegram_username',
+  ]);
+  expect(
+    columns
+      .filter((column) => !nullableProfileFields.has(column.attname))
+      .every((column) => column.attnotnull),
+  ).toBe(true);
+  expect(
+    columns
+      .filter((column) => nullableProfileFields.has(column.attname))
+      .every((column) => !column.attnotnull),
+  ).toBe(true);
 });
 for (const [table, fragments] of [
   [
@@ -184,7 +201,15 @@ for (const [name, expected] of [
   [
     'signup_field_contract',
     {
-      required: ['name', 'email', 'phone', 'password'],
+      required: [
+        'name',
+        'email',
+        'phone',
+        'password',
+        'date_of_birth',
+        'username',
+      ],
+      optional: ['telegram_username'],
       telegram: false,
       phone_input_format: null,
     },

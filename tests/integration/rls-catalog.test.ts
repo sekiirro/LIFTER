@@ -23,6 +23,7 @@ const signupPrivate = [
   'signup_identity_normalization',
   'signup_password_policy',
   'signup_field_contract',
+  'signup_reserved_usernames',
   'signup_consumption_policy',
   'client_signup_limits',
   'signup_completion_policy',
@@ -41,6 +42,7 @@ const signupPrivate = [
   'signup_guard_ticket_update',
   'redeem_signup_admission_ticket',
   'signup_guard_attempt_delete',
+  'prevent_consent_receipt_mutation',
 ];
 const registrationPrivate = [
   'registration_link_is_valid',

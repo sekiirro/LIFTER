@@ -1,4 +1,4 @@
-const reservedRoleNames = new Set([
+export const RESERVED_SIGNUP_ROLE_NAMES = [
   'platform',
   'system',
   'platformowner',
@@ -6,7 +6,9 @@ const reservedRoleNames = new Set([
   'trainer',
   'sales',
   'client',
-]);
+] as const;
+
+const reservedRoleNames = new Set<string>(RESERVED_SIGNUP_ROLE_NAMES);
 
 /** Names split on Unicode whitespace; the authored value is never rewritten. */
 export function validateSignupName(value: unknown): value is string {

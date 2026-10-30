@@ -97,13 +97,16 @@ it('T035 collapses every registration-link state to valid or invalid, never unav
   );
 });
 
-it('T035 keeps the signup field contract to name, email, phone and password', () => {
+it('T045 keeps the extended signup field contract strict', () => {
   expect(
     signupFields({
-      name: 'Example Person',
+      name: 'Example Middle Person',
       email: 'example@example.test',
       phone: '+201012345678',
       password: 'Complex!2345',
+      dateOfBirth: '1990-04-12',
+      username: 'example-user',
+      telegramUsername: '',
       telegram: 'unused',
     }),
   ).toBeNull();

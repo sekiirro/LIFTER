@@ -41,10 +41,13 @@ it('rejects empty email components and multiple separators through invalid field
   for (const email of ['@example.test', 'person@', 'person@@example.test']) {
     expect(normalizedEmail(email), email).toBeNull();
     const validation = validateSignupFields({
-      name: 'Example Person',
+      name: 'Example Middle Person',
       email,
       phone: '+201012345678',
       password: 'Strong9!Password',
+      dateOfBirth: '1990-04-12',
+      username: 'example-user',
+      telegramUsername: '',
     });
     expect(validation.fields).toBeNull();
     expect(validation.invalidFields).toContain('email');
@@ -60,10 +63,13 @@ it('routes malformed email shapes to field validation before admission or collis
     token: 'A'.repeat(43),
     requestSecret: 'B'.repeat(43),
     fields: {
-      name: 'Example Person',
+      name: 'Example Middle Person',
       email: '@example.test',
       phone: JSON.stringify({ country: 'EG', nationalNumber: '01012345678' }),
       password: 'Strong9!Password',
+      dateOfBirth: '1990-04-12',
+      username: 'example-user',
+      telegramUsername: '',
     },
     origin: 'https://signup.example.test',
     expectedOrigin: 'https://signup.example.test',
@@ -125,10 +131,13 @@ it('Q-M22 preserves database unavailable through the signup action result mappin
       token: 'A'.repeat(43),
       requestSecret: 'B'.repeat(43),
       fields: {
-        name: 'Example Person',
+        name: 'Example Middle Person',
         email: 'client@example.test',
         phone: JSON.stringify({ country: 'EG', nationalNumber: '01012345678' }),
         password: 'Complex!2345',
+        dateOfBirth: '1990-04-12',
+        username: 'example-user',
+        telegramUsername: '',
       },
       origin: 'https://signup.example.test',
       expectedOrigin: 'https://signup.example.test',
@@ -152,12 +161,15 @@ it('Q-M22 preserves database unavailable through the signup action result mappin
   }
 });
 
-it('T023 strict signup shape rejects unknown fields and accepts only the four approved fields', () => {
+it('T045 strict signup shape accepts the profile extension and rejects unknown fields', () => {
   const accepted = {
-    name: 'Example Person',
+    name: 'Example Middle Person',
     email: 'example@example.test',
     phone: '+201012345678',
     password: 'Complex!2345',
+    dateOfBirth: '1990-04-12',
+    username: 'example-user',
+    telegramUsername: '',
   };
   expect(signupFields(accepted) !== null).toBe(true);
   expect(signupFields({ ...accepted, workspace_id: 'fixture' }) === null).toBe(
@@ -305,7 +317,8 @@ it('T023 rejects unknown payload fields and maps all database statuses safely', 
   const validation = source('lib/client-accounts/validation.ts');
   const results = source('lib/client-accounts/results.ts');
 
-  expect(validation).toContain("['name', 'email', 'phone', 'password']");
+  expect(validation).toContain("'dateOfBirth'");
+  expect(validation).toContain("'telegramUsername'");
   expect(service).toContain('validateSignupFields');
   expect(service).toContain('invalid_input');
   for (const status of [
@@ -422,10 +435,13 @@ it('U6-R1 returns sign_out_required before admission or signup RPC calls', async
     token: 'A'.repeat(43),
     requestSecret: 'B'.repeat(43),
     fields: {
-      name: 'Example Person',
+      name: 'Example Middle Person',
       email: 'client@example.test',
       phone: JSON.stringify({ country: 'EG', nationalNumber: '01012345678' }),
       password: 'Complex!2345',
+      dateOfBirth: '1990-04-12',
+      username: 'example-user',
+      telegramUsername: '',
     },
     origin: 'https://signup.example.test',
     expectedOrigin: 'https://signup.example.test',
