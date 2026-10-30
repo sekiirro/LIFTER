@@ -1,8 +1,14 @@
-# F14 Hero Banner design gate — PENDING PO
+# F14 Hero Banner design gate — DECIDED — PO s15 Q1 C (2:1, 8–18rem, max 288px)
 
-**Status:** Prototype complete; no production aspect or height has been selected. The PO decision remains open under PI-F14-7 and spec FR-008/FR-015, decision 11. The route is available only when `LIFTER_SHOWCASE=1`; with the flag set to `0`, it returned HTTP 404.
+**Status:** Prototype complete; PO Session 15 selected candidate C. The prototype route remains available only when `LIFTER_SHOWCASE=1`; with the flag set to `0`, it returned HTTP 404.
 
-**Actual model:** GPT-6. The requested Luna High runtime was not available in this session.
+**PO decision (Session 15, verbatim):**
+
+> * Q1 C: F14 banner 2:1, max-height 288px.
+
+This selects the existing C candidate's 2:1 aspect ratio and 18rem/288px cap. The production registration component uses this decision; the candidate research and screenshot measurements below are retained as evidence.
+
+**Model / effort for this implementation session:** Runtime metadata is unavailable; no model or effort tier is claimed.
 
 **Authority used:** `DESIGN.md` §§3, 10–12; F14 DG-F14-1..3; the feature spec and the supplied design gate. The preview is a Registration Premium Centered Card with image-only hero, logo placeholder, then a vertically separate form. No banner copy or text overlay is rendered. Its responsive measurements are candidate values for PO comparison, not product decisions.
 
@@ -85,7 +91,7 @@ All screenshots are exact viewport captures; the Next.js development badge was h
 
 | Check | Result | Evidence |
 | --- | --- | --- |
-| Approved design authority | PASS | Registration Premium Centered Card retained; A/B/C values remain pending PO. No edit to `DESIGN.md`, tokens, or shared components. |
+| Approved design authority | PASS | Registration Premium Centered Card retained; PO s15 Q1 C is applied. No edit to `DESIGN.md`, tokens, or shared components. |
 | Token use and workspace brand scope | PASS | Existing tokens/components used for all visual styling; `BrandScope` sample is `#2563EB`. Render checks confirmed success/warning/error semantic foreground tokens were unchanged. |
 | Typography and direction | PASS | Existing Geist / IBM Plex Sans Arabic and token scale; localized UI messages; ratio/bounds use `Bidi` LTR isolation. HTML language/direction asserted for all matrix cases. |
 | Spacing, alignment, responsive behavior | PASS | CSS modules follow showcase/card idioms and logical properties; wrap-based controls, tested at requested viewports plus 320px and 720px width. |
@@ -171,7 +177,9 @@ The full `design-skills-catalog.md` was read. Skills remain advisory; DESIGN.md 
 | `lottie` | NOT APPLICABLE | No motion asset is requested. |
 | `remotion-to-hyperframes` | NOT APPLICABLE | No video conversion is involved. |
 
-## PO decision — PENDING PO
+## Superseded PO question
+
+Session 15 resolved this question with Q1 C, quoted verbatim at the top of this report. The original options and recommendation below are retained as historical prototype context; the recommendation is not the selected value.
 
 **Which responsive Hero Banner geometry should F14 carry forward for the Registration Premium Centered Card?**
 
@@ -180,4 +188,4 @@ The full `design-skills-catalog.md` was read. Skills remain advisory; DESIGN.md 
 - **C.** 2:1, 8–18rem bounds — capped at 18rem; more crop at tablet and desktop.
 - **Other.** Specify the aspect ratio and responsive min/max/cap values.
 
-**Recommendation:** B, 16:9, because it matches common source imagery and preserves the least crop when the upload is 16:9. Its 588.38px desktop height is the cost; choose C if limiting desktop vertical space outweighs the increased crop risk. This is a recommendation only. **PENDING PO; no final value has been applied.**
+**Historical prototype recommendation (superseded by the decision above):** B, 16:9, because it matches common source imagery and preserves the least crop when the upload is 16:9. Its 588.38px desktop height is the cost; choose C if limiting desktop vertical space outweighs the increased crop risk. This recommendation was not selected.

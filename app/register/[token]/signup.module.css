@@ -4,6 +4,17 @@
   max-inline-size: 34rem;
   margin-block-start: var(--space-4);
 }
+.registrationCard {
+  display: grid;
+  gap: var(--space-5);
+  inline-size: 100%;
+  max-inline-size: 42rem;
+  margin-inline: auto;
+}
+.registrationCard > h1 {
+  font-size: var(--text-lg);
+  line-height: var(--line-height-heading);
+}
 .field {
   display: grid;
   gap: var(--space-2);

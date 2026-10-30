@@ -1,0 +1,44 @@
+.identity {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-4);
+  min-inline-size: 0;
+  text-align: center;
+}
+
+.identity h2 {
+  max-inline-size: 100%;
+  overflow-wrap: anywhere;
+  font-size: var(--text-xl);
+  line-height: var(--line-height-heading);
+}
+
+.banner {
+  /* PO s15 Q1 C: F14 banner 2:1, max-height 288px. */
+  display: block;
+  inline-size: 100%;
+  min-block-size: 8rem;
+  max-block-size: 18rem;
+  aspect-ratio: 2 / 1;
+  border-radius: var(--radius-sm);
+  background: var(--color-card-raised);
+  object-fit: cover;
+  object-position: center;
+}
+
+.bannerFallback {
+  display: block;
+  inline-size: 100%;
+  min-block-size: 8rem;
+  max-block-size: 18rem;
+  aspect-ratio: 2 / 1;
+  border-radius: var(--radius-sm);
+  background: var(--color-card-raised);
+}
+
+.logo {
+  display: block;
+  max-inline-size: 100%;
+  max-block-size: var(--touch-min);
+  object-fit: contain;
+}

@@ -265,6 +265,39 @@ export const en: Record<keyof typeof ar, string> = {
   'f14Banner.alt': 'Neutral sample hero image for comparing banner crops.',
   'f14Banner.fallbackAlt':
     'Neutral hero banner surface shown because no image is configured.',
+  // DRAFT (PO Q4): branding editor interface copy pending separate approval.
+  'branding.editorTitle': 'Workspace branding',
+  'branding.draftSnapshot': 'Draft preview',
+  'branding.previewTitle': 'Live preview',
+  'branding.editorTab': 'Edit branding',
+  'branding.previewTab': 'Preview',
+  'branding.localOnly':
+    'Unsaved sample controls update this preview only. Nothing is saved.',
+  'branding.uploadGuidancePrefix': 'Draft upload guidance: ',
+  'branding.uploadGuidanceFormats': 'PNG or WebP',
+  'branding.uploadDimensionPrefix': 'about ',
+  'branding.uploadDimensionSuffix':
+    ' px. Keep important content inside a generous center-safe margin; the desktop banner is capped at about ',
+  'branding.uploadGuidanceSuffix': '.',
+  'branding.nameArabic': 'Workspace name in Arabic',
+  'branding.nameEnglish': 'Workspace name in English',
+  'branding.bannerAltArabic': 'Banner description in Arabic',
+  'branding.bannerAltEnglish': 'Banner description in English',
+  'branding.colorField': 'Brand color',
+  'branding.registrationSurface': 'Registration',
+  'branding.staffSurface': 'Staff dashboard',
+  'branding.portalSurface': 'Client Portal placeholder',
+  'branding.colorSource': 'Original brand color',
+  'branding.colorAdjusted': 'Accessible color treatment',
+  'branding.lightTreatment': 'Light theme',
+  'branding.darkTreatment': 'Dark theme',
+  'branding.colorExplanation':
+    'The original color is retained. The preview uses the closest treatment that meets text and focus contrast in each theme.',
+  'branding.staleRevision':
+    'This draft changed elsewhere. Reload the latest draft before continuing.',
+  'branding.currentPublished': 'Currently published',
+  'branding.showcaseNotice':
+    'Sample preview only. Changes are not saved. All branding copy is awaiting review.',
   'registrationApproval.title': 'Registration approvals',
   'registrationApproval.intro':
     'Review submitted requests and issued terms before deciding.',

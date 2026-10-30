@@ -256,6 +256,39 @@ export const ar = {
     'نموذج بوابة التصميم · اختيار الأبعاد بانتظار مالك المنتج.',
   'f14Banner.alt': 'صورة لافتة محايدة لمقارنة اقتصاص اللافتات.',
   'f14Banner.fallbackAlt': 'سطح محايد للافتة يظهر لعدم ضبط صورة.',
+  // DRAFT (PO Q4): branding editor interface copy pending separate approval.
+  'branding.editorTitle': 'علامة مساحة العمل',
+  'branding.draftSnapshot': 'معاينة المسودة',
+  'branding.previewTitle': 'معاينة مباشرة',
+  'branding.editorTab': 'تحرير العلامة',
+  'branding.previewTab': 'معاينة',
+  'branding.localOnly':
+    'تحدّث عناصر العينة غير المحفوظة هذه المعاينة فقط. لا يتم حفظ أي تغيير.',
+  'branding.uploadGuidancePrefix': 'إرشادات تحميل أولية: ',
+  'branding.uploadGuidanceFormats': 'PNG أو WebP',
+  'branding.uploadDimensionPrefix': 'نحو ',
+  'branding.uploadDimensionSuffix':
+    ' بكسل. أبقِ العناصر المهمة داخل هامش آمن واسع في الوسط؛ ويُحدد عرض اللافتة على سطح المكتب بنسبة تقارب ',
+  'branding.uploadGuidanceSuffix': '.',
+  'branding.nameArabic': 'اسم مساحة العمل بالعربية',
+  'branding.nameEnglish': 'اسم مساحة العمل بالإنجليزية',
+  'branding.bannerAltArabic': 'وصف اللافتة بالعربية',
+  'branding.bannerAltEnglish': 'وصف اللافتة بالإنجليزية',
+  'branding.colorField': 'لون العلامة',
+  'branding.registrationSurface': 'التسجيل',
+  'branding.staffSurface': 'لوحة الفريق',
+  'branding.portalSurface': 'معاينة بوابة العميل',
+  'branding.colorSource': 'لون العلامة الأصلي',
+  'branding.colorAdjusted': 'معالجة اللون للوضوح',
+  'branding.lightTreatment': 'المظهر الفاتح',
+  'branding.darkTreatment': 'المظهر الداكن',
+  'branding.colorExplanation':
+    'يظل اللون الأصلي محفوظًا. تستخدم المعاينة المعالجة الأقرب التي تحقق تباين النص والتركيز في كل وضع.',
+  'branding.staleRevision':
+    'تغيّرت هذه المسودة في مكان آخر. أعد تحميل أحدث مسودة قبل المتابعة.',
+  'branding.currentPublished': 'المنشور حاليًا',
+  'branding.showcaseNotice':
+    'معاينة ببيانات تجريبية فقط. لا تُحفظ التغييرات. جميع نصوص العلامة بانتظار المراجعة.',
   'registrationApproval.title': 'مراجعة طلبات التسجيل',
   'registrationApproval.intro':
     'راجع الطلبات وشروطها المسجلة قبل اتخاذ القرار.',
