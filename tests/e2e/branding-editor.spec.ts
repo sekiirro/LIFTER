@@ -1,12 +1,57 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
-import { mkdir } from 'node:fs/promises';
+import { expect, test, type Browser, type Page } from '@playwright/test';
+import { mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 const screenshotDirectory = join(tmpdir(), `lifter-f14-editor-${process.pid}`);
+
+async function screenshotGuidanceCrop(
+  browser: Browser,
+  locale: 'ar' | 'en',
+  theme: 'light' | 'dark',
+) {
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    deviceScaleFactor: 2,
+  });
+  const page = await context.newPage();
+  await context.addCookies([
+    { name: LOCALE_COOKIE, value: locale, url: origin },
+    { name: THEME_COOKIE, value: theme, url: origin },
+  ]);
+  await page.goto('/showcase/f14-branding');
+  const guidance = page.locator('[data-upload-guidance-draft]');
+  await expect(guidance).toBeVisible();
+  const bounds = await guidance.boundingBox();
+  expect(bounds).not.toBeNull();
+  expect(await page.evaluate(() => [innerWidth, devicePixelRatio])).toEqual([
+    1440, 2,
+  ]);
+  const margin = 20;
+  const x = Math.max(0, bounds!.x - margin);
+  const y = Math.max(0, bounds!.y - margin);
+  const right = Math.min(1440, bounds!.x + bounds!.width + margin);
+  const bottom = Math.min(900, bounds!.y + bounds!.height + margin);
+  const png = await page.screenshot({
+    clip: { x, y, width: right - x, height: bottom - y },
+    scale: 'device',
+  });
+  expect(
+    Math.abs(png.readUInt32BE(16) - Math.round((right - x) * 2)),
+  ).toBeLessThanOrEqual(1);
+  expect(
+    Math.abs(png.readUInt32BE(20) - Math.round((bottom - y) * 2)),
+  ).toBeLessThanOrEqual(1);
+  await mkdir(screenshotDirectory, { recursive: true });
+  await writeFile(
+    join(screenshotDirectory, `guidance-card-${locale}-${theme}-1440.png`),
+    png,
+  );
+  await context.close();
+}
 
 async function expectAxeClean(page: Page) {
   const report = await new AxeBuilder({ page })
@@ -25,6 +70,7 @@ for (const locale of ['ar', 'en'] as const) {
       test(`${locale}/${theme}/${viewport.name}: editor and live preview`, async ({
         page,
         context,
+        browser,
       }) => {
         await page.setViewportSize(viewport);
         await context.addCookies([
@@ -179,44 +225,7 @@ for (const locale of ['ar', 'en'] as const) {
             ),
           });
           if (viewport.width === 1440) {
-            const guidance = await page
-              .locator('[data-upload-guidance-draft]')
-              .boundingBox();
-            expect(guidance).not.toBeNull();
-            const client = await context.newCDPSession(page);
-            await client.send('Emulation.setDeviceMetricsOverride', {
-              width: 1440,
-              height: 900,
-              deviceScaleFactor: 2,
-              mobile: false,
-            });
-            try {
-              await expect
-                .poll(() => page.evaluate(() => devicePixelRatio))
-                .toBe(2);
-              const margin = 20;
-              const x = Math.max(0, guidance!.x - margin);
-              const y = Math.max(0, guidance!.y - margin);
-              const right = Math.min(
-                1440,
-                guidance!.x + guidance!.width + margin,
-              );
-              const bottom = Math.min(
-                900,
-                guidance!.y + guidance!.height + margin,
-              );
-              await page.screenshot({
-                path: join(
-                  screenshotDirectory,
-                  `guidance-card-${locale}-${theme}-1440.png`,
-                ),
-                clip: { x, y, width: right - x, height: bottom - y },
-                scale: 'device',
-              });
-            } finally {
-              await client.send('Emulation.clearDeviceMetricsOverride');
-              await client.detach();
-            }
+            await screenshotGuidanceCrop(browser, locale, theme);
           }
         }
       });

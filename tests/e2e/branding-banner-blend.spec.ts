@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
+import { expect, test, type Browser, type Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -287,36 +287,68 @@ async function screenshot(page: Page, filename: string) {
   screenshots.push(path);
 }
 
-async function screenshotRegistrationCardCrop(page: Page, filename: string) {
+async function screenshotRegistrationCardCrop(
+  browser: Browser,
+  locale: 'ar' | 'en',
+  theme: 'light' | 'dark',
+  image: boolean,
+  filename: string,
+) {
+  const context = await browser.newContext({
+    viewport: { width: 1440, height: 900 },
+    deviceScaleFactor: 2,
+  });
+  const page = await context.newPage();
+  await context.addCookies([
+    { name: LOCALE_COOKIE, value: locale, url: origin },
+    { name: THEME_COOKIE, value: theme, url: origin },
+  ]);
+  if (image)
+    await page.route('**/api/branding/**', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'image/png',
+        body: wideImage,
+        headers: { 'cache-control': 'no-store' },
+      });
+    });
+  await page.goto(
+    `/showcase/f14-banner?real=1${image ? `&brand=${encodeURIComponent('#2563EB')}` : '&image=missing'}`,
+  );
+  if (image) {
+    const banner = page.locator('[data-registration-banner]');
+    await expect(banner).toBeVisible();
+    await banner.evaluate((element: HTMLImageElement) => element.decode());
+  }
+  await page.addStyleTag({
+    content: 'nextjs-portal { display: none !important; }',
+  });
   const card = page.locator('[data-registration-card="premium-centered"]');
   const bounds = await card.boundingBox();
   expect(bounds).not.toBeNull();
-  const client = await page.context().newCDPSession(page);
-  await client.send('Emulation.setDeviceMetricsOverride', {
-    width: 1440,
-    height: 900,
-    deviceScaleFactor: 2,
-    mobile: false,
+  expect(await page.evaluate(() => [innerWidth, devicePixelRatio])).toEqual([
+    1440, 2,
+  ]);
+  const margin = 12;
+  const x = Math.max(0, bounds!.x - margin);
+  const y = Math.max(0, bounds!.y - margin);
+  const right = Math.min(1440, bounds!.x + bounds!.width + margin);
+  const bottom = Math.min(900, bounds!.y + bounds!.height + margin);
+  const path = join(screenshotDirectory, filename);
+  await mkdir(screenshotDirectory, { recursive: true });
+  const png = await page.screenshot({
+    clip: { x, y, width: right - x, height: bottom - y },
+    scale: 'device',
   });
-  try {
-    await expect.poll(() => page.evaluate(() => devicePixelRatio)).toBe(2);
-    const margin = 12;
-    const x = Math.max(0, bounds!.x - margin);
-    const y = Math.max(0, bounds!.y - margin);
-    const right = Math.min(1440, bounds!.x + bounds!.width + margin);
-    const bottom = Math.min(900, bounds!.y + bounds!.height + margin);
-    const path = join(screenshotDirectory, filename);
-    await mkdir(screenshotDirectory, { recursive: true });
-    await page.screenshot({
-      path,
-      clip: { x, y, width: right - x, height: bottom - y },
-      scale: 'device',
-    });
-    screenshots.push(path);
-  } finally {
-    await client.send('Emulation.clearDeviceMetricsOverride');
-    await client.detach();
-  }
+  expect(
+    Math.abs(png.readUInt32BE(16) - Math.round((right - x) * 2)),
+  ).toBeLessThanOrEqual(1);
+  expect(
+    Math.abs(png.readUInt32BE(20) - Math.round((bottom - y) * 2)),
+  ).toBeLessThanOrEqual(1);
+  await writeFile(path, png);
+  screenshots.push(path);
+  await context.close();
 }
 
 async function readSeamPixels(page: Page) {
@@ -396,6 +428,7 @@ for (const locale of ['ar', 'en'] as const) {
     for (const viewport of viewports) {
       test(`${locale}/${theme}/${viewport.name}: real component geometry, seams, crop and axe`, async ({
         page,
+        browser,
       }) => {
         responseImage = wideImage;
         await installImageRoute(page);
@@ -546,7 +579,10 @@ for (const locale of ['ar', 'en'] as const) {
             );
             if (viewport.width === 1440)
               await screenshotRegistrationCardCrop(
-                page,
+                browser,
+                locale,
+                theme,
+                true,
                 `card-crop-image-${locale}-${theme}-1440.png`,
               );
           }
@@ -678,6 +714,7 @@ for (const locale of ['ar', 'en'] as const) {
 
       test(`${locale}/${theme}/${viewport.name}: fallback stays unchanged without a gradient`, async ({
         page,
+        browser,
       }) => {
         await setPreferences(
           page,
@@ -716,7 +753,10 @@ for (const locale of ['ar', 'en'] as const) {
         );
         if (viewport.width === 1440)
           await screenshotRegistrationCardCrop(
-            page,
+            browser,
+            locale,
+            theme,
+            false,
             `card-crop-fallback-${locale}-${theme}-1440.png`,
           );
       });
