@@ -1,11 +1,9 @@
 import { readdirSync } from 'node:fs';
 import { afterAll, expect, it } from 'vitest';
 import {
-  CAPABILITIES,
   MATRIX,
   ROLES,
   roleHasCapability,
-  type Capability,
   type Role,
 } from '../../lib/auth/capabilities';
 import { sql } from './harness';
@@ -18,8 +16,22 @@ const requireF14 = process.env.F13_REQUIRE_F14_CAPABILITIES === '1';
 const expectationSet =
   f14MigrationPresent || requireF14 ? 'F12+F13+F14' : 'F12+F13 (pre-F14)';
 
-const requiredCapabilities: Record<Role, Capability[]> = {
-  platform_owner: [...CAPABILITIES],
+const requiredCapabilities: Record<Role, string[]> = {
+  platform_owner: [
+    'generate_recovery_link',
+    'set_package_pricing',
+    'generate_registration_link',
+    'configure_installment_schedule',
+    'approve_registration',
+    'record_payment',
+    'manage_freeze',
+    'record_refund',
+    'delete_client',
+    'export_client_dataset',
+    'manage_workspaces',
+    'manage_staff_access',
+    'coaching_work',
+  ],
   workspace_owner: [
     'generate_recovery_link',
     'generate_registration_link',
@@ -43,8 +55,8 @@ const requiredCapabilities: Record<Role, Capability[]> = {
   ],
 };
 if (f14MigrationPresent || requireF14) {
-  requiredCapabilities.platform_owner.push('manage_branding' as Capability);
-  requiredCapabilities.workspace_owner.push('manage_branding' as Capability);
+  requiredCapabilities.platform_owner.push('manage_branding');
+  requiredCapabilities.workspace_owner.push('manage_branding');
 }
 
 it(`T017 expectation set ${expectationSet}: TypeScript capability union`, () => {
@@ -62,7 +74,10 @@ it(`T017 expectation set ${expectationSet}: TypeScript capability union`, () => 
 it(`T017 expectation set ${expectationSet}: SQL capability union`, async () => {
   for (const role of ROLES) {
     const actual: string[] = [];
-    for (const capability of new Set([...CAPABILITIES, 'manage_branding'])) {
+    for (const capability of new Set([
+      ...requiredCapabilities.platform_owner,
+      'manage_branding',
+    ])) {
       const [row] = await db`
         select app_private.role_has_capability(${role}::public.staff_role, ${capability}) as allowed
       `;
