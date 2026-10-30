@@ -57,7 +57,31 @@ function pngChunk(type: string, data: Uint8Array): Buffer {
   return Buffer.concat([size, body, checksum]);
 }
 
-function testImage(width: number, height: number, bands = false): Buffer {
+function smoothstep(edge0: number, edge1: number, value: number): number {
+  const t = Math.max(0, Math.min(1, (value - edge0) / (edge1 - edge0)));
+  return t * t * (3 - 2 * t);
+}
+
+function hashNoise(x: number, y: number): number {
+  let value = Math.imul(x | 0, 0x1f123bb5) ^ Math.imul(y | 0, 0x5f356495);
+  value = Math.imul(value ^ (value >>> 15), 0x2c1b3c6d);
+  value = Math.imul(value ^ (value >>> 12), 0x297a2d39);
+  value ^= value >>> 15;
+  return (value >>> 0) / 0xffffffff;
+}
+
+function valueNoise(x: number, y: number): number {
+  const x0 = Math.floor(x);
+  const y0 = Math.floor(y);
+  const fx = smoothstep(0, 1, x - x0);
+  const fy = smoothstep(0, 1, y - y0);
+  const top = hashNoise(x0, y0) * (1 - fx) + hashNoise(x0 + 1, y0) * fx;
+  const bottom =
+    hashNoise(x0, y0 + 1) * (1 - fx) + hashNoise(x0 + 1, y0 + 1) * fx;
+  return top * (1 - fy) + bottom * fy;
+}
+
+function testImage(width: number, height: number): Buffer {
   const header = Buffer.alloc(13);
   header.writeUInt32BE(width, 0);
   header.writeUInt32BE(height, 4);
@@ -65,20 +89,140 @@ function testImage(width: number, height: number, bands = false): Buffer {
   header[9] = 6;
   const pixels = Buffer.alloc(height * (width * 4 + 1));
   for (let y = 0; y < height; y += 1) {
-    const stripeColor = bands
-      ? y < height / 4
-        ? [230, 40, 40]
-        : y >= (height * 3) / 4
-          ? [35, 75, 205]
-          : [35, 170, 70]
-      : [40, 80, 120];
+    const v = y / (height - 1);
     const row = y * (width * 4 + 1);
     pixels[row] = 0;
     for (let x = 0; x < width; x += 1) {
+      const u = x / (width - 1);
+      const cloudField =
+        valueNoise(u * 4.8, v * 8) * 0.52 +
+        valueNoise(u * 11, v * 21) * 0.3 +
+        valueNoise(u * 27, v * 42) * 0.18;
+      const grain = (hashNoise(x, y) - 0.5) * 5;
+      let red: number;
+      let green: number;
+      let blue: number;
+
+      const skyBlend = smoothstep(0.02, 0.64, v);
+      red = 39 + skyBlend * 151;
+      green = 67 + skyBlend * 79;
+      blue = 100 + skyBlend * 40;
+      const cloudAmount =
+        (1 - smoothstep(0.43, 0.66, v)) *
+        smoothstep(0.55, 0.73, cloudField) *
+        0.46;
+      red += cloudAmount * (230 - red);
+      green += cloudAmount * (219 - green);
+      blue += cloudAmount * (207 - blue);
+
+      const sunDistance = Math.hypot((u - 0.75) * 1.3, v - 0.36);
+      const sunGlow = Math.max(0, 1 - sunDistance / 0.28) ** 2 * 0.52;
+      red += sunGlow * (255 - red);
+      green += sunGlow * (216 - green);
+      blue += sunGlow * (164 - blue);
+
+      const farRidge =
+        0.55 +
+        (valueNoise(u * 8, 0.2) - 0.5) * 0.06 +
+        (valueNoise(u * 31, 0.4) - 0.5) * 0.026;
+      const nearRidge =
+        0.68 +
+        (valueNoise(u * 6.5, 1.3) - 0.5) * 0.085 +
+        (valueNoise(u * 25, 2.1) - 0.5) * 0.035;
+      const farLand = smoothstep(farRidge - 0.008, farRidge + 0.008, v);
+      red += farLand * (50 - red);
+      green += farLand * (61 - green);
+      blue += farLand * (68 - blue);
+
+      const waterBlend = smoothstep(0.63, 0.76, v);
+      const ripples =
+        valueNoise(u * 36, v * 118) * 0.5 +
+        valueNoise(u * 91, v * 257) * 0.32 +
+        valueNoise(u * 217, v * 493) * 0.18;
+      const reflection =
+        waterBlend *
+        Math.exp(-((u - 0.75) ** 2) / 0.008) *
+        smoothstep(0.22, 0.75, ripples) *
+        0.86;
+      const waterR = 25 + 111 * ripples;
+      const waterG = 50 + 105 * ripples;
+      const waterB = 69 + 91 * ripples;
+      red += waterBlend * (waterR - red);
+      green += waterBlend * (waterG - green);
+      blue += waterBlend * (waterB - blue);
+      red += reflection * (242 - red);
+      green += reflection * (196 - green);
+      blue += reflection * (130 - blue);
+
+      const foreground = smoothstep(nearRidge - 0.012, nearRidge + 0.014, v);
+      const treeLine =
+        0.78 +
+        (valueNoise(u * 39, 8) - 0.5) * 0.08 +
+        (valueNoise(u * 131, 12) - 0.5) * 0.04;
+      const forest =
+        foreground * smoothstep(treeLine - 0.025, treeLine + 0.025, v);
+      const shadowForest = u < 0.43 || u > 0.9 ? 0.9 : 0.56;
+      const dark = forest * shadowForest;
+      red += dark * (24 - red);
+      green += dark * (35 - green);
+      blue += dark * (39 - blue);
+
+      // A backlit person stands in the upper two-thirds of the frame.
+      const headDistance = Math.hypot((u - 0.5) * 1.12, (v - 0.292) * 0.82);
+      const head = 1 - smoothstep(0.018, 0.021, headDistance);
+      const neck =
+        smoothstep(0.304, 0.317, v) *
+        (1 - smoothstep(0.35, 0.364, v)) *
+        (1 - smoothstep(0.009, 0.013, Math.abs(u - 0.5)));
+      const torsoWidth =
+        0.031 -
+        smoothstep(0.385, 0.48, v) * 0.009 -
+        smoothstep(0.52, 0.59, v) * 0.007;
+      const torso =
+        smoothstep(0.35, 0.368, v) *
+        (1 - smoothstep(0.59, 0.612, v)) *
+        (1 -
+          smoothstep(
+            torsoWidth - 0.004,
+            torsoWidth + 0.004,
+            Math.abs(u - 0.5),
+          ));
+      const leftLegCenter = 0.49 - Math.max(0, v - 0.57) * 0.07;
+      const rightLegCenter = 0.51 + Math.max(0, v - 0.57) * 0.07;
+      const legs =
+        smoothstep(0.565, 0.58, v) *
+        (1 - smoothstep(0.665, 0.678, v)) *
+        Math.max(
+          1 - smoothstep(0.006, 0.009, Math.abs(u - leftLegCenter)),
+          1 - smoothstep(0.006, 0.009, Math.abs(u - rightLegCenter)),
+        );
+      const arms =
+        smoothstep(0.37, 0.39, v) *
+        (1 - smoothstep(0.565, 0.58, v)) *
+        Math.max(
+          1 - smoothstep(0.006, 0.01, Math.abs(u - (0.47 - (v - 0.39) * 0.07))),
+          1 - smoothstep(0.006, 0.01, Math.abs(u - (0.53 + (v - 0.39) * 0.07))),
+        );
+      const subject = Math.max(head, neck, torso, legs, arms);
+      red += subject * (29 - red);
+      green += subject * (37 - green);
+      blue += subject * (44 - blue);
+
+      // Keep both a dark shoreline and bright reflected water at the bottom edge.
+      if (v > 0.985 && u > 0.63 && u < 0.88) {
+        const brightRipple = 0.35 + 0.65 * valueNoise(u * 48, v * 157);
+        red += brightRipple * (226 - red);
+        green += brightRipple * (174 - green);
+        blue += brightRipple * (108 - blue);
+      }
+
       const offset = row + 1 + x * 4;
-      pixels[offset] = stripeColor[0]!;
-      pixels[offset + 1] = stripeColor[1]!;
-      pixels[offset + 2] = stripeColor[2]!;
+      pixels[offset] = Math.max(0, Math.min(255, Math.round(red + grain)));
+      pixels[offset + 1] = Math.max(
+        0,
+        Math.min(255, Math.round(green + grain)),
+      );
+      pixels[offset + 2] = Math.max(0, Math.min(255, Math.round(blue + grain)));
       pixels[offset + 3] = 255;
     }
   }
@@ -91,7 +235,7 @@ function testImage(width: number, height: number, bands = false): Buffer {
 }
 
 const wideImage = testImage(1600, 800);
-const tallImage = testImage(1600, 1200, true);
+const tallImage = testImage(1600, 1200);
 let responseImage = wideImage;
 
 async function setPreferences(
@@ -150,7 +294,7 @@ async function readSeamPixels(page: Page) {
   expect(frame).not.toBeNull();
   const png = await page.screenshot({ type: 'png' });
   const pixels = await page.evaluate(
-    async ({ base64, x, bannerY, surfaceY }) => {
+    async ({ base64, left, right, top, bottom, surfaceY }) => {
       const image = new Image();
       image.src = `data:image/png;base64,${base64}`;
       await image.decode();
@@ -160,14 +304,58 @@ async function readSeamPixels(page: Page) {
       const context = canvas.getContext('2d');
       if (!context) throw new Error('Canvas 2D context unavailable');
       context.drawImage(image, 0, 0);
-      const sample = (y: number) =>
+      const sample = (x: number, y: number) =>
         Array.from(context.getImageData(x, y, 1, 1).data).slice(0, 3);
-      return { banner: sample(bannerY), surface: sample(surfaceY) };
+      let bottomRowMaxDelta = 0;
+      let bottomRowSamples = 0;
+      let edgeMaxDelta = 0;
+      let edgeSamples = 0;
+      let bottomRowWorst: Record<string, unknown> | null = null;
+      let edgeWorst: Record<string, unknown> | null = null;
+      for (let x = left; x < right; x += 1) {
+        const banner = sample(x, bottom - 1);
+        const surface = sample(x, surfaceY);
+        for (let channel = 0; channel < 3; channel += 1) {
+          const delta = Math.abs(banner[channel]! - surface[channel]!);
+          if (delta > bottomRowMaxDelta) {
+            bottomRowMaxDelta = delta;
+            bottomRowWorst = { x, channel, banner, surface, delta };
+          }
+        }
+        bottomRowSamples += 1;
+      }
+      for (let y = top; y < bottom; y += 1) {
+        for (const [edge, neighbor] of [
+          [left, left - 1],
+          [right - 1, right],
+        ] as const) {
+          const banner = sample(edge, y);
+          const surface = sample(neighbor, y);
+          for (let channel = 0; channel < 3; channel += 1) {
+            const delta = Math.abs(banner[channel]! - surface[channel]!);
+            if (delta > edgeMaxDelta) {
+              edgeMaxDelta = delta;
+              edgeWorst = { x: edge, y, channel, banner, surface, delta };
+            }
+          }
+          edgeSamples += 1;
+        }
+      }
+      return {
+        bottomRowMaxDelta,
+        bottomRowSamples,
+        bottomRowWorst,
+        edgeMaxDelta,
+        edgeSamples,
+        edgeWorst,
+      };
     },
     {
       base64: png.toString('base64'),
-      x: Math.round(frame!.x + frame!.width / 2),
-      bannerY: Math.ceil(frame!.y + frame!.height) - 1,
+      left: Math.floor(frame!.x),
+      right: Math.ceil(frame!.x + frame!.width),
+      top: Math.ceil(frame!.y + frame!.height * 0.65),
+      bottom: Math.ceil(frame!.y + frame!.height),
       surfaceY: Math.ceil(frame!.y + frame!.height) + 1,
     },
   );
@@ -299,12 +487,14 @@ for (const locale of ['ar', 'en'] as const) {
           expect(cls).toBe(0);
 
           const seam = await readSeamPixels(page);
-          for (let channel = 0; channel < 3; channel += 1) {
-            expect(
-              Math.abs(seam.banner[channel]! - seam.surface[channel]!),
-              `${locale}/${theme}/${viewport.name} ${color} channel ${channel}`,
-            ).toBeLessThanOrEqual(2);
-          }
+          expect(
+            seam.bottomRowMaxDelta,
+            `${locale}/${theme}/${viewport.name} ${color} full bottom row ${JSON.stringify(seam.bottomRowWorst)}`,
+          ).toBeLessThanOrEqual(2);
+          expect(
+            seam.edgeMaxDelta,
+            `${locale}/${theme}/${viewport.name} ${color} lower side edges ${JSON.stringify(seam.edgeWorst)}`,
+          ).toBeLessThanOrEqual(2);
           await expectAxeClean(page);
           measurements.push({
             locale,
@@ -320,9 +510,6 @@ for (const locale of ['ar', 'en'] as const) {
             objectPosition: data.objectPosition,
             cls,
             seam,
-            channelDeltas: seam.banner.map((channel, index) =>
-              Math.abs(channel - seam.surface[index]!),
-            ),
           });
 
           if (color === '#2563EB') {
@@ -397,29 +584,68 @@ for (const locale of ['ar', 'en'] as const) {
         expect(frame).not.toBeNull();
         await page.emulateMedia({ forcedColors: 'active' });
         const cropPixels = await page.evaluate(
-          async ({ base64, x, topY, bottomY }) => {
-            const image = new Image();
-            image.src = `data:image/png;base64,${base64}`;
-            await image.decode();
-            const canvas = document.createElement('canvas');
-            canvas.width = image.naturalWidth;
-            canvas.height = image.naturalHeight;
-            const context = canvas.getContext('2d');
-            if (!context) throw new Error('Canvas 2D context unavailable');
-            context.drawImage(image, 0, 0);
-            const sample = (y: number) =>
-              Array.from(context.getImageData(x, y, 1, 1).data).slice(0, 3);
-            return { top: sample(topY), bottom: sample(bottomY) };
+          async ({ screenshotBase64, sourceBase64, frameBox }) => {
+            async function pixels(base64: string) {
+              const image = new Image();
+              image.src = `data:image/png;base64,${base64}`;
+              await image.decode();
+              const canvas = document.createElement('canvas');
+              canvas.width = image.naturalWidth;
+              canvas.height = image.naturalHeight;
+              const context = canvas.getContext('2d');
+              if (!context) throw new Error('Canvas 2D context unavailable');
+              context.drawImage(image, 0, 0);
+              return { image, context };
+            }
+            const rendered = await pixels(screenshotBase64);
+            const source = await pixels(sourceBase64);
+            const scale = Math.max(
+              frameBox.width / source.image.naturalWidth,
+              frameBox.height / source.image.naturalHeight,
+            );
+            const cropTop =
+              (source.image.naturalHeight - frameBox.height / scale) / 2;
+            const sourceYTop = Math.floor(cropTop + 2 / scale);
+            const sourceYBottom = Math.floor(
+              cropTop + (frameBox.height - 3) / scale,
+            );
+            const screenX = Math.round(frameBox.x + frameBox.width / 2);
+            const screenTopY = Math.ceil(frameBox.y + 2);
+            const screenBottomY = Math.ceil(frameBox.y + frameBox.height - 3);
+            const rgb = (
+              context: CanvasRenderingContext2D,
+              x: number,
+              y: number,
+            ) => Array.from(context.getImageData(x, y, 1, 1).data).slice(0, 3);
+            return {
+              renderedTop: rgb(rendered.context, screenX, screenTopY),
+              sourceTop: rgb(source.context, 800, sourceYTop),
+              renderedBottom: rgb(rendered.context, screenX, screenBottomY),
+              sourceBottom: rgb(source.context, 800, sourceYBottom),
+            };
           },
           {
-            base64: (await page.screenshot({ type: 'png' })).toString('base64'),
-            x: Math.round(frame!.x + frame!.width / 2),
-            topY: Math.ceil(frame!.y + 2),
-            bottomY: Math.ceil(frame!.y + frame!.height - 3),
+            screenshotBase64: (await page.screenshot({ type: 'png' })).toString(
+              'base64',
+            ),
+            sourceBase64: tallImage.toString('base64'),
+            frameBox: frame!,
           },
         );
-        expect(cropPixels.top).toEqual([230, 40, 40]);
-        expect(cropPixels.bottom).toEqual([35, 75, 205]);
+        for (let channel = 0; channel < 3; channel += 1) {
+          expect(
+            Math.abs(
+              cropPixels.renderedTop[channel]! - cropPixels.sourceTop[channel]!,
+            ),
+          ).toBeLessThanOrEqual(6);
+          expect(
+            Math.abs(
+              cropPixels.renderedBottom[channel]! -
+                cropPixels.sourceBottom[channel]!,
+            ),
+          ).toBeLessThanOrEqual(6);
+        }
+        expect(cropPixels.sourceTop).not.toEqual(cropPixels.sourceBottom);
         await page.emulateMedia({ forcedColors: 'none' });
         await screenshot(
           page,
@@ -488,4 +714,97 @@ test('blend overlay is hidden in forced-colors and print', async ({ page }) => {
       frame.evaluate((element) => getComputedStyle(element, '::after').display),
     )
     .toBe('none');
+});
+
+test('procedural banner fixtures have tonal texture and a centered subject', async ({
+  page,
+}) => {
+  const details = await page.evaluate(
+    async ({ wideBase64, tallBase64 }) => {
+      async function inspect(base64: string) {
+        const image = new Image();
+        image.src = `data:image/png;base64,${base64}`;
+        await image.decode();
+        const canvas = document.createElement('canvas');
+        canvas.width = image.naturalWidth;
+        canvas.height = image.naturalHeight;
+        const context = canvas.getContext('2d');
+        if (!context) throw new Error('Canvas 2D context unavailable');
+        context.drawImage(image, 0, 0);
+        const pixel = (x: number, y: number) =>
+          Array.from(context.getImageData(x, y, 1, 1).data).slice(0, 3);
+        const luminance = (rgb: number[]) =>
+          rgb[0]! * 0.2126 + rgb[1]! * 0.7152 + rgb[2]! * 0.0722;
+        const bottom = Array.from({ length: 161 }, (_, index) =>
+          luminance(
+            pixel(
+              Math.round((index / 160) * (image.naturalWidth - 1)),
+              image.naturalHeight - 2,
+            ),
+          ),
+        );
+        const sampledColors = new Set<string>();
+        for (let y = 24; y < image.naturalHeight; y += 13) {
+          for (let x = 19; x < image.naturalWidth; x += 17)
+            sampledColors.add(pixel(x, y).join(','));
+        }
+        return {
+          width: image.naturalWidth,
+          height: image.naturalHeight,
+          bottomMin: Math.min(...bottom),
+          bottomMax: Math.max(...bottom),
+          sampledColorCount: sampledColors.size,
+          subjectLuminance: luminance(
+            pixel(
+              Math.round(image.naturalWidth * 0.5),
+              Math.round(image.naturalHeight * 0.48),
+            ),
+          ),
+          adjacentLuminance: luminance(
+            pixel(
+              Math.round(image.naturalWidth * 0.43),
+              Math.round(image.naturalHeight * 0.48),
+            ),
+          ),
+        };
+      }
+      return Promise.all([inspect(wideBase64), inspect(tallBase64)]);
+    },
+    {
+      wideBase64: wideImage.toString('base64'),
+      tallBase64: tallImage.toString('base64'),
+    },
+  );
+
+  expect(details.map(({ width, height }) => [width, height])).toEqual([
+    [1600, 800],
+    [1600, 1200],
+  ]);
+  for (const fixture of details) {
+    expect(fixture.sampledColorCount).toBeGreaterThan(200);
+    expect(fixture.bottomMin).toBeLessThan(55);
+    expect(fixture.bottomMax).toBeGreaterThan(140);
+    expect(fixture.subjectLuminance).toBeLessThan(
+      fixture.adjacentLuminance * 0.65,
+    );
+  }
+});
+
+test('pixel seam sampler detects a reintroduced frame outline and background', async ({
+  page,
+}) => {
+  responseImage = wideImage;
+  await installImageRoute(page);
+  await setPreferences(page, 'en', 'light', 390, 844);
+  await page.goto('/showcase/f14-banner?real=1');
+  const frame = page.locator('[data-registration-banner-frame]');
+  await expect(frame).toBeVisible();
+  await page.addStyleTag({
+    content:
+      '[data-registration-banner-frame] { outline: 2px solid rgb(128 128 128) !important; background: rgb(128 128 128) !important; }',
+  });
+  const seam = await readSeamPixels(page);
+  expect(Math.max(seam.bottomRowMaxDelta, seam.edgeMaxDelta)).toBeGreaterThan(
+    2,
+  );
 });

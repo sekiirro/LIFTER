@@ -273,16 +273,10 @@ export const en: Record<keyof typeof ar, string> = {
   'branding.previewTab': 'Preview',
   'branding.localOnly':
     'Unsaved sample controls update this preview only. Nothing is saved.',
-  'branding.uploadGuidancePrefix': 'Recommended banner image: ',
-  'branding.uploadGuidanceFormats': 'PNG or WebP',
-  'branding.uploadDimensionPrefix': '— ',
+  'branding.uploadGuidancePrefix': 'Recommended size: ',
   'branding.uploadDimensionRatioPrefix': ' (',
-  'branding.uploadDimensionSuffix': '), shown cropped to fill (',
-  'branding.uploadCoverSuffix':
-    ') and centered. The bottom part fades into the form, and the edges may be trimmed slightly on wider screens (desktop box ',
-  'branding.uploadGuidanceRatioPrefix': ' ≈',
   'branding.uploadGuidanceSuffix':
-    '), so keep important content centered in the upper two-thirds. Do not put text in the image.',
+    '). Keep important content away from the edges and the bottom fade. Avoid text in the image.',
   'branding.nameArabic': 'Workspace name in Arabic',
   'branding.nameEnglish': 'Workspace name in English',
   'branding.bannerAltArabic': 'Banner description in Arabic',

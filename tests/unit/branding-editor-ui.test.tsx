@@ -59,22 +59,29 @@ describe('branding editor presentation contract', () => {
     expect(html).not.toContain('history');
   });
 
-  it('shows the recommended banner dimensions and crop guidance in both locales', () => {
+  it('shows the concise recommended banner guidance in both locales', () => {
     const english = renderToStaticMarkup(
       createElement(BrandEditor, { locale: 'en', projection }),
     );
     const arabic = renderToStaticMarkup(
       createElement(BrandEditor, { locale: 'ar', projection }),
     );
+    const englishText = english.replace(/<[^>]+>/g, '');
+    const arabicText = arabic.replace(/<[^>]+>/g, '');
 
+    expect(englishText).toContain('Recommended size: 1600 × 800 px (2:1).');
+    expect(englishText).toContain(
+      'Keep important content away from the edges and the bottom fade.',
+    );
+    expect(englishText).toContain('Avoid text in the image.');
     expect(english).toContain('1600 × 800 px');
-    expect(english).toContain('630 × 288 px');
-    expect(english).toContain('centered in the upper two-thirds');
-    expect(english).toContain('Do not put text in the image');
+    expect(arabicText).toContain('المقاس الموصى به: 1600 × 800 px (2:1).');
+    expect(arabicText).toContain(
+      'أبقِ المحتوى المهم بعيدًا عن الحواف والتلاشي السفلي، وتجنّب وضع نص في الصورة.',
+    );
     expect(arabic).toContain('1600 × 800 px');
-    expect(arabic).toContain('630 × 288 px');
-    expect(arabic).toContain('الثلثين العلويين');
-    expect(arabic).toContain('لا تضع نصًا داخل الصورة');
+    expect(english).not.toContain('PNG or WebP');
+    expect(arabic).not.toContain('PNG أو WebP');
 
     for (const html of [english, arabic]) {
       const guidance = html.match(
@@ -84,10 +91,7 @@ describe('branding editor presentation contract', () => {
       expect(
         guidance?.match(/<bdi dir="ltr">1600 × 800 px<\/bdi>/),
       ).toBeTruthy();
-      expect(
-        guidance?.match(/<bdi dir="ltr">630 × 288 px<\/bdi>/),
-      ).toBeTruthy();
-      expect(guidance?.match(/<bdi dir="ltr">cover<\/bdi>/)).toBeTruthy();
+      expect(guidance?.match(/<bdi dir="ltr">2:1<\/bdi>/)).toBeTruthy();
     }
   });
 

@@ -59,7 +59,7 @@ for (const locale of ['ar', 'en'] as const) {
         );
         await expect(
           page.locator('[data-upload-guidance-draft] bdi'),
-        ).toHaveCount(6);
+        ).toHaveCount(2);
         await expect(
           page.locator('[data-upload-guidance-draft] bdi').first(),
         ).toHaveAttribute('dir', 'ltr');
@@ -171,6 +171,14 @@ for (const locale of ['ar', 'en'] as const) {
           content: 'nextjs-portal { display: none !important; }',
         });
         await page.screenshot({ path: temporary, fullPage: true });
+        if (viewport.width === 390 || viewport.width === 1440) {
+          await page.screenshot({
+            path: join(
+              screenshotDirectory,
+              `guidance-${locale}-${theme}-${viewport.width}.png`,
+            ),
+          });
+        }
       });
     }
   }
