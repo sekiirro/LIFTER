@@ -4,16 +4,6 @@ import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const SAFE_HEALTH = new Set([
-  'available',
-  'healthy',
-  'not running',
-  'running',
-  'starting',
-  'stopped',
-  'unhealthy',
-  'up',
-]);
 const SECRET_FIELD = /(?:jwt|token|key|secret|password|credential|db[_-]?url)/i;
 const SAFE_ERROR_MESSAGES = new Set([
   '--workdir must be an absolute path',
@@ -138,18 +128,26 @@ function requiredPort(value, name) {
 }
 
 function portFromUrl(value, name) {
-  let parsed;
+  let url;
   try {
-    parsed = new URL(value);
+    url = new URL(value);
   } catch {
     throw new Error(`${name} is missing or invalid`);
   }
-  const port = Number(parsed.port);
+  const authority = value.match(/^[a-z][a-z\d+.-]*:\/\/([^/?#]*)/i)?.[1];
+  const host = authority?.slice((authority.lastIndexOf('@') ?? -1) + 1);
+  const explicitPort = host?.startsWith('[')
+    ? host.match(/\]:(\d+)$/)?.[1]
+    : host?.match(/:(\d+)$/)?.[1];
+  const port = Number(explicitPort);
   if (!port) throw new Error(`${name} has no explicit port`);
+  if (Number(url.port || explicitPort) !== port) {
+    throw new Error(`${name} is missing or invalid`);
+  }
   return port;
 }
 
-function safeApiUrl(value) {
+function safeApiUrl(value, port) {
   let parsed;
   try {
     parsed = new URL(value);
@@ -159,22 +157,7 @@ function safeApiUrl(value) {
   if (!['http:', 'https:'].includes(parsed.protocol)) {
     throw new Error('Supabase status API URL must use HTTP or HTTPS');
   }
-  return parsed.origin;
-}
-
-function healthProjection(services) {
-  if (!services || typeof services !== 'object' || Array.isArray(services))
-    return {};
-  const result = {};
-  for (const [name, value] of Object.entries(services)) {
-    if (!/^[a-z][a-z0-9_-]*$/i.test(name)) continue;
-    const raw =
-      typeof value === 'string' ? value : (value?.status ?? value?.health);
-    if (typeof raw !== 'string') continue;
-    const status = raw.toLowerCase();
-    if (SAFE_HEALTH.has(status)) result[name] = status;
-  }
-  return result;
+  return `${parsed.protocol}//${parsed.hostname}:${port}`;
 }
 
 /** Validate identity and return only fields that are safe to print. */
@@ -206,8 +189,9 @@ export function validateAndRedactStatus(status, expected) {
     );
   }
 
-  const apiUrl = safeApiUrl(status?.API_URL ?? status?.api_url);
-  const observedApiPort = portFromUrl(apiUrl, 'Supabase status API URL');
+  const rawApiUrl = status?.API_URL ?? status?.api_url;
+  const observedApiPort = portFromUrl(rawApiUrl, 'Supabase status API URL');
+  const apiUrl = safeApiUrl(rawApiUrl, observedApiPort);
   const observedDbPort = portFromUrl(
     status?.DB_URL ?? status?.db_url,
     'Supabase status DB URL',
@@ -217,14 +201,11 @@ export function validateAndRedactStatus(status, expected) {
       'Supabase status API or DB port does not match the expected port',
     );
   }
-  const safeStatus = redactSensitiveFields(status);
   return {
-    apiUrl: safeApiUrl(safeStatus.API_URL ?? safeStatus.api_url),
+    apiUrl,
     dbPort: observedDbPort,
     projectId,
-    serviceHealth: healthProjection(
-      safeStatus.services ?? safeStatus.service_health,
-    ),
+    serviceHealth: {},
   };
 }
 

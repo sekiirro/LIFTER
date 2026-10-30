@@ -7,10 +7,5 @@
   "JWT_SECRET": "fake-jwt-secret",
   "secret": "fake-secret-value",
   "S3_PROTOCOL_ACCESS_KEY_ID": "fake-s3-key-id",
-  "S3_PROTOCOL_ACCESS_KEY_SECRET": "fake-s3-key-secret",
-  "services": {
-    "api": "healthy",
-    "db": "healthy",
-    "storage": "healthy"
-  }
+  "S3_PROTOCOL_ACCESS_KEY_SECRET": "fake-s3-key-secret"
 }

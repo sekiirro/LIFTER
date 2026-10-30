@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import path from 'node:path';
 import { describe, expect, it } from 'vitest';
 import {
   parseStatusOutput,
@@ -15,7 +16,7 @@ const fixture = JSON.parse(
   ),
 );
 const expected = {
-  workdir: 'C:\\workspace\\LIFTER',
+  workdir: path.resolve('/workspace/LIFTER'),
   projectId: 'lifter',
   apiPort: 54321,
   dbPort: 54322,
@@ -44,7 +45,12 @@ describe('safe Supabase status projection', () => {
     expect(output).toContain('http://127.0.0.1:54321');
     expect(output).toContain('54322');
     expect(output).toContain('lifter');
-    expect(output).toContain('healthy');
+    expect(validateAndRedactStatus(fixture, expected)).toEqual({
+      apiUrl: 'http://127.0.0.1:54321',
+      dbPort: 54322,
+      projectId: 'lifter',
+      serviceHealth: {},
+    });
   });
 
   it('refuses a relative workdir', () => {
@@ -85,6 +91,36 @@ describe('safe Supabase status projection', () => {
         expected,
       ),
     ).toThrow(/port/i);
+  });
+
+  it('preserves explicitly supplied default ports in the safe projection', () => {
+    const defaultPortStatus = {
+      ...fixture,
+      API_URL: 'http://127.0.0.1:80',
+      DB_URL: 'postgresql://postgres:fake-password@127.0.0.1:5432/postgres',
+    };
+    expect(
+      validateAndRedactStatus(defaultPortStatus, {
+        ...expected,
+        apiPort: 80,
+        dbPort: 5432,
+        config: { projectId: 'lifter', apiPort: 80, dbPort: 5432 },
+      }),
+    ).toEqual({
+      apiUrl: 'http://127.0.0.1:80',
+      dbPort: 5432,
+      projectId: 'lifter',
+      serviceHealth: {},
+    });
+  });
+
+  it('still rejects API URLs that omit their port', () => {
+    expect(() =>
+      validateAndRedactStatus(
+        { ...fixture, API_URL: 'http://127.0.0.1' },
+        expected,
+      ),
+    ).toThrow('Supabase status API URL has no explicit port');
   });
 });
 
