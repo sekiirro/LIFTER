@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useState } from 'react';
 import type { Messages } from '../../lib/i18n';
 import {
   correctCollectionAction,
@@ -14,6 +14,7 @@ import { Alert } from '../ui/Alert';
 import { Field } from '../ui/Field';
 import { PaymentConfirmation } from './PaymentConfirmation';
 import { StatusBadge } from './StatusBadge';
+import { createPaymentRequestKeyStore } from './payment-request-keys';
 import styles from './registration-approval.module.css';
 
 type Obligation = {
@@ -59,16 +60,7 @@ export function PaymentHistory({
   const [notice, setNotice] = useState('');
   const [pendingRequest, setPendingRequest] = useState('');
   const [paymentDates, setPaymentDates] = useState<Record<string, string>>({});
-  const requestKeys = useRef(new Map<string, string>());
-  const requestKey = (operation: string, id: string) => {
-    const mapKey = `${operation}:${id}`;
-    let key = requestKeys.current.get(mapKey);
-    if (!key) {
-      key = crypto.randomUUID();
-      requestKeys.current.set(mapKey, key);
-    }
-    return key;
-  };
+  const [requestKey] = useState(() => createPaymentRequestKeyStore());
   const runCorrection = async () => {
     if (
       !correcting?.obligation_id ||
