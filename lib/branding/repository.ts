@@ -42,7 +42,7 @@ function hasPersistedName(fields: unknown): boolean {
 }
 
 function asDraft(result: ReadResult): BrandingDraft | null {
-  if (!hasPersistedName(result.fields)) return null;
+  if (!hasPersistedName(result.fields) && result.revision === 0) return null;
   return {
     workspaceId: result.workspace_id,
     revision: result.revision,

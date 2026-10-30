@@ -60,6 +60,23 @@ export function fromPersistedBrandingFields(
       value.bannerAlt.ar.trim().length > 0) ||
     (typeof value.bannerAlt.en === 'string' &&
       value.bannerAlt.en.trim().length > 0);
+  const hasName =
+    (typeof value.name.ar === 'string' && value.name.ar.trim().length > 0) ||
+    (typeof value.name.en === 'string' && value.name.en.trim().length > 0);
+  if (!hasName) {
+    if (
+      typeof value.name.ar !== 'string' ||
+      typeof value.name.en !== 'string' ||
+      typeof value.color !== 'string' ||
+      !/^#[\da-f]{6}$/i.test(value.color)
+    ) {
+      throw new Error('Persisted branding SQL contract drift');
+    }
+    return {
+      names: { ar: '', en: '' },
+      color: value.color.toUpperCase() as `#${string}`,
+    };
+  }
   return normalizeBrandDraft({
     names: value.name,
     ...(hasBannerAlt ? { bannerAltText: value.bannerAlt } : {}),
