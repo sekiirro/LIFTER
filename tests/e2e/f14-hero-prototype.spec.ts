@@ -634,6 +634,8 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
     await capture(browser, {
       ...variant,
       fixture: 'bright',
+      material: 'B',
+      effect: 'webgl',
       label: variant.name,
       group: 'extras',
       screenshotName: `${variant.name}.png`,
@@ -764,8 +766,11 @@ test('F14 hero prototypes render the review matrix, preserve contrast, and fit l
           { name: THEME_COOKIE, value: theme, url: origin },
         ]);
         const page = await context.newPage();
-        await page.goto('/showcase/f14-hero-glass/guidance');
+        await page.goto('/showcase/f14-hero-glass/guidance', {
+          waitUntil: 'domcontentloaded',
+        });
         await expect(page.getByTestId('hero-guidance')).toBeVisible();
+        await page.evaluate(() => document.fonts.ready);
         const label = `guidance-${locale}-${theme}-${width}`;
         await checkAxe(page, label);
         const path = join(output, `${label}.png`);

@@ -10,7 +10,7 @@ export default defineConfig({
   testMatch: ['f14-hero-prototype.spec.ts'],
   fullyParallel: false,
   workers: 1,
-  timeout: 180_000,
+  timeout: 240_000,
   outputDir: join(tmpdir(), 'lifter-f14-hero-prototype-results'),
   use: {
     ...devices['Desktop Chrome'],
