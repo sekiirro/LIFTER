@@ -311,6 +311,69 @@ describe('cron edge wiring', () => {
     }
   });
 
+  it('waits for independent scheduled jobs and signals sanitized failure', async () => {
+    let releaseRefundDrain!: () => void;
+    let refundDrainStarted = false;
+    const refundDrainGate = new Promise<void>((resolve) => {
+      releaseRefundDrain = resolve;
+    });
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.includes('/rpc/jobs_claim'))
+          throw new Error('private provider payload');
+        if (url.includes('/rpc/alert_expired_refund_auth_lockouts'))
+          return Response.json(0);
+        if (url.includes('/rpc/claim_refund_auth_lockout_jobs')) {
+          refundDrainStarted = true;
+          await refundDrainGate;
+          return Response.json([]);
+        }
+        return Response.json(true);
+      });
+    const logError = vi.spyOn(console, 'error').mockImplementation(() => {});
+    vi.stubGlobal('fetch', fetchMock);
+    const waitUntil = vi.fn<(promise: Promise<unknown>) => void>();
+    try {
+      worker.scheduled(
+        { scheduledTime: 0, cron: '* * * * *', noRetry() {} },
+        {
+          SUPABASE_URL: 'https://example.test',
+          SUPABASE_SERVICE_ROLE_KEY: 'test-runtime-key',
+        },
+        { waitUntil },
+      );
+      const outcome = waitUntil.mock.calls[0]?.[0];
+      expect(outcome).toBeDefined();
+      let settled = false;
+      void outcome!.then(
+        () => {
+          settled = true;
+        },
+        () => {
+          settled = true;
+        },
+      );
+      await vi.waitFor(() => expect(refundDrainStarted).toBe(true));
+      await Promise.resolve();
+      expect(settled).toBe(false);
+      releaseRefundDrain();
+      await expect(outcome).rejects.toThrow('scheduled_jobs_failed');
+      expect(logError).toHaveBeenCalledExactlyOnceWith(
+        'scheduled_job_failed',
+        'jobs',
+      );
+      expect(JSON.stringify(logError.mock.calls)).not.toContain(
+        'private provider payload',
+      );
+    } finally {
+      releaseRefundDrain();
+      vi.unstubAllGlobals();
+      vi.restoreAllMocks();
+    }
+  });
+
   it('runs the bounded refund lockout drain and five-minute alert sweep on every tick', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
