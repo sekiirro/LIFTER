@@ -16,6 +16,18 @@ import {
 } from './staff-policy';
 import { validateFormDefinition, type FormQuestion } from './validation';
 
+export type MockFormsStaffAdapter = FormsStaffAdapter & {
+  getPublishedVersions(formId: string): readonly StaffFormDraft[];
+};
+
+function freezeSnapshot<T>(value: T): T {
+  if (value !== null && typeof value === 'object' && !Object.isFrozen(value)) {
+    for (const child of Object.values(value)) freezeSnapshot(child);
+    Object.freeze(value);
+  }
+  return value;
+}
+
 const DEMO_ASSIGNED_AT = '2026-10-24T12:00:00.000Z';
 const demoDeadline = calculateCairoClientSubmissionDeadline(
   DEMO_ASSIGNED_AT,
@@ -96,11 +108,17 @@ function isPublishable(form: StaffFormDraft): boolean {
   );
 }
 
-export function createMockFormsStaffAdapter(): FormsStaffAdapter {
+export function createMockFormsStaffAdapter(): MockFormsStaffAdapter {
   const forms = new Map<string, StaffFormDraft>();
+  const publishedVersions = new Map<string, readonly StaffFormDraft[]>();
+  const versionRoots = new Map<string, string>();
   let nextId = 1;
 
   return {
+    getPublishedVersions(formId) {
+      const rootId = versionRoots.get(formId) ?? formId;
+      return publishedVersions.get(rootId) ?? [];
+    },
     async load(): Promise<FormsStaffSnapshot> {
       return {
         forms: [...forms.values()],
@@ -123,6 +141,9 @@ export function createMockFormsStaffAdapter(): FormsStaffAdapter {
         return result('invalid');
       }
       const current = forms.get(form.id);
+      if (current !== undefined && current.status !== 'draft') {
+        return result('forbidden');
+      }
       if (current !== undefined && current.revision !== form.revision) {
         return result('conflict');
       }
@@ -131,6 +152,7 @@ export function createMockFormsStaffAdapter(): FormsStaffAdapter {
         status: 'draft' as const,
         revision: form.revision + 1,
       };
+      if (!versionRoots.has(saved.id)) versionRoots.set(saved.id, saved.id);
       forms.set(saved.id, saved);
       return { status: 'ok', form: saved };
     },
@@ -138,12 +160,17 @@ export function createMockFormsStaffAdapter(): FormsStaffAdapter {
       if (!canManageWorkspaceForms(role)) return result('forbidden');
       const current = forms.get(formId);
       if (current === undefined) return result('missing');
+      if (current.status !== 'draft') return result('invalid');
       if (!isPublishable(current)) return result('invalid');
-      const published = {
+      const published = freezeSnapshot({
         ...current,
         status: 'published' as const,
         revision: current.revision + 1,
-      };
+      });
+      const rootId = versionRoots.get(formId) ?? formId;
+      const versions = publishedVersions.get(rootId) ?? [];
+      publishedVersions.set(rootId, Object.freeze([...versions, published]));
+      versionRoots.set(formId, rootId);
       forms.set(formId, published);
       return { status: 'ok', form: published };
     },
@@ -152,11 +179,11 @@ export function createMockFormsStaffAdapter(): FormsStaffAdapter {
       const current = forms.get(formId);
       if (current === undefined) return result('missing');
       if (current.status !== 'published') return result('invalid');
-      const retired = {
+      const retired = freezeSnapshot({
         ...current,
         status: 'retired' as const,
         revision: current.revision + 1,
-      };
+      });
       forms.set(formId, retired);
       return { status: 'ok', form: retired };
     },
@@ -185,6 +212,7 @@ export function createMockFormsStaffAdapter(): FormsStaffAdapter {
           sectionId: sectionIds.get(question.sectionId) ?? question.sectionId,
         })),
       };
+      versionRoots.set(copied.id, versionRoots.get(formId) ?? formId);
       forms.set(copied.id, copied);
       return { status: 'ok', form: copied };
     },
