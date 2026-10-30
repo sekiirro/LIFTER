@@ -95,6 +95,7 @@ jobs:
       - name: Run full Playwright suite against the local stack
         run: npm run e2e -- --workers=1
         env:
+          LOCAL_SUPABASE_STORAGE_TEST: 'true'
           LOCAL_SUPABASE_PROVIDER_FAULT_TEST: 'true'
       - run: supabase stop
         working-directory: supabase-stack-b
