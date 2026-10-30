@@ -1,3 +1,4 @@
+import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import {
   assertLocalStackTarget,
@@ -7,6 +8,32 @@ import {
 } from '../../scripts/local-stack.mjs';
 
 describe('isolated local Supabase Stack D contract', () => {
+  it('keeps D auth and hook settings in parity with the branch root config', () => {
+    const rootConfig = readFileSync('supabase/config.toml', 'utf8');
+    const stackDConfig = readFileSync(
+      'supabase-stack-d/supabase/config.toml',
+      'utf8',
+    );
+    const authSections = (config: string) => {
+      const lines = config.split(/\r?\n/);
+      const sections: string[] = [];
+      let current: string[] | undefined;
+
+      for (const line of lines) {
+        if (/^\[[^\]]+\]$/.test(line)) {
+          if (current) sections.push(current.join('\n'));
+          current = /^\[auth(?:\.|\])/.test(line) ? [line] : undefined;
+        } else if (current) {
+          current.push(line);
+        }
+      }
+      if (current) sections.push(current.join('\n'));
+      return sections.join('\n');
+    };
+
+    expect(authSections(stackDConfig)).toBe(authSections(rootConfig));
+  });
+
   it('selects only the configured local stack identifiers', () => {
     expect(selectStack({ LIFTER_SUPABASE_STACK: 'd' })).toBe('d');
     expect(() => selectStack({ LIFTER_SUPABASE_STACK: 'e' })).toThrow(
