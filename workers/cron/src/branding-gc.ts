@@ -1,5 +1,6 @@
 export type BrandingGcClaim = {
   id: string;
+  workspace_id: string;
   bucket_id: string;
   object_name: string;
 };
@@ -13,10 +14,20 @@ export type BrandingGcDependencies = {
 function validClaim(claim: BrandingGcClaim): boolean {
   const validatedObject =
     /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\/validated\/(?:logo|banner)\/[0-9a-f]{64}\.(?:png|webp)$/i;
+  const stagingObject =
+    /^([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})\/staging\/([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})$/i;
+  const workspaceId = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(
+    claim.workspace_id,
+  );
+  const staging = stagingObject.exec(claim.object_name);
   return (
     /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(claim.id) &&
-    claim.bucket_id === 'branding-validated' &&
-    validatedObject.test(claim.object_name)
+    workspaceId &&
+    ((claim.bucket_id === 'branding-validated' &&
+      validatedObject.test(claim.object_name) &&
+      claim.object_name.startsWith(`${claim.workspace_id}/`)) ||
+      (claim.bucket_id === 'branding-staging' &&
+        staging?.[1]?.toLowerCase() === claim.workspace_id.toLowerCase()))
   );
 }
 
@@ -24,14 +35,17 @@ function validClaim(claim: BrandingGcClaim): boolean {
 export async function runBrandingGc(
   dependencies: BrandingGcDependencies,
   batchSize = 10,
-): Promise<void> {
-  const claims = await dependencies.claim(batchSize);
+): Promise<number> {
+  const claims = await dependencies.claim(
+    Math.min(50, Math.max(1, Math.trunc(batchSize) || 10)),
+  );
   for (const claim of claims) {
     if (!validClaim(claim)) throw new Error('branding_gc_invalid_claim');
     await dependencies.remove(claim.bucket_id, claim.object_name);
     const finalized = await dependencies.finalize(claim.id);
     if (!finalized) throw new Error('branding_gc_finalize_rejected');
   }
+  return claims.length;
 }
 
 export function createBrandingGc(env: {

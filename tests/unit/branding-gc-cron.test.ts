@@ -3,6 +3,7 @@ import { runBrandingGc } from '../../workers/cron/src/branding-gc';
 
 const claim = {
   id: '00000000-0000-4000-8000-000000000001',
+  workspace_id: '00000000-0000-4000-8000-000000000002',
   bucket_id: 'branding-validated',
   object_name: `00000000-0000-4000-8000-000000000002/validated/logo/${'a'.repeat(64)}.png`,
 };
@@ -50,5 +51,30 @@ describe('branding garbage collection cron', () => {
       }),
     ).rejects.toThrow('branding_gc_invalid_claim');
     expect(remove).not.toHaveBeenCalled();
+  });
+
+  it('cleans a stale staging upload through the same leased GC path', async () => {
+    const events: string[] = [];
+    await runBrandingGc({
+      claim: async () => [
+        {
+          ...claim,
+          bucket_id: 'branding-staging',
+          object_name: `${claim.workspace_id}/staging/00000000-0000-4000-8000-000000000003`,
+        },
+      ],
+      remove: async (bucket, objectName) => {
+        expect(bucket).toBe('branding-staging');
+        expect(objectName).toBe(
+          `${claim.workspace_id}/staging/00000000-0000-4000-8000-000000000003`,
+        );
+        events.push('remove');
+      },
+      finalize: async () => {
+        events.push('finalize');
+        return true;
+      },
+    });
+    expect(events).toEqual(['remove', 'finalize']);
   });
 });

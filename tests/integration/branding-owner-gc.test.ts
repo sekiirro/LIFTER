@@ -317,7 +317,7 @@ it('T050 claims only unreferenced assets, blocks new references, and requires a 
   expect(functions[0]?.cron_finalize_exists).toBe(true);
 
   const versionId = crypto.randomUUID();
-  const objectName = `${fixture.wsB.id}/${'f'.repeat(64)}.png`;
+  const objectName = `${fixture.wsB.id}/validated/logo/${'f'.repeat(64)}.png`;
   const savedDraft = await fixture.actors.woB.client.rpc(
     'branding_draft_save',
     {
