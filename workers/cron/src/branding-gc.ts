@@ -52,6 +52,7 @@ export function createBrandingGc(env: {
   SUPABASE_URL: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
 }): BrandingGcDependencies {
+  validateSupabaseUrl(env.SUPABASE_URL);
   const base = env.SUPABASE_URL.replace(/\/$/, '');
   const headers = {
     apikey: env.SUPABASE_SERVICE_ROLE_KEY,
@@ -89,3 +90,4 @@ export function createBrandingGc(env: {
     },
   };
 }
+import { validateSupabaseUrl } from './rpc';

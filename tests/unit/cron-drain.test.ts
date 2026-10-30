@@ -6,6 +6,7 @@ import {
   type Rpc,
 } from '../../workers/cron/src/drain';
 import { createRpc } from '../../workers/cron/src/rpc';
+import { createBrandingGc } from '../../workers/cron/src/branding-gc';
 import worker from '../../workers/cron/src';
 
 const job = (id: string, kind = 'system.noop'): Job => ({
@@ -198,6 +199,22 @@ describe('cron edge wiring', () => {
     expect(() => createRpc(env)).toThrow(/^rpc_insecure_url$/);
     expect(() => createRpc(env)).not.toThrow(env.SUPABASE_URL);
     expect(() => createRpc(env)).not.toThrow(env.SUPABASE_SERVICE_ROLE_KEY);
+  });
+
+  it('rejects a non-HTTPS branding GC URL before using the service-role key', () => {
+    const fetchMock = vi.fn<typeof fetch>();
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      expect(() =>
+        createBrandingGc({
+          SUPABASE_URL: 'http://remote.example.test',
+          SUPABASE_SERVICE_ROLE_KEY: 'test-runtime-key',
+        }),
+      ).toThrow(/^rpc_insecure_url$/);
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
   });
 
   it.each([
