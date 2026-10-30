@@ -49,7 +49,9 @@ export async function resolveBrandingAsset(
       r.status !== 'ok' ||
       r.bucket !== 'branding-validated' ||
       typeof r.object !== 'string' ||
-      !/^[0-9a-f-]{36}\/[0-9a-f]{64}\.(png|webp)$/.test(r.object) ||
+      !/^[0-9a-f-]{36}\/validated\/(logo|banner)\/[0-9a-f]{64}\.(png|webp)$/.test(
+        r.object,
+      ) ||
       !['image/png', 'image/webp'].includes(r.content_type) ||
       !Number.isSafeInteger(r.byte_size) ||
       r.byte_size <= 0

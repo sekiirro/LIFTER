@@ -12,6 +12,7 @@ export function authorize(
   workspaceId: string,
 ): boolean {
   return (
+    workspaceId.trim().length > 0 &&
     actor.role !== null &&
     (actor.role === 'platform_owner' ||
       actor.activeWorkspaceIds.includes(workspaceId)) &&

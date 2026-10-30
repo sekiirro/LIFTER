@@ -53,6 +53,9 @@ describe('authorize', () => {
       false,
     );
   });
+  it.each(ROLES)('%s denies a missing workspace context', (role) => {
+    expect(authorize({ ...actor, role }, 'manage_branding', '')).toBe(false);
+  });
   it.each(['workspace_owner', 'trainer', 'sales'] as const)(
     '%s requires active membership',
     (role) => {

@@ -23,7 +23,7 @@ it('uses only restricted bearer, exact RPC and no-store transport; ignores inval
   const metadata = {
     status: 'ok',
     bucket: 'branding-validated',
-    object: `00000000-0000-0000-0000-000000000001/${'a'.repeat(64)}.png`,
+    object: `00000000-0000-0000-0000-000000000001/validated/logo/${'a'.repeat(64)}.png`,
     content_type: 'image/png',
     byte_size: 24,
   };
