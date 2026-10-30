@@ -5,11 +5,36 @@ import { credential, brandingFixture, hash } from './branding-security-fixture';
 import { admin, checked, sql, twoWorkspaceFixture } from './harness';
 
 const db = sql();
+const mutateSerializedGuard =
+  process.env.BRANDING_VALIDATOR_SERIALIZED_GUARD_MUTATION === 'remove_call';
 let fixture: Awaited<ReturnType<typeof brandingFixture>>;
-afterAll(() => db.end());
 
 beforeAll(async () => {
   fixture = await brandingFixture(db);
+  if (mutateSerializedGuard) {
+    await db`drop policy branding_validator_insert_validated on storage.objects`;
+    await db`create policy branding_validator_insert_validated on storage.objects
+      for insert to branding_validator with check (
+        bucket_id='branding-validated'
+        and name ~ '^[0-9a-f-]{36}/validated/(logo|banner)/[0-9a-f]{64}-[0-9a-f-]{36}[.](png|webp)$'
+        and app_private.branding_credential_allowed('branding_validator')
+        and app_private.branding_validator_upload_binding_matches_gc(name)
+      )`;
+  }
+});
+
+afterAll(async () => {
+  if (mutateSerializedGuard) {
+    await db`drop policy branding_validator_insert_validated on storage.objects`;
+    await db`create policy branding_validator_insert_validated on storage.objects
+      for insert to branding_validator with check (
+        bucket_id='branding-validated'
+        and name ~ '^[0-9a-f-]{36}/validated/(logo|banner)/[0-9a-f]{64}-[0-9a-f-]{36}[.](png|webp)$'
+        and app_private.branding_credential_allowed('branding_validator')
+        and app_private.branding_validator_upload_binding_matches_gc_serialized(name)
+      )`;
+  }
+  await db.end();
 });
 
 async function asValidator<T>(
@@ -72,8 +97,42 @@ it('T049 creates durable uploads and validator-only receipts with forced RLS', a
   expect(policy?.with_check).toMatch(/branding-validated/);
   expect(policy?.with_check).toMatch(/branding_credential_allowed/);
   expect(policy?.with_check).toMatch(
-    /branding_validator_upload_binding_matches/,
+    /branding_validator_upload_binding_matches_gc_serialized/,
   );
+});
+
+it('T049 keeps every GC claim, including an expired unfinalized claim, as a validator insert barrier', async () => {
+  const c = await credential(db, 'branding_validator');
+  const uploadId = crypto.randomUUID();
+  const claimId = crypto.randomUUID();
+  const objectName = brandingValidatedObjectName(
+    fixture.wsA.id,
+    'logo',
+    'f'.repeat(64),
+    uploadId,
+    'image/png',
+  );
+  await db`insert into app_private.branding_uploads(
+      id,workspace_id,role,draft_revision,staging_bucket,staging_object,status,validator_credential_hash
+    ) values (
+      ${uploadId},${fixture.wsA.id},'logo',0,'branding-staging',${`${fixture.wsA.id}/staging/${uploadId}`},'validating',${hash(c.id)}
+    )`;
+  await db`insert into app_private.branding_gc_claims(id,workspace_id,bucket_id,object_name,lease_until)
+    values(${claimId},${fixture.wsA.id},'branding-validated',${objectName},statement_timestamp()-interval '1 second')`;
+  try {
+    const attempt = await c.client.storage
+      .from('branding-validated')
+      .upload(
+        objectName,
+        Buffer.from('expired claim must still block validator insert'),
+        { contentType: 'image/png' },
+      );
+    expect(attempt.error).toBeTruthy();
+  } finally {
+    await db`delete from app_private.branding_gc_claims where id=${claimId}`;
+    await db`delete from app_private.branding_uploads where id=${uploadId}`;
+    await admin().storage.from('branding-validated').remove([objectName]);
+  }
 });
 
 it('T049 accepts, validates, and idempotently records a receipt bound to upload, objects, hash, and enabled credential', async () => {
