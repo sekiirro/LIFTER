@@ -201,7 +201,7 @@ describe('registration read and commission parity', () => {
   });
 });
 
-it('keeps the role and capability definitions unchanged', () => {
+it('preserves F12 approval removal and scopes F13 capabilities', () => {
   expect(ROLES).toEqual([
     'platform_owner',
     'workspace_owner',
@@ -236,7 +236,12 @@ it('keeps the role and capability definitions unchanged', () => {
       'manage_freeze',
       'coaching_work',
     ],
-    trainer: ['generate_registration_link', 'coaching_work'],
+    trainer: [
+      'generate_registration_link',
+      'record_payment',
+      'manage_freeze',
+      'coaching_work',
+    ],
     sales: [
       'generate_registration_link',
       'configure_installment_schedule',
@@ -248,7 +253,7 @@ it('keeps the role and capability definitions unchanged', () => {
 
 for (const role of ROLES) {
   for (const capability of parityCapabilities) {
-    it(`T010 parity: ${role} / ${capability}`, async () => {
+    it(`T005 bidirectional parity: ${role} / ${capability}`, async () => {
       const [row] =
         await db`select app_private.role_has_capability(${role}::public.staff_role, ${capability}) as allowed`;
       expect(row?.allowed).toBe(roleHasCapability(role, capability));

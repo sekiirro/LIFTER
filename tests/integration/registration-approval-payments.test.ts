@@ -131,10 +131,19 @@ it('T018 stale revision/predecessor/seq cannot drift to a different obligation',
 });
 it('T018 all U4 foreign/nonexistent targets and disallowed roles have generic denial', async () => {
   for (const kind of ['collect', 'correct'] as const) {
-    for (const who of ['trainerA', 'trainerB', 'noProfile', 'revoked'] as const)
+    const denied =
+      kind === 'collect'
+        ? (['trainerB', 'noProfile', 'revoked'] as const)
+        : (['trainerA', 'trainerB', 'noProfile', 'revoked'] as const);
+    for (const who of denied)
       expect(
         await pay(f.actors[who].client, kind, paymentRequest(f, p, kind)),
       ).toEqual({ status: 'not_permitted' });
+    if (kind === 'collect')
+      expect(
+        (await pay(f.actors.trainerA.client, kind, paymentRequest(f, p, kind)))
+          .status,
+      ).not.toBe('not_permitted');
     for (const extra of [
       { workspace_id: randomUUID() },
       { workspace_id: f.wsB.id },

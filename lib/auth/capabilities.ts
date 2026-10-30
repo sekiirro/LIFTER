@@ -34,7 +34,12 @@ export const MATRIX: Readonly<Record<Role, readonly Capability[]>> = {
     'manage_freeze',
     'coaching_work',
   ],
-  trainer: ['generate_registration_link', 'coaching_work'],
+  trainer: [
+    'generate_registration_link',
+    'record_payment',
+    'manage_freeze',
+    'coaching_work',
+  ],
   sales: [
     'generate_registration_link',
     'configure_installment_schedule',

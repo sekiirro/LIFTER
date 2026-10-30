@@ -54,7 +54,7 @@ it('T023 authorizes PO only for a real workspace, owners by active membership, S
       client_id: p.t.id,
       subscription_id: p.sid,
     });
-    const allowed = ['po', 'woA', 'salesA'].includes(name);
+    const allowed = ['po', 'woA', 'salesA', 'trainerA'].includes(name);
     if (!allowed) expect(status.data).toEqual({ status: 'not_permitted' });
     else {
       expect(status.error).toBeNull();
