@@ -44,7 +44,7 @@ function advanceTo(
   if (stage === 'attachment') {
     upload = transitionBrandingUpload(upload, {
       type: 'promotion_succeeded',
-      validatedObjectKey: `workspace-a/validated/logo/${contentHash(new Uint8Array([1, 2, 3]))}`,
+      validatedObjectKey: `workspace-a/validated/logo/${contentHash(new Uint8Array([1, 2, 3]))}-upload-1`,
     });
     upload = transitionBrandingUpload(upload, { type: 'attachment_started' });
   }
@@ -89,7 +89,7 @@ describe('branding upload state and reconciliation contract', () => {
     );
     const promoted = transitionBrandingUpload(validated, {
       type: 'promotion_succeeded',
-      validatedObjectKey: `workspace-a/validated/logo/${contentHash(new Uint8Array([1, 2, 3]))}`,
+      validatedObjectKey: `workspace-a/validated/logo/${contentHash(new Uint8Array([1, 2, 3]))}-upload-1`,
     });
     const result = transitionBrandingUpload(promoted, {
       type: 'attach',

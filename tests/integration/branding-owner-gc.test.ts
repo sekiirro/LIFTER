@@ -5,6 +5,7 @@ import {
   createBrandingGc,
   runBrandingGc,
 } from '../../workers/cron/src/branding-gc';
+import { brandingValidatedObjectName } from '../../lib/branding/object-path';
 
 const db = sql();
 let fixture: Awaited<ReturnType<typeof brandingFixture>>;
@@ -455,4 +456,150 @@ it('T050 collects a stale attached upload after its asset references disappear',
     select status from app_private.branding_uploads where id=${uploadId}
   `;
   expect(upload?.status).toBe('cleaned');
+});
+
+it('T050 preserves a live same-content upload when an expired GC worker resumes', async () => {
+  const workspaceId = fixture.wsB.id;
+  const contentHash = '9'.repeat(64);
+  const staleUploadId = crypto.randomUUID();
+  const staleObject = brandingValidatedObjectName(
+    workspaceId,
+    'logo',
+    contentHash,
+    staleUploadId,
+    'image/png',
+  );
+  const oldVersionId = crypto.randomUUID();
+  const oldSequenceRows = await db<{ next_sequence: number }[]>`
+    select coalesce(max(sequence),0)+1 as next_sequence
+    from app_private.branding_published_versions where workspace_id=${workspaceId}`;
+  const oldUpload = await admin()
+    .storage.from('branding-validated')
+    .upload(staleObject, Buffer.from('old validated bytes'), {
+      contentType: 'image/png',
+      upsert: false,
+    });
+  expect(oldUpload.error).toBeNull();
+  await db`insert into app_private.branding_published_versions(
+      workspace_id,id,sequence,fields,published_by,published_at)
+    values(${workspaceId},${oldVersionId},${oldSequenceRows[0]!.next_sequence},
+      jsonb_build_object('name',jsonb_build_object('ar','','en','Old GC asset'),
+        'color','#123456','logo',null,'banner',null,
+        'bannerAlt',jsonb_build_object('ar','','en','')),
+      ${fixture.po.userId},'2000-01-01'::timestamptz)`;
+  await db`insert into app_private.branding_published_assets(
+      workspace_id,version_id,slot,bucket_id,object_name,content_type,byte_size)
+    values(${workspaceId},${oldVersionId},'logo','branding-validated',${staleObject},'image/png',18)`;
+
+  const [claimed] = await db<
+    {
+      id: string;
+      workspace_id: string;
+      bucket_id: string;
+      object_name: string;
+    }[]
+  >`select * from app_private.branding_gc_claim(1)`;
+  expect(claimed?.object_name).toBe(staleObject);
+  const claim = {
+    id: claimed!.id,
+    workspace_id: claimed!.workspace_id,
+    bucket_id: claimed!.bucket_id,
+    object_name: claimed!.object_name,
+  };
+  let signalStarted!: () => void;
+  const started = new Promise<void>((resolve) => {
+    signalStarted = resolve;
+  });
+  let releaseDelete!: () => void;
+  const deleteGate = new Promise<void>((resolve) => {
+    releaseDelete = resolve;
+  });
+  const storage = admin().storage;
+  const staleWorker = runBrandingGc({
+    claim: async () => [claim],
+    remove: async (bucket, objectName) => {
+      expect(bucket).toBe('branding-validated');
+      expect(objectName).toBe(staleObject);
+      signalStarted();
+      await deleteGate;
+      const removed = await storage.from(bucket).remove([objectName]);
+      if (removed.error) throw removed.error;
+    },
+    finalize: async (claimId) => {
+      const [result] = await db<{ finalized: boolean }[]>`
+        select app_private.branding_gc_finalize(${claimId}::uuid) as finalized`;
+      return result?.finalized ?? false;
+    },
+  });
+  await started;
+  await db`update app_private.branding_gc_claims
+    set lease_until=statement_timestamp()-interval '1 second' where id=${claim.id}::uuid`;
+  const [reclaimed] = await db<
+    {
+      id: string;
+      workspace_id: string;
+      bucket_id: string;
+      object_name: string;
+    }[]
+  >`select * from app_private.branding_gc_claim(1)`;
+  expect(reclaimed?.id).toBe(claim.id);
+  const secondPass = await runBrandingGc({
+    claim: async () => [reclaimed!],
+    remove: async (bucket, objectName) => {
+      const removed = await storage.from(bucket).remove([objectName]);
+      if (removed.error) throw removed.error;
+    },
+    finalize: async (claimId) => {
+      const [result] = await db<{ finalized: boolean }[]>`
+        select app_private.branding_gc_finalize(${claimId}::uuid) as finalized`;
+      return result?.finalized ?? false;
+    },
+  });
+  expect(secondPass).toBe(1);
+
+  const liveUploadId = crypto.randomUUID();
+  const liveObject = brandingValidatedObjectName(
+    workspaceId,
+    'logo',
+    contentHash,
+    liveUploadId,
+    'image/png',
+  );
+  expect(liveObject).not.toBe(staleObject);
+  const liveBytes = Buffer.from('new live validated bytes');
+  const liveUpload = await storage
+    .from('branding-validated')
+    .upload(liveObject, liveBytes, { contentType: 'image/png', upsert: false });
+  expect(liveUpload.error).toBeNull();
+  const liveVersionId = crypto.randomUUID();
+  const liveSequenceRows = await db<{ next_sequence: number }[]>`
+    select coalesce(max(sequence),0)+1 as next_sequence
+    from app_private.branding_published_versions where workspace_id=${workspaceId}`;
+  await db`insert into app_private.branding_published_versions(
+      workspace_id,id,sequence,fields,published_by,published_at)
+    values(${workspaceId},${liveVersionId},${liveSequenceRows[0]!.next_sequence},
+      jsonb_build_object('name',jsonb_build_object('ar','','en','Live GC asset'),
+        'color','#123456','logo',jsonb_build_object('bucket','branding-validated',
+          'object',${liveObject}::text,'content_type','image/png','byte_size',${liveBytes.byteLength}::bigint),
+        'banner',null,'bannerAlt',jsonb_build_object('ar','','en','')),
+      ${fixture.po.userId},statement_timestamp())`;
+  await db`insert into app_private.branding_published_assets(
+      workspace_id,version_id,slot,bucket_id,object_name,content_type,byte_size)
+    values(${workspaceId},${liveVersionId},'logo','branding-validated',${liveObject},'image/png',${liveBytes.byteLength})`;
+  await db`insert into app_private.branding_current_publications(workspace_id,version_id)
+    values(${workspaceId},${liveVersionId}) on conflict(workspace_id)
+    do update set version_id=excluded.version_id`;
+
+  releaseDelete();
+  await expect(staleWorker).rejects.toThrow();
+  const readBack = await storage
+    .from('branding-validated')
+    .download(liveObject);
+  expect(readBack.error).toBeNull();
+  expect(Buffer.from(await readBack.data!.arrayBuffer())).toEqual(liveBytes);
+
+  await storage.from('branding-validated').remove([staleObject, liveObject]);
+  await db`delete from app_private.branding_current_publications where workspace_id=${workspaceId} and version_id=${liveVersionId}`;
+  await db`delete from app_private.branding_published_assets where workspace_id=${workspaceId} and version_id=${liveVersionId}`;
+  await db`delete from app_private.branding_published_versions where workspace_id=${workspaceId} and id=${liveVersionId}`;
 });

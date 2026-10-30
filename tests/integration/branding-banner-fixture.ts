@@ -1,5 +1,6 @@
 import { deflateSync } from 'node:zlib';
 import { validateBrandingImage } from '../../lib/branding/image-validation';
+import { brandingValidatedObjectName } from '../../lib/branding/object-path';
 import { admin, sql } from './harness';
 import {
   registrationFixture,
@@ -81,7 +82,13 @@ export async function createPublishedBannerFixture() {
 
   const validator = await credential(db, 'branding_validator');
   const processed = validateBrandingImage(bytes, { role: 'banner' });
-  const validatedPath = `${fixture.wsA.id}/validated/banner/${processed.contentHash}.png`;
+  const validatedPath = brandingValidatedObjectName(
+    fixture.wsA.id,
+    'banner',
+    processed.contentHash,
+    uploadId,
+    processed.mediaType,
+  );
   await db.begin(async (tx) => {
     await tx`set local role branding_validator`;
     await tx`select set_config('request.jwt.claims', ${JSON.stringify(validator.claims)}, true)`;

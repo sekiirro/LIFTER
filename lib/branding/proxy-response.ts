@@ -43,7 +43,7 @@ function validAsset(
 ): value is BrandingProxyAsset {
   if (!value || value.bucket !== 'branding-validated') return false;
   const path = new RegExp(
-    `^${UUID}/validated/${slot}/([0-9a-f]{64})\\.(png|webp)$`,
+    `^${UUID}/validated/${slot}/([0-9a-f]{64})(?:-${UUID})?\\.(png|webp)$`,
     'i',
   );
   const match = path.exec(value.object);

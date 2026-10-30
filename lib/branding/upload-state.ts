@@ -117,7 +117,7 @@ export function transitionBrandingUpload(
       if (
         upload.status !== 'promoting' ||
         event.validatedObjectKey !==
-          `${upload.workspaceId}/validated/${upload.role}/${upload.contentHash}`
+          `${upload.workspaceId}/validated/${upload.role}/${upload.contentHash}-${upload.id}`
       )
         invalidTransition();
       return {

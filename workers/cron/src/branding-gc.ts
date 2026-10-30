@@ -13,7 +13,7 @@ export type BrandingGcDependencies = {
 
 function validClaim(claim: BrandingGcClaim): boolean {
   const validatedObject =
-    /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\/validated\/(?:logo|banner)\/[0-9a-f]{64}\.(?:png|webp)$/i;
+    /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\/validated\/(?:logo|banner)\/[0-9a-f]{64}(?:-[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})?\.(?:png|webp)$/i;
   const stagingObject =
     /^([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})\/staging\/([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})$/i;
   const workspaceId = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(

@@ -1,5 +1,6 @@
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import type { TransactionSql } from 'postgres';
+import { brandingValidatedObjectName } from '../../lib/branding/object-path';
 import { credential, brandingFixture, hash } from './branding-security-fixture';
 import { admin, checked, sql, twoWorkspaceFixture } from './harness';
 
@@ -80,7 +81,13 @@ it('T049 accepts, validates, and idempotently records a receipt bound to upload,
   const uploadId = crypto.randomUUID();
   const stagingObject = `${fixture.wsA.id}/staging/${uploadId}`;
   const outputHash = 'a'.repeat(64);
-  const outputObject = `${fixture.wsA.id}/validated/logo/${outputHash}.png`;
+  const outputObject = brandingValidatedObjectName(
+    fixture.wsA.id,
+    'logo',
+    outputHash,
+    uploadId,
+    'image/png',
+  );
   await db`insert into app_private.branding_uploads(id,workspace_id,role,draft_revision,staging_bucket,staging_object,status)
     values(${uploadId},${fixture.wsA.id},'logo',0,'branding-staging',${stagingObject},'staging')`;
 
@@ -169,8 +176,19 @@ it('T049 binds validated Storage inserts to a matching validating upload', async
   );
   if (!workspaceRow) throw new Error('workspace_fixture_create_failed');
   const workspaceC = workspaceRow.id;
-  const path = (workspaceId: string, role: string, hashValue: string) =>
-    `${workspaceId}/validated/${role}/${hashValue}.png`;
+  const path = (
+    workspaceId: string,
+    role: 'logo' | 'banner',
+    hashValue: string,
+    uploadId = crypto.randomUUID(),
+  ) =>
+    brandingValidatedObjectName(
+      workspaceId,
+      role,
+      hashValue,
+      uploadId,
+      'image/png',
+    );
   const upload = async (input: {
     workspaceId: string;
     role: 'logo' | 'banner';
@@ -197,12 +215,12 @@ it('T049 binds validated Storage inserts to a matching validating upload', async
     role: 'banner',
     status: 'validating',
   });
-  await upload({
+  const bannerUpload = await upload({
     workspaceId: fixture.wsB.id,
     role: 'banner',
     status: 'validating',
   });
-  await upload({
+  const stagingUpload = await upload({
     workspaceId: workspaceC,
     role: 'logo',
     status: 'staging',
@@ -216,8 +234,8 @@ it('T049 binds validated Storage inserts to a matching validating upload', async
   for (const objectName of [
     path(crypto.randomUUID(), 'banner', 'a'.repeat(64)), // No matching upload.
     path(workspaceC, 'banner', 'b'.repeat(64)), // Upload is bound to another workspace.
-    path(fixture.wsB.id, 'logo', 'd'.repeat(64)), // Matching upload is for banner.
-    path(workspaceC, 'logo', 'e'.repeat(64)), // Matching upload is still staging.
+    path(fixture.wsB.id, 'logo', 'd'.repeat(64), bannerUpload), // Matching upload is for banner.
+    path(workspaceC, 'logo', 'e'.repeat(64), stagingUpload), // Matching upload is still staging.
   ]) {
     const result = await attempt(objectName);
     if (!result.error) {
@@ -229,11 +247,17 @@ it('T049 binds validated Storage inserts to a matching validating upload', async
     expect(result.error, objectName).toBeTruthy();
   }
 
-  const allowed = await attempt(path(fixture.wsA.id, 'logo', 'c'.repeat(64)));
+  const allowedPath = path(
+    fixture.wsA.id,
+    'logo',
+    'c'.repeat(64),
+    matchingUpload,
+  );
+  const allowed = await attempt(allowedPath);
   expect(allowed.error).toBeNull();
   const cleanup = await admin()
     .storage.from('branding-validated')
-    .remove([path(fixture.wsA.id, 'logo', 'c'.repeat(64))]);
+    .remove([allowedPath]);
   expect(cleanup.error).toBeNull();
   expect(matchingUpload).toBeTruthy();
 });
