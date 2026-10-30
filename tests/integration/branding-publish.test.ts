@@ -115,6 +115,73 @@ it('does not append an audit event for an unchanged publication', async () => {
   ).toEqual(before);
 });
 
+it('allows publication when the workspace has only an expired GC claim', async () => {
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 0,
+    fields: fields('Expired claim publish'),
+  });
+  await db`insert into app_private.branding_gc_claims(workspace_id,bucket_id,object_name,lease_until)
+    values(${fixture.wsA.id},'branding-validated',${`${fixture.wsA.id}/validated/logo/${'a'.repeat(64)}.png`},statement_timestamp()-interval '1 second')`;
+
+  const result = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+  });
+
+  expect(result.error).toBeNull();
+  expect(result.data).toBeTruthy();
+});
+
+it('rejects a banner publication without usable alternate text', async () => {
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 0,
+    fields: fields('Missing banner alt'),
+  });
+  await db`update app_private.branding_drafts set fields=fields || jsonb_build_object('banner',
+    jsonb_build_object('bucket','branding-validated'::text,'object',${`${fixture.wsA.id}/validated/banner/${'b'.repeat(64)}.png`}::text,
+      'content_type','image/png'::text,'byte_size',32)) where workspace_id=${fixture.wsA.id}`;
+
+  const result = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+  });
+
+  expect(result.error?.code).toBe('22023');
+  expect(
+    await db`select 1 from app_private.branding_published_versions where workspace_id=${fixture.wsA.id}`,
+  ).toHaveLength(0);
+});
+
+it('copies a single banner alt locale into the published fallback locale', async () => {
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 0,
+    fields: {
+      ...fields('Banner alt fallback'),
+      bannerAlt: { ar: '', en: 'Published banner' },
+    },
+  });
+  await db`update app_private.branding_drafts set fields=fields || jsonb_build_object('banner',
+    jsonb_build_object('bucket','branding-validated'::text,'object',${`${fixture.wsA.id}/validated/banner/${'c'.repeat(64)}.png`}::text,
+      'content_type','image/png'::text,'byte_size',32)) where workspace_id=${fixture.wsA.id}`;
+
+  const result = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+  });
+  expect(result.error).toBeNull();
+  const published = await db<
+    { fields: { bannerAlt: { ar: string; en: string } } }[]
+  >`
+    select fields from app_private.branding_published_versions where workspace_id=${fixture.wsA.id}`;
+  expect(published[0]?.fields.bannerAlt).toEqual({
+    ar: 'Published banner',
+    en: 'Published banner',
+  });
+});
+
 it('rolls back the version, current pointer, and event when audit insertion fails', async () => {
   const failFunction = `branding_test_fail_audit_${randomUUID().replaceAll('-', '')}`;
   const failTrigger = `branding_test_fail_audit_${randomUUID().replaceAll('-', '')}`;
