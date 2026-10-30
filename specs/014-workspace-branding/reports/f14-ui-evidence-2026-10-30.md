@@ -51,6 +51,58 @@ The final post-fix run passed 25/25 with no skips. It covers 12 real registratio
 
 Reviewed representatives: `registration-ar-dark-mobile-390.png`, `registration-en-light-tablet-768.png`, `registration-en-dark-desktop-1440.png`, `registration-invalid-en-light-mobile-390.png`, `editor-ar-dark-mobile-390.png`, `editor-ar-light-desktop-1440.png`, `editor-en-light-tablet-768.png`, and `editor-en-dark-mobile-390.png`. The review found the neutral fallback holds its reserved space, the form starts below it, the invalid page stays generic and form-free, the mobile AR sample is localized and right-aligned, inline codes remain readable, and the editor layout changes to its mobile tabs without clipping the sample fields. Axe ran on each editor case, each valid registration case and the invalid registration page with no reported violations. Keyboard assertions cover the mobile Editor/Preview tabs and the preview-surface tabs. No authored motion was added; reduced-motion preference was not separately toggled. No explicit touch-target measurement is claimed.
 
+## Frontend Design Gate checklist
+
+Overall result: **PARTIAL**. The implemented public registration and sample-editor surfaces pass the checks below; missing actual staff/editor product surfaces and loaded-image evidence keep T032–T035 open.
+
+| Criterion | Result | Evidence / limit |
+| --- | --- | --- |
+| Design authority and tokens | PASS | Registration Premium Centered Card follows `DESIGN.md`; styling uses existing tokens and component-scoped CSS. No shared token, `DESIGN.md`, or shared component changed. `BrandScope` scopes `#2563EB` and preserves semantic success, warning, and error colors. |
+| Typography and direction | PASS | Existing Geist / IBM Plex Sans Arabic and type scale; document language/direction is asserted in the AR/EN matrix. Arabic labels and sample names are localized; Latin hex/dimension values use `Bidi` isolation. |
+| Layout and responsive geometry | PASS for captured fallback/sample UI; PARTIAL for loaded image | 12 registration geometry rows measure the reserved 2:1 fallback, capped banner and form separation with CLS 0; editor and registration render at 390/768/1440. A decoded, approved banner asset was unavailable, so loaded-image crop/CLS is unverified. |
+| Sample brand and contrast | PASS for sample brand/token treatment | Sample brand `#2563EB` is scoped; its light/dark treatments and semantic token preservation are asserted. This does not establish contrast for arbitrary persisted customer brand values. |
+| Accessibility, motion and touch | PARTIAL | Axe reported no violations in all 25 E2E cases; keyboard tab assertions and localized accessible names pass. No authored motion exists. Reduced-motion preference was not separately toggled, and touch-target dimensions were not measured. |
+| States and surface coverage | PARTIAL | Published-versus-draft isolation, neutral missing-banner fallback and generic invalid-link states pass. Editor controls are local-only samples; the “staff” view is a preview rather than a staff product surface, and no persisted editor or upload flow is implemented. |
+| Copy and upload guidance | PASS as DRAFT | New messages are bilingual and marked DRAFT; option C guidance appears only as informational copy. No upload control, persistence, publish action, or final approved copy is claimed. |
+| Locale/theme/viewport matrix and screenshots | PASS for recorded matrix | 24 core cases cover AR/EN × light/dark × 390/768/1440 for registration/editor, with four additional mobile preview states and one generic-invalid case. 29 committed PNGs were captured; representative variants spanning each locale, theme, and viewport were reviewed. |
+| Tests and size | PASS | Unit: 91 files / 1,641 passed. Focused E2E: 25/25 passed. Lint, typecheck, build, Prettier and diff checks passed. Web bundle: 7,164.98 KiB (1,481.18 KiB gzip); cron: 5.58 KiB (1.96 KiB gzip). The unrelated full Playwright suite was not run. |
+
+## Temporary Playwright screenshot paths
+
+These are the 29 screenshot paths from the final focused run under `test-results/`; `.last-run.json` is test-run metadata, not a screenshot.
+
+```text
+test-results/branding-editor-ar-dark-desktop-1440-editor-and-live-preview-chromium/editor-ar-dark-desktop-1440.png
+test-results/branding-editor-ar-dark-mobile-390-editor-and-live-preview-chromium/editor-ar-dark-mobile-390.png
+test-results/branding-editor-ar-dark-mobile-390-editor-and-live-preview-chromium/editor-preview-ar-dark-mobile-390.png
+test-results/branding-editor-ar-dark-tablet-768-editor-and-live-preview-chromium/editor-ar-dark-tablet-768.png
+test-results/branding-editor-ar-light-d-5e9da-440-editor-and-live-preview-chromium/editor-ar-light-desktop-1440.png
+test-results/branding-editor-ar-light-mobile-390-editor-and-live-preview-chromium/editor-ar-light-mobile-390.png
+test-results/branding-editor-ar-light-mobile-390-editor-and-live-preview-chromium/editor-preview-ar-light-mobile-390.png
+test-results/branding-editor-ar-light-tablet-768-editor-and-live-preview-chromium/editor-ar-light-tablet-768.png
+test-results/branding-editor-en-dark-desktop-1440-editor-and-live-preview-chromium/editor-en-dark-desktop-1440.png
+test-results/branding-editor-en-dark-mobile-390-editor-and-live-preview-chromium/editor-en-dark-mobile-390.png
+test-results/branding-editor-en-dark-mobile-390-editor-and-live-preview-chromium/editor-preview-en-dark-mobile-390.png
+test-results/branding-editor-en-dark-tablet-768-editor-and-live-preview-chromium/editor-en-dark-tablet-768.png
+test-results/branding-editor-en-light-d-521f0-440-editor-and-live-preview-chromium/editor-en-light-desktop-1440.png
+test-results/branding-editor-en-light-mobile-390-editor-and-live-preview-chromium/editor-en-light-mobile-390.png
+test-results/branding-editor-en-light-mobile-390-editor-and-live-preview-chromium/editor-preview-en-light-mobile-390.png
+test-results/branding-editor-en-light-tablet-768-editor-and-live-preview-chromium/editor-en-light-tablet-768.png
+test-results/branding-registration-ar-d-361bc-ublished-registration-brand-chromium/registration-ar-dark-tablet-768.png
+test-results/branding-registration-ar-d-6e5d3-ublished-registration-brand-chromium/registration-ar-dark-mobile-390.png
+test-results/branding-registration-ar-d-a9533-ublished-registration-brand-chromium/registration-ar-dark-desktop-1440.png
+test-results/branding-registration-ar-l-411c9-ublished-registration-brand-chromium/registration-ar-light-desktop-1440.png
+test-results/branding-registration-ar-l-52e71-ublished-registration-brand-chromium/registration-ar-light-tablet-768.png
+test-results/branding-registration-ar-l-aa1bd-ublished-registration-brand-chromium/registration-ar-light-mobile-390.png
+test-results/branding-registration-en-d-07c77-ublished-registration-brand-chromium/registration-en-dark-mobile-390.png
+test-results/branding-registration-en-d-493a5-ublished-registration-brand-chromium/registration-en-dark-desktop-1440.png
+test-results/branding-registration-en-d-c6628-ublished-registration-brand-chromium/registration-en-dark-tablet-768.png
+test-results/branding-registration-en-l-98366-ublished-registration-brand-chromium/registration-en-light-tablet-768.png
+test-results/branding-registration-en-l-a9f4f-ublished-registration-brand-chromium/registration-en-light-desktop-1440.png
+test-results/branding-registration-en-l-c5a6b-ublished-registration-brand-chromium/registration-en-light-mobile-390.png
+test-results/branding-registration-inva-fbf88-neric-neutral-and-form-free-chromium/registration-invalid-en-light-mobile-390.png
+```
+
 ## Editor adapter and remaining task decisions
 
 `components/branding/BrandEditor.tsx` is a local-only sample. Its fields update preview state and never save; its “staff” view is a sample preview and not a staff dashboard surface. `lib/branding/service.ts` defines a `BrandingRepository` interface but this branch has no concrete authorized repository/API route or dashboard editor route. `lib/branding/validation.ts` accepts the TypeScript DTO keys `names` / `bannerAltText`, while the persisted SQL contract uses `name` / `bannerAlt`; no approved adapter currently reconciles that shape.
