@@ -8,13 +8,18 @@ const copy = decisions.P2_health_notice;
 
 describe('HealthDataNotice', () => {
   it('renders the supplied draft notice immediately before the health questions', () => {
+    expect(copy.title_status).toContain('DRAFT');
+    expect(copy.title).toEqual({
+      ar: 'عن بياناتك الصحية',
+      en: 'About your health data',
+    });
     const html = renderToStaticMarkup(
       createElement(
         HealthDataNotice,
         {
           locale: 'ar',
           copy,
-          title: 'Health data notice',
+          title: copy.title.ar,
           draftLabel: 'DRAFT',
         },
         createElement('h2', null, 'Health question'),
@@ -25,7 +30,7 @@ describe('HealthDataNotice', () => {
     expect(html.indexOf(copy.ar)).toBeLessThan(html.indexOf('Health question'));
     expect(html).toContain('aria-labelledby="health-data-notice-title"');
     expect(html).toContain(
-      '<h2 id="health-data-notice-title">Health data notice</h2>',
+      `<h2 id="health-data-notice-title">${copy.title.ar}</h2>`,
     );
     expect(html).not.toContain('aria-label="DRAFT"');
   });
