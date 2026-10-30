@@ -278,8 +278,9 @@ export const en: Record<keyof typeof ar, string> = {
   'registrationApproval.history': 'Payment history',
   'registrationApproval.installment': 'Installment',
   'registrationApproval.dueOn': 'Due date',
-  'registrationApproval.paid': 'Recorded',
   'registrationApproval.unpaid': 'Unpaid',
+  'registrationApproval.paid': 'Recorded',
+  'registrationApproval.commission': 'Commission',
   'registrationApproval.confirmTitle': 'Confirm payment recording',
   'registrationApproval.confirmDescription':
     'Check the amount and date before confirming the record.',
@@ -293,4 +294,5 @@ export const en: Record<keyof typeof ar, string> = {
   'registrationApproval.success': 'Payment recorded.',
   'registrationApproval.dashboardApprovals': 'Approvals',
   'registrationApproval.dashboardPayments': 'Payments',
+  'registrationApproval.clientStatus': 'Registration status',
 };

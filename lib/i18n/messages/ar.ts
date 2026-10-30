@@ -266,8 +266,9 @@ export const ar = {
   'registrationApproval.history': 'سجل الدفعات',
   'registrationApproval.installment': 'الدفعة',
   'registrationApproval.dueOn': 'تاريخ الاستحقاق',
-  'registrationApproval.paid': 'مسجلة',
   'registrationApproval.unpaid': 'غير مسددة',
+  'registrationApproval.paid': 'مسجلة',
+  'registrationApproval.commission': 'العمولة',
   'registrationApproval.confirmTitle': 'تأكيد تسجيل الدفعة',
   'registrationApproval.confirmDescription':
     'تحقق من المبلغ والتاريخ قبل تأكيد التسجيل.',
@@ -281,4 +282,5 @@ export const ar = {
   'registrationApproval.success': 'تم تسجيل الدفعة.',
   'registrationApproval.dashboardApprovals': 'الموافقات',
   'registrationApproval.dashboardPayments': 'الدفعات',
+  'registrationApproval.clientStatus': 'حالة التسجيل',
 } as const;
