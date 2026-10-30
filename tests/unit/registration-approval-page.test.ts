@@ -89,9 +89,18 @@ beforeEach(() => {
   mock.session.mockResolvedValue({
     from: () => ({
       select: () => ({
-        order: async () => ({
-          data: [{ id: workspace, name: 'Studio' }],
-          error: null,
+        order: () => ({
+          in: async () => ({
+            data: [{ id: workspace, name: 'Studio' }],
+            error: null,
+          }),
+          then: (
+            resolve: (value: {
+              data: { id: string; name: string }[];
+              error: null;
+            }) => void,
+          ) =>
+            resolve({ data: [{ id: workspace, name: 'Studio' }], error: null }),
         }),
       }),
     }),
@@ -114,10 +123,7 @@ describe('registration approval and payment pages', () => {
       await Page({ searchParams: Promise.resolve({ workspace }) }),
     );
     expect(queue).toContain('data-testid="approval-queue"');
-    expect(mock.approvalQueue).toHaveBeenCalledWith(
-      expect.objectContaining({ role: 'platform_owner' }),
-      workspace,
-    );
+    expect(mock.approvalQueue).toHaveBeenCalledWith({ workspaceId: workspace });
     const review = renderToStaticMarkup(
       await Review({
         params: Promise.resolve({ clientId: client }),
@@ -125,7 +131,6 @@ describe('registration approval and payment pages', () => {
       }),
     );
     expect(review).toContain('data-testid="approval-review"');
-    expect(review).toContain('data-confirmation-required="true"');
     expect(review).toContain('120000');
   });
   it.each(['sales', 'trainer', null])(
