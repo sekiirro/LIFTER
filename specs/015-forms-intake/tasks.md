@@ -198,3 +198,9 @@ All tasks below have disjoint lane ownership. Every task writes focused tests fi
 | Stack D persistence | T045-T048 | Stack D only | Verified isolation; latest F11/F12/F14 contracts; each task dependencies above |
 
 T030-T048 (19 tasks) are independently reviewable, tests-first units with one to three owner files each. `[P]` marks tasks whose owner files and prerequisites allow parallel execution. Exact F15 migration timestamps must follow the latest actually merged F12/F14 migrations; do not allocate or execute migrations before verifying Stack D. No task permits Stack A/B/C use.
+
+### S14 UI lane evidence — branch `015-s14-ui` (partial)
+
+- T042 RED: focused unit suite failed because `TermsCard` did not exist. GREEN: 3/3 focused tests passed. Mutation: removing the affirmative-acceptance requirement failed 1 test; mutation reverted. Playwright coverage remains blocked because no authorized route in this lane renders the card.
+- T043 RED: focused unit suite failed because `HealthDataNotice` did not exist. GREEN: 2/2 focused tests passed. Arabic and English notice text is supplied from `fixtures/s14-po-decisions.json`; no consent/acknowledgment controls are rendered. Playwright coverage remains blocked because no authorized route in this lane renders the notice before the health questions.
+- T044 not started: the Welcome/resume copy keys are not present in `lib/i18n/messages`, and that shared file is outside this lane's owner list. The current branch also has no accepted-Terms persistence adapter; the Stack D journey remains a follow-up. No task checkbox is marked complete until its full UI/e2e acceptance is met.
