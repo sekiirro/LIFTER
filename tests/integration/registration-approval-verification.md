@@ -891,67 +891,68 @@ Cross-feature/finance/isolation review notes: the new SQL count is scoped by wor
 
 Skill catalog read in full (55 entries). Skill review (APPLIES / NOT APPLICABLE; one-line reason):
 
-| Skill | Status | Reason |
-|---|---|---|
-| apple-design | NOT APPLICABLE | This is not an Apple-native surface and no motion direction was requested. |
-| ui-ux-pro-max | APPLIES ? lookup only | Searched UX guidance for status refresh; no generated design system or persisted output used. |
-| impeccable | APPLIES | Loaded incumbent context, craft floor and one post-edit detector pass. |
-| frontend-design | APPLIES | Applied production UI guidance; DS overrides its font, palette and motion suggestions. |
-| baseline-ui | APPLIES | Reused existing primitives; its Tailwind requirement conflicts with this CSS-module project and was not adopted. |
-| design-dna | NOT APPLICABLE | No brand/system extraction or rebrand was requested. |
-| genjutsu | NOT APPLICABLE | No canvas or authored motion work is in scope. |
-| emil-design-eng | APPLIES | Applied interaction-feedback and restraint guidance to the status controls. |
-| animate | NOT APPLICABLE | The status flow specifies no authored animation. |
-| animate-expo | NOT APPLICABLE | This is a Next.js web app, not Expo. |
-| review-animations | NOT APPLICABLE | No new animation code was added. |
-| improve-animations | NOT APPLICABLE | No existing animation was changed. |
-| find-animation-opportunities | NOT APPLICABLE | The approved flow does not call for motion. |
-| animation-vocabulary | NOT APPLICABLE | No motion direction needed translation. |
-| animation-performance | NOT APPLICABLE | No authored motion to optimize. |
-| prototype | NOT APPLICABLE | The brief fixes one approved status flow; no alternatives were requested. |
-| mobile-native | APPLIES | Reviewed the 390px/touch surface; existing Button meets the project touch token. Physical-device testing remains unavailable. |
-| pick-ui-library | NOT APPLICABLE | Existing Design System components cover the surface; no library choice is needed. |
-| ask-sonner | NOT APPLICABLE | The flow uses inline status feedback, not toasts. |
-| write-swift | NOT APPLICABLE | No Swift/native code is in scope. |
-| break-ui | APPLIES | Added tests for offline/hidden, unavailable, budget exhaustion and concurrent refresh cases. |
-| better-ui | APPLIES | Reused established page and component patterns. |
-| better-typography | APPLIES | Uses root Geist/IBM Plex Sans Arabic font setup and existing hierarchy. |
-| better-colors | APPLIES | Uses existing semantic badge and surface tokens only. |
-| better-accessibility | APPLIES | Native buttons/links, stable polite status region, alert denial and visible shared focus treatment. |
-| better-layout | APPLIES | Reuses the existing narrow login layout and responsive card behavior. |
-| better-interface | APPLIES | Reviewed the changed route/component and its callers; full U9 screenshot review remains open. |
-| better-writing | APPLIES | Added concise bilingual state copy, with no activation or rejection-reason claims. |
-| interface-review | APPLIES | Reviewed the changed UI diff and status flows; axe/rendered evidence remains open. |
-| visual-style-presets | NOT APPLICABLE | Presets cannot override the approved LIFTER Design System. |
-| glass-dark-ui | NOT APPLICABLE | Glass effects are outside the approved visual language. |
-| progressive-blur | NOT APPLICABLE | No blur effect is needed. |
-| motion-design | NOT APPLICABLE | No motion is specified. |
-| css-animation | NOT APPLICABLE | No authored CSS animation was added. |
-| remotion-motion-graphics | NOT APPLICABLE | This is not a video composition. |
-| gsap-core | NOT APPLICABLE | No GSAP animation is used. |
-| threejs-fundamentals | NOT APPLICABLE | No 3D scene is used. |
-| threejs-animation | NOT APPLICABLE | No 3D animation is used. |
-| threejs-geometry | NOT APPLICABLE | No 3D geometry is needed. |
-| threejs-interaction | NOT APPLICABLE | No 3D interaction is needed. |
-| threejs-lighting | NOT APPLICABLE | No 3D lighting is needed. |
-| threejs-loaders | NOT APPLICABLE | No 3D assets are loaded. |
-| threejs-materials | NOT APPLICABLE | No 3D materials are used. |
-| threejs-postprocessing | NOT APPLICABLE | No 3D postprocessing is used. |
-| threejs-shaders | NOT APPLICABLE | No shader work is in scope. |
-| threejs-textures | NOT APPLICABLE | No 3D textures are used. |
-| gsap-frameworks | NOT APPLICABLE | The app uses React and no GSAP or non-React framework. |
-| gsap-performance | NOT APPLICABLE | No GSAP code is used. |
-| gsap-plugins | NOT APPLICABLE | No GSAP plugins are used. |
-| gsap-react | NOT APPLICABLE | No GSAP integration is used. |
-| gsap-scrolltrigger | NOT APPLICABLE | No scroll animation is specified. |
-| gsap-timeline | NOT APPLICABLE | No animation timeline is specified. |
-| gsap-utils | NOT APPLICABLE | No GSAP utilities are used. |
-| lottie | NOT APPLICABLE | No Lottie asset or runtime is used. |
-| remotion-to-hyperframes | NOT APPLICABLE | No Remotion-to-video port is requested. |
+| Skill                        | Status                | Reason                                                                                                                        |
+| ---------------------------- | --------------------- | ----------------------------------------------------------------------------------------------------------------------------- |
+| apple-design                 | NOT APPLICABLE        | This is not an Apple-native surface and no motion direction was requested.                                                    |
+| ui-ux-pro-max                | APPLIES ? lookup only | Searched UX guidance for status refresh; no generated design system or persisted output used.                                 |
+| impeccable                   | APPLIES               | Loaded incumbent context, craft floor and one post-edit detector pass.                                                        |
+| frontend-design              | APPLIES               | Applied production UI guidance; DS overrides its font, palette and motion suggestions.                                        |
+| baseline-ui                  | APPLIES               | Reused existing primitives; its Tailwind requirement conflicts with this CSS-module project and was not adopted.              |
+| design-dna                   | NOT APPLICABLE        | No brand/system extraction or rebrand was requested.                                                                          |
+| genjutsu                     | NOT APPLICABLE        | No canvas or authored motion work is in scope.                                                                                |
+| emil-design-eng              | APPLIES               | Applied interaction-feedback and restraint guidance to the status controls.                                                   |
+| animate                      | NOT APPLICABLE        | The status flow specifies no authored animation.                                                                              |
+| animate-expo                 | NOT APPLICABLE        | This is a Next.js web app, not Expo.                                                                                          |
+| review-animations            | NOT APPLICABLE        | No new animation code was added.                                                                                              |
+| improve-animations           | NOT APPLICABLE        | No existing animation was changed.                                                                                            |
+| find-animation-opportunities | NOT APPLICABLE        | The approved flow does not call for motion.                                                                                   |
+| animation-vocabulary         | NOT APPLICABLE        | No motion direction needed translation.                                                                                       |
+| animation-performance        | NOT APPLICABLE        | No authored motion to optimize.                                                                                               |
+| prototype                    | NOT APPLICABLE        | The brief fixes one approved status flow; no alternatives were requested.                                                     |
+| mobile-native                | APPLIES               | Reviewed the 390px/touch surface; existing Button meets the project touch token. Physical-device testing remains unavailable. |
+| pick-ui-library              | NOT APPLICABLE        | Existing Design System components cover the surface; no library choice is needed.                                             |
+| ask-sonner                   | NOT APPLICABLE        | The flow uses inline status feedback, not toasts.                                                                             |
+| write-swift                  | NOT APPLICABLE        | No Swift/native code is in scope.                                                                                             |
+| break-ui                     | APPLIES               | Added tests for offline/hidden, unavailable, budget exhaustion and concurrent refresh cases.                                  |
+| better-ui                    | APPLIES               | Reused established page and component patterns.                                                                               |
+| better-typography            | APPLIES               | Uses root Geist/IBM Plex Sans Arabic font setup and existing hierarchy.                                                       |
+| better-colors                | APPLIES               | Uses existing semantic badge and surface tokens only.                                                                         |
+| better-accessibility         | APPLIES               | Native buttons/links, stable polite status region, alert denial and visible shared focus treatment.                           |
+| better-layout                | APPLIES               | Reuses the existing narrow login layout and responsive card behavior.                                                         |
+| better-interface             | APPLIES               | Reviewed the changed route/component and its callers; full U9 screenshot review remains open.                                 |
+| better-writing               | APPLIES               | Added concise bilingual state copy, with no activation or rejection-reason claims.                                            |
+| interface-review             | APPLIES               | Reviewed the changed UI diff and status flows; axe/rendered evidence remains open.                                            |
+| visual-style-presets         | NOT APPLICABLE        | Presets cannot override the approved LIFTER Design System.                                                                    |
+| glass-dark-ui                | NOT APPLICABLE        | Glass effects are outside the approved visual language.                                                                       |
+| progressive-blur             | NOT APPLICABLE        | No blur effect is needed.                                                                                                     |
+| motion-design                | NOT APPLICABLE        | No motion is specified.                                                                                                       |
+| css-animation                | NOT APPLICABLE        | No authored CSS animation was added.                                                                                          |
+| remotion-motion-graphics     | NOT APPLICABLE        | This is not a video composition.                                                                                              |
+| gsap-core                    | NOT APPLICABLE        | No GSAP animation is used.                                                                                                    |
+| threejs-fundamentals         | NOT APPLICABLE        | No 3D scene is used.                                                                                                          |
+| threejs-animation            | NOT APPLICABLE        | No 3D animation is used.                                                                                                      |
+| threejs-geometry             | NOT APPLICABLE        | No 3D geometry is needed.                                                                                                     |
+| threejs-interaction          | NOT APPLICABLE        | No 3D interaction is needed.                                                                                                  |
+| threejs-lighting             | NOT APPLICABLE        | No 3D lighting is needed.                                                                                                     |
+| threejs-loaders              | NOT APPLICABLE        | No 3D assets are loaded.                                                                                                      |
+| threejs-materials            | NOT APPLICABLE        | No 3D materials are used.                                                                                                     |
+| threejs-postprocessing       | NOT APPLICABLE        | No 3D postprocessing is used.                                                                                                 |
+| threejs-shaders              | NOT APPLICABLE        | No shader work is in scope.                                                                                                   |
+| threejs-textures             | NOT APPLICABLE        | No 3D textures are used.                                                                                                      |
+| gsap-frameworks              | NOT APPLICABLE        | The app uses React and no GSAP or non-React framework.                                                                        |
+| gsap-performance             | NOT APPLICABLE        | No GSAP code is used.                                                                                                         |
+| gsap-plugins                 | NOT APPLICABLE        | No GSAP plugins are used.                                                                                                     |
+| gsap-react                   | NOT APPLICABLE        | No GSAP integration is used.                                                                                                  |
+| gsap-scrolltrigger           | NOT APPLICABLE        | No scroll animation is specified.                                                                                             |
+| gsap-timeline                | NOT APPLICABLE        | No animation timeline is specified.                                                                                           |
+| gsap-utils                   | NOT APPLICABLE        | No GSAP utilities are used.                                                                                                   |
+| lottie                       | NOT APPLICABLE        | No Lottie asset or runtime is used.                                                                                           |
+| remotion-to-hyperframes      | NOT APPLICABLE        | No Remotion-to-video port is requested.                                                                                       |
 
 Design authority conflict: frontend-design recommends custom fonts/colors and motion; baseline-ui recommends Tailwind. `DESIGN.md`, existing tokens/components and CSS modules take precedence. No token, dependency, or motion change was made.
 
 Checklist (PASS/FAIL with evidence):
+
 - PASS ? Tokens/brand: no new color, spacing, radius or font values; existing semantic status tokens are retained.
 - PASS ? Typography/direction: root Geist and IBM Plex Sans Arabic; page direction follows locale; no mixed-direction values need Bidi.
 - PASS ? Layout/components: existing login layout, Card, Button, StatusBadge, Skeleton and ErrorState reused.
@@ -1014,17 +1015,17 @@ At this snapshot, T042 real signup/session coverage, T043 Playwright/axe and the
 
 Each database mutation below ran serially on verified Stack A (`lifter`, API 54321 / DB 54322). Before each mutation phase, a filtered read-only `supabase status -o json` check verified API/DB ports; the process-only env loader supplied integration credentials without displaying values. Each canonical function was restored in `finally`, then its focused detector was rerun GREEN. No migration file was edited for a mutation.
 
-| Mutation | Reversible defect | RED detector | Restored GREEN |
-| --- | --- | --- | --- |
-| M08 | Paired operation and validator mutant recalculated reversal commission using current catalog rate after publishing rate 5,000 over the issued 17 bp snapshot. | `registration-approval-corrections.test.ts`, Q-M08: 1 failed / 12 skipped; expected reversal commission `-1`, received `-200`. | 1 passed / 12 skipped |
-| M09 | Paired role capability, actor authorization, and U4 correction gate mutants allowed workspace-owner correction. | `registration-approval-corrections.test.ts -t 'T019 woA cannot correct'`: 1 failed / 12 skipped; returned `ok` instead of `not_permitted`. | 1 passed / 12 skipped |
-| M15 | Safe payment-status projection exposed `commission_rate_bp` from the subscription. | `registration-approval-reads.test.ts -t 'Sales without commission'`: 1 failed / 7 skipped at sensitive-field assertion. | 1 passed / 7 skipped |
-| M16a | Pre-activation projection derived later due dates from subscription creation time. | `registration-approval-activation.test.ts -t 'later due dates are undefined'`: 1 failed / 1 skipped; dates appeared before activation. | 1 passed / 1 skipped |
-| M16b | Projection replaced issued custom offsets with `(seq-1)*30`. | `registration-approval-activation.test.ts -t 'exact custom offsets'`: 1 failed / 1 skipped; projected November 24 / December 24 instead of November 11 / December 17. | 1 passed / 1 skipped |
-| M19 | Flexible RPC omitted upfront-to-row-one and declared-count-to-array-length checks while retaining authoritative total check. | `registration-links-flexible.test.ts -t 'T050 rejects'`: 2 failed / 1 passed / 2 skipped; invalid upfront and count requests were accepted. | 3 passed / 2 skipped |
-| M21 | Collection operation omitted the earlier-installment-currently-paid guard while retaining activation check. | `registration-approval-payments.test.ts -t 'later sequence requires every earlier obligation currently paid'`: 1 failed / 18 skipped; seq 3 was collected before earlier obligations were paid. | 1 passed / 18 skipped |
-| M22a | Paired operation and deferred-validator mutant booked correction in the original collection month. | `registration-approval-corrections.test.ts -t 'correction negates stored original exactly'`: 1 failed / 12 skipped; effective date `1900-01-01` instead of fresh Cairo date `2026-10-30`. | 1 passed / 12 skipped |
-| M22b | Exact replay mutant regenerated event ID and returned a receipt timestamp one month later. | `registration-approval-replay.test.ts -t 'exact correction replay is stable'`: 1 failed / 16 skipped; replay returned November 30 instead of original October 30 receipt. | 1 passed / 16 skipped |
+| Mutation | Reversible defect                                                                                                                                             | RED detector                                                                                                                                                                                    | Restored GREEN        |
+| -------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | --------------------- |
+| M08      | Paired operation and validator mutant recalculated reversal commission using current catalog rate after publishing rate 5,000 over the issued 17 bp snapshot. | `registration-approval-corrections.test.ts`, Q-M08: 1 failed / 12 skipped; expected reversal commission `-1`, received `-200`.                                                                  | 1 passed / 12 skipped |
+| M09      | Paired role capability, actor authorization, and U4 correction gate mutants allowed workspace-owner correction.                                               | `registration-approval-corrections.test.ts -t 'T019 woA cannot correct'`: 1 failed / 12 skipped; returned `ok` instead of `not_permitted`.                                                      | 1 passed / 12 skipped |
+| M15      | Safe payment-status projection exposed `commission_rate_bp` from the subscription.                                                                            | `registration-approval-reads.test.ts -t 'Sales without commission'`: 1 failed / 7 skipped at sensitive-field assertion.                                                                         | 1 passed / 7 skipped  |
+| M16a     | Pre-activation projection derived later due dates from subscription creation time.                                                                            | `registration-approval-activation.test.ts -t 'later due dates are undefined'`: 1 failed / 1 skipped; dates appeared before activation.                                                          | 1 passed / 1 skipped  |
+| M16b     | Projection replaced issued custom offsets with `(seq-1)*30`.                                                                                                  | `registration-approval-activation.test.ts -t 'exact custom offsets'`: 1 failed / 1 skipped; projected November 24 / December 24 instead of November 11 / December 17.                           | 1 passed / 1 skipped  |
+| M19      | Flexible RPC omitted upfront-to-row-one and declared-count-to-array-length checks while retaining authoritative total check.                                  | `registration-links-flexible.test.ts -t 'T050 rejects'`: 2 failed / 1 passed / 2 skipped; invalid upfront and count requests were accepted.                                                     | 3 passed / 2 skipped  |
+| M21      | Collection operation omitted the earlier-installment-currently-paid guard while retaining activation check.                                                   | `registration-approval-payments.test.ts -t 'later sequence requires every earlier obligation currently paid'`: 1 failed / 18 skipped; seq 3 was collected before earlier obligations were paid. | 1 passed / 18 skipped |
+| M22a     | Paired operation and deferred-validator mutant booked correction in the original collection month.                                                            | `registration-approval-corrections.test.ts -t 'correction negates stored original exactly'`: 1 failed / 12 skipped; effective date `1900-01-01` instead of fresh Cairo date `2026-10-30`.       | 1 passed / 12 skipped |
+| M22b     | Exact replay mutant regenerated event ID and returned a receipt timestamp one month later.                                                                    | `registration-approval-replay.test.ts -t 'exact correction replay is stable'`: 1 failed / 16 skipped; replay returned November 30 instead of original October 30 receipt.                       | 1 passed / 16 skipped |
 
 M22b simulates the next-month replay response by shifting the stored receipt timestamp; the local integration test does not advance the database wall clock across a month boundary. The existing assertion checks byte-for-byte replay stability and database state. M19 uses forward migration `20261101131000_flexible_registration_link_terms_forward.sql`: the T051 planned timestamp `20261101124000` conflicts with the binding immutable-pushed-migrations rule, so the wrapper follows the existing pushed `20261101130000` migration. The wrapper contract is explicit in the F12 flexible-installment addendum; no additional migration was required.
 
