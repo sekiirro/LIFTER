@@ -323,6 +323,7 @@ describe('cron edge wiring', () => {
         const url = String(input);
         if (url.includes('/rpc/jobs_claim'))
           throw new Error('private provider payload');
+        if (url.includes('/rpc/branding_gc_claim')) return Response.json([]);
         if (url.includes('/rpc/alert_expired_refund_auth_lockouts'))
           return Response.json(0);
         if (url.includes('/rpc/claim_refund_auth_lockout_jobs')) {

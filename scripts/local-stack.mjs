@@ -28,7 +28,7 @@ function valueFor(configText, section, key) {
   return match ? Number(match[1]) : undefined;
 }
 
-/** @param {{ LIFTER_SUPABASE_STACK?: string, API_URL?: string, SUPABASE_URL?: string, DB_URL?: string, SUPABASE_DB_URL?: string }} [env] */
+/** @param {Record<string, string | undefined>} [env] */
 export function selectStack(env = process.env, root = process.cwd()) {
   const requested = env.LIFTER_SUPABASE_STACK;
   if (requested && !['a', 'b', 'c', 'd'].includes(requested))

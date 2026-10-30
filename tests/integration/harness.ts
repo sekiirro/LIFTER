@@ -10,7 +10,7 @@ import {
 
 export function loadEnv() {
   const stack = selectStack();
-  loadSelectedStackEnv();
+  if (stack !== 'c') loadSelectedStackEnv();
   const apiUrl = process.env.API_URL || process.env.SUPABASE_URL;
   const anonKey = process.env.ANON_KEY || process.env.SUPABASE_ANON_KEY;
   const serviceRoleKey =

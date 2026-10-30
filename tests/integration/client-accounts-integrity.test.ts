@@ -1,4 +1,3 @@
-import { localSupabaseContainer } from './local-docker';
 import { randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
 import { localSupabaseContainer } from '../../scripts/local-stack.mjs';
