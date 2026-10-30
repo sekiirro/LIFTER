@@ -36,7 +36,9 @@ it('T035 has matching Arabic and English signup message keys and scoped Telegram
   const telegramCopyAllowlist = ['clientSignup.telegramUsername'] as const;
   for (const messages of [en, ar]) {
     const telegramEntries = Object.entries(messages)
-      .filter(([key, value]) => /telegram|تيليجرام/i.test(`${key} ${value}`))
+      .filter(([key, value]) =>
+        /telegram|تيليجرام|تليجرام|تلغرام|تيلجرام/i.test(`${key} ${value}`),
+      )
       .map(([key]) => key)
       .sort();
     expect(telegramEntries).toEqual([...telegramCopyAllowlist]);
