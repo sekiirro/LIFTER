@@ -5,7 +5,7 @@
     "viewport": "mobile-390",
     "bannerWidth": 316,
     "bannerHeight": 158,
-    "formTop": 568.578125,
+    "formTop": 556.578125,
     "bannerBottom": 423.1875,
     "cls": 0
   },
@@ -15,7 +15,7 @@
     "viewport": "tablet-768",
     "bannerWidth": 630,
     "bannerHeight": 288,
-    "formTop": 706.578125,
+    "formTop": 694.578125,
     "bannerBottom": 561.1875,
     "cls": 0
   },
@@ -25,7 +25,7 @@
     "viewport": "desktop-1440",
     "bannerWidth": 630,
     "bannerHeight": 288,
-    "formTop": 706.578125,
+    "formTop": 694.578125,
     "bannerBottom": 561.1875,
     "cls": 0
   },
@@ -35,7 +35,7 @@
     "viewport": "mobile-390",
     "bannerWidth": 316,
     "bannerHeight": 158,
-    "formTop": 568.578125,
+    "formTop": 556.578125,
     "bannerBottom": 423.1875,
     "cls": 0
   },
@@ -45,7 +45,7 @@
     "viewport": "tablet-768",
     "bannerWidth": 630,
     "bannerHeight": 288,
-    "formTop": 706.578125,
+    "formTop": 694.578125,
     "bannerBottom": 561.1875,
     "cls": 0
   },
@@ -55,7 +55,7 @@
     "viewport": "desktop-1440",
     "bannerWidth": 630,
     "bannerHeight": 288,
-    "formTop": 706.578125,
+    "formTop": 694.578125,
     "bannerBottom": 561.1875,
     "cls": 0
   },
@@ -65,7 +65,7 @@
     "viewport": "mobile-390",
     "bannerWidth": 316,
     "bannerHeight": 158,
-    "formTop": 568.578125,
+    "formTop": 556.578125,
     "bannerBottom": 423.1875,
     "cls": 0
   },
@@ -75,7 +75,7 @@
     "viewport": "tablet-768",
     "bannerWidth": 630,
     "bannerHeight": 288,
-    "formTop": 706.578125,
+    "formTop": 694.578125,
     "bannerBottom": 561.1875,
     "cls": 0
   },
@@ -85,7 +85,7 @@
     "viewport": "desktop-1440",
     "bannerWidth": 630,
     "bannerHeight": 288,
-    "formTop": 706.578125,
+    "formTop": 694.578125,
     "bannerBottom": 561.1875,
     "cls": 0
   },
@@ -95,7 +95,7 @@
     "viewport": "mobile-390",
     "bannerWidth": 316,
     "bannerHeight": 158,
-    "formTop": 568.578125,
+    "formTop": 556.578125,
     "bannerBottom": 423.1875,
     "cls": 0
   },
@@ -105,7 +105,7 @@
     "viewport": "tablet-768",
     "bannerWidth": 630,
     "bannerHeight": 288,
-    "formTop": 706.578125,
+    "formTop": 694.578125,
     "bannerBottom": 561.1875,
     "cls": 0
   },
@@ -115,7 +115,7 @@
     "viewport": "desktop-1440",
     "bannerWidth": 630,
     "bannerHeight": 288,
-    "formTop": 706.578125,
+    "formTop": 694.578125,
     "bannerBottom": 561.1875,
     "cls": 0
   }
