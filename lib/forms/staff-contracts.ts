@@ -38,11 +38,16 @@ export type StaffAssignmentPreview = {
 export type FormsStaffSnapshot = {
   forms: readonly StaffFormDraft[];
   assignments: readonly StaffAssignmentPreview[];
+  defaultOnboardingFormId: string | null;
 };
 
 export type FormsStaffResult =
   | { status: 'ok'; form: StaffFormDraft }
   | { status: 'invalid' | 'conflict' | 'forbidden' | 'missing' };
+
+export type FormsStaffSelectionResult = {
+  status: 'ok' | 'forbidden' | 'missing';
+};
 
 export interface FormsStaffAdapter {
   load(): Promise<FormsStaffSnapshot>;
@@ -53,6 +58,10 @@ export interface FormsStaffAdapter {
   publish(role: FormsStaffRole, formId: string): Promise<FormsStaffResult>;
   retire(role: FormsStaffRole, formId: string): Promise<FormsStaffResult>;
   copy(role: FormsStaffRole, formId: string): Promise<FormsStaffResult>;
+  selectDefaultOnboardingForm(
+    role: FormsStaffRole,
+    formId: string,
+  ): Promise<FormsStaffSelectionResult>;
 }
 
 /** Presentation seam for the published F14 workspace brand provider. */

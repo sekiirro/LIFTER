@@ -53,12 +53,13 @@ describe('S14 draft-copy PO review package', () => {
     );
   });
 
-  it('places the health notice before health questions without consent UI or receipt', () => {
+  it('keeps the historical S14 health notice informational, with standalone UI superseded', () => {
     expect(decisions.P2_health_notice.position).toBe(
       'immediately before health questions',
     );
     expect(decisions.P2_health_notice.acknowledgment_checkbox).toBe(false);
     expect(decisions.P2_health_notice.consent_record).toBe(false);
     expect(report).toContain('no acknowledgment checkbox or consent record');
+    expect(spec).toContain('There is no standalone health notice');
   });
 });

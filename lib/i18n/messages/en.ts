@@ -291,6 +291,7 @@ export const en: Record<keyof typeof ar, string> = {
     'This draft policy cannot be accepted in production.',
   'forms.draftAcceptanceMock': 'Draft acceptance reached the mock adapter.',
   'forms.healthQuestionExample': 'Health question example',
+  'forms.aboutHealthData': 'About your health data',
   'forms.welcomeTitle': 'Welcome to LIFTER',
   'forms.welcomeBody':
     'Your intake is complete. You can continue to your plan.',
@@ -429,6 +430,7 @@ export const en: Record<keyof typeof ar, string> = {
   'forms.staffAddQuestion': 'Add question',
   'forms.staffAddOption': 'Add choice',
   'forms.staffSavedForms': 'Saved forms',
+  'forms.staffSetDefaultOnboarding': 'Set as onboarding form (DRAFT)',
   'forms.staffAddSectionHint': 'Add a section before adding questions.',
   'forms.staffQuestionLimitReached':
     'This form has reached the approved question limit.',
@@ -459,7 +461,7 @@ export const en: Record<keyof typeof ar, string> = {
   'forms.staffClientLate': 'Client submission alerts',
   'forms.staffDeadlinePolicy':
     'Deadlines use Cairo calendar dates and are calculated for each assignment.',
-  'forms.staffMandatoryDeadline': 'Mandatory Intake deadline',
+  'forms.defaultOnboardingForm': 'Your First Step',
   'forms.staffOtherDeadline': 'Other forms',
   'forms.staffCalendarDays': 'calendar days',
   'forms.staffDefault': 'default',

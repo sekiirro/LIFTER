@@ -9,7 +9,6 @@ import {
   parseLocale,
 } from '../../../../../lib/design/preferences';
 import { isShowcaseEnabled } from '../../../../../lib/design/showcase';
-import decisions from '../../../../../specs/015-forms-intake/fixtures/s14-po-decisions.json';
 
 function policySections(report: string, locale: 'ar' | 'en') {
   const heading =
@@ -26,7 +25,7 @@ function policySections(report: string, locale: 'ar' | 'en') {
 export default async function S14ConsentShowcasePage({
   searchParams,
 }: {
-  searchParams: Promise<{ brand?: string; welcome?: string }>;
+  searchParams: Promise<{ brand?: string; welcome?: string; health?: string }>;
 }) {
   if (!isShowcaseEnabled(process.env)) notFound();
   const query = await searchParams;
@@ -40,8 +39,13 @@ export default async function S14ConsentShowcasePage({
     <S14ConsentDemo
       locale={locale}
       sections={policySections(report, locale)}
-      notice={decisions.P2_health_notice}
-      view={query.welcome === '1' ? 'welcome' : 'terms'}
+      view={
+        query.welcome === '1'
+          ? 'welcome'
+          : query.health === '1'
+            ? 'health'
+            : 'terms'
+      }
     />
   );
   return query.brand === 'sample' ? (

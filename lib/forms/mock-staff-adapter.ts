@@ -15,6 +15,7 @@ import {
   resolveClientDeadlineDays,
 } from './staff-policy';
 import { validateFormDefinition, type FormQuestion } from './validation';
+import { getMessages } from '../i18n';
 
 export type MockFormsStaffAdapter = FormsStaffAdapter & {
   getPublishedVersions(formId: string): readonly StaffFormDraft[];
@@ -109,7 +110,24 @@ function isPublishable(form: StaffFormDraft): boolean {
 }
 
 export function createMockFormsStaffAdapter(): MockFormsStaffAdapter {
-  const forms = new Map<string, StaffFormDraft>();
+  let defaultOnboardingFormId = 'your-first-step';
+  const forms = new Map<string, StaffFormDraft>([
+    [
+      defaultOnboardingFormId,
+      {
+        id: defaultOnboardingFormId,
+        title: {
+          en: getMessages('en')['forms.defaultOnboardingForm'],
+          ar: getMessages('ar')['forms.defaultOnboardingForm'],
+        },
+        sections: [],
+        questions: [],
+        deadlineDays: 3,
+        status: 'draft',
+        revision: 0,
+      },
+    ],
+  ]);
   const publishedVersions = new Map<string, readonly StaffFormDraft[]>();
   const versionRoots = new Map<string, string>();
   let nextId = 1;
@@ -123,19 +141,22 @@ export function createMockFormsStaffAdapter(): MockFormsStaffAdapter {
       return {
         forms: [...forms.values()],
         assignments: demoAssignments,
+        defaultOnboardingFormId,
       };
     },
     async saveDraft(role, form) {
       if (!canManageWorkspaceForms(role)) return result('forbidden');
+      let deadlineDays: number;
       try {
-        resolveClientDeadlineDays({
-          kind: 'other',
+        deadlineDays = resolveClientDeadlineDays({
+          isDefaultOnboardingForm: form.id === defaultOnboardingFormId,
           configuredDays: form.deadlineDays,
         });
       } catch {
         return result('invalid');
       }
       if (
+        form.questions.length > 0 &&
         validateFormDefinition(form.questions.map(toFormQuestion)).length > 0
       ) {
         return result('invalid');
@@ -149,6 +170,7 @@ export function createMockFormsStaffAdapter(): MockFormsStaffAdapter {
       }
       const saved = {
         ...form,
+        deadlineDays,
         status: 'draft' as const,
         revision: form.revision + 1,
       };
@@ -215,6 +237,14 @@ export function createMockFormsStaffAdapter(): MockFormsStaffAdapter {
       versionRoots.set(copied.id, versionRoots.get(formId) ?? formId);
       forms.set(copied.id, copied);
       return { status: 'ok', form: copied };
+    },
+    async selectDefaultOnboardingForm(role, formId) {
+      if (!canManageWorkspaceForms(role)) return { status: 'forbidden' };
+      const selected = forms.get(formId);
+      if (selected === undefined || selected.status === 'retired')
+        return { status: 'missing' };
+      defaultOnboardingFormId = formId;
+      return { status: 'ok' };
     },
   };
 }

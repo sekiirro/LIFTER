@@ -43,12 +43,14 @@ describe('S14 PO decision fixture', () => {
     ]);
   });
 
-  it('records the health notice before health questions without consent', () => {
+  it('keeps historical S14 health-notice fixture separate from S17 product UI', () => {
     expect(decisions.P2_health_notice.position).toBe(
       'immediately before health questions',
     );
     expect(decisions.P2_health_notice.acknowledgment_checkbox).toBe(false);
     expect(decisions.P2_health_notice.consent_record).toBe(false);
+    expect(spec).toContain('There is no standalone health notice');
+    expect(spec).toContain('only where genuinely useful');
   });
 
   it('keeps the PO-approved P4 meal variation separate from canonical Arabic', () => {
@@ -63,41 +65,15 @@ describe('S14 PO decision fixture', () => {
     ]);
   });
 
-  it('matches the 26 parent IDs and keeps N12 last', () => {
-    expect(cases.parentIds).toHaveLength(26);
-    for (const id of cases.parentIds)
-      expect(spec).toMatch(new RegExp(`\\| ${id} \\|`));
-    expect(cases.parentIds).toEqual([
-      'B01',
-      'B02',
-      'B03',
-      'B04',
-      'B05',
-      'B06',
-      'T01',
-      'T02',
-      'T03',
-      'T04',
-      'T05',
-      'T06',
-      'T07',
-      'T08',
-      'N01',
-      'N02',
-      'N03',
-      'N04',
-      'N05',
-      'N06',
-      'N07',
-      'N08',
-      'N09',
-      'N10',
-      'N11',
-      'N12',
-    ]);
-    expect(spec.indexOf('| N12 | Nutrition 12, last')).toBeGreaterThan(
-      spec.indexOf('| N11 | Nutrition 11'),
+  it('treats prior S14 questions as optional editable starter material', () => {
+    expect(spec).toContain(
+      'Previously supplied S14 questions are editable starter content, not a fixed catalog.',
     );
+    expect(spec).toMatch(
+      /Your First Step \(.+\) is the default ordinary editable onboarding form in Forms\./,
+    );
+    expect(spec).not.toContain('all 26 parent questions are required');
+    expect(Array.isArray(cases.parentIds)).toBe(true);
   });
 
   it('maps sex only to standard image series', () => {

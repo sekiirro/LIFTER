@@ -287,12 +287,14 @@ export function FormBuilder({
   actorRole,
   form,
   allForms,
+  defaultOnboardingFormId,
   busy = false,
   issue,
   statusMessage,
   onChange,
   onCreate,
   onSelectForm,
+  onSetDefaultOnboardingForm,
   onSave,
   onPublish,
   onRetire,
@@ -303,12 +305,14 @@ export function FormBuilder({
   actorRole: FormsStaffRole;
   form: StaffFormDraft | null;
   allForms: readonly StaffFormDraft[];
+  defaultOnboardingFormId: string | null;
   busy?: boolean;
   issue?: string;
   statusMessage?: string;
   onChange: (form: StaffFormDraft) => void;
   onCreate: () => void;
   onSelectForm: (form: StaffFormDraft) => void;
+  onSetDefaultOnboardingForm: (formId: string) => void;
   onSave: () => void;
   onPublish: () => void;
   onRetire: () => void;
@@ -433,15 +437,25 @@ export function FormBuilder({
         >
           {allForms.map((savedForm) => (
             <li key={savedForm.id}>
-              <Button
-                variant="secondary"
-                aria-current={form?.id === savedForm.id ? 'true' : undefined}
-                onClick={() => onSelectForm(savedForm)}
-              >
-                {savedForm.title[locale] || <Bidi>{savedForm.id}</Bidi>}
-                {' · '}
-                {messages[`forms.staffStatus.${savedForm.status}`]}
-              </Button>
+              <div className={styles.formListItem}>
+                <Button
+                  variant="secondary"
+                  aria-current={form?.id === savedForm.id ? 'true' : undefined}
+                  onClick={() => onSelectForm(savedForm)}
+                >
+                  {savedForm.title[locale] || <Bidi>{savedForm.id}</Bidi>}
+                  {' · '}
+                  {messages[`forms.staffStatus.${savedForm.status}`]}
+                </Button>
+                <Button
+                  variant="secondary"
+                  aria-pressed={defaultOnboardingFormId === savedForm.id}
+                  disabled={!canManage || busy}
+                  onClick={() => onSetDefaultOnboardingForm(savedForm.id)}
+                >
+                  {messages['forms.staffSetDefaultOnboarding']}
+                </Button>
+              </div>
             </li>
           ))}
         </ul>

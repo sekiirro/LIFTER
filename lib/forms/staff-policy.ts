@@ -10,10 +10,10 @@ export function canManageWorkspaceForms(role: FormsStaffRole): boolean {
 }
 
 export function resolveClientDeadlineDays(input: {
-  kind: 'mandatory' | 'other';
+  isDefaultOnboardingForm: boolean;
   configuredDays?: number;
 }): number {
-  if (input.kind === 'mandatory') return 3;
+  if (input.isDefaultOnboardingForm) return 3;
   const days = input.configuredDays ?? 3;
   if (!Number.isInteger(days) || days < 1 || days > 14) {
     throw new RangeError('days must be an integer from 1 to 14');

@@ -6,19 +6,32 @@ import { getMessages } from '../../lib/i18n';
 import { Card } from '../ui/Card';
 import type { TermsPolicy } from './TermsCard';
 import { TermsCard } from './TermsCard';
-import { HealthDataNotice } from './HealthDataNotice';
+import { QuestionFlow, type FormsClientAdapter } from './QuestionFlow';
 import styles from './S14ConsentDemo.module.css';
+
+const healthDemoAdapter: FormsClientAdapter = {
+  async reloadDraft() {
+    return { status: 'loaded', revision: 1, answers: {} };
+  },
+  async saveDraft() {
+    return { status: 'saved', revision: 2 };
+  },
+  async submit() {
+    return { status: 'submitted', revision: 2 };
+  },
+  async correct() {
+    return { status: 'saved', revision: 3 };
+  },
+};
 
 export function S14ConsentDemo({
   locale,
   sections,
-  notice,
   view = 'terms',
 }: {
   locale: Locale;
   sections: TermsPolicy['sections'];
-  notice: { ar: string; en: string; title: { ar: string; en: string } };
-  view?: 'terms' | 'welcome';
+  view?: 'terms' | 'welcome' | 'health';
 }) {
   const copy = getMessages(locale);
   const [accepted, setAccepted] = useState(false);
@@ -40,25 +53,30 @@ export function S14ConsentDemo({
     </main>
   );
 
-  if (view === 'welcome') {
+  if (view === 'health') {
     return (
-      <TermsCard
+      <QuestionFlow
         locale={locale}
-        policy={policy}
-        labels={{
-          title: copy['forms.termsCardTitle'],
-          requiredTerms: copy['forms.requiredTerms'],
-          optionalMarketing: copy['forms.optionalMarketing'],
-          accept: copy['forms.acceptTerms'],
-          unavailable: copy['forms.draftAcceptanceUnavailable'],
-        }}
-        onAccept={() => undefined}
-        pendingMessage={copy['forms.intakeIncomplete']}
-        acceptedContent={welcome}
-        mockAcceptanceKey="f15-welcome-terms-mock-v1"
+        questions={[
+          {
+            id: 'health-question-example',
+            sectionId: 'health',
+            type: 'longText',
+            required: false,
+            privacy: 'health',
+            title: {
+              en: copy['forms.healthQuestionExample'],
+              ar: copy['forms.healthQuestionExample'],
+            },
+          },
+        ]}
+        adapter={healthDemoAdapter}
+        assignmentId="s14-health-context-showcase"
       />
     );
   }
+
+  if (view === 'welcome') return welcome;
 
   return (
     <main className={styles.main}>
@@ -75,14 +93,6 @@ export function S14ConsentDemo({
         onAccept={() => setAccepted(true)}
       />
       {accepted && <p role="status">{copy['forms.draftAcceptanceMock']}</p>}
-      <HealthDataNotice
-        locale={locale}
-        copy={notice}
-        title={notice.title[locale]}
-        draftLabel={copy['forms.copyDraft']}
-      >
-        <h2>{copy['forms.healthQuestionExample']}</h2>
-      </HealthDataNotice>
     </main>
   );
 }

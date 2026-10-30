@@ -66,6 +66,11 @@ export function FormsStaffConsole({
       .then(([loaded, color]) => {
         if (!active) return;
         setSnapshot(loaded);
+        setForm(
+          loaded.forms.find(
+            (item) => item.id === loaded.defaultOnboardingFormId,
+          ) ?? null,
+        );
         setBrandColor(color);
       })
       .catch(() => {
@@ -112,6 +117,7 @@ export function FormsStaffConsole({
         result.form,
       ],
       assignments: current?.assignments ?? [],
+      defaultOnboardingFormId: current?.defaultOnboardingFormId ?? null,
     }));
     return result.form;
   }
@@ -157,6 +163,22 @@ export function FormsStaffConsole({
     const result = await adapter.copy(role, formId);
     const copied = acceptResult(result, messages['forms.staffCopied']);
     if (copied) setView('builder');
+    setBusy(false);
+  }
+
+  async function selectDefaultOnboardingForm(formId: string) {
+    setBusy(true);
+    setIssue('');
+    const result = await adapter.selectDefaultOnboardingForm(role, formId);
+    if (result.status !== 'ok') {
+      setIssue(messages[`forms.staffResult.${result.status}`]);
+      setStatusMessage('');
+    } else {
+      setSnapshot((current) =>
+        current ? { ...current, defaultOnboardingFormId: formId } : current,
+      );
+      setStatusMessage(messages['forms.staffSaved']);
+    }
     setBusy(false);
   }
 
@@ -243,12 +265,18 @@ export function FormsStaffConsole({
               actorRole={role}
               form={activeForm}
               allForms={forms}
+              defaultOnboardingFormId={
+                snapshot?.defaultOnboardingFormId ?? null
+              }
               busy={busy}
               issue={issue}
               statusMessage={statusMessage}
               onChange={setForm}
               onCreate={() => void create()}
               onSelectForm={setForm}
+              onSetDefaultOnboardingForm={(formId) =>
+                void selectDefaultOnboardingForm(formId)
+              }
               onSave={() => void saveDraft()}
               onPublish={() => void publish()}
               onRetire={() => void retire()}

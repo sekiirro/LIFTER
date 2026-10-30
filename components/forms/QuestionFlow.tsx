@@ -320,6 +320,9 @@ export function QuestionFlow({
             aria-label={current.title[locale]}
             className={styles.question}
           >
+            {current.privacy === 'health' && (
+              <p>{messages['forms.aboutHealthData']}</p>
+            )}
             {current.type !== 'shortText' && current.type !== 'longText' && (
               <h2>{current.title[locale]}</h2>
             )}

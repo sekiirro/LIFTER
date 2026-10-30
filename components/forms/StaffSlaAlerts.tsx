@@ -46,7 +46,7 @@ export function StaffSlaAlerts({
         <h3 id="client-late-title">{messages['forms.staffClientLate']}</h3>
         <p>{messages['forms.staffDeadlinePolicy']}</p>
         <p>
-          {messages['forms.staffMandatoryDeadline']}: <Bidi>3</Bidi>{' '}
+          {messages['forms.defaultOnboardingForm']}: <Bidi>3</Bidi>{' '}
           {messages['forms.staffCalendarDays']}
         </p>
         <p>

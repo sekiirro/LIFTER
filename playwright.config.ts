@@ -9,11 +9,12 @@ const serverLogSummaryPath = join(
   tmpdir(),
   `lftr-u8-${serverLogRunId}.summary.json`,
 );
+const e2ePort = process.env.LIFTER_E2E_PORT ?? '3000';
 export default defineConfig({
   globalTeardown: './tests/e2e/server-log-global-teardown.ts',
   testDir: './tests/e2e',
   use: {
-    baseURL: 'http://localhost:3000',
+    baseURL: `http://localhost:${e2ePort}`,
   },
   projects: [
     {
@@ -29,9 +30,10 @@ export default defineConfig({
   ],
   webServer: {
     command: 'npm run build && node tests/e2e/start-server-capture.mjs',
-    url: 'http://localhost:3000/api/health',
+    url: `http://localhost:${e2ePort}/api/health`,
     env: {
       LIFTER_SHOWCASE: '1',
+      PORT: e2ePort,
       U8_SERVER_LOG_RAW_PATH: serverLogRawPath,
       U8_SERVER_LOG_SUMMARY_PATH: serverLogSummaryPath,
     },

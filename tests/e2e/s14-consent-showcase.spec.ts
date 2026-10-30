@@ -1,11 +1,11 @@
 import AxeBuilder from '@axe-core/playwright';
 import { mkdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { getMessages } from '../../lib/i18n';
-import decisions from '../../specs/015-forms-intake/fixtures/s14-po-decisions.json';
 
-const evidenceDir = join(process.cwd(), 'tests/integration/evidence/f15-ui');
+const evidenceDir = join(tmpdir(), 'lifter-f15-s18-ui');
 const viewports = [
   { name: 'mobile', width: 390, height: 844 },
   { name: 'tablet', width: 768, height: 1024 },
@@ -21,7 +21,7 @@ async function assertAxe(page: Page) {
   ).toEqual([]);
 }
 
-test('Terms, health notice and Welcome render accessibly across the design matrix', async ({
+test('Terms, contextual health guidance and Welcome render accessibly across the design matrix', async ({
   page,
   context,
 }) => {
@@ -54,20 +54,61 @@ test('Terms, health notice and Welcome render accessibly across the design matri
           page.getByRole('heading', { name: messages['forms.termsCardTitle'] }),
         ).toBeVisible();
         await expect(
-          page.getByRole('region', {
-            name: decisions.P2_health_notice.title[locale],
-          }),
-        ).toBeVisible();
-        await expect(
-          page.getByRole('heading', {
-            name: messages['forms.healthQuestionExample'],
-          }),
-        ).toBeVisible();
+          page.getByText(messages['forms.aboutHealthData']),
+        ).toHaveCount(0);
         await assertAxe(page);
         await page.screenshot({
           path: join(
             evidenceDir,
             `s14-${locale}-${theme}-${viewport.name}.png`,
+          ),
+          fullPage: true,
+        });
+
+        await page.goto('/showcase/forms/s14?health=1');
+        await page.addStyleTag({
+          content: 'nextjs-portal { display: none !important; }',
+        });
+        await expect(
+          page.getByRole('region', {
+            name: messages['forms.healthQuestionExample'],
+          }),
+        ).toBeVisible();
+        await expect(
+          page.getByText(messages['forms.aboutHealthData']),
+        ).toBeVisible();
+        await assertAxe(page);
+        await page.screenshot({
+          path: join(
+            evidenceDir,
+            `health-context-${locale}-${theme}-${viewport.name}.png`,
+          ),
+          fullPage: true,
+        });
+
+        await page.goto('/showcase/forms/staff');
+        await page.addStyleTag({
+          content: 'nextjs-portal { display: none !important; }',
+        });
+        await expect(
+          page.getByRole('heading', { name: messages['forms.staffBuilder'] }),
+        ).toBeVisible();
+        await expect(
+          page.getByLabel(messages['forms.staffEnglishName']),
+        ).toHaveValue(getMessages('en')['forms.defaultOnboardingForm']);
+        await expect(
+          page.getByLabel(messages['forms.staffArabicName']),
+        ).toHaveValue(getMessages('ar')['forms.defaultOnboardingForm']);
+        await expect(
+          page.getByRole('button', {
+            name: messages['forms.staffSetDefaultOnboarding'],
+          }),
+        ).toHaveAttribute('aria-pressed', 'true');
+        await assertAxe(page);
+        await page.screenshot({
+          path: join(
+            evidenceDir,
+            `onboarding-builder-${locale}-${theme}-${viewport.name}.png`,
           ),
           fullPage: true,
         });
@@ -127,7 +168,7 @@ test('Terms, health notice and Welcome render accessibly across the design matri
   ).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(
-    page.getByText(getMessages('en')['forms.draftAcceptanceMock']),
+    page.getByText(getMessages('en')['forms.draftAcceptanceUnavailable']),
   ).toBeVisible();
   await page.emulateMedia({ reducedMotion: 'reduce' });
   expect(
@@ -152,10 +193,13 @@ test('Terms, health notice and Welcome render accessibly across the design matri
         },
         { name: 'lifter_theme', value: theme, domain: 'localhost', path: '/' },
       ]);
-      await page.goto('/showcase/forms/s14?brand=sample');
+      await page.goto('/showcase/forms/s14?health=1&brand=sample');
       await page.addStyleTag({
         content: 'nextjs-portal { display: none !important; }',
       });
+      await expect(
+        page.getByText(getMessages(locale)['forms.aboutHealthData']),
+      ).toBeVisible();
       await assertAxe(page);
     }
   }

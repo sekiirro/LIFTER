@@ -144,6 +144,39 @@ describe('QuestionFlow', () => {
     expect(html).toContain('This answer exceeds the character limit.');
     expect(html).toContain('value="');
   });
+
+  it('shows health-data context only beside a health-related question', () => {
+    const healthQuestion = {
+      id: 'health-detail',
+      sectionId: 'health',
+      type: 'longText' as const,
+      required: false,
+      privacy: 'health' as const,
+      title: { en: 'Health question example', ar: '' },
+    };
+    const healthHtml = renderToStaticMarkup(
+      createElement(QuestionFlow, {
+        locale: 'en',
+        questions: [healthQuestion],
+        adapter,
+        assignmentId: 'health-context',
+      }),
+    );
+    expect(healthHtml).toContain('About your health data');
+    expect(healthHtml.indexOf('About your health data')).toBeLessThan(
+      healthHtml.indexOf('<label'),
+    );
+
+    const ordinaryHtml = renderToStaticMarkup(
+      createElement(QuestionFlow, {
+        locale: 'en',
+        questions: [{ ...healthQuestion, privacy: undefined }],
+        adapter,
+        assignmentId: 'ordinary-context',
+      }),
+    );
+    expect(ordinaryHtml).not.toContain('About your health data');
+  });
 });
 
 it('counts an emoji as one Unicode code point in the answer counter', () => {
