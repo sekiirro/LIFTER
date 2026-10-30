@@ -774,3 +774,79 @@ Conflicts: catalog entries marked `CONFLICT - PO decision` are advisory; `DESIGN
 - `npm run build:edge`: PASS; OpenNext build complete, routes include `/registration-approvals` and `/payments`.
 - `npm run size`: PASS; web 7,165.20 KiB / 65,536 KiB, cron 2.85 KiB / 65,536 KiB.
 - Runtime identifies GPT-6; effort-selection metadata is unavailable, so Luna High could not be independently verified.
+
+## S14 — U7 T035 continuation (2026-10-30)
+
+Starting feature head was `d56897bb9244b377e13a8c44cbf63753bc93039f`; merged `origin/main` with `--no-ff` as `ee41742`. The protected `012-registration-approval` branch was not checked out. Stack A only was used: project `lifter`, API `127.0.0.1:54321`, DB `127.0.0.1:54322`. Stacks B and C were not accessed.
+
+Architect accepted option 1 for T035. Added one forward-only migration, `supabase/migrations/20261101125000_registration_approval_correction_read.sql`. Its separate authenticated RPC checks `platform_owner`, `approve_registration`, workspace and client association; it returns only `subscription_id` and correctionable rows containing `obligation_id`, `revision`, and `tail_event_id`. The installment sequence is the JSON object key so the page can match those identifiers to the already safe issued schedule without adding a returned data column. WO, Trainer, Sales, clients, unknown targets, and foreign-workspace targets receive `{status: "not_permitted"}`. Existing review RPC remains unchanged.
+
+The workspace membership check in `app/(app)/registration-approvals/[clientId]/page.tsx` now runs before `readRegistrationApprovalReview`, preserving generic `notFound`. The review page reads the new correction projection only for a platform owner and passes the minimal context into the existing PaymentHistory/ConfirmDialog correction control. No new style, token, color, font, dependency, or motion was added. Components continue to use existing semantic status and focus treatments; static UI tests cover PO visibility and the confirmation dialog. Axe and the rendered AR/EN × light/dark × mobile/desktop screenshots remain deferred to U9’s authenticated B gate; no screenshot path or axe result is claimed here.
+
+### Migration order
+
+Sorted migration files at this head (timestamp — file):
+
+- `20261027120000` — `tenancy.sql`
+- `20261027130000` — `workspaces_update_columns.sql`
+- `20261027140000` — `access_capability_for_po.sql`
+- `20261027150000` — `audit_log.sql`
+- `20261027150100` — `audited_tables_no_delete.sql`
+- `20261027160000` — `jobs.sql`
+- `20261027160100` — `audit_jobs.sql`
+- `20261028120000` — `auth_recovery_links.sql`
+- `20261029120000` — `packages.sql`
+- `20261030120000` — `registration_links.sql`
+- `20261031120000` — `client_accounts.sql`
+- `20261031121000` — `client_accounts_model.sql`
+- `20261031122000` — `client_accounts_signup.sql`
+- `20261031123000` — `signup_password_parity.sql`
+- `20261031123500` — `signup_duplicate_result.sql`
+- `20261031123600` — `client_accounts_admission.sql`
+- `20261031123700` — `signup_admission_po_decisions.sql`
+- `20261031124000` — `client_accounts_recovery.sql`
+- `20261031125000` — `client_signup_admission_before_bcrypt.sql`
+- `20261031130000` — `purge_scheduling_pg_cron.sql`
+- `20261101120000` — `registration_approval_model.sql`
+- `20261101121000` — `registration_approval_operations.sql`
+- `20261101122000` — `payment_operations.sql`
+- `20261101123000` — `registration_approval_reads.sql`
+- `20261101125000` — `registration_approval_correction_read.sql` (new)
+
+No `20261101124000_flexible_registration_link_terms.sql` or `20261102120000` F14 migration file exists in this merged tree. The new timestamp is ordered after the reserved T051 timestamp `20261101124000` and before F14’s specified `20261102120000`; no migration already on main was edited.
+
+### RED / GREEN and mutations
+
+- Before implementation, the three focused UI/read suites reported 7 failed / 21 passed: the correction reader/UI was absent and the page ordering assertion was not met.
+- Stack A RED after reset from merged-main migrations: read-projection integration reported 2 failed / 6 passed because the new RPC did not exist.
+- M1, grant projection to WO: integration assertion failed for `woA` (1 failed / 7 passed). Restored PO-only role check.
+- M2, remove workspace predicate: foreign-workspace call returned the other tenant’s subscription (1 failed / 7 passed). Restored the tenant predicate.
+- M3, add `amount_minor`: exact projection assertion caught the extra column (1 failed / 7 passed). Removed the field.
+- Final focused unit suites: 3 files / 28 tests passed. Registration-approval read integration: 1 file / 8 tests passed.
+- Final full unit: `npm test` — 73 files passed, 1,518 passed.
+- Final full Stack A integration: 37 files passed, 1 skipped; 1,112 passed, 1 skipped, 0 failed.
+- `npm run typecheck`, `npm run lint`, `npm run format:check`, and `npm run build:edge`: PASS. Edge build includes `/registration-approvals/[clientId]` and completed successfully.
+- Stack A `supabase db reset` from the checked-out migration chain applied the new migration; `supabase migration up` then reported `applied: []`. No manual DB edits were made. After reset, the approved unmodified `client-accounts-provision.mjs` was run with explicit Stack A endpoint environment; secrets were not printed or committed.
+- The existing bidirectional TypeScript↔SQL capability parity suite passed in the full unit/integration gates; the capability matrix itself was unchanged.
+
+### Remaining open F12 tasks
+
+- T002 — U0 decision/PA mapping documentation remains a separate plan/spec synchronization task.
+- T003 — waiting for the infrastructure owner’s Stack B selector, harness, provisioner, and e2e readiness evidence; Stack B is outside this lane.
+- T038 — U8 status-page RED coverage remains unimplemented; next authorized U8 slice.
+- T039 — U8 client status UI remains unimplemented; depends on T038.
+- T040 — U8 status copy/parity remains unimplemented; depends on T038 and U7 message release.
+- T041 — U8 mock/render evidence remains unrecorded; depends on T038–T040 and U9 B proof.
+- T042 — U9 real signup/session integration coverage remains open; requires the assigned integration/B lane.
+- T043 — U9 e2e, axe, and retained eight-cell screenshot journeys remain open; requires authenticated B session and U8.
+- T044 — full Q-M01..Q-M24 U9 mutations remain open; requires disposable B/module fixtures.
+- T045 — U9 aggregate gates/finance/isolation/log-scrub review remains open; requires U9 scope and evidence.
+- T046 — final traceability reconciliation remains open; depends on U9 evidence.
+- T047 — retained artifacts and exact-head CI evidence remain open; requires the later authorized staging/push evidence. No PR was created here.
+- T048 — independent U10 architect review remains open; it is not self-approvable.
+- T050 — flexible-link RED/history tests remain open; requires Stack B.
+- T051 — flexible-link wrapper migration remains open; requires T050 and Stack B; migration timestamp `20261101124000` remains reserved.
+- T053 — flexible-link UI RED coverage remains open; requires T050/T051 and Stack B.
+- T054 — flexible-link UI implementation remains open; requires T053 and Stack B.
+
+- Runtime identifies GPT-6; effort-selection metadata is unavailable, so Luna High could not be independently verified.
