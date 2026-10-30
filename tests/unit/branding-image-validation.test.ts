@@ -226,9 +226,10 @@ describe('branding image validation contract', () => {
       metadata: true,
     });
     const output = validate(input).bytes;
-    expect(output.includes(Buffer.from('tRNS'))).toBe(true);
-    expect(output.includes(Buffer.from('tEXt'))).toBe(false);
-    expect(output.includes(Buffer.from('private'))).toBe(false);
+    const sanitized = Buffer.from(output);
+    expect(sanitized.includes(Buffer.from('tRNS'))).toBe(true);
+    expect(sanitized.includes(Buffer.from('tEXt'))).toBe(false);
+    expect(sanitized.includes(Buffer.from('private'))).toBe(false);
   });
 
   it('rejects malformed palette transparency lengths', () => {
@@ -244,12 +245,12 @@ describe('branding image validation contract', () => {
       lossless: true,
       alpha: true,
       metadata: true,
-      metadataKinds: true,
     });
-    const output = validate(input).bytes;
+    const output = Buffer.from(validate(input).bytes);
     expect(output.includes(Buffer.from('VP8L'))).toBe(true);
     expect(output.includes(Buffer.from('ICCP'))).toBe(false);
     expect(output.includes(Buffer.from('EXIF'))).toBe(false);
+    expect(output[20]! & 0x10).toBe(0x10);
   });
 
   it('walks WebP RIFF chunks, removes metadata flags/chunks and hashes stripped bytes', () => {
