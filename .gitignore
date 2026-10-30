@@ -70,6 +70,11 @@ pnpm-debug.log*
 tmp/
 temp/
 
+# Stack D links its migration directory to the branch root
+/supabase-stack-d/supabase/.branches/
+/supabase-stack-d/supabase/.temp/
+/supabase-stack-d/supabase/migrations/
+
 # Editor and operating system files
 .vscode/
 .idea/
