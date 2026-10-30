@@ -287,6 +287,38 @@ async function screenshot(page: Page, filename: string) {
   screenshots.push(path);
 }
 
+async function screenshotRegistrationCardCrop(page: Page, filename: string) {
+  const card = page.locator('[data-registration-card="premium-centered"]');
+  const bounds = await card.boundingBox();
+  expect(bounds).not.toBeNull();
+  const client = await page.context().newCDPSession(page);
+  await client.send('Emulation.setDeviceMetricsOverride', {
+    width: 1440,
+    height: 900,
+    deviceScaleFactor: 2,
+    mobile: false,
+  });
+  try {
+    await expect.poll(() => page.evaluate(() => devicePixelRatio)).toBe(2);
+    const margin = 12;
+    const x = Math.max(0, bounds!.x - margin);
+    const y = Math.max(0, bounds!.y - margin);
+    const right = Math.min(1440, bounds!.x + bounds!.width + margin);
+    const bottom = Math.min(900, bounds!.y + bounds!.height + margin);
+    const path = join(screenshotDirectory, filename);
+    await mkdir(screenshotDirectory, { recursive: true });
+    await page.screenshot({
+      path,
+      clip: { x, y, width: right - x, height: bottom - y },
+      scale: 'device',
+    });
+    screenshots.push(path);
+  } finally {
+    await client.send('Emulation.clearDeviceMetricsOverride');
+    await client.detach();
+  }
+}
+
 async function readSeamPixels(page: Page) {
   const frame = await page
     .locator('[data-registration-banner-frame]')
@@ -294,7 +326,7 @@ async function readSeamPixels(page: Page) {
   expect(frame).not.toBeNull();
   const png = await page.screenshot({ type: 'png' });
   const pixels = await page.evaluate(
-    async ({ base64, left, right, top, bottom, surfaceY }) => {
+    async ({ base64, left, right, bottom, surfaceY }) => {
       const image = new Image();
       image.src = `data:image/png;base64,${base64}`;
       await image.decode();
@@ -308,10 +340,7 @@ async function readSeamPixels(page: Page) {
         Array.from(context.getImageData(x, y, 1, 1).data).slice(0, 3);
       let bottomRowMaxDelta = 0;
       let bottomRowSamples = 0;
-      let edgeMaxDelta = 0;
-      let edgeSamples = 0;
       let bottomRowWorst: Record<string, unknown> | null = null;
-      let edgeWorst: Record<string, unknown> | null = null;
       for (let x = left; x < right; x += 1) {
         const banner = sample(x, bottom - 1);
         const surface = sample(x, surfaceY);
@@ -324,39 +353,18 @@ async function readSeamPixels(page: Page) {
         }
         bottomRowSamples += 1;
       }
-      for (let y = top; y < bottom; y += 1) {
-        for (const [edge, neighbor] of [
-          [left, left - 1],
-          [right - 1, right],
-        ] as const) {
-          const banner = sample(edge, y);
-          const surface = sample(neighbor, y);
-          for (let channel = 0; channel < 3; channel += 1) {
-            const delta = Math.abs(banner[channel]! - surface[channel]!);
-            if (delta > edgeMaxDelta) {
-              edgeMaxDelta = delta;
-              edgeWorst = { x: edge, y, channel, banner, surface, delta };
-            }
-          }
-          edgeSamples += 1;
-        }
-      }
       return {
         bottomRowMaxDelta,
         bottomRowSamples,
         bottomRowWorst,
-        edgeMaxDelta,
-        edgeSamples,
-        edgeWorst,
       };
     },
     {
       base64: png.toString('base64'),
       left: Math.floor(frame!.x),
       right: Math.ceil(frame!.x + frame!.width),
-      top: Math.ceil(frame!.y + frame!.height * 0.65),
       bottom: Math.ceil(frame!.y + frame!.height),
-      surfaceY: Math.ceil(frame!.y + frame!.height) + 1,
+      surfaceY: Math.ceil(frame!.y + frame!.height),
     },
   );
   return pixels;
@@ -424,6 +432,10 @@ for (const locale of ['ar', 'en'] as const) {
               objectPosition: imageStyle.objectPosition,
               frameWidth: rect.width,
               frameHeight: rect.height,
+              frameBorder: frameStyle.borderWidth,
+              frameOutlineStyle: frameStyle.outlineStyle,
+              frameBoxShadow: frameStyle.boxShadow,
+              frameBackground: frameStyle.backgroundColor,
               frameAspectRatio: frameStyle.aspectRatio,
               overflow: frameStyle.overflow,
               position: frameStyle.position,
@@ -444,6 +456,11 @@ for (const locale of ['ar', 'en'] as const) {
                 .animationDuration,
               overlayTransition: getComputedStyle(frame, '::after')
                 .transitionDuration,
+              overlayGradientLayers: (
+                getComputedStyle(frame, '::after').backgroundImage.match(
+                  /linear-gradient\(/g,
+                ) ?? []
+              ).length,
               frameTop: rect.top,
               frameBottom: rect.bottom,
             };
@@ -460,6 +477,11 @@ for (const locale of ['ar', 'en'] as const) {
           expect(data.frameAspectRatio).toBe('2 / 1');
           expect(data.overflow).toBe('hidden');
           expect(data.position).toBe('relative');
+          expect(data.frameBorder).toBe('0px');
+          expect(data.frameOutlineStyle).toBe('none');
+          expect(data.frameBoxShadow).toBe('none');
+          expect(data.frameBackground).toBe('rgba(0, 0, 0, 0)');
+          expect(data.overlayGradientLayers).toBe(1);
           expect(data.frameWidth).toBeCloseTo(viewport.expectedWidth, 0);
           expect(data.frameHeight).toBeCloseTo(viewport.expectedHeight, 0);
           expect(data.overlayAnimation).toBe('0s');
@@ -490,10 +512,6 @@ for (const locale of ['ar', 'en'] as const) {
           expect(
             seam.bottomRowMaxDelta,
             `${locale}/${theme}/${viewport.name} ${color} full bottom row ${JSON.stringify(seam.bottomRowWorst)}`,
-          ).toBeLessThanOrEqual(2);
-          expect(
-            seam.edgeMaxDelta,
-            `${locale}/${theme}/${viewport.name} ${color} lower side edges ${JSON.stringify(seam.edgeWorst)}`,
           ).toBeLessThanOrEqual(2);
           await expectAxeClean(page);
           measurements.push({
@@ -526,6 +544,11 @@ for (const locale of ['ar', 'en'] as const) {
               page,
               `loaded-${locale}-${theme}-${viewport.name}.png`,
             );
+            if (viewport.width === 1440)
+              await screenshotRegistrationCardCrop(
+                page,
+                `card-crop-image-${locale}-${theme}-1440.png`,
+              );
           }
         }
       });
@@ -691,6 +714,11 @@ for (const locale of ['ar', 'en'] as const) {
           page,
           `fallback-${locale}-${theme}-${viewport.name}.png`,
         );
+        if (viewport.width === 1440)
+          await screenshotRegistrationCardCrop(
+            page,
+            `card-crop-fallback-${locale}-${theme}-1440.png`,
+          );
       });
     }
   }
@@ -790,7 +818,7 @@ test('procedural banner fixtures have tonal texture and a centered subject', asy
   }
 });
 
-test('pixel seam sampler detects a reintroduced frame outline and background', async ({
+test('frame and overlay style contract detects outline, background, and extra gradient layers', async ({
   page,
 }) => {
   responseImage = wideImage;
@@ -799,12 +827,46 @@ test('pixel seam sampler detects a reintroduced frame outline and background', a
   await page.goto('/showcase/f14-banner?real=1');
   const frame = page.locator('[data-registration-banner-frame]');
   await expect(frame).toBeVisible();
-  await page.addStyleTag({
-    content:
-      '[data-registration-banner-frame] { outline: 2px solid rgb(128 128 128) !important; background: rgb(128 128 128) !important; }',
+  const cleanFrame = async () =>
+    frame.evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        border: style.borderWidth,
+        outlineStyle: style.outlineStyle,
+        boxShadow: style.boxShadow,
+        background: style.backgroundColor,
+        gradientLayers: (
+          getComputedStyle(element, '::after').backgroundImage.match(
+            /linear-gradient\(/g,
+          ) ?? []
+        ).length,
+      };
+    });
+  const initial = await cleanFrame();
+  expect(initial).toEqual({
+    border: '0px',
+    outlineStyle: 'none',
+    boxShadow: 'none',
+    background: 'rgba(0, 0, 0, 0)',
+    gradientLayers: 1,
   });
-  const seam = await readSeamPixels(page);
-  expect(Math.max(seam.bottomRowMaxDelta, seam.edgeMaxDelta)).toBeGreaterThan(
-    2,
-  );
+  await frame.evaluate((element) => {
+    (element as HTMLElement).style.outline = '1px solid rgb(128 128 128)';
+  });
+  expect((await cleanFrame()).outlineStyle).toBe('solid');
+  await frame.evaluate((element) => {
+    const target = element as HTMLElement;
+    target.style.removeProperty('outline');
+    target.style.backgroundColor = 'var(--color-card-raised)';
+  });
+  expect((await cleanFrame()).background).not.toBe('rgba(0, 0, 0, 0)');
+  await frame.evaluate((element) => {
+    const overlay = element as HTMLElement;
+    overlay.style.setProperty('--mutation-gradient', 'none');
+    const style = document.createElement('style');
+    style.textContent =
+      '[data-registration-banner-frame]::after { background-image: linear-gradient(to right, transparent, black), linear-gradient(to bottom, transparent, white) !important; }';
+    document.head.append(style);
+  });
+  expect((await cleanFrame()).gradientLayers).toBe(2);
 });

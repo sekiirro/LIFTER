@@ -178,6 +178,46 @@ for (const locale of ['ar', 'en'] as const) {
               `guidance-${locale}-${theme}-${viewport.width}.png`,
             ),
           });
+          if (viewport.width === 1440) {
+            const guidance = await page
+              .locator('[data-upload-guidance-draft]')
+              .boundingBox();
+            expect(guidance).not.toBeNull();
+            const client = await context.newCDPSession(page);
+            await client.send('Emulation.setDeviceMetricsOverride', {
+              width: 1440,
+              height: 900,
+              deviceScaleFactor: 2,
+              mobile: false,
+            });
+            try {
+              await expect
+                .poll(() => page.evaluate(() => devicePixelRatio))
+                .toBe(2);
+              const margin = 20;
+              const x = Math.max(0, guidance!.x - margin);
+              const y = Math.max(0, guidance!.y - margin);
+              const right = Math.min(
+                1440,
+                guidance!.x + guidance!.width + margin,
+              );
+              const bottom = Math.min(
+                900,
+                guidance!.y + guidance!.height + margin,
+              );
+              await page.screenshot({
+                path: join(
+                  screenshotDirectory,
+                  `guidance-card-${locale}-${theme}-1440.png`,
+                ),
+                clip: { x, y, width: right - x, height: bottom - y },
+                scale: 'device',
+              });
+            } finally {
+              await client.send('Emulation.clearDeviceMetricsOverride');
+              await client.detach();
+            }
+          }
         }
       });
     }
