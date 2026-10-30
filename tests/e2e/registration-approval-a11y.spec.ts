@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type BrowserContext } from '@playwright/test';
-import { mkdir } from 'node:fs/promises';
+import { copyFile, mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { getMessages } from '../../lib/i18n';
@@ -100,7 +100,7 @@ async function signInPendingClient(context: BrowserContext) {
   return fixture;
 }
 
-test('pending client status renders accessibly in the eight-cell visual matrix', async ({
+test('pending client status renders accessibly in the twelve-cell visual matrix', async ({
   page,
   context,
 }) => {
@@ -114,6 +114,7 @@ test('pending client status renders accessibly in the eight-cell visual matrix',
     for (const theme of ['light', 'dark'] as const) {
       for (const viewport of [
         { name: 'mobile390', width: 390, height: 844 },
+        { name: 'tablet768x1024', width: 768, height: 1024 },
         { name: 'desktop1440', width: 1440, height: 900 },
       ]) {
         await page.setViewportSize({
@@ -150,13 +151,23 @@ test('pending client status renders accessibly in the eight-cell visual matrix',
             ['serious', 'critical'].includes(violation.impact ?? ''),
           ),
         ).toEqual([]);
+        const screenshot = join(
+          screenshots,
+          `registration-status-${locale}-${theme}-${viewport.name}.png`,
+        );
         await page.screenshot({
-          path: join(
-            screenshots,
-            `registration-status-${locale}-${theme}-${viewport.name}.png`,
-          ),
+          path: screenshot,
           fullPage: true,
         });
+        const evidence = join(
+          process.cwd(),
+          'tests/integration/evidence/f12-u9',
+          `registration-status-${locale}-${theme}-${viewport.name}.png`,
+        );
+        await mkdir(join(process.cwd(), 'tests/integration/evidence/f12-u9'), {
+          recursive: true,
+        });
+        await copyFile(screenshot, evidence);
       }
     }
   }
