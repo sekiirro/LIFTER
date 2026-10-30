@@ -9,12 +9,17 @@
 - F14 migrations already exist and additional F12/F14 work is planned. F13 migration timestamps must be later than every merged or unmerged F12/F14 migration at implementation time. Rebuild shared functions from the latest integrated bodies.
 - The approved final PO decisions settle freeze duration/overlap/day counting, purchase independence, post-deactivation partial refunds and FIFO allocation. No policy branch remains open for those items.
 
-## Provisional F12/F14 branch inspection (T001/T002)
+## F12 merged contract and provisional F14 inventory (T001/T002)
 
-**Provisional evidence only:** F12 PR #18 is not merged. These observations were read from
-`origin/012-registration-approval` at `b5898f11fa57b3cd17c52f0e7dda93d8fce96213` and
-`origin/014-workspace-branding` at `1c337e081b1eee3b5f4a4ec324df00366c0b8bbe`. Re-verify every
-signature, body, ordering and timestamp against the merged/integrated branch before F13 DB work.
+**F12 is merged and verified:** PR #18 merge commit
+`e3a2534e8de24f80016f42d809061ab2f2207fba` is an ancestor of `origin/main`; the current F13 branch
+was merged with `origin/main` at `d4ae80258f31ab550d546355f0138a71b684c23e`. The U2–U5 contract
+below was re-read from `origin/main`, not inferred from the pre-merge branch. **F14 remains
+provisional and unmerged:** the fetched `origin/014-workspace-branding` tip was
+`1c337e081b1eee3b5f4a4ec324df00366c0b8bbe` and contained migrations through
+`20261102130000`; F14 is continuing with `manage_branding` and later migrations outside this
+worktree. Refresh its full inventory and shared-function integration after F14 merges, before F13
+integration work (T017).
 
 ### F12 U2–U5 operation boundary
 
@@ -92,7 +97,7 @@ signature, body, ordering and timestamp against the merged/integrated branch bef
   same-actor registration decision and current approval capability. It currently blocks other client
   updates, including refund deactivation; F13 requires a coordinated forward amendment, never an
   in-place edit.
-- F14 latest migration inventory on the inspected branch is
+- F14 latest observed remote migration inventory on the fetched branch is
   `20261102120000_workspace_branding_identities.sql`, `...1210000_workspace_branding_render_handles.sql`,
   `...1220000_workspace_branding_asset_resolve.sql`, `...1230000_workspace_branding_definer_owner.sql`,
   `...1240000_workspace_branding_validator_upload_binding.sql`,
