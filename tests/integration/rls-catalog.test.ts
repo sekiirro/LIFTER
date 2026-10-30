@@ -52,16 +52,27 @@ const registrationPrivate = [
   'check_registration_link_schedule',
 ];
 const brandingPrivate = [
+  'branding_actor_id',
+  'branding_asset_attach',
   'branding_credential_event_immutable',
   'branding_credential_register',
   'branding_credential_set_enabled',
   'branding_credential_allowed',
+  'branding_draft_save',
+  'branding_gc_claim',
+  'branding_gc_finalize',
+  'branding_gc_lock_object',
+  'branding_publish',
   'branding_render_handles_cleanup',
   'branding_asset_context',
+  'branding_staging_upload_allowed',
   'branding_storage_read_allowed',
+  'branding_upload_begin',
   'branding_validation_prepare',
   'branding_validation_complete',
   'branding_validator_upload_binding_matches',
+  'branding_validator_upload_binding_matches_gc',
+  'branding_validator_upload_binding_matches_gc_serialized',
 ];
 const brandingFunctionOwners: Record<string, string> = {
   branding_validator_upload_binding_matches: 'branding_upload_check_definer',
@@ -212,6 +223,7 @@ describe('tenancy security catalog (T007)', () => {
       expect(row.prosecdef).toBe(
         ![
           'audit_events_immutable',
+          'branding_actor_id',
           'forbid_delete',
           'jobs_updated_at',
           'recovery_link_limits',
@@ -228,24 +240,31 @@ describe('tenancy security catalog (T007)', () => {
             : 'postgres'),
       );
       expect(row.anon_execute).toBe(false);
-      expect(row.authenticated_execute).toBe(
-        !row.proname.startsWith('f12_') &&
-          !registrationPrivate.includes(row.proname) &&
-          !brandingPrivate.includes(row.proname) &&
-          !signupPrivate.includes(row.proname) &&
-          ![
-            'audit_events_immutable',
-            'audit_row_change',
-            'client_has_access',
-            'enqueue_job',
-            'forbid_delete',
-            'guard_package_offer_update',
-            'guard_package_version_insert',
-            'jobs_updated_at',
-            'recovery_link_guard',
-            'recovery_link_limits',
-            'recovery_target_workspace',
-          ].includes(row.proname),
+      expect(row.authenticated_execute, row.proname).toBe(
+        [
+          'branding_upload_begin',
+          'branding_draft_save',
+          'branding_asset_attach',
+          'branding_publish',
+          'branding_staging_upload_allowed',
+        ].includes(row.proname) ||
+          (!row.proname.startsWith('f12_') &&
+            !registrationPrivate.includes(row.proname) &&
+            !brandingPrivate.includes(row.proname) &&
+            !signupPrivate.includes(row.proname) &&
+            ![
+              'audit_events_immutable',
+              'audit_row_change',
+              'client_has_access',
+              'enqueue_job',
+              'forbid_delete',
+              'guard_package_offer_update',
+              'guard_package_version_insert',
+              'jobs_updated_at',
+              'recovery_link_guard',
+              'recovery_link_limits',
+              'recovery_target_workspace',
+            ].includes(row.proname)),
       );
     }
   });

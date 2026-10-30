@@ -273,7 +273,7 @@ describe('cron edge wiring', () => {
   it('registers the scheduled drain with waitUntil', async () => {
     vi.stubGlobal(
       'fetch',
-      vi.fn<typeof fetch>().mockResolvedValue(Response.json([])),
+      vi.fn<typeof fetch>().mockImplementation(async () => Response.json([])),
     );
     const waitUntil = vi.fn<(promise: Promise<unknown>) => void>();
     try {

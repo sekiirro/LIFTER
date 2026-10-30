@@ -156,7 +156,7 @@ it('T049 denies owner or stale credentials and rejects mismatched staging/output
 
 it('T049 binds validated Storage inserts to a matching validating upload', async () => {
   const c = await credential(db, 'branding_validator');
-  const workspaceC = checked(
+  const workspaceRow = checked(
     await admin()
       .from('workspaces')
       .insert({
@@ -166,7 +166,9 @@ it('T049 binds validated Storage inserts to a matching validating upload', async
       })
       .select('id')
       .single(),
-  ).id;
+  );
+  if (!workspaceRow) throw new Error('workspace_fixture_create_failed');
+  const workspaceC = workspaceRow.id;
   const path = (workspaceId: string, role: string, hashValue: string) =>
     `${workspaceId}/validated/${role}/${hashValue}.png`;
   const upload = async (input: {

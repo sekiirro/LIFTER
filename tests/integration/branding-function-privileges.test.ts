@@ -123,6 +123,24 @@ describe('F14 definer function privileges', () => {
         expect(fn.validator_execute).toBe(false);
       } else if (fn.signature.startsWith('app_private.branding_validation_')) {
         expect(publicRoles, fn.signature).toEqual([false, false, false, false]);
+      } else if (
+        fn.signature ===
+          'app_private.branding_upload_begin(uuid,text,bigint)' ||
+        fn.signature === 'app_private.branding_draft_save(uuid,bigint,jsonb)' ||
+        fn.signature === 'app_private.branding_asset_attach(uuid,bigint)' ||
+        fn.signature === 'app_private.branding_publish(uuid,bigint)'
+      ) {
+        expect(publicRoles, fn.signature).toEqual([false, false, true, false]);
+      } else if (
+        fn.signature === 'app_private.branding_gc_claim(integer)' ||
+        fn.signature === 'app_private.branding_gc_finalize(uuid)'
+      ) {
+        expect(publicRoles, fn.signature).toEqual([false, false, false, true]);
+      } else if (
+        fn.signature ===
+        'app_private.branding_staging_upload_allowed(text,text)'
+      ) {
+        expect(publicRoles, fn.signature).toEqual([false, false, true, false]);
       } else {
         expect(publicRoles, fn.signature).toEqual([false, false, false, false]);
       }
