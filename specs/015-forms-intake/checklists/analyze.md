@@ -1,17 +1,17 @@
 # F15 Spec Kit Analyze
 
-**Status**: Completed as a documentation consistency review on 2026-10-29. No implementation, test, database, Docker or Supabase verification is claimed.
+**Status**: Base review completed 2026-10-29; S14 consistency update completed 2026-10-30. No application implementation, database, Docker or Supabase verification is claimed. The requested fixture byte comparison was run separately and recorded in `reports/S14-design-and-consistency-review.md`.
 
 ## Checks
 
-- [x] `spec.md` ↔ `plan.md`: all 33 functional requirements (FR-001–FR-033) and approved decisions are represented in the implementation approach and task coverage index.
+- [x] `spec.md` ↔ `plan.md`: all 39 functional requirements (FR-001–FR-039), including S14 inventory, Builder, signup, consent and flow requirements, are represented in the implementation approach and task coverage index.
 - [x] `plan.md` ↔ `tasks.md`: every OPEN policy item names the exact affected task(s); independent work remains sequenced where it can proceed safely.
-- [x] Tasks have an FR or explicit decision/dependency trace, named owner files, and a DB classification (`none` or a verified NEW isolated stack requirement). No task assigns F15 to Stack A or Stack B.
+- [x] Tasks have an FR or explicit decision/dependency trace, named disjoint owner files and DB classification (DB-free or Stack D). No task assigns F15 to Stacks A/B/C; F15 migration timestamps start at `20261104000000` and follow latest integrated F12/F14 history.
 - [x] Every implementation unit calls for focused tests first and RED→GREEN evidence; security, authorization, audit, idempotency, retention and scheduler units name mutation evidence.
 - [x] Capability parity is bidirectional and follows F12 and F14 integration; migration timestamps remain unallocated until all actual F12/F14 migrations are rechecked.
 - [x] Tenant isolation, client self-only access, staff current-workspace access, PO explicit-existing-workspace access, Sales denial, and fail-closed audited reads are required across answer, correction and history paths.
 - [x] The Final PO APPROVAL is reflected without adding attachment storage; FR-032 remains no MVP attachment feature/storage. Post-relationship-end correction eligibility remains OPEN.
-- [x] No implementation code or invented product policy is included. UI tasks require the Frontend Design Gate and `DESIGN.md`.
+- [x] No application code or invented product policy is included. S14 UI tasks require the Frontend Design Gate and `DESIGN.md`; exact visual gaps are escalated.
 - [x] Retention feasibility/legal review, hosted copy evidence, P4 facts and private-CI limits remain explicit gates rather than claimed as verified.
 
 ## Findings and disposition
@@ -23,4 +23,4 @@
 
 ## Coverage result
 
-The tasks coverage index maps FR-001 through FR-033 to at least one task (33/33). Cross-feature readiness and production gates are separate from functional requirements and are assigned to T001, T019, T024 and T025. No requirement is claimed runtime-verified here.
+The tasks coverage index maps FR-001 through FR-039 to at least one task (39/39). Cross-feature readiness and production gates are separate from functional requirements and are assigned to T001, T019, T024 and T025. S14 has 11 future tasks across seven disjoint-file lanes (DB-free or Stack D); no requirement is claimed runtime-verified here. Genuine PO questions and design gaps are recorded in `reports/S14-design-and-consistency-review.md`.
