@@ -20,8 +20,7 @@ workspace/client, explicitly selected purchase, positive amount, external-confir
 and expected revisions. It must run current authorization before any receipt lookup and recheck it
 after key-lock waits. Same key with changed intent is a generic `key_conflict`; revoked replay is
 `not_permitted` without receipt disclosure. No amount-zero confirmation, unselected purchase, or
-gateway/payment credential is accepted. F14's later migrations and shared-function changes remain
-unmerged and must be reconciled after F14 merges.
+gateway/payment credential is accepted. F14 core is integrated in this branch; `20261103129200_f13_f14_capability_reconciliation.sql` preserves the F12/F14 shared-function and capability contracts after the F14 migrations.
 
 ## Hard gates
 
