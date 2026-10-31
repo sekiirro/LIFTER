@@ -268,6 +268,63 @@ test('T034: a late first workspace read is discarded after a rapid switch', asyn
   await expect(page.locator('#branding-workspace-error')).toHaveCount(0);
 });
 
+test('workspace retry stays hidden until failure and retries the failed target', async ({
+  page,
+}) => {
+  const [current, target] = fixtures.editor.workspaces;
+  await authenticate(page, fixtures.editor, 'en', 'light');
+  await page.goto(`/branding?workspace=${current!.id}`);
+  const retry = page.getByRole('button', { name: /retry/i });
+  await expect(retry).toHaveCount(0);
+  let attempts = 0;
+  const requested: string[] = [];
+  await page.route('**/api/branding/draft?workspace=*', async (route) => {
+    requested.push(
+      new URL(route.request().url()).searchParams.get('workspace')!,
+    );
+    attempts += 1;
+    if (attempts === 1) {
+      await route.fulfill({ status: 503, body: '{}' });
+      return;
+    }
+    await route.continue();
+  });
+  await page.locator('#branding-workspace').selectOption(target!.id);
+  await expect(page.getByRole('alert')).toBeVisible();
+  await expect(retry).toBeVisible();
+  await retry.click();
+  await expect(page).toHaveURL(
+    new RegExp(`/branding\\?workspace=${target!.id}`),
+  );
+  expect(requested).toEqual([target!.id, target!.id]);
+});
+
+test('branding editor accepts one locale name and explains when both are blank', async ({
+  page,
+}) => {
+  const workspace = fixtures.editor.workspaces[0]!;
+  await authenticate(page, fixtures.editor, 'en', 'light');
+  await page.goto(`/branding?workspace=${workspace.id}`);
+  const arabic = page.locator('input[name="nameAr"]');
+  const english = page.locator('input[name="nameEn"]');
+  await expect(arabic).toHaveJSProperty('required', false);
+  await expect(english).toHaveJSProperty('required', false);
+
+  await arabic.fill('');
+  await english.fill('English only brand');
+  await page.getByRole('button', { name: /save draft/i }).click();
+  await expect(page).toHaveURL(/status=saved/);
+  await expect(english).toHaveValue('English only brand');
+
+  await arabic.fill('');
+  await english.fill('');
+  await page.getByRole('button', { name: /save draft/i }).click();
+  await expect(page).toHaveURL(/status=invalid/);
+  await expect(page.locator('main').getByRole('alert')).toContainText(
+    'DRAFT: Enter a name in Arabic or English.',
+  );
+});
+
 test('T033: caller-JWT editor saves by revision and publishes current draft only', async ({
   page,
 }) => {

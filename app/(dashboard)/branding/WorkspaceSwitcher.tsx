@@ -21,11 +21,13 @@ export function WorkspaceSwitcher({
   const messages = getMessages(locale);
   const requestId = useRef(0);
   const controller = useRef<AbortController | null>(null);
+  const lastRequestedWorkspace = useRef(selected);
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
   const [requestedWorkspace, setRequestedWorkspace] = useState(selected);
 
   async function switchWorkspace(workspaceId: string) {
+    lastRequestedWorkspace.current = workspaceId;
     controller.current?.abort();
     const currentId = ++requestId.current;
     const nextController = new AbortController();
@@ -90,13 +92,15 @@ export function WorkspaceSwitcher({
           {messages['branding.genericUnavailable']}
         </span>
       )}
-      <Button
-        type="button"
-        disabled={pending}
-        onClick={() => void switchWorkspace(selected)}
-      >
-        {messages['registrationApproval.retry']}
-      </Button>
+      {failed && (
+        <Button
+          type="button"
+          disabled={pending}
+          onClick={() => void switchWorkspace(lastRequestedWorkspace.current)}
+        >
+          {messages['registrationApproval.retry']}
+        </Button>
+      )}
     </div>
   );
 }
