@@ -10,7 +10,10 @@ import {
   fromPersistedBrandingFields,
   toPersistedBrandingFields,
 } from './rpc-contract';
-import type { NormalizedBrandingDraft } from './validation';
+import {
+  BrandingValidationError,
+  type NormalizedBrandingDraft,
+} from './validation';
 
 type ReadResult = {
   workspace_id: string;
@@ -69,6 +72,9 @@ function throwRpcError(error: { code?: string; message: string }): never {
   }
   if (error.code === '42501') {
     throw new BrandingServiceError('Branding access denied', 'denied');
+  }
+  if (error.code === '22023') {
+    throw new BrandingValidationError('Branding fields are invalid');
   }
   throw new Error('Branding operation failed');
 }

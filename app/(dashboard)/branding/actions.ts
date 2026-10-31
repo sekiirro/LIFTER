@@ -75,7 +75,9 @@ export async function publishBrandingAction(form: FormData): Promise<void> {
     status =
       error instanceof BrandingServiceError && error.code === 'stale_revision'
         ? 'stale'
-        : 'unavailable';
+        : error instanceof BrandingValidationError
+          ? 'invalid_branding'
+          : 'unavailable';
   }
   revalidatePath('/branding');
   redirect(

@@ -110,4 +110,28 @@ describe('Supabase branding repository publication result', () => {
       },
     });
   });
+
+  it('maps publish validation RPC errors to BrandingValidationError', async () => {
+    const rpc = vi
+      .fn()
+      .mockResolvedValueOnce({ data: readResult(11), error: null })
+      .mockResolvedValueOnce({
+        data: null,
+        error: { code: '22023', message: 'invalid_branding_fields' },
+      });
+    const repository = createSupabaseBrandingRepository({
+      rpc,
+    } as unknown as SupabaseClient);
+
+    await expect(
+      repository.publishDraftCAS('workspace-a', 3, {
+        names: { ar: 'Elite', en: 'Elite' },
+        bannerAltText: { ar: '', en: '' },
+        color: '#059669',
+      }),
+    ).rejects.toMatchObject({
+      name: 'BrandingValidationError',
+      code: 'invalid_branding',
+    });
+  });
 });

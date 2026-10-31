@@ -294,7 +294,11 @@ test('workspace retry stays hidden until failure and retries the failed target',
     await route.continue();
   });
   await page.locator('#branding-workspace').selectOption(target!.id);
-  await expect(page.getByRole('alert')).toBeVisible();
+  const workspaceError = page.locator('#branding-workspace-error');
+  await expect(workspaceError).toBeVisible();
+  await expect(workspaceError).toHaveText(
+    getMessages('en')['branding.genericUnavailable'],
+  );
   await expect(retry).toBeVisible();
   await retry.click();
   await expect(page).toHaveURL(

@@ -70,7 +70,9 @@ export default async function WorkspaceBrandingPage({
             ? m['branding.genericUnavailable']
             : query.status === 'invalid'
               ? m['branding.nameRequired']
-              : null;
+              : query.status === 'invalid_branding'
+                ? m['branding.invalidFields']
+                : null;
 
   return (
     <main className={styles.main} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
@@ -90,7 +92,8 @@ export default async function WorkspaceBrandingPage({
           tone={
             query.status === 'stale' ||
             query.status === 'unavailable' ||
-            query.status === 'invalid'
+            query.status === 'invalid' ||
+            query.status === 'invalid_branding'
               ? 'error'
               : 'success'
           }

@@ -212,6 +212,59 @@ it('keeps superseded versions with assets and removes orphaned assetless version
   ).toHaveLength(1);
 });
 
+it('removes a superseded version when its logo is still used by the current version', async () => {
+  const logo = {
+    bucket: 'branding-validated',
+    object: `${fixture.wsA.id}/validated/logo/${'b'.repeat(64)}.png`,
+    content_type: 'image/png',
+    byte_size: 32,
+  };
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 0,
+    fields: fields('First logo publication'),
+  });
+  await db`
+    update app_private.branding_drafts
+    set fields=jsonb_set(fields,'{logo}',${db.json(logo)},true)
+    where workspace_id=${fixture.wsA.id}
+  `;
+  const first = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+  });
+  expect(first.error).toBeNull();
+
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+    fields: fields('Renamed logo publication'),
+  });
+  await db`
+    update app_private.branding_drafts
+    set fields=jsonb_set(fields,'{logo}',${db.json(logo)},true)
+    where workspace_id=${fixture.wsA.id}
+  `;
+  const current = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 2,
+  });
+  expect(current.error).toBeNull();
+
+  expect(
+    await db<{ id: string }[]>`
+      select id from app_private.branding_published_versions
+      where workspace_id=${fixture.wsA.id}
+    `,
+  ).toEqual([{ id: current.data }]);
+  expect(
+    await db<{ version_id: string }[]>`
+      select version_id from app_private.branding_published_assets
+      where workspace_id=${fixture.wsA.id}
+    `,
+  ).toEqual([{ version_id: current.data }]);
+});
+
 it('allows publication when the workspace has only an expired GC claim', async () => {
   await fixture.po.client.rpc('branding_draft_save', {
     workspace_id: fixture.wsA.id,
