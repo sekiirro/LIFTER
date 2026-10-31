@@ -4,6 +4,7 @@ import { DEFAULT_BRAND } from '../../lib/design/color';
 import { getMessages } from '../../lib/i18n';
 import type { PublicBrandingProjection } from '../../lib/registration-links/open';
 import type { Locale } from '../../lib/design/preferences';
+import { registrationBrandName } from '../../lib/branding/registration-name';
 import styles from './registration-brand.module.css';
 
 export function brandingAssetUrl(
@@ -28,7 +29,7 @@ export function RegistrationBrand({
   renderHandle?: string;
   fallbackName: string;
 }) {
-  const name = brand?.name[locale].trim() || fallbackName;
+  const name = registrationBrandName(brand?.name, locale, fallbackName);
   const handle = renderHandle;
   const messages = getMessages(locale);
 

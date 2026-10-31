@@ -16,6 +16,9 @@ export type BrandingUploadStatus =
   | 'failed'
   | 'cleaned';
 
+export type BrandingUploadResumeStatus =
+  'staging' | 'validating' | 'promoting' | 'attaching' | 'cleaned';
+
 export type BrandingUpload = {
   id: string;
   workspaceId: string;
@@ -52,7 +55,7 @@ export type BrandingUploadEvent =
   | { type: 'reconciliation_pending' }
   | {
       type: 'reconciliation_complete';
-      status: 'staging' | 'validating' | 'promoting' | 'attaching' | 'cleaned';
+      status: BrandingUploadResumeStatus;
     };
 
 function invalidTransition(): never {
@@ -113,11 +116,12 @@ export function transitionBrandingUpload(
     case 'promotion_started':
       if (upload.status !== 'validated') invalidTransition();
       return { ...upload, status: 'promoting' };
-    case 'promotion_succeeded':
+    case 'promotion_succeeded': {
+      const validatedPrefix = `${upload.workspaceId}/validated/${upload.role}/${upload.contentHash}-${upload.id}`;
       if (
         upload.status !== 'promoting' ||
-        event.validatedObjectKey !==
-          `${upload.workspaceId}/validated/${upload.role}/${upload.contentHash}`
+        (event.validatedObjectKey !== `${validatedPrefix}.png` &&
+          event.validatedObjectKey !== `${validatedPrefix}.webp`)
       )
         invalidTransition();
       return {
@@ -125,6 +129,7 @@ export function transitionBrandingUpload(
         status: 'promoted',
         validatedObjectKey: event.validatedObjectKey,
       };
+    }
     case 'attachment_started':
       if (upload.status !== 'promoted') invalidTransition();
       return { ...upload, status: 'attaching' };

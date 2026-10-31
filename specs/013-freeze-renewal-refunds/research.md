@@ -6,7 +6,7 @@
 
 - F12 owns subscription snapshots, installment obligations, collections, exact correction reversals, operation receipts and the collection/correction writer. F13 extends these merged contracts without creating a competing payment writer.
 - F12 U4 is merged on `origin/main` as PR #18 (`e3a2534`). Its final migration, RPC signatures, receipt shape, authorization rechecks, advisory-key lock position, audit rollback, lock order and race guarantees are recorded below from merged source.
-- F14 is not merged. F13 migration timestamps must follow the actual integrated F12/F14 migration chain when F14 merges; rebuild shared functions from the latest integrated bodies then.
+- Historical research note: F14 was not merged when this note was written. S21 confirms F14 is now merged; F13 follows its migration chain through `20261102152000`, and T017 verifies the reconciled shared functions.
 - The approved final PO decisions settle freeze duration/overlap/day counting, purchase independence, post-deactivation partial refunds and FIFO allocation. No policy branch remains open for those items.
 
 ## F12 merged contract and provisional F14 inventory (T001/T002)
@@ -14,12 +14,9 @@
 **F12 is merged and verified:** PR #18 merge commit
 `e3a2534e8de24f80016f42d809061ab2f2207fba` is an ancestor of `origin/main`; the current F13 branch
 was merged with `origin/main` at `d4ae80258f31ab550d546355f0138a71b684c23e`. The U2–U5 contract
-below was re-read from `origin/main`, not inferred from the pre-merge branch. **F14 remains
-provisional and unmerged:** the fetched `origin/014-workspace-branding` tip was
+below was re-read from `origin/main`, not inferred from the pre-merge branch. **Historical S17 snapshot:** the fetched `origin/014-workspace-branding` tip was
 `1c337e081b1eee3b5f4a4ec324df00366c0b8bbe` and contained migrations through
-`20261102130000`; F14 is continuing with `manage_branding` and later migrations outside this
-worktree. Refresh its full inventory and shared-function integration after F14 merges, before F13
-integration work (T017).
+`20261102130000`; F14 was continuing with `manage_branding` and later migrations at that time. **S21:** F14 PR #25 is merged to main; its 34 migrations through `20261102152000` are present in the replayed set, and T017 parity/integration checks passed.
 
 ### F12 U2–U5 operation boundary
 
@@ -97,14 +94,13 @@ integration work (T017).
   same-actor registration decision and current approval capability. It currently blocks other client
   updates, including refund deactivation; F13 requires a coordinated forward amendment, never an
   in-place edit.
-- F14 latest observed remote migration inventory on the fetched branch is
+- Historical F14 remote inventory observed during the original research was
   `20261102120000_workspace_branding_identities.sql`, `...1210000_workspace_branding_render_handles.sql`,
   `...1220000_workspace_branding_asset_resolve.sql`, `...1230000_workspace_branding_definer_owner.sql`,
   `...1240000_workspace_branding_validator_upload_binding.sql`,
   `...1250000_workspace_branding_validator_binding_acl.sql`, and
   `20261102130000_workspace_branding_remove_superseded_binding.sql`. The final migration removes the
-  superseded validator binding role/path after the ACL replacement. These are unmerged predecessors;
-  F13 migration timestamps must be re-sequenced after the actual integrated tip.
+  superseded validator binding role/path after the ACL replacement. These were unmerged predecessors at the time; S21 replayed the complete F14 chain through `20261102152000` before F13.
 
 ## Design decisions supported by sources
 
@@ -130,6 +126,6 @@ integration work (T017).
 ## Unresolved technical gates (not policy decisions)
 
 - PO-1 token issuance timing is closed by the tested Custom Access Token hook. The hook does not revoke already-issued JWTs; PO accepted their natural expiry.
-- **F14 integration — dependency gate**: refresh F14's full migration inventory and shared-function bodies after F14 merges (T017), before final F13 timestamping and cross-feature reconciliation.
+- **F14 integration completed in S21**: the full 34-migration F14 chain through `20261102152000` replayed before F13; F12/F13/F14 shared-function and capability expectations passed T017.
 - **Verified isolated stack ? Stack C assigned**: F13 uses lifter-stack-c only (API 35421, DB 35422). Never use Stack A or B.
 - **Retention — PRE-PRODUCTION BLOCKER**: technical feasibility across all recoverable copies including backups and applicable legal exceptions must be resolved before real client data/production.

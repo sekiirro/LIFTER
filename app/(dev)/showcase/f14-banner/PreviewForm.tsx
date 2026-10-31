@@ -1,9 +1,13 @@
 'use client';
 
-import { useState, type FormEvent } from 'react';
+import { useState, useSyncExternalStore, type FormEvent } from 'react';
 import { Button } from '../../../../components/ui/Button';
 import { Field } from '../../../../components/ui/Field';
 import styles from './page.module.css';
+
+const subscribeToHydration = () => () => {};
+const clientHydrated = () => true;
+const serverHydrated = () => false;
 
 export function PreviewForm({
   labels,
@@ -18,6 +22,11 @@ export function PreviewForm({
   };
 }) {
   const [submitted, setSubmitted] = useState(false);
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    clientHydrated,
+    serverHydrated,
+  );
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitted(true);
@@ -27,7 +36,12 @@ export function PreviewForm({
     <form className={styles.form} onSubmit={handleSubmit}>
       <Field
         label={labels.name}
-        inputProps={{ name: 'name', autoComplete: 'name', required: true }}
+        inputProps={{
+          name: 'name',
+          autoComplete: 'name',
+          required: true,
+          disabled: !hydrated,
+        }}
       />
       <Field
         label={labels.email}
@@ -36,6 +50,7 @@ export function PreviewForm({
           type: 'email',
           autoComplete: 'email',
           required: true,
+          disabled: !hydrated,
         }}
       />
       <Field
@@ -45,9 +60,12 @@ export function PreviewForm({
           type: 'password',
           autoComplete: 'new-password',
           required: true,
+          disabled: !hydrated,
         }}
       />
-      <Button type="submit">{labels.submit}</Button>
+      <Button type="submit" disabled={!hydrated}>
+        {labels.submit}
+      </Button>
       <p className={styles.note}>
         {submitted ? labels.complete : labels.previewNote}
       </p>

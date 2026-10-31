@@ -49,6 +49,87 @@ it('uses persisted compare-and-set so only one save wins the same revision', asy
   expect(candidates).toContainEqual(draft?.fields);
 });
 
+it('rejects missing or non-string localized draft identity before persistence', async () => {
+  const invalid = [
+    { color: '#123456', bannerAlt: { ar: '', en: '' } },
+    {
+      ...fields('Invalid Arabic', '#123456'),
+      name: { ar: 7, en: 'Invalid Arabic' },
+    },
+    {
+      ...fields('Invalid alt', '#123456'),
+      bannerAlt: { ar: '', en: false },
+    },
+  ];
+  for (const value of invalid) {
+    const result = await fixture.woA.client.rpc('branding_draft_save', {
+      workspace_id: fixture.wsA.id,
+      expected_revision: 0,
+      fields: value,
+    });
+    expect(result.error).toBeTruthy();
+  }
+  const [draft] = await db<{ revision: number }[]>`
+    select revision::int as revision from app_private.branding_drafts
+    where workspace_id=${fixture.wsA.id}
+  `;
+  expect(draft).toBeUndefined();
+});
+
+it('rejects drafts whose localized names are both blank at the persisted boundary', async () => {
+  const [functionRow] = await db<{ body: string }[]>`
+    select pg_get_functiondef(
+      'app_private.branding_draft_save(uuid,bigint,jsonb)'::regprocedure
+    ) as body
+  `;
+  expect(functionRow?.body).toContain("!~ '[^[:space:]]'");
+  for (const names of [
+    { ar: '', en: '' },
+    { ar: '  ', en: '\t' },
+  ]) {
+    const result = await fixture.woA.client.rpc('branding_draft_save', {
+      workspace_id: fixture.wsA.id,
+      expected_revision: 0,
+      fields: {
+        ...fields('ignored', '#123456'),
+        name: names,
+      },
+    });
+    expect(result.error).toBeTruthy();
+  }
+  const [draft] = await db<{ revision: number }[]>`
+    select revision::int as revision from app_private.branding_drafts
+    where workspace_id=${fixture.wsA.id}
+  `;
+  expect(draft).toBeUndefined();
+});
+
+it('applies the same 1000-character bound to persisted localized identity and banner alt text', async () => {
+  for (const value of [
+    fields('n'.repeat(1001), '#123456'),
+    {
+      ...fields('Invalid alt length', '#123456'),
+      bannerAlt: { ar: '', en: 'a'.repeat(1001) },
+    },
+  ]) {
+    const result = await fixture.woA.client.rpc('branding_draft_save', {
+      workspace_id: fixture.wsA.id,
+      expected_revision: 0,
+      fields: value,
+    });
+    expect(result.error).toBeTruthy();
+  }
+  const boundary = await fixture.woA.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 0,
+    fields: {
+      ...fields('n'.repeat(1000), '#123456'),
+      bannerAlt: { ar: '', en: 'a'.repeat(1000) },
+    },
+  });
+  expect(boundary.error).toBeNull();
+});
+
 it('publishes immutable per-workspace sequences and makes unchanged publication a no-op', async () => {
   const drafts = await Promise.all([
     fixture.po.client.rpc('branding_draft_save', {
@@ -109,7 +190,6 @@ it('publishes immutable per-workspace sequences and makes unchanged publication 
     versions.map(({ workspace_id, sequence }) => ({ workspace_id, sequence })),
   ).toEqual(
     [
-      { workspace_id: fixture.wsA.id, sequence: 1 },
       { workspace_id: fixture.wsA.id, sequence: 2 },
       { workspace_id: fixture.wsB.id, sequence: 1 },
     ].sort(
@@ -121,15 +201,33 @@ it('publishes immutable per-workspace sequences and makes unchanged publication 
   expect(
     versions.find(
       (version) =>
-        version.workspace_id === fixture.wsA.id && version.sequence === 1,
-    )?.name,
-  ).toBe('Workspace A');
-  expect(
-    versions.find(
-      (version) =>
         version.workspace_id === fixture.wsA.id && version.sequence === 2,
     )?.name,
   ).toBe('Workspace A changed');
+
+  const auditSequences = await db<{ workspace_id: string; sequence: number }[]>`
+    select workspace_id,(details->>'sequence')::int as sequence
+    from public.audit_events
+    where workspace_id in (${fixture.wsA.id},${fixture.wsB.id})
+      and action='branding.published'
+  `;
+  expect(
+    auditSequences.sort(
+      (left, right) =>
+        left.workspace_id.localeCompare(right.workspace_id) ||
+        left.sequence - right.sequence,
+    ),
+  ).toEqual(
+    [
+      { workspace_id: fixture.wsA.id, sequence: 1 },
+      { workspace_id: fixture.wsA.id, sequence: 2 },
+      { workspace_id: fixture.wsB.id, sequence: 1 },
+    ].sort(
+      (left, right) =>
+        left.workspace_id.localeCompare(right.workspace_id) ||
+        left.sequence - right.sequence,
+    ),
+  );
 
   const current = await db<{ workspace_id: string; version_id: string }[]>`
     select workspace_id,version_id from app_private.branding_current_publications

@@ -194,6 +194,10 @@ describe('branding service pure repository contract', () => {
       fields,
     };
     vi.mocked(repository.getCurrentPublication).mockResolvedValue(current);
+    vi.mocked(repository.publishDraftCAS).mockResolvedValue({
+      status: 'unchanged',
+      current,
+    });
 
     await expect(
       service.publishDraft({
@@ -202,10 +206,46 @@ describe('branding service pure repository contract', () => {
         expectedRevision: 3,
       }),
     ).resolves.toEqual({ status: 'unchanged', version: current });
-    expect(repository.publishDraftCAS).not.toHaveBeenCalled();
+    expect(repository.publishDraftCAS).toHaveBeenCalledWith(
+      'workspace-a',
+      3,
+      fields,
+    );
     expect(service).not.toHaveProperty('restore');
     expect(service).not.toHaveProperty('rollback');
     expect(Object.keys(service).sort()).toEqual(['publishDraft', 'saveDraft']);
+  });
+
+  it('delegates unchanged detection to the atomic repository for asset-only changes', async () => {
+    const { service, repository } = setup();
+    const current: BrandingVersion = {
+      workspaceId: 'workspace-a',
+      sequence: 11,
+      fields,
+    };
+    const published: BrandingVersion = {
+      workspaceId: 'workspace-a',
+      sequence: 12,
+      fields,
+    };
+    vi.mocked(repository.getCurrentPublication).mockResolvedValue(current);
+    vi.mocked(repository.publishDraftCAS).mockResolvedValue({
+      status: 'published',
+      current: published,
+    });
+
+    await expect(
+      service.publishDraft({
+        actor,
+        workspaceId: 'workspace-a',
+        expectedRevision: 3,
+      }),
+    ).resolves.toEqual({ status: 'published', version: published });
+    expect(repository.publishDraftCAS).toHaveBeenCalledWith(
+      'workspace-a',
+      3,
+      fields,
+    );
   });
 
   it('preserves an atomic repository no-op when a concurrent publish made the draft current', async () => {

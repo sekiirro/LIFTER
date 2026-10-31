@@ -281,6 +281,9 @@ export const en: Record<keyof typeof ar, string> = {
   'branding.uploadGuidanceSuffix': '.',
   'branding.nameArabic': 'Workspace name in Arabic',
   'branding.nameEnglish': 'Workspace name in English',
+  'branding.nameRequired': 'DRAFT: Enter a name in Arabic or English.',
+  'branding.invalidFields':
+    'Some branding details are invalid. Check the values and try again.',
   'branding.bannerAltArabic': 'Banner description in Arabic',
   'branding.bannerAltEnglish': 'Banner description in English',
   'branding.colorField': 'Brand color',
@@ -306,6 +309,7 @@ export const en: Record<keyof typeof ar, string> = {
   'branding.publishedNotice': 'DRAFT: Current branding published.',
   'branding.noPublished': 'DRAFT: Nothing published yet',
   'branding.genericUnavailable': 'DRAFT: Branding is unavailable. Try again.',
+  'branding.workspaceLoading': 'DRAFT: Loading workspace branding…',
   'registrationApproval.title': 'Registration approvals',
   'registrationApproval.intro':
     'Review submitted requests and issued terms before deciding.',

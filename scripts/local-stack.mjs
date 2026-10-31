@@ -136,19 +136,20 @@ export function assertLocalStackTarget({
 }
 
 export function loadSelectedStackEnv(env = process.env, root = process.cwd()) {
-  const stack = selectStack(env);
-  if (stack === 'a') return;
+  const stack = selectStack(env, root);
+  if (stack === 'a') return stack;
   const envFile = getStackConfig(stack, root).envFile;
   let contents;
   try {
     contents = readFileSync(envFile, 'utf8');
   } catch {
-    return;
+    return stack;
   }
   for (const line of contents.replace(/^\uFEFF/, '').split(/\r?\n/)) {
     const match = line.match(/^([A-Z][A-Z0-9_]*)="?([^"\r\n]*)"?$/);
     if (match && env[match[1]] === undefined) env[match[1]] = match[2];
   }
+  return stack;
 }
 
 export function localSupabaseContainer(

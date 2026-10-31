@@ -8,6 +8,8 @@
 **Reviewed spec**: `c575cfa35b8a22b2f1870692f91846558f332e5e`
 **Outcome**: 8/8 accepted; debate closed after one round (PO-approved single round).
 
+**Retention status:** The ten-restorable-version recommendation in this historical critique and response is superseded by the current PO decision F14-5: retain only the latest published version long-term. See the current [F14 specification](../spec.md#po-decision-record--f14-final-po-2026-10-29).
+
 The critique below is copied verbatim. The architect response reproduces the focused response supplied for this round.
 
 ## Sol Medium focused critique (verbatim)

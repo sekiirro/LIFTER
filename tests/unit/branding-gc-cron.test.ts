@@ -5,7 +5,7 @@ const claim = {
   id: '00000000-0000-4000-8000-000000000001',
   workspace_id: '00000000-0000-4000-8000-000000000002',
   bucket_id: 'branding-validated',
-  object_name: `00000000-0000-4000-8000-000000000002/validated/logo/${'a'.repeat(64)}.png`,
+  object_name: `00000000-0000-4000-8000-000000000002/validated/logo/${'a'.repeat(64)}-00000000-0000-4000-8000-000000000001.png`,
 };
 
 describe('branding garbage collection cron', () => {
@@ -37,8 +37,46 @@ describe('branding garbage collection cron', () => {
         },
         finalize,
       }),
-    ).rejects.toThrow('storage unavailable');
+    ).rejects.toThrow('branding_gc_pass_failed');
     expect(finalize).not.toHaveBeenCalled();
+  });
+
+  it('continues after a claim failure, logs generically, and processes later claims', async () => {
+    const laterClaims = [
+      {
+        ...claim,
+        id: '00000000-0000-4000-8000-000000000003',
+        object_name: `${claim.workspace_id}/validated/logo/${'a'.repeat(64)}-00000000-0000-4000-8000-000000000003.png`,
+      },
+      {
+        ...claim,
+        id: '00000000-0000-4000-8000-000000000004',
+        object_name: `${claim.workspace_id}/validated/logo/${'a'.repeat(64)}-00000000-0000-4000-8000-000000000004.png`,
+      },
+    ];
+    const remove = vi.fn(async (_bucket: string, objectName: string) => {
+      if (objectName === claim.object_name)
+        throw new Error(`secret token at ${objectName}`);
+    });
+    const finalize = vi.fn(async () => true);
+    const log = vi.spyOn(console, 'error').mockImplementation(() => {});
+
+    try {
+      await expect(
+        runBrandingGc({
+          claim: async () => [claim, ...laterClaims],
+          remove,
+          finalize,
+        }),
+      ).rejects.toThrow('branding_gc_pass_failed');
+      expect(remove).toHaveBeenCalledTimes(3);
+      expect(finalize).toHaveBeenCalledTimes(2);
+      expect(log).toHaveBeenCalledWith('branding_gc_claim_failed');
+      expect(JSON.stringify(log.mock.calls)).not.toContain(claim.object_name);
+      expect(JSON.stringify(log.mock.calls)).not.toContain('secret token');
+    } finally {
+      log.mockRestore();
+    }
   });
 
   it('rejects unexpected bucket and path claims before touching Storage', async () => {
@@ -49,7 +87,7 @@ describe('branding garbage collection cron', () => {
         remove,
         finalize: async () => true,
       }),
-    ).rejects.toThrow('branding_gc_invalid_claim');
+    ).rejects.toThrow('branding_gc_pass_failed');
     expect(remove).not.toHaveBeenCalled();
   });
 

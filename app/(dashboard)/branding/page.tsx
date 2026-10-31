@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { requireActor } from '../../../lib/auth/actor';
-import { authorize } from '../../../lib/auth/authorize';
 import { createSupabaseBrandingRepository } from '../../../lib/branding/repository';
+import { filterBrandingWorkspaces } from '../../../lib/branding/workspaces';
 import { createPortalBrandContract } from '../../../lib/branding/portal-contract';
 import { createSessionClient } from '../../../lib/supabase/server';
 import { getMessages } from '../../../lib/i18n';
@@ -14,6 +14,8 @@ import { BrandScope } from '../../../components/ui/BrandScope';
 import { saveBrandingAction, publishBrandingAction } from './actions';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { ClientPortalBrandPreview } from '../../../components/branding/ClientPortalBrandPreview';
+import { DEFAULT_BRAND } from '../../../lib/design/color';
+import { registrationBrandName } from '../../../lib/branding/registration-name';
 import styles from './branding.module.css';
 
 export default async function WorkspaceBrandingPage({
@@ -32,11 +34,7 @@ export default async function WorkspaceBrandingPage({
     .select('id,name')
     .order('name');
   if (result.error || !result.data) notFound();
-  const workspaces = result.data.filter(
-    (workspace) =>
-      actor.activeWorkspaceIds.includes(workspace.id) &&
-      authorize(actor, 'manage_branding', workspace.id),
-  );
+  const workspaces = filterBrandingWorkspaces(result.data, actor);
   if (!workspaces.length) notFound();
   const query = await searchParams;
   const requestedWorkspace = query.workspace;
@@ -48,8 +46,11 @@ export default async function WorkspaceBrandingPage({
     notFound();
   const repository = createSupabaseBrandingRepository(client);
   const draft = await repository.getDraft(workspaceId);
-  if (!draft) notFound();
   const current = await repository.getCurrentPublication(workspaceId);
+  const draftFields = draft?.fields ?? {
+    names: { ar: '', en: '' },
+    color: current?.fields.color ?? DEFAULT_BRAND,
+  };
   const portalBrand = current
     ? createPortalBrandContract({
         workspaceName:
@@ -67,7 +68,11 @@ export default async function WorkspaceBrandingPage({
           ? m['branding.publishedNotice']
           : query.status === 'unavailable'
             ? m['branding.genericUnavailable']
-            : null;
+            : query.status === 'invalid'
+              ? m['branding.nameRequired']
+              : query.status === 'invalid_branding'
+                ? m['branding.invalidFields']
+                : null;
 
   return (
     <main className={styles.main} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
@@ -85,7 +90,10 @@ export default async function WorkspaceBrandingPage({
       {statusMessage && (
         <Alert
           tone={
-            query.status === 'stale' || query.status === 'unavailable'
+            query.status === 'stale' ||
+            query.status === 'unavailable' ||
+            query.status === 'invalid' ||
+            query.status === 'invalid_branding'
               ? 'error'
               : 'success'
           }
@@ -96,23 +104,21 @@ export default async function WorkspaceBrandingPage({
         <h2 id="branding-draft-title">{m['branding.draftSnapshot']}</h2>
         <form action={saveBrandingAction} className={styles.form}>
           <input type="hidden" name="workspaceId" value={workspaceId} />
-          <input type="hidden" name="revision" value={draft.revision} />
+          <input type="hidden" name="revision" value={draft?.revision ?? 0} />
           <Field
             label={m['branding.nameArabic']}
             inputProps={{
               name: 'nameAr',
-              defaultValue: draft.fields.names.ar,
+              defaultValue: draftFields.names.ar,
               dir: 'rtl',
-              required: true,
             }}
           />
           <Field
             label={m['branding.nameEnglish']}
             inputProps={{
               name: 'nameEn',
-              defaultValue: draft.fields.names.en,
+              defaultValue: draftFields.names.en,
               dir: 'ltr',
-              required: true,
             }}
           />
           <Field
@@ -120,7 +126,7 @@ export default async function WorkspaceBrandingPage({
             inputProps={{
               name: 'color',
               type: 'color',
-              defaultValue: draft.fields.color,
+              defaultValue: draftFields.color,
             }}
           />
           <div className={styles.actions}>
@@ -129,22 +135,26 @@ export default async function WorkspaceBrandingPage({
         </form>
         <form action={publishBrandingAction} className={styles.publish}>
           <input type="hidden" name="workspaceId" value={workspaceId} />
-          <input type="hidden" name="revision" value={draft.revision} />
+          <input type="hidden" name="revision" value={draft?.revision ?? 0} />
           <p data-current-published="">
             {m['branding.currentPublished']}:{' '}
-            {current?.fields.names[locale] ?? m['branding.noPublished']}
+            {registrationBrandName(
+              current?.fields.names,
+              locale,
+              m['branding.noPublished'],
+            )}
           </p>
           <Button type="submit">{m['branding.publishCurrent']}</Button>
         </form>
         <BrandScope
-          color={draft.fields.color}
+          color={draftFields.color}
           className={styles.preview}
           aria-labelledby="branding-preview-title"
           data-branding-private-preview=""
         >
           <h2 id="branding-preview-title">{m['branding.previewTitle']}</h2>
           <p>
-            {draft.fields.names[locale] ||
+            {draftFields.names[locale] ||
               workspaces.find(({ id }) => id === workspaceId)?.name}
           </p>
           <Button type="button">{m['branding.staffSurface']}</Button>

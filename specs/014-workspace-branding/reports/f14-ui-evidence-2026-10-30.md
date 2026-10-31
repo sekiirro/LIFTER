@@ -9,7 +9,7 @@ T027, T030 and T031 have green implementation evidence for the published-only re
 Before each database-backed Playwright run, the read-only ownership command was run from the LFTR-014 worktree:
 
 ```text
-node scripts/supabase-status-safe.mjs --workdir C:\Users\NEW LAP\Desktop\LFTR-014\supabase-stack-b --expected-project-id lifter-stack-b --expected-api-port 25421 --expected-db-port 25422
+node scripts/supabase-status-safe.mjs --workdir supabase-stack-b --expected-project-id lifter-stack-b --expected-api-port 25421 --expected-db-port 25422
 ```
 
 It returned `projectId=lifter-stack-b`, `apiUrl=http://127.0.0.1:25421`, and `dbPort=25422`. The Stack-B selector was `b`; its checked-in config enables Storage. No fresh reset was run for this UI work. The full Stack-B integration run from the preceding F14 checkpoint, after the approved unmodified Vault provisioner, reported 49 passing suites / 1 skipped suite and 1,201 passing tests / 2 skipped / 0 failed. The provisioner was not modified here.

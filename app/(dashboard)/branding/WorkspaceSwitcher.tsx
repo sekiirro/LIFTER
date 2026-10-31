@@ -5,6 +5,7 @@ import { useRouter } from 'next/navigation';
 import { Button } from '../../../components/ui/Button';
 import type { Locale } from '../../../lib/design/preferences';
 import { getMessages } from '../../../lib/i18n';
+import { hasWorkspaceDraftResponse } from '../../../lib/branding/workspace-response';
 import styles from './branding.module.css';
 
 export function WorkspaceSwitcher({
@@ -20,11 +21,13 @@ export function WorkspaceSwitcher({
   const messages = getMessages(locale);
   const requestId = useRef(0);
   const controller = useRef<AbortController | null>(null);
+  const lastRequestedWorkspace = useRef(selected);
   const [pending, setPending] = useState(false);
   const [failed, setFailed] = useState(false);
   const [requestedWorkspace, setRequestedWorkspace] = useState(selected);
 
   async function switchWorkspace(workspaceId: string) {
+    lastRequestedWorkspace.current = workspaceId;
     controller.current?.abort();
     const currentId = ++requestId.current;
     const nextController = new AbortController();
@@ -42,13 +45,7 @@ export function WorkspaceSwitcher({
       const draft: unknown = await response.json();
       if (currentId !== requestId.current || nextController.signal.aborted)
         return;
-      if (
-        !response.ok ||
-        !draft ||
-        typeof draft !== 'object' ||
-        !('workspace_id' in draft) ||
-        draft.workspace_id !== workspaceId
-      ) {
+      if (!response.ok || !hasWorkspaceDraftResponse(draft, workspaceId)) {
         setFailed(true);
         setPending(false);
         setRequestedWorkspace(selected);
@@ -88,20 +85,22 @@ export function WorkspaceSwitcher({
         ))}
       </select>
       {pending && (
-        <span role="status">{messages['registrationApproval.loading']}</span>
+        <span role="status">{messages['branding.workspaceLoading']}</span>
       )}
       {failed && (
         <span id="branding-workspace-error" role="alert">
           {messages['branding.genericUnavailable']}
         </span>
       )}
-      <Button
-        type="button"
-        disabled={pending}
-        onClick={() => void switchWorkspace(selected)}
-      >
-        {messages['registrationApproval.retry']}
-      </Button>
+      {failed && (
+        <Button
+          type="button"
+          disabled={pending}
+          onClick={() => void switchWorkspace(lastRequestedWorkspace.current)}
+        >
+          {messages['registrationApproval.retry']}
+        </Button>
+      )}
     </div>
   );
 }

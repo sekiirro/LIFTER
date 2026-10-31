@@ -66,13 +66,6 @@ export class BrandingServiceError extends Error {
   }
 }
 
-function sameFields(
-  left: NormalizedBrandingDraft,
-  right: NormalizedBrandingDraft,
-): boolean {
-  return JSON.stringify(left) === JSON.stringify(right);
-}
-
 export function createBrandingService({
   repository,
   authorize,
@@ -153,11 +146,6 @@ export function createBrandingService({
     }
 
     const fields = normalizeBrandDraft(draft.fields);
-    const current = await repository.getCurrentPublication(input.workspaceId);
-    if (current && sameFields(current.fields, fields)) {
-      return { status: 'unchanged', version: current };
-    }
-
     const result = await repository.publishDraftCAS(
       input.workspaceId,
       input.expectedRevision,

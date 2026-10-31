@@ -115,6 +115,223 @@ it('does not append an audit event for an unchanged publication', async () => {
   ).toEqual(before);
 });
 
+it('retains only the current version after a text-only republish', async () => {
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 0,
+    fields: fields('Text publication one'),
+  });
+  const first = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+  });
+  expect(first.error).toBeNull();
+
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+    fields: fields('Text publication two'),
+  });
+  const second = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 2,
+  });
+  expect(second.error).toBeNull();
+
+  const versions = await db<{ id: string; sequence: string }[]>`
+    select id,sequence from app_private.branding_published_versions
+    where workspace_id=${fixture.wsA.id} order by sequence
+  `;
+  expect(versions).toEqual([{ id: second.data, sequence: '2' }]);
+  expect(
+    await db<{ version_id: string }[]>`
+      select version_id from app_private.branding_current_publications
+      where workspace_id=${fixture.wsA.id}
+    `,
+  ).toEqual([{ version_id: second.data }]);
+  const auditTargets = await db<{ target_id: string }[]>`
+    select target_id from public.audit_events
+    where workspace_id=${fixture.wsA.id} and action='branding.published'
+  `;
+  expect(auditTargets.map(({ target_id }) => target_id).sort()).toEqual(
+    [first.data, second.data].sort(),
+  );
+});
+
+it('keeps superseded versions with assets and removes orphaned assetless versions', async () => {
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 0,
+    fields: fields('Asset-backed publication'),
+  });
+  const first = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+  });
+  expect(first.error).toBeNull();
+
+  await db`
+    insert into app_private.branding_published_assets(
+      workspace_id,version_id,slot,bucket_id,object_name,content_type,byte_size
+    ) values(
+      ${fixture.wsA.id},${first.data},'logo','branding-validated',
+      ${`${fixture.wsA.id}/${'a'.repeat(64)}.png`},'image/png',32
+    )
+  `;
+  const orphanId = randomUUID();
+  await db`
+    insert into app_private.branding_published_versions(
+      workspace_id,id,sequence,fields,published_by
+    ) values(
+      ${fixture.wsA.id},${orphanId},2,${db.json(fields('Orphaned snapshot'))},
+      ${fixture.po.userId}
+    )
+  `;
+
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+    fields: fields('New current publication'),
+  });
+  const second = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 2,
+  });
+  expect(second.error).toBeNull();
+
+  const versions = await db<{ id: string }[]>`
+    select id from app_private.branding_published_versions
+    where workspace_id=${fixture.wsA.id} order by sequence
+  `;
+  expect(versions).toEqual([{ id: first.data }, { id: second.data }]);
+  expect(
+    await db`select 1 from app_private.branding_published_versions where id=${orphanId}`,
+  ).toHaveLength(0);
+  expect(
+    await db`select 1 from app_private.branding_published_assets where version_id=${first.data}`,
+  ).toHaveLength(1);
+});
+
+it('removes a superseded version when its logo is still used by the current version', async () => {
+  const logo = {
+    bucket: 'branding-validated',
+    object: `${fixture.wsA.id}/validated/logo/${'b'.repeat(64)}.png`,
+    content_type: 'image/png',
+    byte_size: 32,
+  };
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 0,
+    fields: fields('First logo publication'),
+  });
+  await db`
+    update app_private.branding_drafts
+    set fields=jsonb_set(fields,'{logo}',${db.json(logo)},true)
+    where workspace_id=${fixture.wsA.id}
+  `;
+  const first = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+  });
+  expect(first.error).toBeNull();
+
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+    fields: fields('Renamed logo publication'),
+  });
+  await db`
+    update app_private.branding_drafts
+    set fields=jsonb_set(fields,'{logo}',${db.json(logo)},true)
+    where workspace_id=${fixture.wsA.id}
+  `;
+  const current = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 2,
+  });
+  expect(current.error).toBeNull();
+
+  expect(
+    await db<{ id: string }[]>`
+      select id from app_private.branding_published_versions
+      where workspace_id=${fixture.wsA.id}
+    `,
+  ).toEqual([{ id: current.data }]);
+  expect(
+    await db<{ version_id: string }[]>`
+      select version_id from app_private.branding_published_assets
+      where workspace_id=${fixture.wsA.id}
+    `,
+  ).toEqual([{ version_id: current.data }]);
+});
+
+it('allows publication when the workspace has only an expired GC claim', async () => {
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 0,
+    fields: fields('Expired claim publish'),
+  });
+  await db`insert into app_private.branding_gc_claims(workspace_id,bucket_id,object_name,lease_until)
+    values(${fixture.wsA.id},'branding-validated',${`${fixture.wsA.id}/validated/logo/${'a'.repeat(64)}.png`},statement_timestamp()-interval '1 second')`;
+
+  const result = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+  });
+
+  expect(result.error).toBeNull();
+  expect(result.data).toBeTruthy();
+});
+
+it('rejects a banner publication without usable alternate text', async () => {
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 0,
+    fields: fields('Missing banner alt'),
+  });
+  await db`update app_private.branding_drafts set fields=fields || jsonb_build_object('banner',
+    jsonb_build_object('bucket','branding-validated'::text,'object',${`${fixture.wsA.id}/validated/banner/${'b'.repeat(64)}.png`}::text,
+      'content_type','image/png'::text,'byte_size',32)) where workspace_id=${fixture.wsA.id}`;
+
+  const result = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+  });
+
+  expect(result.error?.code).toBe('22023');
+  expect(
+    await db`select 1 from app_private.branding_published_versions where workspace_id=${fixture.wsA.id}`,
+  ).toHaveLength(0);
+});
+
+it('copies a single banner alt locale into the published fallback locale', async () => {
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 0,
+    fields: {
+      ...fields('Banner alt fallback'),
+      bannerAlt: { ar: '', en: 'Published banner' },
+    },
+  });
+  await db`update app_private.branding_drafts set fields=fields || jsonb_build_object('banner',
+    jsonb_build_object('bucket','branding-validated'::text,'object',${`${fixture.wsA.id}/validated/banner/${'c'.repeat(64)}.png`}::text,
+      'content_type','image/png'::text,'byte_size',32)) where workspace_id=${fixture.wsA.id}`;
+
+  const result = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+  });
+  expect(result.error).toBeNull();
+  const published = await db<
+    { fields: { bannerAlt: { ar: string; en: string } } }[]
+  >`
+    select fields from app_private.branding_published_versions where workspace_id=${fixture.wsA.id}`;
+  expect(published[0]?.fields.bannerAlt).toEqual({
+    ar: 'Published banner',
+    en: 'Published banner',
+  });
+});
+
 it('rolls back the version, current pointer, and event when audit insertion fails', async () => {
   const failFunction = `branding_test_fail_audit_${randomUUID().replaceAll('-', '')}`;
   const failTrigger = `branding_test_fail_audit_${randomUUID().replaceAll('-', '')}`;

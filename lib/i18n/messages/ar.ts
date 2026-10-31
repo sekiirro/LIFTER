@@ -272,6 +272,9 @@ export const ar = {
   'branding.uploadGuidanceSuffix': '.',
   'branding.nameArabic': 'اسم مساحة العمل بالعربية',
   'branding.nameEnglish': 'اسم مساحة العمل بالإنجليزية',
+  'branding.nameRequired': 'مسودة: أدخل اسمًا بالعربية أو الإنجليزية.',
+  'branding.invalidFields':
+    'بعض بيانات العلامة التجارية غير صالحة. راجع القيم وحاول مرة أخرى.',
   'branding.bannerAltArabic': 'وصف اللافتة بالعربية',
   'branding.bannerAltEnglish': 'وصف اللافتة بالإنجليزية',
   'branding.colorField': 'لون العلامة',
@@ -297,6 +300,7 @@ export const ar = {
   'branding.publishedNotice': 'مسودة: تم نشر العلامة الحالية.',
   'branding.noPublished': 'مسودة: لم يتم نشر شيء بعد',
   'branding.genericUnavailable': 'مسودة: العلامة غير متاحة. حاول مرة أخرى.',
+  'branding.workspaceLoading': 'مسودة: جارٍ تحميل علامة مساحة العمل…',
   'registrationApproval.title': 'مراجعة طلبات التسجيل',
   'registrationApproval.intro':
     'راجع الطلبات وشروطها المسجلة قبل اتخاذ القرار.',

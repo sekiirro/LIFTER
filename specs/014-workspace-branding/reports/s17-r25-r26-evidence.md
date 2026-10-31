@@ -79,7 +79,7 @@ Changed the real F14 transform assertion in `tests/integration/branding-storage-
 
 ## Reset, gates, and scope
 
-- Ownership checks confirmed project `lifter-stack-b`, API 25421, DB 25422, Storage enabled, port assignments 25420–25429 (25420 is the shadow DB port), and workdir `C:\Users\NEW LAP\Desktop\LFTR-014\supabase-stack-b` before database commands. Supabase status output was consumed in memory and never printed.
+- Ownership checks confirmed project `lifter-stack-b`, API 25421, DB 25422, Storage enabled, port assignments 25420–25429 (25420 is the shadow DB port), and workdir `<worktree>/supabase-stack-b` before database commands. Supabase status output was consumed in memory and never printed.
 - Fresh Stack B reset: **53 migrations applied**, no errors. The unmodified `tests/integration/client-accounts-provision.mjs` ran with explicit Stack B selection; output was suppressed.
 - Unit: **96 files, 1,658 passed, 0 failed**, versus 1,654 before this change.
 - Full Playwright: **193 passed, 0 failed, 8 skipped**; F14 browser/axe cases all ran. The dedicated Storage browser guard passed 13/13 with zero skips.

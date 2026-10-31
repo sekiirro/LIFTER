@@ -12,11 +12,14 @@ const integrationFiles = [
 ];
 const browserFiles = [
   'branding-banner-loaded.spec.ts',
+  'branding-production-ui.spec.ts',
   'client-accounts-storage.spec.ts',
 ];
 
 function skippedStatus(status) {
-  return ['pending', 'skipped', 'skip'].includes(String(status).toLowerCase());
+  return ['pending', 'skipped', 'skip', 'todo'].includes(
+    String(status).toLowerCase(),
+  );
 }
 
 export function assertVitestStorageReport(
@@ -41,10 +44,27 @@ export function assertVitestStorageReport(
     skippedStatus(test.status),
   ).length;
   const failed = assertions.filter((test) => test.status === 'failed').length;
-  const passed = assertions.filter((test) => test.status === 'passed').length;
-  if (missing.length || skipped || failed || !passed)
+  const failedFiles = [...matched.values()].filter(
+    (result) => result.status === 'failed',
+  ).length;
+  const passedTests = assertions.filter((test) => test.status === 'passed');
+  const passed = passedTests.length;
+  const noPassedFiles = requiredFiles.filter(
+    (file) =>
+      !matched
+        .get(file)
+        ?.assertionResults?.some((test) => test.status === 'passed'),
+  );
+  if (
+    report?.success === false ||
+    missing.length ||
+    skipped ||
+    failed ||
+    failedFiles ||
+    noPassedFiles.length
+  )
     throw new Error(
-      `Storage integration guard failed: missing=${missing.join(',') || 'none'} skipped=${skipped} failed=${failed} passed=${passed}`,
+      `Storage integration guard failed: reportFailed=${report?.success === false} missing=${missing.join(',') || 'none'} skipped=${skipped} failed=${failed} failedFiles=${failedFiles} noPassed=${noPassedFiles.join(',') || 'none'} passed=${passed}`,
     );
   return { files: matched.size, passed, skipped, failed };
 }
@@ -61,6 +81,24 @@ function collectFiles(value, files = new Set()) {
   return files;
 }
 
+function collectPlaywrightTests(value, file = '', tests = []) {
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectPlaywrightTests(item, file, tests));
+    return tests;
+  }
+  if (!value || typeof value !== 'object') return tests;
+
+  const currentFile =
+    typeof value.file === 'string' ? value.file.replaceAll('\\', '/') : file;
+  if (Array.isArray(value.tests)) {
+    for (const test of value.tests) tests.push({ file: currentFile, test });
+  }
+  for (const [key, child] of Object.entries(value)) {
+    if (key !== 'tests') collectPlaywrightTests(child, currentFile, tests);
+  }
+  return tests;
+}
+
 export function assertPlaywrightStorageReport(
   report,
   requiredFiles = browserFiles,
@@ -69,23 +107,56 @@ export function assertPlaywrightStorageReport(
   const missing = requiredFiles.filter(
     (required) => ![...files].some((file) => file.endsWith(required)),
   );
+  const tests = collectPlaywrightTests(report);
+  const fileTests = new Map(
+    requiredFiles.map((file) => [
+      file,
+      tests
+        .filter((entry) => entry.file.endsWith(file))
+        .map(({ test }) => test),
+    ]),
+  );
+  const expectedFailures = requiredFiles.filter((file) =>
+    fileTests.get(file).some((test) => test.expectedStatus === 'failed'),
+  );
+  const noPassedFiles = requiredFiles.filter(
+    (file) =>
+      !fileTests
+        .get(file)
+        .some((test) =>
+          test.results?.some((result) => result.status === 'passed'),
+        ),
+  );
   const stats = report?.stats ?? {};
   const result = {
     files: requiredFiles.length - missing.length,
-    passed: Number(stats.expected ?? 0),
+    passed: requiredFiles.reduce(
+      (count, file) =>
+        count +
+        fileTests
+          .get(file)
+          .filter((test) =>
+            test.results?.some((item) => item.status === 'passed'),
+          ).length,
+      0,
+    ),
     skipped: Number(stats.skipped ?? 0),
     failed: Number(stats.unexpected ?? 0),
     flaky: Number(stats.flaky ?? 0),
+    errors: Array.isArray(report?.errors) ? report.errors.length : 0,
   };
   if (
     missing.length ||
+    expectedFailures.length ||
+    noPassedFiles.length ||
     result.skipped ||
     result.failed ||
     result.flaky ||
+    result.errors ||
     !result.passed
   )
     throw new Error(
-      `Storage Playwright guard failed: missing=${missing.join(',') || 'none'} skipped=${result.skipped} failed=${result.failed} flaky=${result.flaky} passed=${result.passed}`,
+      `Storage Playwright guard failed: missing=${missing.join(',') || 'none'} expectedFailures=${expectedFailures.join(',') || 'none'} noPassed=${noPassedFiles.join(',') || 'none'} skipped=${result.skipped} failed=${result.failed} flaky=${result.flaky} errors=${result.errors} passed=${result.passed}`,
     );
   return result;
 }

@@ -11,9 +11,9 @@
 
 ## Stack ownership, reset, migration order
 
-Before the Stack B reset/provisioner/integration commands, the read-only ownership proof established `project_id=lifter-stack-b`, API 25421, DB 25422, the 25421–25426 port profile, Storage enabled, and `LIFTER_SUPABASE_STACK=b`. All Supabase CLI commands used the explicit workdir `C:\Users\NEW LAP\Desktop\LFTR-014\supabase-stack-b`; no raw status or environment output was printed. Stack A and the protected LFTR checkout were not targeted. The unmodified `tests/integration/client-accounts-provision.mjs` ran with the explicit B selector after ownership verification.
+Before the Stack B reset/provisioner/integration commands, the read-only ownership proof established `project_id=lifter-stack-b`, API 25421, DB 25422, the 25421–25426 port profile, Storage enabled, and `LIFTER_SUPABASE_STACK=b`. All Supabase CLI commands used the explicit workdir `<worktree>/supabase-stack-b`; no raw status or environment output was printed. Stack A and the protected LFTR checkout were not targeted. The unmodified `tests/integration/client-accounts-provision.mjs` ran with the explicit B selector after ownership verification.
 
-The final fresh Stack B reset exited successfully and applied every migration in the following sorted inventory (53 files, through `20261102139000`):
+The final fresh Stack B reset exited successfully and applied every migration in the following sorted inventory (60 files, through `20261102150000`):
 
 ```text
 20261027120000  20261027130000  20261027140000  20261027150000
@@ -29,10 +29,11 @@ The final fresh Stack B reset exited successfully and applied every migration in
 20261102132400  20261102132500  20261102132600  20261102132700
 20261102132800  20261102132900  20261102133000  20261102134000
 20261102135000  20261102136000  20261102137000  20261102138000
-20261102139000
+20261102139000  20261102140000  20261102141000  20261102142000
+20261102143000  20261102144000  20261102145000  20261102150000
 ```
 
-Order verdict: all 28 main migrations end at `20261101132000`; F14's 25 prior lane migrations are in its own range `20261102120000–20261102136000`, followed by its forward migrations `20261102137000`, `20261102138000`, and `20261102139000`. There are 53 unique timestamps, no duplicate or out-of-lane feature migration, and every F14 migration sorts after main.
+Order verdict: all 28 main migrations end at `20261101132000`; F14 has 32 migrations: 22 through `20261102136000` and 10 forward migrations from `20261102137000` through `20261102150000`. There are 60 unique timestamps, no duplicate or out-of-lane feature migration, and every F14 migration sorts after main.
 
 ## RED → GREEN and architecture rulings
 
@@ -71,14 +72,14 @@ All six mutations were restored; the unmutated suite passed.
 
 - Contract/placeholder test was RED while the preview module was absent, then GREEN after implementing the static preview.
 - The dashboard renders only the published brand contract. The preview has no links, forms, buttons, client behavior, or draft data. It uses existing `Card`, `BrandScope`, `Bidi`, and design tokens.
-- Screenshot reviewed: `C:\Users\NEW LAP\AppData\Local\Temp\lifter-f14-ui-6052\production-editor-ar-dark-mobile-390.png` (real editor surface with the published-only preview).
+- Screenshot reviewed: `<temp>/lifter-f14-ui-6052/production-editor-ar-dark-mobile-390.png` (real editor surface with the published-only preview).
 
 ## Final gates
 
 | Gate | Result |
 | --- | --- |
 | `npm ci` | PASS; 670 packages, 0 vulnerabilities |
-| Fresh Stack B reset | PASS; 53 migrations applied from scratch |
+| Fresh Stack B reset | PASS; 60 migrations applied from scratch |
 | Stack B integration | PASS; 54 files passed, 1 skipped; 1,217 passed / 0 failed / 2 skipped |
 | Unit | PASS; 95 files passed; 1,654 passed / 0 failed |
 | Full Playwright | PASS; 201 tests; 192 passed / 0 failed / 9 skipped |
@@ -94,8 +95,8 @@ The integration baseline was 1,207/0/2 and unit baseline was 1,648. Final counts
 
 ## UI and design gate
 
-- Real rendered matrix: Arabic RTL and English LTR × light and dark × 390, 768, and 1440 px, on the production editor, production staff surface, and portal preview. Loaded banner matrix includes all 12 locale/theme/viewport combinations. All screenshots are in OS temp directory `C:\Users\NEW LAP\AppData\Local\Temp\lifter-f14-ui-6052`; patterns include `production-editor-*`, `production-staff-*`, `banner-loaded-*`, and `editor-*`. No new PNG was committed. The real production editor Arabic dark mobile screenshot and English light mobile screenshot were visually reviewed; no follow-up visual change was needed.
-- Touch measurements for the 8 visible editor controls are written to `C:\Users\NEW LAP\AppData\Local\Temp\lifter-f14-ui-6052\touch-targets-{ar,en}-{light,dark}-{mobile-390,tablet-768,desktop-1440}.json`. At all three widths and both themes, observed minimum width was 123.25 px in Arabic and 76 px in English; minimum height was 44 px in both locales. These are reported against a 44×44 CSS px reference only. `DESIGN.md §11 item 4` leaves exact minimum touch size unresolved; no 44 px product rule is encoded in the test.
+- Real rendered matrix: Arabic RTL and English LTR × light and dark × 390, 768, and 1440 px, on the production editor, production staff surface, and portal preview. Loaded banner matrix includes all 12 locale/theme/viewport combinations. All screenshots are in OS temp directory `<temp>/lifter-f14-ui-6052`; patterns include `production-editor-*`, `production-staff-*`, `banner-loaded-*`, and `editor-*`. No new PNG was committed. The real production editor Arabic dark mobile screenshot and English light mobile screenshot were visually reviewed; no follow-up visual change was needed.
+- Touch measurements for the 8 visible editor controls are written to `<temp>/lifter-f14-ui-6052/touch-targets-{ar,en}-{light,dark}-{mobile-390,tablet-768,desktop-1440}.json`. At all three widths and both themes, observed minimum width was 123.25 px in Arabic and 76 px in English; minimum height was 44 px in both locales. These are reported against a 44×44 CSS px reference only. `DESIGN.md §11 item 4` leaves exact minimum touch size unresolved; no 44 px product rule is encoded in the test.
 - Geometry evidence is retained as JSON at `tests/integration/evidence/f14-ui/loaded-banner-geometry.json`: 390 px gives 316×158 (2:1); 768/1440 px gives 630×288 at cap; form starts below banner; CLS is 0. The 12 observations cover AR/EN × light/dark × all three widths.
 
 | Checklist | Result and evidence |

@@ -43,3 +43,27 @@ it('uses only restricted bearer, exact RPC and no-store transport; ignores inval
     await resolveBrandingAsset('A'.repeat(43), 'A'.repeat(43), 'logo'),
   ).toBeNull();
 });
+
+it('accepts a validated asset path scoped to its upload generation', async () => {
+  vi.stubEnv('SUPABASE_URL', 'http://127.0.0.1:25421');
+  vi.stubEnv('SUPABASE_ANON_KEY', 'anon');
+  vi.stubEnv('BRANDING_PROXY_JWT', 'header.payload.signature');
+  m.create.mockReturnValue({ rpc: m.rpc });
+  m.rpc.mockResolvedValue({
+    data: {
+      status: 'ok',
+      bucket: 'branding-validated',
+      object: `00000000-0000-0000-0000-000000000001/validated/logo/${'a'.repeat(64)}-00000000-0000-4000-8000-000000000002.png`,
+      content_type: 'image/png',
+      byte_size: 24,
+    },
+    error: null,
+  });
+  expect(
+    await resolveBrandingAsset('A'.repeat(43), 'A'.repeat(43), 'logo'),
+  ).toMatchObject({
+    object: expect.stringContaining(
+      '-00000000-0000-4000-8000-000000000002.png',
+    ),
+  });
+});

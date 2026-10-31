@@ -7,6 +7,7 @@ import {
   type Rpc,
 } from '../../workers/cron/src/drain';
 import { createRpc } from '../../workers/cron/src/rpc';
+import { createBrandingGc } from '../../workers/cron/src/branding-gc';
 import worker from '../../workers/cron/src';
 import { drainRefundAuthLockouts } from '../../workers/cron/src/refund-auth-lockout';
 import {
@@ -215,6 +216,43 @@ describe('cron edge wiring', () => {
     expect(() => createRpc(env)).not.toThrow(env.SUPABASE_SERVICE_ROLE_KEY);
   });
 
+  it('rejects a non-HTTPS branding GC URL before using the service-role key', () => {
+    const fetchMock = vi.fn<typeof fetch>();
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      expect(() =>
+        createBrandingGc({
+          SUPABASE_URL: 'http://remote.example.test',
+          SUPABASE_SERVICE_ROLE_KEY: 'test-runtime-key',
+        }),
+      ).toThrow(/^rpc_insecure_url$/);
+      expect(fetchMock).not.toHaveBeenCalled();
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
+  it('bounds both branding GC RPC and Storage requests', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(Response.json([]))
+      .mockResolvedValueOnce(new Response(null, { status: 204 }));
+    vi.stubGlobal('fetch', fetchMock);
+    try {
+      const gc = createBrandingGc({
+        SUPABASE_URL: 'https://example.test',
+        SUPABASE_SERVICE_ROLE_KEY: 'test-runtime-key',
+      });
+      await gc.claim(1);
+      await gc.remove('branding-staging', 'workspace/staging/upload');
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      for (const [, init] of fetchMock.mock.calls)
+        expect(init?.signal).toBeInstanceOf(AbortSignal);
+    } finally {
+      vi.unstubAllGlobals();
+    }
+  });
+
   it.each([
     'http://127.0.0.1:54321',
     'http://localhost:54321',
@@ -285,14 +323,15 @@ describe('cron edge wiring', () => {
     }
   });
 
-  it('registers the scheduled drain with waitUntil', async () => {
+  it('registers the job, branding GC, and refund drains under waitUntil', async () => {
     const fetchMock = vi
       .fn<typeof fetch>()
-      .mockImplementation(async (input) =>
-        String(input).includes('alert_expired_refund_auth_lockouts')
-          ? Response.json(0)
-          : Response.json([]),
-      );
+      .mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.includes('alert_expired_refund_auth_lockouts'))
+          return Response.json(0);
+        return Response.json([]);
+      });
     vi.stubGlobal('fetch', fetchMock);
     const waitUntil = vi.fn<(promise: Promise<unknown>) => void>();
     try {
@@ -305,7 +344,16 @@ describe('cron edge wiring', () => {
         { waitUntil },
       );
       expect(waitUntil).toHaveBeenCalledOnce();
-      await waitUntil.mock.calls[0]?.[0];
+      await Promise.all(waitUntil.mock.calls.map(([promise]) => promise));
+      const paths = fetchMock.mock.calls.map(
+        ([input]) => new URL(String(input)).pathname,
+      );
+      expect(paths).toContain('/rest/v1/rpc/jobs_claim');
+      expect(paths).toContain('/rest/v1/rpc/branding_gc_claim');
+      expect(paths).toContain(
+        '/rest/v1/rpc/alert_expired_refund_auth_lockouts',
+      );
+      expect(paths).toContain('/rest/v1/rpc/claim_refund_auth_lockout_jobs');
     } finally {
       vi.unstubAllGlobals();
     }

@@ -13,7 +13,7 @@ export type BrandingGcDependencies = {
 
 function validClaim(claim: BrandingGcClaim): boolean {
   const validatedObject =
-    /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\/validated\/(?:logo|banner)\/[0-9a-f]{64}\.(?:png|webp)$/i;
+    /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\/validated\/(?:logo|banner)\/[0-9a-f]{64}(?:-[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})?\.(?:png|webp)$/i;
   const stagingObject =
     /^([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})\/staging\/([0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})$/i;
   const workspaceId = /^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}$/i.test(
@@ -39,12 +39,19 @@ export async function runBrandingGc(
   const claims = await dependencies.claim(
     Math.min(50, Math.max(1, Math.trunc(batchSize) || 10)),
   );
+  let failed = false;
   for (const claim of claims) {
-    if (!validClaim(claim)) throw new Error('branding_gc_invalid_claim');
-    await dependencies.remove(claim.bucket_id, claim.object_name);
-    const finalized = await dependencies.finalize(claim.id);
-    if (!finalized) throw new Error('branding_gc_finalize_rejected');
+    try {
+      if (!validClaim(claim)) throw new Error('branding_gc_invalid_claim');
+      await dependencies.remove(claim.bucket_id, claim.object_name);
+      const finalized = await dependencies.finalize(claim.id);
+      if (!finalized) throw new Error('branding_gc_finalize_rejected');
+    } catch {
+      failed = true;
+      console.error('branding_gc_claim_failed');
+    }
   }
+  if (failed) throw new Error('branding_gc_pass_failed');
   return claims.length;
 }
 
@@ -52,6 +59,7 @@ export function createBrandingGc(env: {
   SUPABASE_URL: string;
   SUPABASE_SERVICE_ROLE_KEY: string;
 }): BrandingGcDependencies {
+  validateSupabaseUrl(env.SUPABASE_URL);
   const base = env.SUPABASE_URL.replace(/\/$/, '');
   const headers = {
     apikey: env.SUPABASE_SERVICE_ROLE_KEY,
@@ -64,6 +72,7 @@ export function createBrandingGc(env: {
       redirect: 'manual',
       headers,
       body: JSON.stringify(args),
+      signal: AbortSignal.timeout(30_000),
     });
     if (!response.ok) throw new Error(`branding_gc_rpc_${response.status}`);
     return response.json() as Promise<T>;
@@ -76,6 +85,7 @@ export function createBrandingGc(env: {
         redirect: 'manual',
         headers,
         body: JSON.stringify({ prefixes: [objectName] }),
+        signal: AbortSignal.timeout(30_000),
       });
       // Missing bytes are already in the desired state after an interrupted pass.
       if (!response.ok && response.status !== 404)
@@ -89,3 +99,4 @@ export function createBrandingGc(env: {
     },
   };
 }
+import { validateSupabaseUrl } from './rpc';

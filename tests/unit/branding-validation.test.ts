@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { normalizeBrandDraft } from '../../lib/branding/validation';
+import {
+  MAX_BRANDING_LOCALIZED_TEXT_LENGTH,
+  normalizeBrandDraft,
+} from '../../lib/branding/validation';
 
 describe('branding draft validation', () => {
   it('trims fields and fills the missing name locale from the required locale', () => {
@@ -36,6 +39,30 @@ describe('branding draft validation', () => {
         color: '#059669',
       }),
     ).toThrow(/name/i);
+  });
+
+  it('bounds localized names and banner alt text by Unicode characters', () => {
+    const withinLimit = '😀'.repeat(MAX_BRANDING_LOCALIZED_TEXT_LENGTH);
+    expect(
+      normalizeBrandDraft({
+        names: { en: withinLimit },
+        color: '#059669',
+        bannerAltText: { en: withinLimit },
+      }).names.en,
+    ).toBe(withinLimit);
+    expect(() =>
+      normalizeBrandDraft({
+        names: { en: `${withinLimit}😀` },
+        color: '#059669',
+      }),
+    ).toThrow(/1000 characters/i);
+    expect(() =>
+      normalizeBrandDraft({
+        names: { en: 'Studio' },
+        color: '#059669',
+        bannerAltText: { en: `${withinLimit}😀` },
+      }),
+    ).toThrow(/1000 characters/i);
   });
 
   it.each(['#123', '123456', '#12345G', '#1234567', 'red'])(

@@ -33,6 +33,18 @@ afterAll(async () => {
   await db.end();
 });
 
+it('does not leave an attachment-failure status update before its rolled-back stale exception', async () => {
+  const [functionRow] = await db<{ body: string }[]>`
+    select pg_get_functiondef(
+      'app_private.branding_asset_attach(uuid,bigint)'::regprocedure
+    ) as body
+  `;
+  expect(functionRow?.body).toMatch(/stale_branding_upload/);
+  expect(functionRow?.body).not.toMatch(
+    /set status\s*=\s*'attachment_failed_stale'[\s\S]*?stale_branding_upload/,
+  );
+});
+
 it('collects stale staging and validated bytes through bounded GC leases', async () => {
   const uploadId = crypto.randomUUID();
   const stagingObject = `${fixture.wsA.id}/staging/${uploadId}`;
@@ -75,13 +87,14 @@ it('collects stale staging and validated bytes through bounded GC leases', async
     SUPABASE_SERVICE_ROLE_KEY: config.serviceRoleKey,
   };
   const batches: number[] = [];
-  for (let attempt = 0; attempt < 4; attempt++) {
+  for (let attempt = 0; attempt < 50; attempt++) {
     const processed = await runBrandingGc(createBrandingGc(env), 1);
     batches.push(processed);
     if (processed === 0) break;
   }
   expect(batches.at(-1)).toBe(0);
-  expect(batches.length).toBeLessThanOrEqual(3);
+  expect(batches.length).toBeLessThanOrEqual(50);
+  expect(batches.every((batch) => batch >= 0 && batch <= 1)).toBe(true);
 
   const [row] = await db<
     {

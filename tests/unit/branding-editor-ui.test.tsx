@@ -53,6 +53,14 @@ describe('branding editor presentation contract', () => {
     expect(portal).not.toMatch(/<(?:button|a|form|input)\b/i);
   });
 
+  it('renders the banner dimensions with one localized unit suffix', () => {
+    const html = renderToStaticMarkup(
+      createElement(BrandEditor, { locale: 'en', projection }),
+    );
+    expect(html).toContain('2100 × 1050');
+    expect(html).not.toContain('2100 × 1050 px px');
+  });
+
   it('explains source and accessible adjusted colors, keeps draft identity isolated, and omits history controls', () => {
     const html = renderToStaticMarkup(
       createElement(BrandEditor, {

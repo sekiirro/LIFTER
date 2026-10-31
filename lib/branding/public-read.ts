@@ -55,7 +55,7 @@ export async function resolveBrandingAsset(
       r.bucket !== 'branding-validated' ||
       typeof r.object !== 'string' ||
       !new RegExp(
-        `^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\\/validated\\/${slot}\\/[0-9a-f]{64}\\.(png|webp)$`,
+        `^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\\/validated\\/${slot}\\/[0-9a-f]{64}(?:-[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})?\\.(png|webp)$`,
         'i',
       ).test(r.object) ||
       !['image/png', 'image/webp'].includes(r.content_type) ||
@@ -83,7 +83,7 @@ export async function downloadBrandingAsset(
     asset.bucket !== 'branding-validated' ||
     !/^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$/.test(context.token) ||
     !/^[A-Za-z0-9_-]{42}[AEIMQUYcgkosw048]$/.test(context.handle) ||
-    !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\/validated\/(logo|banner)\/[0-9a-f]{64}\.(png|webp)$/i.test(
+    !/^[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12}\/validated\/(logo|banner)\/[0-9a-f]{64}(?:-[0-9a-f]{8}-(?:[0-9a-f]{4}-){3}[0-9a-f]{12})?\.(png|webp)$/i.test(
       asset.object,
     ) ||
     !new RegExp(`/validated/${context.slot}/`, 'i').test(asset.object)

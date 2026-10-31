@@ -24,6 +24,7 @@ const activePath =
 const temporaryPath = `${summaryPath}.tmp`;
 const summary = {
   totalLines: 0,
+  captureStarted: true,
   stdoutLines: 0,
   stderrLines: 0,
   registrationRelatedLines: 0,

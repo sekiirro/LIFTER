@@ -10,7 +10,10 @@ import {
   fromPersistedBrandingFields,
   toPersistedBrandingFields,
 } from './rpc-contract';
-import type { NormalizedBrandingDraft } from './validation';
+import {
+  BrandingValidationError,
+  type NormalizedBrandingDraft,
+} from './validation';
 
 type ReadResult = {
   workspace_id: string;
@@ -30,7 +33,19 @@ function readResult(value: unknown): ReadResult {
   return value as ReadResult;
 }
 
-function asDraft(result: ReadResult): BrandingDraft {
+function hasPersistedName(fields: unknown): boolean {
+  if (!fields || typeof fields !== 'object' || Array.isArray(fields))
+    return false;
+  const name = (fields as { name?: unknown }).name;
+  if (!name || typeof name !== 'object' || Array.isArray(name)) return false;
+  return ['ar', 'en'].some((locale) => {
+    const text = (name as Record<string, unknown>)[locale];
+    return typeof text === 'string' && text.trim().length > 0;
+  });
+}
+
+function asDraft(result: ReadResult): BrandingDraft | null {
+  if (!hasPersistedName(result.fields) && result.revision === 0) return null;
   return {
     workspaceId: result.workspace_id,
     revision: result.revision,
@@ -57,6 +72,9 @@ function throwRpcError(error: { code?: string; message: string }): never {
   }
   if (error.code === '42501') {
     throw new BrandingServiceError('Branding access denied', 'denied');
+  }
+  if (error.code === '22023') {
+    throw new BrandingValidationError('Branding fields are invalid');
   }
   throw new Error('Branding operation failed');
 }
@@ -123,8 +141,7 @@ export function createSupabaseBrandingRepository(
       if (!current)
         throw new Error('Branding publication missing after publish');
       const previous = asVersion(workspaceId, before.current_publication);
-      return previous &&
-        JSON.stringify(previous.fields) === JSON.stringify(current.fields)
+      return previous && previous.sequence === current.sequence
         ? { status: 'unchanged', current }
         : { status: 'published', current };
     },

@@ -1,7 +1,11 @@
 import { describe, expect, it } from 'vitest';
+import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
 import {
   assertLocalStackTarget,
   getStackConfig,
+  loadSelectedStackEnv,
   selectStack,
 } from '../../scripts/local-stack.mjs';
 import { localSupabaseContainer } from '../integration/local-docker';
@@ -34,6 +38,28 @@ describe('isolated local Supabase stack contract', () => {
         DB_URL: 'postgres://postgres:postgres@127.0.0.1:54322/postgres',
       }),
     ).toBe('a');
+  });
+
+  it('uses the supplied root when inferring the environment-selected profile', () => {
+    const root = mkdtempSync(join(tmpdir(), 'lifter-stack-root-'));
+    try {
+      const b = join(root, 'supabase-stack-b', 'supabase');
+      mkdirSync(b, { recursive: true });
+      const config = getStackConfig('b')
+        .configText.replaceAll('25421', '29521')
+        .replaceAll('25422', '29522');
+      writeFileSync(join(b, 'config.toml'), config);
+      const env = {
+        NODE_ENV: 'test' as const,
+        API_URL: 'http://127.0.0.1:29521',
+        DB_URL: 'postgres://postgres:postgres@127.0.0.1:29522/postgres',
+      };
+
+      expect(loadSelectedStackEnv(env, root)).toBe('b');
+      expect(selectStack(env, root)).toBe('b');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
   });
 
   it('binds stack B to its separate project and complete port block', () => {

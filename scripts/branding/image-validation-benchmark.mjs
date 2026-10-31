@@ -1,3 +1,5 @@
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
 import { performance } from 'node:perf_hooks';
 import { deflateSync } from 'node:zlib';
 import {
@@ -87,6 +89,8 @@ function measure(label, input, role) {
   console.log(
     JSON.stringify({
       label,
+      pid: process.pid,
+      isolation: 'per-case-process',
       role,
       ingressBytes: input.length,
       medianMs: Number(times[3].toFixed(2)),
@@ -101,22 +105,54 @@ function measure(label, input, role) {
 const logo = BRANDING_IMAGE_LIMITS.logo;
 const banner = BRANDING_IMAGE_LIMITS.banner;
 const cases = [
-  ['logo metadata CRC walk', png(1, 1, logo.maxIngressBytes - 82), 'logo'],
-  ['logo maximum chunk complexity', png(1, 1, 0, logo.maxChunks - 3), 'logo'],
-  ['logo retained output and hash', webp(logo.maxIngressBytes), 'logo'],
-  ['logo max pixel expansion', png(1000, 1000), 'logo'],
-  [
+  () => [
+    'logo metadata CRC walk',
+    png(1, 1, logo.maxIngressBytes - 82),
+    'logo',
+  ],
+  () => [
+    'logo maximum chunk complexity',
+    png(1, 1, 0, logo.maxChunks - 3),
+    'logo',
+  ],
+  () => ['logo retained output and hash', webp(logo.maxIngressBytes), 'logo'],
+  () => ['logo max pixel expansion', png(1000, 1000), 'logo'],
+  () => [
     'banner metadata CRC walk',
     png(1, 1, banner.maxIngressBytes - 82),
     'banner',
   ],
-  [
+  () => [
     'banner maximum chunk complexity',
     png(1, 1, 0, banner.maxChunks - 3),
     'banner',
   ],
-  ['banner retained output and hash', webp(banner.maxIngressBytes), 'banner'],
-  ['banner max pixel expansion', png(2000, 2000), 'banner'],
+  () => [
+    'banner retained output and hash',
+    webp(banner.maxIngressBytes),
+    'banner',
+  ],
+  () => ['banner max pixel expansion', png(2000, 2000), 'banner'],
 ];
 
-for (const [label, input, role] of cases) measure(label, input, role);
+const caseIndex = process.argv.indexOf('--case-index');
+if (caseIndex >= 0) {
+  const index = Number(process.argv[caseIndex + 1]);
+  const selected = cases[index];
+  if (!selected) throw new Error('unknown_image_benchmark_case');
+  measure(...selected());
+} else {
+  const script = fileURLToPath(import.meta.url);
+  for (let index = 0; index < cases.length; index += 1) {
+    const child = spawnSync(
+      process.execPath,
+      ['--experimental-strip-types', script, '--case-index', String(index)],
+      { encoding: 'utf8' },
+    );
+    if (child.stdout) process.stdout.write(child.stdout);
+    if (child.stderr) process.stderr.write(child.stderr);
+    if (child.error) throw child.error;
+    if (child.status !== 0)
+      throw new Error(`image_benchmark_case_${index}_failed`);
+  }
+}
