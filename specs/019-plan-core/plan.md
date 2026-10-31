@@ -26,7 +26,8 @@ F16 catalog contracts precede Plan Core; Plan Core precedes F17/F18 integration.
 
 ## Deferred implementation detail
 
-- P4 activation migration: in the owning Plan Core/P4 implementation PR, define forward-only nullability for the new typed delivery links on legacy `subscription_activations` rows, require both typed links for new activations, and specify what readers return for legacy rows. Do not rewrite or backfill existing rows. Tracked from CodeRabbit round 5; see the P4 forward extension in `specs/012-registration-approval/data-model.md`.
+- P4 activation migration: implement the forward-only typed-link contract recorded in `specs/012-registration-approval/data-model.md`: leave both new typed links unset on legacy rows, require both on new activations, preserve legacy `delivery_event_id` readers, and do not rewrite or backfill existing rows. Tracked from CodeRabbit round 5.
+- P4 first-delivery idempotency: in the owning P4 implementation PR, choose and name the ledger referenced by each `first_plan_deliveries` row (`app_private.registration_operations` or the shared `app_private.operation_keys`), then specify its FK, canonical request hash, replay result, and retention contract. Preserve independent delivery retries and exactly-once activation. Tracked from CodeRabbit round 6; see `specs/012-registration-approval/data-model.md`.
 
 ## Validation plan
 
