@@ -1716,7 +1716,9 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
           thresholdLuminance: 0.18,
           slope: 1.33,
           maximumDimming: 0.72,
-          brightLightSurfaceOffset: 0.2,
+          darkThemeBrightArtFill: '0.01 + dimming * 0.99',
+          lightThemeBrightArtFill: 'max(0, dimming - 0.27)',
+          lightThemeBrightArtOffset: 0.27,
         },
         contrastEvidence,
         focusEvidence,
@@ -2023,7 +2025,7 @@ test('P1 no-image centering and P2 art-luminance adaptive glass dimming', async 
             expect(adaptive.dimming).toBeLessThanOrEqual(0.72);
             expect(adaptive.cardFillAlpha).toBeCloseTo(
               theme === 'light' && adaptive.tone === 'bright'
-                ? Math.max(0, adaptive.dimming - 0.2)
+                ? Math.max(0, adaptive.dimming - 0.27)
                 : 0.01 + adaptive.dimming * 0.99,
               2,
             );
@@ -2151,7 +2153,9 @@ test('P1 no-image centering and P2 art-luminance adaptive glass dimming', async 
           thresholdLuminance: 0.18,
           slope: 1.33,
           maximumDimming: 0.72,
-          brightLightSurfaceOffset: 0.2,
+          darkThemeBrightArtFill: '0.01 + dimming * 0.99',
+          lightThemeBrightArtFill: 'max(0, dimming - 0.27)',
+          lightThemeBrightArtOffset: 0.27,
         },
         contrastEvidence,
         focusEvidence,

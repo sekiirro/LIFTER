@@ -498,7 +498,7 @@
 :global([data-theme='light']) .stage[data-photo-tone='bright'] .glassCard {
   --hero-adaptive-glass-fill-percent: max(
     0%,
-    calc(var(--hero-adaptive-dimming-percent, 0%) - 20%)
+    calc(var(--hero-adaptive-dimming-percent, 0%) - 27%)
   );
   background: color-mix(
     in srgb,
