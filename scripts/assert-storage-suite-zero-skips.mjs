@@ -80,6 +80,24 @@ function collectFiles(value, files = new Set()) {
   return files;
 }
 
+function collectPlaywrightTests(value, file = '', tests = []) {
+  if (Array.isArray(value)) {
+    value.forEach((item) => collectPlaywrightTests(item, file, tests));
+    return tests;
+  }
+  if (!value || typeof value !== 'object') return tests;
+
+  const currentFile =
+    typeof value.file === 'string' ? value.file.replaceAll('\\', '/') : file;
+  if (Array.isArray(value.tests)) {
+    for (const test of value.tests) tests.push({ file: currentFile, test });
+  }
+  for (const [key, child] of Object.entries(value)) {
+    if (key !== 'tests') collectPlaywrightTests(child, currentFile, tests);
+  }
+  return tests;
+}
+
 export function assertPlaywrightStorageReport(
   report,
   requiredFiles = browserFiles,
@@ -88,10 +106,39 @@ export function assertPlaywrightStorageReport(
   const missing = requiredFiles.filter(
     (required) => ![...files].some((file) => file.endsWith(required)),
   );
+  const tests = collectPlaywrightTests(report);
+  const fileTests = new Map(
+    requiredFiles.map((file) => [
+      file,
+      tests
+        .filter((entry) => entry.file.endsWith(file))
+        .map(({ test }) => test),
+    ]),
+  );
+  const expectedFailures = requiredFiles.filter((file) =>
+    fileTests.get(file).some((test) => test.expectedStatus === 'failed'),
+  );
+  const noPassedFiles = requiredFiles.filter(
+    (file) =>
+      !fileTests
+        .get(file)
+        .some((test) =>
+          test.results?.some((result) => result.status === 'passed'),
+        ),
+  );
   const stats = report?.stats ?? {};
   const result = {
     files: requiredFiles.length - missing.length,
-    passed: Number(stats.expected ?? 0),
+    passed: requiredFiles.reduce(
+      (count, file) =>
+        count +
+        fileTests
+          .get(file)
+          .filter((test) =>
+            test.results?.some((item) => item.status === 'passed'),
+          ).length,
+      0,
+    ),
     skipped: Number(stats.skipped ?? 0),
     failed: Number(stats.unexpected ?? 0),
     flaky: Number(stats.flaky ?? 0),
@@ -99,6 +146,8 @@ export function assertPlaywrightStorageReport(
   };
   if (
     missing.length ||
+    expectedFailures.length ||
+    noPassedFiles.length ||
     result.skipped ||
     result.failed ||
     result.flaky ||
@@ -106,7 +155,7 @@ export function assertPlaywrightStorageReport(
     !result.passed
   )
     throw new Error(
-      `Storage Playwright guard failed: missing=${missing.join(',') || 'none'} skipped=${result.skipped} failed=${result.failed} flaky=${result.flaky} errors=${result.errors} passed=${result.passed}`,
+      `Storage Playwright guard failed: missing=${missing.join(',') || 'none'} expectedFailures=${expectedFailures.join(',') || 'none'} noPassed=${noPassedFiles.join(',') || 'none'} skipped=${result.skipped} failed=${result.failed} flaky=${result.flaky} errors=${result.errors} passed=${result.passed}`,
     );
   return result;
 }

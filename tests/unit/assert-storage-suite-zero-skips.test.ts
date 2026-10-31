@@ -53,4 +53,116 @@ describe('storage suite report guards', () => {
       ),
     ).toThrow('Storage Playwright guard failed');
   });
+
+  it('rejects a Playwright expected failure even when stats count it as expected', () => {
+    expect(() =>
+      assertPlaywrightStorageReport(
+        {
+          stats: { expected: 1, skipped: 0, unexpected: 0, flaky: 0 },
+          suites: [
+            {
+              file: 'branding-banner-loaded.spec.ts',
+              specs: [
+                {
+                  tests: [
+                    {
+                      expectedStatus: 'failed',
+                      results: [{ status: 'failed' }],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              file: 'client-accounts-storage.spec.ts',
+              specs: [
+                {
+                  tests: [
+                    {
+                      expectedStatus: 'passed',
+                      results: [{ status: 'passed' }],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        ['branding-banner-loaded.spec.ts', 'client-accounts-storage.spec.ts'],
+      ),
+    ).toThrow('Storage Playwright guard failed');
+  });
+
+  it('requires an executed passing result for every required Playwright file', () => {
+    expect(() =>
+      assertPlaywrightStorageReport(
+        {
+          stats: { expected: 1, skipped: 0, unexpected: 0, flaky: 0 },
+          suites: [
+            {
+              file: 'branding-banner-loaded.spec.ts',
+              specs: [
+                {
+                  tests: [
+                    {
+                      expectedStatus: 'passed',
+                      results: [{ status: 'passed' }],
+                    },
+                  ],
+                },
+              ],
+            },
+            { file: 'client-accounts-storage.spec.ts', specs: [] },
+          ],
+        },
+        ['branding-banner-loaded.spec.ts', 'client-accounts-storage.spec.ts'],
+      ),
+    ).toThrow('Storage Playwright guard failed');
+  });
+
+  it('accepts executed passing results from every required Playwright file', () => {
+    expect(
+      assertPlaywrightStorageReport(
+        {
+          stats: { expected: 2, skipped: 0, unexpected: 0, flaky: 0 },
+          suites: [
+            {
+              file: 'branding-banner-loaded.spec.ts',
+              specs: [
+                {
+                  tests: [
+                    {
+                      expectedStatus: 'passed',
+                      results: [{ status: 'passed' }],
+                    },
+                  ],
+                },
+              ],
+            },
+            {
+              file: 'client-accounts-storage.spec.ts',
+              specs: [
+                {
+                  tests: [
+                    {
+                      expectedStatus: 'passed',
+                      results: [{ status: 'passed' }],
+                    },
+                  ],
+                },
+              ],
+            },
+          ],
+        },
+        ['branding-banner-loaded.spec.ts', 'client-accounts-storage.spec.ts'],
+      ),
+    ).toEqual({
+      files: 2,
+      passed: 2,
+      skipped: 0,
+      failed: 0,
+      flaky: 0,
+      errors: 0,
+    });
+  });
 });

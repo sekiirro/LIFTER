@@ -114,8 +114,32 @@ describe('F14 Storage CI lane contract', () => {
     const report = {
       stats: { expected: 13, skipped: 0, unexpected: 0, flaky: 0 },
       suites: [
-        { file: 'tests/e2e/branding-banner-loaded.spec.ts', specs: [] },
-        { file: 'tests/e2e/client-accounts-storage.spec.ts', specs: [] },
+        {
+          file: 'tests/e2e/branding-banner-loaded.spec.ts',
+          specs: [
+            {
+              tests: [
+                {
+                  expectedStatus: 'passed',
+                  results: [{ status: 'passed' }],
+                },
+              ],
+            },
+          ],
+        },
+        {
+          file: 'tests/e2e/client-accounts-storage.spec.ts',
+          specs: [
+            {
+              tests: [
+                {
+                  expectedStatus: 'passed',
+                  results: [{ status: 'passed' }],
+                },
+              ],
+            },
+          ],
+        },
       ],
     };
     expect(() =>

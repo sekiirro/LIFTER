@@ -60,7 +60,7 @@ describe('Supabase branding repository publication result', () => {
           revision: 5,
           fields: {
             ...emptyRead.fields,
-            name: { ar: 'Ø§Ù„Ù†Ø®Ø¨Ø©', en: 'Elite' },
+            name: { ar: 'النخبة', en: 'Elite' },
           },
         },
         error: null,
@@ -72,7 +72,7 @@ describe('Supabase branding repository publication result', () => {
     const draft = await repository.getDraft('workspace-a');
     expect(draft?.revision).toBe(4);
     await repository.compareAndSetDraft('workspace-a', draft!.revision, {
-      names: { ar: 'Ø§Ù„Ù†Ø®Ø¨Ø©', en: 'Elite' },
+      names: { ar: 'النخبة', en: 'Elite' },
       bannerAltText: { ar: '', en: '' },
       color: '#059669',
     });
