@@ -44,7 +44,7 @@ Ready and publication use the shared Plan Core contract. First workout delivery 
 1. **Given** a first workout plan, **When** it is delivered, **Then** the delivery is recorded independently and activation waits for first nutrition delivery (Plan Core PC-FR-004/005).
 2. **Given** an existing plan, **When** a coach edits and publishes it, **Then** the same Plan ID remains and a new immutable revision becomes visible only after Ready & Publish.
 3. **Given** several published plans/versions, **When** listed, **Then** all are retained, newest first; nothing is auto-archived.
-4. **Given** the catalog later changes or retires an exercise, **When** an old version is viewed or exported, **Then** every field captured by `ExerciseSnapshotV1` renders unchanged; the selected workspace video is resolved dynamically per authorized read/export and may reflect a later video mapping.
+4. **Given** the catalog later changes or removes an exercise, **When** an old version is viewed or exported, **Then** every field captured by `ExerciseSnapshotV1` renders unchanged; the selected workspace video is resolved dynamically per authorized read/export and may reflect a later video mapping.
 
 ### User Story 4 - Volume reporting (Priority: P2)
 
@@ -62,7 +62,7 @@ Staff export a selected published version (published versions only, with every e
 
 - Rest-day only weeks; a session with zero exercises (allowed in draft, blocked at ready/publish).
 - Rep ranges vs single values; per-set kg or lb; Bodyweight, Added Weight or Assisted load modes.
-- An alternative exercise that is retired after selection (snapshot keeps it; draft shows indicator).
+- An alternative exercise that is removed after selection (snapshot keeps it; draft shows indicator).
 - Client deactivated/refunded while a draft exists: draft preserved, publish denied per lifecycle.
 - Plan document size above the cap: rejected with a clear message (Free-tier protection).
 - Duplicate submit of publish (network retry): idempotent, one version.
@@ -95,7 +95,7 @@ Staff export a selected published version (published versions only, with every e
 
 ### Key Entities
 
-WorkoutPlan (workspace, client), WorkoutPlanDraft (document JSONB, revision, ready_at/ready_by), WorkoutPlanVersion (immutable JSONB, schema_version, version, published_at/by), WorkoutTemplate (scope global|workspace) + WorkoutTemplateVersion, and the per-exercise defaults stored on F16 exercise catalog entries (loaded when an exercise is added; coach-overridable per plan).
+WorkoutPlan (workspace, client, subscription_id), WorkoutPlanDraft (document JSONB, revision, ready_at/ready_by), WorkoutPlanVersion (immutable JSONB, schema_version, version, published_at/by), WorkoutTemplate (scope global|workspace) + WorkoutTemplateVersion, and the per-exercise defaults stored on F16 exercise catalog entries (loaded when an exercise is added; coach-overridable per plan).
 
 ## Success Criteria _(mandatory)_
 

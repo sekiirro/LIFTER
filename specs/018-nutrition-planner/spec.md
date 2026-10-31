@@ -34,7 +34,7 @@ For a food item, staff configure manual alternatives, each with a precise quanti
 
 **Acceptance Scenarios**:
 1. **Given** an item, **When** an alternative is added with a quantity, **Then** its macros are computed; nothing auto-adjusts quantities (no AI, PRD-12). No delta-versus-original display (not in PRD-05; out of scope unless separately approved).
-2. **Given** an alternative whose food is retired or merged in F16, **When** the draft is opened, **Then** an indicator appears and the stored snapshot values remain unchanged.
+2. **Given** an alternative whose food is removed or merged in F16, **When** the draft is opened, **Then** an indicator appears and the stored snapshot values remain unchanged.
 
 ### User Story 3 - Global and workspace nutrition templates (Priority: P1)
 
@@ -92,14 +92,14 @@ Staff export a selected published version only (D17-8=A) to PDF/Excel via the sh
 - **FR-009** Client selections apply only to coach-approved alternatives in the published version. On publish, copy a version-scoped selection to the new version only when the client remains authorized and the same stable item ID and approved alternative ID both exist; if either ID is absent or invalid, write no selection for that new version so the coach default applies. Selections never create plans or affect other clients. (PO S20 Message B section 3; supersedes v3 FR-009)
 - **FR-010** Export authorization MUST check both walls (`has_workspace_access(plan.workspace_id, coaching_work)` in app and RLS) before any read. Exports MUST include meals, items, quantities, alternatives, per-meal/day totals, day types and the client's current permitted selection marked as such; ExcelJS writes coach-authored cells as strings (formula-injection tests).
 - **FR-010a** Every successful plan/template/selection mutation and every export (and export denial) appends one audit event with an allowlist: action, workspace, actor, resource/version/item/alternative ids, changed-field codes. Never food names, quantities, macros, notes, recipe text, URLs, client display data, document JSON, free text or raw operation keys. Log-scrub tests prove zero health-content occurrences.
-- **FR-010b** Every successful draft save and publication attributes the acting staff member; each published version exposes an immutable contributor set (staff ids, action codes, timestamps only) of all staff who contributed since the previous version (PRD-06 "other trainer contributions recorded independently"); `action_code` is a CHECK-constrained enum (`draft_save`, `ready`, `unready`, `publish`, `template_load`); P4 records the responsible trainer separately.
+- **FR-010b** Every successful draft save and publication attributes the acting staff member; each published version exposes an immutable contributor set (workspace id, staff ids, action codes, timestamps only) of all staff who contributed since the previous version (PRD-06 "other trainer contributions recorded independently"). Contributor rows MUST carry `workspace_id`, use a composite FK to the same-workspace plan version, and enforce workspace RLS; `action_code` is a CHECK-constrained enum (`draft_save`, `ready`, `unready`, `publish`, `template_load`). P4 records the responsible trainer separately.
 - **FR-011** Excluded: meal check-offs, consumption logs, calorie diary, AI-generated alternatives, offline client queue, and food replacement requests (P5). Workspace nutrition templates are in scope under amended D18-1; Telegram AI may only select coach-approved existing alternatives. (PO S20 Message B section 3, 6)
 - **FR-012** UI MUST meet Design System, AR/EN, keyboard alternatives to drag, live totals with accessible announcements, loading/empty/error/conflict states, and the Frontend Design Gate. Food search uses F16's indexed `catalog_search` (no global-food scans); template lists paginated <= 50.
 - **FR-013** Every schema version keeps a frozen validator, renderer, export path and macro-algorithm version; new versions never reinterpret old documents or totals; support is added by forward migration, never rewritten.
 
 ### Key Entities
 
-NutritionPlan, NutritionPlanDraft, NutritionPlanVersion (+ contributor set), NutritionGlobalTemplate + Version, ClientAlternativeSelection, shared OperationKey ledger.
+NutritionPlan, NutritionPlanDraft, NutritionPlanVersion (+ workspace-scoped contributor set), NutritionGlobalTemplate + Version, NutritionWorkspaceTemplate + Version, ClientAlternativeSelection, shared OperationKey ledger.
 
 ## Success Criteria _(mandatory)_
 

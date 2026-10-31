@@ -72,7 +72,7 @@ These numbered entries record PO Messages A/B and the final S20 handoff. Later e
 | S20-02 | F14 PR #25 exact head c0026de5a65388e36e68336008e2d8b8893c46af has accepted data-integrity PASS and exact-SHA merge approval, conditional on rechecking gates; retain branch. No production deploy or migration authorization. | PO S20 Message B section 5; handoff section 0-S20-FINAL. Documentary production evidence only; no live hosted query. |
 | S20-03 | D16-1a=A: PO exclusively manages global exercises; authorized staff manage workspace exercises. | PO S20 Message B section 1. |
 | S20-04 | D16-1b=A: food creator or PO may publish food edits without moderation. | PO S20 Message B section 1. |
-| S20-05 | D16-1c=A: only PO retires or merges global entries. | PO S20 Message B section 1. |
+| S20-05 | D16-1c=A: only PO may Remove (called retirement in this S20 entry) or merge global entries; S21-01 names the single staff-facing action Remove. | PO S20 Message B section 1; Remove wording amended by PO S21-PO-4. |
 | S20-06 | D16-2: exact 18 muscles: Chest, Lats, Upper Back, Traps, Front Delts, Side Delts, Rear Delts, Biceps, Triceps, Forearms, Abs, Spinal Erectors, Quads, Hamstrings, Glutes, Adductors, Abductors, Calves; 10 equipment values: Barbell, Dumbbell, Cable, Machine, Smith Machine, Bodyweight, Kettlebell, Resistance Band, Suspension Trainer, Other. Arabic/English names, primary muscle and equipment required; secondary muscles optional. | PO S20 Message B section 1. |
 | S20-07 | D16-3: HTTPS YouTube and Google Drive only. One shared global exercise identity; independent workspace video URLs resolved dynamically. PO manages all mappings; authorized staff manage their workspace only. Enforce tenant isolation; no plan republish. | PO S20 Message B section 1. Supersedes Vimeo and effective-video snapshot text. |
 | S20-08 | D16-4: PO supplies dataset later. Audit nutrition values, calories, names, duplicates, irrelevant foods and raw/cooked variants; report corrections, exclusions, sources and alternative groups; produce smallest useful Egyptian/Arab-oriented catalog. PO approval is required before import. Do not invent nutritional values or exercise content. | PO S20 Message B section 1. |
@@ -92,6 +92,8 @@ These numbered entries record PO Messages A/B and the final S20 handoff. Later e
 | S20-22 | F14b all seven design decisions approved: reusable Upload Card with thumbnail, Retry and clear errors; upload on file selection but never auto-publish; banner-only identity confirmation; alt text in one language with fallback; reuse Workspace Builder Preview tab; Replace and Remove with safe fallback; use verbatim AR/EN strings and show actual server limits. | PO S20 Message B section 5. |
 | S20-23 | Hero implementation approved without another visual approval. Liquid Glass platform-wide effort is a separate audit only; no site-wide implementation until PO approves recommendations. | PO S20 Message B section 5. |
 | S20-24 | Merge gates remain CI green, CodeRabbit approval on exact SHA, zero unresolved threads, independent review and explicit PO exact-SHA approval except approved F14 SHA. No automatic production deployment/migration. | PO S20 Message B sections 5 and 6. |
+| S21-01 | F16 catalog lifecycle is **Add / Edit / Remove / Restore**. Remove is the only staff-facing removal action for both exercise and food catalogs; it is non-destructive, prevents new selections, and never cascades to or automatically changes/republishes an existing client plan. Preserve references, snapshots, logs, media availability, and history; removal from a client plan requires an explicit plan-editing action. Restore remains available for the same identity/current immutable version. | PO S21-PO-4; supersedes the Archive portion of S20-13. |
+| S21-02 | Glisse-based selective Liquid Glass implementation is authorized and in progress on a separate branch under S21-PO-1/2. The approved floating surfaces follow the PO direction; merge still requires explicit PO approval. | PO S21-PO-1/2; supersedes S20-23's platform-audit-only status. |
 
 ### F14b approved AR/EN copy and limits
 
@@ -101,6 +103,4 @@ These numbered entries record PO Messages A/B and the final S20 handoff. Later e
 
 ### Open items for PO
 
-No S20 decision above remains open. The PO-supplied D16-4 dataset is a future input, not an unresolved decision: audit it and obtain PO import approval when supplied. Platform-wide Liquid Glass implementation requires PO review of the separate audit.
-
-- Clarification (not a reopened S20 decision): confirm whether Archive and Remove need distinct staff-facing semantics or may share the same inactive lifecycle state. Until clarified, both preserve content, plan references and snapshots and prevent new selection; Restore reactivates the same identity/version.
+No S20 decision above remains open. The PO-supplied D16-4 dataset is a future input, not an unresolved decision: audit it and obtain PO import approval when supplied. The S21-PO-1/2 Glisse-based selective Liquid Glass implementation is authorized and in progress on its separate branch; merging that work still needs explicit PO approval.

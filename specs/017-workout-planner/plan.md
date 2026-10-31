@@ -32,7 +32,7 @@ Defaults live on each F16 exercise catalog entry and are copied when coaches add
 
 ### Volume
 
-Pure function `lib/plans/workout/volume.ts` over the document + snapshots; secondary fraction from a PO-set config value (D17-1) stored as an integer basis-point value to avoid float drift; table-driven tests.
+Pure function `lib/plans/workout/volume.ts` over the document + snapshots; secondary credit uses the fixed immutable 5,000-basis-point constant (0.5, D17-1=A), not a configurable value; table-driven tests.
 
 ### Export
 

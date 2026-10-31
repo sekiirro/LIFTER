@@ -280,7 +280,7 @@ Approved AR/EN copy: `«شعار مساحة العمل»` / “Workspace logo”
 
 ### Public Hero
 
-The approved public Hero uses Emerald #059669, the approved Liquid Glass treatment, existing design tokens, approved layout, and approved mobile behavior. This approval applies to the public Hero only. A platform-wide Liquid Glass audit is pending PO review; it is not a platform-wide design mandate.
+The approved public Hero uses Emerald #059669, the approved Liquid Glass treatment, existing design tokens, approved layout, and approved mobile behavior. This approval applies to the public Hero. S21-PO-1/2 also authorize the selective Glisse-based Liquid Glass implementation on floating surfaces on a separate branch; dense data, forms, and financial content remain mostly solid. The implementation is in progress, and merging that branch still requires explicit PO approval.
 
 ### Planner UI
 

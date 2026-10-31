@@ -37,7 +37,7 @@ PO items added/reworded: D16-1a/b/c, D16-5, D16-7, D16-9, D16-10, D16-11. Reject
 | R8 | minor | REJECTED | Review note was outside the feature decision scope. |
 | R9 | minor | ACCEPTED | SC-005 fixture definition + DB/index size vs 70% exit trigger. |
 
-PO list changes: D16-11 removed (engineering-owned p95 <= 300 ms); D16-10 owner = PO (proposed).
+PO list changes: D16-11 is the engineering-owned p95 <= 300 ms target, not a PO decision; D16-10 owner = PO (proposed).
 
 ## Round 3 ? review record
 
@@ -56,7 +56,7 @@ PO list changes: D16-11 removed (engineering-owned p95 <= 300 ms); D16-10 owner 
 | R11 | minor | ACCEPTED | `catalog_operations` counted in D16-10 storage budgets. |
 | R12 | minor | REJECTED | BRD-06 was deliberately excluded from the sanitized pack; the source exists. |
 
-Decisions: D16-7 split into 7a/7b/7c (accepted); D16-11 "PO read without membership" rejected (R3); D16-12 rejected (R4 handled as engineering).
+Decisions: D16-7 split into 7a/7b/7c (accepted); the R3 "PO read without membership" proposal was rejected and has no D16 decision identifier; D16-11 remains the engineering-owned p95 target; D16-12 rejected (R4 handled as engineering).
 
 ## Summary
 
