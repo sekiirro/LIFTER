@@ -267,6 +267,62 @@ it('T008 Remove preserves the Cairo day on which its fact is recorded', async ()
   });
 });
 
+it('T008 rejects Stop after a freeze has been Removed', async () => {
+  const f = await clientContext();
+  await probe(async (tx) => {
+    const ids = await graph(tx, f);
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp()-interval '100 days',${randomUUID()})`;
+    const apply = tx.json({
+      action: 'apply',
+      workspace_id: f.wsA.id,
+      client_id: ids.client,
+      subscription_id: ids.subscription,
+      duration_days: 3,
+      expected_revision: 0,
+      request_key: randomUUID(),
+    });
+    const [applied] =
+      await tx`select public.subscription_freeze_operation(${apply}::jsonb) as receipt`;
+    expect(applied!.receipt).toMatchObject({ status: 'applied', revision: 1 });
+    const freezeId = (applied!.receipt as { freeze_id: string }).freeze_id;
+    const remove = tx.json({
+      action: 'remove',
+      workspace_id: f.wsA.id,
+      client_id: ids.client,
+      subscription_id: ids.subscription,
+      freeze_id: freezeId,
+      expected_revision: 1,
+      request_key: randomUUID(),
+    });
+    const [removed] =
+      await tx`select public.subscription_freeze_operation(${remove}::jsonb) as receipt`;
+    expect(removed!.receipt).toMatchObject({ status: 'removed', revision: 2 });
+
+    const stop = tx.json({
+      action: 'stop',
+      workspace_id: f.wsA.id,
+      client_id: ids.client,
+      subscription_id: ids.subscription,
+      freeze_id: freezeId,
+      expected_revision: 2,
+      request_key: randomUUID(),
+    });
+    await expect(
+      tx.savepoint(async (inner) => {
+        await inner`select public.subscription_freeze_operation(${stop}::jsonb)`;
+      }),
+    ).rejects.toMatchObject({ code: '23514' });
+
+    const [events] = await tx`
+      select count(*)::int as total,
+        count(*) filter (where kind='remove')::int as removed,
+        count(*) filter (where kind='stop')::int as stopped
+      from public.subscription_freeze_events where freeze_id=${freezeId}`;
+    expect(events).toEqual({ total: 1, removed: 1, stopped: 0 });
+  });
+});
+
 it('T008 rejects Apply, Stop and Remove facts after a terminal refund', async () => {
   const f = await clientContext();
   await probe(async (tx) => {

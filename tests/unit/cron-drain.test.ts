@@ -458,6 +458,54 @@ describe('cron edge wiring', () => {
     }
   });
 
+  it('completes lockout jobs when the alert sweep throws and reports a safe signal', async () => {
+    const fetchMock = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async (input) => {
+        const url = String(input);
+        if (url.includes('/rpc/alert_expired_refund_auth_lockouts'))
+          return new Response('private audit failure email@example.test', {
+            status: 500,
+          });
+        if (url.includes('/rpc/claim_refund_auth_lockout_jobs'))
+          return Response.json([
+            {
+              id: '00000000-0000-4000-8000-000000000001',
+              auth_user_id: '00000000-0000-4000-8000-000000000002',
+              attempts: 0,
+              status: 'pending',
+            },
+          ]);
+        if (url.includes('/auth/v1/admin/users/')) return Response.json({});
+        if (url.includes('/rpc/complete_refund_auth_lockout_job'))
+          return Response.json(true);
+        throw new Error('unexpected_rpc');
+      });
+
+    const result = await drainRefundAuthLockouts(
+      {
+        SUPABASE_URL: 'https://example.test',
+        SUPABASE_SERVICE_ROLE_KEY: 'test-runtime-key',
+      },
+      { now: () => new Date('2026-10-30T12:00:00.000Z'), fetcher: fetchMock },
+    );
+
+    expect(result).toEqual({
+      alerted: 0,
+      claimed: 1,
+      failed: 0,
+      alertSweepError: 'auth_lockout_alert_sweep_failed',
+    });
+    expect(fetchMock.mock.calls.map(([input]) => String(input))).toContain(
+      'https://example.test/rest/v1/rpc/claim_refund_auth_lockout_jobs',
+    );
+    expect(fetchMock.mock.calls.map(([input]) => String(input))).toContain(
+      'https://example.test/rest/v1/rpc/complete_refund_auth_lockout_job',
+    );
+    expect(JSON.stringify(result)).not.toContain('private audit failure');
+    expect(JSON.stringify(result)).not.toContain('email@example.test');
+  });
+
   it('records only an allow-listed retry code when Auth Admin returns private provider text', async () => {
     const bodies: string[] = [];
     const fetchMock = vi

@@ -38,11 +38,16 @@ function checkedJob(value: unknown): LockoutJob {
   return value as LockoutJob;
 }
 
-/** A bounded scheduled drain. The five-minute sweep runs before claim on every cron tick. */
+/** A bounded scheduled drain with an independently settled five-minute alert sweep. */
 export async function drainRefundAuthLockouts(
   env: Env,
   options: { limit?: number; now?: () => Date; fetcher?: typeof fetch } = {},
-): Promise<{ alerted: number; claimed: number; failed: number }> {
+): Promise<{
+  alerted: number;
+  claimed: number;
+  failed: number;
+  alertSweepError?: 'auth_lockout_alert_sweep_failed';
+}> {
   const limit = options.limit ?? DEFAULT_BATCH;
   if (!Number.isSafeInteger(limit) || limit < 1 || limit > 100)
     throw new Error('auth_lockout_invalid_batch');
@@ -50,13 +55,18 @@ export async function drainRefundAuthLockouts(
   const fetcher = options.fetcher ?? fetch;
   const rpc = createRpc(env, fetcher);
   const checkedAt = now();
-  const alerted = await rpc('alert_expired_refund_auth_lockouts', {
-    p_limit: limit,
-    p_checked_at: checkedAt.toISOString(),
-  });
-  const rawJobs = await rpc('claim_refund_auth_lockout_jobs', {
-    p_limit: limit,
-  });
+  const [alertResult, claimResult] = await Promise.allSettled([
+    rpc('alert_expired_refund_auth_lockouts', {
+      p_limit: limit,
+      p_checked_at: checkedAt.toISOString(),
+    }),
+    rpc('claim_refund_auth_lockout_jobs', {
+      p_limit: limit,
+    }),
+  ]);
+  const alerted = alertResult.status === 'fulfilled' ? alertResult.value : 0;
+  if (claimResult.status === 'rejected') throw claimResult.reason;
+  const rawJobs = claimResult.value;
   if (!Array.isArray(rawJobs) || rawJobs.length > limit)
     throw new Error('auth_lockout_invalid_batch_result');
   const jobs = rawJobs.map(checkedJob);
@@ -114,5 +124,12 @@ export async function drainRefundAuthLockouts(
     }
   }
 
-  return { alerted, claimed: jobs.length, failed };
+  return {
+    alerted,
+    claimed: jobs.length,
+    failed,
+    ...(alertResult.status === 'rejected'
+      ? { alertSweepError: 'auth_lockout_alert_sweep_failed' as const }
+      : {}),
+  };
 }

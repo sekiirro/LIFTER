@@ -39,7 +39,10 @@ const worker = {
         },
         {
           name: 'refund_auth_lockouts',
-          run: () => drainRefundAuthLockouts(env),
+          run: async () => {
+            const result = await drainRefundAuthLockouts(env);
+            if (result.alertSweepError) console.error(result.alertSweepError);
+          },
         },
       ]),
     );
