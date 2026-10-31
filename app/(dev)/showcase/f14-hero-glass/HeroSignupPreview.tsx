@@ -48,6 +48,9 @@ export function HeroSignupPreview({
     above: boolean;
   } | null>(null);
   const [phoneError, setPhoneError] = useState(false);
+  const [fieldErrors, setFieldErrors] = useState<
+    Partial<Record<'name' | 'email' | 'password', boolean>>
+  >({});
   const [pending, setPending] = useState(false);
   const [validatedPhone, setValidatedPhone] = useState('');
   const messages = getMessages(locale);
@@ -107,6 +110,21 @@ export function HeroSignupPreview({
       above: opensAbove,
     });
   }, [countryOpen, filteredCountries.length]);
+
+  useLayoutEffect(() => {
+    if (!countryOpen || !countryListPlacement) return;
+    const activeCountry = filteredCountries[activeIndex];
+    if (!activeCountry) return;
+    document
+      .getElementById(`${optionsId}-${activeCountry.code}`)
+      ?.scrollIntoView({ block: 'nearest', behavior: 'auto' });
+  }, [
+    activeIndex,
+    countryListPlacement,
+    countryOpen,
+    filteredCountries,
+    optionsId,
+  ]);
 
   useEffect(() => {
     const preview = formRef.current?.closest<HTMLElement>(
@@ -171,9 +189,28 @@ export function HeroSignupPreview({
   async function submitPreview(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (pending) return;
-    setPending(true);
-    setPhoneError(false);
+    const form = formRef.current;
+    if (!form) return;
+    const requiredFields = ['name', 'email', 'password'] as const;
+    const nextFieldErrors = Object.fromEntries(
+      requiredFields.map((name) => {
+        const input = form.elements.namedItem(name) as HTMLInputElement | null;
+        return [name, Boolean(input && !input.validity.valid)];
+      }),
+    ) as Partial<Record<(typeof requiredFields)[number], boolean>>;
+    const phoneInput = form.elements.namedItem(
+      'phone-national',
+    ) as HTMLInputElement | null;
+    const phoneIsInvalid = Boolean(phoneInput && !phoneInput.validity.valid);
+    setFieldErrors(nextFieldErrors);
+    setPhoneError(phoneIsInvalid);
     setValidatedPhone('');
+    const firstInvalid = form.querySelector<HTMLInputElement>(':invalid');
+    if (firstInvalid) {
+      firstInvalid.focus();
+      return;
+    }
+    setPending(true);
     try {
       const value = await validatePreviewPhone(country, nationalNumber);
       if (!value) {
@@ -208,10 +245,23 @@ export function HeroSignupPreview({
               name="name"
               type="text"
               autoComplete="name"
+              aria-describedby={
+                fieldErrors.name ? 'hero-name-error' : undefined
+              }
+              aria-invalid={fieldErrors.name || undefined}
               required
               disabled={pending}
+              onChange={() => {
+                setFieldErrors((current) => ({ ...current, name: false }));
+                setValidatedPhone('');
+              }}
             />
           </span>
+          {fieldErrors.name && (
+            <span id="hero-name-error" className={styles.fieldError}>
+              {messages['clientSignup.fieldError']}
+            </span>
+          )}
         </label>
         <label className={styles.field}>
           <span>{messages['clientSignup.email']}</span>
@@ -222,10 +272,23 @@ export function HeroSignupPreview({
               name="email"
               type="email"
               autoComplete="email"
+              aria-describedby={
+                fieldErrors.email ? 'hero-email-error' : undefined
+              }
+              aria-invalid={fieldErrors.email || undefined}
               required
               disabled={pending}
+              onChange={() => {
+                setFieldErrors((current) => ({ ...current, email: false }));
+                setValidatedPhone('');
+              }}
             />
           </span>
+          {fieldErrors.email && (
+            <span id="hero-email-error" className={styles.fieldError}>
+              {messages['clientSignup.fieldError']}
+            </span>
+          )}
         </label>
         <div className={`${styles.phoneFields} ${prototypeStyles.phoneFields}`}>
           <div className={`${styles.field} ${prototypeStyles.countryField}`}>
@@ -363,10 +426,23 @@ export function HeroSignupPreview({
               name="password"
               type="password"
               autoComplete="new-password"
+              aria-describedby={
+                fieldErrors.password ? 'hero-password-error' : undefined
+              }
+              aria-invalid={fieldErrors.password || undefined}
               required
               disabled={pending}
+              onChange={() => {
+                setFieldErrors((current) => ({ ...current, password: false }));
+                setValidatedPhone('');
+              }}
             />
           </span>
+          {fieldErrors.password && (
+            <span id="hero-password-error" className={styles.fieldError}>
+              {messages['clientSignup.fieldError']}
+            </span>
+          )}
         </label>
         <Button type="submit" variant="primary" disabled={pending}>
           {pending

@@ -11,6 +11,7 @@ const output = join(
   tmpdir(),
   `lifter-f14-liquid-glass-redesign-${process.pid}-${Date.now()}`,
 );
+const reportPath = join(output, 'evidence.json');
 type Locale = 'ar' | 'en';
 type Theme = 'light' | 'dark';
 type Group =
@@ -28,10 +29,69 @@ type Group =
   | 'adaptive-dimming'
   | 'phone-glyphs';
 const captures: Array<{ path: string; label: string; group: Group }> = [];
+const contactPaths: string[] = [];
 const contrastEvidence: Array<Record<string, unknown>> = [];
 const focusEvidence: Array<Record<string, unknown>> = [];
+const dimmingEvidence: Array<Record<string, unknown>> = [];
 const geometryEvidence: Array<Record<string, unknown>> = [];
 const fieldBoundaryEvidence: Array<Record<string, unknown>> = [];
+
+test('empty required fields stay inline and block preview success', async ({
+  browser,
+}) => {
+  const { page, close } = await open(browser, {
+    width: 1440,
+    height: 900,
+    locale: 'en',
+    theme: 'light',
+    fixture: 'bright',
+  });
+  await page.locator('input[name="phone-national"]').fill('1001234567');
+  await page.locator('form button[type="submit"]').click();
+  await expect(page.getByTestId('phone-e164-preview')).toHaveCount(0);
+  for (const name of ['name', 'email', 'password']) {
+    const input = page.locator(`input[name="${name}"]`);
+    await expect(input).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.locator(`#hero-${name}-error`)).toBeVisible();
+  }
+  await expect(page.locator('input[name="name"]')).toBeFocused();
+  await close();
+});
+
+test('country keyboard navigation keeps the active option visible', async ({
+  browser,
+}) => {
+  const { page, close } = await open(browser, {
+    width: 390,
+    height: 844,
+    locale: 'en',
+    theme: 'dark',
+    fixture: 'dark',
+  });
+  const country = page.getByRole('combobox');
+  await country.focus();
+  const list = page.getByRole('listbox');
+  await expect(list).toBeVisible();
+  for (let index = 0; index < 10; index += 1) await country.press('ArrowDown');
+  const activeOption = await list.evaluate((element) => {
+    const id = document
+      .querySelector('[role="combobox"]')
+      ?.getAttribute('aria-activedescendant');
+    const option = id ? document.getElementById(id) : null;
+    if (!option) throw new Error('Active country option is unavailable');
+    const listBounds = element.getBoundingClientRect();
+    const optionBounds = option.getBoundingClientRect();
+    return {
+      id,
+      visible:
+        optionBounds.top >= listBounds.top &&
+        optionBounds.bottom <= listBounds.bottom,
+      scrollTop: element.scrollTop,
+    };
+  });
+  expect(activeOption.visible, JSON.stringify(activeOption)).toBe(true);
+  await close();
+});
 
 async function open(
   browser: Browser,
@@ -94,6 +154,12 @@ async function open(
   }
   await page.evaluate(() => document.fonts.ready);
   return { page, close: () => context.close() };
+}
+
+async function fillRequiredSignupFields(page: Page) {
+  await page.locator('input[name="name"]').fill('Preview Member');
+  await page.locator('input[name="email"]').fill('preview@example.com');
+  await page.locator('input[name="password"]').fill('preview-password');
 }
 
 async function axe(page: Page, label: string) {
@@ -686,6 +752,9 @@ async function measureFocusRingContrast(page: Page, label: string) {
   if (!bounds) throw new Error('Focused field geometry unavailable');
   const ringStyle = await wrapper.evaluate((element) => {
     const style = getComputedStyle(element, '::after');
+    const card = element.closest<HTMLElement>(
+      '[data-testid="hero-glass-card"]',
+    );
     return {
       width: style.borderTopWidth,
       style: style.borderTopStyle,
@@ -693,6 +762,8 @@ async function measureFocusRingContrast(page: Page, label: string) {
       radius: style.borderTopLeftRadius,
       fieldRadius: getComputedStyle(element).borderTopLeftRadius,
       rim: getComputedStyle(element, '::before').display,
+      focusWrapperOverflow: getComputedStyle(element).overflow,
+      cardOverflow: card ? getComputedStyle(card).overflow : 'missing',
     };
   });
   expect(ringStyle.width).toBe('2px');
@@ -704,6 +775,8 @@ async function measureFocusRingContrast(page: Page, label: string) {
   );
   expect(Number.parseFloat(ringStyle.fieldRadius)).toBeGreaterThan(0);
   expect(ringStyle.rim).toBe('none');
+  expect(ringStyle.focusWrapperOverflow).toBe('visible');
+  expect(ringStyle.cardOverflow).toBe('hidden');
   await mkdir(output, { recursive: true });
   const screenshotPath = join(output, `${label}.png`);
   const screenshot = await page.screenshot({
@@ -926,6 +999,15 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
           'data-material',
           'liquid-glass-strong',
         );
+        const shell = await card.evaluate((element) => ({
+          overflow: getComputedStyle(element).overflow,
+          rimDisplay: getComputedStyle(element, '::before').display,
+          rimRadius: getComputedStyle(element, '::before').borderTopLeftRadius,
+          radius: getComputedStyle(element).borderTopLeftRadius,
+        }));
+        expect(shell.overflow).toBe('hidden');
+        expect(shell.rimDisplay).toBe('block');
+        expect(shell.rimRadius).toBe(shell.radius);
         await expect(card).toHaveAttribute(
           'dir',
           locale === 'ar' ? 'rtl' : 'ltr',
@@ -967,7 +1049,7 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
             };
           });
           expect(cardStyle.border).toMatch(/0px/);
-          expect(cardStyle.backdrop).toContain('8px');
+          expect(cardStyle.backdrop).toContain('blur(4px)');
           expect(cardStyle.edge).toContain('linear-gradient');
           expect(cardStyle.mask).toContain('exclude');
         }
@@ -1147,6 +1229,7 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
         theme,
       });
       const phone = errorRun.page.locator('input[name="phone-national"]');
+      await fillRequiredSignupFields(errorRun.page);
       await phone.fill('123');
       await errorRun.page.locator('form button[type="submit"]').click();
       await expect(phone).toHaveAttribute('aria-invalid', 'true');
@@ -1221,6 +1304,7 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
       theme,
       fixture: 'dark',
     });
+    await fillRequiredSignupFields(page);
     await page.locator('input[name="phone-national"]').fill('123');
     await page.locator('form button[type="submit"]').click();
     await expect(page.locator('input[name="phone-national"]')).toHaveAttribute(
@@ -1243,6 +1327,7 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
         theme,
         fixture: 'bright',
       });
+      await fillRequiredSignupFields(page);
       await page.locator('input[name="phone-national"]').fill('123');
       await page.locator('form button[type="submit"]').click();
       await expect(
@@ -1607,7 +1692,6 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
     await close();
   }
 
-  const contactPaths: string[] = [];
   for (const [group, name, columns] of [
     ['required', 'contact-required.png', 4],
     ['surface', 'contact-material-and-fade.png', 3],
@@ -1624,13 +1708,19 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
     if (path) contactPaths.push(path);
   }
 
-  const reportPath = join(output, 'evidence.json');
   await writeFile(
     reportPath,
     JSON.stringify(
       {
+        dimmingCurve: {
+          thresholdLuminance: 0.18,
+          slope: 1.33,
+          maximumDimming: 0.72,
+          brightLightSurfaceOffset: 0.2,
+        },
         contrastEvidence,
         focusEvidence,
+        dimmingEvidence,
         geometryEvidence,
         fieldBoundaryEvidence,
         captures,
@@ -1781,6 +1871,7 @@ test('P3 phone glyphs form one LTR group with one token gap in RTL and LTR', asy
           `${locale}-${theme}-${viewport.name} typed glyph gap ${JSON.stringify(typed)}`,
         ).toBeLessThanOrEqual(2);
 
+        await fillRequiredSignupFields(page);
         await phone.fill('123');
         await page.locator('form button[type="submit"]').click();
         await expect(phone).toHaveAttribute('aria-invalid', 'true');
@@ -1896,9 +1987,6 @@ test('P1 no-image centering and P2 art-luminance adaptive glass dimming', async 
             const stage = document.querySelector<HTMLElement>(
               '[data-testid="hero-prototype"]',
             );
-            const plate = document.querySelector<HTMLElement>(
-              '[data-testid="hero-content-plate"]',
-            );
             const field =
               document.querySelector<HTMLElement>(
                 'input[name="name"]',
@@ -1906,8 +1994,10 @@ test('P1 no-image centering and P2 art-luminance adaptive glass dimming', async 
             const card = document.querySelector<HTMLElement>(
               '[data-testid="hero-glass-card"]',
             );
-            if (!stage || !plate || !field || !card)
+            if (!stage || !field || !card)
               throw new Error('Adaptive glass surface unavailable');
+            const cardBackground = getComputedStyle(card).backgroundColor;
+            const alpha = cardBackground.match(/(?:,|\/)\s*([\d.]+)\s*\)$/);
             return {
               photoLuminance: Number.parseFloat(
                 stage.style.getPropertyValue('--hero-photo-luminance'),
@@ -1915,9 +2005,8 @@ test('P1 no-image centering and P2 art-luminance adaptive glass dimming', async 
               dimming: Number.parseFloat(
                 stage.style.getPropertyValue('--hero-adaptive-dimming'),
               ),
-              plateScrim: Number.parseFloat(
-                getComputedStyle(plate, '::before').opacity,
-              ),
+              cardFillAlpha: alpha ? Number.parseFloat(alpha[1]!) : 1,
+              cardBackground,
               fieldBackground: getComputedStyle(field).backgroundColor,
               cardBackdrop: getComputedStyle(card).backdropFilter,
               fieldBackdrop: getComputedStyle(field).backdropFilter,
@@ -1931,8 +2020,13 @@ test('P1 no-image centering and P2 art-luminance adaptive glass dimming', async 
             } else {
               expect(adaptive.dimming).toBeLessThanOrEqual(0.05);
             }
-            expect(adaptive.dimming).toBeLessThanOrEqual(0.82);
-            expect(adaptive.plateScrim).toBeCloseTo(adaptive.dimming, 2);
+            expect(adaptive.dimming).toBeLessThanOrEqual(0.72);
+            expect(adaptive.cardFillAlpha).toBeCloseTo(
+              theme === 'light' && adaptive.tone === 'bright'
+                ? Math.max(0, adaptive.dimming - 0.2)
+                : 0.01 + adaptive.dimming * 0.99,
+              2,
+            );
             const fieldAlpha = adaptive.fieldBackground.startsWith('rgba(')
               ? Number.parseFloat(adaptive.fieldBackground.split(',').at(-1)!)
               : 1;
@@ -1948,6 +2042,16 @@ test('P1 no-image centering and P2 art-luminance adaptive glass dimming', async 
                 `${locale}-${theme}-${viewport.name} bright ${key} contrast`,
               ).toBeGreaterThanOrEqual(key === 'field-edge' ? 3 : 4.5);
             }
+            dimmingEvidence.push({
+              locale,
+              theme,
+              viewport: viewport.name,
+              fixture,
+              photoLuminance: adaptive.photoLuminance,
+              dimming: adaptive.dimming,
+              cardFillAlpha: adaptive.cardFillAlpha,
+              contrast: contrastResult,
+            });
             await capture(
               page,
               `pass4-bright-${locale}-${theme}-${viewport.name}`,
@@ -1955,6 +2059,16 @@ test('P1 no-image centering and P2 art-luminance adaptive glass dimming', async 
             );
           } else {
             expect(adaptive.dimming).toBeLessThanOrEqual(0.03);
+            dimmingEvidence.push({
+              locale,
+              theme,
+              viewport: viewport.name,
+              fixture,
+              photoLuminance: adaptive.photoLuminance,
+              dimming: adaptive.dimming,
+              cardFillAlpha: adaptive.cardFillAlpha,
+              cardBackground: adaptive.cardBackground,
+            });
             await capture(
               page,
               `pass4-dark-${locale}-${theme}-${viewport.name}`,
@@ -1963,11 +2077,20 @@ test('P1 no-image centering and P2 art-luminance adaptive glass dimming', async 
           }
           if (fixture === 'bright') {
             const phone = page.locator('input[name="phone-national"]');
+            await fillRequiredSignupFields(page);
             await phone.fill('123');
             await page.locator('form button[type="submit"]').click();
             await expect(phone).toHaveAttribute('aria-invalid', 'true');
             await expect(page.locator('#hero-phone-error')).toBeVisible();
             await page.evaluate(() => window.scrollTo(0, 0));
+            const errorTokenColor = await page
+              .locator('#hero-phone-error')
+              .evaluate((element) => getComputedStyle(element).color);
+            expect(errorTokenColor).toBe(
+              theme === 'light' && adaptive.tone === 'bright'
+                ? 'rgb(153, 27, 27)'
+                : 'rgb(252, 165, 165)',
+            );
             const errorContrast = await measureTextContrast(
               page,
               `${locale}-${theme}-${viewport.name}-bright-error`,
@@ -1976,6 +2099,16 @@ test('P1 no-image centering and P2 art-luminance adaptive glass dimming', async 
               key.startsWith('error-copy-'),
             )?.[1];
             expect(errorCopyRatio).toBeGreaterThanOrEqual(4.5);
+            dimmingEvidence.push({
+              locale,
+              theme,
+              viewport: viewport.name,
+              fixture: 'bright-error',
+              photoLuminance: adaptive.photoLuminance,
+              dimming: adaptive.dimming,
+              cardFillAlpha: adaptive.cardFillAlpha,
+              errorContrast: errorCopyRatio,
+            });
             await capture(
               page,
               `pass4-bright-error-${locale}-${theme}-${viewport.name}`,
@@ -1983,7 +2116,9 @@ test('P1 no-image centering and P2 art-luminance adaptive glass dimming', async 
               { locator: 'label:has(input[name="phone-national"])' },
             );
           }
-          expect(adaptive.cardBackdrop).toContain('8px');
+          expect(adaptive.cardBackdrop).toContain(
+            viewport.name === 'mobile-390' ? 'blur(8px)' : 'blur(4px)',
+          );
           console.log(
             `ADAPTIVE_DIMMING ${JSON.stringify({ locale, theme, viewport: viewport.name, fixture, photoLuminance: adaptive.photoLuminance, dimming: adaptive.dimming })}`,
           );
@@ -2008,4 +2143,28 @@ test('P1 no-image centering and P2 art-luminance adaptive glass dimming', async 
   )) {
     console.log(`PASS4_SCREENSHOT ${item.path}`);
   }
+  await writeFile(
+    reportPath,
+    JSON.stringify(
+      {
+        dimmingCurve: {
+          thresholdLuminance: 0.18,
+          slope: 1.33,
+          maximumDimming: 0.72,
+          brightLightSurfaceOffset: 0.2,
+        },
+        contrastEvidence,
+        focusEvidence,
+        dimmingEvidence,
+        geometryEvidence,
+        fieldBoundaryEvidence,
+        captures,
+        contactPaths,
+      },
+      null,
+      2,
+    ),
+    'utf8',
+  );
+  console.log(`EVIDENCE ${reportPath}`);
 });
