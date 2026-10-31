@@ -1,3 +1,62 @@
+§0-S18-FINAL
+Snapshot: 2026-10-31 02:26 +02:00 (00:26Z). Main: 87f9b407431f69e358f41f91517c785e510cc871. Repository: PRIVATE. Docs branch was clean at a2e62e859e3dbce3c4c03826b1a07999e213297f before this update.
+
+### Lanes at snapshot
+
+| Lane | Branch | Worktree | Head SHA (live) | Thread | Relay run dir | State | Next step |
+|---|---|---|---|---|---|---|---|
+| F14 core PR #25 | 014-workspace-branding | LFTR-014 | d26e4d5902e639ea42dcd3d88150da6239acabea | 01a18c7e-1ff7-78e2-a1c2-55a7f0b5a11b | LFTR-014-2026-10-30T23-41-44-682Z | r3 live, PID 43668; 5 CodeRabbit findings being fixed, including Storage-policy serialized-check regression; worktree clean at check | Wait; review final round, then gates/approval |
+| F13 | 013-freeze-renewal-refunds | LFTR-013 | 6c4f8392e405fedf7b5d1b9c4f8266683d3dbb06 | 01a18c7e-1ff7-70a1-8e7c-fb5c961b2172 | none live | Parked until F14 merges; T017 done | Fix stale quickstart migration-range note at merge, then rebase/verify |
+| F15 | 015-forms-intake | LFTR-p2 | 650849360fa52bdaed263ca278088a1233549209 | 01a18c7e-1ff7-7500-87e8-903e1c48e85c | LFTR-p2-2026-10-31T00-16-46-848Z | r6 live, PID 45960; migration 17000 and test edits uncommitted | Wait/review r6; queued r6b brief `s18-f15-r6b.txt` |
+| Hero prototype | 014-hero-prototype | LFTR-014-blend | a63e60dfc44e96c8b9bb220c85cadad3e017563c | 01a18dae-2dd5-7853-abc4-d0408221df00 | LFTR-014-blend-2026-10-30T23-50-52-914Z | r2 live, PID 48376; prototype edits uncommitted | Review r2 first; then launch `s18-f14-hero-pass-3.txt` |
+
+Relay PIDs and run directories were present at snapshot; all three run dirs had `events.jsonl`, no `result.json` or `final.txt`. Do not signal, resume, or launch against these worktrees while their relays remain live.
+
+### PR #25 and merge gates
+
+PR #25 is OPEN, head `d26e4d5902e639ea42dcd3d88150da6239acabea`, reviewDecision `CHANGES_REQUESTED`, merge state UNSTABLE. Six CI jobs (two each: validate, integration, storage) failed in 2 seconds; billing block is the observed cause in the active brief. The public CI window has not run. REST check rollup contains no CodeRabbit check. Active r3 brief says 5 findings are being fixed; REST GET exposes 30 review comments but not thread resolution flags, so exact unresolved-thread count was not independently verifiable by permitted GET calls. Last recorded CodeRabbit CHANGES_REQUESTED review was on 01df14a; request one review per fix round. Merge gates remain: CodeRabbit APPROVED on exact head, 0 unresolved threads, CI green on that SHA via one CI-window agent, independent architect review, explicit PO approval of exact SHA, `gh pr merge --match-head-commit`, keep branch. Required merge order: F14 -> F13 -> F15.
+
+### Migration maxima observed
+
+| Lane | Max migration at snapshot | Note |
+|---|---:|---|
+| main | 20261101132000 | Matches expected |
+| F14 | 20261102144000 | Expected 142000; 143000 and 144000 are already committed at live head |
+| F13 | 20261103129200 | Matches expected |
+| F15 | 20261104016000 committed | Expected 16000; 17000 is untracked in live r6 worktree |
+| Hero follow-up PR | >= 20261105000000 | New range after F15; hero branch currently max 20261102137000 |
+
+### Results and open work
+
+- F14 r2 fixes accepted: commits `73fec15`, `7774264`, `01df14a`; r3 now addresses five further findings. Live branch head is d26e4d5.
+- F13 T017 is done at `6c4f839`; parked until F14 merges. Quickstart has a stale migration-range note to correct then.
+- F15 S18 r3-r5 accepted work includes T014/T018/T027/T043, editable default onboarding provisioning/selection, and starter content; key S18 commits include `a69a2cf` and `33a8124`, current head `6508493`. Six tracked T049 reconciliation-only failing cases (from `specs/015-forms-intake/tasks.md`): `forms-r3-core.test.ts > T003 tenant keys and two authorization walls > leaves final capability positives pending reconciliation`; `forms-s14-persistence.test.ts > T047 forms persistence > keeps the PO, WO, and Trainer assignment capability in parity and denies Sales/unknown`; `forms-s14-privacy.test.ts > T048 personal-data authorization and erasure > requires the shared Forms answer-read capability and denies Sales/unknown`; `forms-r3-corrections.test.ts > T014 keeps Trainer, WO, and PO correction roles pending shared capability reconciliation`; `forms-default-onboarding.test.ts > T006/T009 persisted onboarding default > selects a non-retired onboarding form for authorized Workspace Owner and Platform Owner (pending T049)`; `forms-default-onboarding.test.ts > T006/T009 persisted onboarding default > loads Forms and lazily provisions the default through author_forms (pending T049)`. Remaining: T006/T009; T046/T021/T023/T049 blockers; `playwright.config.ts` F14/F15 merge item.
+- Hero: A/B rejected by PO. Recipe is `.liquidGlass`, `.liquidGlassStrong`, `.liquidGlassEdge` per decisions file. r2 brief fixes no-image fallback, error state, +20 padding, full focus ring, and base `blur(4px)`. Branch contains banner-blend commits `13a38fd`/`1c1c390`; drop or replace before any implementation PR. Preview was sent to PO, not sign-off; production untouched.
+
+### PO pending
+
+Hero visual sign-off; F14 branding copy (27 keys plus DRAFT `branding.workspaceLoading`) and interim banner acceptability at merge; F15 copy (EN intake translations, Welcome title/body, Builder Arabic labels, contextual health copy, DRAFT "Set as onboarding form", r6b configuration-error copy); sex labels; T&C AR/EN; Q2 duplicate copy; Q3 alert channel; explicit exact-SHA merge approval for each PR.
+
+### Routing, security, and operating notes
+
+Beam was evaluated then CANCELLED by PO in S18, removed from routing; archive `~/.lifter/reports/s18-beam-archive`, reports kept; no rotation needed (no credentials found). Kilo is S15 fallback only: free models, only while Codex is quota-limited, never sensitive work.
+
+Security follow-ups: after runs end, redact the 8 deferred logs with `redact-files.mjs` and rescan using `inventory.mjs`; filenames are in `~/.lifter/reports/s17-security-local-keys.md` section F. Check Stack D `vault.secrets` created_at/updated_at metadata once F15 releases Stack D.
+
+S18 operating notes: relay completion notifications do not carry into a new session; monitor PIDs/run dirs. One CodeRabbit request per fix round; targeted tests during development, full gates once on final head. Never auto-run model-written test code from third-party models. Codex quota reset was observed around 23:07 local; resume the same threads after reset.
+
+### Session 19 next actions
+
+1. Recheck the three named PIDs and run-dir mtimes/results; review completed runs only. Do not disturb a live relay.
+2. Review F14 r3 on its exact head; finish the CodeRabbit round, then arrange the single CI-window agent and remaining exact-SHA gates/PO decision.
+3. After F14 merges, resume F13, correct the quickstart range note, verify T017 and full gates, then open its PR.
+4. Review F15 r6, launch queued r6b only when r6 is reviewed and the worktree is free; after F13 merges resolve listed blockers and T049 reconciliation before its PR.
+5. Review Hero r2 before starting pass 3; deliver preview for PO visual sign-off. No production implementation before sign-off.
+6. After relays end, redact/rescan the eight deferred logs and inspect Stack D vault metadata when free.
+7. Keep exact-SHA PO approval and merge order F14 -> F13 -> F15.
+
+Decision source: `~/.lifter/briefs/s13-po-decisions-2026-10-29.md` Session 18 sections. Earlier S17 and older handoff sections remain below unchanged.
+
 # LIFTER — SESSION HANDOFF (Session 16 close-out, 2026-10-30; older sessions below)
 §0-S17-FINAL — SESSION 17 CLOSE-OUT (2026-10-30)
 
