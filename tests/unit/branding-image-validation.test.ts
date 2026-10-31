@@ -253,6 +253,29 @@ describe('branding image validation contract', () => {
     expect(output[20]! & 0x10).toBe(0x10);
   });
 
+  it('strips EXIF and XMP chunks that follow a valid WebP image chunk', () => {
+    const vp8x = Buffer.alloc(10);
+    vp8x[0] = 0x0c;
+    vp8x.writeUIntLE(0, 4, 3);
+    vp8x.writeUIntLE(0, 7, 3);
+    const body = Buffer.concat([
+      Buffer.from('WEBP'),
+      webpChunk('VP8X', vp8x),
+      webpChunk('VP8L', Buffer.from([0x2f, 0, 0, 0, 0x10])),
+      webpChunk('EXIF', Buffer.from('private exif')),
+      webpChunk('XMP ', Buffer.from('private xmp')),
+    ]);
+    const riffSize = Buffer.alloc(4);
+    riffSize.writeUInt32LE(body.length);
+    const output = Buffer.from(
+      validate(Buffer.concat([Buffer.from('RIFF'), riffSize, body])).bytes,
+    );
+
+    expect(output.includes(Buffer.from('VP8L'))).toBe(true);
+    expect(output.includes(Buffer.from('EXIF'))).toBe(false);
+    expect(output.includes(Buffer.from('XMP '))).toBe(false);
+  });
+
   it('walks WebP RIFF chunks, removes metadata flags/chunks and hashes stripped bytes', () => {
     const withMetadata = webpFixture({ metadata: true });
     const expected = webpFixture();

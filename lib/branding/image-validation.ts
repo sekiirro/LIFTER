@@ -301,7 +301,7 @@ function webp(
     } else if (type === 'ANIM' || type === 'ANMF') {
       fail();
     } else if (type === 'EXIF' || type === 'XMP ' || type === 'ICCP') {
-      if (!extended || sawImage) fail();
+      if (!extended || (type === 'ICCP' && sawImage)) fail();
       sawMetadata = true;
     } else if (type === 'ALPH') {
       if (!extended || sawImage || !data.length) fail();
