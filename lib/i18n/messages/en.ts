@@ -265,6 +265,16 @@ export const en: Record<keyof typeof ar, string> = {
   'f14Banner.alt': 'Neutral sample hero image for comparing banner crops.',
   'f14Banner.fallbackAlt':
     'Neutral hero banner surface shown because no image is configured.',
+  // APPROVED (PO S20 F14b)
+  'branding.logoLabel': 'Workspace logo',
+  'branding.bannerLabel': 'Banner image',
+  'branding.bannerAltLegend': 'Banner image description (Arabic or English)',
+  'branding.bannerAltHint':
+    'Enter a description in at least one language; the available description will be used as fallback.',
+  'branding.bannerSizeHint':
+    'Recommended 1600×800 (2:1). Keep important content away from the edges and the lower part of the image.',
+  'branding.uploadFailed':
+    'Upload failed. Check the file type, size, and dimensions, then retry.',
   // DRAFT (PO Q4): branding editor interface copy pending separate approval.
   'branding.editorTitle': 'Workspace branding',
   'branding.draftSnapshot': 'Draft preview',

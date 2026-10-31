@@ -256,6 +256,16 @@ export const ar = {
     'نموذج بوابة التصميم · اختيار الأبعاد بانتظار مالك المنتج.',
   'f14Banner.alt': 'صورة لافتة محايدة لمقارنة اقتصاص اللافتات.',
   'f14Banner.fallbackAlt': 'سطح محايد للافتة يظهر لعدم ضبط صورة.',
+  // APPROVED (PO S20 F14b)
+  'branding.logoLabel': 'شعار مساحة العمل',
+  'branding.bannerLabel': 'صورة الغلاف',
+  'branding.bannerAltLegend': 'وصف صورة الغلاف (بالعربية أو الإنجليزية)',
+  'branding.bannerAltHint':
+    'أدخل وصفًا بلغة واحدة على الأقل؛ سيُستخدم الوصف المتاح عند غياب الآخر.',
+  'branding.bannerSizeHint':
+    'Recommended 1600×800 (2:1). Keep important content away from the edges and the lower part of the image.',
+  'branding.uploadFailed':
+    'تعذر رفع الصورة. تحقق من نوع الملف وحجمه وأبعاده ثم حاول مجددًا.',
   // DRAFT (PO Q4): branding editor interface copy pending separate approval.
   'branding.editorTitle': 'علامة مساحة العمل',
   'branding.draftSnapshot': 'معاينة المسودة',

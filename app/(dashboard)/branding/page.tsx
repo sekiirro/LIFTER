@@ -50,7 +50,9 @@ export default async function WorkspaceBrandingPage({
   const draftFields = draft?.fields ?? {
     names: { ar: '', en: '' },
     color: current?.fields.color ?? DEFAULT_BRAND,
+    bannerAltText: { ar: '', en: '' },
   };
+  const bannerAltProjection = draftFields.bannerAltText ?? { ar: '', en: '' };
   const portalBrand = current
     ? createPortalBrandContract({
         workspaceName:
@@ -121,6 +123,41 @@ export default async function WorkspaceBrandingPage({
               dir: 'ltr',
             }}
           />
+          <fieldset
+            className={styles.bannerAltFields}
+            aria-describedby="branding-banner-alt-hint"
+          >
+            <legend className={styles.bannerAltLegend}>
+              {m['branding.bannerAltLegend']}
+            </legend>
+            <p id="branding-banner-alt-hint" className={styles.bannerAltHint}>
+              {m['branding.bannerAltHint']}
+            </p>
+            <div className={styles.bannerAltInputs}>
+              <Field
+                label={m['branding.bannerAltArabic']}
+                inputProps={{
+                  id: 'branding-banner-alt-ar',
+                  name: 'bannerAltAr',
+                  defaultValue: bannerAltProjection.ar,
+                  dir: 'rtl',
+                  lang: 'ar',
+                  'aria-describedby': 'branding-banner-alt-hint',
+                }}
+              />
+              <Field
+                label={m['branding.bannerAltEnglish']}
+                inputProps={{
+                  id: 'branding-banner-alt-en',
+                  name: 'bannerAltEn',
+                  defaultValue: bannerAltProjection.en,
+                  dir: 'ltr',
+                  lang: 'en',
+                  'aria-describedby': 'branding-banner-alt-hint',
+                }}
+              />
+            </div>
+          </fieldset>
           <Field
             label={m['branding.colorField']}
             inputProps={{

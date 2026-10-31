@@ -82,7 +82,12 @@ for (const locale of ['ar', 'en'] as const) {
           page.locator('[data-branding-private-preview]'),
         ).toBeVisible();
         await expect(page.locator('form')).toHaveCount(2);
-        await expect(page.locator('input[name*="bannerAlt"]')).toHaveCount(0);
+        await expect(page.locator('input[name*="bannerAlt"]')).toHaveCount(2);
+        await expect(
+          page.getByRole('group', {
+            name: getMessages(locale)['branding.bannerAltLegend'],
+          }),
+        ).toBeVisible();
         await expect(
           page.getByRole('button', { name: /history|restore/i }),
         ).toHaveCount(0);

@@ -36,6 +36,11 @@ function field(form: FormData, key: string): string {
 export async function saveBrandingAction(form: FormData): Promise<void> {
   const workspaceId = field(form, 'workspaceId');
   const { actor, service } = await authorized(workspaceId);
+  const bannerAltText = {
+    ar: field(form, 'bannerAltAr').trim(),
+    en: field(form, 'bannerAltEn').trim(),
+  };
+  const hasBannerAltText = Boolean(bannerAltText.ar || bannerAltText.en);
   let status = 'saved';
   try {
     await service.saveDraft({
@@ -45,6 +50,7 @@ export async function saveBrandingAction(form: FormData): Promise<void> {
       fields: {
         names: { ar: field(form, 'nameAr'), en: field(form, 'nameEn') },
         color: field(form, 'color'),
+        ...(hasBannerAltText ? { bannerAltText } : {}),
       },
     });
   } catch (error) {
