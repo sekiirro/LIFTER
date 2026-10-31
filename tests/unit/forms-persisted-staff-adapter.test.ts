@@ -55,11 +55,17 @@ describe('persisted Forms staff adapter', () => {
     const rpc = vi
       .fn()
       .mockResolvedValueOnce({ data: { status: 'unavailable' }, error: null })
+      .mockResolvedValueOnce({ data: null, error: null })
       .mockResolvedValueOnce({ data: null, error: new Error('raw db error') });
     const adapter = createPersistedFormsStaffAdapter(
       clientFor(rpc),
       'workspace-1',
     );
+    await expect(
+      adapter.selectDefaultOnboardingForm('wo', 'form-1'),
+    ).resolves.toEqual({
+      status: 'unavailable',
+    });
     await expect(
       adapter.selectDefaultOnboardingForm('wo', 'form-1'),
     ).resolves.toEqual({
