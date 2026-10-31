@@ -407,6 +407,7 @@ async function highTierProfile(browser, session, fixture) {
     { waitUntil: 'domcontentloaded', timeout: 120_000 },
   );
   if (!response?.ok()) throw new Error('High-tier profile route did not load');
+  let runtimeWaitTimedOut = false;
   await page.waitForFunction(
     () => Boolean(document.querySelector('[data-testid="nav-rail"]')),
     undefined,
@@ -414,23 +415,39 @@ async function highTierProfile(browser, session, fixture) {
   );
   await page
     .waitForFunction(
-      () =>
-        document
-          .querySelector('[data-testid="nav-rail"]')
-          ?.getAttribute('data-glass-runtime') === 'enhanced',
+      () => {
+        const dock = document.querySelector('[data-testid="nav-rail"]');
+        return Boolean(
+          dock?.hasAttribute('data-glass-enhanced') ||
+          dock?.matches('[data-rim]') ||
+          dock?.querySelector('[data-rim]'),
+        );
+      },
       undefined,
       { timeout: 30_000 },
     )
-    .catch(() => {});
+    .catch(() => {
+      runtimeWaitTimedOut = true;
+    });
   await page.waitForTimeout(200);
-  const profile = await page.evaluate(() => {
+  const profile = await page.evaluate((runtimeTimedOut) => {
     const longTasks = window.__glassProfileTasks;
     const dock = document.querySelector('[data-testid="nav-rail"]');
-    const runtimeMode = dock?.getAttribute('data-glass-runtime') ?? null;
+    const runtimeAttribute = dock?.getAttribute('data-glass-runtime') ?? null;
+    const refractionPresent = Boolean(
+      dock?.hasAttribute('data-glass-enhanced') ||
+      dock?.matches('[data-rim]') ||
+      dock?.querySelector('[data-rim]'),
+    );
+    const runtimeMode = refractionPresent
+      ? 'enhanced'
+      : (runtimeAttribute ?? 'unknown');
     return {
       runtimeMode,
+      runtimeAttribute,
       fallback: dock?.getAttribute('data-glass-fallback') ?? null,
-      refractionPresent: runtimeMode === 'enhanced',
+      refractionPresent,
+      runtimeWaitTimedOut: runtimeTimedOut,
       longTasks,
       blockingMs: longTasks.reduce(
         (sum, task) => sum + Math.max(0, task.duration - 50),
@@ -438,7 +455,7 @@ async function highTierProfile(browser, session, fixture) {
       ),
       longestTaskMs: Math.max(0, ...longTasks.map((task) => task.duration)),
     };
-  });
+  }, runtimeWaitTimedOut);
   profile.runtimeReadyMs = Date.now() - startedAt;
   await context.close();
   return profile;
@@ -484,14 +501,37 @@ async function captureDockState(
   const page = await openRoute(context, origin, fixture.workspaceId, 'high');
   const dock = page.locator('[data-testid="nav-rail"]');
   await dock.waitFor({ state: 'visible' });
-  await page.waitForFunction(
-    (expected) =>
-      document
-        .querySelector('[data-testid="nav-rail"]')
-        ?.getAttribute('data-glass-runtime') === expected,
-    reducedTransparency ? 'static' : 'enhanced',
-    { timeout: 30_000 },
-  );
+  try {
+    await page.waitForFunction(
+      (expected) => {
+        const dock = document.querySelector('[data-testid="nav-rail"]');
+        const runtimeAttribute = dock?.getAttribute('data-glass-runtime');
+        const enhanced = Boolean(
+          dock?.hasAttribute('data-glass-enhanced') ||
+          dock?.matches('[data-rim]') ||
+          dock?.querySelector('[data-rim]'),
+        );
+        return expected === 'enhanced'
+          ? enhanced
+          : runtimeAttribute === expected;
+      },
+      reducedTransparency ? 'static' : 'enhanced',
+      { timeout: 30_000 },
+    );
+  } catch (error) {
+    const diagnostics = await dock.evaluate((element) => ({
+      runtimeAttribute: element.getAttribute('data-glass-runtime'),
+      fallback: element.getAttribute('data-glass-fallback'),
+      enhancedMarker: element.hasAttribute('data-glass-enhanced'),
+      rimMarker:
+        element.matches('[data-rim]') ||
+        Boolean(element.querySelector('[data-rim]')),
+    }));
+    await context.close();
+    throw new Error(
+      `Desktop dock runtime did not reach ${reducedTransparency ? 'static' : 'enhanced'}: ${JSON.stringify(diagnostics)}; ${error.message}`,
+    );
+  }
   if (state === 'focused') {
     await page.evaluate(() => {
       (document.activeElement instanceof HTMLElement
@@ -522,9 +562,19 @@ async function captureDockState(
   let cropRect = null;
   const computed = await rail.evaluate((element) => {
     const style = getComputedStyle(element);
+    const runtimeAttribute = element.getAttribute('data-glass-runtime');
+    const refractionPresent = Boolean(
+      element.hasAttribute('data-glass-enhanced') ||
+      element.matches('[data-rim]') ||
+      element.querySelector('[data-rim]'),
+    );
     return {
       fallback: element.getAttribute('data-glass-fallback'),
-      runtimeMode: element.getAttribute('data-glass-runtime'),
+      runtimeMode: refractionPresent
+        ? 'enhanced'
+        : (runtimeAttribute ?? 'unknown'),
+      runtimeAttribute,
+      refractionPresent,
       backgroundColor: style.backgroundColor,
       backdropFilter: style.backdropFilter,
       boxShadow: style.boxShadow,
@@ -668,6 +718,13 @@ async function main() {
       'Running one controlled high-tier desktop dock profile…\n',
     );
     summary.highTierProfile = await highTierProfile(browser, session, fixture);
+    process.stdout.write(
+      `High-tier dock profile: ${JSON.stringify(summary.highTierProfile)}\n`,
+    );
+    await writeFile(
+      path.join(reportRoot, 'visual-evidence.json'),
+      `${JSON.stringify(summary, null, 2)}\n`,
+    );
 
     const themePanels = { light: [], dark: [] };
     let lightCrop = null;
