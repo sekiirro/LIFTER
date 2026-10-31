@@ -18,7 +18,7 @@ F17 consumes the canonical plan identity, draft/revision, Ready & Publish, indep
 
 ### Workout document schema v1 (Zod in `lib/plans/workout/schema.ts`, DB check on version + size)
 
-`{ days: [{ id, kind: 'session'|'rest', title?, notes?, items: [{ id, exercise: {source:'global'|'workspace', id, version, variation?: {id, version}}, notes?, alternatives: [{source, id, version, variation?: {id, version}}], sets: [{ id, type:'warmup'|'working', reps: {min,max}|{value}, load?: {value, unit}, restSec?, rir?, notes? }] }] }], notes? }`. Item and set ids are UUIDs generated client-side, validated unique server-side. Published versions embed `ExerciseSnapshotV1` per referenced exercise in a `snapshots` map.
+`{ days: [{ id, kind: 'session'|'rest', title?, notes?, items: [{ id, exercise: {source:'global'|'workspace', id, version, variation?: {id, version}}, notes?, alternatives: [{source, id, version, variation?: {id, version}}], sets: [{ id, type:'warmup'|'working', reps: {min,max}|{value}, load: {mode:'bodyweight'}|{mode:'added_weight', value:decimal-string, unit:'kg'|'lb'}|{mode:'assisted', value:decimal-string, unit:'kg'|'lb'}, restSec?, rir?, notes? }] }] }], notes? }`. Load is a per-set tagged union: Bodyweight has no value or unit; Added Weight and Assisted are separate variants, each requiring a positive exact decimal value and an explicit kg or lb unit. Item and set ids are UUIDs generated client-side, validated unique server-side. Published versions embed `ExerciseSnapshotV1` per referenced exercise in a `snapshots` map.
 
 ### Templates
 

@@ -63,7 +63,7 @@ Implementation staffing and sequencing are tracked outside this canonical contra
 ## Dependencies
 
 - Hard: main with F9-F12 (capability function, audit, idempotency patterns). Merge order: F14 -> F13 -> F15 -> F16 (F16 merges only after F15 is verified on main); lands after F14/F13/F15 merges to avoid capability-function merge conflicts (each redefines `role_has_capability`; F16 must rebase onto the latest definition).
-- Blocks: the F16 snapshot contract blocks both planners. F17 and F18 may develop domain/UI work in parallel once it is fixed; F18 integration depends on the F17 Plan Core and export contract landing first (small F17 PR-1). P4 depends on both planners' ready-draft and snapshot contracts.
+- Blocks: the F16 snapshot contract blocks both planners. F17 and F18 may develop domain/UI work in parallel once it is fixed; F18 integration depends on the canonical Plan Core (F19) contract and the F17 export contract landing first. P4 depends on both planners' ready-draft and snapshot contracts.
 
 ## Risks
 
