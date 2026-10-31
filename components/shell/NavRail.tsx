@@ -12,7 +12,7 @@ export function NavRail({
 }: ShellNavigationProps) {
   return (
     <GlassSurface
-      variant="regular"
+      variant="solid"
       fallback="solid"
       role="navigation"
       aria-label={messages['nav.label']}

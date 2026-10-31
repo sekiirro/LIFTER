@@ -21,6 +21,17 @@ describe('GlassSurface', () => {
     expect(opaque).toContain('solid');
   });
 
+  it('forces an opaque fallback to disable prefixed and unprefixed backdrop filters', () => {
+    const html = renderToStaticMarkup(
+      <GlassSurface fallback="solid" style={{ opacity: 0.9, color: 'red' }} />,
+    );
+
+    expect(html).toContain('backdrop-filter:none');
+    expect(html).toContain('-webkit-backdrop-filter:none');
+    expect(html).toContain('opacity:0.9');
+    expect(html).toContain('color:red');
+  });
+
   it('forwards semantic props and preserves caller classes', () => {
     const html = renderToStaticMarkup(
       <GlassSurface

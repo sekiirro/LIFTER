@@ -4,7 +4,7 @@ import type { HTMLAttributes, Ref } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import styles from './GlassSurface.module.css';
 
-export type GlassVariant = 'regular' | 'strong' | 'edge';
+export type GlassVariant = 'regular' | 'strong' | 'edge' | 'solid';
 export type GlassFallback = 'auto' | 'solid';
 
 export type GlassSurfaceProps = HTMLAttributes<HTMLDivElement> & {
@@ -291,6 +291,14 @@ export function GlassSurface({
 
   const surfaceProps = {
     ...props,
+    style:
+      fallback === 'solid'
+        ? {
+            ...props.style,
+            backdropFilter: 'none',
+            WebkitBackdropFilter: 'none',
+          }
+        : props.style,
     ref: assignSurfaceRef,
     className: getGlassSurfaceClassName({ variant, fallback, className }),
     'data-glass-surface': '',
