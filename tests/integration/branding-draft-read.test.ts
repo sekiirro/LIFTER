@@ -12,7 +12,7 @@ afterAll(async () => {
   await db.end();
 });
 
-// Mutation: revert supabase/migrations/20261102146000 function body to the
+// Mutation: revert supabase/migrations/20261102150000 function body to the
 // 20261102137000/138000 capability+membership guard (or replace the
 // has_workspace_access call with `false`) and this test must fail.
 it('authorizes draft reads through has_workspace_access, allowing a membership-less platform owner', async () => {
