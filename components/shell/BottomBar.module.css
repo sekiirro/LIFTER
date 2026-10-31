@@ -23,5 +23,5 @@
 }
 .link[aria-current='page'] {
   color: var(--color-text);
-  border-color: var(--brand-ring);
+  border-color: #059669;
 }

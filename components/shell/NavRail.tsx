@@ -13,6 +13,7 @@ export function NavRail({
   return (
     <GlassSurface
       variant="regular"
+      fallback="solid"
       role="navigation"
       aria-label={messages['nav.label']}
       data-testid="nav-rail"

@@ -4,6 +4,7 @@
   gap: var(--space-3);
   padding: var(--space-3);
   border-radius: 999px;
+  box-shadow: var(--shadow-md);
 }
 .link {
   display: grid;
@@ -21,7 +22,7 @@
 }
 .link[aria-current='page'] {
   color: var(--color-text);
-  border-color: var(--brand-ring);
+  border-color: #059669;
 }
 .tooltip {
   position: absolute;
