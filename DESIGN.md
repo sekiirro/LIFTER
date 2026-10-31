@@ -284,4 +284,4 @@ The approved public Hero uses Emerald #059669, the approved Liquid Glass treatme
 
 ### Planner UI
 
-Keep editing on the same Plan ID after publish. Silently autosave edits to a private draft, provide Save as Draft and one Ready & Publish action, and keep drafts invisible until published. Display calories and macros as integers while retaining exact decimal calculations and storage. Hide the optional recipe/preparation video link and icon when absent.
+Keep editing on the same Plan ID after publish. Silent autosave to a private draft is the default and works without Save as Draft; Save as Draft is a provided, always-available explicit control (S20 §4); there is exactly one Ready & Publish action; drafts remain invisible until published. Display calories and macros as integers while retaining exact decimal calculations and storage. Hide the optional recipe/preparation video link and icon when absent.
