@@ -31,6 +31,7 @@ function renderCard(
     thumbnailUrl?: string | null;
     errorMessage?: string | null;
     identityOnlyConfirmed?: boolean;
+    disabledReason?: string;
   },
 ) {
   return renderToStaticMarkup(
@@ -46,8 +47,12 @@ function renderCard(
       onReplace: vi.fn(),
       onRemove: vi.fn(),
       onRetry: vi.fn(),
+      onReloadDraft: vi.fn(),
       onConfirmationChange: vi.fn(),
       onFileChange: vi.fn(),
+      ...(options?.disabledReason
+        ? { disabledReason: options.disabledReason }
+        : {}),
     }),
   );
 }
@@ -138,6 +143,127 @@ describe('Upload Card error-code mapping', () => {
     expect(
       brandingUploadErrorMessage('stale_revision', getMessages('en')),
     ).toBe(getMessages('en')['branding.staleRevision']);
+  });
+});
+
+describe('Upload Card hardening states and keyboard contract', () => {
+  it('disables upload controls and exposes the reason while another action owns the workspace', () => {
+    const html = renderCard('logo', 'idle', {
+      disabledReason: 'Another branding action is still in progress.',
+    });
+
+    expect(html).toContain('data-upload-state="disabled"');
+    expect(html).toContain('Another branding action is still in progress.');
+    expect(html).toMatch(/<button[^>]*disabled/);
+  });
+
+  it('renders stale-revision recovery with the existing message and a reload action', () => {
+    const html = renderCard('logo', 'stale' as UploadCardStatus, {
+      errorMessage: getMessages('en')['branding.staleRevision'],
+    });
+
+    expect(html).toContain('data-upload-state="stale"');
+    expect(html).toContain(getMessages('en')['branding.staleRevision']);
+    expect(html).toContain('Reload draft');
+  });
+
+  it('renders an interrupted upload with the approved failure copy and retry recovery', () => {
+    const html = renderCard('banner', 'interrupted' as UploadCardStatus, {
+      errorMessage: getMessages('en')['branding.uploadFailed'],
+    });
+
+    expect(html).toContain('data-upload-state="interrupted"');
+    expect(html).toContain(getMessages('en')['branding.uploadFailed']);
+    expect(html).toContain(getMessages('en')['branding.retryImage']);
+  });
+
+  it('keeps the native file input in the banner keyboard path before confirmation', () => {
+    const html = renderCard('banner', 'idle');
+    const fileInput = html.indexOf('data-upload-file-input="banner"');
+    const confirmation = html.indexOf('type="checkbox"');
+    const fileInputTag = html.match(
+      /<input(?=[^>]*data-upload-file-input="banner")[^>]*>/,
+    )?.[0];
+
+    expect(fileInput).toBeGreaterThan(-1);
+    expect(confirmation).toBeGreaterThan(fileInput);
+    expect(fileInputTag).toContain('tabindex="0"');
+    expect(fileInputTag).not.toContain('tabindex="-1"');
+  });
+
+  it('uses the same semantic state class under light and dark themes', () => {
+    const card = renderCard('logo', 'error', {
+      errorMessage: getMessages('en')['branding.uploadFailed'],
+    });
+    const light = renderToStaticMarkup(
+      createElement('div', { 'data-theme': 'light' }, card),
+    );
+    const dark = renderToStaticMarkup(
+      createElement('div', { 'data-theme': 'dark' }, card),
+    );
+
+    expect(light).toMatch(/stateError/);
+    expect(dark).toMatch(/stateError/);
+  });
+
+  it('preserves the prior asset and selected file after an interrupted upload', async () => {
+    const { reduceUploadCardState } =
+      await import('../../components/ui/UploadCard');
+    const file = new File(['image'], 'logo.png', { type: 'image/png' });
+    const next = reduceUploadCardState(
+      {
+        status: 'uploading',
+        thumbnailUrl:
+          '/api/branding/draft-image?workspace=workspace-1&role=logo',
+        selectedFile: file,
+        errorCode: null,
+        errorKind: null,
+        pendingAction: 'upload',
+        lastAction: 'upload',
+      },
+      { type: 'result', result: { ok: false, code: 'interrupted' } },
+    );
+
+    expect(next.status).toBe('interrupted');
+    expect(next.thumbnailUrl).toBe(
+      '/api/branding/draft-image?workspace=workspace-1&role=logo',
+    );
+    expect(next.selectedFile).toBe(file);
+  });
+
+  it('disables every manager card when workspace access is unavailable', () => {
+    const html = renderToStaticMarkup(
+      createElement(BrandingUploadManager, {
+        locale: 'en',
+        workspaceId: 'workspace-1',
+        initialRevision: 7,
+        workspaceAvailable: false,
+        draftFormId: 'branding-draft-form',
+        publishFormId: 'branding-publish-form',
+      }),
+    );
+    const messages = getMessages('en');
+
+    expect(html.match(/data-upload-state="disabled"/g)).toHaveLength(2);
+    expect(html).toContain(messages['branding.workspaceUnavailable']);
+    expect(html.match(/<button[^>]*disabled/g)).toHaveLength(2);
+  });
+
+  it('renders no upload controls for a caller without branding access', () => {
+    const html = renderToStaticMarkup(
+      createElement(BrandingUploadManager, {
+        locale: 'en',
+        workspaceId: 'workspace-1',
+        initialRevision: 7,
+        canManage: false,
+        draftFormId: 'branding-draft-form',
+        publishFormId: 'branding-publish-form',
+      }),
+    );
+
+    expect(html).not.toContain('data-branding-upload-manager');
+    expect(html).not.toContain('data-upload-file-input');
+    expect(html).not.toContain('<button');
   });
 });
 

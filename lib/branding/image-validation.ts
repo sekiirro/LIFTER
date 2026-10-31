@@ -1,17 +1,18 @@
 import { createHash } from 'node:crypto';
 import { inflateSync } from 'node:zlib';
+import {
+  BRANDING_IMAGE_LIMITS,
+  type BrandingImageLimits,
+  type BrandingImageRole,
+  type BrandingMediaType,
+} from './image-limits';
 
-export type BrandingImageRole = 'logo' | 'banner';
-export type BrandingMediaType = 'image/png' | 'image/webp';
-
-export type BrandingImageLimits = {
-  maxIngressBytes: number;
-  maxOutputBytes: number;
-  maxWidth: number;
-  maxHeight: number;
-  maxPixels: number;
-  maxChunks: number;
-};
+export {
+  BRANDING_IMAGE_LIMITS,
+  type BrandingImageLimits,
+  type BrandingImageRole,
+  type BrandingMediaType,
+} from './image-limits';
 
 export type BrandingImageResult = {
   bytes: Uint8Array<ArrayBuffer>;
@@ -27,28 +28,6 @@ export class BrandingImageValidationError extends Error {
     this.name = 'BrandingImageValidationError';
   }
 }
-
-export const BRANDING_IMAGE_LIMITS: Record<
-  BrandingImageRole,
-  BrandingImageLimits
-> = {
-  logo: {
-    maxIngressBytes: 4 * 1024 * 1024,
-    maxOutputBytes: 4 * 1024 * 1024,
-    maxWidth: 2048,
-    maxHeight: 2048,
-    maxPixels: 1_000_000,
-    maxChunks: 96,
-  },
-  banner: {
-    maxIngressBytes: 8 * 1024 * 1024,
-    maxOutputBytes: 8 * 1024 * 1024,
-    maxWidth: 4096,
-    maxHeight: 2048,
-    maxPixels: 4_000_000,
-    maxChunks: 192,
-  },
-};
 
 const PNG_SIGNATURE = [137, 80, 78, 71, 13, 10, 26, 10];
 const RENDER_REQUIRED_PNG_ANCILLARY = new Set(['tRNS']);

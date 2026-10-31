@@ -324,6 +324,12 @@ export const en: Record<keyof typeof ar, string> = {
   'branding.replaceImage': 'Replace image',
   'branding.removeImage': 'Remove image',
   'branding.retryImage': 'Retry upload',
+  'branding.retryRemove': 'Retry remove',
+  'branding.reloadDraft': 'Reload draft',
+  'branding.workspaceUnavailable':
+    'Workspace access is unavailable, so branding controls are disabled.',
+  'branding.uploadInProgress':
+    'Another branding action is still in progress. Wait for it to finish before continuing.',
   'branding.uploadingImage': 'Uploading image…',
   'branding.removingImage': 'Removing image…',
   'branding.imageAttached': 'Image attached to the draft.',

@@ -315,6 +315,12 @@ export const ar = {
   'branding.replaceImage': 'استبدال الصورة',
   'branding.removeImage': 'إزالة الصورة',
   'branding.retryImage': 'إعادة محاولة الرفع',
+  'branding.retryRemove': 'إعادة محاولة الإزالة',
+  'branding.reloadDraft': 'إعادة تحميل المسودة',
+  'branding.workspaceUnavailable':
+    'تعذّر تأكيد الوصول إلى مساحة العمل، لذلك تم تعطيل عناصر التحكم في العلامة.',
+  'branding.uploadInProgress':
+    'لا يزال إجراء آخر في العلامة قيد التنفيذ. انتظر حتى ينتهي قبل المتابعة.',
   'branding.uploadingImage': 'جارٍ رفع الصورة…',
   'branding.removingImage': 'جارٍ إزالة الصورة…',
   'branding.imageAttached': 'تم إرفاق الصورة بالمسودة.',

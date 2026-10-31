@@ -11,6 +11,13 @@ const approvedKeys = [
   'branding.uploadFailed',
 ] as const;
 
+const draftUploadKeys = [
+  'branding.workspaceUnavailable',
+  'branding.uploadInProgress',
+  'branding.reloadDraft',
+  'branding.retryRemove',
+] as const;
+
 describe('branding banner alt-text i18n', () => {
   it('keeps Arabic and English message catalogs in parity', () => {
     expect(Object.keys(en).sort()).toEqual(Object.keys(ar).sort());
@@ -20,6 +27,14 @@ describe('branding banner alt-text i18n', () => {
     for (const key of approvedKeys) {
       expect(en[key], key).toBeTruthy();
       expect(ar[key], key).toBeTruthy();
+    }
+  });
+
+  it('defines each new upload recovery label in both draft locales', () => {
+    for (const key of draftUploadKeys) {
+      expect(en[key], key).toBeTruthy();
+      expect(ar[key], key).toBeTruthy();
+      expect(ar[key], key).not.toBe(en[key]);
     }
   });
 
