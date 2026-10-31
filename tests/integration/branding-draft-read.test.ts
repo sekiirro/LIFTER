@@ -12,6 +12,26 @@ afterAll(async () => {
   await db.end();
 });
 
+// Mutation: revert supabase/migrations/20261102146000 function body to the
+// 20261102137000/138000 capability+membership guard (or replace the
+// has_workspace_access call with `false`) and this test must fail.
+it('authorizes draft reads through has_workspace_access, allowing a membership-less platform owner', async () => {
+  const [definition] =
+    await db`select pg_get_functiondef('app_private.branding_draft_read(uuid)'::regprocedure) as def`;
+  expect(definition!.def).toContain(
+    'has_workspace_access(branding_draft_read.workspace_id',
+  );
+  expect(definition!.def).not.toContain('from public.workspace_memberships');
+
+  await db`delete from public.workspace_memberships
+    where workspace_id=${fixture.wsB.id} and user_id=${fixture.po.userId}`;
+  const ownerRead = await fixture.po.client.rpc('branding_draft_read', {
+    workspace_id: fixture.wsB.id,
+  });
+  expect(ownerRead.error).toBeNull();
+  expect(ownerRead.data?.workspace_id).toBe(fixture.wsB.id);
+});
+
 it('reads only the caller’s active authorized workspace draft and current publication', async () => {
   const crossMembership = await admin().from('workspace_memberships').insert({
     workspace_id: fixture.wsB.id,
