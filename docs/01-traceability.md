@@ -58,8 +58,8 @@ Journeys = PRD-14 (A–G). `AT-*` = proposed acceptance test ids; each becomes a
 
 | Feature requirements | Decision/source | Trace |
 |---|---|---|
-| F16 FR-001 through FR-021 | D16-1a/b/c, D16-2 through D16-10 | specs/016-exercise-food-catalogs/spec.md; PO S20 Message B section 1 |
-| Plan Core PC-FR-001 through PC-FR-007 | Plan Core/P4 override | specs/019-plan-core/spec.md; PO S20 Message B section 4 |
-| F17 FR-001 through FR-016 | D17-1 through D17-9 and Plan Core | specs/017-workout-planner/spec.md; PO S20 Message B sections 2 and 4 |
-| F18 FR-001 through FR-013 | D18-1/2/4/6/9 and Plan Core | specs/018-nutrition-planner/spec.md; PO S20 Message B sections 3 and 4 |
+| F16 FR-001 through FR-021 | D16-1a/b/c, D16-2 through D16-10 | spec on branch 016-exercise-food-catalogs (feature PR pending); PO S20 Message B section 1 |
+| Plan Core PC-FR-001 through PC-FR-007 | Plan Core/P4 override | spec on branch 019-plan-core (feature PR pending); PO S20 Message B section 4 |
+| F17 FR-001 through FR-016 | D17-1 through D17-9 and Plan Core | spec on branch 017-workout-planner (feature PR pending); PO S20 Message B sections 2 and 4 |
+| F18 FR-001 through FR-013 | D18-1/2/4/6/9 and Plan Core | spec on branch 018-nutrition-planner (feature PR pending); PO S20 Message B sections 3 and 4 |
 | F14b / Hero | Seven F14b decisions; approved prototype 97debaf | docs/04-changes-and-questions.md S20-22/23; DESIGN.md |
