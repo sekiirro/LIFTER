@@ -1,3 +1,206 @@
+§0-S21-FINAL
+
+Snapshot: 2026-10-31, observed live at 2026-10-31 21:10 UTC unless a row gives a more specific time. This is the durable S21 handoff. S21-PO-1..7 below are copied verbatim from the authoritative decision file. Later explicit PO decisions govern conflicts (DR-03). This section is above and supplements §0-S20-FINAL; older sections remain unchanged. No implementation, merge, deployment, visibility change, or running-agent interruption was authorized by this handoff task.
+
+### Live verification
+
+| Check | Observed value |
+|---|---|
+| Handoff checkout | `C:/Users/NEW LAP/Desktop/LFTR-handoff`; branch `docs-session-handoff`; initial HEAD `cde395ce2c875b60359e58ee9b20b7851512ca22`; `git fetch origin` completed; clean before this edit. |
+| Repository | `sekiirro/LIFTER`, PRIVATE; default branch `main`; `origin/main` = `ea2974c49550d1e6f8ac642116550ff4fa1e9750`. `git ls-remote` and fetched `origin/main` agreed. |
+| PR #25 / F14 | MERGED 2026-10-31 15:46:38 UTC. Head `c0026de5a65388e36e68336008e2d8b8893c46af`; merge commit and current main `ea2974c49550d1e6f8ac642116550ff4fa1e9750`; branch `014-workspace-branding` retained at the approved head. Approved-head tree and merge-commit tree both `0451df03d114042ff67f6f3ed78a0d89cd0b4e06`. Exact command report says `gh pr merge 25 --merge --match-head-commit c0026de5a65388e36e68336008e2d8b8893c46af` succeeded. |
+| PR #25 review gates | PR `reviewDecision=APPROVED`; 78 review threads, 0 unresolved; push and PR validate/integration/storage checks plus CodeRabbit were SUCCESS on the approved head. Correction to the architect fact sheet: the merge run report says the latest three CodeRabbit review records on that SHA were `COMMENTED`; an earlier `APPROVED` record existed and GitHub's overall decision was APPROVED. Thus the exact-SHA merge and tree facts are confirmed, but the stricter “latest review itself APPROVED” condition was not met. |
+| Main CI after F14 merge | Run `41216463229` on merge SHA completed `failure`; all three jobs (`validate`, `integration`, `storage`) failed immediately with no steps (`steps=[]`). This is the billing/spending-limit block, not test execution. No deployment workflow appeared in the merge run. |
+| PR #26 / docs split | OPEN, branch `docs-s21-s20-reconcile`, head `4551fdc564e007ce3cbf6d7ec2522bd04c71c483`; `CHANGES_REQUESTED`, merge state `UNSTABLE`. GraphQL at 21:10:08 UTC: 55 threads, 0 unresolved. CI validate/integration/storage jobs on the current head failed immediately; CodeRabbit was `IN_PROGRESS` (started 21:09:05 UTC). Split commit and feature branch heads are pushed. |
+| PR #27 / F13 | OPEN, branch `013-freeze-renewal-refunds`, current pushed head `2b5d57caf188579efe26f688c1b114f407fe2ec3`; `CHANGES_REQUESTED`, merge state `UNSTABLE`. GraphQL at 21:10:08 UTC: 19 threads, 7 unresolved. CI checks shown for this head failed immediately; CodeRabbit check was SUCCESS but the formal PR decision remains CHANGES_REQUESTED. Existing CI window ran earlier on `5bbc55c`; a new public CI window is required on the final head after hosted billing is available. |
+| Public CI billing state | The latest failed validate/integration/storage jobs for PRs #26 and #27 began and failed within seconds with no steps. Historical run reports explicitly identify GitHub payment failure/spending limit. Treat hosted CI as billing-blocked; do not treat these as test failures or as green. |
+| Repository visibility | `PRIVATE` at 21:09 UTC. No visibility change was made. |
+| C: free space | 25.79 GB at 21:09 UTC. This is above the 15 GB floor. Check before every build-heavy lane. S21 cleanup report records PO-run cleanup freed 11.8 GB to 34.9 GB; no cleanup was repeated here. |
+| Process listing | At 21:09 UTC, the allowed process-name listing showed 7 `codex` processes and no process named `pi`. This does not map processes to a particular run; use each run's `result.json`/events and do not interrupt any run. |
+| CI public windows | PR #26 had a green public window only on superseded SHA `21699629ae5f541070753bd2f6d820b5808f2892`. PR #27's prior window was on `5bbc55cd9684ab7e0b663794f7bf4e66257a4036`; integration later failed and was fixed. Neither result validates the current PR head. |
+
+### Lanes, worktrees, branches, stacks, and run sessions
+
+| Lane | Worktree / branch | Observed HEAD and status | Stack / thread | State and next action |
+|---|---|---|---|---|
+| Handoff docs | `LFTR-handoff` / `docs-session-handoff` | Initial `cde395c`; clean before this section | none | Edit this file only in this worktree; commit only `docs/SESSION_HANDOFF.md`; push only this branch. |
+| Main / PO checkout | `LFTR` / `009-packages` | Local `b359985`; dirty with PO-owned changes, including package files and `opencode.json` (not read) | none | Untouched. Preserve unrelated PO edits. PO decides whether to revert their Glisse install. |
+| F14 merged | `LFTR-014` / `014-workspace-branding` | `c0026de`; clean | Stack B; prior merge thread | Merged into main; retain branch and verification worktree. No production migration/deploy authorization. |
+| F14 verify evidence | `LFTR-014-verify` / detached | `c0026de`; three untracked verification files | Stack B | Retain worktree/files. Data-integrity PASS was accepted; production conclusion remains documentation-based because no configured hosted read-only query was available. |
+| PR #26 split | `LFTR-s21-docs` / `docs-s21-s20-reconcile` | `4551fdc`; clean; pushed | no DB stack; Codex `01a192a6-797c-7382-a2d9-26ab86b93185` | Run `s21-luna-docs-split` (`C:/Users/NEW LAP/.lifter/runs/s21-luna-docs-split/`) has no `result.json` as of 21:09 UTC. Read its `events.jsonl` for progress; when complete, read only `finalMessage` from `result.json`. Commits/branch heads are visible; CodeRabbit follow-up and run completion remain in progress. |
+| F13 PR #27 r5 | `LFTR-013` / `013-freeze-renewal-refunds` | HEAD remains pushed `2b5d57c`; dirty round-5 docs/tests and new migration `20261103130200_f13_stop_remove_date_bounds.sql` are present; do not infer committed/pushed | Stack C; fresh Codex `01a193c5-1de2-7ba3-a693-c2d0b9b9eab2` | Run `s21-luna-f13-r5` (`C:/Users/NEW LAP/.lifter/runs/s21-luna-f13-r5/`) has no `result.json`. Read `events.jsonl` for progress and only `finalMessage` from `result.json` when complete. Seven findings are in scope. Code findings 6–7 must be checked against the Freeze PO decisions; escalate any PO-behavior change or ambiguity and leave that thread open. |
+| F14b upload seam | `LFTR-014b-seam` / `014b-upload-seam` | pushed `0070f43c1939283db05d917d339c32ee07172a45`; clean | Stack B | Accepted seam: server upload/remove actions, draft-image route, migration `20261105120000`, SECURITY DEFINER with empty search path and `has_workspace_access`, storage read limited to referenced drafts, 9 MB server-action body limit. `node_modules` is a junction to `LFTR-014-verify`; keep that target worktree. Verify `build:edge` in a real-install worktree. |
+| F14b UI | `LFTR-014b` / `014b-branding-uploads` | local HEAD `add0d4b0f2f258eb2f84ea4fa4a7c1699cde4f7d`, three commits ahead of `origin/main`, not pushed; dirty chunk-3 changes | Stack B; Pi session `01a19358-aaed-777f-9e48-d52a245c4b2f` (MiniMax) | Run `s21-mm-f14b-chunk3-resume` (`C:/Users/NEW LAP/.lifter/runs/s21-mm-f14b-chunk3-resume/`) has no `result.json`. Read `events.jsonl` for progress and only `finalMessage` from `result.json` when complete. Chunk 2 commit `5f3f332` and seam merge `add0d4b` are present. Do not push this branch. |
+| F16 design/spec | `LFTR-016` / `016-exercise-food-catalogs` | pushed `5cfcd52ecb0fba7503866191fc570331bbf0a17d`; clean | no stack assigned yet | Spec/research/contracts/tasks are on branch. Apply S21-01 Remove-only wording consistently to both catalogs; Restore remains. DB implementation waits for Stack C after F13 merges. |
+| Plan Core | `LFTR-019` / `019-plan-core` | pushed `4f633d77cd2e3d77b2d3d2d3b616a9ef5062fbb6`; clean | none | Spec branch exists; implementation follows F16 and precedes F17/F18 integration. |
+| F17 | `LFTR-017` / `017-workout-planner` | pushed `496d8138d82536b7959915f8654322869d612121`; clean | none | Spec branch exists; carry required split-round findings into implementation tasks and resolve before feature PR merge. |
+| F18 | `LFTR-018` / `018-nutrition-planner` | pushed `0fae97123ebc6386b9aab40ff7325a1e4e7e7895`; clean | none | Spec branch exists; carry required split-round findings into implementation tasks and resolve before feature PR merge. |
+| Liquid Glass / Glisse | `LFTR-glass` / `ui-liquid-glass-glisse` | pushed `19045b9e0b700ba6a39e3335b82f75a648d17c3e`; clean | Stack B screenshots; Codex `01a19305-ff67-7de2-95d3-a6cbdfaffbc4` | Run `s21-luna-glass-r4` completed at 21:09:16 UTC. No PR: median TBT is +119 ms vs that run's baseline, 69 ms over PO's +50 ms allowance. Keep static low-end path and report/contact sheets at `.lifter/reports/s21-glass/r4/`. Stack B additive fixtures remain; do not reset/clean them. |
+| F15 | `LFTR-p2` / `015-forms-intake` | pushed `3be1289cccd42a7d2960c9d69d6aee561741e454`; clean | Stack D, idle | Finalization not started. After F13 merge, replay only approved trial commit `614325be31107ed7dd2447897f79d8b7e4ce7303` against final F14/F13; follow `s20-f15-integration-prep.md`. |
+| Hero approved prototype | `LFTR-014-blend` / `014-hero-prototype` | `97debafce8a7b6929722f079f0028c8d02311d07`; only untracked `AGENTS.md` | none | Visual implementation is PO-approved for next session. Use a separate implementation worktree; do not commit the untracked AGENTS file. Normal gates and exact-SHA PO approval still apply. |
+
+Other worktree observations at 21:09 UTC: `LFTR-013-integ` remains at trial `0ae9049` and is not the production branch; `LFTR-014-verify` and `LFTR-014-blend` contain untracked evidence/AGENTS files; F14b UI is dirty. Do not clean, reset, or edit other worktrees as part of this handoff.
+
+### Binding S21 PO decisions — verbatim
+# Session 21 PO decisions (2026-10-31) - VERBATIM, BINDING
+Recorded by the architect exactly as received. Latest explicit PO decision wins (DR-03).
+
+## S21-PO-1 — Glisse / Liquid Glass (message)
+Claude, delegate implementation entirely to Luna High. You only supervise, coordinate, and independently review.
+1. Glisse + Liquid Glass: Integrate Glisse (https://github.com/0kzh/glisse) wherever visually appropriate across LIFTER: bars, buttons, sliders, cards, menus, popovers, floating UI, etc. Aim for premium Apple-style Liquid Glass on mobile/desktop without sacrificing simplicity, Emerald #059669, readability, accessibility, or performance. Keep dense data, forms, and financial content mostly solid. Produce real browser screenshots: Before/After, mobile/desktop, Light/Dark, Arabic/English.
+2. Existing installation: investigate dependency changes, pending scripts, security findings, compatibility. Preserve unrelated changes. No npm audit fix --force or breaking upgrades.
+3. Cleanup results: freed 11.8 GB; C: 34.9 GB free. Do not repeat cleanup or reinstall deleted dependencies unnecessarily.
+4. Validation & approval: verify existing features, RTL, a11y, responsiveness, performance; isolated worktrees; Claude reviews code/tests/screenshots; no merges, deployments, or production changes without explicit PO approval; present screenshots and findings for final design approval.
+
+## S21-PO-2 — Glass round 2 direction (answers)
+- "Floating + real refraction (Recommended)": iOS-26-style detached floating capsule bottom bar / floating rail & menus, Glisse's real React refraction component on those floating surfaces only; measure hydration/LCP/CSP cost; solid fallback.
+- "Yes, Stack B for screenshots (Recommended)": run the authenticated app against Stack B for real screenshots (wrapper-scoped, narrow reviewed allow-rule, no Stack A, no resets of F14b data).
+
+## S21-PO-3 — Disk P0 (answers)
+Investigation delegated to Luna, read-only until approval; approved: npm cache, pip cache, 18 merged node_modules, LIFTER temp dirs, and "verified unused YBS temporary folders only. Preserve all source code, databases, user data, Git files, and active build outputs." PO ran the final cleanup script personally.
+
+## S21-PO-4 — F16 Decision — Remove Only (No Archive) (verbatim)
+- Remove the Archive feature entirely from the staff-facing UI.
+- Keep one action: **Remove**.
+- Removing an exercise hides it from the catalog and prevents new selections.
+- Existing client workout plans, including active and historical plans, must remain completely unaffected.
+- Preserve exercise references, snapshots, logs, media availability, and historical data.
+- Never cascade-delete an exercise from client plans.
+- Use non-destructive soft deletion.
+- Do not automatically modify or republish any existing client plan.
+- Any removal from an existing client plan must happen through an explicit plan-editing action.
+**Core rule: Removing from the Catalog must never mean removing from clients' existing plans.**
+Architect application (flag to PO): applied to BOTH F16 catalogs (exercises and foods) because the core rule is stated for "the Catalog"; Restore (S20-approved) is retained.
+
+## S21-PO-5 — PR #26 completion path (answer)
+"Fix Majors, defer detail (Recommended)": one more round fixing every Major + quick Minor; implementation-level Minor design detail is answered by deferring to the F16/Plan Core/F17/F18 feature PR with a tracked tasks item, then resolved. Merge once CodeRabbit approves; still one docs PR.
+
+## S21-PO-6 — Glass round 3 review (answers)
+- Mobile floating glass capsule: "Approve, cut TBT first (Recommended)" — design APPROVED; before any PR, TBT must be within +50 ms of baseline.
+- Round 4 surfaces: "Floating action buttons", "Menus & popovers" (dense data, forms, finance stay solid). Desktop rail stays solid (architect-accepted r3 rationale).
+
+## S21-PO-7 — PR #26 end (answer)
+"Split now": keep decision logs/PRD/constitution/DESIGN.md/tracker in PR #26 and merge soon; move the four new spec bodies (016-019) into their feature PRs to be reviewed alongside code. (Supersedes S21-PO-5 and the S20 "single documentation PR" instruction for the spec bodies only.)
+### Verified workstream facts and exact next steps
+
+#### F14 / PR #25 — merged
+
+The architect fact sheet is confirmed for exact approved head `c0026de5a65388e36e68336008e2d8b8893c46af`, merge commit/main `ea2974c49550d1e6f8ac642116550ff4fa1e9750`, retained branch, and identical tree `0451df03d114042ff67f6f3ed78a0d89cd0b4e06`. The report confirms use of `--match-head-commit`. The material correction is the CodeRabbit nuance in the live table: overall review decision and an earlier review were APPROVED, but the latest three records were COMMENTED. No deployment or production migration was run. The post-merge main CI failure did not execute jobs because of billing.
+
+#### PR #26 — decision records retained; spec bodies split
+
+S21-PO-7 supersedes S21-PO-5 for spec bodies. PR #26 now keeps decision records S20-01..24, S21-01 (Remove-only), S21-02 (Glisse authorized), and S21-03 (split), plus PRD/constitution/DESIGN.md/tracker work. The 016, 019, 017, and 018 spec bodies live on their respective pushed feature branches at the heads above. Current PR head is `4551fdc`; its review history did not converge through nine recorded rounds (finding counts 9, 3, 6, 8, 10, 6, 3, 4, 6). The prior green CI window was only on superseded `2169962`. Next: collect the split-run finalMessage, confirm CodeRabbit's final state and delayed second pass on the current split head, obtain a new public CI window when billing permits, then request PO exact-SHA approval. Do not merge on the stale prior approval.
+
+Split-review findings moved with the specs must remain tracked as required implementation tasks. From the supplied r9 brief: F16 variation lifecycle; Plan Core first-delivery owner/subscription binding; F17 workspace-template `coaching_work` authorization and no-op autosave readiness hash semantics; F18 stable item/alternative identity across non-duplicate edits. Fix and verify these in their feature work before those feature PRs merge. PR #26's own tracker lifecycle wording was corrected to Add/Edit/Remove/Restore while S21-01 keeps only Remove as the staff removal action.
+
+#### F13 / PR #27 — round 5 in progress
+
+Rounds 1–4 are accepted at pushed head `2b5d57c`. The forward migrations are `20261103130000` and `20261103130100`; replay applied 77 migrations. Round 4 accepted unit 1,826; integration 1,296 passed/1 skipped; Playwright 196 passed/8 intentional skips (the shell specs are project-specific). Round 5 has seven findings and is modifying a dirty worktree, not yet a new pushed head. Findings 6–7 concern the renewal activation/freeze seam and planned-end upper bound (Stop vs late Remove); compare them to the binding Freeze decisions before any behavior change. Escalate ambiguity/change to PO and leave thread open. The last hosted window was on `5bbc55c`; get a new public window on the final pushed head after billing is restored. Secret scan rulings in `s21-ci-window-pr27-r2.txt` and `-r4.txt` remain authoritative: bare PostgreSQL role `service_role` without an assigned value is allowed; in `tests/**`, `service_role: true/false/<boolean identifier>` is allowed; `.env.stack-b.example` is allowlisted only while unchanged from origin/main (the two secret-like matches are `user:password` URL shape); local Supabase default `postgres://postgres:postgres@127.0.0.1:<port>` URLs are allowed; mock apikey fixture literals starting `test` are allowed. Any other finding stops the CI window for architect review.
+
+#### F14b — accepted seam, UI chunk 3 in progress
+
+Chunk 2 `5f3f332` adds bilingual banner alt-text fields, persists draft values, and uses six approved strings; the Arabic `branding.bannerSizeHint` is still needed from PO. Chunk 3 must finish Upload Card and BrandingUploadManager, clear alt text when both fields are blank, keep publish denied when an attached banner has blank alt text, restore the accidental `'use server'` from `client-contract.ts`, add tests, run its requested gates, and commit locally only. Keep new strings in DRAFT in both locales and list them for PO. The worker instructions require no DB, no push. Remaining chunks 4–8 are in `C:/Users/NEW LAP/.lifter/reports/s20-f14b-prep.md`; next MiniMax chunks are 4–5, then F16 T002/T003 and Hero when the single MiniMax lane is available. MiniMax UI chunks need 75–90 minute relay timeouts. Migration ranges: F14b `20261105120000–20261105235959`; Hero `20261105000000–20261105115959`.
+
+#### Liquid Glass / Glisse — not PR-ready
+
+Rounds 1–3 are recorded at `5d2fb88`, `339636e`, `93ab551`. R2 raised authenticated LCP from 1.124 s to 3.192 s; R3 fixed LCP/CLS but TBT rose 193 ms over target. R4 is at `19045b9`; TBT was 198→317 ms (+119 ms), above the +50 ms gate by 69 ms. Floating action/menu UI remains showcase-only because no real workflow fit without invention. Desktop rail remains solid; PO approved the mobile capsule design subject to TBT. Next: optimize and measure median-of-five to within +50 ms, preserve approved appearance and LCP/CLS, produce Stack B screenshots, then request design/PO review and later exact-SHA approval. No PR until the TBT condition is met.
+
+The separate audit report is `C:/Users/NEW LAP/.lifter/reports/s21-liquid-glass-audit.md`, with examples at `https://claude.ai/artifact/1JyUSshqvzExW8WsXfMWma`. Its “Hero blocker open” statement is stale against the later PO-approved prototype; correct status is approved visual, implementation still gated. Audit scope could not verify missing route families or rendered contrast/performance. The report found no need for new dependencies and recommends selective navigation/floating surfaces; keep dense data/forms/finance solid. The main checkout's Glisse install and unrelated PO changes were untouched. The recorded investigation found Glisse added 0 dependencies / 0 audit findings; pending scripts (esbuild, unrs-resolver, workerd) predate it; current audit snapshot had 20 moderate dev-only and 0 high findings. PO decides whether to revert the install.
+
+#### F16, Plan Core, F17, F18 — specs only
+
+F16 design artifacts were created on the feature branch; 36 tasks were planned (25 Luna / 11 MiniMax). S21-PO-4 means Remove (soft delete) hides catalog entries and blocks new selection while preserving all active/historical plan references, snapshots, logs, media, and data; never cascade delete or auto-edit plans. Restore remains. Apply Remove-only to both exercise and food catalogs. No F16 DB work until Stack C is free after F13 merge. F16 range `20261106000000–20261106195959`; Plan Core `20261106200000–20261106235959`; F17 `20261107*`; F18 `20261108*`.
+
+Plan Core implements same-Plan-ID editing, silent draft autosave, Save as Draft, one Ready & Publish, independent first workout/nutrition delivery dates, and exactly-once activation after both deliveries, with secure idempotent concurrency-safe operations. Implement/merge Plan Core after F16 and before F17/F18 integration. No implementation has started for these workstreams.
+
+#### F15, Hero, and deferred work
+
+F15 finalization starts after F13 merge and replays only `614325b` against the final F14/F13 base. Hero implementation is authorized from approved `97debaf`; use a separate worktree and normal quality gates. Still not started: F16 DB implementation, Plan Core, F17/F18 implementation, Hero implementation, S17 log redaction (5 logs), and Stack D vault metadata check. Stack D is idle and reserved for F15.
+
+### Gates and operating rulings
+
+- Merge order: F14 (done) → F13 → F15 → F16 → Plan Core → F17 and F18. F14b, Hero, and Glisse may proceed independently after F14, subject to their own gates.
+- Every merge requires hosted CI green on the exact final SHA, CodeRabbit `APPROVED` on that exact SHA, zero unresolved threads, architect review, explicit PO exact-SHA approval, and `--match-head-commit`; keep the branch. CodeRabbit may post a delayed second review ~10 minutes later; wait before calling approval final.
+- No production deployment/migration authorization is implied. Do not change repository visibility. No Stack A; Stack A is never. Stack B is F14b and serial Glisse screenshots; Stack C is F13; Stack D is F15. One writer per worktree and one lane per stack.
+- Before build-heavy work, check free disk and preserve at least 15 GB. Never repeat cleanup; the PO already ran it. Do not stop, reset, clean, or disturb an active agent or its data.
+- Model routing: Claude coordinates and independently reviews; Luna High handles complex DB/RLS/migrations/security/concurrency; MiniMax M3.1 Flash High handles substantial non-sensitive UI/code/tests/docs. One MiniMax lane, verify effective `thinkingLevel=high`, maximum 7 images per run. Pi must start with `--cd C:/Users/NEW LAP/.lifter/scratch/pi-smoke` and absolute paths. Use fresh agent thread beyond 60% context or 8 compactions; never interrupt a live run.
+
+### Pending PO items
+
+1. Exact-SHA approvals for PR #26 after split, PR #27, and later F14b / Glisse PRs.
+2. Arabic `branding.bannerSizeHint`; any new chunk-3 DRAFT strings; remaining F14b DRAFT branding copy; F15 DRAFT copy.
+3. T&C AR/EN, sex labels, Q3 alert channel, D16-4 food dataset, and glass R4 design/performance review.
+4. Any F13 round-5 business-rule escalation; whether to revert the Glisse install in the main checkout.
+5. Stack D vault metadata check and completion of the remaining five S17 log redactions.
+
+### Next-session execution order
+
+1. Read this `§0-S21-FINAL` first and re-run the live checks (fetch; PRs/reviews/thread counts; repo visibility; exact worktree logs/status; run results; disk/process listing). Never read or print `.env*`, `opencode.json`, keys, or tokens.
+2. Collect final results from the three unfinished runs: docs split, F13 round 5, and F14b chunk 3. Do not stop or disturb them. Reconcile run `finalMessage`, current branches, PRs and review threads before launching dependent work.
+3. Complete the PR #26 split review/CI/approval path; finish F13 round 5 with the Freeze business-rule escalation rule; finish F14b chunk 3 locally and preserve its no-push instruction. Keep independent work in isolated worktrees/stacks.
+4. On F13 final pushed head, obtain a fresh public CI window when billing is restored; wait for delayed CodeRabbit review; get PO exact-SHA approval. Then continue F15 finalization, F16 DB after Stack C frees, Plan Core, and F17/F18 in dependency order.
+5. Start approved Hero implementation in a separate worktree. Keep Glisse out of PR review until median TBT is within +50 ms; present the R4 evidence and screenshots for PO review.
+6. Append S21 model rows and keep the MiniMax queue current. Preserve merge gates, Stack A prohibition, disk floor, and no-production-change rule.
+
+### Source pointers
+
+- Exact binding S21 PO decisions: `C:/Users/NEW LAP/.lifter/briefs/s21-po-decisions-verbatim.md` (copied above).
+- Binding S20 decisions: `C:/Users/NEW LAP/.lifter/briefs/s20-po-final-decisions-verbatim.md`; prior durable context: §0-S20-FINAL below.
+- Lane handoffs: `C:/Users/NEW LAP/.lifter/briefs/lanes/f13-handoff.md`, `f14-handoff.md`, and `hero-handoff.md`.
+- S21 run briefs/results: `C:/Users/NEW LAP/.lifter/briefs/s21-*.txt`; `C:/Users/NEW LAP/.lifter/runs/s21-*/result.json` (read only `finalMessage`; for incomplete runs inspect `events.jsonl` metadata and wait for `result.json`).
+- Disk report: `C:/Users/NEW LAP/.lifter/reports/s21-disk-p0.md`; Glass rounds: `C:/Users/NEW LAP/.lifter/reports/s21-glass/r1..r4/`; audit: `C:/Users/NEW LAP/.lifter/reports/s21-liquid-glass-audit.md`.
+- F14b plan: `C:/Users/NEW LAP/.lifter/reports/s20-f14b-prep.md`; model log: `C:/Users/NEW LAP/.lifter/model-performance-log.md`; MiniMax queue: `C:/Users/NEW LAP/.lifter/briefs/minimax-queue.md`.
+
+### START NEW SESSION prompt
+
+```text
+LIFTER S22 — continue from the durable handoff.
+1. Read `C:/Users/NEW LAP/Desktop/LFTR-handoff/docs/SESSION_HANDOFF.md`, section `§0-S21-FINAL`, before acting.
+2. Re-verify live state: git fetch; gh PR #26/#27/#25, reviews and GraphQL thread counts; repo PRIVATE; exact git log/status for each named worktree; run result.json (finalMessage only); disk free space and codex/pi process-name listing.
+3. Never read or print .env*, opencode.json, keys, or tokens. Do not change visibility, touch other worktrees except read-only git/gh status queries, stop agents, use Stack A, merge, deploy, or run production migrations without explicit authorization.
+4. Collect the docs-split, F13-r5 and F14b-chunk3 run results; do not stop or disturb them. Reconcile their finalMessage against live branch/PR state.
+5. Continue the handoff execution order and preserve all exact-SHA CI, CodeRabbit, zero-thread, architect-review, PO-approval and --match-head-commit gates.
+6. Keep the disk floor at 15 GB, Stack assignments, Luna/MiniMax routing, single MiniMax lane, and business-rule escalation requirements.
+```# Session 21 PO decisions (2026-10-31) - VERBATIM, BINDING
+Recorded by the architect exactly as received. Latest explicit PO decision wins (DR-03).
+
+## S21-PO-1 — Glisse / Liquid Glass (message)
+Claude, delegate implementation entirely to Luna High. You only supervise, coordinate, and independently review.
+1. Glisse + Liquid Glass: Integrate Glisse (https://github.com/0kzh/glisse) wherever visually appropriate across LIFTER: bars, buttons, sliders, cards, menus, popovers, floating UI, etc. Aim for premium Apple-style Liquid Glass on mobile/desktop without sacrificing simplicity, Emerald #059669, readability, accessibility, or performance. Keep dense data, forms, and financial content mostly solid. Produce real browser screenshots: Before/After, mobile/desktop, Light/Dark, Arabic/English.
+2. Existing installation: investigate dependency changes, pending scripts, security findings, compatibility. Preserve unrelated changes. No npm audit fix --force or breaking upgrades.
+3. Cleanup results: freed 11.8 GB; C: 34.9 GB free. Do not repeat cleanup or reinstall deleted dependencies unnecessarily.
+4. Validation & approval: verify existing features, RTL, a11y, responsiveness, performance; isolated worktrees; Claude reviews code/tests/screenshots; no merges, deployments, or production changes without explicit PO approval; present screenshots and findings for final design approval.
+
+## S21-PO-2 — Glass round 2 direction (answers)
+- "Floating + real refraction (Recommended)": iOS-26-style detached floating capsule bottom bar / floating rail & menus, Glisse's real React refraction component on those floating surfaces only; measure hydration/LCP/CSP cost; solid fallback.
+- "Yes, Stack B for screenshots (Recommended)": run the authenticated app against Stack B for real screenshots (wrapper-scoped, narrow reviewed allow-rule, no Stack A, no resets of F14b data).
+
+## S21-PO-3 — Disk P0 (answers)
+Investigation delegated to Luna, read-only until approval; approved: npm cache, pip cache, 18 merged node_modules, LIFTER temp dirs, and "verified unused YBS temporary folders only. Preserve all source code, databases, user data, Git files, and active build outputs." PO ran the final cleanup script personally.
+
+## S21-PO-4 — F16 Decision — Remove Only (No Archive) (verbatim)
+- Remove the Archive feature entirely from the staff-facing UI.
+- Keep one action: **Remove**.
+- Removing an exercise hides it from the catalog and prevents new selections.
+- Existing client workout plans, including active and historical plans, must remain completely unaffected.
+- Preserve exercise references, snapshots, logs, media availability, and historical data.
+- Never cascade-delete an exercise from client plans.
+- Use non-destructive soft deletion.
+- Do not automatically modify or republish any existing client plan.
+- Any removal from an existing client plan must happen through an explicit plan-editing action.
+**Core rule: Removing from the Catalog must never mean removing from clients' existing plans.**
+Architect application (flag to PO): applied to BOTH F16 catalogs (exercises and foods) because the core rule is stated for "the Catalog"; Restore (S20-approved) is retained.
+
+## S21-PO-5 — PR #26 completion path (answer)
+"Fix Majors, defer detail (Recommended)": one more round fixing every Major + quick Minor; implementation-level Minor design detail is answered by deferring to the F16/Plan Core/F17/F18 feature PR with a tracked tasks item, then resolved. Merge once CodeRabbit approves; still one docs PR.
+
+## S21-PO-6 — Glass round 3 review (answers)
+- Mobile floating glass capsule: "Approve, cut TBT first (Recommended)" — design APPROVED; before any PR, TBT must be within +50 ms of baseline.
+- Round 4 surfaces: "Floating action buttons", "Menus & popovers" (dense data, forms, finance stay solid). Desktop rail stays solid (architect-accepted r3 rationale).
+
+## S21-PO-7 — PR #26 end (answer)
+"Split now": keep decision logs/PRD/constitution/DESIGN.md/tracker in PR #26 and merge soon; move the four new spec bodies (016-019) into their feature PRs to be reviewed alongside code. (Supersedes S21-PO-5 and the S20 "single documentation PR" instruction for the spec bodies only.)
+
 §0-S20-FINAL
 
 Snapshot: 2026-10-31 (S20 close). Durable handoff only. This section records the binding S20 PO Messages A/B, final decisions, live state, dependencies, conflicts for next-session reconciliation, and execution order. Message B's critical handoff-only instruction governed S20; do not treat its earlier request to edit canonical documentation as authorization in this session. Reconcile canonical specs/plans/DESIGN.md/decision logs in the next session. The complete verbatim source is in the pointer list below. Latest explicit PO decisions override earlier specs and plans where they conflict (DR-03).
