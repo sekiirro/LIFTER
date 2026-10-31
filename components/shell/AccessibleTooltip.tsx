@@ -98,10 +98,7 @@ export function AccessibleTooltip({
 }: AccessibleTooltipProps) {
   const tooltipId = `accessible-tooltip-${useId()}`;
   const [visible, setVisible] = useState(false);
-  const controller = useMemo(
-    () => createTooltipController(setVisible),
-    [],
-  );
+  const controller = useMemo(() => createTooltipController(setVisible), []);
 
   useEffect(() => () => controller.dispose(), [controller]);
 
@@ -121,10 +118,7 @@ export function AccessibleTooltip({
 
   const handleFocus = (event: FocusEvent<HTMLSpanElement>) => {
     const target = event.target;
-    if (
-      target instanceof HTMLElement &&
-      target.matches(':focus-visible')
-    ) {
+    if (target instanceof HTMLElement && target.matches(':focus-visible')) {
       controller.focusVisible();
     }
   };
@@ -151,9 +145,7 @@ export function AccessibleTooltip({
         aria-hidden={!visible}
         data-visible={visible ? 'true' : 'false'}
         data-testid={tooltipTestId}
-        className={[styles.tooltip, tooltipClassName]
-          .filter(Boolean)
-          .join(' ')}
+        className={[styles.tooltip, tooltipClassName].filter(Boolean).join(' ')}
       >
         {label}
       </span>

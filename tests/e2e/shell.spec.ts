@@ -129,13 +129,8 @@ for (const locale of ['ar', 'en'] as const) {
           throw new Error('Expected focused tooltip and unchanged dock');
         expect(after).toEqual(before);
         if (locale === 'ar')
-          expect(tooltipBox.x + tooltipBox.width).toBeLessThanOrEqual(
-            after.x,
-          );
-        else
-          expect(tooltipBox.x).toBeGreaterThanOrEqual(
-            after.x + after.width,
-          );
+          expect(tooltipBox.x + tooltipBox.width).toBeLessThanOrEqual(after.x);
+        else expect(tooltipBox.x).toBeGreaterThanOrEqual(after.x + after.width);
       } finally {
         await context.close();
       }

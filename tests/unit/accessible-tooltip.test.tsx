@@ -74,7 +74,10 @@ describe('AccessibleTooltip behavior', () => {
 
   it('anchors outside the fixed 44px trigger footprint without shifting the dock', () => {
     const css = readFileSync(
-      new URL('../../components/shell/AccessibleTooltip.module.css', import.meta.url),
+      new URL(
+        '../../components/shell/AccessibleTooltip.module.css',
+        import.meta.url,
+      ),
       'utf8',
     );
 

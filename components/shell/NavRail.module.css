@@ -77,7 +77,8 @@
     border-color: Highlight;
   }
 }
-@media (prefers-reduced-transparency: reduce), (prefers-contrast: more),
+@media (prefers-reduced-transparency: reduce),
+  (prefers-contrast: more),
   (prefers-reduced-motion: reduce) {
   .rail::before {
     display: none;
