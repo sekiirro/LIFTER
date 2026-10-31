@@ -10,4 +10,4 @@ Reviewer: Codex (read-only, no edits). Thread `01a17a57-604c-7a60-9865-9084af369
 | 4 | Prisma rejection rationale is wrong (interactive transactions keep one connection) | MED | **Accepted.** Rationale removed. ORM chosen by a P0 spike against the real pooler. | Architecture stack table |
 | 5 | "Creator-only edits" of global catalog is an invented permission rule | MED | **Accepted.** Rule removed; rights → NEEDS SOURCE CONFIRMATION. Versioning + snapshots keep any eventual rule safe. | Architecture § versioning; change #5; checklist |
 
-Agreed by both: atomic paired delivery (with `ready` ≠ delivered), append-only ledger with deferred refund math, renewal timing and Sales rights left unresolved.
+Historical pre-S20 note: the earlier review proposed atomic paired delivery (ready was distinct from delivered). Superseded by PO S20 Message B section 4 and specs/019-plan-core: first deliveries are independent and may occur on different days; activation is exactly once after both succeed. Other unresolved items remain tracked in their owning decisions.

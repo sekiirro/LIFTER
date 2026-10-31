@@ -88,7 +88,7 @@ Monthly `kpi_periods` with weights/targets frozen (changes apply next month). `p
 - **First delivery:** both plans `ready` → one RPC publishes both, writes the delivery event, sets `activated_at` and the productivity unit. Idempotent via a unique key per subscription.
 - **SLA (D-03):** `addWorkingDays(submittedAt, 5, {tz: 'Africa/Cairo', nonWorking: [Fri], cutoff: '18:00'})`. Submitted before 18:00 on a working day → that day is day 1. At/after 18:00, or on a Friday → day 1 is the next working day. Pure function, table-tested.
 - Forms: immutable template versions, pinned assignments, stable question ids, autosave draft rows.
-- Catalogs: foods/exercises are versioned. Trainers add globally with duplicate detection. Edit/merge rights NEEDS SOURCE CONFIRMATION.
+- Catalogs: foods/exercises are versioned. Food creators/PO may publish edits; PO exclusively manages global exercises and retires/merges global entries. Authorized staff manage workspace exercises. D16-2 through D16-10 values are recorded in docs/04-changes-and-questions.md.
 
 ## Telegram
 

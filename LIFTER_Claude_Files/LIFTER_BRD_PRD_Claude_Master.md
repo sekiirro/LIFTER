@@ -168,7 +168,7 @@ Workspace Owner can edit logo, color theme, visual identity, hero/branding eleme
 ## PRD-05. Nutrition planner and food data
 
 - Shared/global food database with structured nutrition values, serving units and reliable per-quantity calories/protein/carbs/fat. **Trainers may add foods directly to the global food database**, without a moderation approval queue. Validation and duplicate detection are required; do not block ordinary additions behind bureaucracy.
-- Nutrition template library is **global/shared**, not separately owned per workspace; a trainer loads a template, customizes an independent client plan and publishes it. Do not invent workspace-specific nutrition template ownership.
+- Nutrition templates may be global/shared or workspace-owned. PO exclusively manages global templates; authorized workspace staff manage workspace templates. PO may use **Make it Global** on an eligible template after removing private data and references. Loading always creates an independent copy. (D18-1 amendment, PO S20 Message B section 3.)
 - Plan editor supports meals and foods, drag/reorder/duplicate, per-meal notes, optional recipes/video links, daily macros/calories and a repeating single-day or seven-day structure (including carb cycling and different day targets). Conditional pre-workout meals may be omitted on rest days.
 - Multiple published nutrition plans for the same client **are allowed**, including multiple simultaneously eligible plans; show all with dates, newest first. Do not auto-archive older plans or delete their logs/history.
 - Coach-configured manual food alternatives with precise gram amounts and calculated macros; unified client-visible alternatives, not separate 'strict' versus 'functional' lists. Approved replacement can become the selected food, with prior original remaining as an alternative where valid.
@@ -185,7 +185,7 @@ Workspace Owner can edit logo, color theme, visual identity, hero/branding eleme
 ## PRD-06. Plan delivery, activation and revisions
 
 - First subscription's activation gate is delivery of both a workout plan and a nutrition plan. Publishing one plan alone does not activate it.
-- Automatic delivery when both are ready, with a designated responsible trainer for accountability. Other trainer contributions recorded independently.
+- First workout and nutrition plans may be delivered independently, including on different days. Subscription activation occurs exactly once after both first plans are successfully delivered; no paired-publish transaction is required. Each delivery is secure, idempotent and concurrency-safe. Later plan edits never restart activation. The responsible trainer is recorded for accountability; other trainer contributions are recorded independently. (PO S20 Message B section 4; supersedes paired-delivery transaction wording.)
 - Deadline calculated from mandatory intake submission: five working days, Friday excluded; before 18:00 counts as first day, after 18:00 starts next working day.
 - Delays trigger alerts to responsible trainer, Workspace Owner and Platform Owner; strike review is human-governed.
 - Additional plan revisions during a subscription do not create new first-pair productivity credit. Renewals require actually delivered new plans to generate a new credit.
@@ -248,7 +248,7 @@ Workspace Owner can edit logo, color theme, visual identity, hero/branding eleme
 - Web workout logging/timers; web meal check-offs/calorie diary; web progress photo uploads.
 - A standalone educational-content library.
 - Hevy import/export/integration.
-- A dedicated workspace-owned nutrition template library.
+- Unapproved nutrition-template ownership or publishing. Workspace-owned templates are now allowed only under the D18-1 amendment: authorized staff manage workspace templates; PO manages global templates and may safely Make it Global without private data or references. (PO S20 Message B section 3; supersedes this exclusion.)
 - AI-generated exercise alternatives or a mandatory food-addition approval queue.
 - Automatic salary bonus computation, auto-deductions or automatic termination.
 - Mandatory 2FA, one-device-per-account restriction or device-management screen.
