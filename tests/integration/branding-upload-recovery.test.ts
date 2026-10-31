@@ -33,6 +33,18 @@ afterAll(async () => {
   await db.end();
 });
 
+it('does not leave an attachment-failure status update before its rolled-back stale exception', async () => {
+  const [functionRow] = await db<{ body: string }[]>`
+    select pg_get_functiondef(
+      'app_private.branding_asset_attach(uuid,bigint)'::regprocedure
+    ) as body
+  `;
+  expect(functionRow?.body).toMatch(/stale_branding_upload/);
+  expect(functionRow?.body).not.toMatch(
+    /set status\s*=\s*'attachment_failed_stale'[\s\S]*?stale_branding_upload/,
+  );
+});
+
 it('collects stale staging and validated bytes through bounded GC leases', async () => {
   const uploadId = crypto.randomUUID();
   const stagingObject = `${fixture.wsA.id}/staging/${uploadId}`;

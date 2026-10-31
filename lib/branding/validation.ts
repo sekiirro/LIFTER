@@ -25,6 +25,8 @@ export class BrandingValidationError extends Error {
   }
 }
 
+export const MAX_BRANDING_LOCALIZED_TEXT_LENGTH = 1000;
+
 const allowedFields = new Set([
   'names',
   'color',
@@ -59,6 +61,11 @@ function normalizeLocalizedText(
       throw new BrandingValidationError(`${label} values must be text`);
     }
     const normalized = text.trim();
+    if (Array.from(normalized).length > MAX_BRANDING_LOCALIZED_TEXT_LENGTH) {
+      throw new BrandingValidationError(
+        `${label} must be ${MAX_BRANDING_LOCALIZED_TEXT_LENGTH} characters or fewer`,
+      );
+    }
     if (normalized) result[locale] = normalized;
   }
   return result;

@@ -49,6 +49,59 @@ it('uses persisted compare-and-set so only one save wins the same revision', asy
   expect(candidates).toContainEqual(draft?.fields);
 });
 
+it('rejects missing or non-string localized draft identity before persistence', async () => {
+  const invalid = [
+    { color: '#123456', bannerAlt: { ar: '', en: '' } },
+    {
+      ...fields('Invalid Arabic', '#123456'),
+      name: { ar: 7, en: 'Invalid Arabic' },
+    },
+    {
+      ...fields('Invalid alt', '#123456'),
+      bannerAlt: { ar: '', en: false },
+    },
+  ];
+  for (const value of invalid) {
+    const result = await fixture.woA.client.rpc('branding_draft_save', {
+      workspace_id: fixture.wsA.id,
+      expected_revision: 0,
+      fields: value,
+    });
+    expect(result.error).toBeTruthy();
+  }
+  const [draft] = await db<{ revision: number }[]>`
+    select revision::int as revision from app_private.branding_drafts
+    where workspace_id=${fixture.wsA.id}
+  `;
+  expect(draft).toBeUndefined();
+});
+
+it('applies the same 1000-character bound to persisted localized identity and banner alt text', async () => {
+  for (const value of [
+    fields('n'.repeat(1001), '#123456'),
+    {
+      ...fields('Invalid alt length', '#123456'),
+      bannerAlt: { ar: '', en: 'a'.repeat(1001) },
+    },
+  ]) {
+    const result = await fixture.woA.client.rpc('branding_draft_save', {
+      workspace_id: fixture.wsA.id,
+      expected_revision: 0,
+      fields: value,
+    });
+    expect(result.error).toBeTruthy();
+  }
+  const boundary = await fixture.woA.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 0,
+    fields: {
+      ...fields('n'.repeat(1000), '#123456'),
+      bannerAlt: { ar: '', en: 'a'.repeat(1000) },
+    },
+  });
+  expect(boundary.error).toBeNull();
+});
+
 it('publishes immutable per-workspace sequences and makes unchanged publication a no-op', async () => {
   const drafts = await Promise.all([
     fixture.po.client.rpc('branding_draft_save', {
