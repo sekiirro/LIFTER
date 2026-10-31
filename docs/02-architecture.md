@@ -80,7 +80,7 @@ Removal (PO only) pseudonymizes the old email/phone so they become free while th
 
 ## Payroll / KPI
 
-Monthly `kpi_periods` with weights/targets frozen (changes apply next month). `productivity_units` are unique per subscription, created by the delivery RPC, and kept on refund. `payroll_entries` use approve = paid, immutable, with adjusting entries for corrections. Strikes are a rolling 90-day view. Every action is a PO decision record.
+Monthly `kpi_periods` with weights/targets frozen (changes apply next month). `productivity_units` are unique per subscription and are created by the activation transaction only after both workout and nutrition first-delivery rows succeed; they are kept on refund. `payroll_entries` use approve = paid, immutable, with adjusting entries for corrections. Strikes are a rolling 90-day view. Every action is a PO decision record.
 
 ## Plans, forms, catalogs: versioning
 
