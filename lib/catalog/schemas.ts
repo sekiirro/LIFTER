@@ -664,8 +664,42 @@ export function normalizeCatalogSearchInput(
 // Aliases for compatibility with common naming.
 export const normalizeExercise = normalizeExerciseInput;
 export const validateExercise = normalizeExerciseInput;
+export type FoodKcalWarning = {
+  field: 'kcal';
+  code: 'kcal_macro_mismatch';
+  computed: number;
+  stated: number;
+};
+
+export type FoodValidationWarning = FoodKcalWarning;
+export type CatalogValidationWarning = FoodKcalWarning;
+export type ValidationWarning = FoodKcalWarning;
+
+export type FoodValidationResult = {
+  food: NormalizedFood;
+  warnings: FoodKcalWarning[];
+};
+
+export function validateFoodInput(input: unknown): FoodValidationResult {
+  const food = normalizeFoodInput(input);
+  const computed = 4 * food.protein + 4 * food.carbs + 9 * food.fat;
+  const stated = food.kcal;
+  const threshold = Math.max(20, 0.1 * stated);
+  const warnings: FoodKcalWarning[] = [];
+  if (Math.abs(stated - computed) > threshold) {
+    warnings.push({
+      field: 'kcal',
+      code: 'kcal_macro_mismatch',
+      computed,
+      stated,
+    });
+  }
+  return { food, warnings };
+}
+
 export const normalizeFood = normalizeFoodInput;
 export const validateFood = normalizeFoodInput;
+export const validateFoodWithWarnings = validateFoodInput;
 export const normalizeServing = normalizeServingInput;
 export const validateServing = normalizeServingInput;
 export const normalizeSearchInput = normalizeCatalogSearchInput;
