@@ -1,0 +1,111 @@
+.main {
+  display: grid;
+  gap: var(--space-5);
+  inline-size: min(100% - 2 * var(--space-4), 56rem);
+  margin-inline: auto;
+  padding-block: var(--space-6);
+}
+
+.header,
+.panel {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.preview {
+  display: grid;
+  gap: var(--space-3);
+  margin-block-start: var(--space-5);
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-card-raised);
+  color: var(--color-text);
+}
+
+.preview h2,
+.preview p {
+  margin: 0;
+}
+
+.preview h2 {
+  font-size: var(--text-lg);
+  line-height: var(--line-height-heading);
+}
+
+.header h1,
+.panel h2 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-xl);
+  line-height: var(--line-height-heading);
+}
+
+.header p,
+.publish p {
+  margin: 0;
+  color: var(--color-text-muted);
+}
+
+.panel {
+  padding: var(--space-5);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+}
+
+.form,
+.workspace,
+.publish {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.workspace {
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: end;
+}
+
+.workspace label {
+  grid-column: 1 / -1;
+  color: var(--color-text);
+}
+
+.workspace select {
+  min-block-size: var(--touch-min);
+  padding-inline: var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  background: var(--color-card);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.publish {
+  margin-block-start: var(--space-5);
+  padding-block-start: var(--space-4);
+  border-block-start: 1px solid var(--color-border);
+}
+
+@media (min-width: 48rem) {
+  .main {
+    inline-size: min(100% - 2 * var(--space-6), 56rem);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .main :global(*),
+  .main :global(*::before),
+  .main :global(*::after) {
+    animation-duration: 0ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0ms !important;
+    transition-delay: 0ms !important;
+  }
+}

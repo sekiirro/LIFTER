@@ -1,0 +1,10 @@
+@media (prefers-reduced-motion: reduce) {
+  .scope :global(*),
+  .scope :global(*::before),
+  .scope :global(*::after) {
+    animation-duration: 0ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0ms !important;
+    transition-delay: 0ms !important;
+  }
+}

@@ -5,10 +5,10 @@ export type Env = {
   SUPABASE_SERVICE_ROLE_KEY: string;
 };
 
-export function createRpc(env: Env): Rpc {
+export function validateSupabaseUrl(supabaseUrl: string): URL {
   let url: URL;
   try {
-    url = new URL(env.SUPABASE_URL);
+    url = new URL(supabaseUrl);
   } catch {
     throw new Error('rpc_insecure_url');
   }
@@ -21,6 +21,11 @@ export function createRpc(env: Env): Rpc {
   ) {
     throw new Error('rpc_insecure_url');
   }
+  return url;
+}
+
+export function createRpc(env: Env): Rpc {
+  validateSupabaseUrl(env.SUPABASE_URL);
 
   return async (name, args) => {
     const response = await fetch(

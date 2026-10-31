@@ -1,0 +1,47 @@
+project_id = "lifter-stack-b"
+
+[api]
+enabled = true
+port = 25421
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 25422
+shadow_port = 25420
+
+[storage]
+enabled = true
+
+[storage.image_transformation]
+enabled = true
+
+[studio]
+enabled = true
+port = 25423
+
+[inbucket]
+enabled = true
+port = 25424
+smtp_port = 25425
+pop3_port = 25426
+
+[analytics]
+enabled = false
+port = 25427
+
+[edge_runtime]
+enabled = true
+inspector_port = 25428
+
+[db.pooler]
+enabled = false
+port = 25429
+
+[auth]
+enable_signup = false
+minimum_password_length = 8
+
+[auth.email]
+otp_expiry = 3600

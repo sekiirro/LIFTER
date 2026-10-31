@@ -51,6 +51,34 @@ const registrationPrivate = [
   'validate_registration_link_schedule',
   'check_registration_link_schedule',
 ];
+const brandingPrivate = [
+  'branding_actor_id',
+  'branding_asset_attach',
+  'branding_credential_event_immutable',
+  'branding_credential_register',
+  'branding_credential_set_enabled',
+  'branding_credential_allowed',
+  'branding_current_read',
+  'branding_draft_read',
+  'branding_draft_save',
+  'branding_gc_claim',
+  'branding_gc_finalize',
+  'branding_gc_lock_object',
+  'branding_publish',
+  'branding_render_handles_cleanup',
+  'branding_asset_context',
+  'branding_staging_upload_allowed',
+  'branding_storage_read_allowed',
+  'branding_upload_begin',
+  'branding_validation_prepare',
+  'branding_validation_complete',
+  'branding_validator_upload_binding_matches',
+  'branding_validator_upload_binding_matches_gc',
+  'branding_validator_upload_binding_matches_gc_serialized',
+];
+const brandingFunctionOwners: Record<string, string> = {
+  branding_validator_upload_binding_matches: 'branding_upload_check_definer',
+};
 afterAll(async () => {
   await db.end();
 });
@@ -175,6 +203,7 @@ describe('tenancy security catalog (T007)', () => {
         ...approvalFunctions.map((signature) => signature.split('(')[0]!),
         'client_has_access',
         ...signupPrivate,
+        ...brandingPrivate,
         'audit_events_immutable',
         'audit_row_change',
         'current_staff_role',
@@ -196,6 +225,7 @@ describe('tenancy security catalog (T007)', () => {
       expect(row.prosecdef).toBe(
         ![
           'audit_events_immutable',
+          'branding_actor_id',
           'forbid_delete',
           'jobs_updated_at',
           'recovery_link_limits',
@@ -205,25 +235,40 @@ describe('tenancy security catalog (T007)', () => {
         ].includes(row.proname),
       );
       expect(row.proconfig).toContain('search_path=""');
-      expect(row.owner).toBe('postgres');
+      expect(row.owner).toBe(
+        brandingFunctionOwners[row.proname] ??
+          (brandingPrivate.includes(row.proname)
+            ? 'branding_definer'
+            : 'postgres'),
+      );
       expect(row.anon_execute).toBe(false);
-      expect(row.authenticated_execute).toBe(
-        !row.proname.startsWith('f12_') &&
-          !registrationPrivate.includes(row.proname) &&
-          !signupPrivate.includes(row.proname) &&
-          ![
-            'audit_events_immutable',
-            'audit_row_change',
-            'client_has_access',
-            'enqueue_job',
-            'forbid_delete',
-            'guard_package_offer_update',
-            'guard_package_version_insert',
-            'jobs_updated_at',
-            'recovery_link_guard',
-            'recovery_link_limits',
-            'recovery_target_workspace',
-          ].includes(row.proname),
+      expect(row.authenticated_execute, row.proname).toBe(
+        [
+          'branding_upload_begin',
+          'branding_draft_save',
+          'branding_asset_attach',
+          'branding_publish',
+          'branding_current_read',
+          'branding_draft_read',
+          'branding_staging_upload_allowed',
+        ].includes(row.proname) ||
+          (!row.proname.startsWith('f12_') &&
+            !registrationPrivate.includes(row.proname) &&
+            !brandingPrivate.includes(row.proname) &&
+            !signupPrivate.includes(row.proname) &&
+            ![
+              'audit_events_immutable',
+              'audit_row_change',
+              'client_has_access',
+              'enqueue_job',
+              'forbid_delete',
+              'guard_package_offer_update',
+              'guard_package_version_insert',
+              'jobs_updated_at',
+              'recovery_link_guard',
+              'recovery_link_limits',
+              'recovery_target_workspace',
+            ].includes(row.proname)),
       );
     }
   });
@@ -664,10 +709,27 @@ describe('registration security catalog', () => {
         await db`select relrowsecurity,relforcerowsecurity from pg_class where oid=${'public.' + table}::regclass`;
       expect(r).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
       const policies =
-        await db`select cmd,qual from pg_policies where schemaname='public' and tablename=${table}`;
-      expect(policies).toHaveLength(1);
-      expect(policies[0]!.cmd).toBe('SELECT');
-      expect(policies[0]!.qual).toContain('generate_registration_link');
+        await db`select cmd,qual,roles,with_check from pg_policies where schemaname='public' and tablename=${table}`;
+      // Count every policy, including any granted TO PUBLIC: PostgreSQL applies
+      // such policies to authenticated users too, so a stray permissive policy
+      // must fail before the role-filtered assertions below run.
+      expect(policies).toHaveLength(table === 'registration_links' ? 2 : 1);
+      const apiPolicies = policies.filter((policy) =>
+        policy.roles.includes('authenticated'),
+      );
+      const definerPolicies = policies.filter((policy) =>
+        policy.roles.includes('branding_definer'),
+      );
+      expect(apiPolicies).toHaveLength(1);
+      expect(apiPolicies[0]!.cmd).toBe('SELECT');
+      expect(apiPolicies[0]!.qual).toContain('generate_registration_link');
+      if (table === 'registration_links') {
+        expect(definerPolicies).toHaveLength(1);
+        expect(definerPolicies[0]!.cmd).toBe('ALL');
+        expect(definerPolicies[0]!.qual).toBe('true');
+      } else {
+        expect(definerPolicies).toHaveLength(0);
+      }
       const triggers =
         await db`select tgname,tgenabled,tgdeferrable,tginitdeferred from pg_trigger where tgrelid=${'public.' + table}::regclass and not tgisinternal`;
       expect(triggers.length).toBe(table === 'registration_links' ? 7 : 5);
@@ -804,7 +866,11 @@ describe('registration security catalog', () => {
     for (const name of signatures) {
       const [r] =
         await db`select pg_get_userbyid(proowner) as owner,proconfig from pg_proc where oid=${name}::regprocedure`;
-      expect(r!.owner).toBe('postgres');
+      expect(r!.owner).toBe(
+        name === 'public.registration_link_open(text)'
+          ? 'branding_definer'
+          : 'postgres',
+      );
       expect(r!.proconfig).toContain('search_path=""');
       for (const role of ['anon', 'authenticated', 'service_role']) {
         const [g] =

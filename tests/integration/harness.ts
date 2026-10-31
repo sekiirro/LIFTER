@@ -2,8 +2,15 @@ import { randomUUID } from 'node:crypto';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import postgres from 'postgres';
 import type { Role } from '../../lib/auth/capabilities';
+import {
+  assertLocalStackTarget,
+  loadSelectedStackEnv,
+  selectStack,
+} from '../../scripts/local-stack.mjs';
 
 export function loadEnv() {
+  const stack = selectStack();
+  loadSelectedStackEnv();
   const apiUrl = process.env.API_URL || process.env.SUPABASE_URL;
   const anonKey = process.env.ANON_KEY || process.env.SUPABASE_ANON_KEY;
   const serviceRoleKey =
@@ -14,6 +21,7 @@ export function loadEnv() {
       'Integration env missing: run `supabase start` and export `supabase status -o env`',
     );
   }
+  assertLocalStackTarget({ stack, apiUrl, dbUrl });
   return { apiUrl, anonKey, serviceRoleKey, dbUrl };
 }
 

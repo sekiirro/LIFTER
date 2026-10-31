@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { localSupabaseContainer } from '../integration/local-docker';
 import { execFileSync } from 'node:child_process';
 import { readFile, mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -6,7 +7,7 @@ import { join } from 'node:path';
 import { inflateRawSync } from 'node:zlib';
 import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, randomInt, randomUUID } from 'node:crypto';
 import {
   serverLogRawPath,
   serverLogSummaryPath,
@@ -25,7 +26,6 @@ let duplicateToken: string;
 let providerToken: string;
 let expiredToken: string;
 let knownStaffEmail: string;
-let collisionPhoneSequence = 0;
 let fixture: Awaited<
   ReturnType<
     typeof import('../integration/registration-links-fixture').registrationFixture
@@ -963,7 +963,9 @@ test('provider failure returns generic unavailable, then a retry can complete', 
     name: 'Example Person',
     email: `provider-${randomUUID()}@example.test`,
   });
-  execFileSync('docker', ['stop', 'supabase_kong_lifter'], { stdio: 'ignore' });
+  execFileSync('docker', ['stop', localSupabaseContainer('kong')], {
+    stdio: 'ignore',
+  });
   try {
     const unavailableResponse = page.waitForResponse(
       (response) => response.request().method() === 'POST',
@@ -979,7 +981,7 @@ test('provider failure returns generic unavailable, then a retry can complete', 
       'Please try again later.',
     );
   } finally {
-    execFileSync('docker', ['start', 'supabase_kong_lifter'], {
+    execFileSync('docker', ['start', localSupabaseContainer('kong')], {
       stdio: 'ignore',
     });
   }
@@ -1187,7 +1189,7 @@ for (const locale of ['ar', 'en'] as const) {
       kind: 'pending' | 'active' | 'staff' | 'archived',
     ) => {
       const email = `u8-${kind}-${randomUUID()}@example.test`;
-      const phone = `0105678${String(++collisionPhoneSequence).padStart(4, '0')}`;
+      const phone = `010${String(randomInt(0, 100_000_000)).padStart(8, '0')}`;
       const phoneE164 = `+20${phone.slice(1)}`;
       if (kind === 'pending') {
         const token = await issueSignupToken(locale === 'en');

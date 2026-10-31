@@ -22,6 +22,7 @@ const expected: Record<Capability, readonly boolean[]> = {
   manage_workspaces: [true, false, false, false],
   manage_staff_access: [true, false, false, false],
   coaching_work: [true, true, true, false],
+  manage_branding: [true, true, false, false],
 };
 
 describe('approved matrix', () => {
@@ -51,6 +52,9 @@ describe('authorize', () => {
     expect(authorize({ ...actor, role: null }, 'coaching_work', 'A')).toBe(
       false,
     );
+  });
+  it.each(ROLES)('%s denies a missing workspace context', (role) => {
+    expect(authorize({ ...actor, role }, 'manage_branding', '')).toBe(false);
   });
   it.each(['workspace_owner', 'trainer', 'sales'] as const)(
     '%s requires active membership',
