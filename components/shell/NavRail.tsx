@@ -1,6 +1,7 @@
 import { Icon } from '../icons/Icon';
 import { GlassSurface } from '../ui/glass/GlassSurface';
 import type { ShellNavigationProps } from './AppShell';
+import { AccessibleTooltip } from './AccessibleTooltip';
 import styles from './NavRail.module.css';
 
 export function NavRail({
@@ -12,8 +13,8 @@ export function NavRail({
 }: ShellNavigationProps) {
   return (
     <GlassSurface
-      variant="solid"
-      fallback="solid"
+      variant="regular"
+      fallback="auto"
       role="navigation"
       aria-label={messages['nav.label']}
       data-testid="nav-rail"
@@ -21,23 +22,21 @@ export function NavRail({
       className={[styles.rail, className].filter(Boolean).join(' ')}
     >
       {items.map((item) => (
-        <a
+        <AccessibleTooltip
           key={item.key}
-          href={hrefFor(item.key)}
-          className={styles.link}
-          aria-label={messages[item.labelKey]}
-          aria-current={activeKey === item.key ? 'page' : undefined}
-          data-nav-key={item.key}
+          label={messages[item.labelKey]}
+          tooltipTestId={`tooltip-${item.key}`}
         >
-          <Icon name={item.icon} />
-          <span
-            aria-hidden="true"
-            className={styles.tooltip}
-            data-testid={`tooltip-${item.key}`}
+          <a
+            href={hrefFor(item.key)}
+            className={styles.link}
+            aria-label={messages[item.labelKey]}
+            aria-current={activeKey === item.key ? 'page' : undefined}
+            data-nav-key={item.key}
           >
-            {messages[item.labelKey]}
-          </span>
-        </a>
+            <Icon name={item.icon} />
+          </a>
+        </AccessibleTooltip>
       ))}
     </GlassSurface>
   );

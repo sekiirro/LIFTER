@@ -1,5 +1,5 @@
 .shell {
-  --rail-width: calc(var(--touch-min) + var(--space-6));
+  --rail-width: calc(var(--touch-min) + var(--space-4) + 2px);
   --bottom-bar-size: calc(var(--touch-min) + var(--space-4));
 }
 .content {
@@ -32,7 +32,9 @@
   z-index: 5;
 }
 /* ND-3 provisional */
-@media (min-width: 64rem) {
+/* Keep the horizontal dock through 74.99rem. The fixed vertical dock needs
+   enough outside gutter to clear the unchanged 64rem content column. */
+@media (min-width: 75rem) {
   .rail {
     display: flex;
   }

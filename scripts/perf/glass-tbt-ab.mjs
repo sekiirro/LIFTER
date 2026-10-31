@@ -16,7 +16,7 @@ const beforeRoot = path.resolve(
 );
 const reportRoot = path.resolve(
   process.env.GLASS_REPORT_ROOT ??
-    'C:/Users/NEW LAP/.lifter/reports/s21-glass/r5',
+    'C:/Users/NEW LAP/.lifter/reports/s21-glass/r6',
 );
 const beforeUrl = process.env.GLASS_BEFORE_URL ?? 'http://127.0.0.1:4356';
 const afterUrl = process.env.GLASS_AFTER_URL ?? 'http://127.0.0.1:4355';
@@ -24,6 +24,20 @@ const routePath = '/registration-links';
 const measuredPerArm = Number(process.env.GLASS_SAMPLES ?? 15);
 const warmupsPerArm = Number(process.env.GLASS_WARMUPS ?? 2);
 const traceEnabled = process.env.GLASS_TRACE === '1';
+const viewportArg = process.argv.find((argument) =>
+  argument.startsWith('--viewport='),
+);
+const viewportName =
+  viewportArg?.slice('--viewport='.length) ??
+  process.env.GLASS_VIEWPORT ??
+  'mobile';
+const viewport =
+  viewportName === 'desktop'
+    ? { width: 1440, height: 900, isMobile: false, hasTouch: false }
+    : viewportName === 'mobile'
+      ? { width: 390, height: 844, isMobile: true, hasTouch: true }
+      : null;
+if (!viewport) throw new Error('Use --viewport=mobile or --viewport=desktop');
 
 if (new URL(beforeUrl).port === '3300' || new URL(afterUrl).port === '3300')
   throw new Error('Port 3300 is forbidden');
@@ -51,13 +65,16 @@ function spawnServer(root, url, label) {
     [nextBin, 'start', '--hostname', '127.0.0.1', '--port', port],
     {
       cwd: root,
-      env: {
-        ...process.env,
-        PORT: port,
-        APP_ORIGIN: url,
-        NEXT_TELEMETRY_DISABLED: '1',
-        LIFTER_SHOWCASE: '1',
-      },
+      env: (() => {
+        const environment = { ...process.env };
+        delete environment.LIFTER_SHOWCASE;
+        return {
+          ...environment,
+          PORT: port,
+          APP_ORIGIN: url,
+          NEXT_TELEMETRY_DISABLED: '1',
+        };
+      })(),
       stdio: 'ignore',
       windowsHide: true,
     },
@@ -293,10 +310,10 @@ async function sample(
   warmup,
 ) {
   const context = await browser.newContext({
-    viewport: { width: 390, height: 844 },
+    viewport: { width: viewport.width, height: viewport.height },
     deviceScaleFactor: 2,
-    isMobile: true,
-    hasTouch: true,
+    isMobile: viewport.isMobile,
+    hasTouch: viewport.hasTouch,
   });
   await context.grantPermissions([]).catch(() => {});
   await installSession(context, url, session);
@@ -547,7 +564,8 @@ async function main() {
   const diffs = before.map((entry, index) => after[index].tbtMs - entry.tbtMs);
   const summary = {
     protocol: {
-      viewport: '390x844',
+      viewport: `${viewport.width}x${viewport.height}`,
+      viewportName,
       dpr: 2,
       cpuThrottle: 4,
       latencyMs: 150,
@@ -581,12 +599,10 @@ async function main() {
     },
     raw,
   };
-  await writeFile(
-    path.join(reportRoot, 'metrics.json'),
-    `${JSON.stringify(summary, null, 2)}\n`,
-  );
+  const metricsPath = path.join(reportRoot, `metrics-${viewportName}.json`);
+  await writeFile(metricsPath, `${JSON.stringify(summary, null, 2)}\n`);
   process.stdout.write(
-    `${JSON.stringify({ pairedTbtDifference: summary.pairedTbtDifference, tbt: summary.metrics.tbtMs, lcp: summary.metrics.lcpMs, cls: summary.metrics.cls, evidence: path.join(reportRoot, 'metrics.json') }, null, 2)}\n`,
+    `${JSON.stringify({ pairedTbtDifference: summary.pairedTbtDifference, tbt: summary.metrics.tbtMs, lcp: summary.metrics.lcpMs, cls: summary.metrics.cls, evidence: metricsPath }, null, 2)}\n`,
   );
 }
 

@@ -224,7 +224,7 @@ async function loadShellPage(
     );
   });
   const startedAt = Date.now();
-  const route = `${routePath}?workspace=${encodeURIComponent(fixture.wsA.id)}${origin === afterOrigin ? '&glassShowcase=r4' : ''}`;
+  const route = `${routePath}?workspace=${encodeURIComponent(fixture.wsA.id)}`;
   const response = await page.goto(new URL(route, origin).toString(), {
     waitUntil: 'networkidle',
   });
@@ -1268,7 +1268,7 @@ test.describe('S21 Round 4 Stack B visual and performance evidence', () => {
     await enhancementPage.emulateMedia({ reducedMotion: 'reduce' });
     await enhancementPage.goto(
       new URL(
-        `${routePath}?workspace=${encodeURIComponent(fixture.wsA.id)}&glassShowcase=r4`,
+        `${routePath}?workspace=${encodeURIComponent(fixture.wsA.id)}`,
         afterOrigin,
       ).toString(),
       { waitUntil: 'networkidle' },
@@ -1409,7 +1409,7 @@ test.describe('S21 Round 4 Stack B visual and performance evidence', () => {
     const contrastPage = await contrastContext.newPage();
     await contrastPage.goto(
       new URL(
-        `${routePath}?workspace=${encodeURIComponent(fixture.wsA.id)}&glassShowcase=r4`,
+        `${routePath}?workspace=${encodeURIComponent(fixture.wsA.id)}`,
         afterOrigin,
       ).toString(),
       { waitUntil: 'networkidle' },
@@ -1449,7 +1449,7 @@ test.describe('S21 Round 4 Stack B visual and performance evidence', () => {
     });
     await prefPage.goto(
       new URL(
-        `${routePath}?workspace=${encodeURIComponent(fixture.wsA.id)}&glassShowcase=r4`,
+        `${routePath}?workspace=${encodeURIComponent(fixture.wsA.id)}`,
         afterOrigin,
       ).toString(),
       { waitUntil: 'networkidle' },

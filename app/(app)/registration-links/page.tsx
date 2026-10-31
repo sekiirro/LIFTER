@@ -16,7 +16,6 @@ export default async function RegistrationLinksPage({
 }: {
   searchParams: Promise<{
     workspace?: string | string[];
-    glassShowcase?: string | string[];
   }>;
 }) {
   const actor = await requireActor();
@@ -72,9 +71,6 @@ export default async function RegistrationLinksPage({
         workspaceId,
       )}
       locale={locale}
-      showGlassShowcase={
-        process.env.LIFTER_SHOWCASE === '1' && params.glassShowcase === 'r4'
-      }
     />
   );
 }
