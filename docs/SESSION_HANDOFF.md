@@ -1,45 +1,46 @@
 §0-S19-FINAL
-Snapshot: 2026-10-31 04:26Z. Main: 87f9b407431f69e358f41f91517c785e510cc871. Repository: PRIVATE. Docs branch was clean at cd0db8608fd28a62d95a4e7403877b4f3f64690b before this update.
+Snapshot: 2026-10-31 04:41Z. Main: 87f9b407431f69e358f41f91517c785e510cc871. Repository: PRIVATE. Docs branch was clean at cd0db8608fd28a62d95a4e7403877b4f3f64690b before this update.
 
 ### Lanes at snapshot
 
 | Lane | Branch | Worktree | Head SHA (live) | Status | Next step |
 |---|---|---|---|---|---|
-| F14 core PR #25 | 014-workspace-branding | LFTR-014 | 9272e3514fde036009a7e7772cc9b67dd8d40d51 | Clean; local and remote match. r6 completed 04:18:56Z after the supplied 04:20Z snapshot said it was running. Two new CodeRabbit findings remain; CI is not green. | Review r6, fix the two findings in one focused round, then run the single CI-window/merge gates. |
+| F14 core PR #25 | 014-workspace-branding | LFTR-014 | 9272e3514fde036009a7e7772cc9b67dd8d40d51 | Clean; local and remote match. r6 completed 04:18:56Z after the supplied 04:20Z snapshot said it was running. Two new CodeRabbit findings remain; CI is not green. r7 is queued for MiniMax. | Launch MiniMax queue #2 with pre-filtered threads when the MiniMax lane is free; review, then run the single CI-window/merge gates. |
 | F13 | 013-freeze-renewal-refunds | LFTR-013 | 6c4f8392e405fedf7b5d1b9c4f8266683d3dbb06 | Clean; parked until F14 merges. | After F14 merge, fix the stale quickstart range note, verify T017/full gates, then PR. |
 | F15 | 015-forms-intake | LFTR-p2 | 3be1289cccd42a7d2960c9d69d6aee561741e454 | Clean. r6/r6b accepted; waits for F14 and F13 merges. | After both merges, close T049/T006/T009/T046/T021/T023 and final gates, then PR. |
-| Hero prototype | 014-hero-prototype | LFTR-014-blend | e0b7d3bd0313b8b6e67830a89d5246fd7d5b52bb | Dirty: five modified prototype/test files plus untracked `AGENTS.md`. Pass 5 stopped for error contrast; nothing committed or pushed. | PO resolves the bright-desktop error treatment; then complete pass 5, audit/fix/review, and obtain visual approval. |
+| Hero prototype | 014-hero-prototype | LFTR-014-blend | e0b7d3bd0313b8b6e67830a89d5246fd7d5b52bb | Dirty: five modified prototype/test files plus untracked `AGENTS.md`. Pass 5 continuation PID 50260 is live, tuning adaptive dimming under architect ruling 2; no result yet. | Check PID/result and review; after commit, run MiniMax queue #3 read-only audit, Luna fixes, architect review, then PO visual approval. |
 | MiniMax full-Hero benchmark | bench/s19-minimax-hero | LFTR-bench-mm | db098cc465f9b4f7a083d92fccd835a5b83dddc3 | Dirty; preserved edits from the 429-failed run. Never push. | Keep until the PO says otherwise. |
 | MiniMax small benchmark | bench/s19-minimax-small | LFTR-bench-mm2 | 31c6e8c96f89bbf8830059dd3f8045336ea53933 | Clean; passed benchmark. Never push. | Keep until the PO says otherwise. |
 | Canonical main | main | repo remote | 87f9b407431f69e358f41f91517c785e510cc871 | Canonical remote. The local `LFTR` checkout is on dirty `009-packages` at `b359985`; its docs copy is not canonical. | Use the remote/canonical branches; do not treat local `LFTR/docs` as handoff state. |
 | Docs | docs-session-handoff | LFTR-handoff | cd0db8608fd28a62d95a4e7403877b4f3f64690b | Clean before this S19 update; remote matched at check. | Commit this S19 section and push only `docs-session-handoff`. |
 
-The live F14 SHA differs from the supplied as-of-04:20Z fact (`r6 running`): it is now `9272e35`, clean and pushed. The Hero SHA remains `e0b7d3b` with uncommitted pass-5 changes.
+The live F14 SHA differs from the supplied as-of-04:20Z fact (`r6 running`): it is now `9272e35`, clean and pushed. The Hero SHA remains `e0b7d3b` with uncommitted pass-5 changes; continuation PID 50260 is live.
 
-### S19 relay agents — live completion check
+### S19 relay agents — current state
 
-No PID in the supplied S19 RUNNING list remained live at 04:26Z. Both run directories now contain `result.json`; review the result and branch diff before any follow-up. Do not launch another writer against either worktree until that review is complete.
+Old PIDs 4332 and 33432 are finished and their `result.json` files exist. Hero continuation PID 50260 is live; its run directory exists and has no `result.json` at 04:41Z. Do not launch another writer against LFTR-014-blend until that run completes and is reviewed.
 
-| Lane | Supplied PID | Worktree | Thread | Run directory | Brief | Live result |
+| Lane | PID | Worktree | Thread | Run directory | Brief | Live result |
 |---|---:|---|---|---|---|---|
-| F14 PR #25 r6 | 4332 (not live) | LFTR-014 | 01a18ff7-34d2-7f20-8de3-8c79ff7031b9 | LFTR-014-2026-10-31T03-45-42-358Z | s19-codex-f14-r6.txt | completed, exit 0, finished 04:18:56Z; pushed `9272e35`; two new CodeRabbit findings reported; no merge. |
-| Hero pass 5 continuation | 33432 (not live) | LFTR-014-blend | 01a1900e-c1a8-71e0-969e-8d8683d75067 | LFTR-014-blend-2026-10-31T04-13-41-791Z | s19-hero-pass-5-implement.txt + s19-hero-pass-5-continue.txt | completed, exit 0, finished 04:20:59Z; required stop at 3.778/3.918:1; no full gates, commit, or push. |
+| F14 PR #25 r6 | 4332 (finished) | LFTR-014 | 01a18ff7-34d2-7f20-8de3-8c79ff7031b9 | LFTR-014-2026-10-31T03-45-42-358Z | s19-codex-f14-r6.txt | completed, exit 0, finished 04:18:56Z; pushed `9272e35`; two new CodeRabbit findings reported; no merge. |
+| Hero pass 5 initial continuation | 33432 (finished) | LFTR-014-blend | 01a1900e-c1a8-71e0-969e-8d8683d75067 | LFTR-014-blend-2026-10-31T04-13-41-791Z | s19-hero-pass-5-implement.txt + s19-hero-pass-5-continue.txt | completed, exit 0, finished 04:20:59Z; required stop at 3.778/3.918:1; no full gates, commit, or push. |
+| Hero pass 5 adaptive-dimming continuation | 50260 (live) | LFTR-014-blend | 01a1900e-c1a8-71e0-969e-8d8683d75067 | LFTR-014-blend-2026-10-31T04-21-30-702Z | s19-hero-pass-5-continue-2.txt | live; no `result.json` at check. Architect ruling 2: tune adaptive dimming for bright art until error text reaches >= 4.5:1 using the existing dark-theme token; no new token, chip, or text scrim. |
 
 ### Completed work
 
 - F14 r3 `a5959f0` was accepted (15 threads fixed/already fixed, Major draft-read security fix at migration `20261102150000`, 60/60 focused integration, 28/28 Playwright, no-JS 1/1, unit 1,685). r4 `072e908` was accepted (paths redacted; pushed BOM migration left unchanged under PO Option 1). r5 `8fbde31` was accepted (FR-009 partial/F14b scope; FR-001 PO global access).
 - F14 r6 pushed `9272e35`. Its result reports all 12 input findings addressed/resolved, unit 104 files/1,693 passed, lint/typecheck/build/build:edge passed, size passed, touched-file Prettier and `git diff --check` passed, fresh Stack B integration 3 files/12 passed, and `supabase-safe.test.mjs` 5/5. The one requested CodeRabbit review then reported two new findings; no CI window and no merge occurred.
 - F15 r6 `9521057` and r6b `3be1289` were accepted: persisted Builder, never-provisioned marker and generic configuration error, mutation killed, published-version and assignment-snapshot immutability, migrations `20261104022000`/`20261104023000`; Stack D 1,189 pass + 10 tracked T049; unit 1,752; Playwright 36.
-- Hero passes 3 `db098cc` and 4 `e0b7d3b` were accepted as prototype work. Pass 5 replaced filled error chips with inline text, removed the mobile white line, and targeted the focus ring/light-mode/card refinements, but stopped before full gates because the existing dark-theme error token measured below 4.5:1 on bright desktop artwork.
+- Hero passes 3 `db098cc` and 4 `e0b7d3b` were accepted as prototype work. Pass 5 replaced filled error chips with inline text, removed the mobile white line, and targeted the focus ring/light-mode/card refinements. Its first continuation stopped at 3.778/3.918:1; architect ruling 2 now directs adaptive-dimming tuning for bright art until the worst error-text composite is >= 4.5:1, using existing dark-theme token `#FCA5A5`, no new token/chip/scrim, approximately zero dimming for dark art, and unchanged dark mobile. Continuation PID 50260 is running.
 - MiniMax full-Hero benchmark failed on NVIDIA 429s (68 requests, 15 429s, 88 tool calls); its edits remain uncommitted in LFTR-bench-mm and must not be pushed. The small benchmark passed (17.9 min, 25 requests, 27 tool calls, one absorbed 429) at `31c6e8c` in LFTR-bench-mm2; neither benchmark branch is for pushing.
 
 ### Pending fixes and blockers
 
-- F14: fix `scripts/assert-storage-suite-zero-skips.mjs` so required files need actual passing Playwright results and expected failures are rejected; fix the two mojibake Arabic fixture strings in `tests/unit/branding-repository.test.ts`. Use one focused round and at most one new full CodeRabbit review for that round; do not request a redundant review on the same head.
+- F14: r7 is queued for MiniMax as queue #2, using `C:/Users/NEW LAP/.lifter/briefs/s19-mm-f14-r7.txt` and pre-filtered `s19-f14-r7-threads.txt`. The first attempt failed after 2.4 minutes from two-lane 429s plus a 400 context overflow caused by dumping all PR threads; LFTR-014 remains untouched at `9272e35`. All MiniMax briefs must pre-filter large inputs. The round must fix `scripts/assert-storage-suite-zero-skips.mjs` so required files need actual passing Playwright results and expected failures are rejected, and fix the two mojibake Arabic fixture strings in `tests/unit/branding-repository.test.ts`. Use at most one new full CodeRabbit review for the completed round; do not request a redundant review on the same head.
 - F14: upload and banner alt-text editor UI are deliberately deferred to F14b. Keep FR-009 marked partially complete; do not expand PR #25 with that UI.
 - F13: after F14 merges, correct the stale quickstart migration-range note, re-verify T017 and all required gates, then open the PR.
 - F15: after F14 and F13 merge, close tracked T049 plus T006/T009/T046/T021/T023, then run final gates before its PR.
-- Hero: the architect-ruled existing dark-theme error token still measured 3.778:1 (AR) and 3.918:1 (EN) on bright desktop artwork. Report to the PO and obtain a treatment decision before continuing. Then complete the full pass-5 gates and AR/EN, light/dark, mobile/desktop screenshots; run a fresh-thread independent read-only Luna design/UI/UX audit; fix findings; perform architect full-size screenshot review; then request PO visual approval. No PR before approval.
+- Hero: do not wait for a PO treatment decision. Continuation PID 50260 is tuning the adaptive dimming curve for bright art until the worst composite meets >= 4.5:1 for error text, using the existing dark-theme error token `#FCA5A5`; no new token, no chip, and no text scrim. Dark art remains approximately undimmed; dark mobile is unchanged. Check PID/result and review the run, then complete full pass-5 gates and AR/EN, light/dark, mobile/desktop screenshots. After Hero commits, MiniMax queue #3 performs the independent read-only design/UI/UX audit (findings only); Luna fixes findings; the architect performs the full-size review; then request PO visual approval. The PO may override the slightly darker card on very bright desktop art at approval. No PR before approval.
 - Security records: once no live run needs the files, redact/rescan the eight deferred S17 logs using `redact-files.mjs` and `inventory.mjs`; filenames are in `~/.lifter/reports/s17-security-local-keys.md` section F. Check Stack D `vault.secrets` created_at/updated_at metadata after F15 releases Stack D.
 
 ### CodeRabbit, CI, and merge gates
@@ -54,14 +55,14 @@ Merge requires, on the exact head: CodeRabbit APPROVED; 0 unresolved threads; CI
 - F14b deferral: upload and alt-text editor UI move to F14b; FR-009 is partial, not finished; F14b starts immediately after F14 merges in parallel with F13/F15; preserve quality gates and explicit PO merge approval. Source: `C:/Users/NEW LAP/.lifter/briefs/s19-po-msg-f14b-upload-deferral.txt`.
 - Hero premium refinement items 1-8 and workflow: Luna implementation, independent design/UI/UX audit, fixes, Claude review, detailed AR/EN light/dark mobile/desktop screenshots, then PO approval; no PR/merge before approval. Source: `C:/Users/NEW LAP/.lifter/briefs/s19-po-msg-hero-premium-refinement.txt`.
 - The three messages are appended verbatim under “Session 19 PO decisions” in `C:/Users/NEW LAP/.lifter/briefs/s13-po-decisions-2026-10-29.md`; all earlier PO decisions remain binding.
-- Routing: Codex Luna High is default for complex/security/architecture/long UI. MiniMax M3.1 Flash via Pi + pi-delegate is active for short bounded non-sensitive tasks, one MiniMax lane at a time; OpenCode GLM 5.3/Big Pickle is the Codex-quota fallback, with sensitive work code-only/local-commit only. Beam is cancelled; Sol Medium requires PO approval. Source: `C:/Users/NEW LAP/.claude/projects/c--Users-NEW-LAP-Desktop-LFTR/memory/lifter-delegation-priority.md`.
+- Routing: PO S19 latest gives MiniMax the maximum workload share and keeps it active in every implementation round whenever suitable non-sensitive work exists. MiniMax owns substantial coding (features, UI, refactors, tests, docs, and CodeRabbit rounds on non-sensitive files) in 45-60 minute chunks with local commits. Luna High mainly handles complex/security-critical work: security, Auth, DB/RLS/definer, migrations, finance, complex architecture, secrets, or DB stacks. One MiniMax lane is the default; start a second only after >=10 minutes at <5% 429s, staggered by >=5 minutes, and return to one lane if any run exceeds 10% 429s (two lanes at 04:22Z produced 6/13 429s). Queue: `C:/Users/NEW LAP/.lifter/briefs/minimax-queue.md`; performance log: `C:/Users/NEW LAP/.lifter/model-performance-log.md`. OpenCode GLM 5.3/Big Pickle remains the Codex-quota fallback, with sensitive work code-only/local-commit only. Beam is cancelled; Sol Medium requires PO approval. Source: `C:/Users/NEW LAP/.claude/projects/c--Users-NEW-LAP-Desktop-LFTR/memory/lifter-delegation-priority.md`.
 - MiniMax always uses the highest supported reasoning; effective level is `high` (Pi clamps `max` to high). NVIDIA retry is 10s exponential, five attempts, Retry-After honoured up to 120s. Source: `C:/Users/NEW LAP/.claude/projects/c--Users-NEW-LAP-Desktop-LFTR/memory/lifter-minimax-max-reasoning.md`.
 - Context policy: at a round boundary, use a fresh thread plus complete lane handoff when context is over 60% or compactions are at least 8; otherwise resume. Source: `C:/Users/NEW LAP/.claude/projects/c--Users-NEW-LAP-Desktop-LFTR/memory/lifter-agent-context-policy.md`.
 - Every new migration filename must be a unique valid UTC `YYYYMMDDHHMMSS` timestamp with HH<=23, MM<=59, SS<=59. Never rewrite pushed migration history. Source: `C:/Users/NEW LAP/.claude/projects/c--Users-NEW-LAP-Desktop-LFTR/memory/lifter-migration-timestamp-validity.md`.
 
 ### PO pending
 
-Hero visual approval and the bright-desktop error-contrast treatment decision; F14 DRAFT copy (27 keys plus `branding.workspaceLoading` and `branding.nameRequired`); F15 DRAFT copy (including `forms.staffDefaultConfigurationError` and `forms.staffResult.default_selected`); T&C AR/EN; sex labels; Q3 alert channel; and explicit exact-SHA approval for every merge.
+Hero visual approval (the PO may override the slightly darker card on very bright desktop art at approval); F14 DRAFT copy (27 keys plus `branding.workspaceLoading` and `branding.nameRequired`); F15 DRAFT copy (including `forms.staffDefaultConfigurationError` and `forms.staffResult.default_selected`); T&C AR/EN; sex labels; Q3 alert channel; and explicit exact-SHA approval for every merge.
 
 ### Migration lanes and maxima
 
@@ -76,14 +77,14 @@ All new migration filenames must be valid UTC timestamps; existing pushed invali
 
 ### Session 20 next actions
 
-1. Review completed F14 r6 and Hero pass-5 results/diffs before launching follow-ups. For F14, fix the two new CodeRabbit findings in one focused round with one review request. For Hero, report the 3.778/3.918:1 desktop failure and obtain the PO's treatment decision.
-2. F14 only: run the single CI-public-window agent on the final exact SHA, restore PRIVATE, verify CodeRabbit APPROVED + 0 unresolved + CI green + architect review, obtain explicit PO exact-SHA approval, then `gh pr merge --match-head-commit` and keep the branch.
-3. Immediately after F14 merges, start F14b (upload + banner alt-text editor UI, design gate) in parallel with F13/F15.
-4. Resume F13 after F14 merges; fix the stale quickstart range note, verify T017/full gates, then open its PR.
-5. After F14 and F13 merge, resume F15; close T049/T006/T009/T046/T021/T023, run final gates, then open its PR.
-6. After the Hero treatment decision, complete pass 5, then use a fresh thread for the independent read-only Luna design-skill audit; fix findings; architect-review full-size screenshots; send detailed AR/EN, light/dark, mobile/desktop screenshots to the PO. No PR before explicit PO visual approval.
-7. After runs end, redact/rescan the eight deferred logs; inspect Stack D vault metadata when free. Keep both MiniMax benchmark worktrees until the PO says otherwise.
-8. Preserve merge order F14 -> F13 -> F15 and require a new PO exact-SHA approval after every SHA change.
+1. Check Hero continuation PID 50260 and `result.json` in run `LFTR-014-blend-2026-10-31T04-21-30-702Z`; review the adaptive-dimming result and diff. Do not launch a second writer in LFTR-014-blend while it is live.
+2. Launch MiniMax queue #2 (F14 r7) as soon as no other MiniMax lane is running, using the pre-filtered brief/threads; do not dump all PR threads into a MiniMax context.
+3. After Hero commits, launch MiniMax queue #3 for the independent read-only design/UI/UX audit (findings only); then Luna fixes findings, the architect performs the full-size screenshot review, and the PO gives visual approval.
+4. Review F14 r7, run the single CI-public-window agent on the final exact SHA, restore PRIVATE, verify CodeRabbit APPROVED + 0 unresolved + CI green + architect review, obtain explicit PO exact-SHA approval, then `gh pr merge --match-head-commit` and keep the branch.
+5. Immediately after F14 merges, start F14b (upload + banner alt-text editor UI, design gate) in parallel with F13/F15.
+6. Resume F13 after F14 merges; fix the stale quickstart range note, verify T017/full gates, then open its PR.
+7. After F14 and F13 merge, resume F15; close T049/T006/T009/T046/T021/T023, run final gates, then open its PR.
+8. After runs end, redact/rescan the eight deferred logs; inspect Stack D vault metadata when free. Keep both MiniMax benchmark worktrees until the PO says otherwise. Preserve merge order F14 -> F13 -> F15 and require a new PO exact-SHA approval after every SHA change.
 
 Decision source: `C:/Users/NEW LAP/.lifter/briefs/s13-po-decisions-2026-10-29.md` Session 19 sections plus the three S19 source messages named above. §0-S18-FINAL and older sections remain below unchanged.
 
