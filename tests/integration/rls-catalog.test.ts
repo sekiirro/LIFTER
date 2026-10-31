@@ -710,6 +710,10 @@ describe('registration security catalog', () => {
       expect(r).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
       const policies =
         await db`select cmd,qual,roles,with_check from pg_policies where schemaname='public' and tablename=${table}`;
+      // Count every policy, including any granted TO PUBLIC: PostgreSQL applies
+      // such policies to authenticated users too, so a stray permissive policy
+      // must fail before the role-filtered assertions below run.
+      expect(policies).toHaveLength(table === 'registration_links' ? 2 : 1);
       const apiPolicies = policies.filter((policy) =>
         policy.roles.includes('authenticated'),
       );
