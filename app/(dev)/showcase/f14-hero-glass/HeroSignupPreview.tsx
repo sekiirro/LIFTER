@@ -322,7 +322,7 @@ export function HeroSignupPreview({
           <label className={styles.field}>
             <span>{messages['clientSignup.phone']}</span>
             <span
-              className={`${styles.phoneNumber} ${prototypeStyles.fieldControl} ${glass.liquidGlassEdge}`}
+              className={`${styles.phoneNumber} ${prototypeStyles.phoneNumber} ${prototypeStyles.fieldControl} ${glass.liquidGlassEdge}`}
               data-error={phoneError || undefined}
             >
               <span aria-hidden="true" data-testid="country-calling-code">

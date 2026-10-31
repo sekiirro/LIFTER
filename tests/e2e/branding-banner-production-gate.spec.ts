@@ -14,6 +14,8 @@ test('F14 hero prototype and artwork guidance are unavailable in production', as
     '/showcase/f14-hero-glass',
     '/showcase/f14-hero-glass?material=B',
     '/showcase/f14-hero-glass/guidance',
+    '/showcase/f14-hero-glass/artwork/desktop',
+    '/showcase/f14-hero-glass/artwork/mobile',
   ]) {
     const response = await page.goto(path);
     expect(response?.status(), path).toBe(404);

@@ -55,11 +55,25 @@ export default async function HeroPrototypePage({
   const messages = getMessages(locale);
   const fixture = parseFixture(query.fixture);
   const tone = fixture === 'bright' ? 'bright' : 'dark';
+  const generatedDesktop = '/showcase/f14-hero-glass/artwork/desktop';
+  const generatedMobile = '/showcase/f14-hero-glass/artwork/mobile';
   let artwork: HeroArtwork = {};
   if (fixture === 'desktop-only') {
-    artwork = { desktop: createF14HeroArtwork('desktop', tone) };
+    artwork = {
+      desktop:
+        tone === 'dark'
+          ? generatedDesktop
+          : createF14HeroArtwork('desktop', tone),
+    };
   } else if (fixture === 'mobile-only') {
-    artwork = { mobile: createF14HeroArtwork('mobile', tone) };
+    artwork = {
+      mobile:
+        tone === 'dark'
+          ? generatedMobile
+          : createF14HeroArtwork('mobile', tone),
+    };
+  } else if (fixture === 'dark') {
+    artwork = { desktop: generatedDesktop, mobile: generatedMobile };
   } else if (fixture !== 'none') {
     artwork = {
       desktop: createF14HeroArtwork('desktop', tone),

@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3216';
+const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 const output = join(
   tmpdir(),
   `lifter-f14-liquid-glass-redesign-${process.pid}-${Date.now()}`,
@@ -20,7 +20,10 @@ type Group =
   | 'combobox'
   | 'fallbacks'
   | 'accessibility'
-  | 'references';
+  | 'references'
+  | 'gap-mocks'
+  | 'composition'
+  | 'artwork';
 const captures: Array<{ path: string; label: string; group: Group }> = [];
 const contrastEvidence: Array<Record<string, unknown>> = [];
 const focusEvidence: Array<Record<string, unknown>> = [];
@@ -366,10 +369,10 @@ async function measureTextContrast(page: Page, label: string) {
       for (const target of targets) {
         const { x, y, width, height } = target.rect;
         if (target.key === 'field-edge' || target.key === 'error-edge') {
-          const sample = (sampleY: number) => {
+          const sample = (sampleX: number, sampleY: number) => {
             const px = Math.max(
               0,
-              Math.min(canvas.width - 1, Math.round((x + width / 2) * 2)),
+              Math.min(canvas.width - 1, Math.round(sampleX * 2)),
             );
             const py = Math.max(
               0,
@@ -396,11 +399,25 @@ async function measureTextContrast(page: Page, label: string) {
             const b = light(second);
             return (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
           };
-          const edgeY = target.key === 'error-edge' ? y - 3 : y + 0.5;
-          const edge = sample(edgeY);
-          values[target.key] = Math.min(
-            ratio(edge, sample(edgeY - 2)),
-            ratio(edge, sample(edgeY + 2)),
+          if (target.key === 'error-edge') {
+            const edgeX = x + 1;
+            const edgeY = y + height / 2;
+            const edge = sample(edgeX, edgeY);
+            values[target.key] = Math.min(
+              ratio(edge, sample(x - 2, edgeY)),
+              ratio(edge, sample(x + 3, edgeY)),
+            );
+            continue;
+          }
+          values[target.key] = Math.max(
+            ...[0.25, 0.5, 0.75, 1, 1.25, 1.5, 1.75].map((offset) => {
+              const edgeY = y + offset;
+              const edge = sample(x + width / 2, edgeY);
+              return Math.min(
+                ratio(edge, sample(x + width / 2, edgeY - 2)),
+                ratio(edge, sample(x + width / 2, edgeY + 2)),
+              );
+            }),
           );
           continue;
         }
@@ -580,7 +597,14 @@ async function measureFieldBoundaries(page: Page, label: string) {
     });
   });
   expect(targets).toHaveLength(5);
-  const screenshot = await page.screenshot({ fullPage: true, scale: 'device' });
+  await mkdir(output, { recursive: true });
+  const screenshotPath = join(output, `${label}.png`);
+  const screenshot = await page.screenshot({
+    path: screenshotPath,
+    fullPage: true,
+    scale: 'device',
+  });
+  captures.push({ path: screenshotPath, label, group: 'states' });
   const { data, info } = await sharp(screenshot)
     .raw()
     .toBuffer({ resolveWithObject: true });
@@ -631,31 +655,46 @@ async function measureFocusRingContrast(page: Page, label: string) {
       width: style.borderTopWidth,
       style: style.borderTopStyle,
       color: style.borderTopColor,
+      radius: style.borderTopLeftRadius,
+      fieldRadius: getComputedStyle(element).borderTopLeftRadius,
     };
   });
   expect(ringStyle.width).toBe('2px');
   expect(ringStyle.style).toBe('solid');
-  const screenshot = await page.screenshot({ fullPage: true, scale: 'device' });
+  expect(Number.parseFloat(ringStyle.radius)).toBeGreaterThan(0);
+  expect(Number.parseFloat(ringStyle.radius)).toBeCloseTo(
+    Number.parseFloat(ringStyle.fieldRadius) + 2,
+    1,
+  );
+  await mkdir(output, { recursive: true });
+  const screenshotPath = join(output, `${label}.png`);
+  const screenshot = await page.screenshot({
+    path: screenshotPath,
+    fullPage: true,
+    scale: 'device',
+  });
+  captures.push({ path: screenshotPath, label, group: 'states' });
   const { data, info } = await sharp(screenshot)
     .raw()
     .toBuffer({ resolveWithObject: true });
-  const sample = (y: number) => {
-    const x = Math.max(
-      0,
-      Math.min(info.width - 1, Math.round((bounds.x + bounds.width / 2) * 2)),
-    );
+  const sample = (x: number, y: number) => {
+    const pixelX = Math.max(0, Math.min(info.width - 1, Math.round(x * 2)));
     const pixelY = Math.max(0, Math.min(info.height - 1, Math.round(y * 2)));
-    const offset = (pixelY * info.width + x) * info.channels;
+    const offset = (pixelY * info.width + pixelX) * info.channels;
     return [data[offset]!, data[offset + 1]!, data[offset + 2]!];
   };
-  const ring = sample(bounds.y - 1);
-  const keyline = sample(bounds.y - 3);
+  const sampleY = bounds.y + bounds.height / 2;
+  const ring = sample(bounds.x + 1, sampleY);
+  const keyline = sample(bounds.x - 1, sampleY);
   const ratio = contrast(
     luminance(ring[0]!, ring[1]!, ring[2]!),
     luminance(keyline[0]!, keyline[1]!, keyline[2]!),
   );
   focusEvidence.push({ label, ring, keyline, ringStyle, contrast: ratio });
-  expect(ratio, `${label} focus ring contrast`).toBeGreaterThanOrEqual(3);
+  expect(
+    ratio,
+    `${label} focus ring contrast ${JSON.stringify({ bounds, ring, keyline, ringStyle })}`,
+  ).toBeGreaterThanOrEqual(3);
   return ratio;
 }
 
@@ -771,8 +810,20 @@ async function measureMobileFade(page: Page, label: string) {
 
 test('Liquid Glass redesign matrix, localized form states, contrast, geometry, and PO evidence', async ({
   browser,
+  request,
 }) => {
   await mkdir(output, { recursive: true });
+
+  for (const orientation of ['desktop', 'mobile'] as const) {
+    const response = await request.get(
+      `${origin}/showcase/f14-hero-glass/artwork/${orientation}`,
+    );
+    expect(response.status(), `${orientation} generated artwork route`).toBe(
+      200,
+    );
+    expect(response.headers()['content-type']).toContain('image/webp');
+    expect((await response.body()).byteLength).toBeGreaterThan(100_000);
+  }
 
   for (const locale of ['ar', 'en'] as const) {
     for (const theme of ['light', 'dark'] as const) {
@@ -787,6 +838,46 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
         });
         const card = page.getByTestId('hero-glass-card');
         await assertVisibleLabels(page, `${locale}-${theme}-${size.label}`);
+        const loadedArtwork = await page
+          .locator('[data-hero-image]')
+          .evaluate((image) => (image as HTMLImageElement).currentSrc);
+        expect(
+          loadedArtwork,
+          `${locale}-${theme}-${size.label} artwork`,
+        ).toContain(
+          `/showcase/f14-hero-glass/artwork/${size.width === 390 ? 'mobile' : 'desktop'}`,
+        );
+        const radii = await page.evaluate(() => {
+          const control = (selector: string) =>
+            document.querySelector<HTMLElement>(selector)?.parentElement ??
+            null;
+          const entries: Record<string, string> = {};
+          const targets: Array<[string, HTMLElement | null]> = [
+            ['name', control('input[name="name"]')],
+            ['email', control('input[name="email"]')],
+            ['country', control('#hero-country-input')],
+            ['phone', control('input[name="phone-national"]')],
+            ['password', control('input[name="password"]')],
+            ['submit', document.querySelector<HTMLElement>('form > button')],
+            [
+              'card',
+              document.querySelector<HTMLElement>(
+                '[data-testid="hero-glass-card"]',
+              ),
+            ],
+          ];
+          for (const [key, element] of targets) {
+            if (!element) throw new Error(`Radius target unavailable: ${key}`);
+            entries[key] = getComputedStyle(element).borderTopLeftRadius;
+          }
+          return entries;
+        });
+        for (const [key, radius] of Object.entries(radii)) {
+          expect(
+            Number.parseFloat(radius),
+            `${locale}-${theme}-${size.label} ${key} radius`,
+          ).toBeGreaterThan(0);
+        }
         const nestedBackdrop = await page
           .locator('input[name="name"]')
           .locator('xpath=..')
@@ -837,7 +928,7 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
             };
           });
           expect(cardStyle.border).toMatch(/0px/);
-          expect(cardStyle.backdrop).toContain('12px');
+          expect(cardStyle.backdrop).toContain('8px');
           expect(cardStyle.edge).toContain('linear-gradient');
           expect(cardStyle.mask).toContain('exclude');
         }
@@ -908,15 +999,47 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
     const dimensions = await page.evaluate(() => ({
       viewport: window.innerHeight,
       document: document.documentElement.scrollHeight,
-      card: document
-        .querySelector('[data-testid="hero-glass-card"]')!
-        .getBoundingClientRect().height,
+      card: (() => {
+        const bounds = document
+          .querySelector('[data-testid="hero-glass-card"]')!
+          .getBoundingClientRect();
+        return { width: bounds.width, height: bounds.height };
+      })(),
     }));
     geometryEvidence.push({
       label: `desktop-fit-${size.width}x${size.height}`,
       ...dimensions,
     });
     expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport + 1);
+    if (size.width === 1440)
+      expect(dimensions.card.width).toBeGreaterThanOrEqual(480);
+    if (size.width === 1280 || size.width === 1366)
+      await capture(
+        page,
+        `desktop-fit-${size.width}x${size.height}`,
+        'composition',
+      );
+    await close();
+  }
+
+  for (const size of [
+    { width: 1440, height: 900, label: 'desktop' },
+    { width: 390, height: 844, label: 'mobile' },
+  ]) {
+    const { page, close } = await open(browser, {
+      width: size.width,
+      height: size.height,
+      theme: 'dark',
+      locale: 'en',
+      fixture: 'dark',
+    });
+    await page.addStyleTag({
+      content: `
+        [data-testid="registration-panel"] { display: none !important; }
+        [class*="mobileFade"] { display: none !important; }
+      `,
+    });
+    await capture(page, `hero-art-only-${size.label}`, 'artwork');
     await close();
   }
 
@@ -971,28 +1094,65 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
     expect(focused.width).toBe('2px');
     expect(focused.style).toBe('solid');
     expect(focused.ring).toBe('rgb(5, 150, 105)');
-    await page.locator('input[name="phone-national"]').fill('123');
-    await page.locator('form button[type="submit"]').click();
-    await expect(page.locator('input[name="phone-national"]')).toHaveAttribute(
-      'aria-invalid',
-      'true',
-    );
-    await expect(page.locator('input[name="phone-national"]')).toHaveAttribute(
-      'aria-describedby',
-      'hero-phone-error',
-    );
-    await expect(page.locator('#hero-phone-error')).toBeVisible();
-    await expect(page.locator('#hero-phone-error')).not.toHaveText('');
-    await axe(page, `error-state-${theme}`);
-    await measureTextContrast(page, `error-dark-art-${theme}-desktop`);
-    await capture(page, `input-error-${theme}`, 'states', {
-      locator: 'form label:has(input[name="phone-national"])',
-    });
-    const errorColor = await page
-      .locator('#hero-phone-error')
-      .evaluate((element) => getComputedStyle(element).color);
-    expect(errorColor).not.toBe('rgba(0, 0, 0, 0)');
     await close();
+
+    for (const locale of ['ar', 'en'] as const) {
+      const errorRun = await open(browser, {
+        width: 1440,
+        height: 900,
+        locale,
+        theme,
+      });
+      const phone = errorRun.page.locator('input[name="phone-national"]');
+      await phone.fill('123');
+      await errorRun.page.locator('form button[type="submit"]').click();
+      await expect(phone).toHaveAttribute('aria-invalid', 'true');
+      await expect(phone).toHaveAttribute(
+        'aria-describedby',
+        'hero-phone-error',
+      );
+      await expect(errorRun.page.locator('#hero-phone-error')).toBeVisible();
+      await expect(errorRun.page.locator('#hero-phone-error')).not.toHaveText(
+        '',
+      );
+      const edge = await phone.evaluate((input) => {
+        const wrapper = input.parentElement!;
+        const style = getComputedStyle(wrapper);
+        return {
+          width: style.borderTopWidth,
+          style: style.borderTopStyle,
+          outline: style.outlineStyle,
+          rim: getComputedStyle(wrapper, '::before').display,
+          radius: style.borderTopLeftRadius,
+        };
+      });
+      expect(edge.width).toBe('2px');
+      expect(edge.style).toBe('solid');
+      expect(edge.outline).toBe('none');
+      expect(edge.rim).toBe('none');
+      expect(edge.radius).not.toBe('0px');
+      const restingRadius = await errorRun.page
+        .locator('input[name="name"]')
+        .evaluate(
+          (input) => getComputedStyle(input.parentElement!).borderTopLeftRadius,
+        );
+      expect(edge.radius, `${locale}-${theme} error edge radius`).toBe(
+        restingRadius,
+      );
+      await axe(errorRun.page, `error-state-${locale}-${theme}`);
+      await measureTextContrast(
+        errorRun.page,
+        `error-dark-art-${locale}-${theme}-desktop`,
+      );
+      await capture(errorRun.page, `input-error-${locale}-${theme}`, 'states', {
+        locator: 'form label:has(input[name="phone-national"])',
+      });
+      const errorColor = await errorRun.page
+        .locator('#hero-phone-error')
+        .evaluate((element) => getComputedStyle(element).color);
+      expect(errorColor).not.toBe('rgba(0, 0, 0, 0)');
+      await errorRun.close();
+    }
   }
 
   for (const theme of ['light', 'dark'] as const) {
@@ -1070,16 +1230,54 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
           x: bounds.x,
         };
       }),
+      phoneInput.evaluate((element) => {
+        const style = getComputedStyle(element.parentElement!);
+        return {
+          start: Number.parseFloat(style.paddingInlineStart),
+          end: Number.parseFloat(style.paddingInlineEnd),
+          gap: Number.parseFloat(style.columnGap),
+        };
+      }),
     ]);
-    expect(spacing[0].start).toBeGreaterThan(0);
-    expect(spacing[0].end).toBeGreaterThan(0);
-    expect(spacing[1].start).toBeGreaterThan(0);
-    expect(spacing[1].end).toBeGreaterThan(0);
+    expect(spacing[0].start).toBe(0);
+    expect(spacing[0].end).toBe(0);
+    expect(spacing[1].start).toBe(0);
+    expect(spacing[1].end).toBe(0);
+    expect(spacing[2].start).toBeGreaterThan(0);
+    expect(spacing[2].end).toBeGreaterThan(0);
     expect(
       locale === 'ar'
         ? spacing[0].x > spacing[1].x
         : spacing[0].x < spacing[1].x,
     ).toBe(true);
+    await phoneInput.fill('1234567');
+    const phoneGap = await page.evaluate(() => {
+      const prefixElement = document.querySelector<HTMLElement>(
+        '[data-testid="country-calling-code"]',
+      );
+      const inputElement = document.querySelector<HTMLInputElement>(
+        'input[name="phone-national"]',
+      );
+      const wrapper = inputElement?.parentElement;
+      if (!prefixElement || !inputElement || !wrapper)
+        throw new Error('Phone group geometry unavailable');
+      const prefixRect = prefixElement.getBoundingClientRect();
+      const inputRect = inputElement.getBoundingClientRect();
+      const direction = getComputedStyle(wrapper).direction;
+      const gap =
+        direction === 'rtl'
+          ? prefixRect.left - inputRect.right
+          : inputRect.left - prefixRect.right;
+      const probe = document.createElement('span');
+      probe.style.gap = 'var(--space-2)';
+      document.body.append(probe);
+      const expected = Number.parseFloat(getComputedStyle(probe).gap);
+      probe.remove();
+      return { gap, expected, direction, value: inputElement.value };
+    });
+    expect(phoneGap.value).toBe('1234567');
+    expect(phoneGap.direction).toBe(locale === 'ar' ? 'rtl' : 'ltr');
+    expect(Math.abs(phoneGap.gap - phoneGap.expected)).toBeLessThanOrEqual(1);
     await country.focus();
     const list = page.getByRole('listbox');
     await expect(list).toBeVisible();
@@ -1097,6 +1295,13 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
     expect(bounds!.x).toBeGreaterThanOrEqual(0);
     expect(bounds!.x + bounds!.width).toBeLessThanOrEqual(390);
     expect(bounds!.y + bounds!.height).toBeLessThanOrEqual(844);
+    const listRadius = await list.evaluate(
+      (element) => getComputedStyle(element).borderTopLeftRadius,
+    );
+    expect(
+      Number.parseFloat(listRadius),
+      `combobox-${locale} list radius`,
+    ).toBeGreaterThan(0);
     await axe(page, `combobox-open-${locale}`);
     await capture(page, `country-open-${locale}`, 'combobox', {
       locator: 'body',
@@ -1154,6 +1359,57 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
       await close();
     }
   }
+
+  const noImageOptions = await open(browser, {
+    width: 1440,
+    height: 900,
+    theme: 'light',
+    fixture: 'none',
+  });
+  await capture(
+    noImageOptions.page,
+    'no-image-option-1-keep-right',
+    'gap-mocks',
+  );
+  await noImageOptions.page.addStyleTag({
+    content: `
+      [data-fixture="none"] [class*="glassFrame"] {
+        inset-inline-start: 50%;
+        right: auto;
+        transform: translate(-50%, -50%);
+      }
+    `,
+  });
+  await capture(
+    noImageOptions.page,
+    'no-image-option-2-center-card',
+    'gap-mocks',
+  );
+  await noImageOptions.page.addStyleTag({
+    content: `
+      [data-fixture="none"] [class*="glassFrame"] {
+        inset-inline-start: auto;
+        right: clamp(1.5rem, 4vw, 4rem);
+        transform: translateY(-50%);
+      }
+      [data-fixture="none"]::before {
+        position: absolute;
+        z-index: 1;
+        inset: 12% auto 12% 5%;
+        inline-size: min(30vw, 26rem);
+        border-radius: var(--radius-card);
+        background: var(--hero-toned-substrate);
+        box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+        content: '';
+      }
+    `,
+  });
+  await capture(
+    noImageOptions.page,
+    'no-image-option-3-tonal-panel-left',
+    'gap-mocks',
+  );
+  await noImageOptions.close();
 
   const reduced = await open(browser, {
     width: 1440,
@@ -1305,6 +1561,9 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
     ['fallbacks', 'contact-no-image.png', 2],
     ['accessibility', 'contact-accessibility.png', 3],
     ['references', 'contact-reference-comparison.png', 2],
+    ['gap-mocks', 'contact-no-image-layout-options.png', 3],
+    ['composition', 'contact-desktop-fit.png', 2],
+    ['artwork', 'contact-hero-art-only.png', 2],
   ] as const) {
     const path = await contactSheet(group, name, columns);
     if (path) contactPaths.push(path);
