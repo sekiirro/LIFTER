@@ -153,7 +153,7 @@ export function BrandEditor({
             {m['branding.uploadGuidancePrefix']}
             <Bidi dir="ltr">{m['branding.uploadGuidanceFormats']}</Bidi>{' '}
             {m['branding.uploadDimensionPrefix']}
-            <Bidi dir="ltr">2100 × 1050 px</Bidi>
+            <Bidi dir="ltr">2100 × 1050</Bidi>
             {m['branding.uploadDimensionSuffix']}
             <Bidi dir="ltr">3.63:1</Bidi>
             {m['branding.uploadGuidanceSuffix']}
