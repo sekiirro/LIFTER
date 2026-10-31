@@ -34,7 +34,7 @@ Pure function `lib/plans/workout/volume.ts` over the document + snapshots; secon
 
 ### Export
 
-`lib/plans/export/` shared module (also used by F18): print route rendering a selected version with RTL print CSS; ExcelJS workbook built in the browser from the version API response. Version selection is explicit; draft exports are watermarked DRAFT.
+`lib/plans/export/` shared module (also used by F18): print route rendering a selected published version with RTL print CSS; ExcelJS workbook built in the browser from the published-version API response. Version selection is explicit; drafts are not exportable (FR-011, D17-8=A).
 
 ### Authorization
 

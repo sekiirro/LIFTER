@@ -37,11 +37,11 @@ A Trainer, WO or PO adds a workspace-specific video reference or note to a globa
 
 Any staff member with `coaching_work` adds a food to the global database immediately (no moderation queue), with structured nutrition per reference quantity and serving units. Validation and duplicate detection prevent invalid or duplicate entries without bureaucracy.
 
-**Independent Test**: Add a valid food (immediately searchable by all coaching staff of all workspaces); attempt an invalid food (rejected with field errors) and an exact duplicate (blocked, pointing to the existing food); attempt a near-duplicate (warned, explicit confirm allowed).
+**Independent Test**: Add a valid food (immediately searchable by all coaching staff of all workspaces); attempt an invalid food with negative values (rejected with field errors) and an exact duplicate (blocked, pointing to the existing food); attempt a near-duplicate (warned, explicit confirm allowed); submit a 4/4/9 kcal discrepancy beyond the approved tolerance and verify a warning appears while the food saves.
 
 **Acceptance Scenarios**:
 1. **Given** a Trainer, **When** they add a food with AR and/or EN name, per-100 g (or per-100 ml) calories, protein, carbohydrate and fat, and at least one serving unit with a gram (or ml) equivalent, **Then** the food is immediately available globally as version 1.
-2. **Given** negative values, macro grams exceeding the reference quantity, or calories inconsistent with 4/4/9 beyond the approved tolerance, **When** submitted, **Then** it is rejected with field-level bilingual errors and nothing is written.
+2. **Given** negative values or macro grams exceeding the reference quantity, **When** submitted, **Then** it is rejected with field-level bilingual errors and nothing is written. **Given** calories inconsistent with 4/4/9 beyond `max(20 kcal, 10% of stated kcal)`, **When** submitted, **Then** a field-level warning appears and the food saves if all other validation passes (PO S20 Message B section 1, D16-5).
 3. **Given** a food whose normalized name and basis match an existing active food, **When** submitted, **Then** creation is blocked and the existing food is offered; **Given** a near match (similar name, macros within tolerance), **Then** a warning lists candidates and creation proceeds only on explicit confirmation.
 4. **Given** any global food, **When** viewed by non-PO staff, **Then** no creator identity or workspace of origin is disclosed (Invariant 1).
 

@@ -95,7 +95,7 @@ Staff export a selected published version (published versions only, with every e
 
 ### Key Entities
 
-WorkoutPlan (workspace, client), WorkoutPlanDraft (document JSONB, revision, ready_at/ready_by), WorkoutPlanVersion (immutable JSONB, schema_version, version, published_at/by), WorkoutTemplate (scope global|workspace) + WorkoutTemplateVersion, PlatformWorkoutDefaults (PO, versioned).
+WorkoutPlan (workspace, client), WorkoutPlanDraft (document JSONB, revision, ready_at/ready_by), WorkoutPlanVersion (immutable JSONB, schema_version, version, published_at/by), WorkoutTemplate (scope global|workspace) + WorkoutTemplateVersion, and the per-exercise defaults stored on F16 exercise catalog entries (loaded when an exercise is added; coach-overridable per plan).
 
 ## Success Criteria _(mandatory)_
 

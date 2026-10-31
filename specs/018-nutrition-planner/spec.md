@@ -20,7 +20,7 @@ A Trainer, WO or PO builds a client's nutrition plan from global foods: meals wi
 **Independent Test**: Build a 7-day plan with high/low carb day types and a pre-workout meal flagged training-days-only; verify per-meal and per-day totals equal the golden-fixture values for the snapshot values and quantities, and that rest days omit the conditional meal.
 
 **Acceptance Scenarios**:
-1. **Given** an approved client in workspace A and `coaching_work` in A, **When** staff add foods with quantities, **Then** macros are computed from the selected food version's per-100 values and the unit's exact basis equivalent with exact decimal arithmetic; totals stay unrounded and are rounded only for display.
+1. **Given** an approved client in workspace A and `coaching_work` in A, **When** staff add foods with quantities, **Then** macros are computed from the selected food version's per-100 values and the unit's exact basis equivalent with exact decimal arithmetic; intermediate arithmetic stays exact, computed totals are rounded once half-even to four decimal places for storage, and the UI displays calories and macros as integers (D18-4=C).
 2. **Given** a unit the food version does not define (e.g. ml for a g-basis food without an equivalence), **When** entered, **Then** it is rejected; no implicit conversion (PRD-05 acceptance).
 3. **Given** a seven-day structure with day types, **When** a meal is `training_days_only`, **Then** it appears only on days whose resolved day type has `trainingDay = true`.
 4. **Given** reorder, duplicate meal/day or drag of foods, **Then** quantities, alternatives and notes are preserved exactly; duplicates remap their own and all descendant ids.
@@ -36,11 +36,15 @@ For a food item, staff configure manual alternatives, each with a precise quanti
 1. **Given** an item, **When** an alternative is added with a quantity, **Then** its macros are computed; nothing auto-adjusts quantities (no AI, PRD-12). No delta-versus-original display (not in PRD-05; out of scope unless separately approved).
 2. **Given** an alternative whose food is retired or merged in F16, **When** the draft is opened, **Then** an indicator appears and the stored snapshot values remain unchanged.
 
-### User Story 3 - Global nutrition templates (Priority: P1)
+### User Story 3 - Global and workspace nutrition templates (Priority: P1)
 
 Staff load a global nutrition template into a client plan and customize it independently. Authorized staff may manage workspace templates; PO manages global templates and may Make it Global after removing private data/references (D18-1 amendment).
 
-**Independent Test**: Load template T v2 into a client draft, then T gets v3; the draft and published client versions remain unchanged; no workspace-scoped nutrition template can be created.
+**Independent Test**: Authorized staff create and version a workspace-A template; workspace B cannot list or load it. Load its v2 into a client draft, then publish template v3; the draft and published client versions remain unchanged. The PO can Make it Global only after private data and references are removed.
+
+**Acceptance Scenarios**:
+1. **Given** authorized staff in workspace A, **When** they create or edit a workspace nutrition template, **Then** its identity and immutable versions are scoped to A and unavailable to workspace B.
+2. **Given** a workspace template selected by the PO for global promotion, **When** Make it Global runs, **Then** only eligible template content without private data or references is copied into a separate global identity/version; the workspace original remains unchanged (D18-1).
 
 ### User Story 4 - Ready, publish revisions, multiple plans (Priority: P1)
 
@@ -85,7 +89,7 @@ Staff export a selected published version only (D17-8=A) to PDF/Excel via the sh
 - **FR-006** Alternatives are coach-configured existing food catalog entries, with at most THREE default alternatives per food in a plan. Each alternative has a validated portion quantity and calculated macros; coaches may override quantities per plan. No alternatives are invented automatically. (PO S20 Message B section 1)
 - **FR-007** Global nutrition templates are PO-managed; authorized staff manage workspace-owned templates. The PO may use Make it Global on an eligible template, copying only approved template content and excluding private data and references. Apply two-wall authorization, immutable versions, creator/origin masking for non-PO, safe audit and explicit-version copy semantics. (PO S20 Message B section 3; D18-1 amendment)
 - **FR-008** Multiple published nutrition plans per client MUST be allowed and listed newest first with dates; no automatic archive or deletion.
-- **FR-009** Client selections apply only to coach-approved alternatives in the published version. A selected alternative persists across edits while the client remains authorized and the same stable item and alternative remain; otherwise selection resets to the coach default. Selections never create plans or affect other clients. (PO S20 Message B section 3; supersedes v3 FR-009)
+- **FR-009** Client selections apply only to coach-approved alternatives in the published version. On publish, copy a version-scoped selection to the new version only when the client remains authorized and the same stable item ID and approved alternative ID both exist; if either ID is absent or invalid, write no selection for that new version so the coach default applies. Selections never create plans or affect other clients. (PO S20 Message B section 3; supersedes v3 FR-009)
 - **FR-010** Export authorization MUST check both walls (`has_workspace_access(plan.workspace_id, coaching_work)` in app and RLS) before any read. Exports MUST include meals, items, quantities, alternatives, per-meal/day totals, day types and the client's current permitted selection marked as such; ExcelJS writes coach-authored cells as strings (formula-injection tests).
 - **FR-010a** Every successful plan/template/selection mutation and every export (and export denial) appends one audit event with an allowlist: action, workspace, actor, resource/version/item/alternative ids, changed-field codes. Never food names, quantities, macros, notes, recipe text, URLs, client display data, document JSON, free text or raw operation keys. Log-scrub tests prove zero health-content occurrences.
 - **FR-010b** Every successful draft save and publication attributes the acting staff member; each published version exposes an immutable contributor set (staff ids, action codes, timestamps only) of all staff who contributed since the previous version (PRD-06 "other trainer contributions recorded independently"); `action_code` is a CHECK-constrained enum (`draft_save`, `ready`, `unready`, `publish`, `template_load`); P4 records the responsible trainer separately.

@@ -14,11 +14,11 @@ Same stack and SECURITY DEFINER pattern as F16/F17. Consumes the shared Plan Cor
 
 ### Tables
 
-`nutrition_plans(workspace_id, id, client_id, subscription_id, ...)`; `nutrition_plan_drafts`; `nutrition_plan_versions(workspace_id, plan_id, id, version, schema_version, source_revision, document, computed_totals, published_at, published_by, UNIQUE(workspace_id,id), UNIQUE(workspace_id,plan_id,version), UNIQUE(plan_id,source_revision))`; `nutrition_plan_version_contributors(version_id, staff_user_id, action_code, at)`; `nutrition_global_templates` + `nutrition_global_template_versions` (no workspace_id; FORCE RLS with a SELECT policy using `can_read_global_coaching_content()`, no DML policies); `client_alternative_selections` per FR-009. All version/contributor tables append-only (UPDATE/DELETE/TRUNCATE revoked + trigger).
+`nutrition_plans(workspace_id, id, client_id, subscription_id, ...)`; `nutrition_plan_drafts`; `nutrition_plan_versions(workspace_id, plan_id, id, version, schema_version, source_revision, document, computed_totals, published_at, published_by, UNIQUE(workspace_id,id), UNIQUE(workspace_id,plan_id,version), UNIQUE(plan_id,source_revision))`; `nutrition_plan_version_contributors(version_id, staff_user_id, action_code, at)`; `nutrition_global_templates` + `nutrition_global_template_versions` (no workspace_id; FORCE RLS with a SELECT policy using `can_read_global_coaching_content()`, no DML policies); `nutrition_workspace_templates(workspace_id, id, ...)` + `nutrition_workspace_template_versions(workspace_id, template_id, version, ...)` with composite workspace FKs and `coaching_work` RLS; and version-scoped `client_alternative_selections` per FR-009. Template and version rows are immutable/append-only; authorized RPCs create versions, retire templates and load a selected version. Make it Global uses a PO-only RPC that validates/removes private data and references, then copies eligible content to a distinct global identity/version without modifying the workspace original. All version/contributor tables append-only (UPDATE/DELETE/TRUNCATE revoked + trigger).
 
 ### Document schema v1 (`lib/plans/nutrition/schema.ts`, registered per Plan Core registry)
 
-As FR-002; quantities/targets/totals are decimal strings. Published versions add `snapshots` (FoodSnapshotV1 map, DB-built) and `computed` (DB-computed, unrounded).
+As FR-002; quantities/targets/totals are decimal strings. Published versions add `snapshots` (FoodSnapshotV1 map, DB-built) and `computed_totals` (DB-computed from exact intermediates, rounded once half-even to four decimal places and serialized as fixed-scale strings).
 
 ### Macro algorithm
 
@@ -26,11 +26,11 @@ As FR-002; quantities/targets/totals are decimal strings. Published versions add
 
 ### Publish path
 
-Route handler validates for UX only; `publish_nutrition_revision(expected_revision, operation_key)` (SECURITY DEFINER): authorize -> idempotency -> lock draft -> re-read expected revision -> recheck current membership and capability -> recheck lifecycle eligibility -> parse schema -> load exact food versions -> rebuild snapshots -> compute totals in SQL -> insert version + contributors -> one audit event. Caller-supplied snapshots/totals are ignored. First-delivery and activation semantics are owned by Plan Core; F18 supplies the nutrition domain writer.
+Route handler validates for UX only; `publish_nutrition_revision(expected_revision, operation_key)` (SECURITY DEFINER): authorize -> idempotency -> lock draft -> re-read expected revision -> recheck current membership and capability -> recheck lifecycle eligibility -> parse schema -> load exact food versions -> rebuild snapshots -> compute exact totals in SQL and round once half-even to four decimals -> insert version + contributors -> copy valid client selections to the new version by stable item and alternative IDs (drop selections whose item/alternative is missing or invalid so coach default applies) -> one audit event. Caller-supplied snapshots/totals are ignored. First-delivery and activation semantics are owned by Plan Core; F18 supplies the nutrition domain writer.
 
 ### Copy-forward ids
 
-New versions from a draft keep unchanged item ids (P5 replacement requests, selections); duplicates remap their own and descendant ids.
+New versions from a draft keep unchanged item and alternative ids when content remains the same; duplicates remap their own and descendant ids. During publish, carry forward each client's selection only when the corresponding stable item and approved alternative IDs remain present in the new version and the client remains authorized. If either ID is absent or no longer approved, omit the new-version selection row so the coach default applies.
 
 ### Client selection RPC
 
@@ -38,7 +38,7 @@ New versions from a draft keep unchanged item ids (P5 replacement requests, sele
 
 ### Authorization
 
-Actions `plan.nutrition_read|write|ready|publish|export`, `template.nutrition_global_write` (D18-1), `client.nutrition_select` (two-segment audit action names per the existing CHECK). Sales denied.
+Actions `plan.nutrition_read|write|ready|publish|export`, `template.nutrition_global_write`, `template.nutrition_workspace_write`, and PO-only `template.nutrition_make_global` (D18-1), `client.nutrition_select` (two-segment audit action names per the existing CHECK). Sales denied.
 
 ## Validation phases
 
