@@ -109,6 +109,20 @@ it('T010 reuses F12 installment snapshots and anchors renewal dues to its record
       installment_total: receipt.price_minor,
       first_due_on: receipt.recording_date,
     });
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+    await tx`set local role authenticated`;
+    try {
+      const [paymentStatus] = await tx`
+        select public.subscription_payment_status(${f.wsA.id},${purchase.t.id},${receipt.subscription_id as string}) as result`;
+      expect(paymentStatus!.result).toMatchObject({
+        status: 'ok',
+        obligations: [
+          expect.objectContaining({ due_on: receipt.recording_date }),
+        ],
+      });
+    } finally {
+      await tx`reset role`;
+    }
     const [projection] = await tx`
       select app_private.f13_project_entitlement(
         ${f.wsA.id},${purchase.sid},
@@ -284,6 +298,54 @@ it('T010 shifts an unstarted renewal after predecessor Freeze without moving rec
     );
     expect(dueAfter!.due_on).toBe(dueBefore!.due_on);
     expect(dueAfter!.due_on).toBe(expectedDates!.due_on);
+  });
+});
+
+it('T010 rolls back a predecessor Freeze that would reflow an already-started renewal', async () => {
+  const { f, purchase, offerId } = await fixture();
+  await probe(async (tx) => {
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '62 days',${randomUUID()})`;
+    const renewed = await renewal(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      renewal_confirmed: true,
+      installments: null,
+    });
+    expect(renewed.status).toBe('ok');
+    const renewalIdValue = (renewed.receipt as Record<string, unknown>)
+      .subscription_id;
+    if (typeof renewalIdValue !== 'string')
+      throw new Error('Missing renewal subscription ID');
+    const renewalId = renewalIdValue;
+    const [before] =
+      await tx`select service_start_date::text from public.subscription_renewals where subscription_id=${renewalId}`;
+    const [today] =
+      await tx`select (clock_timestamp() at time zone 'Africa/Cairo')::date::text as date`;
+    expect(before!.service_start_date).toBe(today!.date);
+    const request = {
+      action: 'apply',
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      duration_days: 2,
+    };
+    await expect(
+      tx.savepoint(async (inner) => {
+        await freeze(inner, f.trainerA.userId, request);
+      }),
+    ).rejects.toMatchObject({ code: '23514' });
+    const [counts] = await tx`
+      select (select count(*)::int from public.subscription_freezes where subscription_id=${purchase.sid}) as freezes,
+        (select count(*)::int from public.subscription_renewal_date_revisions where subscription_id=${renewalId}) as revisions,
+        (select count(*)::int from app_private.subscription_freeze_operations where request_key=${request.request_key}) as receipts`;
+    expect(counts).toEqual({ freezes: 0, revisions: 0, receipts: 0 });
   });
 });
 

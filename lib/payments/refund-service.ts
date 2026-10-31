@@ -124,13 +124,17 @@ export async function recordRefund(
       return { status: 'not_permitted' };
     }
     if (!validInput(input)) return { status: 'invalid_input' };
+    const workspaceId = (input.workspaceId as string).toLowerCase();
+    const clientId = (input.clientId as string).toLowerCase();
+    const purchaseId = (input.purchaseId as string).toLowerCase();
+    const requestKey = (input.requestKey as string).toLowerCase();
 
     const result = await deps.client.rpc('record_refund', {
       request: {
-        workspace_id: input.workspaceId,
-        client_id: input.clientId,
-        purchase_id: input.purchaseId,
-        request_key: input.requestKey,
+        workspace_id: workspaceId,
+        client_id: clientId,
+        purchase_id: purchaseId,
+        request_key: requestKey,
         amount_minor: input.amountMinor,
         external_confirmation: true,
         ...(input.expectedRevision === undefined
@@ -150,9 +154,9 @@ export async function recordRefund(
     const receipt = safeReceipt(response.receipt);
     if (
       !receipt ||
-      receipt.workspace_id !== input.workspaceId ||
-      receipt.client_id !== input.clientId ||
-      receipt.purchase_id !== input.purchaseId ||
+      receipt.workspace_id !== workspaceId ||
+      receipt.client_id !== clientId ||
+      receipt.purchase_id !== purchaseId ||
       receipt.amount_minor !== input.amountMinor
     )
       return { status: 'unavailable' };

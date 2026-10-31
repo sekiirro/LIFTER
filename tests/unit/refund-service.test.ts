@@ -6,12 +6,12 @@ import {
   type RefundRpcClient,
 } from '../../lib/payments/refund-service';
 
-const workspaceId = '00000000-0000-0000-0000-000000000001';
-const clientId = '00000000-0000-0000-0000-000000000002';
-const purchaseId = '00000000-0000-0000-0000-000000000003';
-const requestKey = '00000000-0000-0000-0000-000000000004';
+const workspaceId = 'aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaa1';
+const clientId = 'bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbb2';
+const purchaseId = 'cccccccc-cccc-cccc-cccc-ccccccccccc3';
+const requestKey = 'dddddddd-dddd-dddd-dddd-ddddddddddd4';
 const receipt = {
-  operation_id: '00000000-0000-0000-0000-000000000005',
+  operation_id: 'eeeeeeee-eeee-eeee-eeee-eeeeeeeeeee5',
   workspace_id: workspaceId,
   client_id: clientId,
   purchase_id: purchaseId,
@@ -27,7 +27,7 @@ const input = {
   externalConfirmation: true,
 };
 const po: RefundActor = {
-  userId: '00000000-0000-0000-0000-000000000006',
+  userId: 'ffffffff-ffff-ffff-ffff-fffffffffff6',
   role: 'platform_owner',
   activeWorkspaceIds: [],
 };
@@ -39,6 +39,31 @@ function rpc(data: unknown, error: { message: string } | null = null) {
 }
 
 describe('refund service', () => {
+  it('canonicalizes UUID casing before the RPC and receipt binding check', async () => {
+    const upper = {
+      ...input,
+      workspaceId: workspaceId.toUpperCase(),
+      clientId: clientId.toUpperCase(),
+      purchaseId: purchaseId.toUpperCase(),
+      requestKey: requestKey.toUpperCase(),
+    };
+    const client = rpc({ status: 'ok', receipt });
+    await expect(recordRefund(upper, { actor: po, client })).resolves.toEqual({
+      status: 'ok',
+      receipt,
+    });
+    expect(client.rpc).toHaveBeenCalledWith('record_refund', {
+      request: {
+        workspace_id: workspaceId,
+        client_id: clientId,
+        purchase_id: purchaseId,
+        request_key: requestKey,
+        amount_minor: '1250',
+        external_confirmation: true,
+      },
+    });
+  });
+
   it('submits an explicit positive refund for an attested purchase and returns the safe receipt', async () => {
     const client = rpc({ status: 'ok', receipt });
     await expect(recordRefund(input, { actor: po, client })).resolves.toEqual({

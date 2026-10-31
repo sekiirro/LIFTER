@@ -144,13 +144,13 @@ it('T023 represents obligations without a collection event as unpaid', async () 
   ).toEqual([true, false, false]);
 });
 
-it('Q1 keeps the installed subscription payment status body equal to migration 127900', async () => {
+it('Q1 keeps the installed subscription payment status body equal to the latest forward migration', async () => {
   const migration = readFileSync(
     join(
       process.cwd(),
       'supabase',
       'migrations',
-      '20261103127900_f13_unpaid_obligations_boolean_forward.sql',
+      '20261103130000_f13_review_guards_projection.sql',
     ),
     'utf8',
   );

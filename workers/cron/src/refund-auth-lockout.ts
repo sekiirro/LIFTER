@@ -73,6 +73,7 @@ export async function drainRefundAuthLockouts(
         {
           method: 'PUT',
           redirect: 'manual',
+          signal: AbortSignal.timeout(30_000),
           headers: {
             apikey: env.SUPABASE_SERVICE_ROLE_KEY,
             Authorization: `Bearer ${env.SUPABASE_SERVICE_ROLE_KEY}`,

@@ -224,6 +224,101 @@ it('T008 committed-style freeze facts feed the existing entitlement projection w
   });
 });
 
+it('T008 Remove preserves the Cairo day on which its fact is recorded', async () => {
+  const f = await clientContext();
+  await probe(async (tx) => {
+    const ids = await graph(tx, f);
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp()-interval '100 days',${randomUUID()})`;
+    const apply = tx.json({
+      action: 'apply',
+      workspace_id: f.wsA.id,
+      client_id: ids.client,
+      subscription_id: ids.subscription,
+      duration_days: 3,
+      expected_revision: 0,
+      request_key: randomUUID(),
+    });
+    const [applied] =
+      await tx`select public.subscription_freeze_operation(${apply}::jsonb) as receipt`;
+    expect(applied!.receipt).toMatchObject({ status: 'applied' });
+    const receipt = applied!.receipt as { freeze_id: string };
+    const remove = tx.json({
+      action: 'remove',
+      workspace_id: f.wsA.id,
+      client_id: ids.client,
+      subscription_id: ids.subscription,
+      freeze_id: receipt.freeze_id,
+      expected_revision: 1,
+      request_key: randomUUID(),
+    });
+    const [removed] =
+      await tx`select public.subscription_freeze_operation(${remove}::jsonb) as receipt`;
+    expect(removed!.receipt).toMatchObject({ status: 'removed' });
+    const [projection] = await tx`
+      select app_private.f13_project_entitlement(
+        ${f.wsA.id},${ids.subscription},(clock_timestamp() at time zone 'Africa/Cairo')::date
+      ) as value,
+      ((clock_timestamp() at time zone 'Africa/Cairo')::date+1)::text as floor`;
+    expect(projection!.value).toMatchObject({
+      status: 'active',
+      effective_end_exclusive: projection!.floor,
+    });
+  });
+});
+
+it('T008 rejects Apply, Stop and Remove facts after a terminal refund', async () => {
+  const f = await clientContext();
+  await probe(async (tx) => {
+    const ids = await graph(tx, f);
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp(),${randomUUID()})`;
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+    const freezeId = randomUUID();
+    await tx`insert into public.subscription_freezes(id,workspace_id,subscription_id,applied_on,duration_days,applied_by)
+      values(${freezeId},${f.wsA.id},${ids.subscription},(clock_timestamp() at time zone 'Africa/Cairo')::date,3,${f.trainerA.userId})`;
+
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
+    await tx`set local role authenticated`;
+    try {
+      const [refund] = await tx`select public.record_refund(${tx.json({
+        workspace_id: f.wsA.id,
+        client_id: ids.client,
+        purchase_id: ids.subscription,
+        request_key: randomUUID(),
+        amount_minor: '600',
+        external_confirmation: true,
+      })}) as result`;
+      expect(refund!.result).toMatchObject({ status: 'ok' });
+    } finally {
+      await tx`reset role`;
+    }
+
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+    const applied = randomUUID();
+    await expect(
+      tx.savepoint(async (inner) => {
+        await inner`insert into public.subscription_freezes(id,workspace_id,subscription_id,applied_on,duration_days,applied_by)
+        values(${applied},${f.wsA.id},${ids.subscription},(clock_timestamp() at time zone 'Africa/Cairo')::date,2,${f.trainerA.userId})`;
+      }),
+    ).rejects.toMatchObject({ code: '23514' });
+
+    for (const kind of ['stop', 'remove'] as const) {
+      await expect(
+        tx.savepoint(async (inner) => {
+          await inner`insert into public.subscription_freeze_events(workspace_id,subscription_id,freeze_id,kind,effective_on,actor_user_id)
+          select ${f.wsA.id},${ids.subscription},${freezeId},${kind},applied_on+1,${f.trainerA.userId}
+          from public.subscription_freezes where id=${freezeId}`;
+        }),
+      ).rejects.toMatchObject({ code: '23514' });
+    }
+    const [counts] = await tx`
+      select (select count(*)::int from public.subscription_freezes where id=${applied}) as applied,
+        (select count(*)::int from public.subscription_freeze_events where freeze_id=${freezeId}) as events`;
+    expect(counts).toEqual({ applied: 0, events: 0 });
+  });
+});
+
 it('T008 audit failure rolls back the Apply fact and idempotency receipt', async () => {
   const f = await clientContext();
   await probe(async (tx) => {
