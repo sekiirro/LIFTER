@@ -1,0 +1,328 @@
+{
+  "title": {
+    "en": "Your First Step",
+    "ar": "خطوتك الأولى"
+  },
+  "sections": [
+    {
+      "id": "basic",
+      "title": {
+        "en": "Basic Information",
+        "ar": "البيانات الأساسية"
+      }
+    },
+    {
+      "id": "training",
+      "title": {
+        "en": "Training",
+        "ar": "التمرين"
+      }
+    },
+    {
+      "id": "nutrition",
+      "title": {
+        "en": "Nutrition",
+        "ar": "التغذية"
+      }
+    }
+  ],
+  "questions": [
+    {
+      "id": "B01",
+      "sectionId": "basic",
+      "type": "profileText",
+      "required": false,
+      "label": {
+        "en": "Full name",
+        "ar": "الاسم الثلاثي"
+      },
+      "profileField": "fullName"
+    },
+    {
+      "id": "B02",
+      "sectionId": "basic",
+      "type": "computedAge",
+      "required": false,
+      "label": {
+        "en": "Age",
+        "ar": "العمر"
+      },
+      "dateOfBirthField": "dateOfBirth"
+    },
+    {
+      "id": "B03",
+      "sectionId": "basic",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Do you have any chronic conditions?",
+        "ar": "عندك أي أمراض مزمنة؟"
+      }
+    },
+    {
+      "id": "B04",
+      "sectionId": "basic",
+      "type": "number",
+      "required": false,
+      "label": {
+        "en": "What is your current weight?",
+        "ar": "وزنك الحالي كام؟"
+      },
+      "unit": {
+        "en": "kg",
+        "ar": "kg"
+      },
+      "validation": {
+        "min": 1,
+        "max": 300,
+        "step": 0.1
+      }
+    },
+    {
+      "id": "B05",
+      "sectionId": "basic",
+      "type": "shortText",
+      "required": false,
+      "charLimit": 150,
+      "label": {
+        "en": "What is your occupation?",
+        "ar": "إيه وظيفتك؟"
+      }
+    },
+    {
+      "id": "B06",
+      "sectionId": "basic",
+      "type": "shortText",
+      "required": false,
+      "charLimit": 150,
+      "label": {
+        "en": "Sex",
+        "ar": "النوع"
+      },
+      "privacy": "personal"
+    },
+    {
+      "id": "T01",
+      "sectionId": "training",
+      "type": "shortText",
+      "required": false,
+      "charLimit": 150,
+      "label": {
+        "en": "What is your near-term goal?",
+        "ar": "إيه هدفك على المستوى القريب؟"
+      }
+    },
+    {
+      "id": "T02",
+      "sectionId": "training",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Do you have any injuries?",
+        "ar": "عندك أي إصابة؟"
+      }
+    },
+    {
+      "id": "T03",
+      "sectionId": "training",
+      "type": "shortText",
+      "required": false,
+      "charLimit": 150,
+      "label": {
+        "en": "How many days a week would you like to train?",
+        "ar": "حابب تتمرن كام يوم في الأسبوع؟"
+      }
+    },
+    {
+      "id": "T04",
+      "sectionId": "training",
+      "type": "shortText",
+      "required": false,
+      "charLimit": 150,
+      "label": {
+        "en": "How much time can you set aside for a workout?",
+        "ar": "تقدر تخصص وقت قد إيه للتمرينة؟"
+      }
+    },
+    {
+      "id": "T05",
+      "sectionId": "training",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Do you play a sport in addition to going to the gym?",
+        "ar": "بتلعب أي رياضة بجانب الجيم؟"
+      }
+    },
+    {
+      "id": "T06",
+      "sectionId": "training",
+      "type": "longText",
+      "required": false,
+      "label": {
+        "en": "What do you consider your weak points?",
+        "ar": "شايف إيه نقاط ضعفك؟"
+      }
+    },
+    {
+      "id": "T07",
+      "sectionId": "training",
+      "type": "shortText",
+      "required": false,
+      "charLimit": 150,
+      "label": {
+        "en": "Which exercises do you like most and dislike most?",
+        "ar": "إيه أكتر تمارين بتحبها وإيه أكتر تمارين بتكرهها؟"
+      }
+    },
+    {
+      "id": "T08",
+      "sectionId": "training",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Would you like to follow a particular training split?",
+        "ar": "عايز نظام تمرين معين؟"
+      }
+    },
+    {
+      "id": "N01",
+      "sectionId": "nutrition",
+      "type": "shortText",
+      "required": false,
+      "charLimit": 150,
+      "label": {
+        "en": "What is your goal for your nutrition plan?",
+        "ar": "إيه هدفك من النظام الغذائي؟"
+      }
+    },
+    {
+      "id": "N02",
+      "sectionId": "nutrition",
+      "type": "number",
+      "required": false,
+      "label": {
+        "en": "What is your height in centimeters?",
+        "ar": "طولك كام بالسنتيمتر؟"
+      },
+      "unit": {
+        "en": "cm",
+        "ar": "cm"
+      },
+      "validation": {
+        "min": 1,
+        "max": 300,
+        "step": 0.1
+      }
+    },
+    {
+      "id": "N03",
+      "sectionId": "nutrition",
+      "type": "shortText",
+      "required": false,
+      "charLimit": 150,
+      "label": {
+        "en": "How active are you and how much do you move during the day?",
+        "ar": "مستوى نشاطك وحركتك خلال اليوم عامل إزاي؟"
+      }
+    },
+    {
+      "id": "N04",
+      "sectionId": "nutrition",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Are you allergic to any foods?",
+        "ar": "عندك حساسية من أكل معين؟"
+      }
+    },
+    {
+      "id": "N05",
+      "sectionId": "nutrition",
+      "type": "boolean",
+      "required": false,
+      "label": {
+        "en": "Are you currently taking any medications or supplements?",
+        "ar": "بتستخدم أدوية أو مكملات حاليًا؟"
+      }
+    },
+    {
+      "id": "N06",
+      "sectionId": "nutrition",
+      "type": "longText",
+      "required": false,
+      "label": {
+        "en": "Tell us what a typical day of eating looks like for you.",
+        "ar": "احكيلي يوم أكلك المعتاد عبارة عن إيه؟"
+      }
+    },
+    {
+      "id": "N07",
+      "sectionId": "nutrition",
+      "type": "shortText",
+      "required": false,
+      "charLimit": 150,
+      "label": {
+        "en": "How many meals would you like to eat each day?",
+        "ar": "حابب تاكل كام وجبة في اليوم؟"
+      }
+    },
+    {
+      "id": "N08",
+      "sectionId": "nutrition",
+      "type": "shortText",
+      "required": false,
+      "charLimit": 150,
+      "label": {
+        "en": "What is your food budget like?",
+        "ar": "ميزانيتك للأكل عاملة إزاي؟"
+      }
+    },
+    {
+      "id": "N09",
+      "sectionId": "nutrition",
+      "type": "shortText",
+      "required": false,
+      "charLimit": 150,
+      "label": {
+        "en": "Which foods do you like most and dislike most?",
+        "ar": "إيه أكتر أكل بتحبه وإيه أكتر أكل بتكرهه؟"
+      }
+    },
+    {
+      "id": "N10",
+      "sectionId": "nutrition",
+      "type": "shortText",
+      "required": false,
+      "charLimit": 150,
+      "label": {
+        "en": "Would you rather weigh food before or after cooking?",
+        "ar": "تحب توزن أكلك قبل الطبخ ولا بعده؟"
+      }
+    },
+    {
+      "id": "N11",
+      "sectionId": "nutrition",
+      "type": "shortText",
+      "required": false,
+      "charLimit": 150,
+      "label": {
+        "en": "How hungry do you feel, from 0 to 10?",
+        "ar": "بتقيّم إحساسك بالجوع كام من 10؟"
+      }
+    },
+    {
+      "id": "N12",
+      "sectionId": "nutrition",
+      "type": "shortText",
+      "required": false,
+      "charLimit": 150,
+      "label": {
+        "en": "Choose the body-fat reference that most closely resembles your body shape.",
+        "ar": "اختار أقرب نسبة دهون لشكل جسمك"
+      }
+    }
+  ],
+  "deadlineDays": 3,
+  "copyStatus": "draft"
+}

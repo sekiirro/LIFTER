@@ -46,7 +46,7 @@ export type FormsStaffResult =
   | { status: 'invalid' | 'conflict' | 'forbidden' | 'missing' };
 
 export type FormsStaffSelectionResult = {
-  status: 'ok' | 'forbidden' | 'missing';
+  status: 'ok' | 'forbidden' | 'missing' | 'unavailable';
 };
 
 export interface FormsStaffAdapter {

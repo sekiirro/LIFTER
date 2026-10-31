@@ -130,7 +130,7 @@ describe('staff builder and assignment views', () => {
     expect((await adapter.retire('trainer', form.id)).status).toBe('ok');
   });
 
-  it('provides Your First Step as an ordinary editable default form with optional empty starter content', async () => {
+  it('provides Your First Step with editable S14 starter content and no catalog lock', async () => {
     const adapter = createMockFormsStaffAdapter();
     const snapshot = await adapter.load();
     expect(snapshot.defaultOnboardingFormId).toBe('your-first-step');
@@ -140,14 +140,17 @@ describe('staff builder and assignment views', () => {
         en: 'Your First Step',
         ar: getMessages('ar')['forms.defaultOnboardingForm'],
       },
-      sections: [],
-      questions: [],
       status: 'draft',
     });
+    expect(draft?.sections).toHaveLength(3);
+    expect(draft?.questions.length).toBeGreaterThan(0);
+    expect(draft?.questions.some((question) => question.id === 'B04')).toBe(
+      true,
+    );
     expect(snapshot.forms).toHaveLength(1);
   });
 
-  it('allows a Workspace Owner to edit, empty, replace and select an ordinary form without a catalog lock', async () => {
+  it('allows a Workspace Owner to edit, reorder, remove, replace and select ordinary forms', async () => {
     const adapter = createMockFormsStaffAdapter();
     const snapshot = await adapter.load();
     const first = snapshot.forms[0]!;
@@ -158,19 +161,29 @@ describe('staff builder and assignment views', () => {
     expect(edited.status).toBe('ok');
     if (edited.status !== 'ok') return;
 
-    const emptied = await adapter.saveDraft('wo', {
+    const editedQuestions = edited.form.questions;
+    const reordered = await adapter.saveDraft('wo', {
       ...edited.form,
-      sections: [],
-      questions: [],
+      questions: [...editedQuestions].reverse(),
     });
-    expect(emptied.status).toBe('ok');
-    if (emptied.status !== 'ok') return;
-    expect(emptied.form.questions).toEqual([]);
+    expect(reordered.status).toBe('ok');
+    if (reordered.status !== 'ok') return;
+    expect(reordered.form.questions[0]?.id).toBe(editedQuestions.at(-1)?.id);
+
+    const removed = await adapter.saveDraft('wo', {
+      ...reordered.form,
+      questions: reordered.form.questions.slice(1),
+    });
+    expect(removed.status).toBe('ok');
+    if (removed.status !== 'ok') return;
+    expect(removed.form.questions).toHaveLength(editedQuestions.length - 1);
 
     const replacement = {
-      ...emptied.form,
+      ...removed.form,
       id: 'replacement-onboarding',
       title: { en: 'Replacement', ar: '' },
+      sections: [],
+      questions: [],
       revision: 0,
     };
     const savedReplacement = await adapter.saveDraft('wo', replacement);

@@ -171,7 +171,9 @@ export function FormsStaffConsole({
     setIssue('');
     const result = await adapter.selectDefaultOnboardingForm(role, formId);
     if (result.status !== 'ok') {
-      setIssue(messages[`forms.staffResult.${result.status}`]);
+      const messageStatus =
+        result.status === 'unavailable' ? 'missing' : result.status;
+      setIssue(messages[`forms.staffResult.${messageStatus}`]);
       setStatusMessage('');
     } else {
       setSnapshot((current) =>

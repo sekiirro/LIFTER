@@ -9,6 +9,7 @@ import type {
   FormsWorkspaceBrandSource,
   StaffFormDraft,
   StaffFormQuestion,
+  StaffFormSection,
 } from './staff-contracts';
 import {
   canManageWorkspaceForms,
@@ -16,6 +17,7 @@ import {
 } from './staff-policy';
 import { validateFormDefinition, type FormQuestion } from './validation';
 import { getMessages } from '../i18n';
+import starterContent from './s14-starter-content.json';
 
 export type MockFormsStaffAdapter = FormsStaffAdapter & {
   getPublishedVersions(formId: string): readonly StaffFormDraft[];
@@ -111,6 +113,10 @@ function isPublishable(form: StaffFormDraft): boolean {
 
 export function createMockFormsStaffAdapter(): MockFormsStaffAdapter {
   let defaultOnboardingFormId = 'your-first-step';
+  const starter = starterContent as unknown as {
+    sections: StaffFormSection[];
+    questions: StaffFormQuestion[];
+  };
   const forms = new Map<string, StaffFormDraft>([
     [
       defaultOnboardingFormId,
@@ -120,8 +126,14 @@ export function createMockFormsStaffAdapter(): MockFormsStaffAdapter {
           en: getMessages('en')['forms.defaultOnboardingForm'],
           ar: getMessages('ar')['forms.defaultOnboardingForm'],
         },
-        sections: [],
-        questions: [],
+        sections: starter.sections.map((section) => ({
+          ...section,
+          title: { ...section.title },
+        })),
+        questions: starter.questions.map((question) => ({
+          ...question,
+          label: { ...question.label },
+        })),
         deadlineDays: 3,
         status: 'draft',
         revision: 0,

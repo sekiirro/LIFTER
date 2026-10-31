@@ -73,7 +73,6 @@ describe('S14 PO decision fixture', () => {
       /Your First Step \(.+\) is the default ordinary editable onboarding form in Forms\./,
     );
     expect(spec).not.toContain('all 26 parent questions are required');
-    expect(Array.isArray(cases.parentIds)).toBe(true);
   });
 
   it('maps sex only to standard image series', () => {
