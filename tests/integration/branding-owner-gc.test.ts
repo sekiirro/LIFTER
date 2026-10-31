@@ -48,7 +48,7 @@ beforeAll(async () => {
   mutationOriginal = row.definition;
   const replacements: Record<string, [RegExp, string]> = {
     publish: [
-      /if exists\(select 1 from app_private\.branding_gc_claims g where g\.workspace_id=d\.workspace_id\)\s*then\s*raise exception using errcode='40001',message='branding_deletion_in_progress';\s*end if;/,
+      /if exists\(select 1 from app_private\.branding_gc_claims g\s+where g\.workspace_id=d\.workspace_id(?:\s+and g\.lease_until\s*>\s*statement_timestamp\(\))?\)\s*then\s*raise exception using errcode='40001',message='branding_deletion_in_progress';\s*end if;/,
       "if false then raise exception using errcode='40001',message='branding_deletion_in_progress'; end if;",
     ],
     attach: [

@@ -44,7 +44,7 @@ function advanceTo(
   if (stage === 'attachment') {
     upload = transitionBrandingUpload(upload, {
       type: 'promotion_succeeded',
-      validatedObjectKey: `workspace-a/validated/logo/${contentHash(new Uint8Array([1, 2, 3]))}-upload-1`,
+      validatedObjectKey: `workspace-a/validated/logo/${contentHash(new Uint8Array([1, 2, 3]))}-upload-1.png`,
     });
     upload = transitionBrandingUpload(upload, { type: 'attachment_started' });
   }
@@ -89,7 +89,7 @@ describe('branding upload state and reconciliation contract', () => {
     );
     const promoted = transitionBrandingUpload(validated, {
       type: 'promotion_succeeded',
-      validatedObjectKey: `workspace-a/validated/logo/${contentHash(new Uint8Array([1, 2, 3]))}-upload-1`,
+      validatedObjectKey: `workspace-a/validated/logo/${contentHash(new Uint8Array([1, 2, 3]))}-upload-1.png`,
     });
     const result = transitionBrandingUpload(promoted, {
       type: 'attach',
@@ -100,6 +100,47 @@ describe('branding upload state and reconciliation contract', () => {
     expect(result.status).toBe('attachment_failed_stale');
     expect(result.draftRevision).toBe(4);
     expect(result.attachedAssetId).toBeUndefined();
+  });
+
+  it('accepts the validated object key including the validator extension', () => {
+    const bytes = new Uint8Array([1, 2, 3]);
+    const validating = transitionBrandingUpload(startUpload(), {
+      type: 'validation_started',
+    });
+    const validated = transitionBrandingUpload(validating, {
+      type: 'validation_succeeded',
+      validatedBytes: bytes,
+      contentHash: contentHash(bytes),
+    });
+    const promoting = transitionBrandingUpload(validated, {
+      type: 'promotion_started',
+    });
+
+    expect(
+      transitionBrandingUpload(promoting, {
+        type: 'promotion_succeeded',
+        validatedObjectKey: `workspace-a/validated/logo/${contentHash(bytes)}-upload-1.png`,
+      }).status,
+    ).toBe('promoted');
+  });
+
+  it('resumes at the status returned by the retry operation', async () => {
+    const interrupted = interruptBrandingUpload(
+      advanceTo('promotion'),
+      'promotion',
+    );
+    const storage = {
+      inspect: vi.fn().mockResolvedValue({ present: true }),
+      retryStage: vi.fn().mockResolvedValue({
+        completed: true,
+        status: 'promoting' as const,
+      }),
+    };
+
+    const result = await reconcileBrandingUpload(interrupted, { storage });
+
+    expect(result.status).toBe('promoting');
+    expect(result.interruptionStage).toBeUndefined();
   });
 
   it('rejects a validator receipt when its claimed hash does not match bounded bytes', () => {
@@ -113,11 +154,12 @@ describe('branding upload state and reconciliation contract', () => {
         contentHash: 'a'.repeat(64),
       }),
     ).toThrow();
+    const oversizedBytes = new Uint8Array(4 * 1024 * 1024 + 1);
     expect(() =>
       transitionBrandingUpload(validating, {
         type: 'validation_succeeded',
-        validatedBytes: new Uint8Array(4 * 1024 * 1024 + 1),
-        contentHash: contentHash(new Uint8Array(0)),
+        validatedBytes: oversizedBytes,
+        contentHash: contentHash(oversizedBytes),
       }),
     ).toThrow();
   });

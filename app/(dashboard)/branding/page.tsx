@@ -1,8 +1,8 @@
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { requireActor } from '../../../lib/auth/actor';
-import { authorize } from '../../../lib/auth/authorize';
 import { createSupabaseBrandingRepository } from '../../../lib/branding/repository';
+import { filterBrandingWorkspaces } from '../../../lib/branding/workspaces';
 import { createPortalBrandContract } from '../../../lib/branding/portal-contract';
 import { createSessionClient } from '../../../lib/supabase/server';
 import { getMessages } from '../../../lib/i18n';
@@ -34,11 +34,7 @@ export default async function WorkspaceBrandingPage({
     .select('id,name')
     .order('name');
   if (result.error || !result.data) notFound();
-  const workspaces = result.data.filter(
-    (workspace) =>
-      actor.activeWorkspaceIds.includes(workspace.id) &&
-      authorize(actor, 'manage_branding', workspace.id),
-  );
+  const workspaces = filterBrandingWorkspaces(result.data, actor);
   if (!workspaces.length) notFound();
   const query = await searchParams;
   const requestedWorkspace = query.workspace;

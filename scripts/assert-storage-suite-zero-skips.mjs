@@ -43,6 +43,9 @@ export function assertVitestStorageReport(
     skippedStatus(test.status),
   ).length;
   const failed = assertions.filter((test) => test.status === 'failed').length;
+  const failedFiles = [...matched.values()].filter(
+    (result) => result.status === 'failed',
+  ).length;
   const passedTests = assertions.filter((test) => test.status === 'passed');
   const passed = passedTests.length;
   const noPassedFiles = requiredFiles.filter(
@@ -51,9 +54,16 @@ export function assertVitestStorageReport(
         .get(file)
         ?.assertionResults?.some((test) => test.status === 'passed'),
   );
-  if (missing.length || skipped || failed || noPassedFiles.length)
+  if (
+    report?.success === false ||
+    missing.length ||
+    skipped ||
+    failed ||
+    failedFiles ||
+    noPassedFiles.length
+  )
     throw new Error(
-      `Storage integration guard failed: missing=${missing.join(',') || 'none'} skipped=${skipped} failed=${failed} noPassed=${noPassedFiles.join(',') || 'none'} passed=${passed}`,
+      `Storage integration guard failed: reportFailed=${report?.success === false} missing=${missing.join(',') || 'none'} skipped=${skipped} failed=${failed} failedFiles=${failedFiles} noPassed=${noPassedFiles.join(',') || 'none'} passed=${passed}`,
     );
   return { files: matched.size, passed, skipped, failed };
 }
@@ -85,16 +95,18 @@ export function assertPlaywrightStorageReport(
     skipped: Number(stats.skipped ?? 0),
     failed: Number(stats.unexpected ?? 0),
     flaky: Number(stats.flaky ?? 0),
+    errors: Array.isArray(report?.errors) ? report.errors.length : 0,
   };
   if (
     missing.length ||
     result.skipped ||
     result.failed ||
     result.flaky ||
+    result.errors ||
     !result.passed
   )
     throw new Error(
-      `Storage Playwright guard failed: missing=${missing.join(',') || 'none'} skipped=${result.skipped} failed=${result.failed} flaky=${result.flaky} passed=${result.passed}`,
+      `Storage Playwright guard failed: missing=${missing.join(',') || 'none'} skipped=${result.skipped} failed=${result.failed} flaky=${result.flaky} errors=${result.errors} passed=${result.passed}`,
     );
   return result;
 }

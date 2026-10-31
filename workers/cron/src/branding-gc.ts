@@ -39,12 +39,19 @@ export async function runBrandingGc(
   const claims = await dependencies.claim(
     Math.min(50, Math.max(1, Math.trunc(batchSize) || 10)),
   );
+  let failed = false;
   for (const claim of claims) {
-    if (!validClaim(claim)) throw new Error('branding_gc_invalid_claim');
-    await dependencies.remove(claim.bucket_id, claim.object_name);
-    const finalized = await dependencies.finalize(claim.id);
-    if (!finalized) throw new Error('branding_gc_finalize_rejected');
+    try {
+      if (!validClaim(claim)) throw new Error('branding_gc_invalid_claim');
+      await dependencies.remove(claim.bucket_id, claim.object_name);
+      const finalized = await dependencies.finalize(claim.id);
+      if (!finalized) throw new Error('branding_gc_finalize_rejected');
+    } catch {
+      failed = true;
+      console.error('branding_gc_claim_failed');
+    }
   }
+  if (failed) throw new Error('branding_gc_pass_failed');
   return claims.length;
 }
 

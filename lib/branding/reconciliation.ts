@@ -1,14 +1,14 @@
 import {
   transitionBrandingUpload,
   type BrandingUpload,
-  type BrandingUploadStatus,
+  type BrandingUploadResumeStatus,
 } from './upload-state';
 
 export type BrandingUploadStorage = {
   inspect(upload: BrandingUpload): Promise<{ present: boolean }>;
   retryStage(
     upload: BrandingUpload,
-  ): Promise<{ completed: boolean; status?: BrandingUploadStatus }>;
+  ): Promise<{ completed: boolean; status?: BrandingUploadResumeStatus }>;
 };
 
 export async function reconcileBrandingUpload(
@@ -23,14 +23,14 @@ export async function reconcileBrandingUpload(
         if (!retry.completed) return upload;
         return transitionBrandingUpload(upload, {
           type: 'reconciliation_complete',
-          status: retry.status === 'cleaned' ? 'cleaned' : 'staging',
+          status: retry.status ?? 'staging',
         });
       }
       const retry = await dependencies.storage.retryStage(upload);
       if (!retry.completed) return upload;
       return transitionBrandingUpload(upload, {
         type: 'reconciliation_complete',
-        status: retry.status === 'cleaned' ? 'cleaned' : 'staging',
+        status: retry.status ?? 'staging',
       });
     } catch {
       return upload;
@@ -47,7 +47,7 @@ export async function reconcileBrandingUpload(
           });
         return transitionBrandingUpload(upload, {
           type: 'reconciliation_complete',
-          status: retry.status === 'cleaned' ? 'cleaned' : 'staging',
+          status: retry.status ?? 'staging',
         });
       }
       const retry = await dependencies.storage.retryStage(upload);
@@ -57,7 +57,7 @@ export async function reconcileBrandingUpload(
         });
       return transitionBrandingUpload(upload, {
         type: 'reconciliation_complete',
-        status: retry.status === 'cleaned' ? 'cleaned' : 'staging',
+        status: retry.status ?? 'staging',
       });
     } catch {
       return transitionBrandingUpload(upload, {

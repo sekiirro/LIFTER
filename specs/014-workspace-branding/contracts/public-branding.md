@@ -4,7 +4,7 @@
 
 - Extend the existing F10 token-validated open projection with the current published identity only. Drafts and history remain private.
 - Every page render resolves workspace and current published version on the server. Invalid, malformed, expired, or consumed tokens receive the exact generic invalid response already defined by F10, with no workspace identity.
-- The extended `registration_link_open(token)` creates a cryptographically unguessable, bounded-expiry render handle bound to the exact link, workspace and published version; only its hash is stored. Enforce per-link active-handle and issuance-rate caps, with exact caps set before implementation, and expire/delete handles after the render window. The handle is a render capability, not a user-selected version or object id. Existing F10 open semantics remain authoritative.
+- The extended `registration_link_open(token)` creates a cryptographically unguessable, bounded-expiry render handle bound to the exact link, workspace and published version; only its hash is stored. Enforce per-link active-handle and issuance-rate caps, with exact caps set before implementation. A handle expires after the render window, but its issuance row remains as rate-limit history until it is older than the rolling five-minute issuance window; cleanup may delete it only after both conditions hold. The handle is a render capability, not a user-selected version or object id. Existing F10 open semantics remain authoritative.
 - Responses, including errors, are private/no-store. No shared actor/workspace or CDN token cache.
 - Publication does not alter signup authorization, input state, F10/F11 link validity, or package/workspace snapshots. An already rendered page keeps its identity until reload.
 
