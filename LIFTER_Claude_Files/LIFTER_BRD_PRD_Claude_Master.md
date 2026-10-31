@@ -66,7 +66,7 @@ Workspace Owner can edit logo, color theme, visual identity, hero/branding eleme
 3. Client identity is tied to one workspace-specific account. Account/email/phone uniqueness and separation across workspaces follow the approved account-isolation rules; do not merge unrelated workspace accounts. Telegram username is collected; actual bot linking is optional.
 4. Workspace Owner approves registration/payment before intake. Client sees approval without having to log out and back in. Rejection/release of registration and deletion handling must preserve required financial/audit evidence. **PO decision 2026-10-28 (DG-F12-1):** PO, WO, or an authorized Trainer selects the intake form; it is automatically assigned after approval and presented to the client on login. This is delivered by the Forms/Intake engine (P2), not as a partial engine inside F12.
 5. Mandatory initial intake consists of one form with **Basic, Workout and Nutrition** sections, conditional questions, autosave and workspace-independent assigned copies. Information is available contextually to the relevant planners; measurement linkage is manual where specified. Intake can be edited under form-versioning rules. The mandatory sections and workspace authorization remain required under the PO decision.
-6. The delivery clock starts after **submission of mandatory intake**. First complete workout + nutrition plan pair is due in **five working days**. Friday is nonworking; submissions before 18:00 count the submission day, after 18:00 count from the next working day. Correcting submitted answers does not restart the clock.
+6. The delivery clock starts after **submission of mandatory intake**. First complete workout and nutrition plans are due in **five working days**. Friday is nonworking; submissions before 18:00 count the submission day, after 18:00 count from the next working day. Correcting submitted answers does not restart the clock.
 7. First subscription becomes active automatically when both initial plans are delivered; `activated_at` is the second delivery timestamp. New-client assignment, planning and delivery status must be visible operationally.
 8. During active subscription the client views eligible plans, measurements, check-ins, subscription and notifications. On expiry, login/settings/support/renewal-related access remains, while plan access/export is restricted. Overdue installments independently restrict plan access.
 9. Renewal is paid and arranged **outside LIFTER**. Client sees expiry alert/date only, with no in-app renewal request or redirect CTA. Administration records and approves the renewed subscription; renewals activate under their previously agreed renewal rule (distinct from first-subscription activation).
@@ -75,8 +75,8 @@ Workspace Owner can edit logo, color theme, visual identity, hero/branding eleme
 ## BRD-05. Trainer accountability and workforce policies
 
 - New clients are automatically assigned across authorized trainers by balanced client count; assignment identifies a **responsible trainer**, not an exclusive access boundary.
-- All trainers in the same authorized workspace may collaborate on its clients and plans; helper contributions are separately auditable. The designated responsible trainer receives productivity credit for the first auto-delivered workout+nutrition pair.
-- **One productivity unit = one complete workout+nutrition plan pair per client per subscription**. Extra edits/revisions/extra plans in the same subscription do not earn another unit. A renewal counts only if genuinely new plans are delivered. Genuine completed delivery remains credited even if a later refund occurs.
+- All trainers in the same authorized workspace may collaborate on its clients and plans; helper contributions are separately auditable. The designated responsible trainer receives productivity credit for the first auto-delivered workout and nutrition plans.
+- **One productivity unit = one complete initial workout and nutrition plan set per client per subscription**. Extra edits/revisions/extra plans in the same subscription do not earn another unit. A renewal counts only if genuinely new plans are delivered. Genuine completed delivery remains credited even if a later refund occurs.
 - Four KPI categories: plan deliveries, timeliness, follow-ups handled, and service quality. Platform Owner sets weights totaling 100% and performance targets. If no new clients are assigned, the new-delivery category is not evaluable and its weight redistributes proportionally; never punish the trainer for lack of assignments. Check-in performance measures handling of check-ins **received**, not whether clients send them.
 - Service quality is assessed manually by Platform Owner; changes to monthly targets take effect the next month. Owner may correct attribution with a recorded reason/audit trail.
 - Trainers have **fixed base salaries** and potential KPI-linked incentives. **Platform Owner decides incentive amounts manually**; do not automatically calculate salary bonuses from KPI scores. Trainers see own salary/KPI only. Payroll approval means **actually paid**, so approval must not occur before the external transfer. No second “confirm paid” step.
@@ -196,7 +196,7 @@ Workspace Owner can edit logo, color theme, visual identity, hero/branding eleme
 - Package selection is server-authoritative and linked to registration token. Price/commission snapshots immutable at purchase; later package edits apply prospectively.
 - External payment confirmation is required before account/renewal approval. Avoid representing unverified cash as received.
 - For applicable three-month installments: 50% + 50%; second installment due end of first month measured from activation; late installment restricts plans and prompts staff/client notices as approved.
-- First activation is plan-pair based; renewal activation is immediate under the approved renewal behavior. Freeze affects eligibility and weekly forms, and must preserve agreed extension/history rules.
+- First activation occurs after both initial workout and nutrition plans are delivered (independent delivery records); renewal activation is immediate under the approved renewal behavior. Freeze affects eligibility and weekly forms, and must preserve agreed extension/history rules.
 - Client expiration notifications at 3 days, 1 day and on expiry; access to plans/export stops at expiry but account/settings/support-related visibility remains. Do not add in-app 'request renewal' or external renewal CTA: client sees an expiry alert only.
 - Full and partial refunds create immutable reversal ledger events. Deleted/closed accounts retain legally necessary financial/audit history.
 - Exact duration arithmetic, freeze limits and schedule edge values must be verified against the signed-off original decision log before implementation; **do not guess them from YBS code**.
@@ -204,7 +204,7 @@ Workspace Owner can edit logo, color theme, visual identity, hero/branding eleme
 ## PRD-08. Trainer workflow, KPI and payroll
 
 - Balanced initial client assignment across workspace trainers. Workspace trainers collaborate freely; assignment drives accountability and KPI credit, not exclusive authorization.
-- Productivity measured as a complete first workout+nutrition pair per subscription. Owner-approved corrections have recorded reasons.
+- Productivity measured as a complete first workout and nutrition plan set per subscription. Owner-approved corrections have recorded reasons.
 - Four weighted KPI categories (delivery, timeliness, handled check-ins, manually rated service quality), 100% total; not-evaluable delivery category weight redistributed if trainer has no new assignments. Target changes next month only.
 - Fixed salary plus Platform Owner manually selected incentive; KPI is decision support, not a bonus-calculation engine. Owner-only all-staff payroll visibility; trainer own salary/KPI only.
 - Approval marks salary **paid**; no separate payment confirmation. Any strike/deduction/dismissal requires Platform Owner authorization; 3/6/9 rolling 90-day progression tracked without automatic firing.
@@ -278,7 +278,7 @@ Workspace Owner can edit logo, color theme, visual identity, hero/branding eleme
 
 **Journey E — workspace isolation:** staff belongs to multiple authorized workspaces with consistent role → chooses appropriate context → cannot view or mutate unrelated workspace records via any surface, including bot/export/background operations.
 
-**Journey F — coach payroll:** platform sets KPI weights/targets → received check-ins and plan pairs counted → no-assignment KPI reweighting works → owner manually rates quality/incentive → actual payment made outside system → owner approves payroll as already paid → trainer sees only own result.
+**Journey F — coach payroll:** platform sets KPI weights/targets → received check-ins and initial plan sets counted → no-assignment KPI reweighting works → owner manually rates quality/incentive → actual payment made outside system → owner approves payroll as already paid → trainer sees only own result.
 
 **Journey G — account closure:** client contacts admin externally → authorized admin reviews closure → client access closed and personal data handled under applicable retention rules → historical financial/audit records remain valid.
 

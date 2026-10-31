@@ -25,7 +25,7 @@ F11 creates `public.clients` rows in `pending-approval` with zero access. F12 le
 - S6 Approved clients get live access WITHOUT re-login (BRD-04.4): access is derived from DB state per request (app `authorize()` + RLS read `clients.state`), never from JWT claims minted at sign-in.
 - S7 Staff UI: approval queue, approve/reject dialogs, record-installment action; bilingual, Design System, frontend design gate.
 
-**Out of scope** (later features): refunds (F13; D-10 PO-only, D-15 full only), freeze, renewal, activation on plan-pair delivery (P4), overdue restriction enforcement and notifications (P4/P6), finance reporting (P4), client portal content beyond the approval-state landing, intake (P2), client deletion/closure (ND-F5-1).
+**Out of scope** (later features): refunds (F13; D-10 PO-only, D-15 full only), freeze, renewal, activation after both initial plans are delivered (P4), overdue restriction enforcement and notifications (P4/P6), finance reporting (P4), client portal content beyond the approval-state landing, intake (P2), client deletion/closure (ND-F5-1).
 
 ## 2. Requirements (draft)
 - FR-01 Two walls on every mutation/read: app `authorize()` capability + DB `has_workspace_access()`/actor checks inside SECURITY DEFINER RPCs (`search_path=''`, postgres-owned, EXECUTE only to `authenticated`). No capability-matrix change (uses existing `approve_registration`, `record_payment`).
