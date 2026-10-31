@@ -8,7 +8,7 @@ Observable contract only. Exact SQL argument types and transport schemas remain 
 | --- | --- | --- | --- | --- | --- | --- |
 | Read global catalog/search/history | Allow directly, including without workspace membership | Allow with current `coaching_work` membership in at least one workspace | Same as WO | Deny | Deny; clients receive plan snapshots only | Deny |
 | Create global exercise; edit/version; taxonomy governance | Allow | Deny | Deny | Deny | Deny | Deny |
-| Archive/remove/restore/merge global exercise or food | Allow | Deny | Deny | Deny | Deny | Deny |
+| Remove/restore/merge global exercise or food | Allow | Deny | Deny | Deny | Deny | Deny |
 | Create global food | Allow if PO identity is authenticated | Allow with current `coaching_work` in at least one workspace | Allow with current `coaching_work` in at least one workspace | Deny | Deny | Deny |
 | Edit/version global food | Allow | Allow only when current actor is the food creator; otherwise deny | Allow only when current actor is the food creator; otherwise deny | Deny | Deny | Deny |
 | Read/write workspace-only exercise | Allow with explicit workspace scope | Allow in own current workspace | Allow in own current workspace | Deny | Deny | Deny |
@@ -33,13 +33,13 @@ Every mutation accepts an action-bound UUIDv4 operation key, request data, and (
 | --- | --- | --- | --- |
 | `catalog_create_exercise` | Create global identity + v1 | PO only | Stable ID and v1; bilingual name/taxonomy fields valid; one audit event. |
 | `catalog_version_exercise` | Append global exercise version | PO only | New immutable version under same ID; expected-version CAS. |
-| `catalog_retire_exercise` | Global lifecycle transition | PO only | Append lifecycle marker/version; no delete. |
+| `catalog_remove_exercise` / `catalog_restore_exercise` | Global lifecycle transition | PO only | Append non-destructive Remove or Restore marker; preserve identity, versions, plans and snapshots. |
 | `catalog_merge_exercise` | Supersede duplicate identity | PO only | Active survivor only; deterministic pair locking; no chains/cycles. |
 | `catalog_write_workspace_exercise` | Create/version workspace-only exercise | PO for explicit authorized workspace; WO/Trainer in own workspace | Workspace-bound identity/version; no cross-workspace read. |
-| `catalog_write_variation` | Create/version/archive/restore a mapping | PO for any explicit workspace; WO/Trainer in own workspace | Workspace mapping version for shared global exercise ID; HTTPS YouTube/Drive only. |
-| `catalog_create_food` | Create global food v1 | PO, WO or Trainer with current coaching membership | Immediate global availability; required nutrition/servings; kcal discrepancy is warn-only; enforce dedup and D16-10. |
+| `catalog_write_variation` | Create or version a mapping | PO for any explicit workspace; WO/Trainer with `coaching_work` in the explicitly selected workspace | Append a mapping version for the shared global exercise ID; HTTPS YouTube/Drive only. Variation lifecycle behavior is a required F16 implementation detail tracked in `plan.md`. |
+| `catalog_create_food` | Create global food v1 | PO, or WO/Trainer with current `coaching_work` in one explicitly selected workspace | Immediate global availability; persist immutable `created_by` and `origin_workspace_id` provenance; PO may create without workspace context; required nutrition/servings; kcal discrepancy is warn-only; enforce dedup and D16-10. |
 | `catalog_version_food` | Append food version | PO or creator | New immutable version; expected-version CAS; duplicate checks against changed names. |
-| `catalog_retire_food` | Global lifecycle transition | PO only | Append marker/version; hide from new selection, preserve references. |
+| `catalog_remove_food` / `catalog_restore_food` | Global lifecycle transition | PO only | Append non-destructive Remove or Restore marker; preserve identity, versions, plans and snapshots. Restore re-reserves the exact keys atomically and conflicts if another active food owns one. |
 | `catalog_merge_food` | Supersede duplicate identity | PO only | Active survivor only; deterministic pair locking; no chains/cycles. |
 | `catalog_version_taxonomy_term` | Append taxonomy labels/lifecycle | PO only | Stable code, immutable term version; old exercise versions unchanged. |
 
@@ -47,11 +47,11 @@ Every mutation accepts an action-bound UUIDv4 operation key, request data, and (
 
 | Read operation | Authorization | Projection |
 | --- | --- | --- |
-| `catalog_search(kind, query, filters, cursor)` | Global PO-or-current-coaching-staff predicate; workspace items also require matching current workspace access | Max 50, stable order, indexed normalized search, no creator/origin to non-PO, no foreign workspace variation data. |
-| Entry/version detail read (via hardened `catalog_search` continuation or dedicated hardened read function) | Same rule as search | Explicit immutable versions; non-PO creator/origin omitted; lifecycle clearly identified. |
-| Workspace video resolution | Explicit selected workspace authorization on every call | Returns only that workspace's current authorized YouTube/Drive mapping; never returns or signals other workspace links. |
+| `catalog_search(kind, query, filters, cursor, workspace_id)` | Global reads use the PO-or-current-coaching-staff predicate and return global rows only; workspace reads require one explicit `workspace_id` plus current `coaching_work` in it | Max 50, stable order, indexed normalized search; workspace-owned rows and videos from other workspaces are never returned or inferable. |
+| Entry/version detail and history read | Global: same PO-or-current-coaching-staff rule. Workspace-owned: explicit `workspace_id` and current `coaching_work` there | Explicit immutable versions; server returns `created_by` and `origin_workspace_id` only to PO governance reads; all non-PO RPC/view/search/detail/history/error/export projections null or omit both. |
+| Workspace video resolution | Explicit selected workspace and current `coaching_work` authorization on every call | Returns only that workspace's current authorized YouTube/Drive mapping; never returns or signals other workspace links. |
 
-Read calls are not audit events. Client plan reads consume F17/F18 immutable snapshots and do not call catalog reads.
+Read calls are not audit events. Client plan reads consume F17/F18 immutable snapshots and do not call catalog reads. Every non-PO path enforces provenance masking server-side; name the negative and positive tests `global_food_provenance_masking_non_po` and `global_food_provenance_po_governance_read` respectively. Workspace read authorization and foreign-workspace non-disclosure are checked independently for search, detail/history, variation, video resolution and planner/export joins.
 
 ## Audit action contract
 

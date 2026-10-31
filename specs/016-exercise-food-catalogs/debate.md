@@ -15,6 +15,10 @@ Historical review record. It preserves earlier proposals and deliberation only; 
 | R7 | major | ACCEPTED | D16-1 split into 1a/1b/1c; FR-002/009 marked PENDING with PROPOSED defaults. |
 | R8 | major | ACCEPTED | D16-5 = NEEDS SOURCE CONFIRMATION, release-blocking; decimal-string transport at fixed scales; F18 engine converts (apply in F18 v1). |
 | R9 | major | ACCEPTED | FR-013 audit allowlist, workspace_id NULL for global, search not audited, two-segment action names. |
+
+## Post-debate canonical reconciliation
+
+The accepted R7 key reservation shape above is historical and is superseded by the canonical F16 FR-008 in the spec: exact keys include language, normalized name, basis, canonical product identity, preparation identity and weighing state. The canonical spec and plan, under DR-03 and the S20 PO decisions, govern implementation.
 | R10 | major | ACCEPTED as PROPOSAL | FR-021 + D16-10; production gate, no moderation queue (PRD-05/PRD-12 preserved). |
 | R11 | major | ACCEPTED | SC-005 split Worker CPU vs DB/API SLO (D16-11) + EXPLAIN assertion. |
 | R12 | major | ACCEPTED | RED list extended verbatim in substance. |
@@ -37,7 +41,7 @@ PO items added/reworded: D16-1a/b/c, D16-5, D16-7, D16-9, D16-10, D16-11. Reject
 | R8 | minor | REJECTED | Review note was outside the feature decision scope. |
 | R9 | minor | ACCEPTED | SC-005 fixture definition + DB/index size vs 70% exit trigger. |
 
-PO list changes: D16-11 removed (engineering-owned p95 <= 300 ms); D16-10 owner = PO (proposed).
+PO list changes: D16-11 is the engineering-owned p95 <= 300 ms target, not a PO decision; D16-10 owner = PO (proposed).
 
 ## Round 3 ? review record
 
@@ -56,7 +60,7 @@ PO list changes: D16-11 removed (engineering-owned p95 <= 300 ms); D16-10 owner 
 | R11 | minor | ACCEPTED | `catalog_operations` counted in D16-10 storage budgets. |
 | R12 | minor | REJECTED | BRD-06 was deliberately excluded from the sanitized pack; the source exists. |
 
-Decisions: D16-7 split into 7a/7b/7c (accepted); D16-11 "PO read without membership" rejected (R3); D16-12 rejected (R4 handled as engineering).
+Decisions: D16-7 split into 7a/7b/7c (accepted); the R3 "PO read without membership" proposal was rejected and has no D16 decision identifier; D16-11 remains the engineering-owned p95 target; D16-12 rejected (R4 handled as engineering).
 
 ## Summary
 
