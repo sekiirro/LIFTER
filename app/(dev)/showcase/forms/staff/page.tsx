@@ -7,9 +7,19 @@ import {
 import { isShowcaseEnabled } from '../../../../../lib/design/showcase';
 import { FormsStaffDemo } from '../../../../../components/forms/FormsStaffDemo';
 
-export default async function FormsStaffDemoPage() {
+export default async function FormsStaffDemoPage({
+  searchParams,
+}: {
+  searchParams?: Promise<{ defaultConfigurationError?: string }>;
+}) {
   if (!isShowcaseEnabled(process.env)) notFound();
   const preferences = await cookies();
   const locale = parseLocale(preferences.get(LOCALE_COOKIE)?.value);
-  return <FormsStaffDemo locale={locale} />;
+  const params = await searchParams;
+  return (
+    <FormsStaffDemo
+      locale={locale}
+      defaultConfigurationError={params?.defaultConfigurationError === '1'}
+    />
+  );
 }

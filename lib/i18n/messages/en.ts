@@ -449,6 +449,8 @@ export const en: Record<keyof typeof ar, string> = {
     'This form is no longer available in the preview.',
   'forms.staffResult.default_selected':
     'This form is the selected onboarding default. Select another onboarding form before retiring it. (DRAFT)',
+  'forms.staffDefaultConfigurationError':
+    'The onboarding default needs correction. Select an eligible form below. (DRAFT)',
   'forms.staffIntake': 'Intake',
   'forms.staffAssignedForms': 'Assigned forms',
   'forms.staffNoAssignments': 'No assigned forms',

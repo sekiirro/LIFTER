@@ -447,14 +447,16 @@ export function FormBuilder({
                   {' · '}
                   {messages[`forms.staffStatus.${savedForm.status}`]}
                 </Button>
-                <Button
-                  variant="secondary"
-                  aria-pressed={defaultOnboardingFormId === savedForm.id}
-                  disabled={!canManage || busy}
-                  onClick={() => onSetDefaultOnboardingForm(savedForm.id)}
-                >
-                  {messages['forms.staffSetDefaultOnboarding']}
-                </Button>
+                {savedForm.status !== 'retired' && (
+                  <Button
+                    variant="secondary"
+                    aria-pressed={defaultOnboardingFormId === savedForm.id}
+                    disabled={!canManage || busy}
+                    onClick={() => onSetDefaultOnboardingForm(savedForm.id)}
+                  >
+                    {messages['forms.staffSetDefaultOnboarding']}
+                  </Button>
+                )}
               </div>
             </li>
           ))}

@@ -2,7 +2,7 @@ import { randomUUID } from 'node:crypto';
 import postgres from 'postgres';
 import { afterAll, describe, expect, it } from 'vitest';
 
-const db = postgres(process.env.DB_URL ?? '', { max: 1, connect_timeout: 10 });
+const db = postgres(process.env.DB_URL ?? '', { max: 4, connect_timeout: 10 });
 afterAll(() => db.end());
 
 const rollback = new Error('T009 synthetic fixture rollback');
@@ -92,6 +92,161 @@ describe('T006/T009 persisted onboarding default', () => {
     ).rejects.toBe(rollback);
   });
 
+  it('serializes concurrent first reads and records one durable provisioning marker', async () => {
+    const fixture = await db.begin(async (tx) => workspace(tx));
+    try {
+      const provision = () =>
+        db.begin(async (tx) => {
+          const rows = await tx`
+            select app_private.ensure_default_onboarding_form(
+              ${fixture.workspaceId},${fixture.actor}
+            ) as form_id`;
+          return rows[0]?.form_id;
+        });
+      const [first, second] = await Promise.all([provision(), provision()]);
+      expect(first).toBeTruthy();
+      expect(first).toBe(second);
+      const counts = await db`
+        select
+          (select count(*)::int from public.workspace_default_onboarding_forms
+            where workspace_id=${fixture.workspaceId}) as designations,
+          (select count(*)::int from app_private.workspace_onboarding_provisioning
+            where workspace_id=${fixture.workspaceId}) as markers,
+          (select count(*)::int from public.forms where workspace_id=${fixture.workspaceId}) as forms`;
+      expect(counts[0]).toEqual({ designations: 1, markers: 1, forms: 1 });
+    } finally {
+      await db.begin(async (tx) => {
+        await tx`set local session_replication_role = replica`;
+        await tx`delete from public.audit_events where workspace_id=${fixture.workspaceId}`;
+        await tx`delete from public.workspace_default_onboarding_forms where workspace_id=${fixture.workspaceId}`;
+        await tx`delete from app_private.workspace_onboarding_provisioning where workspace_id=${fixture.workspaceId}`;
+        await tx`delete from public.form_versions where workspace_id=${fixture.workspaceId}`;
+        await tx`delete from public.forms where workspace_id=${fixture.workspaceId}`;
+        await tx`delete from public.workspace_memberships where workspace_id=${fixture.workspaceId}`;
+        await tx`delete from public.workspaces where id=${fixture.workspaceId}`;
+        await tx`delete from public.staff_profiles where user_id=${fixture.actor}`;
+        await tx`delete from auth.users where id=${fixture.actor}`;
+      });
+    }
+  });
+
+  it('returns a generic configuration error after a provisioned designation and form disappear', async () => {
+    await expect(
+      db.begin(async (tx) => {
+        const fixture = await workspace(tx);
+        const initial = await tx`
+          select app_private.ensure_default_onboarding_form(${fixture.workspaceId},${fixture.actor}) as form_id`;
+        const firstFormId = initial[0]!.form_id;
+        await tx`delete from public.workspace_default_onboarding_forms where workspace_id=${fixture.workspaceId}`;
+        await tx`delete from public.form_versions where workspace_id=${fixture.workspaceId} and form_id=${firstFormId}`;
+        await tx`delete from public.forms where workspace_id=${fixture.workspaceId} and id=${firstFormId}`;
+
+        const before =
+          await tx`select count(*)::int as count from public.forms where workspace_id=${fixture.workspaceId}`;
+        const state =
+          await tx`select app_private.resolve_default_onboarding_configuration(
+          ${fixture.workspaceId},${fixture.actor}) as result`;
+        const stillNoDefault =
+          await tx`select count(*)::int as count from public.workspace_default_onboarding_forms
+          where workspace_id=${fixture.workspaceId}`;
+        const after =
+          await tx`select count(*)::int as count from public.forms where workspace_id=${fixture.workspaceId}`;
+        const marker =
+          await tx`select first_form_id from app_private.workspace_onboarding_provisioning
+          where workspace_id=${fixture.workspaceId}`;
+        expect(state[0]?.result).toEqual({
+          status: 'configuration_error',
+          errorCode: 'onboarding_default_configuration',
+        });
+        expect(marker).toEqual([{ first_form_id: firstFormId }]);
+        expect(stillNoDefault[0]?.count).toBe(0);
+        expect(after).toEqual(before);
+        expect(after[0]?.count).toBe(0);
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
+  });
+
+  it.each(['retired', 'cross-workspace'] as const)(
+    'returns a generic configuration error without re-pointing a %s designation',
+    async (invalidKind) => {
+      await expect(
+        db.begin(async (tx) => {
+          const fixture = await workspace(tx);
+          const other = await workspace(tx);
+          const first =
+            await tx`select app_private.ensure_default_onboarding_form(
+            ${fixture.workspaceId},${fixture.actor}) as form_id`;
+          const second =
+            await tx`select app_private.ensure_default_onboarding_form(
+            ${other.workspaceId},${other.actor}) as form_id`;
+          let invalidId = first[0]!.form_id;
+          if (invalidKind === 'retired') {
+            await tx`update public.form_versions set status='retired'
+              where workspace_id=${fixture.workspaceId} and form_id=${invalidId}`;
+          } else {
+            await tx`set local session_replication_role = replica`;
+            await tx`update public.workspace_default_onboarding_forms
+              set form_id=${second[0]!.form_id} where workspace_id=${fixture.workspaceId}`;
+            await tx`set local session_replication_role = origin`;
+            invalidId = second[0]!.form_id;
+          }
+          const beforeForms =
+            await tx`select count(*)::int as count from public.forms
+            where workspace_id in (${fixture.workspaceId},${other.workspaceId})`;
+          const state =
+            await tx`select app_private.resolve_default_onboarding_configuration(
+            ${fixture.workspaceId},${fixture.actor}) as result`;
+          const designation =
+            await tx`select form_id from public.workspace_default_onboarding_forms
+            where workspace_id=${fixture.workspaceId}`;
+          const afterForms =
+            await tx`select count(*)::int as count from public.forms
+            where workspace_id in (${fixture.workspaceId},${other.workspaceId})`;
+          expect(state[0]?.result).toEqual({
+            status: 'configuration_error',
+            errorCode: 'onboarding_default_configuration',
+          });
+          expect(designation).toEqual([{ form_id: invalidId }]);
+          expect(afterForms).toEqual(beforeForms);
+          throw rollback;
+        }),
+      ).rejects.toBe(rollback);
+    },
+  );
+
+  it('clears configuration error by authorized internal selection and records the correction audit', async () => {
+    await expect(
+      db.begin(async (tx) => {
+        const fixture = await workspace(tx);
+        await tx`select app_private.ensure_default_onboarding_form(
+          ${fixture.workspaceId},${fixture.actor})`;
+        await tx`delete from public.workspace_default_onboarding_forms where workspace_id=${fixture.workspaceId}`;
+        const replacement = randomUUID();
+        await tx`insert into public.forms(id,workspace_id,name)
+          values(${replacement},${fixture.workspaceId},'Corrected default')`;
+        await tx`insert into public.form_versions(workspace_id,form_id,version_number,
+          terms_policy_version,definition,status) values(${fixture.workspaceId},${replacement},1,
+          'f15-terms-s14-draft-2026-10-30',${tx.json({ title: { en: 'Corrected default', ar: '' }, sections: [], questions: [] })},'draft')`;
+        const changed = await tx`select app_private.set_default_onboarding_form(
+          ${fixture.workspaceId},${replacement},${fixture.actor}) as changed`;
+        const state =
+          await tx`select app_private.resolve_default_onboarding_configuration(
+          ${fixture.workspaceId},${fixture.actor}) as result`;
+        const audit = await tx`select action,details from public.audit_events
+          where workspace_id=${fixture.workspaceId} and action='form.default_onboarding_selected'`;
+        expect(changed[0]?.changed).toBe(true);
+        expect(state[0]?.result).toEqual({ status: 'ok', formId: replacement });
+        expect(audit).toHaveLength(1);
+        expect(audit[0]?.details).toEqual({
+          previous_form_id: null,
+          form_id: replacement,
+        });
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
+  });
+
   it('does not silently replace a retired designated default', async () => {
     await expect(
       db.begin(async (tx) => {
@@ -105,19 +260,27 @@ describe('T006/T009 persisted onboarding default', () => {
         const stillSelected = await tx`
           select app_private.ensure_default_onboarding_form(${fixture.workspaceId},${fixture.actor}) as form_id
         `;
-        expect(stillSelected[0]?.form_id).toBe(formId);
+        expect(stillSelected[0]?.form_id).toBeNull();
+        const state =
+          await tx`select app_private.resolve_default_onboarding_configuration(
+          ${fixture.workspaceId},${fixture.actor}) as result`;
+        expect(state[0]?.result).toEqual({
+          status: 'configuration_error',
+          errorCode: 'onboarding_default_configuration',
+        });
         const latest = await tx`select status from public.form_versions
           where workspace_id=${fixture.workspaceId} and form_id=${formId}
           order by version_number desc limit 1`;
         expect(latest[0]?.status).toBe('retired');
-        const forms = await tx`select count(*)::int as count from public.forms where workspace_id=${fixture.workspaceId}`;
+        const forms =
+          await tx`select count(*)::int as count from public.forms where workspace_id=${fixture.workspaceId}`;
         expect(forms[0]?.count).toBe(1);
         throw rollback;
       }),
     ).rejects.toBe(rollback);
   });
 
-  it('reads a retired designation flagged for attention (pending T049 author_forms)', async () => {
+  it('reads a retired designation as a generic configuration error (pending T049 author_forms)', async () => {
     await db
       .begin(async (tx) => {
         const fixture = await workspace(tx);
@@ -129,13 +292,13 @@ describe('T006/T009 persisted onboarding default', () => {
           where workspace_id=${fixture.workspaceId} and form_id=${formId}`;
         await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: fixture.actor, role: 'authenticated' })},true)`;
         await tx`set local role authenticated`;
-        const result = await tx`select public.get_staff_forms(${fixture.workspaceId}) as result`;
+        const result =
+          await tx`select public.get_staff_forms(${fixture.workspaceId}) as result`;
         expect(result[0]?.result).toMatchObject({
-          defaultOnboardingFormId: formId,
-          defaultNeedsAttention: true,
+          status: 'configuration_error',
+          errorCode: 'onboarding_default_configuration',
+          defaultOnboardingFormId: null,
         });
-        expect(result[0]?.result.forms.find((form: { id: string }) => form.id === formId))
-          .toMatchObject({ status: 'retired', needsAttention: true, deadlineDays: 3 });
         throw rollback;
       })
       .catch((error) => {
@@ -177,7 +340,7 @@ describe('T006/T009 persisted onboarding default', () => {
     ).rejects.toBe(rollback);
   });
 
-  it('selects a non-retired onboarding form for authorized Workspace Owner and Platform Owner (pending T049)', async () => {
+  it('corrects a missing designation through authorized Workspace Owner and Platform Owner selection (pending T049)', async () => {
     await db
       .begin(async (tx) => {
         const fixture = await workspace(tx);
@@ -198,6 +361,7 @@ describe('T006/T009 persisted onboarding default', () => {
           insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
           values(${fixture.workspaceId},${replacement},1,'f15-terms-s14-draft-2026-10-30',${tx.json({ title: { en: 'Synthetic selected form', ar: '' }, sections: [], questions: [] })},'draft')
         `;
+        await tx`delete from public.workspace_default_onboarding_forms where workspace_id=${fixture.workspaceId}`;
         await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: fixture.actor, role: 'authenticated' })},true)`;
         await tx`set local role authenticated`;
         const result = await tx`

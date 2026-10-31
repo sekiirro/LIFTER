@@ -8,8 +8,28 @@ import {
 } from '../../lib/forms/mock-staff-adapter';
 import { FormsStaffConsole } from './FormsStaffConsole';
 
-export function FormsStaffDemo({ locale }: { locale: Locale }) {
-  const adapter = useMemo(() => createMockFormsStaffAdapter(), []);
+export function FormsStaffDemo({
+  locale,
+  defaultConfigurationError = false,
+}: {
+  locale: Locale;
+  defaultConfigurationError?: boolean;
+}) {
+  const adapter = useMemo(() => {
+    const source = createMockFormsStaffAdapter();
+    if (!defaultConfigurationError) return source;
+    return {
+      ...source,
+      async load() {
+        const snapshot = await source.load();
+        return {
+          ...snapshot,
+          defaultOnboardingFormId: null,
+          defaultConfigurationError: true,
+        };
+      },
+    };
+  }, [defaultConfigurationError]);
   const brandSource = useMemo(() => createNeutralFormsBrandSource(), []);
   return (
     <FormsStaffConsole

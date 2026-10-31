@@ -9,6 +9,7 @@ import type {
 
 type StaffFormsResponse = {
   status?: string;
+  errorCode?: string;
   defaultOnboardingFormId?: string | null;
   forms?: FormsStaffSnapshot['forms'];
 };
@@ -91,13 +92,17 @@ export function createPersistedFormsStaffAdapter(
       });
       if (error) throw new Error('Unable to load workspace forms');
       const response = data as StaffFormsResponse | null;
-      if (response?.status !== 'ok') {
+      const configurationError =
+        response?.status === 'configuration_error' &&
+        response.errorCode === 'onboarding_default_configuration';
+      if (response?.status !== 'ok' && !configurationError) {
         throw new Error('Workspace forms are unavailable');
       }
       return {
         forms: response.forms ?? [],
         assignments: [],
         defaultOnboardingFormId: response.defaultOnboardingFormId ?? null,
+        defaultConfigurationError: configurationError,
       };
     },
     async selectDefaultOnboardingForm(

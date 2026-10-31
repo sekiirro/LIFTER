@@ -433,6 +433,8 @@ export const ar = {
   'forms.staffResult.missing': 'لم تعد هذه الاستمارة متاحة في المعاينة.',
   'forms.staffResult.default_selected':
     'هذه الاستمارة مختارة كخطوة البدء الافتراضية. اختر استمارة أخرى كخطوة البدء قبل إيقافها. (مسودة)',
+  'forms.staffDefaultConfigurationError':
+    '\u064A\u062D\u062A\u0627\u062C \u0627\u0644\u0625\u0639\u062F\u0627\u062F \u0625\u0644\u0649 \u062A\u0635\u062D\u064A\u062D. \u0627\u062E\u062A\u0631 \u0646\u0645\u0648\u0630\u062C\u064B\u0627 \u0645\u062A\u0627\u062D\u064B\u0627 \u0623\u062F\u0646\u0627\u0647. (\u0645\u0633\u0648\u062F\u0629)',
   'forms.staffIntake': 'الاستقبال',
   'forms.staffAssignedForms': 'الاستمارات المسندة',
   'forms.staffNoAssignments': 'لا توجد استمارات مسندة',

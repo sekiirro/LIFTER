@@ -118,6 +118,7 @@ export function FormsStaffConsole({
       ],
       assignments: current?.assignments ?? [],
       defaultOnboardingFormId: current?.defaultOnboardingFormId ?? null,
+      defaultConfigurationError: current?.defaultConfigurationError ?? false,
     }));
     return result.form;
   }
@@ -176,8 +177,16 @@ export function FormsStaffConsole({
       setIssue(messages[`forms.staffResult.${messageStatus}`]);
       setStatusMessage('');
     } else {
+      const selectedForm = snapshot?.forms.find((item) => item.id === formId);
+      if (selectedForm) setForm(selectedForm);
       setSnapshot((current) =>
-        current ? { ...current, defaultOnboardingFormId: formId } : current,
+        current
+          ? {
+              ...current,
+              defaultOnboardingFormId: formId,
+              defaultConfigurationError: false,
+            }
+          : current,
       );
       setStatusMessage(messages['forms.staffSaved']);
     }
@@ -232,6 +241,12 @@ export function FormsStaffConsole({
       <p className={styles.previewNotice} role="note">
         {messages['forms.staffMockPreview']}
       </p>
+
+      {snapshot?.defaultConfigurationError && (
+        <p className={styles.error} role="alert">
+          {messages['forms.staffDefaultConfigurationError']}
+        </p>
+      )}
 
       <div
         className={styles.viewPicker}

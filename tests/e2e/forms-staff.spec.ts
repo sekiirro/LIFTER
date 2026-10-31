@@ -170,6 +170,51 @@ for (const variant of matrix) {
       fullPage: true,
     });
   });
+
+  test(`${variant.locale} ${variant.theme} ${variant.width}px default configuration error and correction`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({
+      width: variant.width,
+      height: variant.height,
+    });
+    await page.context().addCookies([
+      {
+        name: 'lifter_locale',
+        value: variant.locale,
+        url: 'http://localhost:3000',
+      },
+      {
+        name: 'lifter_theme',
+        value: variant.theme,
+        url: 'http://localhost:3000',
+      },
+    ]);
+    await page.goto('/showcase/forms/staff?defaultConfigurationError=1');
+    const messages = getMessages(variant.locale);
+    const alert = page.locator('p[role="alert"]');
+    await expect(alert).toHaveText(
+      messages['forms.staffDefaultConfigurationError'],
+    );
+    const violations = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+      .analyze();
+    expect(violations.violations).toEqual([]);
+    await page.screenshot({
+      path: join(
+        tmpdir(),
+        `lifter-f15-default-configuration-${variant.locale}-${variant.theme}-${variant.width}.png`,
+      ),
+      fullPage: true,
+    });
+    await page
+      .getByRole('button', {
+        name: messages['forms.staffSetDefaultOnboarding'],
+      })
+      .first()
+      .click();
+    await expect(alert).toHaveCount(0);
+  });
 }
 
 test('staff can create, save, and publish a blank bilingual form draft', async ({
@@ -196,6 +241,7 @@ test('staff can create, save, and publish a blank bilingual form draft', async (
   ).toBeVisible();
   await page.getByRole('button', { name: 'Save draft' }).click();
   await expect(page.getByRole('status')).toContainText('Draft saved');
+  await page.getByRole('button', { name: 'Preview form' }).click();
   await page.getByRole('button', { name: 'Publish form' }).click();
   await expect(page.getByRole('status')).toContainText('Form published');
 });

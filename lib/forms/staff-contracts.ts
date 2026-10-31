@@ -40,6 +40,7 @@ export type FormsStaffSnapshot = {
   forms: readonly StaffFormDraft[];
   assignments: readonly StaffAssignmentPreview[];
   defaultOnboardingFormId: string | null;
+  defaultConfigurationError?: boolean;
 };
 
 export type FormsStaffResult =

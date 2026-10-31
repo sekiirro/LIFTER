@@ -7,6 +7,27 @@ function clientFor(rpc: ReturnType<typeof vi.fn>) {
 }
 
 describe('persisted Forms staff adapter', () => {
+  it('loads the generic default-configuration error with forms available for correction', async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        status: 'configuration_error',
+        errorCode: 'onboarding_default_configuration',
+        defaultOnboardingFormId: null,
+        forms: [{ id: 'eligible-1', status: 'published' }],
+      },
+      error: null,
+    });
+    const adapter = createPersistedFormsStaffAdapter(
+      clientFor(rpc),
+      'workspace-1',
+    );
+    await expect(adapter.load()).resolves.toMatchObject({
+      defaultOnboardingFormId: null,
+      defaultConfigurationError: true,
+      forms: [{ id: 'eligible-1', status: 'published' }],
+    });
+  });
+
   it('loads the workspace snapshot through the audited Forms RPC', async () => {
     const rpc = vi.fn().mockResolvedValue({
       data: {

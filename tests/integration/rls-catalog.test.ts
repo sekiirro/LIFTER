@@ -183,6 +183,7 @@ describe('tenancy security catalog (T007)', () => {
         'current_staff_role',
         'ensure_default_onboarding_form',
         'enqueue_job',
+        'f15_onboarding_provisioning_marker_immutable',
         'f15_builder_cached_result',
         'f15_builder_store_result',
         'f15_current_terms_policy',
@@ -216,6 +217,7 @@ describe('tenancy security catalog (T007)', () => {
         'recovery_link_guard',
         'recovery_link_limits',
         'recovery_target_workspace',
+        'resolve_default_onboarding_configuration',
         'retire_workspace_form',
         'retire_workspace_form',
         'role_has_capability',
@@ -233,6 +235,7 @@ describe('tenancy security catalog (T007)', () => {
           'f15_question_applies',
           'f15_submission_complete',
           'f15_valid_builder_definition',
+          'f15_onboarding_provisioning_marker_immutable',
           'forbid_delete',
           'jobs_updated_at',
           'recovery_link_limits',
@@ -255,8 +258,10 @@ describe('tenancy security catalog (T007)', () => {
             'copy_workspace_form',
             'enqueue_job',
             'ensure_default_onboarding_form',
+            'resolve_default_onboarding_configuration',
             'f15_builder_cached_result',
             'f15_builder_store_result',
+            'f15_onboarding_provisioning_marker_immutable',
             'f15_current_terms_policy',
             'f15_answer_is_present',
             'f15_approval_reconcile_trigger',
@@ -291,6 +296,30 @@ describe('tenancy security catalog (T007)', () => {
           ].includes(row.proname),
       );
     }
+  });
+
+  it('keeps the first-provision marker forced-RLS, API-private, and immutable', async () => {
+    const [marker] = await db`
+      select c.relrowsecurity,c.relforcerowsecurity
+      from pg_catalog.pg_class c
+      where c.oid='app_private.workspace_onboarding_provisioning'::regclass`;
+    expect(marker).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      for (const privilege of ['SELECT', 'INSERT', 'UPDATE', 'DELETE']) {
+        const [grant] = await db`
+          select has_table_privilege(${role},'app_private.workspace_onboarding_provisioning',${privilege}) as allowed`;
+        expect(grant?.allowed).toBe(false);
+      }
+    }
+    const triggers = await db`
+      select tgname,tgenabled from pg_catalog.pg_trigger
+      where tgrelid='app_private.workspace_onboarding_provisioning'::regclass and not tgisinternal`;
+    expect(triggers).toEqual([
+      {
+        tgname: 'f15_onboarding_provisioning_marker_immutable',
+        tgenabled: 'O',
+      },
+    ]);
   });
 });
 
