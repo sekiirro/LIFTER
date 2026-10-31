@@ -76,6 +76,34 @@ it('rejects missing or non-string localized draft identity before persistence', 
   expect(draft).toBeUndefined();
 });
 
+it('rejects drafts whose localized names are both blank at the persisted boundary', async () => {
+  const [functionRow] = await db<{ body: string }[]>`
+    select pg_get_functiondef(
+      'app_private.branding_draft_save(uuid,bigint,jsonb)'::regprocedure
+    ) as body
+  `;
+  expect(functionRow?.body).toContain("!~ '[^[:space:]]'");
+  for (const names of [
+    { ar: '', en: '' },
+    { ar: '  ', en: '\t' },
+  ]) {
+    const result = await fixture.woA.client.rpc('branding_draft_save', {
+      workspace_id: fixture.wsA.id,
+      expected_revision: 0,
+      fields: {
+        ...fields('ignored', '#123456'),
+        name: names,
+      },
+    });
+    expect(result.error).toBeTruthy();
+  }
+  const [draft] = await db<{ revision: number }[]>`
+    select revision::int as revision from app_private.branding_drafts
+    where workspace_id=${fixture.wsA.id}
+  `;
+  expect(draft).toBeUndefined();
+});
+
 it('applies the same 1000-character bound to persisted localized identity and banner alt text', async () => {
   for (const value of [
     fields('n'.repeat(1001), '#123456'),
