@@ -25,6 +25,7 @@ const captures: Array<{ path: string; label: string; group: Group }> = [];
 const contrastEvidence: Array<Record<string, unknown>> = [];
 const focusEvidence: Array<Record<string, unknown>> = [];
 const geometryEvidence: Array<Record<string, unknown>> = [];
+const fieldBoundaryEvidence: Array<Record<string, unknown>> = [];
 
 async function open(
   browser: Browser,
@@ -95,6 +96,55 @@ async function axe(page: Page, label: string) {
     result.violations,
     `${label}: ${JSON.stringify(result.violations)}`,
   ).toEqual([]);
+}
+
+async function assertOpaqueSurface(page: Page, label: string) {
+  const surface = await page.evaluate(() => {
+    const card = document.querySelector<HTMLElement>(
+      '[data-testid="hero-glass-card"]',
+    );
+    const field =
+      document.querySelector<HTMLElement>('input[name="name"]')?.parentElement;
+    if (!card || !field) throw new Error('Glass surfaces unavailable');
+    const resolveToken = (token: string) => {
+      const probe = document.createElement('span');
+      probe.style.backgroundColor = token;
+      document.body.append(probe);
+      const value = getComputedStyle(probe).backgroundColor;
+      probe.remove();
+      return value;
+    };
+    const cardStyle = getComputedStyle(card);
+    const fieldStyle = getComputedStyle(field);
+    return {
+      cardBackground: cardStyle.backgroundColor,
+      cardToken: resolveToken(
+        getComputedStyle(document.documentElement).getPropertyValue(
+          '--color-card',
+        ),
+      ),
+      cardBorder: cardStyle.borderTopWidth,
+      cardBackdrop: cardStyle.backdropFilter,
+      fieldBackground: fieldStyle.backgroundColor,
+      fieldToken: resolveToken(
+        getComputedStyle(document.documentElement).getPropertyValue(
+          '--color-card-raised',
+        ),
+      ),
+      fieldBorder: fieldStyle.borderTopWidth,
+      fieldBackdrop: fieldStyle.backdropFilter,
+    };
+  });
+  expect(surface.cardBackground, `${label} card token fill`).toBe(
+    surface.cardToken,
+  );
+  expect(surface.cardBorder, `${label} card border`).toBe('2px');
+  expect(surface.cardBackdrop, `${label} card backdrop`).toBe('none');
+  expect(surface.fieldBackground, `${label} field token fill`).toBe(
+    surface.fieldToken,
+  );
+  expect(surface.fieldBorder, `${label} field border`).toBe('2px');
+  expect(surface.fieldBackdrop, `${label} field backdrop`).toBe('none');
 }
 
 async function capture(
@@ -202,19 +252,30 @@ async function measureTextContrast(page: Page, label: string) {
       ['brand', '[data-brand-name]'],
       ['heading', '.formPlate h1'],
       ['field-label', 'form > label > span:first-child'],
-      ['country-label', '.countryField > label'],
+      ['country-label', 'label[for="hero-country-input"]'],
+      [
+        'phone-label',
+        'label:has(input[name="phone-national"]) > span:first-child',
+      ],
       ['field-value', 'form input'],
       ['calling-code', '[data-testid="country-calling-code"]'],
       ['note', '.previewNote'],
       ['error-copy', '#hero-phone-error'],
     ] as const;
-    const result: Array<{ key: string; rect: DOMRectJSON }> = [];
+    const result: Array<{
+      key: string;
+      color: string;
+      rect: DOMRectJSON;
+    }> = [];
     for (const [key, selector] of selectors) {
       for (const element of document.querySelectorAll<HTMLElement>(selector)) {
         const rect = element.getBoundingClientRect();
-        if (rect.width && rect.height)
+        if (rect.width && rect.height) {
+          const style = getComputedStyle(element);
           result.push({
             key,
+            color:
+              style.getPropertyValue('-webkit-text-fill-color') || style.color,
             rect: {
               x: rect.x,
               y: rect.y,
@@ -222,6 +283,7 @@ async function measureTextContrast(page: Page, label: string) {
               height: rect.height,
             },
           });
+        }
       }
     }
     const field = document.querySelector<HTMLElement>(
@@ -231,6 +293,7 @@ async function measureTextContrast(page: Page, label: string) {
       const rect = field.getBoundingClientRect();
       result.push({
         key: 'field-edge',
+        color: '',
         rect: {
           x: rect.x,
           y: rect.y,
@@ -246,6 +309,7 @@ async function measureTextContrast(page: Page, label: string) {
       const rect = errorField.getBoundingClientRect();
       result.push({
         key: 'error-edge',
+        color: '',
         rect: {
           x: rect.x,
           y: rect.y,
@@ -340,8 +404,13 @@ async function measureTextContrast(page: Page, label: string) {
           );
           continue;
         }
-        const insetX = target.key === 'field-value' ? 8 : 0;
-        const insetY = target.key === 'field-value' ? 6 : 0;
+        const insetX =
+          target.key === 'field-value'
+            ? 8
+            : target.key === 'calling-code'
+              ? 2
+              : 0;
+        const insetY = target.key === 'field-value' ? 6 : 2;
         const x0 = Math.max(0, Math.floor((x + insetX) * 2));
         const x1 = Math.min(canvas.width, Math.ceil((x + width - insetX) * 2));
         const y0 = Math.max(0, Math.floor((y + insetY) * 2));
@@ -349,26 +418,38 @@ async function measureTextContrast(page: Page, label: string) {
           canvas.height,
           Math.ceil((y + height - insetY) * 2),
         );
-        let maximum = 0;
+        const foregroundChannels = target.color
+          .match(/[\d.]+/g)
+          ?.slice(0, 3)
+          .map(Number);
+        if (!foregroundChannels || foregroundChannels.length !== 3)
+          throw new Error(`Unsupported text color: ${target.color}`);
+        const linear = (channel: number) => {
+          const value = channel / 255;
+          return value <= 0.04045
+            ? value / 12.92
+            : ((value + 0.055) / 1.055) ** 2.4;
+        };
+        const foreground =
+          0.2126 * linear(foregroundChannels[0]!) +
+          0.7152 * linear(foregroundChannels[1]!) +
+          0.0722 * linear(foregroundChannels[2]!);
+        let minimumContrast = Infinity;
         for (let py = y0; py < y1; py += 2) {
           for (let px = x0; px < x1; px += 2) {
             const offset = (py * canvas.width + px) * 4;
-            const light = (channel: number) => {
-              const value = channel / 255;
-              return value <= 0.04045
-                ? value / 12.92
-                : ((value + 0.055) / 1.055) ** 2.4;
-            };
-            maximum = Math.max(
-              maximum,
-              0.2126 * light(pixels[offset]!) +
-                0.7152 * light(pixels[offset + 1]!) +
-                0.0722 * light(pixels[offset + 2]!),
+            const background =
+              0.2126 * linear(pixels[offset]!) +
+              0.7152 * linear(pixels[offset + 1]!) +
+              0.0722 * linear(pixels[offset + 2]!);
+            minimumContrast = Math.min(
+              minimumContrast,
+              (Math.max(foreground, background) + 0.05) /
+                (Math.min(foreground, background) + 0.05),
             );
           }
         }
-        values[`${target.key}-${Object.keys(values).length}`] =
-          1.05 / (maximum + 0.05);
+        values[`${target.key}-${Object.keys(values).length}`] = minimumContrast;
       }
       return values;
     },
@@ -405,12 +486,155 @@ async function measureTextContrast(page: Page, label: string) {
   return result;
 }
 
+async function assertVisibleLabels(
+  page: Page,
+  label: string,
+  requireSurfaceContrast = false,
+) {
+  const measured = await page.evaluate(() => {
+    const card = document.querySelector<HTMLElement>(
+      '[data-testid="hero-glass-card"]',
+    );
+    const cardColor = card ? getComputedStyle(card).backgroundColor : '';
+    const inputs = [
+      ['name', 'input[name="name"]'],
+      ['email', 'input[name="email"]'],
+      ['country', '#hero-country-input'],
+      ['phone', 'input[name="phone-national"]'],
+      ['password', 'input[name="password"]'],
+    ] as const;
+    return inputs.map(([key, selector]) => {
+      const input = document.querySelector<HTMLInputElement>(selector);
+      const label =
+        key === 'country'
+          ? document.querySelector<HTMLElement>(
+              'label[for="hero-country-input"]',
+            )
+          : input
+              ?.closest('label')
+              ?.querySelector<HTMLElement>(':scope > span:first-child');
+      if (!input || !label)
+        return {
+          key,
+          text: '',
+          color: '',
+          background: cardColor,
+          visible: false,
+        };
+      const style = getComputedStyle(label);
+      const bounds = label.getBoundingClientRect();
+      return {
+        key,
+        text: label.textContent?.trim() ?? '',
+        color: style.color,
+        background: cardColor,
+        visible:
+          style.visibility !== 'hidden' &&
+          Number(style.opacity) > 0 &&
+          bounds.width > 0 &&
+          bounds.height > 0,
+      };
+    });
+  });
+  expect(measured, `${label} labels`).toHaveLength(5);
+  for (const item of measured) {
+    expect(item.text, `${label} ${item.key} label text`).not.toBe('');
+    expect(item.visible, `${label} ${item.key} label visibility`).toBe(true);
+    expect(item.color, `${label} ${item.key} label color`).not.toBe(
+      'rgba(0, 0, 0, 0)',
+    );
+    if (requireSurfaceContrast) {
+      const ratio = contrast(
+        cssLuminance(item.color),
+        cssLuminance(item.background),
+      );
+      expect(
+        ratio,
+        `${label} ${item.key} label contrast`,
+      ).toBeGreaterThanOrEqual(4.5);
+    }
+  }
+}
+
+async function measureFieldBoundaries(page: Page, label: string) {
+  const targets = await page.evaluate(() => {
+    const controls = [
+      ['name', 'input[name="name"]'],
+      ['email', 'input[name="email"]'],
+      ['country', '#hero-country-input'],
+      ['phone', 'input[name="phone-national"]'],
+      ['password', 'input[name="password"]'],
+    ] as const;
+    return controls.map(([key, selector]) => {
+      const input = document.querySelector<HTMLInputElement>(selector);
+      const wrapper = input?.parentElement;
+      if (!wrapper) return { key, width: 0, style: 'none', rect: null };
+      const style = getComputedStyle(wrapper);
+      const rect = wrapper.getBoundingClientRect();
+      return {
+        key,
+        width: Number.parseFloat(style.borderTopWidth),
+        style: style.borderTopStyle,
+        rect: { x: rect.x, y: rect.y, width: rect.width, height: rect.height },
+      };
+    });
+  });
+  expect(targets).toHaveLength(5);
+  const screenshot = await page.screenshot({ fullPage: true, scale: 'device' });
+  const { data, info } = await sharp(screenshot)
+    .raw()
+    .toBuffer({ resolveWithObject: true });
+  const sample = (x: number, y: number) => {
+    const px = Math.max(0, Math.min(info.width - 1, Math.round(x * 2)));
+    const py = Math.max(0, Math.min(info.height - 1, Math.round(y * 2)));
+    const offset = (py * info.width + px) * info.channels;
+    return [data[offset]!, data[offset + 1]!, data[offset + 2]!];
+  };
+  const measured = targets.map((target) => {
+    expect(
+      target.rect,
+      `${label} ${target.key} boundary geometry`,
+    ).not.toBeNull();
+    expect(
+      target.width,
+      `${label} ${target.key} border width`,
+    ).toBeGreaterThanOrEqual(1);
+    expect(target.style, `${label} ${target.key} border style`).toBe('solid');
+    const rect = target.rect!;
+    const x = rect.x + rect.width / 2;
+    const border = sample(x, rect.y + 0.5);
+    const outside = sample(x, rect.y - 1);
+    const inside = sample(x, rect.y + 1.5);
+    const minimum = contrast(
+      luminance(...(border as [number, number, number])),
+      luminance(...(outside as [number, number, number])),
+    );
+    expect(
+      minimum,
+      `${label} ${target.key} visible boundary ${JSON.stringify({ border, outside, inside })}`,
+    ).toBeGreaterThanOrEqual(3);
+    return { field: target.key, border, outside, inside, contrast: minimum };
+  });
+  fieldBoundaryEvidence.push({ label, fields: measured });
+  return measured;
+}
+
 async function measureFocusRingContrast(page: Page, label: string) {
   const input = page.locator('form input[name="name"]');
   const wrapper = input.locator('xpath=..');
   await input.focus();
   const bounds = await wrapper.boundingBox();
   if (!bounds) throw new Error('Focused field geometry unavailable');
+  const ringStyle = await wrapper.evaluate((element) => {
+    const style = getComputedStyle(element, '::after');
+    return {
+      width: style.borderTopWidth,
+      style: style.borderTopStyle,
+      color: style.borderTopColor,
+    };
+  });
+  expect(ringStyle.width).toBe('2px');
+  expect(ringStyle.style).toBe('solid');
   const screenshot = await page.screenshot({ fullPage: true, scale: 'device' });
   const { data, info } = await sharp(screenshot)
     .raw()
@@ -430,7 +654,7 @@ async function measureFocusRingContrast(page: Page, label: string) {
     luminance(ring[0]!, ring[1]!, ring[2]!),
     luminance(keyline[0]!, keyline[1]!, keyline[2]!),
   );
-  focusEvidence.push({ label, ring, keyline, contrast: ratio });
+  focusEvidence.push({ label, ring, keyline, ringStyle, contrast: ratio });
   expect(ratio, `${label} focus ring contrast`).toBeGreaterThanOrEqual(3);
   return ratio;
 }
@@ -562,6 +786,12 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
           theme,
         });
         const card = page.getByTestId('hero-glass-card');
+        await assertVisibleLabels(page, `${locale}-${theme}-${size.label}`);
+        const nestedBackdrop = await page
+          .locator('input[name="name"]')
+          .locator('xpath=..')
+          .evaluate((element) => getComputedStyle(element).backdropFilter);
+        expect(nestedBackdrop).toBe('none');
         await expect(card).toHaveAttribute(
           'data-material',
           'liquid-glass-strong',
@@ -727,28 +957,36 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
     const firstInput = page.locator('form input[name="name"]');
     await firstInput.focus();
     await capture(page, `input-focus-${theme}`, 'states', {
-      locator: 'form input[name="name"] >> xpath=..',
+      locator: '[data-testid="hero-content-plate"]',
     });
     const focused = await firstInput.evaluate((input) => {
       const wrapper = input.parentElement!;
+      const ring = getComputedStyle(wrapper, '::after');
       return {
-        ring: getComputedStyle(wrapper).outlineColor,
-        width: getComputedStyle(wrapper).outlineWidth,
-        border: getComputedStyle(wrapper, '::before').backgroundImage,
+        ring: ring.borderTopColor,
+        width: ring.borderTopWidth,
+        style: ring.borderTopStyle,
       };
     });
     expect(focused.width).toBe('2px');
-    expect(focused.ring).not.toBe('rgba(0, 0, 0, 0)');
+    expect(focused.style).toBe('solid');
+    expect(focused.ring).toBe('rgb(5, 150, 105)');
     await page.locator('input[name="phone-national"]').fill('123');
     await page.locator('form button[type="submit"]').click();
     await expect(page.locator('input[name="phone-national"]')).toHaveAttribute(
       'aria-invalid',
       'true',
     );
+    await expect(page.locator('input[name="phone-national"]')).toHaveAttribute(
+      'aria-describedby',
+      'hero-phone-error',
+    );
+    await expect(page.locator('#hero-phone-error')).toBeVisible();
+    await expect(page.locator('#hero-phone-error')).not.toHaveText('');
     await axe(page, `error-state-${theme}`);
     await measureTextContrast(page, `error-dark-art-${theme}-desktop`);
     await capture(page, `input-error-${theme}`, 'states', {
-      locator: 'form input[name="phone-national"] >> xpath=..',
+      locator: 'form label:has(input[name="phone-national"])',
     });
     const errorColor = await page
       .locator('#hero-phone-error')
@@ -811,6 +1049,37 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
     const country = page.getByRole('combobox');
     const selectedName = await country.inputValue();
     expect(selectedName).not.toBe('+20');
+    const prefix = page.getByTestId('country-calling-code');
+    const phoneInput = page.locator('input[name="phone-national"]');
+    const spacing = await Promise.all([
+      prefix.evaluate((element) => {
+        const style = getComputedStyle(element);
+        const bounds = element.getBoundingClientRect();
+        return {
+          start: Number.parseFloat(style.paddingInlineStart),
+          end: Number.parseFloat(style.paddingInlineEnd),
+          x: bounds.x,
+        };
+      }),
+      phoneInput.evaluate((element) => {
+        const style = getComputedStyle(element);
+        const bounds = element.getBoundingClientRect();
+        return {
+          start: Number.parseFloat(style.paddingInlineStart),
+          end: Number.parseFloat(style.paddingInlineEnd),
+          x: bounds.x,
+        };
+      }),
+    ]);
+    expect(spacing[0].start).toBeGreaterThan(0);
+    expect(spacing[0].end).toBeGreaterThan(0);
+    expect(spacing[1].start).toBeGreaterThan(0);
+    expect(spacing[1].end).toBeGreaterThan(0);
+    expect(
+      locale === 'ar'
+        ? spacing[0].x > spacing[1].x
+        : spacing[0].x < spacing[1].x,
+    ).toBe(true);
     await country.focus();
     const list = page.getByRole('listbox');
     await expect(list).toBeVisible();
@@ -866,16 +1135,24 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
   await axe(flip.page, 'combobox-flip');
   await flip.close();
 
-  for (const width of [390, 1440]) {
-    const { page, close } = await open(browser, {
-      width,
-      height: width === 390 ? 844 : 900,
-      theme: 'light',
-      fixture: 'none',
-    });
-    await axe(page, `no-image-${width}`);
-    await capture(page, `no-image-${width}`, 'fallbacks');
-    await close();
+  for (const theme of ['light', 'dark'] as const) {
+    for (const size of [
+      { name: 'mobile', width: 390, height: 844 },
+      { name: 'desktop', width: 1440, height: 900 },
+    ]) {
+      const { page, close } = await open(browser, {
+        width: size.width,
+        height: size.height,
+        theme,
+        fixture: 'none',
+      });
+      const label = `no-image-${size.name}-${theme}`;
+      await assertVisibleLabels(page, label, true);
+      await capture(page, label, 'fallbacks');
+      await measureFieldBoundaries(page, label);
+      await axe(page, label);
+      await close();
+    }
   }
 
   const reduced = await open(browser, {
@@ -884,6 +1161,7 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
     theme: 'dark',
     mediaFeatures: [{ name: 'prefers-reduced-transparency', value: 'reduce' }],
   });
+  await assertOpaqueSurface(reduced.page, 'reduced-transparency');
   await capture(reduced.page, 'reduced-transparency', 'accessibility');
   await axe(reduced.page, 'reduced-transparency');
   await reduced.close();
@@ -894,6 +1172,7 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
     theme: 'light',
     mediaFeatures: [{ name: 'prefers-contrast', value: 'more' }],
   });
+  await assertOpaqueSurface(higherContrast.page, 'increased-contrast');
   await capture(higherContrast.page, 'increased-contrast', 'accessibility');
   await axe(higherContrast.page, 'increased-contrast');
   await higherContrast.close();
@@ -1039,6 +1318,7 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
         contrastEvidence,
         focusEvidence,
         geometryEvidence,
+        fieldBoundaryEvidence,
         captures,
         contactPaths,
       },

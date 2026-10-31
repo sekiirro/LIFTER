@@ -202,7 +202,7 @@ export function HeroSignupPreview({
         <label className={styles.field}>
           <span>{messages['clientSignup.name']}</span>
           <span
-            className={`${prototypeStyles.fieldControl} ${glass.liquidGlass}`}
+            className={`${prototypeStyles.fieldControl} ${glass.liquidGlassEdge}`}
           >
             <input
               name="name"
@@ -216,7 +216,7 @@ export function HeroSignupPreview({
         <label className={styles.field}>
           <span>{messages['clientSignup.email']}</span>
           <span
-            className={`${prototypeStyles.fieldControl} ${glass.liquidGlass}`}
+            className={`${prototypeStyles.fieldControl} ${glass.liquidGlassEdge}`}
           >
             <input
               name="email"
@@ -234,7 +234,7 @@ export function HeroSignupPreview({
             </label>
             <div
               ref={countryPickerRef}
-              className={`${prototypeStyles.countryPicker} ${glass.liquidGlass}`}
+              className={`${prototypeStyles.countryPicker} ${glass.liquidGlassEdge}`}
               dir={locale === 'ar' ? 'rtl' : 'ltr'}
             >
               <input
@@ -322,7 +322,7 @@ export function HeroSignupPreview({
           <label className={styles.field}>
             <span>{messages['clientSignup.phone']}</span>
             <span
-              className={`${styles.phoneNumber} ${prototypeStyles.fieldControl} ${glass.liquidGlass}`}
+              className={`${styles.phoneNumber} ${prototypeStyles.fieldControl} ${glass.liquidGlassEdge}`}
               data-error={phoneError || undefined}
             >
               <span aria-hidden="true" data-testid="country-calling-code">
@@ -356,7 +356,7 @@ export function HeroSignupPreview({
         <label className={styles.field}>
           <span>{messages['clientSignup.password']}</span>
           <span
-            className={`${prototypeStyles.fieldControl} ${glass.liquidGlass}`}
+            className={`${prototypeStyles.fieldControl} ${glass.liquidGlassEdge}`}
           >
             <input
               name="password"
