@@ -8,7 +8,7 @@ Workout plans consume the canonical shared Plan Core contract, retain same-Plan-
 
 ## Technical Context
 
-As F16 (Next.js/OpenNext Workers, Supabase RLS, invoker RPCs, `authorize()`, audit, next-intl, Design System, Vitest/Playwright/axe). Browser-side export per architecture (print CSS + ExcelJS), Arabic shaping validated in the P0 print spike (specs/002-design-system/print-spike.md).
+As F16 (Next.js/OpenNext Workers, Supabase RLS, invoker-rights reads and SECURITY DEFINER mutation RPCs using the authorize -> plan-root lock -> idempotency order in [019 Plan Core](../019-plan-core/plan.md), `authorize()`, audit, next-intl, Design System, Vitest/Playwright/axe). Browser-side export per architecture (print CSS + ExcelJS), Arabic shaping validated in the P0 print spike (specs/002-design-system/print-spike.md).
 
 ## Design
 
