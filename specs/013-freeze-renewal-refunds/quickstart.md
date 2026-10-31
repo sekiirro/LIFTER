@@ -33,7 +33,7 @@ Stack C is project lifter-stack-c, API 35421, DB 35422, full port block 35420-35
 
 F12 U4 and latest F12/F14 migrations remain dependencies for full refund ledger implementation. T012-T015 own that ledger; the scheduled Auth-lockout drain and durable PO/WO alert runtime are implemented on Stack C, and T015 plus T017 acceptance is recorded in tasks.md. Alert rendering is deferred to the notifications feature. Retention across backups remains a production blocker.
 
-**Migration timestamp exception (architect-authorized once):** the original proof migration was renamed with normal `git mv` from `20261031140000_refund_auth_lockout_hook.sql` to `20261103120000_refund_auth_lockout_hook.sql` so it sorts after the stated F12 migrations through `20261101124000` and F14 through `20261102130000`. This applies only to the unmerged F13 branch and its F13-owned Stack C; no history was rewritten.
+**Committed migration ranges:** main/F12 ends at `20261101132000`; F14 owns `20261102120000`–`20261102139000`; this F13 branch owns `20261103120000`–`20261103129200`; F15 follows at timestamps `>=20261104000000`. Fresh replay order is main/F12, then F14, then F13, then F15. The original proof migration was renamed with normal `git mv` from `20261031140000_refund_auth_lockout_hook.sql` to `20261103120000_refund_auth_lockout_hook.sql` so it sorts in F13's committed lane range. This applies only to the unmerged F13 branch and its F13-owned Stack C; no history was rewritten.
 
 ## Gates
 
