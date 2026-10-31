@@ -126,13 +126,13 @@
   position: absolute;
   z-index: -1;
   inset: -0.75rem;
-  border-radius: inherit;
+  border-radius: calc(var(--radius-card) + var(--space-2));
   background: radial-gradient(
     ellipse at center,
     rgba(0, 0, 0, 0.88) 0%,
     rgba(0, 0, 0, 0.86) 65%,
     rgba(0, 0, 0, 0.82) 90%,
-    transparent 100%
+    rgba(0, 0, 0, 0.82) 100%
   );
   content: '';
   opacity: var(--hero-adaptive-dimming, 0);
@@ -180,8 +180,14 @@
 
 .fieldControl:has(input:focus-visible),
 .countryPicker:has(input:focus-visible) {
+  overflow: visible;
   outline: 0;
   box-shadow: none;
+}
+
+.fieldControl:has(input:focus-visible)::before,
+.countryPicker:has(input:focus-visible)::before {
+  display: none;
 }
 
 .fieldControl:has(input:focus-visible)::after,
@@ -307,18 +313,6 @@
   background: rgba(255, 255, 255, 0.16);
 }
 
-.brandScope :global(#hero-phone-error) {
-  display: block;
-  inline-size: fit-content;
-  max-inline-size: 100%;
-  padding: var(--space-1) var(--space-2);
-  border-radius: var(--radius-sm);
-  background: var(--color-error-bg);
-  color: var(--color-error-fg);
-  font-size: var(--text-sm);
-  font-weight: 600;
-}
-
 .previewNote {
   margin: 0;
   color: rgba(255, 255, 255, 0.92);
@@ -398,6 +392,10 @@
   color: var(--color-error-fg);
 }
 
+.stage[data-photo-tone] :global(#hero-phone-error) {
+  color: var(--hero-dark-error-fg);
+}
+
 .noArtwork .glassContent :global([data-testid='country-calling-code']) {
   color: var(--color-text);
   -webkit-text-fill-color: currentColor;
@@ -437,8 +435,18 @@
     inset-block-start: 50%;
     inset-inline-start: auto;
     right: clamp(1.5rem, 4vw, 4rem);
-    inline-size: min(clamp(30rem, 36vw, 33.75rem), calc(100vw - 3rem));
+    inline-size: min(clamp(28rem, 33vw, 31.5rem), calc(100vw - 3rem));
     transform: translateY(-50%);
+  }
+
+  .glassContent {
+    gap: var(--space-4);
+    padding-block: var(--space-6);
+  }
+
+  .formPlate {
+    gap: var(--space-4);
+    padding: var(--space-4);
   }
 
   .mobileOnly .artwork {
@@ -455,6 +463,42 @@
     margin-inline: auto;
     transform: translateY(-50%);
   }
+}
+
+@media (min-width: 36.001rem) {
+  .phoneFields > label,
+  .phoneFields > .countryField {
+    gap: var(--space-1);
+    font-size: var(--text-sm);
+    font-weight: 600;
+    line-height: var(--line-height-body);
+  }
+
+  .phoneFields > label > span:first-child,
+  .phoneFields > .countryField > label {
+    display: block;
+  }
+}
+
+:global([data-theme='light'])
+  .glassCard[data-material='liquid-glass-strong']::before {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.15) 20%,
+    transparent 40%,
+    transparent 60%,
+    rgba(255, 255, 255, 0.15) 80%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+}
+
+:global([data-theme='light']) .glassCard[data-material='liquid-glass-strong'] {
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.12),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.18),
+    0 28px 72px rgba(0, 0, 0, 0.3),
+    0 4px 14px rgba(0, 0, 0, 0.14);
 }
 
 @media (max-width: 47.999rem) {
@@ -563,9 +607,15 @@
     box-shadow: none;
   }
 
+  .fieldControl:has(input:focus-visible),
+  .countryPicker:has(input:focus-visible) {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
   .fieldControl:has(input:focus-visible)::after,
   .countryPicker:has(input:focus-visible)::after {
-    border-color: Highlight;
+    display: none;
   }
 
   .fieldControl,

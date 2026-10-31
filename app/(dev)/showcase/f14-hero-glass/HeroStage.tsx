@@ -11,6 +11,7 @@ import type {
   HeroArtOrientation,
   HeroArtTone,
 } from '../../../../tests/fixtures/f14-hero-artwork';
+import { modes } from '../../../../lib/design/tokens';
 import styles from './page.module.css';
 
 export type HeroFixture =
@@ -153,8 +154,8 @@ export function HeroStage({
           ? 'mid'
           : 'dim';
     const adaptiveDimming = Math.min(
-      0.72,
-      Math.max(0, (cardPhoto.luminance - 0.18) * 1.4),
+      0.82,
+      Math.max(0, (cardPhoto.luminance - 0.18) * 1.55),
     );
     stage.style.setProperty(
       '--hero-photo-luminance',
@@ -194,9 +195,10 @@ export function HeroStage({
   const sourceStyle = {
     '--hero-focal-x': mobileOnly ? '50%' : '32%',
     '--mobile-focal-x': desktopOnly ? '19%' : '50%',
+    '--hero-dark-error-fg': modes.dark.error.fg,
     '--hero-bottom-average':
       tone === 'dark' ? 'rgb(54 48 41)' : 'rgb(189 184 173)',
-  } as CSSProperties;
+  } as CSSProperties & { '--hero-dark-error-fg': string };
 
   return (
     <main

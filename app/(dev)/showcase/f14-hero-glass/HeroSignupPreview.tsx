@@ -227,7 +227,7 @@ export function HeroSignupPreview({
             />
           </span>
         </label>
-        <div className={styles.phoneFields}>
+        <div className={`${styles.phoneFields} ${prototypeStyles.phoneFields}`}>
           <div className={`${styles.field} ${prototypeStyles.countryField}`}>
             <label htmlFor="hero-country-input">
               {messages['clientSignup.country']}

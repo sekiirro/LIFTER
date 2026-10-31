@@ -314,9 +314,6 @@ async function measureTextContrast(page: Page, label: string) {
             key,
             color:
               style.getPropertyValue('-webkit-text-fill-color') || style.color,
-            ...(key === 'error-copy'
-              ? { background: style.backgroundColor }
-              : {}),
             rect: {
               x: rect.x,
               y: rect.y,
@@ -406,43 +403,6 @@ async function measureTextContrast(page: Page, label: string) {
       const values: Record<string, number> = {};
       for (const target of targets) {
         const { x, y, width, height } = target.rect;
-        if (target.key === 'error-copy') {
-          const channels = (color: string) =>
-            color
-              .match(/[\d.]+/g)
-              ?.slice(0, 3)
-              .map(Number);
-          const foreground = channels(target.color);
-          const background = channels(target.background ?? '');
-          if (
-            !foreground ||
-            foreground.length !== 3 ||
-            !background ||
-            background.length !== 3
-          ) {
-            throw new Error(
-              'Error-copy contrast requires its solid token pair',
-            );
-          }
-          const light = (rgb: number[]) => {
-            const channel = (value: number) => {
-              const normalized = value / 255;
-              return normalized <= 0.04045
-                ? normalized / 12.92
-                : ((normalized + 0.055) / 1.055) ** 2.4;
-            };
-            return (
-              0.2126 * channel(rgb[0]!) +
-              0.7152 * channel(rgb[1]!) +
-              0.0722 * channel(rgb[2]!)
-            );
-          };
-          const a = light(foreground);
-          const b = light(background);
-          values[target.key] =
-            (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
-          continue;
-        }
         if (target.key === 'field-edge' || target.key === 'error-edge') {
           const sample = (sampleX: number, sampleY: number) => {
             const px = Math.max(
@@ -701,9 +661,9 @@ async function measureFieldBoundaries(page: Page, label: string) {
     expect(target.style, `${label} ${target.key} border style`).toBe('solid');
     const rect = target.rect!;
     const x = rect.x + rect.width / 2;
-    const border = sample(x, rect.y + 0.5);
+    const border = sample(x, rect.y + target.width / 2);
     const outside = sample(x, rect.y - 1);
-    const inside = sample(x, rect.y + 1.5);
+    const inside = sample(x, rect.y + target.width + 1);
     const minimum = contrast(
       luminance(...(border as [number, number, number])),
       luminance(...(outside as [number, number, number])),
@@ -732,15 +692,18 @@ async function measureFocusRingContrast(page: Page, label: string) {
       color: style.borderTopColor,
       radius: style.borderTopLeftRadius,
       fieldRadius: getComputedStyle(element).borderTopLeftRadius,
+      rim: getComputedStyle(element, '::before').display,
     };
   });
   expect(ringStyle.width).toBe('2px');
   expect(ringStyle.style).toBe('solid');
-  expect(Number.parseFloat(ringStyle.radius)).toBeGreaterThan(0);
+  expect(ringStyle.color).toBe('rgb(5, 150, 105)');
   expect(Number.parseFloat(ringStyle.radius)).toBeCloseTo(
     Number.parseFloat(ringStyle.fieldRadius) + 2,
     1,
   );
+  expect(Number.parseFloat(ringStyle.fieldRadius)).toBeGreaterThan(0);
+  expect(ringStyle.rim).toBe('none');
   await mkdir(output, { recursive: true });
   const screenshotPath = join(output, `${label}.png`);
   const screenshot = await page.screenshot({
@@ -759,8 +722,7 @@ async function measureFocusRingContrast(page: Page, label: string) {
     return [data[offset]!, data[offset + 1]!, data[offset + 2]!];
   };
   const sampleY = bounds.y + bounds.height / 2;
-  // The pseudo-element extends 2px beyond the control. Sample its center line
-  // and the adjacent 2px token halo, rather than the control's interior.
+  // The single 2px ring clears the field rim with a theme-surface keyline.
   const ring = sample(bounds.x - 1, sampleY);
   const keyline = sample(bounds.x - 3, sampleY);
   const ratio = contrast(
@@ -1088,8 +1050,10 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
       ...dimensions,
     });
     expect(dimensions.document).toBeLessThanOrEqual(dimensions.viewport + 1);
-    if (size.width === 1440)
-      expect(dimensions.card.width).toBeGreaterThanOrEqual(480);
+    if (size.width === 1440) {
+      expect(dimensions.card.width).toBeGreaterThanOrEqual(448);
+      expect(dimensions.card.width).toBeLessThanOrEqual(504);
+    }
     if (size.width === 1280 || size.width === 1366)
       await capture(
         page,
@@ -1166,11 +1130,13 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
         ring: ring.borderTopColor,
         width: ring.borderTopWidth,
         style: ring.borderTopStyle,
+        rim: getComputedStyle(wrapper, '::before').display,
       };
     });
     expect(focused.width).toBe('2px');
     expect(focused.style).toBe('solid');
     expect(focused.ring).toBe('rgb(5, 150, 105)');
+    expect(focused.rim).toBe('none');
     await close();
 
     for (const locale of ['ar', 'en'] as const) {
@@ -1192,6 +1158,9 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
       await expect(errorRun.page.locator('#hero-phone-error')).not.toHaveText(
         '',
       );
+      await capture(errorRun.page, `input-error-${locale}-${theme}`, 'states', {
+        locator: 'form label:has(input[name="phone-national"])',
+      });
       const edge = await phone.evaluate((input) => {
         const wrapper = input.parentElement!;
         const style = getComputedStyle(wrapper);
@@ -1221,13 +1190,26 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
         errorRun.page,
         `error-dark-art-${locale}-${theme}-desktop`,
       );
-      await capture(errorRun.page, `input-error-${locale}-${theme}`, 'states', {
-        locator: 'form label:has(input[name="phone-national"])',
-      });
       const errorColor = await errorRun.page
         .locator('#hero-phone-error')
-        .evaluate((element) => getComputedStyle(element).color);
-      expect(errorColor).not.toBe('rgba(0, 0, 0, 0)');
+        .evaluate((element) => {
+          const style = getComputedStyle(element);
+          const stage = element.closest<HTMLElement>(
+            '[data-testid="hero-prototype"]',
+          );
+          return {
+            color: style.color,
+            background: style.backgroundColor,
+            padding: style.padding,
+            borderRadius: style.borderRadius,
+            darkToken: stage?.style.getPropertyValue('--hero-dark-error-fg'),
+          };
+        });
+      expect(errorColor.color).toBe('rgb(252, 165, 165)');
+      expect(errorColor.darkToken?.trim()).toBe('#FCA5A5');
+      expect(errorColor.background).toBe('rgba(0, 0, 0, 0)');
+      expect(errorColor.padding).toBe('0px');
+      expect(errorColor.borderRadius).toBe('0px');
       await errorRun.close();
     }
   }
@@ -1688,6 +1670,40 @@ test('P3 phone glyphs form one LTR group with one token gap in RTL and LTR', asy
           await capture(page, `phone-rest-${locale}-${theme}`, 'phone-glyphs', {
             locator: 'label:has(input[name="phone-national"])',
           });
+          const labelGeometry = await page.evaluate(() => {
+            const country = document.querySelector<HTMLElement>(
+              '[class*="phoneFields"] > [class*="countryField"] > label',
+            );
+            const phoneLabel = document.querySelector<HTMLElement>(
+              '[class*="phoneFields"] > label > span:first-child',
+            );
+            if (!country || !phoneLabel)
+              throw new Error('Side-by-side phone labels unavailable');
+            const styles = [country, phoneLabel].map((element) => {
+              const style = getComputedStyle(element);
+              const rect = element.getBoundingClientRect();
+              return {
+                fontSize: style.fontSize,
+                fontWeight: style.fontWeight,
+                lineHeight: style.lineHeight,
+                top: rect.top,
+                bottom: rect.bottom,
+              };
+            });
+            return { country: styles[0]!, phone: styles[1]! };
+          });
+          expect(labelGeometry.phone.fontSize).toBe(
+            labelGeometry.country.fontSize,
+          );
+          expect(labelGeometry.phone.fontWeight).toBe(
+            labelGeometry.country.fontWeight,
+          );
+          expect(labelGeometry.phone.lineHeight).toBe(
+            labelGeometry.country.lineHeight,
+          );
+          expect(
+            Math.abs(labelGeometry.phone.top - labelGeometry.country.top),
+          ).toBeLessThanOrEqual(1);
         }
         const measureRangeGap = async () =>
           phone.evaluate((input) => {
@@ -1913,9 +1929,9 @@ test('P1 no-image centering and P2 art-luminance adaptive glass dimming', async 
             if (adaptive.photoLuminance > 0.34) {
               expect(adaptive.dimming).toBeGreaterThan(0.2);
             } else {
-              expect(adaptive.dimming).toBeLessThanOrEqual(0.04);
+              expect(adaptive.dimming).toBeLessThanOrEqual(0.05);
             }
-            expect(adaptive.dimming).toBeLessThanOrEqual(0.72);
+            expect(adaptive.dimming).toBeLessThanOrEqual(0.82);
             expect(adaptive.plateScrim).toBeCloseTo(adaptive.dimming, 2);
             const fieldAlpha = adaptive.fieldBackground.startsWith('rgba(')
               ? Number.parseFloat(adaptive.fieldBackground.split(',').at(-1)!)
@@ -1937,38 +1953,34 @@ test('P1 no-image centering and P2 art-luminance adaptive glass dimming', async 
               `pass4-bright-${locale}-${theme}-${viewport.name}`,
               'adaptive-dimming',
             );
-            const phone = page.locator('input[name="phone-national"]');
-            await phone.fill('123');
-            await page.locator('form button[type="submit"]').click();
-            await expect(phone).toHaveAttribute('aria-invalid', 'true');
-            await expect(page.locator('#hero-phone-error')).toBeVisible();
-            await page.evaluate(() => window.scrollTo(0, 0));
-            const errorColors = await page
-              .locator('#hero-phone-error')
-              .evaluate((element) => {
-                const style = getComputedStyle(element);
-                return {
-                  color: style.color,
-                  background: style.backgroundColor,
-                };
-              });
-            const errorCopyContrast = contrast(
-              cssLuminance(errorColors.color),
-              cssLuminance(errorColors.background),
-            );
-            expect(errorCopyContrast).toBeGreaterThanOrEqual(4.5);
-            await capture(
-              page,
-              `pass4-bright-error-${locale}-${theme}-${viewport.name}`,
-              'phone-glyphs',
-              { locator: 'label:has(input[name="phone-national"])' },
-            );
           } else {
             expect(adaptive.dimming).toBeLessThanOrEqual(0.03);
             await capture(
               page,
               `pass4-dark-${locale}-${theme}-${viewport.name}`,
               'adaptive-dimming',
+            );
+          }
+          if (fixture === 'bright') {
+            const phone = page.locator('input[name="phone-national"]');
+            await phone.fill('123');
+            await page.locator('form button[type="submit"]').click();
+            await expect(phone).toHaveAttribute('aria-invalid', 'true');
+            await expect(page.locator('#hero-phone-error')).toBeVisible();
+            await page.evaluate(() => window.scrollTo(0, 0));
+            const errorContrast = await measureTextContrast(
+              page,
+              `${locale}-${theme}-${viewport.name}-bright-error`,
+            );
+            const errorCopyRatio = Object.entries(errorContrast).find(([key]) =>
+              key.startsWith('error-copy-'),
+            )?.[1];
+            expect(errorCopyRatio).toBeGreaterThanOrEqual(4.5);
+            await capture(
+              page,
+              `pass4-bright-error-${locale}-${theme}-${viewport.name}`,
+              'phone-glyphs',
+              { locator: 'label:has(input[name="phone-national"])' },
             );
           }
           expect(adaptive.cardBackdrop).toContain('8px');
