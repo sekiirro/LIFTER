@@ -71,6 +71,7 @@ export async function drainRefundAuthLockouts(
     throw new Error('auth_lockout_invalid_batch_result');
   const jobs = rawJobs.map(checkedJob);
   let failed = 0;
+  let persistenceFailed = false;
 
   for (const job of jobs) {
     const attempt = job.attempts + 1;
@@ -105,24 +106,31 @@ export async function drainRefundAuthLockouts(
       safeFailure = { code: 'provider_unavailable' };
     }
 
-    if (succeeded) {
-      const completed = await rpc('complete_refund_auth_lockout_job', {
-        p_id: job.id,
-        p_completed_at: now().toISOString(),
-      });
-      if (!completed) throw new Error('auth_lockout_completion_failed');
-    } else {
-      failed++;
-      const attemptAt = now();
-      const saved = await rpc('retry_refund_auth_lockout_job', {
-        p_id: job.id,
-        p_attempt: attempt,
-        p_retry_at: authLockoutRetryAt(attempt, attemptAt).toISOString(),
-        p_safe_error_code: authLockoutSafeErrorCode(safeFailure),
-      });
-      if (!saved) throw new Error('auth_lockout_retry_failed');
+    try {
+      if (succeeded) {
+        const completed = await rpc('complete_refund_auth_lockout_job', {
+          p_id: job.id,
+          p_completed_at: now().toISOString(),
+        });
+        if (!completed) persistenceFailed = true;
+      } else {
+        failed++;
+        const attemptAt = now();
+        const saved = await rpc('retry_refund_auth_lockout_job', {
+          p_id: job.id,
+          p_attempt: attempt,
+          p_retry_at: authLockoutRetryAt(attempt, attemptAt).toISOString(),
+          p_safe_error_code: authLockoutSafeErrorCode(safeFailure),
+        });
+        if (!saved) persistenceFailed = true;
+      }
+    } catch {
+      // Keep draining claimed work; the lease recovers any job we could not persist.
+      persistenceFailed = true;
     }
   }
+
+  if (persistenceFailed) throw new Error('auth_lockout_persistence_failed');
 
   return {
     alerted,

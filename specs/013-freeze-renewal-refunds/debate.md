@@ -46,7 +46,7 @@ Reverified dependency baselines: F12 `50cc77e8a0090f3baa716c3e4656b216db0983dd`;
 | O9 — settle frozen plan/export access | Not adopted as decided policy | Retain ND-14 confirmation of the D-05 reading; recommendation restrict plans/export while preserving login/settings, P4 implements. |
 | O10 — freeze removal authority | Accepted | PO/WO/Sales authority is fixed for Apply/Stop/Remove; only post-completion/expiry applicability remains ND-04. |
 | O11 — removal meaning/closure delivery | Accepted | PO-only pseudonymization retains ledger/audit, separate closure feature after B4; remove F13 ownership question. |
-| O12 — activation dependency/slice order | Accepted | Refund needs no activation; internal projection can use synthetic activation; real freeze/renewal exposure waits for P4 writer. |
+| O12 — activation dependency/slice order | Accepted; renewal seam superseded by S22-PO-5 | Refund needs no activation; P4 retains initial activation and client/plan access. S22-PO-5 resolves F13: `record_renewal` atomically records renewal activation, and service-date-gated freeze/shift is implemented in F13. |
 | O13 — PO/WO receipts include commission | Rejected | F12 contract keeps every receipt/result commission-free; PO/WO use separate commission reader, common audit also excludes commission. |
 | O14 — function hygiene/internal grants | Accepted and strengthened | Owner postgres, SECURITY DEFINER/search_path empty/qualified names, revoke all four application-role defaults then narrow grants; internal seams never authenticated. |
 | O15 — drifted pins | Superseded by exact judgment pins | Use reverified F12 50cc77e model migration and F14 334f501, rather than opening-review pins or later moving heads. |
@@ -65,7 +65,7 @@ Reverified dependency baselines: F12 `50cc77e8a0090f3baa716c3e4656b216db0983dd`;
 | G — successor reflow | FR-009/012/025: unstarted only, no actual-start/access rewrite, atomic conflict rejection, at most one future renewal. |
 | H — security hygiene | FR-001/029/033 and guard inventory: real workspace for PO, forced RLS/grants, hardened functions/internal seams, bounded error codes, clients UPDATE guard amendment warning. |
 | I — ordering/slice independence | FR-034 and coordination: latest merged F12/F14 files and integrated audit/TS/role_has_capability bodies; no fictional helper name or global policy blocker. |
-| J — MVP slices | Refund → internal synthetic-activation projection → freeze → full-payment renewal → later P4/installment/multiple-future scope; real freeze/renewal waits for P4 writer. |
+| J — MVP slices | Refund → internal projection → F13 freeze and renewal under S22-PO-5 → later P4 initial activation/access and broader scope. S22-PO-5 supersedes the earlier P4-writer dependency for F13 renewal activation and service-date-gated freeze; it grants no client/plan access. |
 | K — final PO questions | ND-01/02/03/04/05/06/08/12/13/14/16 only, NOT DECIDED with options/recommendations; settled/deferred questions removed. |
 | L — record/status/checklist | This record, required draft status and updated requirements checklist; no code/DB/plan/tasks/PR. |
 

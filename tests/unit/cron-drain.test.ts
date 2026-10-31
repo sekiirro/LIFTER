@@ -288,6 +288,7 @@ describe('cron edge wiring', () => {
             'Content-Type': 'application/json',
           },
           body: '{"batch":3}',
+          signal: expect.any(AbortSignal),
         },
       );
       fetchMock.mockResolvedValueOnce(

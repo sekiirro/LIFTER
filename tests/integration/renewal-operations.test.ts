@@ -161,7 +161,6 @@ it('Q2 Trainer may collect a renewal installment in its authorized workspace', a
     expect(renewed.status).toBe('ok');
     const receipt = renewed.receipt as Record<string, unknown>;
     const renewalId = receipt.subscription_id as string;
-    await activate(tx, f, { ...purchase, sid: renewalId });
     const obligations = await tx`
       select id,seq from public.subscription_installments
       where subscription_id=${renewalId} order by seq
@@ -235,8 +234,182 @@ it('T010 rejects renewal before initial activation and a second unstarted succes
     await activate(tx, f, purchase);
     expect((await renewal(tx, f.po.userId, request)).status).toBe('ok');
     expect(
-      await renewal(tx, f.po.userId, { ...request, request_key: randomUUID() }),
+      await renewal(tx, f.po.userId, {
+        ...request,
+        request_key: randomUUID(),
+        expected_revision: 1,
+      }),
     ).toMatchObject({ status: 'stale_state' });
+  });
+});
+
+it('S22-PO-5 records renewal activation atomically and permits a renewal of that renewal', async () => {
+  const { f, purchase, offerId } = await fixture();
+  await probe(async (tx) => {
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '62 days',${randomUUID()})`;
+    const first = await renewal(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      renewal_confirmed: true,
+      installments: null,
+    });
+    expect(first.status).toBe('ok');
+    const firstReceipt = first.receipt as Record<string, unknown>;
+    const firstId = firstReceipt.subscription_id as string;
+    const [activation] = await tx`
+      select a.activated_at,r.recorded_at,r.recording_date::text
+      from public.subscription_activations a
+      join public.subscription_renewals r on r.workspace_id=a.workspace_id and r.subscription_id=a.subscription_id
+      where a.workspace_id=${f.wsA.id} and a.subscription_id=${firstId}
+    `;
+    expect(activation).toBeDefined();
+    expect(
+      Math.abs(
+        new Date(activation!.activated_at as string).getTime() -
+          new Date(activation!.recorded_at as string).getTime(),
+      ),
+    ).toBeLessThan(1000);
+    expect(firstReceipt.recording_date).toBe(activation!.recording_date);
+
+    const second = await renewal(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: firstId,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      renewal_confirmed: true,
+      installments: null,
+    });
+    expect(second.status).toBe('ok');
+    const secondId = (second.receipt as Record<string, unknown>)
+      .subscription_id as string;
+    const activationCount = await tx`
+      select count(*)::int as count from public.subscription_activations
+      where workspace_id=${f.wsA.id} and subscription_id in (${firstId},${secondId})
+    `;
+    expect(activationCount[0]!.count).toBe(2);
+  });
+});
+
+it('S22-PO-5 denies freezing a renewal before its Cairo service start', async () => {
+  const { f, purchase, offerId } = await fixture();
+  await probe(async (tx) => {
+    await activate(tx, f, purchase);
+    const renewed = await renewal(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      renewal_confirmed: true,
+      installments: null,
+    });
+    expect(renewed.status).toBe('ok');
+    const renewalId = (renewed.receipt as Record<string, unknown>)
+      .subscription_id as string;
+    const [dates] = await tx`
+      select r.service_start_date::text,(clock_timestamp() at time zone 'Africa/Cairo')::date::text as today
+      from public.subscription_renewals r where r.subscription_id=${renewalId}
+    `;
+    expect(dates!.service_start_date > dates!.today).toBe(true);
+    await expect(
+      tx.savepoint(async (inner) => {
+        await freeze(inner, f.trainerA.userId, {
+          action: 'apply',
+          workspace_id: f.wsA.id,
+          client_id: purchase.t.id,
+          subscription_id: renewalId,
+          request_key: randomUUID(),
+          expected_revision: 0,
+          duration_days: 3,
+        });
+      }),
+    ).rejects.toMatchObject({ code: '23514' });
+    const [count] =
+      await tx`select count(*)::int as count from public.subscription_freezes where subscription_id=${renewalId}`;
+    expect(count!.count).toBe(0);
+  });
+});
+
+it('S22-PO-5 freezes a started renewal and extends service without moving installment dues', async () => {
+  const { f, purchase, offerId } = await fixture();
+  await probe(async (tx) => {
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '62 days',${randomUUID()})`;
+    const renewed = await renewal(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      renewal_confirmed: true,
+      installments: [{ amount_minor: '1200', due_offset_days: 7 }],
+    });
+    expect(renewed.status).toBe('ok');
+    const renewalId = (renewed.receipt as Record<string, unknown>)
+      .subscription_id as string;
+    const [before] = await tx`
+      select r.service_start_date::text,r.service_end_exclusive::text,i.due_on::text
+      from public.subscription_renewals r join public.subscription_installments i
+        on i.workspace_id=r.workspace_id and i.subscription_id=r.subscription_id
+      where r.subscription_id=${renewalId}
+    `;
+    const [today] =
+      await tx`select (clock_timestamp() at time zone 'Africa/Cairo')::date::text as date`;
+    expect(before!.service_start_date).toBe(today!.date);
+    const applied = await freeze(tx, f.trainerA.userId, {
+      action: 'apply',
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: renewalId,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      duration_days: 3,
+    });
+    expect(applied.status).toBe('applied');
+    const [after] = await tx`
+      select (app_private.f13_project_entitlement(${f.wsA.id},${renewalId},
+        (clock_timestamp() at time zone 'Africa/Cairo')::date)->>'effective_end_exclusive') as service_end_exclusive,
+        i.due_on::text
+      from public.subscription_renewals r join public.subscription_installments i
+        on i.workspace_id=r.workspace_id and i.subscription_id=r.subscription_id
+      where r.subscription_id=${renewalId}
+    `;
+    const [expected] =
+      await tx`select (${before!.service_end_exclusive}::date+3)::text as end_date`;
+    expect(after!.service_end_exclusive).toBe(expected!.end_date);
+    expect(after!.service_end_exclusive).not.toBe(
+      before!.service_end_exclusive,
+    );
+    expect(after!.due_on).toBe(before!.due_on);
+  });
+});
+
+it('S22-PO-5 exposes no standalone activation writer to anon or authenticated', async () => {
+  await probe(async (tx) => {
+    const privileges = await tx`
+      select has_table_privilege('anon','public.subscription_activations','INSERT') as anon_insert,
+        has_table_privilege('authenticated','public.subscription_activations','INSERT') as authenticated_insert,
+        coalesce(bool_or(has_function_privilege('anon',p.oid,'EXECUTE')),false) as anon_activation_writer,
+        coalesce(bool_or(has_function_privilege('authenticated',p.oid,'EXECUTE')),false) as authenticated_activation_writer
+      from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+      where n.nspname in ('public','app_private') and p.proname ~* '(activation|activate)'
+        and p.proname <> 'record_renewal'
+    `;
+    expect(privileges[0]).toEqual({
+      anon_insert: false,
+      authenticated_insert: false,
+      anon_activation_writer: false,
+      authenticated_activation_writer: false,
+    });
   });
 });
 

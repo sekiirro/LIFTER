@@ -51,3 +51,53 @@ it('times out Auth Admin calls and continues processing the claimed batch', asyn
     timeout.mockRestore();
   }
 });
+
+it('continues after a poison persistence job and throws one sanitized error', async () => {
+  const jobs = [job('1'), job('2'), job('3')];
+  const banned: string[] = [];
+  const completed: string[] = [];
+  const poisonSecret = 'service-role-secret-poison';
+  const poisonUserId = jobs[1]!.auth_user_id;
+  const poisonDatabaseMessage = `database failed for ${poisonUserId} using ${poisonSecret}`;
+  const fetcher = vi.fn(
+    async (input: RequestInfo | URL, init?: RequestInit) => {
+      const url = String(input);
+      if (url.includes('/auth/v1/')) {
+        banned.push(url.split('/').at(-1)!);
+        return new Response(null, { status: 200 });
+      }
+      const rpc = url.split('/').at(-1);
+      const body = JSON.parse(String(init?.body)) as Record<string, unknown>;
+      if (rpc === 'claim_refund_auth_lockout_jobs') return Response.json(jobs);
+      if (rpc === 'complete_refund_auth_lockout_job') {
+        const id = String(body.p_id);
+        if (id === jobs[1]!.id) throw new Error(poisonDatabaseMessage);
+        completed.push(id);
+      }
+      return Response.json(
+        rpc === 'alert_expired_refund_auth_lockouts' ? 0 : true,
+      );
+    },
+  );
+
+  let thrown: unknown;
+  try {
+    await drainRefundAuthLockouts(
+      {
+        SUPABASE_URL: 'http://127.0.0.1:35421',
+        SUPABASE_SERVICE_ROLE_KEY: poisonSecret,
+      },
+      { fetcher },
+    );
+  } catch (error) {
+    thrown = error;
+  }
+
+  expect(banned).toEqual(jobs.map(({ auth_user_id }) => auth_user_id));
+  expect(completed).toEqual([jobs[0]!.id, jobs[2]!.id]);
+  expect(thrown).toBeInstanceOf(Error);
+  expect((thrown as Error).message).toBe('auth_lockout_persistence_failed');
+  expect((thrown as Error).message).not.toContain(poisonSecret);
+  expect((thrown as Error).message).not.toContain(poisonUserId);
+  expect((thrown as Error).message).not.toContain('database failed');
+});
