@@ -1,3 +1,274 @@
+§0-S20-FINAL
+
+Snapshot: 2026-10-31 (S20 close). Durable handoff only. This section records the binding S20 PO Messages A/B, final decisions, live state, dependencies, conflicts for next-session reconciliation, and execution order. Message B's critical handoff-only instruction governed S20; do not treat its earlier request to edit canonical documentation as authorization in this session. Reconcile canonical specs/plans/DESIGN.md/decision logs in the next session. The complete verbatim source is in the pointer list below. Latest explicit PO decisions override earlier specs and plans where they conflict (DR-03).
+
+### Live verification at handoff
+
+| Check | Observed |
+|---|---|
+| Handoff checkout | `C:/Users/NEW LAP/Desktop/LFTR-handoff`; branch `docs-session-handoff`; clean before this edit; HEAD `9434432f5577a3e60e1f2a6eba9fe35bfd7e76ac`. |
+| Repository | `sekiirro/LIFTER`, PRIVATE; default branch `main` at `87f9b407431f69e358f41f91517c785e510cc871` (architect-checked S20 snapshot). |
+| Open PRs | Only #25, `014-workspace-branding`. |
+| PR #25 | OPEN; head `c0026de5a65388e36e68336008e2d8b8893c46af`; reviewDecision APPROVED; mergeState CLEAN; 78/78 review threads resolved; CodeRabbit and both CI runs green. PO exact-SHA approval is already granted for this SHA in Message B §5. |
+| CI runs | Push `41177822624` and PR `41177826185`, attempt 2; validate, integration and storage jobs passed on both. |
+| Agent activity | No agents running at S20 handoff snapshot. Message B authorized one Luna High agent for handoff work only; no feature execution in this session. |
+| Drift | No drift in the rechecked handoff branch/head/cleanliness, repository visibility, PR #25 head, approval, merge state, CI or review-thread state. Other worktree/stack facts below are the supplied S20 end snapshot and must be rechecked before acting. |
+
+### Message A/B authority and session boundary
+
+- **Message A:** Hero `97debaf` was first approved for visuals only. F14's two destructive migrations required delegated verification against read-only production data and isolated migration tests for zero loss of published branding/assets/references, with no destructive production operations. The architect was to review evidence, report PASS/FAIL, request exact-SHA merge approval after PASS, or delegate fixes and repeat affected gates after FAIL; keep other streams running.
+- **Message A outcome:** The agent completed isolated Stack B evidence and reported PASS. No hosted production query was possible through an approved configured read-only path; repository evidence says the feature was not deployed. Message B later accepted PASS and granted exact-SHA approval for `c0026de5...`.
+- **Message B critical override:** This session was handoff-only; exactly one Luna High agent could work, and only on the durable handoff. No feature code, canonical spec/plan/DESIGN.md edits, migrations, merges, deployments or additional agents in S20. The agent/architect was to independently review the handoff, include a short START NEW SESSION prompt, report the handoff path, then stop.
+- Message B also directed all execution into the next session: F14 verification/merge, canonical reconciliation, F13/F15, F14b, F16, Plan Core/F17/F18, Hero implementation and a separate audit-only Liquid Glass review. The section below records those next-session priorities and gates.
+
+### Lanes and worktrees at S20 close
+
+`Stack A` is not an assigned feature lane. Three accidental Stack A resets occurred earlier in S20; they affected local, unowned data. Never target Stack A. All Stack A reset/destructive operations require the hardened wrapper's explicit refusal bypass, which must never be used.
+
+| Lane / purpose | Worktree | Branch | SHA | Stack | Thread | State and next action |
+|---|---|---|---|---|---|---|
+| Handoff docs | `LFTR-handoff` | `docs-session-handoff` | `9434432f5577a3e60e1f2a6eba9fe35bfd7e76ac` | — | fresh session | Clean before S20 edit; commit and push only this branch. |
+| Main | remote only | `main` | `87f9b407431f69e358f41f91517c785e510cc871` | — | — | Canonical base; recheck after F14 merge. |
+| F14 core, PR #25 | `LFTR-014` | `014-workspace-branding` | `c0026de5a65388e36e68336008e2d8b8893c46af` | B (`lifter-stack-b`, API 25421 / DB 25422) | `01a18c7e-1ff7-70a1-8e7c-fb5c961b2172` | Clean, OPEN, APPROVED, CLEAN; 0/78 unresolved, CI green, architect review and data-integrity PASS complete, PO approved exact SHA. Next session: re-verify every gate, then merge with `gh pr merge 25 --match-head-commit c0026de5a65388e36e68336008e2d8b8893c46af`; keep branch. No production deploy/migration authorization. |
+| F14 data-integrity evidence | `LFTR-014-verify` | detached | `c0026de5a65388e36e68336008e2d8b8893c46af` | B, isolated verification | `01a1914a` (Luna run) | Three uncommitted verification files are evidence; retain the worktree and files. Report PASS is accepted. Production conclusion is documentation-based: F14 is not deployed; no hosted catalog query was made. No destructive production operation. |
+| F14b prep | `LFTR-handoff` report only | — | prep is in pointer list | B after F14 merge | — | Seven design decisions approved; nine-chunk plan prepared. Start immediately after verified F14 merge in a new worktree from main. MiniMax UI; Luna storage/security. |
+| F13 feature | `LFTR-013` | `013-freeze-renewal-refunds` | `a50eb505e4223192696d151e8a24a511d1c383e0` | C (`lifter-stack-c`, API 35421 / DB 35422) | `01a18c7e-1ff7-70a1-8e7c-fb5c961b2172` | Clean, pushed. Local unpushed trial `LFTR-013-integ`, branch `s20-f13-integ-trial`, SHA `0ae9049f82e38f793193311b52b08a4c27e40bab`, integrated F14 `9272e35`; rehearsal passed. Re-run against merged/final F14 before real rebase. Fix quickstart upper bound from `20261102139000` to actual `20261102152000`. Draft PR body is in F13 prep report. |
+| F15 feature | `LFTR-p2` | `015-forms-intake` | `3be1289cccd42a7d2960c9d69d6aee561741e454` | D (dedicated Stack D) | `01a1905d-5e70-7b92-96c6-ea7985851fe7` (trial thread) | Clean, pushed. Trial `LFTR-p2-integ`, branch `s20-f15-integ-trial`, SHA `614325be31107ed7dd2447897f79d8b7e4ce7303`; T049 migration `20261104024000`; trial integrated old F14/F13 rehearsal bases and passed its gates. Re-run against final merged F14/F13 before replaying only trial feature commit. T006/T009 Builder routes and DRAFT copy, plus T023 audience/recurrence, remain. |
+| Hero approved prototype | `LFTR-014-blend` | `014-hero-prototype` | `97debafce8a7b6929722f079f0028c8d02311d07` | none | — | PO approved visual and Message B authorizes implementation next session without another visual approval. Worktree has only untracked `AGENTS.md`; never commit it. Implement approved prototype in a separate implementation worktree/branch; normal gates and exact-SHA merge approval still apply. Any follow-up migrations >= `20261105000000`. |
+| MiniMax benchmark 1 | `LFTR-bench-mm` | `bench/s19-minimax-hero` | last handoff-recorded `db098cc465f9b4f7a083d92fccd835a5b83dddc3`; current SHA not rechecked in this documentation-only scope | none | Pi run recorded in model log | Preserved edits from a failed 429 run; keep until PO says otherwise; never push. |
+| MiniMax benchmark 2 | `LFTR-bench-mm2` | `bench/s19-minimax-small` | last handoff-recorded `31c6e8c96f89bbf8830059dd3f8045336ea53933`; current SHA not rechecked in this documentation-only scope | none | Pi run recorded in model log | Clean at last record; passed benchmark; keep until PO says otherwise; never push. |
+| F16 spec | external `~/.lifter/specs/s20/016-exercise-food-catalogs` | not created | non-canonical FINAL v3 | none | debates complete | No code yet; PO decisions require canonical reconciliation, then implementation after F15. |
+| F17 spec | external `~/.lifter/specs/s20/017-workout-planner` | not created | non-canonical FINAL v3 | none | debates complete | No code yet; shared Plan Core required before integration. |
+| F18 spec | external `~/.lifter/specs/s20/018-nutrition-planner` | not created | non-canonical FINAL v3 | none | debates complete | No code yet; develop domain/UI in parallel, integrate after Plan Core and F16. |
+| Shared Plan Core/P4 | not yet created | not yet created | contract in F17/F18 specs | none | — | Must be implemented and merged before F17/F18 integration; reconcile PO override first. |
+
+Stack B belongs to F14, C to F13, D to F15. One writer per worktree and one lane per stack. Keep retained worktrees and benchmark branches; do not clean them up as part of handoff.
+
+### Binding PO decisions — F16 Exercise & Food Catalogs
+
+| ID | Binding value |
+|---|---|
+| D16-1a=A | PO exclusively manages global exercises; authorized staff manage workspace exercises. |
+| D16-1b=A | Food creator or PO can publish edits without moderation. |
+| D16-1c=A | Only PO retires/merges global entries. |
+| D16-9=A | Creator and origin workspace are visible to PO only. |
+| D16-2=A | Muscles: Chest, Lats, Upper Back, Traps, Front Delts, Side Delts, Rear Delts, Biceps, Triceps, Forearms, Abs, Spinal Erectors, Quads, Hamstrings, Glutes, Adductors, Abductors, Calves. Equipment: Barbell, Dumbbell, Cable, Machine, Smith Machine, Bodyweight, Kettlebell, Resistance Band, Suspension Trainer, Other. Exercise AR/EN names, primary muscle and equipment required; secondary muscles optional. |
+| D16-3 | HTTPS YouTube and Google Drive only. One shared global exercise; independent video URLs per workspace. PO manages mappings; authorized staff manage only their workspace. Resolve dynamically without republishing plans. Strict RLS/API/export isolation: KENDO sees KENDO links, TOJI sees TOJI links; never expose another workspace's URLs. |
+| D16-4 | PO supplies dataset later. Luna audits nutrition, calories, names, duplicates, irrelevant foods, raw/cooked variants; produce the smallest useful Egyptian/Arab-oriented catalog with corrections, exclusions, sources and alternative groups. PO approval is required before import. Never invent values. Global exercise content also comes later after platform completion; implement management only, with no invented/imported exercises. |
+| D16-5 | Warn when kcal discrepancy is greater than `max(20 kcal, 10% of stated kcal)`; this warning never blocks saving by itself. This supersedes the spec's release-blocking reject. |
+| D16-6=A | Calories, protein, carbs and fat required; fiber optional. |
+| D16-7a=B | Normalized textual similarity threshold ≥90%; no automatic synonym matching. Luna separately audits aliases in the initial dataset. |
+| D16-7b=A | Near-duplicate kcal proximity ≤`max(10%, 10 kcal)`, standardized per 100 g/100 ml. Distinguish raw/cooked and genuinely different products. |
+| D16-7c | Block genuine catalog duplicates. Repeated foods/meals inside client plans are allowed; provide Duplicate Food/Meal actions. |
+| D16-8=A | At least one language is required for food names. |
+| D16-10=B | Caps: 10 trainer additions/24h; 100 platform additions/24h; maximum 10,000 active foods. Benchmark before production. |
+| Catalog lifecycle | Both catalogs need Add/Edit/Archive/Remove/Restore behavior. Never break existing plan references; use lifecycle states and preserve references. Raw/cooked food names explicitly state weighing state. |
+| Exercise defaults | Each exercise carries editable warm-up/working sets, fixed/ranged reps, rest, RIR and exercise alternatives. Adding an exercise to a plan populates defaults; coaches may override. |
+| Food defaults | Curated default alternatives, maximum THREE alternatives per food in a plan, validated portion quantities and per-plan overrides. Catalog changes preserve published plan integrity. |
+
+### Binding PO decisions — F17 Workout Planner
+
+| ID | Binding value |
+|---|---|
+| D17-1=A | Primary-muscle volume credit 1.0; secondary-muscle credit 0.5. |
+| D17-2 | Defaults belong to each exercise/catalog entry, not a universal defaults screen. |
+| D17-3 | Global templates PO-only; local templates by authorized staff. PO may Make it Global from eligible templates without leaking private data or references. |
+| D17-4=A | Support fixed reps and rep ranges. |
+| D17-5=A | Draft planning allowed after client approval; publishing requires submitted intake. |
+| D17-7=A | kg/lb per set; Bodyweight, Added Weight and Assisted modes. |
+| D17-8=A | Export published plans only; audited PDF/Excel with formula-injection protection. |
+| D17-9 | Alternatives are catalog-based and editable per plan. |
+
+### Binding PO decisions — F18 Nutrition Planner
+
+| ID | Binding value |
+|---|---|
+| D18-1 | Global templates PO-only; workspace templates by authorized staff; PO may Make it Global safely. This is an approved PO amendment to current PRD/Constitution exclusions; see reconciliation § below. |
+| D18-2=A | Calorie/macro targets optional; calculate totals always. |
+| D18-4=C | Display calories and macros as integers; preserve exact decimal calculations and storage. |
+| D18-6 | Optional recipe/preparation video link/icon for YouTube or Google Drive; hide entirely when absent. |
+| D18-9=A | Client-selected alternatives persist after edits while authorized; otherwise revert to coach default. |
+| Other | Client selections never create plans or affect other clients. Multiple active nutrition plans remain supported. Daily food/calorie logging deferred to mobile app. Telegram AI may recommend only coach-approved existing alternatives, never invent alternatives. |
+
+### Shared Plan Core + P4 binding override
+
+- Published client plans remain editable under the SAME Plan ID. Editing silently autosaves to a draft; provide Save as Draft and a single Ready & Publish action. Draft edits remain invisible until publish, preserving internal audit/revision integrity without creating additional visible plans.
+- Only explicit Create New Plan creates another plan, from blank, template, or an existing authorized plan.
+- The first workout plan and first nutrition plan may be published/delivered on different days. Activate the subscription exactly once, only after BOTH first plans are successfully delivered. Do not require a paired-publish transaction.
+- Later plan edits never restart activation. Database operations must be secure, idempotent and concurrency-safe.
+
+### Binding PO decisions — F14, F14b, Hero, Liquid Glass audit
+
+| Area | Binding decision |
+|---|---|
+| F14 PR #25 | Data-integrity PASS accepted. Merge is PO-approved only at exact SHA `c0026de5a65388e36e68336008e2d8b8893c46af`; next session must re-verify head, approval, CI, threads, and other gates, then use `--match-head-commit` and keep branch. No production migration/deploy authorization. |
+| F14b design 1–6 | All approved: (1) reusable Upload Card with thumbnail, Retry and clear errors; (2) upload automatically on file selection, never auto-publish; (3) banner-only content confirmation; (4) alt text in one language minimum, fallback to the other; (5) reuse existing Workspace Builder Preview tab, no duplicate screen; (6) Replace and Remove with safe fallback. |
+| F14b approved copy | `«شعار مساحة العمل»` / “Workspace logo”; `«صورة الغلاف»` / “Banner image”; `«وصف صورة الغلاف (بالعربية أو الإنجليزية)»` / “Banner image description (Arabic or English)”; `«أدخل وصفًا بلغة واحدة على الأقل؛ سيُستخدم الوصف المتاح عند غياب الآخر.»` / “Enter a description in at least one language; the available description will be used as fallback.”; recommend 1600×800 (2:1), keep important content away from edges/lower portion; `«تعذر رفع الصورة. تحقق من نوع الملف وحجمه وأبعاده ثم حاول مجددًا.»` / “Upload failed. Check the file type, size, and dimensions, then retry.” Show actual server limits, never invented limits. |
+| Hero | Visual prototype `97debafce8a7b6929722f079f0028c8d02311d07` is approved. Message B explicitly authorizes implementing that approved design in the next session without another visual approval, superseding Message A's visual-only scope. Preserve Emerald `#059669`, approved layout, Apple Liquid Glass treatment, mobile behavior and tokens. Normal review and exact-SHA merge gates apply. |
+| Liquid Glass platform audit | A separate read-only audit agent uses installed Design/UI/UX skills and Apple's official HIG/Liquid Glass guidance across major screens/components. Assess UX, accessibility, performance, consistency, implementation effort; recommend suitable nav/floating surfaces and retain solid forms/content; avoid generic glassmorphism/excessive blur. Deliver recommendations, visual examples, risks and priorities to PO. Audit only; no site-wide implementation without PO approval. Run independently, not blocking feature lanes. |
+| Execution policy | S20 itself is handoff-only. Next session: Luna High for complex DB/RLS/migrations/security/concurrency; MiniMax M3.1 Flash High for substantial non-sensitive UI/code/tests/docs; Claude orchestrates and independently reviews. Use one MiniMax lane; verify effective `thinkingLevel=high`; at most 7 images per run. Nemotron 3 Ultra via direct Kilo `--variant high`, sanitized packs, deny-all+read, for read-only debates/review only. Fresh agent thread at >60% context or ≥8 compactions; do not interrupt running work. |
+
+### REQUIRED NEXT SESSION RECONCILIATION — specs are not edited in S20
+
+The following are binding PO overrides of the external FINAL v3 specs. Reconcile into canonical specs, plans, DESIGN.md/constitution and decision logs in a single documentation PR before dependent implementation. Preserve traceability and do not reopen or debate these decisions.
+
+1. **Plan Core / P4 lifecycle.** Same Plan ID stays editable after publish; silent autosave, Save as Draft, one Ready & Publish; drafts invisible until publish; only explicit Create New Plan creates a plan. First workout and nutrition deliveries may occur on different days; activate once after both succeed; no paired-publish transaction; later edits never restart activation. Supersedes F17 FR-001/001a/002/007/008, Plan Core design, F18 FR-001, and `initial_delivery`/`publish_pair` contract. Replace transaction-pair semantics with secure idempotent/concurrency-safe independent deliveries and one activation condition.
+2. **Exercise videos.** One shared exercise identity with per-workspace YouTube/Google Drive URLs resolved dynamically, strict tenant isolation, no plan republish. Supersedes F16 FR-014 host allowlist (remove Vimeo), FR-020 “effective video” snapshot, and D16-3 Vimeo proposal. F17 plan snapshots preserve canonical exercise identity only; render selected workspace video dynamically under authorization.
+3. **D18-1 amendment.** Workspace-owned nutrition templates and Make it Global contradict PRD-05/PRD-12 “no workspace-owned nutrition template library” and Constitution IV exclusions. Record as explicit PO amendment DR-03 with source/decision traceability; update BRD/PRD-12/Constitution text and F18 spec/plan to allow global and workspace template ownership per D18-1.
+4. **Catalog lifecycle.** PO-approved Add/Edit/Archive/Remove/Restore is lifecycle state behavior, not permission to mutate/delete immutable catalog versions. Reconcile F16 FR-011 immutability wording; preserve plan references and published snapshots across lifecycle changes.
+5. **F16 validation and caps.** D16-5 warn-only at `max(20 kcal,10% of stated kcal)` supersedes FR-007's release-blocking reject. Record D16-7a ≥90% normalized textual similarity/no automatic aliases; D16-7b ≤`max(10%,10 kcal)` per 100g/100ml; D16-7c block true catalog duplicates while plan repeats are allowed with Duplicate actions. D16-10 caps = 10 trainer additions/24h, 100 platform additions/24h, 10,000 active foods; benchmark before production. D16-2 exact taxonomies are as above. D16-4 dataset audit protocol and PO import approval are mandatory; no invented values/content.
+6. **F17 defaults/templates/modes.** D17-2 per-exercise defaults on catalog entries supersedes F17 FR-005 platform defaults screen. D17-3 global/local template governance and safe Make it Global; D17-7 kg/lb per set and Bodyweight/Added Weight/Assisted; D17-8 published-only audited PDF/Excel with formula-injection protection; D17-9 catalog-based alternatives editable per plan. Reconcile exact relevant FRs in source spec/plan.
+7. **F18 display/video/persistence.** Maximum THREE default alternatives per food; D18-4 integer display only, exact decimal calculations/storage; D18-6 optional YouTube/Google Drive recipe/preparation link, entirely hidden if absent; D18-9 selection persistence while authorized and reset to coach default otherwise. Reconcile source FRs, client selection contract and tests.
+8. **Telegram AI (P6).** Recommendations may only select coach-approved existing alternatives; never invent foods or alternatives. Record in P6 decision log/spec traceability.
+
+### Next-session execution order and parallel lanes
+
+| Order | Owner / lane | Work |
+|---|---|---|
+| 1 | Luna High, CI/gh agent; Claude independent review | Re-verify F14 PR #25 exact head, approval, CI, 0 unresolved threads, private visibility, architect/data-integrity evidence; merge only with `gh pr merge 25 --match-head-commit c0026de5a65388e36e68336008e2d8b8893c46af`. Keep branch. |
+| 2 | Luna High; one documentation PR | Reconcile all S20 PO decisions into canonical specs, plans, DESIGN.md/Constitution and decision logs, using the eight-item reconciliation list above. No PO question is reopened. |
+| 3 | Luna High on Stack C then D | Finalize F13, then F15. Rehearse/revalidate F13 against merged F14; fix quickstart migration max `20261102152000`. Rehearse F15 against final F14/F13; replay only `614325be31107ed7dd2447897f79d8b7e4ce7303`, not trial merge commits. |
+| 4 | Immediately after F14 merge: MiniMax UI, Luna storage/security | Start F14b in new worktree from main, use existing nine-chunk plan, approved strings/decisions; preserve actual server limits. |
+| 5 | Luna DB/RLS; MiniMax UI | Begin F16 catalogs after canonical reconciliation and F15 merge readiness; no catalog content import until PO dataset audit/approval. |
+| 6 | Luna shared DB contract; MiniMax F17/F18 UI/schema/tests concurrently | Create and merge shared Plan Core before F17/F18 integration; reconcile lifecycle/activation first. F17/F18 development may proceed independently after contracts; integrate only after Plan Core/F16. |
+| 7 | MiniMax UI; Luna for DB/security | Implement approved Hero prototype `97debaf` next session without another visual approval; new isolated worktree, do not commit the prototype's untracked `AGENTS.md`. |
+| 8 | Separate read-only audit agent | Run Liquid Glass platform audit only, independently and without blocking features. Present findings to PO; implementation requires separate PO approval. |
+| 9 | Luna when threads idle | Redact/rescan 5 remaining S17 logs (4 produced by reused threads, 1 held by Codex); complete Stack D vault metadata check. Preserve evidence and backups rules. |
+
+Merge dependency order is fixed: **F14 → F13 → F15 → F16 → Plan Core → F17 || F18**. F14b and Hero start after F14 merge. F13/F15 finalization uses Stacks C/D. F16/F17/F18 merges occur only after F15. One writer per worktree; one active feature lane per stack.
+
+### Supporting lane evidence and exact next steps
+
+#### F14 PR #25 — accepted evidence at exact approved SHA
+
+- The two destructive migrations are `20261102151000_branding_current_only_version_retention.sql` and `20261102152000_branding_shared_asset_retention.sql`.
+- Data-integrity review verdict: PASS. Stack B replayed 62 migrations; focused branding integration passed 85/85. Five expected removals were observed: four superseded version rows and one superseded asset reference; no unexpected deletion/reference loss.
+- Five current publication pointers and their current version hashes were unchanged. Three current asset rows and current Storage objects were unchanged byte-for-byte; active handles and GC claims remained valid; 41 audit rows were unchanged.
+- Idempotent rerun deleted zero rows. A deliberate wrong-variant mutation detected deletion of a live asset and was rolled back (RED then restored GREEN).
+- Production evidence is a repository-record finding: `lifter-prod` had nothing deployed. No live hosted catalog query was made because no approved configured read-only path was available. This is not a claim of direct production observation.
+- Current exact SHA also has CI green on push and PR, CodeRabbit APPROVED, all 78 threads resolved, architectural review complete, mergeState CLEAN, repository PRIVATE, and explicit PO exact-SHA approval. Recheck every item immediately before merge; any SHA drift voids approval.
+- Execute the approved normal merge only after recheck, with `--match-head-commit` and branch retention. No deploy, production migration, or release action follows from this merge approval.
+
+#### F13 trial evidence and remaining work
+
+| Evidence | S20 result |
+|---|---|
+| Trial | `s20-f13-integ-trial` at `0ae9049f82e38f793193311b52b08a4c27e40bab`, unpushed; based on F14 `9272e35` rehearsal. |
+| Fresh Stack C migrations | 73 applied; unique and ordered; includes F14 through `20261102150000`. |
+| Integration | 1,289 passed, 1 skipped in CI-shaped mode; same 1,289/1 in explicit Stack C mode. Sole skip is opt-in SC-011 timing measurement. |
+| Unit / contracts | 1,814 unit tests; T017 parity/cross-feature checks 393; cron isolation 29. |
+| Other gates | Lint, typecheck, build, edge build, Prettier, diff check passed. |
+| Remaining | Re-run on merged final F14; correct quickstart upper migration bound to `20261102152000`; then finalize PR and standard gates. |
+
+Trial conflict resolution kept all-settled cron isolation/sanitized failures, merged F14 branding GC with F13 refund-lockout drain, preserved F14 URL validation and F13 injectable fetch. Do not replay the old trial merge commit; rebase/rehearse on the actual merged base.
+
+#### F15 trial evidence and remaining work
+
+| Evidence | S20 result |
+|---|---|
+| Trial | `s20-f15-integ-trial` at `614325be31107ed7dd2447897f79d8b7e4ce7303`, unpushed; cherry-pick only its feature commit after revalidation. |
+| T049 | Migration `20261104024000`; PO/WO/Trainer receive `author_forms`, `assign_intake_form`, `read_form_answers`; Sales and unknown roles denied. RED 10 → GREEN 39, mutation 1/1. |
+| Stack D integration | 1,408 passed, 1 skipped. Unit: 2,026. Forms Playwright: 69. |
+| Other gates | Lint, typecheck, build, edge build, diff check passed. |
+| Remaining | Re-run on final F14/F13 bases. T006/T009 need Builder route/portal wiring and DRAFT copy. T023 audience, recurrence, deduplication, freeze pause/resume and stop behavior remains coordinated with T010. |
+
+S20 incident disclosure: an early F15 rehearsal reset Stack A (`supabase_db_lifter`) from a CLI child that ignored the intended workdir. The incident was disclosed; no further A/B/C operations followed during that trial; later operations used Stack D through the hardened wrapper. Stack A was unowned local data, reproducible by migration replay. Do not repeat; hardened wrapper now requires matching workdir+stack on every exec.
+
+#### F14b nine-chunk plan summary
+
+| Chunk | Scope | Primary owner |
+|---:|---|---|
+| 0 | PO/architect preflight: seven answers are now satisfied; no further design approval needed. | Claude review |
+| 1 | Trace production editor and authoritative upload orchestration seam; do not mistake showcase/fixture for production path. | MiniMax |
+| 2 | AR/EN banner alt fields and draft persistence; preserve revision/CAS behavior. | MiniMax |
+| 3 | Approved upload controls and banner identity-only confirmation. | MiniMax |
+| 4 | Upload states, accessibility, keyboard and responsive behavior. | MiniMax |
+| 5 | Focused UI/action/contract tests. | MiniMax |
+| 6 | Stack B Storage integration only if the approved production path needs verification; Luna only for proven DB/RLS/Storage gap. | MiniMax; Luna if security/DB |
+| 7 | Production-route Playwright/axe matrix and screenshots; zero Storage skips. | MiniMax |
+| 8 | Report, status reconciliation, PO acceptance, normal gates. | MiniMax + Claude review |
+
+Existing server limits from F14b prep: logo PNG/WebP 4 MiB ingress/output, max 2048×2048 and 1,000,000 pixels; banner PNG/WebP 8 MiB ingress/output, max 4096×2048 and 4,000,000 pixels. These are actual limits to display, not new guesses. The image-only banner remains 2:1, max 288px/18rem; 1600×800 is recommendation only. Upload failures never replace the authoritative attached asset. Preserve FR-009 as partially complete until evidence and PO acceptance.
+
+### Earlier binding decisions that remain in force by reference
+
+S13 and later PO sections in the cited decision file remain binding unless explicitly superseded. Carry forward at least the following cross-feature constraints; do not reinterpret them as new S20 decisions.
+
+| Area | Still-binding prior decision / effect |
+|---|---|
+| F13 Freeze | Freeze lasts 1–30 calendar days, no overlap, sequential allowed; applied start day is frozen, STOP day excluded. Financial purchases remain independent; no automatic refund/shift. Refund deactivation applies globally; other purchases require manual resolution. Later partial refunds capped at remaining balance without reactivation; FIFO oldest installment first with deterministic tie-break. Renewal installments anchor to recording date, unaffected by service delay or Freeze. |
+| F15 corrections | PO, WO, Trainer and Client correction rights follow approved scope and active relationship; immutable version history/audit and tenant isolation apply except the narrowly PO-approved privacy-erasure exception for inapplicable answers and authorized related records. Respect legal holds; deletion log counts only, no IDs; automatic server-validated deletion; preserve financial, security and unrelated audit records. |
+| F15 forms | Q3 flexible automation covers all active workspace clients, onboarding entrants, searched selections and custom recurrence; renewal-triggered delivery only on actual service start; stop when inactive/frozen. Freeze resumes recurrence without catch-up. Mandatory Intake deadline is 23:59 Cairo, third day after assignment; other forms configurable 1–14 days defaulting to Intake, each occurrence with its own deadline. |
+| F15 alerts | Separate client-late and trainer-late alerts; client-late: Trainer +24h, PO+WO +48h. Reassignment transfers the alert without resetting clock. When no Trainer assigned, PO+WO; notify whichever PO/WO remains authorized. Preserve established Trainer-late rules. |
+| F15 size limits | Short answer 150 chars, long answer 1,000 chars (Unicode code points); per-answer UTF-8 safety limit 4 KiB; max submission 256 KiB answer-content UTF-8 bytes; max 20 questions/section and 60/form. Server enforcement and Arabic/English/emoji boundary tests. |
+| F15 starter form | “Your First Step” / `«خطوتك الأولى»`; ordinary fully editable Forms template. Workspace Owner may edit/replace/select another onboarding form. Never silently recreate invalid existing defaults; retiring active default requires another eligible default first. |
+| F14 labels/caps | Render handle cap: five-minute expiry, eight active per link, 30 per rolling five minutes. Previously approved branding caps remain fixed. |
+| Shared governance | Permission parity requires checking TypeScript and SQL in both directions before permission changes. Retention, legal/production evidence and explicit merge gates remain separate from local implementation readiness. |
+
+### S20 tooling, routing, and context notes
+
+- `supabase-safe.mjs` hardening was implemented and independently rechecked: 11/11 tests pass. Every `exec` requires explicit matching `--workdir` and `--stack B|C|D`; configuration must agree. The old wrapper gap allowed env-injected commands without `--stack`; that is closed. Stack A refuses unless `--allow-stack-a` is passed; never pass it.
+- Three accidental Stack A resets occurred across S20 workstreams. Treat this as an operational lesson, not authority to inspect or repair Stack A. Current lanes are B=F14, C=F13, D=F15.
+- MiniMax queue is architect-maintained; never leave MiniMax idle if a suitable non-sensitive task is queued. At S20 end the F14b UI is queued after F14 merge; F13/F15 docs/UI tasks follow their dependencies. MiniMax is not used for DB stacks, RLS/Auth/definer, migrations, finance or sensitive architecture.
+- MiniMax route: Pi/pi-delegate `minimaxai/minimax-m3.1-flash:high`; verify `thinkingLevel=high` from run events. One lane by default; don't start a second without the measured queue policy. Pre-filter large inputs, prefer one contact sheet, and cap images at seven per run.
+- Nemotron route: direct Kilo `nvidia/nemotron-3-ultra-550b-a55b:free --variant high`; highest declared/verified variant. Read-only sanitized spec debate pack in isolated scratch git directory; deny all except read. No product names, people, local paths, secrets, security internals or confidential data in prompts.
+- Context policy: monitor live context, not cumulative usage. At round boundaries use a fresh thread and full lane handoff if >60% or >=8 compactions. Never interrupt a running agent. Record model/task/outcome/review/cost in model-performance-log.md.
+- Local database verification instructions in memory are subordinate to S20 Stack A prohibition and the current safe-wrapper requirement. Confirm ownership/config before starting a stack; one lane per stack; never run destructive DB commands outside the owning worktree.
+
+### Gates, tooling and security rules
+
+- Every merge: CI green; CodeRabbit APPROVED on exact final SHA; zero unresolved review threads; independent architect review; explicit PO approval for that exact SHA (except F14 already approved at the stated SHA). Use `--match-head-commit`; keep branches. A changed SHA voids approval.
+- One CodeRabbit request per round. Run targeted checks during a fix round; full gates once on the final head. No automatic merge, production deployment or production migration.
+- Migration names must be unique valid UTC timestamps. Never edit a pushed migration; add a forward migration. F16 range `20261106*`, Plan Core range to be assigned without overlap, F17 `20261107*`, F18 `20261108*`; Hero follow-ups >= `20261105000000`.
+- `supabase-safe.mjs` S20 hardening passed 11/11 tests. EVERY exec requires `--workdir <lane stack workdir> --stack B|C|D` matching that worktree's `config.toml`. Stack A is refused; never use `--allow-stack-a`. Use backups `*.pre-s20.bak`; verify stack identity before any DB operation. No shared-stack concurrency.
+- CI public window has standing approval: a single agent handles the PRIVATE repository restore flow; minimize public duration, restore PRIVATE immediately even on failure, verify visibility. The S20 F14 CI window already completed and repo is currently PRIVATE.
+- Never read or print `.env*`, `opencode.json`, auth files, keys or secrets. No credentials or secret values in reports/model prompts. Nemotron packs must be sanitized and isolated; MiniMax prompts stay scoped and non-sensitive.
+- Security follow-up: 3/8 deferred S17 logs redacted with 0 findings; 5 remain. Stack D vault metadata inspection remains pending. F14 production finding was documentary only; no live production query or production mutation was performed.
+
+### Still-pending PO items
+
+- F14 remaining DRAFT branding copy keys beyond the now-approved F14b copy; F15 DRAFT copy listed under T009; Terms & Conditions AR/EN; sex labels; Q3 alert channel.
+- D16-4 food dataset: PO supplies it later; Luna audits and reports, then waits for PO approval before import.
+- Global exercise content: supplied after platform completion; no invented/imported content.
+- Exact-SHA PO approval remains required for every merge except F14 #25 at `c0026de5a65388e36e68336008e2d8b8893c46af`.
+- Liquid Glass platform audit findings require PO review before any site-wide implementation.
+- No production deployment/migration authorization has been granted.
+
+### Source pointers (all authoritative input files read for this handoff)
+
+| Source | Path / citation |
+|---|---|
+| S20 binding PO Messages A/B | `C:/Users/NEW LAP/.lifter/briefs/s20-po-final-decisions-verbatim.md` |
+| Earlier binding PO decisions, including S20 section | `C:/Users/NEW LAP/.lifter/briefs/s13-po-decisions-2026-10-29.md` (S20 section; earlier sections by reference where still applicable) |
+| F16 final v3 | `C:/Users/NEW LAP/.lifter/specs/s20/016-exercise-food-catalogs/spec.md`; `plan.md`; `debate.md` |
+| F17 final v3 | `C:/Users/NEW LAP/.lifter/specs/s20/017-workout-planner/spec.md`; `plan.md`; `debate.md` |
+| F18 final v3 | `C:/Users/NEW LAP/.lifter/specs/s20/018-nutrition-planner/spec.md`; `plan.md`; `debate.md` |
+| PO review page (cite only; not fetched) | https://claude.ai/artifact/VSWQk9i9iDFn6qXCxGoR52 |
+| Hero audit | `C:/Users/NEW LAP/.lifter/reports/s20-hero-audit-3a.txt` |
+| F13 integration prep | `C:/Users/NEW LAP/.lifter/reports/s20-f13-integration-prep.md` |
+| F15 integration prep | `C:/Users/NEW LAP/.lifter/reports/s20-f15-integration-prep.md` |
+| F14 data-integrity report | `C:/Users/NEW LAP/.lifter/reports/s20-f14-data-integrity/report.md` |
+| F14b prep | `C:/Users/NEW LAP/.lifter/reports/s20-f14b-prep.md` |
+| Model performance log | `C:/Users/NEW LAP/.lifter/model-performance-log.md` (S20 records) |
+| MiniMax queue | `C:/Users/NEW LAP/.lifter/briefs/minimax-queue.md` |
+| Memory index | `C:/Users/NEW LAP/.claude/projects/c--Users-NEW-LAP-Desktop-LFTR/memory/MEMORY.md` |
+| Local DB verification | `C:/Users/NEW LAP/.claude/projects/c--Users-NEW-LAP-Desktop-LFTR/memory/lifter-local-db-verification.md` |
+| MiniMax max reasoning | `C:/Users/NEW LAP/.claude/projects/c--Users-NEW-LAP-Desktop-LFTR/memory/lifter-minimax-max-reasoning.md` |
+| Nemotron/Kilo debates | `C:/Users/NEW LAP/.claude/projects/c--Users-NEW-LAP-Desktop-LFTR/memory/lifter-nemotron-kilo-debate.md` |
+| Delegation priority | `C:/Users/NEW LAP/.claude/projects/c--Users-NEW-LAP-Desktop-LFTR/memory/lifter-delegation-priority.md` |
+| Agent context policy | `C:/Users/NEW LAP/.claude/projects/c--Users-NEW-LAP-Desktop-LFTR/memory/lifter-agent-context-policy.md` |
+| Earlier durable handoff | `C:/Users/NEW LAP/Desktop/LFTR-handoff/docs/SESSION_HANDOFF.md`, section `§0-S19-FINAL`; leave unchanged. |
+
+### START NEW SESSION prompt
+
+```text
+Read C:/Users/NEW LAP/Desktop/LFTR-handoff/docs/SESSION_HANDOFF.md first, beginning with §0-S20-FINAL. This is the authoritative durable S20 handoff. Re-verify live git/gh state before action. Follow its binding PO decisions without reopening them. First verify and, if all exact-SHA gates remain valid, merge F14 PR #25 at c0026de5a65388e36e68336008e2d8b8893c46af using --match-head-commit; then reconcile all eight listed spec/plan/BRD/PRD/Constitution/DESIGN.md conflicts in one docs PR, and proceed in the stated order F13 → F15 → F16 → Plan Core → F17 || F18, with F14b and Hero after F14. Use isolated worktrees and one feature per stack; honor the CI, CodeRabbit, independent review, exact-SHA PO, migration, secret-handling and no-production-deploy gates. Start the separate Liquid Glass platform audit as read-only and do not implement its findings without PO approval.
+```
+
+### Handoff edit record
+
+This section is inserted above `§0-S19-FINAL`. The S19 and older sections remain unchanged. After final review, commit exactly `docs/SESSION_HANDOFF.md` with message `docs(handoff): S20 final handoff` and push only `docs-session-handoff` (no force).
+
 §0-S19-FINAL
 Snapshot: 2026-10-31 04:41Z. Main: 87f9b407431f69e358f41f91517c785e510cc871. Repository: PRIVATE. Docs branch was clean at cd0db8608fd28a62d95a4e7403877b4f3f64690b before this update.
 
