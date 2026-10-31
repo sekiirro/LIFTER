@@ -174,6 +174,15 @@
 | T042 | Complete: static published-brand placeholder and contract pass; see T035 design-gate evidence in s17-r3 report. |
 | T043 | Production/release blocker: full Q-M01..Q-M30 isolated Storage matrix, hosted CI run IDs, complete state restoration, and backup/restore evidence are not available; related T039–T041 remain open. |
 
+### F14b — owner-facing upload and alt-text editor (PO-approved deferral)
+
+Start F14b immediately after F14 merges, in parallel with F13/F15. F14b completes the owner-facing editor portion of FR-009; it does not replace or weaken the completed private staging, server validation, metadata stripping, validated writes, revision-checked attachment, garbage collection, or alt-text publish guard.
+
+- [ ] Add owner-facing logo and Hero Banner upload controls and connect them to the existing private upload flow. Keep validation authoritative on the server, use revision-checked attachment, and preserve the currently attached asset if upload or attachment fails.
+- [ ] Add the required banner alt-text editor fields for the supported locales, with the existing required-locale/fallback behavior. Persist through the existing draft save contract and retain the publish guard against missing required alt text.
+- [ ] Pass the Frontend Design Gate before accepting the editor UI: Arabic-first RTL and English LTR, light/dark, responsive mobile/tablet/desktop layouts, keyboard and screen-reader behavior, focus/touch states, accessibility checks, and upload/validation/save/error states, using approved design tokens and components.
+- [ ] Add focused tests for owner authorization, logo/banner selection and successful attachment, invalid/rejected uploads, upload/attachment failure preserving the prior asset, alt-text save and reload, locale fallback, and publish denial when required alt text is absent. Run the UI design-gate/accessibility matrix and relevant upload integration coverage; record evidence before marking FR-009 complete.
+
 ### F13 reconciliation plan (deferred until F13 is merged)
 
 - Do not cherry-pick, amend, or otherwise change the F13 branch. Its current capability migration is `20261103121000_f13_capability_scope.sql` (commit `22c65ba`); it adds Trainer to `record_payment` and `manage_freeze`. F14's earlier `20261102131000_manage_branding_capability.sql` adds `manage_branding` for Platform Owner and Workspace Owner. The F13 migration therefore replaces the function with a definition that omits F14's capability.
