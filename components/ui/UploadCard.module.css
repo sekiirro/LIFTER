@@ -1,0 +1,127 @@
+.card {
+  display: grid;
+  gap: var(--space-3);
+  min-inline-size: 0;
+  padding: var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-card);
+  color: var(--color-text);
+}
+
+.header {
+  display: grid;
+  gap: var(--space-2);
+  min-inline-size: 0;
+}
+
+.title {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-lg);
+  line-height: var(--line-height-heading);
+  text-wrap: balance;
+}
+
+.guidance,
+.hint,
+.statusText {
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+  line-height: var(--line-height-body);
+  text-wrap: pretty;
+}
+
+.hint {
+  margin-block-start: var(--space-1);
+}
+
+.confirmation {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: start;
+  gap: var(--space-3);
+  padding-block-start: var(--space-2);
+}
+
+.confirmation input {
+  inline-size: var(--touch-min);
+  block-size: var(--touch-min);
+  margin: 0;
+  accent-color: var(--brand-fill);
+}
+
+.confirmation label {
+  display: inline-block;
+  min-block-size: var(--touch-min);
+  padding-block: var(--space-2);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.fileInput {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.thumbnail {
+  inline-size: 100%;
+  min-inline-size: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-card);
+  background: var(--color-card-raised);
+}
+
+.logoThumbnail {
+  aspect-ratio: 1;
+}
+
+.bannerThumbnail {
+  aspect-ratio: 2;
+}
+
+.thumbnail img {
+  inline-size: 100%;
+  block-size: 100%;
+  object-fit: cover;
+}
+
+.logoThumbnail img {
+  object-fit: contain;
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+}
+
+.status {
+  display: grid;
+  min-block-size: var(--space-6);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .card:hover {
+    border-color: var(--color-border-strong);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .card,
+  .card :global(*),
+  .card :global(*::before),
+  .card :global(*::after) {
+    animation-duration: 0ms !important;
+    animation-delay: 0ms !important;
+    transition-duration: 0ms !important;
+    transition-delay: 0ms !important;
+  }
+}

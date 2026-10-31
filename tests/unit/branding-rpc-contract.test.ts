@@ -56,4 +56,18 @@ describe('persisted branding RPC contract', () => {
       color: '#2563EB',
     });
   });
+
+  it('accepts an explicitly cleared banner-alt pair for persistence', () => {
+    const domain = normalizeBrandDraft({
+      names: { ar: 'الاسم', en: 'Name' },
+      bannerAltText: { ar: '', en: '' },
+      color: '#2563eb',
+    });
+
+    expect(toPersistedBrandingFields(domain)).toEqual({
+      name: { ar: 'الاسم', en: 'Name' },
+      bannerAlt: { ar: '', en: '' },
+      color: '#2563EB',
+    });
+  });
 });

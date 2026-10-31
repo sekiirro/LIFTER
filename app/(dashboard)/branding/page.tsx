@@ -14,6 +14,7 @@ import { BrandScope } from '../../../components/ui/BrandScope';
 import { saveBrandingAction, publishBrandingAction } from './actions';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { ClientPortalBrandPreview } from '../../../components/branding/ClientPortalBrandPreview';
+import { BrandingUploadManager } from '../../../components/branding/BrandingUploadManager';
 import { DEFAULT_BRAND } from '../../../lib/design/color';
 import { registrationBrandName } from '../../../lib/branding/registration-name';
 import styles from './branding.module.css';
@@ -104,9 +105,23 @@ export default async function WorkspaceBrandingPage({
       )}
       <section className={styles.panel} aria-labelledby="branding-draft-title">
         <h2 id="branding-draft-title">{m['branding.draftSnapshot']}</h2>
-        <form action={saveBrandingAction} className={styles.form}>
+        <BrandingUploadManager
+          locale={locale}
+          workspaceId={workspaceId}
+          initialRevision={draft?.revision ?? 0}
+          initialThumbnails={{
+            logo: draft?.assets?.logo?.thumbnailUrl ?? null,
+            banner: draft?.assets?.banner?.thumbnailUrl ?? null,
+          }}
+          draftFormId="branding-draft-form"
+          publishFormId="branding-publish-form"
+        />
+        <form
+          id="branding-draft-form"
+          action={saveBrandingAction}
+          className={styles.form}
+        >
           <input type="hidden" name="workspaceId" value={workspaceId} />
-          <input type="hidden" name="revision" value={draft?.revision ?? 0} />
           <Field
             label={m['branding.nameArabic']}
             inputProps={{
@@ -170,9 +185,12 @@ export default async function WorkspaceBrandingPage({
             <Button type="submit">{m['branding.saveDraft']}</Button>
           </div>
         </form>
-        <form action={publishBrandingAction} className={styles.publish}>
+        <form
+          id="branding-publish-form"
+          action={publishBrandingAction}
+          className={styles.publish}
+        >
           <input type="hidden" name="workspaceId" value={workspaceId} />
-          <input type="hidden" name="revision" value={draft?.revision ?? 0} />
           <p data-current-published="">
             {m['branding.currentPublished']}:{' '}
             {registrationBrandName(

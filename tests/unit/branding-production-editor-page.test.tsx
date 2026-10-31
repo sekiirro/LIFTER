@@ -38,6 +38,9 @@ vi.mock('../../app/(dashboard)/branding/actions', () => ({
 vi.mock('../../components/branding/ClientPortalBrandPreview', () => ({
   ClientPortalBrandPreview: () => null,
 }));
+vi.mock('../../components/branding/BrandingUploadManager', () => ({
+  BrandingUploadManager: () => <div data-branding-upload-manager="" />,
+}));
 
 import WorkspaceBrandingPage from '../../app/(dashboard)/branding/page';
 
@@ -81,6 +84,14 @@ beforeEach(() => {
 });
 
 describe('production branding editor banner alt text', () => {
+  it('wires the upload manager to both draft revision forms', async () => {
+    const html = await renderEditor('en');
+
+    expect(html).toContain('data-branding-upload-manager');
+    expect(html).toContain('id="branding-draft-form"');
+    expect(html).toContain('id="branding-publish-form"');
+  });
+
   it('renders a described fieldset with direction- and language-specific labels', async () => {
     const html = await renderEditor('en');
     const messages = getMessages('en');

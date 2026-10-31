@@ -320,6 +320,22 @@ export const en: Record<keyof typeof ar, string> = {
   'branding.noPublished': 'DRAFT: Nothing published yet',
   'branding.genericUnavailable': 'DRAFT: Branding is unavailable. Try again.',
   'branding.workspaceLoading': 'DRAFT: Loading workspace branding…',
+  'branding.chooseImage': 'Choose image',
+  'branding.replaceImage': 'Replace image',
+  'branding.removeImage': 'Remove image',
+  'branding.retryImage': 'Retry upload',
+  'branding.uploadingImage': 'Uploading image…',
+  'branding.removingImage': 'Removing image…',
+  'branding.imageAttached': 'Image attached to the draft.',
+  'branding.imageRemoved': 'Image removed from the draft.',
+  'branding.identityOnlyConfirm':
+    'I confirm this banner contains identity content only, without pricing, contact details, calls to action, or links.',
+  'branding.identityOnlyRequired':
+    'Confirm the banner content before uploading.',
+  'branding.logoUploadGuidance':
+    'PNG or WebP · 4 MiB max · 2048 × 2048 px max · 1,000,000 px max',
+  'branding.bannerUploadGuidance':
+    'PNG or WebP · 8 MiB max · 4096 × 2048 px max · 4,000,000 px max',
   'registrationApproval.title': 'Registration approvals',
   'registrationApproval.intro':
     'Review submitted requests and issued terms before deciding.',

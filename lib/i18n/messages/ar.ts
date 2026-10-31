@@ -311,6 +311,21 @@ export const ar = {
   'branding.noPublished': 'مسودة: لم يتم نشر شيء بعد',
   'branding.genericUnavailable': 'مسودة: العلامة غير متاحة. حاول مرة أخرى.',
   'branding.workspaceLoading': 'مسودة: جارٍ تحميل علامة مساحة العمل…',
+  'branding.chooseImage': 'اختر صورة',
+  'branding.replaceImage': 'استبدال الصورة',
+  'branding.removeImage': 'إزالة الصورة',
+  'branding.retryImage': 'إعادة محاولة الرفع',
+  'branding.uploadingImage': 'جارٍ رفع الصورة…',
+  'branding.removingImage': 'جارٍ إزالة الصورة…',
+  'branding.imageAttached': 'تم إرفاق الصورة بالمسودة.',
+  'branding.imageRemoved': 'تمت إزالة الصورة من المسودة.',
+  'branding.identityOnlyConfirm':
+    'أؤكد أن صورة الغلاف تحتوي على محتوى الهوية فقط، دون أسعار أو بيانات اتصال أو دعوات لاتخاذ إجراء أو روابط.',
+  'branding.identityOnlyRequired': 'أكد محتوى الغلاف قبل الرفع.',
+  'branding.logoUploadGuidance':
+    'PNG أو WebP · حتى 4 MiB · حتى 2048 × 2048 بكسل · حتى 1,000,000 بكسل',
+  'branding.bannerUploadGuidance':
+    'PNG أو WebP · حتى 8 MiB · حتى 4096 × 2048 بكسل · حتى 4,000,000 بكسل',
   'registrationApproval.title': 'مراجعة طلبات التسجيل',
   'registrationApproval.intro':
     'راجع الطلبات وشروطها المسجلة قبل اتخاذ القرار.',

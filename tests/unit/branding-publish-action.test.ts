@@ -114,7 +114,7 @@ it.each([
   },
 );
 
-it('allows a draft save when both banner alt fields are empty', async () => {
+it('clearing both banner alt fields clears saved alt text', async () => {
   await expect(saveBrandingAction(saveForm())).rejects.toThrow('redirect');
 
   expect(mocks.saveDraft).toHaveBeenCalledWith(
@@ -123,6 +123,7 @@ it('allows a draft save when both banner alt fields are empty', async () => {
       fields: {
         names: { ar: 'اسم المساحة', en: 'Workspace name' },
         color: '#123456',
+        bannerAltText: { ar: '', en: '' },
       },
     }),
   );
@@ -139,6 +140,21 @@ it('maps a stale draft revision to the stale status', async () => {
 
   expect(mocks.redirect).toHaveBeenCalledWith(
     '/branding?workspace=workspace-1&status=stale',
+  );
+});
+
+it('denies publish when an attached banner has both alt fields empty', async () => {
+  const form = new FormData();
+  form.set('workspaceId', 'workspace-1');
+  form.set('revision', '3');
+  mocks.publishDraft.mockRejectedValue(
+    new BrandingValidationError('Banner alt text is required to publish'),
+  );
+
+  await expect(publishBrandingAction(form)).rejects.toThrow('redirect');
+
+  expect(mocks.redirect).toHaveBeenCalledWith(
+    '/branding?workspace=workspace-1&status=invalid_branding',
   );
 });
 

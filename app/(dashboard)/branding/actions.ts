@@ -40,7 +40,6 @@ export async function saveBrandingAction(form: FormData): Promise<void> {
     ar: field(form, 'bannerAltAr').trim(),
     en: field(form, 'bannerAltEn').trim(),
   };
-  const hasBannerAltText = Boolean(bannerAltText.ar || bannerAltText.en);
   let status = 'saved';
   try {
     await service.saveDraft({
@@ -50,7 +49,7 @@ export async function saveBrandingAction(form: FormData): Promise<void> {
       fields: {
         names: { ar: field(form, 'nameAr'), en: field(form, 'nameEn') },
         color: field(form, 'color'),
-        ...(hasBannerAltText ? { bannerAltText } : {}),
+        bannerAltText,
       },
     });
   } catch (error) {

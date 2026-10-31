@@ -116,10 +116,14 @@ export function normalizeBrandDraft(input: unknown): NormalizedBrandingDraft {
   const bannerAssetId = optionalAssetId(input.bannerAssetId, 'Banner asset id');
   let bannerAltText: Record<BrandLocale, string> | undefined;
   if (input.bannerAltText !== undefined) {
-    bannerAltText = withLocaleFallback(
-      normalizeLocalizedText(input.bannerAltText, 'Banner alt text'),
-      'banner alt text',
+    const normalizedAltText = normalizeLocalizedText(
+      input.bannerAltText,
+      'Banner alt text',
     );
+    bannerAltText =
+      Object.keys(normalizedAltText).length === 0
+        ? { ar: '', en: '' }
+        : withLocaleFallback(normalizedAltText, 'banner alt text');
   } else if (bannerAssetId) {
     throw new BrandingValidationError(
       'Banner alt text requires at least one locale',
