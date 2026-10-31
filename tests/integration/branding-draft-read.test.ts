@@ -18,8 +18,8 @@ afterAll(async () => {
 it('authorizes draft reads through has_workspace_access, allowing a membership-less platform owner', async () => {
   const [definition] =
     await db`select pg_get_functiondef('app_private.branding_draft_read(uuid)'::regprocedure) as def`;
-  expect(definition!.def).toContain(
-    'has_workspace_access(branding_draft_read.workspace_id',
+  expect(definition!.def).toMatch(
+    /app_private\.has_workspace_access\s*\(\s*branding_draft_read\.workspace_id/,
   );
   expect(definition!.def).not.toContain('from public.workspace_memberships');
 
