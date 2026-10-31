@@ -6,8 +6,7 @@ import {
   type Role,
 } from '../../lib/design/navigation';
 import type { Messages } from '../../lib/i18n';
-import { BottomBar } from './BottomBar';
-import { NavRail } from './NavRail';
+import { ShellNavigation } from './ShellNavigation';
 import styles from './AppShell.module.css';
 
 export type ShellNavigationProps = {
@@ -19,26 +18,38 @@ export type ShellNavigationProps = {
 };
 export type AppShellProps = Omit<
   ShellNavigationProps,
-  'items' | 'className'
-> & { role: Role; children: ReactNode; contentAs?: 'main' | 'div' };
+  'items' | 'className' | 'hrefFor' | 'activeKey'
+> & {
+  role: Role;
+  activeKey?: NavKey;
+  children: ReactNode;
+  contentAs?: 'main' | 'div';
+  workspaceId?: string;
+};
 
 export function AppShell({
   role,
-  activeKey,
-  hrefFor,
+  activeKey: requestedActiveKey,
   messages,
   children,
   contentAs: Content = 'main',
+  workspaceId,
 }: AppShellProps) {
   const navigation = getNavigation(role);
   if (navigation.status === 'needs-decision')
     return <Content>{children}</Content>;
-  const props = { items: navigation.items, activeKey, hrefFor, messages };
   return (
     <div className={styles.shell} data-shell="">
-      <NavRail {...props} className={styles.rail} />
+      <ShellNavigation
+        role={role}
+        items={navigation.items}
+        activeKey={requestedActiveKey}
+        messages={messages}
+        workspaceId={workspaceId}
+        railClassName={styles.rail}
+        bottomClassName={styles.bottom}
+      />
       <Content className={styles.content}>{children}</Content>
-      <BottomBar {...props} className={styles.bottom} />
     </div>
   );
 }

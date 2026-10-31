@@ -1,31 +1,42 @@
 .surface {
   isolation: isolate;
-  border: 1px solid var(--color-border-strong);
+  border: 1px solid var(--color-text);
   color: var(--color-text);
-  background-color: color-mix(in srgb, var(--color-card) 99%, transparent);
+  background-color: color-mix(in srgb, var(--color-card) 93%, transparent);
   box-shadow:
-    inset 0 1px 1px color-mix(in srgb, var(--color-text) 10%, transparent),
-    0 1px 3px color-mix(in srgb, var(--color-text) 6%, transparent);
-  --lg-filter: none;
+    inset 0 1px 0 color-mix(in srgb, white 42%, transparent),
+    0 12px 32px color-mix(in srgb, black 18%, transparent),
+    0 2px 8px color-mix(in srgb, black 12%, transparent);
+  --lg-edge: var(--color-text);
+  --lg-drop: transparent;
+  --lg-glass-bend: 0.45;
+  --lg-rim-shine: 0.3;
 }
 
 .surface:global(.lg-glass)::after {
   content: none;
 }
 
-.regular {
+.surface:global(.lg-glass)[data-rim] {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 42%, transparent),
+    0 12px 32px color-mix(in srgb, black 18%, transparent),
+    0 2px 8px color-mix(in srgb, black 12%, transparent);
+}
+
+.surface.regular {
   --lg-blur: 4px;
-  backdrop-filter: blur(4px);
-  -webkit-backdrop-filter: blur(4px);
+  backdrop-filter: blur(4px) var(--lg-filter, saturate(1.15));
+  -webkit-backdrop-filter: blur(4px) var(--lg-filter, saturate(1.15));
 }
 
-.strong {
+.surface.strong {
   --lg-blur: 8px;
-  backdrop-filter: blur(8px);
-  -webkit-backdrop-filter: blur(8px);
+  backdrop-filter: blur(8px) var(--lg-filter, saturate(1.15));
+  -webkit-backdrop-filter: blur(8px) var(--lg-filter, saturate(1.15));
 }
 
-.edge {
+.surface.edge {
   --lg-blur: 0px;
   border-color: var(--color-border-strong);
   background: transparent;
@@ -34,7 +45,9 @@
   -webkit-backdrop-filter: none;
 }
 
-.solid {
+.surface.solid {
+  --lg-glass-bend: 0;
+  --lg-rim-shine: 0;
   border-color: var(--color-border-strong);
   background: var(--color-card);
   box-shadow: none;
@@ -45,15 +58,19 @@
 @supports not (
   (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
 ) {
-  .surface {
+  .surface:global(.lg-glass) {
+    --lg-glass-bend: 0;
+    --lg-rim-shine: 0;
     border-color: var(--color-border-strong);
     background: var(--color-card);
     box-shadow: none;
   }
 }
 
-@supports not (background-color: color-mix(in srgb, white 99%, transparent)) {
-  .surface {
+@supports not (background-color: color-mix(in srgb, white 88%, transparent)) {
+  .surface:global(.lg-glass) {
+    --lg-glass-bend: 0;
+    --lg-rim-shine: 0;
     border-color: var(--color-border-strong);
     background: var(--color-card);
     box-shadow: none;
@@ -63,7 +80,9 @@
 }
 
 @media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
-  .surface {
+  .surface:global(.lg-glass) {
+    --lg-glass-bend: 0;
+    --lg-rim-shine: 0;
     border: 2px solid var(--color-border-strong);
     background: var(--color-card);
     box-shadow: none;
@@ -80,7 +99,9 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .surface {
+  .surface:global(.lg-glass) {
+    --lg-glass-bend: 0;
+    --lg-rim-shine: 0;
     background: var(--color-card);
     box-shadow: none;
     backdrop-filter: none;
@@ -90,7 +111,9 @@
 }
 
 @media (forced-colors: active) {
-  .surface {
+  .surface:global(.lg-glass) {
+    --lg-glass-bend: 0;
+    --lg-rim-shine: 0;
     border: 2px solid CanvasText;
     color: CanvasText;
     background: Canvas;
@@ -105,7 +128,9 @@
 }
 
 @media print {
-  .surface {
+  .surface:global(.lg-glass) {
+    --lg-glass-bend: 0;
+    --lg-rim-shine: 0;
     border: 1px solid currentColor;
     color: var(--color-print-text);
     background: var(--color-print-bg);

@@ -4,6 +4,7 @@ import { getMessages } from '../../lib/i18n';
 
 // Both navigation variants and role selection must work without client JavaScript.
 test.use({ javaScriptEnabled: false });
+const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 const trainerKeys = [
   'home',
   'clients',
@@ -24,8 +25,8 @@ for (const locale of ['ar', 'en'] as const) {
     const m = getMessages(locale);
     test.beforeEach(async ({ context }) => {
       await context.addCookies([
-        { name: LOCALE_COOKIE, value: locale, url: 'http://localhost:3000' },
-        { name: THEME_COOKIE, value: 'light', url: 'http://localhost:3000' },
+        { name: LOCALE_COOKIE, value: locale, url: origin },
+        { name: THEME_COOKIE, value: 'light', url: origin },
       ]);
     });
 
@@ -58,15 +59,15 @@ for (const locale of ['ar', 'en'] as const) {
       const viewport = page.viewportSize();
       if (!box || !viewport)
         throw new Error('Expected visible rail and viewport');
-      if (locale === 'ar')
-        expect(box.x).toBeGreaterThanOrEqual(viewport.width / 2);
-      else expect(box.x + box.width).toBeLessThanOrEqual(viewport.width / 2);
+      if (locale === 'ar') expect(box.x).toBeGreaterThan(viewport.width / 2);
+      else expect(box.x + box.width).toBeLessThan(viewport.width / 2);
+      expect(box.height).toBeLessThan(viewport.height / 2);
       const padding = await page
         .locator('main')
         .evaluate((element) =>
           parseFloat(getComputedStyle(element).paddingInlineStart),
         );
-      expect(padding).toBe(box.width);
+      expect(padding).toBe(0);
       await expect(rail.getByTestId('tooltip-home')).toBeHidden();
       await page.keyboard.press('Tab');
       await expect(links.first()).toBeFocused();
@@ -112,6 +113,10 @@ for (const locale of ['ar', 'en'] as const) {
         await expect(links.first()).toHaveAttribute('aria-current', 'page');
         const bottomBox = await bottom.boundingBox();
         if (!bottomBox) throw new Error('Expected visible bottom bar');
+        const viewport = page.viewportSize();
+        if (!viewport) throw new Error('Expected mobile viewport');
+        expect(bottomBox.x).toBeGreaterThan(0);
+        expect(bottomBox.y + bottomBox.height).toBeLessThan(viewport.height);
         const padding = await page
           .locator('main')
           .evaluate((element) =>

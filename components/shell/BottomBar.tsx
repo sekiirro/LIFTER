@@ -12,8 +12,8 @@ export function BottomBar({
 }: ShellNavigationProps) {
   return (
     <GlassSurface
-      as="nav"
       variant="regular"
+      role="navigation"
       aria-label={messages['nav.label']}
       data-testid="bottom-bar"
       data-screen-only=""

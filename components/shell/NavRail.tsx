@@ -12,8 +12,8 @@ export function NavRail({
 }: ShellNavigationProps) {
   return (
     <GlassSurface
-      as="nav"
       variant="regular"
+      role="navigation"
       aria-label={messages['nav.label']}
       data-testid="nav-rail"
       data-screen-only=""
@@ -29,15 +29,13 @@ export function NavRail({
           data-nav-key={item.key}
         >
           <Icon name={item.icon} />
-          <GlassSurface
-            as="span"
-            variant="regular"
+          <span
             aria-hidden="true"
             className={styles.tooltip}
             data-testid={`tooltip-${item.key}`}
           >
             {messages[item.labelKey]}
-          </GlassSurface>
+          </span>
         </a>
       ))}
     </GlassSurface>
