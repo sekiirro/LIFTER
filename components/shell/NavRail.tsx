@@ -1,4 +1,5 @@
 import { Icon } from '../icons/Icon';
+import { GlassSurface } from '../ui/glass/GlassSurface';
 import type { ShellNavigationProps } from './AppShell';
 import styles from './NavRail.module.css';
 
@@ -10,7 +11,9 @@ export function NavRail({
   className,
 }: ShellNavigationProps) {
   return (
-    <nav
+    <GlassSurface
+      as="nav"
+      variant="regular"
       aria-label={messages['nav.label']}
       data-testid="nav-rail"
       data-screen-only=""
@@ -26,15 +29,17 @@ export function NavRail({
           data-nav-key={item.key}
         >
           <Icon name={item.icon} />
-          <span
+          <GlassSurface
+            as="span"
+            variant="regular"
             aria-hidden="true"
             className={styles.tooltip}
             data-testid={`tooltip-${item.key}`}
           >
             {messages[item.labelKey]}
-          </span>
+          </GlassSurface>
         </a>
       ))}
-    </nav>
+    </GlassSurface>
   );
 }
