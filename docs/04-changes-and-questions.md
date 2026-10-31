@@ -62,7 +62,7 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
   - deadline instant on day 5 (P2)
   - Sales coaching rights
 
-## Session 20 PO decisions ? binding under DR-03 (2026-10-31)
+## Session 20 PO decisions — binding under DR-03 (2026-10-31)
 
 These numbered entries record PO Messages A/B and the final S20 handoff. Later explicit PO decisions supersede older specs, plans and PRD wording.
 
@@ -102,3 +102,5 @@ These numbered entries record PO Messages A/B and the final S20 handoff. Later e
 ### Open items for PO
 
 No S20 decision above remains open. The PO-supplied D16-4 dataset is a future input, not an unresolved decision: audit it and obtain PO import approval when supplied. Platform-wide Liquid Glass implementation requires PO review of the separate audit.
+
+- Clarification (not a reopened S20 decision): confirm whether Archive and Remove need distinct staff-facing semantics or may share the same inactive lifecycle state. Until clarified, both preserve content, plan references and snapshots and prevent new selection; Restore reactivates the same identity/version.
