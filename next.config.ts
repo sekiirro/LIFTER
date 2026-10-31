@@ -2,6 +2,8 @@ import type { NextConfig } from 'next';
 import packageJson from './package.json';
 
 const nextConfig: NextConfig = {
+  // The upload action accepts an 8 MiB banner plus multipart overhead; role limits stay server enforced.
+  experimental: { serverActions: { bodySizeLimit: '9mb' } },
   env: {
     APP_VERSION: packageJson.version,
   },

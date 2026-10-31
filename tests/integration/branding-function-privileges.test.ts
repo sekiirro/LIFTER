@@ -135,6 +135,10 @@ describe('F14 definer function privileges', () => {
         fn.signature === 'app_private.branding_draft_read(uuid)' ||
         fn.signature === 'app_private.branding_current_read(uuid)' ||
         fn.signature === 'app_private.branding_asset_attach(uuid,bigint)' ||
+        fn.signature ===
+          'app_private.branding_asset_detach(uuid,text,bigint)' ||
+        fn.signature ===
+          'app_private.branding_draft_asset_read_allowed(text,text)' ||
         fn.signature === 'app_private.branding_publish(uuid,bigint)'
       ) {
         expect(publicRoles, fn.signature).toEqual([false, false, true, false]);
@@ -192,6 +196,49 @@ describe('F14 definer function privileges', () => {
       select has_schema_privilege('service_role', 'app_private', 'USAGE') as has_usage
     `;
     expect(row?.has_usage).toBe(false);
+  });
+
+  it('exposes invoker wrappers only to the upload owner or validator identity', async () => {
+    const wrappers = await db`
+      select p.proname,p.prosecdef,
+        has_function_privilege('public',p.oid,'EXECUTE') as public_execute,
+        has_function_privilege('anon',p.oid,'EXECUTE') as anon_execute,
+        has_function_privilege('authenticated',p.oid,'EXECUTE') as authenticated_execute,
+        has_function_privilege('service_role',p.oid,'EXECUTE') as service_execute,
+        has_function_privilege('branding_validator',p.oid,'EXECUTE') as validator_execute
+      from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+      where n.nspname='public' and p.proname in (
+        'branding_validation_prepare','branding_validation_complete','branding_asset_detach')
+      order by p.proname`;
+    expect(wrappers).toEqual([
+      {
+        proname: 'branding_asset_detach',
+        prosecdef: false,
+        public_execute: false,
+        anon_execute: false,
+        authenticated_execute: true,
+        service_execute: false,
+        validator_execute: false,
+      },
+      {
+        proname: 'branding_validation_complete',
+        prosecdef: false,
+        public_execute: false,
+        anon_execute: false,
+        authenticated_execute: false,
+        service_execute: false,
+        validator_execute: true,
+      },
+      {
+        proname: 'branding_validation_prepare',
+        prosecdef: false,
+        public_execute: false,
+        anon_execute: false,
+        authenticated_execute: false,
+        service_execute: false,
+        validator_execute: true,
+      },
+    ]);
   });
 
   it('limits service-role app_private call paths to the two public GC wrappers', async () => {
