@@ -2,7 +2,8 @@ import { defineConfig, devices } from '@playwright/test';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const baseURL = 'http://127.0.0.1:3216';
+const port = Number(process.env.PLAYWRIGHT_PORT ?? 3216);
+const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? `http://127.0.0.1:${port}`;
 process.env.PLAYWRIGHT_BASE_URL = baseURL;
 
 export default defineConfig({
@@ -17,11 +18,10 @@ export default defineConfig({
     baseURL,
   },
   webServer: {
-    command:
-      'node node_modules/next/dist/bin/next dev --webpack --hostname 127.0.0.1 --port 3216',
+    command: `node node_modules/next/dist/bin/next dev --webpack --hostname 127.0.0.1 --port ${port}`,
     cwd: process.cwd(),
     url: `${baseURL}/api/health`,
-    reuseExistingServer: false,
+    reuseExistingServer: true,
     timeout: 120_000,
     env: {
       APP_ORIGIN: baseURL,

@@ -152,9 +152,17 @@ export function HeroStage({
         : cardPhoto.luminance > 0.34
           ? 'mid'
           : 'dim';
+    const adaptiveDimming = Math.min(
+      0.72,
+      Math.max(0, (cardPhoto.luminance - 0.18) * 1.4),
+    );
     stage.style.setProperty(
       '--hero-photo-luminance',
       cardPhoto.luminance.toFixed(4),
+    );
+    stage.style.setProperty(
+      '--hero-adaptive-dimming',
+      adaptiveDimming.toFixed(3),
     );
     stage.dataset.photoTone = photoTone;
     stage.style.setProperty(

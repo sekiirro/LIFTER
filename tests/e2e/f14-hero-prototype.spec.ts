@@ -23,7 +23,10 @@ type Group =
   | 'references'
   | 'gap-mocks'
   | 'composition'
-  | 'artwork';
+  | 'artwork'
+  | 'pass4-no-image'
+  | 'adaptive-dimming'
+  | 'phone-glyphs';
 const captures: Array<{ path: string; label: string; group: Group }> = [];
 const contrastEvidence: Array<Record<string, unknown>> = [];
 const focusEvidence: Array<Record<string, unknown>> = [];
@@ -268,17 +271,52 @@ async function measureTextContrast(page: Page, label: string) {
     const result: Array<{
       key: string;
       color: string;
+      background?: string;
       rect: DOMRectJSON;
     }> = [];
     for (const [key, selector] of selectors) {
       for (const element of document.querySelectorAll<HTMLElement>(selector)) {
-        const rect = element.getBoundingClientRect();
+        let rect = element.getBoundingClientRect();
+        if (key === 'field-value') {
+          const input = element as HTMLInputElement;
+          if (!input.value) continue;
+          const style = getComputedStyle(input);
+          const inputRect = input.getBoundingClientRect();
+          const mirror = document.createElement('span');
+          Object.assign(mirror.style, {
+            position: 'fixed',
+            left: `${inputRect.left}px`,
+            top: `${inputRect.top}px`,
+            display: 'block',
+            boxSizing: 'border-box',
+            inlineSize: `${inputRect.width}px`,
+            blockSize: `${inputRect.height}px`,
+            paddingLeft: style.paddingLeft,
+            paddingRight: style.paddingRight,
+            font: style.font,
+            letterSpacing: style.letterSpacing,
+            lineHeight: style.lineHeight,
+            direction: style.direction,
+            textAlign: style.textAlign,
+            whiteSpace: 'pre',
+            visibility: 'hidden',
+          });
+          mirror.textContent = input.value;
+          document.body.append(mirror);
+          const range = document.createRange();
+          range.selectNodeContents(mirror);
+          rect = range.getBoundingClientRect();
+          mirror.remove();
+        }
         if (rect.width && rect.height) {
           const style = getComputedStyle(element);
           result.push({
             key,
             color:
               style.getPropertyValue('-webkit-text-fill-color') || style.color,
+            ...(key === 'error-copy'
+              ? { background: style.backgroundColor }
+              : {}),
             rect: {
               x: rect.x,
               y: rect.y,
@@ -368,6 +406,43 @@ async function measureTextContrast(page: Page, label: string) {
       const values: Record<string, number> = {};
       for (const target of targets) {
         const { x, y, width, height } = target.rect;
+        if (target.key === 'error-copy') {
+          const channels = (color: string) =>
+            color
+              .match(/[\d.]+/g)
+              ?.slice(0, 3)
+              .map(Number);
+          const foreground = channels(target.color);
+          const background = channels(target.background ?? '');
+          if (
+            !foreground ||
+            foreground.length !== 3 ||
+            !background ||
+            background.length !== 3
+          ) {
+            throw new Error(
+              'Error-copy contrast requires its solid token pair',
+            );
+          }
+          const light = (rgb: number[]) => {
+            const channel = (value: number) => {
+              const normalized = value / 255;
+              return normalized <= 0.04045
+                ? normalized / 12.92
+                : ((normalized + 0.055) / 1.055) ** 2.4;
+            };
+            return (
+              0.2126 * channel(rgb[0]!) +
+              0.7152 * channel(rgb[1]!) +
+              0.0722 * channel(rgb[2]!)
+            );
+          };
+          const a = light(foreground);
+          const b = light(background);
+          values[target.key] =
+            (Math.max(a, b) + 0.05) / (Math.min(a, b) + 0.05);
+          continue;
+        }
         if (target.key === 'field-edge' || target.key === 'error-edge') {
           const sample = (sampleX: number, sampleY: number) => {
             const px = Math.max(
@@ -684,8 +759,10 @@ async function measureFocusRingContrast(page: Page, label: string) {
     return [data[offset]!, data[offset + 1]!, data[offset + 2]!];
   };
   const sampleY = bounds.y + bounds.height / 2;
-  const ring = sample(bounds.x + 1, sampleY);
-  const keyline = sample(bounds.x - 1, sampleY);
+  // The pseudo-element extends 2px beyond the control. Sample its center line
+  // and the adjacent 2px token halo, rather than the control's interior.
+  const ring = sample(bounds.x - 1, sampleY);
+  const keyline = sample(bounds.x - 3, sampleY);
   const ratio = contrast(
     luminance(ring[0]!, ring[1]!, ring[2]!),
     luminance(keyline[0]!, keyline[1]!, keyline[2]!),
@@ -1245,11 +1322,7 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
     expect(spacing[1].end).toBe(0);
     expect(spacing[2].start).toBeGreaterThan(0);
     expect(spacing[2].end).toBeGreaterThan(0);
-    expect(
-      locale === 'ar'
-        ? spacing[0].x > spacing[1].x
-        : spacing[0].x < spacing[1].x,
-    ).toBe(true);
+    expect(spacing[0].x).toBeLessThan(spacing[1].x);
     await phoneInput.fill('1234567');
     const phoneGap = await page.evaluate(() => {
       const prefixElement = document.querySelector<HTMLElement>(
@@ -1276,7 +1349,7 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
       return { gap, expected, direction, value: inputElement.value };
     });
     expect(phoneGap.value).toBe('1234567');
-    expect(phoneGap.direction).toBe(locale === 'ar' ? 'rtl' : 'ltr');
+    expect(phoneGap.direction).toBe('ltr');
     expect(Math.abs(phoneGap.gap - phoneGap.expected)).toBeLessThanOrEqual(1);
     await country.focus();
     const list = page.getByRole('listbox');
@@ -1593,4 +1666,334 @@ test('Liquid Glass redesign matrix, localized form states, contrast, geometry, a
   console.log(`CONTRAST_EVIDENCE ${JSON.stringify(contrastEvidence)}`);
   console.log(`FOCUS_EVIDENCE ${JSON.stringify(focusEvidence)}`);
   console.log(`GEOMETRY_EVIDENCE ${JSON.stringify(geometryEvidence)}`);
+});
+
+test('P3 phone glyphs form one LTR group with one token gap in RTL and LTR', async ({
+  browser,
+}) => {
+  for (const locale of ['ar', 'en'] as const) {
+    for (const theme of ['light', 'dark'] as const) {
+      for (const viewport of [
+        { name: 'mobile', width: 390, height: 844 },
+        { name: 'desktop', width: 1440, height: 900 },
+      ]) {
+        const { page, close } = await open(browser, {
+          ...viewport,
+          locale,
+          theme,
+          fixture: 'dark',
+        });
+        const phone = page.locator('input[name="phone-national"]');
+        if (viewport.name === 'desktop') {
+          await capture(page, `phone-rest-${locale}-${theme}`, 'phone-glyphs', {
+            locator: 'label:has(input[name="phone-national"])',
+          });
+        }
+        const measureRangeGap = async () =>
+          phone.evaluate((input) => {
+            const phoneInput = input as HTMLInputElement;
+            const prefix = document.querySelector<HTMLElement>(
+              '[data-testid="country-calling-code"]',
+            );
+            const group = phoneInput.parentElement;
+            if (!prefix || !group) throw new Error('Phone group unavailable');
+            const inputStyle = getComputedStyle(phoneInput);
+            const inputRect = phoneInput.getBoundingClientRect();
+            const prefixRect = prefix.getBoundingClientRect();
+            const mirror = document.createElement('span');
+            Object.assign(mirror.style, {
+              position: 'fixed',
+              left: `${inputRect.left}px`,
+              top: `${inputRect.top}px`,
+              display: 'block',
+              boxSizing: 'border-box',
+              inlineSize: `${inputRect.width}px`,
+              blockSize: `${inputRect.height}px`,
+              paddingLeft: inputStyle.paddingLeft,
+              paddingRight: inputStyle.paddingRight,
+              font: inputStyle.font,
+              letterSpacing: inputStyle.letterSpacing,
+              lineHeight: inputStyle.lineHeight,
+              direction: inputStyle.direction,
+              textAlign: inputStyle.textAlign,
+              whiteSpace: 'pre',
+              visibility: 'hidden',
+            });
+            mirror.textContent = phoneInput.value;
+            document.body.append(mirror);
+            const range = document.createRange();
+            range.selectNodeContents(mirror);
+            const glyph = range.getBoundingClientRect();
+            const tokenProbe = document.createElement('span');
+            tokenProbe.style.gap = 'var(--space-2)';
+            document.body.append(tokenProbe);
+            const tokenGap = Number.parseFloat(
+              getComputedStyle(tokenProbe).gap,
+            );
+            tokenProbe.remove();
+            mirror.remove();
+            return {
+              value: phoneInput.value,
+              inputDirection: inputStyle.direction,
+              groupDirection: getComputedStyle(group).direction,
+              inputDir: phoneInput.getAttribute('dir'),
+              glyphLeft: glyph.left,
+              glyphRight: glyph.right,
+              prefixLeft: prefixRect.left,
+              prefixRight: prefixRect.right,
+              gap: glyph.left - prefixRect.right,
+              tokenGap,
+            };
+          });
+
+        await phone.fill('1234567');
+        if (viewport.name === 'desktop') {
+          await capture(
+            page,
+            `phone-typed-${locale}-${theme}`,
+            'phone-glyphs',
+            { locator: 'label:has(input[name="phone-national"])' },
+          );
+        }
+        const typed = await measureRangeGap();
+        expect(typed.value).toBe('1234567');
+        expect(typed.inputDirection).toBe('ltr');
+        expect(typed.groupDirection).toBe('ltr');
+        expect(typed.inputDir).toBe('ltr');
+        expect(
+          Math.abs(typed.gap - typed.tokenGap),
+          `${locale}-${theme}-${viewport.name} typed glyph gap ${JSON.stringify(typed)}`,
+        ).toBeLessThanOrEqual(2);
+
+        await phone.fill('123');
+        await page.locator('form button[type="submit"]').click();
+        await expect(phone).toHaveAttribute('aria-invalid', 'true');
+        if (viewport.name === 'desktop') {
+          await capture(
+            page,
+            `phone-error-${locale}-${theme}`,
+            'phone-glyphs',
+            { locator: 'label:has(input[name="phone-national"])' },
+          );
+        }
+        const error = await measureRangeGap();
+        expect(error.value).toBe('123');
+        expect(error.inputDirection).toBe('ltr');
+        expect(error.groupDirection).toBe('ltr');
+        expect(
+          Math.abs(error.gap - error.tokenGap),
+          `${locale}-${theme}-${viewport.name} error glyph gap ${JSON.stringify(error)}`,
+        ).toBeLessThanOrEqual(2);
+        await close();
+      }
+    }
+  }
+});
+
+test('P1 no-image centering and P2 art-luminance adaptive glass dimming', async ({
+  browser,
+}) => {
+  for (const locale of ['ar', 'en'] as const) {
+    for (const theme of ['light', 'dark'] as const) {
+      for (const viewport of [
+        { name: 'mobile-390', width: 390, height: 844 },
+        { name: 'desktop-1280', width: 1280, height: 800 },
+        { name: 'desktop-1440', width: 1440, height: 900 },
+        { name: 'tablet-768', width: 768, height: 900 },
+      ]) {
+        const { page, close } = await open(browser, {
+          width: viewport.width,
+          height: viewport.height,
+          locale,
+          theme,
+          fixture: 'none',
+        });
+        const geometry = await page.evaluate(() => {
+          const frame = document.querySelector<HTMLElement>(
+            '[data-testid="hero-glass-card"]',
+          )?.parentElement;
+          if (!frame) throw new Error('No-image frame unavailable');
+          const rect = frame.getBoundingClientRect();
+          return {
+            x: rect.x,
+            y: rect.y,
+            width: rect.width,
+            height: rect.height,
+            viewportWidth: window.innerWidth,
+            viewportHeight: window.innerHeight,
+            scrollHeight: document.documentElement.scrollHeight,
+            position: getComputedStyle(frame).position,
+          };
+        });
+        expect(geometry.scrollHeight).toBeLessThanOrEqual(
+          geometry.viewportHeight + 1,
+        );
+        if (viewport.width >= 768) {
+          expect(
+            Math.abs(
+              geometry.x + geometry.width / 2 - geometry.viewportWidth / 2,
+            ),
+            `${locale}-${theme}-${viewport.name} no-image horizontal center`,
+          ).toBeLessThanOrEqual(1);
+          expect(
+            Math.abs(
+              geometry.y + geometry.height / 2 - geometry.viewportHeight / 2,
+            ),
+            `${locale}-${theme}-${viewport.name} no-image vertical center`,
+          ).toBeLessThanOrEqual(1);
+          expect(geometry.position).toBe('absolute');
+        } else {
+          expect(geometry.position).toBe('relative');
+          expect(geometry.y).toBeGreaterThan(0);
+        }
+        await assertVisibleLabels(
+          page,
+          `pass4-no-image-${locale}-${theme}`,
+          true,
+        );
+        await axe(page, `pass4-no-image-${locale}-${theme}-${viewport.name}`);
+        await capture(
+          page,
+          `pass4-no-image-${locale}-${theme}-${viewport.name}`,
+          'pass4-no-image',
+        );
+        await close();
+      }
+    }
+  }
+
+  for (const locale of ['ar', 'en'] as const) {
+    for (const theme of ['light', 'dark'] as const) {
+      for (const viewport of [
+        { name: 'mobile-390', width: 390, height: 844 },
+        { name: 'desktop-1440', width: 1440, height: 900 },
+      ]) {
+        for (const fixture of ['bright', 'dark'] as const) {
+          const { page, close } = await open(browser, {
+            width: viewport.width,
+            height: viewport.height,
+            locale,
+            theme,
+            fixture,
+          });
+          const adaptive = await page.evaluate(() => {
+            const stage = document.querySelector<HTMLElement>(
+              '[data-testid="hero-prototype"]',
+            );
+            const plate = document.querySelector<HTMLElement>(
+              '[data-testid="hero-content-plate"]',
+            );
+            const field =
+              document.querySelector<HTMLElement>(
+                'input[name="name"]',
+              )?.parentElement;
+            const card = document.querySelector<HTMLElement>(
+              '[data-testid="hero-glass-card"]',
+            );
+            if (!stage || !plate || !field || !card)
+              throw new Error('Adaptive glass surface unavailable');
+            return {
+              photoLuminance: Number.parseFloat(
+                stage.style.getPropertyValue('--hero-photo-luminance'),
+              ),
+              dimming: Number.parseFloat(
+                stage.style.getPropertyValue('--hero-adaptive-dimming'),
+              ),
+              plateScrim: Number.parseFloat(
+                getComputedStyle(plate, '::before').opacity,
+              ),
+              fieldBackground: getComputedStyle(field).backgroundColor,
+              cardBackdrop: getComputedStyle(card).backdropFilter,
+              fieldBackdrop: getComputedStyle(field).backdropFilter,
+              tone: stage.dataset.photoTone,
+            };
+          });
+          expect(adaptive.photoLuminance).toBeGreaterThan(0);
+          if (fixture === 'bright') {
+            if (adaptive.photoLuminance > 0.34) {
+              expect(adaptive.dimming).toBeGreaterThan(0.2);
+            } else {
+              expect(adaptive.dimming).toBeLessThanOrEqual(0.04);
+            }
+            expect(adaptive.dimming).toBeLessThanOrEqual(0.72);
+            expect(adaptive.plateScrim).toBeCloseTo(adaptive.dimming, 2);
+            const fieldAlpha = adaptive.fieldBackground.startsWith('rgba(')
+              ? Number.parseFloat(adaptive.fieldBackground.split(',').at(-1)!)
+              : 1;
+            expect(fieldAlpha).toBeLessThan(0.05);
+            expect(adaptive.fieldBackdrop).toBe('none');
+            const contrastResult = await measureTextContrast(
+              page,
+              `pass4-bright-${theme}-${locale}-${viewport.name}`,
+            );
+            for (const [key, value] of Object.entries(contrastResult)) {
+              expect(
+                value,
+                `${locale}-${theme}-${viewport.name} bright ${key} contrast`,
+              ).toBeGreaterThanOrEqual(key === 'field-edge' ? 3 : 4.5);
+            }
+            await capture(
+              page,
+              `pass4-bright-${locale}-${theme}-${viewport.name}`,
+              'adaptive-dimming',
+            );
+            const phone = page.locator('input[name="phone-national"]');
+            await phone.fill('123');
+            await page.locator('form button[type="submit"]').click();
+            await expect(phone).toHaveAttribute('aria-invalid', 'true');
+            await expect(page.locator('#hero-phone-error')).toBeVisible();
+            await page.evaluate(() => window.scrollTo(0, 0));
+            const errorColors = await page
+              .locator('#hero-phone-error')
+              .evaluate((element) => {
+                const style = getComputedStyle(element);
+                return {
+                  color: style.color,
+                  background: style.backgroundColor,
+                };
+              });
+            const errorCopyContrast = contrast(
+              cssLuminance(errorColors.color),
+              cssLuminance(errorColors.background),
+            );
+            expect(errorCopyContrast).toBeGreaterThanOrEqual(4.5);
+            await capture(
+              page,
+              `pass4-bright-error-${locale}-${theme}-${viewport.name}`,
+              'phone-glyphs',
+              { locator: 'label:has(input[name="phone-national"])' },
+            );
+          } else {
+            expect(adaptive.dimming).toBeLessThanOrEqual(0.03);
+            await capture(
+              page,
+              `pass4-dark-${locale}-${theme}-${viewport.name}`,
+              'adaptive-dimming',
+            );
+          }
+          expect(adaptive.cardBackdrop).toContain('8px');
+          console.log(
+            `ADAPTIVE_DIMMING ${JSON.stringify({ locale, theme, viewport: viewport.name, fixture, photoLuminance: adaptive.photoLuminance, dimming: adaptive.dimming })}`,
+          );
+          await close();
+        }
+      }
+    }
+  }
+
+  for (const [group, filename, columns] of [
+    ['pass4-no-image', 'contact-pass4-no-image.png', 4],
+    ['adaptive-dimming', 'contact-pass4-adaptive-dimming.png', 4],
+    ['phone-glyphs', 'contact-pass4-phone-glyphs.png', 3],
+  ] as const) {
+    const path = await contactSheet(group, filename, columns);
+    if (path) console.log(`PASS4_CONTACT_SHEET ${path}`);
+  }
+  for (const item of captures.filter((entry) =>
+    ['pass4-no-image', 'adaptive-dimming', 'phone-glyphs'].includes(
+      entry.group,
+    ),
+  )) {
+    console.log(`PASS4_SCREENSHOT ${item.path}`);
+  }
 });

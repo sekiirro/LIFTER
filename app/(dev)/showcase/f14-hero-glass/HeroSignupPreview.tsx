@@ -330,6 +330,7 @@ export function HeroSignupPreview({
               </span>
               <input
                 name="phone-national"
+                dir="ltr"
                 aria-label={messages['clientSignup.phone']}
                 aria-describedby={phoneError ? 'hero-phone-error' : undefined}
                 aria-invalid={phoneError || undefined}

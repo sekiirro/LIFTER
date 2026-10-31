@@ -12,9 +12,10 @@
   );
   --hero-error-edge: color-mix(
     in srgb,
-    var(--color-error-fg) 55%,
+    var(--color-error-bg) 75%,
     var(--color-error-border)
   );
+  --hero-adaptive-dimming: 0;
 }
 
 .brandScope :global([data-registration-banner-fallback]) {
@@ -35,6 +36,7 @@
 
 :global([data-theme='dark']) .stage,
 :global(html:not([data-theme='light'])) .stage {
+  --hero-error-edge: var(--color-error-fg);
   --hero-toned-substrate: color-mix(
     in srgb,
     var(--hero-bottom-average, rgb(54 48 41)) 18%,
@@ -133,12 +135,8 @@
     transparent 100%
   );
   content: '';
-  opacity: 0.08;
+  opacity: var(--hero-adaptive-dimming, 0);
   pointer-events: none;
-}
-
-.stage[data-photo-tone='bright'] .formPlate::before {
-  opacity: 1;
 }
 
 .formPlate h1 {
@@ -268,12 +266,15 @@
 }
 
 .brandScope .phoneNumber {
+  direction: ltr;
   gap: var(--space-2);
   padding-inline: var(--space-3);
 }
 
 .brandScope .phoneNumber :global(input[name='phone-national']) {
   padding-inline: 0;
+  direction: ltr;
+  text-align: start;
 }
 
 .countryList.countryList {
@@ -307,61 +308,15 @@
 }
 
 .brandScope :global(#hero-phone-error) {
-  color: var(--color-error-border);
+  display: block;
+  inline-size: fit-content;
+  max-inline-size: 100%;
+  padding: var(--space-1) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--color-error-bg);
+  color: var(--color-error-fg);
   font-size: var(--text-sm);
   font-weight: 600;
-}
-
-:global([data-theme='dark']) .brandScope :global(#hero-phone-error) {
-  color: var(--color-error-fg);
-}
-
-.stage[data-photo-tone='bright'] .fieldControl,
-.stage[data-photo-tone='bright'] .countryPicker {
-  border: 2px solid var(--color-border-strong);
-  background: var(--color-card-raised);
-  color: var(--color-text);
-}
-
-.stage[data-photo-tone='bright'] .fieldControl::before,
-.stage[data-photo-tone='bright'] .countryPicker::before {
-  display: none;
-}
-
-.stage[data-photo-tone='bright'] .fieldControl[data-error='true'] {
-  border-width: 2px;
-  border-color: var(--hero-error-edge, var(--color-error-fg));
-}
-
-.brandScope .stage[data-photo-tone='bright'] :global(form input),
-.brandScope .stage[data-photo-tone='bright'] :global(.countryPicker input) {
-  color: var(--color-text) !important;
-  -webkit-text-fill-color: var(--color-text) !important;
-}
-
-.brandScope
-  .stage[data-photo-tone='bright']
-  :global([data-testid='country-calling-code']) {
-  color: var(--color-text);
-  -webkit-text-fill-color: var(--color-text) !important;
-}
-
-.brandScope .stage[data-photo-tone='bright'] :global(form input::placeholder),
-.brandScope
-  .stage[data-photo-tone='bright']
-  :global(.countryPicker input::placeholder) {
-  color: var(--color-text-muted);
-}
-
-.brandScope .stage[data-photo-tone='bright'] :global(#hero-phone-error) {
-  color: var(--color-error-border);
-}
-
-:global([data-theme='dark'])
-  .brandScope
-  .stage[data-photo-tone='bright']
-  :global(#hero-phone-error) {
-  color: var(--color-error-fg);
 }
 
 .previewNote {
@@ -496,6 +451,9 @@
 
   .noArtwork .glassFrame {
     margin-block-start: 0;
+    inset-inline: 0;
+    margin-inline: auto;
+    transform: translateY(-50%);
   }
 }
 
