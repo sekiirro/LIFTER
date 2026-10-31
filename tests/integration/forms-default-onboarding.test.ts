@@ -92,6 +92,91 @@ describe('T006/T009 persisted onboarding default', () => {
     ).rejects.toBe(rollback);
   });
 
+  it('does not silently replace a retired designated default', async () => {
+    await expect(
+      db.begin(async (tx) => {
+        const fixture = await workspace(tx);
+        const selected = await tx`
+          select app_private.ensure_default_onboarding_form(${fixture.workspaceId},${fixture.actor}) as form_id
+        `;
+        const formId = selected[0]!.form_id;
+        await tx`update public.form_versions set status='retired'
+          where workspace_id=${fixture.workspaceId} and form_id=${formId}`;
+        const stillSelected = await tx`
+          select app_private.ensure_default_onboarding_form(${fixture.workspaceId},${fixture.actor}) as form_id
+        `;
+        expect(stillSelected[0]?.form_id).toBe(formId);
+        const latest = await tx`select status from public.form_versions
+          where workspace_id=${fixture.workspaceId} and form_id=${formId}
+          order by version_number desc limit 1`;
+        expect(latest[0]?.status).toBe('retired');
+        const forms = await tx`select count(*)::int as count from public.forms where workspace_id=${fixture.workspaceId}`;
+        expect(forms[0]?.count).toBe(1);
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
+  });
+
+  it('reads a retired designation flagged for attention (pending T049 author_forms)', async () => {
+    await db
+      .begin(async (tx) => {
+        const fixture = await workspace(tx);
+        const selected = await tx`
+          select app_private.ensure_default_onboarding_form(${fixture.workspaceId},${fixture.actor}) as form_id
+        `;
+        const formId = selected[0]!.form_id;
+        await tx`update public.form_versions set status='retired'
+          where workspace_id=${fixture.workspaceId} and form_id=${formId}`;
+        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: fixture.actor, role: 'authenticated' })},true)`;
+        await tx`set local role authenticated`;
+        const result = await tx`select public.get_staff_forms(${fixture.workspaceId}) as result`;
+        expect(result[0]?.result).toMatchObject({
+          defaultOnboardingFormId: formId,
+          defaultNeedsAttention: true,
+        });
+        expect(result[0]?.result.forms.find((form: { id: string }) => form.id === formId))
+          .toMatchObject({ status: 'retired', needsAttention: true, deadlineDays: 3 });
+        throw rollback;
+      })
+      .catch((error) => {
+        if (error !== rollback) throw error;
+      });
+  });
+
+  it('rejects retiring the selected onboarding form until a replacement is chosen', async () => {
+    await expect(
+      db.begin(async (tx) => {
+        const fixture = await workspace(tx);
+        const current = await tx`
+          select app_private.ensure_default_onboarding_form(${fixture.workspaceId},${fixture.actor}) as form_id
+        `;
+        const result = await tx`
+          select app_private.retire_workspace_form(${fixture.workspaceId},${current[0]!.form_id},${fixture.actor}) as result
+        `;
+        expect(result[0]?.result).toEqual({ status: 'default_selected' });
+        const status = await tx`select status from public.form_versions
+          where workspace_id=${fixture.workspaceId} and form_id=${current[0]!.form_id}`;
+        expect(status[0]?.status).toBe('draft');
+        const replacement = randomUUID();
+        await tx`insert into public.forms(id,workspace_id,name)
+          values(${replacement},${fixture.workspaceId},'Selected before retirement')`;
+        await tx`insert into public.form_versions(
+            workspace_id,form_id,version_number,terms_policy_version,definition,status
+          ) values(
+            ${fixture.workspaceId},${replacement},1,'f15-terms-s14-draft-2026-10-30',
+            ${tx.json({ title: { en: 'Replacement', ar: '' }, sections: [], questions: [] })},'draft'
+          )`;
+        const selected = await tx`
+          select app_private.set_default_onboarding_form(${fixture.workspaceId},${replacement},${fixture.actor}) as changed`;
+        expect(selected[0]?.changed).toBe(true);
+        const retireAfterSelection = await tx`
+          select app_private.retire_workspace_form(${fixture.workspaceId},${current[0]!.form_id},${fixture.actor}) as result`;
+        expect(retireAfterSelection[0]?.result).toEqual({ status: 'ok' });
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
+  });
+
   it('selects a non-retired onboarding form for authorized Workspace Owner and Platform Owner (pending T049)', async () => {
     await db
       .begin(async (tx) => {
