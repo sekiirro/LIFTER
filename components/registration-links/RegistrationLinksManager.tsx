@@ -1,6 +1,7 @@
 'use client';
 import type { Locale } from '../../lib/design/preferences';
 import { useState } from 'react';
+import dynamic from 'next/dynamic';
 import { useRouter } from 'next/navigation';
 import { getMessages } from '../../lib/i18n';
 import type { RegistrationData } from '../../lib/registration-links/read';
@@ -8,18 +9,28 @@ import { Button } from '../ui/Button';
 import { EmptyState } from '../ui/States';
 import { RegistrationLinkDialog } from './RegistrationLinkDialog';
 import styles from './registration-links.module.css';
+
+const GlassR4Showcase = dynamic(
+  () =>
+    import('../ui/glass/GlassR4Showcase').then(
+      (module) => module.GlassR4Showcase,
+    ),
+  { ssr: false },
+);
 export function RegistrationLinksManager({
   workspaceId,
   workspaces,
   data,
   canSchedule,
   locale,
+  showGlassShowcase = false,
 }: {
   workspaceId: string;
   workspaces: { id: string; name: string }[];
   data: RegistrationData;
   canSchedule: boolean;
   locale: Locale;
+  showGlassShowcase?: boolean;
 }) {
   const m = getMessages(locale),
     router = useRouter();
@@ -156,6 +167,7 @@ export function RegistrationLinksManager({
           onClose={() => setDialog(false)}
         />
       )}
+      {showGlassShowcase && <GlassR4Showcase locale={locale} />}
     </main>
   );
 }

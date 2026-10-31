@@ -14,7 +14,10 @@ import styles from '../../../components/registration-links/registration-links.mo
 export default async function RegistrationLinksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ workspace?: string | string[] }>;
+  searchParams: Promise<{
+    workspace?: string | string[];
+    glassShowcase?: string | string[];
+  }>;
 }) {
   const actor = await requireActor();
   if (!actor.role) notFound();
@@ -69,6 +72,9 @@ export default async function RegistrationLinksPage({
         workspaceId,
       )}
       locale={locale}
+      showGlassShowcase={
+        process.env.LIFTER_SHOWCASE === '1' && params.glassShowcase === 'r4'
+      }
     />
   );
 }

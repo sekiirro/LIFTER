@@ -50,6 +50,7 @@ describe('GlassSurface', () => {
       increasedContrast: false,
       forcedColors: false,
       reducedMotion: false,
+      constrainedDevice: false,
     };
 
     expect(shouldEnableGlisseRefraction(supported)).toBe(true);
@@ -72,5 +73,8 @@ describe('GlassSurface', () => {
       shouldEnableGlisseRefraction({ ...supported, reducedMotion: true }),
     ).toBe(false);
     expect(shouldEnableGlisseRefraction(supported, 'solid')).toBe(false);
+    expect(
+      shouldEnableGlisseRefraction({ ...supported, constrainedDevice: true }),
+    ).toBe(false);
   });
 });

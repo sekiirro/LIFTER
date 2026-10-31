@@ -1,0 +1,56 @@
+.toolbarSurface,
+.fabSurface {
+  display: inline-flex;
+  padding: 3px;
+  border-radius: 999px;
+}
+
+.toolbarButton,
+.fabButton {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-inline-size: var(--touch-min);
+  min-block-size: var(--touch-min);
+  border: 0;
+  border-radius: inherit;
+  padding-inline: var(--space-3);
+  color: var(--color-text);
+  background: transparent;
+  font: inherit;
+  cursor: pointer;
+}
+
+.fabSurface {
+  inline-size: calc(var(--touch-min) + 6px);
+  block-size: calc(var(--touch-min) + 6px);
+  align-items: center;
+  justify-content: center;
+}
+
+.fabButton {
+  inline-size: var(--touch-min);
+  block-size: var(--touch-min);
+  padding: 0;
+  border-radius: 50%;
+}
+
+.toolbarButton:focus-visible,
+.fabButton:focus-visible {
+  outline: 2px solid var(--color-text);
+  outline-offset: 2px;
+}
+
+.toolbarButton:disabled,
+.fabButton:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+@media (forced-colors: active) {
+  .toolbarButton:focus-visible,
+  .fabButton:focus-visible {
+    outline-color: Highlight;
+  }
+}
