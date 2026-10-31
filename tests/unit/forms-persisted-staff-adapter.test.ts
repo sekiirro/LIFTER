@@ -12,7 +12,13 @@ describe('persisted Forms staff adapter', () => {
       data: {
         status: 'ok',
         defaultOnboardingFormId: 'form-1',
-        forms: [{ id: 'form-1', title: { en: 'Your First Step', ar: '' } }],
+        forms: [
+          {
+            id: 'form-1',
+            title: { en: 'Your First Step', ar: '' },
+            needsAttention: true,
+          },
+        ],
       },
       error: null,
     });
@@ -22,7 +28,7 @@ describe('persisted Forms staff adapter', () => {
     );
     await expect(adapter.load()).resolves.toMatchObject({
       defaultOnboardingFormId: 'form-1',
-      forms: [{ id: 'form-1' }],
+      forms: [{ id: 'form-1', needsAttention: true }],
       assignments: [],
     });
     expect(rpc).toHaveBeenCalledWith('get_staff_forms', {
@@ -76,5 +82,112 @@ describe('persisted Forms staff adapter', () => {
     ).resolves.toEqual({
       status: 'unavailable',
     });
+  });
+
+  it('wires Builder save, publish, retire, and copy through idempotent RPCs', async () => {
+    const definition = {
+      title: { en: 'Your First Step', ar: 'عنوان' },
+      sections: [{ id: 'basics', title: { en: 'Basics', ar: 'أساسيات' } }],
+      questions: [],
+      deadlineDays: 3,
+    };
+    const rpc = vi.fn().mockResolvedValue({
+      data: {
+        status: 'ok',
+        formId: 'form-1',
+        revision: 2,
+        formStatus: 'draft',
+        definition,
+      },
+      error: null,
+    });
+    const adapter = createPersistedFormsStaffAdapter(
+      clientFor(rpc),
+      'workspace-1',
+    );
+    const form = {
+      id: 'form-1',
+      ...definition,
+      status: 'draft' as const,
+      revision: 1,
+    };
+    await expect(
+      adapter.saveDraft('wo', form, 'retry-key'),
+    ).resolves.toMatchObject({
+      status: 'ok',
+      form: { id: 'form-1', revision: 2, status: 'draft' },
+    });
+    expect(rpc).toHaveBeenNthCalledWith(1, 'save_workspace_form_draft', {
+      p_workspace_id: 'workspace-1',
+      p_form_id: 'form-1',
+      p_expected_revision: 1,
+      p_definition: definition,
+      p_request_id: 'retry-key',
+      p_name: 'Your First Step',
+    });
+    await adapter.publish('wo', 'form-1', 'publish-key');
+    expect(rpc).toHaveBeenNthCalledWith(2, 'publish_workspace_form', {
+      p_workspace_id: 'workspace-1',
+      p_form_id: 'form-1',
+      p_request_id: 'publish-key',
+    });
+    await adapter.retire('wo', 'form-1', 'retire-key');
+    expect(rpc).toHaveBeenNthCalledWith(3, 'retire_workspace_form', {
+      p_workspace_id: 'workspace-1',
+      p_form_id: 'form-1',
+      p_request_id: 'retire-key',
+    });
+    await adapter.copy('wo', 'form-1', 'copy-key');
+    expect(rpc).toHaveBeenNthCalledWith(4, 'copy_workspace_form', {
+      p_workspace_id: 'workspace-1',
+      p_source_form_id: 'form-1',
+      p_request_id: 'copy-key',
+    });
+  });
+
+  it('keeps the selected-default retirement refusal distinct from success', async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: { status: 'default_selected' },
+      error: null,
+    });
+    const adapter = createPersistedFormsStaffAdapter(
+      clientFor(rpc),
+      'workspace-1',
+    );
+    await expect(adapter.retire('wo', 'form-1')).resolves.toEqual({
+      status: 'default_selected',
+    });
+  });
+
+  it('maps a reused request key with a different payload to conflict', async () => {
+    const rpc = vi.fn().mockResolvedValue({
+      data: { status: 'idempotency_conflict' },
+      error: null,
+    });
+    const adapter = createPersistedFormsStaffAdapter(
+      clientFor(rpc),
+      'workspace-1',
+    );
+    await expect(
+      adapter.publish('wo', 'form-1', 'reused-key'),
+    ).resolves.toEqual({ status: 'conflict' });
+  });
+
+  it('surfaces a persisted denial as forbidden uniformly for Builder writes', async () => {
+    const rpc = vi.fn().mockResolvedValue({ data: null, error: null });
+    const adapter = createPersistedFormsStaffAdapter(
+      clientFor(rpc),
+      'workspace-1',
+    );
+    await expect(adapter.publish('sales', 'form-1')).resolves.toEqual({
+      status: 'forbidden',
+    });
+    await expect(adapter.retire('sales', 'form-1')).resolves.toEqual({
+      status: 'forbidden',
+    });
+    await expect(adapter.copy('sales', 'form-1')).resolves.toEqual({
+      status: 'forbidden',
+    });
+    expect(rpc).toHaveBeenCalledTimes(3);
   });
 });

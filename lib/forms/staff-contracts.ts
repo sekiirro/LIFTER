@@ -22,6 +22,7 @@ export type StaffFormDraft = {
   deadlineDays: number;
   status: 'draft' | 'published' | 'retired';
   revision: number;
+  needsAttention?: boolean;
 };
 
 export type StaffAssignmentPreview = {
@@ -43,7 +44,10 @@ export type FormsStaffSnapshot = {
 
 export type FormsStaffResult =
   | { status: 'ok'; form: StaffFormDraft }
-  | { status: 'invalid' | 'conflict' | 'forbidden' | 'missing' };
+  | {
+      status:
+        'invalid' | 'conflict' | 'forbidden' | 'missing' | 'default_selected';
+    };
 
 export type FormsStaffSelectionResult = {
   status: 'ok' | 'forbidden' | 'missing' | 'unavailable';
@@ -54,10 +58,23 @@ export interface FormsStaffAdapter {
   saveDraft(
     role: FormsStaffRole,
     form: StaffFormDraft,
+    requestId?: string,
   ): Promise<FormsStaffResult>;
-  publish(role: FormsStaffRole, formId: string): Promise<FormsStaffResult>;
-  retire(role: FormsStaffRole, formId: string): Promise<FormsStaffResult>;
-  copy(role: FormsStaffRole, formId: string): Promise<FormsStaffResult>;
+  publish(
+    role: FormsStaffRole,
+    formId: string,
+    requestId?: string,
+  ): Promise<FormsStaffResult>;
+  retire(
+    role: FormsStaffRole,
+    formId: string,
+    requestId?: string,
+  ): Promise<FormsStaffResult>;
+  copy(
+    role: FormsStaffRole,
+    formId: string,
+    requestId?: string,
+  ): Promise<FormsStaffResult>;
   selectDefaultOnboardingForm(
     role: FormsStaffRole,
     formId: string,

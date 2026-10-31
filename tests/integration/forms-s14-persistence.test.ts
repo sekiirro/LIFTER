@@ -181,6 +181,12 @@ describe('T047 forms persistence', () => {
               sp`update public.form_assignments set version_snapshot='{}'::jsonb where workspace_id=${first.wsA.id} and client_id=${ownClient.id} and form_id=${form}`,
           ),
         ).rejects.toThrow();
+        await expect(
+          tx.savepoint(
+            async (sp) =>
+              sp`delete from public.form_assignments where workspace_id=${first.wsA.id} and client_id=${ownClient.id} and form_id=${form}`,
+          ),
+        ).rejects.toThrow();
         const client = await pending(tx, second);
         await expect(
           tx.savepoint(
@@ -210,6 +216,15 @@ describe('T047 forms persistence', () => {
             async (sp) =>
               sp`
               update public.form_versions set definition='{}'::jsonb
+              where workspace_id=${first.wsA.id} and form_id=${form} and version_number=1
+            `,
+          ),
+        ).rejects.toThrow();
+        await expect(
+          tx.savepoint(
+            async (sp) =>
+              sp`
+              delete from public.form_versions
               where workspace_id=${first.wsA.id} and form_id=${form} and version_number=1
             `,
           ),

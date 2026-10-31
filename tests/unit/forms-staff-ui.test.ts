@@ -150,6 +150,18 @@ describe('staff builder and assignment views', () => {
     expect(snapshot.forms).toHaveLength(1);
   });
 
+  it('refuses to retire the selected onboarding form in the showcase adapter', async () => {
+    const adapter = createMockFormsStaffAdapter();
+    await expect(adapter.retire('trainer', 'your-first-step')).resolves.toEqual(
+      {
+        status: 'default_selected',
+      },
+    );
+    await expect(adapter.load()).resolves.toMatchObject({
+      defaultOnboardingFormId: 'your-first-step',
+    });
+  });
+
   it('allows a Workspace Owner to edit, reorder, remove, replace and select ordinary forms', async () => {
     const adapter = createMockFormsStaffAdapter();
     const snapshot = await adapter.load();

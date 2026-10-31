@@ -72,7 +72,7 @@ const demoAssignments = [
 ];
 
 function result(
-  status: 'invalid' | 'conflict' | 'forbidden' | 'missing',
+  status: 'invalid' | 'conflict' | 'forbidden' | 'missing' | 'default_selected',
 ): FormsStaffResult {
   return { status };
 }
@@ -212,6 +212,7 @@ export function createMockFormsStaffAdapter(): MockFormsStaffAdapter {
       if (!canManageWorkspaceForms(role)) return result('forbidden');
       const current = forms.get(formId);
       if (current === undefined) return result('missing');
+      if (formId === defaultOnboardingFormId) return result('default_selected');
       if (current.status !== 'published') return result('invalid');
       const retired = freezeSnapshot({
         ...current,

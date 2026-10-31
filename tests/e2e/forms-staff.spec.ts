@@ -2,6 +2,7 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { getMessages } from '../../lib/i18n';
 
 const matrix = [
   { locale: 'ar', theme: 'light', width: 390, height: 844 },
@@ -110,6 +111,61 @@ for (const variant of matrix) {
       path: join(
         tmpdir(),
         `lifter-f15-t021-alerts-${variant.locale}-${variant.theme}-${variant.width}.png`,
+      ),
+      fullPage: true,
+    });
+  });
+
+  test(`${variant.locale} ${variant.theme} ${variant.width}px selected default retirement error and axe`, async ({
+    page,
+  }) => {
+    await page.setViewportSize({
+      width: variant.width,
+      height: variant.height,
+    });
+    await page.context().addCookies([
+      {
+        name: 'lifter_locale',
+        value: variant.locale,
+        url: 'http://localhost:3000',
+      },
+      {
+        name: 'lifter_theme',
+        value: variant.theme,
+        url: 'http://localhost:3000',
+      },
+    ]);
+    await page.goto('/showcase/forms/staff');
+    const messages = getMessages(variant.locale);
+    await page
+      .getByRole('button', { name: messages['forms.staffPreviewForm'] })
+      .click();
+    await page
+      .getByRole('button', { name: messages['forms.staffPublish'] })
+      .click();
+    await page
+      .getByRole('button', { name: messages['forms.staffReturnToEdit'] })
+      .click();
+    await expect(
+      page.getByRole('button', { name: messages['forms.staffRetire'] }),
+    ).toBeVisible();
+    await page
+      .getByRole('button', { name: messages['forms.staffRetire'] })
+      .click();
+    const alert = page
+      .getByRole('alert')
+      .filter({ hasText: messages['forms.staffResult.default_selected'] });
+    await expect(alert).toHaveText(
+      messages['forms.staffResult.default_selected'],
+    );
+    const violations = await new AxeBuilder({ page })
+      .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+      .analyze();
+    expect(violations.violations).toEqual([]);
+    await page.screenshot({
+      path: join(
+        tmpdir(),
+        `lifter-f15-default-retire-${variant.locale}-${variant.theme}-${variant.width}.png`,
       ),
       fullPage: true,
     });

@@ -431,6 +431,8 @@ export const ar = {
   'forms.staffResult.forbidden':
     'لا يمكن لدور المعاينة إدارة استمارات مساحة العمل.',
   'forms.staffResult.missing': 'لم تعد هذه الاستمارة متاحة في المعاينة.',
+  'forms.staffResult.default_selected':
+    'هذه الاستمارة مختارة كخطوة البدء الافتراضية. اختر استمارة أخرى كخطوة البدء قبل إيقافها. (مسودة)',
   'forms.staffIntake': 'الاستقبال',
   'forms.staffAssignedForms': 'الاستمارات المسندة',
   'forms.staffNoAssignments': 'لا توجد استمارات مسندة',

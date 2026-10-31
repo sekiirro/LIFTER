@@ -447,6 +447,8 @@ export const en: Record<keyof typeof ar, string> = {
     'This preview role cannot manage workspace forms.',
   'forms.staffResult.missing':
     'This form is no longer available in the preview.',
+  'forms.staffResult.default_selected':
+    'This form is the selected onboarding default. Select another onboarding form before retiring it. (DRAFT)',
   'forms.staffIntake': 'Intake',
   'forms.staffAssignedForms': 'Assigned forms',
   'forms.staffNoAssignments': 'No assigned forms',
