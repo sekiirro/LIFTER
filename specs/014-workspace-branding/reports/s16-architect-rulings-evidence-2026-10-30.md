@@ -83,7 +83,7 @@ The 390px case renders at 2:1. At 768/1440px the 630px content width reaches the
 | Reduced motion | PASS | `prefers-reduced-motion: reduce` is emulated; touched editor and staff descendants have zero animation and transition durations. |
 | States | PASS | Editor covers loading, no-workspace, save/publish success, stale, generic denial/error, disabled/pending and interaction states; staff fallback and published states are rendered. |
 | Copy | PASS | All six new keys exist in AR/EN message catalogs and locale parity passes. All six additions below are explicitly DRAFT. Generic invalid/security text remains unchanged. |
-| Matrix / screenshots | PASS | Real surfaces: AR-RTL/EN-LTR × light/dark × 390/768/1440. 24 editor/staff screenshots and 12 loaded-banner screenshots; representative locale/theme/viewport samples were visually checked after fixing the Arabic fixture. OS-temp examples: `C:\Users\NEW LAP\AppData\Local\Temp\lifter-f14-ui-38196\banner-loaded-ar-dark-desktop-1440.png`, `C:\Users\NEW LAP\AppData\Local\Temp\lifter-f14-ui-38196\production-editor-ar-dark-mobile-390.png`, and `C:\Users\NEW LAP\AppData\Local\Temp\lifter-f14-ui-38196\production-staff-en-light-tablet-768.png`. Committed captures are under `tests/integration/evidence/f14-ui/` (65 PNGs). |
+| Matrix / screenshots | PASS | Real surfaces: AR-RTL/EN-LTR × light/dark × 390/768/1440. 24 editor/staff screenshots and 12 loaded-banner screenshots; representative locale/theme/viewport samples were visually checked after fixing the Arabic fixture. OS-temp examples: `<temp>/lifter-f14-ui-38196/banner-loaded-ar-dark-desktop-1440.png`, `<temp>/lifter-f14-ui-38196/production-editor-ar-dark-mobile-390.png`, and `<temp>/lifter-f14-ui-38196/production-staff-en-light-tablet-768.png`. Committed captures are under `tests/integration/evidence/f14-ui/` (65 PNGs). |
 | Tests / dependencies / size | PASS | Full unit, full Playwright and axe pass; no dependency added. Web bundle is 7,164.98 KiB (1,481.18 KiB gzip), 10.93% of the 65,536 KiB cap; cron bundle 5.58 KiB (1.96 KiB gzip). |
 
 The 65 committed screenshots cover the full real-surface matrix; representative AR/EN, light/dark, mobile/tablet/desktop screenshots were visually reviewed against `DESIGN.md` §12. That review caught and fixed mojibake in the Arabic test fixture before the final 38-case F14 matrix. The reviewed set showed no clipping, overlap, unintended direction mirroring, unreserved image space, or brand override of semantic status tokens. No motion effect or new component system was added.
@@ -123,7 +123,7 @@ Architect's accepted overlap review remains valid: the later F14 `role_has_capab
 
 ## Stack and test counts
 
-- Ownership was checked before every reset/provisioner/integration/mutation/browser-fixture DB operation. Sanitized proof: Stack `b`, project `lifter-stack-b`, API `127.0.0.1:25421`, DB port `25422`, Storage API running, workdir `C:\Users\NEW LAP\Desktop\LFTR-014\supabase-stack-b`.
+- Ownership was checked before every reset/provisioner/integration/mutation/browser-fixture DB operation. Sanitized proof: Stack `b`, project `lifter-stack-b`, API `127.0.0.1:25421`, DB port `25422`, Storage API running, workdir `<worktree>/supabase-stack-b`.
 - One mistaken read-only `supabase status` probe from the repository root resolved the default Stack A and reported optional stopped services. It performed no start, reset or write; all actual provisioning, resets, mutation tests and integration/browser fixture DB operations were verified on Stack B from its assigned workdir.
 - Fresh reset: 51/51 migrations applied, no errors. The unchanged provisioner ran after a separate ownership check from the repository root with `LIFTER_SUPABASE_STACK=b`; the approved Vault fixture printed no credential material.
 - Full integration: 52 files passed / 1 skipped; **1,207 passed / 0 failed / 2 skipped**, versus baseline **1,201 / 0 / 2** (+6 tests). The added scoped-reader foreign-draft assertion also passed in the focused 3/3 suite after all mutants were restored.
@@ -134,7 +134,7 @@ Architect's accepted overlap review remains valid: the later F14 `role_has_capab
 
 ## Skill catalog review
 
-The whole `C:\Users\NEW LAP\.lifter\design-skills-catalog.md` was read. The Design System/PO Q1 C decision remained authoritative. Skills did not introduce tokens, colors, fonts, motion, dependencies or alternate components.
+The whole `design-skills-catalog.md` was read. The Design System/PO Q1 C decision remained authoritative. Skills did not introduce tokens, colors, fonts, motion, dependencies or alternate components.
 
 | Skill | Result | Reason |
 | --- | --- | --- |
