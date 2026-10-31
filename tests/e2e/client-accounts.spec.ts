@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { inflateRawSync } from 'node:zlib';
 import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
-import { createHash, randomInt, randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import {
   serverLogRawPath,
   serverLogSummaryPath,
