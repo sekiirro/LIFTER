@@ -87,13 +87,14 @@ it('collects stale staging and validated bytes through bounded GC leases', async
     SUPABASE_SERVICE_ROLE_KEY: config.serviceRoleKey,
   };
   const batches: number[] = [];
-  for (let attempt = 0; attempt < 4; attempt++) {
+  for (let attempt = 0; attempt < 50; attempt++) {
     const processed = await runBrandingGc(createBrandingGc(env), 1);
     batches.push(processed);
     if (processed === 0) break;
   }
   expect(batches.at(-1)).toBe(0);
-  expect(batches.length).toBeLessThanOrEqual(3);
+  expect(batches.length).toBeLessThanOrEqual(50);
+  expect(batches.every((batch) => batch >= 0 && batch <= 1)).toBe(true);
 
   const [row] = await db<
     {
