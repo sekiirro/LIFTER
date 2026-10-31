@@ -190,7 +190,6 @@ it('publishes immutable per-workspace sequences and makes unchanged publication 
     versions.map(({ workspace_id, sequence }) => ({ workspace_id, sequence })),
   ).toEqual(
     [
-      { workspace_id: fixture.wsA.id, sequence: 1 },
       { workspace_id: fixture.wsA.id, sequence: 2 },
       { workspace_id: fixture.wsB.id, sequence: 1 },
     ].sort(
@@ -202,15 +201,33 @@ it('publishes immutable per-workspace sequences and makes unchanged publication 
   expect(
     versions.find(
       (version) =>
-        version.workspace_id === fixture.wsA.id && version.sequence === 1,
-    )?.name,
-  ).toBe('Workspace A');
-  expect(
-    versions.find(
-      (version) =>
         version.workspace_id === fixture.wsA.id && version.sequence === 2,
     )?.name,
   ).toBe('Workspace A changed');
+
+  const auditSequences = await db<{ workspace_id: string; sequence: number }[]>`
+    select workspace_id,(details->>'sequence')::int as sequence
+    from public.audit_events
+    where workspace_id in (${fixture.wsA.id},${fixture.wsB.id})
+      and action='branding.published'
+  `;
+  expect(
+    auditSequences.sort(
+      (left, right) =>
+        left.workspace_id.localeCompare(right.workspace_id) ||
+        left.sequence - right.sequence,
+    ),
+  ).toEqual(
+    [
+      { workspace_id: fixture.wsA.id, sequence: 1 },
+      { workspace_id: fixture.wsA.id, sequence: 2 },
+      { workspace_id: fixture.wsB.id, sequence: 1 },
+    ].sort(
+      (left, right) =>
+        left.workspace_id.localeCompare(right.workspace_id) ||
+        left.sequence - right.sequence,
+    ),
+  );
 
   const current = await db<{ workspace_id: string; version_id: string }[]>`
     select workspace_id,version_id from app_private.branding_current_publications

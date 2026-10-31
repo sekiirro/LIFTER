@@ -12,6 +12,7 @@ const integrationFiles = [
 ];
 const browserFiles = [
   'branding-banner-loaded.spec.ts',
+  'branding-production-ui.spec.ts',
   'client-accounts-storage.spec.ts',
 ];
 

@@ -6,6 +6,9 @@ import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const local = Boolean(
+  process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
+);
 const temporaryDir = join(tmpdir(), `lifter-f14-ui-${process.pid}`);
 const viewports = [
   { name: 'mobile-390', width: 390, height: 844 },
@@ -28,6 +31,7 @@ async function expectAxeClean(page: Page) {
 }
 
 test.beforeEach(async () => {
+  test.skip(!local, 'Requires the selected disposable local database.');
   const { createPublishedBannerFixture } =
     await import('../integration/branding-banner-fixture');
   const fixture = await createPublishedBannerFixture();

@@ -149,7 +149,7 @@ jobs:
         shell: bash
         run: |
           PLAYWRIGHT_JSON_OUTPUT_NAME="$RUNNER_TEMP/branding-storage-playwright.json" \
-            npm run e2e -- tests/e2e/branding-banner-loaded.spec.ts tests/e2e/client-accounts-storage.spec.ts --reporter=json --workers=1
+            npm run e2e -- tests/e2e/branding-banner-loaded.spec.ts tests/e2e/branding-production-ui.spec.ts tests/e2e/client-accounts-storage.spec.ts --reporter=json --workers=1
           node scripts/assert-storage-suite-zero-skips.mjs playwright "$RUNNER_TEMP/branding-storage-playwright.json"
         env:
           LOCAL_SUPABASE_STORAGE_TEST: 'true'

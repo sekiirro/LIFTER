@@ -115,6 +115,103 @@ it('does not append an audit event for an unchanged publication', async () => {
   ).toEqual(before);
 });
 
+it('retains only the current version after a text-only republish', async () => {
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 0,
+    fields: fields('Text publication one'),
+  });
+  const first = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+  });
+  expect(first.error).toBeNull();
+
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+    fields: fields('Text publication two'),
+  });
+  const second = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 2,
+  });
+  expect(second.error).toBeNull();
+
+  const versions = await db<{ id: string; sequence: string }[]>`
+    select id,sequence from app_private.branding_published_versions
+    where workspace_id=${fixture.wsA.id} order by sequence
+  `;
+  expect(versions).toEqual([{ id: second.data, sequence: '2' }]);
+  expect(
+    await db<{ version_id: string }[]>`
+      select version_id from app_private.branding_current_publications
+      where workspace_id=${fixture.wsA.id}
+    `,
+  ).toEqual([{ version_id: second.data }]);
+  const auditTargets = await db<{ target_id: string }[]>`
+    select target_id from public.audit_events
+    where workspace_id=${fixture.wsA.id} and action='branding.published'
+  `;
+  expect(auditTargets.map(({ target_id }) => target_id).sort()).toEqual(
+    [first.data, second.data].sort(),
+  );
+});
+
+it('keeps superseded versions with assets and removes orphaned assetless versions', async () => {
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 0,
+    fields: fields('Asset-backed publication'),
+  });
+  const first = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+  });
+  expect(first.error).toBeNull();
+
+  await db`
+    insert into app_private.branding_published_assets(
+      workspace_id,version_id,slot,bucket_id,object_name,content_type,byte_size
+    ) values(
+      ${fixture.wsA.id},${first.data},'logo','branding-validated',
+      ${`${fixture.wsA.id}/${'a'.repeat(64)}.png`},'image/png',32
+    )
+  `;
+  const orphanId = randomUUID();
+  await db`
+    insert into app_private.branding_published_versions(
+      workspace_id,id,sequence,fields,published_by
+    ) values(
+      ${fixture.wsA.id},${orphanId},2,${db.json(fields('Orphaned snapshot'))},
+      ${fixture.po.userId}
+    )
+  `;
+
+  await fixture.po.client.rpc('branding_draft_save', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 1,
+    fields: fields('New current publication'),
+  });
+  const second = await fixture.po.client.rpc('branding_publish', {
+    workspace_id: fixture.wsA.id,
+    expected_revision: 2,
+  });
+  expect(second.error).toBeNull();
+
+  const versions = await db<{ id: string }[]>`
+    select id from app_private.branding_published_versions
+    where workspace_id=${fixture.wsA.id} order by sequence
+  `;
+  expect(versions).toEqual([{ id: first.data }, { id: second.data }]);
+  expect(
+    await db`select 1 from app_private.branding_published_versions where id=${orphanId}`,
+  ).toHaveLength(0);
+  expect(
+    await db`select 1 from app_private.branding_published_assets where version_id=${first.data}`,
+  ).toHaveLength(1);
+});
+
 it('allows publication when the workspace has only an expired GC claim', async () => {
   await fixture.po.client.rpc('branding_draft_save', {
     workspace_id: fixture.wsA.id,
