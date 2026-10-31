@@ -8,6 +8,7 @@ import {
   createBrandingService,
   BrandingServiceError,
 } from '../../../lib/branding/service';
+import { BrandingValidationError } from '../../../lib/branding/validation';
 import { createSupabaseBrandingRepository } from '../../../lib/branding/repository';
 import { createSessionClient } from '../../../lib/supabase/server';
 
@@ -50,7 +51,9 @@ export async function saveBrandingAction(form: FormData): Promise<void> {
     status =
       error instanceof BrandingServiceError && error.code === 'stale_revision'
         ? 'stale'
-        : 'unavailable';
+        : error instanceof BrandingValidationError
+          ? 'invalid'
+          : 'unavailable';
   }
   revalidatePath('/branding');
   redirect(

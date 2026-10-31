@@ -15,6 +15,7 @@ import { saveBrandingAction, publishBrandingAction } from './actions';
 import { WorkspaceSwitcher } from './WorkspaceSwitcher';
 import { ClientPortalBrandPreview } from '../../../components/branding/ClientPortalBrandPreview';
 import { DEFAULT_BRAND } from '../../../lib/design/color';
+import { registrationBrandName } from '../../../lib/branding/registration-name';
 import styles from './branding.module.css';
 
 export default async function WorkspaceBrandingPage({
@@ -71,7 +72,9 @@ export default async function WorkspaceBrandingPage({
           ? m['branding.publishedNotice']
           : query.status === 'unavailable'
             ? m['branding.genericUnavailable']
-            : null;
+            : query.status === 'invalid'
+              ? m['branding.nameRequired']
+              : null;
 
   return (
     <main className={styles.main} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
@@ -89,7 +92,9 @@ export default async function WorkspaceBrandingPage({
       {statusMessage && (
         <Alert
           tone={
-            query.status === 'stale' || query.status === 'unavailable'
+            query.status === 'stale' ||
+            query.status === 'unavailable' ||
+            query.status === 'invalid'
               ? 'error'
               : 'success'
           }
@@ -107,7 +112,6 @@ export default async function WorkspaceBrandingPage({
               name: 'nameAr',
               defaultValue: draftFields.names.ar,
               dir: 'rtl',
-              required: true,
             }}
           />
           <Field
@@ -116,7 +120,6 @@ export default async function WorkspaceBrandingPage({
               name: 'nameEn',
               defaultValue: draftFields.names.en,
               dir: 'ltr',
-              required: true,
             }}
           />
           <Field
@@ -136,7 +139,11 @@ export default async function WorkspaceBrandingPage({
           <input type="hidden" name="revision" value={draft?.revision ?? 0} />
           <p data-current-published="">
             {m['branding.currentPublished']}:{' '}
-            {current?.fields.names[locale] ?? m['branding.noPublished']}
+            {registrationBrandName(
+              current?.fields.names,
+              locale,
+              m['branding.noPublished'],
+            )}
           </p>
           <Button type="submit">{m['branding.publishCurrent']}</Button>
         </form>

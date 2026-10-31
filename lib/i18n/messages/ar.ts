@@ -272,6 +272,7 @@ export const ar = {
   'branding.uploadGuidanceSuffix': '.',
   'branding.nameArabic': 'اسم مساحة العمل بالعربية',
   'branding.nameEnglish': 'اسم مساحة العمل بالإنجليزية',
+  'branding.nameRequired': 'مسودة: أدخل اسمًا بالعربية أو الإنجليزية.',
   'branding.bannerAltArabic': 'وصف اللافتة بالعربية',
   'branding.bannerAltEnglish': 'وصف اللافتة بالإنجليزية',
   'branding.colorField': 'لون العلامة',
