@@ -323,6 +323,41 @@ it('T008 rejects Stop after a freeze has been Removed', async () => {
   });
 });
 
+it('T008 bounds Stop at the planned end but permits a late Remove', async () => {
+  const f = await clientContext();
+  await probe(async (tx) => {
+    const ids = await graph(tx, f);
+    const appliedOn = '2026-10-01';
+    const freezeId = randomUUID();
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${ids.subscription},clock_timestamp()-interval '100 days',${randomUUID()})`;
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+    await tx`insert into public.subscription_freezes(id,workspace_id,subscription_id,applied_on,duration_days,applied_by,recorded_at)
+      values(${freezeId},${f.wsA.id},${ids.subscription},${appliedOn}::date,3,${f.trainerA.userId},clock_timestamp())`;
+
+    await expect(
+      tx.savepoint(async (inner) => {
+        await inner`insert into public.subscription_freeze_events(workspace_id,subscription_id,freeze_id,kind,effective_on,actor_user_id)
+          values(${f.wsA.id},${ids.subscription},${freezeId},'stop',${appliedOn}::date+3,${f.trainerA.userId})`;
+      }),
+    ).rejects.toMatchObject({ code: '23514' });
+
+    await tx`insert into public.subscription_freeze_events(workspace_id,subscription_id,freeze_id,kind,effective_on,actor_user_id)
+      values(${f.wsA.id},${ids.subscription},${freezeId},'remove',${appliedOn}::date+20,${f.trainerA.userId})`;
+    await tx`set constraints all immediate`;
+    const [events] = await tx`
+      select count(*) filter (where kind='stop')::int as stopped,
+        count(*) filter (where kind='remove')::int as removed,
+        max(effective_on)::text as removed_on
+      from public.subscription_freeze_events where freeze_id=${freezeId}`;
+    expect(events).toEqual({
+      stopped: 0,
+      removed: 1,
+      removed_on: '2026-10-21',
+    });
+  });
+});
+
 it('T008 rejects Apply, Stop and Remove facts after a terminal refund', async () => {
   const f = await clientContext();
   await probe(async (tx) => {

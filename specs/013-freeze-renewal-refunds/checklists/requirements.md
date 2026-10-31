@@ -15,7 +15,7 @@
 - [x] Functional requirements are testable and trace to decisions.
 - [x] Superseded D-09/D-15 assumptions are called out.
 - [x] Cairo date, installment timing, concurrency and idempotency cases are specified.
-- [x] Architecture proposal distinguishes logical guarantees from unmerged F12 runtime work.
+- [x] Architecture proposal distinguishes logical guarantees from F12 U4 runtime evidence verified at merged PR #18 / `e3a2534`.
 
 ## Remaining decisions and confidence
 

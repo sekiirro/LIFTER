@@ -249,7 +249,7 @@ Requests bind expected lifecycle/chain/tail revisions. All callers are permitted
 
 ## Assumptions and policy status
 
-- F9–F11 supply approved package versions, issued agreements and isolated client identities; F12 must land and integrate its U4 payment operations before F13 implementation. The inspected F12 model migration exists on `origin/012-registration-approval` at `7f2cc19249bc7b6b1a0199240694cb68e5d28a06`; no DB/runtime/hosted execution is proven here.
+- F9–F11 supply approved package versions, issued agreements and isolated client identities. F12 U4 is merged and verified against `origin/main` at PR #18 / `e3a2534`; F13 reuses its integrated payment operations and does not add a parallel collection/correction writer.
 - D-04/05/10/11/12/13/17 and final F12 decisions are binding, subject to later F13 PO overrides recorded above. ND-01 and ND-08 are closed by Final PO Approval; recommendations elsewhere have no runtime effect.
 - P4 is future work: initial activation writer, plan access/export enforcement and portal notifications cannot be claimed delivered by F13 alone. F13 must define and verify the seam with synthetic facts later, without adding a public activation action.
 - This authorized decision-record unit updates the F13 spec, checklist and ledger architecture. Do not write `.specify/feature.json` or shared registers. Spec Debate is complete; architecture review remains pending.

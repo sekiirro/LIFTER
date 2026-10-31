@@ -4,7 +4,7 @@
 
 ## Scope and source facts
 
-This design extends F12 forward-only. It does not edit F12 migrations or claim that the planned F12 collection/correction RPC exists. The inspected F12 branch is `origin/012-registration-approval` at `7f2cc19249bc7b6b1a0199240694cb68e5d28a06`; its model migration allows `collection` and `correction_reversal`, uniquely constrains one successor per event and one `reverses_event_id`, and stores per-actor request receipts in `app_private.registration_operations`. The F12 payment-operations work is still unchecked U4 work at that source state.
+This design extends F12 forward-only and does not edit F12 migrations. F12 U4 is merged as PR #18 at `e3a2534`; its collection/correction RPCs, event chain, receipts, authorization rechecks, lock order, audit rollback and race behavior are verified in `research.md` and `contracts/refund-and-ledger.md`. F13 reuses those writers and contracts; it must not add a parallel collection/correction writer.
 
 F13 refund semantics supersede the one-reversal-per-collection shape. Refund allocations are separate immutable negative ledger events tied to a refund-operation header and a source collection. A correction continues using `reverses_event_id` and exact full reversal. A refund allocation does not use that unique field, and multiple allocations may refer to one source collection subject to the cumulative source and purchase caps below. Refunds are external cash actions; the LIFTER transaction only attests the completed refund.
 
@@ -52,7 +52,7 @@ Use the F12 operation order verbatim: lock the client row first; then that clien
 
 ## Failure atomicity: refund, deactivation and Auth lockout
 
-The refund DB transaction atomically writes refund facts, cancellation, client deactivation state, audit, receipt, RET-1 start and one unique-per-client Auth-lockout outbox row. Failure of any transaction write aborts all of them. The Custom Access Token hook reads the committed deactivation fact and blocks new token issuance before the worker runs. An Auth Admin failure occurs after commit: it does not roll back the refund; the same outbox row remains retryable with bounded exponential backoff, records success, and surfaces a persistent safe operational alert to PO/WO. Repeated refunds do not create another lockout row or reactivate the client. No direct writes to Supabase Auth-managed tables are allowed.
+The refund DB transaction atomically writes refund facts, cancellation, client deactivation state, audit, receipt, RET-1 start and one unique-per-client Auth-lockout outbox row. Failure of any transaction write aborts all of them. The Custom Access Token hook reads the committed deactivation fact and blocks new token issuance before the worker runs. An Auth Admin failure occurs after commit: it does not roll back the refund; the same outbox row remains retryable with bounded exponential backoff and records success. After the approved threshold, the worker records one durable, deduplicated, audited PO/WO alert; delivery and rendering are deferred to Notifications. Repeated refunds do not create another lockout row or reactivate the client. No direct writes to Supabase Auth-managed tables are allowed.
 
 The hook preserves incoming claims for active clients and staff. Supabase allows one custom access-token hook per project, so future claim customization must compose into this function. Hook errors fail issuance closed. Hosted dashboard enablement must first be tested on a non-production hosted project; production enablement requires PO approval.
 
@@ -75,17 +75,9 @@ F13 implementation must add migrations after the latest merged F12/F14 migration
 9. **Readers and projections:** amend every F12 payment status, commission, workspace queue, eligibility, subscription, Active Clients and client-access reader to distinguish collected, corrected, partially refunded, fully refunded, canceled and deactivated; maintain role-safe columns and hide commissions from Sales/Trainer/client.
 10. **Capability parity:** extend TypeScript `lib/auth/capabilities.ts` and integrated `app_private.role_has_capability()` with Trainer's already-existing `manage_freeze` and `record_payment` scopes as appropriate; no new capability. Test TS→SQL and SQL→TS parity, retaining F12 Sales approval removal and F14 `manage_branding`.
 
-## Unmerged F12 U4 dependency inventory
+## F12 U4 merged dependency contract
 
-At inspected F12 head `7f2cc19`, Phase 5 U4 includes unchecked tests/tasks T018–T022 and planned migration `20261101122000_payment_operations.sql` (T021). F13 depends on each of these planned contracts and must re-inspect the merged implementation before migration design:
-
-- T018 collection/date/timing behavior: exact full obligation, Cairo date, no future collection, activation and earlier-installment gating.
-- T019 correction behavior: exact stored principal/commission, original immutable, correction recording month and recollection semantics.
-- T020 shared lock/replay races: distinct-key collection/correction/recollection serialization, receipt binding and revoked actor behavior.
-- T021 `payment_operations` RPC/migration: actual collection/correction writers, their lock order and advisory-key position, authorization rechecks, operation rows, audit transaction and terminal-state extension point.
-- T022 audit/rollback and reconciliation evidence: integrated event vocabulary, safe audit payload and exact failure rollback behavior.
-
-If U4 is still unmerged, F13 cannot assume these runtime guarantees or safely implement the shared race contract. F13 must coordinate after U4 lands; it must not duplicate a parallel collection/correction writer. This document's invariant claims are target design arguments, not evidence that U4 or F13 code has passed them.
+F12 U4 was verified against merged PR #18 at `e3a2534`. Its integrated writer, RPC signatures, operation receipts, authorization rechecks, lock order, audit rollback and collection/correction race guarantees are pinned in `research.md` and `contracts/refund-and-ledger.md`. Keep using those contracts and the existing F12 collection/correction writer; do not block F13 on the former unmerged snapshot at `7f2cc192` or create a duplicate payment writer. Migration ordering follows the integrated replay baseline and only migrations present in that baseline.
 
 ## Race fixtures required for implementation
 
@@ -98,11 +90,11 @@ If U4 is still unmerged, F13 cannot assume these runtime guarantees or safely im
 | Revoked actor waiting on financial lock | Recheck authorization after wait; deny with no target/receipt disclosure and no ledger/audit write. |
 | Commission one-minor-unit and odd amount remainder | Cumulative formula is exact, monotone and capped at stored commission for every refund partition/order. |
 | Refund transaction/deactivation/outbox failure | Whole transaction rolls back: no refund/allocation/cancellation/deactivation/audit/receipt/outbox persists. |
-| Auth Admin failure after refund commit | Refund remains committed; same outbox row retries idempotently with backoff; persistent failure raises a safe alert. |
+| Auth Admin failure after refund commit | Refund remains committed; same outbox row retries idempotently with backoff; threshold creates one durable, deduplicated, audited PO/WO alert record. Delivery/rendering are deferred to Notifications. |
 | Repeated refunds after deactivation | No reactivation and no duplicate per-client Auth-lockout row. |
 | Multiple purchases, one refund | Explicit selected purchase required; client deactivation applies; other purchases remain financially independent and require manual resolution. |
 
 ## Remaining architecture confidence
 
 - **Auth issuance timing:** closed by the Stack C tested Custom Access Token hook; already-issued JWTs remain valid only through their accepted natural expiry.
-- **DEPENDENCY GATE — F12 U4 integration shape:** final function signatures, receipt shape and advisory-lock placement must be verified against the F12 U4 merge before F13 chooses its forward amendment. No implementation against the unmerged contract.
+- **F12 U4 integration shape:** verified against merged PR #18 at `e3a2534`; use the pinned signatures, receipts and lock placement in `research.md` and `contracts/refund-and-ledger.md`.
