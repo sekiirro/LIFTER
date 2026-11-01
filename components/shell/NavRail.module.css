@@ -2,7 +2,6 @@
   position: relative;
   flex-direction: column;
   align-items: center;
-  gap: var(--space-1);
   padding: var(--space-2);
   border-radius: 999px;
   box-shadow:
@@ -14,6 +13,15 @@
   --lg-glass-bend: 0.38;
   --lg-rim-shine: 0.2;
   --lg-blur: 1px;
+}
+.links {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--space-1);
+  max-block-size: calc(100dvb - 2 * var(--space-8) - 2 * var(--space-2));
+  overflow-y: auto;
+  overscroll-behavior-block: contain;
 }
 .rail.rail.rail {
   --lg-blur: 1px;

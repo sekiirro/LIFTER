@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { getActiveNavigationKey } from '../../components/shell/ShellNavigation';
+import {
+  getActiveNavigationKey,
+  getShellNavigationHref,
+} from '../../components/shell/ShellNavigation';
 
 describe('ShellNavigation active route mapping', () => {
   it.each([
@@ -14,5 +17,21 @@ describe('ShellNavigation active route mapping', () => {
     ['/not-a-navigation-route', undefined],
   ])('maps %s to %s', (pathname, expected) => {
     expect(getActiveNavigationKey(pathname)).toBe(expected);
+  });
+
+  it('keeps trainer Clients routing aligned with the active Registration Links route', () => {
+    expect(getActiveNavigationKey('/registration-links')).toBe('clients');
+    expect(
+      getShellNavigationHref('clients', '/registration-links', 'trainer'),
+    ).toBe('/registration-links');
+    expect(
+      getShellNavigationHref(
+        'clients',
+        '/registration-links',
+        'trainer',
+        'workspace id',
+      ),
+    ).toBe('/registration-links?workspace=workspace%20id');
+    expect(getShellNavigationHref('clients', '/', 'client')).toBe('/#clients');
   });
 });

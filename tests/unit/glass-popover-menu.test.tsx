@@ -5,11 +5,19 @@ import {
   GlassToolbarButton,
 } from '../../components/ui/glass/GlassActions';
 import {
+  getGlassMenuInitialFocusIndex,
   getGlassMenuKeyAction,
   GlassPopoverMenu,
 } from '../../components/ui/glass/GlassPopoverMenu';
 
 describe('Glass popover menu keyboard model', () => {
+  it('opens on ArrowUp at the last item and on ArrowDown at the first', () => {
+    expect(getGlassMenuInitialFocusIndex('ArrowUp', 3)).toBe(2);
+    expect(getGlassMenuInitialFocusIndex('ArrowDown', 3)).toBe(0);
+    expect(getGlassMenuInitialFocusIndex(null, 3)).toBe(0);
+    expect(getGlassMenuInitialFocusIndex('ArrowUp', 0)).toBe(-1);
+  });
+
   it('moves focus with arrows and wraps at either end', () => {
     expect(getGlassMenuKeyAction('ArrowDown', 1, 3)).toEqual({
       type: 'focus',

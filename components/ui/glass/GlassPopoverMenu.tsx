@@ -32,6 +32,14 @@ export function getGlassMenuKeyAction(
   return null;
 }
 
+export function getGlassMenuInitialFocusIndex(
+  openingKey: string | null,
+  itemCount: number,
+) {
+  if (itemCount === 0) return -1;
+  return openingKey === 'ArrowUp' ? itemCount - 1 : 0;
+}
+
 export function GlassPopoverMenu({
   label,
   triggerLabel,
@@ -51,6 +59,7 @@ export function GlassPopoverMenu({
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const menuRef = useRef<HTMLDivElement>(null);
+  const openingKeyRef = useRef<'ArrowDown' | 'ArrowUp' | null>(null);
 
   useEffect(() => {
     if (!open) return;
@@ -73,9 +82,15 @@ export function GlassPopoverMenu({
         else setAlignment('end');
       } else if (overflowLeft) setAlignment('start');
       else setAlignment('end');
-      menuRef.current
-        ?.querySelector<HTMLElement>('[role="menuitem"]')
-        ?.focus({ preventScroll: true });
+      const entries =
+        menuRef.current?.querySelectorAll<HTMLElement>('[role="menuitem"]');
+      const focusIndex = getGlassMenuInitialFocusIndex(
+        openingKeyRef.current,
+        entries?.length ?? 0,
+      );
+      if (focusIndex >= 0)
+        entries?.[focusIndex]?.focus({ preventScroll: true });
+      openingKeyRef.current = null;
     });
     return () => cancelAnimationFrame(frame);
   }, [open, items.length]);
@@ -128,10 +143,14 @@ export function GlassPopoverMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-label={triggerLabel}
-        onClick={() => setOpen((value) => !value)}
+        onClick={() => {
+          openingKeyRef.current = null;
+          setOpen((value) => !value);
+        }}
         onKeyDown={(event) => {
           if (!open && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
             event.preventDefault();
+            openingKeyRef.current = event.key;
             setOpen(true);
           }
         }}

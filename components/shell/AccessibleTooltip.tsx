@@ -4,13 +4,16 @@ import {
   cloneElement,
   useEffect,
   useId,
+  useLayoutEffect,
   useMemo,
+  useRef,
   useState,
   type FocusEvent,
   type KeyboardEvent,
   type PointerEvent,
   type ReactElement,
 } from 'react';
+import { createPortal } from 'react-dom';
 import styles from './AccessibleTooltip.module.css';
 
 type TooltipTriggerProps = {
@@ -91,6 +94,7 @@ export type AccessibleTooltipProps = {
   label: string;
   tooltipClassName?: string;
   tooltipTestId?: string;
+  portalToBody?: boolean;
   children: ReactElement<TooltipTriggerProps>;
 };
 
@@ -99,13 +103,54 @@ export function AccessibleTooltip({
   label,
   tooltipClassName,
   tooltipTestId,
+  portalToBody = false,
   children,
 }: AccessibleTooltipProps) {
   const tooltipId = `accessible-tooltip-${useId()}`;
   const [visible, setVisible] = useState(false);
+  const [portalPosition, setPortalPosition] = useState<{
+    top: number;
+    left: number;
+    rtl: boolean;
+  } | null>(null);
+  const triggerRef = useRef<HTMLSpanElement>(null);
+  const tooltipRef = useRef<HTMLSpanElement>(null);
   const controller = useMemo(() => createTooltipController(setVisible), []);
+  const portalTarget =
+    portalToBody && typeof document !== 'undefined' ? document.body : null;
 
   useEffect(() => () => controller.dispose(), [controller]);
+
+  useLayoutEffect(() => {
+    if (!visible || !portalToBody || !portalTarget) return;
+
+    const updatePosition = () => {
+      const trigger = triggerRef.current;
+      const tooltip = tooltipRef.current;
+      if (!trigger || !tooltip) return;
+      const bounds = trigger.getBoundingClientRect();
+      const rtl = getComputedStyle(trigger).direction === 'rtl';
+      const gap = Number.parseFloat(
+        getComputedStyle(document.documentElement).getPropertyValue(
+          '--space-3',
+        ),
+      );
+      setPortalPosition({
+        top: bounds.top + bounds.height / 2,
+        left: rtl ? bounds.left - (gap || 12) : bounds.right + (gap || 12),
+        rtl,
+      });
+    };
+
+    const frame = window.requestAnimationFrame(updatePosition);
+    window.addEventListener('resize', updatePosition);
+    window.addEventListener('scroll', updatePosition, true);
+    return () => {
+      window.cancelAnimationFrame(frame);
+      window.removeEventListener('resize', updatePosition);
+      window.removeEventListener('scroll', updatePosition, true);
+    };
+  }, [portalTarget, portalToBody, visible]);
 
   const childProps = children.props;
   const ariaProps = getTooltipAriaAttributes(
@@ -135,8 +180,38 @@ export function AccessibleTooltip({
     if (event.key === 'Escape') controller.escape();
   };
 
+  const tooltip = (
+    <span
+      ref={portalToBody ? tooltipRef : undefined}
+      id={tooltipId}
+      role="tooltip"
+      aria-hidden={!visible}
+      data-visible={visible ? 'true' : 'false'}
+      data-testid={tooltipTestId}
+      className={[
+        styles.tooltip,
+        portalToBody && styles.tooltipPortal,
+        portalPosition?.rtl && styles.tooltipPortalRtl,
+        tooltipClassName,
+      ]
+        .filter(Boolean)
+        .join(' ')}
+      style={
+        portalToBody
+          ? {
+              top: portalPosition?.top ?? -10000,
+              left: portalPosition?.left ?? -10000,
+            }
+          : undefined
+      }
+    >
+      {label}
+    </span>
+  );
+
   return (
     <span
+      ref={triggerRef}
       className={styles.trigger}
       onPointerEnter={handlePointerEnter}
       onPointerLeave={handlePointerLeave}
@@ -145,16 +220,9 @@ export function AccessibleTooltip({
       onKeyDown={handleKeyDown}
     >
       {cloneElement(children, ariaProps)}
-      <span
-        id={tooltipId}
-        role="tooltip"
-        aria-hidden={!visible}
-        data-visible={visible ? 'true' : 'false'}
-        data-testid={tooltipTestId}
-        className={[styles.tooltip, tooltipClassName].filter(Boolean).join(' ')}
-      >
-        {label}
-      </span>
+      {portalToBody && portalTarget
+        ? createPortal(tooltip, portalTarget)
+        : tooltip}
     </span>
   );
 }

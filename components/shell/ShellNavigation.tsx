@@ -28,6 +28,21 @@ export function getActiveNavigationKey(
   return undefined;
 }
 
+export function getShellNavigationHref(
+  key: NavKey,
+  pathname: string | null,
+  role: Role,
+  workspaceId?: string,
+): string {
+  if (pathname?.startsWith('/showcase')) return `?role=${role}#${key}`;
+  if (key === 'home') return '/';
+  if (key === 'clients' && role === 'trainer')
+    return workspaceId
+      ? `/registration-links?workspace=${encodeURIComponent(workspaceId)}`
+      : '/registration-links';
+  return `/#${key}`;
+}
+
 export function ShellNavigation({
   role,
   items,
@@ -39,13 +54,8 @@ export function ShellNavigation({
 }: ShellNavigationProps) {
   const pathname = usePathname();
   const activeKey = requestedActiveKey ?? getActiveNavigationKey(pathname);
-  const hrefFor = (key: NavKey) => {
-    if (pathname?.startsWith('/showcase')) return `?role=${role}#${key}`;
-    if (key === 'home') return '/';
-    if (key === 'clients' && role === 'trainer' && workspaceId)
-      return `/registration-links?workspace=${encodeURIComponent(workspaceId)}`;
-    return `/#${key}`;
-  };
+  const hrefFor = (key: NavKey) =>
+    getShellNavigationHref(key, pathname, role, workspaceId);
   const props = { items, activeKey, hrefFor, messages };
   return (
     <>

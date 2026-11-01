@@ -41,6 +41,16 @@
   visibility: visible;
 }
 
+.tooltipPortal {
+  position: fixed;
+  inset-block-start: 0;
+  inset-inline-start: 0;
+}
+
+.tooltipPortalRtl {
+  transform: translate(-100%, -50%);
+}
+
 @media (prefers-reduced-motion: reduce) {
   .tooltip {
     transition: none;
