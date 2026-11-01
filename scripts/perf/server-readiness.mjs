@@ -42,15 +42,12 @@ export function waitForServerReady(
             );
           });
           const healthCheck = fetch(new URL('/api/health', url), {
-              signal: controller.signal,
-            })
-              .then((response) => response.ok)
-              .catch(() => false)
-              .then((ready) => (ready ? true : pollDelay));
-          const ready = await Promise.race([
-            healthCheck,
-            exited,
-          ]);
+            signal: controller.signal,
+          })
+            .then((response) => response.ok)
+            .catch(() => false)
+            .then((ready) => (ready ? true : pollDelay));
+          const ready = await Promise.race([healthCheck, exited]);
           if (ready) return;
         } finally {
           controller.abort();
