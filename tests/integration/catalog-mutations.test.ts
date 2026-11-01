@@ -634,4 +634,116 @@ describe('F16 mutation probes', () => {
       expect((error as Error).message, stage).toBe(marker);
     }
   });
+
+  it('T026: bypassing creator, request-hash, key-lock, or audit guards breaks food RPC contracts', async () => {
+    const foodId = randomUUID();
+    const hashKey = randomUUID();
+    const hashResult = { food_id: randomUUID(), version: 1, warnings: [] };
+    const marker = 'rollback_catalog_food_operation_mutation';
+    const request = {
+      name_ar: 'اختبار تعديل الطعام',
+      name_en: `Mutation food ${randomUUID()}`,
+      basis: 'g',
+      product_identity_norm: 'mutation-product',
+      preparation_identity_norm: 'plain',
+      weighing_state: 'not_applicable',
+      kcal: 120,
+      protein_g: 5,
+      carbohydrate_g: 20,
+      fat_g: 2,
+      fiber_g: null,
+      servings: [{ unit_key: 'reference', label_en: '100 g', basis_qty: 100 }],
+      confirm_near_match: false,
+    };
+    try {
+      await db.begin(async (tx) => {
+        await tx`insert into public.foods(id, created_by, origin_workspace_id, current_version)
+          values (${foodId}, ${trainerA.userId}, ${wsA}, 1)`;
+        await tx`insert into public.food_versions(
+          food_id, version, payload, created_by, name_en, basis, product_identity_norm,
+          preparation_identity_norm, weighing_state, kcal, protein_g, carbohydrate_g, fat_g
+        ) values (
+          ${foodId}, 1, ${tx.json({ name_en: 'Mutation food' })}, ${trainerA.userId},
+          'Mutation food', 'g', 'mutation-product', 'plain', 'not_applicable', 120, 5, 20, 2
+        )`;
+        await tx`insert into public.food_serving_units(food_id, food_version, basis, unit_key, label_en, basis_qty)
+          values (${foodId}, 1, 'g', 'reference', '100 g', 100)`;
+
+        await tx`create or replace function public.catalog_version_food(p_food_id uuid, p_expected_version integer, p_operation_key uuid, p_request jsonb)
+          returns jsonb language sql security definer set search_path = '' as $$ select '{}'::jsonb $$`;
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerB.userId, role: 'authenticated' })}, true)`;
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx`select public.catalog_version_food(${foodId}, 1, ${randomUUID()}, ${tx.json(request)})`,
+            ).rejects.toMatchObject({
+              code: '42501',
+              message: 'not_permitted',
+            }),
+          'removing creator-or-PO authorization must break non-creator denial',
+        );
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerA.userId, role: 'authenticated' })}, true)`;
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx`select public.catalog_version_food(${foodId}, 0, ${randomUUID()}, ${tx.json(request)})`,
+            ).rejects.toMatchObject({ code: '40001' }),
+          'removing expected-version CAS must break stale food edit denial',
+        );
+
+        await tx`select set_config('role', 'postgres', true)`;
+        await tx`insert into app_private.operation_keys(actor_user_id, action, operation_key, request_hash, result)
+          values (${trainerA.userId}, 'catalog.food_created', ${hashKey}, ${`sha256:${'a'.repeat(64)}`}, ${tx.json(hashResult)})`;
+        await tx`create or replace function app_private.operation_key_result(p_actor_user_id uuid, p_action text, p_operation_key uuid, p_request_hash text)
+          returns jsonb language sql security definer set search_path = '' as $$
+            select result from app_private.operation_keys where actor_user_id = p_actor_user_id and operation_key = p_operation_key
+          $$`;
+        await tx`select set_config('role', 'authenticated', true)`;
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx`select public.catalog_create_food(${hashKey}, ${wsA}, ${tx.json(request)})`,
+            ).rejects.toMatchObject({
+              code: '23505',
+              message: 'operation_key_request_conflict',
+            }),
+          'removing action/hash binding must break changed-request replay conflict',
+        );
+
+        await tx`select set_config('role', 'postgres', true)`;
+        await tx`create or replace function app_private.lock_catalog_food_request(p_actor uuid, p_operation_key uuid, p_request jsonb)
+          returns void language plpgsql security definer set search_path = '' as $$ begin return; end $$`;
+        await tx`create or replace function app_private.reserve_catalog_food_keys(p_food_id uuid, p_version integer)
+          returns void language plpgsql security definer set search_path = '' as $$ begin return; end $$`;
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerA.userId, role: 'authenticated' })}, true)`;
+        const before =
+          await tx`select count(*)::int as locks from pg_catalog.pg_locks where locktype = 'advisory' and pid = pg_backend_pid()`;
+        await tx`select public.catalog_create_food(${randomUUID()}, ${wsA}, ${tx.json(request)})`;
+        const after =
+          await tx`select count(*)::int as locks from pg_catalog.pg_locks where locktype = 'advisory' and pid = pg_backend_pid()`;
+        await expectMutationToBreak(async () => {
+          expect(after[0]!.locks).toBeGreaterThan(before[0]!.locks);
+        }, 'removing deterministic food key locks must break the in-transaction lock assertion');
+
+        await tx`select set_config('role', 'postgres', true)`;
+        await tx`create or replace function app_private.catalog_write_audit(p_actor_user_id uuid, p_action text, p_target_table text, p_target_id uuid, p_workspace_id uuid, p_details jsonb)
+          returns bigint language sql security definer set search_path = '' as $$ select 1::bigint $$`;
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerA.userId, role: 'authenticated' })}, true)`;
+        const [auditProbe] = await tx`
+          select public.catalog_create_food(${randomUUID()}, ${wsA}, ${tx.json({ ...request, name_en: `Audit mutation ${randomUUID()}`, name_ar: null })}) as result`;
+        const auditFoodId = (auditProbe?.result as { food_id: string }).food_id;
+        const auditCount =
+          await tx`select count(*)::int as events from public.audit_events where target_id = ${auditFoodId}`;
+        await expectMutationToBreak(async () => {
+          expect(auditCount[0]?.events).toBe(1);
+        }, 'bypassing the audit allowlist/writer must break the one-audit assertion');
+        throw new Error(marker);
+      });
+    } catch (error) {
+      expect((error as Error).message).toBe(marker);
+    }
+  });
 });
