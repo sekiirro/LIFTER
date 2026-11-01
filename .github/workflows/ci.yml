@@ -19,6 +19,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Validate migration timestamps
+        run: npm run check:migration-timestamps
       - name: Assert runtime Unicode pin
         run: |
           node -p process.versions.unicode

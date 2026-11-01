@@ -12,6 +12,7 @@
     "start": "next start",
     "typecheck": "tsc --noEmit",
     "lint": "eslint . --max-warnings=0",
+    "check:migration-timestamps": "node scripts/check-migration-timestamps.mjs",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "check:secrets": "node scripts/check-client-secrets.mjs",
