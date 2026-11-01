@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { expectTooltipBesideTrigger } from './tooltip-geometry';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 
@@ -175,6 +176,7 @@ for (const locale of ['ar', 'en'] as const) {
           const tooltip = page.getByTestId('tooltip-home');
           const checkGeometry = async () => {
             await expect(tooltip).toHaveAttribute('data-visible', 'true');
+            await expectTooltipBesideTrigger(tooltip, link, 'rtl');
             const [triggerBox, tooltipBox, measurement] = await Promise.all([
               link.boundingBox(),
               tooltip.boundingBox(),

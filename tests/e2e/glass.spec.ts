@@ -1,4 +1,5 @@
 import { expect, test } from '@playwright/test';
+import { expectTooltipBesideTrigger } from './tooltip-geometry';
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
@@ -187,6 +188,15 @@ test.describe('desktop rail viewport access', () => {
         const navKey = await focusedLink.getAttribute('data-nav-key');
         const tooltip = page.getByTestId(`tooltip-${navKey}`);
         await expect(tooltip).toHaveAttribute('data-visible', 'true');
+        const isRtl =
+          (await rail.evaluate(
+            (element) => getComputedStyle(element).direction,
+          )) === 'rtl';
+        await expectTooltipBesideTrigger(
+          tooltip,
+          focusedLink,
+          isRtl ? 'rtl' : 'ltr',
+        );
         expect(
           await tooltip.evaluate(
             (element) =>
@@ -200,10 +210,6 @@ test.describe('desktop rail viewport access', () => {
         ]);
         expect(railBox).not.toBeNull();
         expect(tooltipBox).not.toBeNull();
-        const isRtl =
-          (await rail.evaluate(
-            (element) => getComputedStyle(element).direction,
-          )) === 'rtl';
         if (isRtl)
           expect(tooltipBox!.x + tooltipBox!.width).toBeLessThan(railBox!.x);
         else expect(tooltipBox!.x).toBeGreaterThan(railBox!.x + railBox!.width);
