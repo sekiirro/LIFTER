@@ -6,6 +6,30 @@ import { getMessages } from '../../lib/i18n';
 
 const planId = '123e4567-e89b-12d3-a456-426614174000';
 
+type TestNode = {
+  props?: {
+    children?: unknown;
+    'data-testid'?: string;
+    onClick?: () => void;
+  };
+};
+
+function findNode(node: unknown, testId: string): TestNode | null {
+  if (!node) return null;
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const found = findNode(child, testId);
+      if (found) return found;
+    }
+    return null;
+  }
+  const candidate = node as TestNode;
+  if (candidate.props?.['data-testid'] === testId) return candidate;
+  if (candidate.props?.children)
+    return findNode(candidate.props.children, testId);
+  return null;
+}
+
 describe('plan lifecycle controls', () => {
   it('does not expose a client-visible draft while editing', () => {
     const html = renderToStaticMarkup(
@@ -53,23 +77,39 @@ describe('plan lifecycle controls', () => {
     expect(html).toContain('data-action="create-new-plan"');
   });
 
-  it('keeps save-draft distinct from create and publish', () => {
+  it('keeps save-draft wired to save, not create', () => {
     const onSaveDraft = vi.fn();
-    const onPublish = vi.fn();
     const onCreateNewPlan = vi.fn();
-    const html = renderToStaticMarkup(
-      createElement(PlanLifecycleControls, {
-        locale: 'en',
-        planId,
-        messages: getMessages('en'),
-        onSaveDraft,
-        onPublish,
-        onCreateNewPlan,
-      }),
-    );
-    expect(html).toContain('data-testid="save-draft"');
-    expect(html).toContain('data-testid="ready-publish"');
-    expect(html).toContain('data-testid="create-new-plan"');
+    const onPublish = vi.fn();
+    const tree = PlanLifecycleControls({
+      locale: 'en',
+      planId,
+      messages: getMessages('en'),
+      onSaveDraft,
+      onCreateNewPlan,
+      onPublish,
+    } as Record<string, unknown>);
+    const button = findNode(tree, 'save-draft');
+    expect(button).toBeTruthy();
+    button!.props!.onClick!();
+    expect(onSaveDraft).toHaveBeenCalledWith(planId);
+    expect(onCreateNewPlan).not.toHaveBeenCalled();
+  });
+
+  it('publishes only through the ready-publish action', () => {
+    const onPublish = vi.fn();
+    const onSaveDraft = vi.fn();
+    const tree = PlanLifecycleControls({
+      locale: 'en',
+      planId,
+      messages: getMessages('en'),
+      onPublish,
+      onSaveDraft,
+    } as Record<string, unknown>);
+    const button = findNode(tree, 'ready-publish');
+    expect(button).toBeTruthy();
+    button!.props!.onClick!();
+    expect(onPublish).toHaveBeenCalledWith(planId);
   });
 
   it('renders Arabic labels', () => {

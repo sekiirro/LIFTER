@@ -1,6 +1,5 @@
 'use client';
 
-import { useState } from 'react';
 import type { Locale } from '../../lib/design/preferences';
 import type { Messages } from '../../lib/i18n';
 import { getMessages } from '../../lib/i18n';
@@ -83,13 +82,9 @@ export function PlanLifecycleControls(props: Record<string, unknown>) {
   const publishedVersion =
     props.publishedVersion ?? projection.publishedVersion;
 
-  const [value, setValue] = useState(
-    (props.defaultValue ?? props.value ?? '') as string,
-  );
   const controlled = props.value !== undefined;
 
   function handleAutosave(next: string) {
-    if (!controlled) setValue(next);
     onAutosave?.(next, planId);
   }
 
@@ -114,7 +109,12 @@ export function PlanLifecycleControls(props: Record<string, unknown>) {
         id="plan-lifecycle-editor"
         data-testid="plan-editor"
         data-autosave="true"
-        value={controlled ? (props.value as string) : value}
+        defaultValue={
+          controlled
+            ? undefined
+            : ((props.defaultValue ?? props.value ?? '') as string)
+        }
+        value={controlled ? (props.value as string) : undefined}
         onChange={(event) => handleAutosave(event.target.value)}
         aria-label={m['planCore.autosave']}
       />
