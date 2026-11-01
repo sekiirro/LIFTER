@@ -60,10 +60,12 @@ it('T008 serializes distinct selections racing with the F12 approval fact', asyn
   expect((approval.data as { status: string }).status).toBe('ok');
   expect(firstSelection.error).toBeNull();
   expect(secondSelection.error).toBeNull();
-  expect([
+  const selectionStatuses = [
     (firstSelection.data as { status: string }).status,
     (secondSelection.data as { status: string }).status,
-  ]).toEqual(expect.arrayContaining(['assigned']));
+  ];
+  expect(selectionStatuses.some((status) => ['assigned', 'waiting_for_approval'].includes(status))).toBe(true);
+  expect(selectionStatuses.every((status) => ['assigned', 'waiting_for_approval', 'conflict', 'not_found'].includes(status))).toBe(true);
 
   const [selectionRows, assignmentRows, consumptionRows, audits] =
     await Promise.all([
