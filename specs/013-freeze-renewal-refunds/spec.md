@@ -284,9 +284,9 @@ Requests bind expected lifecycle/chain/tail revisions. All callers are permitted
 
 **Retention — FINAL**
 
-- RET-1=B: 30-day clock starts when client relationship ends (Closure/Refund/Deactivation). Necessary data stays while Active. Auth-user purge must first remove or anonymize `app_private.client_deactivation_state` and `app_private.refund_auth_lockouts` rows, whose `auth_user_id` foreign keys intentionally restrict deletion in line with `client_accounts`.
+- RET-1=B: 30-day clock starts when client relationship ends (Closure/Refund/Deactivation). Necessary data stays while Active. Future purge job operational requirement (not implemented in F13): (a) disable/ban the Auth user and confirm it, retaining the deactivation denial state until confirmed; (b) stop or complete pending refund lockout retries; (c) only then remove or anonymize `app_private.client_deactivation_state` and `app_private.refund_auth_lockouts` rows; (d) purge the Auth user. Their `auth_user_id` foreign keys intentionally restrict deletion in line with `client_accounts`.
 - RET-2=A: Purge client-specific drafts, answers, correction content and attachments; retain reusable templates and legally required minimal audit evidence.
-- RET-3=A: Maximum 30 days across ALL recoverable copies, including backups. Technical feasibility and legal exceptions require review BEFORE production, including the prerequisite removal or anonymization of `client_deactivation_state` and `refund_auth_lockouts` rows before any Auth-user purge.
+- RET-3=A: Maximum 30 days across ALL recoverable copies, including backups. Technical feasibility and legal exceptions require review BEFORE production. The future purge job must follow the RET-1 operational order above: confirm Auth-user disablement/ban while retaining denial state, stop or complete pending refund lockout retries, remove or anonymize the `client_deactivation_state` and `refund_auth_lockouts` rows, then purge the Auth user. This job is not implemented in F13.
 
 ### PO Decisions — Session 13 (2026-10-29)
 
@@ -416,7 +416,7 @@ F13 production blockers are registered centrally as F13-PB-01 (operational refun
 
 ### RET-1/RET-3 retention requirements
 
-RET-1's 30-day relationship-end clock includes `client_deactivation_state.auth_user_id` and `refund_auth_lockouts.auth_user_id`, which intentionally use `ON DELETE RESTRICT`, consistent with `client_accounts`. Before an Auth-user purge, remove or anonymize these rows. RET-3 requires technical and legal feasibility across recoverable copies, including backups, before production.
+RET-1's 30-day relationship-end clock includes `client_deactivation_state.auth_user_id` and `refund_auth_lockouts.auth_user_id`, which intentionally use `ON DELETE RESTRICT`, consistent with `client_accounts`. The future purge job's operational order (not implemented in F13) is: (a) disable/ban the Auth user and confirm it, retaining the deactivation denial state until confirmed; (b) stop or complete pending refund lockout retries; (c) only then remove or anonymize these rows; (d) purge the Auth user. RET-3 requires technical and legal feasibility across recoverable copies, including backups, before production.
 
 Spec Debate is complete; unresolved policy blocks only its affected slice. Unaffected slices may be planned separately; relevant PO decisions/approval and approved plan/tasks/analyze precede implementation. Future merges still require independent architect review, exact-head push and pull-request CI, current CodeRabbit approval/resolved threads and explicit PO merge approval under Constitution 1.3.0/docs/08. No PR/deployment is authorized here.
 
