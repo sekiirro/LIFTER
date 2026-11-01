@@ -200,17 +200,23 @@ for (const locale of ['ar', 'en'] as const) {
         await expectHeroMaterialContract(page);
         const buttonTextContrast = await expectHeroTextContrast(page);
         const buttonBoundary = await expectHeroButtonBoundary(page);
-        if (viewport.width <= 390) await expectHeroPreferencesSingleRow(page);
+        const preferenceMetrics =
+          viewport.width <= 390
+            ? await expectHeroPreferencesSingleRow(page)
+            : null;
         await expectHeroTouchTargets(page);
         await expectHeroFocusRing(page);
         if (locale === 'ar') await expectHeroPhoneGroupLtr(page);
         await expectHeroAxeClean(page);
         const dimensions =
           viewport.width >= 768 ? await expectNoPageScroll(page) : null;
-        const screenshot = await captureHeroScreenshot(
-          page,
-          `banner-${locale}-${theme}-${viewport.name}`,
-        );
+        const screenshot =
+          viewport.width <= 390
+            ? await captureHeroScreenshot(
+                page,
+                `banner-${locale}-${theme}-${viewport.name}`,
+              )
+            : '';
         const stage = await page
           .locator('[data-registration-hero]')
           .evaluate((element) => ({
@@ -234,6 +240,7 @@ for (const locale of ['ar', 'en'] as const) {
           buttonBoundary,
           ...stage,
           ...(dimensions ? { dimensions } : {}),
+          ...(preferenceMetrics ? { preferenceMetrics } : {}),
         });
       });
     }

@@ -256,6 +256,9 @@ for (const locale of ['ar', 'en'] as const) {
                 preferenceRows: preferenceMetrics.rows,
                 preferencePillHeight: preferenceMetrics.pillHeight,
                 preferenceControlRowHeight: preferenceMetrics.controlRowHeight,
+                preferencePaddingLeft: preferenceMetrics.paddingLeft,
+                preferencePaddingRight: preferenceMetrics.paddingRight,
+                preferenceChildInsets: preferenceMetrics.childInsets,
               }
             : {}),
           ...(gapMetrics
@@ -289,5 +292,4 @@ test('invalid registration remains generic, neutral, and form-free', async ({
   await expect(page.locator('[data-brand-scope]')).toHaveCount(0);
   await expect(page.locator('[data-registration-card] form')).toHaveCount(0);
   await expectHeroAxeClean(page);
-  await captureHeroScreenshot(page, 'invalid-en-light-mobile-390');
 });

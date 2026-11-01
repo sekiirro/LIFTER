@@ -15,7 +15,7 @@ import { inflateSync } from 'node:zlib';
  */
 export const heroEvidenceDirectory = join(
   tmpdir(),
-  'lifter-s24-hero-matrix-r3',
+  'lifter-s24-hero-matrix-r4',
 );
 
 export async function captureHeroScreenshot(page: Page, name: string) {
@@ -303,6 +303,8 @@ export async function expectHeroPreferencesSingleRow(page: Page) {
       rowHeight: Math.max(languageRect.height, themeRect.height),
       pillScrollWidth: pill.scrollWidth,
       pillClientWidth: pill.clientWidth,
+      paddingLeft: Number.parseFloat(getComputedStyle(pill).paddingLeft),
+      paddingRight: Number.parseFloat(getComputedStyle(pill).paddingRight),
       languageLeft: languageRect.left,
       languageRight: languageRect.right,
       themeLeft: themeRect.left,
@@ -316,6 +318,19 @@ export async function expectHeroPreferencesSingleRow(page: Page) {
         const rect = option.getBoundingClientRect();
         return { left: rect.left, right: rect.right };
       }),
+      childBounds: Array.from(pill.querySelectorAll<HTMLElement>('*'))
+        .map((child) => {
+          const rect = child.getBoundingClientRect();
+          return {
+            name:
+              child.getAttribute('data-testid') ?? child.tagName.toLowerCase(),
+            left: rect.left,
+            right: rect.right,
+            width: rect.width,
+            height: rect.height,
+          };
+        })
+        .filter((bounds) => bounds.width >= 2 && bounds.height >= 2),
     };
   });
   expect(Math.abs(metrics.languageTop - metrics.themeTop)).toBeLessThanOrEqual(
@@ -333,13 +348,34 @@ export async function expectHeroPreferencesSingleRow(page: Page) {
   for (const height of metrics.themeOptionHeights)
     expect(height).toBeGreaterThanOrEqual(44);
   for (const bounds of metrics.themeOptionBounds) {
-    expect(bounds.left).toBeGreaterThanOrEqual(metrics.pillLeft + 1);
-    expect(bounds.right).toBeLessThanOrEqual(metrics.pillRight - 1);
+    expect(bounds.left).toBeGreaterThanOrEqual(
+      metrics.pillLeft + metrics.paddingLeft,
+    );
+    expect(bounds.right).toBeLessThanOrEqual(
+      metrics.pillRight - metrics.paddingRight,
+    );
+  }
+  for (const bounds of metrics.childBounds) {
+    expect(
+      bounds.left,
+      `${bounds.name} must clear the pill's left rounded inset`,
+    ).toBeGreaterThanOrEqual(metrics.pillLeft + metrics.paddingLeft);
+    expect(
+      bounds.right,
+      `${bounds.name} must clear the pill's right rounded inset`,
+    ).toBeLessThanOrEqual(metrics.pillRight - metrics.paddingRight);
   }
   return {
     rows: 1,
     pillHeight: metrics.pillHeight,
     controlRowHeight: metrics.rowHeight,
+    paddingLeft: metrics.paddingLeft,
+    paddingRight: metrics.paddingRight,
+    childInsets: metrics.childBounds.map((bounds) => ({
+      name: bounds.name,
+      left: bounds.left - metrics.pillLeft,
+      right: metrics.pillRight - bounds.right,
+    })),
   };
 }
 
