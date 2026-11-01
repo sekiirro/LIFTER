@@ -11,7 +11,7 @@ Approved hosting direction (PO, 2026-10-27): Next.js + Cloudflare + serverless b
 | DB | **Supabase Postgres (Free)** with RLS | Postgres for money/versioning, JSONB for plan/form documents |
 | Auth | **Supabase Auth** (email/password, reset links), JWT verified by Postgres | RLS keys off a *signed* JWT (`auth.uid()`), so the tenant context can't be forged from SQL. Fits globally unique client email (D-08). |
 | UI / Design System | P0 Design System: tokens (neutral dark/light, emerald `#059669` default brand, workspace brand colors with contrast guard; D-18), AR-first RTL + EN LTR components, loading/empty/error states, accessible inputs (BRD-02, PRD-13.4/13.7) | Every feature builds on it; prevents per-screen drift |
-| Data access | `supabase-js` with the user's JWT → PostgREST/RPC under RLS. Postgres functions (`SECURITY INVOKER`) for multi-step transactions | No pooled-connection `SET LOCAL` problem. The service-role key is used only by `cron`, through scoped RPCs that take an explicit `workspace_id`, and every call is audited. |
+| Data access | `supabase-js` with the user's JWT → PostgREST/RPC under RLS. Reads use invoker rights where appropriate; privileged mutations use the established F12-F15 `SECURITY DEFINER` RPC pattern with explicit authorization and restricted grants. | No pooled-connection `SET LOCAL` problem. The service-role key is used only by `cron`, through scoped RPCs that take an explicit `workspace_id`, and every call is audited. |
 | Jobs | `jobs` table (outbox) + Cloudflare Cron Trigger (every minute) draining with `FOR UPDATE SKIP LOCKED` and unique `idempotency_key`. Alt: Supabase `pg_cron` | Serverless-compatible, $0, and retries never duplicate |
 | Files | Supabase Storage (private buckets, RLS, signed URLs). Overflow: Cloudflare R2 | Logos and profile images only. No progress photos (PRD-09). |
 | PDF / Excel | **Browser-side**: print-to-PDF with RTL print CSS, and ExcelJS in the browser from authorized API data | Chromium shapes Arabic correctly at $0. There's no headless browser available on the free plan. Server-side Browser Rendering is a later option. |
@@ -80,15 +80,15 @@ Removal (PO only) pseudonymizes the old email/phone so they become free while th
 
 ## Payroll / KPI
 
-Monthly `kpi_periods` with weights/targets frozen (changes apply next month). `productivity_units` are unique per subscription, created by the delivery RPC, and kept on refund. `payroll_entries` use approve = paid, immutable, with adjusting entries for corrections. Strikes are a rolling 90-day view. Every action is a PO decision record.
+Monthly `kpi_periods` with weights/targets frozen (changes apply next month). `productivity_units` are unique per subscription and are created by the activation transaction only after both workout and nutrition first-delivery rows succeed; they are kept on refund. `payroll_entries` use approve = paid, immutable, with adjusting entries for corrections. Strikes are a rolling 90-day view. Every action is a PO decision record.
 
 ## Plans, forms, catalogs: versioning
 
 - One mutable draft per plan. Publishing creates an immutable `plan_version` JSONB (with a schema version) that snapshots food macros and canonical exercise ids.
-- **First delivery:** both plans `ready` → one RPC publishes both, writes the delivery event, sets `activated_at` and the productivity unit. Idempotent via a unique key per subscription.
+- **First delivery:** workout and nutrition plans are delivered independently and may be delivered on different days. Persist each first delivery as an idempotent, concurrency-safe delivery record. Activate the subscription exactly once after both first deliveries succeed, creating the productivity unit in that same transaction; later plan edits do not restart activation or add first-delivery credit. See the canonical contract on branch `019-plan-core` (feature PR pending) and the supersession note in the [F12 data model](../specs/012-registration-approval/data-model.md).
 - **SLA (D-03):** `addWorkingDays(submittedAt, 5, {tz: 'Africa/Cairo', nonWorking: [Fri], cutoff: '18:00'})`. Submitted before 18:00 on a working day → that day is day 1. At/after 18:00, or on a Friday → day 1 is the next working day. Pure function, table-tested.
 - Forms: immutable template versions, pinned assignments, stable question ids, autosave draft rows.
-- Catalogs: foods/exercises are versioned. Food creators/PO may publish edits; PO exclusively manages global exercises and retires/merges global entries. Authorized staff manage workspace exercises. D16-2 through D16-10 values are recorded in docs/04-changes-and-questions.md.
+- Catalogs: foods/exercises are versioned. Only the creator recorded on the stable food identity (immutable `created_by`) or the PO may publish food edits, without moderation; authoring a later version grants no edit right, and other staff cannot edit a global food (D16-1b=A; F16 FR-009). `created_by` is also provenance visible to the PO only (D16-9); PO exclusively manages global exercises and removes/merges global entries. Remove is non-destructive and never changes existing client plans; authorized staff manage workspace exercises. D16-2 through D16-10 values are recorded in docs/04-changes-and-questions.md; the Remove-only amendment is S21-01.
 
 ## Telegram
 

@@ -106,7 +106,9 @@ Immutable id/event_id, workspace_id, client_id, subscription_id, schema_version=
 
 ## public.subscription_activations
 
-Immutable id, workspace_id, subscription_id, activated_at and delivery_event_id, with unique workspace/subscription and composite subscription relation. In F12 this table has no public writer or standalone activation action. Future P4 writers must record each first-plan delivery independently and activate exactly once after both first plans are delivered, under specs/019-plan-core. Delivery and activation operations must be idempotent and concurrency-safe; the two plan deliveries need not share a transaction. Their source-event relations are added forward when P4 exists. F12 internal due reader sees no rows until that integration.
+Immutable id, workspace_id, subscription_id, activated_at and delivery_event_id, with unique workspace/subscription and composite subscription relation. In F12 this table has no public writer or standalone activation action. Future P4 writer must prove independent delivery of both initial plans (possibly on different days) and append this activation fact, together with the productivity unit, in one exactly-once transaction after both deliveries succeed; its eventual source-event FK is added forward when P4 exists, not guessed here. F12 internal due reader sees no rows until that integration.
+
+> **Superseded by Plan Core (S20 §4 / spec 019):** First workout and nutrition deliveries are independent, idempotent delivery records and may occur on different days. After both succeed, activation, including the productivity unit, happens in one exactly-once transaction. See the `019-plan-core` branch for the canonical contract.
 
 Later due projection: first obligation is collected at approval; seq≥2 has no due date without activation. With activation, derive Cairo date + the exact issued offset, through that Cairo day-end; the 30-day default never overrides custom offsets. Do not set due date from signup, approval, request clock, or a cron placeholder. F13 cancellation/refund adds new events and shares subscription serialization; it cannot rewrite these snapshots.
 

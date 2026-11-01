@@ -9,7 +9,7 @@ Journeys = PRD-14 (A–G). `AT-*` = proposed acceptance test ids; each becomes a
 | Inv.3/BRD-03 External collection, commission owed | PRD-07, 11 | A, D | AT-FIN-01 payment recorded only after approval · AT-FIN-02 commission/share derived from snapshot | Resolved: D-13 (per collected payment), D-15 (full refund only) |
 | Inv.4 Historical financial truth | PRD-07 | D | AT-FIN-03 package price edit doesn't change prior subscription · AT-FIN-04 ledger rows reject UPDATE/DELETE at DB level · AT-FIN-05 refund = reversal event | — |
 | Inv.5 Post-sale registration only | PRD-02, 12 | A | AT-REG-01 no public routes except token registration, login, reset | — |
-| Inv.6 Activation on plan pair | PRD-06 | A | AT-ACT-01 one plan published → not active · AT-ACT-02 second delivery sets `activated_at` = its timestamp · AT-ACT-03 idempotent under concurrent publish | Single-plan visibility before pair (C5) |
+| Inv.6 Activation after first-plan deliveries | PRD-06 | A | AT-ACT-01 either first plan delivered alone → subscription not active · AT-ACT-02 workout and nutrition first deliveries may occur on different days; activate exactly once after both succeed · AT-ACT-03 retries/concurrent deliveries do not duplicate delivery, activation or productivity credit; later edits add none | P4 exposes each delivered plan under its access rules; activation waits for both |
 | BRD-02 Roles, multi-workspace staff, consistent role | PRD-02 | E | AT-ISO-07 role identical across memberships · AT-ISO-08 workspace switch scopes all reads | — |
 | BRD-02 Branding preview/publish | PRD-01 | — | AT-BRD-01 preview not visible on live registration until publish · AT-BRD-02 branding can't alter finance/security | **No PRD acceptance check** |
 | BRD-03 Packages data-driven, canonical id | PRD-07 | A | AT-PKG-01 token bound to package version; tamper → reject | Resolved: D-11 (PO-only; 30-day months 1/3/6/8/12 or custom days) |
@@ -33,8 +33,8 @@ Journeys = PRD-14 (A–G). `AT-*` = proposed acceptance test ids; each becomes a
 | BRD-06 Directory, indicators, no bulk | PRD-11 | — | AT-DIR-01 filters + indicators; no multi-select actions | — |
 | BRD-06 Timeline (meaningful only) | PRD-09 | B | AT-TL-01 listed event types only | — |
 | BRD-06 PO-only full export | PRD-11 | E | AT-EXP-03 WO/Trainer denied | — |
-| PRD-04 Workout planner | PRD-04 | P3 | AT-WRK-01 reorder/copy preserves sets; AT-WRK-02 workspace video is dynamically scoped to canonical exercise identity; AT-WRK-03 published-only audited export; AT-WRK-04 per-exercise defaults; AT-WRK-05 same-Plan-ID edits | Resolved by PO S20 Message B sections 1, 2 and 4 |
-| PRD-05 Nutrition & foods | PRD-05 | C | AT-NUT-01 exact decimal storage/integer display; AT-NUT-02 multiple active plans; AT-NUT-03 duplicate detection and D16-5 warn-only; AT-NUT-04 coach-approved alternatives and persistence; AT-NUT-05 global/workspace templates; AT-NUT-06 optional video hidden when absent | Resolved by PO S20 Message B sections 1, 3 and 4 |
+| PRD-04 Workout planner | PRD-04 | P3 | AT-WRK-01 reorder/copy preserves sets; AT-WRK-02 workspace video is dynamically scoped to canonical exercise identity; AT-WRK-03 published-only audited export; AT-WRK-04 per-exercise defaults; AT-WRK-05 same-Plan-ID edits; AT-WRK-06 catalog Remove is non-destructive and never removes/changes existing client plans | Resolved by PO S20 Message B sections 1, 2 and 4; Remove rule amended by PO S21-PO-4 |
+| PRD-05 Nutrition & foods | PRD-05 | C | AT-NUT-01 exact decimal storage/integer display; AT-NUT-02 multiple active plans; AT-NUT-03 genuine duplicates block, while only kcal discrepancy is warn-only; AT-NUT-04 coach-approved alternatives and persistence; AT-NUT-05 global/workspace templates; AT-NUT-06 optional video hidden when absent; AT-NUT-07 catalog Remove preserves existing plan references and snapshots | Resolved by PO S20 Message B sections 1, 3 and 4; Remove rule amended by PO S21-PO-4 |
 | PRD-10 Telegram | PRD-10 | E | AT-TG-01 one-time token linking; AT-TG-02 selector only if multiple accounts; AT-TG-03 revoked membership denies lookup; AT-TG-04 AI selects only coach-approved existing alternatives | Reminder defaults NEEDS SOURCE; Business auto-reply = feasibility |
 | D-08 Global email/phone uniqueness | PRD-02 | A, E | AT-ID-02 duplicate email/phone → exactly "This email is already registered. Contact support.", token not consumed, no workspace disclosed · AT-ID-04 no merge/transfer · AT-ID-05 after PO removal, email/phone reusable · AT-ID-06 staff email cannot register as client and vice versa (D-16) | — |
 | D-15 Full refund only (supersedes BRD-03/PRD-07 partial refunds) | PRD-07 | D | AT-FIN-09 refund = Σ collected (600 / 1200 cases) · AT-FIN-10 all collected revenue + commission reversed in refund month · AT-FIN-11 unpaid installments cancelled · AT-FIN-12 no partial-refund path exists · AT-FIN-04 originals untouched | — |
@@ -58,8 +58,8 @@ Journeys = PRD-14 (A–G). `AT-*` = proposed acceptance test ids; each becomes a
 
 | Feature requirements | Decision/source | Trace |
 |---|---|---|
-| F16 FR-001 through FR-021 | D16-1a/b/c, D16-2 through D16-10 | specs/016-exercise-food-catalogs/spec.md; PO S20 Message B section 1 |
-| Plan Core PC-FR-001 through PC-FR-007 | Plan Core/P4 override | specs/019-plan-core/spec.md; PO S20 Message B section 4 |
-| F17 FR-001 through FR-016 | D17-1 through D17-9 and Plan Core | specs/017-workout-planner/spec.md; PO S20 Message B sections 2 and 4 |
-| F18 FR-001 through FR-013 | D18-1/2/4/6/9 and Plan Core | specs/018-nutrition-planner/spec.md; PO S20 Message B sections 3 and 4 |
+| F16 FR-001 through FR-021 | D16-1a/b/c, D16-2 through D16-10 | spec on branch 016-exercise-food-catalogs (feature PR pending); PO S20 Message B section 1 |
+| Plan Core PC-FR-001 through PC-FR-007 | Plan Core/P4 override | spec on branch 019-plan-core (feature PR pending); PO S20 Message B section 4 |
+| F17 FR-001 through FR-016 | D17-1 through D17-9 and Plan Core | spec on branch 017-workout-planner (feature PR pending); PO S20 Message B sections 2 and 4 |
+| F18 FR-001 through FR-013 | D18-1/2/4/6/9 and Plan Core | spec on branch 018-nutrition-planner (feature PR pending); PO S20 Message B sections 3 and 4 |
 | F14b / Hero | Seven F14b decisions; approved prototype 97debaf | docs/04-changes-and-questions.md S20-22/23; DESIGN.md |

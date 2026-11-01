@@ -194,7 +194,7 @@ describe('F14 definer function privileges', () => {
     expect(row?.has_usage).toBe(false);
   });
 
-  it('limits service-role app_private call paths to the two public GC wrappers', async () => {
+  it('limits service-role app_private call paths to the public GC and lockout-worker wrappers', async () => {
     const paths = await db<ServiceRoleAppPrivatePath[]>`
       select format('%I.%I(%s)', n.nspname, p.proname,
         oidvectortypes(p.proargtypes)) as signature
@@ -207,8 +207,21 @@ describe('F14 definer function privileges', () => {
       order by signature
     `;
     expect(paths).toEqual([
+      {
+        signature:
+          'public.alert_expired_refund_auth_lockouts(integer, timestamp with time zone)',
+      },
       { signature: 'public.branding_gc_claim(integer)' },
       { signature: 'public.branding_gc_finalize(uuid)' },
+      { signature: 'public.claim_refund_auth_lockout_jobs(integer)' },
+      {
+        signature:
+          'public.complete_refund_auth_lockout_job(uuid, timestamp with time zone)',
+      },
+      {
+        signature:
+          'public.retry_refund_auth_lockout_job(uuid, integer, timestamp with time zone, text)',
+      },
     ]);
 
     const deniedRoles = await db<

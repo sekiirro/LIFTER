@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 const DEFAULT_A_PORTS = [
@@ -28,40 +28,15 @@ function valueFor(configText, section, key) {
   return match ? Number(match[1]) : undefined;
 }
 
-/** @param {{ LIFTER_SUPABASE_STACK?: string, API_URL?: string, SUPABASE_URL?: string, DB_URL?: string, SUPABASE_DB_URL?: string }} [env] */
-export function selectStack(env = process.env, root = process.cwd()) {
+/** @param {Record<string, string | undefined>} [env] */
+export function selectStack(env = process.env) {
   const requested = env.LIFTER_SUPABASE_STACK;
   if (requested && !['a', 'b', 'c', 'd'].includes(requested))
     throw new Error('Unsupported local Supabase stack');
   if (requested) return requested;
-
-  const apiUrl = env.API_URL || env.SUPABASE_URL;
-  const dbUrl = env.DB_URL || env.SUPABASE_DB_URL;
-  if (apiUrl && dbUrl) {
-    try {
-      const api = new URL(apiUrl);
-      const db = new URL(dbUrl);
-      for (const candidate of ['a', 'b', 'c', 'd']) {
-        try {
-          const config = getStackConfig(candidate, root);
-          if (
-            api.protocol === 'http:' &&
-            api.hostname === '127.0.0.1' &&
-            api.port === String(config.apiPort) &&
-            db.hostname === '127.0.0.1' &&
-            db.port === String(config.dbPort) &&
-            db.pathname === '/postgres'
-          )
-            return candidate;
-        } catch {
-          // A stack without a checked-in local profile cannot be selected here.
-        }
-      }
-    } catch {
-      // The selected-stack target validator reports malformed endpoints.
-    }
-  }
-  return 'a';
+  throw new Error(
+    'No local Supabase stack selected. Set LIFTER_SUPABASE_STACK to a, b, c, or d.',
+  );
 }
 
 export function getStackConfig(stack = 'a', root = process.cwd()) {
@@ -71,6 +46,11 @@ export function getStackConfig(stack = 'a', root = process.cwd()) {
     stack === 'a'
       ? path.join(root, 'supabase', 'config.toml')
       : path.join(root, `supabase-stack-${stack}`, 'supabase', 'config.toml');
+  if (!existsSync(configPath)) {
+    throw new Error(
+      `Expected profile config at ${configPath}; profile ${stack} must be provisioned locally in the lane's worktree.`,
+    );
+  }
   const configText = readFileSync(configPath, 'utf8');
   const projectId = configText.match(/^project_id\s*=\s*"([^"]+)"/m)?.[1];
   const expectedProjectId = stack === 'a' ? 'lifter' : `lifter-stack-${stack}`;
@@ -148,4 +128,12 @@ export function loadSelectedStackEnv(env = process.env, root = process.cwd()) {
     if (match && env[match[1]] === undefined) env[match[1]] = match[2];
   }
   return stack;
+}
+
+export function localSupabaseContainer(
+  service,
+  stack = selectStack(process.env),
+) {
+  const project = stack === 'a' ? 'lifter' : `lifter-stack-${stack}`;
+  return `supabase_${service}_${project}`;
 }

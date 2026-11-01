@@ -16,6 +16,13 @@ export function loadEnv() {
   const serviceRoleKey =
     process.env.SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   const dbUrl = process.env.DB_URL || process.env.SUPABASE_DB_URL;
+  const hasCompleteEnvironment = Boolean(
+    apiUrl && anonKey && serviceRoleKey && dbUrl,
+  );
+  if (stack === 'c' && !hasCompleteEnvironment)
+    throw new Error(
+      'Integration env missing: inject Stack C status environment',
+    );
   if (!apiUrl || !anonKey || !serviceRoleKey || !dbUrl) {
     throw new Error(
       'Integration env missing: run `supabase start` and export `supabase status -o env`',

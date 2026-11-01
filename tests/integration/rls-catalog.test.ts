@@ -50,6 +50,20 @@ const registrationPrivate = [
   'guard_registration_installment_insert',
   'validate_registration_link_schedule',
   'check_registration_link_schedule',
+  'f13_audit_freeze',
+  'f13_audit_renewal',
+  'f13_audit_renewal_date_revision',
+  'f13_audit_refund_ledger',
+  'f13_check_freeze',
+  'f13_check_refund_ledger',
+  'f13_freeze_contribution',
+  'f13_freeze_event_guard',
+  'f13_freeze_guard',
+  'f13_reflow_unstarted_renewal',
+  'f13_guard_terminal_payment',
+  'f13_validate_freeze',
+  'f13_validate_renewal',
+  'f13_validate_refund_ledger',
 ];
 const brandingPrivate = [
   'branding_actor_id',
@@ -209,6 +223,11 @@ describe('tenancy security catalog (T007)', () => {
         'current_staff_role',
         'enqueue_job',
         'forbid_delete',
+        'f13_actor_preflight',
+        'f13_create_refund_lockout_alert',
+        'f13_materialize_entitlement',
+        'f13_project_entitlement',
+        'f13_audit_client_deactivation',
         'guard_membership_update',
         'guard_package_offer_update',
         'guard_package_version_insert',
@@ -253,6 +272,7 @@ describe('tenancy security catalog (T007)', () => {
           'branding_staging_upload_allowed',
         ].includes(row.proname) ||
           (!row.proname.startsWith('f12_') &&
+            !row.proname.startsWith('f13_') &&
             !registrationPrivate.includes(row.proname) &&
             !brandingPrivate.includes(row.proname) &&
             !signupPrivate.includes(row.proname) &&
@@ -261,6 +281,7 @@ describe('tenancy security catalog (T007)', () => {
               'audit_row_change',
               'client_has_access',
               'enqueue_job',
+              'f13_audit_client_deactivation',
               'forbid_delete',
               'guard_package_offer_update',
               'guard_package_version_insert',
@@ -466,6 +487,55 @@ describe('audit security catalog (T005)', () => {
       {
         tgname: 'f12_no_update',
         relname: 'subscriptions',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'refund_allocation_events',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'refund_operations',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'subscription_freeze_events',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'subscription_freezes',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'subscription_obligation_cancellations',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'subscription_renewal_date_revisions',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'subscription_renewals',
         type: 19,
         tgenabled: 'O',
         proname: 'audit_events_immutable',
@@ -849,19 +919,36 @@ describe('registration security catalog', () => {
   });
   it('hardens complete F10 function inventory and pgcrypto schema/vector', async () => {
     const signatures = [
-      ...registrationPrivate.map(
-        (n) =>
-          'app_private.' +
-          n +
-          (n === 'registration_link_is_valid'
-            ? '(timestamptz,timestamptz,timestamptz,timestamptz)'
-            : n === 'validate_registration_link_schedule'
-              ? '(uuid,uuid)'
-              : '()'),
-      ),
+      ...registrationPrivate
+        .filter((name) => !name.startsWith('f13_'))
+        .map(
+          (n) =>
+            'app_private.' +
+            n +
+            (n === 'registration_link_is_valid'
+              ? '(timestamptz,timestamptz,timestamptz,timestamptz)'
+              : n === 'validate_registration_link_schedule'
+                ? '(uuid,uuid)'
+                : '()'),
+        ),
       'public.issue_registration_link(uuid,uuid,text,jsonb)',
       'public.registration_link_open(text)',
       'public.get_registration_link_commissions(uuid)',
+      'app_private.f13_audit_freeze()',
+      'app_private.f13_audit_renewal()',
+      'app_private.f13_audit_renewal_date_revision()',
+      'app_private.f13_audit_refund_ledger()',
+      'app_private.f13_check_freeze()',
+      'app_private.f13_check_refund_ledger()',
+      'app_private.f13_freeze_contribution(uuid,uuid,uuid)',
+      'app_private.f13_freeze_event_guard()',
+      'app_private.f13_freeze_guard()',
+      'app_private.f13_reflow_unstarted_renewal()',
+      'app_private.f13_guard_terminal_payment()',
+      'app_private.f13_validate_freeze(uuid,uuid)',
+      'app_private.f13_validate_renewal(uuid,uuid)',
+      'app_private.f13_validate_refund_ledger(uuid,uuid)',
+      'public.record_renewal(jsonb)',
     ];
     for (const name of signatures) {
       const [r] =
