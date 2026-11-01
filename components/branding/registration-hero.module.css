@@ -716,7 +716,7 @@
 
   .noArtwork .glassFrame {
     margin-block-start: calc(
-      var(--space-8) + var(--touch-min) + var(--space-5)
+      var(--space-8) + var(--touch-min) + var(--space-10) + var(--space-2)
     );
   }
 }
@@ -724,14 +724,6 @@
 @media (max-width: 36rem) {
   .phoneFields {
     grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 23rem) {
-  .noArtwork .glassFrame {
-    margin-block-start: calc(
-      var(--space-8) + var(--touch-min) + var(--space-10) + var(--space-2)
-    );
   }
 }
 
