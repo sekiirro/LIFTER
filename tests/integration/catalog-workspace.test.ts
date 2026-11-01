@@ -130,4 +130,80 @@ describe('workspace exercise tenant keys', () => {
         values (${kendoId}, ${id}, 2, '{}'::jsonb, ${trainerA.userId})`;
     })).rejects.toMatchObject({ code: '23503' });
   });
+
+  it('scopes workspace search and counts, keeps global results workspace-free, and denies foreign scope generically', async () => {
+    const canonicalId = randomUUID();
+    const kendoExerciseId = randomUUID();
+    const tojiExerciseId = randomUUID();
+    const rollbackMarker = 'rollback_catalog_workspace_search_fixture';
+    try {
+      await db.begin(async (tx) => {
+        await tx`insert into public.exercises (id, created_by, current_version)
+          values (${canonicalId}, ${po.userId}, 1)`;
+        await tx`insert into public.exercise_versions (exercise_id, version, payload, created_by)
+          values (${canonicalId}, 1, '{"marker":"global-canonical"}'::jsonb, ${po.userId})`;
+        await tx`insert into public.workspace_exercises (workspace_id, id, created_by, current_version)
+          values (${kendoId}, ${kendoExerciseId}, ${trainerA.userId}, 1), (${tojiId}, ${tojiExerciseId}, ${trainerB.userId}, 1)`;
+        await tx`insert into public.workspace_exercise_versions (workspace_id, workspace_exercise_id, version, payload, created_by)
+          values (${kendoId}, ${kendoExerciseId}, 1, '{"marker":"KENDO exercise"}'::jsonb, ${trainerA.userId}),
+            (${tojiId}, ${tojiExerciseId}, 1, '{"marker":"TOJI exercise"}'::jsonb, ${trainerB.userId})`;
+        await tx`insert into public.exercise_variations (workspace_id, exercise_id, created_by, current_version)
+          values (${kendoId}, ${canonicalId}, ${trainerA.userId}, 1), (${tojiId}, ${canonicalId}, ${trainerB.userId}, 1)`;
+        await tx`insert into public.exercise_variation_versions (workspace_id, exercise_id, version, payload, created_by)
+          values (${kendoId}, ${canonicalId}, 1, '{"marker":"KENDO variation"}'::jsonb, ${trainerA.userId}),
+            (${tojiId}, ${canonicalId}, 1, '{"marker":"TOJI variation"}'::jsonb, ${trainerB.userId})`;
+
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerA.userId, role: 'authenticated' })}, true)`;
+        const globalRows = await tx`select result_id, result_workspace_id, result_payload
+          from public.catalog_search('exercise', 'global-canonical', '{}'::jsonb, null, null)`;
+        expect(globalRows).toEqual([
+          { result_id: canonicalId, result_workspace_id: null, result_payload: { marker: 'global-canonical' } },
+        ]);
+        const kendoRows = await tx`select result_id, result_workspace_id, result_payload
+          from public.catalog_search('workspace_exercise', 'KENDO', '{}'::jsonb, null, ${kendoId})`;
+        expect(kendoRows).toEqual([
+          { result_id: kendoExerciseId, result_workspace_id: kendoId, result_payload: { marker: 'KENDO exercise' } },
+        ]);
+        const kendoVariations = await tx`select result_id, result_workspace_id, result_payload
+          from public.catalog_search('variation', 'KENDO', '{}'::jsonb, null, ${kendoId})`;
+        expect(kendoVariations).toEqual([
+          { result_id: canonicalId, result_workspace_id: kendoId, result_payload: { marker: 'KENDO variation' } },
+        ]);
+        const countsA = await tx`select
+            (select count(*)::int from public.workspace_exercises) as exercises,
+            (select count(*)::int from public.exercise_variations) as variations`;
+        expect(countsA).toEqual([{ exercises: 1, variations: 1 }]);
+
+        const denied = async (scope: string | null) => {
+          try {
+            await tx.savepoint(async (sp) =>
+              sp`select * from public.catalog_search('workspace_exercise', null, '{}'::jsonb, null, ${scope})`,
+            );
+            throw new Error('expected generic workspace denial');
+          } catch (error) {
+            expect(error).toMatchObject({ code: '42501', message: 'not_permitted' });
+            return { code: (error as { code: string }).code, message: (error as { message: string }).message };
+          }
+        };
+        const foreignDenied = await denied(tojiId);
+        const missingDenied = await denied(null);
+        expect(foreignDenied).toEqual(missingDenied);
+
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerB.userId, role: 'authenticated' })}, true)`;
+        const tojiRows = await tx`select result_id, result_workspace_id, result_payload
+          from public.catalog_search('workspace_exercise', 'TOJI', '{}'::jsonb, null, ${tojiId})`;
+        expect(tojiRows).toEqual([
+          { result_id: tojiExerciseId, result_workspace_id: tojiId, result_payload: { marker: 'TOJI exercise' } },
+        ]);
+        const countsB = await tx`select
+            (select count(*)::int from public.workspace_exercises) as exercises,
+            (select count(*)::int from public.exercise_variations) as variations`;
+        expect(countsB).toEqual([{ exercises: 1, variations: 1 }]);
+        throw new Error(rollbackMarker);
+      });
+    } catch (error) {
+      expect((error as Error).message).toBe(rollbackMarker);
+    }
+  });
 });
