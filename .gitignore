@@ -32,7 +32,13 @@ secrets/
 # Dependencies and generated output
 node_modules/
 vendor/
+!vendor/
+!vendor/glisse/
+!vendor/glisse/**
+vendor/glisse/node_modules/
 dist/
+!vendor/glisse/dist/
+!vendor/glisse/dist/**
 build/
 out/
 target/

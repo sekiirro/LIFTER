@@ -7,7 +7,6 @@
     "node": ">=24 <25"
   },
   "scripts": {
-    "postinstall": "node scripts/patch-glisse.mjs",
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
@@ -35,7 +34,7 @@
     "@supabase/ssr": "0.12.7",
     "@supabase/supabase-js": "2.118.0",
     "geist": "1.8.2",
-    "glisse": "0.5.0",
+    "glisse": "file:vendor/glisse",
     "libphonenumber-js": "1.13.15",
     "next": "16.4.3",
     "react": "19.3.1",
