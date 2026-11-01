@@ -103,6 +103,55 @@ describe('refund Auth lockout worker', () => {
     );
   });
 
+  it('propagates completion persistence failures without retrying or alerting', async () => {
+    const persistenceError = new Error('completion persistence failed');
+    const persistence = store({
+      markSucceeded: vi.fn(async () => {
+        throw persistenceError;
+      }),
+    });
+    const alert = vi.fn(async () => undefined);
+    await expect(
+      runAuthLockout(job, {
+        authAdmin: { updateUserById: vi.fn(async () => ({ error: null })) },
+        store: persistence,
+        now: () => new Date('2026-10-30T12:00:00.000Z'),
+        alertAfterAttempts: 1,
+        alert,
+      }),
+    ).rejects.toBe(persistenceError);
+    expect(persistence.markRetry).not.toHaveBeenCalled();
+    expect(alert).not.toHaveBeenCalled();
+  });
+
+  it('keeps void completion persistence semantics when Auth ban succeeds', async () => {
+    const persistence = store({ markSucceeded: vi.fn(async () => undefined) });
+    await expect(
+      runAuthLockout(job, {
+        authAdmin: { updateUserById: vi.fn(async () => ({ error: null })) },
+        store: persistence,
+        now: () => new Date('2026-10-30T12:00:00.000Z'),
+        alertAfterAttempts: 1,
+      }),
+    ).resolves.toEqual({ status: 'succeeded' });
+    expect(persistence.markRetry).not.toHaveBeenCalled();
+  });
+
+  it('treats an untyped false completion result as success per the worker seam', async () => {
+    const persistence = store({
+      markSucceeded: vi.fn(async () => false as unknown as void),
+    });
+    await expect(
+      runAuthLockout(job, {
+        authAdmin: { updateUserById: vi.fn(async () => ({ error: null })) },
+        store: persistence,
+        now: () => new Date('2026-10-30T12:00:00.000Z'),
+        alertAfterAttempts: 1,
+      }),
+    ).resolves.toEqual({ status: 'succeeded' });
+    expect(persistence.markRetry).not.toHaveBeenCalled();
+  });
+
   it('keeps the refund committed, schedules bounded retry, and raises a safe alert after persistent failure', async () => {
     const updateUserById = vi
       .fn()

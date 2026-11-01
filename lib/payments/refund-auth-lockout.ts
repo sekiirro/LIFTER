@@ -59,8 +59,6 @@ export async function runAuthLockout(
       ban_duration: AUTH_LOCKOUT_BAN_DURATION,
     });
     if (result.error) throw result.error;
-    await deps.store.markSucceeded(job.id, deps.now());
-    return { status: 'succeeded' };
   } catch (error) {
     const attempt = job.attempts + 1;
     const attemptAt = deps.now();
@@ -77,6 +75,11 @@ export async function runAuthLockout(
       });
     return { status: 'retry_scheduled', attempt };
   }
+
+  // Preserve the store's void completion semantics. Persistence failures
+  // propagate separately and are not classified as Auth Admin failures.
+  await deps.store.markSucceeded(job.id, deps.now());
+  return { status: 'succeeded' };
 }
 
 export type RefundLockoutTx = {

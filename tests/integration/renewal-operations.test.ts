@@ -380,7 +380,7 @@ it('T010 rejects renewal before initial activation and a second unstarted succes
   });
 });
 
-it('S22-PO-5 records renewal activation atomically and permits a renewal of that renewal', async () => {
+it('rejects renewing an expired predecessor with a started successor, then allows the tail', async () => {
   const { f, purchase, offerId } = await fixture();
   await probe(async (tx) => {
     await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
@@ -398,6 +398,40 @@ it('S22-PO-5 records renewal activation atomically and permits a renewal of that
     expect(first.status).toBe('ok');
     const firstReceipt = first.receipt as Record<string, unknown>;
     const firstId = firstReceipt.subscription_id as string;
+    const [beforeBranch] = await tx`
+      select
+        (select count(*)::int from app_private.subscription_renewal_operations where client_id=${purchase.t.id}) as operations,
+        (select count(*)::int from public.subscription_renewals where client_id=${purchase.t.id}) as renewals,
+        (select count(*)::int from public.subscription_activations a join public.subscriptions s
+          on s.workspace_id=a.workspace_id and s.id=a.subscription_id where s.client_id=${purchase.t.id}) as activations,
+        (select count(*)::int from public.subscription_installments i join public.subscriptions s
+          on s.workspace_id=i.workspace_id and s.id=i.subscription_id where s.client_id=${purchase.t.id}) as installments,
+        (select count(*)::int from public.audit_events where workspace_id=${f.wsA.id}) as audit_events,
+        app_private.f13_project_entitlement(${f.wsA.id},${purchase.sid},(clock_timestamp() at time zone 'Africa/Cairo')::date) as entitlement
+    `;
+    const branched = await renewal(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 1,
+      renewal_confirmed: true,
+      installments: null,
+    });
+    expect(branched).toMatchObject({ status: 'stale_state' });
+    const [afterBranch] = await tx`
+      select
+        (select count(*)::int from app_private.subscription_renewal_operations where client_id=${purchase.t.id}) as operations,
+        (select count(*)::int from public.subscription_renewals where client_id=${purchase.t.id}) as renewals,
+        (select count(*)::int from public.subscription_activations a join public.subscriptions s
+          on s.workspace_id=a.workspace_id and s.id=a.subscription_id where s.client_id=${purchase.t.id}) as activations,
+        (select count(*)::int from public.subscription_installments i join public.subscriptions s
+          on s.workspace_id=i.workspace_id and s.id=i.subscription_id where s.client_id=${purchase.t.id}) as installments,
+        (select count(*)::int from public.audit_events where workspace_id=${f.wsA.id}) as audit_events,
+        app_private.f13_project_entitlement(${f.wsA.id},${purchase.sid},(clock_timestamp() at time zone 'Africa/Cairo')::date) as entitlement
+    `;
+    expect(afterBranch).toEqual(beforeBranch);
     const [activation] = await tx`
       select a.activated_at,r.recorded_at,r.recording_date::text
       from public.subscription_activations a
@@ -431,6 +465,11 @@ it('S22-PO-5 records renewal activation atomically and permits a renewal of that
       where workspace_id=${f.wsA.id} and subscription_id in (${firstId},${secondId})
     `;
     expect(activationCount[0]!.count).toBe(2);
+    const [renewalCount] = await tx`
+      select count(*)::int as count from public.subscription_renewals
+      where client_id=${purchase.t.id}
+    `;
+    expect(renewalCount!.count).toBe(2);
   });
 });
 
@@ -472,8 +511,20 @@ it('rejects chaining from an unstarted renewal without writing lifecycle or audi
           on s.workspace_id=i.workspace_id and s.id=i.subscription_id where s.client_id=${purchase.t.id}) as installments,
         (select count(*)::int from public.payment_events e join public.subscriptions s
           on s.workspace_id=e.workspace_id and s.id=e.subscription_id where s.client_id=${purchase.t.id}) as payment_events,
-        (select count(*)::int from public.audit_events where workspace_id=${f.wsA.id}) as audit_events
+        (select count(*)::int from public.audit_events where workspace_id=${f.wsA.id}) as audit_events,
+        app_private.f13_project_entitlement(${f.wsA.id},${purchase.sid},(clock_timestamp() at time zone 'Africa/Cairo')::date) as entitlement
     `;
+    const predecessorRetry = await renewal(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 1,
+      renewal_confirmed: true,
+      installments: null,
+    });
+    expect(predecessorRetry).toMatchObject({ status: 'stale_state' });
     const chained = await renewal(tx, f.trainerA.userId, {
       workspace_id: f.wsA.id,
       client_id: purchase.t.id,
@@ -495,7 +546,8 @@ it('rejects chaining from an unstarted renewal without writing lifecycle or audi
           on s.workspace_id=i.workspace_id and s.id=i.subscription_id where s.client_id=${purchase.t.id}) as installments,
         (select count(*)::int from public.payment_events e join public.subscriptions s
           on s.workspace_id=e.workspace_id and s.id=e.subscription_id where s.client_id=${purchase.t.id}) as payment_events,
-        (select count(*)::int from public.audit_events where workspace_id=${f.wsA.id}) as audit_events
+        (select count(*)::int from public.audit_events where workspace_id=${f.wsA.id}) as audit_events,
+        app_private.f13_project_entitlement(${f.wsA.id},${purchase.sid},(clock_timestamp() at time zone 'Africa/Cairo')::date) as entitlement
     `;
     expect(after).toEqual(before);
   });

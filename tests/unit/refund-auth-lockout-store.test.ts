@@ -104,6 +104,15 @@ describe('Supabase Auth lockout store', () => {
     );
   });
 
+  it('requires a true completion RPC result and maps false to store unavailable', async () => {
+    const client = rpcClient({ data: false, error: null });
+    const store = new SupabaseAuthLockoutStore(client);
+
+    await expect(store.markSucceeded(job.id, new Date())).rejects.toThrow(
+      'Auth lockout store unavailable',
+    );
+  });
+
   it('rejects unsafe retry metadata before making an RPC call', async () => {
     const client = rpcClient({ data: true, error: null });
     const store = new SupabaseAuthLockoutStore(client);
