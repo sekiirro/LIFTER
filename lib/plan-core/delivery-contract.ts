@@ -1,5 +1,6 @@
-import { z } from 'zod';
-import { PlanIdSchema } from './schemas';
+import { PlanCoreValidationError, normalizePlanId } from './schemas';
+
+export { PlanCoreValidationError } from './schemas';
 
 /**
  * Shared Plan Core (F19) first-delivery and activation contract fixtures.
@@ -19,37 +20,195 @@ export const MAX_ACTIVATIONS = 1;
 // Kinds
 // ---------------------------------------------------------------------------
 
-export const DeliveryKindSchema = z.enum(['workout', 'nutrition']);
-export type DeliveryKind = z.infer<typeof DeliveryKindSchema>;
+export type DeliveryKind = 'workout' | 'nutrition';
+
+const DELIVERY_KINDS: readonly DeliveryKind[] = ['workout', 'nutrition'];
+
+export function normalizeDeliveryKind(input: unknown): DeliveryKind {
+  if (
+    typeof input !== 'string' ||
+    !DELIVERY_KINDS.includes(input as DeliveryKind)
+  ) {
+    throw new PlanCoreValidationError(
+      `Delivery kind must be one of: ${DELIVERY_KINDS.join(', ')}`,
+    );
+  }
+  return input as DeliveryKind;
+}
 
 // ---------------------------------------------------------------------------
 // Records
 // ---------------------------------------------------------------------------
 
-export const FirstDeliveryRecordSchema = z
-  .object({
-    deliveryId: z.string().uuid(),
-    subscriptionId: z.string().uuid(),
-    planId: PlanIdSchema,
-    kind: DeliveryKindSchema,
-    deliveredAt: z.string(),
-    idempotencyKey: z.string().uuid().optional(),
-    requestKey: z.string().uuid().optional(),
-    replayed: z.boolean().optional(),
-  })
-  .strict();
-export type FirstDeliveryRecord = z.infer<typeof FirstDeliveryRecordSchema>;
+export type FirstDeliveryRecord = {
+  deliveryId: string;
+  subscriptionId: string;
+  planId: string;
+  kind: DeliveryKind;
+  deliveredAt: string;
+  idempotencyKey?: string;
+  requestKey?: string;
+  replayed?: boolean;
+};
 
-export const ActivationSchema = z
-  .object({
-    subscriptionId: z.string().uuid(),
-    activatedAt: z.string(),
-    productivityUnitId: z.string().uuid().optional(),
-    activationCount: z.number().int().nonnegative().optional(),
-    activated: z.boolean().optional(),
-  })
-  .strict();
-export type Activation = z.infer<typeof ActivationSchema>;
+const FIRST_DELIVERY_KEYS = [
+  'deliveryId',
+  'subscriptionId',
+  'planId',
+  'kind',
+  'deliveredAt',
+  'idempotencyKey',
+  'requestKey',
+  'replayed',
+] as const;
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isUuid(value: unknown): value is string {
+  return typeof value === 'string' && UUID_RE.test(value);
+}
+
+function requireUuid(value: unknown, label: string): string {
+  if (!isUuid(value)) {
+    throw new PlanCoreValidationError(`${label} must be a valid UUID`);
+  }
+  return value;
+}
+
+function checkAllowedKeys(
+  record: Record<string, unknown>,
+  allowed: readonly string[],
+  label: string,
+): void {
+  for (const key of Object.keys(record)) {
+    if (!allowed.includes(key)) {
+      throw new PlanCoreValidationError(
+        `${label} has an unknown field: ${key}`,
+      );
+    }
+  }
+}
+
+export function normalizeFirstDeliveryRecord(
+  input: unknown,
+): FirstDeliveryRecord {
+  if (!isRecord(input)) {
+    throw new PlanCoreValidationError(
+      'First delivery record must be an object',
+    );
+  }
+  checkAllowedKeys(input, FIRST_DELIVERY_KEYS, 'First delivery record');
+
+  const deliveryId = requireUuid(input.deliveryId, 'Delivery id');
+  const subscriptionId = requireUuid(input.subscriptionId, 'Subscription id');
+  const planId = normalizePlanId(input.planId);
+  const kind = normalizeDeliveryKind(input.kind);
+  if (typeof input.deliveredAt !== 'string') {
+    throw new PlanCoreValidationError('Delivered at must be a string');
+  }
+  const deliveredAt = input.deliveredAt;
+
+  let idempotencyKey: string | undefined;
+  if (input.idempotencyKey !== undefined) {
+    idempotencyKey = requireUuid(input.idempotencyKey, 'Idempotency key');
+  }
+
+  let requestKey: string | undefined;
+  if (input.requestKey !== undefined) {
+    requestKey = requireUuid(input.requestKey, 'Request key');
+  }
+
+  let replayed: boolean | undefined;
+  if (input.replayed !== undefined) {
+    if (typeof input.replayed !== 'boolean') {
+      throw new PlanCoreValidationError('Replayed must be a boolean');
+    }
+    replayed = input.replayed;
+  }
+
+  return {
+    deliveryId,
+    subscriptionId,
+    planId,
+    kind,
+    deliveredAt,
+    ...(idempotencyKey !== undefined ? { idempotencyKey } : {}),
+    ...(requestKey !== undefined ? { requestKey } : {}),
+    ...(replayed !== undefined ? { replayed } : {}),
+  };
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+export type Activation = {
+  subscriptionId: string;
+  activatedAt: string;
+  productivityUnitId?: string;
+  activationCount?: number;
+  activated?: boolean;
+};
+
+const ACTIVATION_KEYS = [
+  'subscriptionId',
+  'activatedAt',
+  'productivityUnitId',
+  'activationCount',
+  'activated',
+] as const;
+
+export function normalizeActivation(input: unknown): Activation {
+  if (!isRecord(input)) {
+    throw new PlanCoreValidationError('Activation must be an object');
+  }
+  checkAllowedKeys(input, ACTIVATION_KEYS, 'Activation');
+
+  const subscriptionId = requireUuid(input.subscriptionId, 'Subscription id');
+  if (typeof input.activatedAt !== 'string') {
+    throw new PlanCoreValidationError('Activated at must be a string');
+  }
+  const activatedAt = input.activatedAt;
+
+  let productivityUnitId: string | undefined;
+  if (input.productivityUnitId !== undefined) {
+    productivityUnitId = requireUuid(
+      input.productivityUnitId,
+      'Productivity unit id',
+    );
+  }
+
+  let activationCount: number | undefined;
+  if (input.activationCount !== undefined) {
+    if (
+      typeof input.activationCount !== 'number' ||
+      !Number.isInteger(input.activationCount) ||
+      input.activationCount < 0
+    ) {
+      throw new PlanCoreValidationError(
+        'Activation count must be a non-negative integer',
+      );
+    }
+    activationCount = input.activationCount;
+  }
+
+  let activated: boolean | undefined;
+  if (input.activated !== undefined) {
+    if (typeof input.activated !== 'boolean') {
+      throw new PlanCoreValidationError('Activated must be a boolean');
+    }
+    activated = input.activated;
+  }
+
+  return {
+    subscriptionId,
+    activatedAt,
+    ...(productivityUnitId !== undefined ? { productivityUnitId } : {}),
+    ...(activationCount !== undefined ? { activationCount } : {}),
+    ...(activated !== undefined ? { activated } : {}),
+  };
+}
 
 // ---------------------------------------------------------------------------
 // In-memory helpers

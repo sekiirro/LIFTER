@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  ImmutableRevisionRefSchema,
+  normalizeImmutableRevisionRef,
   isRevisionAppendOnly,
   validateRevisionAppendOnly,
+  PlanCoreValidationError,
 } from '../../lib/plan-core/schemas';
 import {
   WORKOUT_FIRST_DELIVERY_FIXTURE,
@@ -13,13 +14,13 @@ const VALID_UUID = '123e4567-e89b-12d3-a456-426614174000';
 
 describe('plan core revision and audit contract', () => {
   it('preserves same plan identity across revisions', () => {
-    const rev1 = ImmutableRevisionRefSchema.parse({
+    const rev1 = normalizeImmutableRevisionRef({
       planId: VALID_UUID,
       revisionId: VALID_UUID,
       revisionNumber: 1,
       authorId: VALID_UUID,
     });
-    const rev2 = ImmutableRevisionRefSchema.parse({
+    const rev2 = normalizeImmutableRevisionRef({
       planId: VALID_UUID,
       revisionId: '223e4567-e89b-12d3-a456-426614174000',
       revisionNumber: 2,
@@ -29,7 +30,7 @@ describe('plan core revision and audit contract', () => {
   });
 
   it('preserves authorship on a revision', () => {
-    const parsed = ImmutableRevisionRefSchema.parse({
+    const parsed = normalizeImmutableRevisionRef({
       planId: VALID_UUID,
       revisionId: VALID_UUID,
       revisionNumber: 1,
@@ -39,22 +40,22 @@ describe('plan core revision and audit contract', () => {
   });
 
   it('rejects in-place revision mutation (overwrite)', () => {
-    const prev = ImmutableRevisionRefSchema.parse({
+    const prev = normalizeImmutableRevisionRef({
       planId: VALID_UUID,
       revisionId: VALID_UUID,
       revisionNumber: 1,
       authorId: VALID_UUID,
     });
-    const sameRevisionMutated = ImmutableRevisionRefSchema.parse({
+    const sameRevisionMutated = normalizeImmutableRevisionRef({
       planId: VALID_UUID,
       revisionId: VALID_UUID,
       revisionNumber: 1,
       authorId: VALID_UUID,
     });
     expect(isRevisionAppendOnly(prev, sameRevisionMutated)).toBe(false);
-    expect(() =>
-      validateRevisionAppendOnly(prev, sameRevisionMutated),
-    ).toThrow();
+    expect(() => validateRevisionAppendOnly(prev, sameRevisionMutated)).toThrow(
+      PlanCoreValidationError,
+    );
   });
 
   it('rejects a changed revision earning first-delivery credit', () => {
@@ -83,13 +84,13 @@ describe('plan core revision and audit contract', () => {
   });
 
   it('accepts a properly appended revision', () => {
-    const prev = ImmutableRevisionRefSchema.parse({
+    const prev = normalizeImmutableRevisionRef({
       planId: VALID_UUID,
       revisionId: VALID_UUID,
       revisionNumber: 1,
       authorId: VALID_UUID,
     });
-    const next = ImmutableRevisionRefSchema.parse({
+    const next = normalizeImmutableRevisionRef({
       planId: VALID_UUID,
       revisionId: '223e4567-e89b-12d3-a456-426614174000',
       revisionNumber: 2,

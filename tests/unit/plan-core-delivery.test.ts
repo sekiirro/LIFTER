@@ -1,8 +1,9 @@
 import { describe, expect, it } from 'vitest';
 import {
-  DeliveryKindSchema,
-  FirstDeliveryRecordSchema,
-  ActivationSchema,
+  PlanCoreValidationError,
+  normalizeDeliveryKind,
+  normalizeFirstDeliveryRecord,
+  normalizeActivation,
   MAX_ACTIVATIONS,
   WORKOUT_FIRST_DELIVERY_FIXTURE,
   NUTRITION_FIRST_DELIVERY_FIXTURE,
@@ -81,11 +82,20 @@ describe('plan core first-delivery and activation contract', () => {
 
   it('validates delivery and activation schemas', () => {
     expect(
-      FirstDeliveryRecordSchema.parse(WORKOUT_FIRST_DELIVERY_FIXTURE),
+      normalizeFirstDeliveryRecord(WORKOUT_FIRST_DELIVERY_FIXTURE),
     ).toBeTruthy();
-    expect(
-      ActivationSchema.parse(ACTIVATION_EXACTLY_ONCE_FIXTURE),
-    ).toBeTruthy();
-    expect(DeliveryKindSchema.parse('workout')).toBe('workout');
+    expect(normalizeActivation(ACTIVATION_EXACTLY_ONCE_FIXTURE)).toBeTruthy();
+    expect(normalizeDeliveryKind('workout')).toBe('workout');
+  });
+
+  it('rejects invalid delivery and activation payloads', () => {
+    expect(() =>
+      normalizeFirstDeliveryRecord({
+        ...WORKOUT_FIRST_DELIVERY_FIXTURE,
+        kind: 'x',
+      }),
+    ).toThrow(PlanCoreValidationError);
+    expect(() => normalizeDeliveryKind('x')).toThrow(PlanCoreValidationError);
+    expect(() => normalizeActivation({})).toThrow(PlanCoreValidationError);
   });
 });

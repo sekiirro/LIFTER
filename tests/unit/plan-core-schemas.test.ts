@@ -1,30 +1,33 @@
 import { describe, expect, it } from 'vitest';
 import {
-  PlanIdSchema,
-  PrivateDraftSchema,
-  ImmutableRevisionRefSchema,
-  CreatePlanInputSchema,
-  CreateModeSchema,
-  ReadinessStateSchema,
-  ExpectedPublishedVersionSchema,
+  PlanCoreValidationError,
+  normalizePlanId,
+  normalizePrivateDraft,
+  normalizeImmutableRevisionRef,
+  normalizeCreatePlanInput,
+  normalizeCreateMode,
+  normalizeReadinessState,
+  normalizeExpectedPublishedVersion,
+  normalizeRevisionTransition,
   isValidRevisionTransition,
-  RevisionTransitionSchema,
 } from '../../lib/plan-core/schemas';
 
 const VALID_UUID = '123e4567-e89b-12d3-a456-426614174000';
 
 describe('plan core lifecycle schemas', () => {
   it('accepts a valid plan id', () => {
-    expect(PlanIdSchema.parse(VALID_UUID)).toBe(VALID_UUID);
+    expect(normalizePlanId(VALID_UUID)).toBe(VALID_UUID);
   });
 
   it('rejects malformed plan ids', () => {
-    expect(() => PlanIdSchema.parse('not-a-uuid')).toThrow();
-    expect(() => PlanIdSchema.parse('')).toThrow();
+    expect(() => normalizePlanId('not-a-uuid')).toThrow(
+      PlanCoreValidationError,
+    );
+    expect(() => normalizePlanId('')).toThrow(PlanCoreValidationError);
   });
 
   it('accepts a private draft payload', () => {
-    const result = PrivateDraftSchema.parse({
+    const result = normalizePrivateDraft({
       planId: VALID_UUID,
       visibility: 'private',
     });
@@ -33,12 +36,12 @@ describe('plan core lifecycle schemas', () => {
 
   it('rejects a non-private draft', () => {
     expect(() =>
-      PrivateDraftSchema.parse({ planId: VALID_UUID, visibility: 'public' }),
-    ).toThrow();
+      normalizePrivateDraft({ planId: VALID_UUID, visibility: 'public' }),
+    ).toThrow(PlanCoreValidationError);
   });
 
   it('accepts an immutable revision reference', () => {
-    const result = ImmutableRevisionRefSchema.parse({
+    const result = normalizeImmutableRevisionRef({
       planId: VALID_UUID,
       revisionId: VALID_UUID,
       revisionNumber: 1,
@@ -51,18 +54,20 @@ describe('plan core lifecycle schemas', () => {
 
   it('rejects a revision without authorId', () => {
     expect(() =>
-      ImmutableRevisionRefSchema.parse({
+      normalizeImmutableRevisionRef({
         planId: VALID_UUID,
         revisionId: VALID_UUID,
         revisionNumber: 1,
         publishedVersion: 0,
       }),
-    ).toThrow();
+    ).toThrow(PlanCoreValidationError);
   });
 
   it('rejects implicit create (missing discriminator)', () => {
-    expect(() => CreatePlanInputSchema.parse({})).toThrow();
-    expect(() => CreatePlanInputSchema.parse({ title: 'x' })).toThrow();
+    expect(() => normalizeCreatePlanInput({})).toThrow(PlanCoreValidationError);
+    expect(() => normalizeCreatePlanInput({ title: 'x' })).toThrow(
+      PlanCoreValidationError,
+    );
   });
 
   it('rejects legacy create flags', () => {
@@ -76,47 +81,55 @@ describe('plan core lifecycle schemas', () => {
       { mode: 'template', templateId: VALID_UUID },
       { createNewPlan: true, templateId: VALID_UUID },
     ]) {
-      expect(() => CreatePlanInputSchema.parse(legacy)).toThrow();
+      expect(() => normalizeCreatePlanInput(legacy)).toThrow(
+        PlanCoreValidationError,
+      );
     }
   });
 
   it('rejects template create without templateId', () => {
+    expect(() => normalizeCreatePlanInput({ createMode: 'template' })).toThrow(
+      PlanCoreValidationError,
+    );
+  });
+
+  it('rejects template create with an invalid templateId', () => {
     expect(() =>
-      CreatePlanInputSchema.parse({ createMode: 'template' }),
-    ).toThrow();
+      normalizeCreatePlanInput({ createMode: 'template', templateId: null }),
+    ).toThrow(PlanCoreValidationError);
   });
 
   it('rejects existing_plan create without sourcePlanId', () => {
     expect(() =>
-      CreatePlanInputSchema.parse({ createMode: 'existing_plan' }),
-    ).toThrow();
+      normalizeCreatePlanInput({ createMode: 'existing_plan' }),
+    ).toThrow(PlanCoreValidationError);
   });
 
   it('rejects blank create with extra fields', () => {
     expect(() =>
-      CreatePlanInputSchema.parse({
+      normalizeCreatePlanInput({
         createMode: 'blank',
         templateId: VALID_UUID,
       }),
-    ).toThrow();
+    ).toThrow(PlanCoreValidationError);
     expect(() =>
-      CreatePlanInputSchema.parse({
+      normalizeCreatePlanInput({
         createMode: 'blank',
         sourcePlanId: VALID_UUID,
       }),
-    ).toThrow();
+    ).toThrow(PlanCoreValidationError);
   });
 
   it('accepts each valid create variant', () => {
-    expect(CreatePlanInputSchema.parse({ createMode: 'blank' })).toBeTruthy();
+    expect(normalizeCreatePlanInput({ createMode: 'blank' })).toBeTruthy();
     expect(
-      CreatePlanInputSchema.parse({
+      normalizeCreatePlanInput({
         createMode: 'template',
         templateId: VALID_UUID,
       }),
     ).toBeTruthy();
     expect(
-      CreatePlanInputSchema.parse({
+      normalizeCreatePlanInput({
         createMode: 'existing_plan',
         sourcePlanId: VALID_UUID,
       }),
@@ -124,9 +137,9 @@ describe('plan core lifecycle schemas', () => {
   });
 
   it('accepts only the three spec create modes', () => {
-    expect(CreateModeSchema.parse('blank')).toBe('blank');
-    expect(CreateModeSchema.parse('template')).toBe('template');
-    expect(CreateModeSchema.parse('existing_plan')).toBe('existing_plan');
+    expect(normalizeCreateMode('blank')).toBe('blank');
+    expect(normalizeCreateMode('template')).toBe('template');
+    expect(normalizeCreateMode('existing_plan')).toBe('existing_plan');
   });
 
   it('rejects non-spec create mode spellings', () => {
@@ -138,28 +151,30 @@ describe('plan core lifecycle schemas', () => {
       'from_existing_plan',
       'fromExistingPlan',
     ]) {
-      expect(() => CreateModeSchema.parse(spelling)).toThrow();
+      expect(() => normalizeCreateMode(spelling)).toThrow(
+        PlanCoreValidationError,
+      );
     }
   });
 
   it('accepts readiness states', () => {
-    expect(ReadinessStateSchema.parse('draft')).toBe('draft');
-    expect(ReadinessStateSchema.parse('ready_to_publish')).toBe(
+    expect(normalizeReadinessState('draft')).toBe('draft');
+    expect(normalizeReadinessState('ready_to_publish')).toBe(
       'ready_to_publish',
     );
   });
 
   it('accepts expected published version numbers', () => {
-    expect(ExpectedPublishedVersionSchema.parse(0)).toBe(0);
-    expect(ExpectedPublishedVersionSchema.parse(3)).toBe(3);
+    expect(normalizeExpectedPublishedVersion(0)).toBe(0);
+    expect(normalizeExpectedPublishedVersion(3)).toBe(3);
   });
 
   it('rejects invalid revision transitions', () => {
     expect(isValidRevisionTransition(1, 1)).toBe(false);
     expect(isValidRevisionTransition(2, 1)).toBe(false);
     expect(() => {
-      RevisionTransitionSchema.parse({ fromVersion: 2, toVersion: 2 });
-    }).toThrow();
+      normalizeRevisionTransition({ fromVersion: 2, toVersion: 2 });
+    }).toThrow(PlanCoreValidationError);
   });
 
   it('accepts valid revision transitions', () => {

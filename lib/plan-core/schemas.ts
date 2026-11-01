@@ -1,5 +1,3 @@
-import { z } from 'zod';
-
 /**
  * Shared Plan Core (F19) lifecycle schemas.
  *
@@ -9,121 +7,466 @@ import { z } from 'zod';
  * readiness state consumed by F17/F18 by reference (PC-FR-001..007).
  */
 
+export class PlanCoreValidationError extends Error {
+  readonly code = 'invalid_plan_core';
+
+  constructor(message: string) {
+    super(message);
+    this.name = 'PlanCoreValidationError';
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Helpers
+// ---------------------------------------------------------------------------
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+const UUID_RE =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isUuid(value: unknown): value is string {
+  return typeof value === 'string' && UUID_RE.test(value);
+}
+
+function requireUuid(value: unknown, label: string): string {
+  if (!isUuid(value)) {
+    throw new PlanCoreValidationError(`${label} must be a valid UUID`);
+  }
+  return value;
+}
+
+function requireNonNegativeInteger(value: unknown, label: string): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value < 0) {
+    throw new PlanCoreValidationError(
+      `${label} must be a non-negative integer`,
+    );
+  }
+  return value;
+}
+
+function requirePositiveInteger(value: unknown, label: string): number {
+  if (typeof value !== 'number' || !Number.isInteger(value) || value <= 0) {
+    throw new PlanCoreValidationError(`${label} must be a positive integer`);
+  }
+  return value;
+}
+
+function requireString(value: unknown, label: string): string {
+  if (typeof value !== 'string') {
+    throw new PlanCoreValidationError(`${label} must be a string`);
+  }
+  return value;
+}
+
+function checkAllowedKeys(
+  record: Record<string, unknown>,
+  allowed: readonly string[],
+  label: string,
+): void {
+  for (const key of Object.keys(record)) {
+    if (!allowed.includes(key)) {
+      throw new PlanCoreValidationError(
+        `${label} has an unknown field: ${key}`,
+      );
+    }
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Plan identity
 // ---------------------------------------------------------------------------
 
-export const PlanIdSchema = z.string().uuid();
-export type PlanId = z.infer<typeof PlanIdSchema>;
+export type PlanId = string;
+
+export function normalizePlanId(input: unknown): PlanId {
+  return requireUuid(input, 'Plan id');
+}
+
+export type RevisionId = string;
+
+export function normalizeRevisionId(input: unknown): RevisionId {
+  return requireUuid(input, 'Revision id');
+}
 
 // ---------------------------------------------------------------------------
 // Readiness state
 // ---------------------------------------------------------------------------
 
-export const ReadinessStateSchema = z.enum([
+export type ReadinessState =
+  'draft' | 'ready' | 'ready_to_publish' | 'published';
+
+const READINESS_STATES: readonly ReadinessState[] = [
   'draft',
   'ready',
   'ready_to_publish',
   'published',
-]);
-export type ReadinessState = z.infer<typeof ReadinessStateSchema>;
+];
+
+export function normalizeReadinessState(input: unknown): ReadinessState {
+  if (
+    typeof input !== 'string' ||
+    !READINESS_STATES.includes(input as ReadinessState)
+  ) {
+    throw new PlanCoreValidationError(
+      `Readiness state must be one of: ${READINESS_STATES.join(', ')}`,
+    );
+  }
+  return input as ReadinessState;
+}
 
 // ---------------------------------------------------------------------------
 // Private draft (never client-visible before publish)
 // ---------------------------------------------------------------------------
 
-export const PrivateDraftSchema = z
-  .object({
-    planId: PlanIdSchema,
-    draftId: z.string().uuid().optional(),
-    visibility: z.literal('private'),
-    content: z.unknown().optional(),
-    revision: z.number().int().nonnegative().optional(),
-    updatedAt: z.string().optional(),
-  })
-  .strict();
-export type PrivateDraft = z.infer<typeof PrivateDraftSchema>;
+export type PrivateDraft = {
+  planId: PlanId;
+  draftId?: RevisionId;
+  visibility: 'private';
+  content?: unknown;
+  revision?: number;
+  updatedAt?: string;
+};
+
+const PRIVATE_DRAFT_KEYS = [
+  'planId',
+  'draftId',
+  'visibility',
+  'content',
+  'revision',
+  'updatedAt',
+] as const;
+
+export function normalizePrivateDraft(input: unknown): PrivateDraft {
+  if (!isRecord(input)) {
+    throw new PlanCoreValidationError('Private draft must be an object');
+  }
+  checkAllowedKeys(input, PRIVATE_DRAFT_KEYS, 'Private draft');
+
+  const planId = normalizePlanId(input.planId);
+
+  let draftId: RevisionId | undefined;
+  if (input.draftId !== undefined) {
+    draftId = normalizeRevisionId(input.draftId);
+  }
+
+  if (input.visibility !== 'private') {
+    throw new PlanCoreValidationError('Draft visibility must be private');
+  }
+
+  let revision: number | undefined;
+  if (input.revision !== undefined) {
+    revision = requireNonNegativeInteger(input.revision, 'Draft revision');
+  }
+
+  let updatedAt: string | undefined;
+  if (input.updatedAt !== undefined) {
+    updatedAt = requireString(input.updatedAt, 'Draft updatedAt');
+  }
+
+  return {
+    planId,
+    ...(draftId ? { draftId } : {}),
+    visibility: 'private',
+    ...(input.content !== undefined ? { content: input.content } : {}),
+    ...(revision !== undefined ? { revision } : {}),
+    ...(updatedAt !== undefined ? { updatedAt } : {}),
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Immutable revision reference
 // ---------------------------------------------------------------------------
 
-export const RevisionIdSchema = z.string().uuid();
+export type ImmutableRevisionRef = {
+  planId: PlanId;
+  revisionId: RevisionId;
+  revisionNumber: number;
+  version?: number;
+  publishedVersion?: number;
+  expectedPublishedVersion?: number;
+  authorId: PlanId;
+  author?: PlanId;
+  createdAt?: string;
+  immutable?: true;
+};
 
-export const ImmutableRevisionRefSchema = z
-  .object({
-    planId: PlanIdSchema,
-    revisionId: RevisionIdSchema,
-    revisionNumber: z.number().int().positive(),
-    version: z.number().int().nonnegative().optional(),
-    publishedVersion: z.number().int().nonnegative().optional(),
-    expectedPublishedVersion: z.number().int().nonnegative().optional(),
-    authorId: z.string().uuid(),
-    author: z.string().uuid().optional(),
-    createdAt: z.string().optional(),
-    immutable: z.literal(true).optional(),
-  })
-  .strict();
-export type ImmutableRevisionRef = z.infer<typeof ImmutableRevisionRefSchema>;
+const IMMUTABLE_REVISION_KEYS = [
+  'planId',
+  'revisionId',
+  'revisionNumber',
+  'version',
+  'publishedVersion',
+  'expectedPublishedVersion',
+  'authorId',
+  'author',
+  'createdAt',
+  'immutable',
+] as const;
+
+export function normalizeImmutableRevisionRef(
+  input: unknown,
+): ImmutableRevisionRef {
+  if (!isRecord(input)) {
+    throw new PlanCoreValidationError(
+      'Immutable revision reference must be an object',
+    );
+  }
+  checkAllowedKeys(
+    input,
+    IMMUTABLE_REVISION_KEYS,
+    'Immutable revision reference',
+  );
+
+  const planId = normalizePlanId(input.planId);
+  const revisionId = normalizeRevisionId(input.revisionId);
+  const revisionNumber = requirePositiveInteger(
+    input.revisionNumber,
+    'Revision number',
+  );
+
+  let version: number | undefined;
+  if (input.version !== undefined) {
+    version = requireNonNegativeInteger(input.version, 'Version');
+  }
+
+  let publishedVersion: number | undefined;
+  if (input.publishedVersion !== undefined) {
+    publishedVersion = requireNonNegativeInteger(
+      input.publishedVersion,
+      'Published version',
+    );
+  }
+
+  let expectedPublishedVersion: number | undefined;
+  if (input.expectedPublishedVersion !== undefined) {
+    expectedPublishedVersion = requireNonNegativeInteger(
+      input.expectedPublishedVersion,
+      'Expected published version',
+    );
+  }
+
+  const authorId = normalizePlanId(input.authorId);
+
+  let author: PlanId | undefined;
+  if (input.author !== undefined) {
+    author = normalizePlanId(input.author);
+  }
+
+  let createdAt: string | undefined;
+  if (input.createdAt !== undefined) {
+    createdAt = requireString(input.createdAt, 'Created at');
+  }
+
+  let immutable: true | undefined;
+  if (input.immutable !== undefined) {
+    if (input.immutable !== true) {
+      throw new PlanCoreValidationError('Immutable must be true');
+    }
+    immutable = true;
+  }
+
+  return {
+    planId,
+    revisionId,
+    revisionNumber,
+    ...(version !== undefined ? { version } : {}),
+    ...(publishedVersion !== undefined ? { publishedVersion } : {}),
+    ...(expectedPublishedVersion !== undefined
+      ? { expectedPublishedVersion }
+      : {}),
+    authorId,
+    ...(author !== undefined ? { author } : {}),
+    ...(createdAt !== undefined ? { createdAt } : {}),
+    ...(immutable !== undefined ? { immutable } : {}),
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Expected published version (CAS)
 // ---------------------------------------------------------------------------
 
-export const ExpectedPublishedVersionSchema = z.number().int().nonnegative();
+export type ExpectedPublishedVersion = number;
+
+export function normalizeExpectedPublishedVersion(
+  input: unknown,
+): ExpectedPublishedVersion {
+  return requireNonNegativeInteger(input, 'Expected published version');
+}
 
 // ---------------------------------------------------------------------------
 // Explicit create modes
 // ---------------------------------------------------------------------------
 
-export const CreateModeSchema = z.enum(['blank', 'template', 'existing_plan']);
+export type CreateMode = 'blank' | 'template' | 'existing_plan';
 
-export const CreatePlanInputSchema = z.discriminatedUnion('createMode', [
-  z.object({ createMode: z.literal('blank') }).strict(),
-  z
-    .object({
-      createMode: z.literal('template'),
-      templateId: z.string().uuid(),
-    })
-    .strict(),
-  z
-    .object({
-      createMode: z.literal('existing_plan'),
-      sourcePlanId: PlanIdSchema,
-    })
-    .strict(),
-]);
-export type CreatePlanInput = z.infer<typeof CreatePlanInputSchema>;
+const CREATE_MODES: readonly CreateMode[] = [
+  'blank',
+  'template',
+  'existing_plan',
+];
+
+export function normalizeCreateMode(input: unknown): CreateMode {
+  if (
+    typeof input !== 'string' ||
+    !CREATE_MODES.includes(input as CreateMode)
+  ) {
+    throw new PlanCoreValidationError(
+      `Create mode must be one of: ${CREATE_MODES.join(', ')}`,
+    );
+  }
+  return input as CreateMode;
+}
+
+export type CreatePlanInput =
+  | { createMode: 'blank' }
+  | { createMode: 'template'; templateId: PlanId }
+  | { createMode: 'existing_plan'; sourcePlanId: PlanId };
+
+const BLANK_CREATE_KEYS = ['createMode'] as const;
+const TEMPLATE_CREATE_KEYS = ['createMode', 'templateId'] as const;
+const EXISTING_CREATE_KEYS = ['createMode', 'sourcePlanId'] as const;
+
+export function normalizeCreatePlanInput(input: unknown): CreatePlanInput {
+  if (!isRecord(input)) {
+    throw new PlanCoreValidationError('Create plan input must be an object');
+  }
+
+  const createMode = normalizeCreateMode(input.createMode);
+
+  if (createMode === 'blank') {
+    checkAllowedKeys(input, BLANK_CREATE_KEYS, 'Create plan input');
+    return { createMode: 'blank' };
+  }
+
+  if (createMode === 'template') {
+    checkAllowedKeys(input, TEMPLATE_CREATE_KEYS, 'Create plan input');
+    const templateId = normalizePlanId(input.templateId);
+    return { createMode: 'template', templateId };
+  }
+
+  checkAllowedKeys(input, EXISTING_CREATE_KEYS, 'Create plan input');
+  const sourcePlanId = normalizePlanId(input.sourcePlanId);
+  return { createMode: 'existing_plan', sourcePlanId };
+}
 
 // ---------------------------------------------------------------------------
 // Plan root / lifecycle
 // ---------------------------------------------------------------------------
 
-export const PlanRootSchema = z
-  .object({
-    planId: PlanIdSchema,
-    draft: PrivateDraftSchema.optional(),
-    currentRevision: ImmutableRevisionRefSchema.optional(),
-    publishedVersion: ExpectedPublishedVersionSchema.optional(),
-    readiness: ReadinessStateSchema.optional(),
-  })
-  .strict();
+export type PlanRoot = {
+  planId: PlanId;
+  draft?: PrivateDraft;
+  currentRevision?: ImmutableRevisionRef;
+  publishedVersion?: number;
+  readiness?: ReadinessState;
+};
+
+const PLAN_ROOT_KEYS = [
+  'planId',
+  'draft',
+  'currentRevision',
+  'publishedVersion',
+  'readiness',
+] as const;
+
+export function normalizePlanRoot(input: unknown): PlanRoot {
+  if (!isRecord(input)) {
+    throw new PlanCoreValidationError('Plan root must be an object');
+  }
+  checkAllowedKeys(input, PLAN_ROOT_KEYS, 'Plan root');
+
+  const planId = normalizePlanId(input.planId);
+
+  let draft: PrivateDraft | undefined;
+  if (input.draft !== undefined) {
+    draft = normalizePrivateDraft(input.draft);
+  }
+
+  let currentRevision: ImmutableRevisionRef | undefined;
+  if (input.currentRevision !== undefined) {
+    currentRevision = normalizeImmutableRevisionRef(input.currentRevision);
+  }
+
+  let publishedVersion: number | undefined;
+  if (input.publishedVersion !== undefined) {
+    publishedVersion = requireNonNegativeInteger(
+      input.publishedVersion,
+      'Published version',
+    );
+  }
+
+  let readiness: ReadinessState | undefined;
+  if (input.readiness !== undefined) {
+    readiness = normalizeReadinessState(input.readiness);
+  }
+
+  return {
+    planId,
+    ...(draft !== undefined ? { draft } : {}),
+    ...(currentRevision !== undefined ? { currentRevision } : {}),
+    ...(publishedVersion !== undefined ? { publishedVersion } : {}),
+    ...(readiness !== undefined ? { readiness } : {}),
+  };
+}
 
 // ---------------------------------------------------------------------------
 // Revision transition validation
 // ---------------------------------------------------------------------------
 
-export const RevisionTransitionSchema = z
-  .object({
-    fromVersion: z.number().int().nonnegative(),
-    toVersion: z.number().int().nonnegative(),
-    fromRevisionId: RevisionIdSchema.optional(),
-    toRevisionId: RevisionIdSchema.optional(),
-  })
-  .strict()
-  .refine((value) => value.toVersion > value.fromVersion, {
-    message: 'revision version must strictly increase',
-  });
+export type RevisionTransition = {
+  fromVersion: number;
+  toVersion: number;
+  fromRevisionId?: RevisionId;
+  toRevisionId?: RevisionId;
+};
+
+const REVISION_TRANSITION_KEYS = [
+  'fromVersion',
+  'toVersion',
+  'fromRevisionId',
+  'toRevisionId',
+] as const;
+
+export function normalizeRevisionTransition(
+  input: unknown,
+): RevisionTransition {
+  if (!isRecord(input)) {
+    throw new PlanCoreValidationError('Revision transition must be an object');
+  }
+  checkAllowedKeys(input, REVISION_TRANSITION_KEYS, 'Revision transition');
+
+  const fromVersion = requireNonNegativeInteger(
+    input.fromVersion,
+    'From version',
+  );
+  const toVersion = requireNonNegativeInteger(input.toVersion, 'To version');
+
+  if (toVersion <= fromVersion) {
+    throw new PlanCoreValidationError(
+      'revision version must strictly increase',
+    );
+  }
+
+  let fromRevisionId: RevisionId | undefined;
+  if (input.fromRevisionId !== undefined) {
+    fromRevisionId = normalizeRevisionId(input.fromRevisionId);
+  }
+
+  let toRevisionId: RevisionId | undefined;
+  if (input.toRevisionId !== undefined) {
+    toRevisionId = normalizeRevisionId(input.toRevisionId);
+  }
+
+  return {
+    fromVersion,
+    toVersion,
+    ...(fromRevisionId !== undefined ? { fromRevisionId } : {}),
+    ...(toRevisionId !== undefined ? { toRevisionId } : {}),
+  };
+}
 
 export function isValidRevisionTransition(
   fromVersion: number,
@@ -142,7 +485,7 @@ export function assertRevisionTransition(
   toVersion: number,
 ): void {
   if (!isValidRevisionTransition(fromVersion, toVersion)) {
-    throw new Error('invalid revision transition');
+    throw new PlanCoreValidationError('invalid revision transition');
   }
 }
 
@@ -165,39 +508,6 @@ export function validateRevisionAppendOnly(
   next: ImmutableRevisionRef,
 ): void {
   if (!isRevisionAppendOnly(previous, next)) {
-    throw new Error('revision must be append-only');
+    throw new PlanCoreValidationError('revision must be append-only');
   }
-}
-
-// ---------------------------------------------------------------------------
-// Parse helpers (null on failure, mirroring lib validation style)
-// ---------------------------------------------------------------------------
-
-function safe<T>(schema: z.ZodType<T>, value: unknown): T | null {
-  const result = schema.safeParse(value);
-  return result.success ? result.data : null;
-}
-
-export function parsePlanId(value: unknown): PlanId | null {
-  return safe(PlanIdSchema, value);
-}
-
-export function parsePrivateDraft(value: unknown): PrivateDraft | null {
-  return safe(PrivateDraftSchema, value);
-}
-
-export function parseImmutableRevisionRef(
-  value: unknown,
-): ImmutableRevisionRef | null {
-  return safe(ImmutableRevisionRefSchema, value);
-}
-
-export function parseCreatePlanInput(
-  value: unknown,
-): z.infer<typeof CreatePlanInputSchema> | null {
-  return safe(CreatePlanInputSchema, value);
-}
-
-export function parseReadinessState(value: unknown): ReadinessState | null {
-  return safe(ReadinessStateSchema, value);
 }
