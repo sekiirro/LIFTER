@@ -116,7 +116,7 @@ for (const locale of ['ar', 'en'] as const) {
         expect(response?.status()).toBe(200);
         const rail = page.getByTestId('nav-rail');
         const home = rail.getByRole('link', { name: m['nav.home'] });
-        const tooltip = rail.getByTestId('tooltip-home');
+        const tooltip = page.getByTestId('tooltip-home');
         await expect(tooltip).toBeHidden();
         const before = await rail.boundingBox();
         if (!before) throw new Error('Expected visible desktop dock');
