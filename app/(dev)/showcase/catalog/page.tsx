@@ -15,7 +15,11 @@ import {
   type CatalogListKind,
   type CatalogListStatus,
 } from '../../../../lib/catalog/list';
-import type { CatalogStaffRole } from '../../../../lib/catalog/exercise-editor';
+import {
+  EXERCISE_SCOPES,
+  type CatalogStaffRole,
+  type ExerciseScope,
+} from '../../../../lib/catalog/exercise-editor';
 import {
   mockExerciseAlternatives,
   mockExerciseEditorFixture,
@@ -31,6 +35,7 @@ type PreviewState = 'ready' | 'loading' | 'empty' | 'noResults' | 'error';
 type ShowcaseView = 'list' | 'editor';
 type ShowcaseRole = Extract<CatalogStaffRole, 'po' | 'trainer'>;
 type ShowcaseReps = 'fixed' | 'range';
+type ShowcaseScope = ExerciseScope;
 
 const previewStates: readonly PreviewState[] = [
   'ready',
@@ -42,6 +47,7 @@ const previewStates: readonly PreviewState[] = [
 const showcaseViews: readonly ShowcaseView[] = ['list', 'editor'];
 const showcaseRoles: readonly ShowcaseRole[] = ['po', 'trainer'];
 const showcaseReps: readonly ShowcaseReps[] = ['fixed', 'range'];
+const showcaseScopes: readonly ShowcaseScope[] = EXERCISE_SCOPES;
 
 function parseKind(value: string | string[] | undefined): CatalogListKind {
   const candidate = Array.isArray(value) ? value[0] : value;
@@ -76,6 +82,18 @@ function parseReps(value: string | string[] | undefined): ShowcaseReps {
     : 'fixed';
 }
 
+function parseScope(value: string | string[] | undefined): ShowcaseScope {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  return showcaseScopes.includes(candidate as ShowcaseScope)
+    ? (candidate as ShowcaseScope)
+    : 'global';
+}
+
+function parseBoolean(value: string | string[] | undefined): boolean {
+  const candidate = Array.isArray(value) ? value[0] : value;
+  return candidate === 'true';
+}
+
 function statusFor(state: PreviewState): CatalogListStatus {
   if (state === 'loading') return 'loading';
   if (state === 'error') return 'error';
@@ -88,10 +106,12 @@ type ShowcaseQuery = {
   view: ShowcaseView;
   role: ShowcaseRole;
   reps: ShowcaseReps;
+  scope: ShowcaseScope;
+  coachingWork: boolean;
 };
 
 function hrefFor(query: ShowcaseQuery): string {
-  return `/showcase/catalog?kind=${query.kind}&state=${query.state}&view=${query.view}&role=${query.role}&reps=${query.reps}`;
+  return `/showcase/catalog?kind=${query.kind}&state=${query.state}&view=${query.view}&role=${query.role}&reps=${query.reps}&scope=${query.scope}&coachingWork=${query.coachingWork}`;
 }
 
 export default async function CatalogShowcasePage({
@@ -103,6 +123,8 @@ export default async function CatalogShowcasePage({
     view?: string | string[];
     role?: string | string[];
     reps?: string | string[];
+    scope?: string | string[];
+    coachingWork?: string | string[];
   }>;
 }) {
   if (!isShowcaseEnabled(process.env)) notFound();
@@ -116,12 +138,16 @@ export default async function CatalogShowcasePage({
   const view = parseView(search.view);
   const role = parseRole(search.role);
   const reps = parseReps(search.reps);
+  const scope = parseScope(search.scope);
+  const coachingWork = parseBoolean(search.coachingWork);
   const query: ShowcaseQuery = {
     kind,
     state: previewState,
     view,
     role,
     reps,
+    scope,
+    coachingWork,
   };
   const allItems = kind === 'exercise' ? mockExerciseItems : mockFoodItems;
   const items = previewState === 'empty' ? [] : allItems;
@@ -149,6 +175,10 @@ export default async function CatalogShowcasePage({
   const repsLabels: Record<ShowcaseReps, string> = {
     fixed: m['catalog.showcaseRepsFixed'],
     range: m['catalog.showcaseRepsRange'],
+  };
+  const scopeLabels: Record<ShowcaseScope, string> = {
+    global: m['catalog.showcaseScopeGlobal'],
+    workspace: m['catalog.showcaseScopeWorkspace'],
   };
 
   return (
@@ -241,6 +271,59 @@ export default async function CatalogShowcasePage({
             </fieldset>
 
             <fieldset className={styles.controlGroup}>
+              <legend>{m['catalog.showcaseScope']}</legend>
+              <nav
+                aria-label={m['catalog.showcaseScope']}
+                className={styles.links}
+              >
+                {showcaseScopes.map((option) => (
+                  <a
+                    key={option}
+                    href={hrefFor({ ...query, scope: option })}
+                    className={styles.link}
+                    aria-current={scope === option ? 'page' : undefined}
+                    data-testid={`catalog-scope-${option}`}
+                  >
+                    {scopeLabels[option]}
+                  </a>
+                ))}
+              </nav>
+            </fieldset>
+
+            {scope === 'workspace' ? (
+              <fieldset className={styles.controlGroup}>
+                <legend>{m['catalog.showcaseCoachingWork']}</legend>
+                <nav
+                  aria-label={m['catalog.showcaseCoachingWork']}
+                  className={styles.links}
+                >
+                  {[
+                    { value: true, label: m['catalog.showcaseCoachingWorkOn'] },
+                    {
+                      value: false,
+                      label: m['catalog.showcaseCoachingWorkOff'],
+                    },
+                  ].map((option) => (
+                    <a
+                      key={String(option.value)}
+                      href={hrefFor({
+                        ...query,
+                        coachingWork: option.value,
+                      })}
+                      className={styles.link}
+                      aria-current={
+                        coachingWork === option.value ? 'page' : undefined
+                      }
+                      data-testid={`catalog-coaching-work-${option.value}`}
+                    >
+                      {option.label}
+                    </a>
+                  ))}
+                </nav>
+              </fieldset>
+            ) : null}
+
+            <fieldset className={styles.controlGroup}>
               <legend>{m['catalog.showcaseReps']}</legend>
               <nav
                 aria-label={m['catalog.showcaseReps']}
@@ -283,9 +366,11 @@ export default async function CatalogShowcasePage({
 
       {view === 'editor' ? (
         <ExerciseEditor
-          key={`editor-${role}-${reps}`}
+          key={`editor-${role}-${reps}-${scope}-${coachingWork}`}
           locale={locale}
           role={role}
+          scope={scope}
+          hasCoachingWork={scope === 'workspace' ? coachingWork : false}
           exercise={
             reps === 'range'
               ? mockExerciseEditorRangeFixture

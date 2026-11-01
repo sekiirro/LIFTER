@@ -24,6 +24,13 @@ export const CATALOG_STAFF_ROLES = [
 
 export type CatalogStaffRole = (typeof CATALOG_STAFF_ROLES)[number];
 
+export type ExerciseScope = 'global' | 'workspace';
+
+export const EXERCISE_SCOPES: readonly ExerciseScope[] = [
+  'global',
+  'workspace',
+] as const;
+
 export const EXERCISE_REPS_MODES = ['fixed', 'range'] as const;
 
 export type ExerciseRepsMode = (typeof EXERCISE_REPS_MODES)[number];
@@ -78,8 +85,26 @@ export type ExerciseEditorErrors = Partial<
 
 const EMPTY_VALUE = '—';
 
-export function canGovernGlobalExercise(role: CatalogStaffRole): boolean {
-  return role === 'po';
+export function canEditExercise(
+  scope: ExerciseScope,
+  role: CatalogStaffRole,
+  hasCoachingWork: boolean,
+): boolean {
+  if (scope === 'global') {
+    // Global rule unchanged: only the platform owner may create or edit
+    // global exercises; remove/merge governance stays PO-only.
+    return role === 'po';
+  }
+  // Workspace scope: PO, WO and Trainer with coaching_work may create/edit
+  // the workspace-only exercise; Sales and Client are read-only.
+  // catalog-api.md:14 exposes only read/write for workspace-only exercises
+  // (PO, WO, Trainer in own workspace); remove/merge are not exposed for
+  // workspace scope.
+  return (
+    role === 'po' ||
+    role === 'workspace_owner' ||
+    (role === 'trainer' && hasCoachingWork)
+  );
 }
 
 export function alternativeName(

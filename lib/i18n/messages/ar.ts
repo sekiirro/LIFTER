@@ -460,6 +460,7 @@ export const ar = {
   'catalog.editorRestore': 'استعادة',
   'catalog.editorMerge': 'دمج تكرار',
   'catalog.editorSave': 'حفظ التمرين العالمي',
+  'catalog.editorSaveWorkspace': 'حفظ تمرين مساحة العمل',
   'catalog.editorSaving': 'جارٍ حفظ التمرين…',
   'catalog.editorReadOnly': 'عرض فقط',
   'catalog.editorReadOnlyNotice':
@@ -483,4 +484,10 @@ export const ar = {
   'catalog.showcaseReps': 'افتراضي التكرارات',
   'catalog.showcaseRepsFixed': 'ثابت',
   'catalog.showcaseRepsRange': 'نطاق',
+  'catalog.showcaseScope': 'نطاق التمرين',
+  'catalog.showcaseScopeGlobal': 'عالمي',
+  'catalog.showcaseScopeWorkspace': 'مساحة العمل',
+  'catalog.showcaseCoachingWork': 'دعم التوجيه',
+  'catalog.showcaseCoachingWorkOn': 'مفعل',
+  'catalog.showcaseCoachingWorkOff': 'معطل',
 } as const;

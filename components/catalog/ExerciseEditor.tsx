@@ -16,13 +16,14 @@ import {
 import {
   alternativeName,
   buildExerciseInput,
-  canGovernGlobalExercise,
+  canEditExercise,
   draftFromExercise,
   formatExerciseReps,
   formatExerciseRir,
   hasExerciseEditorErrors,
   validateExerciseEditorDraft,
   type CatalogStaffRole,
+  type ExerciseScope,
   type ExerciseAlternativeOption,
   type ExerciseEditorDraft,
   type ExerciseEditorErrorCode,
@@ -37,6 +38,8 @@ export type ExerciseEditorStatus = 'ready' | 'saving' | 'error';
 export type ExerciseEditorProps = {
   locale: Locale;
   role: CatalogStaffRole;
+  scope?: ExerciseScope;
+  hasCoachingWork?: boolean;
   exercise?: NormalizedExercise | null;
   alternatives?: readonly ExerciseAlternativeOption[];
   initialDraft?: ExerciseEditorDraft;
@@ -108,6 +111,8 @@ function updateDraft(
 export function ExerciseEditor({
   locale,
   role,
+  scope = 'global',
+  hasCoachingWork = false,
   exercise = null,
   alternatives = [],
   initialDraft,
@@ -130,7 +135,8 @@ export function ExerciseEditor({
     initialErrors ?? {},
   );
 
-  const canGovern = canGovernGlobalExercise(role);
+  const canEdit = canEditExercise(scope, role, hasCoachingWork);
+  const canGovern = scope === 'global' && role === 'po';
   const state = lifecycleState ?? exercise?.lifecycleState ?? 'active';
   const reps = repsFromDraft(draft);
   const repsText = formatExerciseReps(reps);
@@ -177,7 +183,7 @@ export function ExerciseEditor({
 
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    if (!canGovern) return;
+    if (!canEdit) return;
     const nextErrors = validateExerciseEditorDraft(draft);
     setErrors(nextErrors);
     if (hasExerciseEditorErrors(nextErrors)) return;
@@ -192,13 +198,14 @@ export function ExerciseEditor({
       lang={locale}
       data-catalog-locale={locale}
       data-catalog-role={role}
+      data-catalog-scope={scope}
       data-testid="exercise-editor"
       aria-labelledby={titleId}
     >
       <header className={styles.header}>
         <div className={styles.titleRow}>
           <h2 id={titleId}>{m['catalog.editorTitle']}</h2>
-          {!canGovern && (
+          {!canEdit && (
             <span className={styles.badge}>{m['catalog.editorReadOnly']}</span>
           )}
         </div>
@@ -320,7 +327,7 @@ export function ExerciseEditor({
               inputProps={{
                 id: `${base}-name-ar`,
                 value: draft.names.ar,
-                disabled: !canGovern,
+                disabled: !canEdit,
                 onChange: (event) => setName('ar', event.currentTarget.value),
               }}
             />
@@ -330,7 +337,7 @@ export function ExerciseEditor({
               inputProps={{
                 id: `${base}-name-en`,
                 value: draft.names.en,
-                disabled: !canGovern,
+                disabled: !canEdit,
                 onChange: (event) => setName('en', event.currentTarget.value),
               }}
             />
@@ -341,7 +348,7 @@ export function ExerciseEditor({
               <select
                 id={`${base}-primary-muscle`}
                 value={draft.primaryMuscle}
-                disabled={!canGovern}
+                disabled={!canEdit}
                 aria-invalid={errors.primaryMuscle ? true : undefined}
                 aria-describedby={
                   errors.primaryMuscle
@@ -372,7 +379,7 @@ export function ExerciseEditor({
               <select
                 id={`${base}-equipment`}
                 value={draft.equipment}
-                disabled={!canGovern}
+                disabled={!canEdit}
                 aria-invalid={errors.equipment ? true : undefined}
                 aria-describedby={
                   errors.equipment ? `${base}-equipment-error` : undefined
@@ -410,7 +417,7 @@ export function ExerciseEditor({
                 min: 0,
                 max: 100,
                 value: draft.warmupSets,
-                disabled: !canGovern,
+                disabled: !canEdit,
                 onChange: (event) =>
                   setValue('warmupSets', event.currentTarget.value),
               }}
@@ -425,7 +432,7 @@ export function ExerciseEditor({
                 min: 0,
                 max: 100,
                 value: draft.workingSets,
-                disabled: !canGovern,
+                disabled: !canEdit,
                 onChange: (event) =>
                   setValue('workingSets', event.currentTarget.value),
               }}
@@ -443,7 +450,7 @@ export function ExerciseEditor({
                     name={`${base}-reps-mode`}
                     value={mode}
                     checked={draft.repsMode === mode}
-                    disabled={!canGovern}
+                    disabled={!canEdit}
                     onChange={() => setValue('repsMode', mode)}
                   />
                   <label htmlFor={`${base}-reps-${mode}`}>
@@ -468,7 +475,7 @@ export function ExerciseEditor({
                   min: 1,
                   max: 1000,
                   value: draft.repsValue,
-                  disabled: !canGovern,
+                  disabled: !canEdit,
                   onChange: (event) =>
                     setValue('repsValue', event.currentTarget.value),
                 }}
@@ -486,7 +493,7 @@ export function ExerciseEditor({
                   min: 1,
                   max: 1000,
                   value: draft.repsMin,
-                  disabled: !canGovern,
+                  disabled: !canEdit,
                   onChange: (event) =>
                     setValue('repsMin', event.currentTarget.value),
                 }}
@@ -501,7 +508,7 @@ export function ExerciseEditor({
                   min: 1,
                   max: 1000,
                   value: draft.repsMax,
-                  disabled: !canGovern,
+                  disabled: !canEdit,
                   onChange: (event) =>
                     setValue('repsMax', event.currentTarget.value),
                 }}
@@ -525,7 +532,7 @@ export function ExerciseEditor({
                 min: 0,
                 max: 100000,
                 value: draft.restSeconds,
-                disabled: !canGovern,
+                disabled: !canEdit,
                 onChange: (event) =>
                   setValue('restSeconds', event.currentTarget.value),
               }}
@@ -540,7 +547,7 @@ export function ExerciseEditor({
                 min: 0,
                 max: 10,
                 value: draft.rir,
-                disabled: !canGovern,
+                disabled: !canEdit,
                 onChange: (event) => setValue('rir', event.currentTarget.value),
               }}
             />
@@ -564,7 +571,7 @@ export function ExerciseEditor({
                         id={id}
                         type="checkbox"
                         checked={checked}
-                        disabled={!canGovern || (!checked && alternativesAtMax)}
+                        disabled={!canEdit || (!checked && alternativesAtMax)}
                         aria-describedby={`${base}-alternatives-hint`}
                         onChange={(event) =>
                           toggleAlternative(
@@ -598,7 +605,7 @@ export function ExerciseEditor({
           </fieldset>
         </fieldset>
 
-        {canGovern ? (
+        {canEdit ? (
           <>
             <div className={styles.actions}>
               <Button
@@ -606,34 +613,40 @@ export function ExerciseEditor({
                 loading={status === 'saving'}
                 loadingLabel={m['catalog.editorSaving']}
               >
-                {m['catalog.editorSave']}
+                {scope === 'global'
+                  ? m['catalog.editorSave']
+                  : m['catalog.editorSaveWorkspace']}
               </Button>
             </div>
-            <section
-              className={styles.governance}
-              data-testid="exercise-governance"
-              aria-labelledby={`${base}-governance`}
-            >
-              <h3 id={`${base}-governance`}>{m['catalog.editorGovernance']}</h3>
-              <p>{m['catalog.editorGovernanceIntro']}</p>
-              <dl className={styles.lifecycle}>
-                <div>
-                  <dt>{m['catalog.editorLifecycle']}</dt>
-                  <dd>{lifecycleLabels[state]}</dd>
+            {canGovern && (
+              <section
+                className={styles.governance}
+                data-testid="exercise-governance"
+                aria-labelledby={`${base}-governance`}
+              >
+                <h3 id={`${base}-governance`}>
+                  {m['catalog.editorGovernance']}
+                </h3>
+                <p>{m['catalog.editorGovernanceIntro']}</p>
+                <dl className={styles.lifecycle}>
+                  <div>
+                    <dt>{m['catalog.editorLifecycle']}</dt>
+                    <dd>{lifecycleLabels[state]}</dd>
+                  </div>
+                </dl>
+                <div className={styles.governanceActions}>
+                  <Button variant="destructive" onClick={onRemove}>
+                    {m['catalog.editorRemove']}
+                  </Button>
+                  <Button variant="secondary" onClick={onRestore}>
+                    {m['catalog.editorRestore']}
+                  </Button>
+                  <Button variant="secondary" onClick={onMerge}>
+                    {m['catalog.editorMerge']}
+                  </Button>
                 </div>
-              </dl>
-              <div className={styles.governanceActions}>
-                <Button variant="destructive" onClick={onRemove}>
-                  {m['catalog.editorRemove']}
-                </Button>
-                <Button variant="secondary" onClick={onRestore}>
-                  {m['catalog.editorRestore']}
-                </Button>
-                <Button variant="secondary" onClick={onMerge}>
-                  {m['catalog.editorMerge']}
-                </Button>
-              </div>
-            </section>
+              </section>
+            )}
           </>
         ) : (
           <p className={styles.readOnly} data-testid="exercise-read-only">

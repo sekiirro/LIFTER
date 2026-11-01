@@ -474,6 +474,7 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.editorRestore': 'Restore',
   'catalog.editorMerge': 'Merge duplicate',
   'catalog.editorSave': 'Save global exercise',
+  'catalog.editorSaveWorkspace': 'Save workspace exercise',
   'catalog.editorSaving': 'Saving exercise…',
   'catalog.editorReadOnly': 'View only',
   'catalog.editorReadOnlyNotice':
@@ -501,4 +502,10 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.showcaseReps': 'Reps default',
   'catalog.showcaseRepsFixed': 'Fixed',
   'catalog.showcaseRepsRange': 'Range',
+  'catalog.showcaseScope': 'Exercise scope',
+  'catalog.showcaseScopeGlobal': 'Global',
+  'catalog.showcaseScopeWorkspace': 'Workspace',
+  'catalog.showcaseCoachingWork': 'Coaching work',
+  'catalog.showcaseCoachingWorkOn': 'On',
+  'catalog.showcaseCoachingWorkOff': 'Off',
 };

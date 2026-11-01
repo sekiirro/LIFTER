@@ -4,7 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { ExerciseEditor } from '../../components/catalog/ExerciseEditor';
 import {
   buildExerciseInput,
-  canGovernGlobalExercise,
+  canEditExercise,
   draftFromExercise,
   formatExerciseReps,
   validateExerciseEditorDraft,
@@ -24,6 +24,8 @@ function render(props: Record<string, unknown> = {}) {
     createElement(ExerciseEditor, {
       locale: 'en',
       role: 'po',
+      scope: 'global',
+      hasCoachingWork: false,
       exercise: mockExerciseEditorFixture,
       alternatives: mockExerciseAlternatives,
       ...props,
@@ -160,19 +162,19 @@ describe('exercise editor fixed-vs-range validation', () => {
 });
 
 describe('exercise editor role gating', () => {
-  it('allows only the platform owner to govern global exercises', () => {
-    expect(canGovernGlobalExercise('po')).toBe(true);
+  it('keeps the global rule unchanged: only PO may create or edit global exercises', () => {
+    expect(canEditExercise('global', 'po', false)).toBe(true);
     for (const role of [
       'workspace_owner',
       'trainer',
       'sales',
       'client',
     ] satisfies CatalogStaffRole[]) {
-      expect(canGovernGlobalExercise(role)).toBe(false);
+      expect(canEditExercise('global', role, false)).toBe(false);
     }
   });
 
-  it('renders governance and global save controls for the PO', () => {
+  it('renders governance and save controls for the PO on a global exercise', () => {
     const html = render({ role: 'po' });
     expect(html).toContain('data-testid="exercise-governance"');
     expect(html).toContain(en['catalog.editorRemove']);
@@ -180,9 +182,10 @@ describe('exercise editor role gating', () => {
     expect(html).toContain(en['catalog.editorMerge']);
     expect(html).toContain(en['catalog.editorSave']);
     expect(html).not.toContain('data-testid="exercise-read-only"');
+    expect(html).not.toContain('disabled');
   });
 
-  it('hides governance and global save controls from non-PO roles', () => {
+  it('hides governance and save controls from non-PO roles on a global exercise', () => {
     for (const role of [
       'workspace_owner',
       'trainer',
@@ -197,7 +200,74 @@ describe('exercise editor role gating', () => {
       expect(html).toContain('data-testid="exercise-read-only"');
       expect(html).toContain(en['catalog.editorReadOnlyNotice']);
       expect(html).toContain(`data-catalog-role="${role}"`);
+      expect(html).toContain('disabled');
     }
+  });
+});
+
+describe('exercise editor workspace scope', () => {
+  it('allows a trainer with coaching work to edit a workspace exercise', () => {
+    expect(canEditExercise('workspace', 'trainer', true)).toBe(true);
+    const html = render({
+      role: 'trainer',
+      scope: 'workspace',
+      hasCoachingWork: true,
+    });
+    expect(html).not.toContain('data-testid="exercise-read-only"');
+    expect(html).not.toContain('data-testid="exercise-governance"');
+    expect(html).toContain(en['catalog.editorSaveWorkspace']);
+    expect(html).not.toContain('disabled');
+  });
+
+  it('keeps a trainer without coaching work read-only on a workspace exercise', () => {
+    expect(canEditExercise('workspace', 'trainer', false)).toBe(false);
+    const html = render({
+      role: 'trainer',
+      scope: 'workspace',
+      hasCoachingWork: false,
+    });
+    expect(html).toContain('data-testid="exercise-read-only"');
+    expect(html).toContain(en['catalog.editorReadOnlyNotice']);
+    expect(html).not.toContain(en['catalog.editorSaveWorkspace']);
+    expect(html).not.toContain('data-testid="exercise-governance"');
+    expect(html).toContain('disabled');
+  });
+
+  it('keeps a trainer read-only on a global exercise', () => {
+    expect(canEditExercise('global', 'trainer', false)).toBe(false);
+    const html = render({ role: 'trainer', scope: 'global' });
+    expect(html).toContain('data-testid="exercise-read-only"');
+    expect(html).toContain(en['catalog.editorReadOnlyNotice']);
+    expect(html).not.toContain(en['catalog.editorSave']);
+    expect(html).not.toContain('data-testid="exercise-governance"');
+    expect(html).toContain('disabled');
+  });
+
+  it('keeps sales read-only on both scopes', () => {
+    for (const scope of ['global', 'workspace'] as const) {
+      expect(canEditExercise(scope, 'sales', false)).toBe(false);
+      const html = render({ role: 'sales', scope });
+      expect(html).toContain('data-testid="exercise-read-only"');
+      expect(html).toContain(en['catalog.editorReadOnlyNotice']);
+      expect(html).not.toContain(en['catalog.editorSave']);
+      expect(html).not.toContain(en['catalog.editorSaveWorkspace']);
+      expect(html).not.toContain('data-testid="exercise-governance"');
+      expect(html).toContain('disabled');
+    }
+  });
+
+  it('lets the PO edit both scopes and shows governance only on global', () => {
+    const globalHtml = render({ role: 'po', scope: 'global' });
+    expect(canEditExercise('global', 'po', false)).toBe(true);
+    expect(globalHtml).toContain(en['catalog.editorSave']);
+    expect(globalHtml).toContain('data-testid="exercise-governance"');
+    expect(globalHtml).not.toContain('data-testid="exercise-read-only"');
+
+    const workspaceHtml = render({ role: 'po', scope: 'workspace' });
+    expect(canEditExercise('workspace', 'po', false)).toBe(true);
+    expect(workspaceHtml).toContain(en['catalog.editorSaveWorkspace']);
+    expect(workspaceHtml).not.toContain('data-testid="exercise-governance"');
+    expect(workspaceHtml).not.toContain('data-testid="exercise-read-only"');
   });
 });
 
