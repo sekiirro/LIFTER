@@ -100,11 +100,20 @@ it('clients: every required field is NOT NULL, generated id/time and pending-onl
       'approval_state',
       'created_at',
       'deactivated_at',
+      'date_of_birth',
+      'username_normalized',
+      'telegram_username',
     ].sort(),
   );
   expect(
     columns
       .filter((c) => c.attname !== 'deactivated_at')
+      .filter(
+        (c) =>
+          !['date_of_birth', 'username_normalized', 'telegram_username'].includes(
+            c.attname,
+          ),
+      )
       .every((c) => c.attnotnull),
   ).toBe(true);
   expect(columns.find((c) => c.attname === 'deactivated_at')?.attnotnull).toBe(
@@ -192,7 +201,15 @@ for (const [name, expected] of [
   [
     'signup_field_contract',
     {
-      required: ['name', 'email', 'phone', 'password'],
+      required: [
+        'name',
+        'email',
+        'phone',
+        'password',
+        'date_of_birth',
+        'username',
+      ],
+      optional: ['telegram_username'],
       telegram: false,
       phone_input_format: null,
     },

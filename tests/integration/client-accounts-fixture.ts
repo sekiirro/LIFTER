@@ -392,6 +392,10 @@ export async function pendingHttpAccess(
           result.data === false ||
           (Array.isArray(result.data) && result.data.length === 0) ||
           result.data?.status === 'invalid' ||
+          (['select_intake_form', 'submit_form_assignment'].includes(
+            fn.proname,
+          ) &&
+            result.data?.status === 'not_found') ||
           (['record_refund', 'record_renewal'].includes(fn.proname)
             ? result.data?.status === 'not_permitted'
             : ['subscription_freeze_operation'].includes(fn.proname) &&

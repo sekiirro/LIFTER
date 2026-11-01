@@ -335,6 +335,10 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
                       value !== null &&
                       'status' in value &&
                       (value.status === 'invalid' ||
+                        (['select_intake_form', 'submit_form_assignment'].includes(
+                          fn.proname,
+                        ) &&
+                          value.status === 'not_found') ||
                         (['subscription_freeze_operation'].includes(
                           fn.proname,
                         ) &&
