@@ -9,12 +9,20 @@ const source = readFileSync(
   'utf8',
 );
 const globalTables = [
-  'taxonomy_terms', 'taxonomy_term_versions', 'exercises', 'exercise_versions',
-  'foods', 'food_versions', 'food_serving_units', 'food_alternatives',
+  'taxonomy_terms',
+  'taxonomy_term_versions',
+  'exercises',
+  'exercise_versions',
+  'foods',
+  'food_versions',
+  'food_serving_units',
+  'food_alternatives',
 ];
 const workspaceTables = [
-  'workspace_exercises', 'workspace_exercise_versions',
-  'exercise_variations', 'exercise_variation_versions',
+  'workspace_exercises',
+  'workspace_exercise_versions',
+  'exercise_variations',
+  'exercise_variation_versions',
 ];
 
 afterAll(async () => db.end());
@@ -34,22 +42,42 @@ describe('F16 catalog row-level security', () => {
       from pg_policies where schemaname = 'public' and tablename = any(${names})
     `;
     for (const table of names) {
-      const tablePolicies = policies.filter((policy) => policy.tablename === table);
+      const tablePolicies = policies.filter(
+        (policy) => policy.tablename === table,
+      );
       expect(tablePolicies.length, table).toBeGreaterThan(0);
-      expect(tablePolicies.every((policy) => policy.cmd === 'SELECT'), table).toBe(true);
-      expect(tablePolicies.every((policy) => policy.roles.includes('authenticated')), table).toBe(true);
+      expect(
+        tablePolicies.every((policy) => policy.cmd === 'SELECT'),
+        table,
+      ).toBe(true);
+      expect(
+        tablePolicies.every((policy) => policy.roles.includes('authenticated')),
+        table,
+      ).toBe(true);
       if (globalTables.includes(table))
-        expect(tablePolicies.every((policy) => policy.qual.includes('catalog_can_read_global')), table).toBe(true);
+        expect(
+          tablePolicies.every((policy) =>
+            policy.qual.includes('catalog_can_read_global'),
+          ),
+          table,
+        ).toBe(true);
       else
-        expect(tablePolicies.every((policy) =>
-          policy.qual.includes('has_workspace_access') && policy.qual.includes('coaching_work'),
-        ), table).toBe(true);
+        expect(
+          tablePolicies.every(
+            (policy) =>
+              policy.qual.includes('has_workspace_access') &&
+              policy.qual.includes('coaching_work'),
+          ),
+          table,
+        ).toBe(true);
     }
   });
 
   it('keeps global and tenant denial guards in a forward migration', () => {
     expect(source).toContain('catalog_can_read_global');
-    expect(source).toContain("has_workspace_access(workspace_id, 'coaching_work')");
+    expect(source).toContain(
+      "has_workspace_access(workspace_id, 'coaching_work')",
+    );
     expect(source).toContain('force row level security');
     expect(source).toContain('create policy');
   });

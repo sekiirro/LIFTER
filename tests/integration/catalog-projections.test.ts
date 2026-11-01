@@ -2,10 +2,11 @@ import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type postgres from 'postgres';
 import { createStaff, sql, twoWorkspaceFixture } from './harness';
 
 const db = sql();
-type Tx = Parameters<Parameters<typeof db.begin>[0]>[0];
+type Tx = postgres.TransactionSql;
 let po: Awaited<ReturnType<typeof twoWorkspaceFixture>>['po'];
 let trainer: Awaited<ReturnType<typeof twoWorkspaceFixture>>['trainerA'];
 let sales: Awaited<ReturnType<typeof twoWorkspaceFixture>>['salesA'];
@@ -25,7 +26,10 @@ beforeAll(async () => {
 
 afterAll(async () => db.end());
 
-async function withFoodReadFixture<T>(actorId: string, body: (tx: Tx, foodId: string) => Promise<T>) {
+async function withFoodReadFixture<T>(
+  actorId: string,
+  body: (tx: Tx, foodId: string) => Promise<T>,
+) {
   const foodId = randomUUID();
   const rollbackMarker = 'rollback_catalog_projection_fixture';
   let result: T | undefined;
@@ -55,29 +59,39 @@ async function withFoodReadFixture<T>(actorId: string, body: (tx: Tx, foodId: st
 
 describe('global food provenance privacy projections', () => {
   it('global_food_provenance_masking_non_po', async () => {
-    const projections = await withFoodReadFixture(trainer.userId, async (tx, foodId) => {
-      const identity = await tx`select created_by, origin_workspace_id
+    const projections = await withFoodReadFixture(
+      trainer.userId,
+      async (tx, foodId) => {
+        const identity = await tx`select created_by, origin_workspace_id
         from public.catalog_foods_safe where id = ${foodId}`;
-      const version = await tx`select created_by, origin_workspace_id
+        const version = await tx`select created_by, origin_workspace_id
         from public.catalog_food_versions_safe where name_en = 'Privacy catalog food'`;
-      const search = await tx`select result_created_by, result_origin_workspace_id, result_payload
+        const search =
+          await tx`select result_created_by, result_origin_workspace_id, result_payload
         from public.catalog_search('food', 'privacy catalog', '{}'::jsonb, null, null)`;
-      const detail = await tx`select created_by as result_created_by, origin_workspace_id as result_origin_workspace_id
+        const detail =
+          await tx`select created_by as result_created_by, origin_workspace_id as result_origin_workspace_id
         from public.catalog_food_detail(${foodId}, 1)`;
-      const history = await tx`select created_by as result_created_by, origin_workspace_id as result_origin_workspace_id
+        const history =
+          await tx`select created_by as result_created_by, origin_workspace_id as result_origin_workspace_id
         from public.catalog_food_history(${foodId})`;
-      const exported = await tx`select created_by, origin_workspace_id
+        const exported = await tx`select created_by, origin_workspace_id
         from public.catalog_food_export_safe where food_id = ${foodId}`;
-      return { identity, version, search, detail, history, exported };
-    });
+        return { identity, version, search, detail, history, exported };
+      },
+    );
     expect(projections.identity[0]?.created_by).toBeNull();
     expect(projections.identity[0]?.origin_workspace_id).toBeNull();
     expect(projections.version[0]?.created_by).toBeNull();
     expect(projections.version[0]?.origin_workspace_id).toBeNull();
     expect(projections.search[0]?.result_created_by).toBeNull();
     expect(projections.search[0]?.result_origin_workspace_id).toBeNull();
-    expect(projections.search[0]?.result_payload).not.toHaveProperty('created_by');
-    expect(projections.search[0]?.result_payload).not.toHaveProperty('origin_workspace_id');
+    expect(projections.search[0]?.result_payload).not.toHaveProperty(
+      'created_by',
+    );
+    expect(projections.search[0]?.result_payload).not.toHaveProperty(
+      'origin_workspace_id',
+    );
     expect(projections.detail[0]?.result_created_by).toBeNull();
     expect(projections.detail[0]?.result_origin_workspace_id).toBeNull();
     expect(projections.history[0]?.result_created_by).toBeNull();
@@ -87,40 +101,58 @@ describe('global food provenance privacy projections', () => {
   });
 
   it('global_food_provenance_po_governance_read', async () => {
-    const projections = await withFoodReadFixture(po.userId, async (tx, foodId) => {
-      const identity = await tx`select id, created_by, origin_workspace_id
+    const projections = await withFoodReadFixture(
+      po.userId,
+      async (tx, foodId) => {
+        const identity = await tx`select id, created_by, origin_workspace_id
         from public.catalog_foods_safe where id = ${foodId}`;
-      const version = await tx`select created_by, origin_workspace_id
+        const version = await tx`select created_by, origin_workspace_id
         from public.catalog_food_versions_safe where name_en = 'Privacy catalog food'`;
-      const search = await tx`select result_created_by, result_origin_workspace_id
+        const search =
+          await tx`select result_created_by, result_origin_workspace_id
         from public.catalog_search('food', 'privacy catalog', '{}'::jsonb, null, null)`;
-      const detail = await tx`select created_by as result_created_by, origin_workspace_id as result_origin_workspace_id
+        const detail =
+          await tx`select created_by as result_created_by, origin_workspace_id as result_origin_workspace_id
         from public.catalog_food_detail(${foodId}, 1)`;
-      const history = await tx`select created_by as result_created_by, origin_workspace_id as result_origin_workspace_id
+        const history =
+          await tx`select created_by as result_created_by, origin_workspace_id as result_origin_workspace_id
         from public.catalog_food_history(${foodId})`;
-      const exported = await tx`select created_by, origin_workspace_id
+        const exported = await tx`select created_by, origin_workspace_id
         from public.catalog_food_export_safe where food_id = ${foodId}`;
-      return { identity, version, search, detail, history, exported };
-    });
+        return { identity, version, search, detail, history, exported };
+      },
+    );
     expect(projections.identity[0]?.created_by).toBe(po.userId);
-    expect(projections.identity[0]?.origin_workspace_id).toBe(originWorkspaceId);
+    expect(projections.identity[0]?.origin_workspace_id).toBe(
+      originWorkspaceId,
+    );
     expect(projections.version[0]?.created_by).toBe(po.userId);
     expect(projections.version[0]?.origin_workspace_id).toBe(originWorkspaceId);
     expect(projections.search[0]?.result_created_by).toBe(po.userId);
-    expect(projections.search[0]?.result_origin_workspace_id).toBe(originWorkspaceId);
+    expect(projections.search[0]?.result_origin_workspace_id).toBe(
+      originWorkspaceId,
+    );
     expect(projections.detail[0]?.result_created_by).toBe(po.userId);
-    expect(projections.detail[0]?.result_origin_workspace_id).toBe(originWorkspaceId);
+    expect(projections.detail[0]?.result_origin_workspace_id).toBe(
+      originWorkspaceId,
+    );
     expect(projections.history[0]?.result_created_by).toBe(po.userId);
-    expect(projections.history[0]?.result_origin_workspace_id).toBe(originWorkspaceId);
+    expect(projections.history[0]?.result_origin_workspace_id).toBe(
+      originWorkspaceId,
+    );
     expect(projections.exported[0]?.created_by).toBe(po.userId);
-    expect(projections.exported[0]?.origin_workspace_id).toBe(originWorkspaceId);
+    expect(projections.exported[0]?.origin_workspace_id).toBe(
+      originWorkspaceId,
+    );
   });
 
   it('denies every T001 read-denial role on search, detail and history', async () => {
-    const parity = JSON.parse(readFileSync(
-      resolve(process.cwd(), 'tests/fixtures/catalog-role-parity.sql.json'),
-      'utf8',
-    )) as { operations: Array<Record<string, string> & { operation: string }> };
+    const parity = JSON.parse(
+      readFileSync(
+        resolve(process.cwd(), 'tests/fixtures/catalog-role-parity.sql.json'),
+        'utf8',
+      ),
+    ) as { operations: Array<Record<string, string> & { operation: string }> };
     const expectation = parity.operations.find(
       (row) => row.operation === 'Read global catalog/search/history',
     );
@@ -132,16 +164,29 @@ describe('global food provenance privacy projections', () => {
     ]) {
       expect(expectation?.[actor.state]).toMatch(/^Deny/);
       await withFoodReadFixture(actor.userId, async (tx, foodId) => {
-        await expect(tx.savepoint((sp) => sp`
+        await expect(
+          tx.savepoint(
+            (sp) => sp`
           select * from public.catalog_search('food', 'privacy', '{}'::jsonb, null, null)
-        `)).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
-        await expect(tx.savepoint((sp) => sp`
+        `,
+          ),
+        ).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
+        await expect(
+          tx.savepoint(
+            (sp) => sp`
           select * from public.catalog_food_detail(${foodId}, 1)
-        `)).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
-        await expect(tx.savepoint((sp) => sp`
+        `,
+          ),
+        ).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
+        await expect(
+          tx.savepoint(
+            (sp) => sp`
           select * from public.catalog_food_history(${foodId})
-        `)).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
-        const exported = await tx`select food_id from public.catalog_food_export_safe where food_id = ${foodId}`;
+        `,
+          ),
+        ).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
+        const exported =
+          await tx`select food_id from public.catalog_food_export_safe where food_id = ${foodId}`;
         expect(exported).toHaveLength(0);
       });
     }
@@ -149,11 +194,16 @@ describe('global food provenance privacy projections', () => {
 
   it('uses safe views for detail, history, search and export projections', () => {
     const contract = readFileSync(
-      resolve(process.cwd(), 'specs/016-exercise-food-catalogs/contracts/catalog-api.md'),
+      resolve(
+        process.cwd(),
+        'specs/016-exercise-food-catalogs/contracts/catalog-api.md',
+      ),
       'utf8',
     );
     expect(contract).toContain('global_food_provenance_masking_non_po');
     expect(contract).toContain('global_food_provenance_po_governance_read');
-    expect(contract).toContain('projection nulls or omits both `created_by` and `origin_workspace_id`');
+    expect(contract).toContain(
+      'projection nulls or omits both `created_by` and `origin_workspace_id`',
+    );
   });
 });

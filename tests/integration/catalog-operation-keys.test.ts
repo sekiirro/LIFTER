@@ -6,13 +6,18 @@ import { admin, sql } from './harness';
 
 const db = sql();
 const contract = readFileSync(
-  resolve(process.cwd(), 'specs/016-exercise-food-catalogs/contracts/catalog-api.md'),
+  resolve(
+    process.cwd(),
+    'specs/016-exercise-food-catalogs/contracts/catalog-api.md',
+  ),
   'utf8',
 );
-const roleParity = JSON.parse(readFileSync(
-  resolve(process.cwd(), 'tests/fixtures/catalog-role-parity.sql.json'),
-  'utf8',
-)) as { operations: Array<Record<string, string> & { operation: string }> };
+const roleParity = JSON.parse(
+  readFileSync(
+    resolve(process.cwd(), 'tests/fixtures/catalog-role-parity.sql.json'),
+    'utf8',
+  ),
+) as { operations: Array<Record<string, string> & { operation: string }> };
 
 afterAll(async () => db.end());
 
@@ -38,23 +43,41 @@ describe('shared catalog operation key ledger', () => {
       order by ordinal_position
     `;
     expect(columns.map((column) => column.column_name)).toEqual([
-      'actor_user_id', 'action', 'operation_key', 'request_hash', 'result', 'created_at',
+      'actor_user_id',
+      'action',
+      'operation_key',
+      'request_hash',
+      'result',
+      'created_at',
     ]);
-    expect(columns.filter((column) => column.column_name !== 'result')
-      .every((column) => column.is_nullable === 'NO')).toBe(true);
-    expect(columns.find((column) => column.column_name === 'result')?.is_nullable).toBe('YES');
+    expect(
+      columns
+        .filter((column) => column.column_name !== 'result')
+        .every((column) => column.is_nullable === 'NO'),
+    ).toBe(true);
+    expect(
+      columns.find((column) => column.column_name === 'result')?.is_nullable,
+    ).toBe('YES');
 
     const constraints = await db`
       select conname, pg_get_constraintdef(oid) as definition
       from pg_constraint
       where conrelid = 'app_private.operation_keys'::regclass
     `;
-    expect(constraints.some((constraint) =>
-      constraint.definition.includes('PRIMARY KEY (actor_user_id, operation_key)')),
+    expect(
+      constraints.some((constraint) =>
+        constraint.definition.includes(
+          'PRIMARY KEY (actor_user_id, operation_key)',
+        ),
+      ),
     ).toBe(true);
-    expect(constraints.some((constraint) =>
-      constraint.definition.includes('action') && constraint.definition.includes('operation_key'),
-    )).toBe(false);
+    expect(
+      constraints.some(
+        (constraint) =>
+          constraint.definition.includes('action') &&
+          constraint.definition.includes('operation_key'),
+      ),
+    ).toBe(false);
 
     const created = await admin().auth.admin.createUser({
       email: `catalog-operation-key-${randomUUID()}@example.test`,
@@ -88,7 +111,8 @@ describe('shared catalog operation key ledger', () => {
         insert into app_private.operation_keys(actor_user_id, action, operation_key, request_hash, result, created_at)
         values (${actor}, 'catalog.food_created', ${expiredKey}, ${requestHash}, ${db.json(original)}, statement_timestamp() - interval '31 days')
       `;
-      const purged = await db`select app_private.purge_operation_keys() as removed`;
+      const purged =
+        await db`select app_private.purge_operation_keys() as removed`;
       expect(Number(purged[0]?.removed)).toBeGreaterThanOrEqual(1);
       const expired = await db`
         select 1 from app_private.operation_keys where actor_user_id = ${actor} and operation_key = ${expiredKey}
@@ -101,10 +125,14 @@ describe('shared catalog operation key ledger', () => {
   });
 
   it('exposes the shared 30-day replay contract and cron purge', async () => {
-    const policy = await db`select app_private.operation_key_retention_days() as days`;
+    const policy =
+      await db`select app_private.operation_key_retention_days() as days`;
     expect(policy[0]?.days).toBe(30);
     const source = readFileSync(
-      resolve(process.cwd(), 'supabase/migrations/20261106100000_catalog_operation_keys.sql'),
+      resolve(
+        process.cwd(),
+        'supabase/migrations/20261106100000_catalog_operation_keys.sql',
+      ),
       'utf8',
     );
     expect(source).toContain('operation_key_request_conflict');
@@ -115,7 +143,9 @@ describe('shared catalog operation key ledger', () => {
   it('keeps the F16 audit mapping two-segment, allowlisted and globally unscoped', async () => {
     expect(contract).toContain('## Audit action contract');
     expect(contract).toContain('Global `workspace_id` is NULL');
-    expect(contract).toContain('changed-field values are codes from the writer\'s fixed allowlist');
+    expect(contract).toContain(
+      "changed-field values are codes from the writer's fixed allowlist",
+    );
     expect(contract).not.toMatch(/raw operation key[^\n]*audit/i);
 
     const target = randomUUID();
@@ -125,7 +155,8 @@ describe('shared catalog operation key ledger', () => {
         '{"identity_id":"00000000-0000-4000-8000-000000000001","version":1,"changed_fields":["name_en"]}'::jsonb
       ) as event_id
     `;
-    const [event] = await db`select action, target_table, target_id, workspace_id, details
+    const [event] =
+      await db`select action, target_table, target_id, workspace_id, details
       from public.audit_events where id = ${rows[0]?.event_id}`;
     expect(event?.action).toMatch(/^[a-z_]+\.[a-z_]+$/);
     expect(event?.target_table).toBe('foods');

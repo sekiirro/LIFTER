@@ -5,14 +5,26 @@ import { sql } from './harness';
 
 const db = sql();
 const source = readFileSync(
-  resolve(process.cwd(), 'supabase/migrations/20261106101000_catalog_privileges.sql'),
+  resolve(
+    process.cwd(),
+    'supabase/migrations/20261106101000_catalog_privileges.sql',
+  ),
   'utf8',
 );
 const tables = [
-  'taxonomy_terms', 'taxonomy_term_versions', 'exercises', 'exercise_versions',
-  'foods', 'food_versions', 'food_serving_units', 'food_alternatives',
-  'workspace_exercises', 'workspace_exercise_versions', 'exercise_variations',
-  'exercise_variation_versions', 'operation_keys',
+  'taxonomy_terms',
+  'taxonomy_term_versions',
+  'exercises',
+  'exercise_versions',
+  'foods',
+  'food_versions',
+  'food_serving_units',
+  'food_alternatives',
+  'workspace_exercises',
+  'workspace_exercise_versions',
+  'exercise_variations',
+  'exercise_variation_versions',
+  'operation_keys',
 ];
 
 afterAll(async () => db.end());
@@ -21,7 +33,8 @@ describe('catalog privilege boundary', () => {
   it('keeps direct catalog DML denied for every client role', async () => {
     const clients = ['anon', 'authenticated', 'service_role'];
     for (const schemaTable of tables) {
-      const schema = schemaTable === 'operation_keys' ? 'app_private' : 'public';
+      const schema =
+        schemaTable === 'operation_keys' ? 'app_private' : 'public';
       for (const role of clients) {
         const [privileges] = await db`
           select has_table_privilege(${role}, ${`${schema}.${schemaTable}`}, 'INSERT') as can_insert,
@@ -29,7 +42,9 @@ describe('catalog privilege boundary', () => {
             has_table_privilege(${role}, ${`${schema}.${schemaTable}`}, 'DELETE') as can_delete
         `;
         expect(privileges, `${role} ${schema}.${schemaTable}`).toEqual({
-          can_insert: false, can_update: false, can_delete: false,
+          can_insert: false,
+          can_update: false,
+          can_delete: false,
         });
       }
     }
@@ -41,7 +56,11 @@ describe('catalog privilege boundary', () => {
         has_function_privilege('anon', 'public.catalog_search(text,text,jsonb,text,uuid)', 'EXECUTE') as anon,
         has_function_privilege('service_role', 'public.catalog_search(text,text,jsonb,text,uuid)', 'EXECUTE') as service_role
     `;
-    expect(read).toEqual({ authenticated: true, anon: false, service_role: false });
+    expect(read).toEqual({
+      authenticated: true,
+      anon: false,
+      service_role: false,
+    });
 
     const [helper] = await db`
       select p.prosecdef as security_definer,
@@ -54,7 +73,11 @@ describe('catalog privilege boundary', () => {
       where p.oid = 'app_private.catalog_write_audit(uuid,text,text,uuid,uuid,jsonb)'::regprocedure
     `;
     expect(helper).toMatchObject({
-      security_definer: true, owner: 'postgres', authenticated: false, anon: false, service_role: false,
+      security_definer: true,
+      owner: 'postgres',
+      authenticated: false,
+      anon: false,
+      service_role: false,
     });
     expect(helper?.config).toContain('search_path=""');
   });

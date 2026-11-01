@@ -16,9 +16,12 @@ beforeAll(async () => {
   if (created.error || !created.data.user)
     throw new Error(created.error?.message ?? 'catalog search actor missing');
   actorId = created.data.user.id;
-  checked(await admin().from('staff_profiles').insert({
-    user_id: actorId, role: 'platform_owner',
-  }));
+  checked(
+    await admin().from('staff_profiles').insert({
+      user_id: actorId,
+      role: 'platform_owner',
+    }),
+  );
 });
 
 afterAll(async () => {
@@ -38,22 +41,33 @@ describe('normalized, indexed and bounded catalog search', () => {
     const indexes = await db`
       select tablename, indexname, indexdef from pg_indexes
       where schemaname = 'public' and indexname = any(${[
-        'exercise_versions_name_norm_ar_trgm_idx', 'exercise_versions_name_norm_en_trgm_idx',
-        'food_versions_name_norm_ar_trgm_idx', 'food_versions_name_norm_en_trgm_idx',
-        'workspace_exercise_versions_name_norm_ar_trgm_idx', 'workspace_exercise_versions_name_norm_en_trgm_idx',
+        'exercise_versions_name_norm_ar_trgm_idx',
+        'exercise_versions_name_norm_en_trgm_idx',
+        'food_versions_name_norm_ar_trgm_idx',
+        'food_versions_name_norm_en_trgm_idx',
+        'workspace_exercise_versions_name_norm_ar_trgm_idx',
+        'workspace_exercise_versions_name_norm_en_trgm_idx',
       ]})
     `;
     expect(indexes).toHaveLength(6);
-    expect(indexes.every((row) => row.indexdef.includes('gin_trgm_ops'))).toBe(true);
-    expect(indexes.every((row) => row.indexdef.includes('USING gin'))).toBe(true);
+    expect(indexes.every((row) => row.indexdef.includes('gin_trgm_ops'))).toBe(
+      true,
+    );
+    expect(indexes.every((row) => row.indexdef.includes('USING gin'))).toBe(
+      true,
+    );
   });
 
   it('applies exercise filters, stable cursor ordering, and a page size capped at 50', async () => {
-    const ids = Array.from({ length: 56 }, (_, index) =>
-      `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
+    const ids = Array.from(
+      { length: 56 },
+      (_, index) =>
+        `00000000-0000-4000-8000-${String(index + 1).padStart(12, '0')}`,
     );
     const fixtures = ids.map((id, index) => ({
-      id, actor: actorId, version: 1,
+      id,
+      actor: actorId,
+      version: 1,
       name_en: `Dumbbell press ${index + 1}`,
       name_ar: `ضغط دمبل ${index + 1}`,
       muscleGroup: index === 55 ? 'back' : 'chest',
@@ -70,24 +84,31 @@ describe('normalized, indexed and bounded catalog search', () => {
             values (${fixture.id}, ${fixture.actor}, ${fixture.version})`;
           await tx`insert into public.exercise_versions(exercise_id, version, payload, created_by)
             values (${fixture.id}, ${fixture.version}, ${tx.json({
-              name_ar: fixture.name_ar, name_en: fixture.name_en,
-              muscleGroup: fixture.muscleGroup, equipment: fixture.equipment,
+              name_ar: fixture.name_ar,
+              name_en: fixture.name_en,
+              muscleGroup: fixture.muscleGroup,
+              equipment: fixture.equipment,
             })}, ${fixture.actor})`;
         }
         await tx`select set_config('role', 'authenticated', true)`;
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: actorId, role: 'authenticated' })}, true)`;
-        const pageFilters = { muscle_group: 'chest', equipment: 'dumbbell', page_size: 7 };
-        const filterType = await tx`select jsonb_typeof(${tx.json(pageFilters)}) as type`;
+        const pageFilters = {
+          muscle_group: 'chest',
+          equipment: 'dumbbell',
+          page_size: 7,
+        };
+        const filterType =
+          await tx`select jsonb_typeof(${tx.json(pageFilters)}) as type`;
         expect(filterType[0]?.type).toBe('object');
-        page = await tx`select result_id from public.catalog_search(
+        page = (await tx`select result_id from public.catalog_search(
           'exercise','dumbbell',${tx.json(pageFilters)},null,null
-        )` as typeof page;
-        next = await tx`select result_id from public.catalog_search(
-          'exercise','dumbbell','{}'::jsonb,${ids[6]},null
-        )` as typeof next;
-        capped = await tx`select result_id from public.catalog_search(
+        )`) as unknown as typeof page;
+        next = (await tx`select result_id from public.catalog_search(
+          'exercise','dumbbell','{}'::jsonb,${ids[6]!},null
+        )`) as unknown as typeof next;
+        capped = (await tx`select result_id from public.catalog_search(
           'exercise','dumbbell',${tx.json({ page_size: 500 })},null,null
-        )` as typeof capped;
+        )`) as unknown as typeof capped;
         expect(page).toHaveLength(7);
         expect(page.map((row) => row.result_id)).toEqual(ids.slice(0, 7));
         expect(next.map((row) => row.result_id)).toEqual(ids.slice(7));
@@ -122,9 +143,9 @@ describe('normalized, indexed and bounded catalog search', () => {
         }
         await tx`select set_config('role', 'authenticated', true)`;
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: actorId, role: 'authenticated' })}, true)`;
-        rows = await tx`select result_id from public.catalog_search(
+        rows = (await tx`select result_id from public.catalog_search(
           'food', 'milk', ${tx.json({ basis: 'ml', page_size: 10 })}, null, null
-        )` as typeof rows;
+        )`) as unknown as typeof rows;
         expect(rows.map((row) => row.result_id)).toEqual([ids[1]]);
         throw new Error(rollbackMarker);
       });
@@ -135,7 +156,10 @@ describe('normalized, indexed and bounded catalog search', () => {
 
   it('pins the SQL normalizer and index contract in a forward migration', () => {
     const source = readFileSync(
-      resolve(process.cwd(), 'supabase/migrations/20261106103000_catalog_search_indexes.sql'),
+      resolve(
+        process.cwd(),
+        'supabase/migrations/20261106103000_catalog_search_indexes.sql',
+      ),
       'utf8',
     );
     expect(source).toContain('normalize_ar_en_v1');
