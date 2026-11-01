@@ -297,6 +297,163 @@ it('S22-PO-5 records renewal activation atomically and permits a renewal of that
   });
 });
 
+it('rejects chaining from an unstarted renewal without writing lifecycle or audit side effects', async () => {
+  const { f, purchase, offerId } = await fixture();
+  await probe(async (tx) => {
+    await activate(tx, f, purchase);
+    const first = await renewal(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      renewal_confirmed: true,
+      installments: null,
+    });
+    expect(first.status).toBe('ok');
+    const firstId = (first.receipt as Record<string, unknown>)
+      .subscription_id as string;
+    const [dates] = await tx`
+      select coalesce((
+        select d.service_start_date
+        from public.subscription_renewal_date_revisions d
+        where d.workspace_id=r.workspace_id and d.subscription_id=r.subscription_id
+        order by d.revision desc limit 1
+      ),r.service_start_date)::text as service_start_date,
+      (clock_timestamp() at time zone 'Africa/Cairo')::date::text as today
+      from public.subscription_renewals r where r.subscription_id=${firstId}
+    `;
+    expect(dates!.service_start_date > dates!.today).toBe(true);
+    const [before] = await tx`
+      select
+        (select count(*)::int from app_private.subscription_renewal_operations where client_id=${purchase.t.id}) as operations,
+        (select count(*)::int from public.subscription_renewals where workspace_id=${f.wsA.id} and client_id=${purchase.t.id}) as renewals,
+        (select count(*)::int from public.subscription_activations a join public.subscriptions s
+          on s.workspace_id=a.workspace_id and s.id=a.subscription_id where s.client_id=${purchase.t.id}) as activations,
+        (select count(*)::int from public.subscription_installments i join public.subscriptions s
+          on s.workspace_id=i.workspace_id and s.id=i.subscription_id where s.client_id=${purchase.t.id}) as installments,
+        (select count(*)::int from public.payment_events e join public.subscriptions s
+          on s.workspace_id=e.workspace_id and s.id=e.subscription_id where s.client_id=${purchase.t.id}) as payment_events,
+        (select count(*)::int from public.audit_events where workspace_id=${f.wsA.id}) as audit_events
+    `;
+    const chained = await renewal(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: firstId,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      renewal_confirmed: true,
+      installments: null,
+    });
+    expect(chained).toMatchObject({ status: 'stale_state' });
+    const [after] = await tx`
+      select
+        (select count(*)::int from app_private.subscription_renewal_operations where client_id=${purchase.t.id}) as operations,
+        (select count(*)::int from public.subscription_renewals where workspace_id=${f.wsA.id} and client_id=${purchase.t.id}) as renewals,
+        (select count(*)::int from public.subscription_activations a join public.subscriptions s
+          on s.workspace_id=a.workspace_id and s.id=a.subscription_id where s.client_id=${purchase.t.id}) as activations,
+        (select count(*)::int from public.subscription_installments i join public.subscriptions s
+          on s.workspace_id=i.workspace_id and s.id=i.subscription_id where s.client_id=${purchase.t.id}) as installments,
+        (select count(*)::int from public.payment_events e join public.subscriptions s
+          on s.workspace_id=e.workspace_id and s.id=e.subscription_id where s.client_id=${purchase.t.id}) as payment_events,
+        (select count(*)::int from public.audit_events where workspace_id=${f.wsA.id}) as audit_events
+    `;
+    expect(after).toEqual(before);
+  });
+});
+
+it('serializes concurrent renewals of one predecessor so only one unstarted successor is recorded', async () => {
+  const { f, purchase, offerId } = await fixture();
+  await db.begin((tx) => activate(tx, f, purchase));
+  const request = () => ({
+    workspace_id: f.wsA.id,
+    client_id: purchase.t.id,
+    predecessor_subscription_id: purchase.sid,
+    package_offer_id: offerId,
+    request_key: randomUUID(),
+    expected_revision: 0,
+    renewal_confirmed: true,
+    installments: null,
+  });
+  const leftDb = sql();
+  const rightDb = sql();
+  let left: Record<string, unknown>;
+  let right: Record<string, unknown>;
+  try {
+    [left, right] = await Promise.all([
+      leftDb.begin((tx) => renewal(tx, f.trainerA.userId, request())),
+      rightDb.begin((tx) => renewal(tx, f.trainerA.userId, request())),
+    ]);
+  } finally {
+    await Promise.all([leftDb.end(), rightDb.end()]);
+  }
+  expect([left.status, right.status].sort()).toEqual(['ok', 'stale_state']);
+  const [count] = await db`
+    select count(*)::int as count from public.subscription_renewals
+    where workspace_id=${f.wsA.id} and client_id=${purchase.t.id}
+      and predecessor_subscription_id=${purchase.sid}
+  `;
+  expect(count!.count).toBe(1);
+});
+
+it('keeps one unstarted renewal across the full subscription chain', async () => {
+  const { f, purchase, offerId } = await fixture();
+  await probe(async (tx) => {
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '62 days',${randomUUID()})`;
+    const started = await renewal(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      renewal_confirmed: true,
+      installments: null,
+    });
+    expect(started.status).toBe('ok');
+    const startedId = (started.receipt as Record<string, unknown>)
+      .subscription_id as string;
+    const second = await renewal(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: startedId,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      renewal_confirmed: true,
+      installments: null,
+    });
+    expect(second.status).toBe('ok');
+    const [counts] = await tx`
+      select count(*)::int as renewals,
+        (select count(*)::int from public.subscription_renewals r
+          where r.client_id=${purchase.t.id}
+            and coalesce((select d.service_start_date from public.subscription_renewal_date_revisions d
+              where d.workspace_id=r.workspace_id and d.subscription_id=r.subscription_id
+              order by d.revision desc limit 1),r.service_start_date)
+              >(clock_timestamp() at time zone 'Africa/Cairo')::date) as unstarted
+      from public.subscription_renewals where client_id=${purchase.t.id}
+    `;
+    expect(counts!.renewals).toBe(2);
+    expect(counts!.unstarted).toBe(1);
+
+    const branched = await renewal(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 1,
+      renewal_confirmed: true,
+      installments: null,
+    });
+    expect(branched).toMatchObject({ status: 'stale_state' });
+  });
+});
+
 it('S22-PO-5 denies freezing a renewal before its Cairo service start', async () => {
   const { f, purchase, offerId } = await fixture();
   await probe(async (tx) => {

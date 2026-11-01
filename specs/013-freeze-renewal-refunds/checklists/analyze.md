@@ -19,5 +19,5 @@ No critical or high inconsistency found in the generated planning artifacts. No 
 ## Remaining medium/low observations
 
 - F12 U4 RPC and receipt shapes are verified against merged PR #18 at `e3a2534`; planning copies must use the pinned merged contract and must not create a duplicate payment writer.
-- Exact Auth primitive and isolated stack assignment are unresolved technical prerequisites, not planning assumptions.
+- The Auth design is resolved as the Custom Access Token hook plus the Auth Admin worker; the isolated database and Auth API stack is assigned to Stack C (`lifter-stack-c`).
 - F13 UI is outside this plan's implementation units; any later request to add rendered UI must use the Frontend Design Gate and DESIGN.md.
