@@ -9,6 +9,7 @@ import {
 import {
   clientContext,
   probe,
+  registered,
   type Context,
 } from './registration-approval-operations-fixture';
 
@@ -130,11 +131,15 @@ export async function withFormsPolicyF13Fixtures(
       expiredSubscription: Scenario;
       recurringActive: Scenario;
       recurringFreeze: Scenario;
+      futureSubscription: Scenario;
+      pendingCandidate?: Awaited<ReturnType<typeof registered>>;
     },
   ) => Promise<void>,
+  options: { pendingCandidate?: boolean } = {},
 ) {
   const f = await clientContext();
   const purchases = await Promise.all([
+    bought(f),
     bought(f),
     bought(f),
     bought(f),
@@ -146,6 +151,9 @@ export async function withFormsPolicyF13Fixtures(
   const offers = await Promise.all(
     purchases.map((purchase) => packageOfferId(f, purchase)),
   );
+  const pendingCandidate = options.pendingCandidate
+    ? await registered(f)
+    : undefined;
 
   await probe(async (tx) => {
     const [calendar] = await tx`
@@ -240,6 +248,17 @@ export async function withFormsPolicyF13Fixtures(
 
     await activate(tx, f, purchases[5]!);
     await activate(tx, f, purchases[6]!);
+    const [futureDate] = await tx`
+      select (${calendar!.today}::date+5)::timestamp at time zone 'Africa/Cairo' as activated_at
+    `;
+    await tx`insert into public.subscription_activations(
+      workspace_id,subscription_id,activated_at,delivery_event_id
+    ) values(${f.wsA.id},${purchases[7]!.sid},${futureDate!.activated_at},${randomUUID()})`;
+    const [futureProjection] = await tx`
+      select app_private.f13_project_entitlement(${f.wsA.id},${purchases[7]!.sid},${calendar!.today}::date)->>'status' as status
+    `;
+    if (futureProjection!.status !== 'future')
+      throw new Error('Expected future F13 projection');
 
     const [expiredDuration] = await tx`
       select duration_days from public.subscriptions where id=${purchases[3]!.sid}
@@ -295,6 +314,11 @@ export async function withFormsPolicyF13Fixtures(
         clientId: purchases[6]!.t.id,
         subscriptionId: purchases[6]!.sid,
       },
+      futureSubscription: {
+        clientId: purchases[7]!.t.id,
+        subscriptionId: purchases[7]!.sid,
+      },
+      ...(pendingCandidate ? { pendingCandidate } : {}),
     });
   });
 }
