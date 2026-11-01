@@ -23,7 +23,7 @@
 
 ## Phase 0 — Contract fixtures and independent foundations
 
-- [ ] **T001 (45m) — Freeze nutrition document schema v1 contract fixtures.** `OWNER=MiniMax`. **[INDEPENDENT]**. Exact files: `lib/plans/nutrition/schema.ts`, `tests/unit/nutrition-schema.test.ts`. RED: assert `single_day` without required `implicitDayTypeId`, `seven_day` with duplicate or missing dayIndex, a `training_days_only` meal with no reachable training day, non-positive quantities and negative targets are rejected. GREEN: assert spec-valid payloads are accepted. **Mutation:** remove the always-required `implicitDayTypeId` rule and prove the test fails. No direct DB.
+- [x] **T001 (45m) — Freeze nutrition document schema v1 contract fixtures.** `OWNER=MiniMax`. **[INDEPENDENT]**. Exact files: `lib/plans/nutrition/schema.ts`, `tests/unit/nutrition-schema.test.ts`. RED: assert `single_day` without required `implicitDayTypeId`, `seven_day` with duplicate or missing dayIndex, a `training_days_only` meal with no reachable training day, non-positive quantities and negative targets are rejected. GREEN: assert spec-valid payloads are accepted. **Mutation:** remove the always-required `implicitDayTypeId` rule and prove the test fails. No direct DB.
 
 - [ ] **T002 (45m) — Freeze canonical macro algorithm golden fixtures.** `OWNER=MiniMax`. **[INDEPENDENT]**. Exact files: `lib/plans/nutrition/macros.ts`, `tests/golden/nutrition-macros.ts`. RED: parity fixture for exact decimal arithmetic and single half-even rounding to four decimals fails. GREEN: TypeScript and SQL pass the identical golden fixture set, including repeating fractions and precision boundaries. **Mutation:** switch the TypeScript implementation to double rounding and prove the fixture fails. No direct DB.
 
