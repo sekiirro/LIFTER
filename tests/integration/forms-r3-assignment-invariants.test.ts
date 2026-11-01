@@ -84,7 +84,7 @@ describe('T007 assignment snapshot and T010 one-time assignment', () => {
     expect(triggerMutationWouldBeCaught).toBe(true);
   });
 
-  it('allows only one assignment per client/form and kills a unique-index mutation', async () => {
+  it('allows only one assignment per client/form/occurrence and kills a unique-index mutation', async () => {
     let duplicateMutationWouldBeCaught = false;
     await expect(
       db.begin(async (tx) => {
@@ -99,7 +99,7 @@ describe('T007 assignment snapshot and T010 one-time assignment', () => {
         ).rejects.toMatchObject({ code: '23505' });
 
         await tx.savepoint(async (sp) => {
-          await sp`alter table public.form_assignments drop constraint form_assignments_workspace_id_client_id_form_id_key`;
+          await sp`alter table public.form_assignments drop constraint form_assignments_occurrence_unique`;
           await insertDuplicate(sp);
           let assertionDetectedMutation = false;
           try {

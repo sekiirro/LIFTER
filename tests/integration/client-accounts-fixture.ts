@@ -381,6 +381,7 @@ export async function pendingHttpAccess(
           boolean: false,
           bytea: '\\x00',
           'timestamp with time zone': new Date().toISOString(),
+          'uuid[]': [],
         };
         if (!(type in values)) throw new Error('Uncovered HTTP RPC type');
         args[fn.proargnames[i]] = values[type];
@@ -392,9 +393,12 @@ export async function pendingHttpAccess(
           result.data === false ||
           (Array.isArray(result.data) && result.data.length === 0) ||
           result.data?.status === 'invalid' ||
-          (['select_intake_form', 'submit_form_assignment'].includes(
-            fn.proname,
-          ) &&
+          ([
+            'select_intake_form',
+            'submit_form_assignment',
+            'configure_intake_assignment_policy',
+            'materialize_intake_assignment_occurrence',
+          ].includes(fn.proname) &&
             result.data?.status === 'not_found') ||
           (['record_refund', 'record_renewal'].includes(fn.proname)
             ? result.data?.status === 'not_permitted'

@@ -303,6 +303,7 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
           boolean: 'false',
           bytea: "decode('00','hex')",
           'timestamp with time zone': 'now()',
+          'uuid[]': "'{}'::uuid[]",
         };
         if (!values[typeName])
           throw new Error('Uncovered public RPC argument type');
@@ -338,6 +339,8 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
                         ([
                           'select_intake_form',
                           'submit_form_assignment',
+                          'configure_intake_assignment_policy',
+                          'materialize_intake_assignment_occurrence',
                         ].includes(fn.proname) &&
                           value.status === 'not_found') ||
                         (['subscription_freeze_operation'].includes(

@@ -39,3 +39,34 @@
 - F12/F14 merge state, final latest migrations, isolated F15 database availability, current hosted backup/PITR capabilities, provider at-rest encryption, real P4 fact coverage and hosted scheduler readiness are unverified by this DB-free lane.
 - Before implementation, re-open latest merged source branches and inspect their actual function bodies and migration timestamps. The handoff timestamps are lower-bound planning evidence, not an upper bound.
 - No DB, Docker, Supabase CLI, `psql`, integration tests, hosted project or live data was used for this research.
+# S25 CHUNK B — assignment policy implementation assumptions
+
+These are conservative implementation details for Q3=D where the approved
+requirements name behavior but do not specify a storage-level timestamp or
+occurrence identifier. They do not change audience, role, trigger, freeze, or
+recurrence policy.
+
+- An occurrence's audience snapshot instant is the start of the materializing
+  database transaction (`transaction_timestamp()`). The policy row and the
+  candidate clients are read under the form's transaction advisory lock. A
+  retry uses the stored `(workspace, policy, occurrence key)` snapshot and
+  cannot add clients who joined later.
+- “New clients” means approved clients whose creation timestamp is at or after
+  the policy's configuration timestamp. This deliberately excludes older
+  clients from a newly created onboarding policy. The architect should review
+  whether an explicit onboarding event is needed to replace this conservative
+  cutoff.
+- An eligible active client must be approved and have an F13 subscription
+  projection of `active` on the snapshot's Cairo calendar date. `frozen`,
+  `future`, `expired`, `refunded`, and missing subscription states are excluded.
+- Each occurrence key is an opaque caller supplied identifier, scoped by its
+  form and client in the assignment uniqueness constraint. The same occurrence
+  key is recorded once even if its audience snapshot is empty.
+- The initial client deadline defaults to three Cairo calendar days after the
+  snapshot date and may be configured from one through fourteen days, matching
+  FR-034. The due instant is the final millisecond of that Cairo date. B2 must
+  continue to use this per-assignment deadline for every recurrence.
+- The initial materializer accepts manual, joining, and onboarding triggers.
+  Renewal and recurring triggers remain unavailable until B2 binds them to
+  F13's actual entitlement service-start projection. No scheduler or cron job
+  is activated by this migration.
