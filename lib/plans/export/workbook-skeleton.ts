@@ -70,6 +70,11 @@ function requireSheetName(value: unknown): string {
       `Sheet name must be at most ${MAX_SHEET_NAME_LENGTH} characters`,
     );
   }
+  if (value.startsWith("'") || value.endsWith("'")) {
+    throw new WorkbookSkeletonError(
+      'Sheet name must not start or end with an apostrophe',
+    );
+  }
   if (INVALID_SHEET_NAME_CHARACTERS.test(value)) {
     throw new WorkbookSkeletonError(
       'Sheet name must not contain any of: : \\ / ? * [ ]',
@@ -184,9 +189,22 @@ export function createWorkbookSkeleton(
     throw new WorkbookSkeletonError('Workbook sheets must be an array');
   }
 
+  const seenNames = new Set<string>();
+  const sheets = inputs.map((input) => {
+    const sheet = buildSheet(layout, input);
+    const normalizedName = sheet.name.toLowerCase();
+    if (seenNames.has(normalizedName)) {
+      throw new WorkbookSkeletonError(
+        `Workbook sheet names must be unique: ${sheet.name}`,
+      );
+    }
+    seenNames.add(normalizedName);
+    return sheet;
+  });
+
   return {
     locale: layout.lang,
     rightToLeft: layout.dir === 'rtl',
-    sheets: inputs.map((input) => buildSheet(layout, input)),
+    sheets,
   };
 }

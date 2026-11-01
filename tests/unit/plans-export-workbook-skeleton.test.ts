@@ -108,6 +108,28 @@ describe('F17 export workbook skeleton', () => {
     expect(workbook.sheets.every((sheet) => sheet.rightToLeft)).toBe(true);
   });
 
+  it('rejects duplicate sheet names case-insensitively within a workbook', () => {
+    expect(() =>
+      createWorkbookSkeleton('en', [
+        { name: 'Push A', columns, rows },
+        { name: 'Push A', columns, rows: [] },
+      ]),
+    ).toThrow(WorkbookSkeletonError);
+    expect(() =>
+      createWorkbookSkeleton('ar', [
+        { name: 'Push A', columns, rows },
+        { name: 'push a', columns, rows: [] },
+      ]),
+    ).toThrow(WorkbookSkeletonError);
+    expect(() =>
+      createWorkbookSkeleton('en', [
+        { name: 'Push A', columns, rows },
+        { name: 'PULL A', columns, rows },
+        { name: 'pull a', columns, rows },
+      ]),
+    ).toThrow(WorkbookSkeletonError);
+  });
+
   it('rejects unsupported locales with the print-layout error', () => {
     expect(() =>
       createWorkbookSheet('fr', { name: 'Push A', columns, rows }),
@@ -129,6 +151,9 @@ describe('F17 export workbook skeleton', () => {
       'Bad*name',
       'Bad[name]',
       'Bad]name',
+      "'Push A",
+      "Push A'",
+      "'Push A'",
     ];
 
     for (const name of invalidNames) {
