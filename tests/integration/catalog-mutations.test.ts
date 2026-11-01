@@ -21,14 +21,43 @@ beforeAll(async () => {
 
 afterAll(async () => db.end());
 
-async function expectMutationToBreak<T>(body: () => Promise<T>, label: string) {
+async function expectMutationToBreak<T>(
+  body: () => Promise<T>,
+  label: string,
+  reportFailure = false,
+) {
   let assertionFailure: unknown;
   try {
     await body();
   } catch (error) {
     assertionFailure = error;
   }
+  if (reportFailure && assertionFailure)
+    console.info(
+      `[expected mutant failure] ${label}: ${(assertionFailure as Error).message.split('\n')[0]}`,
+    );
   expect(assertionFailure, label).toBeDefined();
+}
+
+async function insertMutationFood(
+  tx: postgres.TransactionSql,
+  actorId: string,
+  name = `Mutation food ${randomUUID()}`,
+) {
+  const foodId = randomUUID();
+  await tx`insert into public.foods(id, created_by, current_version)
+    values (${foodId}, ${actorId}, 1)`;
+  await tx`insert into public.food_versions(
+      food_id, version, payload, created_by, name_en, basis, product_identity_norm,
+      preparation_identity_norm, weighing_state, kcal, protein_g, carbohydrate_g, fat_g
+    ) values (
+      ${foodId}, 1, '{}'::jsonb, ${actorId}, ${name}, 'g', ${`product:${foodId}`},
+      'plain', 'not_applicable', 100, 10, 10, 2
+    )`;
+  await tx`insert into public.food_serving_units(
+      food_id, food_version, basis, unit_key, label_en, basis_qty
+    ) values (${foodId}, 1, 'g', 'reference', '100 g', 100)`;
+  return foodId;
 }
 
 describe('F16 mutation probes', () => {
@@ -540,6 +569,372 @@ describe('F16 mutation probes', () => {
       });
     } catch (error) {
       if ((error as Error).message !== marker) throw error;
+    }
+  });
+
+  it('T006: removing a taxonomy seed or adding a catalog seed breaks clean-seed assertions', async () => {
+    const removedSeedMarker = 'rollback_catalog_taxonomy_seed_mutation';
+    try {
+      await db.begin(async (tx) => {
+        const [seed] = await tx`
+          select id from public.taxonomy_terms where kind = 'muscle_group' and code = 'chest'
+        `;
+        if (!seed?.id) throw new Error('chest taxonomy seed missing');
+        await tx`alter table public.taxonomy_term_versions disable trigger taxonomy_term_versions_append_only`;
+        await tx`delete from public.taxonomy_term_versions where term_id = ${seed.id}`;
+        await tx`delete from public.taxonomy_terms where id = ${seed.id}`;
+        const codes = await tx`
+          select code from public.taxonomy_terms where kind = 'muscle_group'
+        `;
+        await expectMutationToBreak(
+          async () => expect(codes.map((row) => row.code)).toContain('chest'),
+          'removing the chest taxonomy seed must break the exact taxonomy assertion',
+          true,
+        );
+        expect(codes.map((row) => row.code)).not.toContain('chest');
+        throw new Error(removedSeedMarker);
+      });
+    } catch (error) {
+      if ((error as Error).message !== removedSeedMarker) throw error;
+    }
+
+    const addedSeedMarker = 'rollback_catalog_content_seed_mutation';
+    try {
+      await db.begin(async (tx) => {
+        const [baseline] =
+          await tx`select count(*)::int as count from public.exercises`;
+        const exerciseId = randomUUID();
+        await tx`insert into public.exercises(id, created_by, current_version)
+          values (${exerciseId}, ${po.userId}, 1)`;
+        await tx`insert into public.exercise_versions(exercise_id, version, payload, created_by)
+          values (${exerciseId}, 1, '{"name_en":"catalog seed mutant"}'::jsonb, ${po.userId})`;
+        const [row] =
+          await tx`select count(*)::int as count from public.exercises`;
+        await expectMutationToBreak(
+          async () => expect(row?.count).toBe(baseline?.count),
+          'adding an exercise seed must break the clean-catalog baseline assertion',
+          true,
+        );
+        expect(row?.count).toBe((baseline?.count ?? 0) + 1);
+        throw new Error(addedSeedMarker);
+      });
+    } catch (error) {
+      if ((error as Error).message !== addedSeedMarker) throw error;
+    }
+  });
+
+  it('T007: disabling append-only and provenance triggers breaks immutable-data assertions', async () => {
+    const marker = 'rollback_catalog_identity_immutability_mutation';
+    try {
+      await db.begin(async (tx) => {
+        await tx`alter table public.food_versions disable trigger food_versions_append_only`;
+        await tx`alter table public.foods disable trigger foods_provenance_immutable`;
+        const foodId = await insertMutationFood(tx, po.userId);
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx`update public.food_versions set payload = '{"mutated":true}'::jsonb where food_id = ${foodId} and version = 1`,
+            ).rejects.toMatchObject({ code: '23514' }),
+          'disabling the food-version append-only trigger must break the immutable-version assertion',
+          true,
+        );
+
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx`update public.foods set created_by = ${trainerA.userId} where id = ${foodId}`,
+            ).rejects.toMatchObject({ code: '23514' }),
+          'disabling provenance protection must break the immutable creator assertion',
+          true,
+        );
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx`update public.foods set origin_workspace_id = ${wsB} where id = ${foodId}`,
+            ).rejects.toMatchObject({ code: '23514' }),
+          'disabling provenance protection must break the immutable origin assertion',
+          true,
+        );
+        throw new Error(marker);
+      });
+    } catch (error) {
+      if ((error as Error).message !== marker) throw error;
+    }
+  });
+
+  it('T008: dropping the workspace composite owner FK breaks the tenant-binding assertion', async () => {
+    const marker = 'rollback_catalog_composite_fk_mutation';
+    const workspaceExerciseId = randomUUID();
+    try {
+      await db.begin(async (tx) => {
+        const [compositeFk] = await tx`
+          select c.conname as name from pg_catalog.pg_constraint c
+          where c.conrelid = 'public.workspace_exercise_versions'::regclass
+            and c.contype = 'f'
+            and pg_catalog.pg_get_constraintdef(c.oid) like 'FOREIGN KEY (workspace_id, workspace_exercise_id)%'
+        `;
+        if (!compositeFk?.name)
+          throw new Error('workspace composite FK missing');
+        await tx.unsafe(
+          `alter table public.workspace_exercise_versions drop constraint "${String(compositeFk.name).replaceAll('"', '""')}"`,
+        );
+        await tx`insert into public.workspace_exercises(workspace_id, id, created_by, current_version)
+          values (${wsA}, ${workspaceExerciseId}, ${trainerA.userId}, 1)`;
+        await tx`insert into public.workspace_exercise_versions(workspace_id, workspace_exercise_id, version, payload, created_by)
+          values (${wsA}, ${workspaceExerciseId}, 1, '{}'::jsonb, ${trainerA.userId})`;
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx`insert into public.workspace_exercise_versions(workspace_id, workspace_exercise_id, version, payload, created_by)
+                values (${wsB}, ${workspaceExerciseId}, 1, '{}'::jsonb, ${trainerB.userId})`,
+            ).rejects.toMatchObject({ code: '23503' }),
+          'dropping the composite workspace owner FK must break the cross-tenant version assertion',
+          true,
+        );
+        const foreign = await tx`select workspace_id, workspace_exercise_id
+          from public.workspace_exercise_versions where workspace_id = ${wsB} and workspace_exercise_id = ${workspaceExerciseId}`;
+        expect(foreign).toHaveLength(1);
+        throw new Error(marker);
+      });
+    } catch (error) {
+      if ((error as Error).message !== marker) throw error;
+    }
+  });
+
+  it('T009: dropping each food-version and serving check breaks its invalid-payload assertion', async () => {
+    const versionChecks: Array<{
+      name: string;
+      values: {
+        basis?: string;
+        product?: string;
+        preparation?: string;
+        state?: string;
+        kcal?: number;
+        protein?: number;
+        carbohydrate?: number;
+        fat?: number;
+        fiber?: number;
+        names?: boolean;
+      };
+    }> = [
+      { name: 'food_versions_basis_check', values: { basis: 'oz' } },
+      {
+        name: 'food_versions_product_identity_norm_check',
+        values: { product: '' },
+      },
+      {
+        name: 'food_versions_preparation_identity_norm_check',
+        values: { preparation: '' },
+      },
+      {
+        name: 'food_versions_weighing_state_check',
+        values: { state: 'steamed' },
+      },
+      { name: 'food_versions_kcal_check', values: { kcal: -1 } },
+      { name: 'food_versions_protein_g_check', values: { protein: -1 } },
+      {
+        name: 'food_versions_carbohydrate_g_check',
+        values: { carbohydrate: -1 },
+      },
+      { name: 'food_versions_fat_g_check', values: { fat: -1 } },
+      { name: 'food_versions_fiber_g_check', values: { fiber: -1 } },
+      { name: 'food_versions_name_language_check', values: { names: true } },
+      {
+        name: 'food_versions_macro_sum_check',
+        values: { protein: 40, carbohydrate: 40, fat: 30 },
+      },
+    ];
+    for (const probe of versionChecks) {
+      const marker = `rollback_${probe.name}_mutation`;
+      try {
+        await db.begin(async (tx) => {
+          await tx.unsafe(
+            `alter table public.food_versions drop constraint ${probe.name}`,
+          );
+          const foodId = randomUUID();
+          await tx`insert into public.foods(id, created_by, current_version)
+            values (${foodId}, ${po.userId}, 1)`;
+          const values = probe.values;
+          const basis = values.basis ?? 'g';
+          const nameAr = 'names' in values ? null : 'اختبار';
+          const nameEn =
+            'names' in values ? null : `Check mutation ${probe.name}`;
+          const product = values.product ?? `product:${foodId}`;
+          const preparation = values.preparation ?? 'plain';
+          const weighingState = values.state ?? 'not_applicable';
+          const kcal = values.kcal ?? 100;
+          const protein = values.protein ?? 10;
+          const carbohydrate = values.carbohydrate ?? 10;
+          const fat = values.fat ?? 2;
+          const fiber = values.fiber ?? null;
+          await expectMutationToBreak(
+            async () =>
+              expect(
+                tx`insert into public.food_versions(
+                  food_id, version, payload, created_by, name_ar, name_en, basis,
+                  product_identity_norm, preparation_identity_norm, weighing_state,
+                  kcal, protein_g, carbohydrate_g, fat_g, fiber_g
+                ) values (
+                  ${foodId}, 1, '{}'::jsonb, ${po.userId}, ${nameAr}, ${nameEn}, ${basis},
+                  ${product}, ${preparation}, ${weighingState}, ${kcal}, ${protein},
+                  ${carbohydrate}, ${fat}, ${fiber}
+                )`,
+              ).rejects.toMatchObject({ code: '23514' }),
+            `dropping ${probe.name} must break its food-version check assertion`,
+            true,
+          );
+          throw new Error(marker);
+        });
+      } catch (error) {
+        if ((error as Error).message !== marker) throw error;
+      }
+    }
+
+    const basisMarker = 'rollback_food_serving_units_basis_check_mutation';
+    try {
+      await db.begin(async (tx) => {
+        await tx`alter table public.food_serving_units drop constraint food_serving_units_basis_check`;
+        const [constraint] = await tx`
+          select c.conname as name from pg_catalog.pg_constraint c
+          where c.conrelid = 'public.food_serving_units'::regclass
+            and c.conname = 'food_serving_units_basis_check'
+        `;
+        await expectMutationToBreak(
+          async () => expect(constraint).toBeDefined(),
+          'dropping food_serving_units_basis_check must break the schema guard assertion',
+          true,
+        );
+        const foodId = await insertMutationFood(tx, po.userId);
+        await expect(
+          tx`insert into public.food_serving_units(
+            food_id, food_version, basis, unit_key, label_en, basis_qty
+          ) values (${foodId}, 1, 'oz', 'invalid-basis', 'Invalid basis', 100)`,
+        ).rejects.toMatchObject({ code: '23503' });
+        throw new Error(basisMarker);
+      });
+    } catch (error) {
+      if ((error as Error).message !== basisMarker) throw error;
+    }
+
+    const servingChecks = [
+      {
+        name: 'food_serving_units_unit_key_check',
+        basis: 'g',
+        unit: '',
+        qty: 100,
+        labels: true,
+      },
+      {
+        name: 'food_serving_units_basis_qty_check',
+        basis: 'g',
+        unit: 'zero',
+        qty: 0,
+        labels: true,
+      },
+      {
+        name: 'food_serving_units_check',
+        basis: 'g',
+        unit: 'unnamed',
+        qty: 100,
+        labels: false,
+      },
+    ];
+    for (const probe of servingChecks) {
+      const marker = `rollback_${probe.name}_mutation`;
+      try {
+        await db.begin(async (tx) => {
+          await tx.unsafe(
+            `alter table public.food_serving_units drop constraint ${probe.name}`,
+          );
+          const foodId = await insertMutationFood(tx, po.userId);
+          const badLabel = probe.labels ? 'Reference' : null;
+          await expectMutationToBreak(
+            async () =>
+              expect(
+                tx`insert into public.food_serving_units(
+                  food_id, food_version, basis, unit_key, label_en, basis_qty
+                ) values (
+                  ${foodId}, 1, ${probe.basis}, ${probe.unit}, ${badLabel}, ${probe.qty}
+                )`,
+              ).rejects.toMatchObject({ code: '23514' }),
+            `dropping ${probe.name} must break its serving check assertion`,
+            true,
+          );
+          throw new Error(marker);
+        });
+      } catch (error) {
+        if ((error as Error).message !== marker) throw error;
+      }
+    }
+  });
+
+  it('T010: dropping alternatives cardinality and portion checks breaks negative assertions', async () => {
+    const probes = [
+      {
+        constraint: 'food_alternatives_position_check',
+        position: 4,
+        sourcePortion: 100,
+        alternativePortion: 100,
+      },
+      {
+        constraint: 'food_alternatives_source_portion_check',
+        position: 1,
+        sourcePortion: 0,
+        alternativePortion: 100,
+      },
+      {
+        constraint: 'food_alternatives_alternative_portion_check',
+        position: 1,
+        sourcePortion: 100,
+        alternativePortion: 0,
+      },
+    ];
+    for (const probe of probes) {
+      const marker = `rollback_${probe.constraint}_mutation`;
+      try {
+        await db.begin(async (tx) => {
+          await tx.unsafe(
+            `alter table public.food_alternatives drop constraint ${probe.constraint}`,
+          );
+          const source = await insertMutationFood(tx, po.userId);
+          if (probe.constraint === 'food_alternatives_position_check') {
+            for (const position of [1, 2, 3]) {
+              const existingTarget = await insertMutationFood(tx, po.userId);
+              await tx`insert into public.food_alternatives(
+                food_id, food_version, position, source_basis, source_portion,
+                alternative_food_id, alternative_version, alternative_basis, alternative_portion
+              ) values (
+                ${source}, 1, ${position}, 'g', 100,
+                ${existingTarget}, 1, 'g', 100
+              )`;
+            }
+          }
+          const target = await insertMutationFood(tx, po.userId);
+          await expectMutationToBreak(
+            async () =>
+              expect(
+                tx`insert into public.food_alternatives(
+                  food_id, food_version, position, source_basis, source_portion,
+                  alternative_food_id, alternative_version, alternative_basis, alternative_portion
+                ) values (
+                  ${source}, 1, ${probe.position}, 'g', ${probe.sourcePortion},
+                  ${target}, 1, 'g', ${probe.alternativePortion}
+                )`,
+              ).rejects.toMatchObject({ code: '23514' }),
+            `dropping ${probe.constraint} must break its alternatives assertion`,
+            true,
+          );
+          if (probe.constraint === 'food_alternatives_position_check') {
+            const [count] = await tx`
+              select count(*)::int as alternatives from public.food_alternatives where food_id = ${source}
+            `;
+            expect(count?.alternatives).toBe(4);
+          }
+          throw new Error(marker);
+        });
+      } catch (error) {
+        if ((error as Error).message !== marker) throw error;
+      }
     }
   });
 
