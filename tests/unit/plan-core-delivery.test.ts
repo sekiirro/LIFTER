@@ -3,8 +3,7 @@ import {
   DeliveryKindSchema,
   FirstDeliveryRecordSchema,
   ActivationSchema,
-  ACTIVATION_REQUIRES_PAIRED_PUBLISH,
-  PERMIT_SECOND_ACTIVATION,
+  MAX_ACTIVATIONS,
   WORKOUT_FIRST_DELIVERY_FIXTURE,
   NUTRITION_FIRST_DELIVERY_FIXTURE,
   DELAYED_SECOND_DELIVERY_FIXTURE,
@@ -76,8 +75,7 @@ describe('plan core first-delivery and activation contract', () => {
   });
 
   it('encodes PC-FR-004/005 fixtures', () => {
-    expect(ACTIVATION_REQUIRES_PAIRED_PUBLISH).toBe(false);
-    expect(PERMIT_SECOND_ACTIVATION).toBe(false);
+    expect(MAX_ACTIVATIONS).toBe(1);
     expect(ACTIVATION_EXACTLY_ONCE_FIXTURE.activationCount).toBe(1);
   });
 

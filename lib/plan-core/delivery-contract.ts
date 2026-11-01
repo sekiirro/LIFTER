@@ -10,13 +10,9 @@ import { PlanIdSchema } from './schemas';
  */
 
 // ---------------------------------------------------------------------------
-// Contract switches (mutation targets)
+// Activation limits
 // ---------------------------------------------------------------------------
 
-/** When true, activation would incorrectly require a paired-publish transaction. */
-export const ACTIVATION_REQUIRES_PAIRED_PUBLISH = false;
-/** When true, a second activation would incorrectly be permitted. */
-export const PERMIT_SECOND_ACTIVATION = false;
 export const MAX_ACTIVATIONS = 1;
 
 // ---------------------------------------------------------------------------
@@ -175,15 +171,7 @@ export function activateSubscription(
   records: readonly FirstDeliveryRecord[],
   existingActivations: readonly Activation[] = [],
 ): Activation | null {
-  if (ACTIVATION_REQUIRES_PAIRED_PUBLISH) {
-    // paired publish would be required -> no independent activation
-    return null;
-  }
   if (existingActivations.length >= MAX_ACTIVATIONS) {
-    if (PERMIT_SECOND_ACTIVATION) {
-      // incorrectly permit a second activation
-      return createActivation(subscriptionId, records);
-    }
     // exactly once: return the existing activation, never a second
     return existingActivations[0] ?? null;
   }
@@ -267,8 +255,6 @@ export const FIRST_DELIVERY_FIXTURES = [
 
 export const planCoreDeliveryContract = {
   kinds: ['workout', 'nutrition'],
-  pairedPublishRequired: ACTIVATION_REQUIRES_PAIRED_PUBLISH,
-  secondActivationPermitted: PERMIT_SECOND_ACTIVATION,
   maxActivations: MAX_ACTIVATIONS,
   fixtures: FIRST_DELIVERY_FIXTURES,
   delayedSecondDelivery: DELAYED_SECOND_DELIVERY_FIXTURE,

@@ -1,7 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import {
   ImmutableRevisionRefSchema,
-  ALLOW_IN_PLACE_REVISION_MUTATION,
   isRevisionAppendOnly,
   validateRevisionAppendOnly,
 } from '../../lib/plan-core/schemas';
@@ -81,7 +80,6 @@ describe('plan core revision and audit contract', () => {
       [activation],
     );
     expect(result).toBe(activation);
-    expect(ALLOW_IN_PLACE_REVISION_MUTATION).toBe(false);
   });
 
   it('accepts a properly appended revision', () => {

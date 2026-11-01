@@ -69,7 +69,7 @@ export const ImmutableRevisionRefSchema = z
     version: z.number().int().nonnegative().optional(),
     publishedVersion: z.number().int().nonnegative().optional(),
     expectedPublishedVersion: z.number().int().nonnegative().optional(),
-    authorId: z.string().uuid().optional(),
+    authorId: z.string().uuid(),
     author: z.string().uuid().optional(),
     createdAt: z.string().optional(),
     immutable: z.literal(true).optional(),
@@ -97,18 +97,7 @@ export const expectedVersionSchema = ExpectedPublishedVersionSchema;
 // Explicit create modes
 // ---------------------------------------------------------------------------
 
-export const CreateModeSchema = z.enum([
-  'blank',
-  'template',
-  'existing',
-  'from_blank',
-  'from_template',
-  'from_existing',
-  'from_existing_plan',
-  'fromExistingPlan',
-]);
-export const createModeSchema = CreateModeSchema;
-export const CreateMode = CreateModeSchema;
+export const CreateModeSchema = z.enum(['blank', 'template', 'existing_plan']);
 
 export const CreatePlanInputSchema = z
   .object({
@@ -200,16 +189,13 @@ export function assertRevisionTransition(
 }
 
 // ---------------------------------------------------------------------------
-// Append-only revision guard (mutation target)
+// Append-only revision guard
 // ---------------------------------------------------------------------------
-
-export const ALLOW_IN_PLACE_REVISION_MUTATION = false;
 
 export function isRevisionAppendOnly(
   previous: ImmutableRevisionRef,
   next: ImmutableRevisionRef,
 ): boolean {
-  if (ALLOW_IN_PLACE_REVISION_MUTATION) return true;
   if (previous.planId !== next.planId) return false;
   if (previous.revisionId === next.revisionId) return false;
   if (next.revisionNumber <= previous.revisionNumber) return false;
@@ -282,7 +268,6 @@ export const planCoreSchemas = {
   ExpectedVersionSchema,
   expectedVersionSchema,
   CreateModeSchema,
-  createModeSchema,
   CreatePlanInputSchema,
   createPlanInputSchema,
   CreateNewPlanSchema,

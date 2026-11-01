@@ -4,6 +4,7 @@ import {
   PrivateDraftSchema,
   ImmutableRevisionRefSchema,
   CreatePlanInputSchema,
+  CreateModeSchema,
   ReadinessStateSchema,
   ExpectedPublishedVersionSchema,
   isValidRevisionTransition,
@@ -42,8 +43,21 @@ describe('plan core lifecycle schemas', () => {
       revisionId: VALID_UUID,
       revisionNumber: 1,
       publishedVersion: 0,
+      authorId: VALID_UUID,
     });
     expect(result.revisionNumber).toBe(1);
+    expect(result.authorId).toBe(VALID_UUID);
+  });
+
+  it('rejects a revision without authorId', () => {
+    expect(() =>
+      ImmutableRevisionRefSchema.parse({
+        planId: VALID_UUID,
+        revisionId: VALID_UUID,
+        revisionNumber: 1,
+        publishedVersion: 0,
+      }),
+    ).toThrow();
   });
 
   it('rejects implicit create (missing discriminator)', () => {
@@ -57,8 +71,27 @@ describe('plan core lifecycle schemas', () => {
       CreatePlanInputSchema.parse({ createMode: 'template' }),
     ).toBeTruthy();
     expect(
-      CreatePlanInputSchema.parse({ createMode: 'existing' }),
+      CreatePlanInputSchema.parse({ createMode: 'existing_plan' }),
     ).toBeTruthy();
+  });
+
+  it('accepts only the three spec create modes', () => {
+    expect(CreateModeSchema.parse('blank')).toBe('blank');
+    expect(CreateModeSchema.parse('template')).toBe('template');
+    expect(CreateModeSchema.parse('existing_plan')).toBe('existing_plan');
+  });
+
+  it('rejects non-spec create mode spellings', () => {
+    for (const spelling of [
+      'existing',
+      'from_blank',
+      'from_template',
+      'from_existing',
+      'from_existing_plan',
+      'fromExistingPlan',
+    ]) {
+      expect(() => CreateModeSchema.parse(spelling)).toThrow();
+    }
   });
 
   it('accepts readiness states', () => {
