@@ -77,6 +77,30 @@ describe('T003 tenant keys and two authorization walls', () => {
     ).rejects.toBe(rollback);
   });
 
+  it('denies revoked members and Sales at the SQL Forms capability wall', async () => {
+    await expect(
+      db.begin(async (tx) => {
+        const ids = await makeScope(tx);
+        await tx`update public.workspace_memberships
+          set revoked_at=clock_timestamp(), revoked_by=${ids.trainer}
+          where workspace_id=${ids.workspaceA} and user_id=${ids.trainer}`;
+
+        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: ids.trainer, role: 'authenticated' })},true)`;
+        const [revoked] = await tx`
+          select app_private.has_workspace_access(${ids.workspaceA},'author_forms') as allowed
+        `;
+        expect(revoked?.allowed).toBe(false);
+
+        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: ids.sales, role: 'authenticated' })},true)`;
+        const [sales] = await tx`
+          select app_private.has_workspace_access(${ids.workspaceA},'author_forms') as allowed
+        `;
+        expect(sales?.allowed).toBe(false);
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
+  });
+
   it('keeps the RLS denial assertion sensitive to a broadened-policy mutation', async () => {
     let mutantWasKilled = false;
     await expect(
