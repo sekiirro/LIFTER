@@ -19,6 +19,7 @@ export function getGlassMenuKeyAction(
   if (!itemCount) return null;
   if (key === 'Escape') return { type: 'restore-trigger' as const };
   if (key === 'Tab') return { type: 'close' as const };
+  if (key === ' ' || key === 'Spacebar') return { type: 'activate' as const };
   if (key === 'Home') return { type: 'focus' as const, index: 0 };
   if (key === 'End') return { type: 'focus' as const, index: itemCount - 1 };
   if (key === 'ArrowDown' || key === 'ArrowUp') {
@@ -104,7 +105,10 @@ export function GlassPopoverMenu({
     );
     const index = entries.indexOf(document.activeElement as HTMLElement);
     const action = getGlassMenuKeyAction(event.key, index, entries.length);
-    if (action?.type === 'restore-trigger') {
+    if (action?.type === 'activate') {
+      event.preventDefault();
+      entries[index]?.click();
+    } else if (action?.type === 'restore-trigger') {
       event.preventDefault();
       closeAndRestore();
     } else if (action?.type === 'focus') {

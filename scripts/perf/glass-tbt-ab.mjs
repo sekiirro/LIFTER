@@ -11,12 +11,12 @@ const scriptDir = path.dirname(fileURLToPath(import.meta.url));
 const afterRoot = path.resolve(
   process.env.GLASS_AFTER_ROOT ?? path.join(scriptDir, '../..'),
 );
-const beforeRoot = path.resolve(
-  process.env.GLASS_BEFORE_ROOT ?? 'C:/Users/NEW LAP/Desktop/LFTR-glass-before',
-);
+if (!process.env.GLASS_BEFORE_ROOT)
+  throw new Error('Set GLASS_BEFORE_ROOT to the baseline checkout');
+const beforeRoot = path.resolve(process.env.GLASS_BEFORE_ROOT);
 const reportRoot = path.resolve(
   process.env.GLASS_REPORT_ROOT ??
-    'C:/Users/NEW LAP/.lifter/reports/s21-glass/r6',
+    path.join(scriptDir, '../../.reports/glass-tbt-ab'),
 );
 const beforeUrl = process.env.GLASS_BEFORE_URL ?? 'http://127.0.0.1:4356';
 const afterUrl = process.env.GLASS_AFTER_URL ?? 'http://127.0.0.1:4355';
@@ -44,12 +44,26 @@ if (new URL(beforeUrl).port === '3300' || new URL(afterUrl).port === '3300')
 if (new URL(beforeUrl).port !== '4356' || new URL(afterUrl).port !== '4355')
   throw new Error('Use the assigned ports: before 4356, after 4355');
 if (
+  !process.env.DB_URL ||
   !process.env.API_URL ||
   !process.env.ANON_KEY ||
   !process.env.SERVICE_ROLE_KEY
 )
   throw new Error(
-    'Run through supabase-safe.mjs for Stack B environment injection',
+    'DB_URL, API_URL, ANON_KEY and SERVICE_ROLE_KEY are required',
+  );
+const apiEndpoint = new URL(process.env.API_URL);
+const dbEndpoint = new URL(process.env.DB_URL);
+if (
+  apiEndpoint.protocol !== 'http:' ||
+  apiEndpoint.hostname !== '127.0.0.1' ||
+  apiEndpoint.port !== '25421' ||
+  dbEndpoint.hostname !== '127.0.0.1' ||
+  dbEndpoint.port !== '25422' ||
+  dbEndpoint.pathname !== '/postgres'
+)
+  throw new Error(
+    'Use the assigned loopback Stack B API and database endpoints',
   );
 
 process.chdir(afterRoot);
@@ -411,21 +425,26 @@ async function sample(
     };
   });
   if (traceEnabled && !warmup && ordinal === 1) {
-    const chunks = [];
-    cdp.on('Tracing.dataCollected', (event) => chunks.push(...event.value));
     const complete = new Promise((resolve) =>
       cdp.once('Tracing.tracingComplete', resolve),
     );
     await cdp.send('Tracing.end');
-    await complete;
-    traceEvents = chunks;
+    const { stream } = await complete;
+    let trace = '';
+    try {
+      while (true) {
+        const chunk = await cdp.send('IO.read', { handle: stream });
+        trace += chunk.data;
+        if (chunk.eof) break;
+      }
+    } finally {
+      await cdp.send('IO.close', { handle: stream });
+    }
+    traceEvents = trace;
   }
   await context.close();
   if (traceEvents)
-    await writeFile(
-      path.join(reportRoot, `trace-${arm}.json`),
-      JSON.stringify({ traceEvents }),
-    );
+    await writeFile(path.join(reportRoot, `trace-${arm}.json`), traceEvents);
   return { arm, ordinal, warmup, ...values };
 }
 
@@ -486,14 +505,15 @@ async function main() {
   process.stdout.write(
     `Reusing ${fixture.existingLinkCount} existing links; starting production servers…\n`,
   );
-  await Promise.all([
-    spawnServer(beforeRoot, beforeUrl, 'BEFORE'),
-    spawnServer(afterRoot, afterUrl, 'AFTER'),
-  ]);
-  process.stdout.write('Both production servers are ready; measuring…\n');
-  const browser = await chromium.launch({ headless: true });
   const raw = [];
+  let browser;
   try {
+    await Promise.all([
+      spawnServer(beforeRoot, beforeUrl, 'BEFORE'),
+      spawnServer(afterRoot, afterUrl, 'AFTER'),
+    ]);
+    process.stdout.write('Both production servers are ready; measuring…\n');
+    browser = await chromium.launch({ headless: true });
     for (let index = 0; index < warmupsPerArm; index++) {
       raw.push(
         await sample(
@@ -555,7 +575,7 @@ async function main() {
       );
     }
   } finally {
-    await browser.close();
+    await browser?.close();
     for (const server of servers) server.kill();
   }
   const measured = raw.filter((entry) => !entry.warmup);

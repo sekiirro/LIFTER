@@ -43,6 +43,10 @@ describe('Glass popover menu keyboard model', () => {
     });
   });
 
+  it('activates the focused item with Space', () => {
+    expect(getGlassMenuKeyAction(' ', 1, 3)).toEqual({ type: 'activate' });
+  });
+
   it('keeps the menu closed in server markup and exposes an accessible trigger', () => {
     const html = renderToStaticMarkup(
       <GlassPopoverMenu

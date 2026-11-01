@@ -3,11 +3,21 @@ import { expect, test } from '@playwright/test';
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 
 test.describe('glass runtime focus behavior', () => {
-  test.beforeEach(({}, testInfo) => {
+  test.beforeEach(async ({ page }, testInfo) => {
     test.skip(
       testInfo.project.name !== 'chromium',
       'Glass enhancement focus checks use desktop Chromium.',
     );
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'hardwareConcurrency', {
+        configurable: true,
+        value: 8,
+      });
+      Object.defineProperty(navigator, 'deviceMemory', {
+        configurable: true,
+        value: 8,
+      });
+    });
   });
 
   test('keeps the dock link node focused when enhancement completes', async ({
