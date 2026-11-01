@@ -16,19 +16,20 @@ describe('F13 isolated Stack C contract', () => {
     }
   });
 
-  it('infers the selected stack from generic CI endpoint variables', () => {
-    expect(
+  it('requires an explicit stack selector alongside generic CI endpoint variables', () => {
+    expect(() =>
       selectStack({
         API_URL: 'http://127.0.0.1:35421',
         DB_URL: 'postgres://postgres:postgres@127.0.0.1:35422/postgres',
       }),
-    ).toBe('c');
+    ).toThrow('No local Supabase stack selected');
     expect(
       selectStack({
-        API_URL: 'http://127.0.0.1:54321',
-        DB_URL: 'postgres://postgres:postgres@127.0.0.1:54322/postgres',
+        LIFTER_SUPABASE_STACK: 'c',
+        API_URL: 'http://127.0.0.1:35421',
+        DB_URL: 'postgres://postgres:postgres@127.0.0.1:35422/postgres',
       }),
-    ).toBe('a');
+    ).toBe('c');
   });
 
   it('binds Stack C to its own project and full distinct port block', () => {
