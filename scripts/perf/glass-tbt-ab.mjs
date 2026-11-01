@@ -2,6 +2,7 @@ import { spawn } from 'node:child_process';
 import { mkdir, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
+import { waitForServerReady } from './server-readiness.mjs';
 import { chromium } from '@playwright/test';
 import { createClient } from '@supabase/supabase-js';
 import { createServerClient } from '@supabase/ssr';
@@ -69,7 +70,6 @@ if (
 process.chdir(afterRoot);
 
 const servers = [];
-const sleep = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 
 function spawnServer(root, url, label) {
   const port = new URL(url).port;
@@ -94,19 +94,7 @@ function spawnServer(root, url, label) {
     },
   );
   servers.push(child);
-  return (async () => {
-    const deadline = Date.now() + 120_000;
-    while (Date.now() < deadline) {
-      if (child.exitCode !== null)
-        throw new Error(`${label} Next server exited with ${child.exitCode}`);
-      try {
-        const response = await fetch(new URL('/api/health', url));
-        if (response.ok) return;
-      } catch {}
-      await sleep(250);
-    }
-    throw new Error(`${label} Next server did not become ready`);
-  })();
+  return waitForServerReady(child, url, label);
 }
 
 async function existingRouteFixture() {
