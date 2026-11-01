@@ -330,4 +330,64 @@ describe('F16 mutation probes', () => {
       expect((error as Error).message).toBe(marker);
     }
   });
+
+  it('T018: bypassing PO, CAS, or append-only guards breaks each negative contract', async () => {
+    const exerciseId = randomUUID();
+    const request = {
+      name_ar: 'اختبار الطفرة',
+      name_en: 'Mutation exercise',
+      primary_muscle_code: 'chest',
+      secondary_muscle_codes: [],
+      equipment_codes: ['barbell'],
+      defaults: {},
+    };
+    const marker = 'rollback_catalog_exercise_mutations';
+    try {
+      await db.begin(async (tx) => {
+        await tx`insert into public.exercises(id, created_by, current_version)
+          values (${exerciseId}, ${po.userId}, 1)`;
+        await tx`insert into public.exercise_versions(exercise_id, version, payload, created_by)
+          values (${exerciseId}, 1, ${tx.json(request)}, ${po.userId})`;
+        await tx`create or replace function public.catalog_create_exercise(p_operation_key uuid, p_request jsonb)
+          returns jsonb language sql security definer set search_path = '' as $$ select '{}'::jsonb $$`;
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerA.userId, role: 'authenticated' })}, true)`;
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx`select public.catalog_create_exercise(${randomUUID()}, ${tx.json(request)})`,
+            ).rejects.toMatchObject({ code: '42501' }),
+          'removing the SQL PO guard must break the denied-role assertion',
+        );
+
+        await tx`select set_config('role', 'postgres', true)`;
+        await tx`create or replace function public.catalog_version_exercise(p_exercise_id uuid, p_expected_version integer, p_operation_key uuid, p_request jsonb)
+          returns jsonb language sql security definer set search_path = '' as $$
+            select jsonb_build_object('exercise_id', $1, 'version', 2)
+          $$`;
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: po.userId, role: 'authenticated' })}, true)`;
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx`select public.catalog_version_exercise(${exerciseId}, 0, ${randomUUID()}, ${tx.json(request)})`,
+            ).rejects.toMatchObject({ code: '40001' }),
+          'removing expected-version CAS must break the stale-write assertion',
+        );
+
+        await tx`select set_config('role', 'postgres', true)`;
+        await tx`alter table public.exercise_versions disable trigger exercise_versions_append_only`;
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx`update public.exercise_versions set payload = '{}'::jsonb where exercise_id = ${exerciseId} and version = 1`,
+            ).rejects.toMatchObject({ code: '23514' }),
+          'removing append-only protection must break the immutability assertion',
+        );
+        throw new Error(marker);
+      });
+    } catch (error) {
+      expect((error as Error).message).toBe(marker);
+    }
+  });
 });

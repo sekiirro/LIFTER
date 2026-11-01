@@ -39,6 +39,7 @@ Every mutation accepts an action-bound UUIDv4 operation key, request data, and (
 | --- | --- | --- | --- |
 | `catalog_create_exercise` | Create global identity + v1 | PO only | Stable ID and v1; bilingual name/taxonomy fields valid; one audit event. |
 | `catalog_version_exercise` | Append global exercise version | PO only | New immutable version under same ID; expected-version CAS. |
+| `catalog_resolve_exercise_video` | Resolve current selected-workspace mapping | PO for an explicit workspace; WO/Trainer with current `coaching_work` in that workspace | HTTPS YouTube/Google Drive URL only; returns only the selected workspace mapping, resolved dynamically. |
 | `catalog_remove_exercise` / `catalog_restore_exercise` | Global lifecycle transition | PO only | Append non-destructive Remove or Restore marker; preserve identity, versions, plans and snapshots. |
 | `catalog_merge_exercise` | Supersede duplicate identity | PO only | Active survivor only; deterministic pair locking; no chains/cycles. |
 | `catalog_write_workspace_exercise` | Create/version workspace-only exercise | PO for explicit authorized workspace; WO/Trainer in own workspace | Workspace-bound identity/version; no cross-workspace read. |
