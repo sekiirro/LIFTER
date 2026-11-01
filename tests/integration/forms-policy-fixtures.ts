@@ -128,11 +128,15 @@ export async function withFormsPolicyF13Fixtures(
       reflowedRenewal: Scenario;
       frozenThenUnfrozen: Scenario;
       expiredSubscription: Scenario;
+      recurringActive: Scenario;
+      recurringFreeze: Scenario;
     },
   ) => Promise<void>,
 ) {
   const f = await clientContext();
   const purchases = await Promise.all([
+    bought(f),
+    bought(f),
     bought(f),
     bought(f),
     bought(f),
@@ -234,6 +238,9 @@ export async function withFormsPolicyF13Fixtures(
       freezeId,
     );
 
+    await activate(tx, f, purchases[5]!);
+    await activate(tx, f, purchases[6]!);
+
     const [expiredDuration] = await tx`
       select duration_days from public.subscriptions where id=${purchases[3]!.sid}
     `;
@@ -280,6 +287,33 @@ export async function withFormsPolicyF13Fixtures(
         clientId: purchases[3]!.t.id,
         subscriptionId: purchases[3]!.sid,
       },
+      recurringActive: {
+        clientId: purchases[5]!.t.id,
+        subscriptionId: purchases[5]!.sid,
+      },
+      recurringFreeze: {
+        clientId: purchases[6]!.t.id,
+        subscriptionId: purchases[6]!.sid,
+      },
     });
   });
+}
+
+export async function changePolicyFixtureFreeze(
+  tx: TransactionSql,
+  f: Context,
+  scenario: Scenario,
+  action: 'apply' | 'remove',
+  expectedRevision: number,
+  freezeId?: string,
+) {
+  return freeze(
+    tx,
+    f,
+    scenario.clientId,
+    scenario.subscriptionId,
+    action,
+    expectedRevision,
+    freezeId,
+  );
 }
