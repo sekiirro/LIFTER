@@ -205,11 +205,14 @@ describe('global food lifecycle and merge RPCs', () => {
         db`select count(*)::int as keys from public.catalog_food_name_keys where food_id = ${food.food_id} and active`,
       ).resolves.toEqual([{ keys: 0 }]);
     }
+    const unauthorizedSource = await createFood(
+      `Unauthorized merge ${randomUUID()}`,
+    );
     await expect(
       asActor(
         trainerA.userId,
         (tx) =>
-          tx`select public.catalog_merge_food(${source.food_id}, ${terminal.food_id}, 0, ${randomUUID()})`,
+          tx`select public.catalog_merge_food(${unauthorizedSource.food_id}, ${terminal.food_id}, 0, ${randomUUID()})`,
       ),
     ).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
   });
