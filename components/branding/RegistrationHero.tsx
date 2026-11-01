@@ -167,7 +167,7 @@ export function RegistrationHero({
       const adaptiveDimming = adaptiveDimmingFromLuminance(cardPhoto.luminance);
       stage.style.setProperty(
         '--hero-photo-luminance',
-        cardPhoto.luminance.toFixed(4),
+        cardPhoto.luminance.toString(),
       );
       stage.style.setProperty(
         '--hero-adaptive-dimming',

@@ -56,6 +56,7 @@ export function bannerPng(width = 316, height = 158): Buffer {
   ]);
 }
 
+/** Light artwork near L=0.5 reproduces the former contrast failure in glass mode. */
 export function brightBannerPng(): Buffer {
   return readFileSync(
     join(process.cwd(), 'tests/fixtures/registration-hero-bright-artwork.png'),
