@@ -29,7 +29,31 @@ Architect notes on S22-PO-9:
 - S22-PO-9 rule 2 supersedes S22-PO-2's agent list: **Luna runs at MEDIUM effort, maximum 2 concurrent**.
 - **Big Pickle** is `opencode/big-pickle` and is added to the OpenCode free-model agents.
 - When OpenCode free quotas are exhausted, remove unavailable agents and use **Kilo Code's two best available free models**, selected by task suitability.
-- Rule 4 says "4 isolated Supabase stacks", but every earlier rule forbids Stack A: `supabase-safe` refuses it without `--allow-stack-a`. **Ask the PO before any Stack A use.**
+- Rule 4 ("4 isolated Supabase stacks") is now governed by **S22-PO-10** (below): Stack A is restored only through the Luna restoration task, after all its safety gates pass. Until then Stack A stays refused by `supabase-safe`; never pass `--allow-stack-a` outside that task's approved lane brief.
+
+#### S22-PO-10 — Stack A restoration (verbatim)
+
+Add **Stack A restoration** as a delegated task in the next-session handoff and startup prompt.
+
+Have Claude assign it to Luna: remove unsafe default fallback while preserving CI, fix wrapper identity validation, add regression tests, and verify isolation. Restore Stack A as the fourth development stack only after all safety gates pass. Never bypass safeguards or risk existing work.
+
+Claude remains Architect/Reviewer only. Execute this alongside other features without blocking F13.
+
+#### Stack A restoration — investigation facts and task (architect, read-only, 2026-11-01)
+
+- **Why it was banned (S20, 2026-10-31):** Stack A (`lifter`, 54321/54322) is the DEFAULT target: every worktree shares the repo's `supabase/config.toml` (`project_id = "lifter"`), while B/C/D have dedicated workdirs. Three accidental hits: F15 prep reset (~05:22Z) and F14 r8 reset (~05:4xZ), where a `supabase-safe exec` child started from the repo root; then F14 r9 integration tests wrote to A because `exec` injected the repo-root connection env. Data was local, unowned and replayable. Response: wrapper hardening and an architect-level "never Stack A" rule (not a PO decision).
+- **Risk still present:** `scripts/local-stack.mjs` `selectStack()` returns `'a'` when neither `LIFTER_SUPABASE_STACK` nor endpoint env is set, and a raw `npx supabase ...` from any worktree root targets A.
+- **Latent bug:** `supabase-safe` `STACKS.A.project = 'supabase_db_lifter'`, but `config.toml` says `"lifter"`, so the identity check refuses Stack A even with `--allow-stack-a`.
+- **CI depends on the default:** the CI integration jobs run `supabase start` and `npm run test:integration` with no stack selector. Any fix must keep CI working.
+- **Live state at close:** Stack A containers are running and healthy (`supabase_db_lifter` recreated 2026-10-31T05:42:57Z by the second incident; idle since); 0 connections to 54321/54322; nothing depends on it; `supabase_vector_lifter` is in a restart loop (cosmetic; a restart needs PO approval).
+- **Open PO question:** does the PO use Stack A personally from the LFTR checkout (which uses the shared default config)? Ask before assigning Stack A to any lane.
+- **Task (Luna, MEDIUM; own worktree and branch from `origin/main`; small PR; runs in parallel and never blocks F13):**
+  1. Remove the silent default: `selectStack()` fails closed when no stack is selected, except in CI (set `LIFTER_SUPABASE_STACK=a` explicitly in the CI workflow env, or allow the fallback only when `CI=true`).
+  2. Fix the `supabase-safe` Stack A identity (`project_id "lifter"`), keeping the `--allow-stack-a` requirement.
+  3. Regression tests: no selector -> local refusal; CI path still works; wrong-stack workdir refused; Stack A requires `--allow-stack-a`; child cwd pinned to the validated workdir; existing redaction tests unchanged. Show RED then GREEN, plus a mutation check per guard.
+  4. Verify isolation read-only before and after: no connections or processes on A; B/C/D and active lanes untouched. Never reset or touch B/C/D, never bypass a safeguard.
+  5. Normal gates: CI window, CodeRabbit APPROVED on the exact SHA, 0 unresolved, architect review, PO exact-SHA approval, `--match-head-commit`.
+  6. Only after the fix merges and all safety gates pass: restore Stack A as the 4th dev stack, starting with disposable or replay-heavy work (e.g. F16 DB tasks), with `--allow-stack-a` only in that one lane's brief.
 
 ### Live state at S22 close
 
@@ -80,9 +104,9 @@ Files reported by the architect:
 - New: `supabase/migrations/20261103130400_f13_reject_chained_unstarted_renewal.sql`.
 - Modified: `tests/integration/renewal-operations.test.ts`.
 - Modified: `tests/unit/renewal-migration.test.ts`.
-- Modified: `specs/013.../checklists/analyze.md` (path abbreviated in the fact sheet).
-- Modified: `specs/013.../checklists/quickstart.md` (path abbreviated in the fact sheet).
-- Modified: `specs/013.../checklists/tasks.md` (path abbreviated in the fact sheet).
+- Modified: `specs/013-freeze-renewal-refunds/checklists/analyze.md`.
+- Modified: `specs/013-freeze-renewal-refunds/quickstart.md`.
+- Modified: `specs/013-freeze-renewal-refunds/tasks.md`.
 - Untracked: `scripts/f13-unit-runner.mjs`; decide whether it belongs.
 
 Agent-reported, unreviewed: the 14-test Stack C renewal suite was green with a mutation check. Luna hit its quota mid-run; final gates were **not** run.
@@ -93,8 +117,9 @@ Review first: inspect every r7 change, including whether the runner belongs; run
 
 Files reported by the architect:
 
-- Modified: `vendor/glisse/dist/*` (vendored Glisse stable-node additive hook).
-- Modified: `NOTICE.md`.
+- Modified: `components/shell/AccessibleTooltip.tsx`, `components/shell/AppShell.tsx`, `components/shell/ShellNavigation.tsx`, `components/ui/glass/GlassSurface.tsx`.
+- Modified tests: `tests/e2e/shell.spec.ts`, `tests/unit/accessible-tooltip.test.tsx`, `tests/unit/glisse-vendored.test.ts`; new: `tests/unit/glass-surface-interaction.test.tsx`, `tests/unit/shell-navigation.test.ts`.
+- Modified vendored Glisse: `vendor/glisse/NOTICE.md`, `vendor/glisse/dist/index.js`, `index.cjs`, `index.d.ts`, `index.d.cts` (additive stable-node hook).
 
 Agent-reported, unreviewed: the stable-node approach is partially done but uncommitted because the Luna quota was cut.
 
@@ -102,7 +127,7 @@ Review first: the vendored Glisse change is a **third modification beyond the tw
 
 #### 3. Hero chunk 1 in `C:/Users/NEW LAP/Desktop/LFTR-hero`
 
-Files reported by the architect: exact filenames are **not enumerated**; obtain the exact list with `git status` before touching anything.
+Files (git status at close): modified `app/register/[token]/SignupForm.tsx`, `app/register/[token]/page.tsx`, `components/branding/RegistrationBrand.tsx`, `components/branding/registration-brand.module.css`; new `components/branding/RegistrationHero.tsx`, `components/branding/liquid-glass.module.css`, `components/branding/registration-hero.module.css`, `components/branding/registration-hero.ts`, `specs/014-workspace-branding/hero-implementation-plan.md`, `tests/unit/registration-hero.test.ts`. **Never commit** the untracked `AGENTS.md` or `app/(dev)/showcase/rest/` (the agent's temporary preview harness; remove it or keep it uncommitted).
 
 Agent-reported, unreviewed: MiniMax stopped mid-run with 12 uncommitted files. The run session is `C:/Users/NEW LAP/.lifter/runs/s22-mm-hero-c1/result.json`.
 
@@ -147,7 +172,7 @@ Verbatim authority: `C:/Users/NEW LAP/.lifter/briefs/s22-po-decisions-verbatim.m
 1. Exact-SHA approvals for PR #26 after its CI window, PR #27, PR #28, and later F14b/Hero.
 2. F14b copy: Arabic `branding.bannerSizeHint` (still English in `ar.ts`) plus 16 DRAFT strings: 12 from chunk 3 and `retryRemove`, `reloadDraft`, `workspaceUnavailable`, `uploadInProgress` from chunks 4-5; list at `C:/Users/NEW LAP/.lifter/reports/s22-f14b/chunk45/report.md`.
 3. Carry-over product decisions: F14b/T&C AR/EN copy, sex labels, Q3 alert channel, and the D16-4 food dataset from S21.
-4. Whether Stack A may ever be used under S22-PO-9 rule 4; ask the PO explicitly and never infer permission.
+4. Stack A: S22-PO-10 authorizes the Luna restoration task; still ask whether the PO uses Stack A personally from the LFTR checkout, and get exact-SHA approval for the restoration PR before any lane uses Stack A.
 5. Whether to revert the Glisse installation in the PO main checkout (S21 carry-over).
 6. Stack D vault metadata check and the 5 remaining S17 log redactions.
 
@@ -155,14 +180,15 @@ Verbatim authority: `C:/Users/NEW LAP/.lifter/briefs/s22-po-decisions-verbatim.m
 
 1. Re-verify live state before acting; do not clean, reset, stop, or overwrite the three uncommitted items.
 2. **F13 first:** resume r7 review, run every gate, commit/push, resolve all 3 threads, obtain one full review, use a CI window on the exact final SHA, then request PO exact-SHA approval.
-3. **PR #26:** obtain the CI public window on `a4f88b6`, request PO exact-SHA approval, then merge with `--match-head-commit` and keep the branch.
-4. **PR #28:** review the vendored change and 3 findings, finish fixes, gate, commit/push, review, CI, then PO exact-SHA approval.
-5. **F14b:** complete chunks 6-8, run the gates, prepare the PR, and request exact-SHA approval.
-6. **Hero:** review/resume chunk 1, complete the implementation and gates, then prepare the PR and exact-SHA request.
-7. **F15:** only after the F13 merge, replay `614325b` against final F14/F13 and run the F15 gates.
-8. **F16:** push the 4 accepted commits; complete T001, the UI tasks, and DB tasks on the first available safe stack.
-9. **Plan Core, then F17/F18:** start only as their F16/Plan Core dependencies allow.
-10. Delegate regular safe disk cleanup using the allowlist pattern; never trade away active or uncommitted work.
+3. **Stack A restoration (S22-PO-10), in parallel with F13:** start the Luna task above in its own worktree; never let it block F13 or touch B/C/D.
+4. **PR #26:** obtain the CI public window on `a4f88b6`, request PO exact-SHA approval, then merge with `--match-head-commit` and keep the branch.
+5. **PR #28:** review the vendored change and 3 findings, finish fixes, gate, commit/push, review, CI, then PO exact-SHA approval.
+6. **F14b:** complete chunks 6-8, run the gates, prepare the PR, and request exact-SHA approval.
+7. **Hero:** review/resume chunk 1, complete the implementation and gates, then prepare the PR and exact-SHA request.
+8. **F15:** only after the F13 merge, replay `614325b` against final F14/F13 and run the F15 gates.
+9. **F16:** push the 4 accepted commits; complete T001, the UI tasks, and DB tasks on the first available safe stack.
+10. **Plan Core, then F17/F18:** start only as their F16/Plan Core dependencies allow.
+11. Delegate regular safe disk cleanup using the allowlist pattern; never trade away active or uncommitted work.
 
 Proposed stacks for the next session:
 
@@ -170,7 +196,7 @@ Proposed stacks for the next session:
 - **C:** F13.
 - **D:** F15.
 - **F16 DB:** whichever of C or D frees first.
-- **Stack A:** only if the PO explicitly allows it; until then, never use it.
+- **Stack A:** restored as the 4th dev stack only after the S22-PO-10 restoration PR merges and its safety gates pass; first assign it disposable/replay-heavy work (e.g. F16 DB), with `--allow-stack-a` only in that lane's brief.
 
 ### START NEW SESSION prompt
 
@@ -195,8 +221,9 @@ Agent limits: 2 Luna MEDIUM, 1 MiniMax highest, 1 Big Pickle, 1 Beam, 1 Flint.
 If OpenCode quotas are exhausted, use Kilo's two best available free models; never exceed the limits.
 Merge gates: CI green + CodeRabbit APPROVED on the exact SHA + 0 unresolved + architect review + PO exact-SHA approval + --match-head-commit.
 Keep every branch after merge. Use supabase-safe for every Supabase call.
-Never use Stack A without explicit PO approval; use B serially for F14b/Hero/Glisse screenshots, C for F13, D for F15.
-Assign F16 DB to whichever of C or D frees first; Stack A only with explicit PO permission.
+Stack A (S22-PO-10): assign Luna (MEDIUM) the Stack A restoration task from §0-S22-FINAL in its own worktree, in parallel and never blocking F13.
+Until that PR merges and all safety gates pass, Stack A stays refused; never pass --allow-stack-a outside that task's approved lane brief.
+Use B serially for F14b/Hero/Glisse screenshots, C for F13, D for F15; F16 DB on whichever of C/D frees first, later Stack A once restored.
 Migrations require unique valid UTC timestamps; never edit a pushed migration.
 Never read or print .env*, opencode.json, keys, or tokens.
 Never deploy or migrate production; the PO's LFTR checkout must remain untouched.
