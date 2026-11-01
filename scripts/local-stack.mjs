@@ -28,7 +28,7 @@ function valueFor(configText, section, key) {
   return match ? Number(match[1]) : undefined;
 }
 
-/** @param {{ LIFTER_SUPABASE_STACK?: string, CI?: string, API_URL?: string, SUPABASE_URL?: string, DB_URL?: string, SUPABASE_DB_URL?: string }} [env] */
+/** @param {{ LIFTER_SUPABASE_STACK?: string, API_URL?: string, SUPABASE_URL?: string, DB_URL?: string, SUPABASE_DB_URL?: string }} [env] */
 export function selectStack(env = process.env, root = process.cwd()) {
   const requested = env.LIFTER_SUPABASE_STACK;
   if (requested && !['a', 'b', 'c', 'd'].includes(requested))
@@ -61,7 +61,6 @@ export function selectStack(env = process.env, root = process.cwd()) {
       // The selected-stack target validator reports malformed endpoints.
     }
   }
-  if (env.CI === 'true') return 'a';
   throw new Error(
     'No local Supabase stack selected. Set LIFTER_SUPABASE_STACK to a, b, c, or d.',
   );
