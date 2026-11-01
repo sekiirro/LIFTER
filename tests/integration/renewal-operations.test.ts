@@ -83,6 +83,67 @@ async function fixture() {
   return { f, purchase, offerId };
 }
 
+it.each([
+  'client_id',
+  'predecessor_subscription_id',
+  'package_offer_id',
+  'expected_revision',
+  'request_key',
+] as const)(
+  'returns invalid_input without writes when %s is absent',
+  async (missingKey) => {
+    const { f, purchase, offerId } = await fixture();
+    await probe(async (tx) => {
+      await activate(tx, f, purchase);
+      const request: Record<string, unknown> = {
+        workspace_id: f.wsA.id,
+        client_id: purchase.t.id,
+        predecessor_subscription_id: purchase.sid,
+        package_offer_id: offerId,
+        request_key: randomUUID(),
+        expected_revision: 0,
+        renewal_confirmed: true,
+        installments: null,
+      };
+      delete request[missingKey];
+      const state = async () => {
+        const [row] = await tx`
+        select
+          (select count(*)::int from public.subscriptions s
+            where s.workspace_id=${f.wsA.id} and s.client_id=${purchase.t.id}) as subscriptions,
+          (select count(*)::int from public.subscription_renewals r
+            where r.workspace_id=${f.wsA.id} and r.client_id=${purchase.t.id}) as renewals,
+          (select count(*)::int from app_private.subscription_renewal_operations o
+            where o.workspace_id=${f.wsA.id} and o.client_id=${purchase.t.id}) as operations,
+          (select count(*)::int from app_private.subscription_entitlement_projection p
+            where p.workspace_id=${f.wsA.id} and p.subscription_id=${purchase.sid}) as entitlements,
+          (select count(*)::int from public.subscription_installments i
+            join public.subscriptions s on s.workspace_id=i.workspace_id and s.id=i.subscription_id
+            where s.workspace_id=${f.wsA.id} and s.client_id=${purchase.t.id}) as installments,
+          (select count(*)::int from public.payment_events e
+            join public.subscriptions s on s.workspace_id=e.workspace_id and s.id=e.subscription_id
+            where s.workspace_id=${f.wsA.id} and s.client_id=${purchase.t.id}) as payment_events,
+          (select count(*)::int from public.audit_events a
+            where a.workspace_id=${f.wsA.id}) as audit_events`;
+        return row;
+      };
+      const before = await state();
+      const result = await tx
+        .savepoint(async (inner) => {
+          await inner`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+          await inner`set local role authenticated`;
+          const [row] = await inner`
+          select public.record_renewal(${inner.json(request as JSONValue)}) as result`;
+          await inner`reset role`;
+          return row!.result as Record<string, unknown>;
+        })
+        .catch(() => ({ status: 'rpc_error' }));
+      expect(result).toMatchObject({ status: 'invalid_input' });
+      expect(await state()).toEqual(before);
+    });
+  },
+);
+
 it('T010 reuses F12 installment snapshots and anchors renewal dues to its recording date', async () => {
   const { f, purchase, offerId } = await fixture();
   await probe(async (tx) => {

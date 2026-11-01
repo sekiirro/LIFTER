@@ -6,6 +6,7 @@ const migrationPaths = [
   'supabase/migrations/20261103127000_f13_renewal_package_lookup_fix.sql',
   'supabase/migrations/20261103130400_f13_reject_chained_unstarted_renewal.sql',
   'supabase/migrations/20261103130600_f13_renewal_lineage_tail.sql',
+  'supabase/migrations/20261103130700_f13_renewal_required_keys.sql',
 ];
 
 describe('F13 renewal migration', () => {
@@ -66,7 +67,7 @@ describe('F13 renewal migration', () => {
 
   it('rejects any predecessor with an existing successor, started or not', () => {
     const migration = readFileSync(
-      'supabase/migrations/20261103130600_f13_renewal_lineage_tail.sql',
+      'supabase/migrations/20261103130700_f13_renewal_required_keys.sql',
       'utf8',
     );
     const bodyStart = migration.indexOf(
@@ -81,6 +82,43 @@ describe('F13 renewal migration', () => {
     );
     expect(body).toMatch(
       /exists\(select 1 from public\.subscription_renewals successor[\s\S]*?successor\.predecessor_subscription_id=predecessor_id\)/,
+    );
+  });
+
+  it('treats every missing required request key as invalid input and preserves the RPC ACL', () => {
+    const migration = readFileSync(
+      'supabase/migrations/20261103130700_f13_renewal_required_keys.sql',
+      'utf8',
+    );
+    const bodyStart = migration.indexOf(
+      'function public.record_renewal(request jsonb)',
+    );
+    const body = migration.slice(
+      bodyStart,
+      migration.indexOf(
+        'alter function public.record_renewal(jsonb) owner to postgres',
+        bodyStart,
+      ),
+    );
+
+    for (const key of [
+      'client_id',
+      'predecessor_subscription_id',
+      'package_offer_id',
+      'request_key',
+    ]) {
+      expect(body).toMatch(
+        new RegExp(`coalesce\\(request->>'${key}' !~\\* '[^']+',true\\)`),
+      );
+    }
+    expect(body).toMatch(
+      /coalesce\(request->>'expected_revision' !~ '[^']+',true\)/,
+    );
+    expect(migration).toMatch(
+      /language plpgsql volatile security definer set search_path=''/,
+    );
+    expect(migration).toMatch(
+      /owner to postgres[\s\S]*revoke all on function public\.record_renewal\(jsonb\) from public,anon,authenticated,service_role[\s\S]*grant execute on function public\.record_renewal\(jsonb\) to authenticated/,
     );
   });
 });
