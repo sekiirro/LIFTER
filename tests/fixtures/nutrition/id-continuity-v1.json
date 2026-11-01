@@ -1,0 +1,459 @@
+{
+  "previous": {
+    "structure": {
+      "kind": "single_day",
+      "implicitDayTypeId": "11111111-1111-1111-1111-111111111111"
+    },
+    "dayTypes": [
+      {
+        "id": "11111111-1111-1111-1111-111111111111",
+        "name": "Training",
+        "trainingDay": true
+      }
+    ],
+    "meals": [
+      {
+        "id": "22222222-2222-2222-2222-222222222222",
+        "conditional": "always",
+        "items": [
+          {
+            "id": "44444444-4444-4444-4444-444444444444",
+            "foodVersionId": "77777777-7777-7777-7777-777777777777",
+            "quantity": { "value": "150", "unit": "g" },
+            "notes": "Grill until opaque",
+            "alternatives": [
+              {
+                "id": "66666666-6666-6666-6666-666666666666",
+                "foodVersionId": "88888888-8888-8888-8888-888888888888",
+                "quantity": { "value": "120", "unit": "g" }
+              }
+            ]
+          },
+          {
+            "id": "55555555-5555-5555-5555-555555555555",
+            "foodVersionId": "99999999-9999-9999-9999-999999999999",
+            "quantity": { "value": "2", "unit": "eggs" },
+            "alternatives": []
+          }
+        ]
+      },
+      {
+        "id": "33333333-3333-3333-3333-333333333333",
+        "conditional": "always",
+        "items": [
+          {
+            "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+            "foodVersionId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+            "quantity": { "value": "130", "unit": "g" },
+            "alternatives": []
+          }
+        ]
+      }
+    ]
+  },
+  "selection": {
+    "itemId": "44444444-4444-4444-4444-444444444444",
+    "alternativeId": "66666666-6666-6666-6666-666666666666"
+  },
+  "duplicate": {
+    "source": {
+      "mealId": "22222222-2222-2222-2222-222222222222",
+      "itemId": "44444444-4444-4444-4444-444444444444"
+    },
+    "assignment": {
+      "itemId": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+      "alternativeIds": ["cccccccc-cccc-cccc-cccc-cccccccccccc"]
+    }
+  },
+  "cases": [
+    {
+      "name": "quantity and notes retain ids and carry the choice",
+      "candidate": {
+        "structure": {
+          "kind": "single_day",
+          "implicitDayTypeId": "11111111-1111-1111-1111-111111111111"
+        },
+        "dayTypes": [
+          {
+            "id": "11111111-1111-1111-1111-111111111111",
+            "name": "Training",
+            "trainingDay": true
+          }
+        ],
+        "meals": [
+          {
+            "id": "22222222-2222-2222-2222-222222222222",
+            "conditional": "always",
+            "items": [
+              {
+                "id": "44444444-4444-4444-4444-444444444444",
+                "foodVersionId": "77777777-7777-7777-7777-777777777777",
+                "quantity": { "value": "175", "unit": "g" },
+                "notes": "Roast and rest before slicing",
+                "alternatives": [
+                  {
+                    "id": "66666666-6666-6666-6666-666666666666",
+                    "foodVersionId": "88888888-8888-8888-8888-888888888888",
+                    "quantity": { "value": "140", "unit": "g" }
+                  }
+                ]
+              },
+              {
+                "id": "55555555-5555-5555-5555-555555555555",
+                "foodVersionId": "99999999-9999-9999-9999-999999999999",
+                "quantity": { "value": "2", "unit": "eggs" },
+                "alternatives": []
+              }
+            ]
+          },
+          {
+            "id": "33333333-3333-3333-3333-333333333333",
+            "conditional": "always",
+            "items": [
+              {
+                "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+                "foodVersionId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+                "quantity": { "value": "130", "unit": "g" },
+                "alternatives": []
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "itemIds": [
+          "44444444-4444-4444-4444-444444444444",
+          "55555555-5555-5555-5555-555555555555",
+          "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+        ],
+        "alternativeIds": ["66666666-6666-6666-6666-666666666666"],
+        "selection": {
+          "itemId": "44444444-4444-4444-4444-444444444444",
+          "alternativeId": "66666666-6666-6666-6666-666666666666"
+        }
+      }
+    },
+    {
+      "name": "reorder and move retain ids and carry the choice",
+      "candidate": {
+        "structure": {
+          "kind": "single_day",
+          "implicitDayTypeId": "11111111-1111-1111-1111-111111111111"
+        },
+        "dayTypes": [
+          {
+            "id": "11111111-1111-1111-1111-111111111111",
+            "name": "Training",
+            "trainingDay": true
+          }
+        ],
+        "meals": [
+          {
+            "id": "33333333-3333-3333-3333-333333333333",
+            "conditional": "always",
+            "items": [
+              {
+                "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+                "foodVersionId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+                "quantity": { "value": "130", "unit": "g" },
+                "alternatives": []
+              },
+              {
+                "id": "44444444-4444-4444-4444-444444444444",
+                "foodVersionId": "77777777-7777-7777-7777-777777777777",
+                "quantity": { "value": "150", "unit": "g" },
+                "notes": "Grill until opaque",
+                "alternatives": [
+                  {
+                    "id": "66666666-6666-6666-6666-666666666666",
+                    "foodVersionId": "88888888-8888-8888-8888-888888888888",
+                    "quantity": { "value": "120", "unit": "g" }
+                  }
+                ]
+              }
+            ]
+          },
+          {
+            "id": "22222222-2222-2222-2222-222222222222",
+            "conditional": "always",
+            "items": [
+              {
+                "id": "55555555-5555-5555-5555-555555555555",
+                "foodVersionId": "99999999-9999-9999-9999-999999999999",
+                "quantity": { "value": "2", "unit": "eggs" },
+                "alternatives": []
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "itemIds": [
+          "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+          "44444444-4444-4444-4444-444444444444",
+          "55555555-5555-5555-5555-555555555555"
+        ],
+        "alternativeIds": ["66666666-6666-6666-6666-666666666666"],
+        "selection": {
+          "itemId": "44444444-4444-4444-4444-444444444444",
+          "alternativeId": "66666666-6666-6666-6666-666666666666"
+        }
+      }
+    },
+    {
+      "name": "replacing an alternative food remaps its id and resets the choice",
+      "candidate": {
+        "structure": {
+          "kind": "single_day",
+          "implicitDayTypeId": "11111111-1111-1111-1111-111111111111"
+        },
+        "dayTypes": [
+          {
+            "id": "11111111-1111-1111-1111-111111111111",
+            "name": "Training",
+            "trainingDay": true
+          }
+        ],
+        "meals": [
+          {
+            "id": "22222222-2222-2222-2222-222222222222",
+            "conditional": "always",
+            "items": [
+              {
+                "id": "44444444-4444-4444-4444-444444444444",
+                "foodVersionId": "77777777-7777-7777-7777-777777777777",
+                "quantity": { "value": "150", "unit": "g" },
+                "notes": "Grill until opaque",
+                "alternatives": [
+                  {
+                    "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+                    "foodVersionId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+                    "quantity": { "value": "120", "unit": "g" }
+                  }
+                ]
+              },
+              {
+                "id": "55555555-5555-5555-5555-555555555555",
+                "foodVersionId": "99999999-9999-9999-9999-999999999999",
+                "quantity": { "value": "2", "unit": "eggs" },
+                "alternatives": []
+              }
+            ]
+          },
+          {
+            "id": "33333333-3333-3333-3333-333333333333",
+            "conditional": "always",
+            "items": [
+              {
+                "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+                "foodVersionId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+                "quantity": { "value": "130", "unit": "g" },
+                "alternatives": []
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "itemIds": [
+          "44444444-4444-4444-4444-444444444444",
+          "55555555-5555-5555-5555-555555555555",
+          "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+        ],
+        "alternativeIds": ["cccccccc-cccc-cccc-cccc-cccccccccccc"],
+        "selection": null
+      }
+    },
+    {
+      "name": "replacing an item food remaps its id and resets the choice",
+      "candidate": {
+        "structure": {
+          "kind": "single_day",
+          "implicitDayTypeId": "11111111-1111-1111-1111-111111111111"
+        },
+        "dayTypes": [
+          {
+            "id": "11111111-1111-1111-1111-111111111111",
+            "name": "Training",
+            "trainingDay": true
+          }
+        ],
+        "meals": [
+          {
+            "id": "22222222-2222-2222-2222-222222222222",
+            "conditional": "always",
+            "items": [
+              {
+                "id": "55555555-5555-5555-5555-555555555555",
+                "foodVersionId": "99999999-9999-9999-9999-999999999999",
+                "quantity": { "value": "2", "unit": "eggs" },
+                "alternatives": []
+              }
+            ]
+          },
+          {
+            "id": "33333333-3333-3333-3333-333333333333",
+            "conditional": "always",
+            "items": [
+              {
+                "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+                "foodVersionId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+                "quantity": { "value": "130", "unit": "g" },
+                "alternatives": []
+              },
+              {
+                "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+                "foodVersionId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+                "quantity": { "value": "150", "unit": "g" },
+                "alternatives": []
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "itemIds": [
+          "55555555-5555-5555-5555-555555555555",
+          "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+          "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb"
+        ],
+        "alternativeIds": [],
+        "selection": null
+      }
+    },
+    {
+      "name": "removing an item invalidates the choice",
+      "candidate": {
+        "structure": {
+          "kind": "single_day",
+          "implicitDayTypeId": "11111111-1111-1111-1111-111111111111"
+        },
+        "dayTypes": [
+          {
+            "id": "11111111-1111-1111-1111-111111111111",
+            "name": "Training",
+            "trainingDay": true
+          }
+        ],
+        "meals": [
+          {
+            "id": "22222222-2222-2222-2222-222222222222",
+            "conditional": "always",
+            "items": [
+              {
+                "id": "55555555-5555-5555-5555-555555555555",
+                "foodVersionId": "99999999-9999-9999-9999-999999999999",
+                "quantity": { "value": "2", "unit": "eggs" },
+                "alternatives": []
+              }
+            ]
+          },
+          {
+            "id": "33333333-3333-3333-3333-333333333333",
+            "conditional": "always",
+            "items": [
+              {
+                "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+                "foodVersionId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+                "quantity": { "value": "130", "unit": "g" },
+                "alternatives": []
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "itemIds": [
+          "55555555-5555-5555-5555-555555555555",
+          "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+        ],
+        "alternativeIds": [],
+        "selection": null
+      }
+    },
+    {
+      "name": "duplicating an item creates new ids without inheriting the choice",
+      "candidate": {
+        "structure": {
+          "kind": "single_day",
+          "implicitDayTypeId": "11111111-1111-1111-1111-111111111111"
+        },
+        "dayTypes": [
+          {
+            "id": "11111111-1111-1111-1111-111111111111",
+            "name": "Training",
+            "trainingDay": true
+          }
+        ],
+        "meals": [
+          {
+            "id": "22222222-2222-2222-2222-222222222222",
+            "conditional": "always",
+            "items": [
+              {
+                "id": "44444444-4444-4444-4444-444444444444",
+                "foodVersionId": "77777777-7777-7777-7777-777777777777",
+                "quantity": { "value": "150", "unit": "g" },
+                "notes": "Grill until opaque",
+                "alternatives": [
+                  {
+                    "id": "66666666-6666-6666-6666-666666666666",
+                    "foodVersionId": "88888888-8888-8888-8888-888888888888",
+                    "quantity": { "value": "120", "unit": "g" }
+                  }
+                ]
+              },
+              {
+                "id": "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+                "foodVersionId": "77777777-7777-7777-7777-777777777777",
+                "quantity": { "value": "150", "unit": "g" },
+                "notes": "Grill until opaque",
+                "alternatives": [
+                  {
+                    "id": "cccccccc-cccc-cccc-cccc-cccccccccccc",
+                    "foodVersionId": "88888888-8888-8888-8888-888888888888",
+                    "quantity": { "value": "120", "unit": "g" }
+                  }
+                ]
+              },
+              {
+                "id": "55555555-5555-5555-5555-555555555555",
+                "foodVersionId": "99999999-9999-9999-9999-999999999999",
+                "quantity": { "value": "2", "unit": "eggs" },
+                "alternatives": []
+              }
+            ]
+          },
+          {
+            "id": "33333333-3333-3333-3333-333333333333",
+            "conditional": "always",
+            "items": [
+              {
+                "id": "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee",
+                "foodVersionId": "aaaaaaaa-aaaa-aaaa-aaaa-aaaaaaaaaaaa",
+                "quantity": { "value": "130", "unit": "g" },
+                "alternatives": []
+              }
+            ]
+          }
+        ]
+      },
+      "expected": {
+        "itemIds": [
+          "44444444-4444-4444-4444-444444444444",
+          "bbbbbbbb-bbbb-bbbb-bbbb-bbbbbbbbbbbb",
+          "55555555-5555-5555-5555-555555555555",
+          "eeeeeeee-eeee-eeee-eeee-eeeeeeeeeeee"
+        ],
+        "alternativeIds": [
+          "66666666-6666-6666-6666-666666666666",
+          "cccccccc-cccc-cccc-cccc-cccccccccccc"
+        ],
+        "selection": {
+          "itemId": "44444444-4444-4444-4444-444444444444",
+          "alternativeId": "66666666-6666-6666-6666-666666666666"
+        }
+      }
+    }
+  ]
+}
