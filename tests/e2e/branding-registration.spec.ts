@@ -5,6 +5,8 @@ import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import {
   captureHeroScreenshot,
   expectHeroAxeClean,
+  expectHeroPreferencesGap,
+  expectHeroPreferencesSingleRow,
   expectHeroFocusRing,
   expectHeroMaterialContract,
   expectHeroPhoneGroupLtr,
@@ -30,6 +32,11 @@ const geometryEvidence: {
   viewportCenterY: number;
   cls: number;
   screenshot: string;
+  preferenceRows?: number;
+  preferencePillHeight?: number;
+  preferenceControlRowHeight?: number;
+  preferenceGap?: number;
+  preferenceGapToken?: number;
 }[] = [];
 
 test.beforeAll(async () => {
@@ -177,6 +184,14 @@ for (const locale of ['ar', 'en'] as const) {
         await expect(
           page.locator('[data-registration-card="premium-centered"] form'),
         ).toBeVisible();
+        await expect(page.getByTestId('language-select')).toHaveAccessibleName(
+          /.+/,
+        );
+        for (const option of ['system', 'dark', 'light']) {
+          await expect(
+            page.getByTestId(`theme-${option}`),
+          ).toHaveAccessibleName(/.+/);
+        }
         const cardBox = await page
           .locator('[data-registration-card="premium-centered"]')
           .boundingBox();
@@ -186,6 +201,12 @@ for (const locale of ['ar', 'en'] as const) {
           .boundingBox();
         expect(pillBox).not.toBeNull();
         expect(pillBox!.y + pillBox!.height).toBeLessThanOrEqual(cardBox!.y);
+        const preferenceMetrics =
+          viewport.width <= 390
+            ? await expectHeroPreferencesSingleRow(page)
+            : null;
+        const gapMetrics =
+          viewport.width <= 390 ? await expectHeroPreferencesGap(page) : null;
         const cardCenterX = cardBox!.x + cardBox!.width / 2;
         const cardCenterY = cardBox!.y + cardBox!.height / 2;
         const viewportCenterX = viewport.width / 2;
@@ -213,10 +234,13 @@ for (const locale of ['ar', 'en'] as const) {
         await expectHeroFocusRing(page);
         if (locale === 'ar') await expectHeroPhoneGroupLtr(page);
         await expectHeroAxeClean(page);
-        const screenshot = await captureHeroScreenshot(
-          page,
-          `centered-${locale}-${theme}-${viewport.name}`,
-        );
+        const screenshot =
+          viewport.width <= 390
+            ? await captureHeroScreenshot(
+                page,
+                `centered-${locale}-${theme}-${viewport.name}`,
+              )
+            : '';
         geometryEvidence.push({
           locale,
           theme,
@@ -227,6 +251,19 @@ for (const locale of ['ar', 'en'] as const) {
           viewportCenterY,
           cls,
           screenshot,
+          ...(preferenceMetrics
+            ? {
+                preferenceRows: preferenceMetrics.rows,
+                preferencePillHeight: preferenceMetrics.pillHeight,
+                preferenceControlRowHeight: preferenceMetrics.controlRowHeight,
+              }
+            : {}),
+          ...(gapMetrics
+            ? {
+                preferenceGap: gapMetrics.gap,
+                preferenceGapToken: gapMetrics.token,
+              }
+            : {}),
         });
       });
     }

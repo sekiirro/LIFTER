@@ -1,16 +1,18 @@
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
-import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import {
   captureHeroScreenshot,
   expectHeroAxeClean,
+  expectHeroButtonBoundary,
   expectHeroFocusRing,
   expectHeroMaterialContract,
   expectHeroPhoneGroupLtr,
+  expectHeroPreferencesSingleRow,
   expectHeroTextContrast,
   expectHeroTouchTargets,
+  heroEvidenceDirectory,
 } from './registration-hero-evidence';
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
@@ -71,10 +73,9 @@ test.afterEach(async () => {
 
 test.afterAll(async () => {
   if (measurements.length === 0) return;
-  const evidence = join(tmpdir(), 'lifter-s23-hero-matrix-r2');
-  await mkdir(evidence, { recursive: true });
+  await mkdir(heroEvidenceDirectory, { recursive: true });
   await writeFile(
-    join(evidence, 'loaded-banner-geometry.json'),
+    join(heroEvidenceDirectory, 'loaded-banner-geometry.json'),
     `${JSON.stringify(measurements, null, 2)}\n`,
   );
 });
@@ -197,7 +198,9 @@ for (const locale of ['ar', 'en'] as const) {
         );
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
         await expectHeroMaterialContract(page);
-        await expectHeroTextContrast(page);
+        const buttonTextContrast = await expectHeroTextContrast(page);
+        const buttonBoundary = await expectHeroButtonBoundary(page);
+        if (viewport.width <= 390) await expectHeroPreferencesSingleRow(page);
         await expectHeroTouchTargets(page);
         await expectHeroFocusRing(page);
         if (locale === 'ar') await expectHeroPhoneGroupLtr(page);
@@ -227,6 +230,8 @@ for (const locale of ['ar', 'en'] as const) {
           cardRightInset: viewport.width - (cardBox!.x + cardBox!.width),
           cls,
           screenshot,
+          buttonTextContrast,
+          buttonBoundary,
           ...stage,
           ...(dimensions ? { dimensions } : {}),
         });

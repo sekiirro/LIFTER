@@ -3,6 +3,7 @@ import { expect, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { inflateSync } from 'node:zlib';
 
 /**
  * Shared production registration-hero evidence helpers.
@@ -14,7 +15,7 @@ import { join } from 'node:path';
  */
 export const heroEvidenceDirectory = join(
   tmpdir(),
-  'lifter-s23-hero-matrix-r2',
+  'lifter-s24-hero-matrix-r3',
 );
 
 export async function captureHeroScreenshot(page: Page, name: string) {
@@ -65,6 +66,14 @@ function contrast(foreground: number, background: number) {
 }
 
 function cssLuminance(color: string) {
+  const hex = color.match(/^#([\da-f]{6})$/i)?.[1];
+  if (hex) {
+    return luminance(
+      Number.parseInt(hex.slice(0, 2), 16),
+      Number.parseInt(hex.slice(2, 4), 16),
+      Number.parseInt(hex.slice(4, 6), 16),
+    );
+  }
   const channels = color
     .match(/[\d.]+/g)
     ?.slice(0, 3)
@@ -72,6 +81,85 @@ function cssLuminance(color: string) {
   if (!channels || channels.length !== 3)
     throw new Error(`Unsupported rendered color: ${color}`);
   return luminance(channels[0]!, channels[1]!, channels[2]!);
+}
+
+function paeth(left: number, above: number, upperLeft: number) {
+  const estimate = left + above - upperLeft;
+  const leftDistance = Math.abs(estimate - left);
+  const aboveDistance = Math.abs(estimate - above);
+  const upperLeftDistance = Math.abs(estimate - upperLeft);
+  if (leftDistance <= aboveDistance && leftDistance <= upperLeftDistance)
+    return left;
+  return aboveDistance <= upperLeftDistance ? above : upperLeft;
+}
+
+/** Read one pixel from Playwright's standard 8-bit RGB/RGBA PNG screenshot. */
+function screenshotPixel(png: Buffer, x: number, y: number) {
+  let width = 0;
+  let height = 0;
+  let channels = 0;
+  const imageData: Buffer[] = [];
+  let offset = 8;
+  while (offset < png.length) {
+    const length = png.readUInt32BE(offset);
+    const type = png.toString('ascii', offset + 4, offset + 8);
+    const chunk = png.subarray(offset + 8, offset + 8 + length);
+    if (type === 'IHDR') {
+      width = chunk.readUInt32BE(0);
+      height = chunk.readUInt32BE(4);
+      if (chunk[8] !== 8 || ![2, 6].includes(chunk[9]!))
+        throw new Error('Unsupported screenshot PNG color format');
+      channels = chunk[9] === 6 ? 4 : 3;
+    } else if (type === 'IDAT') {
+      imageData.push(chunk);
+    } else if (type === 'IEND') {
+      break;
+    }
+    offset += length + 12;
+  }
+  if (x < 0 || y < 0 || x >= width || y >= height || channels === 0)
+    throw new Error('Screenshot pixel is outside the PNG dimensions');
+
+  const rowBytes = width * channels;
+  const compressed = inflateSync(Buffer.concat(imageData));
+  const decoded = Buffer.alloc(height * rowBytes);
+  for (let row = 0; row < height; row += 1) {
+    const source = row * (rowBytes + 1);
+    const filter = compressed[source]!;
+    const target = row * rowBytes;
+    const previous = target - rowBytes;
+    for (let column = 0; column < rowBytes; column += 1) {
+      const value = compressed[source + column + 1]!;
+      const left =
+        column >= channels ? decoded[target + column - channels]! : 0;
+      const above = row > 0 ? decoded[previous + column]! : 0;
+      const upperLeft =
+        row > 0 && column >= channels
+          ? decoded[previous + column - channels]!
+          : 0;
+      const predictor =
+        filter === 0
+          ? 0
+          : filter === 1
+            ? left
+            : filter === 2
+              ? above
+              : filter === 3
+                ? Math.floor((left + above) / 2)
+                : filter === 4
+                  ? paeth(left, above, upperLeft)
+                  : NaN;
+      if (!Number.isFinite(predictor))
+        throw new Error('Unsupported screenshot PNG filter');
+      decoded[target + column] = (value + predictor) & 0xff;
+    }
+  }
+  const pixel = (y * width + x) * channels;
+  return [decoded[pixel]!, decoded[pixel + 1]!, decoded[pixel + 2]!];
+}
+
+function pixelHex(pixel: number[]) {
+  return pixel.map((channel) => channel.toString(16).padStart(2, '0')).join('');
 }
 
 /** Approved prototype material contract for the glass card shell. */
@@ -148,6 +236,9 @@ export async function expectHeroTextContrast(page: Page) {
       cardBackground: getComputedStyle(card).backgroundColor,
       buttonColor: buttonStyle.color,
       buttonBackground: buttonStyle.backgroundColor,
+      buttonBorderColor: buttonStyle.borderTopColor,
+      buttonBorderStyle: buttonStyle.borderTopStyle,
+      buttonBorderWidth: buttonStyle.borderTopWidth,
       tokenTextColor: resolvedTokenText,
     };
   });
@@ -170,7 +261,7 @@ export async function expectHeroTextContrast(page: Page) {
         cssLuminance(surface.cardBackground),
       ),
     ).toBeGreaterThanOrEqual(4.5);
-    return;
+    return buttonContrast;
   }
 
   expect(surface.labelColor).toBe('rgb(255, 255, 255)');
@@ -183,6 +274,174 @@ export async function expectHeroTextContrast(page: Page) {
   expect(
     contrast(cssLuminance(surface.labelColor), effectiveLuminance),
   ).toBeGreaterThanOrEqual(4.5);
+  return buttonContrast;
+}
+
+/** The floating preference controls remain one compact row on narrow phones. */
+export async function expectHeroPreferencesSingleRow(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const pill = document.querySelector<HTMLElement>(
+      '[data-testid="registration-hero-preferences"]',
+    );
+    const language = pill?.querySelector<HTMLElement>(
+      '[data-testid="language-select"]',
+    )?.parentElement;
+    const theme = pill?.querySelector<HTMLElement>('fieldset');
+    if (!pill || !language || !theme)
+      throw new Error('Hero preference pill controls unavailable');
+    const pillRect = pill.getBoundingClientRect();
+    const languageRect = language.getBoundingClientRect();
+    const themeRect = theme.getBoundingClientRect();
+    return {
+      pillHeight: pillRect.height,
+      pillLeft: pillRect.left,
+      pillRight: pillRect.right,
+      languageTop: languageRect.top,
+      languageBottom: languageRect.bottom,
+      themeTop: themeRect.top,
+      themeBottom: themeRect.bottom,
+      rowHeight: Math.max(languageRect.height, themeRect.height),
+      pillScrollWidth: pill.scrollWidth,
+      pillClientWidth: pill.clientWidth,
+      languageLeft: languageRect.left,
+      languageRight: languageRect.right,
+      themeLeft: themeRect.left,
+      themeRight: themeRect.right,
+      themeOptionHeights: Array.from(
+        theme.querySelectorAll<HTMLLabelElement>('label'),
+      ).map((option) => option.getBoundingClientRect().height),
+      themeOptionBounds: Array.from(
+        theme.querySelectorAll<HTMLLabelElement>('label'),
+      ).map((option) => {
+        const rect = option.getBoundingClientRect();
+        return { left: rect.left, right: rect.right };
+      }),
+    };
+  });
+  expect(Math.abs(metrics.languageTop - metrics.themeTop)).toBeLessThanOrEqual(
+    1,
+  );
+  expect(
+    Math.abs(metrics.languageBottom - metrics.themeBottom),
+  ).toBeLessThanOrEqual(1);
+  expect(metrics.pillHeight).toBeLessThanOrEqual(metrics.rowHeight);
+  expect(metrics.pillScrollWidth).toBeLessThanOrEqual(metrics.pillClientWidth);
+  expect(metrics.languageLeft).toBeGreaterThanOrEqual(metrics.pillLeft);
+  expect(metrics.languageRight).toBeLessThanOrEqual(metrics.pillRight);
+  expect(metrics.themeLeft).toBeGreaterThanOrEqual(metrics.pillLeft);
+  expect(metrics.themeRight).toBeLessThanOrEqual(metrics.pillRight);
+  for (const height of metrics.themeOptionHeights)
+    expect(height).toBeGreaterThanOrEqual(44);
+  for (const bounds of metrics.themeOptionBounds) {
+    expect(bounds.left).toBeGreaterThanOrEqual(metrics.pillLeft + 1);
+    expect(bounds.right).toBeLessThanOrEqual(metrics.pillRight - 1);
+  }
+  return {
+    rows: 1,
+    pillHeight: metrics.pillHeight,
+    controlRowHeight: metrics.rowHeight,
+  };
+}
+
+/** No-banner phone spacing keeps a full existing space-4 token below the pill. */
+export async function expectHeroPreferencesGap(page: Page) {
+  const metrics = await page.evaluate(() => {
+    const pill = document.querySelector<HTMLElement>(
+      '[data-testid="registration-hero-preferences"]',
+    );
+    const card = document.querySelector<HTMLElement>(
+      '[data-registration-card="premium-centered"]',
+    );
+    if (!pill || !card) throw new Error('Hero spacing targets unavailable');
+    const token = Number.parseFloat(
+      getComputedStyle(document.documentElement)
+        .getPropertyValue('--space-4')
+        .trim(),
+    );
+    return {
+      gap:
+        card.getBoundingClientRect().top - pill.getBoundingClientRect().bottom,
+      token,
+    };
+  });
+  expect(metrics.token).toBeGreaterThan(0);
+  expect(metrics.gap).toBeGreaterThanOrEqual(metrics.token);
+  return metrics;
+}
+
+/** The primary action keeps its token fill and a visible boundary over art. */
+export async function expectHeroButtonBoundary(page: Page) {
+  await page.locator('form button[type="submit"]').scrollIntoViewIfNeeded();
+  const geometry = await page.evaluate(() => {
+    const stage = document.querySelector<HTMLElement>(
+      '[data-registration-hero]',
+    );
+    const button = document.querySelector<HTMLButtonElement>(
+      'form button[type="submit"]',
+    );
+    if (!stage || !button) throw new Error('Hero submit button unavailable');
+    const style = getComputedStyle(button);
+    const root = getComputedStyle(document.documentElement);
+    return {
+      hasBanner: stage.dataset.hasBanner === 'true',
+      background: style.backgroundColor,
+      borderColor: style.borderTopColor,
+      borderStyle: style.borderTopStyle,
+      borderWidth: style.borderTopWidth,
+      brandFill: root.getPropertyValue('--brand-fill').trim(),
+      x:
+        button.getBoundingClientRect().x +
+        button.getBoundingClientRect().width / 2,
+      y: button.getBoundingClientRect().y,
+    };
+  });
+  if (!geometry.hasBanner) return null;
+  expect(geometry.background).not.toBe('rgba(0, 0, 0, 0)');
+  expect(geometry.borderStyle).toBe('solid');
+  expect(Number.parseFloat(geometry.borderWidth)).toBeGreaterThanOrEqual(1);
+  expect(geometry.brandFill).not.toBe('');
+  const image = await page.screenshot();
+  const dimensions = await page.evaluate(() => ({
+    width: innerWidth,
+    height: innerHeight,
+  }));
+  const x = Math.min(dimensions.width - 1, Math.max(0, Math.round(geometry.x)));
+  const borderY = Math.min(
+    dimensions.height - 1,
+    Math.max(0, Math.round(geometry.y)),
+  );
+  const backdropY = Math.max(0, borderY - 4);
+  const borderColor = pixelHex(screenshotPixel(image, x, borderY));
+  const ringColor = pixelHex(
+    screenshotPixel(image, x, Math.max(0, borderY - 1)),
+  );
+  const faceColor = pixelHex(
+    screenshotPixel(image, x, Math.min(dimensions.height - 1, borderY + 2)),
+  );
+  const backdropColor = pixelHex(screenshotPixel(image, x, backdropY));
+  const fillEdgeRatio = contrast(
+    cssLuminance(`#${borderColor}`),
+    cssLuminance(`#${backdropColor}`),
+  );
+  const outerEdgeRatio = contrast(
+    cssLuminance(`#${ringColor}`),
+    cssLuminance(`#${backdropColor}`),
+  );
+  const faceEdgeRatio = contrast(
+    cssLuminance(`#${borderColor}`),
+    cssLuminance(`#${faceColor}`),
+  );
+  const ratio = Math.max(fillEdgeRatio, outerEdgeRatio, faceEdgeRatio);
+  expect(ratio).toBeGreaterThanOrEqual(3);
+  return {
+    ratio,
+    fillEdgeRatio,
+    outerEdgeRatio,
+    faceEdgeRatio,
+    borderColor: `#${borderColor}`,
+    ringColor: `#${ringColor}`,
+    backdropColor: `#${backdropColor}`,
+  };
 }
 
 /** Interactive controls keep the 44px touch minimum. */
