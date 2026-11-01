@@ -433,4 +433,72 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.stateEmpty': 'Empty',
   'catalog.stateNoResults': 'No results',
   'catalog.stateError': 'Error',
+  // DRAFT (T022): exercise editor interface copy pending PO approval.
+  'catalog.editorTitle': 'Exercise editor',
+  'catalog.editorIntro':
+    'Create a global exercise or edit its plan defaults. These values populate a plan and coaches may override them.',
+  'catalog.editorDefaultsTitle': 'Plan defaults',
+  'catalog.editorDefaultsIntro':
+    'Exact defaults stored with this exercise. Adding it to a plan copies these values.',
+  'catalog.editorWarmupSets': 'Warm-up sets',
+  'catalog.editorWorkingSets': 'Working sets',
+  'catalog.editorReps': 'Reps',
+  'catalog.editorRepsFixed': 'Fixed',
+  'catalog.editorRepsRange': 'Range',
+  'catalog.editorRepsFixedValue': 'Fixed rep count',
+  'catalog.editorRepsMin': 'Minimum reps',
+  'catalog.editorRepsMax': 'Maximum reps',
+  'catalog.editorRest': 'Rest',
+  'catalog.editorSeconds': 'seconds',
+  'catalog.editorRir': 'RIR (reps in reserve)',
+  'catalog.editorAlternatives': 'Alternative exercises',
+  'catalog.editorAlternativesHint':
+    'Choose up to three alternatives to suggest when adding this exercise.',
+  'catalog.editorAlternativesMax':
+    'Three alternatives selected. Clear one to choose another.',
+  'catalog.editorNone': 'Not set',
+  'catalog.editorBasics': 'Exercise details',
+  'catalog.editorDefaultsFormTitle': 'Edit defaults',
+  'catalog.editorNameAr': 'Arabic name',
+  'catalog.editorNameEn': 'English name',
+  'catalog.editorPrimaryMuscle': 'Primary muscle',
+  'catalog.editorEquipment': 'Equipment',
+  'catalog.editorGovernance': 'Global catalog governance',
+  'catalog.editorGovernanceIntro':
+    'Remove, restore, and merge global exercises are platform owner actions.',
+  'catalog.editorLifecycle': 'Lifecycle state',
+  'catalog.editorLifecycleActive': 'Active',
+  'catalog.editorLifecycleRemoved': 'Removed',
+  'catalog.editorLifecycleSuperseded': 'Superseded',
+  'catalog.editorRemove': 'Remove from catalog',
+  'catalog.editorRestore': 'Restore',
+  'catalog.editorMerge': 'Merge duplicate',
+  'catalog.editorSave': 'Save global exercise',
+  'catalog.editorSaving': 'Saving exercise…',
+  'catalog.editorReadOnly': 'View only',
+  'catalog.editorReadOnlyNotice':
+    'Global exercises are managed by the platform owner. This role cannot save or govern them.',
+  'catalog.editorStatusError': 'Unable to save the exercise',
+  'catalog.editorStatusErrorDescription':
+    'Your changes were not saved. Try again.',
+  'catalog.editorErrorRequired': 'This field is required.',
+  'catalog.editorErrorPositiveInteger':
+    'Enter a whole number greater than zero.',
+  'catalog.editorErrorIntegerRange':
+    'Enter a whole number in the allowed range.',
+  'catalog.editorErrorRangeOrder':
+    'The minimum reps must not exceed the maximum reps.',
+  'catalog.editorErrorChoice': 'Choose a value from the list.',
+  'catalog.editorErrorTooManyAlternatives':
+    'Choose no more than three alternatives.',
+  // DRAFT (T022): showcase controls for the exercise editor preview.
+  'catalog.showcaseView': 'View',
+  'catalog.showcaseViewList': 'List',
+  'catalog.showcaseViewEditor': 'Exercise editor',
+  'catalog.showcaseRole': 'Role',
+  'catalog.showcaseRolePo': 'Platform owner',
+  'catalog.showcaseRoleTrainer': 'Trainer',
+  'catalog.showcaseReps': 'Reps default',
+  'catalog.showcaseRepsFixed': 'Fixed',
+  'catalog.showcaseRepsRange': 'Range',
 };

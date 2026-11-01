@@ -95,3 +95,50 @@ export const mockExerciseItems = exerciseSeeds.map((seed, index) =>
 export const mockFoodItems = foodSeeds.map((seed, index) =>
   toFoodListItem(`mock-food-${index + 1}`, normalizeFoodInput(seed)),
 );
+
+// T022 editor fixtures. They reuse the T017 mock identities so alternatives
+// point at visible list entries; no catalog content is seeded or saved.
+export const mockExerciseAlternatives = [
+  {
+    id: 'mock-exercise-2',
+    names: { ar: 'سحب أمامي', en: 'Lat Pulldown' },
+  },
+  {
+    id: 'mock-exercise-3',
+    names: { ar: 'تمرين الضغط', en: 'Push-Up' },
+  },
+  {
+    id: 'mock-exercise-4',
+    names: { ar: 'تفريغ الصدر', en: 'Chest Fly' },
+  },
+] as const;
+
+export const mockExerciseEditorFixture = normalizeExerciseInput({
+  names: { ar: 'ضغط الصدر بالبار', en: 'Barbell Bench Press' },
+  primaryMuscle: 'Chest',
+  secondaryMuscles: ['Triceps', 'Front Delts'],
+  equipment: 'Barbell',
+  defaults: {
+    warmupSets: 2,
+    workingSets: 4,
+    reps: { kind: 'fixed', value: 8 },
+    restSeconds: 90,
+    rir: 2,
+    alternativeExerciseIds: ['mock-exercise-2', 'mock-exercise-3'],
+  },
+});
+
+export const mockExerciseEditorRangeFixture = normalizeExerciseInput({
+  names: { ar: 'ضغط الدمبل المائل', en: 'Incline Dumbbell Press' },
+  primaryMuscle: 'Chest',
+  secondaryMuscles: ['Front Delts', 'Triceps'],
+  equipment: 'Dumbbell',
+  defaults: {
+    warmupSets: 1,
+    workingSets: 3,
+    reps: { kind: 'range', min: 8, max: 12 },
+    restSeconds: 120,
+    rir: null,
+    alternativeExerciseIds: ['mock-exercise-3'],
+  },
+});

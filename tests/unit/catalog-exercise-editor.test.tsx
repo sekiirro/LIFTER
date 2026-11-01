@@ -1,0 +1,233 @@
+import { createElement } from 'react';
+import { renderToStaticMarkup } from 'react-dom/server';
+import { describe, expect, it } from 'vitest';
+import { ExerciseEditor } from '../../components/catalog/ExerciseEditor';
+import {
+  buildExerciseInput,
+  canGovernGlobalExercise,
+  draftFromExercise,
+  formatExerciseReps,
+  validateExerciseEditorDraft,
+  type CatalogStaffRole,
+  type ExerciseEditorDraft,
+} from '../../lib/catalog/exercise-editor';
+import {
+  mockExerciseAlternatives,
+  mockExerciseEditorFixture,
+  mockExerciseEditorRangeFixture,
+} from '../../lib/catalog/mock';
+import { ar } from '../../lib/i18n/messages/ar';
+import { en } from '../../lib/i18n/messages/en';
+
+function render(props: Record<string, unknown> = {}) {
+  return renderToStaticMarkup(
+    createElement(ExerciseEditor, {
+      locale: 'en',
+      role: 'po',
+      exercise: mockExerciseEditorFixture,
+      alternatives: mockExerciseAlternatives,
+      ...props,
+    }),
+  );
+}
+
+function draft(
+  overrides: Partial<ExerciseEditorDraft> = {},
+): ExerciseEditorDraft {
+  return { ...draftFromExercise(mockExerciseEditorFixture), ...overrides };
+}
+
+describe('exercise editor defaults presentation', () => {
+  it('renders the exact warm-up/working sets, fixed reps, rest, RIR and alternatives', () => {
+    const html = render();
+    expect(html).toContain('data-testid="exercise-defaults"');
+    expect(html).toContain('data-defaults-warmup="2"');
+    expect(html).toContain('data-defaults-working="4"');
+    expect(html).toContain('data-defaults-reps="8"');
+    expect(html).toContain('data-defaults-rest="90"');
+    expect(html).toContain('data-defaults-rir="2"');
+    expect(html).toContain(en['catalog.editorRepsFixed']);
+    expect(html).toContain(en['catalog.editorWarmupSets']);
+    expect(html).toContain(en['catalog.editorWorkingSets']);
+    expect(html).toContain(en['catalog.editorRest']);
+    expect(html).toContain(en['catalog.editorRir']);
+    expect(html).toContain('Lat Pulldown');
+    expect(html).toContain('Push-Up');
+  });
+
+  it('renders ranged reps exactly and shows an empty RIR as not set', () => {
+    const html = render({ exercise: mockExerciseEditorRangeFixture });
+    expect(html).toContain('data-defaults-reps="8–12"');
+    expect(html).toContain('data-defaults-rir="—"');
+    expect(html).toContain(en['catalog.editorRepsRange']);
+    expect(formatExerciseReps({ kind: 'range', min: 8, max: 12 })).toBe('8–12');
+    expect(formatExerciseReps({ kind: 'fixed', value: 8 })).toBe('8');
+  });
+
+  it('preserves the exact defaults when building an exercise input', () => {
+    expect(buildExerciseInput(draft())).toMatchObject({
+      names: { ar: 'ضغط الصدر بالبار', en: 'Barbell Bench Press' },
+      primaryMuscle: 'Chest',
+      equipment: 'Barbell',
+      defaults: {
+        warmupSets: 2,
+        workingSets: 4,
+        reps: { kind: 'fixed', value: 8 },
+        restSeconds: 90,
+        rir: 2,
+        alternativeExerciseIds: ['mock-exercise-2', 'mock-exercise-3'],
+      },
+    });
+  });
+
+  it('renders Arabic-first RTL and English LTR copy', () => {
+    const arabic = render({ locale: 'ar' });
+    expect(arabic).toContain('dir="rtl"');
+    expect(arabic).toContain('lang="ar"');
+    expect(arabic).toContain('data-catalog-locale="ar"');
+    expect(arabic).toContain(ar['catalog.editorTitle']);
+    expect(arabic).toContain(ar['catalog.editorDefaultsTitle']);
+    expect(arabic).toContain('سحب أمامي');
+
+    const english = render({ locale: 'en' });
+    expect(english).toContain('dir="ltr"');
+    expect(english).toContain('lang="en"');
+    expect(english).toContain('data-catalog-locale="en"');
+    expect(english).toContain(en['catalog.editorTitle']);
+    expect(english).not.toContain(ar['catalog.editorTitle']);
+  });
+
+  it('keeps canonical numbers and taxonomy in LTR bidi isolation', () => {
+    const html = render();
+    expect(html).toContain('<bdi dir="ltr">8</bdi>');
+    expect(html).toContain('<bdi dir="ltr">90</bdi>');
+    expect(html).toContain('<bdi dir="ltr">Chest</bdi>');
+  });
+});
+
+describe('exercise editor fixed-vs-range validation', () => {
+  it('rejects a range whose minimum exceeds its maximum', () => {
+    const errors = validateExerciseEditorDraft(
+      draft({ repsMode: 'range', repsMin: '12', repsMax: '8' }),
+    );
+    expect(errors.repsMin).toBe('range_order');
+    expect(errors.repsMax).toBe('range_order');
+    expect(
+      buildExerciseInput(
+        draft({ repsMode: 'range', repsMin: '12', repsMax: '8' }),
+      ),
+    ).toBeNull();
+  });
+
+  it('accepts a valid range and builds the range default', () => {
+    const input = buildExerciseInput(
+      draft({ repsMode: 'range', repsMin: '8', repsMax: '12' }),
+    );
+    expect(
+      validateExerciseEditorDraft(
+        draft({ repsMode: 'range', repsMin: '8', repsMax: '12' }),
+      ),
+    ).toEqual({});
+    expect(input?.defaults?.reps).toEqual({ kind: 'range', min: 8, max: 12 });
+  });
+
+  it('rejects a fixed rep count that is not a positive integer', () => {
+    const errors = validateExerciseEditorDraft(
+      draft({ repsMode: 'fixed', repsValue: '0' }),
+    );
+    expect(errors.repsValue).toBe('positive_integer');
+    expect(
+      validateExerciseEditorDraft(
+        draft({ repsMode: 'fixed', repsValue: '8.5' }),
+      ).repsValue,
+    ).toBe('positive_integer');
+  });
+
+  it('accepts a valid fixed rep count', () => {
+    const input = buildExerciseInput(
+      draft({ repsMode: 'fixed', repsValue: '10' }),
+    );
+    expect(input?.defaults?.reps).toEqual({ kind: 'fixed', value: 10 });
+  });
+
+  it('renders range-order validation feedback as an alert', () => {
+    const html = render({
+      initialErrors: { repsMin: 'range_order', repsMax: 'range_order' },
+    });
+    expect(html).toContain('role="alert"');
+    expect(html).toContain(en['catalog.editorErrorRangeOrder']);
+  });
+});
+
+describe('exercise editor role gating', () => {
+  it('allows only the platform owner to govern global exercises', () => {
+    expect(canGovernGlobalExercise('po')).toBe(true);
+    for (const role of [
+      'workspace_owner',
+      'trainer',
+      'sales',
+      'client',
+    ] satisfies CatalogStaffRole[]) {
+      expect(canGovernGlobalExercise(role)).toBe(false);
+    }
+  });
+
+  it('renders governance and global save controls for the PO', () => {
+    const html = render({ role: 'po' });
+    expect(html).toContain('data-testid="exercise-governance"');
+    expect(html).toContain(en['catalog.editorRemove']);
+    expect(html).toContain(en['catalog.editorRestore']);
+    expect(html).toContain(en['catalog.editorMerge']);
+    expect(html).toContain(en['catalog.editorSave']);
+    expect(html).not.toContain('data-testid="exercise-read-only"');
+  });
+
+  it('hides governance and global save controls from non-PO roles', () => {
+    for (const role of [
+      'workspace_owner',
+      'trainer',
+      'sales',
+      'client',
+    ] satisfies CatalogStaffRole[]) {
+      const html = render({ role });
+      expect(html).not.toContain('data-testid="exercise-governance"');
+      expect(html).not.toContain(en['catalog.editorRemove']);
+      expect(html).not.toContain(en['catalog.editorMerge']);
+      expect(html).not.toContain(en['catalog.editorSave']);
+      expect(html).toContain('data-testid="exercise-read-only"');
+      expect(html).toContain(en['catalog.editorReadOnlyNotice']);
+      expect(html).toContain(`data-catalog-role="${role}"`);
+    }
+  });
+});
+
+describe('exercise editor keyboard access', () => {
+  it('associates every control with a label and exposes a submit action', () => {
+    const html = render();
+    expect(html).toContain('<form');
+    expect(html).toContain('type="submit"');
+    expect(html).toContain('<fieldset');
+    expect(html).toContain('<legend');
+
+    const labelledFor = [...html.matchAll(/<label[^>]* for="([^"]+)"/g)].map(
+      (match) => match[1],
+    );
+    expect(labelledFor.length).toBeGreaterThan(5);
+    for (const id of labelledFor) {
+      expect(html).toContain(`id="${id}"`);
+    }
+    expect(html).toMatch(/<input[^>]* type="radio"/);
+    expect(html).toMatch(/<input[^>]* type="checkbox"/);
+  });
+
+  it('renders saving and error status without claiming success', () => {
+    const saving = render({ status: 'saving' });
+    expect(saving).toContain('aria-busy="true"');
+    expect(saving).toContain(en['catalog.editorSaving']);
+
+    const failed = render({ status: 'error' });
+    expect(failed).toContain('role="alert"');
+    expect(failed).toContain(en['catalog.editorStatusError']);
+    expect(failed).toContain(en['catalog.editorStatusErrorDescription']);
+  });
+});
