@@ -21,7 +21,10 @@ function contractExpectationFixture(): {
   const table = markdown.match(
     /\| Operation \| PO \| WO \| Trainer \| Sales \| Client \| Unknown\/unauthenticated \|\r?\n\|[^\n]+\|\r?\n((?:\|[^\n]+\|\r?\n)+)/,
   );
-  if (!table) throw new Error('Role authorization matrix missing from contract');
+  if (!table)
+    throw new Error('Role authorization matrix missing from contract');
+  const matrixBody = table[1];
+  if (!matrixBody) throw new Error('Role authorization matrix is empty');
   const headers = [
     'operation',
     'PO',
@@ -31,19 +34,20 @@ function contractExpectationFixture(): {
     'Client',
     'Unknown/unauthenticated',
   ];
-  const operations = table[1]
+  const operations = matrixBody
     .trim()
     .split(/\r?\n/)
-    .map((line) =>
-      Object.fromEntries(
-        line
-          .slice(1, -1)
-          .split('|')
-          .map((cell, index) => [
-            headers[index],
-            cell.trim().replaceAll('`', ''),
-          ]),
-      ) as MatrixRow,
+    .map(
+      (line) =>
+        Object.fromEntries(
+          line
+            .slice(1, -1)
+            .split('|')
+            .map((cell, index) => [
+              headers[index],
+              cell.trim().replaceAll('`', ''),
+            ]),
+        ) as MatrixRow,
     );
   return { roles: headers.slice(1), operations };
 }
@@ -62,10 +66,14 @@ describe('catalog TypeScript and SQL role parity fixture', () => {
     const sql = JSON.parse(readFileSync(sqlFixturePath, 'utf8')) as ReturnType<
       typeof contractExpectationFixture
     >;
-    sql.operations = sql.operations.map((row) =>
-      Object.fromEntries(
-        Object.entries(row).map(([key, value]) => [key, value.replaceAll('`', '')]),
-      ) as MatrixRow,
+    sql.operations = sql.operations.map(
+      (row) =>
+        Object.fromEntries(
+          Object.entries(row).map(([key, value]) => [
+            key,
+            value.replaceAll('`', ''),
+          ]),
+        ) as MatrixRow,
     );
 
     expect(expected.roles).toEqual([
@@ -81,17 +89,27 @@ describe('catalog TypeScript and SQL role parity fixture', () => {
   });
   it('fails when any role permission is changed or removed from the SQL fixture', () => {
     const expected = contractExpectationFixture();
-    const baseline = JSON.parse(readFileSync(sqlFixturePath, 'utf8')) as ReturnType<
-      typeof contractExpectationFixture
-    >;
+    const baseline = JSON.parse(
+      readFileSync(sqlFixturePath, 'utf8'),
+    ) as ReturnType<typeof contractExpectationFixture>;
     for (const role of expected.roles) {
       const changed = structuredClone(baseline);
-      changed.operations[0][role] = 'Mutated permission';
-      expect(() => assertParity(expected, changed), `${role} changed`).toThrow();
+      const changedRow = changed.operations[0];
+      if (!changedRow) throw new Error('Role matrix is empty');
+      changedRow[role] = 'Mutated permission';
+      expect(
+        () => assertParity(expected, changed),
+        `${role} changed`,
+      ).toThrow();
 
       const removed = structuredClone(baseline);
-      delete removed.operations[0][role];
-      expect(() => assertParity(expected, removed), `${role} removed`).toThrow();
+      const removedRow = removed.operations[0];
+      if (!removedRow) throw new Error('Role matrix is empty');
+      delete removedRow[role];
+      expect(
+        () => assertParity(expected, removed),
+        `${role} removed`,
+      ).toThrow();
     }
   });
 });

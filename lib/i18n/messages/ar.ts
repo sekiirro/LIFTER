@@ -421,8 +421,11 @@ export const ar = {
   'catalog.stateError': 'خطأ',
   // DRAFT (T022): exercise editor interface copy pending PO approval.
   'catalog.editorTitle': 'محرر التمرين',
-  'catalog.editorIntro':
+  'catalog.editorIntroGlobal':
     'أنشئ تمرينًا عالميًا أو حرّر إعداداته الافتراضية للخطة. تُستخدم هذه القيم عند إضافة التمرين، ويمكن للمدرّب تجاوزها.',
+  // DRAFT (F16): scope-aware exercise editor subtitle pending PO approval.
+  'catalog.editorIntroWorkspace':
+    'أنشئ تمرينًا لهذه المساحة أو حرّر إعداداته الافتراضية. يمكن للمدرّبين تجاوزها عند إضافة التمرين إلى خطة.',
   'catalog.editorDefaultsTitle': 'إعدادات الخطة الافتراضية',
   'catalog.editorDefaultsIntro':
     'القيم الدقيقة المحفوظة مع هذا التمرين. عند إضافته إلى خطة تُنسخ هذه القيم.',

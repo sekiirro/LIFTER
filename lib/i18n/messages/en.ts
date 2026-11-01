@@ -435,8 +435,11 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.stateError': 'Error',
   // DRAFT (T022): exercise editor interface copy pending PO approval.
   'catalog.editorTitle': 'Exercise editor',
-  'catalog.editorIntro':
+  'catalog.editorIntroGlobal':
     'Create a global exercise or edit its plan defaults. These values populate a plan and coaches may override them.',
+  // DRAFT (F16): scope-aware exercise editor subtitle pending PO approval.
+  'catalog.editorIntroWorkspace':
+    'Create an exercise for this workspace or edit its plan defaults. Coaches may override these values when adding the exercise to a plan.',
   'catalog.editorDefaultsTitle': 'Plan defaults',
   'catalog.editorDefaultsIntro':
     'Exact defaults stored with this exercise. Adding it to a plan copies these values.',

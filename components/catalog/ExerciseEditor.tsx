@@ -209,7 +209,11 @@ export function ExerciseEditor({
             <span className={styles.badge}>{m['catalog.editorReadOnly']}</span>
           )}
         </div>
-        <p>{m['catalog.editorIntro']}</p>
+        <p>
+          {scope === 'workspace'
+            ? m['catalog.editorIntroWorkspace']
+            : m['catalog.editorIntroGlobal']}
+        </p>
         <dl className={styles.meta}>
           <div>
             <dt>{m['catalog.editorPrimaryMuscle']}</dt>

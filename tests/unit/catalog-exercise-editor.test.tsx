@@ -268,6 +268,8 @@ describe('exercise editor workspace scope', () => {
     expect(workspaceHtml).toContain(en['catalog.editorSaveWorkspace']);
     expect(workspaceHtml).not.toContain('data-testid="exercise-governance"');
     expect(workspaceHtml).not.toContain('data-testid="exercise-read-only"');
+    expect(workspaceHtml).toContain(en['catalog.editorIntroWorkspace']);
+    expect(workspaceHtml).not.toContain('global exercise');
   });
 });
 
