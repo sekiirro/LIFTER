@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { admin, sql, twoWorkspaceFixture } from './harness';
+import { sql, twoWorkspaceFixture } from './harness';
 
 const db = sql();
 const concurrentDb = postgres(process.env.DB_URL!, {
@@ -102,7 +102,7 @@ describe('workspace exercise create/version RPC', () => {
       ),
     );
     expect(responses[0]).toEqual(responses[1]);
-    const result = responses[0][0]?.catalog_write_workspace_exercise as {
+    const result = responses[0]![0]?.catalog_write_workspace_exercise as {
       exercise_id: string;
     };
     await expect(
@@ -135,8 +135,11 @@ describe('workspace exercise create/version RPC', () => {
     );
     expect(responses[0]).toEqual(responses[1]);
     expect(
-      (responses[0][0]?.catalog_write_workspace_exercise as { version: number })
-        .version,
+      (
+        responses[0]![0]?.catalog_write_workspace_exercise as {
+          version: number;
+        }
+      ).version,
     ).toBe(2);
     await expect(
       db`select count(*)::int as versions from public.workspace_exercise_versions where workspace_id = ${wsB} and workspace_exercise_id = ${result.exercise_id}`,

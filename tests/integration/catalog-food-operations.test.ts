@@ -179,7 +179,7 @@ describe('global food create and version RPCs', () => {
       ),
     );
     expect(responses[0]).toEqual(responses[1]);
-    const result = responses[0][0]?.catalog_create_food as {
+    const result = responses[0]![0]?.catalog_create_food as {
       food_id: string;
       version: number;
     };
@@ -219,7 +219,7 @@ describe('global food create and version RPCs', () => {
     );
     expect(responses[0]).toEqual(responses[1]);
     expect(
-      (responses[0][0]?.catalog_version_food as { version: number }).version,
+      (responses[0]![0]?.catalog_version_food as { version: number }).version,
     ).toBe(2);
     await expect(
       db`select count(*)::int as versions from public.food_versions where food_id = ${created.food_id}`,

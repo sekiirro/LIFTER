@@ -36,6 +36,7 @@ beforeAll(async () => {
       .select('id')
       .single(),
   );
+  if (!workspace) throw new Error('Catalog video workspace missing');
   workspaceId = workspace.id as string;
   checked(
     await admin().from('workspace_memberships').insert({

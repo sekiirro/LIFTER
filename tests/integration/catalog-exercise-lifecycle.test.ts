@@ -1,7 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
-import { admin, sql, twoWorkspaceFixture } from './harness';
+import { sql, twoWorkspaceFixture } from './harness';
 
 const db = sql();
 const concurrentDb = postgres(process.env.DB_URL!, {
@@ -56,7 +56,7 @@ describe('global exercise lifecycle and merge RPCs', () => {
     expect(removed[0]).toEqual(removed[1]);
     expect(
       (
-        removed[0][0]?.catalog_transition_exercise as {
+        removed[0]![0]?.catalog_transition_exercise as {
           lifecycle_state: string;
         }
       ).lifecycle_state,

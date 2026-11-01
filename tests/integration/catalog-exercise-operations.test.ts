@@ -121,7 +121,7 @@ describe('global exercise create and version RPCs', () => {
       ),
     );
     expect(responses[0]).toEqual(responses[1]);
-    const result = responses[0][0]?.catalog_create_exercise as {
+    const result = responses[0]![0]?.catalog_create_exercise as {
       exercise_id: string;
       version: number;
     };
@@ -154,7 +154,7 @@ describe('global exercise create and version RPCs', () => {
       ),
     );
     expect(responses[0]).toEqual(responses[1]);
-    expect(responses[0][0]?.catalog_version_exercise).toEqual({
+    expect(responses[0]![0]?.catalog_version_exercise).toEqual({
       exercise_id: result.exercise_id,
       version: 2,
     });

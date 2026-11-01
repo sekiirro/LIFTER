@@ -10,7 +10,6 @@ const concurrentDb = postgres(process.env.DB_URL!, {
 });
 let po: Awaited<ReturnType<typeof twoWorkspaceFixture>>['po'];
 let trainerA: Awaited<ReturnType<typeof twoWorkspaceFixture>>['trainerA'];
-let trainerB: Awaited<ReturnType<typeof twoWorkspaceFixture>>['trainerB'];
 let wsA: string;
 
 async function asActor<T>(
@@ -58,7 +57,6 @@ beforeAll(async () => {
   const fixture = await twoWorkspaceFixture();
   po = fixture.po;
   trainerA = fixture.trainerA;
-  trainerB = fixture.trainerB;
   wsA = fixture.wsA.id;
 });
 
@@ -80,7 +78,7 @@ describe('global food lifecycle and merge RPCs', () => {
     );
     expect(responses[0]).toEqual(responses[1]);
     expect(
-      (responses[0][0]?.catalog_transition_food as { lifecycle_state: string })
+      (responses[0]![0]?.catalog_transition_food as { lifecycle_state: string })
         .lifecycle_state,
     ).toBe('removed');
     await expect(

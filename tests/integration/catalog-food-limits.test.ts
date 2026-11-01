@@ -98,10 +98,11 @@ describe('D16-10 food addition limits', () => {
       key: randomUUID(),
       name: `Creator cap ${index} ${randomUUID()}`,
     }));
-    const first = await createFood(actor, requests[0].key, requests[0].name);
+    const firstRequest = requests[0]!;
+    const first = await createFood(actor, firstRequest.key, firstRequest.name);
     for (const request of requests.slice(1))
       await createFood(actor, request.key, request.name);
-    const replay = await createFood(actor, requests[0].key, requests[0].name);
+    const replay = await createFood(actor, firstRequest.key, firstRequest.name);
     expect(replay).toEqual(first);
     await expect(
       createFood(actor, randomUUID(), `Creator cap 11 ${randomUUID()}`),
