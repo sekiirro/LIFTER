@@ -45,6 +45,7 @@ jobs:
     permissions:
       contents: read
     env:
+      LIFTER_SUPABASE_STACK: a
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:
@@ -98,6 +99,7 @@ jobs:
     permissions:
       contents: read
     env:
+      LIFTER_SUPABASE_STACK: a
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:
