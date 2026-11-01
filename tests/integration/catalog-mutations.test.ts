@@ -472,6 +472,77 @@ describe('F16 mutation probes', () => {
     }
   });
 
+  it('T016: removing video host, selected-workspace, or live-membership guards breaks assertions', async () => {
+    const exerciseId = randomUUID();
+    const marker = 'rollback_catalog_video_resolution_mutation';
+    try {
+      await db.begin(async (tx) => {
+        await tx`insert into public.exercises(id, created_by, current_version)
+          values (${exerciseId}, ${po.userId}, 1)`;
+        await tx`insert into public.exercise_versions(exercise_id, version, payload, created_by)
+          values (${exerciseId}, 1, '{}'::jsonb, ${po.userId})`;
+        await tx`insert into public.exercise_variations(workspace_id, exercise_id, created_by, current_version)
+          values (${wsA}, ${exerciseId}, ${trainerA.userId}, 1), (${wsB}, ${exerciseId}, ${trainerB.userId}, 1)`;
+        await tx`insert into public.exercise_variation_versions(workspace_id, exercise_id, version, payload, created_by)
+          values (${wsA}, ${exerciseId}, 1, '{"video_url":"https://evil.example/video"}'::jsonb, ${trainerA.userId}),
+            (${wsB}, ${exerciseId}, 1, '{"video_url":"https://youtu.be/abcdefghijk"}'::jsonb, ${trainerB.userId})`;
+        await tx`select set_config('role', 'postgres', true)`;
+        await tx`create or replace function app_private.catalog_video_url_allowed(p_url text)
+          returns boolean language sql immutable security definer set search_path = '' as $$ select true $$`;
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerA.userId, role: 'authenticated' })}, true)`;
+        const unsafeHost =
+          await tx`select * from public.catalog_resolve_exercise_video(${exerciseId}, ${wsA})`;
+        await expectMutationToBreak(async () => {
+          expect(unsafeHost).toHaveLength(0);
+        }, 'removing the video host allowlist must break the unsafe-host denial');
+        expect(unsafeHost[0]?.video_url).toBe('https://evil.example/video');
+
+        await tx`select set_config('role', 'postgres', true)`;
+        await tx`create or replace function app_private.has_workspace_access(ws uuid, cap text default null)
+          returns boolean language sql stable security definer set search_path = '' as $$ select true $$`;
+        const [resolver] = await tx`
+          select pg_get_functiondef('public.catalog_resolve_exercise_video(uuid,uuid)'::regprocedure) as definition
+        `;
+        if (!resolver?.definition)
+          throw new Error('video resolver definition missing');
+        const originalResolver = resolver.definition;
+        const equalityMutant = resolver.definition.replace(
+          'and v.workspace_id = p_workspace_id',
+          'and true',
+        );
+        if (equalityMutant === resolver.definition)
+          throw new Error(
+            'selected-workspace equality mutation target missing',
+          );
+        await tx.unsafe(equalityMutant);
+        await tx`select set_config('role', 'authenticated', true)`;
+        const foreignWorkspace =
+          await tx`select * from public.catalog_resolve_exercise_video(${exerciseId}, ${wsB})`;
+        await expectMutationToBreak(async () => {
+          expect(foreignWorkspace).toHaveLength(0);
+        }, 'removing the selected-workspace equality check must break isolation');
+        expect(foreignWorkspace.map((row) => row.workspace_id)).toContain(wsA);
+
+        await tx`select set_config('role', 'postgres', true)`;
+        await tx.unsafe(originalResolver);
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: po.userId, role: 'authenticated' })}, true)`;
+        await tx`update public.workspace_memberships set revoked_at = statement_timestamp(), revoked_by = ${po.userId}
+          where workspace_id = ${wsA} and user_id = ${trainerA.userId} and revoked_at is null`;
+        await tx`select set_config('role', 'authenticated', true)`;
+        const revokedAccess =
+          await tx`select * from public.catalog_resolve_exercise_video(${exerciseId}, ${wsA})`;
+        await expectMutationToBreak(async () => {
+          expect(revokedAccess).toHaveLength(0);
+        }, 'removing the current-membership guard must break revocation denial');
+        expect(revokedAccess).toHaveLength(1);
+        throw new Error(marker);
+      });
+    } catch (error) {
+      if ((error as Error).message !== marker) throw error;
+    }
+  });
+
   it('T021: lifecycle, active-survivor, and cycle guards fail under mutation', async () => {
     const sourceId = randomUUID();
     const targetId = randomUUID();
