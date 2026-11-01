@@ -10,12 +10,13 @@ import postgres from 'postgres';
 import {
   assertLocalStackTarget,
   getStackConfig,
+  localSupabaseContainer,
   selectStack,
 } from '../../scripts/local-stack.mjs';
 
 const stack = selectStack();
 const config = getStackConfig(stack);
-const path = config.envFile;
+const envPath = config.envFile;
 function parseEnv(contents) {
   const normalized = contents
     .replace(/^\uFEFF/, '')
@@ -48,8 +49,8 @@ function stackEndpointsFromStatus() {
 
 let contents;
 let env;
-if (existsSync(path)) {
-  contents = readFileSync(path, 'utf8').replace(/^\uFEFF/, '');
+if (existsSync(envPath)) {
+  contents = readFileSync(envPath, 'utf8').replace(/^\uFEFF/, '');
   env = parseEnv(contents);
 } else {
   const processEndpoints = {
@@ -60,17 +61,18 @@ if (existsSync(path)) {
     processEndpoints.DB_URL && processEndpoints.API_URL
       ? processEndpoints
       : stackEndpointsFromStatus();
-  env = {
-    DB_URL: endpoints.DB_URL || endpoints.SUPABASE_DB_URL,
-    API_URL: endpoints.API_URL || endpoints.SUPABASE_URL,
-  };
+  env = endpoints;
   if (!env.DB_URL || !env.API_URL) {
     throw new Error('Local stack environment required');
   }
   contents = `DB_URL="${env.DB_URL}"\nAPI_URL="${env.API_URL}"\n`;
 }
 
-assertLocalStackTarget({ stack, apiUrl: env.API_URL, dbUrl: env.DB_URL });
+const dbUrl = env.DB_URL || env.SUPABASE_DB_URL;
+const apiUrl = env.API_URL || env.SUPABASE_URL;
+assertLocalStackTarget({ stack, apiUrl, dbUrl });
+env.DB_URL = dbUrl;
+env.API_URL = apiUrl;
 
 // The extension owner is supabase_admin; postgres cannot revoke its grants.
 // No secrets are passed in command arguments, input, output or diagnostics.
@@ -79,7 +81,7 @@ execFileSync(
   [
     'exec',
     '-i',
-    `supabase_db_${config.projectId}`,
+    localSupabaseContainer('db', stack),
     'psql',
     '-U',
     'supabase_admin',
@@ -137,7 +139,7 @@ try {
     .split(/\r?\n/)
     .filter((line) => line && !/^SIGNUP_(RATE|ATTEST)_KEY=/.test(line));
   writeFileSync(
-    path,
+    envPath,
     retained
       .concat(rows.map((row) => `${row.name}="${row.decrypted_secret}"`))
       .join('\n') + '\n',

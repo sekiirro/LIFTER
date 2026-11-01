@@ -98,6 +98,22 @@ it('T049 parity mutation probes detect Sales grant, dropped WO scope, and TS-onl
   );
   expect(tsOnlyMutation.tsOnly).toContain('mutation_only_capability');
 });
+
+it('preserves the approved Trainer payment and freeze grants in both matrices', async () => {
+  for (const capability of ['record_payment', 'manage_freeze'] as const) {
+    expect(roleHasCapability('trainer', capability)).toBe(true);
+    const [row] = await db`
+      select app_private.role_has_capability('trainer'::public.staff_role, ${capability}) as allowed
+    `;
+    expect(row?.allowed).toBe(true);
+  }
+  expect(roleHasCapability('trainer', 'record_refund')).toBe(false);
+  const [refund] = await db`
+    select app_private.role_has_capability('trainer'::public.staff_role, 'record_refund') as allowed
+  `;
+  expect(refund?.allowed).toBe(false);
+});
+
 afterAll(async () => {
   if (matrixMutationOriginal) {
     await db.unsafe(matrixMutationOriginal);
@@ -253,7 +269,7 @@ describe('registration read and commission parity', () => {
   });
 });
 
-it('keeps the role and capability definitions unchanged', () => {
+it('preserves F12 approval removal and scopes F13 capabilities', () => {
   expect(ROLES).toEqual([
     'platform_owner',
     'workspace_owner',
@@ -290,7 +306,12 @@ it('keeps the role and capability definitions unchanged', () => {
       'coaching_work',
       'manage_branding',
     ],
-    trainer: ['generate_registration_link', 'coaching_work'],
+    trainer: [
+      'generate_registration_link',
+      'record_payment',
+      'manage_freeze',
+      'coaching_work',
+    ],
     sales: [
       'generate_registration_link',
       'configure_installment_schedule',
@@ -302,7 +323,7 @@ it('keeps the role and capability definitions unchanged', () => {
 
 for (const role of ROLES) {
   for (const capability of parityCapabilities) {
-    it(`T010 parity: ${role} / ${capability}`, async () => {
+    it(`T005 bidirectional parity: ${role} / ${capability}`, async () => {
       const [row] =
         await db`select app_private.role_has_capability(${role}::public.staff_role, ${capability}) as allowed`;
       expect(row?.allowed).toBe(roleHasCapability(role, capability));

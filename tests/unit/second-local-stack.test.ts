@@ -32,22 +32,23 @@ describe('isolated local Supabase stack contract', () => {
     }
   });
 
-  it('infers the selected local profile from CI-shaped endpoint variables', () => {
-    expect(
+  it('requires an explicit selector even when endpoint variables are present', () => {
+    expect(() =>
       selectStack({
         API_URL: 'http://127.0.0.1:25421',
         DB_URL: 'postgres://postgres:postgres@127.0.0.1:25422/postgres',
       }),
-    ).toBe('b');
+    ).toThrow(/Set LIFTER_SUPABASE_STACK/);
     expect(
       selectStack({
-        API_URL: 'http://127.0.0.1:54321',
-        DB_URL: 'postgres://postgres:postgres@127.0.0.1:54322/postgres',
+        LIFTER_SUPABASE_STACK: 'b',
+        API_URL: 'http://127.0.0.1:25421',
+        DB_URL: 'postgres://postgres:postgres@127.0.0.1:25422/postgres',
       }),
-    ).toBe('a');
+    ).toBe('b');
   });
 
-  it('uses the supplied root when inferring the environment-selected profile', () => {
+  it('uses the supplied root for the explicitly selected profile', () => {
     const root = mkdtempSync(join(tmpdir(), 'lifter-stack-root-'));
     try {
       const b = join(root, 'supabase-stack-b', 'supabase');
@@ -58,12 +59,13 @@ describe('isolated local Supabase stack contract', () => {
       writeFileSync(join(b, 'config.toml'), config);
       const env = {
         NODE_ENV: 'test' as const,
+        LIFTER_SUPABASE_STACK: 'b',
         API_URL: 'http://127.0.0.1:29521',
         DB_URL: 'postgres://postgres:postgres@127.0.0.1:29522/postgres',
       };
 
       expect(loadSelectedStackEnv(env, root)).toBe('b');
-      expect(selectStack(env, root)).toBe('b');
+      expect(selectStack(env)).toBe('b');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

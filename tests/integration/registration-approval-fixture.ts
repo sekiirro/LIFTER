@@ -47,6 +47,7 @@ export async function graph(
     amount?: string;
     offset?: number;
     currency?: string;
+    authUserId?: string;
     issuedRows?: readonly {
       seq: number;
       amount_minor: string;
@@ -54,7 +55,7 @@ export async function graph(
     }[];
   } = {},
 ) {
-  const client = await pending(tx, f);
+  const client = await pending(tx, f, {}, options.authUserId);
   await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.po.userId, role: 'authenticated' })},true)`;
   const ids = {
     client: client.id as string,

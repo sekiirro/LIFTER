@@ -1,6 +1,6 @@
-import { localSupabaseContainer } from './local-docker';
 import { randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { localSupabaseContainer } from '../../scripts/local-stack.mjs';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import {
   clientContext,
@@ -99,9 +99,17 @@ it('clients: every required field is NOT NULL, generated id/time and pending-onl
       'name',
       'approval_state',
       'created_at',
+      'deactivated_at',
     ].sort(),
   );
-  expect(columns.every((c) => c.attnotnull)).toBe(true);
+  expect(
+    columns
+      .filter((c) => c.attname !== 'deactivated_at')
+      .every((c) => c.attnotnull),
+  ).toBe(true);
+  expect(columns.find((c) => c.attname === 'deactivated_at')?.attnotnull).toBe(
+    false,
+  );
 });
 for (const [table, fragments] of [
   [

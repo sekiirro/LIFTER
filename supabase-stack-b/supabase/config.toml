@@ -43,5 +43,10 @@ port = 25429
 enable_signup = false
 minimum_password_length = 8
 
+[auth.hook.custom_access_token]
+# Stack B has no root-migration sync; the hook is exercised on Stack C/CI.
+enabled = false
+uri = "pg-functions://postgres/public/custom_access_token_hook"
+
 [auth.email]
 otp_expiry = 3600
