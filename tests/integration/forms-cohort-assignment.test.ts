@@ -1,14 +1,21 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
-import { clientContext, sql } from './registration-approval-operations-fixture';
+import {
+  clientContext,
+  registered,
+  request,
+  sql,
+} from './registration-approval-operations-fixture';
 
 const db = sql();
 afterAll(() => db.end());
-async function createForm(workspaceId: string) {
-  const policy = `t010-${randomUUID()}`;
+async function createForm(workspaceId: string, termsVersion?: string) {
+  const policy = termsVersion ?? `t010-${randomUUID()}`;
   const formId = randomUUID();
-  await db`insert into app_private.terms_policy_versions(version,policy_kind,status)
-    values(${policy},'terms','published')`;
+  if (!termsVersion) {
+    await db`insert into app_private.terms_policy_versions(version,policy_kind,status)
+      values(${policy},'terms','published')`;
+  }
   await db`insert into public.forms(id,workspace_id,name) values(${formId},${workspaceId},'T010 policy')`;
   await db`insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
     values(${workspaceId},${formId},1,${policy},${db.json({ questions: [] })},'published')`;
@@ -33,7 +40,158 @@ function policyArgs(
   };
 }
 
+async function futureApprovedClient() {
+  const context = await clientContext();
+  const client = await registered(context);
+  return { context, client };
+}
+
+async function setFutureActivation(
+  workspaceId: string,
+  subscriptionId: string,
+) {
+  await db`insert into public.subscription_activations(
+    workspace_id,subscription_id,activated_at,delivery_event_id
+  ) select ${workspaceId},${subscriptionId},
+    (((clock_timestamp() at time zone 'Africa/Cairo')::date+5)::timestamp at time zone 'Africa/Cairo'),
+    ${randomUUID()}`;
+}
+
 describe('T010/T023 per-form assignment policy', () => {
+  it('uses the F12 approved_at fact for joining clients created before policy configuration', async () => {
+    const { context, client } = await futureApprovedClient();
+    const formId = await createForm(context.wsA.id);
+    const configured = await context.po.client.rpc(
+      'configure_intake_assignment_policy',
+      policyArgs(context.wsA.id, formId, 'new_clients', 'onboarding'),
+    );
+    expect(configured.data).toEqual({ status: 'configured' });
+    const approved = await context.po.client.rpc('registration_approve', {
+      request: request(context, client),
+    });
+    expect((approved.data as { status: string }).status).toBe('ok');
+    const subscriptionId = (
+      approved.data as { receipt: { subscription_id: string } }
+    ).receipt.subscription_id;
+    await setFutureActivation(context.wsA.id, subscriptionId);
+    const [timestamps] =
+      await db`select c.created_at < p.configured_at as created_before_policy,
+      a.approved_at >= p.configured_at as approved_after_policy
+      from public.clients c join app_private.registration_approval_events a
+        on a.workspace_id=c.workspace_id and a.client_id=c.id
+      join app_private.form_assignment_policies p on p.workspace_id=c.workspace_id and p.form_id=${formId}
+      where c.workspace_id=${context.wsA.id} and c.id=${client.id}`;
+    expect(timestamps).toEqual({
+      created_before_policy: true,
+      approved_after_policy: true,
+    });
+    const assigned = await context.po.client.rpc(
+      'materialize_intake_assignment_occurrence',
+      {
+        p_workspace_id: context.wsA.id,
+        p_form_id: formId,
+        p_occurrence_key: `onboard-${client.id}`,
+      },
+    );
+    expect(assigned.data).toMatchObject({ status: 'materialized', count: 1 });
+    const [row] = await db`select client_id from public.form_assignments
+      where workspace_id=${context.wsA.id} and form_id=${formId}`;
+    expect(row?.client_id).toBe(client.id);
+  });
+
+  it('admits future entitlement for onboarding/manual specific and rejects it for all-active/recurring', async () => {
+    const { context, client } = await futureApprovedClient();
+    const sharedTerms = `t010-${randomUUID()}`;
+    await db`insert into app_private.terms_policy_versions(version,policy_kind,status)
+      values(${sharedTerms},'terms','published')`;
+    const formIds = {
+      onboarding: await createForm(context.wsA.id, sharedTerms),
+      manual: await createForm(context.wsA.id, sharedTerms),
+      active: await createForm(context.wsA.id, sharedTerms),
+    };
+    const onboardingPolicy = await context.po.client.rpc(
+      'configure_intake_assignment_policy',
+      policyArgs(
+        context.wsA.id,
+        formIds.onboarding,
+        'new_clients',
+        'onboarding',
+      ),
+    );
+    expect(onboardingPolicy.data).toEqual({ status: 'configured' });
+    const approved = await context.po.client.rpc('registration_approve', {
+      request: request(context, client),
+    });
+    expect((approved.data as { status: string }).status).toBe('ok');
+    const subscriptionId = (
+      approved.data as { receipt: { subscription_id: string } }
+    ).receipt.subscription_id;
+    await setFutureActivation(context.wsA.id, subscriptionId);
+    for (const [formId, args] of [
+      [
+        formIds.manual,
+        {
+          ...policyArgs(
+            context.wsA.id,
+            formIds.manual,
+            'specific_clients',
+            'manual',
+          ),
+          p_specific_client_ids: [client.id],
+        },
+      ],
+      [
+        formIds.active,
+        policyArgs(
+          context.wsA.id,
+          formIds.active,
+          'all_active_clients',
+          'recurring',
+        ),
+      ],
+    ] as const) {
+      const result = await context.po.client.rpc(
+        'configure_intake_assignment_policy',
+        args,
+      );
+      expect(result.data).toEqual({ status: 'configured' });
+    }
+    const [projection] = await db`select app_private.f13_project_entitlement(
+      ${context.wsA.id},${subscriptionId},(clock_timestamp() at time zone 'Africa/Cairo')::date
+    )->>'status' as status`;
+    expect(projection?.status).toBe('future');
+    for (const [formId, expected] of [
+      [formIds.onboarding, 1],
+      [formIds.manual, 1],
+      [formIds.active, 0],
+    ] as const) {
+      const result = await context.po.client.rpc(
+        'materialize_intake_assignment_occurrence',
+        {
+          p_workspace_id: context.wsA.id,
+          p_form_id: formId,
+          p_occurrence_key: `future-${formId}`,
+        },
+      );
+      if (expected === 0) {
+        expect(
+          result.data?.status === 'not_found' ||
+            (result.data?.status === 'materialized' && result.data.count === 0),
+          'future entitlement must never enter an all-active/recurring audience',
+        ).toBe(true);
+        const [count] =
+          await db`select count(*)::int as count from public.form_assignments
+          where workspace_id=${context.wsA.id} and form_id=${formId} and client_id=${client.id}`;
+        expect(count?.count).toBe(0);
+      } else {
+        expect(result.data).toMatchObject({
+          status: 'materialized',
+          count: expected,
+        });
+      }
+    }
+  });
+
   it('defines scoped audience policy and occurrence-bound immutable snapshots with separate deadlines', async () => {
     const policies = await db`
       select column_name from information_schema.columns
