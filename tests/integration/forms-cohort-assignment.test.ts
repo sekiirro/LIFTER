@@ -99,6 +99,58 @@ describe('T010/T023 per-form assignment policy', () => {
     expect(row?.client_id).toBe(client.id);
   });
 
+  it('accepts bounded Cairo-date recurrence timing and snapshots each scheduled occurrence once', async () => {
+    const context = await clientContext();
+    const formId = await createForm(context.wsA.id);
+    const today =
+      await db`select (clock_timestamp() at time zone 'Africa/Cairo')::date::text as day`;
+    const configured = await context.po.client.rpc(
+      'configure_intake_assignment_policy',
+      {
+        ...policyArgs(
+          context.wsA.id,
+          formId,
+          'all_active_clients',
+          'recurring',
+        ),
+        p_timing: {
+          recurrence_interval_days: 7,
+          recurrence_starts_on: today[0]!.day,
+          client_deadline_days: 3,
+        },
+      },
+    );
+    expect(configured.data).toEqual({ status: 'configured' });
+    const key = `recurring:${today[0]!.day}`;
+    const first = await context.po.client.rpc(
+      'materialize_intake_assignment_occurrence',
+      {
+        p_workspace_id: context.wsA.id,
+        p_form_id: formId,
+        p_occurrence_key: key,
+      },
+    );
+    expect(first.data).toMatchObject({ status: 'materialized' });
+    const replay = await context.po.client.rpc(
+      'materialize_intake_assignment_occurrence',
+      {
+        p_workspace_id: context.wsA.id,
+        p_form_id: formId,
+        p_occurrence_key: key,
+      },
+    );
+    expect(replay.data).toEqual({ status: 'already_materialized', count: 0 });
+    const next = await context.po.client.rpc(
+      'materialize_intake_assignment_occurrence',
+      {
+        p_workspace_id: context.wsA.id,
+        p_form_id: formId,
+        p_occurrence_key: `recurring:${today[0]!.day}:next`,
+      },
+    );
+    expect(next.data).toMatchObject({ status: 'not_found' });
+  });
+
   it('admits future entitlement for onboarding/manual specific and rejects it for all-active/recurring', async () => {
     const { context, client } = await futureApprovedClient();
     const sharedTerms = `t010-${randomUUID()}`;
@@ -127,7 +179,7 @@ describe('T010/T023 per-form assignment policy', () => {
       approved.data as { receipt: { subscription_id: string } }
     ).receipt.subscription_id;
     await setFutureActivation(context.wsA.id, subscriptionId);
-    for (const [formId, args] of [
+    for (const [, args] of [
       [
         formIds.manual,
         {
@@ -142,12 +194,21 @@ describe('T010/T023 per-form assignment policy', () => {
       ],
       [
         formIds.active,
-        policyArgs(
-          context.wsA.id,
-          formIds.active,
-          'all_active_clients',
-          'recurring',
-        ),
+        {
+          ...policyArgs(
+            context.wsA.id,
+            formIds.active,
+            'all_active_clients',
+            'recurring',
+          ),
+          p_timing: {
+            recurrence_interval_days: 7,
+            recurrence_starts_on: (
+              await db`select (clock_timestamp() at time zone 'Africa/Cairo')::date::text as day`
+            )[0]!.day,
+            client_deadline_days: 3,
+          },
+        },
       ],
     ] as const) {
       const result = await context.po.client.rpc(

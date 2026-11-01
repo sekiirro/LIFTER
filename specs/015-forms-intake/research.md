@@ -76,3 +76,12 @@
   create a late renewal occurrence.
 - No cron schedule is activated by migrations. T017's owner-only activation
   gate remains separate.
+- A recurring occurrence is addressed as `recurring:<Cairo-date>` and is valid
+  only on a date on or after `recurrence_starts_on` whose offset is divisible
+  by `recurrence_interval_days`. A renewal occurrence is addressed as
+  `renewal:<subscription-id>` and is valid only when F13 reports `future` on
+  the prior Cairo date and `active` on the current Cairo date. This makes the
+  projection, including F13 freeze reflow, authoritative over payment time.
+  Manual delivery remains an opaque caller-keyed occurrence. Each stored
+  occurrence snapshots its eligible audience once and receives independent
+  assignment rows and deadlines.
