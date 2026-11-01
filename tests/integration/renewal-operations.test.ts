@@ -60,6 +60,22 @@ async function freeze(
   }
 }
 
+async function refundPurchase(
+  tx: TransactionSql,
+  userId: string,
+  request: Record<string, unknown>,
+) {
+  await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: userId, role: 'authenticated' })},true)`;
+  await tx`set local role authenticated`;
+  try {
+    const [row] = await tx`
+      select public.record_refund(${tx.json(request as JSONValue)}) as result`;
+    return row!.result as Record<string, unknown>;
+  } finally {
+    await tx`reset role`;
+  }
+}
+
 async function fixture() {
   const f = await clientContext();
   const purchase = await bought(f);
@@ -138,6 +154,127 @@ it('T010 reuses F12 installment snapshots and anchors renewal dues to its record
       .effective_end_exclusive!;
     expect(predecessorEnd <= (receipt.service_start_date as string)).toBe(true);
     expect(predecessorEnd).toBe(receipt.service_start_date);
+  });
+});
+
+it('accepts uppercase renewal UUIDs and replays without recording a second renewal', async () => {
+  const { f, purchase, offerId } = await fixture();
+  await probe(async (tx) => {
+    await activate(tx, f, purchase);
+    const input = {
+      workspace_id: f.wsA.id.toUpperCase(),
+      client_id: purchase.t.id.toUpperCase(),
+      predecessor_subscription_id: purchase.sid.toUpperCase(),
+      package_offer_id: offerId.toUpperCase(),
+      request_key: randomUUID().toUpperCase(),
+      expected_revision: 0,
+      renewal_confirmed: true,
+      installments: null,
+    };
+    const first = await renewal(tx, f.trainerA.userId, input);
+    expect(first.status).toBe('ok');
+    expect(await renewal(tx, f.trainerA.userId, input)).toEqual(first);
+    const retryWithNewKey = await renewal(tx, f.trainerA.userId, {
+      ...input,
+      request_key: randomUUID().toUpperCase(),
+      expected_revision: 1,
+    });
+    expect(retryWithNewKey.status).toBe('stale_state');
+    const [counts] = await tx`
+      select count(*)::int as renewals,
+        (select count(*)::int from public.subscription_activations a
+          join public.subscriptions s on s.workspace_id=a.workspace_id and s.id=a.subscription_id
+          where s.client_id=${purchase.t.id} and s.kind='renewal') as activations,
+        (select count(*)::int from public.subscription_installments i
+          join public.subscriptions s on s.workspace_id=i.workspace_id and s.id=i.subscription_id
+          where s.client_id=${purchase.t.id} and s.kind='renewal') as installments
+      from public.subscription_renewals where client_id=${purchase.t.id}
+    `;
+    expect(counts).toEqual({ renewals: 1, activations: 1, installments: 1 });
+  });
+});
+
+it('treats refund deactivation as terminal across another renewal purchase and freeze', async () => {
+  const { f, purchase, offerId } = await fixture();
+  await probe(async (tx) => {
+    await tx`insert into public.subscription_activations(workspace_id,subscription_id,activated_at,delivery_event_id)
+      values(${f.wsA.id},${purchase.sid},clock_timestamp()-interval '62 days',${randomUUID()})`;
+    const firstRenewal = await renewal(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: purchase.sid,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      renewal_confirmed: true,
+      installments: null,
+    });
+    expect(firstRenewal.status).toBe('ok');
+    const otherPurchase = (firstRenewal.receipt as Record<string, string>)
+      .subscription_id;
+    if (typeof otherPurchase !== 'string')
+      throw new Error('Renewal receipt has no subscription ID');
+    const refunded = await refundPurchase(tx, f.po.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      purchase_id: purchase.sid,
+      request_key: randomUUID(),
+      amount_minor: '400',
+      external_confirmation: true,
+    });
+    expect(refunded.status).toBe('ok');
+
+    const [before] = await tx`
+      select
+        (select count(*)::int from public.subscriptions where client_id=${purchase.t.id}) as subscriptions,
+        (select count(*)::int from public.subscription_renewals where client_id=${purchase.t.id}) as renewals,
+        (select count(*)::int from public.subscription_activations a join public.subscriptions s
+          on s.workspace_id=a.workspace_id and s.id=a.subscription_id where s.client_id=${purchase.t.id}) as activations,
+        (select count(*)::int from public.subscription_installments i join public.subscriptions s
+          on s.workspace_id=i.workspace_id and s.id=i.subscription_id where s.client_id=${purchase.t.id}) as installments,
+        (select count(*)::int from public.audit_events where workspace_id=${f.wsA.id}) as audit_events
+    `;
+    const deniedRenewal = await renewal(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      predecessor_subscription_id: otherPurchase,
+      package_offer_id: offerId,
+      request_key: randomUUID(),
+      expected_revision: 0,
+      renewal_confirmed: true,
+      installments: null,
+    });
+    expect(deniedRenewal.status).toBe('stale_state');
+    const [after] = await tx`
+      select
+        (select count(*)::int from public.subscriptions where client_id=${purchase.t.id}) as subscriptions,
+        (select count(*)::int from public.subscription_renewals where client_id=${purchase.t.id}) as renewals,
+        (select count(*)::int from public.subscription_activations a join public.subscriptions s
+          on s.workspace_id=a.workspace_id and s.id=a.subscription_id where s.client_id=${purchase.t.id}) as activations,
+        (select count(*)::int from public.subscription_installments i join public.subscriptions s
+          on s.workspace_id=i.workspace_id and s.id=i.subscription_id where s.client_id=${purchase.t.id}) as installments,
+        (select count(*)::int from public.audit_events where workspace_id=${f.wsA.id}) as audit_events
+    `;
+    expect(after).toEqual(before);
+
+    await expect(
+      tx.savepoint((inner) =>
+        freeze(inner, f.trainerA.userId, {
+          action: 'apply',
+          workspace_id: f.wsA.id,
+          client_id: purchase.t.id,
+          subscription_id: otherPurchase,
+          request_key: randomUUID(),
+          expected_revision: 0,
+          duration_days: 2,
+        }),
+      ),
+    ).rejects.toMatchObject({ code: '23514' });
+    const [freezes] = await tx`
+      select count(*)::int as count from public.subscription_freezes
+      where workspace_id=${f.wsA.id} and subscription_id=${otherPurchase}
+    `;
+    expect(freezes!.count).toBe(0);
   });
 });
 

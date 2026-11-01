@@ -10,7 +10,14 @@ vi.mock('server-only', () => ({}));
 const db = sql();
 let authUserId: string | undefined;
 afterAll(async () => {
-  if (authUserId) await admin().auth.admin.deleteUser(authUserId);
+  if (authUserId) {
+    await db`delete from app_private.refund_auth_lockouts where auth_user_id=${authUserId}`;
+    await db`delete from app_private.client_deactivation_state where auth_user_id=${authUserId}`;
+    const deletion = await admin().auth.admin.deleteUser(authUserId);
+    // The fixture deliberately retains its client, matching the existing
+    // client_accounts.auth_user_id ON DELETE RESTRICT retention contract.
+    expect(deletion.error).not.toBeNull();
+  }
   await db.end();
 });
 

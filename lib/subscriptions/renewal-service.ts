@@ -150,10 +150,17 @@ export async function recordRenewal(
     if (
       !deps.actor ||
       typeof input.workspaceId !== 'string' ||
-      !authorize(deps.actor, 'record_payment', input.workspaceId)
+      !authorize(deps.actor, 'record_payment', input.workspaceId.toLowerCase())
     )
       return { status: 'not_permitted' };
     if (!validInput(input)) return { status: 'invalid_input' };
+    const workspaceId = input.workspaceId.toLowerCase();
+    const clientId = (input.clientId as string).toLowerCase();
+    const predecessorSubscriptionId = (
+      input.predecessorSubscriptionId as string
+    ).toLowerCase();
+    const packageOfferId = (input.packageOfferId as string).toLowerCase();
+    const requestKey = (input.requestKey as string).toLowerCase();
     const installments =
       input.installments === undefined || input.installments === null
         ? null
@@ -161,21 +168,17 @@ export async function recordRenewal(
     if (
       installments &&
       installments.length > 1 &&
-      !authorize(
-        deps.actor,
-        'configure_installment_schedule',
-        input.workspaceId,
-      )
+      !authorize(deps.actor, 'configure_installment_schedule', workspaceId)
     )
       return { status: 'not_permitted' };
 
     const response = await deps.client.rpc('record_renewal', {
       request: {
-        workspace_id: input.workspaceId,
-        client_id: input.clientId,
-        predecessor_subscription_id: input.predecessorSubscriptionId,
-        package_offer_id: input.packageOfferId,
-        request_key: input.requestKey,
+        workspace_id: workspaceId,
+        client_id: clientId,
+        predecessor_subscription_id: predecessorSubscriptionId,
+        package_offer_id: packageOfferId,
+        request_key: requestKey,
         expected_revision: input.expectedRevision,
         renewal_confirmed: true,
         installments:
@@ -200,9 +203,9 @@ export async function recordRenewal(
     const receipt = safeReceipt(response.data.receipt);
     if (
       !receipt ||
-      receipt.workspace_id !== input.workspaceId ||
-      receipt.client_id !== input.clientId ||
-      receipt.predecessor_subscription_id !== input.predecessorSubscriptionId
+      receipt.workspace_id !== workspaceId ||
+      receipt.client_id !== clientId ||
+      receipt.predecessor_subscription_id !== predecessorSubscriptionId
     )
       return { status: 'unavailable' };
     return { status: 'ok', receipt };

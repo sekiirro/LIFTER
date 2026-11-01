@@ -283,9 +283,9 @@ Requests bind expected lifecycle/chain/tail revisions. All callers are permitted
 
 **Retention — FINAL**
 
-- RET-1=B: 30-day clock starts when client relationship ends (Closure/Refund/Deactivation). Necessary data stays while Active.
+- RET-1=B: 30-day clock starts when client relationship ends (Closure/Refund/Deactivation). Necessary data stays while Active. Auth-user purge must first remove or anonymize `app_private.client_deactivation_state` and `app_private.refund_auth_lockouts` rows, whose `auth_user_id` foreign keys intentionally restrict deletion in line with `client_accounts`.
 - RET-2=A: Purge client-specific drafts, answers, correction content and attachments; retain reusable templates and legally required minimal audit evidence.
-- RET-3=A: Maximum 30 days across ALL recoverable copies, including backups. Technical feasibility and legal exceptions require review BEFORE production.
+- RET-3=A: Maximum 30 days across ALL recoverable copies, including backups. Technical feasibility and legal exceptions require review BEFORE production, including the prerequisite removal or anonymization of `client_deactivation_state` and `refund_auth_lockouts` rows before any Auth-user purge.
 
 ### PO Decisions — Session 13 (2026-10-29)
 

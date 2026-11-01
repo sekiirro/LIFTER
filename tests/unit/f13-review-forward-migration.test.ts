@@ -5,6 +5,10 @@ const migration = readFileSync(
   'supabase/migrations/20261103130000_f13_review_guards_projection.sql',
   'utf8',
 );
+const round9 = readFileSync(
+  'supabase/migrations/20261103130500_f13_reject_deactivated_client_operations.sql',
+  'utf8',
+);
 function functionBody(name: string): string {
   const start = migration.indexOf(`function app_private.${name}`);
   if (start < 0) return '';
@@ -13,6 +17,16 @@ function functionBody(name: string): string {
 }
 
 describe('F13 review corrections are forward-only and enforced in SQL', () => {
+  it('rejects renewals and freezes after client deactivation', () => {
+    const renewalStart = round9.indexOf('function public.record_renewal');
+    const freezeStart = round9.indexOf('function app_private.f13_freeze_guard');
+    expect(round9.slice(renewalStart, freezeStart)).toMatch(
+      /c\.deactivated_at is not null[\s\S]*?return jsonb_build_object\('status','stale_state'\)/,
+    );
+    expect(round9.slice(freezeStart)).toMatch(
+      /client_deactivated_at is not null[\s\S]*?raise exception 'invalid_freeze_actor_or_state'/,
+    );
+  });
   it('blocks Apply and lifecycle events after a refund', () => {
     expect(functionBody('f13_freeze_guard')).toMatch(
       /public\.refund_operations/,

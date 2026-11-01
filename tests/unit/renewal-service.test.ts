@@ -1,11 +1,11 @@
 import { describe, expect, it, vi } from 'vitest';
 import { recordRenewal } from '../../lib/subscriptions/renewal-service';
 
-const ws = '00000000-0000-4000-8000-000000000001';
-const client = '00000000-0000-4000-8000-000000000002';
-const predecessor = '00000000-0000-4000-8000-000000000003';
-const offer = '00000000-0000-4000-8000-000000000004';
-const key = '00000000-0000-4000-8000-000000000005';
+const ws = 'abcdefab-cdef-4abc-8def-abcdefabcdef';
+const client = 'abcdefab-cdef-4abc-8def-abcdefabcdee';
+const predecessor = 'abcdefab-cdef-4abc-8def-abcdefabcded';
+const offer = 'abcdefab-cdef-4abc-8def-abcdefabcdcc';
+const key = 'abcdefab-cdef-4abc-8def-abcdefabcdcb';
 const request = {
   workspaceId: ws,
   clientId: client,
@@ -21,8 +21,8 @@ const receipt = {
   workspace_id: ws,
   client_id: client,
   predecessor_subscription_id: predecessor,
-  subscription_id: '00000000-0000-4000-8000-000000000006',
-  package_version_id: '00000000-0000-4000-8000-000000000007',
+  subscription_id: 'abcdefab-cdef-4abc-8def-abcdefabcdca',
+  package_version_id: 'abcdefab-cdef-4abc-8def-abcdefabcdc9',
   price_minor: '30000',
   currency: 'EGP',
   duration_days: 30,
@@ -54,6 +54,38 @@ describe('recordRenewal', () => {
         installments: null,
       },
     });
+    expect(result).toEqual({ status: 'ok', receipt });
+  });
+
+  it('normalizes uppercase UUID inputs before RPC and accepts the canonical receipt', async () => {
+    const upper = {
+      ...request,
+      workspaceId: ws.toUpperCase(),
+      clientId: client.toUpperCase(),
+      predecessorSubscriptionId: predecessor.toUpperCase(),
+      packageOfferId: offer.toUpperCase(),
+      requestKey: key.toUpperCase(),
+    };
+    const rpc = vi.fn(async () => ({
+      data: { status: 'ok', receipt },
+      error: null,
+    }));
+    const result = await recordRenewal(upper, {
+      actor: { userId: 'trainer-1', role: 'trainer', activeWorkspaceIds: [ws] },
+      client: { rpc },
+    });
+    expect(rpc).toHaveBeenCalledWith(
+      'record_renewal',
+      expect.objectContaining({
+        request: expect.objectContaining({
+          workspace_id: ws,
+          client_id: client,
+          predecessor_subscription_id: predecessor,
+          package_offer_id: offer,
+          request_key: key,
+        }),
+      }),
+    );
     expect(result).toEqual({ status: 'ok', receipt });
   });
 
