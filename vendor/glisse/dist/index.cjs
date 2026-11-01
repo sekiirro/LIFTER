@@ -1278,6 +1278,9 @@ function useRefraction(ref, selection = false, bendsBackdrop = true) {
 	]);
 	(0, react.useEffect)(() => refit.current?.());
 }
+function useGlisseRefraction(ref) {
+	useRefraction(ref);
+}
 const SELECTION_PROPERTIES = [
 	"--lg-filter",
 	"--lg-rim",
@@ -2681,3 +2684,4 @@ exports.SegmentedControl = SegmentedControl;
 exports.Slider = Slider;
 exports.Switch = Switch;
 exports.TabBar = TabBar;
+exports.useGlisseRefraction = useGlisseRefraction;

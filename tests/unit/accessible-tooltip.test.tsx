@@ -48,12 +48,20 @@ describe('AccessibleTooltip behavior', () => {
   });
 
   it('keeps an accessible name and wires the visible tooltip as a description', () => {
-    expect(getTooltipAriaAttributes('Clients', 'tip-1', false)).toEqual({
+    expect(
+      getTooltipAriaAttributes('Clients', 'Clients', 'tip-1', false),
+    ).toEqual({
       'aria-label': 'Clients',
       'aria-describedby': undefined,
     });
     expect(
-      getTooltipAriaAttributes('Clients', 'tip-1', true, 'help-1'),
+      getTooltipAriaAttributes(
+        'Clients',
+        'Client actions',
+        'tip-1',
+        true,
+        'help-1',
+      ),
     ).toEqual({
       'aria-label': 'Clients',
       'aria-describedby': 'help-1 tip-1',
@@ -70,6 +78,16 @@ describe('AccessibleTooltip behavior', () => {
     expect(html).toContain('role="tooltip"');
     expect(html).toContain('data-testid="tooltip-clients"');
     expect(html).toContain('data-visible="false"');
+  });
+
+  it('avoids repeating a tooltip that matches the trigger accessible name', () => {
+    expect(getTooltipAriaAttributes('Home', 'Home', 'tip-home', true)).toEqual({
+      'aria-label': 'Home',
+      'aria-describedby': undefined,
+    });
+    expect(
+      getTooltipAriaAttributes('Home', 'Home help', 'tip-home', true),
+    ).toEqual({ 'aria-label': 'Home', 'aria-describedby': 'tip-home' });
   });
 
   it('anchors outside the fixed 44px trigger footprint without shifting the dock', () => {

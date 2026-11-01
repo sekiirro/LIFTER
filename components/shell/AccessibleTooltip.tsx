@@ -25,17 +25,22 @@ type TooltipAriaAttributes = {
 
 /** Combines existing descriptions with the tooltip only while it is visible. */
 export function getTooltipAriaAttributes(
-  label: string,
+  accessibleName: string,
+  tooltipText: string,
   tooltipId: string,
   visible: boolean,
   existingDescription?: string,
+  tooltipIsDistinct = tooltipText !== accessibleName,
 ): TooltipAriaAttributes {
-  const describedBy = [existingDescription, visible ? tooltipId : undefined]
+  const describedBy = [
+    existingDescription,
+    visible && tooltipIsDistinct ? tooltipId : undefined,
+  ]
     .filter(Boolean)
     .join(' ');
 
   return {
-    'aria-label': label,
+    'aria-label': accessibleName,
     'aria-describedby': describedBy || undefined,
   };
 }
@@ -105,6 +110,7 @@ export function AccessibleTooltip({
   const childProps = children.props;
   const ariaProps = getTooltipAriaAttributes(
     childProps['aria-label'] ?? label,
+    label,
     tooltipId,
     visible,
     childProps['aria-describedby'],

@@ -1,6 +1,6 @@
 'use client';
 
-import type { HTMLAttributes, Ref } from 'react';
+import type { HTMLAttributes, Ref, RefObject } from 'react';
 import { useEffect, useRef, useState } from 'react';
 import styles from './GlassSurface.module.css';
 
@@ -39,6 +39,19 @@ type GlisseMount = {
   mount: () => Promise<boolean> | boolean;
   settle: (duration: number) => void;
 };
+
+type GlisseRefractionHook = (ref: RefObject<HTMLDivElement | null>) => void;
+
+function GlisseRefraction({
+  hook,
+  surfaceRef,
+}: {
+  hook: GlisseRefractionHook;
+  surfaceRef: RefObject<HTMLDivElement | null>;
+}) {
+  hook(surfaceRef);
+  return null;
+}
 
 const glisseMountQueue: GlisseMount[] = [];
 let drainingGlisseMounts = false;
@@ -275,7 +288,7 @@ export function GlassSurface({
   ref: forwardedRef,
   ...props
 }: GlassSurfaceProps) {
-  const [Glass, setGlass] = useState<typeof import('glisse').Glass | null>(
+  const [glisseHook, setGlisseHook] = useState<GlisseRefractionHook | null>(
     null,
   );
   const surfaceRef = useRef<HTMLDivElement>(null);
@@ -344,7 +357,7 @@ export function GlassSurface({
         cancelSchedule?.();
         cancelSchedule = undefined;
         loading = false;
-        setGlass(null);
+        setGlisseHook(null);
         return;
       }
       setRuntimeMode('waiting');
@@ -363,9 +376,9 @@ export function GlassSurface({
               initStartRef.current,
             );
             return import('glisse').then(
-              ({ Glass: GlisseGlass }) => {
+              ({ useGlisseRefraction }) => {
                 if (!cancelled && enabled) {
-                  setGlass(() => GlisseGlass);
+                  setGlisseHook(() => useGlisseRefraction);
                   return true;
                 }
                 return false;
@@ -387,7 +400,7 @@ export function GlassSurface({
             if (duration > 100) {
               setRuntimeMode('static');
               surface.setAttribute('data-glass-over-budget', '');
-              setGlass(null);
+              setGlisseHook(null);
               return;
             }
             setRuntimeMode('enhanced');
@@ -420,12 +433,15 @@ export function GlassSurface({
     'data-glass-surface': '',
     'data-glass-variant': variant,
     'data-glass-fallback': fallback,
-    'data-glass-enhanced': Glass ? '' : undefined,
+    'data-glass-enhanced': glisseHook ? '' : undefined,
   };
 
-  return Glass ? (
-    <Glass {...surfaceProps}>{children}</Glass>
-  ) : (
-    <div {...surfaceProps}>{children}</div>
+  return (
+    <div {...surfaceProps}>
+      {children}
+      {glisseHook ? (
+        <GlisseRefraction hook={glisseHook} surfaceRef={surfaceRef} />
+      ) : null}
+    </div>
   );
 }

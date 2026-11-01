@@ -23,4 +23,17 @@ describe('vendored Glisse performance patch', () => {
       ).toHaveLength(2);
     }
   });
+
+  it('exports the in-place refraction hook from both runtime bundles and types', () => {
+    for (const bundle of ['index.js', 'index.cjs']) {
+      const source = readFileSync(`vendor/glisse/dist/${bundle}`, 'utf8');
+      expect(source).toContain('useGlisseRefraction');
+    }
+    expect(readFileSync('vendor/glisse/dist/index.d.ts', 'utf8')).toContain(
+      'useGlisseRefraction',
+    );
+    expect(readFileSync('vendor/glisse/dist/index.d.cts', 'utf8')).toContain(
+      'useGlisseRefraction',
+    );
+  });
 });

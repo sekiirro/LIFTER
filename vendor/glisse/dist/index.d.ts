@@ -1,5 +1,5 @@
 
-import { ButtonHTMLAttributes, CSSProperties, ElementType, ForwardRefExoticComponent, HTMLAttributes, InputHTMLAttributes, JSX, ReactNode, RefAttributes } from "react";
+import { ButtonHTMLAttributes, CSSProperties, ElementType, ForwardRefExoticComponent, HTMLAttributes, InputHTMLAttributes, JSX, ReactNode, RefAttributes, RefObject } from "react";
 interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
   /** Shown before the label. On its own, the button is a circle; give it an `aria-label`. */
   icon?: ReactNode;
@@ -13,6 +13,7 @@ interface ButtonProps extends ButtonHTMLAttributes<HTMLButtonElement> {
 export declare const Button: ForwardRefExoticComponent<ButtonProps & RefAttributes<HTMLButtonElement>>;
 type GlassProps = HTMLAttributes<HTMLDivElement>;
 export declare const Glass: ForwardRefExoticComponent<GlassProps & RefAttributes<HTMLDivElement>>;
+export declare function useGlisseRefraction(ref: RefObject<HTMLDivElement | null>): void;
 interface InputProps extends Omit<InputHTMLAttributes<HTMLInputElement>, "value" | "defaultValue" | "onChange"> {
   value?: string;
   defaultValue?: string;

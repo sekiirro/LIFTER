@@ -1277,6 +1277,9 @@ function useRefraction(ref, selection = false, bendsBackdrop = true) {
 	]);
 	useEffect(() => refit.current?.());
 }
+function useGlisseRefraction(ref) {
+	useRefraction(ref);
+}
 const SELECTION_PROPERTIES = [
 	"--lg-filter",
 	"--lg-rim",
@@ -2671,4 +2674,4 @@ function TabBar(props) {
 }
 // src/index.ts
 insertStyles(styles_default);
-export { Button, Glass, Input, Menu, SearchField, SegmentedControl, Slider, Switch, TabBar };
+export { Button, Glass, Input, Menu, SearchField, SegmentedControl, Slider, Switch, TabBar, useGlisseRefraction };

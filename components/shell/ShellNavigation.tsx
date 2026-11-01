@@ -16,6 +16,18 @@ type ShellNavigationProps = {
   bottomClassName?: string;
 };
 
+export function getActiveNavigationKey(
+  pathname: string | null,
+): NavKey | undefined {
+  if (pathname === '/' || pathname === '/showcase/shell') return 'home';
+  if (
+    pathname === '/registration-links' ||
+    pathname?.startsWith('/registration-links/')
+  )
+    return 'clients';
+  return undefined;
+}
+
 export function ShellNavigation({
   role,
   items,
@@ -26,9 +38,7 @@ export function ShellNavigation({
   bottomClassName,
 }: ShellNavigationProps) {
   const pathname = usePathname();
-  const activeKey =
-    requestedActiveKey ??
-    (pathname?.startsWith('/registration-links') ? 'clients' : 'home');
+  const activeKey = requestedActiveKey ?? getActiveNavigationKey(pathname);
   const hrefFor = (key: NavKey) => {
     if (pathname?.startsWith('/showcase')) return `?role=${role}#${key}`;
     if (key === 'home') return '/';

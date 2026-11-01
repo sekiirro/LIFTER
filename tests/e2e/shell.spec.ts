@@ -127,11 +127,8 @@ for (const locale of ['ar', 'en'] as const) {
         await expect(tooltip).toHaveText(m['nav.home']);
         await expect(tooltip).toHaveAttribute('aria-hidden', 'false');
         const tooltipId = await tooltip.getAttribute('id');
-        const describedBy = (await home.getAttribute('aria-describedby'))
-          ?.split(/\s+/)
-          .filter(Boolean);
         expect(tooltipId).toBeTruthy();
-        expect(describedBy).toContain(tooltipId);
+        await expect(home).not.toHaveAttribute('aria-describedby');
 
         const after = await rail.boundingBox();
         const tooltipBox = await tooltip.boundingBox();
