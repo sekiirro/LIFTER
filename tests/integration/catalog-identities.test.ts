@@ -3,6 +3,7 @@ import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { admin, checked, sql } from './harness';
 
 const db = sql();
+type Tx = Parameters<Parameters<typeof db.begin>[0]>[0];
 type Actor = { userId: string };
 let po: Actor;
 let trainer: Actor;
@@ -50,16 +51,27 @@ beforeAll(async () => {
 });
 afterAll(async () => db.end());
 
+async function insertFoodFixture(tx: Tx, foodId: string) {
+  await tx`insert into public.foods (id, created_by, origin_workspace_id, current_version)
+    values (${foodId}, ${po.userId}, ${workspaceId}, 1)`;
+  await tx`insert into public.food_versions (
+      food_id, version, payload, created_by, name_en, basis, product_identity_norm,
+      preparation_identity_norm, weighing_state, kcal, protein_g, carbohydrate_g, fat_g
+    ) values (
+      ${foodId}, 1, '{}'::jsonb, ${po.userId}, 'Fixture food', 'g', 'fixture-product',
+      'not_applicable', 'not_applicable', 100, 10, 10, 2
+    )`;
+  await tx`insert into public.food_serving_units (food_id, food_version, basis, unit_key, label_en, basis_qty)
+    values (${foodId}, 1, 'g', 'reference', 'Reference', 100)`;
+}
+
 async function readFoodProvenance(actor: Actor) {
   const foodId = randomUUID();
   let projected: { created_by: string | null; origin_workspace_id: string | null }[] = [];
   const rollbackMarker = 'rollback_catalog_provenance_fixture';
   try {
     await db.begin(async (tx) => {
-      await tx`insert into public.foods (id, created_by, origin_workspace_id, current_version)
-        values (${foodId}, ${po.userId}, ${workspaceId}, 1)`;
-      await tx`insert into public.food_versions (food_id, version, payload, created_by)
-        values (${foodId}, 1, '{}'::jsonb, ${po.userId})`;
+      await insertFoodFixture(tx, foodId);
       await tx`select set_config('role', 'authenticated', true)`;
       await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: actor.userId, role: 'authenticated' })}, true)`;
       projected = await tx`select created_by, origin_workspace_id from public.catalog_foods_safe where id = ${foodId}`;
@@ -195,16 +207,14 @@ describe('global catalog identities and immutable versions', () => {
 
     const foodId = randomUUID();
     await expect(db.begin(async (tx) => {
-      await tx`insert into public.foods (id, created_by, origin_workspace_id, current_version) values (${foodId}, ${po.userId}, ${workspaceId}, 1)`;
-      await tx`insert into public.food_versions (food_id, version, payload, created_by) values (${foodId}, 1, '{}'::jsonb, ${po.userId})`;
+      await insertFoodFixture(tx, foodId);
       await tx`update public.foods set origin_workspace_id = null where id = ${foodId}`;
     })).rejects.toMatchObject({ code: '23514' });
 
     const creatorId = randomUUID();
     const creatorFoodId = randomUUID();
     await expect(db.begin(async (tx) => {
-      await tx`insert into public.foods (id, created_by, origin_workspace_id, current_version) values (${creatorFoodId}, ${po.userId}, ${workspaceId}, 1)`;
-      await tx`insert into public.food_versions (food_id, version, payload, created_by) values (${creatorFoodId}, 1, '{}'::jsonb, ${po.userId})`;
+      await insertFoodFixture(tx, creatorFoodId);
       await tx`update public.foods set created_by = ${creatorId} where id = ${creatorFoodId}`;
     })).rejects.toMatchObject({ code: '23514' });
 
