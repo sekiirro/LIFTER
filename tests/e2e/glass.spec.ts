@@ -127,7 +127,45 @@ test.describe('desktop rail viewport access', () => {
         await expect(rail).toBeVisible();
         await expect(links).toHaveCount(4);
         await expect(scrollport).toHaveCSS('overflow-y', 'auto');
-        for (const link of await links.all()) await expect(link).toBeVisible();
+        const railLinks = await links.all();
+        for (const link of railLinks) await expect(link).toBeVisible();
+
+        if (viewport.height === 600) {
+          for (const link of railLinks) {
+            await link.focus();
+            await page.keyboard.press('Tab');
+            await page.keyboard.press('Shift+Tab');
+            await expect(link).toBeFocused();
+            const ring = await link.evaluate((element) => {
+              const box = element.getBoundingClientRect();
+              const clip = element
+                .closest('[data-nav-scroll]')!
+                .getBoundingClientRect();
+              const style = getComputedStyle(element);
+              const extra =
+                Number.parseFloat(style.outlineWidth) +
+                Number.parseFloat(style.outlineOffset);
+              return {
+                clipLeft: clip.left,
+                clipRight: clip.right,
+                clipTop: clip.top,
+                clipBottom: clip.bottom,
+                left: box.left - extra,
+                right: box.right + extra,
+                top: box.top - extra,
+                bottom: box.bottom + extra,
+                outlineStyle: style.outlineStyle,
+                outlineWidth: style.outlineWidth,
+              };
+            });
+            expect(ring.outlineStyle).not.toBe('none');
+            expect(Number.parseFloat(ring.outlineWidth)).toBeGreaterThan(0);
+            expect(ring.left).toBeGreaterThanOrEqual(ring.clipLeft);
+            expect(ring.right).toBeLessThanOrEqual(ring.clipRight);
+            expect(ring.top).toBeGreaterThanOrEqual(ring.clipTop);
+            expect(ring.bottom).toBeLessThanOrEqual(ring.clipBottom);
+          }
+        }
 
         if (viewport.height !== 200)
           await page.screenshot({

@@ -1,5 +1,7 @@
 import { readFileSync } from 'node:fs';
-import { renderToStaticMarkup } from 'react-dom/server';
+import { act } from 'react';
+import { JSDOM } from 'jsdom';
+import { renderToStaticMarkup, renderToString } from 'react-dom/server';
 import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   AccessibleTooltip,
@@ -88,6 +90,75 @@ describe('AccessibleTooltip behavior', () => {
     expect(
       getTooltipAriaAttributes('Home', 'Home help', 'tip-home', true),
     ).toEqual({ 'aria-label': 'Home', 'aria-describedby': 'tip-home' });
+  });
+
+  it('hydrates the body portal without logging a hydration error', async () => {
+    const element = (
+      <AccessibleTooltip label="Home" tooltipTestId="tooltip-home" portalToBody>
+        <a href="#home" aria-label="Home">
+          Home
+        </a>
+      </AccessibleTooltip>
+    );
+    const markup = renderToString(element);
+    const dom = new JSDOM(`<div id="root">${markup}</div>`, {
+      url: 'http://localhost/',
+    });
+    const previousGlobals = new Map<string, PropertyDescriptor | undefined>(
+      [
+        'window',
+        'document',
+        'HTMLElement',
+        'Node',
+        'IS_REACT_ACT_ENVIRONMENT',
+      ].map((key) => [key, Object.getOwnPropertyDescriptor(globalThis, key)]),
+    );
+    for (const [key, value] of Object.entries({
+      window: dom.window,
+      document: dom.window.document,
+      HTMLElement: dom.window.HTMLElement,
+      Node: dom.window.Node,
+      IS_REACT_ACT_ENVIRONMENT: true,
+    }))
+      Object.defineProperty(globalThis, key, {
+        configurable: true,
+        value,
+      });
+
+    const consoleError = vi
+      .spyOn(console, 'error')
+      .mockImplementation(() => {});
+    const recoverableErrors: unknown[] = [];
+    let root: Awaited<
+      ReturnType<typeof import('react-dom/client').hydrateRoot>
+    > | null = null;
+    try {
+      const { hydrateRoot } = await import('react-dom/client');
+      await act(async () => {
+        root = hydrateRoot(
+          dom.window.document.getElementById('root')!,
+          element,
+          {
+            onRecoverableError: (error) => recoverableErrors.push(error),
+          },
+        );
+      });
+
+      expect(consoleError).not.toHaveBeenCalled();
+      expect(recoverableErrors).toEqual([]);
+      const tooltip = dom.window.document.querySelector(
+        '[data-testid="tooltip-home"]',
+      );
+      expect(tooltip?.parentElement).toBe(dom.window.document.body);
+    } finally {
+      if (root) await act(async () => root?.unmount());
+      consoleError.mockRestore();
+      for (const [key, descriptor] of previousGlobals) {
+        if (descriptor) Object.defineProperty(globalThis, key, descriptor);
+        else Reflect.deleteProperty(globalThis, key);
+      }
+      dom.window.close();
+    }
   });
 
   it('anchors outside the fixed 44px trigger footprint without shifting the dock', () => {

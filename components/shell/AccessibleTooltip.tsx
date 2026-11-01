@@ -8,6 +8,7 @@ import {
   useMemo,
   useRef,
   useState,
+  useSyncExternalStore,
   type FocusEvent,
   type KeyboardEvent,
   type PointerEvent,
@@ -49,6 +50,10 @@ export function getTooltipAriaAttributes(
 }
 
 type TimeoutHandle = ReturnType<typeof setTimeout>;
+
+const subscribeToHydration = () => () => {};
+const getHydratedSnapshot = () => true;
+const getServerHydrationSnapshot = () => false;
 
 /** Small behavior controller so the interaction model can be tested without a DOM dependency. */
 export function createTooltipController(
@@ -116,8 +121,12 @@ export function AccessibleTooltip({
   const triggerRef = useRef<HTMLSpanElement>(null);
   const tooltipRef = useRef<HTMLSpanElement>(null);
   const controller = useMemo(() => createTooltipController(setVisible), []);
-  const portalTarget =
-    portalToBody && typeof document !== 'undefined' ? document.body : null;
+  const isHydrated = useSyncExternalStore(
+    subscribeToHydration,
+    getHydratedSnapshot,
+    getServerHydrationSnapshot,
+  );
+  const portalTarget = portalToBody && isHydrated ? document.body : null;
 
   useEffect(() => () => controller.dispose(), [controller]);
 

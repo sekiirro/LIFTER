@@ -426,7 +426,7 @@ async function fillSignup(
     .getByRole('textbox', { name: m['clientSignup.phone'] })
     .fill(
       values.phone ??
-        `0101234${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
+        `010${String(randomInt(0, 100_000_000)).padStart(8, '0')}`,
     );
   await page
     .getByLabel(m['clientSignup.password'], { exact: true })
@@ -540,7 +540,7 @@ for (const locale of ['ar', 'en'] as const) {
     const id = randomUUID();
     const name = `Privacy Example ${id}`;
     const email = `privacy-${id}@example.test`;
-    const phone = `0101234${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+    const phone = `010${String(randomInt(0, 100_000_000)).padStart(8, '0')}`;
     const phoneE164 = `+20${phone.slice(1)}`;
     const password = `Privacy!${id.replaceAll('-', '').slice(0, 12)}`;
     const ip = '203.0.113.20';

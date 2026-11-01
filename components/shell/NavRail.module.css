@@ -20,6 +20,8 @@
   align-items: center;
   gap: var(--space-1);
   max-block-size: calc(100dvb - 2 * var(--space-8) - 2 * var(--space-2));
+  padding: 5px;
+  margin: -5px;
   overflow-y: auto;
   overscroll-behavior-block: contain;
 }
