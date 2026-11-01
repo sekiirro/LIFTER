@@ -58,7 +58,7 @@ async function setFutureActivation(
 }
 
 describe('T010/T023 per-form assignment policy', () => {
-  it('uses the F12 approved_at fact for joining clients created before policy configuration', async () => {
+  it('S25-R2 uses F12 approved_at rather than client created_at for onboarding cutoff', async () => {
     const { context, client } = await futureApprovedClient();
     const formId = await createForm(context.wsA.id);
     const configured = await context.po.client.rpc(
@@ -156,7 +156,7 @@ describe('T010/T023 per-form assignment policy', () => {
     expect(next.data).toMatchObject({ status: 'not_found' });
   });
 
-  it('admits future entitlement for onboarding/manual specific and rejects it for all-active/recurring', async () => {
+  it('S25-R2 allows future onboarding/manual delivery and excludes future all-active recurring delivery', async () => {
     const { context, client } = await futureApprovedClient();
     const sharedTerms = `t010-${randomUUID()}`;
     await db`insert into app_private.terms_policy_versions(version,policy_kind,status)
