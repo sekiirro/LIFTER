@@ -1,3 +1,207 @@
+§0-S22-FINAL
+
+Snapshot: 2026-11-01 (S22 close). S22 superseded the S21 next steps where they conflict.
+
+### NEXT-SESSION OPERATING RULES
+
+#### S22-PO-9 — Luna restored; S22 close and next-session operating rules (verbatim)
+
+Luna quota is restored.
+
+**FIRST, IN THIS SESSION:**
+Delegate to **MiniMax (highest effort)** to update the complete session handoff with all latest progress, unfinished work, PRs, blockers, decisions, and the instructions below. Have MiniMax write a ready-to-paste next-session startup prompt. Review both, then **STOP this session**.
+
+**NEXT SESSION — Operating Rules:**
+
+1. **Claude = Architect/Orchestrator/Reviewer only.** Minimize your own token usage. Delegate implementation, testing, documentation, and cleanup. Review results, coordinate agents, and make architectural decisions.
+2. **Maximum concurrent agents:** 2 Luna (Medium), 1 MiniMax (highest effort), 1 Big Pickle, 1 Beam, 1 Flint. Use my existing delegation skills. The last three use OpenCode free quotas. When exhausted, remove unavailable agents and use Kilo Code's **two best available free models**, selected by task suitability. Never exceed 2 Luna or 1 MiniMax.
+3. **Work on F13, F14 (including F14b/Hero), F15, F16, F17, F18 concurrently.** Their specs already exist. Prioritize completing F13 through all review/CI gates, then request my exact-SHA merge approval. Start remaining features immediately wherever dependencies allow.
+4. Use all **4 isolated Supabase stacks** efficiently. Assign independent worktrees, avoid collisions, and maximize safe parallel execution.
+5. Route tasks by complexity, security risk, model capability, and quota. Claude independently reviews every agent's output. Preserve security, tests, CodeRabbit, CI, and all existing merge gates.
+6. Regularly delegate **safe disk cleanup** of obsolete builds, dependencies, temporary files, and unused worktrees. Never delete active work, uncommitted changes, or needed evidence.
+7. Ask me about required product decisions, conflicts, scope ambiguities, and final merges. Never invent approvals.
+8. Preserve active work and resume unfinished tasks from the handoff. Keep agents continuously productive without unnecessary review loops or wasted tokens.
+
+**Speed, clean code, strict isolation, maximum parallelism, and minimal Claude token consumption are mandatory.**
+
+Architect notes on S22-PO-9:
+
+- S22-PO-9 rule 2 supersedes S22-PO-2's agent list: **Luna runs at MEDIUM effort, maximum 2 concurrent**.
+- **Big Pickle** is `opencode/big-pickle` and is added to the OpenCode free-model agents.
+- When OpenCode free quotas are exhausted, remove unavailable agents and use **Kilo Code's two best available free models**, selected by task suitability.
+- Rule 4 says "4 isolated Supabase stacks", but every earlier rule forbids Stack A: `supabase-safe` refuses it without `--allow-stack-a`. **Ask the PO before any Stack A use.**
+
+### Live state at S22 close
+
+| Item | Head / state | Review / unresolved | Exact next action |
+|---|---|---|---|
+| Repository / main | `sekiirro/LIFTER`, PRIVATE at session start; `origin/main` = `ea2974c49550d1e6f8ac642116550ff4fa1e9750`; nothing merged in S22 | Not applicable | Re-fetch and re-verify visibility, main, PR heads, reviews, threads, and disk before acting. |
+| Hosted CI billing | Still billing-blocked; jobs fail in about 2 seconds with no steps | These are not test failures and are not green | Obtain the required public CI window only after the prescribed public/CI procedure permits it. |
+| PR #26, `docs-s21-s20-reconcile` | `a4f88b61fc616b7c4cfcbb8c869dcaaa305ed45e` | CodeRabbit APPROVED; 0 unresolved | One CI public window on `a4f88b6`; ask the PO for exact-SHA approval; merge with `--match-head-commit`; keep the branch. |
+| PR #27, `013-freeze-renewal-refunds` | `39cd952e5d70a96f57f8918fb72bd4cc03f6f698` | CHANGES_REQUESTED; 3 unresolved | Review and finish uncommitted r7; run full gates; commit/push; resolve all 3 threads; obtain one full review; then CI window and PO exact-SHA approval. |
+| PR #28, `ui-liquid-glass-glisse` | `16912de4be5e90a7d3ea8ac5b123afc755abd7bd` | CHANGES_REQUESTED; 3 unresolved; focus-loss is an architect merge-blocker | Review the uncommitted vendored-Glisse work and all 3 findings; complete fixes and gates; commit/push; resolve threads; obtain one full review; then CI window and PO exact-SHA approval. |
+
+### S22 accepted evidence
+
+- PR #26: S22 rounds 10-14 covered F12/P4 superseded by Plan Core, Save as Draft, F14 readiness links, `activated_at`, food-creator permission D16-1b/FR-009, and the S20/21 heading.
+- PR #27: architect accepted r5 `e835dae` and r6 `39cd952`; r6 included the renewal activation/freeze seam migration `20261103130300`, S22-PO-5, 79-migration replay, unit 1,828, integration 1,301 x2, and Playwright 196 with 8 skips.
+- PR #28: design r7 `1fc8153` is approved; r8 `332806f` used vendored Glisse with only the 2 density caps differing from upstream 0.5.0; trim `16912de` removed lockfile drift (now 13 lines) and archived round evidence harnesses at `C:/Users/NEW LAP/.lifter/reports/s21-glass/harness-archive/`.
+- PR #28 performance: TBT n=15 was desktop -4 ms [-22,+6] and mobile -3 ms [-12,+6]; high-tier dock initialization had 0 ms long tasks.
+- F14b: chunks 1-5 were accepted; MiniMax's chunk 4-5 changes to `lib/branding/service.ts` and `validation.ts` were reverted.
+
+### Lanes, worktrees, branches, and stacks
+
+| Worktree / path | Branch | Head | Committed / uncommitted status | Stack | Next action | Owner model under S22-PO-9 |
+|---|---|---|---|---|---|---|
+| `C:/Users/NEW LAP/Desktop/LFTR-s21-docs` | `docs-s21-s20-reconcile` | `a4f88b61fc616b7c4cfcbb8c869dcaaa305ed45e` | Committed and pushed | None | CI public window, PO exact-SHA approval, exact-head merge; keep branch | Architect assigns by complexity and quota |
+| `C:/Users/NEW LAP/Desktop/LFTR-013` | `013-freeze-renewal-refunds` | `39cd952e5d70a96f57f8918fb72bd4cc03f6f698` | r6 committed and pushed; r7 uncommitted | C | Review r7, run full gates, commit/push, resolve 3 threads, full review, CI, PO approval | Luna, fresh thread |
+| `C:/Users/NEW LAP/Desktop/LFTR-glass` | `ui-liquid-glass-glisse` | `16912de4be5e90a7d3ea8ac5b123afc755abd7bd` | Pushed head; r1 partially done and uncommitted | B for screenshots, serial | Review stable-node/vendor change, fix all 3 findings, gate, commit/push, review, CI, PO approval | Luna; architect reviews |
+| `C:/Users/NEW LAP/Desktop/LFTR-014b` | `014b-branding-uploads` | `630c3db` | Pushed; chunks 1-5 accepted | B, serial | Chunk 6 Storage integration, chunk 7 Playwright/axe, chunk 8 gate report, then PR | Luna for chunk 6; MiniMax for chunk 7 |
+| `C:/Users/NEW LAP/Desktop/LFTR-016` | `016-exercise-food-catalogs` | `5ee1c6d`, `dae1145`, `f23c6cc`, `8b7e424` | 4 accepted local commits, not pushed | DB: first C or D to free | Push; T001 role parity; UI T017/T022/T023/T029/T030; DB T004+ | Luna for T001/DB; MiniMax for UI |
+| `C:/Users/NEW LAP/Desktop/LFTR-hero` | `014-hero-impl` | From `ea2974c` | Chunk 1 stopped mid-run; 12 uncommitted files, unreviewed | B for screenshots, serial | Review and resume chunk 1 against approved `97debaf` source | MiniMax; architect reviews |
+| `C:/Users/NEW LAP/Desktop/LFTR-014-blend` | `014-hero-prototype` | `97debaf` | Approved source branch | None | Preserve as the approved implementation source; continue in `LFTR-hero` | No implementation lane |
+| `C:/Users/NEW LAP/Desktop/LFTR-p2` | `015-forms-intake` | `3be1289` | Idle; status not stated in the S22 fact sheet | D | After the F13 merge, replay only `614325b` against final F14/F13 | Unassigned; architect routes by risk |
+| `C:/Users/NEW LAP/Desktop/LFTR-017` | `017-workout-planner` | `496d813` | Spec branch unchanged | None | Start only when F16 and Plan Core dependencies allow | Unassigned; architect routes by risk |
+| `C:/Users/NEW LAP/Desktop/LFTR-018` | `018-nutrition-planner` | `0fae971` | Spec branch unchanged | None | Start only when F16 and Plan Core dependencies allow | Unassigned; architect routes by risk |
+| `C:/Users/NEW LAP/Desktop/LFTR-019` | `019-plan-core` | `4f633d7` | Spec branch unchanged | None | Implement after F16 and before F17/F18 integration | Unassigned; architect routes by risk |
+| `C:/Users/NEW LAP/Desktop/LFTR` | `009-packages` | Not stated in the S22 fact sheet | PO checkout, untouched | None | Keep untouched; PO alone decides on the Glisse install | PO only |
+| `C:/Users/NEW LAP/Desktop/LFTR-014-verify` | Not stated in the S22 fact sheet | Not stated; protected | Protected junction target for `LFTR-014b-seam` | None | Preserve | No implementation lane |
+| `C:/Users/NEW LAP/Desktop/LFTR-014b-seam` | Not stated in the S22 fact sheet | Not stated | Protected dependency target; `.next` is a cleanup candidate | None | Do not break the junction target | No implementation lane |
+| `C:/Users/NEW LAP/Desktop/LFTR-stack` | Not stated in the S22 fact sheet | Not applicable | Protected | None | Preserve | No implementation lane |
+| `C:/Users/NEW LAP/Desktop/LFTR-bench-mm` | Not stated in the S22 fact sheet | Not stated | Dirty and protected | None | Preserve | No implementation lane |
+| `C:/Users/NEW LAP/Desktop/LFTR-p2-integ` | Not stated in the S22 fact sheet | `614325b` | Protected integration worktree | D-related trial | Preserve; F15 replays only the approved trial commit after F13 merges | F15 owner after routing |
+
+### UNCOMMITTED WORK — DO NOT CLEAN, RESET, OR OVERWRITE
+
+#### 1. F13 round 7 in `C:/Users/NEW LAP/Desktop/LFTR-013`
+
+Files reported by the architect:
+
+- New: `supabase/migrations/20261103130400_f13_reject_chained_unstarted_renewal.sql`.
+- Modified: `tests/integration/renewal-operations.test.ts`.
+- Modified: `tests/unit/renewal-migration.test.ts`.
+- Modified: `specs/013.../checklists/analyze.md` (path abbreviated in the fact sheet).
+- Modified: `specs/013.../checklists/quickstart.md` (path abbreviated in the fact sheet).
+- Modified: `specs/013.../checklists/tasks.md` (path abbreviated in the fact sheet).
+- Untracked: `scripts/f13-unit-runner.mjs`; decide whether it belongs.
+
+Agent-reported, unreviewed: the 14-test Stack C renewal suite was green with a mutation check. Luna hit its quota mid-run; final gates were **not** run.
+
+Review first: inspect every r7 change, including whether the runner belongs; run all full gates; commit and push; resolve the 3 existing PR threads; obtain one full review; then use the CI-window and PO exact-SHA approval path. Resume from `C:/Users/NEW LAP/.lifter/briefs/lanes/f13-handoff.md` and `C:/Users/NEW LAP/.lifter/briefs/s22-luna-f13-r7.txt`.
+
+#### 2. PR #28 round 1 in `C:/Users/NEW LAP/Desktop/LFTR-glass`
+
+Files reported by the architect:
+
+- Modified: `vendor/glisse/dist/*` (vendored Glisse stable-node additive hook).
+- Modified: `NOTICE.md`.
+
+Agent-reported, unreviewed: the stable-node approach is partially done but uncommitted because the Luna quota was cut.
+
+Review first: the vendored Glisse change is a **third modification beyond the two density caps** and requires explicit architect review. Also resolve all 3 PR findings: duplicate tooltip/accessible name in `aria-describedby`, Home marked current on unmapped routes, and the `GlassSurface` element-type swap that remounts children and loses keyboard focus after 2.5 seconds idle (architect merge-blocker). Do not infer that the partial implementation satisfies any gate. Resume from `C:/Users/NEW LAP/.lifter/briefs/s22-luna-pr28-r1.txt`.
+
+#### 3. Hero chunk 1 in `C:/Users/NEW LAP/Desktop/LFTR-hero`
+
+Files reported by the architect: exact filenames are **not enumerated**; obtain the exact list with `git status` before touching anything.
+
+Agent-reported, unreviewed: MiniMax stopped mid-run with 12 uncommitted files. The run session is `C:/Users/NEW LAP/.lifter/runs/s22-mm-hero-c1/result.json`.
+
+Review first: enumerate and review all 12 files against the approved `97debaf` source, determine what is complete, then resume implementation. The new branch is `014-hero-impl` from `origin/main` `ea2974c`. Resume from `C:/Users/NEW LAP/.lifter/briefs/s22-mm-hero-impl-c1.txt`.
+
+### S22 PO decisions 1-8
+
+- **S22-PO-1:** Re-measure Glisse TBT on the same build with n=15 per arm, keep the +50 ms gate, and accept high-tier refraction only with static fallback elsewhere.
+- **S22-PO-2:** Four-agent routing policy (Luna High, MiniMax, Beam, Flint; architect/reviewer governance); its agent list is superseded by S22-PO-9.
+- **S22-PO-3:** Open the Glisse PR with shared primitives/mobile capsule, but remove env-gated showcase demo wiring from the product route.
+- **S22-PO-4:** Use a desktop vertical, floating, icon-only Liquid Glass dock with hover/focus tooltips that do not shift layout; mobile stays horizontal; show Light/Dark desktop screenshots before the PR.
+- **S22-PO-5:** F13 recording atomically activates a renewal; freeze applies once started to the service-current renewal, while an unstarted renewal shifts and is never frozen directly; maximum one unstarted.
+- **S22-PO-6:** Keep the vertical icon-only dock, remove the three-dot overflow, preserve spacing and emerald active state, soften edges, and add subtle theme-matched gradients.
+- **S22-PO-7:** Keep glass lightweight: no expensive blur or excessive animation; preserve accessibility, reduced-transparency fallback, responsiveness, and no noticeable performance impact.
+- **S22-PO-8:** Glass r7 design at `1fc8153` is approved; after the vendored-copy packaging fix, use the normal CodeRabbit/CI/PO exact-SHA gates.
+
+Verbatim authority: `C:/Users/NEW LAP/.lifter/briefs/s22-po-decisions-verbatim.md` (S22-PO-9 is copied in full above).
+
+### Agents, tooling, and operational lessons
+
+- **Luna:** Codex `gpt-6-luna`; quota restored; MEDIUM effort; maximum 2 concurrent under S22-PO-9.
+- **MiniMax / Pi:** use `PATH="/c/Users/NEW LAP/.pi/agent/bin:$PATH"`, `--cd C:/Users/NEW LAP/.lifter/scratch/pi-smoke`, model `minimaxai/minimax-m3.1-flash:high`, and 75-90 minute timeouts; verify `thinkingLevel=high`.
+- **OpenCode agents:** Beam = `opencode/beam-free`; Flint = `opencode/flint-40b-free`; Big Pickle = `opencode/big-pickle`; relay script = `C:/Users/NEW LAP/Desktop/LFTR/.claude/skills/opencode-delegate/scripts/relay.mjs`.
+- **OpenCode quota behavior:** free quotas are per model; Beam and Flint each hit `FreeUsageLimitError` after about 6-8 runs in S22, and Beam recovered within about 2 hours. Use Kilo's two best free models when the OpenCode agents are unavailable.
+- **OpenCode operating notes:** the read-only `plan` agent refuses to run commands, so use `build` plus a read-only brief. OpenCode runs exit instead of waiting, so the architect watches CodeRabbit.
+- **Isolation rule:** never point an agent at the whole PO-decisions file. Quote only the relevant decisions and explicitly say "you are the implementer"; otherwise an implementer may wrongly apply an orchestrator-only rule to itself.
+- **Disk/concurrency rule:** concurrent builds can spike C: usage by about 20 GB; `uv_spawn` crashes at 6 GB free. Check disk before build-heavy work and preserve the 15 GB floor.
+- **Relay rule:** never launch a relay with a trailing `&`; it prevents the completion notice. Do not interrupt running agents.
+- **Review rule:** one writer per worktree; route by complexity, security risk, capability, and quota; independently review every agent output; preserve all merge and Supabase gates.
+
+### Disk state and cleanup pattern
+
+- Close state: **about 29 GB free** on C:.
+- Cleanup 1 freed **10.14 GB** from build artifacts in 17 idle clean worktrees; cleanup 2 freed **1.71 GB** from temporary clean clones.
+- Reusable allowlist scripts: `C:/Users/NEW LAP/.lifter/briefs/s22-disk-cleanup.ps1` and `C:/Users/NEW LAP/.lifter/briefs/s22-disk-cleanup-2.ps1`.
+- Remaining candidates: npm cache **3.42 GB** (only while no `npx`/`npm` process is running), `LFTR-014b-seam/.next` (**285 MB**), and merged/obsolete worktrees only from a PO-visible explicit list.
+- Protected: `LFTR`, active lanes, `LFTR-014-verify` (junction target of `LFTR-014b-seam`), `LFTR-stack`, `LFTR-bench-mm` (dirty), `LFTR-p2`, and `LFTR-p2-integ` (`614325b`).
+- Pattern: use an explicit allowlist; verify Git status, active processes, dependencies, and evidence first; never delete active work, uncommitted changes, source, databases, user data, Git files, or needed evidence; keep at least 15 GB free and delegate cleanup regularly under S22-PO-9.
+
+### Pending PO items
+
+1. Exact-SHA approvals for PR #26 after its CI window, PR #27, PR #28, and later F14b/Hero.
+2. F14b copy: Arabic `branding.bannerSizeHint` (still English in `ar.ts`) plus 16 DRAFT strings: 12 from chunk 3 and `retryRemove`, `reloadDraft`, `workspaceUnavailable`, `uploadInProgress` from chunks 4-5; list at `C:/Users/NEW LAP/.lifter/reports/s22-f14b/chunk45/report.md`.
+3. Carry-over product decisions: F14b/T&C AR/EN copy, sex labels, Q3 alert channel, and the D16-4 food dataset from S21.
+4. Whether Stack A may ever be used under S22-PO-9 rule 4; ask the PO explicitly and never infer permission.
+5. Whether to revert the Glisse installation in the PO main checkout (S21 carry-over).
+6. Stack D vault metadata check and the 5 remaining S17 log redactions.
+
+### Next-session execution order and stack proposal
+
+1. Re-verify live state before acting; do not clean, reset, stop, or overwrite the three uncommitted items.
+2. **F13 first:** resume r7 review, run every gate, commit/push, resolve all 3 threads, obtain one full review, use a CI window on the exact final SHA, then request PO exact-SHA approval.
+3. **PR #26:** obtain the CI public window on `a4f88b6`, request PO exact-SHA approval, then merge with `--match-head-commit` and keep the branch.
+4. **PR #28:** review the vendored change and 3 findings, finish fixes, gate, commit/push, review, CI, then PO exact-SHA approval.
+5. **F14b:** complete chunks 6-8, run the gates, prepare the PR, and request exact-SHA approval.
+6. **Hero:** review/resume chunk 1, complete the implementation and gates, then prepare the PR and exact-SHA request.
+7. **F15:** only after the F13 merge, replay `614325b` against final F14/F13 and run the F15 gates.
+8. **F16:** push the 4 accepted commits; complete T001, the UI tasks, and DB tasks on the first available safe stack.
+9. **Plan Core, then F17/F18:** start only as their F16/Plan Core dependencies allow.
+10. Delegate regular safe disk cleanup using the allowlist pattern; never trade away active or uncommitted work.
+
+Proposed stacks for the next session:
+
+- **B:** F14b, Hero, and Glisse screenshots, **serial**.
+- **C:** F13.
+- **D:** F15.
+- **F16 DB:** whichever of C or D frees first.
+- **Stack A:** only if the PO explicitly allows it; until then, never use it.
+
+### START NEW SESSION prompt
+
+```text
+LIFTER SESSION 23 — START (architect/orchestrator/reviewer only)
+You are Claude: architect, orchestrator, and reviewer. Do not implement.
+First read C:/Users/NEW LAP/Desktop/LFTR-handoff/docs/SESSION_HANDOFF.md §0-S22-FINAL.
+Then read C:/Users/NEW LAP/.lifter/briefs/s22-po-decisions-verbatim.md; S22-PO-9 is the operating rulebook.
+Then read MEMORY.md and apply the durable operational lessons.
+Live re-verification before changes:
+- git fetch; re-check origin/main and repository visibility (must remain PRIVATE).
+- Re-check PR #26, #27, and #28 heads, reviewDecision, and unresolved threads.
+- Wait for CodeRabbit's delayed second pass before treating any review as final.
+- Check C: free space; require at least 15 GB before build-heavy work.
+- List codex, pi, and opencode processes without stopping or interrupting anything.
+- Run git status in LFTR-013, LFTR-glass, LFTR-hero, LFTR-014b, and LFTR-016.
+Review and resume these three uncommitted items first:
+1. F13 r7 in LFTR-013; use the F13 lane handoff and s22-luna-f13-r7.txt.
+2. PR #28 r1 in LFTR-glass; explicitly review the third vendored-Glisse modification and the focus-loss blocker.
+3. Hero chunk 1 in LFTR-hero; enumerate its 12 unreviewed files before editing.
+Agent limits: 2 Luna MEDIUM, 1 MiniMax highest, 1 Big Pickle, 1 Beam, 1 Flint.
+If OpenCode quotas are exhausted, use Kilo's two best available free models; never exceed the limits.
+Merge gates: CI green + CodeRabbit APPROVED on the exact SHA + 0 unresolved + architect review + PO exact-SHA approval + --match-head-commit.
+Keep every branch after merge. Use supabase-safe for every Supabase call.
+Never use Stack A without explicit PO approval; use B serially for F14b/Hero/Glisse screenshots, C for F13, D for F15.
+Assign F16 DB to whichever of C or D frees first; Stack A only with explicit PO permission.
+Migrations require unique valid UTC timestamps; never edit a pushed migration.
+Never read or print .env*, opencode.json, keys, or tokens.
+Never deploy or migrate production; the PO's LFTR checkout must remain untouched.
+```
+
 §0-S21-FINAL
 
 Snapshot: 2026-10-31, observed live at 2026-10-31 21:10 UTC unless a row gives a more specific time. This is the durable S21 handoff. S21-PO-1..7 below are copied verbatim from the authoritative decision file. Later explicit PO decisions govern conflicts (DR-03). This section is above and supplements §0-S20-FINAL; older sections remain unchanged. No implementation, merge, deployment, visibility change, or running-agent interruption was authorized by this handoff task.
