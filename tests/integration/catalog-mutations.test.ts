@@ -440,4 +440,34 @@ describe('F16 mutation probes', () => {
       expect((error as Error).message).toBe(marker);
     }
   });
+
+  it('T020: bypassing video host validation makes the invalid-URL assertion fail', async () => {
+    const exerciseId = randomUUID();
+    const marker = 'rollback_catalog_variation_url_mutation';
+    try {
+      await db.begin(async (tx) => {
+        await tx`insert into public.exercises(id, created_by, current_version)
+          values (${exerciseId}, ${po.userId}, 1)`;
+        await tx`insert into public.exercise_versions(exercise_id, version, payload, created_by)
+          values (${exerciseId}, 1, '{}'::jsonb, ${po.userId})`;
+        await tx`create or replace function app_private.catalog_video_url_allowed(p_url text)
+          returns boolean language sql immutable security definer set search_path = '' as $$ select true $$`;
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerA.userId, role: 'authenticated' })}, true)`;
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx`select public.catalog_write_variation(${wsA}, ${exerciseId}, null, ${randomUUID()}, ${tx.json({ video_url: 'https://attacker.example/video' })})`,
+            ).rejects.toMatchObject({
+              code: '22023',
+              message: 'catalog_variation_invalid',
+            }),
+          'removing the YouTube/Drive URL allowlist must break the negative payload test',
+        );
+        throw new Error(marker);
+      });
+    } catch (error) {
+      expect((error as Error).message).toBe(marker);
+    }
+  });
 });
