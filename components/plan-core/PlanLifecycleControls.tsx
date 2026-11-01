@@ -6,6 +6,8 @@ import { getMessages } from '../../lib/i18n';
 import { Bidi } from '../ui/Bidi';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
+import fieldStyles from '../ui/Field.module.css';
+import styles from './PlanLifecycleControls.module.css';
 
 type PlanProjection = {
   planId?: string;
@@ -81,6 +83,10 @@ export function PlanLifecycleControls(props: Record<string, unknown>) {
     'draft') as string;
   const publishedVersion =
     props.publishedVersion ?? projection.publishedVersion;
+  const readinessLabel =
+    m[
+      `planCore.readiness.${readiness === 'ready_to_publish' ? 'readyToPublish' : readiness}` as keyof Messages
+    ] ?? m['planCore.readiness.draft'];
 
   const controlled = props.value !== undefined;
 
@@ -89,7 +95,11 @@ export function PlanLifecycleControls(props: Record<string, unknown>) {
   }
 
   return (
-    <Card as="section" aria-labelledby="plan-lifecycle-title" dir={undefined}>
+    <Card
+      as="section"
+      aria-labelledby="plan-lifecycle-title"
+      className={styles.card}
+    >
       <header>
         <h2 id="plan-lifecycle-title">{m['planCore.title']}</h2>
         {planId ? (
@@ -98,30 +108,34 @@ export function PlanLifecycleControls(props: Record<string, unknown>) {
             <Bidi dir="ltr">{planId}</Bidi>
           </p>
         ) : null}
-        <p>{m['planCore.autosave']}</p>
         <p>{m['planCore.draftPrivate']}</p>
       </header>
 
-      <label className="sr-only" htmlFor="plan-lifecycle-editor">
-        {m['planCore.autosave']}
-      </label>
-      <textarea
-        id="plan-lifecycle-editor"
-        data-testid="plan-editor"
-        data-autosave="true"
-        defaultValue={
-          controlled
-            ? undefined
-            : ((props.defaultValue ?? props.value ?? '') as string)
-        }
-        value={controlled ? (props.value as string) : undefined}
-        onChange={(event) => handleAutosave(event.target.value)}
-        aria-label={m['planCore.autosave']}
-      />
+      <div className={styles.editorField}>
+        <label htmlFor="plan-lifecycle-editor">{m['planCore.autosave']}</label>
+        <textarea
+          id="plan-lifecycle-editor"
+          data-testid="plan-editor"
+          data-autosave="true"
+          defaultValue={
+            controlled
+              ? undefined
+              : ((props.defaultValue ?? props.value ?? '') as string)
+          }
+          value={controlled ? (props.value as string) : undefined}
+          onChange={(event) => handleAutosave(event.target.value)}
+          className={`${fieldStyles.input} ${styles.editor}`}
+        />
+      </div>
 
-      <div role="group" aria-label={m['planCore.title']}>
+      <div
+        className={styles.actions}
+        role="group"
+        aria-label={m['planCore.title']}
+      >
         <Button
           type="button"
+          variant="secondary"
           data-testid="save-draft"
           data-action="save-draft"
           onClick={() => onSaveDraft?.(planId)}
@@ -130,6 +144,7 @@ export function PlanLifecycleControls(props: Record<string, unknown>) {
         </Button>
         <Button
           type="button"
+          variant="primary"
           data-testid="ready-publish"
           data-action="ready-publish"
           onClick={() => onPublish?.(planId)}
@@ -138,6 +153,7 @@ export function PlanLifecycleControls(props: Record<string, unknown>) {
         </Button>
         <Button
           type="button"
+          variant="secondary"
           data-testid="create-new-plan"
           data-action="create-new-plan"
           onClick={() => onCreate?.()}
@@ -147,7 +163,9 @@ export function PlanLifecycleControls(props: Record<string, unknown>) {
       </div>
 
       <p data-testid="plan-readiness" data-readiness={readiness}>
-        {m['planCore.readiness']}: {readiness}
+        <span>{m['planCore.readiness']}</span>
+        <span aria-hidden="true">: </span>
+        <span>{readinessLabel}</span>
       </p>
       {publishedVersion !== undefined && publishedVersion !== null ? (
         <p data-testid="plan-published-version">

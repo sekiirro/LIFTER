@@ -6,6 +6,7 @@ import { LOCALE_COOKIE, parseLocale } from '../../../../lib/design/preferences';
 import { isShowcaseEnabled } from '../../../../lib/design/showcase';
 import { getMessages } from '../../../../lib/i18n';
 import { WORKOUT_FIRST_DELIVERY_FIXTURE } from '../../../../lib/plan-core/delivery-contract';
+import styles from './page.module.css';
 
 const planId = '123e4567-e89b-12d3-a456-426614174000';
 
@@ -15,7 +16,7 @@ export default async function PlanCoreShowcasePage() {
   const locale = parseLocale(preferences.get(LOCALE_COOKIE)?.value);
   const m = getMessages(locale);
   return (
-    <main data-testid="plan-core-showcase">
+    <main className={styles.page} data-testid="plan-core-showcase">
       <h1>{m['planCore.title']}</h1>
       <PlanLifecycleControls
         locale={locale}

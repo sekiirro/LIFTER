@@ -1,0 +1,30 @@
+.card {
+  display: grid;
+  gap: var(--space-4);
+}
+
+.editorField {
+  display: grid;
+  gap: var(--space-2);
+}
+
+.editorField label {
+  font-weight: 600;
+}
+
+.editor {
+  min-block-size: 8rem;
+  resize: vertical;
+  font: inherit;
+}
+
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-3);
+}
+
+.actions button:last-child {
+  margin-inline-start: auto;
+}

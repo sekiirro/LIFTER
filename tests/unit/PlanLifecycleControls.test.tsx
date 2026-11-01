@@ -77,6 +77,19 @@ describe('plan lifecycle controls', () => {
     expect(html).toContain('data-action="create-new-plan"');
   });
 
+  it('renders localized readiness text instead of the raw enum', () => {
+    const html = renderToStaticMarkup(
+      createElement(PlanLifecycleControls, {
+        locale: 'ar',
+        planId,
+        projection: { readiness: 'published' },
+        messages: getMessages('ar'),
+      }),
+    );
+    expect(html).toContain(getMessages('ar')['planCore.readiness.published']);
+    expect(html).not.toContain('>published<');
+  });
+
   it('keeps save-draft wired to save, not create', () => {
     const onSaveDraft = vi.fn();
     const onCreateNewPlan = vi.fn();

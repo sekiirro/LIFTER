@@ -399,6 +399,7 @@ export const en: Record<keyof typeof ar, string> = {
   'planCore.readiness.ready': 'Ready',
   'planCore.readiness.readyToPublish': 'Ready to publish',
   'planCore.readiness.published': 'Published',
+  'planCore.subscriptionId': 'Subscription ID',
   'planCore.delivery.workout': 'Workout delivery',
   'planCore.delivery.nutrition': 'Nutrition delivery',
   'planCore.delivery.delivered': 'Delivered',

@@ -385,6 +385,7 @@ export const ar = {
   'planCore.readiness.ready': 'جاهز',
   'planCore.readiness.readyToPublish': 'جاهز للنشر',
   'planCore.readiness.published': 'منشور',
+  'planCore.subscriptionId': 'معرّف الاشتراك',
   'planCore.delivery.workout': 'تسليم التدريب',
   'planCore.delivery.nutrition': 'تسليم التغذية',
   'planCore.delivery.delivered': 'تم التسليم',

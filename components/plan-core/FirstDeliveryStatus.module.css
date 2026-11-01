@@ -1,0 +1,25 @@
+.card {
+  display: grid;
+  gap: var(--space-3);
+}
+
+.status,
+.subscription {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: var(--space-3);
+  align-items: baseline;
+  margin: 0;
+}
+
+.status > :last-child {
+  font-weight: 600;
+}
+
+.subscription {
+  grid-template-columns: auto 1fr auto;
+  padding-block-start: var(--space-2);
+  border-block-start: 1px solid var(--color-border);
+  font-size: var(--text-sm);
+  color: var(--color-text-muted);
+}

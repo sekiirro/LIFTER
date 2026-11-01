@@ -10,6 +10,7 @@ import type {
 import { activationState as deriveActivationState } from '../../lib/plan-core/delivery-contract';
 import { Bidi } from '../ui/Bidi';
 import { Card } from '../ui/Card';
+import styles from './FirstDeliveryStatus.module.css';
 
 type DeliveryProjection = {
   subscriptionId?: string;
@@ -108,11 +109,16 @@ export function FirstDeliveryStatus(props: Record<string, unknown>) {
       : m['planCore.delivery.activationPending'];
 
   return (
-    <Card as="section" aria-labelledby="first-delivery-title">
+    <Card
+      as="section"
+      aria-labelledby="first-delivery-title"
+      className={styles.card}
+    >
       <header>
         <h2 id="first-delivery-title">{m['planCore.delivery.independent']}</h2>
       </header>
       <div
+        className={styles.status}
         data-testid="workout-delivery"
         data-delivery="workout"
         data-delivered={workoutDelivered ? 'true' : 'false'}
@@ -123,6 +129,7 @@ export function FirstDeliveryStatus(props: Record<string, unknown>) {
         </span>
       </div>
       <div
+        className={styles.status}
         data-testid="nutrition-delivery"
         data-delivery="nutrition"
         data-delivered={nutritionDelivered ? 'true' : 'false'}
@@ -133,6 +140,7 @@ export function FirstDeliveryStatus(props: Record<string, unknown>) {
         </span>
       </div>
       <div
+        className={styles.status}
         data-testid="activation-status"
         data-activation={state}
         data-state={state}
@@ -141,7 +149,9 @@ export function FirstDeliveryStatus(props: Record<string, unknown>) {
         <span data-status={state}>{activationLabel}</span>
       </div>
       {subscriptionId ? (
-        <p>
+        <p className={styles.subscription}>
+          <span>{m['planCore.subscriptionId']}</span>
+          <span aria-hidden="true">: </span>
           <Bidi dir="ltr">{subscriptionId}</Bidi>
         </p>
       ) : null}
