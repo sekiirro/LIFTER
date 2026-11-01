@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import { deriveBrand } from '../../lib/design/color';
 import { brandToCssVars, tokensToCss } from '../../lib/design/tokens-css';
+import { modes } from '../../lib/design/tokens';
 
 describe('token CSS', () => {
   it('declares every contract variable', () => {
@@ -8,6 +9,7 @@ describe('token CSS', () => {
     const names = [
       ...[
         'bg',
+        'shell-gradient',
         'card',
         'card-raised',
         'border',
@@ -66,5 +68,12 @@ describe('token CSS', () => {
       expect(vars[`--brand-text-${mode}`]).toBe(brand[mode].text);
       expect(vars[`--brand-ring-${mode}`]).toBe(brand[mode].ring);
     }
+  });
+  it('defines theme-matched, restrained shell gradients in the token set', () => {
+    expect(tokensToCss()).toContain('--color-shell-gradient:');
+    expect(modes.light.shellGradient).toContain('#059669 3%');
+    expect(modes.dark.shellGradient).toContain('#059669 2%');
+    expect(modes.light.shellGradient).toContain('var(--color-bg)');
+    expect(modes.dark.shellGradient).toContain('var(--color-card)');
   });
 });

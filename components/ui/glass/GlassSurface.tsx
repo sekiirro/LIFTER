@@ -33,6 +33,82 @@ type IdleWindow = Window & {
   cancelIdleCallback?: (handle: number) => void;
 };
 
+type GlisseMount = {
+  cancelled: boolean;
+  isCurrent: () => boolean;
+  mount: () => Promise<boolean> | boolean;
+  settle: (duration: number) => void;
+};
+
+const glisseMountQueue: GlisseMount[] = [];
+let drainingGlisseMounts = false;
+
+function nextPaint(): Promise<void> {
+  return new Promise((resolve) => {
+    requestAnimationFrame(() => requestAnimationFrame(() => resolve()));
+  });
+}
+
+function waitForEnhancementSlot(): Promise<void> {
+  const idleWindow = window as IdleWindow;
+  if (!idleWindow.requestIdleCallback)
+    return new Promise((resolve) => window.setTimeout(resolve, 32));
+  return new Promise((resolve) => {
+    const schedule = () =>
+      idleWindow.requestIdleCallback!(
+        (deadline) => {
+          if (!deadline.didTimeout && deadline.timeRemaining() < 12) {
+            window.setTimeout(schedule, 48);
+            return;
+          }
+          resolve();
+        },
+        { timeout: 1000 },
+      );
+    schedule();
+  });
+}
+
+async function drainGlisseMounts() {
+  if (drainingGlisseMounts) return;
+  drainingGlisseMounts = true;
+  while (glisseMountQueue.length) {
+    const task = glisseMountQueue.shift()!;
+    if (task.cancelled || !task.isCurrent()) continue;
+    await waitForEnhancementSlot();
+    if (task.cancelled || !task.isCurrent()) continue;
+    const startedAt = performance.now();
+    const mounted = await task.mount();
+    if (!mounted) continue;
+    await nextPaint();
+    const duration = performance.now() - startedAt;
+    task.settle(duration);
+    // Each mount gets two paint opportunities before another surface begins.
+    await nextPaint();
+  }
+  drainingGlisseMounts = false;
+}
+
+function queueGlisseMount(task: GlisseMount) {
+  glisseMountQueue.push(task);
+  void drainGlisseMounts();
+  return () => {
+    task.cancelled = true;
+    const index = glisseMountQueue.indexOf(task);
+    if (index >= 0) glisseMountQueue.splice(index, 1);
+  };
+}
+
+function setStaticBackdrop(surface: HTMLDivElement, isStatic: boolean) {
+  if (isStatic) {
+    surface.style.setProperty('backdrop-filter', 'none', 'important');
+    surface.style.setProperty('-webkit-backdrop-filter', 'none', 'important');
+    return;
+  }
+  surface.style.removeProperty('backdrop-filter');
+  surface.style.removeProperty('-webkit-backdrop-filter');
+}
+
 function afterInitialPaintAndLcp(
   callback: () => void,
   isVisible: () => boolean,
@@ -203,18 +279,32 @@ export function GlassSurface({
     null,
   );
   const surfaceRef = useRef<HTMLDivElement>(null);
+  const runtimeModeRef = useRef<string | null>(null);
+  const initStartRef = useRef<string | null>(null);
   const assignSurfaceRef = (node: HTMLDivElement | null) => {
     surfaceRef.current = node;
+    if (node && runtimeModeRef.current)
+      node.setAttribute('data-glass-runtime', runtimeModeRef.current);
+    if (node && initStartRef.current)
+      node.setAttribute('data-glass-init-start', initStartRef.current);
+    if (node && runtimeModeRef.current === 'static')
+      setStaticBackdrop(node, true);
     if (typeof forwardedRef === 'function') forwardedRef(node);
     else if (forwardedRef)
       (forwardedRef as { current: HTMLDivElement | null }).current = node;
+  };
+  const setRuntimeMode = (mode: string) => {
+    runtimeModeRef.current = mode;
+    surfaceRef.current?.setAttribute('data-glass-runtime', mode);
+    if (surfaceRef.current)
+      setStaticBackdrop(surfaceRef.current, mode === 'static');
   };
 
   useEffect(() => {
     // The server-rendered material already matches the approved capsule. On
     // constrained devices, skip observers, listeners, and idle timers entirely.
     if (isConstrainedDevice()) {
-      surfaceRef.current?.setAttribute('data-glass-runtime', 'static');
+      setRuntimeMode('static');
       return;
     }
 
@@ -250,33 +340,59 @@ export function GlassSurface({
       if (enabled === next) return;
       enabled = next;
       if (!next) {
-        surfaceRef.current?.setAttribute('data-glass-runtime', 'static');
+        setRuntimeMode('static');
         cancelSchedule?.();
         cancelSchedule = undefined;
         loading = false;
         setGlass(null);
         return;
       }
-      surfaceRef.current?.setAttribute('data-glass-runtime', 'waiting');
+      setRuntimeMode('waiting');
       cancelSchedule = afterInitialPaintAndLcp(() => {
         if (loading) return;
         loading = true;
         cancelSchedule?.();
         cancelSchedule = undefined;
-        void import('glisse').then(
-          ({ Glass: GlisseGlass }) => {
-            if (!cancelled && enabled) {
-              surfaceRef.current?.setAttribute(
-                'data-glass-runtime',
-                'enhanced',
-              );
-              setGlass(() => GlisseGlass);
+        cancelSchedule = queueGlisseMount({
+          cancelled: false,
+          isCurrent: () => !cancelled && Boolean(enabled),
+          mount: () => {
+            initStartRef.current = String(performance.now());
+            surfaceRef.current?.setAttribute(
+              'data-glass-init-start',
+              initStartRef.current,
+            );
+            return import('glisse').then(
+              ({ Glass: GlisseGlass }) => {
+                if (!cancelled && enabled) {
+                  setGlass(() => GlisseGlass);
+                  return true;
+                }
+                return false;
+              },
+              () => {
+                setRuntimeMode('static');
+                return false;
+              },
+            );
+          },
+          settle: (duration) => {
+            const surface = surfaceRef.current;
+            if (!surface || cancelled || !enabled) return;
+            surface.setAttribute('data-glass-init-ms', String(duration));
+            surface.setAttribute(
+              'data-glass-init-end',
+              String(performance.now()),
+            );
+            if (duration > 100) {
+              setRuntimeMode('static');
+              surface.setAttribute('data-glass-over-budget', '');
+              setGlass(null);
+              return;
             }
+            setRuntimeMode('enhanced');
           },
-          () => {
-            // Keep the server-rendered token surface if the optional effect fails.
-          },
-        );
+        });
       }, isVisible);
     };
 

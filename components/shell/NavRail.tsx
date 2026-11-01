@@ -21,23 +21,25 @@ export function NavRail({
       data-screen-only=""
       className={[styles.rail, className].filter(Boolean).join(' ')}
     >
-      {items.map((item) => (
-        <AccessibleTooltip
-          key={item.key}
-          label={messages[item.labelKey]}
-          tooltipTestId={`tooltip-${item.key}`}
-        >
-          <a
-            href={hrefFor(item.key)}
-            className={styles.link}
-            aria-label={messages[item.labelKey]}
-            aria-current={activeKey === item.key ? 'page' : undefined}
-            data-nav-key={item.key}
+      {items
+        .filter((item) => item.key !== 'more')
+        .map((item) => (
+          <AccessibleTooltip
+            key={item.key}
+            label={messages[item.labelKey]}
+            tooltipTestId={`tooltip-${item.key}`}
           >
-            <Icon name={item.icon} />
-          </a>
-        </AccessibleTooltip>
-      ))}
+            <a
+              href={hrefFor(item.key)}
+              className={styles.link}
+              aria-label={messages[item.labelKey]}
+              aria-current={activeKey === item.key ? 'page' : undefined}
+              data-nav-key={item.key}
+            >
+              <Icon name={item.icon} />
+            </a>
+          </AccessibleTooltip>
+        ))}
     </GlassSurface>
   );
 }

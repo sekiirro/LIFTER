@@ -5,14 +5,14 @@ import { getMessages } from '../../lib/i18n';
 // Both navigation variants and role selection must work without client JavaScript.
 test.use({ javaScriptEnabled: false });
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
-const trainerKeys = [
+const trainerMobileKeys = [
   'home',
   'clients',
   'workout',
   'nutrition',
   'more',
 ] as const;
-const clientKeys = [
+const clientMobileKeys = [
   'home',
   'workout',
   'nutrition',
@@ -37,50 +37,60 @@ for (const locale of ['ar', 'en'] as const) {
         testInfo.project.name !== 'chromium',
         'Desktop rail assertions use chromium.',
       );
-      const response = await page.goto('/showcase/shell?role=trainer');
-      expect(response?.status()).toBe(200);
-      const rail = page.getByTestId('nav-rail');
-      await expect(page.getByRole('navigation')).toHaveCount(1);
-      await expect(rail).toHaveAccessibleName(m['nav.label']);
-      const links = rail.getByRole('link');
-      await expect(links).toHaveCount(5);
-      for (const [index, key] of trainerKeys.entries()) {
-        await expect(links.nth(index)).toHaveAttribute('data-nav-key', key);
-        await expect(links.nth(index)).toHaveAccessibleName(m[`nav.${key}`]);
-        await expect(links.nth(index)).toHaveAttribute(
-          'href',
-          `?role=trainer#${key}`,
-        );
-      }
-      await expect(links.first()).toHaveAttribute('aria-current', 'page');
-
-      for (const width of [1024, 1280, 1440]) {
-        await page.setViewportSize({ width, height: 900 });
-        const main = page.locator('main');
-        const mainBox = await main.boundingBox();
-        if (!mainBox) throw new Error('Expected visible main content');
-        expect(mainBox.x).toBe(0);
-        expect(mainBox.width).toBe(width);
-
-        if (width === 1024) {
-          await expect(rail).toBeHidden();
-          await expect(page.getByTestId('bottom-bar')).toBeVisible();
-          continue;
+      for (const [role, keys] of [
+        ['trainer', ['home', 'clients', 'workout', 'nutrition']],
+        ['client', ['home', 'workout', 'nutrition', 'progress']],
+      ] as const) {
+        const response = await page.goto(`/showcase/shell?role=${role}`);
+        expect(response?.status()).toBe(200);
+        const rail = page.getByTestId('nav-rail');
+        await expect(page.getByRole('navigation')).toHaveCount(1);
+        await expect(rail).toHaveAccessibleName(m['nav.label']);
+        const links = rail.getByRole('link');
+        await expect(links).toHaveCount(4);
+        await expect(rail.locator('[data-nav-key="more"]')).toHaveCount(0);
+        for (const [index, key] of keys.entries()) {
+          await expect(links.nth(index)).toHaveAttribute('data-nav-key', key);
+          await expect(links.nth(index)).toHaveAccessibleName(m[`nav.${key}`]);
+          await expect(links.nth(index)).toHaveAttribute(
+            'href',
+            `?role=${role}#${key}`,
+          );
         }
+        await expect(links.first()).toHaveAttribute('aria-current', 'page');
 
-        await expect(rail).toBeVisible();
-        await expect(page.getByTestId('bottom-bar')).toBeHidden();
-        const box = await rail.boundingBox();
-        if (!box) throw new Error('Expected visible desktop dock');
-        expect(box.height).toBeLessThan(900 / 2);
+        for (const width of [1024, 1280, 1440]) {
+          await page.setViewportSize({ width, height: 900 });
+          const main = page.locator('main');
+          const mainBox = await main.boundingBox();
+          if (!mainBox) throw new Error('Expected visible main content');
+          expect(mainBox.x).toBe(0);
+          expect(mainBox.width).toBe(width);
 
-        // The unchanged 64rem content lane is centered. The floating dock
-        // must remain entirely in its outer gutter on the logical start side.
-        const laneStart = (width - 1024) / 2;
-        const laneEnd = laneStart + 1024;
-        if (locale === 'ar') expect(box.x).toBeGreaterThanOrEqual(laneEnd);
-        else expect(box.x + box.width).toBeLessThanOrEqual(laneStart);
+          if (width === 1024) {
+            await expect(rail).toBeHidden();
+            await expect(page.getByTestId('bottom-bar')).toBeVisible();
+            continue;
+          }
+
+          await expect(rail).toBeVisible();
+          await expect(page.getByTestId('bottom-bar')).toBeHidden();
+          const box = await rail.boundingBox();
+          if (!box) throw new Error('Expected visible desktop dock');
+          expect(box.height).toBeLessThan(900 / 2);
+
+          const laneStart = (width - 1024) / 2;
+          const laneEnd = laneStart + 1024;
+          if (locale === 'ar') expect(box.x).toBeGreaterThanOrEqual(laneEnd);
+          else expect(box.x + box.width).toBeLessThanOrEqual(laneStart);
+        }
       }
+
+      await page.setViewportSize({ width: 1280, height: 720 });
+      const dockBox = await page.getByTestId('nav-rail').boundingBox();
+      if (!dockBox) throw new Error('Expected visible dock at 1280×720');
+      expect(dockBox.y).toBeGreaterThanOrEqual(0);
+      expect(dockBox.y + dockBox.height).toBeLessThanOrEqual(720);
     });
 
     test('desktop keyboard tooltip is described and does not move the dock', async ({
@@ -150,7 +160,7 @@ for (const locale of ['ar', 'en'] as const) {
         await expect(page.getByTestId('nav-rail')).toBeHidden();
         await expect(page.getByRole('navigation')).toHaveCount(1);
         await expect(bottom).toHaveAccessibleName(m['nav.label']);
-        const keys = role === 'trainer' ? trainerKeys : clientKeys;
+        const keys = role === 'trainer' ? trainerMobileKeys : clientMobileKeys;
         const labels = bottom.getByTestId('bottom-label');
         await expect(labels).toHaveText(keys.map((key) => m[`nav.${key}`]));
         const links = bottom.getByRole('link');

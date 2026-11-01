@@ -1,6 +1,8 @@
 .shell {
   --rail-width: calc(var(--touch-min) + var(--space-4) + 2px);
   --bottom-bar-size: calc(var(--touch-min) + var(--space-4));
+  min-block-size: 100dvb;
+  background: var(--color-shell-gradient);
 }
 .content {
   min-block-size: var(--shell-min-block-size, 100dvb);
@@ -54,5 +56,17 @@
   .content {
     min-block-size: 0;
     padding: 0;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .shell {
+    background: var(--color-bg);
+  }
+}
+
+@media (forced-colors: active) {
+  .shell {
+    background: Canvas;
   }
 }

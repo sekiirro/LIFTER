@@ -6,12 +6,19 @@
   padding: var(--space-2);
   border-radius: 999px;
   box-shadow:
-    inset 0 1px 0 color-mix(in srgb, white 68%, transparent),
-    inset 0 0 0 1px color-mix(in srgb, white 18%, transparent),
-    0 12px 32px color-mix(in srgb, black 18%, transparent),
-    0 2px 8px color-mix(in srgb, black 7%, transparent);
-  --lg-glass-bend: 0.62;
-  --lg-rim-shine: 0.52;
+    inset 0 1px 0 color-mix(in srgb, white 30%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, white 10%, transparent),
+    0 10px 24px color-mix(in srgb, black 14%, transparent),
+    0 2px 6px color-mix(in srgb, black 5%, transparent);
+  --lg-edge: color-mix(in srgb, var(--color-text) 2.5%, transparent);
+  --lg-glass-bend: 0.38;
+  --lg-rim-shine: 0.2;
+  --lg-blur: 1px;
+}
+.rail.rail.rail {
+  --lg-blur: 1px;
+  backdrop-filter: blur(1px) var(--lg-filter, saturate(1.12));
+  -webkit-backdrop-filter: blur(1px) var(--lg-filter, saturate(1.12));
 }
 .rail::before {
   content: '';
@@ -19,17 +26,61 @@
   inset: 1px;
   z-index: 0;
   border-radius: inherit;
-  border-inline-start: 1px solid color-mix(in srgb, white 58%, transparent);
-  border-inline-end: 1px solid color-mix(in srgb, white 18%, transparent);
+  border-inline-start: 1px solid color-mix(in srgb, white 30%, transparent);
+  border-inline-end: 1px solid color-mix(in srgb, white 10%, transparent);
   background: linear-gradient(
     180deg,
-    color-mix(in srgb, white 28%, transparent),
+    color-mix(in srgb, white 16%, transparent),
     transparent 24%,
     transparent 78%,
-    color-mix(in srgb, white 14%, transparent)
+    color-mix(in srgb, white 7%, transparent)
   );
-  opacity: 0.46;
+  opacity: 0.32;
   pointer-events: none;
+}
+:global([data-theme='dark']) .rail {
+  --lg-edge: color-mix(in srgb, white 8%, transparent);
+  --lg-rim-shine: 0.1;
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 12%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, white 6%, transparent),
+    0 10px 24px color-mix(in srgb, black 28%, transparent),
+    0 2px 6px color-mix(in srgb, black 14%, transparent);
+}
+:global([data-theme='dark']) .rail::before {
+  border-inline-start-color: color-mix(in srgb, white 16%, transparent);
+  border-inline-end-color: color-mix(in srgb, white 6%, transparent);
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, white 8%, transparent),
+    transparent 24%,
+    transparent 78%,
+    color-mix(in srgb, white 4%, transparent)
+  );
+  opacity: 0.24;
+}
+@media (prefers-color-scheme: dark) {
+  :global(:root:not([data-theme='light'])) .rail {
+    --lg-edge: color-mix(in srgb, white 8%, transparent);
+    --lg-rim-shine: 0.1;
+    box-shadow:
+      inset 0 1px 0 color-mix(in srgb, white 12%, transparent),
+      inset 0 0 0 1px color-mix(in srgb, white 6%, transparent),
+      0 10px 24px color-mix(in srgb, black 28%, transparent),
+      0 2px 6px color-mix(in srgb, black 14%, transparent);
+  }
+  :global(:root:not([data-theme='light'])) .rail::before {
+    border-inline-start-color: color-mix(in srgb, white 16%, transparent);
+    border-inline-end-color: color-mix(in srgb, white 6%, transparent);
+    background: linear-gradient(
+      180deg,
+      color-mix(in srgb, white 8%, transparent),
+      transparent 24%,
+      transparent 78%,
+      color-mix(in srgb, white 4%, transparent)
+    );
+    opacity: 0.24;
+  }
 }
 .link {
   display: grid;
@@ -59,11 +110,25 @@
   --lg-rim-shine: 0;
   background: var(--color-card);
   box-shadow: none;
-  backdrop-filter: none;
-  -webkit-backdrop-filter: none;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
 }
 .rail[data-glass-runtime='static']::before {
   display: none;
+}
+.rail.rail.rail:global(.lg-glass)[data-rim] {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 30%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, white 10%, transparent),
+    0 8px 20px color-mix(in srgb, black 10%, transparent),
+    0 2px 5px color-mix(in srgb, black 4%, transparent);
+}
+:global([data-theme='dark']) .rail.rail.rail:global(.lg-glass)[data-rim] {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 8%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, white 4%, transparent),
+    0 8px 20px color-mix(in srgb, black 18%, transparent),
+    0 2px 5px color-mix(in srgb, black 8%, transparent);
 }
 @media (forced-colors: active) {
   .rail::before {
@@ -80,7 +145,23 @@
 @media (prefers-reduced-transparency: reduce),
   (prefers-contrast: more),
   (prefers-reduced-motion: reduce) {
+  .rail.rail.rail {
+    --lg-glass-bend: 0;
+    --lg-rim-shine: 0;
+    background: var(--color-card);
+    box-shadow: none;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
+  }
   .rail::before {
     display: none;
+  }
+}
+@media (forced-colors: active) {
+  .rail.rail.rail {
+    background: Canvas;
+    box-shadow: none;
+    backdrop-filter: none !important;
+    -webkit-backdrop-filter: none !important;
   }
 }
