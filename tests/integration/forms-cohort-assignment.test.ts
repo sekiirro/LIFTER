@@ -131,6 +131,11 @@ describe('T010/T023 per-form assignment policy', () => {
       },
     );
     expect(first.data).toMatchObject({ status: 'materialized' });
+    const evaluatedAt = (first.data as { snapshot_at: string }).snapshot_at;
+    const [evaluatedDate] = await db`
+      select ((${evaluatedAt}::timestamptz at time zone 'Africa/Cairo')::date)::text as day
+    `;
+    expect(key).toBe(`recurring:${evaluatedDate!.day}`);
     const replay = await context.po.client.rpc(
       'materialize_intake_assignment_occurrence',
       {

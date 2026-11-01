@@ -124,6 +124,7 @@ export async function withFormsPolicyF13Fixtures(
     f: Context,
     scenarios: {
       earlyPaidRenewal: Scenario;
+      missedRenewal: Scenario;
       reflowedRenewal: Scenario;
       frozenThenUnfrozen: Scenario;
       expiredSubscription: Scenario;
@@ -132,6 +133,7 @@ export async function withFormsPolicyF13Fixtures(
 ) {
   const f = await clientContext();
   const purchases = await Promise.all([
+    bought(f),
     bought(f),
     bought(f),
     bought(f),
@@ -171,6 +173,12 @@ export async function withFormsPolicyF13Fixtures(
     });
     if (payment.status !== 'ok' || early!.status !== 'future')
       throw new Error('Early-paid renewal fixture must remain F13 future');
+
+    const missedRenewalId = await renewal(tx, f, purchases[4]!, offers[4]!);
+    const [missedRenewal] = await tx`
+      select service_start_date::text from public.subscription_renewals
+      where subscription_id=${missedRenewalId}
+    `;
 
     const [durationRow] = await tx`
       select duration_days from public.subscriptions where id=${purchases[1]!.sid}
@@ -249,6 +257,13 @@ export async function withFormsPolicyF13Fixtures(
         renewalId: earlyRenewalId,
         occurrenceKey: `renewal:${earlyRenewalId}`,
         serviceStart: early!.service_start_date,
+      },
+      missedRenewal: {
+        clientId: purchases[4]!.t.id,
+        subscriptionId: purchases[4]!.sid,
+        renewalId: missedRenewalId,
+        occurrenceKey: `renewal:${missedRenewalId}`,
+        serviceStart: missedRenewal!.service_start_date,
       },
       reflowedRenewal: {
         clientId: purchases[1]!.t.id,
