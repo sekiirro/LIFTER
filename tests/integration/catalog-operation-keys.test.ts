@@ -82,7 +82,20 @@ describe('shared catalog operation key ledger', () => {
       await expect(db`
         select app_private.operation_key_result(${actor}, 'catalog.food_created', ${key}, ${`sha256:${'b'.repeat(64)}`})
       `).rejects.toThrow('operation_key_request_conflict');
+
+      const expiredKey = randomUUID();
+      await db`
+        insert into app_private.operation_keys(actor_user_id, action, operation_key, request_hash, result, created_at)
+        values (${actor}, 'catalog.food_created', ${expiredKey}, ${requestHash}, ${db.json(original)}, statement_timestamp() - interval '31 days')
+      `;
+      const purged = await db`select app_private.purge_operation_keys() as removed`;
+      expect(Number(purged[0]?.removed)).toBeGreaterThanOrEqual(1);
+      const expired = await db`
+        select 1 from app_private.operation_keys where actor_user_id = ${actor} and operation_key = ${expiredKey}
+      `;
+      expect(expired).toHaveLength(0);
     } finally {
+      await db`delete from app_private.operation_keys where actor_user_id = ${actor}`;
       await admin().auth.admin.deleteUser(actor);
     }
   });
