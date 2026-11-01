@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest';
 import {
   isFormulaInjection,
-  toSafeExportCellValue,
+  toCoachTextCell,
 } from '../../lib/plans/workout/export-guard';
 
 describe('F17 export formula-injection guard', () => {
@@ -25,34 +25,29 @@ describe('F17 export formula-injection guard', () => {
     expect(isFormulaInjection('Ø®Ø± Ø§ÙØ£ÙØ© @ Ø§ÙØ©ÙÙØ§ØªÙØ©')).toBe(false);
   });
 
-  it('writes coach-authored formula strings as strings, never as formulas', () => {
-    expect(toSafeExportCellValue('=SUM(A1:A5)')).toBe("'=SUM(A1:A5)");
-    expect(toSafeExportCellValue('+SUM(A1:A5)')).toBe("'+SUM(A1:A5)");
-    expect(toSafeExportCellValue("-2+cmd|'/C calc'!A0")).toBe(
-      "'-2+cmd|'/C calc'!A0",
-    );
-    expect(toSafeExportCellValue('@SUM(A1:A5)')).toBe("'@SUM(A1:A5)");
+  it('writes coach-authored cells as string cells with the text unchanged', () => {
+    expect(toCoachTextCell('=SUM(A1:A5)')).toEqual({
+      type: 'string',
+      value: '=SUM(A1:A5)',
+    });
+    expect(toCoachTextCell('+1')).toEqual({ type: 'string', value: '+1' });
+    expect(toCoachTextCell('-1')).toEqual({ type: 'string', value: '-1' });
+    expect(toCoachTextCell('@x')).toEqual({ type: 'string', value: '@x' });
+    expect(toCoachTextCell('\t=1')).toEqual({ type: 'string', value: '\t=1' });
   });
 
-  it('neutralizes formula characters hidden after a leading tab or carriage return', () => {
-    expect(toSafeExportCellValue('\t=SUM(A1:A5)')).toBe("'\t=SUM(A1:A5)");
-    expect(toSafeExportCellValue('\r\n@SUM(A1:A5)')).toBe("'\r\n@SUM(A1:A5)");
-  });
-
-  it('leaves ordinary coach-authored strings unchanged', () => {
-    expect(toSafeExportCellValue('Bench press 3x10')).toBe('Bench press 3x10');
-    expect(toSafeExportCellValue('')).toBe('');
-  });
-
-  it('keeps legitimate numbers as numbers', () => {
-    expect(toSafeExportCellValue(5)).toBe(5);
-    expect(toSafeExportCellValue(2.5)).toBe(2.5);
+  it('writes ordinary coach-authored strings to string cells unchanged', () => {
+    expect(toCoachTextCell('Bench press 3x10')).toEqual({
+      type: 'string',
+      value: 'Bench press 3x10',
+    });
+    expect(toCoachTextCell('')).toEqual({ type: 'string', value: '' });
   });
 
   it('keeps Arabic and mixed-direction text unchanged', () => {
     const arabic = 'Ø§ÙØ³ÙØ§Ø³Ø©';
-    expect(toSafeExportCellValue(arabic)).toBe(arabic);
+    expect(toCoachTextCell(arabic)).toEqual({ type: 'string', value: arabic });
     const mixed = 'Ø®Ø± Ø§ÙØ£ÙØ© @ Ø§ÙØ©ÙÙØ§ØªÙØ©';
-    expect(toSafeExportCellValue(mixed)).toBe(mixed);
+    expect(toCoachTextCell(mixed)).toEqual({ type: 'string', value: mixed });
   });
 });
