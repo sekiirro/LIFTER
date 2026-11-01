@@ -124,7 +124,7 @@ export async function signupFixture(f: ClientContext, executor = sql()) {
       link,
       ticket: t.id as string,
       fields: {
-        name: 'U3 synthetic',
+        name: 'U3 synthetic client',
         email: `u3-${randomUUID()}@example.test`,
         phone:
           '+201' +
