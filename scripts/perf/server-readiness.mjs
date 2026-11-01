@@ -35,14 +35,18 @@ export function waitForServerReady(
         const controller = new AbortController();
         let timer;
         try {
+          const remainingMs = Math.max(1, deadline - Date.now());
           const pollDelay = new Promise((resolve) => {
             timer = setTimeout(
               () => resolve(false),
-              Math.min(pollIntervalMs, deadline - Date.now()),
+              Math.min(pollIntervalMs, remainingMs),
             );
           });
           const healthCheck = fetch(new URL('/api/health', url), {
-            signal: controller.signal,
+            signal: AbortSignal.any([
+              controller.signal,
+              AbortSignal.timeout(remainingMs),
+            ]),
           })
             .then((response) => response.ok)
             .catch(() => false)
