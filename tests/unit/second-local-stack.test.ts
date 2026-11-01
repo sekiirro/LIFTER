@@ -65,7 +65,7 @@ describe('isolated local Supabase stack contract', () => {
       };
 
       expect(loadSelectedStackEnv(env, root)).toBe('b');
-      expect(selectStack(env, root)).toBe('b');
+      expect(selectStack(env)).toBe('b');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

@@ -34,7 +34,9 @@ export function selectStack(env = process.env) {
   if (requested && !['a', 'b', 'c', 'd'].includes(requested))
     throw new Error('Unsupported local Supabase stack');
   if (requested) return requested;
-  throw new Error('No local Supabase stack selected. Set LIFTER_SUPABASE_STACK to a, b, c, or d.');
+  throw new Error(
+    'No local Supabase stack selected. Set LIFTER_SUPABASE_STACK to a, b, c, or d.',
+  );
 }
 
 export function getStackConfig(stack = 'a', root = process.cwd()) {
