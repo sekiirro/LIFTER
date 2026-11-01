@@ -1,0 +1,28 @@
+{
+  "days": [
+    {
+      "id": "10000000-0000-4000-8000-000000000001",
+      "kind": "session",
+      "title": "Push",
+      "items": [
+        {
+          "id": "20000000-0000-4000-8000-000000000001",
+          "exercise": { "source": "global", "id": "bench-press", "version": 1 },
+          "sets": [
+            {
+              "id": "30000000-0000-4000-8000-000000000001",
+              "type": "working",
+              "reps": { "min": 8, "max": 10 },
+              "load": { "mode": "added_weight", "value": "20.5", "unit": "kg" },
+              "restSec": 90,
+              "rir": 2,
+              "notes": "Controlled tempo"
+            }
+          ]
+        }
+      ]
+    },
+    { "id": "10000000-0000-4000-8000-000000000002", "kind": "rest" }
+  ],
+  "notes": "Week one"
+}
