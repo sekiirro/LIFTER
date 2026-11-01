@@ -14,11 +14,7 @@ import { z } from 'zod';
 // ---------------------------------------------------------------------------
 
 export const PlanIdSchema = z.string().uuid();
-export const planIdSchema = PlanIdSchema;
 export type PlanId = z.infer<typeof PlanIdSchema>;
-
-export const PlanIdInputSchema = PlanIdSchema;
-export const planIdInputSchema = PlanIdSchema;
 
 // ---------------------------------------------------------------------------
 // Readiness state
@@ -30,9 +26,6 @@ export const ReadinessStateSchema = z.enum([
   'ready_to_publish',
   'published',
 ]);
-export const readinessStateSchema = ReadinessStateSchema;
-export const PlanReadinessSchema = ReadinessStateSchema;
-export const planReadinessSchema = ReadinessStateSchema;
 export type ReadinessState = z.infer<typeof ReadinessStateSchema>;
 
 // ---------------------------------------------------------------------------
@@ -49,9 +42,6 @@ export const PrivateDraftSchema = z
     updatedAt: z.string().optional(),
   })
   .strict();
-export const privateDraftSchema = PrivateDraftSchema;
-export const DraftSchema = PrivateDraftSchema;
-export const draftSchema = PrivateDraftSchema;
 export type PrivateDraft = z.infer<typeof PrivateDraftSchema>;
 
 // ---------------------------------------------------------------------------
@@ -59,7 +49,6 @@ export type PrivateDraft = z.infer<typeof PrivateDraftSchema>;
 // ---------------------------------------------------------------------------
 
 export const RevisionIdSchema = z.string().uuid();
-export const revisionIdSchema = RevisionIdSchema;
 
 export const ImmutableRevisionRefSchema = z
   .object({
@@ -75,13 +64,6 @@ export const ImmutableRevisionRefSchema = z
     immutable: z.literal(true).optional(),
   })
   .strict();
-export const immutableRevisionRefSchema = ImmutableRevisionRefSchema;
-export const RevisionRefSchema = ImmutableRevisionRefSchema;
-export const revisionRefSchema = ImmutableRevisionRefSchema;
-export const RevisionReferenceSchema = ImmutableRevisionRefSchema;
-export const revisionReferenceSchema = ImmutableRevisionRefSchema;
-export const PublishedRevisionSchema = ImmutableRevisionRefSchema;
-export const publishedRevisionSchema = ImmutableRevisionRefSchema;
 export type ImmutableRevisionRef = z.infer<typeof ImmutableRevisionRefSchema>;
 
 // ---------------------------------------------------------------------------
@@ -89,9 +71,6 @@ export type ImmutableRevisionRef = z.infer<typeof ImmutableRevisionRefSchema>;
 // ---------------------------------------------------------------------------
 
 export const ExpectedPublishedVersionSchema = z.number().int().nonnegative();
-export const expectedPublishedVersionSchema = ExpectedPublishedVersionSchema;
-export const ExpectedVersionSchema = ExpectedPublishedVersionSchema;
-export const expectedVersionSchema = ExpectedPublishedVersionSchema;
 
 // ---------------------------------------------------------------------------
 // Explicit create modes
@@ -99,37 +78,22 @@ export const expectedVersionSchema = ExpectedPublishedVersionSchema;
 
 export const CreateModeSchema = z.enum(['blank', 'template', 'existing_plan']);
 
-export const CreatePlanInputSchema = z
-  .object({
-    createMode: CreateModeSchema.optional(),
-    mode: CreateModeSchema.optional(),
-    createNewPlan: z.boolean().optional(),
-    newPlan: z.boolean().optional(),
-    explicitCreate: z.boolean().optional(),
-    explicit: z.boolean().optional(),
-    planId: PlanIdSchema.optional(),
-    sourcePlanId: PlanIdSchema.optional(),
-    templateId: z.string().optional(),
-    expectedPublishedVersion: ExpectedPublishedVersionSchema.optional(),
-  })
-  .strict()
-  .refine(
-    (value) =>
-      value.createMode !== undefined ||
-      value.mode !== undefined ||
-      value.createNewPlan === true ||
-      value.newPlan === true ||
-      value.explicitCreate === true ||
-      value.explicit === true,
-    { message: 'explicit create discriminator is required' },
-  );
-export const createPlanInputSchema = CreatePlanInputSchema;
-export const CreateNewPlanSchema = CreatePlanInputSchema;
-export const createNewPlanSchema = CreatePlanInputSchema;
-export const CreatePlanSchema = CreatePlanInputSchema;
-export const createPlanSchema = CreatePlanInputSchema;
-export const ExplicitCreateSchema = CreatePlanInputSchema;
-export const explicitCreateSchema = CreatePlanInputSchema;
+export const CreatePlanInputSchema = z.discriminatedUnion('createMode', [
+  z.object({ createMode: z.literal('blank') }).strict(),
+  z
+    .object({
+      createMode: z.literal('template'),
+      templateId: z.string().uuid(),
+    })
+    .strict(),
+  z
+    .object({
+      createMode: z.literal('existing_plan'),
+      sourcePlanId: PlanIdSchema,
+    })
+    .strict(),
+]);
+export type CreatePlanInput = z.infer<typeof CreatePlanInputSchema>;
 
 // ---------------------------------------------------------------------------
 // Plan root / lifecycle
@@ -144,11 +108,6 @@ export const PlanRootSchema = z
     readiness: ReadinessStateSchema.optional(),
   })
   .strict();
-export const planRootSchema = PlanRootSchema;
-export const PlanSchema = PlanRootSchema;
-export const planSchema = PlanRootSchema;
-export const PlanLifecycleSchema = PlanRootSchema;
-export const planLifecycleSchema = PlanRootSchema;
 
 // ---------------------------------------------------------------------------
 // Revision transition validation
@@ -165,7 +124,6 @@ export const RevisionTransitionSchema = z
   .refine((value) => value.toVersion > value.fromVersion, {
     message: 'revision version must strictly increase',
   });
-export const revisionTransitionSchema = RevisionTransitionSchema;
 
 export function isValidRevisionTransition(
   fromVersion: number,
@@ -243,53 +201,3 @@ export function parseCreatePlanInput(
 export function parseReadinessState(value: unknown): ReadinessState | null {
   return safe(ReadinessStateSchema, value);
 }
-
-// ---------------------------------------------------------------------------
-// Aggregate export
-// ---------------------------------------------------------------------------
-
-export const planCoreSchemas = {
-  PlanIdSchema,
-  planIdSchema,
-  PrivateDraftSchema,
-  privateDraftSchema,
-  DraftSchema,
-  draftSchema,
-  ImmutableRevisionRefSchema,
-  immutableRevisionRefSchema,
-  RevisionRefSchema,
-  revisionRefSchema,
-  RevisionReferenceSchema,
-  revisionReferenceSchema,
-  PublishedRevisionSchema,
-  publishedRevisionSchema,
-  ExpectedPublishedVersionSchema,
-  expectedPublishedVersionSchema,
-  ExpectedVersionSchema,
-  expectedVersionSchema,
-  CreateModeSchema,
-  CreatePlanInputSchema,
-  createPlanInputSchema,
-  CreateNewPlanSchema,
-  createNewPlanSchema,
-  CreatePlanSchema,
-  createPlanSchema,
-  ExplicitCreateSchema,
-  explicitCreateSchema,
-  PlanRootSchema,
-  planRootSchema,
-  PlanSchema,
-  planSchema,
-  PlanLifecycleSchema,
-  planLifecycleSchema,
-  ReadinessStateSchema,
-  readinessStateSchema,
-  PlanReadinessSchema,
-  planReadinessSchema,
-  RevisionTransitionSchema,
-  revisionTransitionSchema,
-  RevisionIdSchema,
-  revisionIdSchema,
-};
-
-export default planCoreSchemas;

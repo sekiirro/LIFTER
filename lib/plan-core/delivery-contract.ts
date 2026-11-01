@@ -20,9 +20,6 @@ export const MAX_ACTIVATIONS = 1;
 // ---------------------------------------------------------------------------
 
 export const DeliveryKindSchema = z.enum(['workout', 'nutrition']);
-export const deliveryKindSchema = DeliveryKindSchema;
-export const DeliveryTypeSchema = DeliveryKindSchema;
-export const deliveryTypeSchema = DeliveryKindSchema;
 export type DeliveryKind = z.infer<typeof DeliveryKindSchema>;
 
 // ---------------------------------------------------------------------------
@@ -41,9 +38,6 @@ export const FirstDeliveryRecordSchema = z
     replayed: z.boolean().optional(),
   })
   .strict();
-export const firstDeliveryRecordSchema = FirstDeliveryRecordSchema;
-export const DeliveryRecordSchema = FirstDeliveryRecordSchema;
-export const deliveryRecordSchema = FirstDeliveryRecordSchema;
 export type FirstDeliveryRecord = z.infer<typeof FirstDeliveryRecordSchema>;
 
 export const ActivationSchema = z
@@ -55,7 +49,6 @@ export const ActivationSchema = z
     activated: z.boolean().optional(),
   })
   .strict();
-export const activationSchema = ActivationSchema;
 export type Activation = z.infer<typeof ActivationSchema>;
 
 // ---------------------------------------------------------------------------
@@ -252,14 +245,3 @@ export const FIRST_DELIVERY_FIXTURES = [
   WORKOUT_FIRST_DELIVERY_FIXTURE,
   NUTRITION_FIRST_DELIVERY_FIXTURE,
 ];
-
-export const planCoreDeliveryContract = {
-  kinds: ['workout', 'nutrition'],
-  maxActivations: MAX_ACTIVATIONS,
-  fixtures: FIRST_DELIVERY_FIXTURES,
-  delayedSecondDelivery: DELAYED_SECOND_DELIVERY_FIXTURE,
-  idempotentReplay: IDEMPOTENT_REPLAY_FIXTURE,
-  activation: ACTIVATION_EXACTLY_ONCE_FIXTURE,
-};
-
-export default planCoreDeliveryContract;

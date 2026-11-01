@@ -65,13 +65,61 @@ describe('plan core lifecycle schemas', () => {
     expect(() => CreatePlanInputSchema.parse({ title: 'x' })).toThrow();
   });
 
-  it('accepts explicit create modes', () => {
+  it('rejects legacy create flags', () => {
+    for (const legacy of [
+      { mode: 'blank' },
+      { createNewPlan: true },
+      { newPlan: true },
+      { explicitCreate: true },
+      { explicit: true },
+      { planId: VALID_UUID },
+      { mode: 'template', templateId: VALID_UUID },
+      { createNewPlan: true, templateId: VALID_UUID },
+    ]) {
+      expect(() => CreatePlanInputSchema.parse(legacy)).toThrow();
+    }
+  });
+
+  it('rejects template create without templateId', () => {
+    expect(() =>
+      CreatePlanInputSchema.parse({ createMode: 'template' }),
+    ).toThrow();
+  });
+
+  it('rejects existing_plan create without sourcePlanId', () => {
+    expect(() =>
+      CreatePlanInputSchema.parse({ createMode: 'existing_plan' }),
+    ).toThrow();
+  });
+
+  it('rejects blank create with extra fields', () => {
+    expect(() =>
+      CreatePlanInputSchema.parse({
+        createMode: 'blank',
+        templateId: VALID_UUID,
+      }),
+    ).toThrow();
+    expect(() =>
+      CreatePlanInputSchema.parse({
+        createMode: 'blank',
+        sourcePlanId: VALID_UUID,
+      }),
+    ).toThrow();
+  });
+
+  it('accepts each valid create variant', () => {
     expect(CreatePlanInputSchema.parse({ createMode: 'blank' })).toBeTruthy();
     expect(
-      CreatePlanInputSchema.parse({ createMode: 'template' }),
+      CreatePlanInputSchema.parse({
+        createMode: 'template',
+        templateId: VALID_UUID,
+      }),
     ).toBeTruthy();
     expect(
-      CreatePlanInputSchema.parse({ createMode: 'existing_plan' }),
+      CreatePlanInputSchema.parse({
+        createMode: 'existing_plan',
+        sourcePlanId: VALID_UUID,
+      }),
     ).toBeTruthy();
   });
 
