@@ -4,6 +4,10 @@ import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { inflateSync } from 'node:zlib';
+import {
+  MAX_ADAPTIVE_DIMMING,
+  adaptiveDimmingFromLuminance,
+} from '../../components/branding/registration-hero';
 
 /**
  * Shared production registration-hero evidence helpers.
@@ -13,10 +17,7 @@ import { inflateSync } from 'node:zlib';
  * touch targets, focus ring and axe. Screenshots and geometry are written to
  * the run's OS temp directory, never into the repository.
  */
-export const heroEvidenceDirectory = join(
-  tmpdir(),
-  'lifter-s24-hero-matrix-r4',
-);
+export const heroEvidenceDirectory = join(tmpdir(), 'lifter-s25-hero-r1');
 
 export async function captureHeroScreenshot(page: Page, name: string) {
   await mkdir(heroEvidenceDirectory, { recursive: true });
@@ -231,6 +232,9 @@ export async function expectHeroTextContrast(page: Page) {
       adaptiveDimming: Number(
         stage.style.getPropertyValue('--hero-adaptive-dimming'),
       ),
+      adaptiveDimmingPercent: Number.parseFloat(
+        stage.style.getPropertyValue('--hero-adaptive-dimming-percent'),
+      ),
       labelColor: getComputedStyle(label).color,
       headingColor: getComputedStyle(heading).color,
       cardBackground: getComputedStyle(card).backgroundColor,
@@ -267,10 +271,16 @@ export async function expectHeroTextContrast(page: Page) {
   expect(surface.labelColor).toBe('rgb(255, 255, 255)');
   expect(surface.headingColor).toBe('rgb(255, 255, 255)');
   expect(Number.isFinite(surface.photoLuminance)).toBe(true);
+  const expectedAdaptiveDimming = adaptiveDimmingFromLuminance(
+    surface.photoLuminance,
+  );
   expect(surface.adaptiveDimming).toBeGreaterThanOrEqual(0);
-  expect(surface.adaptiveDimming).toBeLessThanOrEqual(0.72);
+  expect(surface.adaptiveDimming).toBeLessThanOrEqual(MAX_ADAPTIVE_DIMMING);
+  expect(surface.adaptiveDimmingPercent).toBeGreaterThanOrEqual(
+    expectedAdaptiveDimming * 100,
+  );
   const effectiveLuminance =
-    surface.photoLuminance * (1 - surface.adaptiveDimming);
+    surface.photoLuminance * (1 - surface.adaptiveDimmingPercent / 100);
   expect(
     contrast(cssLuminance(surface.labelColor), effectiveLuminance),
   ).toBeGreaterThanOrEqual(4.5);

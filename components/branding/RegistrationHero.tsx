@@ -171,11 +171,11 @@ export function RegistrationHero({
       );
       stage.style.setProperty(
         '--hero-adaptive-dimming',
-        adaptiveDimming.toFixed(3),
+        adaptiveDimming.toString(),
       );
       stage.style.setProperty(
         '--hero-adaptive-dimming-percent',
-        `${(adaptiveDimming * 100).toFixed(1)}%`,
+        `${adaptiveDimming * 100}%`,
       );
       stage.dataset.photoTone = photoToneFromLuminance(cardPhoto.luminance);
       stage.style.setProperty(

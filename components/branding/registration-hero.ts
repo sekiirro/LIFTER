@@ -23,7 +23,25 @@ export function photoToneFromLuminance(luminance: number): HeroPhotoTone {
   return 'dim';
 }
 
+// Maximum backdrop luminance for 4.5:1 contrast against white text.
+export const MAX_BACKDROP_LUMINANCE_FOR_WHITE_TEXT = 1.05 / 4.5 - 0.05;
+
+// The cap reaches exactly the contrast limit when the artwork reaches white.
+export const MAX_ADAPTIVE_DIMMING = 1 - MAX_BACKDROP_LUMINANCE_FOR_WHITE_TEXT;
+
 export function adaptiveDimmingFromLuminance(luminance: number): number {
   if (!Number.isFinite(luminance)) return 0;
-  return Math.min(0.72, Math.max(0, (luminance - 0.18) * 1.33));
+  const boundedLuminance = Math.min(1, Math.max(0, luminance));
+  const existingCurve = Math.min(
+    0.72,
+    Math.max(0, (boundedLuminance - 0.18) * 1.33),
+  );
+  const contrastRequiredDimming =
+    boundedLuminance > 0
+      ? 1 - MAX_BACKDROP_LUMINANCE_FOR_WHITE_TEXT / boundedLuminance
+      : 0;
+  return Math.min(
+    MAX_ADAPTIVE_DIMMING,
+    Math.max(0, Math.max(existingCurve, contrastRequiredDimming)),
+  );
 }

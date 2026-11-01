@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import { validateBrandingImage } from '../../lib/branding/image-validation';
 import { brandingValidatedObjectName } from '../../lib/branding/object-path';
@@ -54,7 +56,15 @@ export function bannerPng(width = 316, height = 158): Buffer {
   ]);
 }
 
-export async function createPublishedBannerFixture() {
+export function brightBannerPng(): Buffer {
+  return readFileSync(
+    join(process.cwd(), 'tests/fixtures/registration-hero-bright-artwork.png'),
+  );
+}
+
+export async function createPublishedBannerFixture(
+  bytes: Buffer = bannerPng(),
+) {
   const db = sql();
   const fixture = await registrationFixture();
   const token = secret();
@@ -62,7 +72,6 @@ export async function createPublishedBannerFixture() {
     token_hash: token.hash,
   });
   if (issued.error) throw new Error('Registration fixture issuance failed');
-  const bytes = bannerPng();
   const upload = await fixture.woA.client.rpc('branding_upload_begin', {
     workspace_id: fixture.wsA.id,
     role: 'banner',
