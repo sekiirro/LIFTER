@@ -35,8 +35,14 @@ async function createSelection(
 it('T008 serializes distinct selections racing with the F12 approval fact', async () => {
   const context = await clientContext();
   const client = await registered(context);
-  const first = await createSelection(context.wsA.id, 'T008 concurrent option one');
-  const second = await createSelection(context.wsA.id, 'T008 concurrent option two');
+  const first = await createSelection(
+    context.wsA.id,
+    'T008 concurrent option one',
+  );
+  const second = await createSelection(
+    context.wsA.id,
+    'T008 concurrent option two',
+  );
 
   const [approval, firstSelection, secondSelection] = await Promise.all([
     context.po.client.rpc('registration_approve', {
@@ -64,8 +70,18 @@ it('T008 serializes distinct selections racing with the F12 approval fact', asyn
     (firstSelection.data as { status: string }).status,
     (secondSelection.data as { status: string }).status,
   ];
-  expect(selectionStatuses.some((status) => ['assigned', 'waiting_for_approval'].includes(status))).toBe(true);
-  expect(selectionStatuses.every((status) => ['assigned', 'waiting_for_approval', 'conflict', 'not_found'].includes(status))).toBe(true);
+  expect(
+    selectionStatuses.some((status) =>
+      ['assigned', 'waiting_for_approval'].includes(status),
+    ),
+  ).toBe(true);
+  expect(
+    selectionStatuses.every((status) =>
+      ['assigned', 'waiting_for_approval', 'conflict', 'not_found'].includes(
+        status,
+      ),
+    ),
+  ).toBe(true);
 
   const [selectionRows, assignmentRows, consumptionRows, audits] =
     await Promise.all([
@@ -90,7 +106,10 @@ it('T008 serializes distinct selections racing with the F12 approval fact', asyn
 it('T008 leaves a rejected F12 client unassigned when a selection fact exists', async () => {
   const context = await clientContext();
   const client = await registered(context);
-  const selection = await createSelection(context.wsA.id, 'T008 rejected client');
+  const selection = await createSelection(
+    context.wsA.id,
+    'T008 rejected client',
+  );
 
   const selected = await context.po.client.rpc('select_intake_form', {
     p_workspace_id: context.wsA.id,
@@ -99,7 +118,9 @@ it('T008 leaves a rejected F12 client unassigned when a selection fact exists', 
     p_version_number: 1,
   });
   expect(selected.error).toBeNull();
-  expect((selected.data as { status: string }).status).toBe('waiting_for_approval');
+  expect((selected.data as { status: string }).status).toBe(
+    'waiting_for_approval',
+  );
 
   const rejected = await context.po.client.rpc('registration_reject', {
     request: request(context, client, 'reject'),
@@ -123,7 +144,10 @@ it('T008 leaves a rejected F12 client unassigned when a selection fact exists', 
 it('T008 rolls back selection, assignment, consumption, and audit when assignment audit fails', async () => {
   const context = await clientContext();
   const client = await registered(context);
-  const selection = await createSelection(context.wsA.id, 'T008 audit rollback');
+  const selection = await createSelection(
+    context.wsA.id,
+    'T008 audit rollback',
+  );
   const auditGuard = `t008_reject_audit_${randomUUID().replaceAll('-', '')}`;
   const auditTrigger = `t008_reject_audit_trigger_${randomUUID().replaceAll('-', '')}`;
 
@@ -168,7 +192,9 @@ it('T008 rolls back selection, assignment, consumption, and audit when assignmen
           and target_id in (select id from public.form_assignments where client_id=${client.id})`,
     ).toHaveLength(0);
   } finally {
-    await db.unsafe(`drop trigger if exists ${auditTrigger} on public.audit_events`);
+    await db.unsafe(
+      `drop trigger if exists ${auditTrigger} on public.audit_events`,
+    );
     await db.unsafe(`drop function if exists app_private.${auditGuard}()`);
   }
 });
@@ -177,7 +203,10 @@ it('T008 rechecks selection authorization after an advisory-lock wait', async ()
   const context = await clientContext();
   const client = await registered(context);
   const trainer = await createStaff('trainer', 't008-stale-authorization');
-  const selection = await createSelection(context.wsA.id, 'T008 stale authorization');
+  const selection = await createSelection(
+    context.wsA.id,
+    'T008 stale authorization',
+  );
   const lockKey = `${context.wsA.id}:${client.id}`;
   await db`
     insert into public.workspace_memberships(workspace_id,user_id,granted_by)
@@ -225,7 +254,10 @@ it('T008 rechecks selection authorization after an advisory-lock wait', async ()
       waiting = Boolean(row?.waiting);
       if (!waiting) await new Promise((resolve) => setTimeout(resolve, 20));
     }
-    expect(waiting, 'select_intake_form must reach the controlled advisory-lock wait').toBe(true);
+    expect(
+      waiting,
+      'select_intake_form must reach the controlled advisory-lock wait',
+    ).toBe(true);
 
     await db`
       update public.workspace_memberships
@@ -250,8 +282,12 @@ it('T008 rechecks selection authorization after an advisory-lock wait', async ()
 
 function assertF12LockOrder(body: string) {
   const clientLock = body.indexOf('select * into c from public.clients');
-  const subscriptionLock = body.indexOf('perform s.id from public.subscriptions');
-  const obligationLock = body.indexOf('perform i.id from public.subscription_installments');
+  const subscriptionLock = body.indexOf(
+    'perform s.id from public.subscriptions',
+  );
+  const obligationLock = body.indexOf(
+    'perform i.id from public.subscription_installments',
+  );
   const eventLock = body.indexOf('perform e.id from public.payment_events');
   expect(clientLock).toBeGreaterThanOrEqual(0);
   expect(subscriptionLock).toBeGreaterThan(clientLock);
@@ -273,11 +309,16 @@ it('T008 lock-order assertion kills a client/subscription lock-order mutant', as
       select p.prosrc as body from pg_catalog.pg_proc p
       where p.oid='app_private.f12_u3_operation(text,jsonb)'::regprocedure
   `;
-    const clientLock = 'select * into c from public.clients where workspace_id=ws and id=cid for update;';
-    const subscriptionLock = 'perform s.id from public.subscriptions s where s.workspace_id=ws and s.client_id=cid order by s.id for update;';
-    const body = row?.body as string;
-    expect(body).toContain(clientLock);
-    expect(body).toContain(subscriptionLock);
-    const mutatedBody = body.replace(clientLock, '__LOCK_SWAP__').replace(subscriptionLock, clientLock).replace('__LOCK_SWAP__', subscriptionLock);
-    expect(() => assertF12LockOrder(mutatedBody)).toThrow();
+  const clientLock =
+    'select * into c from public.clients where workspace_id=ws and id=cid for update;';
+  const subscriptionLock =
+    'perform s.id from public.subscriptions s where s.workspace_id=ws and s.client_id=cid order by s.id for update;';
+  const body = row?.body as string;
+  expect(body).toContain(clientLock);
+  expect(body).toContain(subscriptionLock);
+  const mutatedBody = body
+    .replace(clientLock, '__LOCK_SWAP__')
+    .replace(subscriptionLock, clientLock)
+    .replace('__LOCK_SWAP__', subscriptionLock);
+  expect(() => assertF12LockOrder(mutatedBody)).toThrow();
 });
