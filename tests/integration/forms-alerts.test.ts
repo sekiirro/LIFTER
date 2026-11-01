@@ -176,6 +176,8 @@ it('keeps D-03 Trainer-late Q4 stages independent, supports seven-day catch-up, 
         f.po.userId,
       );
       const d03Deadline = '2026-03-10T09:00:00.000Z';
+      await tx`insert into public.workspace_memberships(workspace_id,user_id,granted_by)
+        values(${f.wsA.id},${f.trainerB.userId},${f.po.userId})`;
       const onTimeAssignment = await formAssignment(
         tx,
         f.wsA.id,
@@ -205,7 +207,7 @@ it('keeps D-03 Trainer-late Q4 stages independent, supports seven-day catch-up, 
         await tx`insert into app_private.form_alert_schedules(
         workspace_id,source_assignment_id,alert_kind,deadline_at,trainer_user_id
       ) values(
-        ${f.wsA.id},${catchUpAssignment},'trainer_late',${d03Deadline}::timestamptz,${f.trainerB.userId}
+        ${f.wsA.id},${catchUpAssignment},'trainer_late','2026-03-20T09:00:00.000Z'::timestamptz,${f.trainerB.userId}
       ) returning id`;
       expect(await core(tx, f.wsA.id, '2026-03-10T08:59:59.999Z')).toEqual({
         status: 'ok',
@@ -233,6 +235,10 @@ it('keeps D-03 Trainer-late Q4 stages independent, supports seven-day catch-up, 
       );
       expect(await core(tx, f.wsA.id, '2026-03-16T09:00:00.000Z')).toEqual({
         status: 'ok',
+        enqueued: 0,
+      });
+      expect(await core(tx, f.wsA.id, '2026-03-26T09:00:00.000Z')).toEqual({
+        status: 'ok',
         enqueued: 3,
       });
       const caughtUp = await tx`select stage,recipient_user_id
@@ -241,7 +247,7 @@ it('keeps D-03 Trainer-late Q4 stages independent, supports seven-day catch-up, 
       expect(caughtUp.map((row) => row.recipient_user_id).sort()).toEqual(
         [f.trainerB.userId, f.po.userId, f.woA.userId].sort(),
       );
-      expect(await core(tx, f.wsA.id, '2026-03-18T09:00:00.000Z')).toEqual({
+      expect(await core(tx, f.wsA.id, '2026-03-28T09:00:00.000Z')).toEqual({
         status: 'ok',
         enqueued: 0,
       });
