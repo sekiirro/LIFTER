@@ -470,4 +470,61 @@ describe('F16 mutation probes', () => {
       expect((error as Error).message).toBe(marker);
     }
   });
+
+  it('T021: lifecycle, active-survivor, and cycle guards fail under mutation', async () => {
+    const sourceId = randomUUID();
+    const targetId = randomUUID();
+    const marker = 'rollback_catalog_exercise_lifecycle_mutation';
+    try {
+      await db.begin(async (tx) => {
+        for (const id of [sourceId, targetId]) {
+          await tx`insert into public.exercises(id, created_by, current_version)
+            values (${id}, ${po.userId}, 1)`;
+          await tx`insert into public.exercise_versions(exercise_id, version, payload, created_by)
+            values (${id}, 1, '{}'::jsonb, ${po.userId})`;
+        }
+        await tx`insert into public.exercise_lifecycle_events(exercise_id, revision, lifecycle_state, actor_user_id)
+          values (${sourceId}, 1, 'removed', ${po.userId})`;
+        await tx`alter table public.exercise_lifecycle_events disable trigger exercise_lifecycle_events_append_only`;
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx`update public.exercise_lifecycle_events set lifecycle_state = 'active' where exercise_id = ${sourceId} and revision = 1`,
+            ).rejects.toMatchObject({ code: '23514' }),
+          'removing lifecycle event immutability must break its no-update assertion',
+        );
+
+        await tx`update public.exercises set lifecycle_state = 'removed' where id = ${targetId}`;
+        await tx`create or replace function public.catalog_merge_exercise(p_source_id uuid, p_target_id uuid, p_expected_source_revision integer, p_operation_key uuid)
+          returns jsonb language sql security definer set search_path = '' as $$ select '{}'::jsonb $$`;
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: po.userId, role: 'authenticated' })}, true)`;
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx`select public.catalog_merge_exercise(${sourceId}, ${targetId}, 0, ${randomUUID()})`,
+            ).rejects.toMatchObject({ code: '23514' }),
+          'removing active-survivor validation must break the merge-state denial',
+        );
+
+        await tx`select set_config('role', 'postgres', true)`;
+        await tx`update public.exercises set lifecycle_state = 'merged', superseded_by = ${targetId} where id = ${sourceId}`;
+        await tx`update public.exercises set lifecycle_state = 'merged', superseded_by = ${sourceId} where id = ${targetId}`;
+        const cycle = await tx`
+          with recursive chain(start_id, id, superseded_by, path, cycle) as (
+            select e.id, e.id, e.superseded_by, array[e.id], false from public.exercises e where e.id in (${sourceId}, ${targetId})
+            union all
+            select c.start_id, e.id, e.superseded_by, c.path || e.id, e.id = any(c.path)
+            from chain c join public.exercises e on e.id = c.superseded_by where c.superseded_by is not null and not c.cycle
+          ) select exists(select 1 from chain where cycle) as has_cycle`;
+        await expectMutationToBreak(async () => {
+          expect(cycle[0]?.has_cycle).toBe(false);
+        }, 'removing deterministic merge state checks must break the no-cycle invariant');
+        expect(cycle[0]?.has_cycle).toBe(true);
+        throw new Error(marker);
+      });
+    } catch (error) {
+      expect((error as Error).message).toBe(marker);
+    }
+  });
 });

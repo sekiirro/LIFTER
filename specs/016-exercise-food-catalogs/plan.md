@@ -57,9 +57,9 @@ Routes under `app/(dashboard)/catalog/{exercises,foods}`: list + search + filter
 3. Playwright + axe AR/EN light/dark mobile/desktop; perf fixture 10k foods for search.
 4. Full gates once on the final head; CodeRabbit; CI window; PO exact-SHA approval.
 
-## Deferred implementation detail
+## Resolved implementation detail
 
-- REQUIRED before the F16 feature PR merges — **Define the lifecycle for workspace exercise variations (Minor; PR #26 round 9):** align FR-003 and acceptance tests with the versioned variation model, including Remove/Restore visibility and dynamic video behavior after removal. Resolve with implementation.
+- **Workspace exercise variation lifecycle (Minor; PR #26 round 9):** mappings use immutable versions, Remove/Restore lifecycle markers, and dynamic selected-workspace video resolution. Removed mappings are hidden until restored.
 
 ## Ownership
 
@@ -97,4 +97,4 @@ specs/016-exercise-food-catalogs/{spec.md, plan.md, debate.md, tasks.md (after a
 
 ## Branch reconciliation note
 
-The supporting design artifacts on this feature branch are reconciled to this canonical spec and plan: Remove/Restore lifecycle, product/preparation/weighing-state duplicate identity, shared operation ledger, explicit workspace read scope, role-wide transactional caps and PO-only provenance reads. Workspace exercise-variation lifecycle acceptance remains a required item in the deferred list below.
+The supporting design artifacts on this feature branch are reconciled to this canonical spec and plan: Remove/Restore lifecycle, product/preparation/weighing-state duplicate identity, shared operation ledger, explicit workspace read scope, role-wide transactional caps and PO-only provenance reads. Workspace exercise-variation Remove/Restore uses immutable mapping versions and dynamic video resolution.
