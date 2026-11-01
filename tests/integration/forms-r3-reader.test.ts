@@ -132,11 +132,18 @@ describe('T004 single audited answer reader', () => {
             `;
             await tx`reset role`;
             if (!actor.allowed) {
-              expect(row?.answer, `${actor.label} ${view} must deny`).toBeNull();
+              expect(
+                row?.answer,
+                `${actor.label} ${view} must deny`,
+              ).toBeNull();
             } else if (view === 'current') {
-              expect(row?.answer, `${actor.label} ${view}`).toEqual(secondAnswers);
+              expect(row?.answer, `${actor.label} ${view}`).toEqual(
+                secondAnswers,
+              );
             } else if (view === 'draft') {
-              expect(row?.answer, `${actor.label} ${view}`).toEqual(draftAnswers);
+              expect(row?.answer, `${actor.label} ${view}`).toEqual(
+                draftAnswers,
+              );
             } else {
               expect(row?.answer, `${actor.label} ${view}`).toEqual([
                 { revision: 1, answers: firstAnswers },
