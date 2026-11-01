@@ -4,7 +4,7 @@ Date: 2026-11-02. Stack C only. This is a local release audit; it does not autho
 
 | Gate | Status | Evidence / remaining item |
 |---|---|---|
-| Migration range, timestamp validity, uniqueness and order | FAIL | All 104 names sort lexically and F16 files are in range; however T027 `20261106116000` encodes 11:60:00 and T028 `20261106117000` encodes 11:70:00, both invalid UTC clock times. The full repo scan found 13 invalid timestamp names (11 pre-existing outside F16 plus these 2 F16). Pushed migrations were not edited. This is a release blocker. |
+| Migration range, timestamp validity, uniqueness and order | FAIL | All 104 names sort lexically and F16 files are in range; however S25-PO-7 branch-only rename moved T027 to `20261106115100` and T028 to `20261106115200`; both sort after `20261106115000` in order. After rename, the full repo scan still finds 11 invalid timestamp names, all pre-existing merged exceptions listed by the new validator. |
 | Fresh reset and replay | PASS | Clean Stack C reset completed; full replay count 104. |
 | Empty catalog seed | PASS | Clean replay `catalog-schema.test.ts` 1/1. |
 | Audit/idempotency atomicity | PASS | `catalog-operation-keys.test.ts` and catalog operation integration assertions; operation key result, claim/work/result and audit behavior tested transactionally. |
