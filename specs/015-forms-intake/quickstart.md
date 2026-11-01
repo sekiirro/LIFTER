@@ -33,7 +33,7 @@ node 'C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs' --workdir 'C:/Users/NEW 
 
 $env:SUPABASE_SAFE_CLI='node "C:/Program Files/nodejs/node_modules/npm/bin/npx-cli.js"'
 $env:LIFTER_SUPABASE_STACK='d'
-node 'C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs' --workdir 'C:/Users/NEW LAP/Desktop/LFTR-p2/supabase-stack-d' --stack D exec -- node 'C:/Users/NEW LAP/Desktop/LFTR-p2/tests/integration/client-accounts-provision.mjs'
+node 'C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs' --workdir 'C:/Users/NEW LAP/Desktop/LFTR-p2/supabase-stack-d' --stack D exec -- node -e "process.chdir('C:/Users/NEW LAP/Desktop/LFTR-p2'); import('file:///C:/Users/NEW%20LAP/Desktop/LFTR-p2/tests/integration/client-accounts-provision.mjs').catch(error => { console.error(error); process.exitCode=1; });"
 ```
 
 Then run the existing Vault grant assertion (`tests/integration/client-accounts-schema.test.ts`, test `Vault keys are inaccessible to API roles, including service_role`) through the same Stack D wrapper. Do not run the provisioner directly or inspect/print its environment files; it handles local credentials internally.
