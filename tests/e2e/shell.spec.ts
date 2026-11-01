@@ -143,6 +143,76 @@ for (const locale of ['ar', 'en'] as const) {
       }
     });
 
+    test('Arabic RTL portal tooltip stays content-sized beside its trigger in both themes', async ({
+      browser,
+    }, testInfo) => {
+      test.skip(
+        testInfo.project.name !== 'chromium',
+        'Desktop portal tooltip geometry uses Chromium.',
+      );
+      test.skip(locale !== 'ar', 'RTL geometry applies to Arabic.');
+
+      const context = await browser.newContext({
+        javaScriptEnabled: true,
+        viewport: { width: 1280, height: 800 },
+      });
+      try {
+        await context.addCookies([
+          { name: LOCALE_COOKIE, value: 'ar', url: origin },
+        ]);
+        const page = await context.newPage();
+        for (const colorScheme of ['light', 'dark'] as const) {
+          await context.addCookies([
+            { name: THEME_COOKIE, value: colorScheme, url: origin },
+          ]);
+          await page.emulateMedia({ colorScheme });
+          await page.goto(
+            new URL('/showcase/shell?role=trainer', origin).toString(),
+          );
+
+          const rail = page.getByTestId('nav-rail');
+          const link = rail.getByRole('link', { name: m['nav.home'] });
+          const tooltip = page.getByTestId('tooltip-home');
+          const checkGeometry = async () => {
+            await expect(tooltip).toHaveAttribute('data-visible', 'true');
+            const [triggerBox, tooltipBox, measurement] = await Promise.all([
+              link.boundingBox(),
+              tooltip.boundingBox(),
+              tooltip.evaluate((element) => {
+                const style = getComputedStyle(element);
+                const range = document.createRange();
+                range.selectNodeContents(element);
+                return {
+                  textWidth: range.getBoundingClientRect().width,
+                  horizontalPadding:
+                    Number.parseFloat(style.paddingLeft) +
+                    Number.parseFloat(style.paddingRight),
+                };
+              }),
+            ]);
+            if (!triggerBox || !tooltipBox)
+              throw new Error('Expected visible trigger and tooltip');
+            expect(tooltipBox.width).toBeLessThanOrEqual(
+              measurement.textWidth + measurement.horizontalPadding + 4,
+            );
+            expect(tooltipBox.x + tooltipBox.width).toBeLessThanOrEqual(
+              triggerBox.x + 1,
+            );
+            expect(tooltipBox.x).toBeGreaterThan(0);
+          };
+
+          await link.hover();
+          await checkGeometry();
+          await page.mouse.move(0, 0);
+          await page.keyboard.press('Tab');
+          await expect(link).toBeFocused();
+          await checkGeometry();
+        }
+      } finally {
+        await context.close();
+      }
+    });
+
     for (const role of ['trainer', 'client'] as const) {
       test(`mobile ${role} bottom bar has ordered visible labels and 44px targets`, async ({
         page,
