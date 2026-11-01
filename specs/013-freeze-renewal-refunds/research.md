@@ -127,5 +127,5 @@ below was re-read from `origin/main`, not inferred from the pre-merge branch. **
 
 - PO-1 token issuance timing is closed by the tested Custom Access Token hook. The hook does not revoke already-issued JWTs; PO accepted their natural expiry.
 - **F14 integration completed in S21**: the full 34-migration F14 chain through `20261102152000` replayed before F13; F12/F13/F14 shared-function and capability expectations passed T017.
-- **Verified isolated stack ? Stack C assigned**: F13 uses lifter-stack-c only (API 35421, DB 35422). Never use Stack A or B.
+- **Verified isolated stack — Stack C assigned**: F13 uses lifter-stack-c only (API 35421, DB 35422). Never use Stack A or B.
 - **Retention — PRE-PRODUCTION BLOCKER**: technical feasibility across all recoverable copies including backups and applicable legal exceptions must be resolved before real client data/production.

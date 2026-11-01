@@ -35,7 +35,7 @@ Supabase allows one `custom_access_token` hook per project; all future claim cus
 - **V, versioned content**: pass; purchase snapshots and issued obligations are not rewritten.
 - **VI, human-governed decisions**: pass; no automatic compensation or discipline.
 - **VII, privacy**: pass; narrow audit fields, no PII/secrets/free text in logs; legal/technical retention is a pre-production blocker.
-- **VIII, bilingual accessible UI**: no rendered UI is planned. Any later UI unit must append `C:/Users/NEW LAP/.lifter/briefs/frontend-design-gate.txt` to its brief and follow `DESIGN.md`.
+- **VIII, bilingual accessible UI**: no rendered UI is planned. Any later UI unit must follow the repository's [Frontend Design Gate](../../docs/09-frontend-design-gate.md) and [DESIGN.md](../../DESIGN.md).
 - **IX, reliable operations**: pass subject to proving the PO-1 transaction boundary and F12 lock/replay contract before dependent implementation.
 
 No constitutional exception is requested. Recheck after design: no exception; Auth atomicity and F12 U4 remain blocking gates for dependent units.
