@@ -14,6 +14,13 @@
 
 ## Decisions carried forward
 
+### S25-R3 renewal occurrence semantics
+
+- Renewal occurrences use the opaque key `renewal:<subscription-id>`. Payment or confirmation time is not a delivery clock. Evaluation is eligible once the current F13 service window has started in Cairo: the latest `subscription_renewal_date_revisions.service_start_date`, falling back to the immutable `subscription_renewals.service_start_date`, is on or before today, and `f13_project_entitlement(..., today)` is `active`.
+- The check is level-triggered and idempotent. A later evaluation can materialize a missed renewal occurrence exactly once; replay is suppressed by the occurrence ledger. This does not replay recurring dates skipped while the entitlement was frozen or inactive: each recurring date has its own key and is evaluated only for that date.
+- Worked freeze example: if a renewal was initially scheduled for day 10 and an F13 freeze reflows its actual start to day 15, day 10 remains ineligible even if payment was recorded earlier. Day 15 is the first eligible date when F13 projects `active`; a later repeated evaluation sees the same `renewal:<subscription-id>` key and creates no duplicate.
+- Stack D has the forward migration `20261104030600_f15_renewal_service_start_idempotency.sql`. Existing focused T010/T023 tests cover recurrence replay, approved-at onboarding cutoff, future entitlement rules, audience snapshots, Sales denial, and stale authorization after a lock wait. Real renewal/freeze delivery fixtures and the full requested mutation matrix remain pending, so T010/T023 remain partial.
+
 | Topic | Planning decision | Basis |
 | --- | --- | --- |
 | Storage | PostgreSQL only for MVP Forms data; no attachment feature/storage | FR-032 and Final PO APPROVAL: permission covers attachments wherever they exist, not creation of storage |
