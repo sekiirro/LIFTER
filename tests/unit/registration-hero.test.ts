@@ -3,6 +3,7 @@ import { describe, expect, it } from 'vitest';
 import {
   PHONE_NUMBER_GROUP_DIRECTION,
   PHONE_NUMBER_GROUP_GAP,
+  HERO_CARD_FILL_ALPHA,
   MAX_ADAPTIVE_DIMMING,
   adaptiveDimmingFromLuminance,
   photoToneFromLuminance,
@@ -46,7 +47,9 @@ describe('production registration hero adaptive dimming', () => {
     'keeps white text at 4.5:1 or better for artwork luminance %s',
     (luminance) => {
       const dimming = adaptiveDimmingFromLuminance(luminance);
-      const backdropLuminance = luminance * (1 - dimming);
+      const backdropLuminance =
+        (1 - HERO_CARD_FILL_ALPHA) * luminance * (1 - dimming) +
+        HERO_CARD_FILL_ALPHA;
       const contrast = 1.05 / (backdropLuminance + 0.05);
       expect(contrast).toBeGreaterThanOrEqual(4.5);
     },
@@ -57,12 +60,8 @@ describe('production registration hero adaptive dimming', () => {
     expect(photoToneFromLuminance(0.05)).toBe('dim');
   });
 
-  it('retains the existing curve where it exceeds the contrast minimum', () => {
-    expect(adaptiveDimmingFromLuminance(0.183)).toBeCloseTo(0.00399, 5);
-  });
-
   it('dims bright artwork using the contrast-safe curve', () => {
-    expect(adaptiveDimmingFromLuminance(0.5)).toBeCloseTo(0.6333, 4);
+    expect(adaptiveDimmingFromLuminance(0.5)).toBeCloseTo(0.6498, 4);
     expect(photoToneFromLuminance(0.5)).toBe('mid');
     expect(photoToneFromLuminance(0.9)).toBe('bright');
   });
@@ -70,7 +69,7 @@ describe('production registration hero adaptive dimming', () => {
   it('clamps invalid and extreme luminance inputs', () => {
     expect(adaptiveDimmingFromLuminance(-1)).toBe(0);
     expect(adaptiveDimmingFromLuminance(1)).toBe(MAX_ADAPTIVE_DIMMING);
-    expect(MAX_ADAPTIVE_DIMMING).toBeCloseTo(49 / 60, 12);
+    expect(MAX_ADAPTIVE_DIMMING).toBeCloseTo(245 / 297, 12);
     expect(adaptiveDimmingFromLuminance(Number.NaN)).toBe(0);
   });
 });

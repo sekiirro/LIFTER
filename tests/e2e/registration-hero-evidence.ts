@@ -5,6 +5,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { inflateSync } from 'node:zlib';
 import {
+  HERO_CARD_FILL_ALPHA,
   MAX_ADAPTIVE_DIMMING,
   adaptiveDimmingFromLuminance,
 } from '../../components/branding/registration-hero';
@@ -192,7 +193,8 @@ export async function expectHeroMaterialContract(page: Page) {
  * Glass mode: the white form text sits on the dimmed photo. The hero samples
  * the luminance behind the card (`--hero-photo-luminance`) and applies the
  * approved adaptive dimming, so the effective backdrop luminance is the
- * sampled value scaled by the remaining transparency.
+ * sampled value scaled by the remaining transparency, then composited with
+ * the card's own 1% white fill.
  *
  * Token mode (no artwork, or a bright photo in the light theme): the form
  * text uses the theme tokens, so the token pair is measured directly.
@@ -280,7 +282,10 @@ export async function expectHeroTextContrast(page: Page) {
     expectedAdaptiveDimming * 100,
   );
   const effectiveLuminance =
-    surface.photoLuminance * (1 - surface.adaptiveDimmingPercent / 100);
+    (1 - HERO_CARD_FILL_ALPHA) *
+      surface.photoLuminance *
+      (1 - surface.adaptiveDimmingPercent / 100) +
+    HERO_CARD_FILL_ALPHA;
   expect(
     contrast(cssLuminance(surface.labelColor), effectiveLuminance),
   ).toBeGreaterThanOrEqual(4.5);

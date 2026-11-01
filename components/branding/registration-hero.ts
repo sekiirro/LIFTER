@@ -23,11 +23,18 @@ export function photoToneFromLuminance(luminance: number): HeroPhotoTone {
   return 'dim';
 }
 
-// Maximum backdrop luminance for 4.5:1 contrast against white text.
+// Maximum composited backdrop luminance for 4.5:1 contrast against white text.
 export const MAX_BACKDROP_LUMINANCE_FOR_WHITE_TEXT = 1.05 / 4.5 - 0.05;
 
-// The cap reaches exactly the contrast limit when the artwork reaches white.
-export const MAX_ADAPTIVE_DIMMING = 1 - MAX_BACKDROP_LUMINANCE_FOR_WHITE_TEXT;
+// The glass card mixes its white 1% fill with the dimmed black fill.
+export const HERO_CARD_FILL_ALPHA = 0.01;
+
+// The cap reaches the contrast limit after the card fill is composited.
+export const MAX_ADAPTIVE_DIMMING =
+  1 -
+  (MAX_BACKDROP_LUMINANCE_FOR_WHITE_TEXT - HERO_CARD_FILL_ALPHA) /
+    (1 - HERO_CARD_FILL_ALPHA) +
+  Number.EPSILON;
 
 export function adaptiveDimmingFromLuminance(luminance: number): number {
   if (!Number.isFinite(luminance)) return 0;
@@ -38,7 +45,10 @@ export function adaptiveDimmingFromLuminance(luminance: number): number {
   );
   const contrastRequiredDimming =
     boundedLuminance > 0
-      ? 1 - MAX_BACKDROP_LUMINANCE_FOR_WHITE_TEXT / boundedLuminance
+      ? 1 -
+        (MAX_BACKDROP_LUMINANCE_FOR_WHITE_TEXT - HERO_CARD_FILL_ALPHA) /
+          ((1 - HERO_CARD_FILL_ALPHA) * boundedLuminance) +
+        Number.EPSILON
       : 0;
   return Math.min(
     MAX_ADAPTIVE_DIMMING,
