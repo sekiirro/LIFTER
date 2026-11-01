@@ -58,7 +58,10 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   invented, and no behavior may be imported from YBS.
 - PRD-12 exclusions MUST NOT be built. Examples: public marketing pages, payment gateway,
   in-app chat/helpdesk/broadcasts, bulk client actions, web workout/meal logging, web progress
-  photos, Hevy, AI alternatives, automatic bonuses/deductions/firing, mandatory 2FA, YBS sync.
+  photos, Hevy, AI-generated alternatives, automatic bonuses/deductions/firing, mandatory 2FA, YBS sync.
+- Nutrition templates may be global (PO-managed) or workspace-owned (managed by authorized staff).
+  The PO may Make it Global only after private data and references are removed. This is the
+  PO-approved D18-1 amendment; template copies and audit must preserve workspace isolation.
 - Unknown values MUST be marked NEEDS SOURCE CONFIRMATION, never guessed.
 - The pilot MAY sequence features but MUST NOT remove Full Launch scope (D-07).
 
@@ -68,8 +71,9 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   versions. Edits create new versions.
 - Published plans MUST snapshot the food nutrition values and canonical exercise identities they
   use. Submitted forms MUST remain readable after template changes.
-- A first subscription activates only on the atomic delivery of both initial plans, with
-  `activated_at` = the delivery timestamp and exactly one productivity unit per subscription.
+- First workout and nutrition plans may be delivered independently, including on different
+  days. A subscription activates exactly once after both first deliveries succeed. Delivery
+  operations are secure, idempotent and concurrency-safe; later edits never restart activation.
 
 ### VI. Human-Governed People Decisions
 
@@ -83,15 +87,8 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 
 - Client health, fitness and personal data MUST be least-privilege, never written to logs, and
   every access to sensitive actions and exports MUST be audited.
-- Audit history MUST be append-only and tamper-resistant, except that an explicitly approved,
-  narrowly scoped privacy-erasure mechanism MAY delete an inapplicable client answer and its
-  directly related answer-version records and answer-change and access-view audit records when
-  required by an approved form-branch change. The exception MUST NOT permit general audit
-  editing, deletion, truncation, or alteration of financial, authentication, authorization,
-  security, or unrelated client records. Each erasure MUST be authorized, tenant-isolated,
-  idempotent, and recorded in a separate append-only deletion-control record containing counts
-  only and no assignment, question, or answer IDs. The client timeline is a curated projection,
-  not the audit log.
+- Audit history MUST be append-only and tamper-resistant. The client timeline is a curated
+  projection, not the audit log.
 - Account closure MUST deactivate access and pseudonymize PII while keeping the legally required
   ledger and audit records.
 - Reset, registration and Telegram link tokens MUST be hashed, expiring and single-use.
@@ -197,12 +194,12 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Every spec, plan and review MUST include a constitution check. Deviations MUST be justified in
   the plan's complexity tracking and approved before implementation.
 
-**Version**: 1.4.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-30 (D1 privacy-erasure exception, D-29; prior amendments D-27 and D-28, earlier D-22 and D-26)
+**Version**: 1.4.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-31 (D18-1 nutrition template ownership and shared Plan Core lifecycle, PO S20 Message B sections 3 and 4; prior amendments D-22, D-26 and D-27)
 
 ### Sync impact report and amendment note - 2026-10-29 (D-27)
 
 Adaptive Model Routing and the six-agent concurrency limit were approved by the PO (sessions 10 + 11). Sync impact: `docs/08-agent-workflow.md` mirrors model eligibility, escalation, performance logging, worktree isolation, and concurrency. Tests-first, CI push + pull_request, CodeRabbit approval on the final head, resolved threads, exact-head checks, and explicit PO merge approval are unchanged. No product or feature requirements changed. The PO later expanded the GLM tier (2026-10-29) from documentation-only to implementation, CI workflows, configuration and moderate-risk work under mandatory architect review and passing tests, while reserving genuinely high-risk security, Auth, RLS, migration and financial work for Luna High or Sol Medium.
 
-### Sync impact report and amendment note - 2026-10-30 (D-29)
+### Sync impact report and amendment note: 2026-10-31 (PO S20 Message B sections 3 and 4)
 
-The PO approved the F15 D1 privacy-erasure exception verbatim in `C:/Users/NEW LAP/.lifter/briefs/s13-po-decisions-2026-10-29.md`, § “F15 D1 Constitutional Amendment — PO APPROVED”; proposal: `specs/015-forms-intake/reports/D1-amendment-security-review.md` at `f8524fd`. The approved scope deletes only inapplicable answer values across versions and their answer-change and access-view audit rows. Legal holds defer deletion and alert; the separate deletion-control record contains counts only and no assignment, question or answer IDs. Sync impact: F15 spec, plan, data model, authorization/audit and retention contracts, tasks, and DB-free selector tests record the approved constraints and implementation boundary. Database migrations remain blocked on F12/F14 merge and Stack C. This materially expands Constitution VII's privacy and audit principle, so the semantic-version rule requires a MINOR bump from 1.3.0 to 1.4.0. The approval is design-only and does not approve a merge or exact future migration.
+The PO amended PRD-05/PRD-12 to allow workspace-owned nutrition templates managed by authorized staff alongside PO-managed global templates. The PO may Make it Global after private data and references are removed. Shared Plan Core now allows same-Plan-ID editing, private draft autosave, Save as Draft, one Ready & Publish action, independent first deliveries on different days, and exactly-once activation after both deliveries succeed. Specs 016 through 019, PRD/BRD, docs/03-roadmap.md, docs/04-changes-and-questions.md, docs/01-traceability.md, docs/10-feature-tracker.md and DESIGN.md record the matching contracts. D18-1 materially expands Principle IV/product scope; version bumped from 1.3.0 to 1.4.0.

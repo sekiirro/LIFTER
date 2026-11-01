@@ -8,6 +8,11 @@ import { createPublicSessionClient } from '../../../lib/supabase/public-session'
 import { phoneCountryOptions } from '../../../lib/client-accounts/phone';
 import { submitClientSignup } from './actions';
 import { SignupForm } from './SignupForm';
+import { BrandScope } from '../../../components/ui/BrandScope';
+import { Card } from '../../../components/ui/Card';
+import { RegistrationBrand } from '../../../components/branding/RegistrationBrand';
+import { DEFAULT_BRAND } from '../../../lib/design/color';
+import signupStyles from './signup.module.css';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export default async function RegisterPage({
@@ -31,29 +36,41 @@ export default async function RegisterPage({
     }
   }
   const signupAction = submitClientSignup.bind(null, token);
+  if (result.status === 'valid') {
+    return (
+      <main className={styles.main}>
+        <AuthPreferences />
+        <BrandScope color={result.branding?.color ?? DEFAULT_BRAND}>
+          <Card
+            as="article"
+            className={signupStyles.registrationCard}
+            data-registration-card="premium-centered"
+          >
+            <RegistrationBrand
+              brand={result.branding}
+              locale={locale}
+              token={token}
+              renderHandle={result.render_handle}
+              fallbackName={result.workspace_name}
+            />
+            <h1>{m['registration.publicValid']}</h1>
+            {signedIn && <p role="status">{m['clientSignup.signedIn']}</p>}
+            {!signedIn && (
+              <SignupForm
+                action={signupAction}
+                locale={locale}
+                phoneCountries={phoneCountryOptions(locale)}
+              />
+            )}
+          </Card>
+        </BrandScope>
+      </main>
+    );
+  }
   return (
     <main className={styles.main}>
       <AuthPreferences />
-      <h1>
-        {
-          m[
-            result.status === 'valid'
-              ? 'registration.publicValid'
-              : 'registration.publicInvalid'
-          ]
-        }
-      </h1>
-      {result.status === 'valid' && <p>{result.workspace_name}</p>}
-      {result.status === 'valid' && signedIn && (
-        <p role="status">{m['clientSignup.signedIn']}</p>
-      )}
-      {result.status === 'valid' && !signedIn && (
-        <SignupForm
-          action={signupAction}
-          locale={locale}
-          phoneCountries={phoneCountryOptions(locale)}
-        />
-      )}
+      <h1>{m['registration.publicInvalid']}</h1>
     </main>
   );
 }

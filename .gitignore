@@ -3,6 +3,7 @@
 .env.*
 !.env.example
 !.env.template
+!.env.stack-b.example
 .netrc
 .npmrc
 .pypirc
@@ -64,11 +65,17 @@ venv/
 *.sqlite3
 *.db
 *.log
+/supabase-stack-b/supabase/.branches/
+/supabase-stack-b/supabase/.temp/
+/supabase-stack-b/supabase/migrations/
 npm-debug.log*
 yarn-debug.log*
 pnpm-debug.log*
 tmp/
 temp/
+supabase-stack-c/supabase/migrations/
+supabase-stack-c/supabase/.branches/
+supabase-stack-c/supabase/.temp/
 
 # Stack D links its migration directory to the branch root
 /supabase-stack-d/supabase/.branches/

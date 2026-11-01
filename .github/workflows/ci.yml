@@ -45,6 +45,7 @@ jobs:
     permissions:
       contents: read
     env:
+      LIFTER_SUPABASE_STACK: a
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:
@@ -70,7 +71,7 @@ jobs:
         with:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
-      - run: supabase start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+      - run: supabase start -x studio,inbucket,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
       - name: Export local stack environment
         run: supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
       - name: Export app server environment
@@ -88,6 +89,71 @@ jobs:
       - name: Run full Playwright suite against the local stack
         run: npm run e2e -- --workers=1
         env:
+          LOCAL_SUPABASE_STORAGE_TEST: 'true'
           LOCAL_SUPABASE_PROVIDER_FAULT_TEST: 'true'
+      - run: supabase stop --no-backup
+        if: always()
+
+  storage:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    env:
+      LIFTER_SUPABASE_STACK: a
+      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
+      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - run: npm ci
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+      - name: Login to Docker Hub
+        if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
+        # docker/login-action v4.6.0
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f
+        with:
+          username: ${{ env.DOCKERHUB_USERNAME }}
+          password: ${{ env.DOCKERHUB_TOKEN }}
+      - run: supabase start -x studio,inbucket,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+      - name: Export local stack environment
+        run: supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
+      - name: Export app server environment
+        run: |
+          echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
+          echo "SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
+          echo "APP_ORIGIN=http://localhost:3000" >> "$GITHUB_ENV"
+      - name: Wait for Storage readiness
+        run: node scripts/wait-storage-ready.mjs
+      - name: Provision local Vault signup keys
+        run: node tests/integration/client-accounts-provision.mjs
+      - run: npx playwright install --with-deps chromium
+      - name: Run all F14 Storage integrations with zero skips
+        run: |
+          npm run test:integration -- \
+            tests/integration/branding-banner-pipeline.test.ts \
+            tests/integration/branding-owner-gc.test.ts \
+            tests/integration/branding-proxy-resolution.test.ts \
+            tests/integration/branding-storage-context.test.ts \
+            tests/integration/branding-storage-policy.test.ts \
+            tests/integration/branding-upload-recovery.test.ts \
+            tests/integration/branding-validator.test.ts \
+            --reporter=json --outputFile="$RUNNER_TEMP/branding-storage-integration.json"
+          node scripts/assert-storage-suite-zero-skips.mjs integration "$RUNNER_TEMP/branding-storage-integration.json"
+      - name: Run F14 banner and F11 pending-client Storage browser tests with zero skips
+        shell: bash
+        run: |
+          PLAYWRIGHT_JSON_OUTPUT_NAME="$RUNNER_TEMP/branding-storage-playwright.json" \
+            npm run e2e -- tests/e2e/branding-banner-loaded.spec.ts tests/e2e/branding-production-ui.spec.ts tests/e2e/client-accounts-storage.spec.ts --reporter=json --workers=1
+          node scripts/assert-storage-suite-zero-skips.mjs playwright "$RUNNER_TEMP/branding-storage-playwright.json"
+        env:
+          LOCAL_SUPABASE_STORAGE_TEST: 'true'
       - run: supabase stop --no-backup
         if: always()

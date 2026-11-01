@@ -16,25 +16,33 @@ import {
 } from './registration-links-fixture';
 
 const db = sql();
+let matrixMutationOriginal: string | undefined;
 // Catalog-derived candidates, never a second hand-maintained capability list.
 // Evaluate literals across all roles: this excludes role names and other SQL
 // strings while retaining capabilities that exist only in the SQL grant matrix.
 const sources =
   await db`select prosrc from pg_proc where oid in ('app_private.role_has_capability(public.staff_role,text)'::regprocedure,'app_private.has_workspace_access(uuid,text)'::regprocedure)`;
 const candidates = [
-  ...new Set(
-    sources.flatMap((row) =>
+  ...new Set([
+    ...CAPABILITIES,
+    ...sources.flatMap((row) =>
       [...(row.prosrc as string).matchAll(/'((?:''|[^'])*)'/g)].map((match) =>
         match[1]!.replaceAll("''", "'"),
       ),
     ),
-  ),
+  ]),
 ];
 const sqlCapabilities: string[] = [];
 for (const candidate of candidates) {
   const rows =
     await db`select app_private.role_has_capability(r,${candidate}) as allowed from unnest(enum_range(null::public.staff_role)) r`;
   if (rows.some((row) => row.allowed)) sqlCapabilities.push(candidate);
+}
+function capabilityDrift(ts: readonly string[], sql: readonly string[]) {
+  return {
+    tsOnly: ts.filter((capability) => !sql.includes(capability)),
+    sqlOnly: sql.filter((capability) => !ts.includes(capability)),
+  };
 }
 // Include ungranted literals too: a has_workspace_access-only special case must
 // be exercised even if role_has_capability would deny that literal.
@@ -48,9 +56,69 @@ const parityCapabilities = [
   ]),
 ];
 it('bidirectional catalog capability names equal TypeScript exactly', () => {
-  expect([...sqlCapabilities].sort()).toEqual([...CAPABILITIES].sort());
+  expect(capabilityDrift(CAPABILITIES, sqlCapabilities)).toEqual({
+    tsOnly: [],
+    sqlOnly: [],
+  });
 });
+
+it('T049 parity mutation probes detect Sales grant, dropped WO scope, and TS-only additions', async () => {
+  const tsSalesDecision = roleHasCapability('sales', 'manage_branding');
+  const mutatedSqlSalesDecision = true;
+  expect(tsSalesDecision).toBe(false);
+  expect(tsSalesDecision).not.toBe(mutatedSqlSalesDecision);
+
+  const foreignWorkspace = 'foreign-workspace';
+  const ownerScopeMutation = (
+    role: string,
+    requested: string,
+    active: readonly string[],
+  ) =>
+    role === 'platform_owner' ||
+    (role === 'workspace_owner' && requested !== '' && active.length > 0);
+  const actor: Actor = {
+    userId: 'wo-user',
+    role: 'workspace_owner',
+    activeWorkspaceIds: ['own-workspace'],
+  };
+  expect(authorize(actor, 'manage_branding', foreignWorkspace)).toBe(false);
+  const mutatedSqlForeignDecision = ownerScopeMutation(
+    'workspace_owner',
+    foreignWorkspace,
+    actor.activeWorkspaceIds,
+  );
+  expect(mutatedSqlForeignDecision).toBe(true);
+  expect(authorize(actor, 'manage_branding', foreignWorkspace)).not.toBe(
+    mutatedSqlForeignDecision,
+  );
+
+  const tsOnlyMutation = capabilityDrift(
+    [...CAPABILITIES, 'mutation_only_capability'],
+    sqlCapabilities,
+  );
+  expect(tsOnlyMutation.tsOnly).toContain('mutation_only_capability');
+});
+
+it('preserves the approved Trainer payment and freeze grants in both matrices', async () => {
+  for (const capability of ['record_payment', 'manage_freeze'] as const) {
+    expect(roleHasCapability('trainer', capability)).toBe(true);
+    const [row] = await db`
+      select app_private.role_has_capability('trainer'::public.staff_role, ${capability}) as allowed
+    `;
+    expect(row?.allowed).toBe(true);
+  }
+  expect(roleHasCapability('trainer', 'record_refund')).toBe(false);
+  const [refund] = await db`
+    select app_private.role_has_capability('trainer'::public.staff_role, 'record_refund') as allowed
+  `;
+  expect(refund?.allowed).toBe(false);
+});
+
 afterAll(async () => {
+  if (matrixMutationOriginal) {
+    await db.unsafe(matrixMutationOriginal);
+    console.log('manage_branding mutation restored');
+  }
   await db.end();
 });
 
@@ -201,7 +269,7 @@ describe('registration read and commission parity', () => {
   });
 });
 
-it('keeps the role and capability definitions unchanged', () => {
+it('preserves F12 approval removal and scopes F13 capabilities', () => {
   expect(ROLES).toEqual([
     'platform_owner',
     'workspace_owner',
@@ -222,6 +290,7 @@ it('keeps the role and capability definitions unchanged', () => {
     'manage_workspaces',
     'manage_staff_access',
     'coaching_work',
+    'manage_branding',
   ]);
   expect(
     Object.fromEntries(ROLES.map((role) => [role, [...MATRIX[role]]])),
@@ -235,8 +304,14 @@ it('keeps the role and capability definitions unchanged', () => {
       'record_payment',
       'manage_freeze',
       'coaching_work',
+      'manage_branding',
     ],
-    trainer: ['generate_registration_link', 'coaching_work'],
+    trainer: [
+      'generate_registration_link',
+      'record_payment',
+      'manage_freeze',
+      'coaching_work',
+    ],
     sales: [
       'generate_registration_link',
       'configure_installment_schedule',
@@ -248,7 +323,7 @@ it('keeps the role and capability definitions unchanged', () => {
 
 for (const role of ROLES) {
   for (const capability of parityCapabilities) {
-    it(`T010 parity: ${role} / ${capability}`, async () => {
+    it(`T005 bidirectional parity: ${role} / ${capability}`, async () => {
       const [row] =
         await db`select app_private.role_has_capability(${role}::public.staff_role, ${capability}) as allowed`;
       expect(row?.allowed).toBe(roleHasCapability(role, capability));
@@ -311,6 +386,35 @@ describe('has_workspace_access parity', () => {
         activeWorkspaceIds: [],
       },
     };
+    const mutation = process.env.F14_MATRIX_MUTATION;
+    if (mutation) {
+      const targets = {
+        sales: 'app_private.role_has_capability(public.staff_role,text)',
+        scope: 'app_private.has_workspace_access(uuid,text)',
+      } as const;
+      if (!(mutation in targets)) throw new Error('unknown_matrix_mutation');
+      const signature = targets[mutation as keyof typeof targets];
+      const [row] = await db<{ definition: string }[]>`
+        select pg_get_functiondef(${signature}::regprocedure) as definition
+      `;
+      if (!row?.definition) throw new Error('missing_matrix_mutation_target');
+      matrixMutationOriginal = row.definition;
+      const mutations: Record<string, [RegExp, string]> = {
+        sales: [
+          /then r in \('platform_owner', 'workspace_owner'\)/,
+          "then r in ('platform_owner', 'workspace_owner', 'sales')",
+        ],
+        scope: [
+          /exists\s*\(\s*select 1 from public\.workspace_memberships\s*where workspace_id = ws and user_id = auth\.uid\(\) and revoked_at is null\s*\)/,
+          'true',
+        ],
+      };
+      const [pattern, replacement] = mutations[mutation]!;
+      const mutated = matrixMutationOriginal.replace(pattern, replacement);
+      if (mutated === matrixMutationOriginal)
+        throw new Error('matrix_mutation_target_not_found');
+      await db.unsafe(mutated);
+    }
   });
 
   for (const identity of identities) {
@@ -345,6 +449,44 @@ describe('has_workspace_access parity', () => {
       }
     }
   }
+
+  it('manage_branding is PO-wide, WO-own-workspace, and denied to other roles', async () => {
+    const cases = [
+      { identity: 'po', expectedCapability: true },
+      { identity: 'woA', expectedCapability: true },
+      { identity: 'salesA', expectedCapability: false },
+      { identity: 'trainerA', expectedCapability: false },
+      { identity: 'noProfile', expectedCapability: false },
+    ] as const;
+
+    for (const { identity, expectedCapability } of cases) {
+      const actor = actors[identity];
+      const [capability] =
+        await db`select app_private.role_has_capability(${actor.role}::public.staff_role, 'manage_branding') as allowed`;
+      expect(
+        roleHasCapability(actor.role ?? 'trainer', 'manage_branding'),
+      ).toBe(expectedCapability);
+      expect(capability?.allowed ?? false).toBe(expectedCapability);
+
+      for (const workspaceId of [f.wsA.id, f.wsB.id]) {
+        const expectedAccess =
+          expectedCapability &&
+          (identity === 'po' ||
+            (identity === 'woA' && workspaceId === f.wsA.id));
+        expect(authorize(actor, 'manage_branding', workspaceId)).toBe(
+          expectedAccess,
+        );
+
+        await db.begin(async (tx) => {
+          await tx`select set_config('role', 'authenticated', true)`;
+          await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: actor.userId, role: 'authenticated' })}, true)`;
+          const [access] =
+            await tx`select app_private.has_workspace_access(${workspaceId}::uuid, 'manage_branding') as allowed`;
+          expect(access?.allowed).toBe(expectedAccess);
+        });
+      }
+    }
+  });
 });
 
 describe('package operation parity', () => {

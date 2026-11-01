@@ -1,4 +1,4 @@
-import { readFileSync } from 'node:fs';
+import { existsSync, readFileSync } from 'node:fs';
 import path from 'node:path';
 
 const DEFAULT_A_PORTS = [
@@ -28,12 +28,15 @@ function valueFor(configText, section, key) {
   return match ? Number(match[1]) : undefined;
 }
 
-/** @param {{ LIFTER_SUPABASE_STACK?: string }} [env] */
+/** @param {Record<string, string | undefined>} [env] */
 export function selectStack(env = process.env) {
-  const requested = env.LIFTER_SUPABASE_STACK || 'a';
-  if (!['a', 'b', 'c', 'd'].includes(requested))
+  const requested = env.LIFTER_SUPABASE_STACK;
+  if (requested && !['a', 'b', 'c', 'd'].includes(requested))
     throw new Error('Unsupported local Supabase stack');
-  return requested;
+  if (requested) return requested;
+  throw new Error(
+    'No local Supabase stack selected. Set LIFTER_SUPABASE_STACK to a, b, c, or d.',
+  );
 }
 
 export function getStackConfig(stack = 'a', root = process.cwd()) {
@@ -43,6 +46,11 @@ export function getStackConfig(stack = 'a', root = process.cwd()) {
     stack === 'a'
       ? path.join(root, 'supabase', 'config.toml')
       : path.join(root, `supabase-stack-${stack}`, 'supabase', 'config.toml');
+  if (!existsSync(configPath)) {
+    throw new Error(
+      `Expected profile config at ${configPath}; profile ${stack} must be provisioned locally in the lane's worktree.`,
+    );
+  }
   const configText = readFileSync(configPath, 'utf8');
   const projectId = configText.match(/^project_id\s*=\s*"([^"]+)"/m)?.[1];
   const expectedProjectId = stack === 'a' ? 'lifter' : `lifter-stack-${stack}`;
@@ -103,6 +111,23 @@ export function assertLocalStackTarget({
     db.pathname === '/postgres';
   if (!validApi || !validDb) throw new Error('Local Supabase target required');
   return config;
+}
+
+export function loadSelectedStackEnv(env = process.env, root = process.cwd()) {
+  const stack = selectStack(env, root);
+  if (stack === 'a') return stack;
+  const envFile = getStackConfig(stack, root).envFile;
+  let contents;
+  try {
+    contents = readFileSync(envFile, 'utf8');
+  } catch {
+    return stack;
+  }
+  for (const line of contents.replace(/^\uFEFF/, '').split(/\r?\n/)) {
+    const match = line.match(/^([A-Z][A-Z0-9_]*)="?([^"\r\n]*)"?$/);
+    if (match && env[match[1]] === undefined) env[match[1]] = match[2];
+  }
+  return stack;
 }
 
 export function localSupabaseContainer(

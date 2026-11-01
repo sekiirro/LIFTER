@@ -124,7 +124,7 @@ export async function signupFixture(f: ClientContext, executor = sql()) {
       link,
       ticket: t.id as string,
       fields: {
-        name: 'U3 Synthetic Client',
+        name: 'U3 synthetic',
         email: `u3-${randomUUID()}@example.test`,
         phone:
           '+201' +
@@ -133,9 +133,6 @@ export async function signupFixture(f: ClientContext, executor = sql()) {
             .padStart(11, '0')
             .slice(-11),
         password: 'Synthetic9!' + randomUUID().replaceAll('-', ''),
-        date_of_birth: '1990-04-12',
-        username: `u3-${randomUUID()}`,
-        telegram_username: '',
       },
     };
   } finally {
@@ -146,12 +143,12 @@ export type SignupFixture = Awaited<ReturnType<typeof signupFixture>>;
 export async function signup(
   tx: TransactionSql | ReturnType<typeof sql>,
   f: SignupFixture,
-  fields: Record<string, string | null | undefined> = f.fields,
+  fields = f.fields,
 ) {
   // Never let a provider diagnostic print statement parameters or credentials.
   try {
     const [row] =
-      await tx`select public.client_signup(${f.token},${f.request},${f.ticket},${tx.json(Object.fromEntries(Object.entries(fields).filter(([, value]) => value !== undefined)))}) as result`;
+      await tx`select public.client_signup(${f.token},${f.request},${f.ticket},${tx.json(fields)}) as result`;
     return row!.result;
   } catch (error) {
     throw new Error(
@@ -392,7 +389,10 @@ export async function pendingHttpAccess(
           result.data === false ||
           (Array.isArray(result.data) && result.data.length === 0) ||
           result.data?.status === 'invalid' ||
-          result.data?.status === 'not_found',
+          (['record_refund', 'record_renewal'].includes(fn.proname)
+            ? result.data?.status === 'not_permitted'
+            : ['subscription_freeze_operation'].includes(fn.proname) &&
+              result.data?.status === 'invalid_input'),
         fn.proname,
       );
     }

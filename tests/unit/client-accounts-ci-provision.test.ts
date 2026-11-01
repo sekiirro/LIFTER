@@ -49,6 +49,17 @@ it('runs the shared password DB parity suite explicitly in the integration job',
   ).toBeGreaterThan(parity);
 });
 
+it('uses the root profile for the Storage-ready integration e2e gate', () => {
+  const integration = workflow.slice(workflow.indexOf('\n  integration:'));
+  const storageE2e = integration.slice(
+    integration.indexOf('Run full Playwright suite against the local stack'),
+  );
+
+  expect(integration).not.toMatch(/LIFTER_SUPABASE_STACK:\s*b/);
+  expect(integration).not.toContain('working-directory: supabase-stack-b');
+  expect(storageE2e).toContain("LOCAL_SUPABASE_STORAGE_TEST: 'true'");
+});
+
 it('masks provisioned keys in GitHub Actions before writing the local env file', () => {
   const maskIndex = provisioner.indexOf('::add-mask::');
   const writeIndex = provisioner.indexOf('writeFileSync(');

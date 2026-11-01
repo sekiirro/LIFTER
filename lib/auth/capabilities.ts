@@ -20,6 +20,7 @@ export const CAPABILITIES = [
   'manage_workspaces',
   'manage_staff_access',
   'coaching_work',
+  'manage_branding',
 ] as const;
 export type Capability = (typeof CAPABILITIES)[number];
 
@@ -33,8 +34,14 @@ export const MATRIX: Readonly<Record<Role, readonly Capability[]>> = {
     'record_payment',
     'manage_freeze',
     'coaching_work',
+    'manage_branding',
   ],
-  trainer: ['generate_registration_link', 'coaching_work'],
+  trainer: [
+    'generate_registration_link',
+    'record_payment',
+    'manage_freeze',
+    'coaching_work',
+  ],
   sales: [
     'generate_registration_link',
     'configure_installment_schedule',

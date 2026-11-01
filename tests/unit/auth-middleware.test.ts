@@ -151,6 +151,31 @@ describe('auth middleware', () => {
     );
     expect(response.headers.get('location')).toBeNull();
   });
+  it.each([
+    `/api/branding/${'a'.repeat(43)}/logo?handle=${'b'.repeat(43)}`,
+    `/api/branding/${'a'.repeat(43)}/banner?handle=${'b'.repeat(43)}`,
+  ])(
+    'permits only the image proxy route %s with privacy headers',
+    async (path) => {
+      const response = await middleware(
+        new NextRequest(`http://localhost:3000${path}`),
+      );
+      expect(response.headers.get('location')).toBeNull();
+      expect(response.headers.get('Cache-Control')).toBe('no-store');
+      expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
+    },
+  );
+  it('does not put malformed branding proxy tokens into login redirects', async () => {
+    const response = await middleware(
+      new NextRequest(
+        `http://localhost:3000/api/branding/${'a'.repeat(43)}/logo/extra`,
+      ),
+    );
+    expect(response.status).toBe(307);
+    expect(response.headers.get('Cache-Control')).toBe('no-store');
+    expect(response.headers.get('Referrer-Policy')).toBe('no-referrer');
+    expect(new URL(response.headers.get('location')!).search).toBe('');
+  });
   it('allows a verified identity', async () => {
     mocks.getUser.mockResolvedValue({
       data: { user: { id: 'verified' } },

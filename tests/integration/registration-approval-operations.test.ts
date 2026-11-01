@@ -145,7 +145,7 @@ it('T013 money beyond JS safe integer remains exact through snapshot, collection
 });
 it('T013 committed signup binding survives consumed/expired link, disabled offer and newer version', async () => {
   const fresh = await clientContext(),
-    expires = new Date(Date.now() + 3000).toISOString(),
+    expires = new Date(Date.now() + 10_000).toISOString(),
     t = await registered(fresh, null, expires);
   const oldVersion = fresh.p.versionId;
   const disabled = await fresh.po.client.rpc('set_package_offer_available', {
@@ -158,7 +158,7 @@ it('T013 committed signup binding survives consumed/expired link, disabled offer
     (await publish(fresh, fresh.p.id, { price_minor: '1300' })).error,
   ).toBeNull();
   await new Promise((resolve) =>
-    setTimeout(resolve, Math.max(0, Date.parse(expires) - Date.now() + 20)),
+    setTimeout(resolve, Math.max(0, Date.parse(expires) - Date.now() + 5000)),
   );
   const [before] =
     await db`select consumed_at is not null as consumed,expires_at<clock_timestamp() as expired from public.registration_links where id=${t.link}`;

@@ -4,23 +4,32 @@ import postgres from 'postgres';
 import type { Role } from '../../lib/auth/capabilities';
 import {
   assertLocalStackTarget,
-  getStackConfig,
+  loadSelectedStackEnv,
   selectStack,
 } from '../../scripts/local-stack.mjs';
 
 export function loadEnv() {
+  const stack = selectStack();
+  loadSelectedStackEnv();
   const apiUrl = process.env.API_URL || process.env.SUPABASE_URL;
   const anonKey = process.env.ANON_KEY || process.env.SUPABASE_ANON_KEY;
   const serviceRoleKey =
     process.env.SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY;
   const dbUrl = process.env.DB_URL || process.env.SUPABASE_DB_URL;
+  const hasCompleteEnvironment = Boolean(
+    apiUrl && anonKey && serviceRoleKey && dbUrl,
+  );
+  if (stack === 'c' && !hasCompleteEnvironment)
+    throw new Error(
+      'Integration env missing: inject Stack C status environment',
+    );
   if (!apiUrl || !anonKey || !serviceRoleKey || !dbUrl) {
-    throw new Error('Integration env missing for selected local stack');
+    throw new Error(
+      'Integration env missing: run `supabase start` and export `supabase status -o env`',
+    );
   }
-  const stack = selectStack();
-  const config = getStackConfig(stack);
   assertLocalStackTarget({ stack, apiUrl, dbUrl });
-  return { apiUrl, anonKey, serviceRoleKey, dbUrl, stack, config };
+  return { apiUrl, anonKey, serviceRoleKey, dbUrl };
 }
 
 // Fail before opening any sockets when the local stack environment is missing.

@@ -23,7 +23,6 @@ const signupPrivate = [
   'signup_identity_normalization',
   'signup_password_policy',
   'signup_field_contract',
-  'signup_reserved_usernames',
   'signup_consumption_policy',
   'client_signup_limits',
   'signup_completion_policy',
@@ -42,7 +41,6 @@ const signupPrivate = [
   'signup_guard_ticket_update',
   'redeem_signup_admission_ticket',
   'signup_guard_attempt_delete',
-  'prevent_consent_receipt_mutation',
 ];
 const registrationPrivate = [
   'registration_link_is_valid',
@@ -52,7 +50,49 @@ const registrationPrivate = [
   'guard_registration_installment_insert',
   'validate_registration_link_schedule',
   'check_registration_link_schedule',
+  'f13_audit_freeze',
+  'f13_audit_renewal',
+  'f13_audit_renewal_date_revision',
+  'f13_audit_refund_ledger',
+  'f13_check_freeze',
+  'f13_check_refund_ledger',
+  'f13_freeze_contribution',
+  'f13_freeze_event_guard',
+  'f13_freeze_guard',
+  'f13_reflow_unstarted_renewal',
+  'f13_guard_terminal_payment',
+  'f13_validate_freeze',
+  'f13_validate_renewal',
+  'f13_validate_refund_ledger',
 ];
+const brandingPrivate = [
+  'branding_actor_id',
+  'branding_asset_attach',
+  'branding_credential_event_immutable',
+  'branding_credential_register',
+  'branding_credential_set_enabled',
+  'branding_credential_allowed',
+  'branding_current_read',
+  'branding_draft_read',
+  'branding_draft_save',
+  'branding_gc_claim',
+  'branding_gc_finalize',
+  'branding_gc_lock_object',
+  'branding_publish',
+  'branding_render_handles_cleanup',
+  'branding_asset_context',
+  'branding_staging_upload_allowed',
+  'branding_storage_read_allowed',
+  'branding_upload_begin',
+  'branding_validation_prepare',
+  'branding_validation_complete',
+  'branding_validator_upload_binding_matches',
+  'branding_validator_upload_binding_matches_gc',
+  'branding_validator_upload_binding_matches_gc_serialized',
+];
+const brandingFunctionOwners: Record<string, string> = {
+  branding_validator_upload_binding_matches: 'branding_upload_check_definer',
+};
 afterAll(async () => {
   await db.end();
 });
@@ -177,65 +217,34 @@ describe('tenancy security catalog (T007)', () => {
         ...approvalFunctions.map((signature) => signature.split('(')[0]!),
         'client_has_access',
         ...signupPrivate,
+        ...brandingPrivate,
         'audit_events_immutable',
         'audit_row_change',
-        'copy_workspace_form',
         'current_staff_role',
-        'ensure_default_onboarding_form',
         'enqueue_job',
-        'f15_onboarding_provisioning_marker_immutable',
-        'f15_builder_cached_result',
-        'f15_builder_store_result',
-        'f15_current_terms_policy',
-        'f15_answer_is_present',
-        'f15_approval_reconcile_trigger',
-        'f15_is_assigned_answer',
-        'f15_is_assigned_client',
-        'f15_question_applies',
-        'f15_selection_reconcile_trigger',
-        'f15_submission_complete',
-        'f15_valid_builder_definition',
         'forbid_delete',
-        'guard_f15_assignment_fact',
-        'guard_f15_form_assignment',
-        'guard_f15_form_version',
-        'guard_form_erasure_control',
-        'guard_form_correction_immutable',
-        'guard_form_answer_revision_immutable',
-        'guard_form_draft_after_submission',
-        'guard_form_legal_hold',
-        'guard_form_retention_window',
+        'f13_actor_preflight',
+        'f13_create_refund_lockout_alert',
+        'f13_materialize_entitlement',
+        'f13_project_entitlement',
+        'f13_audit_client_deactivation',
         'guard_membership_update',
         'guard_package_offer_update',
         'guard_package_version_insert',
         'has_workspace_access',
         'is_platform_owner',
         'jobs_updated_at',
-        'publish_workspace_form',
-        'purge_ended_form_answers',
-        'reconcile_f15_form_assignment',
         'recovery_link_guard',
         'recovery_link_limits',
         'recovery_target_workspace',
-        'resolve_default_onboarding_configuration',
-        'retire_workspace_form',
-        'retire_workspace_form',
         'role_has_capability',
-        'save_workspace_form_draft',
-        'set_default_onboarding_form',
-        'stamp_form_purge_deadline',
-        'signup_auth_identity_column',
       ].sort(),
     );
     for (const row of rows) {
       expect(row.prosecdef).toBe(
         ![
           'audit_events_immutable',
-          'f15_answer_is_present',
-          'f15_question_applies',
-          'f15_submission_complete',
-          'f15_valid_builder_definition',
-          'f15_onboarding_provisioning_marker_immutable',
+          'branding_actor_id',
           'forbid_delete',
           'jobs_updated_at',
           'recovery_link_limits',
@@ -245,81 +254,44 @@ describe('tenancy security catalog (T007)', () => {
         ].includes(row.proname),
       );
       expect(row.proconfig).toContain('search_path=""');
-      expect(row.owner).toBe('postgres');
+      expect(row.owner).toBe(
+        brandingFunctionOwners[row.proname] ??
+          (brandingPrivate.includes(row.proname)
+            ? 'branding_definer'
+            : 'postgres'),
+      );
       expect(row.anon_execute).toBe(false);
-      expect(row.authenticated_execute).toBe(
-        !row.proname.startsWith('f12_') &&
-          !registrationPrivate.includes(row.proname) &&
-          !signupPrivate.includes(row.proname) &&
-          ![
-            'audit_events_immutable',
-            'audit_row_change',
-            'client_has_access',
-            'copy_workspace_form',
-            'enqueue_job',
-            'ensure_default_onboarding_form',
-            'resolve_default_onboarding_configuration',
-            'f15_builder_cached_result',
-            'f15_builder_store_result',
-            'f15_onboarding_provisioning_marker_immutable',
-            'f15_current_terms_policy',
-            'f15_answer_is_present',
-            'f15_approval_reconcile_trigger',
-            'f15_selection_reconcile_trigger',
-            'f15_question_applies',
-            'f15_submission_complete',
-            'f15_valid_builder_definition',
-            'guard_f15_assignment_fact',
-            'reconcile_f15_form_assignment',
-            'forbid_delete',
-            'guard_f15_form_assignment',
-            'guard_f15_form_version',
-            'guard_form_erasure_control',
-            'guard_form_correction_immutable',
-            'guard_form_answer_revision_immutable',
-            'guard_form_draft_after_submission',
-            'guard_form_legal_hold',
-            'guard_form_retention_window',
-            'guard_package_offer_update',
-            'guard_package_version_insert',
-            'jobs_updated_at',
-            'purge_ended_form_answers',
-            'publish_workspace_form',
-            'recovery_link_guard',
-            'recovery_link_limits',
-            'recovery_target_workspace',
-            'retire_workspace_form',
-            'save_workspace_form_draft',
-            'set_default_onboarding_form',
-            'signup_auth_identity_column',
-            'stamp_form_purge_deadline',
-          ].includes(row.proname),
+      expect(row.authenticated_execute, row.proname).toBe(
+        [
+          'branding_upload_begin',
+          'branding_draft_save',
+          'branding_asset_attach',
+          'branding_publish',
+          'branding_current_read',
+          'branding_draft_read',
+          'branding_staging_upload_allowed',
+        ].includes(row.proname) ||
+          (!row.proname.startsWith('f12_') &&
+            !row.proname.startsWith('f13_') &&
+            !registrationPrivate.includes(row.proname) &&
+            !brandingPrivate.includes(row.proname) &&
+            !signupPrivate.includes(row.proname) &&
+            ![
+              'audit_events_immutable',
+              'audit_row_change',
+              'client_has_access',
+              'enqueue_job',
+              'f13_audit_client_deactivation',
+              'forbid_delete',
+              'guard_package_offer_update',
+              'guard_package_version_insert',
+              'jobs_updated_at',
+              'recovery_link_guard',
+              'recovery_link_limits',
+              'recovery_target_workspace',
+            ].includes(row.proname)),
       );
     }
-  });
-
-  it('keeps the first-provision marker forced-RLS, API-private, and immutable', async () => {
-    const [marker] = await db`
-      select c.relrowsecurity,c.relforcerowsecurity
-      from pg_catalog.pg_class c
-      where c.oid='app_private.workspace_onboarding_provisioning'::regclass`;
-    expect(marker).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
-    for (const role of ['anon', 'authenticated', 'service_role']) {
-      for (const privilege of ['SELECT', 'INSERT', 'UPDATE', 'DELETE']) {
-        const [grant] = await db`
-          select has_table_privilege(${role},'app_private.workspace_onboarding_provisioning',${privilege}) as allowed`;
-        expect(grant?.allowed).toBe(false);
-      }
-    }
-    const triggers = await db`
-      select tgname,tgenabled from pg_catalog.pg_trigger
-      where tgrelid='app_private.workspace_onboarding_provisioning'::regclass and not tgisinternal`;
-    expect(triggers).toEqual([
-      {
-        tgname: 'f15_onboarding_provisioning_marker_immutable',
-        tgenabled: 'O',
-      },
-    ]);
   });
 });
 
@@ -515,6 +487,55 @@ describe('audit security catalog (T005)', () => {
       {
         tgname: 'f12_no_update',
         relname: 'subscriptions',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'refund_allocation_events',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'refund_operations',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'subscription_freeze_events',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'subscription_freezes',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'subscription_obligation_cancellations',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'subscription_renewal_date_revisions',
+        type: 19,
+        tgenabled: 'O',
+        proname: 'audit_events_immutable',
+      },
+      {
+        tgname: 'f13_no_update',
+        relname: 'subscription_renewals',
         type: 19,
         tgenabled: 'O',
         proname: 'audit_events_immutable',
@@ -758,10 +779,27 @@ describe('registration security catalog', () => {
         await db`select relrowsecurity,relforcerowsecurity from pg_class where oid=${'public.' + table}::regclass`;
       expect(r).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
       const policies =
-        await db`select cmd,qual from pg_policies where schemaname='public' and tablename=${table}`;
-      expect(policies).toHaveLength(1);
-      expect(policies[0]!.cmd).toBe('SELECT');
-      expect(policies[0]!.qual).toContain('generate_registration_link');
+        await db`select cmd,qual,roles,with_check from pg_policies where schemaname='public' and tablename=${table}`;
+      // Count every policy, including any granted TO PUBLIC: PostgreSQL applies
+      // such policies to authenticated users too, so a stray permissive policy
+      // must fail before the role-filtered assertions below run.
+      expect(policies).toHaveLength(table === 'registration_links' ? 2 : 1);
+      const apiPolicies = policies.filter((policy) =>
+        policy.roles.includes('authenticated'),
+      );
+      const definerPolicies = policies.filter((policy) =>
+        policy.roles.includes('branding_definer'),
+      );
+      expect(apiPolicies).toHaveLength(1);
+      expect(apiPolicies[0]!.cmd).toBe('SELECT');
+      expect(apiPolicies[0]!.qual).toContain('generate_registration_link');
+      if (table === 'registration_links') {
+        expect(definerPolicies).toHaveLength(1);
+        expect(definerPolicies[0]!.cmd).toBe('ALL');
+        expect(definerPolicies[0]!.qual).toBe('true');
+      } else {
+        expect(definerPolicies).toHaveLength(0);
+      }
       const triggers =
         await db`select tgname,tgenabled,tgdeferrable,tginitdeferred from pg_trigger where tgrelid=${'public.' + table}::regclass and not tgisinternal`;
       expect(triggers.length).toBe(table === 'registration_links' ? 7 : 5);
@@ -881,24 +919,45 @@ describe('registration security catalog', () => {
   });
   it('hardens complete F10 function inventory and pgcrypto schema/vector', async () => {
     const signatures = [
-      ...registrationPrivate.map(
-        (n) =>
-          'app_private.' +
-          n +
-          (n === 'registration_link_is_valid'
-            ? '(timestamptz,timestamptz,timestamptz,timestamptz)'
-            : n === 'validate_registration_link_schedule'
-              ? '(uuid,uuid)'
-              : '()'),
-      ),
+      ...registrationPrivate
+        .filter((name) => !name.startsWith('f13_'))
+        .map(
+          (n) =>
+            'app_private.' +
+            n +
+            (n === 'registration_link_is_valid'
+              ? '(timestamptz,timestamptz,timestamptz,timestamptz)'
+              : n === 'validate_registration_link_schedule'
+                ? '(uuid,uuid)'
+                : '()'),
+        ),
       'public.issue_registration_link(uuid,uuid,text,jsonb)',
       'public.registration_link_open(text)',
       'public.get_registration_link_commissions(uuid)',
+      'app_private.f13_audit_freeze()',
+      'app_private.f13_audit_renewal()',
+      'app_private.f13_audit_renewal_date_revision()',
+      'app_private.f13_audit_refund_ledger()',
+      'app_private.f13_check_freeze()',
+      'app_private.f13_check_refund_ledger()',
+      'app_private.f13_freeze_contribution(uuid,uuid,uuid)',
+      'app_private.f13_freeze_event_guard()',
+      'app_private.f13_freeze_guard()',
+      'app_private.f13_reflow_unstarted_renewal()',
+      'app_private.f13_guard_terminal_payment()',
+      'app_private.f13_validate_freeze(uuid,uuid)',
+      'app_private.f13_validate_renewal(uuid,uuid)',
+      'app_private.f13_validate_refund_ledger(uuid,uuid)',
+      'public.record_renewal(jsonb)',
     ];
     for (const name of signatures) {
       const [r] =
         await db`select pg_get_userbyid(proowner) as owner,proconfig from pg_proc where oid=${name}::regprocedure`;
-      expect(r!.owner).toBe('postgres');
+      expect(r!.owner).toBe(
+        name === 'public.registration_link_open(text)'
+          ? 'branding_definer'
+          : 'postgres',
+      );
       expect(r!.proconfig).toContain('search_path=""');
       for (const role of ['anon', 'authenticated', 'service_role']) {
         const [g] =

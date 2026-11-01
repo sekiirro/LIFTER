@@ -2,7 +2,9 @@ import { readFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 
-const manifestPath = join(tmpdir(), 'lftr-u8-server-log-current.json');
+const manifestPath =
+  process.env.U8_SERVER_LOG_MANIFEST_PATH ??
+  join(tmpdir(), `lftr-u8-${process.pid}-manifest.json`);
 const paths = JSON.parse(readFileSync(manifestPath, 'utf8')) as {
   rawPath: string;
   summaryPath: string;

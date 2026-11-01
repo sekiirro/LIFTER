@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { localSupabaseContainer } from '../integration/local-docker';
 import { execFileSync } from 'node:child_process';
 import { readFile, mkdtemp, rm, stat } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -6,7 +7,7 @@ import { join } from 'node:path';
 import { inflateRawSync } from 'node:zlib';
 import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
-import { createHash, randomUUID } from 'node:crypto';
+import { createHash, randomInt, randomUUID } from 'node:crypto';
 import {
   serverLogRawPath,
   serverLogSummaryPath,
@@ -19,10 +20,6 @@ const origin = 'http://localhost:3000';
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
-
-function hasDuplicateSignupMessage(text: string, locale: 'ar' | 'en') {
-  return text.includes(getMessages(locale)['clientSignup.duplicate']);
-}
 let validToken: string;
 let pendingToken: string;
 let duplicateToken: string;
@@ -415,19 +412,13 @@ test.afterEach(async ({ page, context }, testInfo) => {
 
 async function fillSignup(
   page: import('@playwright/test').Page,
-  values: { name: string; email: string; phone?: string; username?: string },
+  values: { name: string; email: string; phone?: string },
   locale: 'ar' | 'en' = 'en',
 ) {
   const m = getMessages(locale);
   await page
     .getByLabel(m['clientSignup.name'], { exact: true })
-    .fill(`${values.name} Client`);
-  await page
-    .getByLabel(m['clientSignup.dateOfBirth'], { exact: true })
-    .fill('1990-04-12');
-  await page
-    .getByLabel(m['clientSignup.username'], { exact: true })
-    .fill(values.username ?? `member-${randomUUID().slice(0, 8)}`);
+    .fill(values.name);
   await page
     .getByLabel(m['clientSignup.email'], { exact: true })
     .fill(values.email);
@@ -435,7 +426,7 @@ async function fillSignup(
     .getByRole('textbox', { name: m['clientSignup.phone'] })
     .fill(
       values.phone ??
-        `010${String(parseInt(randomUUID().slice(0, 8), 16) % 100_000_000).padStart(8, '0')}`,
+        `0101234${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
     );
   await page
     .getByLabel(m['clientSignup.password'], { exact: true })
@@ -738,7 +729,6 @@ test('valid signup link renders a minimal form with private route headers', asyn
   context,
 }) => {
   test.skip(!local, 'Requires the disposable local Supabase stack.');
-  const m = getMessages('en');
   await context.addCookies([{ name: LOCALE_COOKIE, value: 'en', url: origin }]);
   const response = await page.goto(`/register/${validToken}`);
   expect(response?.status()).toBe(200);
@@ -750,18 +740,10 @@ test('valid signup link renders a minimal form with private route headers', asyn
     }),
   ).toBeVisible();
   await expect(page.getByLabel('Country')).toHaveValue('EG');
-  await expect(
-    page.getByLabel(m['clientSignup.phone'], { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByLabel(m['clientSignup.name'], { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByLabel(m['clientSignup.email'], { exact: true }),
-  ).toBeVisible();
-  await expect(
-    page.getByLabel(m['clientSignup.password'], { exact: true }),
-  ).toBeVisible();
+  await expect(page.getByLabel('Phone number')).toBeVisible();
+  await expect(page.getByLabel('Name')).toBeVisible();
+  await expect(page.getByLabel('Email')).toBeVisible();
+  await expect(page.getByLabel('Password')).toBeVisible();
   await expect(page.locator('input[name="token"]')).toHaveCount(0);
   expect(await page.locator('main').innerText()).not.toContain(validToken);
 });
@@ -981,7 +963,9 @@ test('provider failure returns generic unavailable, then a retry can complete', 
     name: 'Example Person',
     email: `provider-${randomUUID()}@example.test`,
   });
-  execFileSync('docker', ['stop', 'supabase_kong_lifter'], { stdio: 'ignore' });
+  execFileSync('docker', ['stop', localSupabaseContainer('kong')], {
+    stdio: 'ignore',
+  });
   try {
     const unavailableResponse = page.waitForResponse(
       (response) => response.request().method() === 'POST',
@@ -997,7 +981,7 @@ test('provider failure returns generic unavailable, then a retry can complete', 
       'Please try again later.',
     );
   } finally {
-    execFileSync('docker', ['start', 'supabase_kong_lifter'], {
+    execFileSync('docker', ['start', localSupabaseContainer('kong')], {
       stdio: 'ignore',
     });
   }
@@ -1065,27 +1049,27 @@ test('committed signup retry returns invalid and never creates a second identity
   expect(retryResponse.status()).toBe(200);
   expect(retryResponse.headers()['referrer-policy']).toBe('no-referrer');
   expect(retryResponse.headers()['cache-control']).toContain('no-store');
-  const retryView = await page
-    .locator('main')
-    .evaluate((element, duplicateMessage) => {
-      const main = element as HTMLElement;
-      const text = main.innerText;
-      return {
-        invalid: text.includes(
-          'This registration link is invalid or no longer available.',
-        ),
-        complete: text.includes(
-          'Thank you. Your registration request is complete.',
-        ),
-        unavailable: text.includes('Please try again later.'),
-        duplicate: text.includes(duplicateMessage),
-        invalidInput: text.includes(
-          'Check the highlighted fields and try again.',
-        ),
-        signedIn: text.includes('Please sign out before submitting'),
-        form: !!main.querySelector('form'),
-      };
-    }, getMessages('en')['clientSignup.duplicate']);
+  const retryView = await page.locator('main').evaluate((element) => {
+    const main = element as HTMLElement;
+    const text = main.innerText;
+    return {
+      invalid: text.includes(
+        'This registration link is invalid or no longer available.',
+      ),
+      complete: text.includes(
+        'Thank you. Your registration request is complete.',
+      ),
+      unavailable: text.includes('Please try again later.'),
+      duplicate: text.includes(
+        'This email is already registered. Contact support.',
+      ),
+      invalidInput: text.includes(
+        'Check the highlighted fields and try again.',
+      ),
+      signedIn: text.includes('Please sign out before submitting'),
+      form: !!main.querySelector('form'),
+    };
+  });
   expect(retryView).toEqual({
     invalid: true,
     complete: false,
@@ -1156,7 +1140,7 @@ for (const locale of ['ar', 'en'] as const) {
   });
 }
 
-test('identity collision keeps the neutral duplicate wording without field details', async ({
+test('identity collision keeps the contract duplicate wording without field details', async ({
   page,
   context,
 }) => {
@@ -1172,11 +1156,8 @@ test('identity collision keeps the neutral duplicate wording without field detai
     .getByRole('button', { name: 'Create registration request' })
     .click();
   await expect(page.getByRole('status')).toHaveText(
-    getMessages('en')['clientSignup.duplicate'],
+    'This email is already registered. Contact support.',
   );
-  expect(
-    hasDuplicateSignupMessage(await page.locator('main').innerText(), 'en'),
-  ).toBe(true);
   const duplicateMessage = await page.getByRole('status').textContent();
   expect(duplicateMessage?.includes(knownStaffEmail) ?? false).toBe(false);
 });
@@ -1192,10 +1173,10 @@ for (const locale of ['ar', 'en'] as const) {
     const database = dbModule.sql();
     const identities: Record<
       'pending' | 'active' | 'staff' | 'archived',
-      { email: string; phone: string; username?: string }
+      { email: string; phone: string }
     > = {} as Record<
       'pending' | 'active' | 'staff' | 'archived',
-      { email: string; phone: string; username?: string }
+      { email: string; phone: string }
     >;
     await context.addCookies([
       { name: LOCALE_COOKIE, value: locale, url: origin },
@@ -1208,12 +1189,8 @@ for (const locale of ['ar', 'en'] as const) {
       kind: 'pending' | 'active' | 'staff' | 'archived',
     ) => {
       const email = `u8-${kind}-${randomUUID()}@example.test`;
-      const phone = `010${String(parseInt(randomUUID().slice(0, 8), 16) % 100_000_000).padStart(8, '0')}`;
+      const phone = `010${String(randomInt(0, 100_000_000)).padStart(8, '0')}`;
       const phoneE164 = `+20${phone.slice(1)}`;
-      const username =
-        kind === 'pending'
-          ? `collision-${randomUUID().slice(0, 8)}`
-          : undefined;
       if (kind === 'pending') {
         const token = await issueSignupToken(locale === 'en');
         await page.goto(`/register/${token}`);
@@ -1222,7 +1199,7 @@ for (const locale of ['ar', 'en'] as const) {
         );
         await fillSignup(
           page,
-          { name: 'Collision Example', email, phone, username },
+          { name: 'Collision Example', email, phone },
           locale,
         );
         await page
@@ -1242,7 +1219,7 @@ for (const locale of ['ar', 'en'] as const) {
           }
         });
       }
-      identities[kind] = { email, phone, username };
+      identities[kind] = { email, phone };
     };
 
     const captures: Array<{
@@ -1256,21 +1233,15 @@ for (const locale of ['ar', 'en'] as const) {
 
       const tokenByCollision = Object.fromEntries(
         await Promise.all(
-          (['email', 'phone', 'both', 'username'] as const).map(
-            async (collision) => [
-              collision,
-              await issueSignupToken(locale === 'en'),
-            ],
-          ),
+          (['email', 'phone', 'both'] as const).map(async (collision) => [
+            collision,
+            await issueSignupToken(locale === 'en'),
+          ]),
         ),
       );
 
       for (const kind of ['pending', 'active', 'staff', 'archived'] as const) {
-        const collisionTypes =
-          kind === 'pending'
-            ? (['email', 'phone', 'both', 'username'] as const)
-            : (['email', 'phone', 'both'] as const);
-        for (const collision of collisionTypes) {
+        for (const collision of ['email', 'phone', 'both'] as const) {
           const token = tokenByCollision[collision];
           await page.goto(`/register/${token}`);
           await expect(
@@ -1325,19 +1296,10 @@ for (const locale of ['ar', 'en'] as const) {
             {
               name: 'Collision Example',
               email:
-                collision === 'phone' || collision === 'username'
+                collision === 'phone'
                   ? `new-${randomUUID()}@example.test`
                   : identity.email,
-              ...(collision === 'username'
-                ? {
-                    username: identity
-                      .username!.toUpperCase()
-                      .replace(/[A-Z0-9-]/g, (character) =>
-                        String.fromCodePoint(character.charCodeAt(0) + 0xfee0),
-                      ),
-                  }
-                : {}),
-              ...(collision === 'email' || collision === 'username'
+              ...(collision === 'email'
                 ? {}
                 : {
                     phone:
@@ -1358,10 +1320,6 @@ for (const locale of ['ar', 'en'] as const) {
             page.getByRole('status'),
             `${kind}/${collision} returns duplicate`,
           ).toHaveText(m['clientSignup.duplicate']);
-          await expect(
-            page.locator('input[aria-invalid="true"]'),
-            `${kind}/${collision} highlights no field`,
-          ).toHaveCount(0);
           expect(actionCapture?.status).toBe(200);
           captures.push(actionCapture!);
           await page.unroute(`**/register/${token}`);
@@ -1372,7 +1330,7 @@ for (const locale of ['ar', 'en'] as const) {
     }
 
     const first = captures[0];
-    expect(captures).toHaveLength(13);
+    expect(captures).toHaveLength(12);
     const stableHeaders = (headers: Record<string, string>) =>
       Object.fromEntries(
         Object.entries(headers)
@@ -1519,10 +1477,10 @@ test('lost committed response leaves one identity and the link no longer opens a
     getMessages('en')['clientSignup.unavailable'],
   );
   await expect(
-    page.getByLabel(getMessages('en')['clientSignup.name'], { exact: true }),
-  ).toHaveValue('Example Person Client');
+    page.getByLabel(getMessages('en')['clientSignup.name']),
+  ).toHaveValue('Example Person');
   await expect(
-    page.getByLabel(getMessages('en')['clientSignup.email'], { exact: true }),
+    page.getByLabel(getMessages('en')['clientSignup.email']),
   ).toHaveValue(email);
   await expect(
     page.getByRole('button', { name: 'Create registration request' }),

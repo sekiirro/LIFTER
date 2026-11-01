@@ -1,6 +1,6 @@
-import { localSupabaseContainer } from './local-docker';
 import { randomUUID } from 'node:crypto';
 import { spawnSync } from 'node:child_process';
+import { localSupabaseContainer } from '../../scripts/local-stack.mjs';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import {
   clientContext,
@@ -84,7 +84,7 @@ for (const field of [
 const db = sql();
 afterAll(() => db.end());
 
-it('clients: preserves required F11 fields and allows legacy rows without F15 profile fields', async () => {
+it('clients: every required field is NOT NULL, generated id/time and pending-only state', async () => {
   const columns =
     await db`select attname,attnotnull from pg_attribute where attrelid=to_regclass('public.clients') and attnum>0 and not attisdropped order by attnum`;
   expect(columns.map((c) => c.attname).sort()).toEqual(
@@ -99,26 +99,17 @@ it('clients: preserves required F11 fields and allows legacy rows without F15 pr
       'name',
       'approval_state',
       'created_at',
-      'date_of_birth',
-      'username_normalized',
-      'telegram_username',
+      'deactivated_at',
     ].sort(),
   );
-  const nullableProfileFields = new Set([
-    'date_of_birth',
-    'username_normalized',
-    'telegram_username',
-  ]);
   expect(
     columns
-      .filter((column) => !nullableProfileFields.has(column.attname))
-      .every((column) => column.attnotnull),
+      .filter((c) => c.attname !== 'deactivated_at')
+      .every((c) => c.attnotnull),
   ).toBe(true);
-  expect(
-    columns
-      .filter((column) => nullableProfileFields.has(column.attname))
-      .every((column) => !column.attnotnull),
-  ).toBe(true);
+  expect(columns.find((c) => c.attname === 'deactivated_at')?.attnotnull).toBe(
+    false,
+  );
 });
 for (const [table, fragments] of [
   [
@@ -201,15 +192,7 @@ for (const [name, expected] of [
   [
     'signup_field_contract',
     {
-      required: [
-        'name',
-        'email',
-        'phone',
-        'password',
-        'date_of_birth',
-        'username',
-      ],
-      optional: ['telegram_username'],
+      required: ['name', 'email', 'phone', 'password'],
       telegram: false,
       phone_input_format: null,
     },
