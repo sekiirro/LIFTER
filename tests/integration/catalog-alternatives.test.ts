@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type postgres from 'postgres';
 import { admin, checked, sql } from './harness';
 
 const db = sql();
-type Tx = Parameters<Parameters<typeof db.begin>[0]>[0];
+type Tx = postgres.TransactionSql;
 let creatorId: string;
 
 beforeAll(async () => {
@@ -16,7 +17,9 @@ beforeAll(async () => {
     throw new Error(created.error?.message ?? 'Catalog fixture user missing');
   creatorId = created.data.user.id;
   checked(
-    await admin().from('staff_profiles').insert({ user_id: creatorId, role: 'trainer' }),
+    await admin()
+      .from('staff_profiles')
+      .insert({ user_id: creatorId, role: 'trainer' }),
   );
 });
 
@@ -55,39 +58,54 @@ async function addAlternative(
 
 describe('curated food alternatives', () => {
   it('caps each immutable food version at three validated alternatives', async () => {
-    await expect(db.begin(async (tx) => {
-      const source = await createFood(tx);
-      const targets = await Promise.all([createFood(tx), createFood(tx), createFood(tx), createFood(tx)]);
-      await addAlternative(tx, source, targets[0]!, 1);
-      await addAlternative(tx, source, targets[1]!, 2);
-      await addAlternative(tx, source, targets[2]!, 3);
-      await addAlternative(tx, source, targets[3]!, 4);
-    })).rejects.toMatchObject({ code: '23514' });
+    await expect(
+      db.begin(async (tx) => {
+        const source = await createFood(tx);
+        const targets = await Promise.all([
+          createFood(tx),
+          createFood(tx),
+          createFood(tx),
+          createFood(tx),
+        ]);
+        await addAlternative(tx, source, targets[0]!, 1);
+        await addAlternative(tx, source, targets[1]!, 2);
+        await addAlternative(tx, source, targets[2]!, 3);
+        await addAlternative(tx, source, targets[3]!, 4);
+      }),
+    ).rejects.toMatchObject({ code: '23514' });
   });
 
   it('rejects zero, negative, cross-basis and self portions', async () => {
-    await expect(db.begin(async (tx) => {
-      const source = await createFood(tx);
-      const target = await createFood(tx);
-      await addAlternative(tx, source, target, 1, 0, 100);
-    })).rejects.toMatchObject({ code: '23514' });
-    await expect(db.begin(async (tx) => {
-      const source = await createFood(tx);
-      const target = await createFood(tx);
-      await addAlternative(tx, source, target, 1, 100, -1);
-    })).rejects.toMatchObject({ code: '23514' });
-    await expect(db.begin(async (tx) => {
-      const source = await createFood(tx, 'g');
-      const target = await createFood(tx, 'ml');
-      await tx`insert into public.food_alternatives (
+    await expect(
+      db.begin(async (tx) => {
+        const source = await createFood(tx);
+        const target = await createFood(tx);
+        await addAlternative(tx, source, target, 1, 0, 100);
+      }),
+    ).rejects.toMatchObject({ code: '23514' });
+    await expect(
+      db.begin(async (tx) => {
+        const source = await createFood(tx);
+        const target = await createFood(tx);
+        await addAlternative(tx, source, target, 1, 100, -1);
+      }),
+    ).rejects.toMatchObject({ code: '23514' });
+    await expect(
+      db.begin(async (tx) => {
+        const source = await createFood(tx, 'g');
+        const target = await createFood(tx, 'ml');
+        await tx`insert into public.food_alternatives (
           food_id, food_version, position, source_basis, source_portion,
           alternative_food_id, alternative_version, alternative_basis, alternative_portion
         ) values (${source}, 1, 1, 'g', 100, ${target}, 1, 'g', 100)`;
-    })).rejects.toMatchObject({ code: '23503' });
-    await expect(db.begin(async (tx) => {
-      const source = await createFood(tx);
-      await addAlternative(tx, source, source, 1);
-    })).rejects.toMatchObject({ code: '23514' });
+      }),
+    ).rejects.toMatchObject({ code: '23503' });
+    await expect(
+      db.begin(async (tx) => {
+        const source = await createFood(tx);
+        await addAlternative(tx, source, source, 1);
+      }),
+    ).rejects.toMatchObject({ code: '23514' });
   });
 
   it('keeps plan portion overrides outside the catalog defaults', async () => {
@@ -97,12 +115,16 @@ describe('curated food alternatives', () => {
         const source = await createFood(tx);
         const target = await createFood(tx);
         await addAlternative(tx, source, target, 1, 100, 150);
-        const before = await tx`select * from public.food_alternatives where food_id = ${source}`;
-        await expect(tx.savepoint(async (sp) => {
-          await sp`select set_config('role', 'authenticated', true)`;
-          await sp`update public.food_alternatives set alternative_portion = 200 where food_id = ${source}`;
-        })).rejects.toMatchObject({ code: '42501' });
-        const after = await tx`select * from public.food_alternatives where food_id = ${source}`;
+        const before =
+          await tx`select * from public.food_alternatives where food_id = ${source}`;
+        await expect(
+          tx.savepoint(async (sp) => {
+            await sp`select set_config('role', 'authenticated', true)`;
+            await sp`update public.food_alternatives set alternative_portion = 200 where food_id = ${source}`;
+          }),
+        ).rejects.toMatchObject({ code: '42501' });
+        const after =
+          await tx`select * from public.food_alternatives where food_id = ${source}`;
         expect(after).toEqual(before);
         throw new Error(rollbackMarker);
       });

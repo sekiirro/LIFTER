@@ -1,16 +1,19 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type postgres from 'postgres';
 import { admin, checked, sql } from './harness';
 
 const db = sql();
-type Tx = Parameters<Parameters<typeof db.begin>[0]>[0];
+type Tx = postgres.TransactionSql;
 type Actor = { userId: string };
 let po: Actor;
 let trainer: Actor;
 let workspaceId: string;
 
 beforeAll(async () => {
-  const createActor = async (role: 'platform_owner' | 'trainer'): Promise<Actor> => {
+  const createActor = async (
+    role: 'platform_owner' | 'trainer',
+  ): Promise<Actor> => {
     const email = `catalog-${role}-${randomUUID()}@example.test`;
     const created = await admin().auth.admin.createUser({
       email,
@@ -40,6 +43,7 @@ beforeAll(async () => {
       .select('id')
       .single(),
   );
+  if (!workspace) throw new Error('Catalog provenance workspace missing');
   workspaceId = workspace.id;
   checked(
     await admin().from('workspace_memberships').insert({
@@ -67,15 +71,20 @@ async function insertFoodFixture(tx: Tx, foodId: string) {
 
 async function readFoodProvenance(actor: Actor) {
   const foodId = randomUUID();
-  let projected: { created_by: string | null; origin_workspace_id: string | null }[] = [];
+  let projected: {
+    created_by: string | null;
+    origin_workspace_id: string | null;
+  }[] = [];
   const rollbackMarker = 'rollback_catalog_provenance_fixture';
   try {
     await db.begin(async (tx) => {
       await insertFoodFixture(tx, foodId);
       await tx`select set_config('role', 'authenticated', true)`;
       await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: actor.userId, role: 'authenticated' })}, true)`;
-      projected = await tx`select created_by, origin_workspace_id from public.catalog_foods_safe where id = ${foodId}`;
-      const versions = await tx`select created_by, origin_workspace_id from public.catalog_food_versions_safe where food_id = ${foodId}`;
+      projected =
+        await tx`select created_by, origin_workspace_id from public.catalog_foods_safe where id = ${foodId}`;
+      const versions =
+        await tx`select created_by, origin_workspace_id from public.catalog_food_versions_safe where food_id = ${foodId}`;
       expect(versions).toEqual(projected);
       throw new Error(rollbackMarker);
     });
@@ -118,10 +127,18 @@ describe('global catalog identities and immutable versions', () => {
         .filter((row) => row.table_name.split('.').at(-1) === table)
         .map((row) => row.definition)
         .join('\n');
-    expect(definitionsFor('exercise_versions')).toContain('PRIMARY KEY (exercise_id, version)');
-    expect(definitionsFor('food_versions')).toContain('PRIMARY KEY (food_id, version)');
-    expect(definitionsFor('exercises')).toContain('FOREIGN KEY (id, current_version) REFERENCES exercise_versions(exercise_id, version)');
-    expect(definitionsFor('foods')).toContain('FOREIGN KEY (id, current_version) REFERENCES food_versions(food_id, version)');
+    expect(definitionsFor('exercise_versions')).toContain(
+      'PRIMARY KEY (exercise_id, version)',
+    );
+    expect(definitionsFor('food_versions')).toContain(
+      'PRIMARY KEY (food_id, version)',
+    );
+    expect(definitionsFor('exercises')).toContain(
+      'FOREIGN KEY (id, current_version) REFERENCES exercise_versions(exercise_id, version)',
+    );
+    expect(definitionsFor('foods')).toContain(
+      'FOREIGN KEY (id, current_version) REFERENCES food_versions(food_id, version)',
+    );
 
     const columns = await db`
       select table_name, column_name, is_nullable
@@ -132,10 +149,22 @@ describe('global catalog identities and immutable versions', () => {
       order by table_name, column_name
     `;
     expect(columns).toEqual([
-      { table_name: 'exercises', column_name: 'current_version', is_nullable: 'NO' },
+      {
+        table_name: 'exercises',
+        column_name: 'current_version',
+        is_nullable: 'NO',
+      },
       { table_name: 'foods', column_name: 'created_by', is_nullable: 'NO' },
-      { table_name: 'foods', column_name: 'current_version', is_nullable: 'NO' },
-      { table_name: 'foods', column_name: 'origin_workspace_id', is_nullable: 'YES' },
+      {
+        table_name: 'foods',
+        column_name: 'current_version',
+        is_nullable: 'NO',
+      },
+      {
+        table_name: 'foods',
+        column_name: 'origin_workspace_id',
+        is_nullable: 'YES',
+      },
     ]);
 
     const triggers = await db`
@@ -146,10 +175,22 @@ describe('global catalog identities and immutable versions', () => {
         and c.relname in ('exercise_versions', 'food_versions', 'exercises', 'foods')
       order by c.relname, t.tgname
     `;
-    expect(triggers.filter((row) => row.table_name.endsWith('_versions')).map((row) => row.tgenabled)).not.toContain('D');
-    expect(triggers.some((row) => row.trigger_name === 'exercise_versions_append_only')).toBe(true);
-    expect(triggers.some((row) => row.trigger_name === 'food_versions_append_only')).toBe(true);
-    expect(triggers.some((row) => row.trigger_name === 'foods_provenance_immutable')).toBe(true);
+    expect(
+      triggers
+        .filter((row) => row.table_name.endsWith('_versions'))
+        .map((row) => row.tgenabled),
+    ).not.toContain('D');
+    expect(
+      triggers.some(
+        (row) => row.trigger_name === 'exercise_versions_append_only',
+      ),
+    ).toBe(true);
+    expect(
+      triggers.some((row) => row.trigger_name === 'food_versions_append_only'),
+    ).toBe(true);
+    expect(
+      triggers.some((row) => row.trigger_name === 'foods_provenance_immutable'),
+    ).toBe(true);
 
     const directDml = await db`
       select table_name, privilege_type
@@ -181,19 +222,32 @@ describe('global catalog identities and immutable versions', () => {
       where c.relnamespace = 'public'::regnamespace and c.relkind = 'v'
         and c.relname in ('catalog_foods_safe', 'catalog_food_versions_safe')
     `;
-    expect(views.map((row) => row.name).sort()).toEqual([
-      'catalog_food_versions_safe',
-      'catalog_foods_safe',
-    ].sort());
-    expect(views.every((row) => row.owner === 'postgres' && row.reloptions?.includes('security_barrier=true'))).toBe(true);
+    expect(views.map((row) => row.name).sort()).toEqual(
+      ['catalog_food_versions_safe', 'catalog_foods_safe'].sort(),
+    );
+    expect(
+      views.every(
+        (row) =>
+          row.owner === 'postgres' &&
+          row.reloptions?.includes('security_barrier=true'),
+      ),
+    ).toBe(true);
     const definitions = await db`
       select pg_catalog.pg_get_viewdef(c.oid, true) as definition
       from pg_catalog.pg_class c
       where c.relnamespace = 'public'::regnamespace
         and c.relname in ('catalog_foods_safe', 'catalog_food_versions_safe')
     `;
-    expect(definitions.every((row) => /is_platform_owner/i.test(row.definition))).toBe(true);
-    expect(definitions.every((row) => /created_by/i.test(row.definition) && /origin_workspace_id/i.test(row.definition))).toBe(true);
+    expect(
+      definitions.every((row) => /is_platform_owner/i.test(row.definition)),
+    ).toBe(true);
+    expect(
+      definitions.every(
+        (row) =>
+          /created_by/i.test(row.definition) &&
+          /origin_workspace_id/i.test(row.definition),
+      ),
+    ).toBe(true);
   });
 
   it('rejects mutation of versions, identity provenance and invalid current-version pointers', async () => {
@@ -203,25 +257,33 @@ describe('global catalog identities and immutable versions', () => {
       await tx`insert into public.exercise_versions (exercise_id, version, payload, created_by) values (${exerciseId}, 1, '{}'::jsonb, ${po.userId})`;
       await tx`update public.exercise_versions set payload = '{"mutated":true}' where exercise_id = ${exerciseId}`;
     });
-    await expect(exerciseVersionMutation).rejects.toMatchObject({ code: '23514' });
+    await expect(exerciseVersionMutation).rejects.toMatchObject({
+      code: '23514',
+    });
 
     const foodId = randomUUID();
-    await expect(db.begin(async (tx) => {
-      await insertFoodFixture(tx, foodId);
-      await tx`update public.foods set origin_workspace_id = null where id = ${foodId}`;
-    })).rejects.toMatchObject({ code: '23514' });
+    await expect(
+      db.begin(async (tx) => {
+        await insertFoodFixture(tx, foodId);
+        await tx`update public.foods set origin_workspace_id = null where id = ${foodId}`;
+      }),
+    ).rejects.toMatchObject({ code: '23514' });
 
     const creatorId = randomUUID();
     const creatorFoodId = randomUUID();
-    await expect(db.begin(async (tx) => {
-      await insertFoodFixture(tx, creatorFoodId);
-      await tx`update public.foods set created_by = ${creatorId} where id = ${creatorFoodId}`;
-    })).rejects.toMatchObject({ code: '23514' });
+    await expect(
+      db.begin(async (tx) => {
+        await insertFoodFixture(tx, creatorFoodId);
+        await tx`update public.foods set created_by = ${creatorId} where id = ${creatorFoodId}`;
+      }),
+    ).rejects.toMatchObject({ code: '23514' });
 
     const badId = randomUUID();
-    await expect(db.begin(async (tx) => {
-      await tx`insert into public.exercises (id, created_by, current_version) values (${badId}, ${po.userId}, 99)`;
-      await tx`set constraints all immediate`;
-    })).rejects.toMatchObject({ code: '23503' });
+    await expect(
+      db.begin(async (tx) => {
+        await tx`insert into public.exercises (id, created_by, current_version) values (${badId}, ${po.userId}, 99)`;
+        await tx`set constraints all immediate`;
+      }),
+    ).rejects.toMatchObject({ code: '23503' });
   });
 });

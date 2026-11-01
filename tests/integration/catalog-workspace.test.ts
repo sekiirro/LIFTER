@@ -32,21 +32,38 @@ beforeAll(async () => {
   po = await createActor('platform_owner');
   trainerA = await createActor('trainer');
   trainerB = await createActor('trainer');
-  const createWorkspace = async (name: string, slug: string) =>
-    checked(
+  const createWorkspace = async (name: string, slug: string) => {
+    const workspace = checked(
       await admin()
         .from('workspaces')
-        .insert({ name, slug: `${slug}-${randomUUID().slice(0, 8)}`, created_by: po.userId })
+        .insert({
+          name,
+          slug: `${slug}-${randomUUID().slice(0, 8)}`,
+          created_by: po.userId,
+        })
         .select('id')
         .single(),
-    ).id as string;
+    );
+    if (!workspace) throw new Error('Catalog tenant workspace missing');
+    return workspace.id as string;
+  };
   kendoId = await createWorkspace('KENDO', 'f3-kendo');
   tojiId = await createWorkspace('TOJI', 'f3-toji');
   checked(
-    await admin().from('workspace_memberships').insert([
-      { workspace_id: kendoId, user_id: trainerA.userId, granted_by: po.userId },
-      { workspace_id: tojiId, user_id: trainerB.userId, granted_by: po.userId },
-    ]),
+    await admin()
+      .from('workspace_memberships')
+      .insert([
+        {
+          workspace_id: kendoId,
+          user_id: trainerA.userId,
+          granted_by: po.userId,
+        },
+        {
+          workspace_id: tojiId,
+          user_id: trainerB.userId,
+          granted_by: po.userId,
+        },
+      ]),
   );
 });
 
@@ -68,21 +85,34 @@ describe('workspace exercise tenant keys', () => {
         await tx`insert into public.exercise_variations (workspace_id, exercise_id, created_by, current_version) values (${kendoId}, ${exerciseId}, ${trainerA.userId}, 1), (${tojiId}, ${exerciseId}, ${trainerB.userId}, 1)`;
         await tx`insert into public.exercise_variation_versions (workspace_id, exercise_id, version, payload, created_by) values (${kendoId}, ${exerciseId}, 1, '{}'::jsonb, ${trainerA.userId}), (${tojiId}, ${exerciseId}, 1, '{}'::jsonb, ${trainerB.userId})`;
 
-        const mapped = await tx`select exercise_id, count(*)::int as mappings from public.exercise_variations where exercise_id = ${exerciseId} group by exercise_id`;
+        const mapped =
+          await tx`select exercise_id, count(*)::int as mappings from public.exercise_variations where exercise_id = ${exerciseId} group by exercise_id`;
         expect(mapped).toEqual([{ exercise_id: exerciseId, mappings: 2 }]);
 
         await tx`select set_config('role', 'authenticated', true)`;
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerA.userId, role: 'authenticated' })}, true)`;
-        const rowsA = await tx`select workspace_id, id from public.workspace_exercises order by workspace_id`;
-        const variationsA = await tx`select workspace_id, exercise_id from public.exercise_variations order by workspace_id`;
-        expect(rowsA).toEqual([{ workspace_id: kendoId, id: workspaceExerciseA }]);
-        expect(variationsA).toEqual([{ workspace_id: kendoId, exercise_id: exerciseId }]);
+        const rowsA =
+          await tx`select workspace_id, id from public.workspace_exercises order by workspace_id`;
+        const variationsA =
+          await tx`select workspace_id, exercise_id from public.exercise_variations order by workspace_id`;
+        expect(rowsA).toEqual([
+          { workspace_id: kendoId, id: workspaceExerciseA },
+        ]);
+        expect(variationsA).toEqual([
+          { workspace_id: kendoId, exercise_id: exerciseId },
+        ]);
 
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerB.userId, role: 'authenticated' })}, true)`;
-        const rowsB = await tx`select workspace_id, id from public.workspace_exercises order by workspace_id`;
-        const variationsB = await tx`select workspace_id, exercise_id from public.exercise_variations order by workspace_id`;
-        expect(rowsB).toEqual([{ workspace_id: tojiId, id: workspaceExerciseB }]);
-        expect(variationsB).toEqual([{ workspace_id: tojiId, exercise_id: exerciseId }]);
+        const rowsB =
+          await tx`select workspace_id, id from public.workspace_exercises order by workspace_id`;
+        const variationsB =
+          await tx`select workspace_id, exercise_id from public.exercise_variations order by workspace_id`;
+        expect(rowsB).toEqual([
+          { workspace_id: tojiId, id: workspaceExerciseB },
+        ]);
+        expect(variationsB).toEqual([
+          { workspace_id: tojiId, exercise_id: exerciseId },
+        ]);
 
         scoped = { rowsA, rowsB, variationsA, variationsB };
         throw new Error(rollbackMarker);
@@ -106,8 +136,24 @@ describe('workspace exercise tenant keys', () => {
         )
       order by table_name, definition
     `;
-    expect(fks.filter((row) => row.table_name.endsWith('workspace_exercise_versions')).some((row) => /FOREIGN KEY \(workspace_id, workspace_exercise_id\).*REFERENCES .*workspace_exercises\(workspace_id, id\)/.test(row.definition))).toBe(true);
-    expect(fks.filter((row) => row.table_name.endsWith('exercise_variation_versions')).some((row) => /FOREIGN KEY \(workspace_id, exercise_id\).*REFERENCES .*exercise_variations\(workspace_id, exercise_id\)/.test(row.definition))).toBe(true);
+    expect(
+      fks
+        .filter((row) => row.table_name.endsWith('workspace_exercise_versions'))
+        .some((row) =>
+          /FOREIGN KEY \(workspace_id, workspace_exercise_id\).*REFERENCES .*workspace_exercises\(workspace_id, id\)/.test(
+            row.definition,
+          ),
+        ),
+    ).toBe(true);
+    expect(
+      fks
+        .filter((row) => row.table_name.endsWith('exercise_variation_versions'))
+        .some((row) =>
+          /FOREIGN KEY \(workspace_id, exercise_id\).*REFERENCES .*exercise_variations\(workspace_id, exercise_id\)/.test(
+            row.definition,
+          ),
+        ),
+    ).toBe(true);
     const security = await db`
       select c.relname as name, c.relrowsecurity as rls, c.relforcerowsecurity as forced
       from pg_catalog.pg_class c
@@ -121,14 +167,16 @@ describe('workspace exercise tenant keys', () => {
 
   it('rejects a workspace exercise version whose id belongs to another workspace', async () => {
     const id = randomUUID();
-    await expect(db.begin(async (tx) => {
-      await tx`insert into public.workspace_exercises (workspace_id, id, created_by, current_version)
+    await expect(
+      db.begin(async (tx) => {
+        await tx`insert into public.workspace_exercises (workspace_id, id, created_by, current_version)
         values (${tojiId}, ${id}, ${trainerB.userId}, 1)`;
-      await tx`insert into public.workspace_exercise_versions (workspace_id, workspace_exercise_id, version, payload, created_by)
+        await tx`insert into public.workspace_exercise_versions (workspace_id, workspace_exercise_id, version, payload, created_by)
         values (${tojiId}, ${id}, 1, '{}'::jsonb, ${trainerB.userId})`;
-      await tx`insert into public.workspace_exercise_versions (workspace_id, workspace_exercise_id, version, payload, created_by)
+        await tx`insert into public.workspace_exercise_versions (workspace_id, workspace_exercise_id, version, payload, created_by)
         values (${kendoId}, ${id}, 2, '{}'::jsonb, ${trainerA.userId})`;
-    })).rejects.toMatchObject({ code: '23503' });
+      }),
+    ).rejects.toMatchObject({ code: '23503' });
   });
 
   it('scopes workspace search and counts, keeps global results workspace-free, and denies foreign scope generically', async () => {
@@ -155,20 +203,35 @@ describe('workspace exercise tenant keys', () => {
 
         await tx`select set_config('role', 'authenticated', true)`;
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerA.userId, role: 'authenticated' })}, true)`;
-        const globalRows = await tx`select result_id, result_workspace_id, result_payload
+        const globalRows =
+          await tx`select result_id, result_workspace_id, result_payload
           from public.catalog_search('exercise', 'global-canonical', '{}'::jsonb, null, null)`;
         expect(globalRows).toEqual([
-          { result_id: canonicalId, result_workspace_id: null, result_payload: { marker: 'global-canonical' } },
+          {
+            result_id: canonicalId,
+            result_workspace_id: null,
+            result_payload: { marker: 'global-canonical' },
+          },
         ]);
-        const kendoRows = await tx`select result_id, result_workspace_id, result_payload
+        const kendoRows =
+          await tx`select result_id, result_workspace_id, result_payload
           from public.catalog_search('workspace_exercise', 'KENDO', '{}'::jsonb, null, ${kendoId})`;
         expect(kendoRows).toEqual([
-          { result_id: kendoExerciseId, result_workspace_id: kendoId, result_payload: { marker: 'KENDO exercise' } },
+          {
+            result_id: kendoExerciseId,
+            result_workspace_id: kendoId,
+            result_payload: { marker: 'KENDO exercise' },
+          },
         ]);
-        const kendoVariations = await tx`select result_id, result_workspace_id, result_payload
+        const kendoVariations =
+          await tx`select result_id, result_workspace_id, result_payload
           from public.catalog_search('variation', 'KENDO', '{}'::jsonb, null, ${kendoId})`;
         expect(kendoVariations).toEqual([
-          { result_id: canonicalId, result_workspace_id: kendoId, result_payload: { marker: 'KENDO variation' } },
+          {
+            result_id: canonicalId,
+            result_workspace_id: kendoId,
+            result_payload: { marker: 'KENDO variation' },
+          },
         ]);
         const countsA = await tx`select
             (select count(*)::int from public.workspace_exercises) as exercises,
@@ -177,13 +240,20 @@ describe('workspace exercise tenant keys', () => {
 
         const denied = async (scope: string | null) => {
           try {
-            await tx.savepoint(async (sp) =>
-              sp`select * from public.catalog_search('workspace_exercise', null, '{}'::jsonb, null, ${scope})`,
+            await tx.savepoint(
+              async (sp) =>
+                sp`select * from public.catalog_search('workspace_exercise', null, '{}'::jsonb, null, ${scope})`,
             );
             throw new Error('expected generic workspace denial');
           } catch (error) {
-            expect(error).toMatchObject({ code: '42501', message: 'not_permitted' });
-            return { code: (error as { code: string }).code, message: (error as { message: string }).message };
+            expect(error).toMatchObject({
+              code: '42501',
+              message: 'not_permitted',
+            });
+            return {
+              code: (error as { code: string }).code,
+              message: (error as { message: string }).message,
+            };
           }
         };
         const foreignDenied = await denied(tojiId);
@@ -191,10 +261,15 @@ describe('workspace exercise tenant keys', () => {
         expect(foreignDenied).toEqual(missingDenied);
 
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerB.userId, role: 'authenticated' })}, true)`;
-        const tojiRows = await tx`select result_id, result_workspace_id, result_payload
+        const tojiRows =
+          await tx`select result_id, result_workspace_id, result_payload
           from public.catalog_search('workspace_exercise', 'TOJI', '{}'::jsonb, null, ${tojiId})`;
         expect(tojiRows).toEqual([
-          { result_id: tojiExerciseId, result_workspace_id: tojiId, result_payload: { marker: 'TOJI exercise' } },
+          {
+            result_id: tojiExerciseId,
+            result_workspace_id: tojiId,
+            result_payload: { marker: 'TOJI exercise' },
+          },
         ]);
         const countsB = await tx`select
             (select count(*)::int from public.workspace_exercises) as exercises,

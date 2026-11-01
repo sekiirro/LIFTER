@@ -1,9 +1,10 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import type postgres from 'postgres';
 import { admin, checked, sql } from './harness';
 
 const db = sql();
-type Tx = Parameters<Parameters<typeof db.begin>[0]>[0];
+type Tx = postgres.TransactionSql;
 let creatorId: string;
 const rollbackMarker = 'rollback_catalog_food_fixture';
 
@@ -17,7 +18,9 @@ beforeAll(async () => {
     throw new Error(created.error?.message ?? 'Catalog fixture user missing');
   creatorId = created.data.user.id;
   checked(
-    await admin().from('staff_profiles').insert({ user_id: creatorId, role: 'trainer' }),
+    await admin()
+      .from('staff_profiles')
+      .insert({ user_id: creatorId, role: 'trainer' }),
   );
 });
 
@@ -54,7 +57,10 @@ const validVersion: Required<FoodVersion> = {
 async function insertVersion(
   tx: Tx,
   data: FoodVersion = {},
-  serving: { basis?: string; basis_qty?: number } | null = { basis: 'g', basis_qty: 100 },
+  serving: { basis?: string; basis_qty?: number } | null = {
+    basis: 'g',
+    basis_qty: 100,
+  },
 ) {
   const foodId = randomUUID();
   const value = { ...validVersion, ...data };
@@ -92,16 +98,20 @@ describe('global food version nutrition and servings', () => {
   it('accepts valid g and ml versions with optional fiber and matching positive servings', async () => {
     await withRolledBackFixture(async (tx) => {
       await insertVersion(tx);
-      await insertVersion(tx, {
-        ...validVersion,
-        name_ar: null,
-        name_en: 'Milk',
-        basis: 'ml',
-        product_identity_norm: 'milk:whole',
-        preparation_identity_norm: 'not_applicable',
-        weighing_state: 'not_applicable',
-        fiber_g: null,
-      }, { basis: 'ml', basis_qty: 250 });
+      await insertVersion(
+        tx,
+        {
+          ...validVersion,
+          name_ar: null,
+          name_en: 'Milk',
+          basis: 'ml',
+          product_identity_norm: 'milk:whole',
+          preparation_identity_norm: 'not_applicable',
+          weighing_state: 'not_applicable',
+          fiber_g: null,
+        },
+        { basis: 'ml', basis_qty: 250 },
+      );
     });
   });
 
@@ -127,26 +137,34 @@ describe('global food version nutrition and servings', () => {
       { kcal: Number.POSITIVE_INFINITY },
       { protein_g: 80, carbohydrate_g: 80, fat_g: 0 },
     ] satisfies FoodVersion[]) {
-      await expect(db.begin(async (tx) => {
-        await insertVersion(tx, invalid);
-        await tx`set constraints all immediate`;
-      })).rejects.toBeDefined();
+      await expect(
+        db.begin(async (tx) => {
+          await insertVersion(tx, invalid);
+          await tx`set constraints all immediate`;
+        }),
+      ).rejects.toBeDefined();
     }
   });
 
   it('requires at least one positive serving in the food version basis', async () => {
-    await expect(db.begin(async (tx) => {
-      await insertVersion(tx, {}, null);
-      await tx`set constraints all immediate`;
-    })).rejects.toBeDefined();
-    await expect(db.begin(async (tx) => {
-      await insertVersion(tx, {}, { basis: 'g', basis_qty: 0 });
-      await tx`set constraints all immediate`;
-    })).rejects.toMatchObject({ code: '23514' });
-    await expect(db.begin(async (tx) => {
-      await insertVersion(tx, {}, { basis: 'ml', basis_qty: 50 });
-      await tx`set constraints all immediate`;
-    })).rejects.toMatchObject({ code: '23503' });
+    await expect(
+      db.begin(async (tx) => {
+        await insertVersion(tx, {}, null);
+        await tx`set constraints all immediate`;
+      }),
+    ).rejects.toBeDefined();
+    await expect(
+      db.begin(async (tx) => {
+        await insertVersion(tx, {}, { basis: 'g', basis_qty: 0 });
+        await tx`set constraints all immediate`;
+      }),
+    ).rejects.toMatchObject({ code: '23514' });
+    await expect(
+      db.begin(async (tx) => {
+        await insertVersion(tx, {}, { basis: 'ml', basis_qty: 50 });
+        await tx`set constraints all immediate`;
+      }),
+    ).rejects.toMatchObject({ code: '23503' });
   });
 
   it('accepts macro values that total exactly 100 grams', async () => {

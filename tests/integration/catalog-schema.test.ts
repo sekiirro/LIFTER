@@ -40,7 +40,9 @@ async function rowCount(table: 'exercises' | 'foods') {
     select to_regclass(${`public.${table}`})::text as name
   `;
   if (!relation?.name) return 0;
-  const rows = await db.unsafe(`select count(*)::int as count from public.${table}`);
+  const rows = await db.unsafe(
+    `select count(*)::int as count from public.${table}`,
+  );
   return rows[0]?.count ?? 0;
 }
 
@@ -54,14 +56,25 @@ describe('catalog taxonomy foundation', () => {
       join public.taxonomy_term_versions v on v.term_id = t.id and v.version = 1
       order by t.kind, t.code
     `;
-    expect(terms.filter((term) => term.kind === 'muscle_group').map((term) => term.code).sort()).toEqual(
-      expectedMuscles.sort(),
-    );
-    expect(terms.filter((term) => term.kind === 'equipment').map((term) => term.code).sort()).toEqual(
-      expectedEquipment.sort(),
-    );
+    expect(
+      terms
+        .filter((term) => term.kind === 'muscle_group')
+        .map((term) => term.code)
+        .sort(),
+    ).toEqual(expectedMuscles.sort());
+    expect(
+      terms
+        .filter((term) => term.kind === 'equipment')
+        .map((term) => term.code)
+        .sort(),
+    ).toEqual(expectedEquipment.sort());
     expect(terms).toHaveLength(28);
-    expect(terms.every((term) => term.label_ar.trim() && term.label_en.trim() && term.version === 1)).toBe(true);
+    expect(
+      terms.every(
+        (term) =>
+          term.label_ar.trim() && term.label_en.trim() && term.version === 1,
+      ),
+    ).toBe(true);
     expect(await rowCount('exercises')).toBe(0);
     expect(await rowCount('foods')).toBe(0);
   });
