@@ -1,7 +1,10 @@
 import type { BrandingRepository } from '../branding/service';
 import type { FormsWorkspaceBrandSource } from './staff-contracts';
 
-type PublishedBrandingReader = Pick<BrandingRepository, 'getCurrentPublication'>;
+type PublishedBrandingReader = Pick<
+  BrandingRepository,
+  'getCurrentPublication'
+>;
 
 /** Adapts F14's current-publication contract to the F15 staff presentation seam. */
 export function createFormsWorkspaceBrandSource(

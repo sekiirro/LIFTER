@@ -1,4 +1,3 @@
-import { localSupabaseContainer } from './local-docker';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import {
   proof,

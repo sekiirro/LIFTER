@@ -234,6 +234,32 @@ describe('tenancy security catalog (T007)', () => {
         'has_workspace_access',
         'is_platform_owner',
         'jobs_updated_at',
+        'copy_workspace_form',
+        'ensure_default_onboarding_form',
+        'f15_onboarding_provisioning_marker_immutable',
+        'f15_builder_cached_result',
+        'f15_builder_store_result',
+        'f15_current_terms_policy',
+        'f15_answer_is_present',
+        'f15_approval_reconcile_trigger',
+        'f15_is_assigned_answer',
+        'f15_is_assigned_client',
+        'f15_question_applies',
+        'f15_selection_reconcile_trigger',
+        'f15_submission_complete',
+        'f15_valid_builder_definition',
+        'guard_f15_assignment_fact',
+        'guard_f15_form_assignment',
+        'guard_f15_form_version',
+        'publish_workspace_form',
+        'purge_ended_form_answers',
+        'reconcile_f15_form_assignment',
+        'resolve_default_onboarding_configuration',
+        'retire_workspace_form',
+        'save_workspace_form_draft',
+        'set_default_onboarding_form',
+        'stamp_form_purge_deadline',
+        'signup_auth_identity_column',
         'recovery_link_guard',
         'recovery_link_limits',
         'recovery_target_workspace',
@@ -244,6 +270,11 @@ describe('tenancy security catalog (T007)', () => {
       expect(row.prosecdef).toBe(
         ![
           'audit_events_immutable',
+          'f15_answer_is_present',
+          'f15_question_applies',
+          'f15_submission_complete',
+          'f15_valid_builder_definition',
+          'f15_onboarding_provisioning_marker_immutable',
           'branding_actor_id',
           'forbid_delete',
           'jobs_updated_at',
@@ -280,7 +311,31 @@ describe('tenancy security catalog (T007)', () => {
               'audit_events_immutable',
               'audit_row_change',
               'client_has_access',
+              'copy_workspace_form',
               'enqueue_job',
+              'ensure_default_onboarding_form',
+              'f15_builder_cached_result',
+              'f15_builder_store_result',
+              'f15_onboarding_provisioning_marker_immutable',
+              'f15_current_terms_policy',
+              'f15_answer_is_present',
+              'f15_approval_reconcile_trigger',
+              'f15_selection_reconcile_trigger',
+              'f15_question_applies',
+              'f15_submission_complete',
+              'f15_valid_builder_definition',
+              'guard_f15_assignment_fact',
+              'reconcile_f15_form_assignment',
+              'guard_f15_form_assignment',
+              'guard_f15_form_version',
+              'purge_ended_form_answers',
+              'publish_workspace_form',
+              'resolve_default_onboarding_configuration',
+              'retire_workspace_form',
+              'save_workspace_form_draft',
+              'set_default_onboarding_form',
+              'signup_auth_identity_column',
+              'stamp_form_purge_deadline',
               'f13_audit_client_deactivation',
               'forbid_delete',
               'guard_package_offer_update',
@@ -292,6 +347,30 @@ describe('tenancy security catalog (T007)', () => {
             ].includes(row.proname)),
       );
     }
+  });
+
+  it('keeps the first-provision marker forced-RLS, API-private, and immutable', async () => {
+    const [marker] = await db`
+      select c.relrowsecurity,c.relforcerowsecurity
+      from pg_catalog.pg_class c
+      where c.oid='app_private.workspace_onboarding_provisioning'::regclass`;
+    expect(marker).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      for (const privilege of ['SELECT', 'INSERT', 'UPDATE', 'DELETE']) {
+        const [grant] = await db`
+          select has_table_privilege(${role},'app_private.workspace_onboarding_provisioning',${privilege}) as allowed`;
+        expect(grant?.allowed).toBe(false);
+      }
+    }
+    const triggers = await db`
+      select tgname,tgenabled from pg_catalog.pg_trigger
+      where tgrelid='app_private.workspace_onboarding_provisioning'::regclass and not tgisinternal`;
+    expect(triggers).toEqual([
+      {
+        tgname: 'f15_onboarding_provisioning_marker_immutable',
+        tgenabled: 'O',
+      },
+    ]);
   });
 });
 

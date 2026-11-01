@@ -133,6 +133,9 @@ export async function signupFixture(f: ClientContext, executor = sql()) {
             .padStart(11, '0')
             .slice(-11),
         password: 'Synthetic9!' + randomUUID().replaceAll('-', ''),
+        date_of_birth: '1990-04-12',
+        username: `u3-${randomUUID()}`,
+        telegram_username: '',
       },
     };
   } finally {
@@ -143,7 +146,7 @@ export type SignupFixture = Awaited<ReturnType<typeof signupFixture>>;
 export async function signup(
   tx: TransactionSql | ReturnType<typeof sql>,
   f: SignupFixture,
-  fields = f.fields,
+  fields: Record<string, string | null | undefined> = f.fields,
 ) {
   // Never let a provider diagnostic print statement parameters or credentials.
   try {

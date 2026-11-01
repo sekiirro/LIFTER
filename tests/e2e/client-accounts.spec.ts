@@ -1,4 +1,5 @@
 import { expect, test, type Page } from '@playwright/test';
+import { randomInt } from 'node:crypto';
 import { localSupabaseContainer } from '../integration/local-docker';
 import { execFileSync } from 'node:child_process';
 import { readFile, mkdtemp, rm, stat } from 'node:fs/promises';

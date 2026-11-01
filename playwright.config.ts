@@ -71,7 +71,7 @@ export default defineConfig({
     url: new URL('/api/health', baseURL).toString(),
     env: {
       ...process.env,
-PORT: process.env.PORT ?? (new URL(baseURL).port || '3000'),
+      PORT: process.env.PORT ?? (new URL(baseURL).port || '3000'),
       LIFTER_SHOWCASE: '1',
       APP_ORIGIN: process.env.APP_ORIGIN ?? new URL(baseURL).origin,
       U8_SERVER_LOG_MANIFEST_PATH: serverLogManifestPath,
