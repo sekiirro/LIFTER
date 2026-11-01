@@ -108,6 +108,10 @@ setting `LIFTER_SUPABASE_STACK` to `a`, `b`, `c`, or `d`. Endpoint variables can
 also identify a configured local profile; without either a selector or a complete
 matching endpoint pair, local commands refuse to guess.
 
+Profiles `a` and `b` are tracked in the repository. Profiles `c` and `d` are
+local agent-lane profiles and must be provisioned in the lane's worktree before
+they can be selected.
+
 Install Docker and Supabase CLI 2.122.0 before running the local database suite.
 The integration job in GitHub Actions uses a disposable local stack, applies all
 migrations from scratch, and needs no repository secrets or deployment.

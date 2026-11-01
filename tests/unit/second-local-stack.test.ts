@@ -69,6 +69,24 @@ describe('isolated local Supabase stack contract', () => {
     }
   });
 
+  it('explains that missing C profiles must be provisioned in the lane worktree', () => {
+    const root = mkdtempSync(join(tmpdir(), 'lifter-stack-c-missing-'));
+    try {
+      const expectedPath = join(
+        root,
+        'supabase-stack-c',
+        'supabase',
+        'config.toml',
+      );
+      expect(() => getStackConfig('c', root)).toThrow(
+        /Expected profile config at .*supabase-stack-c.*config\.toml.*must be provisioned locally in the lane's worktree/,
+      );
+      expect(expectedPath).toContain('supabase-stack-c');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
   it('binds stack B to its separate project and complete port block', () => {
     const stackA = getStackConfig('a');
     const stackB = getStackConfig('b');
