@@ -188,7 +188,7 @@ Workspace Owner can edit logo, color theme, visual identity, hero/branding eleme
 - First workout and nutrition plans may be delivered independently, including on different days. Subscription activation occurs exactly once after both first plans are successfully delivered; no paired-publish transaction is required. Each delivery is secure, idempotent and concurrency-safe. Later plan edits never restart activation. The responsible trainer is recorded for accountability; other trainer contributions are recorded independently. (PO S20 Message B section 4; supersedes paired-delivery transaction wording.)
 - Deadline calculated from mandatory intake submission: five working days, Friday excluded; before 18:00 counts as first day, after 18:00 starts next working day.
 - Delays trigger alerts to responsible trainer, Workspace Owner and Platform Owner; strike review is human-governed.
-- Additional plan revisions during a subscription do not create new first-pair productivity credit. Renewals require actually delivered new plans to generate a new credit.
+- Additional plan revisions during a subscription do not create new first complete workout and nutrition plan set productivity credit. Renewals require actually delivered new plans to generate a new credit.
 - Keep versions, authorship, approval/publish actions, assignment changes and meaningful timeline entries.
 
 ## PRD-07. Subscriptions, installments, refunds and expiry
@@ -270,7 +270,7 @@ Workspace Owner can edit logo, color theme, visual identity, hero/branding eleme
 
 **Journey A — paid new client:** workspace receives external payment → staff issues correct branded package link → client signs up once → owner confirms payment/approves → mandatory intake autosaves and submits → deadline computed → trainers prepare both plans → auto-delivery activates subscription → client views plans and receives appropriate notifications.
 
-**Journey B — trainer collaboration:** responsible trainer and helper trainer both edit authorized client plans → source/version/contribution history persists → first complete pair credits only responsible trainer → KPI excludes double-counting from revisions → Owner can audit and correct attribution.
+**Journey B — trainer collaboration:** responsible trainer and helper trainer both edit authorized client plans → source/version/contribution history persists → first complete workout and nutrition plan set credits only responsible trainer → KPI excludes double-counting from revisions → Owner can audit and correct attribution.
 
 **Journey C — food substitution:** client views nutrition plan and approved alternatives → chooses valid alternative → may request new replacement → trainer revises/publishes → client sees updated alternatives and all historical eligible plans → no web food diary is created.
 

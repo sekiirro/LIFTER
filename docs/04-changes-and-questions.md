@@ -62,9 +62,9 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
   - deadline instant on day 5 (P2)
   - Sales coaching rights
 
-## Session 20 PO decisions — binding under DR-03 (2026-10-31)
+## Session 20/21 PO decisions — binding under DR-03 (2026-10-31)
 
-These numbered entries record PO Messages A/B and the final S20 handoff. Later explicit PO decisions supersede older specs, plans and PRD wording.
+These numbered entries record PO Messages A/B, the final S20 handoff, and the S21 follow-up decisions. Later explicit PO decisions supersede older specs, plans and PRD wording.
 
 | ID | Decision | Source / effect |
 |---|---|---|
