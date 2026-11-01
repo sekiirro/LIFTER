@@ -29,6 +29,10 @@ Observable contract only. Exact SQL argument types and transport schemas remain 
 
 Every mutation accepts an action-bound UUIDv4 operation key, request data, and (for edits/transitions) expected current version. Same actor/key/action/hash returns the original result; same key with a different action/hash returns conflict. Successful mutation appends one audit event atomically. Stale versions return conflict; membership/capability is rechecked after lock waits.
 
+### Shared operation-key ledger (S23 R8)
+
+`app_private.operation_keys` is a feature-neutral ledger for F16, Plan Core, F17 and F18. Its stable columns are `actor_user_id`, two-segment `action`, UUIDv4 `operation_key`, canonical SHA-256 `request_hash`, original JSONB `result`, and `created_at`. The primary key is `(actor_user_id, operation_key)`, so one key cannot be rebound to another action or request. A caller checks authorization and acquires resource locks before looking up a replay, rechecks authorization after lock waits, then performs the write, stores the result once, and writes its audit event in the same transaction. Exact actor/action/hash replay returns that stored result; changed action or hash raises `operation_key_request_conflict`. The ledger grants no direct access to client roles and stores no key outside the UUID column. Entries older than 30 days are deleted by the existing hourly F11 retention job; activation of that job remains deferred to its approved pre-production step.
+
 | RPC | Action | Allowed role/scope | Result contract |
 | --- | --- | --- | --- |
 | `catalog_create_exercise` | Create global identity + v1 | PO only | Stable ID and v1; bilingual name/taxonomy fields valid; one audit event. |
@@ -55,4 +59,4 @@ Read calls are not audit events. Client plan reads consume F17/F18 immutable sna
 
 ## Audit action contract
 
-Use the established two-segment format, e.g. `catalog.food_created`, `catalog.food_versioned`, `catalog.food_merged`, `catalog.exercise_versioned`, `catalog.taxonomy_versioned`. A successful write emits one event in the same transaction. Global `workspace_id` is NULL; workspace-specific changes carry that workspace ID. Details are allowlisted IDs and changed-field codes only.
+Use the established two-segment format, e.g. `catalog.food_created`, `catalog.food_versioned`, `catalog.food_merged`, `catalog.exercise_versioned`, `catalog.taxonomy_versioned`. A successful write emits one event in the same transaction. Global `workspace_id` is NULL; workspace-specific changes carry that workspace ID. The audit writer accepts only catalog action/table pairs and the `identity_id`, `version`, `related_id`, and `changed_fields` detail keys; changed-field values are codes from the writer's fixed allowlist. It rejects names, nutrition values, notes, URLs, origin data, raw operation keys, and free text.
