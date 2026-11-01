@@ -167,7 +167,12 @@ describe('F15 application authorization policy (T003)', () => {
     };
 
     expect(
-      authorizeFormAccess(actor, swappedTarget, 'read_form_answers', capability),
+      authorizeFormAccess(
+        actor,
+        swappedTarget,
+        'read_form_answers',
+        capability,
+      ),
     ).toEqual(denied);
   });
 
