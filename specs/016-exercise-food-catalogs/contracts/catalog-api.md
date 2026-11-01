@@ -52,10 +52,13 @@ Every mutation accepts an action-bound UUIDv4 operation key, request data, and (
 | Read operation | Authorization | Projection |
 | --- | --- | --- |
 | `catalog_search(kind, query, filters, cursor, workspace_id)` | Global reads use the PO-or-current-coaching-staff predicate and return global rows only; workspace reads require one explicit `workspace_id` plus current `coaching_work` in it | Max 50, stable order, indexed normalized search; workspace-owned rows and videos from other workspaces are never returned or inferable. |
-| Entry/version detail and history read | Global: same PO-or-current-coaching-staff rule. Workspace-owned: explicit `workspace_id` and current `coaching_work` there | Explicit immutable versions; server returns `created_by` and `origin_workspace_id` only to PO governance reads; all non-PO RPC/view/search/detail/history/error/export projections null or omit both. |
+| `catalog_food_detail(food_id, version)` | PO or current coaching staff, including PO without membership | One immutable food version; provenance is visible only to PO. |
+| `catalog_food_history(food_id)` | PO or current coaching staff, including PO without membership | Immutable versions newest first; provenance is visible only to PO. |
+| `catalog_food_export_safe` | PO or current coaching staff through the safe read views | Same version and provenance projection as detail/history; exports use this safe view. |
+| Workspace exercise or variation detail/history | Explicit `workspace_id` plus current `coaching_work` in that workspace | Returns only that workspace's rows and media; errors and counts do not reveal another workspace. |
 | Workspace video resolution | Explicit selected workspace and current `coaching_work` authorization on every call | Returns only that workspace's current authorized YouTube/Drive mapping; never returns or signals other workspace links. |
 
-Read calls are not audit events. Client plan reads consume F17/F18 immutable snapshots and do not call catalog reads. Every non-PO path enforces provenance masking server-side; name the negative and positive tests `global_food_provenance_masking_non_po` and `global_food_provenance_po_governance_read` respectively. Workspace read authorization and foreign-workspace non-disclosure are checked independently for search, detail/history, variation, video resolution and planner/export joins.
+Read calls are not audit events. Client plan reads consume F17/F18 immutable snapshots and do not call catalog reads. Every non-PO RPC/view/search/detail/history/error/export projection nulls or omits both `created_by` and `origin_workspace_id`; name the negative and positive tests `global_food_provenance_masking_non_po` and `global_food_provenance_po_governance_read` respectively. Workspace read authorization and foreign-workspace non-disclosure are checked independently for search, detail/history, variation, video resolution and planner/export joins.
 
 ## Audit action contract
 
