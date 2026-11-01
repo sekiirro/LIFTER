@@ -22,6 +22,21 @@ Do not run application tests, database integrations, Docker, Supabase CLI, or `p
 5. Use synthetic fixtures only. No real client Forms data until the 30-day all-copy retention review and applicable production-readiness gates are evidenced. Do not activate alert scheduling in a migration.
 6. Any rendered-UI implementation brief must append `C:/Users/NEW LAP/.lifter/briefs/frontend-design-gate.txt` and follow `DESIGN.md`.
 
+## Stack D reset and local provisioning
+
+No repository script currently wraps Stack D reset. After every local reset of `supabase-stack-d`, run the existing local-only Vault/key provisioner immediately, before any integration test. It revokes Vault table/function privileges from API roles and provisions local test keys; these revokes belong in this provisioner, never in a migration. Set the explicit wrapper environment in each PowerShell command and use the Stack D workdir:
+
+```powershell
+$env:SUPABASE_SAFE_CLI='node "C:/Program Files/nodejs/node_modules/npm/bin/npx-cli.js"'
+$env:LIFTER_SUPABASE_STACK='d'
+node 'C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs' --workdir 'C:/Users/NEW LAP/Desktop/LFTR-p2/supabase-stack-d' --stack D db reset --yes
+
+$env:SUPABASE_SAFE_CLI='node "C:/Program Files/nodejs/node_modules/npm/bin/npx-cli.js"'
+$env:LIFTER_SUPABASE_STACK='d'
+node 'C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs' --workdir 'C:/Users/NEW LAP/Desktop/LFTR-p2/supabase-stack-d' --stack D exec -- node 'C:/Users/NEW LAP/Desktop/LFTR-p2/tests/integration/client-accounts-provision.mjs'
+```
+
+Then run the existing Vault grant assertion (`tests/integration/client-accounts-schema.test.ts`, test `Vault keys are inaccessible to API roles, including service_role`) through the same Stack D wrapper. Do not run the provisioner directly or inspect/print its environment files; it handles local credentials internally.
 ## Future RED → GREEN commands
 
 Run these only under a separately approved implementation brief and after satisfying the prerequisites above. Capture exact commands, expected RED failures, commit/stack/fixture revision, pass/fail/skip counts, and restored results for each mutation. Never commit a mutant.
