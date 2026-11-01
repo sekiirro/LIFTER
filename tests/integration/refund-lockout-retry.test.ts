@@ -9,7 +9,15 @@ vi.mock('server-only', () => ({}));
 
 const db = sql();
 let authUserId: string | undefined;
+async function cleanStarvationRows() {
+  await db`delete from app_private.refund_auth_lockouts q
+    where q.created_at in (
+      '0001-01-01 00:00:00+00'::timestamptz,
+      '0002-01-01 00:00:00+00'::timestamptz
+    ) and not exists (select 1 from auth.users u where u.id=q.auth_user_id)`;
+}
 afterAll(async () => {
+  await cleanStarvationRows();
   if (authUserId) {
     await db`delete from app_private.refund_auth_lockouts where auth_user_id=${authUserId}`;
     await db`delete from app_private.client_deactivation_state where auth_user_id=${authUserId}`;
@@ -22,6 +30,7 @@ afterAll(async () => {
 });
 
 it('retains the committed refund outbox row and retries that same row after Auth Admin failure', async () => {
+  await cleanStarvationRows();
   const authUser = await admin().auth.admin.createUser({
     email: `refund-lockout-${randomUUID()}@example.test`,
     password: randomUUID(),
@@ -63,7 +72,26 @@ it('retains the committed refund outbox row and retries that same row after Auth
       typeof SupabaseAuthLockoutStore
     >[0],
   );
-  const claimed = await store.claimDue(100);
+  const olderDueRows = await db.begin(async (tx) => {
+    await tx`set local session_replication_role = 'replica'`;
+    return tx`
+      insert into app_private.refund_auth_lockouts
+        (client_id,auth_user_id,status,attempts,next_attempt_at,created_at)
+      select gen_random_uuid(),gen_random_uuid(),'pending',0,
+        '0002-01-01 00:00:00+00'::timestamptz,
+        '0002-01-01 00:00:00+00'::timestamptz
+      from generate_series(1,101)
+      returning id`;
+  });
+  expect(olderDueRows).toHaveLength(101);
+  const [prioritized] = await db`
+    update app_private.refund_auth_lockouts
+    set next_attempt_at='0001-01-01 00:00:00+00'::timestamptz,
+        created_at='0001-01-01 00:00:00+00'::timestamptz
+    where id=${outboxId} and status='pending'
+    returning id`;
+  expect(prioritized?.id).toBe(outboxId);
+  const claimed = await store.claimDue(1);
   const job = claimed.find((candidate) => candidate.id === outboxId);
   expect(job).toMatchObject({
     id: outboxId,
@@ -107,11 +135,12 @@ it('retains the committed refund outbox row and retries that same row after Auth
 
   const [madeDue] = await db`
     update app_private.refund_auth_lockouts
-    set next_attempt_at=clock_timestamp()-interval '1 second'
+    set next_attempt_at='0001-01-01 00:00:00+00'::timestamptz,
+        created_at='0001-01-01 00:00:00+00'::timestamptz
     where id=${outboxId} and status='retry'
     returning id`;
   expect(madeDue?.id).toBe(outboxId);
-  const reclaimed = await store.claimDue(100);
+  const reclaimed = await store.claimDue(1);
   const retryJob = reclaimed.find((candidate) => candidate.id === outboxId);
   expect(retryJob).toMatchObject({
     id: outboxId,
