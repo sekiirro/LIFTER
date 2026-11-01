@@ -232,6 +232,7 @@ describe('F16 mutation probes', () => {
           throw new Error('stable-order mutation target missing');
         stage = 'replace-order';
         await tx`select set_config('role', 'postgres', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: po.userId, role: 'authenticated' })}, true)`;
         await tx.unsafe(orderingMutant);
         await tx`select set_config('role', 'authenticated', true)`;
         stage = 'query-mutated-order';
@@ -383,6 +384,55 @@ describe('F16 mutation probes', () => {
               tx`update public.exercise_versions set payload = '{}'::jsonb where exercise_id = ${exerciseId} and version = 1`,
             ).rejects.toMatchObject({ code: '23514' }),
           'removing append-only protection must break the immutability assertion',
+        );
+        throw new Error(marker);
+      });
+    } catch (error) {
+      expect((error as Error).message).toBe(marker);
+    }
+  });
+
+  it('T019: removing workspace membership and tenant checks breaks both denial assertions', async () => {
+    const request = {
+      name_ar: 'اختبار النطاق',
+      name_en: 'Workspace scope mutation',
+      primary_muscle_code: 'chest',
+      secondary_muscle_codes: [],
+      equipment_codes: ['barbell'],
+      defaults: {},
+    };
+    const marker = 'rollback_catalog_workspace_scope_mutation';
+    try {
+      await db.begin(async (tx) => {
+        await tx`create or replace function app_private.has_workspace_access(ws uuid, cap text default null)
+          returns boolean language sql stable security definer set search_path = '' as $$ select true $$`;
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerA.userId, role: 'authenticated' })}, true)`;
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx`select public.catalog_write_workspace_exercise(${wsB}, null, null, ${randomUUID()}, ${tx.json(request)})`,
+            ).rejects.toMatchObject({
+              code: '42501',
+              message: 'not_permitted',
+            }),
+          'removing the current workspace tenant predicate must break foreign-scope denial',
+        );
+        await tx`select set_config('role', 'postgres', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: po.userId, role: 'authenticated' })}, true)`;
+        await tx`update public.workspace_memberships set revoked_at = now(), revoked_by = ${po.userId}
+          where workspace_id = ${wsA} and user_id = ${trainerA.userId} and revoked_at is null`;
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerA.userId, role: 'authenticated' })}, true)`;
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx`select public.catalog_write_workspace_exercise(${wsA}, null, null, ${randomUUID()}, ${tx.json(request)})`,
+            ).rejects.toMatchObject({
+              code: '42501',
+              message: 'not_permitted',
+            }),
+          'removing current-membership recheck must break revoked-actor denial',
         );
         throw new Error(marker);
       });
