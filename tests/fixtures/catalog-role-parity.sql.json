@@ -1,0 +1,14 @@
+{
+  "source": "specs/016-exercise-food-catalogs/contracts/catalog-api.md#role-authorization-matrix",
+  "roles": ["PO", "WO", "Trainer", "Sales", "Client", "Unknown/unauthenticated"],
+  "operations": [
+    {"operation":"Read global catalog/search/history","PO":"Allow directly, including without workspace membership","WO":"Allow with current `coaching_work` membership in at least one workspace","Trainer":"Same as WO","Sales":"Deny","Client":"Deny; clients receive plan snapshots only","Unknown/unauthenticated":"Deny"},
+    {"operation":"Create global exercise; edit/version; taxonomy governance","PO":"Allow","WO":"Deny","Trainer":"Deny","Sales":"Deny","Client":"Deny","Unknown/unauthenticated":"Deny"},
+    {"operation":"Remove/restore/merge global exercise or food","PO":"Allow","WO":"Deny","Trainer":"Deny","Sales":"Deny","Client":"Deny","Unknown/unauthenticated":"Deny"},
+    {"operation":"Create global food","PO":"Allow if PO identity is authenticated","WO":"Allow with current `coaching_work` in at least one workspace","Trainer":"Allow with current `coaching_work` in at least one workspace","Sales":"Deny","Client":"Deny","Unknown/unauthenticated":"Deny"},
+    {"operation":"Edit/version global food","PO":"Allow","WO":"Allow only when current actor is the food creator; otherwise deny","Trainer":"Allow only when current actor is the food creator; otherwise deny","Sales":"Deny","Client":"Deny","Unknown/unauthenticated":"Deny"},
+    {"operation":"Read/write workspace-only exercise","PO":"Allow with explicit workspace scope","WO":"Allow in own current workspace","Trainer":"Allow in own current workspace","Sales":"Deny","Client":"Deny","Unknown/unauthenticated":"Deny"},
+    {"operation":"Read/write workspace exercise variation","PO":"Allow for any explicit workspace","WO":"Allow in own current workspace","Trainer":"Allow in own current workspace","Sales":"Deny","Client":"Deny","Unknown/unauthenticated":"Deny"},
+    {"operation":"Resolve workspace video","PO":"Allow for selected authorized workspace","WO":"Allow for own authorized workspace","Trainer":"Allow for own authorized workspace","Sales":"Deny","Client":"Deny","Unknown/unauthenticated":"Deny"}
+  ]
+}
