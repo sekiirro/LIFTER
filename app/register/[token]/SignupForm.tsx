@@ -2,6 +2,10 @@
 
 import { useActionState, useEffect, useRef, useState } from 'react';
 import { Button } from '../../../components/ui/Button';
+import { Bidi } from '../../../components/ui/Bidi';
+import glass from '../../../components/branding/liquid-glass.module.css';
+import heroStyles from '../../../components/branding/registration-hero.module.css';
+import { PHONE_NUMBER_GROUP_DIRECTION } from '../../../components/branding/registration-hero';
 import {
   initialSignupResult,
   runSignupActionSafely,
@@ -105,7 +109,7 @@ export function SignupForm({
     <form
       ref={formRef}
       action={formAction}
-      className={styles.form}
+      className={`${styles.form} ${heroStyles.form}`}
       onSubmit={(event) => {
         if (submittingRef.current) {
           event.preventDefault();
@@ -126,80 +130,118 @@ export function SignupForm({
         value={JSON.stringify({ country, nationalNumber })}
         readOnly
       />
-      <label className={styles.field}>
+      <label className={`${styles.field} ${heroStyles.field}`}>
         <span>{messages.name}</span>
-        <input
-          ref={nameRef}
-          name="name"
-          aria-label={messages.name}
-          aria-describedby={
+        <span
+          className={`${heroStyles.fieldControl} ${glass.liquidGlassEdge}`}
+          data-error={
             submitted && result.invalidFields?.includes('name')
-              ? 'signup-name-error'
+              ? 'true'
               : undefined
           }
-          type="text"
-          value={name}
-          onChange={(event) => setName(event.currentTarget.value)}
-          autoComplete="name"
-          required
-          disabled={pending}
-          aria-invalid={submitted && result.invalidFields?.includes('name')}
-        />
-        {submitted && result.invalidFields?.includes('name') && (
-          <span id="signup-name-error" className={styles.fieldError}>
-            {messages.fieldError}
-          </span>
-        )}
-      </label>
-      <label className={styles.field}>
-        <span>{messages.email}</span>
-        <input
-          ref={emailRef}
-          name="email"
-          aria-label={messages.email}
-          aria-describedby={
-            submitted && result.invalidFields?.includes('email')
-              ? 'signup-email-error'
-              : undefined
-          }
-          type="email"
-          value={email}
-          onChange={(event) => setEmail(event.currentTarget.value)}
-          autoComplete="email"
-          required
-          disabled={pending}
-          aria-invalid={submitted && result.invalidFields?.includes('email')}
-        />
-        {submitted && result.invalidFields?.includes('email') && (
-          <span id="signup-email-error" className={styles.fieldError}>
-            {messages.fieldError}
-          </span>
-        )}
-      </label>
-      <div className={styles.phoneFields}>
-        <label className={styles.field}>
-          <span>{messages.country}</span>
-          <select
-            aria-label={messages.country}
-            value={country}
+        >
+          <input
+            ref={nameRef}
+            name="name"
+            aria-label={messages.name}
+            aria-describedby={
+              submitted && result.invalidFields?.includes('name')
+                ? 'signup-name-error'
+                : undefined
+            }
+            type="text"
+            value={name}
+            onChange={(event) => setName(event.currentTarget.value)}
+            autoComplete="name"
+            required
             disabled={pending}
-            onChange={(event) => setCountry(event.currentTarget.value)}
+            aria-invalid={submitted && result.invalidFields?.includes('name')}
+          />
+        </span>
+        {submitted && result.invalidFields?.includes('name') && (
+          <span
+            id="signup-name-error"
+            className={`${styles.fieldError} ${heroStyles.fieldError}`}
           >
-            {phoneCountries.map((option) => (
-              <option key={option.code} value={option.code}>
-                {option.name} (+{option.callingCode})
-              </option>
-            ))}
-          </select>
+            {messages.fieldError}
+          </span>
+        )}
+      </label>
+      <label className={`${styles.field} ${heroStyles.field}`}>
+        <span>{messages.email}</span>
+        <span
+          className={`${heroStyles.fieldControl} ${glass.liquidGlassEdge}`}
+          data-error={
+            submitted && result.invalidFields?.includes('email')
+              ? 'true'
+              : undefined
+          }
+        >
+          <input
+            ref={emailRef}
+            name="email"
+            aria-label={messages.email}
+            aria-describedby={
+              submitted && result.invalidFields?.includes('email')
+                ? 'signup-email-error'
+                : undefined
+            }
+            type="email"
+            value={email}
+            onChange={(event) => setEmail(event.currentTarget.value)}
+            autoComplete="email"
+            required
+            disabled={pending}
+            aria-invalid={submitted && result.invalidFields?.includes('email')}
+          />
+        </span>
+        {submitted && result.invalidFields?.includes('email') && (
+          <span
+            id="signup-email-error"
+            className={`${styles.fieldError} ${heroStyles.fieldError}`}
+          >
+            {messages.fieldError}
+          </span>
+        )}
+      </label>
+      <div className={`${styles.phoneFields} ${heroStyles.phoneFields}`}>
+        <label className={`${styles.field} ${heroStyles.field}`}>
+          <span>{messages.country}</span>
+          <span
+            className={`${heroStyles.countryPicker} ${glass.liquidGlassEdge}`}
+          >
+            <select
+              aria-label={messages.country}
+              value={country}
+              disabled={pending}
+              onChange={(event) => setCountry(event.currentTarget.value)}
+            >
+              {phoneCountries.map((option) => (
+                <option key={option.code} value={option.code}>
+                  {option.name} (+{option.callingCode})
+                </option>
+              ))}
+            </select>
+          </span>
         </label>
-        <label className={styles.field}>
+        <label className={`${styles.field} ${heroStyles.field}`}>
           <span>{messages.phone}</span>
-          <span className={styles.phoneNumber}>
-            <span aria-hidden="true">
-              +{selectedCountry?.callingCode ?? '20'}
+          <span
+            className={`${styles.phoneNumber} ${heroStyles.phoneNumber} ${heroStyles.fieldControl} ${glass.liquidGlassEdge}`}
+            data-testid="phone-number-group"
+            dir={PHONE_NUMBER_GROUP_DIRECTION}
+            data-error={
+              submitted && result.invalidFields?.includes('phone')
+                ? 'true'
+                : undefined
+            }
+          >
+            <span aria-hidden="true" data-testid="country-calling-code">
+              <Bidi dir="ltr">+{selectedCountry?.callingCode ?? '20'}</Bidi>
             </span>
             <input
               ref={phoneRef}
+              dir="ltr"
               aria-label={messages.phone}
               aria-describedby={
                 submitted && result.invalidFields?.includes('phone')
@@ -219,33 +261,50 @@ export function SignupForm({
             />
           </span>
           {submitted && result.invalidFields?.includes('phone') && (
-            <span id="signup-phone-error" className={styles.fieldError}>
+            <span
+              id="signup-phone-error"
+              className={`${styles.fieldError} ${heroStyles.fieldError}`}
+            >
               {messages.fieldError}
             </span>
           )}
         </label>
       </div>
-      <label className={styles.field}>
+      <label className={`${styles.field} ${heroStyles.field}`}>
         <span>{messages.password}</span>
-        <input
-          ref={passwordRef}
-          name="password"
-          aria-label={messages.password}
-          aria-describedby={
+        <span
+          className={`${heroStyles.fieldControl} ${glass.liquidGlassEdge}`}
+          data-error={
             submitted && result.invalidFields?.includes('password')
-              ? 'signup-password-error'
+              ? 'true'
               : undefined
           }
-          type="password"
-          value={password}
-          onChange={(event) => setPassword(event.currentTarget.value)}
-          autoComplete="new-password"
-          required
-          disabled={pending}
-          aria-invalid={submitted && result.invalidFields?.includes('password')}
-        />
+        >
+          <input
+            ref={passwordRef}
+            name="password"
+            aria-label={messages.password}
+            aria-describedby={
+              submitted && result.invalidFields?.includes('password')
+                ? 'signup-password-error'
+                : undefined
+            }
+            type="password"
+            value={password}
+            onChange={(event) => setPassword(event.currentTarget.value)}
+            autoComplete="new-password"
+            required
+            disabled={pending}
+            aria-invalid={
+              submitted && result.invalidFields?.includes('password')
+            }
+          />
+        </span>
         {submitted && result.invalidFields?.includes('password') && (
-          <span id="signup-password-error" className={styles.fieldError}>
+          <span
+            id="signup-password-error"
+            className={`${styles.fieldError} ${heroStyles.fieldError}`}
+          >
             {messages.fieldError}
           </span>
         )}
@@ -264,7 +323,8 @@ export function SignupForm({
                 ? 'alert'
                 : 'status'
           }
-          className={styles.message}
+          className={`${styles.message} ${heroStyles.message}`}
+          data-result-status={result.status}
           aria-live="polite"
         >
           {pending ? messages.pending : result.message}

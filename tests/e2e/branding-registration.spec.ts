@@ -1,9 +1,17 @@
-import AxeBuilder from '@axe-core/playwright';
-import { expect, test, type Page } from '@playwright/test';
-import { copyFile, mkdir, writeFile } from 'node:fs/promises';
-import { dirname, join } from 'node:path';
+import { expect, test } from '@playwright/test';
+import { mkdir, writeFile } from 'node:fs/promises';
+import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
-import { getMessages } from '../../lib/i18n';
+import {
+  captureHeroScreenshot,
+  expectHeroAxeClean,
+  expectHeroFocusRing,
+  expectHeroMaterialContract,
+  expectHeroPhoneGroupLtr,
+  expectHeroTextContrast,
+  expectHeroTouchTargets,
+  heroEvidenceDirectory,
+} from './registration-hero-evidence';
 import type { RegistrationFixture } from '../integration/registration-links-fixture';
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
@@ -16,19 +24,13 @@ const geometryEvidence: {
   locale: string;
   theme: string;
   viewport: string;
-  bannerWidth: number;
-  bannerHeight: number;
-  formTop: number;
-  bannerBottom: number;
+  cardCenterX: number;
+  cardCenterY: number;
+  viewportCenterX: number;
+  viewportCenterY: number;
   cls: number;
+  screenshot: string;
 }[] = [];
-
-async function expectAxeClean(page: Page) {
-  const report = await new AxeBuilder({ page })
-    .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa', 'wcag22aa'])
-    .analyze();
-  expect(report.violations).toEqual([]);
-}
 
 test.beforeAll(async () => {
   if (!local) return;
@@ -99,16 +101,9 @@ test.beforeEach(async () => {
 
 test.afterAll(async () => {
   if (geometryEvidence.length === 0) return;
-  const path = join(
-    process.cwd(),
-    'tests',
-    'integration',
-    'evidence',
-    'f14-ui',
-    'registration-geometry.json',
-  );
+  await mkdir(heroEvidenceDirectory, { recursive: true });
   await writeFile(
-    path,
+    join(heroEvidenceDirectory, 'registration-geometry.json'),
     `${JSON.stringify(geometryEvidence, null, 2)}\n`,
     'utf8',
   );
@@ -117,6 +112,7 @@ test.afterAll(async () => {
 for (const locale of ['ar', 'en'] as const) {
   for (const theme of ['light', 'dark'] as const) {
     for (const viewport of [
+      { name: 'mobile-360', width: 360, height: 800 },
       { name: 'mobile-390', width: 390, height: 844 },
       { name: 'tablet-768', width: 768, height: 1024 },
       { name: 'desktop-1440', width: 1440, height: 900 },
@@ -124,7 +120,7 @@ for (const locale of ['ar', 'en'] as const) {
       test(`${locale}/${theme}/${viewport.name}: published registration brand`, async ({
         page,
         context,
-      }, testInfo) => {
+      }) => {
         test.skip(!local, 'Requires the selected disposable local database.');
         await page.setViewportSize(viewport);
         await context.addCookies([
@@ -156,6 +152,18 @@ for (const locale of ['ar', 'en'] as const) {
           locale === 'ar' ? 'rtl' : 'ltr',
         );
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+        await expect(page.locator('[data-registration-hero]')).toHaveAttribute(
+          'data-has-banner',
+          'false',
+        );
+        await expect(page.locator('[data-registration-hero]')).toHaveAttribute(
+          'data-hero-layout',
+          'centered',
+        );
+        await expect(page.locator('[data-registration-banner]')).toHaveCount(0);
+        await expect(
+          page.locator('[data-registration-banner-fallback]'),
+        ).toHaveCount(0);
         await expect(
           page.locator('[data-registration-card="premium-centered"]'),
         ).toBeVisible();
@@ -167,43 +175,27 @@ for (const locale of ['ar', 'en'] as const) {
           'Unpublished Draft',
         );
         await expect(
-          page.locator('[data-registration-banner-fallback]'),
-        ).toHaveAccessibleName(getMessages(locale)['f14Banner.fallbackAlt']);
-        await expect(
           page.locator('[data-registration-card="premium-centered"] form'),
         ).toBeVisible();
-        const banner = page.locator('[data-registration-banner-fallback]');
-        const bannerBox = await banner.boundingBox();
-        const bannerGeometry = await banner.evaluate((element) => {
-          const style = getComputedStyle(element);
-          const rect = element.getBoundingClientRect();
-          return {
-            width: rect.width,
-            height: rect.height,
-            aspectRatio: style.aspectRatio,
-            minBlockSize: style.minBlockSize,
-            maxBlockSize: style.maxBlockSize,
-          };
-        });
-        expect(bannerBox).not.toBeNull();
-        expect(bannerGeometry.aspectRatio).toBe('2 / 1');
-        expect(bannerGeometry.minBlockSize).toBe('128px');
-        expect(bannerGeometry.maxBlockSize).toBe('288px');
-        expect(bannerGeometry.height).toBeCloseTo(
-          Math.min(288, Math.max(128, bannerGeometry.width / 2)),
-          1,
-        );
-        const card = await page
+        const cardBox = await page
           .locator('[data-registration-card="premium-centered"]')
           .boundingBox();
-        const form = await page
-          .locator('[data-registration-card="premium-centered"] form')
+        expect(cardBox).not.toBeNull();
+        const pillBox = await page
+          .locator('[data-testid="registration-hero-preferences"]')
           .boundingBox();
-        expect(card).not.toBeNull();
-        expect(form).not.toBeNull();
-        expect(form!.y).toBeGreaterThanOrEqual(
-          bannerBox!.y + bannerBox!.height,
-        );
+        expect(pillBox).not.toBeNull();
+        expect(pillBox!.y + pillBox!.height).toBeLessThanOrEqual(cardBox!.y);
+        const cardCenterX = cardBox!.x + cardBox!.width / 2;
+        const cardCenterY = cardBox!.y + cardBox!.height / 2;
+        const viewportCenterX = viewport.width / 2;
+        const viewportCenterY = viewport.height / 2;
+        expect(Math.abs(cardCenterX - viewportCenterX)).toBeLessThanOrEqual(2);
+        if (viewport.width >= 768) {
+          expect(Math.abs(cardCenterY - viewportCenterY)).toBeLessThanOrEqual(
+            2,
+          );
+        }
         expect(
           await page.evaluate(
             () =>
@@ -215,32 +207,27 @@ for (const locale of ['ar', 'en'] as const) {
           () => (window as Window & { __f14Shifts?: number }).__f14Shifts ?? 0,
         );
         expect(cls).toBeLessThan(0.001);
+        await expectHeroMaterialContract(page);
+        await expectHeroTextContrast(page);
+        await expectHeroTouchTargets(page);
+        await expectHeroFocusRing(page);
+        if (locale === 'ar') await expectHeroPhoneGroupLtr(page);
+        await expectHeroAxeClean(page);
+        const screenshot = await captureHeroScreenshot(
+          page,
+          `centered-${locale}-${theme}-${viewport.name}`,
+        );
         geometryEvidence.push({
           locale,
           theme,
           viewport: viewport.name,
-          bannerWidth: bannerGeometry.width,
-          bannerHeight: bannerGeometry.height,
-          formTop: form!.y,
-          bannerBottom: bannerBox!.y + bannerBox!.height,
+          cardCenterX,
+          cardCenterY,
+          viewportCenterX,
+          viewportCenterY,
           cls,
+          screenshot,
         });
-        await expectAxeClean(page);
-
-        const committed = join(
-          process.cwd(),
-          'tests',
-          'integration',
-          'evidence',
-          'f14-ui',
-          `registration-${locale}-${theme}-${viewport.name}.png`,
-        );
-        const temporary = testInfo.outputPath(
-          `registration-${locale}-${theme}-${viewport.name}.png`,
-        );
-        await mkdir(dirname(committed), { recursive: true });
-        await page.screenshot({ path: temporary, fullPage: true });
-        await copyFile(temporary, committed);
       });
     }
   }
@@ -249,7 +236,7 @@ for (const locale of ['ar', 'en'] as const) {
 test('invalid registration remains generic, neutral, and form-free', async ({
   page,
   context,
-}, testInfo) => {
+}) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await context.addCookies([
     { name: LOCALE_COOKIE, value: 'en', url: origin },
@@ -264,19 +251,6 @@ test('invalid registration remains generic, neutral, and form-free', async ({
   ).toHaveCount(0);
   await expect(page.locator('[data-brand-scope]')).toHaveCount(0);
   await expect(page.locator('[data-registration-card] form')).toHaveCount(0);
-  await expectAxeClean(page);
-  const committed = join(
-    process.cwd(),
-    'tests',
-    'integration',
-    'evidence',
-    'f14-ui',
-    'registration-invalid-en-light-mobile-390.png',
-  );
-  const temporary = testInfo.outputPath(
-    'registration-invalid-en-light-mobile-390.png',
-  );
-  await mkdir(dirname(committed), { recursive: true });
-  await page.screenshot({ path: temporary, fullPage: true });
-  await copyFile(temporary, committed);
+  await expectHeroAxeClean(page);
+  await captureHeroScreenshot(page, 'invalid-en-light-mobile-390');
 });

@@ -1,0 +1,879 @@
+.stage {
+  position: relative;
+  display: flow-root;
+  min-block-size: 100svh;
+  overflow: visible;
+  background: var(--hero-toned-substrate, var(--color-bg));
+  color: #fff;
+  --hero-toned-substrate: color-mix(
+    in srgb,
+    var(--hero-bottom-average, rgb(54 48 41)) 28%,
+    #000
+  );
+  --hero-bottom-average: rgb(54 48 41);
+  --hero-error-edge: color-mix(
+    in srgb,
+    var(--color-error-bg) 75%,
+    var(--color-error-border)
+  );
+  --hero-error-fg: var(--color-error-fg);
+  --hero-adaptive-dimming: 0;
+}
+
+.brandScope {
+  min-inline-size: 0;
+}
+
+.preferences {
+  position: absolute;
+  z-index: 6;
+  inset-block-start: var(--space-4);
+  inset-inline-start: var(--space-4);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  max-inline-size: calc(100% - 2 * var(--space-4));
+  padding: var(--space-1) var(--space-3);
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  border-radius: var(--radius-full);
+  background: rgba(10, 11, 13, 0.58);
+  backdrop-filter: blur(14px) saturate(1.1);
+  -webkit-backdrop-filter: blur(14px) saturate(1.1);
+}
+
+.preferences > :global(div) {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.preferences :global(label[for]) {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: var(--text-xs);
+}
+
+.preferences :global(select) {
+  min-block-size: var(--touch-min);
+  padding-inline: var(--space-2);
+  border: 0;
+  border-radius: var(--radius-button);
+  background: rgba(255, 255, 255, 0.12);
+  color: #fff;
+  font-size: var(--text-xs);
+}
+
+.preferences :global(select option) {
+  background: var(--color-card);
+  color: var(--color-text);
+}
+
+.preferences :global(fieldset) {
+  display: flex;
+  min-inline-size: 0;
+  align-items: center;
+  gap: var(--space-2);
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+
+.preferences :global(legend) {
+  position: absolute;
+  inline-size: 1px;
+  block-size: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.preferences :global(fieldset > div) {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+}
+
+.preferences :global(fieldset label) {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-block-size: var(--touch-min);
+  color: #fff;
+  font-size: var(--text-xs);
+  cursor: pointer;
+}
+
+.preferences :global(input[type='radio']) {
+  accent-color: #fff;
+}
+
+.noArtwork .preferences {
+  border-color: var(--color-border-strong);
+  background: var(--color-card);
+}
+
+.noArtwork .preferences :global(label[for]),
+.noArtwork .preferences :global(fieldset label) {
+  color: var(--color-text-muted);
+}
+
+.noArtwork .preferences :global(select) {
+  background: var(--color-card-raised);
+  color: var(--color-text);
+}
+
+:global([data-theme='dark']) .stage,
+:global(html:not([data-theme='light'])) .stage {
+  --hero-error-edge: var(--color-error-fg);
+  --hero-error-fg: var(--hero-dark-error-fg);
+  --hero-toned-substrate: color-mix(
+    in srgb,
+    var(--hero-bottom-average, rgb(54 48 41)) 18%,
+    #000
+  );
+}
+
+.artwork {
+  position: absolute;
+  z-index: 0;
+  inset: 0 0 auto;
+  display: block;
+  inline-size: 100%;
+  block-size: min(78svh, 133.333vw);
+  overflow: hidden;
+  background: var(--hero-bottom-average, var(--color-bg));
+}
+
+.artworkImage {
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
+  max-inline-size: none;
+  object-fit: cover;
+  /* Approved prototype mobile crop: centered horizontally, 30% from the top. */
+  object-position: 50% 30%;
+}
+
+.mobileFade {
+  position: absolute;
+  z-index: 1;
+  inset-block-start: calc(min(78svh, 133.333vw) * 0.65);
+  inset-inline: 0;
+  block-size: calc(min(78svh, 133.333vw) * 0.35);
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in srgb, var(--hero-bottom-average, #363029) 22%, transparent) 26%,
+    color-mix(in srgb, var(--hero-bottom-average, #363029) 76%, #000) 58%,
+    var(--hero-toned-substrate) 100%
+  );
+  pointer-events: none;
+}
+
+.glassFrame {
+  position: relative;
+  z-index: 2;
+  direction: ltr;
+  inline-size: calc(100% - 2 * var(--space-4));
+  margin-inline: auto;
+}
+
+.glassCard.glassCard {
+  position: relative;
+  display: block;
+  inline-size: 100%;
+  max-block-size: none;
+  overscroll-behavior: contain;
+  padding: 0;
+  border: 0;
+  border-radius: var(--radius-card);
+  background: color-mix(
+    in srgb,
+    rgba(255, 255, 255, 0.01)
+      calc(100% - var(--hero-adaptive-dimming-percent, 0%)),
+    rgb(0 0 0) var(--hero-adaptive-dimming-percent, 0%)
+  );
+  color: #fff;
+  scrollbar-color: rgba(255, 255, 255, 0.45) transparent;
+}
+
+.glassCard[data-material='liquid-glass-strong']::before {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(255, 255, 255, 0.2) 20%,
+    transparent 40%,
+    transparent 60%,
+    rgba(255, 255, 255, 0.2) 80%,
+    rgba(255, 255, 255, 0.5) 100%
+  );
+}
+
+.glassContent {
+  position: relative;
+  z-index: 4;
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-5);
+  scrollbar-width: thin;
+}
+
+.formPlate {
+  position: relative;
+  display: grid;
+  gap: var(--space-3);
+  padding: var(--space-3);
+  border-radius: calc(var(--radius-card) - var(--space-1));
+  color: #fff;
+}
+
+.formPlate h1 {
+  margin-block: 0;
+  color: #fff;
+  font-size: var(--text-lg);
+  line-height: var(--line-height-heading);
+  text-wrap: balance;
+}
+
+.glassContent :global([data-registration-identity]) {
+  justify-items: center;
+  gap: var(--space-3);
+  color: #fff;
+}
+
+.glassContent :global([data-registration-logo]) {
+  display: block;
+  max-inline-size: 100%;
+  max-block-size: var(--touch-min);
+  object-fit: contain;
+}
+
+.glassContent :global([data-brand-name]) {
+  margin: 0;
+  color: #fff;
+  font-size: var(--text-xl);
+  font-weight: 600;
+  line-height: var(--line-height-heading);
+  overflow-wrap: anywhere;
+}
+
+.form {
+  display: grid;
+  gap: var(--space-3);
+  max-inline-size: none;
+  margin: 0;
+  color: #fff;
+}
+
+.form > label,
+.field {
+  display: grid;
+  gap: var(--space-1);
+  color: #fff;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  line-height: var(--line-height-body);
+}
+
+.fieldControl,
+.countryPicker {
+  position: relative;
+  display: flex;
+  min-inline-size: 0;
+  min-block-size: var(--touch-min);
+  align-items: center;
+  border-radius: calc(var(--radius-card) - var(--space-1));
+  color: #fff;
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.12),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.18);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.fieldControl:has(input:focus-visible),
+.fieldControl:has(select:focus-visible) {
+  overflow: visible;
+  outline: 0;
+  box-shadow: none;
+}
+
+.fieldControl:has(input:focus-visible)::before,
+.fieldControl:has(select:focus-visible)::before {
+  display: none;
+}
+
+.fieldControl:has(input:focus-visible)::after,
+.fieldControl:has(select:focus-visible)::after {
+  position: absolute;
+  z-index: 5;
+  inset: -2px;
+  border: 2px solid var(--brand-ring);
+  border-radius: calc(var(--radius-card) - var(--space-1) + 2px);
+  box-shadow: 0 0 0 2px var(--color-bg);
+  content: '';
+  pointer-events: none;
+}
+
+.form :global(input),
+.form :global(select) {
+  min-inline-size: 0;
+  min-block-size: var(--touch-min);
+  flex: 1;
+  padding-block: var(--space-2);
+  padding-inline: var(--space-3);
+  border: 0 !important;
+  border-radius: inherit;
+  outline: 0;
+  background: transparent !important;
+  color: #fff !important;
+  font: inherit;
+  font-weight: 400;
+}
+
+.form :global(select option) {
+  background: var(--color-card);
+  color: var(--color-text);
+}
+
+.form :global(input::placeholder) {
+  color: rgba(255, 255, 255, 0.8);
+  opacity: 1;
+}
+
+.form :global(input:focus-visible),
+.form :global(select:focus-visible) {
+  outline: 0;
+}
+
+.form :global(input:disabled),
+.form :global(select:disabled) {
+  color: rgba(255, 255, 255, 0.68) !important;
+  opacity: 0.76;
+}
+
+.fieldControl[data-error='true'] {
+  border: 2px solid var(--hero-error-edge, var(--color-error-fg));
+  outline: 0;
+}
+
+.fieldControl[data-error='true']::before {
+  display: none;
+}
+
+.form :global(input[aria-invalid='true']) {
+  color: #fff !important;
+}
+
+.fieldError {
+  color: var(--hero-error-fg, var(--color-error-fg));
+  font-size: var(--text-sm);
+  font-weight: 400;
+  line-height: var(--line-height-body);
+}
+
+.form > button {
+  inline-size: 100%;
+  border-radius: calc(var(--radius-card) - var(--space-1));
+  box-shadow: 0 7px 18px color-mix(in srgb, var(--brand-fill) 24%, transparent);
+}
+
+.phoneFields {
+  display: grid;
+  grid-template-columns: minmax(11rem, 1fr) minmax(13rem, 1.4fr);
+  align-items: end;
+  gap: var(--space-3);
+}
+
+.countryField {
+  min-inline-size: 0;
+}
+
+.countryPicker {
+  inline-size: 100%;
+}
+
+.phoneNumber {
+  direction: ltr;
+  gap: var(--space-2);
+  padding-inline: var(--space-3);
+}
+
+.phoneNumber :global(input[type='tel']) {
+  padding-inline: 0;
+  direction: ltr;
+  text-align: start;
+}
+
+.phoneNumber :global([data-testid='country-calling-code']) {
+  color: #fff;
+  -webkit-text-fill-color: currentColor;
+  font-variant-numeric: tabular-nums;
+  padding-inline: 0;
+}
+
+.message {
+  margin: 0;
+  color: inherit;
+  font-size: var(--text-sm);
+  line-height: var(--line-height-body);
+  scroll-margin-block: var(--space-4);
+}
+
+.message[data-result-status='invalid_input'] {
+  color: var(--hero-error-fg, var(--color-error-fg));
+}
+
+.message:focus-visible {
+  outline: 2px solid var(--brand-ring);
+  outline-offset: 2px;
+  border-radius: var(--radius-button);
+}
+
+.noArtwork {
+  background: var(--color-bg);
+  color: var(--color-text);
+}
+
+.noArtwork .mobileFade {
+  display: none;
+}
+
+.noArtwork .glassCard.glassCard {
+  background: var(--color-card);
+  color: var(--color-text);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.1),
+    0 24px 64px rgba(0, 0, 0, 0.28);
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+.noArtwork .formPlate,
+.noArtwork .formPlate h1,
+.noArtwork .glassContent :global([data-registration-identity]),
+.noArtwork .glassContent :global([data-brand-name]),
+.noArtwork .form > label,
+.noArtwork .field,
+.noArtwork .message {
+  color: var(--color-text);
+}
+
+.noArtwork .fieldControl,
+.noArtwork .countryPicker {
+  border: 2px solid var(--color-border-strong);
+  background: var(--color-card-raised);
+  color: var(--color-text);
+}
+
+.noArtwork .fieldControl[data-error='true'] {
+  border-width: 2px;
+  border-color: var(--hero-error-edge, var(--color-error-fg));
+}
+
+.noArtwork .form :global(input),
+.noArtwork .form :global(select),
+.noArtwork .phoneNumber :global([data-testid='country-calling-code']) {
+  color: var(--color-text) !important;
+  -webkit-text-fill-color: var(--color-text) !important;
+}
+
+.noArtwork .form :global(input::placeholder) {
+  color: var(--color-text-muted);
+}
+
+.noArtwork .fieldError,
+.noArtwork .message[data-result-status='invalid_input'] {
+  color: var(--color-error-fg);
+}
+
+:global([data-theme='light'])
+  .glassCard[data-material='liquid-glass-strong']::before {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.15) 20%,
+    transparent 40%,
+    transparent 60%,
+    rgba(255, 255, 255, 0.15) 80%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+}
+
+:global([data-theme='light']) .glassCard[data-material='liquid-glass-strong'] {
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.12),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.18),
+    0 28px 72px rgba(0, 0, 0, 0.3),
+    0 4px 14px rgba(0, 0, 0, 0.14);
+}
+
+:global([data-theme='light']) .stage[data-photo-tone='bright'] .glassCard {
+  --hero-adaptive-glass-fill-percent: max(
+    0%,
+    calc(var(--hero-adaptive-dimming-percent, 0%) - 27%)
+  );
+  background: color-mix(
+    in srgb,
+    transparent calc(100% - var(--hero-adaptive-glass-fill-percent)),
+    var(--color-card) var(--hero-adaptive-glass-fill-percent)
+  );
+  color: var(--color-text);
+  scrollbar-color: var(--color-border-strong) transparent;
+}
+
+:global([data-theme='light']) .stage[data-photo-tone='bright'] .fieldControl,
+:global([data-theme='light']) .stage[data-photo-tone='bright'] .countryPicker {
+  border: 1px solid var(--color-border-strong);
+}
+
+:global([data-theme='light'])
+  .stage[data-photo-tone='bright']
+  .fieldControl::before,
+:global([data-theme='light'])
+  .stage[data-photo-tone='bright']
+  .countryPicker::before {
+  display: none;
+}
+
+:global([data-theme='light'])
+  .stage[data-photo-tone='bright']
+  .fieldControl[data-error='true'] {
+  border: 2px solid var(--color-error-fg);
+}
+
+:global([data-theme='light']) .stage[data-photo-tone='bright'] .formPlate,
+:global([data-theme='light']) .stage[data-photo-tone='bright'] .formPlate h1,
+:global([data-theme='light'])
+  .stage[data-photo-tone='bright']
+  .glassContent
+  :global([data-registration-identity]),
+:global([data-theme='light'])
+  .stage[data-photo-tone='bright']
+  .glassContent
+  :global([data-brand-name]),
+:global([data-theme='light']) .stage[data-photo-tone='bright'] .form > label,
+:global([data-theme='light']) .stage[data-photo-tone='bright'] .field,
+:global([data-theme='light']) .stage[data-photo-tone='bright'] .message,
+:global([data-theme='light']) .stage[data-photo-tone='bright'] .countryPicker,
+:global([data-theme='light'])
+  .stage[data-photo-tone='bright']
+  .phoneNumber
+  :global([data-testid='country-calling-code']) {
+  color: var(--color-text);
+}
+
+:global([data-theme='light'])
+  .stage[data-photo-tone='bright']
+  .form
+  :global(input),
+:global([data-theme='light'])
+  .stage[data-photo-tone='bright']
+  .form
+  :global(select) {
+  color: var(--color-text) !important;
+  -webkit-text-fill-color: var(--color-text) !important;
+}
+
+:global([data-theme='light'])
+  .stage[data-photo-tone='bright']
+  .form
+  :global(input::placeholder) {
+  color: var(--color-text-muted);
+}
+
+:global([data-theme='light']) .stage[data-photo-tone='bright'] .fieldError,
+:global([data-theme='light'])
+  .stage[data-photo-tone='bright']
+  .message[data-result-status='invalid_input'] {
+  color: var(--color-error-fg);
+}
+
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .stage .glassCard.glassCard {
+    overflow: hidden;
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-card);
+    color: var(--color-text);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+  }
+
+  .stage .glassCard::before {
+    display: none;
+  }
+
+  .stage .formPlate,
+  .stage .formPlate h1,
+  .stage .glassContent :global([data-registration-identity]),
+  .stage .glassContent :global([data-brand-name]),
+  .stage .form > label,
+  .stage .field,
+  .stage .message,
+  .stage .fieldControl,
+  .stage .countryPicker,
+  .stage .phoneNumber :global([data-testid='country-calling-code']) {
+    color: var(--color-text);
+  }
+
+  .stage .fieldControl,
+  .stage .countryPicker {
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-card-raised);
+  }
+
+  .stage .form :global(input),
+  .stage .form :global(select) {
+    color: var(--color-text) !important;
+    -webkit-text-fill-color: var(--color-text) !important;
+  }
+
+  .stage .form :global(input::placeholder) {
+    color: var(--color-text);
+  }
+
+  .stage .fieldError,
+  .stage .message[data-result-status='invalid_input'] {
+    color: var(--color-error-fg);
+  }
+}
+
+@media (min-width: 48rem) {
+  .stage {
+    block-size: 100svh;
+    min-block-size: 0;
+    overflow: hidden;
+  }
+
+  .artwork {
+    block-size: 100%;
+  }
+
+  .artworkImage {
+    object-position: 32% center;
+  }
+
+  .mobileFade {
+    display: none;
+  }
+
+  .glassFrame {
+    position: absolute;
+    inset-block-start: 50%;
+    inset-inline-start: auto;
+    inset-inline-end: clamp(1.5rem, 4vw, 4rem);
+    inline-size: min(clamp(28rem, 33vw, 31.5rem), calc(100vw - 3rem));
+    transform: translateY(-50%);
+  }
+
+  .glassContent {
+    max-block-size: calc(100svh - var(--space-8));
+    gap: var(--space-4);
+    padding: var(--space-5);
+    padding-block: var(--space-6);
+    overflow-y: auto;
+  }
+
+  /* Approved prototype desktop material: 4px backdrop blur on the card. */
+  .glassCard[data-material='liquid-glass-strong'] {
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+  }
+
+  .formPlate {
+    gap: var(--space-4);
+    padding: var(--space-4);
+  }
+
+  .noArtwork .glassFrame {
+    inset-inline: 0;
+    margin-inline: auto;
+    transform: translateY(-50%);
+  }
+}
+
+@media (max-width: 47.999rem) {
+  .glassContent {
+    padding: var(--space-4);
+  }
+
+  .preferences :global(label[for]) {
+    position: absolute;
+    inline-size: 1px;
+    block-size: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+
+  .glassFrame {
+    margin-block-start: calc(min(78svh, 133.333vw) * 0.74);
+  }
+
+  .noArtwork .glassFrame {
+    margin-block-start: calc(
+      var(--space-8) + var(--touch-min) + var(--space-5)
+    );
+  }
+}
+
+@media (max-width: 36rem) {
+  .phoneFields {
+    grid-template-columns: 1fr;
+  }
+}
+
+@media (max-width: 23rem) {
+  .noArtwork .glassFrame {
+    margin-block-start: calc(
+      var(--space-8) + var(--touch-min) + var(--space-10) + var(--space-2)
+    );
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .stage {
+    color: var(--color-text);
+  }
+
+  .stage .glassCard.glassCard {
+    border: 2px solid var(--color-border-strong);
+    background: var(--color-card);
+    color: var(--color-text);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .formPlate,
+  .formPlate h1,
+  .glassContent :global([data-registration-identity]),
+  .glassContent :global([data-brand-name]),
+  .form > label,
+  .field,
+  .message,
+  .fieldControl,
+  .countryPicker {
+    color: var(--color-text);
+  }
+
+  .stage .fieldControl,
+  .stage .countryPicker {
+    border: 2px solid var(--color-border-strong);
+    background: var(--color-card-raised);
+    color: var(--color-text);
+  }
+
+  .form :global(input),
+  .form :global(select),
+  .phoneNumber :global([data-testid='country-calling-code']) {
+    color: var(--color-text) !important;
+  }
+
+  .fieldError,
+  .message[data-result-status='invalid_input'] {
+    color: var(--color-error-fg);
+  }
+}
+
+@media (forced-colors: active) {
+  .stage,
+  .noArtwork {
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .artwork,
+  .mobileFade {
+    display: none;
+  }
+
+  .glassCard,
+  .formPlate,
+  .formPlate h1,
+  .glassContent :global([data-registration-identity]),
+  .glassContent :global([data-brand-name]),
+  .form > label,
+  .field,
+  .message,
+  .fieldControl,
+  .countryPicker {
+    background: Canvas;
+    color: CanvasText;
+  }
+
+  .fieldControl:focus-within,
+  .countryPicker:focus-within {
+    outline-color: Highlight;
+    box-shadow: none;
+  }
+
+  .fieldControl:has(input:focus-visible),
+  .fieldControl:has(select:focus-visible) {
+    outline: 2px solid Highlight;
+    outline-offset: 2px;
+  }
+
+  .fieldControl:has(input:focus-visible)::after,
+  .fieldControl:has(select:focus-visible)::after {
+    display: none;
+  }
+
+  .fieldControl,
+  .countryPicker {
+    border: 1px solid FieldText;
+  }
+
+  .stage .glassCard[data-material='liquid-glass-strong'] {
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .glassContent :global(button[type='submit']) {
+    border: 2px solid ButtonText;
+    background: ButtonFace !important;
+    color: ButtonText !important;
+    box-shadow: none;
+    forced-color-adjust: auto;
+  }
+}
+
+@media print {
+  .artwork,
+  .mobileFade {
+    display: none;
+  }
+
+  .stage {
+    min-block-size: 0;
+    overflow: visible;
+    background: var(--color-print-bg);
+    color: var(--color-print-text);
+  }
+
+  .glassFrame {
+    position: static;
+    inline-size: 100%;
+    margin: 0;
+    transform: none;
+  }
+
+  .glassContent {
+    max-block-size: none;
+    overflow: visible;
+  }
+
+  .glassCard,
+  .formPlate,
+  .formPlate h1,
+  .glassContent :global([data-registration-identity]),
+  .glassContent :global([data-brand-name]),
+  .form > label,
+  .field,
+  .message {
+    color: var(--color-print-text);
+  }
+}
