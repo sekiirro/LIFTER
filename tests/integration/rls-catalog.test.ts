@@ -65,6 +65,9 @@ const registrationPrivate = [
   'f13_validate_freeze',
   'f13_validate_renewal',
   'f13_validate_refund_ledger',
+  'f15_alert_occurrence_authorize_insert',
+  'f15_alert_recipient_authorized',
+  'f15_alert_schedule_audit',
 ];
 const brandingPrivate = [
   'branding_actor_id',
@@ -1039,7 +1042,7 @@ describe('registration security catalog', () => {
   it('hardens complete F10 function inventory and pgcrypto schema/vector', async () => {
     const signatures = [
       ...registrationPrivate
-        .filter((name) => !name.startsWith('f13_'))
+        .filter((name) => !name.startsWith('f13_') && !name.startsWith('f15_'))
         .map(
           (n) =>
             'app_private.' +
@@ -1067,6 +1070,16 @@ describe('registration security catalog', () => {
       'app_private.f13_validate_freeze(uuid,uuid)',
       'app_private.f13_validate_renewal(uuid,uuid)',
       'app_private.f13_validate_refund_ledger(uuid,uuid)',
+      'app_private.f15_alert_occurrence_authorize_insert()',
+      'app_private.f15_alert_recipient_authorized(uuid,uuid,text)',
+      'app_private.f15_alert_schedule_audit()',
+      'app_private.f15_alert_schedule_immutable()',
+      'app_private.f15_alert_schedule_run()',
+      'app_private.f15_alert_schedule_activate()',
+      'app_private.f15_alert_schedule_deactivate()',
+      'app_private.f15_client_alert_schedule_insert()',
+      'app_private.register_f15_trainer_alert_schedule(uuid,uuid,uuid,timestamptz)',
+      'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)',
       'public.record_renewal(jsonb)',
     ];
     for (const name of signatures) {
