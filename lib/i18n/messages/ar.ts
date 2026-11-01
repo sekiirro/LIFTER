@@ -213,7 +213,7 @@ export const ar = {
   'showcase.disabled': 'غير متاح',
   'showcase.retryCount': 'عدد المحاولات',
   'showcase.print': 'نموذج الطباعة',
-  'clientSignup.name': 'الاسم',
+  'clientSignup.name': '\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u062b\u0644\u0627\u062b\u064a',
   'clientSignup.email': 'البريد الإلكتروني',
   'clientSignup.country': 'الدولة',
   'clientSignup.phone': 'رقم الهاتف',
@@ -225,7 +225,7 @@ export const ar = {
     'يرجى تسجيل الخروج قبل إرسال طلب التسجيل هذا. عُد إلى هذه الصفحة بعد تسجيل الخروج.',
   'clientSignup.invalid': 'رابط التسجيل غير صالح أو لم يعد متاحًا.',
   'clientSignup.duplicate':
-    'هذا البريد الإلكتروني مسجّل بالفعل. يُرجى التواصل مع الدعم.',
+    '\u062a\u0639\u0630\u0651\u0631 \u0625\u0643\u0645\u0627\u0644 \u0627\u0644\u062a\u0633\u062c\u064a\u0644 \u0628\u0647\u0630\u0647 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a. \u064a\u064f\u0631\u062c\u0649 \u0627\u0644\u062a\u0648\u0627\u0635\u0644 \u0645\u0639 \u0645\u062f\u0631\u0651\u0628\u0643 \u0623\u0648 \u0627\u0644\u062f\u0639\u0645.',
   'clientSignup.complete': 'شكرًا لك. اكتمل طلب التسجيل.',
   'clientSignup.unavailable': 'يرجى المحاولة مرة أخرى لاحقًا.',
   'clientSignup.invalidInput': 'يرجى مراجعة الحقول المحددة والمحاولة مرة أخرى.',
