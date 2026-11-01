@@ -213,7 +213,8 @@ export const ar = {
   'showcase.disabled': 'غير متاح',
   'showcase.retryCount': 'عدد المحاولات',
   'showcase.print': 'نموذج الطباعة',
-  'clientSignup.name': '\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u062b\u0644\u0627\u062b\u064a',
+  'clientSignup.name':
+    '\u0627\u0644\u0627\u0633\u0645 \u0627\u0644\u062b\u0644\u0627\u062b\u064a',
   'clientSignup.email': 'البريد الإلكتروني',
   'clientSignup.country': 'الدولة',
   'clientSignup.phone': 'رقم الهاتف',

@@ -110,9 +110,11 @@ it('clients: every required field is NOT NULL, generated id/time and pending-onl
       .filter((c) => c.attname !== 'deactivated_at')
       .filter(
         (c) =>
-          !['date_of_birth', 'username_normalized', 'telegram_username'].includes(
-            c.attname,
-          ),
+          ![
+            'date_of_birth',
+            'username_normalized',
+            'telegram_username',
+          ].includes(c.attname),
       )
       .every((c) => c.attnotnull),
   ).toBe(true);
