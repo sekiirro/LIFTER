@@ -60,6 +60,8 @@ An immutable approval fact is inserted atomically once per initial subscription,
 
 Decision: immutable subscription snapshot and separate append-only activation fact, unique per subscription; no public activation writer in F12. P4 will append its fact in the same transaction as both initial plans and productivity credit. Due projection stays undefined for installment 2+ until that fact exists. P4 must use the same subscription serialization and be reviewed before adding write grants.
 
+> **Superseded by Plan Core (S20 §4 / spec 019):** First workout and nutrition deliveries are independent, idempotent delivery records and may occur on different days. After both succeed, activation, including the productivity unit, happens in one exactly-once transaction. See the `019-plan-core` branch for the canonical contract.
+
 Final F12-3/F12-8 resolve the older fixed-offset interpretation: default remainder is 30 Cairo calendar days, but each custom issued offset is authoritative and never normalized. Seq1 is upfront at approval; seq>=2 due date is Cairo activation date plus its issued offset, payable through the entire due day. This uses calendar-date arithmetic, not 720 elapsed hours, including DST. Later collections and recollections require activation and all earlier obligations currently paid. Correction of an earlier row leaves later immutable events unchanged; sequence is re-evaluated for the next collection.
 
 ## R8 — Audit source and transaction guard

@@ -11,13 +11,20 @@ import {
 import { localSupabaseContainer } from '../integration/local-docker';
 
 describe('isolated local Supabase stack contract', () => {
-  it('selects A by default and supports explicit A-D profiles', () => {
-    expect(selectStack({})).toBe('a');
+  it('requires local selection and supports explicit A-D profiles in CI', () => {
+    const ciEnv = { CI: 'true' } as Parameters<typeof selectStack>[0];
+    const ciWithA = { ...ciEnv, LIFTER_SUPABASE_STACK: 'a' };
+
+    expect(() => selectStack({})).toThrow(/Set LIFTER_SUPABASE_STACK/);
+    expect(() => selectStack(ciEnv)).toThrow(/Set LIFTER_SUPABASE_STACK/);
+    expect(selectStack(ciWithA)).toBe('a');
     expect(selectStack({ LIFTER_SUPABASE_STACK: 'a' })).toBe('a');
     expect(selectStack({ LIFTER_SUPABASE_STACK: 'b' })).toBe('b');
     expect(selectStack({ LIFTER_SUPABASE_STACK: 'c' })).toBe('c');
     expect(selectStack({ LIFTER_SUPABASE_STACK: 'd' })).toBe('d');
-    expect(selectStack({ LIFTER_SUPABASE_STACK: '' })).toBe('a');
+    expect(() => selectStack({ LIFTER_SUPABASE_STACK: '' })).toThrow(
+      /Set LIFTER_SUPABASE_STACK/,
+    );
     for (const invalid of ['remote', 'B', 'e']) {
       expect(() => selectStack({ LIFTER_SUPABASE_STACK: invalid })).toThrow(
         'Unsupported local Supabase stack',
@@ -57,6 +64,24 @@ describe('isolated local Supabase stack contract', () => {
 
       expect(loadSelectedStackEnv(env, root)).toBe('b');
       expect(selectStack(env, root)).toBe('b');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('explains that missing C profiles must be provisioned in the lane worktree', () => {
+    const root = mkdtempSync(join(tmpdir(), 'lifter-stack-c-missing-'));
+    try {
+      const expectedPath = join(
+        root,
+        'supabase-stack-c',
+        'supabase',
+        'config.toml',
+      );
+      expect(() => getStackConfig('c', root)).toThrow(
+        /Expected profile config at .*supabase-stack-c.*config\.toml.*must be provisioned locally in the lane's worktree/,
+      );
+      expect(expectedPath).toContain('supabase-stack-c');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

@@ -13,7 +13,7 @@ P0 Foundation ──► P1 Commercial core ──► P2 Forms+Intake+SLA ──�
                          P8 Reporting depth, PO export, leaderboard, hardening
 ```
 
-Critical path: P0 tenancy/auth → P1 token+subscription+ledger → P3 planners (largest) → P4 atomic delivery.
+Critical path: P0 tenancy/auth → P1 token+subscription+ledger → P3 planners (largest) → P4 independent first-plan delivery and activation.
 
 ## Phases
 
@@ -22,8 +22,8 @@ Critical path: P0 tenancy/auth → P1 token+subscription+ledger → P3 planners 
 | **P0 Foundation** | Repo, CI, Supabase (staging+prod) + RLS scaffolding, authorize() + permission matrix, Supabase Auth + custom SMTP, audit log, **Design System** (tokens, AR/EN RTL components, states), outbox jobs + cron Worker, isolation test harness, **encrypted backups + first restore test**, free-tier spike (OpenNext bundle/CPU, Supabase limits), browser Arabic PDF spike | E (skeleton) | 4–7 ew | — |
 | **P1 Commercial core** | Workspaces, memberships, branding preview/publish, PO-only packages + versions (30-day months: 1/3/6/8/12, custom days), registration tokens (24h/+30m) with staff-configured installment schedule, global email/phone uniqueness + generic duplicate message, signup, approval, subscriptions + snapshots, ledger (confirmed payments, PO full refunds), per-payment commission, installment overdue restriction/resume, freeze (apply/stop/remove), early-renewal stacking, expiry, PO-only deletion/removal | A (to approval), D, G | 5–8 ew | — |
 | **P2 Forms + intake + SLA** | Form templates/versions, assignment snapshots, conditional logic, autosave, mandatory 3-section intake, Cairo business-calendar SLA, delay alerts (in-app); includes REQ-P2-01 (post-approval automatic form assignment) | A (intake → deadline) | 3–5 ew | Form-builder permissions |
-| **P3 Catalogs + planners** | Global exercises (+ workspace variations), global foods (add, dedup, versions), workout templates (global + workspace), nutrition templates (global), workout planner, nutrition planner (alternatives, 1/7-day, carb cycling), plan versions, PDF/Excel export | C (partial) | 6–10 ew | Secondary-muscle fraction, default set values |
-| **P4 Delivery + client portal** | Balanced auto-assignment, ready/atomic pair delivery, activation, productivity-unit insert, client dashboard (plans, subscription, notifications), in-app notifications, client directory + indicators, plan-access restriction (expiry/overdue), **minimum finance reporting** (workspace: collected, refunds, commission owed, share, active/expiring; PO: aggregate + drill-down) | A (complete), B (partial), E | 4–6 ew | C5 visibility ruling; finance math for commission figures |
+| **P3 Catalogs + planners** | Global exercises (+ workspace variations), global foods (add, dedup, versions), workout templates (global + workspace), global and workspace nutrition templates, workout planner, nutrition planner (alternatives, 1/7-day, carb cycling), plan versions, PDF/Excel export | C (partial) | 6–10 ew | F13 subscription lifecycle (hard dependency for F17/F18) |
+| **P4 Delivery + client portal** | Balanced auto-assignment, independent first workout/nutrition deliveries (possibly on different days), exactly-once activation after both succeed, productivity-unit insert, client dashboard (plans, subscription, notifications), in-app notifications, client directory + indicators, plan-access restriction (expiry/overdue), **minimum finance reporting** (workspace: collected, refunds, commission owed, share, active/expiring; PO: aggregate + drill-down) | A (complete), B (partial), E | 4–6 ew | F17/F18 delivery integration; finance math for commission figures |
 | **Limited pilot total** | P0–P4: a sequencing step only (D-07) | A, D, E, G (+ C partial) | **22–37 ew** | |
 | **Full Launch (mandatory scope)** | Pilot + P5–P8: **all approved features**, none optional except where the BRD itself says so (leaderboard needs PO approval to publish) | A–G | **+10–17 ew** | Full Launch can't be declared with any approved feature missing |
 | P5 Coaching loop | Weekly check-ins + freeze, measurements, food replacement requests, trainer notes, timeline | B, C | 3–5 ew | C1 check-in anchor, freeze rules |
@@ -49,7 +49,19 @@ Critical path: P0 tenancy/auth → P1 token+subscription+ledger → P3 planners 
 ## Testing strategy
 
 - Unit: calendar/SLA, commission calc versions, KPI reweighting, macro/unit math (table-driven).
-- Integration (real Postgres): RLS, token concurrency (parallel submits), atomic delivery, ledger triggers.
+- Integration (real Postgres): RLS, token concurrency (parallel submits), independent first-plan delivery and activation, ledger triggers.
 - E2E (Playwright): Journeys A, D, E, G for MVP; B, C, F as their phases land.
 - Pre-launch: external cross-tenant pen-test (PRD-13.1).
 - Migration from YBS: none (BRD-06). A selective import is a separate, later approval.
+
+## Approved migration allocations (UTC)
+
+| Feature | Migration range |
+|---|---|
+| Hero follow-ups | 20261105000000-20261105235959 |
+| F16 catalogs | 20261106000000-20261106195959 |
+| Plan Core | 20261106200000-20261106235959 |
+| F17 workout planner | 20261107* |
+| F18 nutrition planner | 20261108* |
+
+All migration timestamps use valid UTC clock fields. F16 and Plan Core ranges are adjacent and non-overlapping.

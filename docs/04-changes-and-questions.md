@@ -53,11 +53,55 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 - **F4 auth sub-decisions (ND-F4-1..7):** Trainer permission, link delivery, link expiry, rate-limit values, client-target sequencing, staff recovery, self-service email reset timing. Expiry and limits gate production.
 - **B4 (remaining):** client closure retention period and audit retention (ND-F5-1). Gates production with real client data only.
 - Outstanding production gates: [07-production-readiness.md](07-production-readiness.md). Per the PO (2026-10-27), these do not block local development or PR merges.
-- Phase-gated, no defaults approved:
+- Remaining phase-gated decisions:
   - check-in anchor (C1, P5)
   - form-builder permission matrix (P2)
-  - secondary-muscle credit (P3)
-  - catalog edit/merge rights (P3)
+  - ~~secondary-muscle credit (P3)~~ Resolved by S20 D17-1.
+  - ~~catalog edit/merge rights (P3)~~ Resolved by S20 D16-1.
   - Telegram reminder defaults (P6)
   - deadline instant on day 5 (P2)
   - Sales coaching rights
+
+## Session 20/21 PO decisions — binding under DR-03 (2026-10-31)
+
+These numbered entries record PO Messages A/B, the final S20 handoff, and the S21 follow-up decisions. Later explicit PO decisions supersede older specs, plans and PRD wording.
+
+| ID | Decision | Source / effect |
+|---|---|---|
+| S20-01 | Hero prototype 97debafce8a7b6929722f079f0028c8d02311d07 approved for implementation; retain Emerald #059669, approved layout, Liquid Glass treatment, mobile behavior and tokens. Normal review and exact-SHA merge gates remain. | PO S20 Message A; Message B section 5. Supersedes Message A visual-only scope for next-session implementation. |
+| S20-02 | F14 PR #25 exact head c0026de5a65388e36e68336008e2d8b8893c46af has accepted data-integrity PASS and exact-SHA merge approval, conditional on rechecking gates; retain branch. No production deploy or migration authorization. | PO S20 Message B section 5; handoff section 0-S20-FINAL. Documentary production evidence only; no live hosted query. |
+| S20-03 | D16-1a=A: PO exclusively manages global exercises; authorized staff manage workspace exercises. | PO S20 Message B section 1. |
+| S20-04 | D16-1b=A: food creator or PO may publish food edits without moderation. | PO S20 Message B section 1. |
+| S20-05 | D16-1c=A: only PO may Remove (called retirement in this S20 entry) or merge global entries; S21-01 names the single staff-facing action Remove. | PO S20 Message B section 1; Remove wording amended by PO S21-PO-4. |
+| S20-06 | D16-2: exact 18 muscles: Chest, Lats, Upper Back, Traps, Front Delts, Side Delts, Rear Delts, Biceps, Triceps, Forearms, Abs, Spinal Erectors, Quads, Hamstrings, Glutes, Adductors, Abductors, Calves; 10 equipment values: Barbell, Dumbbell, Cable, Machine, Smith Machine, Bodyweight, Kettlebell, Resistance Band, Suspension Trainer, Other. Arabic/English names, primary muscle and equipment required; secondary muscles optional. | PO S20 Message B section 1. |
+| S20-07 | D16-3: HTTPS YouTube and Google Drive only. One shared global exercise identity; independent workspace video URLs resolved dynamically. PO manages all mappings; authorized staff manage their workspace only. Enforce tenant isolation; no plan republish. | PO S20 Message B section 1. Supersedes Vimeo and effective-video snapshot text. |
+| S20-08 | D16-4: PO supplies dataset later. Audit nutrition values, calories, names, duplicates, irrelevant foods and raw/cooked variants; report corrections, exclusions, sources and alternative groups; produce smallest useful Egyptian/Arab-oriented catalog. PO approval is required before import. Do not invent nutritional values or exercise content. | PO S20 Message B section 1. |
+| S20-09 | D16-5: warn when kcal discrepancy exceeds max(20 kcal, 10% of stated kcal); never block saving solely for this discrepancy. | PO S20 Message B section 1; supersedes release-blocking validation. |
+| S20-10 | D16-6=A: kcal, protein, carbs and fat required; fiber optional. D16-8=A: at least one food-name language required. | PO S20 Message B section 1. |
+| S20-11 | D16-7a=B: normalized textual similarity of at least 90%, with no automatic synonym matching; initial audit separately checks aliases. D16-7b=A: near-duplicate kcal proximity at most max(10%, 10 kcal), standardized per 100 g/100 ml; distinguish raw/cooked and genuinely different products. D16-7c: block genuine catalog duplicates; plan repeats allowed with Duplicate Food/Meal actions. | PO S20 Message B section 1. |
+| S20-12 | D16-9=A: creator and origin workspace visible to PO only. D16-10=B: 10 trainer additions/24h, 100 platform additions/24h, max 10,000 active foods; benchmark before production. | PO S20 Message B section 1. |
+| S20-13 | Add/Edit/Archive/Remove/Restore are lifecycle actions, never mutation/deletion of immutable versions; preserve plan references and published snapshots. Exercise defaults are per exercise (warm-up/working sets, fixed/ranged reps, rest, RIR, alternatives), prefilled when added and coach-overridable. Food defaults allow at most THREE alternatives per food with validated portions and per-plan overrides. | PO S20 Message B section 1; handoff reconciliation items 4 and 5. |
+| S20-14 | D17-1=A: primary volume 1.0, secondary 0.5. D17-2: per-exercise defaults, not universal/platform defaults. | PO S20 Message B section 2. |
+| S20-15 | D17-3: global workout templates PO-only; workspace templates by authorized staff; safe Make it Global. D17-4=A fixed reps and ranges. D17-5=A drafts after client approval; publish requires submitted intake. | PO S20 Message B section 2. |
+| S20-16 | D17-7=A: kg/lb per set and Bodyweight, Added Weight, Assisted modes. D17-8=A: published-plan exports only, audited PDF/Excel with formula-injection protection. D17-9: catalog-based alternatives editable per plan. | PO S20 Message B section 2. |
+| S20-17 | D18-1 amendment: global nutrition templates PO-only; workspace templates by authorized staff; PO may Make it Global after excluding private data/references. Amend PRD-05/PRD-12 and Constitution IV. D18-2=A targets optional; always calculate totals. | PO S20 Message B section 3; DR-03. |
+| S20-18 | D18-4=C: display calories/macros as integers while preserving exact decimal calculations/storage. | PO S20 Message B section 3. |
+| S20-19 | D18-6: optional recipe/preparation video link/icon for YouTube or Google Drive; hidden when absent. D18-9=A: selections persist after edits while authorized and valid; otherwise coach default. Selections never create plans or affect other clients. Multiple active plans remain supported; daily logging deferred to mobile. | PO S20 Message B section 3. |
+| S20-20 | Plan Core/P4: same Plan ID stays editable after publish; silent autosave to private draft, Save as Draft, one Ready & Publish, drafts invisible until publish; only explicit Create New Plan creates a plan. First workout/nutrition deliveries may happen on different days; activate once after both first plans are delivered; no paired-publish transaction; later edits never restart activation. Secure, idempotent, concurrency-safe operations. | PO S20 Message B section 4; handoff reconciliation item 1. |
+| S20-21 | Telegram AI (P6) may only select coach-approved existing alternatives; never invent foods or alternatives. | PO S20 Message B section 3; handoff reconciliation item 8. |
+| S20-22 | F14b all seven design decisions approved: reusable Upload Card with thumbnail, Retry and clear errors; upload on file selection but never auto-publish; banner-only identity confirmation; alt text in one language with fallback; reuse Workspace Builder Preview tab; Replace and Remove with safe fallback; use verbatim AR/EN strings and show actual server limits. | PO S20 Message B section 5. |
+| S20-23 | Hero implementation approved without another visual approval. Liquid Glass platform-wide effort is a separate audit only; no site-wide implementation until PO approves recommendations. | PO S20 Message B section 5. |
+| S20-24 | Merge gates remain CI green, CodeRabbit approval on exact SHA, zero unresolved threads, independent review and explicit PO exact-SHA approval except approved F14 SHA. No automatic production deployment/migration. | PO S20 Message B sections 5 and 6. |
+| S21-01 | F16 catalog lifecycle is **Add / Edit / Remove / Restore**. Remove is the only staff-facing removal action for both exercise and food catalogs; it is non-destructive, prevents new selections, and never cascades to or automatically changes/republishes an existing client plan. Preserve references, snapshots, logs, media availability, and history; removal from a client plan requires an explicit plan-editing action. Restore remains available for the same identity/current immutable version. | PO S21-PO-4; supersedes the Archive portion of S20-13. |
+| S21-02 | Glisse-based selective Liquid Glass implementation is authorized and in progress on a separate branch under S21-PO-1/2. The approved floating surfaces follow the PO direction; merge still requires explicit PO approval. | PO S21-PO-1/2; supersedes S20-23's platform-audit-only status. |
+| S21-03 | Split PR #26 by PO direction: retain decision logs, PRD, constitution, DESIGN.md, tracker and related canonical records in PR #26; move the F16, Plan Core, F17 and F18 spec bodies to their owning feature branches for review alongside implementation. | PO S21-PO-7. Feature branches: 016-exercise-food-catalogs, 019-plan-core, 017-workout-planner and 018-nutrition-planner; feature PRs pending. |
+
+### F14b approved AR/EN copy and limits
+
+`«شعار مساحة العمل»` / “Workspace logo”; `«صورة الغلاف»` / “Banner image”; `«وصف صورة الغلاف (بالعربية أو الإنجليزية)»` / “Banner image description (Arabic or English)”; `«أدخل وصفًا بلغة واحدة على الأقل؛ سيُستخدم الوصف المتاح عند غياب الآخر.»` / “Enter a description in at least one language; the available description will be used as fallback.”; recommend 1600×800 (2:1), keep important content away from edges/lower portion; `«تعذر رفع الصورة. تحقق من نوع الملف وحجمه وأبعاده ثم حاول مجددًا.»` / “Upload failed. Check the file type, size, and dimensions, then retry.” Show actual server limits, never invented limits.
+
+- Show actual server limits: logo PNG/WebP 4 MiB ingress/output, 2048x2048, 1,000,000 pixels; banner PNG/WebP 8 MiB ingress/output, 4096x2048, 4,000,000 pixels.
+
+### Open items for PO
+
+No S20 decision above remains open. The PO-supplied D16-4 dataset is a future input, not an unresolved decision: audit it and obtain PO import approval when supplied. The S21-PO-1/2 Glisse-based selective Liquid Glass implementation is authorized and in progress on its separate branch; merging that work still needs explicit PO approval.
