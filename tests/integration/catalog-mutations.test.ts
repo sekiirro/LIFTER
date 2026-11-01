@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import type postgres from 'postgres';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { admin, sql, twoWorkspaceFixture } from './harness';
 
@@ -525,6 +526,112 @@ describe('F16 mutation probes', () => {
       });
     } catch (error) {
       expect((error as Error).message).toBe(marker);
+    }
+  });
+
+  it('T025: removing food identity dimensions, near-match bounds, or uniqueness breaks assertions', async () => {
+    const baseId = randomUUID();
+    const rawId = randomUUID();
+    const cookedId = randomUUID();
+    const duplicateA = randomUUID();
+    const duplicateB = randomUUID();
+    const marker = 'rollback_catalog_food_duplicate_mutation';
+    const name = 'abcdefghijklmnopqrstuvwxyz'.repeat(4);
+    const midSimilarityName = `${name.slice(0, 20)}zz${name.slice(22)}`;
+    let stage = 'fixture';
+    const makeFood = async (
+      tx: postgres.TransactionSql,
+      id: string,
+      foodName: string,
+      state = 'not_applicable',
+    ) => {
+      await tx`insert into public.foods(id, created_by, current_version) values (${id}, ${po.userId}, 1)`;
+      await tx`insert into public.food_versions(
+        food_id, version, payload, created_by, name_en, basis, product_identity_norm,
+        preparation_identity_norm, weighing_state, kcal, protein_g, carbohydrate_g, fat_g
+      ) values (
+        ${id}, 1, ${tx.json({ name_en: foodName })}, ${po.userId}, ${foodName}, 'g', 'probe-product', 'plain', ${state}, 100, 5, 10, 2
+      )`;
+      await tx`insert into public.food_serving_units(food_id, food_version, basis, unit_key, label_en, basis_qty)
+        values (${id}, 1, 'g', 'reference', '100 g', 100)`;
+    };
+    try {
+      await db.begin(async (tx) => {
+        await makeFood(tx, baseId, name);
+        await tx`select app_private.reserve_catalog_food_keys(${baseId}, 1)`;
+        const [definition] = await tx`
+          select pg_catalog.pg_get_functiondef(
+            'public.catalog_food_duplicate_candidates(text,text,text,text,text,text,numeric)'::regprocedure
+          ) as sql`;
+        if (!definition?.sql)
+          throw new Error('duplicate candidate function definition missing');
+        stage = 'basis mutation';
+        await tx.unsafe(
+          definition.sql.replace('and v.basis = p_basis', 'and true'),
+        );
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerA.userId, role: 'authenticated' })}, true)`;
+        const basisLeak =
+          await tx`select food_id from public.catalog_food_duplicate_candidates(
+          ${`${name.slice(0, -1)}x`}, 'en', 'ml', 'probe-product', 'plain', 'not_applicable', 100
+        )`;
+        await expectMutationToBreak(async () => {
+          expect(basisLeak).toEqual([]);
+        }, 'removing basis equality must break the near-candidate identity assertion');
+        stage = 'threshold mutation';
+        await tx`select set_config('role', 'postgres', true)`;
+        await tx.unsafe(definition.sql.replaceAll('>= 0.90', '>= 0.50'));
+        await tx`select set_config('role', 'authenticated', true)`;
+        const score = await tx`select extensions.similarity(
+          app_private.normalize_ar_en_v1(${name}), app_private.normalize_ar_en_v1(${midSimilarityName})
+        ) as value`;
+        expect(Number(score[0]?.value)).toBeGreaterThanOrEqual(0.5);
+        expect(Number(score[0]?.value)).toBeLessThan(0.9);
+        const lowSimilarity =
+          await tx`select food_id from public.catalog_food_duplicate_candidates(
+          ${midSimilarityName}, 'en', 'g', 'probe-product', 'plain', 'not_applicable', 100
+        )`;
+        await expectMutationToBreak(async () => {
+          expect(lowSimilarity).toEqual([]);
+        }, 'lowering the 90% near-match threshold must break its negative assertion');
+
+        stage = 'weighing dimension mutation';
+        await tx`select set_config('role', 'postgres', true)`;
+        stage = 'uniqueness mutation';
+        await tx`drop index public.catalog_food_name_keys_active_identity_uq`;
+        await tx`create unique index catalog_food_name_keys_active_identity_uq on public.catalog_food_name_keys(
+          lang, name_norm, basis, product_identity_norm, preparation_identity_norm
+        ) where active`;
+        await makeFood(tx, rawId, 'Raw cooked identity', 'raw');
+        await makeFood(tx, cookedId, 'Raw cooked identity', 'cooked');
+        await tx`select app_private.reserve_catalog_food_keys(${rawId}, 1)`;
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx.savepoint(
+                (sp) =>
+                  sp`select app_private.reserve_catalog_food_keys(${cookedId}, 1)`,
+              ),
+            ).resolves.toBeDefined(),
+          'omitting weighing state from exact uniqueness must reject a distinct raw/cooked identity',
+        );
+
+        await tx`drop index public.catalog_food_name_keys_active_identity_uq`;
+        await makeFood(tx, duplicateA, 'Uniqueness mutation', 'not_applicable');
+        await makeFood(tx, duplicateB, 'Uniqueness mutation', 'not_applicable');
+        await tx`select app_private.reserve_catalog_food_keys(${duplicateA}, 1)`;
+        await tx`select app_private.reserve_catalog_food_keys(${duplicateB}, 1)`;
+        const active =
+          await tx`select count(*)::int as owners from public.catalog_food_name_keys
+          where name_norm = 'uniqueness mutation' and active`;
+        await expectMutationToBreak(async () => {
+          expect(active[0]?.owners).toBe(1);
+        }, 'removing exact-key uniqueness must break the single-owner race assertion');
+        expect(active[0]?.owners).toBe(2);
+        throw new Error(marker);
+      });
+    } catch (error) {
+      expect((error as Error).message, stage).toBe(marker);
     }
   });
 });
