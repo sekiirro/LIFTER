@@ -1,7 +1,8 @@
 import { readFileSync, writeFileSync } from 'node:fs';
 import { execFileSync } from 'node:child_process';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
 import net from 'node:net';
-import TOML from '@iarna/toml';
 
 export const CI_PROJECT_ID = 'lifter-stack-ci';
 export const CI_PORT_BASE = 56420;
@@ -34,7 +35,11 @@ export function selectCiPortMap(base = CI_PORT_BASE) {
   );
 }
 
-export function rewriteCiSupabaseConfig(source, portMap = selectCiPortMap()) {
+export async function rewriteCiSupabaseConfig(
+  source,
+  portMap = selectCiPortMap(),
+) {
+  const TOML = (await import('@iarna/toml')).default;
   const parsed = TOML.parse(source);
   if (parsed.project_id !== 'lifter')
     throw new Error('Expected the tracked Supabase project id to be lifter');
@@ -122,14 +127,14 @@ export function assertCiDockerClean() {
 
 if (
   process.argv[1] &&
-  import.meta.url === new URL(`file://${process.argv[1]}`).href
+  path.resolve(process.argv[1]) === fileURLToPath(import.meta.url)
 ) {
   const configPath = process.argv[2] ?? 'supabase/config.toml';
   const command = process.argv[3] ?? 'rewrite';
   if (command === 'rewrite') {
     writeFileSync(
       configPath,
-      rewriteCiSupabaseConfig(readFileSync(configPath, 'utf8')),
+      await rewriteCiSupabaseConfig(readFileSync(configPath, 'utf8')),
     );
   } else if (command === 'wait') {
     await waitForCiPortsFree();

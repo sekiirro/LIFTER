@@ -20,9 +20,9 @@ describe('self-hosted CI Supabase port map', () => {
     );
   });
 
-  it('rewrites every configured service port, including shadow and mail ports', () => {
+  it('rewrites every configured service port, including shadow and mail ports', async () => {
     const source = readFileSync('supabase/config.toml', 'utf8');
-    const rewritten = TOML.parse(rewriteCiSupabaseConfig(source));
+    const rewritten = TOML.parse(await rewriteCiSupabaseConfig(source));
     expect(rewritten.project_id).toBe('lifter-stack-ci');
     const ports = CI_PORT_KEYS.map(([section, key]) =>
       section
@@ -38,12 +38,12 @@ describe('self-hosted CI Supabase port map', () => {
     expect(TOML.parse(source).project_id).toBe('lifter');
   });
 
-  it('rejects a source config with the wrong identity or missing service ports', () => {
-    expect(() => rewriteCiSupabaseConfig('project_id = "other"\n')).toThrow(
-      'Expected the tracked Supabase project id to be lifter',
-    );
-    expect(() =>
+  it('rejects a source config with the wrong identity or missing service ports', async () => {
+    await expect(
+      rewriteCiSupabaseConfig('project_id = "other"\n'),
+    ).rejects.toThrow('Expected the tracked Supabase project id to be lifter');
+    await expect(
       rewriteCiSupabaseConfig('project_id = "lifter"\n[api]\nenabled = true\n'),
-    ).toThrow('does not contain a unique port');
+    ).rejects.toThrow('does not contain a unique port');
   });
 });
