@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
+import { useRouter } from 'next/navigation';
 import { BrandScope } from '../ui/BrandScope';
 import { Button } from '../ui/Button';
 import type { Locale } from '../../lib/design/preferences';
@@ -37,17 +38,24 @@ export function FormsStaffConsole({
   adapter,
   brandSource,
   workspaceId = 'showcase-workspace',
+  workspaces = [],
+  actorRole,
+  demo = true,
 }: {
   locale: Locale;
   adapter: FormsStaffAdapter;
   brandSource: FormsWorkspaceBrandSource;
   workspaceId?: string;
+  workspaces?: readonly { id: string; name: string }[];
+  actorRole?: FormsStaffRole;
+  demo?: boolean;
 }) {
+  const router = useRouter();
   const messages = getMessages(locale);
   const [snapshot, setSnapshot] = useState<FormsStaffSnapshot | null>(null);
   const [brandColor, setBrandColor] = useState<string | null>(null);
   const [view, setView] = useState<StaffView>('builder');
-  const [role, setRole] = useState<FormsStaffRole>('trainer');
+  const [role, setRole] = useState<FormsStaffRole>(actorRole ?? 'trainer');
   const [form, setForm] = useState<StaffFormDraft | null>(null);
   const [busy, setBusy] = useState(false);
   const [issue, setIssue] = useState('');
@@ -198,7 +206,9 @@ export function FormsStaffConsole({
       setIssue(messages['forms.staffSalesDenied']);
       return;
     }
-    const next = blankDraft(`mock-form-${Date.now()}`);
+    const next = blankDraft(
+      demo ? `mock-form-${Date.now()}` : globalThis.crypto.randomUUID(),
+    );
     setForm(next);
     setIssue('');
     setStatusMessage('');
@@ -218,29 +228,54 @@ export function FormsStaffConsole({
       <header className={styles.pageHeader}>
         <div>
           <h1>{messages['forms.staffTitle']}</h1>
-          <p>{messages['forms.staffDescription']}</p>
+          {demo && <p>{messages['forms.staffDescription']}</p>}
         </div>
-        <label className={styles.roleField}>
-          <span>{messages['forms.staffPreviewRole']}</span>
+        {demo && (
+          <label className={styles.roleField}>
+            <span>{messages['forms.staffPreviewRole']}</span>
+            <select
+              value={role}
+              onChange={(event) => {
+                setRole(event.currentTarget.value as FormsStaffRole);
+                setIssue('');
+              }}
+            >
+              {(['po', 'wo', 'trainer', 'sales'] as const).map((item) => (
+                <option key={item} value={item}>
+                  {messages[`forms.staffRole.${item}`]}
+                </option>
+              ))}
+            </select>
+          </label>
+        )}
+      </header>
+
+      {!demo && workspaces.length > 1 && (
+        <label className={styles.field}>
+          <span>{messages['packages.workspace']}</span>
           <select
-            value={role}
-            onChange={(event) => {
-              setRole(event.currentTarget.value as FormsStaffRole);
-              setIssue('');
-            }}
+            aria-label={messages['packages.workspace']}
+            value={workspaceId}
+            onChange={(event) =>
+              router.push(
+                `/forms?workspace=${encodeURIComponent(event.currentTarget.value)}`,
+              )
+            }
           >
-            {(['po', 'wo', 'trainer', 'sales'] as const).map((item) => (
-              <option key={item} value={item}>
-                {messages[`forms.staffRole.${item}`]}
+            {workspaces.map((workspace) => (
+              <option key={workspace.id} value={workspace.id}>
+                {workspace.name}
               </option>
             ))}
           </select>
         </label>
-      </header>
+      )}
 
-      <p className={styles.previewNotice} role="note">
-        {messages['forms.staffMockPreview']}
-      </p>
+      {demo && (
+        <p className={styles.previewNotice} role="note">
+          {messages['forms.staffMockPreview']}
+        </p>
+      )}
 
       {snapshot?.defaultConfigurationError && (
         <p className={styles.error} role="alert">
@@ -248,27 +283,29 @@ export function FormsStaffConsole({
         </p>
       )}
 
-      <div
-        className={styles.viewPicker}
-        role="group"
-        aria-label={messages['forms.staffViews']}
-      >
-        {policies.map((item) => (
-          <Button
-            key={item.id}
-            variant="secondary"
-            className={view === item.id ? styles.activeView : undefined}
-            aria-pressed={view === item.id}
-            onClick={() => {
-              setView(item.id);
-              setIssue('');
-              setStatusMessage('');
-            }}
-          >
-            {item.label}
-          </Button>
-        ))}
-      </div>
+      {demo && (
+        <div
+          className={styles.viewPicker}
+          role="group"
+          aria-label={messages['forms.staffViews']}
+        >
+          {policies.map((item) => (
+            <Button
+              key={item.id}
+              variant="secondary"
+              className={view === item.id ? styles.activeView : undefined}
+              aria-pressed={view === item.id}
+              onClick={() => {
+                setView(item.id);
+                setIssue('');
+                setStatusMessage('');
+              }}
+            >
+              {item.label}
+            </Button>
+          ))}
+        </div>
+      )}
 
       {loadFailed ? (
         <p className={styles.error} role="alert">
@@ -301,13 +338,13 @@ export function FormsStaffConsole({
               onIssue={setIssue}
             />
           )}
-          {view === 'intake' && (
+          {demo && view === 'intake' && (
             <StaffIntake
               locale={locale}
               assignments={snapshot?.assignments ?? []}
             />
           )}
-          {view === 'alerts' && (
+          {demo && view === 'alerts' && (
             <StaffSlaAlerts
               locale={locale}
               assignments={snapshot?.assignments ?? []}

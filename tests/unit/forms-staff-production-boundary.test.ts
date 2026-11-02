@@ -55,9 +55,9 @@ describe('production staff Forms route boundary', () => {
       resolve(root, 'components/forms/FormsStaffConsole.tsx'),
       'utf8',
     );
-    expect(staffConsole).toContain('{demo && <label');
-    expect(staffConsole).toContain(
-      '{demo && <p className={styles.previewNotice}',
+    expect(staffConsole).toMatch(/\{demo\s*&&\s*\(\s*<label/u);
+    expect(staffConsole).toMatch(
+      /\{demo\s*&&\s*\(\s*<p className=\{styles\.previewNotice\}/u,
     );
   });
 });
