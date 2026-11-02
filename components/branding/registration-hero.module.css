@@ -515,14 +515,9 @@
   border-color: var(--hero-error-edge, var(--color-error-fg));
 }
 
-.noArtwork .form :global(input),
-.samplingFallback .form :global(input),
-.noArtwork .form :global(select),
-.samplingFallback .form :global(select),
 .noArtwork .phoneNumber :global([data-testid='country-calling-code']),
 .samplingFallback .phoneNumber :global([data-testid='country-calling-code']) {
   color: var(--hero-form-control-text) !important;
-  -webkit-text-fill-color: var(--hero-form-control-text) !important;
 }
 
 .noArtwork .form :global(input::placeholder),
@@ -630,26 +625,6 @@
 :global([data-theme='light'])
   .stage[data-photo-tone='bright']
   .form
-  :global(input),
-:global([data-theme='light'])
-  .stage[data-photo-tone='bright']
-  .form
-  :global(select) {
-  color: var(--hero-form-control-text) !important;
-  -webkit-text-fill-color: var(--hero-form-control-text) !important;
-}
-
-:global([data-theme='light'])
-  .stage[data-photo-tone='bright']
-  .form
-  :global(input) {
-  color: var(--hero-form-control-text) !important;
-  -webkit-text-fill-color: var(--hero-form-control-text) !important;
-}
-
-:global([data-theme='light'])
-  .stage[data-photo-tone='bright']
-  .form
   :global(input::placeholder) {
   color: var(--color-text-muted);
 }
@@ -693,12 +668,6 @@
   .stage .countryPicker {
     border: 1px solid var(--color-border-strong);
     background: var(--color-card-raised);
-  }
-
-  .stage .form :global(input),
-  .stage .form :global(select) {
-    color: var(--hero-form-control-text) !important;
-    -webkit-text-fill-color: var(--hero-form-control-text) !important;
   }
 
   .stage .form {
@@ -836,8 +805,6 @@
     color: var(--color-text);
   }
 
-  .form :global(input),
-  .form :global(select),
   .phoneNumber :global([data-testid='country-calling-code']) {
     color: var(--hero-form-control-text) !important;
   }
