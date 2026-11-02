@@ -323,7 +323,6 @@ for (const locale of ['ar', 'en'] as const) {
       await page.setViewportSize({ width: 390, height: 844 });
       await page.emulateMedia({
         reducedMotion: 'reduce',
-        reducedTransparency: 'reduce',
         contrast: 'more',
       });
       await context.addCookies([
@@ -357,7 +356,6 @@ test('dim/invalid/en/light/mobile-390: preference keeps invalid text readable', 
   await page.setViewportSize({ width: 390, height: 844 });
   await page.emulateMedia({
     reducedMotion: 'reduce',
-    reducedTransparency: 'reduce',
     contrast: 'more',
   });
   await context.addCookies([
