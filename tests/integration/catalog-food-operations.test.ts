@@ -394,7 +394,16 @@ describe('global food create and version RPCs', () => {
     );
     await expect(
       createWith(four.map((food) => foodAlternative(food.food_id))),
-    ).rejects.toMatchObject({ code: '23514' });
+    ).rejects.toMatchObject({
+      code: '22023',
+      message: 'catalog_food_alternatives_invalid',
+    });
+    await expect(
+      createWith([foodAlternative(valid.food_id, 100, 100, 2147483648)]),
+    ).rejects.toMatchObject({
+      code: '22023',
+      message: 'catalog_food_alternatives_invalid',
+    });
     await expect(
       createWith([foodAlternative(randomUUID())]),
     ).rejects.toMatchObject({

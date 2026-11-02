@@ -4,7 +4,7 @@ Date: 2026-11-02. Stack C only. This local audit does not authorize a production
 
 | Gate | Status | Evidence / remaining item |
 |---|---|---|
-| Migration range, timestamp validity, uniqueness and order | PASS | 83 `origin/main` migrations + 24 F16 migrations + `20261106121000_catalog_food_defaults_and_search.sql` = 108 applied migrations. Timestamp validator passes with exactly 11 listed pre-F16 merged exceptions. |
+| Migration range, timestamp validity, uniqueness and order | PASS | 83 `origin/main` migrations + 24 F16 migrations + `20261106121000_catalog_food_defaults_and_search.sql` + `20261106122000_catalog_food_alternatives_bounds.sql` = 109 applied migrations. Timestamp validator passes with exactly 11 listed pre-F16 merged exceptions. |
 | Fresh reset and replay | PASS | Final clean Stack C reset replayed all 108 migrations; the Vault provisioner completed immediately after reset. |
 | Empty catalog seed | PASS | `catalog-schema.test.ts` passes on an isolated clean replay; only the approved 18 muscle and 10 equipment taxonomy rows are present. |
 | Audit/idempotency atomicity | PASS | `catalog-operation-keys.test.ts`, operation integration assertions and migration transaction semantics cover operation-key result/claim/work/result and audit behavior. |
@@ -15,6 +15,10 @@ Date: 2026-11-02. Stack C only. This local audit does not authorize a production
 | Lint, typecheck, Prettier and diff checks | PASS | `npm run lint`, `npm run typecheck`, Prettier on touched supported files, timestamp check, and `git diff --check` pass. SQL migrations are validated by replay and migration audit, not Prettier's unsupported SQL parser. |
 | Benchmark D16-10 | PASS locally / production gate open | Local Stack C 10,000-active / 1,000-removed fixture; five query classes at concurrency 1/8/32 and all local p95 values <300 ms after `20261106115400_catalog_search_browse_perf.sql`. Worker CPU and hosted HTTP/API results are unavailable locally. See `benchmark-s25.md`. |
 | Production-only gates | OPEN | Production-like benchmark including Worker CPU, production migration/deploy approval, live dataset audit/import approval, and monitoring/backup verification. No production access occurred. |
+
+## S26 F11 retention follow-up
+
+The existing inactive `lifter-f11-purge-signup` job command now calls `app_private.purge_f11_retained_data()`, which purges both retained signup attempts and expired operation keys. The integration contract verifies the command, wrapper body, and postgres-only activation/execution. No schedule was activated; the job remains absent after replay. This is a local contract change only and does not authorize activation or production migration.
 
 ## Integration file outcome
 
