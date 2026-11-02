@@ -1,6 +1,6 @@
 'use client';
 
-import { useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import type { Role } from '../../lib/auth/capabilities';
 import type { Messages } from '../../lib/i18n';
@@ -62,8 +62,10 @@ export function ApprovalReview({
   const [notice, setNotice] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
   const [pending, setPending] = useState(false);
+  const [hydrated, setHydrated] = useState(false);
   const requestKey = useRef(createApprovalRequestKeyStore()).current;
   const owner = role === 'platform_owner';
+  useEffect(() => setHydrated(true), []);
   const run = async (action: 'approve' | 'reject' | 'reconsider') => {
     setPending(true);
     try {
@@ -111,7 +113,12 @@ export function ApprovalReview({
     }
   };
   return (
-    <section className={styles.review} data-confirmation-required="true">
+    <section
+      className={styles.review}
+      data-confirmation-required="true"
+      data-testid="approval-review"
+      data-hydrated={hydrated ? 'true' : 'false'}
+    >
       <dl className={styles.details}>
         <div>
           <dt>{messages['registrationApproval.name']}</dt>
