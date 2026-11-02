@@ -98,6 +98,15 @@ describe('authorized exercise detail projection', () => {
           video_url: 'https://youtu.be/abcdefghijk',
         },
       });
+      const workspaceOwner = await asActor(
+        tx,
+        wo.userId,
+        () =>
+          tx`select exercise_id, lifecycle_state from public.catalog_exercise_detail(${exerciseId}, ${wsA})`,
+      );
+      expect(workspaceOwner).toEqual([
+        { exercise_id: exerciseId, lifecycle_state: 'active' },
+      ]);
       const foreign = await asActor(
         tx,
         foreignTrainer.userId,
