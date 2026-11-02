@@ -7,6 +7,7 @@ import {
 import {
   parseTelegramStart,
   validTelegramWebhookSecret,
+  validTelegramWorkerSecret,
 } from '../../lib/forms/telegram-webhook';
 
 describe('staff Telegram link and delivery primitives', () => {
@@ -14,6 +15,13 @@ describe('staff Telegram link and delivery primitives', () => {
     expect(validTelegramWebhookSecret(null, 'secret')).toBe(false);
     expect(validTelegramWebhookSecret('forged', 'secret')).toBe(false);
     expect(validTelegramWebhookSecret('secret', 'secret')).toBe(true);
+  });
+
+  it('requires the configured bearer secret for the internal worker route', () => {
+    expect(validTelegramWorkerSecret(null, 'secret')).toBe(false);
+    expect(validTelegramWorkerSecret('secret', 'secret')).toBe(false);
+    expect(validTelegramWorkerSecret('Bearer forged', 'secret')).toBe(false);
+    expect(validTelegramWorkerSecret('Bearer secret', 'secret')).toBe(true);
   });
 
   it('accepts only /start token from the chat owner', () => {

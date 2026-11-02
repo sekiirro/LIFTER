@@ -91,3 +91,4 @@ Security, authorization, audit, idempotency, retention and scheduler tasks name 
 No update to `docs/13-production-readiness.md` is made by this planning artifact; any readiness-register change belongs in an explicitly authorized readiness update.
 
 The delivery worker also reads `TELEGRAM_BOT_USERNAME` to build the staff bot link and `APP_URL` to build the in-app inbox link. These are configuration key names only; tests use fake transport and local example URLs.
+`TELEGRAM_WORKER_SECRET` guards the internal job-worker route; provision it as a server-only runtime secret before configuring an external runner. The scheduler remains disabled.

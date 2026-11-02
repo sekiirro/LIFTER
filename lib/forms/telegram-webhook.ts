@@ -10,6 +10,18 @@ export function validTelegramWebhookSecret(
   return left.length === right.length && timingSafeEqual(left, right);
 }
 
+export function validTelegramWorkerSecret(
+  authorization: string | null,
+  configured: string | undefined,
+) {
+  if (!authorization?.startsWith('Bearer ') || !configured) return false;
+  const supplied = Buffer.from(authorization.slice(7));
+  const expected = Buffer.from(configured);
+  return (
+    supplied.length === expected.length && timingSafeEqual(supplied, expected)
+  );
+}
+
 export function parseTelegramStart(body: unknown) {
   if (!body || typeof body !== 'object') return null;
   const payload = body as Record<string, unknown>;
