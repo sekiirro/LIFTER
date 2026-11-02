@@ -1,9 +1,32 @@
-import { describe, expect, it } from 'vitest';
+import { mkdtempSync, mkdirSync, rmSync, writeFileSync } from 'node:fs';
+import os from 'node:os';
+import path from 'node:path';
+import { afterEach, describe, expect, it } from 'vitest';
 import {
   assertLocalStackTarget,
   getStackConfig,
   selectStack,
 } from '../../scripts/local-stack.mjs';
+
+const temporaryRoots: string[] = [];
+
+function stackRoot() {
+  const root = mkdtempSync(path.join(os.tmpdir(), 'f13-stack-readiness-'));
+  temporaryRoots.push(root);
+  const profileDir = path.join(root, 'supabase-stack-c', 'supabase');
+  mkdirSync(profileDir, { recursive: true });
+  writeFileSync(
+    path.join(profileDir, 'config.toml'),
+    `project_id = "lifter-stack-c"\n\n[api]\nport = 35421\n\n[db]\nport = 35422\nshadow_port = 35420\n\n[studio]\nport = 35423\n\n[inbucket]\nport = 35424\nsmtp_port = 35425\npop3_port = 35426\n\n[analytics]\nport = 35427\n\n[edge_runtime]\ninspector_port = 35428\n\n[db.pooler]\nport = 35429\n`,
+    'utf8',
+  );
+  return root;
+}
+
+afterEach(() => {
+  for (const root of temporaryRoots.splice(0))
+    rmSync(root, { recursive: true, force: true });
+});
 
 describe('F13 isolated Stack C contract', () => {
   it('selects only Stack C when explicitly requested', () => {
@@ -33,7 +56,7 @@ describe('F13 isolated Stack C contract', () => {
   });
 
   it('binds Stack C to its own project and full distinct port block', () => {
-    const config = getStackConfig('c');
+    const config = getStackConfig('c', stackRoot());
     expect(config.projectId).toBe('lifter-stack-c');
     expect(config.ports).toEqual([
       35421, 35422, 35420, 35423, 35424, 35425, 35426, 35427, 35428, 35429,
@@ -62,7 +85,12 @@ describe('F13 isolated Stack C contract', () => {
       ],
     ]) {
       expect(() =>
-        assertLocalStackTarget({ stack: 'c', apiUrl, dbUrl }),
+        assertLocalStackTarget({
+          stack: 'c',
+          apiUrl,
+          dbUrl,
+          root: stackRoot(),
+        }),
       ).toThrow('Local Supabase target required');
     }
   });
@@ -73,6 +101,7 @@ describe('F13 isolated Stack C contract', () => {
         stack: 'c',
         apiUrl: 'http://127.0.0.1:35421',
         dbUrl: 'postgres://postgres:postgres@127.0.0.1:35422/postgres',
+        root: stackRoot(),
       }).projectId,
     ).toBe('lifter-stack-c');
   });
