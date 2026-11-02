@@ -1,17 +1,22 @@
 import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it } from 'vitest';
 import { WorkoutTemplateManager } from '../../components/plans/workout/WorkoutTemplateManager';
+import type { Locale } from '../../lib/design/preferences';
 import { createWorkoutTemplateFixture } from '../../lib/plans/workout/template-fixtures';
 import type { WorkoutTemplateActor } from '../../lib/plans/workout/template-management';
 
-function render(actor: WorkoutTemplateActor): string {
-  const fixture = createWorkoutTemplateFixture('en');
+function render(
+  actor: WorkoutTemplateActor,
+  locale: Locale = 'en',
+  initialDraft = createWorkoutTemplateFixture(locale).draft,
+): string {
+  const fixture = createWorkoutTemplateFixture(locale);
   return renderToStaticMarkup(
     <WorkoutTemplateManager
       actor={actor}
       templates={fixture.templates}
-      initialDraft={fixture.draft}
-      locale="en"
+      initialDraft={initialDraft}
+      locale={locale}
     />,
   );
 }
@@ -43,5 +48,29 @@ describe('F17 workout template manager UI', () => {
     expect(html).toMatch(
       /data-template-action="retire" data-template-scope="global"/,
     );
+  });
+
+  it('renders every numeric value with Arabic-Indic digits in Arabic', () => {
+    const html = render(
+      { role: 'trainer', workspaceId: 'workspace-a' },
+      'ar',
+      {
+        days: [
+          {
+            id: 'e1000000-0000-4000-8000-000000000001',
+            kind: 'rest',
+            title: 'يوم الراحة',
+          },
+        ],
+      },
+    );
+
+    expect(html).toContain('٤ قوالب');
+    expect(html).toContain('الإصدار:');
+    expect(html).toContain('>٣</bdi>');
+    expect(html).toContain('الصفحة ١ من ١');
+    expect(html).toContain('١ أيام منسوخة');
+    expect(html).not.toContain('4 قوالب');
+    expect(html).not.toContain('الصفحة 1 من 1');
   });
 });
