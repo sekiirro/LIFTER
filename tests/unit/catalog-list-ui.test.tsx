@@ -61,8 +61,8 @@ describe('catalog list shell presentation', () => {
     expect(html).toMatch(
       new RegExp(`<option value=""[^>]*>${en['catalog.all']}</option>`),
     );
-    expect(html).toContain('<option value="Chest">Chest</option>');
-    expect(html).toContain('<option value="Barbell">Barbell</option>');
+    expect(html).toContain('<option value="chest">Chest</option>');
+    expect(html).toContain('<option value="barbell">Barbell</option>');
   });
 
   it('lists active items only and renders canonical taxonomy as LTR data', () => {

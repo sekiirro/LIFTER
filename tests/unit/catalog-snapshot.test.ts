@@ -30,9 +30,9 @@ const exerciseVersion = {
   exerciseId: 'ex-1',
   version: 3,
   names: { ar: 'تمرين', en: 'Exercise' },
-  primaryMuscle: 'Chest',
-  secondaryMuscles: ['Biceps', 'Triceps'],
-  equipment: 'Barbell',
+  primaryMuscle: 'chest',
+  secondaryMuscles: ['biceps', 'triceps'],
+  equipment: 'barbell',
   defaults: {
     warmupSets: 1,
     workingSets: 3,
@@ -196,7 +196,7 @@ describe('catalog snapshot (T031)', () => {
     missingLocale.names = { en: 'Exercise' };
     expect(() => parseSnapshot(missingLocale)).toThrow(/names\.ar/);
     const invalidMuscle = JSON.parse(serializeSnapshot(snapshot));
-    invalidMuscle.secondaryMuscles = ['Biceps', 7];
+    invalidMuscle.secondaryMuscles = ['biceps', 7];
     expect(() => parseSnapshot(invalidMuscle)).toThrow(/secondaryMuscles/);
   });
 

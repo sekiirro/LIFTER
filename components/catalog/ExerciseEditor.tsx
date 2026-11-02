@@ -152,7 +152,7 @@ export function ExerciseEditor({
   const lifecycleLabels: Record<CatalogLifecycleState, string> = {
     active: m['catalog.editorLifecycleActive'],
     removed: m['catalog.editorLifecycleRemoved'],
-    superseded: m['catalog.editorLifecycleSuperseded'],
+    merged: m['catalog.editorLifecycleSuperseded'],
   };
 
   function setValue<K extends keyof ExerciseEditorDraft>(
@@ -218,13 +218,25 @@ export function ExerciseEditor({
           <div>
             <dt>{m['catalog.editorPrimaryMuscle']}</dt>
             <dd>
-              <Bidi dir="ltr">{draft.primaryMuscle || '—'}</Bidi>
+              <Bidi dir="ltr">
+                {draft.primaryMuscle
+                  ? m[
+                      `catalog.taxonomy.muscle.${draft.primaryMuscle}` as keyof typeof m
+                    ]
+                  : '—'}
+              </Bidi>
             </dd>
           </div>
           <div>
             <dt>{m['catalog.editorEquipment']}</dt>
             <dd>
-              <Bidi dir="ltr">{draft.equipment || '—'}</Bidi>
+              <Bidi dir="ltr">
+                {draft.equipment
+                  ? m[
+                      `catalog.taxonomy.equipment.${draft.equipment}` as keyof typeof m
+                    ]
+                  : '—'}
+              </Bidi>
             </dd>
           </div>
         </dl>
@@ -366,7 +378,7 @@ export function ExerciseEditor({
                 <option value="">{m['catalog.editorNone']}</option>
                 {MUSCLE_GROUP_CODES.map((code) => (
                   <option key={code} value={code}>
-                    {code}
+                    {m[`catalog.taxonomy.muscle.${code}` as keyof typeof m]}
                   </option>
                 ))}
               </select>
@@ -395,7 +407,7 @@ export function ExerciseEditor({
                 <option value="">{m['catalog.editorNone']}</option>
                 {EQUIPMENT_CODES.map((code) => (
                   <option key={code} value={code}>
-                    {code}
+                    {m[`catalog.taxonomy.equipment.${code}` as keyof typeof m]}
                   </option>
                 ))}
               </select>

@@ -150,6 +150,30 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
     expect(restored.error).toBeNull();
   });
 
+  it('creates a workspace variation through the real RPC with an explicit null version', async () => {
+    const action = server(workspaces.po);
+    const exercise = await action.createExercise({
+      operationKey: fixtureKey(),
+      request: {
+        name_ar: `اختبار ${randomUUID()}`,
+        name_en: `Variation create ${randomUUID()}`,
+        primary_muscle_code: 'chest',
+        secondary_muscle_codes: [],
+        equipment_codes: ['dumbbell'],
+        defaults: {},
+      },
+    });
+    expect(exercise.status).toBe('ok');
+    if (exercise.status !== 'ok') return;
+    const result = await action.writeVariation({
+      operationKey: fixtureKey(),
+      workspaceId: workspaces.wsA.id,
+      id: (exercise.data as { exercise_id: string }).exercise_id,
+      request: { video_url: 'https://youtu.be/abcdefghijk' },
+    });
+    expect(result.status).toBe('ok');
+  });
+
   it('searches exercises created through the session wall by stored taxonomy payload keys', async () => {
     const action = server(workspaces.po);
     const created = await action.createExercise({

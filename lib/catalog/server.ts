@@ -228,7 +228,7 @@ export function createCatalogServer(deps: CatalogDependencies) {
         (x) => ({
           p_workspace_id: x.workspaceId,
           p_exercise_id: x.id,
-          p_expected_version: x.expectedVersion,
+          p_expected_version: x.expectedVersion ?? null,
           p_operation_key: x.operationKey,
           p_request: x.request,
         }),

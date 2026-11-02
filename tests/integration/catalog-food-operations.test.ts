@@ -357,6 +357,79 @@ describe('global food create and version RPCs', () => {
     ]);
   });
 
+  it('rejects caller-reserved alternatives on create and version writes', async () => {
+    const target = await createFood(
+      po.userId,
+      `Reserved target ${randomUUID()}`,
+    );
+    const key = randomUUID();
+    const request = {
+      ...foodRequest(`Reserved source ${randomUUID()}`),
+      default_alternatives: [foodAlternative(target.food_id)],
+    };
+    const create = (items: ReturnType<typeof foodAlternative>[]) =>
+      asActor(
+        po.userId,
+        (tx) =>
+          tx`select public.catalog_create_food(
+          ${key}, null, ${tx.json(request)}, ${tx.json(items)}
+        )`,
+      );
+    await expect(create([])).rejects.toMatchObject({ code: '22023' });
+    await expect(
+      create([foodAlternative(target.food_id)]),
+    ).rejects.toMatchObject({ code: '22023' });
+
+    const source = await createFood(
+      po.userId,
+      `Reserved version ${randomUUID()}`,
+    );
+    const versionRequest = {
+      ...foodRequest(`Reserved edit ${randomUUID()}`),
+      default_alternatives: [foodAlternative(target.food_id)],
+    };
+    await expect(
+      asActor(
+        po.userId,
+        (tx) =>
+          tx`select public.catalog_version_food(
+          ${source.food_id}, 1, ${randomUUID()}, ${tx.json(versionRequest)}, '[]'::jsonb
+        )`,
+      ),
+    ).rejects.toMatchObject({ code: '22023' });
+    await expect(
+      db`select current_version from public.foods where id = ${source.food_id}`,
+    ).resolves.toEqual([{ current_version: 1 }]);
+  });
+
+  it('accepts an integral decimal JSON alternative version', async () => {
+    const target = await createFood(
+      po.userId,
+      `Decimal target ${randomUUID()}`,
+    );
+    const rawAlternatives = JSON.stringify([
+      {
+        alternative_food_id: target.food_id,
+        alternative_version: 1,
+        source_portion: 100,
+        alternative_portion: 100,
+      },
+    ]).replace('"alternative_version":1', '"alternative_version":1.0');
+    const jsonbLiteral = (value: string) =>
+      `'${value.replaceAll("'", "''")}'::jsonb`;
+    const response = await asActor(po.userId, (tx) =>
+      tx.unsafe(
+        `select public.catalog_create_food('${randomUUID()}'::uuid, null, ${jsonbLiteral(
+          JSON.stringify(foodRequest(`Decimal source ${randomUUID()}`)),
+        )}, ${jsonbLiteral(rawAlternatives)})`,
+      ),
+    );
+    const source = response[0]?.catalog_create_food as { food_id: string };
+    await expect(
+      db`select alternative_version from public.food_default_alternatives where food_id = ${source.food_id}`,
+    ).resolves.toEqual([{ alternative_version: 1 }]);
+  });
+
   it('rejects invalid alternative sets and rolls a partial version back atomically', async () => {
     const source = await createFood(po.userId, `Atomic source ${randomUUID()}`);
     const valid = await createFood(po.userId, `Atomic target ${randomUUID()}`);

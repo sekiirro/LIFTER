@@ -69,8 +69,8 @@ describe('exercise editor defaults presentation', () => {
   it('preserves the exact defaults when building an exercise input', () => {
     expect(buildExerciseInput(draft())).toMatchObject({
       names: { ar: 'ضغط الصدر بالبار', en: 'Barbell Bench Press' },
-      primaryMuscle: 'Chest',
-      equipment: 'Barbell',
+      primaryMuscle: 'chest',
+      equipment: 'barbell',
       defaults: {
         warmupSets: 2,
         workingSets: 4,

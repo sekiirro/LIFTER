@@ -15,8 +15,8 @@ import { CatalogValidationError } from '../../lib/catalog/schemas';
 
 const validExercise = {
   names: { ar: ' تمرين ', en: ' Exercise ' },
-  primaryMuscle: 'Chest',
-  equipment: 'Barbell',
+  primaryMuscle: 'chest',
+  equipment: 'barbell',
 };
 
 const validServing = {
@@ -42,8 +42,8 @@ describe('catalog schemas', () => {
     it('accepts a spec-valid exercise and trims names', () => {
       expect(normalizeExerciseInput(validExercise)).toMatchObject({
         names: { ar: 'تمرين', en: 'Exercise' },
-        primaryMuscle: 'Chest',
-        equipment: 'Barbell',
+        primaryMuscle: 'chest',
+        equipment: 'barbell',
         secondaryMuscles: [],
         lifecycleState: 'active',
       });
@@ -68,7 +68,7 @@ describe('catalog schemas', () => {
       expect(() =>
         normalizeExerciseInput({
           names: { ar: 'a', en: 'b' },
-          primaryMuscle: 'Chest',
+          primaryMuscle: 'chest',
         }),
       ).toThrow(/equipment/i);
     });
@@ -97,7 +97,7 @@ describe('catalog schemas', () => {
     it('accepts secondary muscles and defaults', () => {
       const result = normalizeExerciseInput({
         ...validExercise,
-        secondaryMuscles: ['Biceps', 'Triceps'],
+        secondaryMuscles: ['biceps', 'triceps'],
         defaults: {
           warmupSets: 1,
           workingSets: 3,
@@ -106,7 +106,7 @@ describe('catalog schemas', () => {
           rir: 2,
         },
       });
-      expect(result.secondaryMuscles).toEqual(['Biceps', 'Triceps']);
+      expect(result.secondaryMuscles).toEqual(['biceps', 'triceps']);
       expect(result.defaults?.reps).toEqual({ kind: 'range', min: 8, max: 12 });
     });
   });
@@ -289,10 +289,11 @@ describe('catalog schemas', () => {
       expect(() => normalizeLifecycleState('archived')).toThrow(/lifecycle/i);
     });
 
-    it('accepts active, removed and superseded', () => {
-      for (const state of ['active', 'removed', 'superseded'] as const) {
+    it('accepts active, removed and merged', () => {
+      for (const state of ['active', 'removed', 'merged'] as const) {
         expect(normalizeLifecycleState(state)).toBe(state);
       }
+      expect(() => normalizeLifecycleState('superseded')).toThrow(/lifecycle/i);
     });
   });
 
@@ -300,6 +301,10 @@ describe('catalog schemas', () => {
     expect(MUSCLE_GROUP_CODES).toHaveLength(18);
     expect(new Set(MUSCLE_GROUP_CODES).size).toBe(18);
     expect(EQUIPMENT_CODES).toHaveLength(10);
+    expect(MUSCLE_GROUP_CODES).toContain('chest');
+    expect(MUSCLE_GROUP_CODES).not.toContain('Chest' as never);
+    expect(EQUIPMENT_CODES).toContain('barbell');
+    expect(EQUIPMENT_CODES).not.toContain('Barbell' as never);
   });
 
   it('rejects invalid search kind', () => {

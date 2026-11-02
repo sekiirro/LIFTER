@@ -53,11 +53,11 @@ describe('catalog list projection', () => {
   });
 
   it('applies muscle, equipment and basis filters', () => {
-    expect(exerciseIds('', { muscleGroup: 'Chest' })).toEqual([
+    expect(exerciseIds('', { muscleGroup: 'chest' })).toEqual([
       'mock-exercise-1',
       'mock-exercise-3',
     ]);
-    expect(exerciseIds('', { equipment: 'Barbell' })).toEqual([
+    expect(exerciseIds('', { equipment: 'barbell' })).toEqual([
       'mock-exercise-1',
     ]);
     expect(foodIds('', { basis: 'g' })).toEqual(['mock-food-1', 'mock-food-2']);
@@ -88,16 +88,16 @@ describe('catalog list projection', () => {
       'ex-1',
       normalizeExerciseInput({
         names: { ar: 'ضغط الصدر', en: 'Bench Press' },
-        primaryMuscle: 'Chest',
-        equipment: 'Barbell',
+        primaryMuscle: 'chest',
+        equipment: 'barbell',
       }),
     );
     expect(exercise).toEqual({
       id: 'ex-1',
       kind: 'exercise',
       names: { ar: 'ضغط الصدر', en: 'Bench Press' },
-      primaryMuscle: 'Chest',
-      equipment: 'Barbell',
+      primaryMuscle: 'chest',
+      equipment: 'barbell',
       lifecycleState: 'active',
     });
 
@@ -173,10 +173,10 @@ describe('catalog list projection', () => {
     const filtered = reduceCatalogShellState(submitted, {
       type: 'filter',
       key: 'equipment',
-      value: 'Barbell',
+      value: 'barbell',
     });
-    expect(filtered.filters).toEqual({ equipment: 'Barbell' });
-    expect(filtered.search.filters).toEqual({ equipment: 'Barbell' });
+    expect(filtered.filters).toEqual({ equipment: 'barbell' });
+    expect(filtered.search.filters).toEqual({ equipment: 'barbell' });
 
     const cleared = reduceCatalogShellState(filtered, { type: 'clear' });
     expect(cleared.query).toBe('');

@@ -168,7 +168,13 @@ export function CatalogListShell({
                 <option value="">{m['catalog.all']}</option>
                 {CATALOG_FILTER_OPTIONS[key].map((option) => (
                   <option key={option} value={option}>
-                    {option}
+                    {key === 'muscleGroup'
+                      ? m[`catalog.taxonomy.muscle.${option}` as keyof typeof m]
+                      : key === 'equipment'
+                        ? m[
+                            `catalog.taxonomy.equipment.${option}` as keyof typeof m
+                          ]
+                        : option}
                   </option>
                 ))}
               </select>
@@ -234,13 +240,25 @@ export function CatalogListShell({
                       <div>
                         <dt>{m['catalog.primaryMuscle']}</dt>
                         <dd>
-                          <Bidi dir="ltr">{item.primaryMuscle}</Bidi>
+                          <Bidi dir="ltr">
+                            {
+                              m[
+                                `catalog.taxonomy.muscle.${item.primaryMuscle}` as keyof typeof m
+                              ]
+                            }
+                          </Bidi>
                         </dd>
                       </div>
                       <div>
                         <dt>{m['catalog.equipment']}</dt>
                         <dd>
-                          <Bidi dir="ltr">{item.equipment}</Bidi>
+                          <Bidi dir="ltr">
+                            {
+                              m[
+                                `catalog.taxonomy.equipment.${item.equipment}` as keyof typeof m
+                              ]
+                            }
+                          </Bidi>
                         </dd>
                       </div>
                     </>
