@@ -72,6 +72,8 @@ function sampleArtwork(
   canvas.height = SAMPLE_CANVAS_HEIGHT;
   const context = canvas.getContext('2d', { willReadFrequently: true });
   if (!context) return null;
+  context.imageSmoothingEnabled = true;
+  context.imageSmoothingQuality = 'high';
   context.drawImage(
     image,
     x,
