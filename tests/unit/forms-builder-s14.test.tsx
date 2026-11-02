@@ -103,7 +103,10 @@ const draft: StaffFormDraft = {
   revision: 0,
 };
 
-function builderMarkup(form: StaffFormDraft = draft, locale: 'en' | 'ar' = 'en') {
+function builderMarkup(
+  form: StaffFormDraft = draft,
+  locale: 'en' | 'ar' = 'en',
+) {
   return renderToStaticMarkup(
     createElement(FormBuilder, {
       locale,
@@ -142,7 +145,9 @@ describe('S14 staff form Builder', () => {
   });
 
   it('exposes every engine field type and authoring action with localized names', () => {
-    const html = builderMarkup();
+    const html = draft.questions
+      .map((question) => builderMarkup({ ...draft, questions: [question] }))
+      .join('');
     for (const type of [
       'slider',
       'imageChoice',

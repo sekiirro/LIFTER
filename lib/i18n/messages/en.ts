@@ -574,6 +574,8 @@ export const en: Record<keyof typeof ar, string> = {
   'forms.staffDateOfBirthField.dateOfBirth': 'Registered date of birth',
   'forms.staffAnswerCharacterLimit': 'Answer character limit',
   'forms.staffRequired': 'Required',
+  // DRAFT: pending PO copy batch review.
+  'forms.staffQuestionOptional': 'Optional',
   'forms.staffChoices': 'Answer choices',
   'forms.staffEnglishOption': 'English choice',
   'forms.staffArabicOption': 'Arabic choice',

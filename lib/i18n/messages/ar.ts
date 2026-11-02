@@ -555,6 +555,8 @@ export const ar = {
   'forms.staffDateOfBirthField.dateOfBirth': 'تاريخ الميلاد المسجل',
   'forms.staffAnswerCharacterLimit': 'حد أحرف الإجابة',
   'forms.staffRequired': 'مطلوب',
+  // DRAFT: pending PO copy batch review.
+  'forms.staffQuestionOptional': 'اختياري',
   'forms.staffChoices': 'خيارات الإجابة',
   'forms.staffEnglishOption': 'الخيار بالإنجليزية',
   'forms.staffArabicOption': 'الخيار بالعربية',

@@ -124,6 +124,15 @@ test('production Forms is authenticated, workspace-scoped, bilingual, and access
             locale === 'en' ? 'Arabic form name' : 'اسم الاستمارة بالعربية',
           ),
         ).toHaveValue('خطوتك الأولى');
+        await expect(
+          page.locator(
+            '[data-testid="question-outline-item"] button[aria-expanded="true"]',
+          ),
+        ).toHaveCount(1);
+        await expect(page.locator('html')).toHaveAttribute(
+          'dir',
+          locale === 'ar' ? 'rtl' : 'ltr',
+        );
         expect(
           await page.evaluate(
             () => document.documentElement.scrollWidth <= window.innerWidth,
@@ -222,8 +231,20 @@ test('production Builder stays compact and supports keyboard question editing', 
   await page.goto(`/forms?workspace=${workspaceId}`);
   await expect(page.getByLabel('Arabic form name')).toHaveValue('خطوتك الأولى');
 
-  const height = await page.evaluate(() => document.documentElement.scrollHeight);
+  const height = await page.evaluate(
+    () => document.documentElement.scrollHeight,
+  );
+  console.log(`F15 Builder 1440px document height: ${height}px`);
   expect(height).toBeLessThan(3000);
+
+  await page.evaluate(() => window.scrollTo(0, 1200));
+  const saveBounds = await page
+    .getByRole('button', { name: 'Save draft' })
+    .boundingBox();
+  expect(saveBounds?.y).toBeGreaterThan(0);
+  expect(
+    (saveBounds?.y ?? 1000) + (saveBounds?.height ?? 0),
+  ).toBeLessThanOrEqual(1000);
 
   const outline = page.getByRole('list', { name: 'Questions' });
   const items = outline.getByTestId('question-outline-item');
@@ -242,12 +263,14 @@ test('production Builder stays compact and supports keyboard question editing', 
   await expect(first).toHaveAttribute('aria-expanded', 'false');
   await expect(page.getByTestId('question-editor')).toHaveCount(1);
 
-  const firstSummary = items.first().getByTestId('question-summary-title');
-  const originalFirst = await firstSummary.textContent();
-  const moveDown = items.first().getByRole('button', { name: 'Move question down' });
+  const originalSecond = await items
+    .nth(1)
+    .getByTestId('question-summary-title')
+    .textContent();
+  const moveDown = page.getByRole('button', { name: 'Move question down' });
   await moveDown.focus();
   await page.keyboard.press('Enter');
-  await expect(items.nth(1).getByTestId('question-summary-title')).toHaveText(
-    originalFirst ?? '',
+  await expect(items.nth(2).getByTestId('question-summary-title')).toHaveText(
+    originalSecond ?? '',
   );
 });

@@ -325,8 +325,28 @@ export function FormBuilder({
     {},
   );
   const [showPreview, setShowPreview] = useState(false);
+  const [questionSelection, setQuestionSelection] = useState<{
+    formId: string;
+    questionId: string | null;
+  } | null>(null);
   const canManage = canManageWorkspaceForms(actorRole);
   const editable = canManage && form?.status === 'draft' && !busy;
+  const activeQuestionId = form
+    ? questionSelection?.formId === form.id
+      ? (questionSelection.questionId ?? undefined)
+      : form.questions[0]?.id
+    : undefined;
+
+  function toggleQuestion(questionId: string) {
+    if (!form) return;
+    setQuestionSelection((current) => ({
+      formId: form.id,
+      questionId:
+        current?.formId === form.id && current.questionId === questionId
+          ? null
+          : questionId,
+    }));
+  }
 
   function patchQuestion(
     index: number,
@@ -366,6 +386,7 @@ export function FormBuilder({
     const question = newQuestion(sectionId, form.questions, preset);
     if (question.type === 'shortText') question.charLimit = 150;
     onChange({ ...form, questions: [...form.questions, question] });
+    setQuestionSelection({ formId: form.id, questionId: question.id });
     onIssue('');
   }
 
@@ -400,6 +421,14 @@ export function FormBuilder({
 
   function removeQuestion(index: number) {
     if (!form || !window.confirm(messages['forms.staffRemoveConfirm'])) return;
+    const removed = form.questions[index];
+    const next = form.questions[index + 1] ?? form.questions[index - 1];
+    if (removed?.id === activeQuestionId) {
+      setQuestionSelection({
+        formId: form.id,
+        questionId: next?.id ?? null,
+      });
+    }
     onChange({
       ...form,
       questions: form.questions.filter(
@@ -410,6 +439,17 @@ export function FormBuilder({
 
   function removeSection(sectionId: string) {
     if (!form || !window.confirm(messages['forms.staffRemoveConfirm'])) return;
+    if (
+      form.questions.some(
+        (question) =>
+          question.id === activeQuestionId && question.sectionId === sectionId,
+      )
+    ) {
+      const next = form.questions.find(
+        (question) => question.sectionId !== sectionId,
+      );
+      setQuestionSelection({ formId: form.id, questionId: next?.id ?? null });
+    }
     onChange({
       ...form,
       sections: form.sections.filter((section) => section.id !== sectionId),
@@ -552,7 +592,9 @@ export function FormBuilder({
             </span>
           </label>
 
-          <div className={styles.builderActions}>
+          <div
+            className={`${styles.builderActions} ${styles.builderActionDock}`}
+          >
             <Button
               variant="secondary"
               onClick={addSection}
@@ -692,337 +734,425 @@ export function FormBuilder({
                       </label>
                     </div>
 
-                    <ol className={styles.questionList}>
-                      {questions.map(({ question, index }) => {
-                        const max = typeLimit(question.type);
-                        return (
-                          <li className={styles.question} key={question.id}>
-                            <div className={styles.localizedFields}>
-                              <label className={styles.field}>
-                                <span>
-                                  {messages['forms.staffEnglishQuestion']}
-                                </span>
-                                <input
-                                  value={question.label.en}
-                                  dir="ltr"
-                                  disabled={!editable}
-                                  onChange={(event) =>
-                                    patchQuestion(index, (item) => ({
-                                      ...item,
-                                      label: {
-                                        ...item.label,
-                                        en: event.currentTarget.value,
-                                      },
-                                    }))
-                                  }
-                                />
-                              </label>
-                              <label className={styles.field}>
-                                <span>
-                                  {messages['forms.staffArabicQuestion']}
-                                </span>
-                                <input
-                                  value={question.label.ar}
-                                  dir="rtl"
-                                  disabled={!editable}
-                                  onChange={(event) =>
-                                    patchQuestion(index, (item) => ({
-                                      ...item,
-                                      label: {
-                                        ...item.label,
-                                        ar: event.currentTarget.value,
-                                      },
-                                    }))
-                                  }
-                                />
-                              </label>
-                            </div>
-                            <label className={styles.field}>
-                              <span>{messages['forms.staffQuestionId']}</span>
-                              <input
-                                value={question.id}
-                                dir="ltr"
-                                disabled={!editable}
-                                onChange={(event) => {
-                                  const oldId = question.id;
-                                  const nextId = event.currentTarget.value;
-                                  onChange({
-                                    ...form,
-                                    questions: form.questions.map((item) => ({
-                                      ...item,
-                                      ...(item.id === oldId
-                                        ? { id: nextId }
-                                        : {}),
-                                      ...(item.derivedOptions
-                                        ?.sourceQuestionId === oldId
-                                        ? {
-                                            derivedOptions: {
-                                              ...item.derivedOptions,
-                                              sourceQuestionId: nextId,
-                                            },
-                                          }
-                                        : {}),
-                                      ...(item.when
-                                        ? {
-                                            when: {
-                                              ...item.when,
-                                              conditions:
-                                                item.when.conditions.map(
-                                                  (condition) =>
-                                                    condition.questionId ===
-                                                    oldId
-                                                      ? {
-                                                          ...condition,
-                                                          questionId: nextId,
-                                                        }
-                                                      : condition,
-                                                ),
-                                            },
-                                          }
-                                        : {}),
-                                    })),
-                                  });
-                                }}
-                              />
-                            </label>
-                            <div className={styles.questionSettings}>
-                              <label className={styles.field}>
-                                <span>{messages['forms.staffAnswerType']}</span>
-                                <select
-                                  aria-label={messages['forms.staffAnswerType']}
-                                  value={question.type}
-                                  disabled={!editable}
-                                  onChange={(event) => {
-                                    const type = event.currentTarget
-                                      .value as FormAnswerType;
-                                    patchQuestion(index, (item) => ({
-                                      ...configureAnswerType(item, type),
-                                      charLimit:
-                                        typeLimit(type) === undefined
-                                          ? undefined
-                                          : Math.min(
-                                              item.charLimit ??
-                                                typeLimit(type)!,
-                                              typeLimit(type)!,
-                                            ),
-                                    }));
-                                  }}
-                                >
-                                  {types.map((type) => (
-                                    <option
-                                      key={type}
-                                      value={type}
-                                      disabled={
-                                        (type === 'mealCount' &&
-                                          question.id !== 'N07.meal_count') ||
-                                        (type === 'derivedChoice' &&
-                                          question.id !== 'N07.training_timing')
-                                      }
-                                    >
-                                      {messages[`forms.answerType.${type}`]}
-                                    </option>
-                                  ))}
-                                </select>
-                              </label>
-                              <label className={styles.field}>
-                                <span>{messages['forms.staffPrivacy']}</span>
-                                <select
-                                  value={question.privacy ?? ''}
-                                  disabled={!editable}
-                                  onChange={(event) =>
-                                    patchQuestion(index, (item) => ({
-                                      ...item,
-                                      privacy:
-                                        event.currentTarget.value === ''
-                                          ? undefined
-                                          : (event.currentTarget.value as
-                                              'personal' | 'health'),
-                                    }))
-                                  }
-                                >
-                                  <option value="">
-                                    {messages['forms.staffPrivacy.none']}
-                                  </option>
-                                  <option value="personal">
-                                    {messages['forms.staffPrivacy.personal']}
-                                  </option>
-                                  <option value="health">
-                                    {messages['forms.staffPrivacy.health']}
-                                  </option>
-                                </select>
-                              </label>
-                              <label className={styles.field}>
-                                <span>{messages['forms.staffPurpose']}</span>
-                                <select
-                                  value={question.purpose ?? ''}
-                                  disabled={!editable}
-                                  onChange={(event) =>
-                                    patchQuestion(index, (item) => ({
-                                      ...item,
-                                      purpose:
-                                        event.currentTarget.value === ''
-                                          ? undefined
-                                          : 'n12-series',
-                                    }))
-                                  }
-                                >
-                                  <option value="">
-                                    {messages['forms.staffPurpose.none']}
-                                  </option>
-                                  <option value="n12-series">
-                                    {
-                                      messages[
-                                        'forms.staffPurpose.n12Series'
-                                      ].split('{series}')[0]
-                                    }
-                                    <Bidi dir="ltr">
-                                      N{formatUiNumber(12, locale)}
-                                    </Bidi>
-                                    {
-                                      messages[
-                                        'forms.staffPurpose.n12Series'
-                                      ].split('{series}')[1]
-                                    }
-                                  </option>
-                                </select>
-                              </label>
-                              {max !== undefined && (
-                                <label className={styles.field}>
-                                  <span>
-                                    {
-                                      messages[
-                                        'forms.staffAnswerCharacterLimit'
-                                      ]
-                                    }{' '}
-                                    <Bidi>{formatUiNumber(1, locale)}</Bidi>–{' '}
-                                    <Bidi>{formatUiNumber(max, locale)}</Bidi>
-                                  </span>
-                                  <input
-                                    type="number"
-                                    min={1}
-                                    max={max}
-                                    value={question.charLimit ?? max}
-                                    disabled={!editable}
-                                    onChange={(event) => {
-                                      const parsed = Number(
-                                        event.currentTarget.value,
-                                      );
-                                      if (
-                                        Number.isInteger(parsed) &&
-                                        parsed >= 1 &&
-                                        parsed <= max
-                                      ) {
-                                        patchQuestion(index, (item) => ({
-                                          ...item,
-                                          charLimit: parsed,
-                                        }));
-                                      }
-                                    }}
-                                  />
-                                </label>
-                              )}
-                              <label className={styles.checkField}>
-                                <input
-                                  type="checkbox"
-                                  checked={question.required}
-                                  disabled={
-                                    !editable ||
-                                    [
-                                      'displayOnly',
-                                      'profileText',
-                                      'computedAge',
-                                    ].includes(question.type)
-                                  }
-                                  onChange={(event) =>
-                                    patchQuestion(index, (item) => ({
-                                      ...item,
-                                      required: event.currentTarget.checked,
-                                    }))
-                                  }
-                                />
-                                <span>{messages['forms.staffRequired']}</span>
-                              </label>
-                            </div>
-                            <label className={styles.checkField}>
-                              <input
-                                type="checkbox"
-                                checked={question.when !== undefined}
-                                disabled={
-                                  !editable || form.questions.length < 2
+                    <div
+                      className={
+                        questions.some(
+                          ({ question }) => question.id === activeQuestionId,
+                        )
+                          ? styles.questionEditorLayout
+                          : undefined
+                      }
+                    >
+                      <ol
+                        className={styles.questionOutline}
+                        aria-label={messages['forms.staffQuestionCount']}
+                      >
+                        {questions.map(({ question }) => {
+                          const selected = question.id === activeQuestionId;
+                          const title = question.label[locale].trim();
+                          return (
+                            <li
+                              className={styles.questionOutlineItem}
+                              data-testid="question-outline-item"
+                              key={question.id}
+                            >
+                              <Button
+                                variant="secondary"
+                                className={
+                                  selected
+                                    ? styles.questionOutlineSelected
+                                    : undefined
                                 }
-                                onChange={(event) => {
-                                  const sources = form.questions.filter(
-                                    (item) => item.id !== question.id,
-                                  );
-                                  patchQuestion(index, (item) => ({
-                                    ...item,
-                                    when: event.currentTarget.checked
-                                      ? {
-                                          mode: 'all',
-                                          conditions: sources[0]
-                                            ? [
-                                                {
-                                                  questionId: sources[0].id,
-                                                  operator: 'isAnswered',
-                                                },
-                                              ]
-                                            : [],
-                                        }
-                                      : undefined,
-                                  }));
+                                aria-expanded={selected}
+                                aria-controls={
+                                  selected
+                                    ? `question-editor-${form.id}`
+                                    : undefined
+                                }
+                                onClick={() => toggleQuestion(question.id)}
+                                onKeyDown={(event) => {
+                                  if (event.key === 'Escape' && selected) {
+                                    event.preventDefault();
+                                    setQuestionSelection({
+                                      formId: form.id,
+                                      questionId: null,
+                                    });
+                                  }
                                 }}
-                              />
-                              <span>{messages['forms.staffConditional']}</span>
-                            </label>
-                            {question.when && (
-                              <fieldset className={styles.options}>
-                                <legend>
-                                  {messages['forms.staffConditional']}
-                                </legend>
-                                <label className={styles.field}>
-                                  <span>
-                                    {messages['forms.staffConditionMode']}
+                              >
+                                <span
+                                  className={styles.questionOutlineTitle}
+                                  data-testid="question-summary-title"
+                                >
+                                  {title || <Bidi>{question.id}</Bidi>}
+                                </span>
+                                <span className={styles.questionOutlineMeta}>
+                                  {
+                                    messages[
+                                      `forms.answerType.${question.type}`
+                                    ]
+                                  }
+                                </span>
+                                <span className={styles.questionOutlineMeta}>
+                                  {question.required
+                                    ? messages['forms.staffRequired']
+                                    : messages['forms.staffQuestionOptional']}
+                                </span>
+                                {question.when && (
+                                  <span className={styles.questionOutlineMeta}>
+                                    {messages['forms.staffConditional']}
                                   </span>
-                                  <select
-                                    value={question.when.mode}
-                                    disabled={!editable}
-                                    onChange={(event) =>
-                                      patchQuestion(index, (item) => ({
-                                        ...item,
-                                        when: item.when
-                                          ? {
-                                              ...item.when,
-                                              mode: event.currentTarget
-                                                .value as 'all' | 'any',
+                                )}
+                              </Button>
+                            </li>
+                          );
+                        })}
+                      </ol>
+                      {questions.some(
+                        ({ question }) => question.id === activeQuestionId,
+                      ) && (
+                        <ol className={styles.questionEditorList}>
+                          {questions
+                            .filter(
+                              ({ question }) =>
+                                question.id === activeQuestionId,
+                            )
+                            .map(({ question, index }) => {
+                              const max = typeLimit(question.type);
+                              return (
+                                <li
+                                  className={styles.question}
+                                  data-testid="question-editor"
+                                  id={`question-editor-${form.id}`}
+                                  key={question.id}
+                                >
+                                  <div className={styles.localizedFields}>
+                                    <label className={styles.field}>
+                                      <span>
+                                        {messages['forms.staffEnglishQuestion']}
+                                      </span>
+                                      <input
+                                        value={question.label.en}
+                                        dir="ltr"
+                                        disabled={!editable}
+                                        onChange={(event) =>
+                                          patchQuestion(index, (item) => ({
+                                            ...item,
+                                            label: {
+                                              ...item.label,
+                                              en: event.currentTarget.value,
+                                            },
+                                          }))
+                                        }
+                                      />
+                                    </label>
+                                    <label className={styles.field}>
+                                      <span>
+                                        {messages['forms.staffArabicQuestion']}
+                                      </span>
+                                      <input
+                                        value={question.label.ar}
+                                        dir="rtl"
+                                        disabled={!editable}
+                                        onChange={(event) =>
+                                          patchQuestion(index, (item) => ({
+                                            ...item,
+                                            label: {
+                                              ...item.label,
+                                              ar: event.currentTarget.value,
+                                            },
+                                          }))
+                                        }
+                                      />
+                                    </label>
+                                  </div>
+                                  <label className={styles.field}>
+                                    <span>
+                                      {messages['forms.staffQuestionId']}
+                                    </span>
+                                    <input
+                                      value={question.id}
+                                      dir="ltr"
+                                      disabled={!editable}
+                                      onChange={(event) => {
+                                        const oldId = question.id;
+                                        const nextId =
+                                          event.currentTarget.value;
+                                        onChange({
+                                          ...form,
+                                          questions: form.questions.map(
+                                            (item) => ({
+                                              ...item,
+                                              ...(item.id === oldId
+                                                ? { id: nextId }
+                                                : {}),
+                                              ...(item.derivedOptions
+                                                ?.sourceQuestionId === oldId
+                                                ? {
+                                                    derivedOptions: {
+                                                      ...item.derivedOptions,
+                                                      sourceQuestionId: nextId,
+                                                    },
+                                                  }
+                                                : {}),
+                                              ...(item.when
+                                                ? {
+                                                    when: {
+                                                      ...item.when,
+                                                      conditions:
+                                                        item.when.conditions.map(
+                                                          (condition) =>
+                                                            condition.questionId ===
+                                                            oldId
+                                                              ? {
+                                                                  ...condition,
+                                                                  questionId:
+                                                                    nextId,
+                                                                }
+                                                              : condition,
+                                                        ),
+                                                    },
+                                                  }
+                                                : {}),
+                                            }),
+                                          ),
+                                        });
+                                      }}
+                                    />
+                                  </label>
+                                  <div className={styles.questionSettings}>
+                                    <label className={styles.field}>
+                                      <span>
+                                        {messages['forms.staffAnswerType']}
+                                      </span>
+                                      <select
+                                        aria-label={
+                                          messages['forms.staffAnswerType']
+                                        }
+                                        value={question.type}
+                                        disabled={!editable}
+                                        onChange={(event) => {
+                                          const type = event.currentTarget
+                                            .value as FormAnswerType;
+                                          patchQuestion(index, (item) => ({
+                                            ...configureAnswerType(item, type),
+                                            charLimit:
+                                              typeLimit(type) === undefined
+                                                ? undefined
+                                                : Math.min(
+                                                    item.charLimit ??
+                                                      typeLimit(type)!,
+                                                    typeLimit(type)!,
+                                                  ),
+                                          }));
+                                        }}
+                                      >
+                                        {types.map((type) => (
+                                          <option
+                                            key={type}
+                                            value={type}
+                                            disabled={
+                                              (type === 'mealCount' &&
+                                                question.id !==
+                                                  'N07.meal_count') ||
+                                              (type === 'derivedChoice' &&
+                                                question.id !==
+                                                  'N07.training_timing')
                                             }
-                                          : undefined,
-                                      }))
-                                    }
-                                  >
-                                    <option value="all">
-                                      {messages['forms.staffConditionModeAll']}
-                                    </option>
-                                    <option value="any">
-                                      {messages['forms.staffConditionModeAny']}
-                                    </option>
-                                  </select>
-                                </label>
-                                {question.when.conditions.map(
-                                  (condition, conditionIndex) => (
-                                    <div
-                                      className={styles.localizedFields}
-                                      key={conditionIndex}
-                                    >
+                                          >
+                                            {
+                                              messages[
+                                                `forms.answerType.${type}`
+                                              ]
+                                            }
+                                          </option>
+                                        ))}
+                                      </select>
+                                    </label>
+                                    <label className={styles.field}>
+                                      <span>
+                                        {messages['forms.staffPrivacy']}
+                                      </span>
+                                      <select
+                                        value={question.privacy ?? ''}
+                                        disabled={!editable}
+                                        onChange={(event) =>
+                                          patchQuestion(index, (item) => ({
+                                            ...item,
+                                            privacy:
+                                              event.currentTarget.value === ''
+                                                ? undefined
+                                                : (event.currentTarget.value as
+                                                    'personal' | 'health'),
+                                          }))
+                                        }
+                                      >
+                                        <option value="">
+                                          {messages['forms.staffPrivacy.none']}
+                                        </option>
+                                        <option value="personal">
+                                          {
+                                            messages[
+                                              'forms.staffPrivacy.personal'
+                                            ]
+                                          }
+                                        </option>
+                                        <option value="health">
+                                          {
+                                            messages[
+                                              'forms.staffPrivacy.health'
+                                            ]
+                                          }
+                                        </option>
+                                      </select>
+                                    </label>
+                                    <label className={styles.field}>
+                                      <span>
+                                        {messages['forms.staffPurpose']}
+                                      </span>
+                                      <select
+                                        value={question.purpose ?? ''}
+                                        disabled={!editable}
+                                        onChange={(event) =>
+                                          patchQuestion(index, (item) => ({
+                                            ...item,
+                                            purpose:
+                                              event.currentTarget.value === ''
+                                                ? undefined
+                                                : 'n12-series',
+                                          }))
+                                        }
+                                      >
+                                        <option value="">
+                                          {messages['forms.staffPurpose.none']}
+                                        </option>
+                                        <option value="n12-series">
+                                          {
+                                            messages[
+                                              'forms.staffPurpose.n12Series'
+                                            ].split('{series}')[0]
+                                          }
+                                          <Bidi dir="ltr">
+                                            N{formatUiNumber(12, locale)}
+                                          </Bidi>
+                                          {
+                                            messages[
+                                              'forms.staffPurpose.n12Series'
+                                            ].split('{series}')[1]
+                                          }
+                                        </option>
+                                      </select>
+                                    </label>
+                                    {max !== undefined && (
                                       <label className={styles.field}>
                                         <span>
                                           {
                                             messages[
-                                              'forms.staffConditionQuestion'
+                                              'forms.staffAnswerCharacterLimit'
                                             ]
-                                          }
+                                          }{' '}
+                                          <Bidi>
+                                            {formatUiNumber(1, locale)}
+                                          </Bidi>
+                                          –{' '}
+                                          <Bidi>
+                                            {formatUiNumber(max, locale)}
+                                          </Bidi>
+                                        </span>
+                                        <input
+                                          type="number"
+                                          min={1}
+                                          max={max}
+                                          value={question.charLimit ?? max}
+                                          disabled={!editable}
+                                          onChange={(event) => {
+                                            const parsed = Number(
+                                              event.currentTarget.value,
+                                            );
+                                            if (
+                                              Number.isInteger(parsed) &&
+                                              parsed >= 1 &&
+                                              parsed <= max
+                                            ) {
+                                              patchQuestion(index, (item) => ({
+                                                ...item,
+                                                charLimit: parsed,
+                                              }));
+                                            }
+                                          }}
+                                        />
+                                      </label>
+                                    )}
+                                    <label className={styles.checkField}>
+                                      <input
+                                        type="checkbox"
+                                        checked={question.required}
+                                        disabled={
+                                          !editable ||
+                                          [
+                                            'displayOnly',
+                                            'profileText',
+                                            'computedAge',
+                                          ].includes(question.type)
+                                        }
+                                        onChange={(event) =>
+                                          patchQuestion(index, (item) => ({
+                                            ...item,
+                                            required:
+                                              event.currentTarget.checked,
+                                          }))
+                                        }
+                                      />
+                                      <span>
+                                        {messages['forms.staffRequired']}
+                                      </span>
+                                    </label>
+                                  </div>
+                                  <label className={styles.checkField}>
+                                    <input
+                                      type="checkbox"
+                                      checked={question.when !== undefined}
+                                      disabled={
+                                        !editable || form.questions.length < 2
+                                      }
+                                      onChange={(event) => {
+                                        const sources = form.questions.filter(
+                                          (item) => item.id !== question.id,
+                                        );
+                                        patchQuestion(index, (item) => ({
+                                          ...item,
+                                          when: event.currentTarget.checked
+                                            ? {
+                                                mode: 'all',
+                                                conditions: sources[0]
+                                                  ? [
+                                                      {
+                                                        questionId:
+                                                          sources[0].id,
+                                                        operator: 'isAnswered',
+                                                      },
+                                                    ]
+                                                  : [],
+                                              }
+                                            : undefined,
+                                        }));
+                                      }}
+                                    />
+                                    <span>
+                                      {messages['forms.staffConditional']}
+                                    </span>
+                                  </label>
+                                  {question.when && (
+                                    <fieldset className={styles.options}>
+                                      <legend>
+                                        {messages['forms.staffConditional']}
+                                      </legend>
+                                      <label className={styles.field}>
+                                        <span>
+                                          {messages['forms.staffConditionMode']}
                                         </span>
                                         <select
-                                          value={condition.questionId}
+                                          value={question.when.mode}
                                           disabled={!editable}
                                           onChange={(event) =>
                                             patchQuestion(index, (item) => ({
@@ -1030,32 +1160,810 @@ export function FormBuilder({
                                               when: item.when
                                                 ? {
                                                     ...item.when,
-                                                    conditions:
-                                                      item.when.conditions.map(
-                                                        (
-                                                          current,
-                                                          currentIndex,
-                                                        ) =>
-                                                          currentIndex ===
-                                                          conditionIndex
-                                                            ? {
-                                                                questionId:
-                                                                  event
-                                                                    .currentTarget
-                                                                    .value,
-                                                                operator:
-                                                                  'isAnswered',
-                                                              }
-                                                            : current,
-                                                      ),
+                                                    mode: event.currentTarget
+                                                      .value as 'all' | 'any',
                                                   }
                                                 : undefined,
                                             }))
                                           }
                                         >
+                                          <option value="all">
+                                            {
+                                              messages[
+                                                'forms.staffConditionModeAll'
+                                              ]
+                                            }
+                                          </option>
+                                          <option value="any">
+                                            {
+                                              messages[
+                                                'forms.staffConditionModeAny'
+                                              ]
+                                            }
+                                          </option>
+                                        </select>
+                                      </label>
+                                      {question.when.conditions.map(
+                                        (condition, conditionIndex) => (
+                                          <div
+                                            className={styles.localizedFields}
+                                            key={conditionIndex}
+                                          >
+                                            <label className={styles.field}>
+                                              <span>
+                                                {
+                                                  messages[
+                                                    'forms.staffConditionQuestion'
+                                                  ]
+                                                }
+                                              </span>
+                                              <select
+                                                value={condition.questionId}
+                                                disabled={!editable}
+                                                onChange={(event) =>
+                                                  patchQuestion(
+                                                    index,
+                                                    (item) => ({
+                                                      ...item,
+                                                      when: item.when
+                                                        ? {
+                                                            ...item.when,
+                                                            conditions:
+                                                              item.when.conditions.map(
+                                                                (
+                                                                  current,
+                                                                  currentIndex,
+                                                                ) =>
+                                                                  currentIndex ===
+                                                                  conditionIndex
+                                                                    ? {
+                                                                        questionId:
+                                                                          event
+                                                                            .currentTarget
+                                                                            .value,
+                                                                        operator:
+                                                                          'isAnswered',
+                                                                      }
+                                                                    : current,
+                                                              ),
+                                                          }
+                                                        : undefined,
+                                                    }),
+                                                  )
+                                                }
+                                              >
+                                                {form.questions
+                                                  .filter(
+                                                    (item) =>
+                                                      item.id !== question.id,
+                                                  )
+                                                  .map((item) => (
+                                                    <option
+                                                      key={item.id}
+                                                      value={item.id}
+                                                    >
+                                                      {item.label[locale] ||
+                                                        item.id}
+                                                    </option>
+                                                  ))}
+                                              </select>
+                                            </label>
+                                            <label className={styles.field}>
+                                              <span>
+                                                {
+                                                  messages[
+                                                    'forms.staffConditionOperator'
+                                                  ]
+                                                }
+                                              </span>
+                                              <select
+                                                value={condition.operator}
+                                                disabled={!editable}
+                                                onChange={(event) => {
+                                                  const operator = event
+                                                    .currentTarget.value as
+                                                    | 'equals'
+                                                    | 'notEquals'
+                                                    | 'contains'
+                                                    | 'isAnswered';
+                                                  const current =
+                                                    question.when?.conditions[
+                                                      conditionIndex
+                                                    ];
+                                                  const nextCondition: ApplicabilityCondition =
+                                                    operator === 'isAnswered'
+                                                      ? {
+                                                          questionId:
+                                                            current?.questionId ??
+                                                            '',
+                                                          operator,
+                                                        }
+                                                      : operator === 'contains'
+                                                        ? {
+                                                            questionId:
+                                                              current?.questionId ??
+                                                              '',
+                                                            operator,
+                                                            value:
+                                                              current &&
+                                                              'value' in
+                                                                current &&
+                                                              typeof current.value ===
+                                                                'string'
+                                                                ? current.value
+                                                                : '',
+                                                          }
+                                                        : {
+                                                            questionId:
+                                                              current?.questionId ??
+                                                              '',
+                                                            operator,
+                                                            value:
+                                                              current &&
+                                                              'value' in current
+                                                                ? current.value
+                                                                : '',
+                                                          };
+                                                  patchQuestion(
+                                                    index,
+                                                    (item) => ({
+                                                      ...item,
+                                                      when: item.when
+                                                        ? {
+                                                            ...item.when,
+                                                            conditions:
+                                                              item.when.conditions.map(
+                                                                (
+                                                                  current,
+                                                                  currentIndex,
+                                                                ) =>
+                                                                  currentIndex ===
+                                                                  conditionIndex
+                                                                    ? nextCondition
+                                                                    : current,
+                                                              ),
+                                                          }
+                                                        : undefined,
+                                                    }),
+                                                  );
+                                                }}
+                                              >
+                                                <option value="equals">
+                                                  {
+                                                    messages[
+                                                      'forms.staffConditionEquals'
+                                                    ]
+                                                  }
+                                                </option>
+                                                <option value="notEquals">
+                                                  {
+                                                    messages[
+                                                      'forms.staffConditionNotEquals'
+                                                    ]
+                                                  }
+                                                </option>
+                                                <option value="contains">
+                                                  {
+                                                    messages[
+                                                      'forms.staffConditionContains'
+                                                    ]
+                                                  }
+                                                </option>
+                                                <option value="isAnswered">
+                                                  {
+                                                    messages[
+                                                      'forms.staffConditionIsAnswered'
+                                                    ]
+                                                  }
+                                                </option>
+                                              </select>
+                                            </label>
+                                            {condition.operator !==
+                                              'isAnswered' && (
+                                              <label className={styles.field}>
+                                                <span>
+                                                  {
+                                                    messages[
+                                                      'forms.staffConditionValue'
+                                                    ]
+                                                  }
+                                                </span>
+                                                <input
+                                                  value={String(
+                                                    condition.value,
+                                                  )}
+                                                  disabled={!editable}
+                                                  onChange={(event) =>
+                                                    patchQuestion(
+                                                      index,
+                                                      (item) => ({
+                                                        ...item,
+                                                        when: item.when
+                                                          ? {
+                                                              ...item.when,
+                                                              conditions:
+                                                                item.when.conditions.map(
+                                                                  (
+                                                                    current,
+                                                                    currentIndex,
+                                                                  ) =>
+                                                                    currentIndex ===
+                                                                      conditionIndex &&
+                                                                    current.operator !==
+                                                                      'isAnswered'
+                                                                      ? {
+                                                                          ...current,
+                                                                          value:
+                                                                            event
+                                                                              .currentTarget
+                                                                              .value,
+                                                                        }
+                                                                      : current,
+                                                                ),
+                                                            }
+                                                          : undefined,
+                                                      }),
+                                                    )
+                                                  }
+                                                />
+                                              </label>
+                                            )}
+                                            <Button
+                                              variant="destructive"
+                                              disabled={!editable}
+                                              onClick={() =>
+                                                patchQuestion(index, (item) => {
+                                                  const conditions =
+                                                    item.when?.conditions.filter(
+                                                      (_, currentIndex) =>
+                                                        currentIndex !==
+                                                        conditionIndex,
+                                                    ) ?? [];
+                                                  return {
+                                                    ...item,
+                                                    when:
+                                                      conditions.length > 0 &&
+                                                      item.when
+                                                        ? {
+                                                            ...item.when,
+                                                            conditions,
+                                                          }
+                                                        : undefined,
+                                                  };
+                                                })
+                                              }
+                                            >
+                                              {
+                                                messages[
+                                                  'forms.staffRemoveCondition'
+                                                ]
+                                              }
+                                            </Button>
+                                          </div>
+                                        ),
+                                      )}
+                                      <Button
+                                        variant="secondary"
+                                        disabled={
+                                          !editable ||
+                                          question.when.conditions.length >= 16
+                                        }
+                                        onClick={() => {
+                                          const source = form.questions.find(
+                                            (item) => item.id !== question.id,
+                                          );
+                                          if (!source) return;
+                                          patchQuestion(index, (item) => ({
+                                            ...item,
+                                            when: item.when
+                                              ? {
+                                                  ...item.when,
+                                                  conditions: [
+                                                    ...item.when.conditions,
+                                                    {
+                                                      questionId: source.id,
+                                                      operator: 'isAnswered',
+                                                    },
+                                                  ],
+                                                }
+                                              : undefined,
+                                          }));
+                                        }}
+                                      >
+                                        {messages['forms.staffAddCondition']}
+                                      </Button>
+                                    </fieldset>
+                                  )}
+                                  {question.type === 'number' && (
+                                    <>
+                                      <LocalizedEditorFields
+                                        englishLabel={
+                                          messages['forms.staffUnitEnglish']
+                                        }
+                                        arabicLabel={
+                                          messages['forms.staffUnitArabic']
+                                        }
+                                        value={
+                                          question.unit ?? { en: '', ar: '' }
+                                        }
+                                        disabled={!editable}
+                                        onChange={(locale, value) =>
+                                          patchQuestion(index, (item) => ({
+                                            ...item,
+                                            unit: {
+                                              ...(item.unit ?? {
+                                                en: '',
+                                                ar: '',
+                                              }),
+                                              [locale]: value,
+                                            },
+                                          }))
+                                        }
+                                      />
+                                      <div className={styles.localizedFields}>
+                                        {(
+                                          [
+                                            ['min', 'forms.staffMinimumValue'],
+                                            ['max', 'forms.staffMaximumValue'],
+                                            ['step', 'forms.staffStep'],
+                                          ] as const
+                                        ).map(([key, messageKey]) => (
+                                          <label
+                                            className={styles.field}
+                                            key={key}
+                                          >
+                                            <span>{messages[messageKey]}</span>
+                                            <input
+                                              type="number"
+                                              step="any"
+                                              value={
+                                                question.validation?.[key] ?? ''
+                                              }
+                                              disabled={!editable}
+                                              onChange={(event) => {
+                                                const value =
+                                                  event.currentTarget.value;
+                                                patchQuestion(
+                                                  index,
+                                                  (item) => ({
+                                                    ...item,
+                                                    validation: {
+                                                      ...(item.validation ??
+                                                        {}),
+                                                      [key]:
+                                                        value === ''
+                                                          ? undefined
+                                                          : Number(value),
+                                                    },
+                                                  }),
+                                                );
+                                              }}
+                                            />
+                                          </label>
+                                        ))}
+                                      </div>
+                                    </>
+                                  )}
+                                  {question.type === 'slider' && (
+                                    <>
+                                      <div className={styles.localizedFields}>
+                                        {(
+                                          [
+                                            ['min', 'forms.staffMinimumValue'],
+                                            ['max', 'forms.staffMaximumValue'],
+                                            ['step', 'forms.staffStep'],
+                                          ] as const
+                                        ).map(([key, messageKey]) => (
+                                          <label
+                                            className={styles.field}
+                                            key={key}
+                                          >
+                                            <span>{messages[messageKey]}</span>
+                                            <input
+                                              type="number"
+                                              step="any"
+                                              value={
+                                                question.validation?.[key] ?? ''
+                                              }
+                                              disabled={!editable}
+                                              onChange={(event) => {
+                                                const value = Number(
+                                                  event.currentTarget.value,
+                                                );
+                                                if (!Number.isFinite(value))
+                                                  return;
+                                                patchQuestion(
+                                                  index,
+                                                  (item) => ({
+                                                    ...item,
+                                                    validation: {
+                                                      ...(item.validation ??
+                                                        {}),
+                                                      [key]: value,
+                                                    },
+                                                  }),
+                                                );
+                                              }}
+                                            />
+                                          </label>
+                                        ))}
+                                      </div>
+                                      <div className={styles.localizedFields}>
+                                        {(
+                                          [
+                                            [
+                                              'minimum',
+                                              'forms.staffMinimumLabel',
+                                            ],
+                                            [
+                                              'middle',
+                                              'forms.staffMiddleLabel',
+                                            ],
+                                            [
+                                              'maximum',
+                                              'forms.staffMaximumLabel',
+                                            ],
+                                          ] as const
+                                        ).map(([key, messageKey]) => (
+                                          <label
+                                            className={styles.field}
+                                            key={key}
+                                          >
+                                            <span>{messages[messageKey]}</span>
+                                            <input
+                                              value={
+                                                question.labels?.[key] ?? ''
+                                              }
+                                              dir={
+                                                locale === 'ar' ? 'rtl' : 'ltr'
+                                              }
+                                              disabled={!editable}
+                                              onChange={(event) =>
+                                                patchQuestion(
+                                                  index,
+                                                  (item) => ({
+                                                    ...item,
+                                                    labels: {
+                                                      minimum:
+                                                        item.labels?.minimum ??
+                                                        '',
+                                                      middle:
+                                                        item.labels?.middle ??
+                                                        '',
+                                                      maximum:
+                                                        item.labels?.maximum ??
+                                                        '',
+                                                      [key]:
+                                                        event.currentTarget
+                                                          .value,
+                                                    },
+                                                  }),
+                                                )
+                                              }
+                                            />
+                                          </label>
+                                        ))}
+                                      </div>
+                                      <fieldset className={styles.options}>
+                                        <legend>
+                                          {messages['forms.staffFeedbackBands']}
+                                        </legend>
+                                        {(question.feedbackBands ?? []).map(
+                                          (band, bandIndex) => (
+                                            <div
+                                              className={styles.localizedFields}
+                                              key={bandIndex}
+                                            >
+                                              <label className={styles.field}>
+                                                <span>
+                                                  {
+                                                    messages[
+                                                      'forms.staffMinimumValue'
+                                                    ]
+                                                  }
+                                                </span>
+                                                <input
+                                                  type="number"
+                                                  value={band.min}
+                                                  disabled={!editable}
+                                                  onChange={(event) =>
+                                                    patchQuestion(
+                                                      index,
+                                                      (item) => ({
+                                                        ...item,
+                                                        feedbackBands:
+                                                          item.feedbackBands?.map(
+                                                            (
+                                                              current,
+                                                              currentIndex,
+                                                            ) =>
+                                                              currentIndex ===
+                                                              bandIndex
+                                                                ? {
+                                                                    ...current,
+                                                                    min: Number(
+                                                                      event
+                                                                        .currentTarget
+                                                                        .value,
+                                                                    ),
+                                                                  }
+                                                                : current,
+                                                          ),
+                                                      }),
+                                                    )
+                                                  }
+                                                />
+                                              </label>
+                                              <label className={styles.field}>
+                                                <span>
+                                                  {
+                                                    messages[
+                                                      'forms.staffMaximumValue'
+                                                    ]
+                                                  }
+                                                </span>
+                                                <input
+                                                  type="number"
+                                                  value={band.max}
+                                                  disabled={!editable}
+                                                  onChange={(event) =>
+                                                    patchQuestion(
+                                                      index,
+                                                      (item) => ({
+                                                        ...item,
+                                                        feedbackBands:
+                                                          item.feedbackBands?.map(
+                                                            (
+                                                              current,
+                                                              currentIndex,
+                                                            ) =>
+                                                              currentIndex ===
+                                                              bandIndex
+                                                                ? {
+                                                                    ...current,
+                                                                    max: Number(
+                                                                      event
+                                                                        .currentTarget
+                                                                        .value,
+                                                                    ),
+                                                                  }
+                                                                : current,
+                                                          ),
+                                                      }),
+                                                    )
+                                                  }
+                                                />
+                                              </label>
+                                              <label className={styles.field}>
+                                                <span>
+                                                  {
+                                                    messages[
+                                                      'forms.staffFeedbackText'
+                                                    ]
+                                                  }
+                                                </span>
+                                                <input
+                                                  value={band.text}
+                                                  dir={
+                                                    locale === 'ar'
+                                                      ? 'rtl'
+                                                      : 'ltr'
+                                                  }
+                                                  disabled={!editable}
+                                                  onChange={(event) =>
+                                                    patchQuestion(
+                                                      index,
+                                                      (item) => ({
+                                                        ...item,
+                                                        feedbackBands:
+                                                          item.feedbackBands?.map(
+                                                            (
+                                                              current,
+                                                              currentIndex,
+                                                            ) =>
+                                                              currentIndex ===
+                                                              bandIndex
+                                                                ? {
+                                                                    ...current,
+                                                                    text: event
+                                                                      .currentTarget
+                                                                      .value,
+                                                                  }
+                                                                : current,
+                                                          ),
+                                                      }),
+                                                    )
+                                                  }
+                                                />
+                                              </label>
+                                              <Button
+                                                variant="destructive"
+                                                disabled={
+                                                  !editable ||
+                                                  (question.feedbackBands
+                                                    ?.length ?? 0) <= 1
+                                                }
+                                                onClick={() =>
+                                                  patchQuestion(
+                                                    index,
+                                                    (item) => ({
+                                                      ...item,
+                                                      feedbackBands:
+                                                        item.feedbackBands?.filter(
+                                                          (_, currentIndex) =>
+                                                            currentIndex !==
+                                                            bandIndex,
+                                                        ),
+                                                    }),
+                                                  )
+                                                }
+                                              >
+                                                {
+                                                  messages[
+                                                    'forms.staffRemoveOption'
+                                                  ]
+                                                }
+                                              </Button>
+                                            </div>
+                                          ),
+                                        )}
+                                        <Button
+                                          variant="secondary"
+                                          disabled={
+                                            !editable ||
+                                            (question.feedbackBands?.length ??
+                                              0) >= 16
+                                          }
+                                          onClick={() =>
+                                            patchQuestion(index, (item) => ({
+                                              ...item,
+                                              feedbackBands: [
+                                                ...(item.feedbackBands ?? []),
+                                                { min: 0, max: 0, text: '' },
+                                              ],
+                                            }))
+                                          }
+                                        >
+                                          {
+                                            messages[
+                                              'forms.staffAddFeedbackBand'
+                                            ]
+                                          }
+                                        </Button>
+                                      </fieldset>
+                                    </>
+                                  )}
+                                  {question.type === 'displayOnly' && (
+                                    <LocalizedEditorFields
+                                      englishLabel={
+                                        messages[
+                                          'forms.staffDisplayTextEnglish'
+                                        ]
+                                      }
+                                      arabicLabel={
+                                        messages['forms.staffDisplayTextArabic']
+                                      }
+                                      value={
+                                        question.displayText ?? {
+                                          en: '',
+                                          ar: '',
+                                        }
+                                      }
+                                      disabled={!editable}
+                                      onChange={(locale, value) =>
+                                        patchQuestion(index, (item) => ({
+                                          ...item,
+                                          displayText: {
+                                            ...(item.displayText ?? {
+                                              en: '',
+                                              ar: '',
+                                            }),
+                                            [locale]: value,
+                                          },
+                                        }))
+                                      }
+                                    />
+                                  )}
+                                  {question.type === 'profileText' && (
+                                    <label className={styles.field}>
+                                      <span>
+                                        {messages['forms.staffProfileField']}
+                                      </span>
+                                      <select
+                                        value={
+                                          question.profileField ?? 'fullName'
+                                        }
+                                        disabled={!editable}
+                                        onChange={(event) =>
+                                          patchQuestion(index, (item) => ({
+                                            ...item,
+                                            profileField: event.currentTarget
+                                              .value as 'fullName',
+                                          }))
+                                        }
+                                      >
+                                        <option value="fullName">
+                                          {
+                                            messages[
+                                              'forms.staffProfileField.fullName'
+                                            ]
+                                          }
+                                        </option>
+                                      </select>
+                                    </label>
+                                  )}
+                                  {question.type === 'computedAge' && (
+                                    <label className={styles.field}>
+                                      <span>
+                                        {
+                                          messages[
+                                            'forms.staffDateOfBirthField'
+                                          ]
+                                        }
+                                      </span>
+                                      <select
+                                        value={
+                                          question.dateOfBirthField ??
+                                          'dateOfBirth'
+                                        }
+                                        disabled={!editable}
+                                        onChange={() =>
+                                          patchQuestion(index, (item) => ({
+                                            ...item,
+                                            dateOfBirthField: 'dateOfBirth',
+                                          }))
+                                        }
+                                      >
+                                        <option value="dateOfBirth">
+                                          {
+                                            messages[
+                                              'forms.staffDateOfBirthField.dateOfBirth'
+                                            ]
+                                          }
+                                        </option>
+                                      </select>
+                                    </label>
+                                  )}
+                                  {question.type === 'derivedChoice' && (
+                                    <fieldset className={styles.options}>
+                                      <legend>
+                                        {
+                                          messages[
+                                            'forms.staffDerivedFromQuestion'
+                                          ]
+                                        }
+                                      </legend>
+                                      <label className={styles.field}>
+                                        <span>
+                                          {
+                                            messages[
+                                              'forms.staffDerivedFromQuestion'
+                                            ]
+                                          }
+                                        </span>
+                                        <select
+                                          value={
+                                            question.derivedOptions
+                                              ?.sourceQuestionId ?? ''
+                                          }
+                                          disabled={!editable}
+                                          onChange={(event) =>
+                                            patchQuestion(index, (item) => ({
+                                              ...item,
+                                              derivedOptions: {
+                                                sourceQuestionId:
+                                                  event.currentTarget.value,
+                                                fixedChoices:
+                                                  item.derivedOptions
+                                                    ?.fixedChoices ?? [],
+                                              },
+                                            }))
+                                          }
+                                        >
                                           {form.questions
                                             .filter(
-                                              (item) => item.id !== question.id,
+                                              (item) =>
+                                                item.type === 'mealCount',
                                             )
                                             .map((item) => (
                                               <option
@@ -1067,877 +1975,347 @@ export function FormBuilder({
                                             ))}
                                         </select>
                                       </label>
-                                      <label className={styles.field}>
-                                        <span>
-                                          {
-                                            messages[
-                                              'forms.staffConditionOperator'
-                                            ]
-                                          }
-                                        </span>
-                                        <select
-                                          value={condition.operator}
-                                          disabled={!editable}
-                                          onChange={(event) => {
-                                            const operator = event.currentTarget
-                                              .value as
-                                              | 'equals'
-                                              | 'notEquals'
-                                              | 'contains'
-                                              | 'isAnswered';
-                                            const current =
-                                              question.when?.conditions[
-                                                conditionIndex
-                                              ];
-                                            const nextCondition: ApplicabilityCondition =
-                                              operator === 'isAnswered'
-                                                ? {
-                                                    questionId:
-                                                      current?.questionId ?? '',
-                                                    operator,
-                                                  }
-                                                : operator === 'contains'
-                                                  ? {
-                                                      questionId:
-                                                        current?.questionId ??
-                                                        '',
-                                                      operator,
-                                                      value:
-                                                        current &&
-                                                        'value' in current &&
-                                                        typeof current.value ===
-                                                          'string'
-                                                          ? current.value
-                                                          : '',
-                                                    }
-                                                  : {
-                                                      questionId:
-                                                        current?.questionId ??
-                                                        '',
-                                                      operator,
-                                                      value:
-                                                        current &&
-                                                        'value' in current
-                                                          ? current.value
-                                                          : '',
-                                                    };
-                                            patchQuestion(index, (item) => ({
-                                              ...item,
-                                              when: item.when
-                                                ? {
-                                                    ...item.when,
-                                                    conditions:
-                                                      item.when.conditions.map(
-                                                        (
-                                                          current,
-                                                          currentIndex,
-                                                        ) =>
-                                                          currentIndex ===
-                                                          conditionIndex
-                                                            ? nextCondition
-                                                            : current,
-                                                      ),
-                                                  }
-                                                : undefined,
-                                            }));
-                                          }}
-                                        >
-                                          <option value="equals">
-                                            {
-                                              messages[
-                                                'forms.staffConditionEquals'
-                                              ]
-                                            }
-                                          </option>
-                                          <option value="notEquals">
-                                            {
-                                              messages[
-                                                'forms.staffConditionNotEquals'
-                                              ]
-                                            }
-                                          </option>
-                                          <option value="contains">
-                                            {
-                                              messages[
-                                                'forms.staffConditionContains'
-                                              ]
-                                            }
-                                          </option>
-                                          <option value="isAnswered">
-                                            {
-                                              messages[
-                                                'forms.staffConditionIsAnswered'
-                                              ]
-                                            }
-                                          </option>
-                                        </select>
-                                      </label>
-                                      {condition.operator !== 'isAnswered' && (
-                                        <label className={styles.field}>
-                                          <span>
-                                            {
-                                              messages[
-                                                'forms.staffConditionValue'
-                                              ]
-                                            }
+                                      <div className={styles.hint}>
+                                        {messages['forms.staffFixedChoices']}:{' '}
+                                        {(
+                                          question.derivedOptions
+                                            ?.fixedChoices ?? []
+                                        ).map((choice, choiceIndex) => (
+                                          <span key={choice}>
+                                            {choiceIndex > 0 ? ' · ' : ''}
+                                            <Bidi>{choice}</Bidi>
                                           </span>
-                                          <input
-                                            value={String(condition.value)}
-                                            disabled={!editable}
-                                            onChange={(event) =>
-                                              patchQuestion(index, (item) => ({
-                                                ...item,
-                                                when: item.when
-                                                  ? {
-                                                      ...item.when,
-                                                      conditions:
-                                                        item.when.conditions.map(
+                                        ))}
+                                      </div>
+                                    </fieldset>
+                                  )}
+                                  {question.type === 'singleChoice' ||
+                                  question.type === 'multiChoice' ||
+                                  question.type === 'imageChoice' ||
+                                  question.type === 'mealCount' ||
+                                  question.type === 'derivedChoice' ? (
+                                    <fieldset className={styles.options}>
+                                      <legend>
+                                        {messages['forms.staffChoices']}
+                                      </legend>
+                                      {(question.optionLabels ?? []).map(
+                                        (option, optionIndex) => (
+                                          <div
+                                            className={styles.builder}
+                                            key={`option-${optionIndex}`}
+                                          >
+                                            <label className={styles.field}>
+                                              <span>
+                                                {
+                                                  messages[
+                                                    'forms.staffChoiceValue'
+                                                  ]
+                                                }
+                                              </span>
+                                              <input
+                                                value={
+                                                  question.choices?.[
+                                                    optionIndex
+                                                  ] ?? ''
+                                                }
+                                                dir="ltr"
+                                                disabled={
+                                                  !editable ||
+                                                  question.type ===
+                                                    'mealCount' ||
+                                                  question.type ===
+                                                    'derivedChoice'
+                                                }
+                                                onChange={(event) =>
+                                                  patchQuestion(
+                                                    index,
+                                                    (item) => ({
+                                                      ...item,
+                                                      choices:
+                                                        item.choices?.map(
                                                           (
-                                                            current,
-                                                            currentIndex,
+                                                            choice,
+                                                            choiceIndex,
                                                           ) =>
-                                                            currentIndex ===
-                                                              conditionIndex &&
-                                                            current.operator !==
-                                                              'isAnswered'
-                                                              ? {
-                                                                  ...current,
-                                                                  value:
-                                                                    event
-                                                                      .currentTarget
-                                                                      .value,
-                                                                }
-                                                              : current,
+                                                            choiceIndex ===
+                                                            optionIndex
+                                                              ? event
+                                                                  .currentTarget
+                                                                  .value
+                                                              : choice,
                                                         ),
-                                                    }
-                                                  : undefined,
-                                              }))
-                                            }
-                                          />
-                                        </label>
+                                                    }),
+                                                  )
+                                                }
+                                              />
+                                            </label>
+                                            <label className={styles.field}>
+                                              <span>
+                                                {
+                                                  messages[
+                                                    'forms.staffEnglishOption'
+                                                  ]
+                                                }
+                                              </span>
+                                              <input
+                                                value={option.en}
+                                                dir="ltr"
+                                                disabled={!editable}
+                                                onChange={(event) =>
+                                                  patchQuestion(
+                                                    index,
+                                                    (item) => ({
+                                                      ...item,
+                                                      optionLabels:
+                                                        item.optionLabels?.map(
+                                                          (
+                                                            label,
+                                                            labelIndex,
+                                                          ) =>
+                                                            labelIndex ===
+                                                            optionIndex
+                                                              ? {
+                                                                  ...label,
+                                                                  en: event
+                                                                    .currentTarget
+                                                                    .value,
+                                                                }
+                                                              : label,
+                                                        ),
+                                                    }),
+                                                  )
+                                                }
+                                              />
+                                            </label>
+                                            <label className={styles.field}>
+                                              <span>
+                                                {
+                                                  messages[
+                                                    'forms.staffArabicOption'
+                                                  ]
+                                                }
+                                              </span>
+                                              <input
+                                                value={option.ar}
+                                                dir="rtl"
+                                                disabled={!editable}
+                                                onChange={(event) =>
+                                                  patchQuestion(
+                                                    index,
+                                                    (item) => ({
+                                                      ...item,
+                                                      optionLabels:
+                                                        item.optionLabels?.map(
+                                                          (
+                                                            label,
+                                                            labelIndex,
+                                                          ) =>
+                                                            labelIndex ===
+                                                            optionIndex
+                                                              ? {
+                                                                  ...label,
+                                                                  ar: event
+                                                                    .currentTarget
+                                                                    .value,
+                                                                }
+                                                              : label,
+                                                        ),
+                                                    }),
+                                                  )
+                                                }
+                                              />
+                                            </label>
+                                            {question.type ===
+                                              'imageChoice' && (
+                                              <label className={styles.field}>
+                                                <span>
+                                                  {
+                                                    messages[
+                                                      'forms.staffAssetReference'
+                                                    ]
+                                                  }
+                                                </span>
+                                                <input
+                                                  value={
+                                                    question.assetReferences?.[
+                                                      optionIndex
+                                                    ] ?? ''
+                                                  }
+                                                  dir="ltr"
+                                                  disabled={!editable}
+                                                  onChange={(event) =>
+                                                    patchQuestion(
+                                                      index,
+                                                      (item) => ({
+                                                        ...item,
+                                                        assetReferences:
+                                                          item.assetReferences?.map(
+                                                            (
+                                                              reference,
+                                                              referenceIndex,
+                                                            ) =>
+                                                              referenceIndex ===
+                                                              optionIndex
+                                                                ? event
+                                                                    .currentTarget
+                                                                    .value
+                                                                : reference,
+                                                          ),
+                                                      }),
+                                                    )
+                                                  }
+                                                />
+                                              </label>
+                                            )}
+                                            {(question.type ===
+                                              'singleChoice' ||
+                                              question.type === 'multiChoice' ||
+                                              question.type ===
+                                                'imageChoice') && (
+                                              <Button
+                                                variant="destructive"
+                                                disabled={
+                                                  !editable ||
+                                                  (question.choices?.length ??
+                                                    0) <= 1
+                                                }
+                                                onClick={() =>
+                                                  patchQuestion(
+                                                    index,
+                                                    (item) => ({
+                                                      ...item,
+                                                      choices:
+                                                        item.choices?.filter(
+                                                          (_, currentIndex) =>
+                                                            currentIndex !==
+                                                            optionIndex,
+                                                        ),
+                                                      optionLabels:
+                                                        item.optionLabels?.filter(
+                                                          (_, currentIndex) =>
+                                                            currentIndex !==
+                                                            optionIndex,
+                                                        ),
+                                                      assetReferences:
+                                                        item.assetReferences?.filter(
+                                                          (_, currentIndex) =>
+                                                            currentIndex !==
+                                                            optionIndex,
+                                                        ),
+                                                    }),
+                                                  )
+                                                }
+                                              >
+                                                {
+                                                  messages[
+                                                    'forms.staffRemoveOption'
+                                                  ]
+                                                }
+                                              </Button>
+                                            )}
+                                          </div>
+                                        ),
                                       )}
                                       <Button
-                                        variant="destructive"
-                                        disabled={!editable}
-                                        onClick={() =>
-                                          patchQuestion(index, (item) => {
-                                            const conditions =
-                                              item.when?.conditions.filter(
-                                                (_, currentIndex) =>
-                                                  currentIndex !==
-                                                  conditionIndex,
-                                              ) ?? [];
-                                            return {
-                                              ...item,
-                                              when:
-                                                conditions.length > 0 &&
-                                                item.when
-                                                  ? { ...item.when, conditions }
-                                                  : undefined,
-                                            };
-                                          })
+                                        variant="secondary"
+                                        disabled={
+                                          !editable ||
+                                          (question.type !== 'singleChoice' &&
+                                            question.type !== 'multiChoice' &&
+                                            question.type !== 'imageChoice') ||
+                                          (question.optionLabels?.length ??
+                                            0) >= 50
                                         }
-                                      >
-                                        {messages['forms.staffRemoveCondition']}
-                                      </Button>
-                                    </div>
-                                  ),
-                                )}
-                                <Button
-                                  variant="secondary"
-                                  disabled={
-                                    !editable ||
-                                    question.when.conditions.length >= 16
-                                  }
-                                  onClick={() => {
-                                    const source = form.questions.find(
-                                      (item) => item.id !== question.id,
-                                    );
-                                    if (!source) return;
-                                    patchQuestion(index, (item) => ({
-                                      ...item,
-                                      when: item.when
-                                        ? {
-                                            ...item.when,
-                                            conditions: [
-                                              ...item.when.conditions,
-                                              {
-                                                questionId: source.id,
-                                                operator: 'isAnswered',
-                                              },
+                                        onClick={() =>
+                                          patchQuestion(index, (item) => ({
+                                            ...item,
+                                            choices: [
+                                              ...(item.choices ?? []),
+                                              `option-${(item.choices?.length ?? 0) + 1}`,
                                             ],
-                                          }
-                                        : undefined,
-                                    }));
-                                  }}
-                                >
-                                  {messages['forms.staffAddCondition']}
-                                </Button>
-                              </fieldset>
-                            )}
-                            {question.type === 'number' && (
-                              <>
-                                <LocalizedEditorFields
-                                  englishLabel={
-                                    messages['forms.staffUnitEnglish']
-                                  }
-                                  arabicLabel={
-                                    messages['forms.staffUnitArabic']
-                                  }
-                                  value={question.unit ?? { en: '', ar: '' }}
-                                  disabled={!editable}
-                                  onChange={(locale, value) =>
-                                    patchQuestion(index, (item) => ({
-                                      ...item,
-                                      unit: {
-                                        ...(item.unit ?? { en: '', ar: '' }),
-                                        [locale]: value,
-                                      },
-                                    }))
-                                  }
-                                />
-                                <div className={styles.localizedFields}>
-                                  {(
-                                    [
-                                      ['min', 'forms.staffMinimumValue'],
-                                      ['max', 'forms.staffMaximumValue'],
-                                      ['step', 'forms.staffStep'],
-                                    ] as const
-                                  ).map(([key, messageKey]) => (
-                                    <label className={styles.field} key={key}>
-                                      <span>{messages[messageKey]}</span>
-                                      <input
-                                        type="number"
-                                        step="any"
-                                        value={question.validation?.[key] ?? ''}
-                                        disabled={!editable}
-                                        onChange={(event) => {
-                                          const value =
-                                            event.currentTarget.value;
-                                          patchQuestion(index, (item) => ({
-                                            ...item,
-                                            validation: {
-                                              ...(item.validation ?? {}),
-                                              [key]:
-                                                value === ''
-                                                  ? undefined
-                                                  : Number(value),
-                                            },
-                                          }));
-                                        }}
-                                      />
-                                    </label>
-                                  ))}
-                                </div>
-                              </>
-                            )}
-                            {question.type === 'slider' && (
-                              <>
-                                <div className={styles.localizedFields}>
-                                  {(
-                                    [
-                                      ['min', 'forms.staffMinimumValue'],
-                                      ['max', 'forms.staffMaximumValue'],
-                                      ['step', 'forms.staffStep'],
-                                    ] as const
-                                  ).map(([key, messageKey]) => (
-                                    <label className={styles.field} key={key}>
-                                      <span>{messages[messageKey]}</span>
-                                      <input
-                                        type="number"
-                                        step="any"
-                                        value={question.validation?.[key] ?? ''}
-                                        disabled={!editable}
-                                        onChange={(event) => {
-                                          const value = Number(
-                                            event.currentTarget.value,
-                                          );
-                                          if (!Number.isFinite(value)) return;
-                                          patchQuestion(index, (item) => ({
-                                            ...item,
-                                            validation: {
-                                              ...(item.validation ?? {}),
-                                              [key]: value,
-                                            },
-                                          }));
-                                        }}
-                                      />
-                                    </label>
-                                  ))}
-                                </div>
-                                <div className={styles.localizedFields}>
-                                  {(
-                                    [
-                                      ['minimum', 'forms.staffMinimumLabel'],
-                                      ['middle', 'forms.staffMiddleLabel'],
-                                      ['maximum', 'forms.staffMaximumLabel'],
-                                    ] as const
-                                  ).map(([key, messageKey]) => (
-                                    <label className={styles.field} key={key}>
-                                      <span>{messages[messageKey]}</span>
-                                      <input
-                                        value={question.labels?.[key] ?? ''}
-                                        dir={locale === 'ar' ? 'rtl' : 'ltr'}
-                                        disabled={!editable}
-                                        onChange={(event) =>
-                                          patchQuestion(index, (item) => ({
-                                            ...item,
-                                            labels: {
-                                              minimum:
-                                                item.labels?.minimum ?? '',
-                                              middle: item.labels?.middle ?? '',
-                                              maximum:
-                                                item.labels?.maximum ?? '',
-                                              [key]: event.currentTarget.value,
-                                            },
+                                            optionLabels: [
+                                              ...(item.optionLabels ?? []),
+                                              { en: '', ar: '' },
+                                            ],
+                                            ...(item.type === 'imageChoice'
+                                              ? {
+                                                  assetReferences: [
+                                                    ...(item.assetReferences ??
+                                                      []),
+                                                    '',
+                                                  ],
+                                                }
+                                              : {}),
                                           }))
                                         }
-                                      />
-                                    </label>
-                                  ))}
-                                </div>
-                                <fieldset className={styles.options}>
-                                  <legend>
-                                    {messages['forms.staffFeedbackBands']}
-                                  </legend>
-                                  {(question.feedbackBands ?? []).map(
-                                    (band, bandIndex) => (
-                                      <div
-                                        className={styles.localizedFields}
-                                        key={bandIndex}
                                       >
-                                        <label className={styles.field}>
-                                          <span>
-                                            {
-                                              messages[
-                                                'forms.staffMinimumValue'
-                                              ]
-                                            }
-                                          </span>
-                                          <input
-                                            type="number"
-                                            value={band.min}
-                                            disabled={!editable}
-                                            onChange={(event) =>
-                                              patchQuestion(index, (item) => ({
-                                                ...item,
-                                                feedbackBands:
-                                                  item.feedbackBands?.map(
-                                                    (current, currentIndex) =>
-                                                      currentIndex === bandIndex
-                                                        ? {
-                                                            ...current,
-                                                            min: Number(
-                                                              event
-                                                                .currentTarget
-                                                                .value,
-                                                            ),
-                                                          }
-                                                        : current,
-                                                  ),
-                                              }))
-                                            }
-                                          />
-                                        </label>
-                                        <label className={styles.field}>
-                                          <span>
-                                            {
-                                              messages[
-                                                'forms.staffMaximumValue'
-                                              ]
-                                            }
-                                          </span>
-                                          <input
-                                            type="number"
-                                            value={band.max}
-                                            disabled={!editable}
-                                            onChange={(event) =>
-                                              patchQuestion(index, (item) => ({
-                                                ...item,
-                                                feedbackBands:
-                                                  item.feedbackBands?.map(
-                                                    (current, currentIndex) =>
-                                                      currentIndex === bandIndex
-                                                        ? {
-                                                            ...current,
-                                                            max: Number(
-                                                              event
-                                                                .currentTarget
-                                                                .value,
-                                                            ),
-                                                          }
-                                                        : current,
-                                                  ),
-                                              }))
-                                            }
-                                          />
-                                        </label>
-                                        <label className={styles.field}>
-                                          <span>
-                                            {
-                                              messages[
-                                                'forms.staffFeedbackText'
-                                              ]
-                                            }
-                                          </span>
-                                          <input
-                                            value={band.text}
-                                            dir={
-                                              locale === 'ar' ? 'rtl' : 'ltr'
-                                            }
-                                            disabled={!editable}
-                                            onChange={(event) =>
-                                              patchQuestion(index, (item) => ({
-                                                ...item,
-                                                feedbackBands:
-                                                  item.feedbackBands?.map(
-                                                    (current, currentIndex) =>
-                                                      currentIndex === bandIndex
-                                                        ? {
-                                                            ...current,
-                                                            text: event
-                                                              .currentTarget
-                                                              .value,
-                                                          }
-                                                        : current,
-                                                  ),
-                                              }))
-                                            }
-                                          />
-                                        </label>
-                                        <Button
-                                          variant="destructive"
-                                          disabled={
-                                            !editable ||
-                                            (question.feedbackBands?.length ??
-                                              0) <= 1
-                                          }
-                                          onClick={() =>
-                                            patchQuestion(index, (item) => ({
-                                              ...item,
-                                              feedbackBands:
-                                                item.feedbackBands?.filter(
-                                                  (_, currentIndex) =>
-                                                    currentIndex !== bandIndex,
-                                                ),
-                                            }))
-                                          }
-                                        >
-                                          {messages['forms.staffRemoveOption']}
-                                        </Button>
-                                      </div>
-                                    ),
-                                  )}
-                                  <Button
-                                    variant="secondary"
-                                    disabled={
-                                      !editable ||
-                                      (question.feedbackBands?.length ?? 0) >=
-                                        16
-                                    }
-                                    onClick={() =>
-                                      patchQuestion(index, (item) => ({
-                                        ...item,
-                                        feedbackBands: [
-                                          ...(item.feedbackBands ?? []),
-                                          { min: 0, max: 0, text: '' },
-                                        ],
-                                      }))
-                                    }
-                                  >
-                                    {messages['forms.staffAddFeedbackBand']}
-                                  </Button>
-                                </fieldset>
-                              </>
-                            )}
-                            {question.type === 'displayOnly' && (
-                              <LocalizedEditorFields
-                                englishLabel={
-                                  messages['forms.staffDisplayTextEnglish']
-                                }
-                                arabicLabel={
-                                  messages['forms.staffDisplayTextArabic']
-                                }
-                                value={
-                                  question.displayText ?? { en: '', ar: '' }
-                                }
-                                disabled={!editable}
-                                onChange={(locale, value) =>
-                                  patchQuestion(index, (item) => ({
-                                    ...item,
-                                    displayText: {
-                                      ...(item.displayText ?? {
-                                        en: '',
-                                        ar: '',
-                                      }),
-                                      [locale]: value,
-                                    },
-                                  }))
-                                }
-                              />
-                            )}
-                            {question.type === 'profileText' && (
-                              <label className={styles.field}>
-                                <span>
-                                  {messages['forms.staffProfileField']}
-                                </span>
-                                <select
-                                  value={question.profileField ?? 'fullName'}
-                                  disabled={!editable}
-                                  onChange={(event) =>
-                                    patchQuestion(index, (item) => ({
-                                      ...item,
-                                      profileField: event.currentTarget
-                                        .value as 'fullName',
-                                    }))
-                                  }
-                                >
-                                  <option value="fullName">
-                                    {
-                                      messages[
-                                        'forms.staffProfileField.fullName'
-                                      ]
-                                    }
-                                  </option>
-                                </select>
-                              </label>
-                            )}
-                            {question.type === 'computedAge' && (
-                              <label className={styles.field}>
-                                <span>
-                                  {messages['forms.staffDateOfBirthField']}
-                                </span>
-                                <select
-                                  value={
-                                    question.dateOfBirthField ?? 'dateOfBirth'
-                                  }
-                                  disabled={!editable}
-                                  onChange={() =>
-                                    patchQuestion(index, (item) => ({
-                                      ...item,
-                                      dateOfBirthField: 'dateOfBirth',
-                                    }))
-                                  }
-                                >
-                                  <option value="dateOfBirth">
-                                    {
-                                      messages[
-                                        'forms.staffDateOfBirthField.dateOfBirth'
-                                      ]
-                                    }
-                                  </option>
-                                </select>
-                              </label>
-                            )}
-                            {question.type === 'derivedChoice' && (
-                              <fieldset className={styles.options}>
-                                <legend>
-                                  {messages['forms.staffDerivedFromQuestion']}
-                                </legend>
-                                <label className={styles.field}>
-                                  <span>
-                                    {messages['forms.staffDerivedFromQuestion']}
-                                  </span>
-                                  <select
-                                    value={
-                                      question.derivedOptions
-                                        ?.sourceQuestionId ?? ''
-                                    }
-                                    disabled={!editable}
-                                    onChange={(event) =>
-                                      patchQuestion(index, (item) => ({
-                                        ...item,
-                                        derivedOptions: {
-                                          sourceQuestionId:
-                                            event.currentTarget.value,
-                                          fixedChoices:
-                                            item.derivedOptions?.fixedChoices ??
-                                            [],
-                                        },
-                                      }))
-                                    }
-                                  >
-                                    {form.questions
-                                      .filter(
-                                        (item) => item.type === 'mealCount',
-                                      )
-                                      .map((item) => (
-                                        <option key={item.id} value={item.id}>
-                                          {item.label[locale] || item.id}
-                                        </option>
-                                      ))}
-                                  </select>
-                                </label>
-                                <div className={styles.hint}>
-                                  {messages['forms.staffFixedChoices']}:{' '}
-                                  {(
-                                    question.derivedOptions?.fixedChoices ?? []
-                                  ).map((choice, choiceIndex) => (
-                                    <span key={choice}>
-                                      {choiceIndex > 0 ? ' · ' : ''}
-                                      <Bidi>{choice}</Bidi>
-                                    </span>
-                                  ))}
-                                </div>
-                              </fieldset>
-                            )}
-                            {question.type === 'singleChoice' ||
-                            question.type === 'multiChoice' ||
-                            question.type === 'imageChoice' ||
-                            question.type === 'mealCount' ||
-                            question.type === 'derivedChoice' ? (
-                              <fieldset className={styles.options}>
-                                <legend>
-                                  {messages['forms.staffChoices']}
-                                </legend>
-                                {(question.optionLabels ?? []).map(
-                                  (option, optionIndex) => (
-                                    <div
-                                      className={styles.builder}
-                                      key={`option-${optionIndex}`}
+                                        {messages['forms.staffAddOption']}
+                                      </Button>
+                                    </fieldset>
+                                  ) : max !== undefined ? (
+                                    <TextAnswerField
+                                      kind={
+                                        question.type as
+                                          'shortText' | 'longText'
+                                      }
+                                      label={
+                                        question.label[locale] ||
+                                        messages['forms.staffAnswerPreview']
+                                      }
+                                      value={previewAnswers[question.id] ?? ''}
+                                      onChange={(value) =>
+                                        setPreviewAnswers((current) => ({
+                                          ...current,
+                                          [question.id]: value,
+                                        }))
+                                      }
+                                      locale={locale}
+                                      charLimit={question.charLimit}
+                                      disabled={!editable}
+                                    />
+                                  ) : null}
+                                  <div className={styles.builderActions}>
+                                    <Button
+                                      variant="secondary"
+                                      onClick={() => moveQuestion(index, -1)}
+                                      disabled={
+                                        !editable ||
+                                        questions.findIndex(
+                                          ({ question: item }) =>
+                                            item.id === question.id,
+                                        ) === 0
+                                      }
                                     >
-                                      <label className={styles.field}>
-                                        <span>
-                                          {messages['forms.staffChoiceValue']}
-                                        </span>
-                                        <input
-                                          value={
-                                            question.choices?.[optionIndex] ??
-                                            ''
-                                          }
-                                          dir="ltr"
-                                          disabled={
-                                            !editable ||
-                                            question.type === 'mealCount' ||
-                                            question.type === 'derivedChoice'
-                                          }
-                                          onChange={(event) =>
-                                            patchQuestion(index, (item) => ({
-                                              ...item,
-                                              choices: item.choices?.map(
-                                                (choice, choiceIndex) =>
-                                                  choiceIndex === optionIndex
-                                                    ? event.currentTarget.value
-                                                    : choice,
-                                              ),
-                                            }))
-                                          }
-                                        />
-                                      </label>
-                                      <label className={styles.field}>
-                                        <span>
-                                          {messages['forms.staffEnglishOption']}
-                                        </span>
-                                        <input
-                                          value={option.en}
-                                          dir="ltr"
-                                          disabled={!editable}
-                                          onChange={(event) =>
-                                            patchQuestion(index, (item) => ({
-                                              ...item,
-                                              optionLabels:
-                                                item.optionLabels?.map(
-                                                  (label, labelIndex) =>
-                                                    labelIndex === optionIndex
-                                                      ? {
-                                                          ...label,
-                                                          en: event
-                                                            .currentTarget
-                                                            .value,
-                                                        }
-                                                      : label,
-                                                ),
-                                            }))
-                                          }
-                                        />
-                                      </label>
-                                      <label className={styles.field}>
-                                        <span>
-                                          {messages['forms.staffArabicOption']}
-                                        </span>
-                                        <input
-                                          value={option.ar}
-                                          dir="rtl"
-                                          disabled={!editable}
-                                          onChange={(event) =>
-                                            patchQuestion(index, (item) => ({
-                                              ...item,
-                                              optionLabels:
-                                                item.optionLabels?.map(
-                                                  (label, labelIndex) =>
-                                                    labelIndex === optionIndex
-                                                      ? {
-                                                          ...label,
-                                                          ar: event
-                                                            .currentTarget
-                                                            .value,
-                                                        }
-                                                      : label,
-                                                ),
-                                            }))
-                                          }
-                                        />
-                                      </label>
-                                      {question.type === 'imageChoice' && (
-                                        <label className={styles.field}>
-                                          <span>
-                                            {
-                                              messages[
-                                                'forms.staffAssetReference'
-                                              ]
-                                            }
-                                          </span>
-                                          <input
-                                            value={
-                                              question.assetReferences?.[
-                                                optionIndex
-                                              ] ?? ''
-                                            }
-                                            dir="ltr"
-                                            disabled={!editable}
-                                            onChange={(event) =>
-                                              patchQuestion(index, (item) => ({
-                                                ...item,
-                                                assetReferences:
-                                                  item.assetReferences?.map(
-                                                    (
-                                                      reference,
-                                                      referenceIndex,
-                                                    ) =>
-                                                      referenceIndex ===
-                                                      optionIndex
-                                                        ? event.currentTarget
-                                                            .value
-                                                        : reference,
-                                                  ),
-                                              }))
-                                            }
-                                          />
-                                        </label>
-                                      )}
-                                      {(question.type === 'singleChoice' ||
-                                        question.type === 'multiChoice' ||
-                                        question.type === 'imageChoice') && (
-                                        <Button
-                                          variant="destructive"
-                                          disabled={
-                                            !editable ||
-                                            (question.choices?.length ?? 0) <= 1
-                                          }
-                                          onClick={() =>
-                                            patchQuestion(index, (item) => ({
-                                              ...item,
-                                              choices: item.choices?.filter(
-                                                (_, currentIndex) =>
-                                                  currentIndex !== optionIndex,
-                                              ),
-                                              optionLabels:
-                                                item.optionLabels?.filter(
-                                                  (_, currentIndex) =>
-                                                    currentIndex !==
-                                                    optionIndex,
-                                                ),
-                                              assetReferences:
-                                                item.assetReferences?.filter(
-                                                  (_, currentIndex) =>
-                                                    currentIndex !==
-                                                    optionIndex,
-                                                ),
-                                            }))
-                                          }
-                                        >
-                                          {messages['forms.staffRemoveOption']}
-                                        </Button>
-                                      )}
-                                    </div>
-                                  ),
-                                )}
-                                <Button
-                                  variant="secondary"
-                                  disabled={
-                                    !editable ||
-                                    (question.type !== 'singleChoice' &&
-                                      question.type !== 'multiChoice' &&
-                                      question.type !== 'imageChoice') ||
-                                    (question.optionLabels?.length ?? 0) >= 50
-                                  }
-                                  onClick={() =>
-                                    patchQuestion(index, (item) => ({
-                                      ...item,
-                                      choices: [
-                                        ...(item.choices ?? []),
-                                        `option-${(item.choices?.length ?? 0) + 1}`,
-                                      ],
-                                      optionLabels: [
-                                        ...(item.optionLabels ?? []),
-                                        { en: '', ar: '' },
-                                      ],
-                                      ...(item.type === 'imageChoice'
-                                        ? {
-                                            assetReferences: [
-                                              ...(item.assetReferences ?? []),
-                                              '',
-                                            ],
-                                          }
-                                        : {}),
-                                    }))
-                                  }
-                                >
-                                  {messages['forms.staffAddOption']}
-                                </Button>
-                              </fieldset>
-                            ) : max !== undefined ? (
-                              <TextAnswerField
-                                kind={question.type as 'shortText' | 'longText'}
-                                label={
-                                  question.label[locale] ||
-                                  messages['forms.staffAnswerPreview']
-                                }
-                                value={previewAnswers[question.id] ?? ''}
-                                onChange={(value) =>
-                                  setPreviewAnswers((current) => ({
-                                    ...current,
-                                    [question.id]: value,
-                                  }))
-                                }
-                                locale={locale}
-                                charLimit={question.charLimit}
-                                disabled={!editable}
-                              />
-                            ) : null}
-                            <div className={styles.builderActions}>
-                              <Button
-                                variant="secondary"
-                                onClick={() => moveQuestion(index, -1)}
-                                disabled={
-                                  !editable || questions[0]?.index === index
-                                }
-                              >
-                                {messages['forms.staffMoveQuestionUp']}
-                              </Button>
-                              <Button
-                                variant="secondary"
-                                onClick={() => moveQuestion(index, 1)}
-                                disabled={
-                                  !editable ||
-                                  questions[questions.length - 1]?.index ===
-                                    index
-                                }
-                              >
-                                {messages['forms.staffMoveQuestionDown']}
-                              </Button>
-                              <Button
-                                variant="destructive"
-                                onClick={() => removeQuestion(index)}
-                                disabled={!editable}
-                              >
-                                {messages['forms.staffRemoveQuestion']}
-                              </Button>
-                            </div>
-                          </li>
-                        );
-                      })}
-                    </ol>
+                                      {messages['forms.staffMoveQuestionUp']}
+                                    </Button>
+                                    <Button
+                                      variant="secondary"
+                                      onClick={() => moveQuestion(index, 1)}
+                                      disabled={
+                                        !editable ||
+                                        questions.findIndex(
+                                          ({ question: item }) =>
+                                            item.id === question.id,
+                                        ) ===
+                                          questions.length - 1
+                                      }
+                                    >
+                                      {messages['forms.staffMoveQuestionDown']}
+                                    </Button>
+                                    <Button
+                                      variant="destructive"
+                                      onClick={() => removeQuestion(index)}
+                                      disabled={!editable}
+                                    >
+                                      {messages['forms.staffRemoveQuestion']}
+                                    </Button>
+                                  </div>
+                                </li>
+                              );
+                            })}
+                        </ol>
+                      )}
+                    </div>
                     <Button
                       variant="secondary"
                       onClick={() => addQuestion(section.id)}
