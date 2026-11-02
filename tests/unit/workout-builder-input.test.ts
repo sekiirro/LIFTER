@@ -27,7 +27,9 @@ describe('workout builder numeric input parsing', () => {
   ] as const)(
     'stores the canonical value for valid Arabic-Indic %s input',
     (kind, input, expected) => {
-      expect(parseBuilderNumber(input, kind as BuilderNumberKind)).toBe(expected);
+      expect(parseBuilderNumber(input, kind as BuilderNumberKind)).toBe(
+        expected,
+      );
     },
   );
 
@@ -39,7 +41,9 @@ describe('workout builder numeric input parsing', () => {
   ] as const)(
     'stores the canonical value for valid Latin %s input',
     (kind, input, expected) => {
-      expect(parseBuilderNumber(input, kind as BuilderNumberKind)).toBe(expected);
+      expect(parseBuilderNumber(input, kind as BuilderNumberKind)).toBe(
+        expected,
+      );
     },
   );
 
