@@ -62,6 +62,7 @@ The full catalog at `C:/Users/NEW LAP/.lifter/design-skills-catalog.md` was read
 | `nutritionTemplates.makeGlobal` | جعله عامًا | Make it Global |
 | `nutritionTemplates.retired` | متوقف | Retired |
 | `nutritionTemplates.origin` | المصدر | Origin |
+| `nutritionTemplates.platform` | المنصة | Platform |
 | `nutritionTemplates.versions` | إصدارات القالب | Template versions |
 | `nutritionTemplates.version` | الإصدار | Version |
 | `nutritionTemplates.loadVersion` | تحميل الإصدار إلى مسودة | Load version into draft |

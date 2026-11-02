@@ -165,7 +165,11 @@ export function NutritionTemplateManager({
                     {role === 'po' && template.origin && (
                       <p className={styles.origin}>
                         {m['nutritionTemplates.origin']}:{' '}
-                        <Bidi>{template.origin}</Bidi>
+                        <Bidi>
+                          {template.origin === 'Platform'
+                            ? m['nutritionTemplates.platform']
+                            : template.origin}
+                        </Bidi>
                       </p>
                     )}
                   </div>

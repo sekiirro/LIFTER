@@ -458,6 +458,7 @@ export const en: Record<keyof typeof ar, string> = {
   'nutritionTemplates.makeGlobal': 'Make it Global',
   'nutritionTemplates.retired': 'Retired',
   'nutritionTemplates.origin': 'Origin',
+  'nutritionTemplates.platform': 'Platform',
   'nutritionTemplates.versions': 'Template versions',
   'nutritionTemplates.version': 'Version',
   'nutritionTemplates.loadVersion': 'Load version into draft',

@@ -108,6 +108,20 @@ describe('NutritionTemplateManager governance and scope', () => {
     );
   });
 
+  it('localizes the platform origin label in Arabic', () => {
+    const html = render({
+      locale: 'ar',
+      role: 'po',
+      templates: [
+        template('global-template', 'Global template', 'global', {
+          origin: 'Platform',
+        }),
+      ],
+    });
+    expect(html).not.toContain('Platform');
+    expect(html).toContain(getMessages('ar')['nutritionTemplates.platform']);
+  });
+
   it('shows only templates for the selected workspace', () => {
     const list = [
       template('a', 'Workspace A template'),

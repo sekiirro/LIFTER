@@ -92,6 +92,11 @@ export default async function NutritionTemplatesShowcasePage({
   const params = await searchParams;
   const role = params.role === 'staff' ? 'staff' : 'po';
   const m = getMessages(locale);
+  const localizedTemplates = templates.map((template) =>
+    locale === 'ar' && template.origin === 'Workspace A'
+      ? { ...template, origin: 'مساحة العمل أ' }
+      : template,
+  );
 
   return (
     <main className={styles.page} data-testid="f18-template-showcase">
@@ -122,7 +127,7 @@ export default async function NutritionTemplatesShowcasePage({
       <NutritionTemplateShowcase
         locale={locale}
         role={role}
-        templates={templates}
+        templates={localizedTemplates}
       />
       <p>{m['nutritionTemplates.previewNotice']}</p>
     </main>

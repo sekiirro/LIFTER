@@ -442,6 +442,7 @@ export const ar = {
   'nutritionTemplates.makeGlobal': 'جعله عامًا',
   'nutritionTemplates.retired': 'متوقف',
   'nutritionTemplates.origin': 'المصدر',
+  'nutritionTemplates.platform': 'المنصة',
   'nutritionTemplates.versions': 'إصدارات القالب',
   'nutritionTemplates.version': 'الإصدار',
   'nutritionTemplates.loadVersion': 'تحميل الإصدار إلى مسودة',

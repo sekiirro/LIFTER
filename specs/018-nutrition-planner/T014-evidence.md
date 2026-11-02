@@ -94,3 +94,23 @@ Rendered review: no horizontal overflow; Arabic day types and units display in A
 The quantity field now sizes to its content (`8ch`), selects use their intrinsic width within the parent, and each food/quantity row aligns at the center. Digit display uses the shared `lib/i18n/format-digits.ts` helper. Playwright captures full pages so meal totals, day totals, and the live region are included. The eight AR/EN × light/dark × 390/1440 captures are in `%TEMP%/lifter-s26-f18-editor-r2`. The editor Playwright suite passed (4 locale/theme cases, both viewports each); axe reported zero violations at each viewport. I visually reviewed the 1440 EN/light and 390 AR/dark renders; the controls remain compact, totals are visible, and there is no horizontal overflow.
 
 The full `C:/Users/NEW LAP/.lifter/design-skills-catalog.md` was read. The complete APPLIES / NOT APPLICABLE matrix is in [T011 evidence](T011-evidence.md) and is reused for this editor. Applied here: `frontend-design` (implemented within the approved system), `impeccable` (detector clean), `baseline-ui` (existing primitives and responsive sizing), `better-ui` (component polish), `better-typography` (hierarchy and tabular values), `better-colors` (semantic token contrast), `better-layout` (fluid RTL/LTR grouping), `better-accessibility` (keyboard, live regions, state semantics), `better-writing` (bilingual copy), `better-interface` and `interface-review` (state and rendered review), `emil-design-eng` (motion restraint), and `ui-ux-pro-max` (lookup only; no persisted output). No skill recommendation overrode `DESIGN.md`; its generic bespoke font/effect guidance conflicts with the approved typography and restrained token system.
+
+## Architect follow-up (2026-11-02)
+
+### Template source localization
+
+- **RED:** Before implementation, the new Arabic render test in `tests/unit/NutritionTemplateManager.test.tsx` failed at line 121 because its markup contained literal `Platform` (`المصدر: <bdi>Platform</bdi>`).
+- **GREEN:** The platform origin now uses the bilingual `nutritionTemplates.platform` message, marked DRAFT in both catalogs. The Arabic showcase uses `مساحة العمل أ` for the sample workspace origin. Focused unit suite: 10 passed. Showcase Playwright: 8 cases passed; axe: 0 violations at tested viewports. Captures reviewed in `C:/Users/NEW LAP/.lifter/runs/s26-luna-f18-followup` (`f18-templates-ar-light-1440.png`, `f18-templates-ar-dark-1440.png`).
+- The screenshot test supports `F18_SCREENSHOT_DIR` and `F18_SCREENSHOT_FILTER`, allowing only requested captures while the full showcase checks run.
+
+### Totals display rule — blocked on specification conflict
+
+The request's S26-R7 default would show each macro as an integer at or above 10 g and one decimal below 10 g, summing unrounded item values. However, the approved feature specification is not silent: FR-003 and the acceptance scenario at `spec.md:23`, plus `plan.md:27` and `plan.md:73` (D18-4=C), explicitly require calories and macros to display as integers. Under that approved rule the 0.4 g + 0.8 g example can display as meal values 0 g and 1 g at the day level. Applying S26-R7 would override the approved PO decision, so no totals code, 0.4 + 0.8 assertion, or totals mutation was committed.
+
+Options for the architect/PO:
+
+1. Keep D18-4=C integer display everywhere; accept that independently rounded meal displays can sum differently from the day display. This preserves the current approved spec.
+2. Replace D18-4=C with S26-R7; exact calculations/storage remain unchanged, while meal/day displays share the >=10 integer / <10 one-decimal rule. This removes the reported small-value contradiction and defines the requested 0.4 + 0.8 fixture outcome.
+3. Keep integer display but add an explicit UI rule that reconciles meal displays to the day total. This preserves integer precision but needs a new allocation rule for assigning residual grams to meals.
+
+Recommendation: option 2, because it gives every displayed value the same deterministic precision rule without changing exact calculations or stored totals. The architect/PO must resolve the spec conflict before the totals implementation and requested editor screenshots can be completed.

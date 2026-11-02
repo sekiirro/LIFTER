@@ -4,7 +4,9 @@ import { tmpdir } from 'node:os';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-const screenshotDirectory = join(tmpdir(), 'lifter-s26-f18-templates');
+const screenshotDirectory =
+  process.env.F18_SCREENSHOT_DIR ?? join(tmpdir(), 'lifter-s26-f18-templates');
+const screenshotFilter = process.env.F18_SCREENSHOT_FILTER?.split(',');
 mkdirSync(screenshotDirectory, { recursive: true });
 
 for (const variant of [
@@ -35,6 +37,10 @@ for (const variant of [
     });
     const manager = page.getByTestId('nutrition-template-manager');
     await expect(manager).toHaveAttribute('dir', variant.direction);
+    if (variant.locale === 'ar') {
+      await expect(manager).not.toContainText('Platform');
+      await expect(manager).toContainText('مساحة العمل أ');
+    }
     await expect(manager.getByText('Another workspace template')).toHaveCount(
       0,
     );
@@ -56,13 +62,16 @@ for (const variant of [
           document.documentElement.clientWidth,
       );
       expect(overflow).toBe(false);
-      await page.screenshot({
-        path: join(
-          screenshotDirectory,
-          `f18-templates-${variant.locale}-${variant.theme}-${width}.png`,
-        ),
-        fullPage: true,
-      });
+      const screenshotName = `templates-${variant.locale}-${variant.theme}-${width}`;
+      if (!screenshotFilter || screenshotFilter.includes(screenshotName)) {
+        await page.screenshot({
+          path: join(
+            screenshotDirectory,
+            `f18-templates-${variant.locale}-${variant.theme}-${width}.png`,
+          ),
+          fullPage: true,
+        });
+      }
       const results = await new AxeBuilder({ page }).analyze();
       expect(
         results.violations,
