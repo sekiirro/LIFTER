@@ -1,7 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import { projectClientDelivery } from '../../lib/plan-core/delivery-projection';
-import type { Activation, FirstDeliveryRecord } from '../../lib/plan-core/delivery-contract';
-import type { PlanRootDto, PublishedRevisionDto } from '../../lib/plan-core/client';
+import type {
+  Activation,
+  FirstDeliveryRecord,
+} from '../../lib/plan-core/delivery-contract';
+import type {
+  PlanRootDto,
+  PublishedRevisionDto,
+} from '../../lib/plan-core/client';
 
 const SUBSCRIPTION_ID = '11111111-1111-4111-8111-111111111111';
 const PLAN_ID = '22222222-2222-4222-8222-222222222222';
@@ -14,7 +20,11 @@ const root: PlanRootDto = {
   draft: {
     planId: PLAN_ID,
     visibility: 'private',
-    content: { kind: 'workout', schemaVersion: 1, document: { secretDraft: true } },
+    content: {
+      kind: 'workout',
+      schemaVersion: 1,
+      document: { secretDraft: true },
+    },
   },
   publishedVersion: 4,
   readiness: 'published',
@@ -27,7 +37,11 @@ const revisions: PublishedRevisionDto[] = [
     revisionNumber: 3,
     createdAt: '2026-10-01T10:00:00.000Z',
     authorId: '66666666-6666-4666-8666-666666666666',
-    content: { kind: 'workout', schemaVersion: 1, document: { exerciseCount: 2 } },
+    content: {
+      kind: 'workout',
+      schemaVersion: 1,
+      document: { exerciseCount: 2 },
+    },
   },
   {
     planId: PLAN_ID,
@@ -35,7 +49,11 @@ const revisions: PublishedRevisionDto[] = [
     revisionNumber: 4,
     createdAt: '2026-11-01T10:00:00.000Z',
     authorId: '77777777-7777-4777-8777-777777777777',
-    content: { kind: 'workout', schemaVersion: 1, document: { exerciseCount: 4 } },
+    content: {
+      kind: 'workout',
+      schemaVersion: 1,
+      document: { exerciseCount: 4 },
+    },
   },
 ];
 
@@ -94,7 +112,9 @@ describe('Plan Core client delivery projection', () => {
       activated: true,
     };
 
-    expect(projectClientDelivery({ ...input, activation })?.activation.status).toBe('complete');
+    expect(
+      projectClientDelivery({ ...input, activation })?.activation.status,
+    ).toBe('complete');
   });
 
   it('does not expose content for a not-delivered plan', () => {
@@ -105,7 +125,10 @@ describe('Plan Core client delivery projection', () => {
   });
 
   it('does not use another subscription delivery or activation', () => {
-    const foreignDelivery = { ...delivery, subscriptionId: '88888888-8888-4888-8888-888888888888' };
+    const foreignDelivery = {
+      ...delivery,
+      subscriptionId: '88888888-8888-4888-8888-888888888888',
+    };
     const foreignActivation: Activation = {
       subscriptionId: foreignDelivery.subscriptionId,
       activatedAt: '2026-11-02T10:00:00.000Z',
