@@ -25,7 +25,7 @@ test('Terms, contextual health guidance and Welcome render accessibly across the
   page,
   context,
 }) => {
-  test.setTimeout(240_000);
+  test.setTimeout(75_000);
   await mkdir(evidenceDir, { recursive: true });
   for (const locale of ['ar', 'en'] as const) {
     const messages = getMessages(locale);
