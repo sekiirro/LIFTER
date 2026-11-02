@@ -104,6 +104,13 @@ describe.runIf(
       const f = await clientContext();
       await probe(async (tx) => {
         const ids = await graph(tx, f);
+        const [schedule] = await tx`
+          select pg_get_userbyid(p.proowner) as owner,p.prosecdef,
+            has_function_privilege('authenticated',p.oid,'execute') as authenticated_can_activate
+          from pg_proc p where p.oid='app_private.f15_forms_purge_schedule_activate()'::regprocedure
+        `;
+        expect(schedule).toEqual({ owner: 'postgres', prosecdef: false, authenticated_can_activate: false });
+        expect(await tx`select count(*)::int as count from cron.job`).toEqual([{ count: 0 }]);
         const key = randomUUID();
         const formId = randomUUID();
         const assignmentId = randomUUID();
@@ -225,6 +232,7 @@ describe.runIf(
             (select count(*)::int from public.refund_allocation_events where workspace_id=${f.wsA.id} and subscription_id=${ids.subscription}) as allocations,
             (select count(*)::int from public.subscription_obligation_cancellations where workspace_id=${f.wsA.id} and subscription_id=${ids.subscription}) as cancellations
         `).toEqual(financialBefore);
+        expect(await tx`select count(*)::int as count from cron.job`).toEqual([{ count: 0 }]);
         await expect(tx.savepoint(async (sp) => {
           await sp`update public.clients set deactivation_reason='refund' where workspace_id=${f.wsA.id} and id=${ids.client}`;
         })).rejects.toThrow();
