@@ -6,6 +6,12 @@ import { getMessages } from '../../lib/i18n';
 test.describe('client-side shell navigation', () => {
   test.use({ javaScriptEnabled: true });
 
+  test.beforeEach(async ({ context }) => {
+    await context.addCookies([
+      { name: LOCALE_COOKIE, value: 'en', url: origin },
+    ]);
+  });
+
   test('keeps the document and enhanced GlassSurface mounted between destinations', async ({
     page,
   }, testInfo) => {
@@ -15,6 +21,14 @@ test.describe('client-side shell navigation', () => {
     );
     await page.setViewportSize({ width: 1280, height: 800 });
     await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'hardwareConcurrency', {
+        configurable: true,
+        value: 8,
+      });
+      Object.defineProperty(navigator, 'deviceMemory', {
+        configurable: true,
+        value: 8,
+      });
       (
         window as Window & { __shellDocumentMarker?: string }
       ).__shellDocumentMarker = crypto.randomUUID();
