@@ -23,13 +23,15 @@ export default async function NewExercisePage({ searchParams }: Props) {
   if (scope === 'workspace') {
     const result = await authoringWorkspaces();
     if (result.status !== 'ok') notFound();
-    workspaces = result.data;
+    workspaces = actor.role === 'platform_owner'
+      ? result.data
+      : result.data.filter((workspace) => actor.activeWorkspaceIds.includes(workspace.id));
     const requested = typeof params.workspace === 'string' ? params.workspace : '';
     workspaceId = workspaces.some((item) => item.id === requested)
       ? requested
       : actor.role === 'platform_owner'
         ? workspaces[0]?.id ?? null
-        : actor.activeWorkspaceIds.find((id) => workspaces.some((item) => item.id === id)) ?? null;
+      : actor.activeWorkspaceIds.find((id) => workspaces.some((item) => item.id === id)) ?? null;
     if (!workspaceId) notFound();
   }
   return (
