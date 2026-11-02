@@ -145,8 +145,8 @@ describe('Plan Core client delivery projection', () => {
 
     expect(result).toBeNull();
   });
-});
 
   it('omits a plan entirely until its first delivery exists', () => {
     expect(projectClientDelivery({ ...input, deliveries: [] })).toBeNull();
   });
+});
