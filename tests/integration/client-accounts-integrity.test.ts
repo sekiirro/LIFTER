@@ -100,6 +100,7 @@ it('clients: every required field is NOT NULL, generated id/time and pending-onl
       'approval_state',
       'created_at',
       'deactivated_at',
+      'deactivation_reason',
       'date_of_birth',
       'username_normalized',
       'telegram_username',
@@ -107,7 +108,7 @@ it('clients: every required field is NOT NULL, generated id/time and pending-onl
   );
   expect(
     columns
-      .filter((c) => c.attname !== 'deactivated_at')
+      .filter((c) => !['deactivated_at', 'deactivation_reason'].includes(c.attname))
       .filter(
         (c) =>
           ![
