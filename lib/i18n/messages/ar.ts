@@ -394,7 +394,7 @@ export const ar = {
   'registrationApproval.statusDenied': 'صفحة الحالة هذه غير متاحة.',
   'registrationApproval.statusRedirectFallback':
     'لم يكتمل الانتقال التلقائي. يمكنك المتابعة إلى الصفحة الرئيسية.',
-  // DRAFT (F17 T037): template-management copy pending PO review.
+  // APPROVED (S28-PO-2): template-management copy.
   'templates.showcaseTitle': 'إدارة قوالب التمرين',
   'templates.showcaseIntro':
     'معاينة تفاعلية للقوالب العامة وقوالب مساحة العمل ونسخها إلى مسودة.',
@@ -497,7 +497,7 @@ export const ar = {
   'volume.sampleRecovery': 'الاستشفاء',
   // APPROVED (S27-PO-2): rest field label.
   'builder.restHint': 'مدة الراحة (بالثواني)',
-  // DRAFT (F17 T036): remaining workout plan-builder copy pending PO review.
+  // APPROVED (S28-PO-2): workout plan-builder copy.
   'builder.showcaseTitle': 'منشئ برنامج التمرين',
   'builder.showcaseIntro':
     'عينة تفاعلية لبناء الأيام والتمارين والمجموعات دون حفظ أي بيانات.',

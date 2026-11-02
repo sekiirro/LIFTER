@@ -408,7 +408,7 @@ export const en: Record<keyof typeof ar, string> = {
   'registrationApproval.statusDenied': 'This status page is not available.',
   'registrationApproval.statusRedirectFallback':
     'Automatic navigation did not complete. Continue to the home page.',
-  // DRAFT (F17 T037): template-management copy pending PO review.
+  // APPROVED (S28-PO-2): template-management copy.
   'templates.showcaseTitle': 'Workout template management',
   'templates.showcaseIntro':
     'An interactive preview of global and workspace templates and independent draft copies.',
@@ -516,7 +516,7 @@ export const en: Record<keyof typeof ar, string> = {
   'volume.sampleRecovery': 'Recovery',
   // APPROVED (S27-PO-2): rest field label.
   'builder.restHint': 'Rest (seconds)',
-  // DRAFT (F17 T036): remaining workout plan-builder copy pending PO review.
+  // APPROVED (S28-PO-2): workout plan-builder copy.
   'builder.showcaseTitle': 'Workout plan builder',
   'builder.showcaseIntro':
     'An interactive sample for building days, exercises, and sets without saving any data.',
