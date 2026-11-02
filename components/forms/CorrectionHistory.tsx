@@ -5,7 +5,7 @@ import styles from './QuestionFlow.module.css';
 
 export type AnswerHistoryEntry = {
   version: number;
-  createdAt: string;
+  createdAt?: string;
   answers: Readonly<
     Record<string, string | number | boolean | readonly string[]>
   >;
@@ -27,7 +27,7 @@ export function CorrectionHistory({
       ) : (
         <ol>
           {entries.map((entry) => (
-            <li key={`${entry.version}-${entry.createdAt}`}>
+            <li key={`${entry.version}-${entry.createdAt ?? 'revision'}`}>
               <h3>
                 {messages['forms.version']
                   .split('{version}')
@@ -38,9 +38,11 @@ export function CorrectionHistory({
                     </span>
                   ))}
               </h3>
-              <time dateTime={entry.createdAt}>
-                <Bidi dir="ltr">{entry.createdAt}</Bidi>
-              </time>
+              {entry.createdAt && (
+                <time dateTime={entry.createdAt}>
+                  <Bidi dir="ltr">{entry.createdAt}</Bidi>
+                </time>
+              )}
               <dl>
                 {Object.entries(entry.answers).map(([questionId, answer]) => (
                   <div key={questionId}>

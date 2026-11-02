@@ -94,12 +94,21 @@ export async function registered(
       userId: row.auth_user_id as string,
       link,
       rows,
+      email: fields.email,
+      password: fields.password,
     };
   } finally {
     await db.end();
   }
 }
-export type Target = Awaited<ReturnType<typeof registered>>;
+export type Target = {
+  id: string;
+  userId: string;
+  link: string;
+  rows:
+    | readonly { seq: number; amount_minor: string; due_offset_days: number }[]
+    | null;
+};
 export function request(
   f: Context,
   t: Target,

@@ -86,3 +86,51 @@ export async function POST(
     return response({ status: 'unavailable' }, 503);
   }
 }
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ assignmentId: string }> },
+) {
+  if (!requestUsesHttps(request))
+    return response({ status: 'unavailable' }, 400);
+  const { assignmentId } = await params;
+  if (!uuidPattern.test(assignmentId))
+    return response({ status: 'not_found' }, 404);
+  const client = await createSessionClient();
+  if (!client) return response({ status: 'unavailable' }, 503);
+  const { data: authData, error: authError } = await client.auth.getUser();
+  if (authError || !authData.user)
+    return response({ status: 'not_found' }, 404);
+
+  try {
+    const { data, error } = await client.rpc('read_client_form_draft', {
+      p_assignment_id: assignmentId,
+    });
+    if (error || !data || typeof data !== 'object' || Array.isArray(data))
+      return response({ status: 'not_found' }, 404);
+    const result = data as {
+      status?: unknown;
+      revision?: unknown;
+      answers?: unknown;
+    };
+    if (
+      result.status !== 'loaded' ||
+      !Number.isInteger(result.revision) ||
+      !Number.isSafeInteger(result.revision) ||
+      typeof result.answers !== 'object' ||
+      result.answers === null ||
+      Array.isArray(result.answers)
+    )
+      return response({ status: 'not_found' }, 404);
+    return response(
+      {
+        status: 'loaded',
+        revision: result.revision,
+        answers: result.answers,
+      },
+      200,
+    );
+  } catch {
+    return response({ status: 'unavailable' }, 503);
+  }
+}

@@ -94,12 +94,16 @@ describe('T013 submission validation', () => {
       'validateFormSubmission(',
       'skipSubmissionValidation(',
     );
-    expect(() => assertValidatorPresent(bypassed, 'validateFormSubmission(')).toThrow();
+    expect(() =>
+      assertValidatorPresent(bypassed, 'validateFormSubmission('),
+    ).toThrow();
 
     const leaked = correctionRoute.replace(
       "response({ status: 'unavailable' }, 503)",
       'response({ status: error.message }, 503)',
     );
-    expect(() => assertValidatorPresent(leaked, 'validateCorrectionRequest(')).toThrow();
+    expect(() =>
+      assertValidatorPresent(leaked, 'validateCorrectionRequest('),
+    ).toThrow();
   });
 });

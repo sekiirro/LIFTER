@@ -6,6 +6,7 @@ vi.mock('../../lib/supabase/server', () => ({
   createSessionClient: mocks.createSessionClient,
 }));
 
+import { GET as readDraft } from '../../app/api/forms/assignments/[assignmentId]/draft/route';
 import { POST as submit } from '../../app/api/forms/assignments/[assignmentId]/submit/route';
 import { POST as correct } from '../../app/api/forms/assignments/[assignmentId]/corrections/route';
 
@@ -14,8 +15,18 @@ const intentKey = 'aac73907-46f9-4774-9f31-3fc15746f35a';
 const snapshot = {
   questions: [
     { id: 'basic', sectionId: 'basic', type: 'shortText', required: true },
-    { id: 'training', sectionId: 'training', type: 'shortText', required: true },
-    { id: 'nutrition', sectionId: 'nutrition', type: 'shortText', required: true },
+    {
+      id: 'training',
+      sectionId: 'training',
+      type: 'shortText',
+      required: true,
+    },
+    {
+      id: 'nutrition',
+      sectionId: 'nutrition',
+      type: 'shortText',
+      required: true,
+    },
   ],
 };
 const validAnswers = {
@@ -172,5 +183,46 @@ describe('T013 submission and correction HTTP validation', () => {
     );
     expect(await submitResponse.json()).toEqual({ status: 'unavailable' });
     expect(await correctionResponse.json()).toEqual({ status: 'unavailable' });
+  });
+
+  it('loads the revision-paired draft without caching and hides foreign/missing IDs alike', async () => {
+    client.rpc.mockResolvedValue({
+      data: { status: 'loaded', revision: 0, answers: {} },
+      error: null,
+    });
+    const loaded = await readDraft(
+      new NextRequest(
+        `https://lifter.test/api/forms/assignments/${assignmentId}/draft`,
+      ),
+      { params: Promise.resolve({ assignmentId }) },
+    );
+    expect(loaded.status).toBe(200);
+    expect(loaded.headers.get('cache-control')).toContain('no-store');
+    expect(await loaded.json()).toEqual({
+      status: 'loaded',
+      revision: 0,
+      answers: {},
+    });
+
+    client.rpc.mockResolvedValue({
+      data: { status: 'not_found' },
+      error: null,
+    });
+    const foreign = await readDraft(
+      new NextRequest(
+        `https://lifter.test/api/forms/assignments/${assignmentId}/draft`,
+      ),
+      { params: Promise.resolve({ assignmentId }) },
+    );
+    const missingId = '13eba9f4-1551-48ae-bfd2-8c21076533b8';
+    const missing = await readDraft(
+      new NextRequest(
+        `https://lifter.test/api/forms/assignments/${missingId}/draft`,
+      ),
+      { params: Promise.resolve({ assignmentId: missingId }) },
+    );
+    expect(foreign.status).toBe(404);
+    expect(missing.status).toBe(404);
+    expect(await foreign.json()).toEqual(await missing.json());
   });
 });

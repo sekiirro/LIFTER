@@ -160,24 +160,36 @@ it('T013 commits one complete original, revision, audit, and frozen D-03 SLA', a
         await tx`select public.submit_form_assignment(${context.wsA.id},${assignmentId},2,${intentKey}) as result`,
       ).toEqual([{ result: submitted?.result }]);
       const correctionKey = randomUUID();
-      const correctedAnswers = { ...answers, nutrition: 'corrected synthetic nutrition' };
+      const correctedAnswers = {
+        ...answers,
+        nutrition: 'corrected synthetic nutrition',
+      };
       const [corrected] = await tx`
         select public.correct_form_answer(
           ${context.wsA.id},${assignmentId},3,${correctionKey},${tx.json(correctedAnswers)},'synthetic correction'
         ) as result
       `;
-      expect(corrected?.result).toMatchObject({ status: 'corrected', revision: 4, intent_key: correctionKey });
-      expect(await tx`
+      expect(corrected?.result).toMatchObject({
+        status: 'corrected',
+        revision: 4,
+        intent_key: correctionKey,
+      });
+      expect(
+        await tx`
         select public.correct_form_answer(
           ${context.wsA.id},${assignmentId},3,${correctionKey},${tx.json(correctedAnswers)},'synthetic correction'
         ) as result
-      `).toEqual([{ result: corrected?.result }]);
+      `,
+      ).toEqual([{ result: corrected?.result }]);
       const [history] = await tx`
         select public.read_form_answer(${context.wsA.id},${assignmentId},'history') as result
       `;
       expect(history?.result).toHaveLength(2);
       expect(history?.result[0]).toMatchObject({ revision: 3, answers });
-      expect(history?.result[1]).toMatchObject({ revision: 4, answers: correctedAnswers });
+      expect(history?.result[1]).toMatchObject({
+        revision: 4,
+        answers: correctedAnswers,
+      });
       let correctionDeadlineMutationKilled = false;
       const deadlineBeforeMutation = result.deadline_at;
       await expect(
@@ -200,7 +212,10 @@ it('T013 commits one complete original, revision, audit, and frozen D-03 SLA', a
               ${context.wsA.id},${assignmentId},4,${randomUUID()},${sp.json({ ...correctedAnswers, nutrition: 'mutation probe' })},'synthetic mutation'
             ) as result
           `;
-          expect(mutated?.result).toMatchObject({ status: 'corrected', revision: 5 });
+          expect(mutated?.result).toMatchObject({
+            status: 'corrected',
+            revision: 5,
+          });
           await sp`reset role`;
           const [sla] = await sp`
             select deadline_at from app_private.form_submission_slas
@@ -254,11 +269,25 @@ it('T013 concurrent identical submits return one idempotent result and persist o
   const definition = {
     questions: [
       { id: 'basic', sectionId: 'basic', type: 'shortText', required: true },
-      { id: 'training', sectionId: 'training', type: 'shortText', required: true },
-      { id: 'nutrition', sectionId: 'nutrition', type: 'shortText', required: true },
+      {
+        id: 'training',
+        sectionId: 'training',
+        type: 'shortText',
+        required: true,
+      },
+      {
+        id: 'nutrition',
+        sectionId: 'nutrition',
+        type: 'shortText',
+        required: true,
+      },
     ],
   };
-  const answers = { basic: 'ready', training: 'strength', nutrition: 'balanced' };
+  const answers = {
+    basic: 'ready',
+    training: 'strength',
+    nutrition: 'balanced',
+  };
   const clientDb = sql();
   const first = worker(`t013-submit-a-${randomUUID()}`);
   const second = worker(`t013-submit-b-${randomUUID()}`);
@@ -297,7 +326,10 @@ it('T013 concurrent identical submits return one idempotent result and persist o
         `;
         return row?.result;
       });
-    const [resultA, resultB] = await Promise.all([submit(first), submit(second)]);
+    const [resultA, resultB] = await Promise.all([
+      submit(first),
+      submit(second),
+    ]);
     expect(resultA).toMatchObject({ status: 'submitted' });
     expect(resultB).toEqual(resultA);
     expect(
@@ -332,5 +364,7 @@ it('T013 detects removal of submit row locks and the original-submission uniquen
     from pg_constraint
     where conrelid='app_private.form_submissions'::regclass and contype='p'
   `;
-  expect(constraint?.definition).toMatch(/primary key \(workspace_id, assignment_id\)/iu);
+  expect(constraint?.definition).toMatch(
+    /primary key \(workspace_id, assignment_id\)/iu,
+  );
 });

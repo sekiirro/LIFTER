@@ -393,6 +393,8 @@ export async function pendingHttpAccess(
           result.data === false ||
           (Array.isArray(result.data) && result.data.length === 0) ||
           result.data?.status === 'invalid' ||
+          (fn.proname === 'read_client_form_draft' &&
+            result.data?.status === 'not_found') ||
           ([
             'select_intake_form',
             'submit_form_assignment',

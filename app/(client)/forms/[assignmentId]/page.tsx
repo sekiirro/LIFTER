@@ -1,23 +1,33 @@
 import { notFound } from 'next/navigation';
 import { cookies } from 'next/headers';
-import { FormsDemo } from '../../../../components/forms/FormsDemo';
+import { AuthorizedClientForm } from '../../../../components/forms/AuthorizedClientForm';
+import { ClientFormUnavailable } from '../../../../components/forms/ClientFormUnavailable';
+import { loadClientAssignment } from '../../../../lib/forms/client-assignment';
 import { LOCALE_COOKIE, parseLocale } from '../../../../lib/design/preferences';
-import { isShowcaseEnabled } from '../../../../lib/design/showcase';
 
-export default async function ClientFormPreviewPage({
+export const dynamic = 'force-dynamic';
+export const fetchCache = 'force-no-store';
+
+export default async function ClientFormAssignmentPage({
   params,
 }: {
   params: Promise<{ assignmentId: string }>;
 }) {
-  if (!isShowcaseEnabled(process.env)) notFound();
   const [{ assignmentId }, preferences] = await Promise.all([
     params,
     cookies(),
   ]);
+  const locale = parseLocale(preferences.get(LOCALE_COOKIE)?.value);
+  const assignment = await loadClientAssignment(assignmentId);
+  if (assignment.status === 'not_found') notFound();
+  if (assignment.status === 'unavailable')
+    return <ClientFormUnavailable locale={locale} />;
+
   return (
-    <FormsDemo
-      locale={parseLocale(preferences.get(LOCALE_COOKIE)?.value)}
+    <AuthorizedClientForm
       assignmentId={assignmentId}
+      locale={locale}
+      assignment={assignment}
     />
   );
 }
