@@ -5,7 +5,10 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
-const screenshotDirectory = path.join(tmpdir(), 'lifter-s26-f17-builder');
+const screenshotDirectory = path.join(
+  tmpdir(),
+  process.env.LIFTER_SCREENSHOT_DIR ?? 'lifter-s26-f17-builder',
+);
 const baseUrl = 'http://localhost:3417';
 
 const PUSH_DAY_ID = '10000000-0000-4000-8000-000000000001';

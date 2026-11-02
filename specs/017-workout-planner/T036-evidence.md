@@ -108,3 +108,68 @@ builder.showcaseTitle, builder.showcaseIntro, builder.projectionNotice, builder.
 | `remotion-to-hyperframes` | NOT APPLICABLE | No Remotion-to-HyperFrames conversion. |
 
 **Skill/design-system conflicts:** creative-direction, palette, font, token, and motion suggestions from advisory skills were not adopted where they conflict with `DESIGN.md`, approved tokens/components, or the user’s “no invented design decisions” gate. No unresolved design gap remains in this screen; the responsive threshold reuses the existing 40rem convention.
+
+## S27 follow-up — Arabic-Indic digits and approved F17 copy
+
+**Starting head:** `a30f1a0`.
+
+### RED / GREEN
+
+- **RED `1d871c2`:** `tests/unit/workout-builder-digits.test.tsx` failed 3 of 4 tests. The helper import failed because `lib/i18n/format-digits` did not exist (`tests/unit/workout-builder-digits.test.tsx:21`); the Arabic day ordinal rendered Latin `1` instead of `١` (`:34`); and the Arabic rest label rendered `بالثواني` instead of `مدة الراحة (بالثواني)` (`:72`). The English control test passed.
+- **GREEN `a0601a9`:** added `lib/i18n/format-digits.ts` as a byte-identical copy of blob `6740a84a71687458a2692c3575ef4efc399ae1d9` (`git hash-object lib/i18n/format-digits.ts` returned that hash before and after formatting), wired Arabic-Indic display and canonical Latin storage through the builder, and moved `builder.restHint` out of the DRAFT block. Focused suite: 4/4 passed.
+- **Approved copy `5ded736`:** added `tests/fixtures/f17-approved-copy.ts` with the 50 `feature=F17` CSV rows and `tests/unit/f17-approved-copy.test.ts` with 3 assertions. Suite: 3/3 passed.
+
+### Digit handling
+
+| Site | Display | Storage |
+|---|---|---|
+| Day ordinal | `formatDigits(dayIndex + 1, locale)` | position derived from index |
+| Exercise ordinal | `formatDigits(itemIndex + 1, locale)` | position derived from index |
+| Set legend | `formatDigits(setIndex + 1, locale)` inside the localized set label | position derived from index |
+| Reps, min, max | `formatDigits(value, locale)` in `type="text"` inputs with `inputMode="numeric"` | local `normalizeDigits` maps Arabic-Indic digits to Latin before `Number(...)` |
+| Load value | `formatDigits(value, locale)` with `inputMode="decimal"` | `normalizeDigits` before parsing |
+| Rest seconds | `formatDigits(value, locale)` with `inputMode="numeric"` | `normalizeDigits` before parsing |
+| RIR | `formatDigits(value, locale)` with `inputMode="numeric"` | `normalizeDigits` before parsing |
+
+Inputs accept both Arabic-Indic and Latin digits; typed values are stored as canonical Latin numbers. Numeric `min` attributes were removed so browser validation does not reject Arabic-Indic text.
+
+### Copy counts
+
+- **50/50** approved `feature=F17` rows (`volume.*`, `workoutPrint.*`) match the CSV values in both locales. No message values required editing because they already matched the approved text.
+- **1** builder key left the DRAFT set: `builder.restHint` = `مدة الراحة (بالثواني)` / `Rest (seconds)`.
+- **74** remaining `builder.*` keys stay under `DRAFT (F17 T036)` pending PO review.
+
+### Mutation evidence
+
+| Mutation | Injected change | Failure | Restore |
+|---|---|---|---|
+| (a) Bypass display formatting | Rendered the raw day index instead of `formatDigits(dayIndex + 1, locale)` | `tests/unit/workout-builder-digits.test.tsx:34` — expected `<span class="_dayNumber_...">١</span>`, received Latin `1` | Restored from `%TEMP%/WorkoutBuilder.mutation-backup.tsx`; SHA-256 `EF4EEA515EA1E50D6810C3D6A7312CA8923459848C7F0905A1AE8F5B15A257DC`; `git diff` empty |
+| (b) Mark approved copy as DRAFT | `en.ts` `'volume.credit'` → `'DRAFT: Set credit'` | `tests/unit/f17-approved-copy.test.ts:13` (expected `Set credit`) and `:20` (unexpected `DRAFT`) | Restored from `%TEMP%/en.mutation-backup.ts`; SHA-256 `37D56531E18B8E344CF65700CAC25A9BB4B5BA69237420A736F47279BB3F69F7`; `git diff` empty |
+
+### Browser evidence
+
+- **Playwright:** `PLAYWRIGHT_BASE_URL=http://localhost:3417 npx playwright test tests/e2e/workout-builder.spec.ts --reporter=line` — **5 passed**.
+  - `:35` keyboard movement with stable ids.
+  - `:72` duplicate id remapping and authored values.
+  - `:103` cross-day pointer drag with item/set ID preservation.
+  - `:130` new Arabic-Indic display and canonical input test: Arabic ordinals, set legend, reps/min/max/load/rest/RIR display in Arabic-Indic; Arabic-Indic typing of load and rest; switching to English shows canonical Latin `34.5` and `90`.
+  - `:178` bilingual responsive matrix and axe.
+- **Axe:** **0 violations** for AR RTL and EN LTR in light and dark at 390px and 1440px.
+- **Screenshots:** full-page captures saved to `%TEMP%/lifter-s27-f17-digits/` (the suite now reads `LIFTER_SCREENSHOT_DIR`, defaulting to the T036 directory):
+  - `ar-dark-mobile.png`, `ar-dark-desktop.png`
+  - `ar-light-mobile.png`, `ar-light-desktop.png`
+  - `en-dark-mobile.png`, `en-dark-desktop.png`
+  - `en-light-mobile.png`, `en-light-desktop.png`
+
+### Final gates
+
+| Gate | Result |
+|---|---|
+| `npm run test` | **PASS** — 124 files, 1,888 tests |
+| `npm run lint` | **PASS** — 0 warnings |
+| `npm run typecheck` | **PASS** |
+| `npm run format:check` | **PASS** |
+| `npm run build` | **PASS** |
+| `npm run check:secrets` | **PASS** |
+| `npm run size` | **PASS** — web worker 8,034.83 KiB uncompressed (12.26% of 65,536 KiB); cron 6.05 KiB |
+| `git diff --check` | **PASS** — clean |
