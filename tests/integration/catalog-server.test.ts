@@ -150,6 +150,108 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
     expect(restored.error).toBeNull();
   });
 
+  it('creates a workspace variation through the real RPC with an explicit null version', async () => {
+    const action = server(workspaces.po);
+    const exercise = await action.createExercise({
+      operationKey: fixtureKey(),
+      request: {
+        name_ar: `اختبار ${randomUUID()}`,
+        name_en: `Variation create ${randomUUID()}`,
+        primary_muscle_code: 'chest',
+        secondary_muscle_codes: [],
+        equipment_codes: ['dumbbell'],
+        defaults: {},
+      },
+    });
+    expect(exercise.status).toBe('ok');
+    if (exercise.status !== 'ok') return;
+    const result = await action.writeVariation({
+      operationKey: fixtureKey(),
+      workspaceId: workspaces.wsA.id,
+      id: (exercise.data as { exercise_id: string }).exercise_id,
+      request: { video_url: 'https://youtu.be/abcdefghijk' },
+    });
+    expect(result.status).toBe('ok');
+  });
+
+  it('searches exercises created through the session wall by stored taxonomy payload keys', async () => {
+    const action = server(workspaces.po);
+    const created = await action.createExercise({
+      operationKey: fixtureKey(),
+      request: {
+        name_ar: `Ø§Ø®ØªØ¨Ø§Ø± ${randomUUID()}`,
+        name_en: `Filter payload ${randomUUID()}`,
+        primary_muscle_code: 'chest',
+        secondary_muscle_codes: [],
+        equipment_codes: ['barbell'],
+        defaults: {},
+      },
+    });
+    expect(created.status).toBe('ok');
+    if (created.status !== 'ok') return;
+    const exerciseId = (created.data as { exercise_id: string }).exercise_id;
+    const muscle = await action.search({
+      kind: 'exercise',
+      query: '',
+      filters: { primary_muscle_code: 'chest' },
+    });
+    const equipment = await action.search({
+      kind: 'exercise',
+      query: '',
+      filters: { equipment_codes: ['barbell'] },
+    });
+    expect(muscle.status).toBe('ok');
+    expect(equipment.status).toBe('ok');
+    if (muscle.status === 'ok' && equipment.status === 'ok') {
+      expect(
+        (muscle.data as Array<{ result_id: string }>).some(
+          (row) => row.result_id === exerciseId,
+        ),
+      ).toBe(true);
+      expect(
+        (equipment.data as Array<{ result_id: string }>).some(
+          (row) => row.result_id === exerciseId,
+        ),
+      ).toBe(true);
+    }
+
+    const workspaceAction = server(workspaces.trainerA);
+    const workspaceCreated = await workspaceAction.writeWorkspaceExercise({
+      operationKey: fixtureKey(),
+      workspaceId: workspaces.wsA.id,
+      request: {
+        name_ar: `Ø§Ø®ØªØ¨Ø§Ø± ${randomUUID()}`,
+        name_en: `Workspace filter payload ${randomUUID()}`,
+        primary_muscle_code: 'chest',
+        secondary_muscle_codes: [],
+        equipment_codes: ['barbell'],
+        defaults: {},
+      },
+    });
+    expect(workspaceCreated.status).toBe('ok');
+    if (workspaceCreated.status === 'ok') {
+      const workspaceExerciseId = (
+        workspaceCreated.data as { exercise_id: string }
+      ).exercise_id;
+      const workspaceResult = await workspaceAction.search({
+        kind: 'workspace_exercise',
+        query: '',
+        workspaceId: workspaces.wsA.id,
+        filters: {
+          primary_muscle_code: 'chest',
+          equipment_codes: ['barbell'],
+        },
+      });
+      expect(workspaceResult.status).toBe('ok');
+      if (workspaceResult.status === 'ok')
+        expect(
+          (workspaceResult.data as Array<{ result_id: string }>).some(
+            (row) => row.result_id === workspaceExerciseId,
+          ),
+        ).toBe(true);
+    }
+  });
+
   it('evaluates creator preflight through authenticated session RPCs for all six role states', async () => {
     const trainer = workspaces.trainerA;
     const food = await server(trainer).createFood({

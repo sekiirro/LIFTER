@@ -281,6 +281,10 @@ test('client status updates after PO rejection and reconsideration without signi
     await expect(clientPage.locator('form')).toHaveCount(0);
 
     await staffPage.goto(reviewUrl);
+    await expect(staffPage.getByTestId('approval-review')).toHaveAttribute(
+      'data-hydrated',
+      'true',
+    );
     const reconsiderDate = staffPage.locator('input[type="date"]');
     const todayInCairo = new Intl.DateTimeFormat('sv-SE', {
       timeZone: 'Africa/Cairo',

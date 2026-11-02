@@ -19,7 +19,7 @@ const tables = [
   'foods',
   'food_versions',
   'food_serving_units',
-  'food_alternatives',
+  'food_default_alternatives',
   'workspace_exercises',
   'workspace_exercise_versions',
   'exercise_variations',

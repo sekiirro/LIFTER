@@ -89,4 +89,3 @@ backup/
 backups/
 *.age
 age-identity*.txt
-/supabase-stack-c/

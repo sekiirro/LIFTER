@@ -159,6 +159,13 @@ describe('global exercise create and version RPCs', () => {
       version: 2,
     });
     await expect(
+      asActor(
+        poId,
+        (tx) =>
+          tx`select public.catalog_version_exercise(${result.exercise_id}, null, ${randomUUID()}, ${tx.json(update)})`,
+      ),
+    ).rejects.toMatchObject({ code: '40001' });
+    await expect(
       db`select count(*)::int as versions from public.exercise_versions where exercise_id = ${result.exercise_id}`,
     ).resolves.toEqual([{ versions: 2 }]);
   });

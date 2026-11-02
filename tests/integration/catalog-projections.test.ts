@@ -58,6 +58,34 @@ async function withFoodReadFixture<T>(
 }
 
 describe('global food provenance privacy projections', () => {
+  it('defaults food detail to the current version and preserves explicit history reads', async () => {
+    const result = await withFoodReadFixture(po.userId, async (tx, foodId) => {
+      await tx`select set_config('role', 'postgres', true)`;
+      await tx`insert into public.food_versions(
+        food_id, version, payload, created_by, name_en, basis, product_identity_norm,
+        preparation_identity_norm, weighing_state, kcal, protein_g, carbohydrate_g, fat_g
+      ) values (
+        ${foodId}, 2, ${tx.json({ name_en: 'Current projection', kcal: 222 })}, ${po.userId},
+        'Current projection', 'g', 'projection-current', 'plain', 'not_applicable', 222, 5, 20, 1
+      )`;
+      await tx`insert into public.food_serving_units(food_id, food_version, basis, unit_key, label_en, basis_qty)
+        values (${foodId}, 2, 'g', 'reference', '100 g', 100)`;
+      await tx`update public.foods set current_version = 2 where id = ${foodId}`;
+      await tx`select set_config('role', 'authenticated', true)`;
+      const current =
+        await tx`select version, name_en from public.catalog_food_detail(${foodId})`;
+      const historical =
+        await tx`select version, name_en from public.catalog_food_detail(${foodId}, 1)`;
+      return { current, historical };
+    });
+    expect(result.current).toEqual([
+      { version: 2, name_en: 'Current projection' },
+    ]);
+    expect(result.historical).toEqual([
+      { version: 1, name_en: 'Privacy catalog food' },
+    ]);
+  });
+
   it('global_food_provenance_masking_non_po', async () => {
     const projections = await withFoodReadFixture(
       trainer.userId,

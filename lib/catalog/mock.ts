@@ -6,30 +6,30 @@ import { normalizeExerciseInput, normalizeFoodInput } from './schemas';
 const exerciseSeeds = [
   {
     names: { ar: 'ضغط الصدر بالبار', en: 'Barbell Bench Press' },
-    primaryMuscle: 'Chest',
-    equipment: 'Barbell',
+    primaryMuscle: 'chest',
+    equipment: 'barbell',
   },
   {
     names: { ar: 'سحب أمامي', en: 'Lat Pulldown' },
-    primaryMuscle: 'Lats',
-    equipment: 'Cable',
+    primaryMuscle: 'lats',
+    equipment: 'cable',
   },
   {
     names: { ar: 'تمرين الضغط', en: 'Push-Up' },
-    primaryMuscle: 'Chest',
-    equipment: 'Bodyweight',
+    primaryMuscle: 'chest',
+    equipment: 'bodyweight',
   },
   {
     names: { ar: 'تمرين مؤرشف', en: 'Archived Curl' },
-    primaryMuscle: 'Biceps',
-    equipment: 'Dumbbell',
+    primaryMuscle: 'biceps',
+    equipment: 'dumbbell',
     lifecycleState: 'removed',
   },
   {
     names: { ar: 'رفعة مؤرشفة', en: 'Archived Squat' },
-    primaryMuscle: 'Quads',
-    equipment: 'Barbell',
-    lifecycleState: 'superseded',
+    primaryMuscle: 'quads',
+    equipment: 'barbell',
+    lifecycleState: 'merged',
   },
 ];
 
@@ -115,9 +115,9 @@ export const mockExerciseAlternatives = [
 
 export const mockExerciseEditorFixture = normalizeExerciseInput({
   names: { ar: 'ضغط الصدر بالبار', en: 'Barbell Bench Press' },
-  primaryMuscle: 'Chest',
-  secondaryMuscles: ['Triceps', 'Front Delts'],
-  equipment: 'Barbell',
+  primaryMuscle: 'chest',
+  secondaryMuscles: ['triceps', 'front_delts'],
+  equipment: 'barbell',
   defaults: {
     warmupSets: 2,
     workingSets: 4,
@@ -130,9 +130,9 @@ export const mockExerciseEditorFixture = normalizeExerciseInput({
 
 export const mockExerciseEditorRangeFixture = normalizeExerciseInput({
   names: { ar: 'ضغط الدمبل المائل', en: 'Incline Dumbbell Press' },
-  primaryMuscle: 'Chest',
-  secondaryMuscles: ['Front Delts', 'Triceps'],
-  equipment: 'Dumbbell',
+  primaryMuscle: 'chest',
+  secondaryMuscles: ['front_delts', 'triceps'],
+  equipment: 'dumbbell',
   defaults: {
     warmupSets: 1,
     workingSets: 3,

@@ -1,0 +1,48 @@
+project_id = "lifter-stack-c"
+
+[api]
+enabled = true
+port = 35421
+schemas = ["public", "graphql_public"]
+extra_search_path = ["public", "extensions"]
+max_rows = 1000
+
+[db]
+port = 35422
+shadow_port = 35420
+
+[storage]
+enabled = true
+
+[studio]
+enabled = true
+port = 35423
+
+[inbucket]
+enabled = true
+port = 35424
+smtp_port = 35425
+pop3_port = 35426
+
+[analytics]
+enabled = false
+port = 35427
+
+[edge_runtime]
+enabled = true
+inspector_port = 35428
+
+[db.pooler]
+enabled = false
+port = 35429
+
+[auth]
+enable_signup = false
+minimum_password_length = 8
+
+[auth.hook.custom_access_token]
+enabled = true
+uri = "pg-functions://postgres/public/custom_access_token_hook"
+
+[auth.email]
+otp_expiry = 3600

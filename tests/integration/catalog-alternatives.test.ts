@@ -48,7 +48,7 @@ async function addAlternative(
   sourcePortion = 100,
   alternativePortion = 100,
 ) {
-  await tx`insert into public.food_alternatives (
+  await tx`insert into public.food_default_alternatives (
       food_id, food_version, position, source_basis, source_portion,
       alternative_food_id, alternative_version, alternative_basis, alternative_portion
     ) values (
@@ -94,7 +94,7 @@ describe('curated food alternatives', () => {
       db.begin(async (tx) => {
         const source = await createFood(tx, 'g');
         const target = await createFood(tx, 'ml');
-        await tx`insert into public.food_alternatives (
+        await tx`insert into public.food_default_alternatives (
           food_id, food_version, position, source_basis, source_portion,
           alternative_food_id, alternative_version, alternative_basis, alternative_portion
         ) values (${source}, 1, 1, 'g', 100, ${target}, 1, 'g', 100)`;
@@ -116,15 +116,15 @@ describe('curated food alternatives', () => {
         const target = await createFood(tx);
         await addAlternative(tx, source, target, 1, 100, 150);
         const before =
-          await tx`select * from public.food_alternatives where food_id = ${source}`;
+          await tx`select * from public.food_default_alternatives where food_id = ${source}`;
         await expect(
           tx.savepoint(async (sp) => {
             await sp`select set_config('role', 'authenticated', true)`;
-            await sp`update public.food_alternatives set alternative_portion = 200 where food_id = ${source}`;
+            await sp`update public.food_default_alternatives set alternative_portion = 200 where food_id = ${source}`;
           }),
         ).rejects.toMatchObject({ code: '42501' });
         const after =
-          await tx`select * from public.food_alternatives where food_id = ${source}`;
+          await tx`select * from public.food_default_alternatives where food_id = ${source}`;
         expect(after).toEqual(before);
         throw new Error(rollbackMarker);
       });

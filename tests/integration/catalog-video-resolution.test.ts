@@ -77,6 +77,18 @@ describe('dynamic workspace video resolution', () => {
             video_url: 'https://youtu.be/abcdefghijk',
           },
         ]);
+        await tx`select set_config('role', 'postgres', true)`;
+        await tx`update public.exercises set lifecycle_state = 'removed' where id = ${exerciseId}`;
+        await tx`select set_config('role', 'authenticated', true)`;
+        expect(
+          await tx`select * from public.catalog_resolve_exercise_video(${exerciseId}, ${workspaceId})`,
+        ).toEqual([
+          {
+            exercise_id: exerciseId,
+            workspace_id: workspaceId,
+            video_url: 'https://youtu.be/abcdefghijk',
+          },
+        ]);
         expect(
           await tx`select * from public.catalog_resolve_exercise_video(${unsafeExerciseId}, ${workspaceId})`,
         ).toEqual([]);

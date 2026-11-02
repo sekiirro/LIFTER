@@ -12,48 +12,48 @@ export class CatalogValidationError extends Error {
 }
 
 export const MUSCLE_GROUP_CODES = [
-  'Chest',
-  'Lats',
-  'Upper Back',
-  'Traps',
-  'Front Delts',
-  'Side Delts',
-  'Rear Delts',
-  'Biceps',
-  'Triceps',
-  'Forearms',
-  'Abs',
-  'Spinal Erectors',
-  'Quads',
-  'Hamstrings',
-  'Glutes',
-  'Adductors',
-  'Abductors',
-  'Calves',
+  'chest',
+  'lats',
+  'upper_back',
+  'traps',
+  'front_delts',
+  'side_delts',
+  'rear_delts',
+  'biceps',
+  'triceps',
+  'forearms',
+  'abs',
+  'spinal_erectors',
+  'quads',
+  'hamstrings',
+  'glutes',
+  'adductors',
+  'abductors',
+  'calves',
 ] as const;
 
 export const EQUIPMENT_CODES = [
-  'Barbell',
-  'Dumbbell',
-  'Cable',
-  'Machine',
-  'Smith Machine',
-  'Bodyweight',
-  'Kettlebell',
-  'Resistance Band',
-  'Suspension Trainer',
-  'Other',
+  'barbell',
+  'dumbbell',
+  'cable',
+  'machine',
+  'smith_machine',
+  'bodyweight',
+  'kettlebell',
+  'resistance_band',
+  'suspension_trainer',
+  'other',
 ] as const;
 
 export type MuscleGroupCode = (typeof MUSCLE_GROUP_CODES)[number];
 export type EquipmentCode = (typeof EQUIPMENT_CODES)[number];
 
-export type CatalogLifecycleState = 'active' | 'removed' | 'superseded';
+export type CatalogLifecycleState = 'active' | 'removed' | 'merged';
 
 export const CATALOG_LIFECYCLE_STATES: readonly CatalogLifecycleState[] = [
   'active',
   'removed',
-  'superseded',
+  'merged',
 ];
 
 export type FoodBasis = 'g' | 'ml';

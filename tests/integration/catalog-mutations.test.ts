@@ -894,13 +894,13 @@ describe('F16 mutation probes', () => {
       try {
         await db.begin(async (tx) => {
           await tx.unsafe(
-            `alter table public.food_alternatives drop constraint ${probe.constraint}`,
+            `alter table public.food_default_alternatives drop constraint ${probe.constraint}`,
           );
           const source = await insertMutationFood(tx, po.userId);
           if (probe.constraint === 'food_alternatives_position_check') {
             for (const position of [1, 2, 3]) {
               const existingTarget = await insertMutationFood(tx, po.userId);
-              await tx`insert into public.food_alternatives(
+              await tx`insert into public.food_default_alternatives(
                 food_id, food_version, position, source_basis, source_portion,
                 alternative_food_id, alternative_version, alternative_basis, alternative_portion
               ) values (
@@ -913,7 +913,7 @@ describe('F16 mutation probes', () => {
           await expectMutationToBreak(
             async () =>
               expect(
-                tx`insert into public.food_alternatives(
+                tx`insert into public.food_default_alternatives(
                   food_id, food_version, position, source_basis, source_portion,
                   alternative_food_id, alternative_version, alternative_basis, alternative_portion
                 ) values (
@@ -926,7 +926,7 @@ describe('F16 mutation probes', () => {
           );
           if (probe.constraint === 'food_alternatives_position_check') {
             const [count] = await tx`
-              select count(*)::int as alternatives from public.food_alternatives where food_id = ${source}
+              select count(*)::int as alternatives from public.food_default_alternatives where food_id = ${source}
             `;
             expect(count?.alternatives).toBe(4);
           }
@@ -935,6 +935,153 @@ describe('F16 mutation probes', () => {
       } catch (error) {
         if ((error as Error).message !== marker) throw error;
       }
+    }
+  });
+
+  it('F16 follow-up: max-three, atomicity, and self-reference alternative guards fail when mutated', async () => {
+    const request = (label: string) => ({
+      name_en: label,
+      basis: 'g',
+      product_identity_norm: `mutation:${randomUUID()}`,
+      preparation_identity_norm: 'plain',
+      weighing_state: 'not_applicable',
+      kcal: 100,
+      protein_g: 10,
+      carbohydrate_g: 10,
+      fat_g: 2,
+      fiber_g: null,
+      servings: [{ unit_key: 'reference', label_en: '100 g', basis_qty: 100 }],
+    });
+    const alternative = (foodId: string) => ({
+      alternative_food_id: foodId,
+      alternative_version: 1,
+      source_portion: 100,
+      alternative_portion: 100,
+    });
+
+    const maxMarker = 'rollback_food_alternative_max_mutation';
+    try {
+      await db.begin(async (tx) => {
+        const [definition] = await tx`
+          select pg_catalog.pg_get_functiondef(
+            'app_private.apply_food_default_alternatives(uuid,integer,jsonb)'::regprocedure
+          ) as body`;
+        const mutated = String(definition?.body).replace(
+          /if\s+requested_count\s*>\s*3\s+then\s+raise exception 'catalog_food_alternatives_invalid' using errcode\s*=\s*'22023';\s+end if;/i,
+          '',
+        );
+        expect(mutated).not.toBe(definition?.body);
+        await tx.unsafe(mutated);
+        await tx`alter table public.food_default_alternatives
+          drop constraint food_alternatives_position_check`;
+        const targets = await Promise.all(
+          [0, 1, 2, 3].map(() => insertMutationFood(tx, po.userId)),
+        );
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: po.userId, role: 'authenticated' })}, true)`;
+        const created = await tx`select public.catalog_create_food(
+          ${randomUUID()}, null, ${tx.json(request(`Max mutation ${randomUUID()}`))},
+          ${tx.json(targets.map(alternative))}
+        )`;
+        const sourceId = (
+          created[0]?.catalog_create_food as { food_id: string }
+        ).food_id;
+        await expectMutationToBreak(
+          async () => expect(created[0]).toBeUndefined(),
+          'dropping the max-three table check must break the RPC rejection assertion',
+          true,
+        );
+        const rows =
+          await tx`select count(*)::int as n from public.food_default_alternatives
+          where food_id = ${sourceId}`;
+        expect(rows[0]?.n).toBe(4);
+        throw new Error(maxMarker);
+      });
+    } catch (error) {
+      expect((error as Error).message).toBe(maxMarker);
+    }
+
+    const atomicMarker = 'rollback_food_alternative_atomicity_mutation';
+    try {
+      await db.begin(async (tx) => {
+        const source = await insertMutationFood(tx, po.userId);
+        const target = await insertMutationFood(tx, po.userId);
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: po.userId, role: 'authenticated' })}, true)`;
+        const versionRequest = request(`Non-atomic version ${randomUUID()}`);
+        await tx`select public.catalog_version_food(
+          ${source}, 1, ${randomUUID()}, ${tx.json(versionRequest)}
+        )`;
+        await tx`select set_config('role', 'postgres', true)`;
+        await expect(
+          tx.savepoint(
+            async (sp) =>
+              sp`select app_private.apply_food_default_alternatives(
+              ${source}, 2, ${sp.json([alternative(target), { ...alternative(source), alternative_version: 2 }])}
+            )`,
+          ),
+        ).rejects.toMatchObject({ code: '22023' });
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx`select count(*)::int as n from public.food_versions where food_id = ${source} and version = 2`,
+            ).resolves.toEqual([{ n: 0 }]),
+          'writing alternatives after a committed version must break the all-or-nothing assertion',
+          true,
+        );
+        await expect(
+          tx`select count(*)::int as n from public.food_versions where food_id = ${source} and version = 2`,
+        ).resolves.toEqual([{ n: 1 }]);
+        throw new Error(atomicMarker);
+      });
+    } catch (error) {
+      expect((error as Error).message).toBe(atomicMarker);
+    }
+
+    const selfMarker = 'rollback_food_alternative_self_mutation';
+    try {
+      await db.begin(async (tx) => {
+        const source = await insertMutationFood(tx, po.userId);
+        const [definition] = await tx`
+          select pg_catalog.pg_get_functiondef(
+            'app_private.apply_food_default_alternatives(uuid,integer,jsonb)'::regprocedure
+          ) as body`;
+        const mutated = String(definition?.body).replace(
+          /if\s+alternative_id\s*=\s*p_food_id\s+or\s+pair_key\s*=\s*any\s*\(\s*seen_pairs\s*\)\s*then/i,
+          'if pair_key = any(seen_pairs) then',
+        );
+        expect(mutated).not.toBe(definition?.body);
+        await tx.unsafe(mutated);
+        const [constraint] = await tx`
+          select conname from pg_catalog.pg_constraint
+          where conrelid = 'public.food_default_alternatives'::regclass
+            and contype = 'c'
+            and conname = 'food_alternatives_check'`;
+        expect(constraint?.conname).toBeTruthy();
+        await tx.unsafe(
+          `alter table public.food_default_alternatives drop constraint ${String(constraint?.conname)}`,
+        );
+        await tx`select set_config('role', 'authenticated', true)`;
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: po.userId, role: 'authenticated' })}, true)`;
+        await expectMutationToBreak(
+          async () =>
+            expect(
+              tx`select public.catalog_version_food(
+                ${source}, 1, ${randomUUID()}, ${tx.json(request(`Self mutation ${randomUUID()}`))},
+                ${tx.json([{ ...alternative(source), alternative_version: 2 }])}
+              )`,
+            ).rejects.toMatchObject({ code: '22023' }),
+          'skipping the self-reference guard must break the RPC rejection assertion',
+          true,
+        );
+        await expect(
+          tx`select count(*)::int as n from public.food_default_alternatives
+            where food_id = ${source} and food_version = 2 and alternative_food_id = ${source}`,
+        ).resolves.toEqual([{ n: 1 }]);
+        throw new Error(selfMarker);
+      });
+    } catch (error) {
+      expect((error as Error).message).toBe(selfMarker);
     }
   });
 
@@ -1033,7 +1180,7 @@ describe('F16 mutation probes', () => {
           throw new Error('duplicate candidate function definition missing');
         stage = 'basis mutation';
         await tx.unsafe(
-          definition.sql.replace('and v.basis = p_basis', 'and true'),
+          definition.sql.replaceAll('and v.basis = p_basis', 'and true'),
         );
         await tx`select set_config('role', 'authenticated', true)`;
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerA.userId, role: 'authenticated' })}, true)`;
@@ -1046,7 +1193,14 @@ describe('F16 mutation probes', () => {
         }, 'removing basis equality must break the near-candidate identity assertion');
         stage = 'threshold mutation';
         await tx`select set_config('role', 'postgres', true)`;
-        await tx.unsafe(definition.sql.replaceAll('>= 0.90', '>= 0.50'));
+        await tx.unsafe(
+          definition.sql
+            .replaceAll('>= 0.90', '>= 0.50')
+            .replace(
+              'SET "pg_trgm.similarity_threshold" TO \'0.90\'',
+              'SET "pg_trgm.similarity_threshold" TO \'0.50\'',
+            ),
+        );
         await tx`select set_config('role', 'authenticated', true)`;
         const score = await tx`select extensions.similarity(
           app_private.normalize_ar_en_v1(${name}), app_private.normalize_ar_en_v1(${midSimilarityName})

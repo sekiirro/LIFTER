@@ -2,7 +2,7 @@
 
 Historical review record. It preserves earlier proposals and deliberation only; the approved S20 decisions in docs/04-changes-and-questions.md supersede conflicting statements. Do not treat old pending proposals or pair-delivery designs below as current requirements.
 
-## Round 1 ? review record
+## Round 1 — review record
 
 | # | Sev | Verdict | Reasoning / integration |
 |---|---|---|---|
@@ -15,19 +15,20 @@ Historical review record. It preserves earlier proposals and deliberation only; 
 | R7 | major | ACCEPTED | D16-1 split into 1a/1b/1c; FR-002/009 marked PENDING with PROPOSED defaults. |
 | R8 | major | ACCEPTED | D16-5 = NEEDS SOURCE CONFIRMATION, release-blocking; decimal-string transport at fixed scales; F18 engine converts (apply in F18 v1). |
 | R9 | major | ACCEPTED | FR-013 audit allowlist, workspace_id NULL for global, search not audited, two-segment action names. |
-
-## Post-debate canonical reconciliation
-
-The accepted R7 key reservation shape above is historical and is superseded by the canonical F16 FR-008 in the spec: exact keys include language, normalized name, basis, canonical product identity, preparation identity and weighing state. The canonical spec and plan, under DR-03 and the S20 PO decisions, govern implementation.
 | R10 | major | ACCEPTED as PROPOSAL | FR-021 + D16-10; production gate, no moderation queue (PRD-05/PRD-12 preserved). |
 | R11 | major | ACCEPTED | SC-005 split Worker CPU vs DB/API SLO (D16-11) + EXPLAIN assertion. |
 | R12 | major | ACCEPTED | RED list extended verbatim in substance. |
 | R13 | major | ACCEPTED | US4 test now uses frozen snapshot fixtures; rendering moved to F17/F18. |
 | R14 | minor | ACCEPTED | `normalize_ar_en_v1`, NFC + fold table, cross-collation tests. |
 
+## Post-debate canonical reconciliation
+
+The accepted R7 key reservation shape above is historical and is superseded by the canonical F16 FR-008 in the spec: exact keys include language, normalized name, basis, canonical product identity, preparation identity and weighing state. The canonical spec and plan, under DR-03 and the S20 PO decisions, govern implementation.
+
+
 PO items added/reworded: D16-1a/b/c, D16-5, D16-7, D16-9, D16-10, D16-11. Rejected: none.
 
-## Round 2 ? review record
+## Round 2 — review record
 
 | # | Sev | Verdict | Reasoning / integration |
 |---|---|---|---|
@@ -43,7 +44,7 @@ PO items added/reworded: D16-1a/b/c, D16-5, D16-7, D16-9, D16-10, D16-11. Reject
 
 PO list changes: D16-11 is the engineering-owned p95 <= 300 ms target, not a PO decision; D16-10 owner = PO (proposed).
 
-## Round 3 ? review record
+## Round 3 — review record
 
 | # | Sev | Verdict | Reasoning / integration |
 |---|---|---|---|

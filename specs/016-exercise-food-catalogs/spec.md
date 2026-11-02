@@ -1,7 +1,7 @@
 # Feature Specification: F16 Exercise & Food Catalogs
 
 **Feature Branch**: `016-exercise-food-catalogs`
-**Status**: PO-approved specification; not implemented (review history in debate.md)
+**Status**: PO-approved specification; database and server implementation in PR #34; UI tasks T023/T029/T030/T033/T036 remain in the follow-on PR (review history in debate.md)
 **Phase**: P3 Catalogs + planners (roadmap), first P3 feature
 **Input**: PRD-04 (canonical global exercise library, workspace variations), PRD-05 (global food database, validation, duplicate detection, no moderation queue), PRD-01 (PO global shared exercise/food governance), Constitution V (catalog entries are immutable versions), architecture "Catalogs: foods/exercises are versioned; trainers add globally with duplicate detection; edit/merge rights per approved D16 decisions".
 

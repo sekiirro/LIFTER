@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import postgres from 'postgres';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, afterEach, beforeAll, describe, expect, it } from 'vitest';
 import { sql, twoWorkspaceFixture } from './harness';
 
 const db = sql();
@@ -12,6 +12,7 @@ let po: Awaited<ReturnType<typeof twoWorkspaceFixture>>['po'];
 let trainerA: Awaited<ReturnType<typeof twoWorkspaceFixture>>['trainerA'];
 let trainerB: Awaited<ReturnType<typeof twoWorkspaceFixture>>['trainerB'];
 let wsA: string;
+let wsB: string;
 
 async function asActor<T>(
   actorId: string,
@@ -30,9 +31,21 @@ beforeAll(async () => {
   trainerA = fixture.trainerA;
   trainerB = fixture.trainerB;
   wsA = fixture.wsA.id;
+  wsB = fixture.wsB.id;
 });
 
 afterAll(async () => Promise.all([db.end(), concurrentDb.end()]));
+
+afterEach(async () => {
+  await Promise.all(
+    [po, trainerA, trainerB].map(
+      ({ userId }) =>
+        db`update public.catalog_addition_limits
+        set created_at = statement_timestamp() - interval '2 days'
+        where creator_user_id = ${userId}`,
+    ),
+  );
+});
 
 function foodRequest(name: string, kcal = 130, confirmNearMatch = false) {
   return {
@@ -57,12 +70,26 @@ async function createFood(actorId: string, name: string) {
   const response = await asActor(
     actorId,
     (tx) =>
-      tx`select public.catalog_create_food(${key}, ${actorId === po.userId ? null : wsA}, ${tx.json(foodRequest(name))})`,
+      tx`select public.catalog_create_food(${key}, ${actorId === po.userId ? null : actorId === trainerB.userId ? wsB : wsA}, ${tx.json(foodRequest(name))})`,
   );
   return response[0]?.catalog_create_food as {
     food_id: string;
     version: number;
     warnings: string[];
+  };
+}
+
+function foodAlternative(
+  foodId: string,
+  sourcePortion = 100,
+  alternativePortion = 100,
+  version = 1,
+) {
+  return {
+    alternative_food_id: foodId,
+    alternative_version: version,
+    source_portion: sourcePortion,
+    alternative_portion: alternativePortion,
   };
 }
 
@@ -224,5 +251,315 @@ describe('global food create and version RPCs', () => {
     await expect(
       db`select count(*)::int as versions from public.food_versions where food_id = ${created.food_id}`,
     ).resolves.toEqual([{ versions: 2 }]);
+  });
+
+  it('creates immutable serving-equivalent food defaults and binds replay to them', async () => {
+    const targetA = await createFood(
+      trainerA.userId,
+      `Alternative A ${randomUUID()}`,
+    );
+    const targetB = await createFood(
+      trainerA.userId,
+      `Alternative B ${randomUUID()}`,
+    );
+    const name = `Defaults source ${randomUUID()}`;
+    const request = foodRequest(name);
+    const alternatives = [foodAlternative(targetA.food_id, 100, 100)];
+    const key = randomUUID();
+    const create = async (items: ReturnType<typeof foodAlternative>[]) =>
+      asActor(
+        trainerA.userId,
+        (tx) =>
+          tx`select public.catalog_create_food(
+          ${key}, ${wsA}, ${tx.json(request)}, ${tx.json(items)}
+        )`,
+      );
+    const first = await create(alternatives);
+    const created = first[0]?.catalog_create_food as {
+      food_id: string;
+      version: number;
+    };
+    expect(created.version).toBe(1);
+    await expect(create(alternatives)).resolves.toEqual(first);
+    await expect(
+      create([foodAlternative(targetB.food_id)]),
+    ).rejects.toMatchObject({
+      code: '23505',
+      message: 'operation_key_request_conflict',
+    });
+    await expect(
+      db`select food_id, food_version, position, alternative_food_id, alternative_version,
+        source_portion, alternative_portion
+        from public.food_default_alternatives where food_id = ${created.food_id}`,
+    ).resolves.toEqual([
+      {
+        food_id: created.food_id,
+        food_version: 1,
+        position: 1,
+        alternative_food_id: targetA.food_id,
+        alternative_version: 1,
+        source_portion: '100.000',
+        alternative_portion: '100.000',
+      },
+    ]);
+  });
+
+  it('versions own a separate immutable alternative list and replay once', async () => {
+    const source = await createFood(
+      po.userId,
+      `Version defaults ${randomUUID()}`,
+    );
+    const oldTarget = await createFood(
+      po.userId,
+      `Old alternative ${randomUUID()}`,
+    );
+    const newTarget = await createFood(
+      po.userId,
+      `New alternative ${randomUUID()}`,
+    );
+    const versionKey = randomUUID();
+    const request = foodRequest(`Version defaults updated ${randomUUID()}`);
+    const alternatives = [foodAlternative(newTarget.food_id, 100, 100)];
+    const version = async () =>
+      asActor(
+        po.userId,
+        (tx) =>
+          tx`select public.catalog_version_food(
+          ${source.food_id}, 1, ${versionKey}, ${tx.json(request)}, ${tx.json(alternatives)}
+        )`,
+      );
+    const first = await version();
+    expect(
+      (first[0]?.catalog_version_food as { version: number }).version,
+    ).toBe(2);
+    await expect(version()).resolves.toEqual(first);
+    await expect(
+      asActor(
+        po.userId,
+        (tx) =>
+          tx`select public.catalog_version_food(
+          ${source.food_id}, 1, ${versionKey}, ${tx.json(request)},
+          ${tx.json([foodAlternative(oldTarget.food_id)])}
+        )`,
+      ),
+    ).rejects.toMatchObject({
+      code: '23505',
+      message: 'operation_key_request_conflict',
+    });
+    await expect(
+      db`select food_version, alternative_food_id from public.food_default_alternatives
+        where food_id = ${source.food_id} order by food_version, position`,
+    ).resolves.toEqual([
+      {
+        food_version: 2,
+        alternative_food_id: newTarget.food_id,
+      },
+    ]);
+  });
+
+  it('rejects caller-reserved alternatives on create and version writes', async () => {
+    const target = await createFood(
+      po.userId,
+      `Reserved target ${randomUUID()}`,
+    );
+    const key = randomUUID();
+    const request = {
+      ...foodRequest(`Reserved source ${randomUUID()}`),
+      default_alternatives: [foodAlternative(target.food_id)],
+    };
+    const create = (items: ReturnType<typeof foodAlternative>[]) =>
+      asActor(
+        po.userId,
+        (tx) =>
+          tx`select public.catalog_create_food(
+          ${key}, null, ${tx.json(request)}, ${tx.json(items)}
+        )`,
+      );
+    await expect(create([])).rejects.toMatchObject({ code: '22023' });
+    await expect(
+      create([foodAlternative(target.food_id)]),
+    ).rejects.toMatchObject({ code: '22023' });
+
+    const source = await createFood(
+      po.userId,
+      `Reserved version ${randomUUID()}`,
+    );
+    const versionRequest = {
+      ...foodRequest(`Reserved edit ${randomUUID()}`),
+      default_alternatives: [foodAlternative(target.food_id)],
+    };
+    await expect(
+      asActor(
+        po.userId,
+        (tx) =>
+          tx`select public.catalog_version_food(
+          ${source.food_id}, 1, ${randomUUID()}, ${tx.json(versionRequest)}, '[]'::jsonb
+        )`,
+      ),
+    ).rejects.toMatchObject({ code: '22023' });
+    await expect(
+      db`select current_version from public.foods where id = ${source.food_id}`,
+    ).resolves.toEqual([{ current_version: 1 }]);
+  });
+
+  it('accepts an integral decimal JSON alternative version', async () => {
+    const target = await createFood(
+      po.userId,
+      `Decimal target ${randomUUID()}`,
+    );
+    const rawAlternatives = JSON.stringify([
+      {
+        alternative_food_id: target.food_id,
+        alternative_version: 1,
+        source_portion: 100,
+        alternative_portion: 100,
+      },
+    ]).replace('"alternative_version":1', '"alternative_version":1.0');
+    const jsonbLiteral = (value: string) =>
+      `'${value.replaceAll("'", "''")}'::jsonb`;
+    const response = await asActor(po.userId, (tx) =>
+      tx.unsafe(
+        `select public.catalog_create_food('${randomUUID()}'::uuid, null, ${jsonbLiteral(
+          JSON.stringify(foodRequest(`Decimal source ${randomUUID()}`)),
+        )}, ${jsonbLiteral(rawAlternatives)})`,
+      ),
+    );
+    const source = response[0]?.catalog_create_food as { food_id: string };
+    await expect(
+      db`select alternative_version from public.food_default_alternatives where food_id = ${source.food_id}`,
+    ).resolves.toEqual([{ alternative_version: 1 }]);
+  });
+
+  it('rejects invalid alternative sets and rolls a partial version back atomically', async () => {
+    const source = await createFood(po.userId, `Atomic source ${randomUUID()}`);
+    const valid = await createFood(po.userId, `Atomic target ${randomUUID()}`);
+    const inactive = await createFood(
+      po.userId,
+      `Inactive target ${randomUUID()}`,
+    );
+    const historical = await createFood(
+      po.userId,
+      `Historical target ${randomUUID()}`,
+    );
+    const historicalUpdate = foodRequest(
+      `Historical target current ${randomUUID()}`,
+    );
+    await asActor(
+      po.userId,
+      (tx) =>
+        tx`select public.catalog_version_food(
+        ${historical.food_id}, 1, ${randomUUID()}, ${tx.json(historicalUpdate)}, '[]'::jsonb
+      )`,
+    );
+    await db`update public.foods set lifecycle_state = 'removed' where id = ${inactive.food_id}`;
+    const createWith = (items: ReturnType<typeof foodAlternative>[]) =>
+      asActor(
+        po.userId,
+        (tx) =>
+          tx`select public.catalog_create_food(
+          ${randomUUID()}, null, ${tx.json(foodRequest(`Rejected ${randomUUID()}`))}, ${tx.json(items)}
+        )`,
+      );
+    const four = await Promise.all(
+      [0, 1, 2, 3].map((index) =>
+        createFood(po.userId, `Four alt ${index} ${randomUUID()}`),
+      ),
+    );
+    await expect(
+      createWith(four.map((food) => foodAlternative(food.food_id))),
+    ).rejects.toMatchObject({
+      code: '22023',
+      message: 'catalog_food_alternatives_invalid',
+    });
+    await expect(
+      createWith([foodAlternative(valid.food_id, 100, 100, 2147483648)]),
+    ).rejects.toMatchObject({
+      code: '22023',
+      message: 'catalog_food_alternatives_invalid',
+    });
+    await expect(
+      createWith([foodAlternative(randomUUID())]),
+    ).rejects.toMatchObject({
+      code: '22023',
+      message: 'catalog_food_alternatives_invalid',
+    });
+    await expect(
+      createWith([foodAlternative(inactive.food_id)]),
+    ).rejects.toMatchObject({
+      code: '22023',
+      message: 'catalog_food_alternatives_invalid',
+    });
+    await expect(
+      createWith([foodAlternative(historical.food_id, 100, 100, 1)]),
+    ).rejects.toMatchObject({
+      code: '22023',
+      message: 'catalog_food_alternatives_invalid',
+    });
+    await expect(
+      createWith([
+        foodAlternative(valid.food_id),
+        foodAlternative(valid.food_id),
+      ]),
+    ).rejects.toMatchObject({
+      code: '22023',
+      message: 'catalog_food_alternatives_invalid',
+    });
+
+    const update = foodRequest(`Atomic source version ${randomUUID()}`);
+    const key = randomUUID();
+    await expect(
+      asActor(
+        po.userId,
+        (tx) =>
+          tx`select public.catalog_version_food(
+          ${source.food_id}, 1, ${key}, ${tx.json(update)},
+          ${tx.json([
+            foodAlternative(valid.food_id),
+            foodAlternative(source.food_id),
+          ])}
+        )`,
+      ),
+    ).rejects.toMatchObject({
+      code: '22023',
+      message: 'catalog_food_alternatives_invalid',
+    });
+    await expect(
+      db`select current_version from public.foods where id = ${source.food_id}`,
+    ).resolves.toEqual([{ current_version: 1 }]);
+    await expect(
+      db`select count(*)::int as rows from public.food_versions where food_id = ${source.food_id} and version = 2`,
+    ).resolves.toEqual([{ rows: 0 }]);
+    await expect(
+      db`select count(*)::int as rows from public.food_default_alternatives where food_id = ${source.food_id}`,
+    ).resolves.toEqual([{ rows: 0 }]);
+  });
+
+  it('normalizes case, whitespace, and Unicode in duplicate identity keys and locks', async () => {
+    const name = `Normalized identity ${randomUUID()}`;
+    const firstRequest = {
+      ...foodRequest(name),
+      product_identity_norm: '  Café   Rice ',
+      preparation_identity_norm: ' PLAIN\tPREP ',
+    };
+    await asActor(
+      po.userId,
+      (tx) =>
+        tx`select public.catalog_create_food(${randomUUID()}, null, ${tx.json(firstRequest)}, '[]'::jsonb)`,
+    );
+    const equivalent = {
+      ...foodRequest(name),
+      product_identity_norm: 'cafe\u0301 rice',
+      preparation_identity_norm: 'plain prep',
+    };
+    await expect(
+      asActor(
+        trainerB.userId,
+        (tx) =>
+          tx`select public.catalog_create_food(${randomUUID()}, ${wsB}, ${tx.json(equivalent)}, '[]'::jsonb)`,
+      ),
+    ).rejects.toMatchObject({
+      code: '23505',
+      message: 'catalog_food_duplicate',
+    });
   });
 });
