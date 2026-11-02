@@ -158,18 +158,85 @@ it('T013 commits one complete original, revision, audit, and frozen D-03 SLA', a
       expect(
         await tx`select public.submit_form_assignment(${context.wsA.id},${assignmentId},2,${intentKey}) as result`,
       ).toEqual([{ result: submitted?.result }]);
+      const correctionKey = randomUUID();
+      const correctedAnswers = { ...answers, nutrition: 'corrected synthetic nutrition' };
+      const [corrected] = await tx`
+        select public.correct_form_answer(
+          ${context.wsA.id},${assignmentId},3,${correctionKey},${tx.json(correctedAnswers)},'synthetic correction'
+        ) as result
+      `;
+      expect(corrected?.result).toMatchObject({ status: 'corrected', revision: 4, intent_key: correctionKey });
+      expect(await tx`
+        select public.correct_form_answer(
+          ${context.wsA.id},${assignmentId},3,${correctionKey},${tx.json(correctedAnswers)},'synthetic correction'
+        ) as result
+      `).toEqual([{ result: corrected?.result }]);
+      const [history] = await tx`
+        select public.read_form_answer(${context.wsA.id},${assignmentId},'history') as result
+      `;
+      expect(history?.result).toHaveLength(2);
+      expect(history?.result[0]).toMatchObject({ revision: 3, answers });
+      expect(history?.result[1]).toMatchObject({ revision: 4, answers: correctedAnswers });
+      let correctionDeadlineMutationKilled = false;
+      const deadlineBeforeMutation = result.deadline_at;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`reset role`;
+          const [definitionRow] = await sp`
+            select pg_get_functiondef('public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text)'::regprocedure) as body
+          `;
+          const mutatedDefinition = (definitionRow?.body as string).replace(
+            '  return response;',
+            `  update app_private.form_submission_slas set deadline_at = deadline_at + interval '1 day'
+             where workspace_id = p_workspace_id and assignment_id = p_assignment_id;
+  return response;`,
+          );
+          expect(mutatedDefinition).not.toBe(definitionRow?.body);
+          await sp.unsafe(mutatedDefinition);
+          await sp`set local role authenticated`;
+          const [mutated] = await sp`
+            select public.correct_form_answer(
+              ${context.wsA.id},${assignmentId},4,${randomUUID()},${sp.json({ ...correctedAnswers, nutrition: 'mutation probe' })},'synthetic mutation'
+            ) as result
+          `;
+          expect(mutated?.result).toMatchObject({ status: 'corrected', revision: 5 });
+          await sp`reset role`;
+          const [sla] = await sp`
+            select deadline_at from app_private.form_submission_slas
+            where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}
+          `;
+          try {
+            expect(new Date(sla?.deadline_at as string).toISOString()).toBe(
+              new Date(deadlineBeforeMutation).toISOString(),
+            );
+          } catch {
+            correctionDeadlineMutationKilled = true;
+          }
+          throw rollback;
+        }),
+      ).rejects.toBe(rollback);
+      expect(correctionDeadlineMutationKilled).toBe(true);
       expect(
         await tx`select public.submit_form_assignment(${context.wsA.id},${assignmentId},2,${randomUUID()}) as result`,
       ).toEqual([{ result: { status: 'already_submitted' } }]);
 
       await tx`reset role`;
+      const [frozenSla] = await tx`
+        select count(*)::int as submissions,
+          (select deadline_at from app_private.form_submission_slas where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as deadline_at
+        from app_private.form_submissions where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}
+      `;
+      expect(frozenSla?.submissions).toBe(1);
+      expect(new Date(frozenSla?.deadline_at as string).toISOString()).toBe(
+        new Date(result.deadline_at).toISOString(),
+      );
       expect(
         await tx`select
           (select count(*)::int from app_private.form_submissions where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as submissions,
           (select count(*)::int from public.form_answer_revisions where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as revisions,
           (select count(*)::int from app_private.form_submission_slas where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as slas,
           (select count(*)::int from public.audit_events where action='form.submitted' and target_id=${assignmentId}) as audits`,
-      ).toEqual([{ submissions: 1, revisions: 1, slas: 1, audits: 1 }]);
+      ).toEqual([{ submissions: 1, revisions: 2, slas: 1, audits: 1 }]);
       expect(completionMutationKilled).toBe(true);
       throw rollback;
     }),
