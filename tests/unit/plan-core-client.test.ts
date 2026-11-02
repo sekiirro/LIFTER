@@ -42,6 +42,7 @@ const revision = {
 describe('Plan Core client', () => {
   it('parses root, draft, and wire revision DTOs with same plan identity', async () => {
     const transport: PlanCoreTransport = {
+      create: vi.fn(),
       getRoot: vi.fn().mockResolvedValue({
         status: 'ok',
         replayed: false,
@@ -75,6 +76,7 @@ describe('Plan Core client', () => {
 
   it('uses one autosave/Save as Draft request shape and passes replayed through', async () => {
     const transport: PlanCoreTransport = {
+      create: vi.fn(),
       getRoot: vi.fn(),
       writeDraft: vi.fn().mockResolvedValue({
         status: 'ok',
@@ -115,6 +117,7 @@ describe('Plan Core client', () => {
 
   it('rejects a draft result that changes the Plan ID', async () => {
     const transport: PlanCoreTransport = {
+      create: vi.fn(),
       getRoot: vi.fn(),
       writeDraft: vi.fn().mockResolvedValue({
         status: 'ok',
@@ -140,6 +143,7 @@ describe('Plan Core client', () => {
 
   it('publishes with expectedPublishedVersion only and retains the Plan ID', async () => {
     const transport: PlanCoreTransport = {
+      create: vi.fn(),
       getRoot: vi.fn(),
       writeDraft: vi.fn(),
       publish: vi.fn().mockResolvedValue({
@@ -170,6 +174,7 @@ describe('Plan Core client', () => {
   it('rejects version and publishedVersion as publish inputs before transport', async () => {
     const publish = vi.fn();
     const client = createPlanCoreClient({
+      create: vi.fn(),
       getRoot: vi.fn(),
       writeDraft: vi.fn(),
       publish,
@@ -190,6 +195,7 @@ describe('Plan Core client', () => {
 
   it('maps local invalid_plan_core validation to invalid_input', async () => {
     const client = createPlanCoreClient({
+      create: vi.fn(),
       getRoot: vi.fn(),
       writeDraft: vi.fn(),
       publish: vi.fn(),
@@ -203,6 +209,7 @@ describe('Plan Core client', () => {
   it('accepts schemaVersion as a finite number', async () => {
     const contentWithNumericSchemaVersion = { ...content, schemaVersion: 1.5 };
     const transport: PlanCoreTransport = {
+      create: vi.fn(),
       getRoot: vi.fn(),
       writeDraft: vi.fn().mockResolvedValue({
         status: 'ok',
@@ -232,6 +239,7 @@ describe('Plan Core client', () => {
 
   it('maps an unknown server status to the closed unavailable error', async () => {
     const transport: PlanCoreTransport = {
+      create: vi.fn(),
       getRoot: vi
         .fn()
         .mockResolvedValue({ status: 'future_secret_error', detail: 'hidden' }),
@@ -252,6 +260,7 @@ describe('Plan Core client', () => {
 
   it('maps known status failures without exposing server detail text', async () => {
     const client = createPlanCoreClient({
+      create: vi.fn(),
       getRoot: vi.fn().mockResolvedValue({
         status: 'not_permitted',
         detail: 'private detail',
@@ -267,37 +276,69 @@ describe('Plan Core client', () => {
   });
 });
 
-  it('creates a new plan through the explicit create transport', async () => {
-    const create = vi.fn().mockResolvedValue({
-      status: 'ok',
-      replayed: false,
-      data: { planId: PLAN_ID, readiness: 'draft' },
-    });
-    const client = createPlanCoreClient({
-      getRoot: vi.fn(), writeDraft: vi.fn(), publish: vi.fn(), create,
-    });
-    await client.create({
-      createMode: 'blank', kind: 'workout', operationKey: OPERATION_KEY,
-    });
-    expect(create).toHaveBeenCalledWith({
-      createMode: 'blank', kind: 'workout', operationKey: OPERATION_KEY,
-    });
+it('creates a new plan through the explicit create transport', async () => {
+  const create = vi.fn().mockResolvedValue({
+    status: 'ok',
+    replayed: false,
+    data: { planId: PLAN_ID, readiness: 'draft' },
   });
+  const client = createPlanCoreClient({
+    getRoot: vi.fn(),
+    writeDraft: vi.fn(),
+    publish: vi.fn(),
+    create,
+  });
+  await client.create({
+    createMode: 'blank',
+    kind: 'workout',
+    operationKey: OPERATION_KEY,
+  });
+  expect(create).toHaveBeenCalledWith({
+    createMode: 'blank',
+    kind: 'workout',
+    operationKey: OPERATION_KEY,
+  });
+});
 
-  it('requires mode-specific create IDs and rejects IDs on other modes', async () => {
-    const create = vi.fn();
-    const client = createPlanCoreClient({
-      getRoot: vi.fn(), writeDraft: vi.fn(), publish: vi.fn(), create,
-    });
-    const cases = [
-      { createMode: 'template', kind: 'workout', operationKey: OPERATION_KEY },
-      { createMode: 'existing_plan', kind: 'nutrition', operationKey: OPERATION_KEY },
-      { createMode: 'blank', kind: 'workout', operationKey: OPERATION_KEY, templateId: PLAN_ID },
-      { createMode: 'blank', kind: 'workout', operationKey: OPERATION_KEY, sourcePlanId: PLAN_ID },
-      { createMode: 'template', kind: 'workout', operationKey: OPERATION_KEY, templateId: PLAN_ID, sourcePlanId: REVISION_ID },
-    ];
-    for (const request of cases) {
-      await expect(client.create(request)).rejects.toMatchObject({ code: 'invalid_input' });
-    }
-    expect(create).not.toHaveBeenCalled();
+it('requires mode-specific create IDs and rejects IDs on other modes', async () => {
+  const create = vi.fn();
+  const client = createPlanCoreClient({
+    getRoot: vi.fn(),
+    writeDraft: vi.fn(),
+    publish: vi.fn(),
+    create,
   });
+  const cases = [
+    { createMode: 'template', kind: 'workout', operationKey: OPERATION_KEY },
+    {
+      createMode: 'existing_plan',
+      kind: 'nutrition',
+      operationKey: OPERATION_KEY,
+    },
+    {
+      createMode: 'blank',
+      kind: 'workout',
+      operationKey: OPERATION_KEY,
+      templateId: PLAN_ID,
+    },
+    {
+      createMode: 'blank',
+      kind: 'workout',
+      operationKey: OPERATION_KEY,
+      sourcePlanId: PLAN_ID,
+    },
+    {
+      createMode: 'template',
+      kind: 'workout',
+      operationKey: OPERATION_KEY,
+      templateId: PLAN_ID,
+      sourcePlanId: REVISION_ID,
+    },
+  ];
+  for (const request of cases) {
+    await expect(client.create(request)).rejects.toMatchObject({
+      code: 'invalid_input',
+    });
+  }
+  expect(create).not.toHaveBeenCalled();
+});
