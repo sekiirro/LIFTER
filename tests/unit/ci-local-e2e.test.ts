@@ -7,15 +7,23 @@ const FULL_INTEGRATION_RUN = /^ {6}- run: npm run test:integration$/m;
 
 it('runs the full Playwright suite after local-stack integration tests', () => {
   const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
-  const [validate, integration] = workflow.split(/^  integration:\s*$/m);
+  const [validate = '', integrationAndStorage = ''] =
+    workflow.split(/^  integration:\s*$/m);
+  const [integration] = integrationAndStorage.split(/^  storage:\s*$/m);
 
   expect(validate).not.toMatch(/run:\s*CI=1 npm run e2e/);
   if (!integration) throw new Error('CI integration job is missing');
-  const supabaseStart = integration.match(
-    /^ {6}- run: supabase start .*$/m,
-  )?.[0];
-  expect(supabaseStart).toBeDefined();
-  expect(supabaseStart).not.toMatch(/-x[^\n]*\bstorage-api\b/);
+  const supabaseStarts = [
+    ...integration.matchAll(
+      /^[ \t]*(?:"\$LIFTER_SUPABASE_CLI"|supabase) start -x ([^\r\n]+)$/gm,
+    ),
+  ];
+  expect(supabaseStarts).toHaveLength(2);
+  expect(supabaseStarts.map((match) => match[1])).toEqual([
+    'studio,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta',
+    'studio,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta',
+  ]);
+  expect(supabaseStarts.join('\n')).not.toMatch(/\bstorage-api\b/);
   expect(integration).toMatch(FULL_INTEGRATION_RUN);
   const isolatedInstallCondition = integration.indexOf(
     `if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then`,
