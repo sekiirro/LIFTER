@@ -23,6 +23,17 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 2.122.0
+      - name: Resolve the Linux Supabase CLI binary
+        if: env.LIFTER_CI_ISOLATED == 'true'
+        shell: bash
+        run: |
+          cli="$(find "$RUNNER_TEMP" -maxdepth 3 -type f -name supabase -executable -print -quit)"
+          if [ -z "$cli" ]; then
+            echo 'Linux Supabase CLI binary was not found in RUNNER_TEMP' >&2
+            exit 1
+          fi
+          "$cli" --version
+          echo "LIFTER_SUPABASE_CLI=$cli" >> "$GITHUB_ENV"
       - run: npm ci
       - name: Validate migration timestamps
         run: npm run check:migration-timestamps
@@ -87,12 +98,22 @@ jobs:
       - name: Clear prior self-hosted Supabase state and wait for ports
         if: env.LIFTER_CI_ISOLATED == 'true'
         run: |
-          supabase stop --project-id lifter-stack-ci --no-backup
+          "$LIFTER_SUPABASE_CLI" stop --project-id lifter-stack-ci --no-backup
           node scripts/ci-supabase-config.mjs supabase/config.toml assert-clean
           node scripts/ci-supabase-config.mjs supabase/config.toml wait
-      - run: supabase start -x studio,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+      - run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            "$LIFTER_SUPABASE_CLI" start -x studio,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+          else
+            supabase start -x studio,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+          fi
       - name: Export local stack environment
-        run: supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
+        run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            "$LIFTER_SUPABASE_CLI" status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
+          else
+            supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
+          fi
       - name: Export app server environment
         run: |
           echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
@@ -117,7 +138,7 @@ jobs:
           LOCAL_SUPABASE_PROVIDER_FAULT_TEST: 'true'
       - run: |
           if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
-            supabase stop --project-id lifter-stack-ci --no-backup
+            "$LIFTER_SUPABASE_CLI" stop --project-id lifter-stack-ci --no-backup
             node scripts/ci-supabase-config.mjs supabase/config.toml assert-clean
             node scripts/ci-supabase-config.mjs supabase/config.toml wait
           else
@@ -145,6 +166,17 @@ jobs:
       - uses: supabase/setup-cli@v1
         with:
           version: 2.122.0
+      - name: Resolve the Linux Supabase CLI binary
+        if: env.LIFTER_CI_ISOLATED == 'true'
+        shell: bash
+        run: |
+          cli="$(find "$RUNNER_TEMP" -maxdepth 3 -type f -name supabase -executable -print -quit)"
+          if [ -z "$cli" ]; then
+            echo 'Linux Supabase CLI binary was not found in RUNNER_TEMP' >&2
+            exit 1
+          fi
+          "$cli" --version
+          echo "LIFTER_SUPABASE_CLI=$cli" >> "$GITHUB_ENV"
       - run: npm ci
       - name: Isolate self-hosted Supabase identity and ports
         if: env.LIFTER_CI_ISOLATED == 'true'
@@ -159,12 +191,22 @@ jobs:
       - name: Clear prior self-hosted Supabase state and wait for ports
         if: env.LIFTER_CI_ISOLATED == 'true'
         run: |
-          supabase stop --project-id lifter-stack-ci --no-backup
+          "$LIFTER_SUPABASE_CLI" stop --project-id lifter-stack-ci --no-backup
           node scripts/ci-supabase-config.mjs supabase/config.toml assert-clean
           node scripts/ci-supabase-config.mjs supabase/config.toml wait
-      - run: supabase start -x studio,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+      - run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            "$LIFTER_SUPABASE_CLI" start -x studio,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+          else
+            supabase start -x studio,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+          fi
       - name: Export local stack environment
-        run: supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
+        run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            "$LIFTER_SUPABASE_CLI" status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
+          else
+            supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
+          fi
       - name: Export app server environment
         run: |
           echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
@@ -203,7 +245,7 @@ jobs:
           LOCAL_SUPABASE_STORAGE_TEST: 'true'
       - run: |
           if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
-            supabase stop --project-id lifter-stack-ci --no-backup
+            "$LIFTER_SUPABASE_CLI" stop --project-id lifter-stack-ci --no-backup
             node scripts/ci-supabase-config.mjs supabase/config.toml assert-clean
             node scripts/ci-supabase-config.mjs supabase/config.toml wait
           else
