@@ -1,4 +1,5 @@
 import { cookies } from 'next/headers';
+import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import { Alert } from '../../../components/ui/Alert';
 import { requireActor } from '../../../lib/auth/actor';
@@ -105,9 +106,9 @@ export default async function ExerciseLibraryPage({
             <h1>{m['catalog.exerciseTitle']}</h1>
             <p>{m['catalog.exerciseIntro']}</p>
           </div>
-          <a className={styles.action} href="/exercise-library/new">
+          <Link className={styles.action} href="/exercise-library/new">
             {m['catalog.addExercise']}
-          </a>
+          </Link>
         </header>
         <Alert tone="error" title={m['catalog.errorTitle']} />
       </main>
@@ -127,9 +128,9 @@ export default async function ExerciseLibraryPage({
           <h1>{m['catalog.exerciseTitle']}</h1>
           <p>{m['catalog.exerciseIntro']}</p>
         </div>
-        <a className={styles.action} href="/exercise-library/new">
+        <Link className={styles.action} href="/exercise-library/new">
           {m['catalog.addExercise']}
-        </a>
+        </Link>
       </header>
       <ExerciseLibraryResults
         key={`${q}:${muscle}:${equipment}:${cursorValue}`}

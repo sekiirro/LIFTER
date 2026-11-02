@@ -102,13 +102,19 @@ export function validateFoodEditorDraft(
     )
   )
     errors.serving = 'positive';
-  if (draft.servings.some((serving) =>
-    [serving.labelAr, serving.labelEn].some(
-      (label) => Array.from(label.trim()).length > MAX_CATALOG_TEXT_LENGTH,
-    ),
-  )) {
+  if (
+    draft.servings.some((serving) =>
+      [serving.labelAr, serving.labelEn].some(
+        (label) => Array.from(label.trim()).length > MAX_CATALOG_TEXT_LENGTH,
+      ),
+    )
+  ) {
     errors.servingLabel = 'too_long';
-  } else if (draft.servings.some((serving) => !serving.labelAr.trim() && !serving.labelEn.trim())) {
+  } else if (
+    draft.servings.some(
+      (serving) => !serving.labelAr.trim() && !serving.labelEn.trim(),
+    )
+  ) {
     errors.servingLabel = 'required';
   }
   if (draft.alternatives.length > 3) errors.alternatives = 'too_many';

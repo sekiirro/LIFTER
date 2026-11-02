@@ -525,8 +525,10 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.detailWorkspace': 'Workspace variation',
   'catalog.detailVideo': 'Exercise video reference',
   'catalog.detailOpenVideo': 'Open video reference',
-  'catalog.detailNoVideo': 'No video reference is available for this workspace.',
-  'catalog.detailMergedTo': 'This exercise has been merged into the active exercise:',
+  'catalog.detailNoVideo':
+    'No video reference is available for this workspace.',
+  'catalog.detailMergedTo':
+    'This exercise has been merged into the active exercise:',
   'catalog.editorSecondaryMuscles': 'Secondary muscles',
   'catalog.editAsNewVersion': 'Edit as new version',
   'catalog.editorErrorTextTooLong': 'Use 120 characters or fewer.',

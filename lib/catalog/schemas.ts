@@ -254,10 +254,7 @@ function requireNonEmptyString(
     throw new CatalogValidationError(`${label} is required`);
   }
   const normalized = value.trim();
-  if (
-    maxLength !== undefined &&
-    Array.from(normalized).length > maxLength
-  ) {
+  if (maxLength !== undefined && Array.from(normalized).length > maxLength) {
     throw new CatalogValidationError(
       `${label} must be ${maxLength} characters or fewer`,
     );
