@@ -265,7 +265,9 @@ function normalizePublishedRevision(input: unknown): PublishedRevisionDto {
   if (!Object.hasOwn(value, 'content')) {
     throw new PlanCoreValidationError('Published revision content is required');
   }
-  const { content: _content, ...metadata } = value;
+  const metadata = Object.fromEntries(
+    Object.entries(value).filter(([key]) => key !== 'content'),
+  );
   return freezeDeep({
     ...normalizeRevisionMetadata(metadata),
     content: normalizePlanContentEnvelope(value.content),
@@ -275,10 +277,11 @@ function normalizePublishedRevision(input: unknown): PublishedRevisionDto {
 function normalizePrivateDraftDto(input: unknown): PrivateDraftDto {
   const value = requireRecord(input, 'Private draft');
   const normalized = normalizePrivateDraft(value);
+  const { content, ...metadata } = normalized;
   return {
-    ...normalized,
-    ...(normalized.content !== undefined
-      ? { content: normalizePlanContentEnvelope(normalized.content) }
+    ...metadata,
+    ...(content !== undefined
+      ? { content: normalizePlanContentEnvelope(content) }
       : {}),
   };
 }
@@ -361,7 +364,7 @@ function normalizePublishRequest(input: unknown): PublishRequest {
   };
 }
 
-function parseFailure<T>(value: unknown): PlanCoreResponse<T> | null {
+function parseFailure(value: unknown): PlanCoreFailure | null {
   if (
     !isRecord(value) ||
     typeof value.status !== 'string' ||
@@ -415,7 +418,7 @@ async function invoke<T>(
     throw new PlanCoreClientError('unavailable');
   }
   try {
-    const failure = parseFailure<T>(response);
+    const failure = parseFailure(response);
     if (failure) throw new PlanCoreClientError(failure.status);
     return parseSuccess(response, parseData);
   } catch (error) {
