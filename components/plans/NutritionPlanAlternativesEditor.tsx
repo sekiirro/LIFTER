@@ -382,6 +382,12 @@ function macroUnit(
     : messages['nutritionAlternatives.grams'];
 }
 
+function localizedQuantityUnit(unit: string, locale: Locale, messages: Messages) {
+  if (locale === 'ar' && unit === 'g') return messages['nutritionAlternatives.grams'];
+  if (locale === 'ar' && unit === 'ml') return messages['nutritionAlternatives.milliliters'];
+  return unit;
+}
+
 function MacroSummary({
   macros,
   label,
@@ -634,7 +640,7 @@ export function NutritionPlanAlternativesEditor({
             <p style={quantityReadoutStyle}>
               <Bidi dir="ltr">
                 {localizeDigits(item.quantity.value, locale)}{' '}
-                {item.quantity.unit}
+                {localizedQuantityUnit(item.quantity.unit, locale, messages)}
               </Bidi>
             </p>
           </div>
@@ -808,12 +814,12 @@ export function NutritionPlanAlternativesEditor({
                   >
                     {units.map((unit) => (
                       <option key={unit} value={unit}>
-                        {unit}
+                        {localizedQuantityUnit(unit, locale, messages)}
                       </option>
                     ))}
                     {!units.includes(alternative.quantity.unit) && (
                       <option value={alternative.quantity.unit}>
-                        {alternative.quantity.unit}
+                        {localizedQuantityUnit(alternative.quantity.unit, locale, messages)}
                       </option>
                     )}
                   </select>

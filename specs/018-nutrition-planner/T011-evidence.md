@@ -1,5 +1,12 @@
 # F18 T011 — Coach manual nutrition alternatives UI
 
+## Follow-up: Arabic unit labels
+
+- RED: `tests/unit/NutritionPlanAlternativesEditor.test.tsx` failed because `nutritionAlternatives.milliliters` was missing and the rendered Arabic unit remained Latin `ml`.
+- GREEN: added DRAFT Arabic/English keys for milliliters and mapped canonical `g`/`ml` display labels through locale messages. Focused unit test passed.
+- Mutation: restoring raw `g`/`ml` display made the focused test fail at the Arabic milliliter label assertion (`expected ... to contain 'مل'`). Restored localization; focused test passed.
+- Additional DRAFT copy key: `nutritionAlternatives.milliliters` (AR `مل`, EN `ml`).
+
 **Result:** Complete on branch `018-nutrition-planner`. The F16 service is not merged; all catalog data and projections in this UI and showcase are mocked.
 
 ## Inherited partial

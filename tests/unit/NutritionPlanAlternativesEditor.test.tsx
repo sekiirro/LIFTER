@@ -420,6 +420,39 @@ describe('F18 nutrition manual alternatives editor', () => {
     expect(text).not.toMatch(/[0-9]/);
   });
 
+  it('localizes gram and milliliter units in Arabic while preserving Latin units in English', () => {
+    const arMessages = getMessages('ar');
+    const enMessages = getMessages('en');
+    const milliliterFood: NutritionAlternativeFood = {
+      name: { ar: 'ماء', en: 'Water' },
+      snapshot: snapshot(
+        '00000000-0000-4000-8000-000000000005',
+        'ml',
+        { calories: '0', protein: '0', carbs: '0', fat: '0' },
+        {},
+      ),
+    };
+    const html = render('ar', {
+      foods: [milliliterFood],
+      alternatives: [
+        {
+          id: '00000000-0000-4000-8000-000000000108',
+          foodVersionId: milliliterFood.snapshot.foodVersionId,
+          quantity: { value: '250', unit: 'ml' },
+        },
+      ],
+    });
+    expect(html).toContain(arMessages['nutritionAlternatives.milliliters']);
+    expect(html).toContain(arMessages['nutritionAlternatives.grams']);
+    expect(html).not.toContain(' ml');
+    expect(html).not.toContain(' g');
+    expect(getMessages('en')['nutritionAlternatives.grams']).toBe(
+      enMessages['nutritionAlternatives.grams'],
+    );
+    expect(arMessages['nutritionAlternatives.grams']).not.toBe('g');
+    expect(arMessages['nutritionAlternatives.milliliters']).not.toBe('ml');
+  });
+
   it('resolves frozen food references to the terminal current version and shows removed targets as unavailable', () => {
     const removedVersion = '00000000-0000-4000-8000-000000000099';
     const html = render('en', {
