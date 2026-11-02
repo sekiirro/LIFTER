@@ -10,7 +10,6 @@ import {
 const db = sql();
 afterAll(() => db.end());
 const rollback = new Error('rollback F15 synthetic alert fixtures');
-const CORE = 'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)';
 
 async function formAssignment(
   tx: TransactionSql,
@@ -82,13 +81,7 @@ it('uses the client-late +24h and +48h clocks, transfers the Trainer stage, and 
         deadline,
         f.po.userId,
       );
-      const noTrainer = await formAssignment(
-        tx,
-        f.wsA.id,
-        client.id,
-        deadline,
-        f.po.userId,
-      );
+      await formAssignment(tx, f.wsA.id, client.id, deadline, f.po.userId);
       await tx`update app_private.form_alert_schedules
         set trainer_user_id=${f.trainerA.userId}
         where workspace_id=${f.wsA.id} and source_assignment_id=${assigned} and alert_kind='client_late'`;
