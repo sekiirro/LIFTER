@@ -124,8 +124,10 @@
 - Membership loss and explicit unlink revoke the chat binding. Delivery checks
   current authorization and link state immediately before send. Telegram
   content is generic text with only an in-app inbox link; client names, answers
-  and health data are excluded. Tests use a fake transport; the server runtime
-  reads `TELEGRAM_BOT_TOKEN` without putting its value in source or logs.
+  and health data are excluded. Per-channel delivery rows transition through
+  queued, sending, delivered or dead; transport errors use the bounded
+  `public.jobs` retry/dead-letter path. Tests use a fake transport; the server
+  runtime reads `TELEGRAM_BOT_TOKEN` without putting its value in source or logs.
 - Email and external delivery adapters other than Telegram are out of scope.
   Scheduler activation is not included in any migration and needs separate PO
   approval.

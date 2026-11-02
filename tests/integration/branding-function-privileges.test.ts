@@ -220,6 +220,7 @@ describe('F14 definer function privileges', () => {
           'public.complete_refund_auth_lockout_job(uuid, timestamp with time zone)',
       },
       { signature: 'public.consume_f15_telegram_start(bigint, text, text)' },
+      { signature: 'public.finish_f15_telegram_delivery(uuid, text)' },
       { signature: 'public.prepare_f15_telegram_delivery(uuid, uuid)' },
       {
         signature:

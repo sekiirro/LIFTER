@@ -205,7 +205,14 @@ it('requires a current staff link for Telegram and claims a channel delivery onc
       expect(chat!.result).toBe('12345');
       const [replay] = await tx`select public.prepare_f15_telegram_delivery(
       ${occurrenceId},${f.trainerA.userId}) as result`;
-      expect(replay!.result).toEqual({ status: 'already_delivered' });
+      expect(replay!.result).toEqual({ status: 'already_processing' });
+      const [finished] = await tx`select public.finish_f15_telegram_delivery(
+        ${context.delivery_id},'delivered') as result`;
+      expect(finished!.result).toBe(true);
+      const [deliveredReplay] =
+        await tx`select public.prepare_f15_telegram_delivery(
+        ${occurrenceId},${f.trainerA.userId}) as result`;
+      expect(deliveredReplay!.result).toEqual({ status: 'already_delivered' });
       await tx`select set_config('request.jwt.claims',${JSON.stringify({
         sub: f.trainerA.userId,
         role: 'authenticated',

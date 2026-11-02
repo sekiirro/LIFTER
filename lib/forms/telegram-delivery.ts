@@ -132,18 +132,38 @@ export async function runTelegramJobs(input: {
     }
     try {
       await deliverTelegramAlert({ message, transport: input.transport });
+      const finished = await input.client.rpc('finish_f15_telegram_delivery', {
+        p_delivery_id: context.delivery_id,
+        p_status: 'delivered',
+      });
+      if (finished.error || finished.data !== true) {
+        await input.client.rpc('jobs_fail', {
+          id: job.id,
+          lease: job.lease_token,
+          error_code: 'delivery_state_unavailable',
+          permanent: false,
+        });
+        failed++;
+        continue;
+      }
       await input.client.rpc('jobs_complete', {
         id: job.id,
         lease: job.lease_token,
       });
       completed++;
     } catch {
-      await input.client.rpc('jobs_fail', {
+      const failure = await input.client.rpc('jobs_fail', {
         id: job.id,
         lease: job.lease_token,
         error_code: 'telegram_transport',
         permanent: false,
       });
+      if (failure.data === 'dead' || failure.data === 'pending') {
+        await input.client.rpc('finish_f15_telegram_delivery', {
+          p_delivery_id: context.delivery_id,
+          p_status: failure.data === 'dead' ? 'dead' : 'queued',
+        });
+      }
       failed++;
     }
   }

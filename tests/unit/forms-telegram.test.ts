@@ -171,6 +171,7 @@ describe('staff Telegram link and delivery primitives', () => {
           };
         if (name === 'claim_f15_telegram_delivery')
           return { data: '12345', error: null };
+        if (name === 'jobs_fail') return { data: 'pending', error: null };
         return { data: true, error: null };
       },
     };
@@ -187,6 +188,12 @@ describe('staff Telegram link and delivery primitives', () => {
     expect(calls.find(([name]) => name === 'jobs_fail')?.[1]).toMatchObject({
       error_code: 'telegram_transport',
       permanent: false,
+    });
+    expect(
+      calls.find(([name]) => name === 'finish_f15_telegram_delivery')?.[1],
+    ).toMatchObject({
+      p_delivery_id: 'delivery',
+      p_status: 'queued',
     });
   });
 });

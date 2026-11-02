@@ -1100,6 +1100,7 @@ describe('registration security catalog', () => {
       'public.claim_f15_telegram_delivery(uuid)',
       'public.claim_f15_form_alert_jobs(integer,integer)',
       'public.consume_f15_telegram_start(bigint,text,text)',
+      'public.finish_f15_telegram_delivery(uuid,text)',
       'public.record_renewal(jsonb)',
     ];
     for (const name of signatures) {
@@ -1120,13 +1121,15 @@ describe('registration security catalog', () => {
               !name.includes('prepare_f15_telegram_delivery') &&
               !name.includes('claim_f15_telegram_delivery') &&
               !name.includes('claim_f15_form_alert_jobs') &&
-              !name.includes('consume_f15_telegram_start')) ||
+              !name.includes('consume_f15_telegram_start') &&
+              !name.includes('finish_f15_telegram_delivery')) ||
               (role === 'anon' && name.includes('registration_link_open')) ||
               (role === 'service_role' &&
                 (name.includes('prepare_f15_telegram_delivery') ||
                   name.includes('claim_f15_telegram_delivery') ||
                   name.includes('claim_f15_form_alert_jobs') ||
-                  name.includes('consume_f15_telegram_start')))),
+                  name.includes('consume_f15_telegram_start') ||
+                  name.includes('finish_f15_telegram_delivery')))),
         );
       }
     }
