@@ -27,11 +27,15 @@
   passes it to the hero. No new storage, database, route, signed URL, or asset is
   introduced.
 - The hero samples that same-origin proxy image in the browser with the prototype's
-  canvas algorithm, measures the luminance behind the card and the bottom edge,
-  then writes the existing prototype CSS variables for adaptive dimming/fade.
-- Server-side pixel decoding would require new image infrastructure, so it is out
-  of scope. The documented fallback is the prototype curve with initial dimming
-  `0`; a failed sample leaves the neutral fallback rather than guessing.
+  canvas algorithm. Artwork luminance may adjust the banner scrim and other
+  treatments drawn over the artwork to keep them legible; it never selects or
+  inverts the registration card theme.
+- The card surface, text, and controls follow the resolved theme: Light uses the
+  light design tokens, Dark uses the dark tokens, and Follow Device follows
+  `prefers-color-scheme`. Print keeps the selected theme, including dark output.
+- Sampling is diagnostic and supports the existing legibility fallback when
+  artwork cannot be measured. Server-side pixel decoding would require new image
+  infrastructure, so it is out of scope.
 - Desktop crops the banner toward the left subject; the card remains physically
   right in both AR and EN. Mobile uses the same banner above the card and applies
   the approved 35% bottom fade.
@@ -48,8 +52,9 @@
 
 ## Tests and dev-only boundaries
 
-- Unit-first: layout-mode selection, adaptive-dimming curve/clamping, and LTR
-  phone-group contract; record RED then GREEN.
+- Unit-first: layout-mode selection, theme-token card contract independent of
+  artwork luminance, sampling fallback, and LTR phone-group contract; record RED
+  then GREEN. Playwright covers light and dark print output.
 - Port production Playwright assertions only where an existing valid-link fixture
   can run without database changes; otherwise list them for chunk 2.
 - Prototype showcase routes, generated fixture art, artwork route, fixture files,
