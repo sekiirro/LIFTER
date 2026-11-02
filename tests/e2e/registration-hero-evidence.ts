@@ -477,8 +477,10 @@ export async function expectHeroTextContrast(page: Page) {
   expect(surface.headingColor).toBe('rgb(255, 255, 255)');
   expect(Number.isFinite(surface.photoLuminance)).toBe(true);
   expect(Number.isFinite(surface.photoAverageLuminance)).toBe(true);
+  // The conservative bound is the brightest sampled cell, so it can only
+  // trail the sampled mean by the rounding error of that mean.
   expect(surface.photoLuminance).toBeGreaterThanOrEqual(
-    surface.photoAverageLuminance,
+    surface.photoAverageLuminance - 1e-9,
   );
   const expectedAdaptiveDimming = adaptiveDimmingFromLuminance(
     surface.photoLuminance,
