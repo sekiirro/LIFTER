@@ -27,6 +27,15 @@ export type CatalogMutation = {
   transition?: 'remove' | 'restore';
   request?: Record<string, unknown>;
 };
+export type FoodDuplicateQuery = {
+  name: string;
+  language: 'ar' | 'en';
+  basis: 'g' | 'ml';
+  productIdentity: string;
+  preparationIdentity: string;
+  weighingState: 'raw' | 'cooked' | 'not_applicable';
+  kcal: number;
+};
 export type CatalogDependencies = {
   session: () => Promise<SessionClient | null>;
   actor: (client: SessionClient) => Promise<Actor | null>;
@@ -152,6 +161,21 @@ export function createCatalogServer(deps: CatalogDependencies) {
     return rpc(ready.client!, name, args(input));
   }
   return {
+    foodDuplicateCandidates(input: FoodDuplicateQuery) {
+      return (async (): Promise<CatalogResult> => {
+        const ready = await prepare(coachingSomewhere);
+        if (ready.result) return ready.result;
+        return rpc(ready.client!, 'catalog_food_duplicate_candidates', {
+          p_name: input.name,
+          p_language: input.language,
+          p_basis: input.basis,
+          p_product_identity: input.productIdentity,
+          p_preparation_identity: input.preparationIdentity,
+          p_weighing_state: input.weighingState,
+          p_kcal: input.kcal,
+        });
+      })();
+    },
     search(input: CatalogSearchInput) {
       return (async (): Promise<CatalogResult> => {
         const ready = await prepare(
@@ -296,6 +320,7 @@ const catalog = createCatalogServer({
   actor: loadSessionActor,
 });
 export const {
+  foodDuplicateCandidates,
   search,
   createExercise,
   versionExercise,

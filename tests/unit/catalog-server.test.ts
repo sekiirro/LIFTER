@@ -28,6 +28,42 @@ beforeEach(() => {
 });
 
 describe('catalog server authorization and RPC boundary', () => {
+  it('authorizes duplicate candidate lookups through the catalog wall and forwards only identity inputs', async () => {
+    const input = {
+      name: 'Rice',
+      language: 'en' as const,
+      basis: 'g' as const,
+      productIdentity: 'rice',
+      preparationIdentity: 'boiled',
+      weighingState: 'cooked' as const,
+      kcal: 130,
+    };
+    currentActor = {
+      userId: 'actor',
+      role: 'trainer',
+      activeWorkspaceIds: [ws],
+    };
+    expect(await catalog().foodDuplicateCandidates(input)).toEqual({
+      status: 'ok',
+      data: { ok: true },
+    });
+    expect(rpc).toHaveBeenCalledWith('catalog_food_duplicate_candidates', {
+      p_name: 'Rice',
+      p_language: 'en',
+      p_basis: 'g',
+      p_product_identity: 'rice',
+      p_preparation_identity: 'boiled',
+      p_weighing_state: 'cooked',
+      p_kcal: 130,
+    });
+    currentActor = { userId: 'actor', role: 'sales', activeWorkspaceIds: [ws] };
+    rpc.mockClear();
+    expect(await catalog().foodDuplicateCandidates(input)).toEqual({
+      status: 'not_permitted',
+    });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it('applies the role parity fixture to search and writes before calling RPC', async () => {
     const cases = [
       ['platform_owner', true],
