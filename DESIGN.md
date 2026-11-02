@@ -240,7 +240,7 @@
 3. اسم/اختيار مكتبة الأيقونات البرمجية النهائي، ما دام الأسلوب **خطيًا**.
 4. أرقام نقاط الانكسار، الأحجام الأدنى للمس، وقواعد التركيز والوصول التفصيلية.
 5. التبويبات المحددة لمالك المنصة ومالك مساحة العمل والمبيعات على الموبايل؛ التوزيع مخصص للدور لكن لم يُحسم تفصيليًا.
-6. المقاسات الدقيقة للكتيبات والتفاصيل الدقيقة لتقسيم الصفحات وتشكيل العربية والطباعة.
+6. المقاسات الدقيقة للكتيبات والتفاصيل الدقيقة لتقسيم الصفحات وتشكيل العربية والطباعة. **حجم الورق للطباعة وPDF (حُسم): A4 هو الافتراضي. PO, S26-PO-4, 2026-11-02.**
 7. تدفقات معالجة تعارضات التعديل المتزامن وانقطاع الشبكة إن لم تكن محددة في مواصفات المنتج؛ لا تحوّلها إلى تغييرات في قواعد العمل بصمت.
 8. **الحاسبة:** معاملات النشاط وطريقة حسابها، أسبقية كل حقل وتوقيته بين الاستمارة والمتابعة، بقاء افتراضات المدرب المعدلة، قيمة الفائض الافتراضي الدقيقة بين 10–15%، وقيمة العجز المكثف الافتراضية الدقيقة بين 20–25%، وصلاحية فرضيات الصيغ الموروثة علميًا.
 9. أي أمر تجاري أو أمني أو قانوني غير منصوص عليه هنا يرجع لوثائقه المختصة في المستودع، وليس لاجتهاد تصميمي.
@@ -268,3 +268,20 @@
 - التحقق من الأذونات على البيانات والوظائف لكل دور، لا مجرد إخفاء عناصر الواجهة.
 - اختبارات منطقية ووحدات وتكامل وإتاحة مناسبة لكل ميزة، مع أدلة/لقطات واضحة في طلب السحب.
 - **لا تُنفِّذ مواصفة أو تعديلًا خارج نطاق F2 الفعلي بسبب ورود مثال توضيحي في هذه الوثيقة.**
+
+
+## Approved S20 design additions
+
+### F14b Upload Card
+
+Use the reusable Upload Card with thumbnail, Retry, clear errors, and upload on file selection. Uploading never publishes. Confirm banner identity content only. Require alt text in one language and fall back to the other. Reuse the Workspace Builder Preview tab. Provide Replace and Remove with a safe fallback. Show actual server limits. Logo: PNG/WebP, 4 MiB ingress/output, up to 2048x2048 and 1,000,000 pixels. Banner: PNG/WebP, 8 MiB ingress/output, up to 4096x2048 and 4,000,000 pixels. Recommend 1600x800 (2:1), with important content away from edges and lower portion.
+
+Approved AR/EN copy: `«شعار مساحة العمل»` / “Workspace logo”; `«صورة الغلاف»` / “Banner image”; `«وصف صورة الغلاف (بالعربية أو الإنجليزية)»` / “Banner image description (Arabic or English)”; `«أدخل وصفًا بلغة واحدة على الأقل؛ سيُستخدم الوصف المتاح عند غياب الآخر.»` / “Enter a description in at least one language; the available description will be used as fallback.”; recommend 1600×800 (2:1), keep important content away from edges/lower portion; `«تعذر رفع الصورة. تحقق من نوع الملف وحجمه وأبعاده ثم حاول مجددًا.»` / “Upload failed. Check the file type, size, and dimensions, then retry.” Show actual server limits, never invented limits.
+
+### Public Hero
+
+The approved public Hero uses Emerald #059669, the approved Liquid Glass treatment, existing design tokens, approved layout, and approved mobile behavior. This approval applies to the public Hero. S21-PO-1/2 also authorize the selective Glisse-based Liquid Glass implementation on floating surfaces on a separate branch; dense data, forms, and financial content remain mostly solid. The implementation is in progress, and merging that branch still requires explicit PO approval.
+
+### Planner UI
+
+Keep editing on the same Plan ID after publish. Silent autosave to a private draft is the default and works without Save as Draft; Save as Draft is a provided, always-available explicit control (S20 §4); there is exactly one Ready & Publish action; drafts remain invisible until published. Display calories and macros as integers while retaining exact decimal calculations and storage. Hide the optional recipe/preparation video link and icon when absent.

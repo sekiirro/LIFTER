@@ -103,6 +103,14 @@ directory and stop if the ACL change fails. After parsing, delete the raw file
 
 ## Local database & isolation tests
 
+For local integration and browser runs, explicitly set `LIFTER_SUPABASE_STACK`
+to `a`, `b`, `c`, or `d`. Endpoint variables provide connection
+details but never select a profile; commands refuse to run without the selector.
+
+Profiles `a` and `b` are tracked in the repository. Profiles `c` and `d` are
+local agent-lane profiles and must be provisioned in the lane's worktree before
+they can be selected.
+
 Install Docker and Supabase CLI 2.122.0 before running the local database suite.
 The integration job in GitHub Actions uses a disposable local stack, applies all
 migrations from scratch, and needs no repository secrets or deployment.
@@ -114,6 +122,7 @@ On Windows, Docker Desktop is enough, and the pinned CLI runs via `npx supabase@
 In Bash, start the stack and export its generated development environment:
 
 ```bash
+export LIFTER_SUPABASE_STACK=a
 npx supabase@2.122.0 start -x studio,imgproxy,inbucket,edge-runtime,logflare,vector,supavisor,realtime,storage-api,postgres-meta
 npx supabase@2.122.0 status -o env
 eval "$(npx supabase@2.122.0 status -o env | sed 's/^/export /')"
@@ -124,6 +133,7 @@ npx supabase@2.122.0 stop --no-backup
 In PowerShell, replace the `eval` command with:
 
 ```powershell
+$env:LIFTER_SUPABASE_STACK = 'a'
 npx supabase@2.122.0 status -o env | ForEach-Object {
   if ($_ -match '^([A-Z_]+)="?(.*?)"?$') {
     Set-Item -Path "Env:$($Matches[1])" -Value $Matches[2]

@@ -26,6 +26,24 @@ it('T018 later collection requires activation; approval alone is insufficient', 
     status: 'stale_state',
   });
 });
+it('Q2 Trainer may collect an initial-purchase installment in its authorized workspace', async () => {
+  await probe(async (tx) => {
+    await activate(tx, f, p);
+    const collected = await sqlPay(
+      tx,
+      f.trainerA.userId,
+      'collect',
+      paymentRequest(f, p),
+    );
+    expect(collected.status).toBe('ok');
+    expect(collected.receipt).toMatchObject({
+      operation: 'collect',
+      outcome: 'collected',
+      installment_seq: 2,
+      amount_minor: '400',
+    });
+  });
+});
 for (const who of ['po', 'woA', 'salesA'] as const)
   it(`T018 ${who} full early collection after activation, past date, exact snapshot commission`, async () => {
     await probe(async (tx) => {
@@ -131,10 +149,19 @@ it('T018 stale revision/predecessor/seq cannot drift to a different obligation',
 });
 it('T018 all U4 foreign/nonexistent targets and disallowed roles have generic denial', async () => {
   for (const kind of ['collect', 'correct'] as const) {
-    for (const who of ['trainerA', 'trainerB', 'noProfile', 'revoked'] as const)
+    const denied =
+      kind === 'collect'
+        ? (['trainerB', 'noProfile', 'revoked'] as const)
+        : (['trainerA', 'trainerB', 'noProfile', 'revoked'] as const);
+    for (const who of denied)
       expect(
         await pay(f.actors[who].client, kind, paymentRequest(f, p, kind)),
       ).toEqual({ status: 'not_permitted' });
+    if (kind === 'collect')
+      expect(
+        (await pay(f.actors.trainerA.client, kind, paymentRequest(f, p, kind)))
+          .status,
+      ).not.toBe('not_permitted');
     for (const extra of [
       { workspace_id: randomUUID() },
       { workspace_id: f.wsB.id },
@@ -146,6 +173,18 @@ it('T018 all U4 foreign/nonexistent targets and disallowed roles have generic de
         await pay(f.po.client, kind, paymentRequest(f, p, kind, extra)),
       ).toEqual({ status: 'not_permitted' });
   }
+});
+it('Q2 Trainer cannot collect a client payment from another workspace', async () => {
+  const foreign = await clientContext();
+  const foreignPurchase = await bought(foreign);
+  await db.begin((tx) => activate(tx, foreign, foreignPurchase));
+  expect(
+    await pay(
+      f.trainerA.client,
+      'collect',
+      paymentRequest(foreign, foreignPurchase),
+    ),
+  ).toEqual({ status: 'not_permitted' });
 });
 it('T018 Cairo today is accepted without a signup lower bound', async () => {
   await probe(async (tx) => {

@@ -1,10 +1,10 @@
-import { localSupabaseContainer } from './local-docker';
 import { spawnSync } from 'node:child_process';
 import { createHmac, randomBytes } from 'node:crypto';
 import type { TransactionSql } from 'postgres';
 import { afterAll, expect, it } from 'vitest';
 import manifest from '../fixtures/client-accounts-auth-schema.json';
 import { sql } from './harness';
+import { localSupabaseContainer } from '../../scripts/local-stack.mjs';
 
 const db = sql();
 afterAll(() => db.end());

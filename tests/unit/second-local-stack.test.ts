@@ -11,13 +11,20 @@ import {
 import { localSupabaseContainer } from '../integration/local-docker';
 
 describe('isolated local Supabase stack contract', () => {
-  it('selects A by default and supports explicit A-D profiles', () => {
-    expect(selectStack({})).toBe('a');
+  it('requires local selection and supports explicit A-D profiles in CI', () => {
+    const ciEnv = { CI: 'true' } as Parameters<typeof selectStack>[0];
+    const ciWithA = { ...ciEnv, LIFTER_SUPABASE_STACK: 'a' };
+
+    expect(() => selectStack({})).toThrow(/Set LIFTER_SUPABASE_STACK/);
+    expect(() => selectStack(ciEnv)).toThrow(/Set LIFTER_SUPABASE_STACK/);
+    expect(selectStack(ciWithA)).toBe('a');
     expect(selectStack({ LIFTER_SUPABASE_STACK: 'a' })).toBe('a');
     expect(selectStack({ LIFTER_SUPABASE_STACK: 'b' })).toBe('b');
     expect(selectStack({ LIFTER_SUPABASE_STACK: 'c' })).toBe('c');
     expect(selectStack({ LIFTER_SUPABASE_STACK: 'd' })).toBe('d');
-    expect(selectStack({ LIFTER_SUPABASE_STACK: '' })).toBe('a');
+    expect(() => selectStack({ LIFTER_SUPABASE_STACK: '' })).toThrow(
+      /Set LIFTER_SUPABASE_STACK/,
+    );
     for (const invalid of ['remote', 'B', 'e']) {
       expect(() => selectStack({ LIFTER_SUPABASE_STACK: invalid })).toThrow(
         'Unsupported local Supabase stack',
@@ -25,22 +32,23 @@ describe('isolated local Supabase stack contract', () => {
     }
   });
 
-  it('infers the selected local profile from CI-shaped endpoint variables', () => {
-    expect(
+  it('requires an explicit selector even when endpoint variables are present', () => {
+    expect(() =>
       selectStack({
         API_URL: 'http://127.0.0.1:25421',
         DB_URL: 'postgres://postgres:postgres@127.0.0.1:25422/postgres',
       }),
-    ).toBe('b');
+    ).toThrow(/Set LIFTER_SUPABASE_STACK/);
     expect(
       selectStack({
-        API_URL: 'http://127.0.0.1:54321',
-        DB_URL: 'postgres://postgres:postgres@127.0.0.1:54322/postgres',
+        LIFTER_SUPABASE_STACK: 'b',
+        API_URL: 'http://127.0.0.1:25421',
+        DB_URL: 'postgres://postgres:postgres@127.0.0.1:25422/postgres',
       }),
-    ).toBe('a');
+    ).toBe('b');
   });
 
-  it('uses the supplied root when inferring the environment-selected profile', () => {
+  it('uses the supplied root for the explicitly selected profile', () => {
     const root = mkdtempSync(join(tmpdir(), 'lifter-stack-root-'));
     try {
       const b = join(root, 'supabase-stack-b', 'supabase');
@@ -51,12 +59,31 @@ describe('isolated local Supabase stack contract', () => {
       writeFileSync(join(b, 'config.toml'), config);
       const env = {
         NODE_ENV: 'test' as const,
+        LIFTER_SUPABASE_STACK: 'b',
         API_URL: 'http://127.0.0.1:29521',
         DB_URL: 'postgres://postgres:postgres@127.0.0.1:29522/postgres',
       };
 
       expect(loadSelectedStackEnv(env, root)).toBe('b');
-      expect(selectStack(env, root)).toBe('b');
+      expect(selectStack(env)).toBe('b');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('explains that missing C profiles must be provisioned in the lane worktree', () => {
+    const root = mkdtempSync(join(tmpdir(), 'lifter-stack-c-missing-'));
+    try {
+      const expectedPath = join(
+        root,
+        'supabase-stack-c',
+        'supabase',
+        'config.toml',
+      );
+      expect(() => getStackConfig('c', root)).toThrow(
+        /Expected profile config at .*supabase-stack-c.*config\.toml.*must be provisioned locally in the lane's worktree/,
+      );
+      expect(expectedPath).toContain('supabase-stack-c');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }

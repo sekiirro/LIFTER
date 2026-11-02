@@ -228,6 +228,7 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
     const functions =
       await tx`select p.proname,to_jsonb(array(select format_type(t,null) from unnest(p.proargtypes) t)) as types from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prokind='f'`;
     expect(functions.length).toBeGreaterThan(0);
+    const unauthorizedPaymentRpcResults: Record<string, unknown> = {};
     await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: c.auth_user_id, role: 'authenticated' })},true)`;
     for (const fn of functions) {
       if (fn.proname === 'client_self_status') {
@@ -299,6 +300,7 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
           integer: '1::integer',
           smallint: '1::smallint',
           bigint: '1::bigint',
+          numeric: '1::numeric',
           boolean: 'false',
           bytea: "decode('00','hex')",
           'timestamp with time zone': 'now()',
@@ -306,6 +308,17 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
         if (!values[typeName])
           throw new Error('Uncovered public RPC argument type');
         args.push(values[typeName]!);
+      }
+      if (['record_refund', 'record_renewal'].includes(fn.proname)) {
+        await tx.savepoint(async (inner) => {
+          await inner`set local role authenticated`;
+          const [row] = await inner.unsafe(
+            `select public."${fn.proname}"(${args.join(',')}) as result`,
+          );
+          unauthorizedPaymentRpcResults[fn.proname] = row!.result;
+          await inner`reset role`;
+        });
+        continue;
       }
       await tx
         .savepoint(async (inner) => {
@@ -322,7 +335,11 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
                     (typeof value === 'object' &&
                       value !== null &&
                       'status' in value &&
-                      value.status === 'invalid'),
+                      (value.status === 'invalid' ||
+                        (['subscription_freeze_operation'].includes(
+                          fn.proname,
+                        ) &&
+                          value.status === 'invalid_input'))),
                   fn.proname,
                 ).toBe(true);
           } catch (error) {
@@ -334,5 +351,9 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
           if (error.code !== '42501') throw error;
         });
     }
+    expect(unauthorizedPaymentRpcResults).toEqual({
+      record_refund: { status: 'not_permitted' },
+      record_renewal: { status: 'not_permitted' },
+    });
   });
 });

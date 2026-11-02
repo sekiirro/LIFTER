@@ -281,9 +281,16 @@ test('client status updates after PO rejection and reconsideration without signi
     await expect(clientPage.locator('form')).toHaveCount(0);
 
     await staffPage.goto(reviewUrl);
+    await expect(staffPage.getByTestId('approval-review')).toHaveAttribute(
+      'data-hydrated',
+      'true',
+    );
     const reconsiderDate = staffPage.locator('input[type="date"]');
-    await reconsiderDate.fill('2026-10-30');
-    await expect(reconsiderDate).toHaveValue('2026-10-30');
+    const todayInCairo = new Intl.DateTimeFormat('sv-SE', {
+      timeZone: 'Africa/Cairo',
+    }).format(new Date());
+    await reconsiderDate.fill(todayInCairo);
+    await expect(reconsiderDate).toHaveValue(todayInCairo);
     await staffPage
       .getByRole('checkbox', {
         name: messages['registrationApproval.confirmPayment'],
