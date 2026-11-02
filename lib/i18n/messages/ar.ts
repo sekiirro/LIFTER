@@ -643,7 +643,7 @@ export const ar = {
   'forms.staffD03Deadline': 'مهلة تسليم {deadline}',
   'forms.staffSyntheticOnly':
     'معاينة تجريبية فقط. لا يبدأ التنبيه الفعلي قبل توافر بيانات التسليم والمدرّب المعتمدة.',
-// DRAFT (T017): catalog list/search interface copy pending PO approval.
+  // DRAFT (T017): catalog list/search interface copy pending PO approval.
   'catalog.exerciseTitle': 'مكتبة التمارين',
   'catalog.exerciseIntro':
     'ابحث في التمارين المتاحة وصفّها حسب العضلة الأساسية أو المعدات.',

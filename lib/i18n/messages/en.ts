@@ -665,7 +665,7 @@ export const en: Record<keyof typeof ar, string> = {
   'forms.staffD03Deadline': '{deadline} delivery deadline',
   'forms.staffSyntheticOnly':
     'Synthetic preview only. Real-data alerting waits for authoritative delivery and Trainer facts.',
-// DRAFT (T017): catalog list/search interface copy pending PO approval.
+  // DRAFT (T017): catalog list/search interface copy pending PO approval.
   'catalog.exerciseTitle': 'Exercise library',
   'catalog.exerciseIntro':
     'Search available exercises and filter by primary muscle or equipment.',
