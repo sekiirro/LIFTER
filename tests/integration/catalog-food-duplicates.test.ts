@@ -225,16 +225,18 @@ describe('SQL food duplicate detection and exact-key reservations', () => {
   }, 120_000);
 
   it('uses language, normalized name, basis, product, preparation, and weighing state in exact identity', async () => {
+    const englishName = `Catalog rice ${randomUUID()}`;
+    const arabicName = `${String.fromCharCode(0x0623, 0x0631, 0x0632)} ${randomUUID()}`;
     const foodId = await createFood({
-      name_en: 'Catalog rice',
-      name_ar: 'أرز',
+      name_en: englishName,
+      name_ar: arabicName,
     });
     await db`select app_private.reserve_catalog_food_keys(${foodId}, 1)`;
     const exact = await asActor(
       trainerId,
       (tx) =>
         tx`select food_id, version, match_type from public.catalog_food_duplicate_candidates(
-        'Catalog rice', 'en', 'g', 'product-a', 'plain', 'not_applicable', 100
+        ${englishName}, 'en', 'g', 'product-a', 'plain', 'not_applicable', 100
       )`,
     );
     expect(exact).toEqual([
@@ -244,7 +246,7 @@ describe('SQL food duplicate detection and exact-key reservations', () => {
       trainerId,
       (tx) =>
         tx`select food_id from public.catalog_food_duplicate_candidates(
-        'أرز', 'ar', 'g', 'product-a', 'plain', 'not_applicable', 100
+        ${arabicName}, 'ar', 'g', 'product-a', 'plain', 'not_applicable', 100
       )`,
     );
     expect(otherLanguage).toEqual([{ food_id: foodId }]);
@@ -259,7 +261,7 @@ describe('SQL food duplicate detection and exact-key reservations', () => {
         trainerId,
         (tx) =>
           tx`select food_id from public.catalog_food_duplicate_candidates(
-          'Catalog rice', 'en', ${dimensions.basis ?? 'g'}, ${dimensions.product ?? 'product-a'},
+          ${englishName}, 'en', ${dimensions.basis ?? 'g'}, ${dimensions.product ?? 'product-a'},
           ${dimensions.preparation ?? 'plain'}, ${dimensions.weighing ?? 'not_applicable'}, 100
         ) where match_type = 'exact'`,
       );
@@ -268,7 +270,7 @@ describe('SQL food duplicate detection and exact-key reservations', () => {
   });
 
   it('warns for same-identity near matches only at >=90% and within the kcal tolerance', async () => {
-    const longName = 'abcdefghijklmnopqrstuvwxyz'.repeat(4);
+    const longName = 'abcdefghijklmnopqrstuvwxyz'.repeat(4) + randomUUID();
     const nearName = `${longName.slice(0, -1)}x`;
     const foodId = await createFood({ name_en: longName, kcal: 100 });
     await db`select app_private.reserve_catalog_food_keys(${foodId}, 1)`;
@@ -299,9 +301,10 @@ describe('SQL food duplicate detection and exact-key reservations', () => {
   });
 
   it('serializes exact-key reservation races and leaves one active owner', async () => {
-    const first = await createFood({ name_en: 'Concurrent reserved identity' });
+    const name = `Concurrent reserved identity ${randomUUID()}`;
+    const first = await createFood({ name_en: name });
     const second = await createFood({
-      name_en: 'Concurrent reserved identity',
+      name_en: name,
     });
     const outcomes = await Promise.allSettled([
       concurrentDb.begin(
@@ -319,7 +322,7 @@ describe('SQL food duplicate detection and exact-key reservations', () => {
     ).toHaveLength(1);
     await expect(
       db`select count(*)::int as active_owners from public.catalog_food_name_keys
-        where active and name_norm = 'concurrent reserved identity'`,
+        where active and name_norm = ${name.toLowerCase()}`,
     ).resolves.toEqual([{ active_owners: 1 }]);
   });
 });
