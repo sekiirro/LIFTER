@@ -86,7 +86,9 @@ describe('NutritionTemplateManager governance and scope', () => {
   it('never exposes Make it Global to workspace staff', () => {
     const html = render({ role: 'staff' });
     expect(html).toContain('Workspace template');
-    expect(html).not.toContain(getMessages('en')['nutritionTemplates.makeGlobal']);
+    expect(html).not.toContain(
+      getMessages('en')['nutritionTemplates.makeGlobal'],
+    );
   });
 
   it('shows Make it Global only to PO for an eligible workspace template', () => {
@@ -114,7 +116,9 @@ describe('NutritionTemplateManager governance and scope', () => {
       }),
       template('global', 'Global template', 'global'),
     ];
-    expect(scopeNutritionTemplates(list, 'workspace', workspaceA).map((x) => x.id)).toEqual(['a']);
+    expect(
+      scopeNutritionTemplates(list, 'workspace', workspaceA).map((x) => x.id),
+    ).toEqual(['a']);
     const html = render({ templates: list });
     expect(html).toContain('Workspace A template');
     expect(html).not.toContain('Workspace B template');
@@ -127,24 +131,33 @@ describe('NutritionTemplateManager governance and scope', () => {
     expect(html).toContain('Global template');
     expect(html).toContain(getMessages('en')['nutritionTemplates.loadVersion']);
     expect(html).not.toContain(getMessages('en')['nutritionTemplates.retire']);
-    expect(html).not.toContain(getMessages('en')['nutritionTemplates.createVersion']);
+    expect(html).not.toContain(
+      getMessages('en')['nutritionTemplates.createVersion'],
+    );
     expect(html).not.toContain('Workspace A');
   });
 
   it('allows PO to see origin and denies Sales template access', () => {
-    const po = render({ role: 'po', templates: [template('global', 'Global template', 'global')] });
+    const po = render({
+      role: 'po',
+      templates: [template('global', 'Global template', 'global')],
+    });
     expect(po).toContain('Workspace A');
     const sales = render({ role: 'sales' });
     expect(sales).toContain(getMessages('en')['nutritionTemplates.noAccess']);
     expect(sales).not.toContain('Workspace template');
-    expect(sales).not.toContain(getMessages('en')['nutritionTemplates.makeGlobal']);
+    expect(sales).not.toContain(
+      getMessages('en')['nutritionTemplates.makeGlobal'],
+    );
   });
 });
 
 describe('NutritionTemplateManager versions and pagination', () => {
   it('keeps retired templates visible as history and disables loading them', () => {
     const html = render({
-      templates: [template('retired', 'Retired template', 'workspace', { retired: true })],
+      templates: [
+        template('retired', 'Retired template', 'workspace', { retired: true }),
+      ],
     });
     expect(html).toContain(getMessages('en')['nutritionTemplates.retired']);
     expect(html).toContain('disabled=""');
@@ -152,7 +165,9 @@ describe('NutritionTemplateManager versions and pagination', () => {
   });
 
   it('renders explicit immutable versions and preserves exact version selection', () => {
-    const html = render({ templates: [template('versions', 'Versioned template')] });
+    const html = render({
+      templates: [template('versions', 'Versioned template')],
+    });
     expect(html).toContain('Load version into draft <bdi dir="ltr">1</bdi>');
     expect(html).toContain('Load version into draft <bdi dir="ltr">2</bdi>');
     expect(render({ locale: 'ar' })).toContain(
@@ -170,10 +185,12 @@ describe('NutritionTemplateManager versions and pagination', () => {
     expect(loaded?.document).not.toBe(document);
     loaded!.document.meals[0]!.items[0]!.quantity.value = '125';
     expect(document.meals[0]!.items[0]!.quantity.value).toBe('100');
-    expect(copyNutritionTemplateVersion(
-      template('retired', 'Retired template', 'workspace', { retired: true }),
-      2,
-    )).toBeNull();
+    expect(
+      copyNutritionTemplateVersion(
+        template('retired', 'Retired template', 'workspace', { retired: true }),
+        2,
+      ),
+    ).toBeNull();
   });
 
   it('caps every template page at 50 rows', () => {
@@ -186,7 +203,9 @@ describe('NutritionTemplateManager versions and pagination', () => {
     expect(page.totalPages).toBe(2);
     expect(paginateNutritionTemplates(entries, 2, 500).items).toHaveLength(13);
     const html = render({ templates: entries, pageSize: 500 });
-    expect(html.match(/data-testid="nutrition-template-row"/g)).toHaveLength(50);
+    expect(html.match(/data-testid="nutrition-template-row"/g)).toHaveLength(
+      50,
+    );
     expect(html).toContain(getMessages('en')['nutritionTemplates.next']);
   });
 
@@ -198,7 +217,9 @@ describe('NutritionTemplateManager versions and pagination', () => {
     expect(render({ templates: [] })).toContain(
       getMessages('en')['nutritionTemplates.empty'],
     );
-    expect(render({ state: 'error', onRetry: vi.fn() })).toContain('role="alert"');
+    expect(render({ state: 'error', onRetry: vi.fn() })).toContain(
+      'role="alert"',
+    );
     expect(render({ state: 'error', onRetry: vi.fn() })).toContain(
       getMessages('en')['nutritionTemplates.retry'],
     );

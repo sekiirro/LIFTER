@@ -64,9 +64,10 @@ export function NutritionTemplateManager({
   const globalTemplates = canReadGlobalTemplates
     ? scopeNutritionTemplates(templates, 'global', selectedWorkspaceId)
     : [];
-  const workspaceTemplates = canWriteWorkspace || role === 'po' || role === 'staff'
-    ? scopeNutritionTemplates(templates, 'workspace', selectedWorkspaceId)
-    : [];
+  const workspaceTemplates =
+    canWriteWorkspace || role === 'po' || role === 'staff'
+      ? scopeNutritionTemplates(templates, 'workspace', selectedWorkspaceId)
+      : [];
 
   if (state === 'loading')
     return (
@@ -100,9 +101,17 @@ export function NutritionTemplateManager({
       </Card>
     );
 
-  if (role === 'sales' || (!canReadGlobalTemplates && !canManageWorkspaceTemplates))
+  if (
+    role === 'sales' ||
+    (!canReadGlobalTemplates && !canManageWorkspaceTemplates)
+  )
     return (
-      <Card as="section" className={styles.state} dir={dirFor(locale)} lang={locale}>
+      <Card
+        as="section"
+        className={styles.state}
+        dir={dirFor(locale)}
+        lang={locale}
+      >
         <h2>{m['nutritionTemplates.noAccess']}</h2>
       </Card>
     );
@@ -116,7 +125,10 @@ export function NutritionTemplateManager({
   ) {
     const result = paginateNutritionTemplates(entries, page, pageSize);
     return (
-      <section className={styles.section} aria-labelledby={`${scope}-templates-title`}>
+      <section
+        className={styles.section}
+        aria-labelledby={`${scope}-templates-title`}
+      >
         <header className={styles.sectionHeader}>
           <h3 id={`${scope}-templates-title`}>{title}</h3>
           {canManage && onCreate && (
@@ -130,7 +142,7 @@ export function NutritionTemplateManager({
             </Button>
           )}
         </header>
-    {result.items.length === 0 ? (
+        {result.items.length === 0 ? (
           <p className={styles.empty}>{m['nutritionTemplates.empty']}</p>
         ) : (
           <ul className={styles.list}>
@@ -157,7 +169,10 @@ export function NutritionTemplateManager({
                       </p>
                     )}
                   </div>
-                  <ol className={styles.versions} aria-label={m['nutritionTemplates.versions']}>
+                  <ol
+                    className={styles.versions}
+                    aria-label={m['nutritionTemplates.versions']}
+                  >
                     {template.versions.map(({ version }) => (
                       <li key={version}>
                         <span>
@@ -170,10 +185,15 @@ export function NutritionTemplateManager({
                             template.retired ||
                             pendingAction === `${template.id}:${version}`
                           }
-                          loading={pendingAction === `${template.id}:${version}`}
+                          loading={
+                            pendingAction === `${template.id}:${version}`
+                          }
                           loadingLabel={m['nutritionTemplates.loading']}
                           onClick={() => {
-                            const copy = copyNutritionTemplateVersion(template, version);
+                            const copy = copyNutritionTemplateVersion(
+                              template,
+                              version,
+                            );
                             if (!copy) return;
                             const key = `${template.id}:${version}`;
                             setPendingAction(key);
@@ -185,7 +205,9 @@ export function NutritionTemplateManager({
                                 document: copy.document,
                               }),
                             )
-                              .then(() => setNotice(m['nutritionTemplates.loaded']))
+                              .then(() =>
+                                setNotice(m['nutritionTemplates.loaded']),
+                              )
                               .catch(() => setActionError(true))
                               .finally(() => setPendingAction(''));
                           }}
@@ -238,7 +260,10 @@ export function NutritionTemplateManager({
               variant="secondary"
               disabled={result.page === 1}
               onClick={() =>
-                setPages((current) => ({ ...current, [scope]: current[scope] - 1 }))
+                setPages((current) => ({
+                  ...current,
+                  [scope]: current[scope] - 1,
+                }))
               }
             >
               {m['nutritionTemplates.previous']}
@@ -253,7 +278,10 @@ export function NutritionTemplateManager({
               variant="secondary"
               disabled={result.page === result.totalPages}
               onClick={() =>
-                setPages((current) => ({ ...current, [scope]: current[scope] + 1 }))
+                setPages((current) => ({
+                  ...current,
+                  [scope]: current[scope] + 1,
+                }))
               }
             >
               {m['nutritionTemplates.next']}

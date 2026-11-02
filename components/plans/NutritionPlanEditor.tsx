@@ -393,10 +393,7 @@ export function NutritionPlanEditor({
                             <input
                               type="text"
                               inputMode="decimal"
-                              value={formatDigits(
-                                item.quantity.value,
-                                locale,
-                              )}
+                              value={formatDigits(item.quantity.value, locale)}
                               onChange={(event) =>
                                 commit(
                                   updateItemQuantity(document, item.id, {

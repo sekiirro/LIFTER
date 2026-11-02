@@ -48,7 +48,10 @@ export function paginateNutritionTemplates(
     Math.max(1, Math.floor(requestedPageSize) || DEFAULT_TEMPLATE_PAGE_SIZE),
   );
   const totalPages = Math.max(1, Math.ceil(templates.length / pageSize));
-  const page = Math.min(totalPages, Math.max(1, Math.floor(requestedPage) || 1));
+  const page = Math.min(
+    totalPages,
+    Math.max(1, Math.floor(requestedPage) || 1),
+  );
   const offset = (page - 1) * pageSize;
   return {
     items: templates.slice(offset, offset + pageSize),
@@ -61,7 +64,11 @@ export function paginateNutritionTemplates(
 export function copyNutritionTemplateVersion(
   template: NutritionTemplate,
   versionNumber: number,
-): { sourceTemplateId: string; sourceVersion: number; document: NutritionDocument } | null {
+): {
+  sourceTemplateId: string;
+  sourceVersion: number;
+  document: NutritionDocument;
+} | null {
   const source = template.versions.find(
     (version) => version.version === versionNumber,
   );

@@ -431,7 +431,8 @@ export const ar = {
   'nutritionPlan.totalsUnavailable': 'تعذر حساب الإجماليات',
   // DRAFT (T012 template manager; pending PO copy approval).
   'nutritionTemplates.title': 'قوالب التغذية',
-  'nutritionTemplates.intro': 'تصفّح الإصدارات المعتمدة وحمّل نسخة إلى مسودة خطة جديدة.',
+  'nutritionTemplates.intro':
+    'تصفّح الإصدارات المعتمدة وحمّل نسخة إلى مسودة خطة جديدة.',
   'nutritionTemplates.global': 'قوالب عامة',
   'nutritionTemplates.workspace': 'قوالب مساحة العمل',
   'nutritionTemplates.create': 'إنشاء قالب',
@@ -457,8 +458,10 @@ export const ar = {
   'nutritionTemplates.retry': 'إعادة المحاولة',
   'nutritionTemplates.noAccess': 'ليس لديك صلاحية الوصول إلى قوالب التغذية.',
   'nutritionTemplates.previewTitle': 'إدارة قوالب التغذية',
-  'nutritionTemplates.previewIntro': 'راجع قوالب مساحة العمل والقوالب العامة ببيانات تجريبية.',
-  'nutritionTemplates.previewNotice': 'للعرض فقط. القوالب وهمية ولا يُحفظ أي شيء.',
+  'nutritionTemplates.previewIntro':
+    'راجع قوالب مساحة العمل والقوالب العامة ببيانات تجريبية.',
+  'nutritionTemplates.previewNotice':
+    'للعرض فقط. القوالب وهمية ولا يُحفظ أي شيء.',
   'nutritionAlternatives.moveUp': 'نقل لأعلى',
   'nutritionAlternatives.moveDown': 'نقل لأسفل',
   'nutritionAlternatives.remove': 'حذف',

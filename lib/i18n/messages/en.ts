@@ -447,7 +447,8 @@ export const en: Record<keyof typeof ar, string> = {
   'nutritionPlan.totalsUnavailable': 'Totals could not be calculated',
   // DRAFT (T012 template manager; pending PO copy approval).
   'nutritionTemplates.title': 'Nutrition templates',
-  'nutritionTemplates.intro': 'Browse approved versions and load one into a new plan draft.',
+  'nutritionTemplates.intro':
+    'Browse approved versions and load one into a new plan draft.',
   'nutritionTemplates.global': 'Global templates',
   'nutritionTemplates.workspace': 'Workspace templates',
   'nutritionTemplates.create': 'Create template',
@@ -461,7 +462,8 @@ export const en: Record<keyof typeof ar, string> = {
   'nutritionTemplates.version': 'Version',
   'nutritionTemplates.loadVersion': 'Load version into draft',
   'nutritionTemplates.loaded': 'A copy of this version is ready in the draft.',
-  'nutritionTemplates.actionError': 'This template could not be loaded. Try again.',
+  'nutritionTemplates.actionError':
+    'This template could not be loaded. Try again.',
   'nutritionTemplates.empty': 'No templates in this section yet.',
   'nutritionTemplates.previous': 'Previous page',
   'nutritionTemplates.next': 'Next page',
@@ -471,10 +473,13 @@ export const en: Record<keyof typeof ar, string> = {
   'nutritionTemplates.errorTitle': 'Unable to load templates',
   'nutritionTemplates.errorDescription': 'Try loading the template list again.',
   'nutritionTemplates.retry': 'Retry',
-  'nutritionTemplates.noAccess': 'You do not have access to nutrition templates.',
+  'nutritionTemplates.noAccess':
+    'You do not have access to nutrition templates.',
   'nutritionTemplates.previewTitle': 'Nutrition template manager',
-  'nutritionTemplates.previewIntro': 'Review workspace and global templates using sample data.',
-  'nutritionTemplates.previewNotice': 'Showcase only. Templates are mocked; nothing is saved.',
+  'nutritionTemplates.previewIntro':
+    'Review workspace and global templates using sample data.',
+  'nutritionTemplates.previewNotice':
+    'Showcase only. Templates are mocked; nothing is saved.',
   'nutritionAlternatives.moveUp': 'Move up',
   'nutritionAlternatives.moveDown': 'Move down',
   'nutritionAlternatives.remove': 'Remove',

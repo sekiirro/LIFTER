@@ -99,7 +99,10 @@ export default async function NutritionTemplatesShowcasePage({
         <h1>{m['nutritionTemplates.previewTitle']}</h1>
         <p>{m['nutritionTemplates.previewIntro']}</p>
       </header>
-      <section className={styles.controls} aria-label={m['showcase.preferences']}>
+      <section
+        className={styles.controls}
+        aria-label={m['showcase.preferences']}
+      >
         <LanguageSwitcher
           value={locale}
           label={m['language.label']}
@@ -116,7 +119,11 @@ export default async function NutritionTemplatesShowcasePage({
           }}
         />
       </section>
-      <NutritionTemplateShowcase locale={locale} role={role} templates={templates} />
+      <NutritionTemplateShowcase
+        locale={locale}
+        role={role}
+        templates={templates}
+      />
       <p>{m['nutritionTemplates.previewNotice']}</p>
     </main>
   );

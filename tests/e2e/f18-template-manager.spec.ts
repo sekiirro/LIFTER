@@ -30,10 +30,14 @@ for (const variant of [
       },
     ]);
     await page.goto('/showcase/f18-templates');
-    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+    await page.addStyleTag({
+      content: 'nextjs-portal { display: none !important; }',
+    });
     const manager = page.getByTestId('nutrition-template-manager');
     await expect(manager).toHaveAttribute('dir', variant.direction);
-    await expect(manager.getByText('Another workspace template')).toHaveCount(0);
+    await expect(manager.getByText('Another workspace template')).toHaveCount(
+      0,
+    );
     await expect(
       manager.getByRole('button', {
         name: variant.locale === 'ar' ? 'جعله عامًا' : 'Make it Global',
@@ -47,7 +51,9 @@ for (const variant of [
     for (const width of [390, 768, 1440]) {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
       const overflow = await page.evaluate(
-        () => document.documentElement.scrollWidth > document.documentElement.clientWidth,
+        () =>
+          document.documentElement.scrollWidth >
+          document.documentElement.clientWidth,
       );
       expect(overflow).toBe(false);
       await page.screenshot({
@@ -65,7 +71,10 @@ for (const variant of [
     }
 
     const loadVersion = manager.getByRole('button', {
-      name: variant.locale === 'ar' ? 'تحميل الإصدار إلى مسودة ٢' : 'Load version into draft 2',
+      name:
+        variant.locale === 'ar'
+          ? 'تحميل الإصدار إلى مسودة ٢'
+          : 'Load version into draft 2',
     });
     await loadVersion.focus();
     await page.keyboard.press('Enter');

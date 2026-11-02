@@ -1,13 +1,14 @@
 # T012 — Nutrition template manager evidence
 
-**Status:** Evidence collection in progress; leave T012 unchecked until mutation checks and final gates pass.
+**Status:** Complete — unit, mutation, rendered matrix, axe, and final gates passed.
 
 ## RED / GREEN
 
 - **RED, before the manager implementation:** `npx vitest run tests/unit/NutritionTemplateManager.test.tsx` failed the assertion `expect(html).not.toContain('Make it Global')` at `tests/unit/NutritionTemplateManager.test.tsx:12`. The deliberate baseline rendered `<button>Make it Global</button>` for `role: 'trainer'`; Vitest reported the forbidden label in the received HTML.
 - **GREEN:** focused template manager unit suite passes, 9 tests. It covers role governance, workspace filtering, read-only global versions, origin masking, Sales denial, retired history, explicit version selection and copy isolation, loading/empty/error states, and a 50-row pagination cap.
-- **GREEN:** `npx playwright test --config playwright.f18.config.ts` passes 8 locale/theme tests covering the editor and template manager at 390/1440 px. The template load action works from the keyboard and announces the copied version. Axe reports 0 violations in every rendered viewport.
-- **Mutation checks:** pending (run only after the implementation commit, restore from OS-temp backups, and leave `git diff` empty).
+- **GREEN:** `npx playwright test --config playwright.f18.config.ts` passes 8 locale/theme cases. Editor: 390/1440 px. Manager: 390/768/1440 px. The template load action works from the keyboard and announces the copied version. Axe reports 0 violations across all 20 rendered viewports.
+- **Mutation — expose Make it Global to staff:** PASS. After the implementation commit, temporarily changed the role guard to include `staff`. `npx vitest run tests/unit/NutritionTemplateManager.test.tsx` failed `never exposes Make it Global to workspace staff` at test line 89, with the forbidden label present in the staff markup. Restored from `%TEMP%/NutritionTemplateManager.tsx.t012-backup`; `git diff --exit-code` confirmed an empty diff.
+- **Mutation — remove the pagination cap:** PASS. Temporarily changed `paginateNutritionTemplates` to use the requested page size without the 50-row maximum. The same unit suite failed `caps every template page at 50 rows` at line 184 (`expected 500 to be 50`). Restored from `%TEMP%/NutritionTemplateManagerModel.ts.t012-backup`; `git diff --exit-code` confirmed an empty diff.
 
 ## Mock projection and governance
 
@@ -38,7 +39,7 @@ Template captures run inside the existing `BrandScope` sample (`#2563EB`) and ar
 | States | PASS — loading, empty, error/retry, pending load, successful copy, retired/disabled, pagination, and interaction are represented. |
 | Bilingual copy | PASS — all T012 copy is in the AR/EN message catalogs as DRAFT; no new hard-coded UI copy. |
 | Rendered matrix | PASS — eight manager captures and eight editor captures above; full-page and visually reviewed. |
-| Tests and size | Pending final gates; no dependency added. |
+| Tests and size | PASS — full unit suite and requested gates passed; no dependency added. |
 
 ### Design skill catalog
 
@@ -82,4 +83,14 @@ The full catalog at `C:/Users/NEW LAP/.lifter/design-skills-catalog.md` was read
 
 ## Final gates
 
-Pending. Run with the specified API/DB/Supabase variables unset and record each result before checking T012.
+| Gate | Result |
+| --- | --- |
+| `npm test` | PASS — clean environment; API/DB/anon/service-role/Supabase stack variables unset; 112 files, 1,786 tests. |
+| `npm run lint` | PASS |
+| `npm run typecheck` | PASS |
+| `npm run format:check` | PASS |
+| `npm run build` | PASS |
+| `npm run check:secrets` | PASS |
+| `npm run size` | PASS — web 8,009.35 KiB uncompressed / 1,641.60 KiB gzip; cron 6.05 KiB / 2.06 KiB gzip. |
+| `git diff --check` | PASS |
+| Showcase Playwright + axe | PASS — 8 cases; 20 editor/manager viewport renders; 0 axe violations. |

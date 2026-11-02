@@ -57,7 +57,7 @@
 
 ## Phase 6 — Template management UI
 
-- [ ] **T012 (45m) — Build global/workspace nutrition template management UI.** `OWNER=MiniMax`. **[INDEPENDENT]**. Exact files: `components/plans/NutritionTemplateManager.tsx`, `tests/unit/NutritionTemplateManager.test.tsx`. RED: PO-only Make it Global governance and workspace template scoping hold. GREEN: UI holds. **Mutation:** expose Make it Global to staff or drop the template list pagination cap and prove the test fails. No direct DB.
+- [x] **T012 (45m) — Build global/workspace nutrition template management UI.** `OWNER=MiniMax`. **[INDEPENDENT]**. Exact files: `components/plans/NutritionTemplateManager.tsx`, `tests/unit/NutritionTemplateManager.test.tsx`. RED: PO-only Make it Global governance and workspace template scoping hold. GREEN: UI holds. **Mutation:** expose Make it Global to staff or drop the template list pagination cap and prove the test fails. No direct DB. Evidence: [T012 report](T012-evidence.md).
 
 ## Phase 7 — Export module
 

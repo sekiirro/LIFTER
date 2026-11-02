@@ -30,7 +30,9 @@ for (const variant of [
       },
     ]);
     await page.goto('/showcase/f18-plan-editor');
-    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+    await page.addStyleTag({
+      content: 'nextjs-portal { display: none !important; }',
+    });
     await page.waitForTimeout(250);
     const editor = page.getByTestId('nutrition-plan-editor');
     await expect(editor).toHaveAttribute('dir', variant.direction);
