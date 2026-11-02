@@ -11,7 +11,7 @@ import {
 } from '../../../../../lib/design/preferences';
 import { getMessages } from '../../../../../lib/i18n';
 import { ExerciseAuthoringForm } from '../../ExerciseAuthoringForm';
-import { exerciseInput } from '../page';
+import { exerciseInput } from '../../../../../lib/catalog/exercise-input';
 import styles from '../../exercise-library.module.css';
 
 const UUID =

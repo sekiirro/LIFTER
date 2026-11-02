@@ -6,6 +6,7 @@ import { DuplicateReview } from '../../components/catalog/DuplicateReview';
 import { selectExistingFood } from '../../components/catalog/DuplicateReview';
 import {
   buildFoodEditorInput,
+  clearResolvedMacroErrors,
   validateFoodEditorDraft,
   type FoodEditorDraft,
 } from '../../lib/catalog/food-editor';
@@ -125,6 +126,28 @@ describe('food editor (T029)', () => {
         ],
       }).alternativePortions?.[0],
     ).toBe('positive');
+  });
+
+  it('clears all dependent macro errors once the macro sum is valid', () => {
+    const invalid = { ...base, protein: '40', carbs: '40', fat: '30' };
+    const errors = validateFoodEditorDraft(invalid);
+    expect(errors).toMatchObject({
+      protein: 'macros_exceed_basis',
+      carbs: 'macros_exceed_basis',
+      fat: 'macros_exceed_basis',
+    });
+    expect(
+      clearResolvedMacroErrors(errors, { ...invalid, fat: '20' }),
+    ).not.toHaveProperty('protein');
+    expect(
+      clearResolvedMacroErrors(errors, { ...invalid, fat: '20' }),
+    ).not.toHaveProperty('carbs');
+    expect(
+      clearResolvedMacroErrors(errors, { ...invalid, fat: '20' }),
+    ).not.toHaveProperty('fat');
+    expect(clearResolvedMacroErrors(errors, { ...invalid, fat: '30' })).toEqual(
+      errors,
+    );
   });
 
   it('renders bilingual named fields, warning-only kcal copy, and accessible errors', () => {

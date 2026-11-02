@@ -44,6 +44,24 @@ export type FoodEditorErrors = {
   alternativeUnits?: (boolean | undefined)[];
 };
 
+export function clearResolvedMacroErrors(
+  errors: FoodEditorErrors,
+  draft: FoodEditorDraft,
+): FoodEditorErrors {
+  const macros = ['protein', 'carbs', 'fat'] as const;
+  const values = macros.map((key) => number(draft[key]));
+  if (
+    values.some((value) => !Number.isFinite(value) || value < 0) ||
+    values.reduce((sum, value) => sum + value, 0) > 100
+  )
+    return errors;
+  const next = { ...errors };
+  for (const key of macros) {
+    if (next[key] === 'macros_exceed_basis') delete next[key];
+  }
+  return next;
+}
+
 function number(value: string): number {
   return value.trim() === '' ? Number.NaN : Number(value);
 }

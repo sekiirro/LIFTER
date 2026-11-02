@@ -12,6 +12,7 @@ import { interpolateNumbers } from '../../lib/i18n/format';
 import {
   MAX_CATALOG_TEXT_LENGTH,
   buildFoodEditorInput,
+  clearResolvedMacroErrors,
   foodWarnings,
   validateFoodEditorDraft,
   type FoodEditorDraft,
@@ -133,7 +134,8 @@ export function FoodEditor({
     key: K,
     value: FoodEditorDraft[K],
   ) {
-    setDraft((prev) => ({ ...prev, [key]: value }));
+    const updatedDraft = { ...draft, [key]: value };
+    setDraft(updatedDraft);
     const errorKey = (
       {
         nameAr: 'name',
@@ -149,10 +151,16 @@ export function FoodEditor({
     )[key];
     if (errorKey) {
       setErrors((previous) => {
-        if (!(errorKey in previous)) return previous;
+        if (!(errorKey in previous)) {
+          return ['protein', 'carbs', 'fat'].includes(key)
+            ? clearResolvedMacroErrors(previous, updatedDraft)
+            : previous;
+        }
         const next = { ...previous };
         delete next[errorKey];
-        return next;
+        return ['protein', 'carbs', 'fat'].includes(key)
+          ? clearResolvedMacroErrors(next, updatedDraft)
+          : next;
       });
     }
   }

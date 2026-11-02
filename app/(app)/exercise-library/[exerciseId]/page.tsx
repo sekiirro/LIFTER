@@ -8,10 +8,8 @@ import {
   authoringWorkspaces,
   exerciseDetail,
 } from '../../../../lib/catalog/server';
-import {
-  normalizeExerciseInput,
-  type ExerciseInput,
-} from '../../../../lib/catalog/schemas';
+import { normalizeExerciseInput } from '../../../../lib/catalog/schemas';
+import { exerciseInput } from '../../../../lib/catalog/exercise-input';
 import {
   LOCALE_COOKIE,
   dirFor,
@@ -26,59 +24,6 @@ type Props = {
   params: Promise<{ exerciseId: string }>;
   searchParams: Promise<{ workspace?: string | string[] }>;
 };
-
-export function exerciseInput(
-  row: Record<string, unknown>,
-): ExerciseInput | null {
-  const payload = row.payload as Record<string, unknown>;
-  const equipment = Array.isArray(payload.equipment_codes)
-    ? payload.equipment_codes[0]
-    : null;
-  const defaults =
-    payload.defaults && typeof payload.defaults === 'object'
-      ? (payload.defaults as Record<string, unknown>)
-      : {};
-  const reps =
-    defaults.reps && typeof defaults.reps === 'object'
-      ? (defaults.reps as Record<string, unknown>)
-      : null;
-  return {
-    names: { ar: String(row.name_ar), en: String(row.name_en) },
-    primaryMuscle: String(payload.primary_muscle_code),
-    secondaryMuscles: Array.isArray(payload.secondary_muscle_codes)
-      ? payload.secondary_muscle_codes.map(String)
-      : [],
-    equipment: String(equipment),
-    lifecycleState: row.lifecycle_state === 'removed' ? 'removed' : 'active',
-    defaults: {
-      warmupSets:
-        typeof defaults.warmup_sets === 'number'
-          ? defaults.warmup_sets
-          : undefined,
-      workingSets:
-        typeof defaults.working_sets === 'number'
-          ? defaults.working_sets
-          : undefined,
-      reps:
-        reps && typeof reps.min === 'number' && typeof reps.max === 'number'
-          ? { kind: 'range', min: reps.min, max: reps.max }
-          : reps && typeof reps.value === 'number'
-            ? { kind: 'fixed', value: reps.value }
-            : undefined,
-      restSeconds:
-        typeof defaults.rest_seconds === 'number'
-          ? defaults.rest_seconds
-          : undefined,
-      rir:
-        typeof defaults.rir === 'number' || defaults.rir === null
-          ? defaults.rir
-          : undefined,
-      alternativeExerciseIds: Array.isArray(defaults.alternative_exercise_ids)
-        ? defaults.alternative_exercise_ids.map(String)
-        : [],
-    },
-  };
-}
 
 export default async function ExerciseDetailPage({
   params,
@@ -96,23 +41,30 @@ export default async function ExerciseDetailPage({
   if (!UUID.test(exerciseId)) notFound();
   let workspaceId: string | null = null;
   let workspaceOptions: { id: string; name: string }[] = [];
-  if (actor.role !== 'platform_owner' || typeof query.workspace === 'string') {
-    const workspaces = await authoringWorkspaces();
-    if (workspaces.status !== 'ok') notFound();
-    const allowed =
-      actor.role === 'platform_owner'
-        ? workspaces.data
-        : workspaces.data.filter((item) =>
-            actor.activeWorkspaceIds.includes(item.id),
-          );
-    workspaceOptions = allowed;
-    const requested =
-      typeof query.workspace === 'string' ? query.workspace : '';
-    if (requested && !allowed.some((item) => item.id === requested)) notFound();
-    workspaceId =
-      requested ||
-      (actor.role === 'platform_owner' ? null : (allowed[0]?.id ?? null));
-    if (actor.role !== 'platform_owner' && !workspaceId) notFound();
+  const workspaces = await authoringWorkspaces();
+  if (workspaces.status !== 'ok') notFound();
+  const allowed =
+    actor.role === 'platform_owner'
+      ? workspaces.data
+      : workspaces.data.filter((item) =>
+          actor.activeWorkspaceIds.includes(item.id),
+        );
+  const requested = typeof query.workspace === 'string' ? query.workspace : '';
+  if (
+    requested &&
+    actor.role !== 'platform_owner' &&
+    !actor.activeWorkspaceIds.includes(requested)
+  )
+    notFound();
+  workspaceId =
+    requested ||
+    (actor.role === 'platform_owner'
+      ? null
+      : (actor.activeWorkspaceIds[0] ?? null));
+  if (actor.role !== 'platform_owner' && !workspaceId) notFound();
+  workspaceOptions = allowed;
+  if (workspaceId && !allowed.some((item) => item.id === workspaceId)) {
+    workspaceOptions = [...allowed, { id: workspaceId, name: workspaceId }];
   }
   const result = await exerciseDetail({ exerciseId, workspaceId });
   if (result.status === 'not_permitted') notFound();
