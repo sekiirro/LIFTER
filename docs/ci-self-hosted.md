@@ -22,7 +22,7 @@ The single registered runner executes one job at a time, so Supabase jobs queue 
 
 ## Startup and service operations
 
-`/etc/wsl.conf` enables systemd in `lifter-ci`; the Docker daemon, runner service, and `lifter-wsl-keepalive.service` start under systemd. A Windows Scheduled Task starts only `lifter-ci` at the current user's logon and holds a `wsl.exe -d lifter-ci --exec /bin/sleep infinity` process so WSL stays running while the runner is idle. It uses an interactive current-user token and stores no password. Creating an additional machine-startup S4U trigger was denied without Windows elevation, so the current task starts after the user signs in. This task does not change global `.wslconfig` settings.
+`/etc/wsl.conf` enables systemd and disables Windows PATH inheritance in `lifter-ci`, so Windows npm shims cannot shadow Linux tools in workflow jobs. The Docker daemon, runner service, and `lifter-wsl-keepalive.service` start under systemd. A Windows Scheduled Task starts only `lifter-ci` at the current user's logon and holds a `wsl.exe -d lifter-ci --exec /bin/sleep infinity` process so WSL stays running while the runner is idle. It uses an interactive current-user token and stores no password. Creating an additional machine-startup S4U trigger was denied without Windows elevation, so the current task starts after the user signs in. This task does not change global `.wslconfig` settings.
 
 Check the runner and local engine from Windows:
 
