@@ -1,0 +1,36 @@
+.page {
+  min-block-size: 100dvb;
+  padding-block: var(--space-4);
+  background: var(--color-bg);
+}
+
+.controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-4);
+  max-inline-size: 72rem;
+  margin-inline: auto;
+  padding: 0 var(--space-4) var(--space-4);
+  border-block-end: 1px solid var(--color-border);
+}
+
+.controls a {
+  display: inline-flex;
+  align-items: center;
+  min-block-size: var(--touch-min);
+  color: var(--brand-text);
+  text-underline-offset: var(--space-1);
+}
+
+@media print {
+  .controls {
+    display: none;
+  }
+
+  .page {
+    min-block-size: auto;
+    padding: 0;
+    background: var(--color-print-bg);
+  }
+}
