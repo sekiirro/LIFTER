@@ -1,10 +1,12 @@
 import {
+  normalizeCreatePlanInput,
   normalizeExpectedPublishedVersion,
   normalizePlanId,
   normalizePrivateDraft,
   normalizeReadinessState,
   PlanCoreValidationError,
   type PlanId,
+  type CreatePlanInput,
   type ReadinessState,
 } from './schemas';
 import {
@@ -24,6 +26,11 @@ export type DraftWriteRequest = {
   content: PlanContentEnvelope;
   operationKey: string;
   intent: 'autosave' | 'save_draft';
+};
+
+export type CreatePlanRequest = CreatePlanInput & {
+  kind: 'workout' | 'nutrition';
+  operationKey: string;
 };
 
 export type PublishRequest = {
@@ -82,6 +89,7 @@ export type PlanCoreFailure = { status: PlanCoreErrorCode };
 export type PlanCoreResponse<T> = PlanCoreSuccess<T> | PlanCoreFailure;
 
 export interface PlanCoreTransport {
+  create(request: CreatePlanRequest): Promise<unknown>;
   getRoot(planId: PlanId): Promise<unknown>;
   writeDraft(request: DraftWriteRequest): Promise<unknown>;
   publish(request: PublishRequest): Promise<unknown>;
@@ -429,6 +437,34 @@ async function invoke<T>(
 
 export function createPlanCoreClient(transport: PlanCoreTransport) {
   return {
+    async create(input: unknown): Promise<PlanCoreSuccess<PlanRootDto>> {
+      let request: CreatePlanRequest;
+      try {
+        const value = requireRecord(input, 'Create plan request');
+        exactKeys(
+          value,
+          ['createMode', 'kind', 'templateId', 'sourcePlanId', 'operationKey'],
+          'Create plan request',
+        );
+        if (value.kind !== 'workout' && value.kind !== 'nutrition') {
+          throw new PlanCoreValidationError('Create plan kind is invalid');
+        }
+        const createInput = Object.fromEntries(
+          Object.entries(value).filter(([key]) =>
+            ['createMode', 'templateId', 'sourcePlanId'].includes(key),
+          ),
+        );
+        request = {
+          ...normalizeCreatePlanInput(createInput),
+          kind: value.kind,
+          operationKey: requireOperationKey(value.operationKey),
+        };
+      } catch (error) {
+        throw mapLocalError(error);
+      }
+      return invoke(() => transport.create(request), normalizePlanRootDto);
+    },
+
     async getRoot(planId: unknown): Promise<PlanCoreSuccess<PlanRootDto>> {
       let normalizedId: PlanId;
       try {

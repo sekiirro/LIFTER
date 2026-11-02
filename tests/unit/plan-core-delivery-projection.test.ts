@@ -128,13 +128,6 @@ describe('Plan Core client delivery projection', () => {
     ).toBe('complete');
   });
 
-  it('does not expose content for a not-delivered plan', () => {
-    const result = projectClientDelivery({ ...input, deliveries: [] });
-
-    expect(result?.delivery.status).toBe('not_delivered');
-    expect(result?.content).toBeNull();
-  });
-
   it('does not use another subscription delivery or activation', () => {
     const foreignDelivery = {
       ...delivery,
@@ -150,9 +143,7 @@ describe('Plan Core client delivery projection', () => {
       activation: foreignActivation,
     });
 
-    expect(result?.delivery.status).toBe('not_delivered');
-    expect(result?.activation.status).toBe('pending');
-    expect(result?.content).toBeNull();
+    expect(result).toBeNull();
   });
 });
 

@@ -283,3 +283,21 @@ describe('Plan Core client', () => {
       createMode: 'blank', kind: 'workout', operationKey: OPERATION_KEY,
     });
   });
+
+  it('requires mode-specific create IDs and rejects IDs on other modes', async () => {
+    const create = vi.fn();
+    const client = createPlanCoreClient({
+      getRoot: vi.fn(), writeDraft: vi.fn(), publish: vi.fn(), create,
+    });
+    const cases = [
+      { createMode: 'template', kind: 'workout', operationKey: OPERATION_KEY },
+      { createMode: 'existing_plan', kind: 'nutrition', operationKey: OPERATION_KEY },
+      { createMode: 'blank', kind: 'workout', operationKey: OPERATION_KEY, templateId: PLAN_ID },
+      { createMode: 'blank', kind: 'workout', operationKey: OPERATION_KEY, sourcePlanId: PLAN_ID },
+      { createMode: 'template', kind: 'workout', operationKey: OPERATION_KEY, templateId: PLAN_ID, sourcePlanId: REVISION_ID },
+    ];
+    for (const request of cases) {
+      await expect(client.create(request)).rejects.toMatchObject({ code: 'invalid_input' });
+    }
+    expect(create).not.toHaveBeenCalled();
+  });

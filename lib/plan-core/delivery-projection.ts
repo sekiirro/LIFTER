@@ -57,6 +57,8 @@ export function projectClientDelivery(
       record.planId === input.root.planId &&
       record.kind === input.kind,
   );
+  if (!delivered) return null;
+
   const activated = input.activation?.subscriptionId === input.subscriptionId;
 
   return {
@@ -64,8 +66,8 @@ export function projectClientDelivery(
     kind: input.kind,
     revisionNumber: latest.revisionNumber,
     publishedAt: latest.createdAt,
-    content: delivered ? latest.content : null,
-    delivery: { status: delivered ? 'delivered' : 'not_delivered' },
+    content: latest.content,
+    delivery: { status: 'delivered' },
     activation: { status: activated ? 'complete' : 'pending' },
   };
 }
