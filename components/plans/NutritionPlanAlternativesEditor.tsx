@@ -382,9 +382,15 @@ function macroUnit(
     : messages['nutritionAlternatives.grams'];
 }
 
-function localizedQuantityUnit(unit: string, locale: Locale, messages: Messages) {
-  if (locale === 'ar' && unit === 'g') return messages['nutritionAlternatives.grams'];
-  if (locale === 'ar' && unit === 'ml') return messages['nutritionAlternatives.milliliters'];
+function localizedQuantityUnit(
+  unit: string,
+  locale: Locale,
+  messages: Messages,
+) {
+  if (locale === 'ar' && unit === 'g')
+    return messages['nutritionAlternatives.grams'];
+  if (locale === 'ar' && unit === 'ml')
+    return messages['nutritionAlternatives.milliliters'];
   return unit;
 }
 
@@ -819,7 +825,11 @@ export function NutritionPlanAlternativesEditor({
                     ))}
                     {!units.includes(alternative.quantity.unit) && (
                       <option value={alternative.quantity.unit}>
-                        {localizedQuantityUnit(alternative.quantity.unit, locale, messages)}
+                        {localizedQuantityUnit(
+                          alternative.quantity.unit,
+                          locale,
+                          messages,
+                        )}
                       </option>
                     )}
                   </select>

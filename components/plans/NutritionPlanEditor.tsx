@@ -10,7 +10,6 @@ import { getMessages } from '../../lib/i18n';
 import type { NutritionFoodSnapshot } from '../../lib/plans/nutrition/macros';
 import type {
   NutritionDocument,
-  Meal,
   Quantity,
 } from '../../lib/plans/nutrition/schema';
 import {

@@ -33,7 +33,6 @@ for (const variant of [
     await page.waitForTimeout(250);
     const editor = page.getByTestId('nutrition-plan-editor');
     await expect(editor).toHaveAttribute('dir', variant.direction);
-    const meals = editor.locator('ol > li h4');
     const before = await editor
       .locator('ol > li')
       .first()
