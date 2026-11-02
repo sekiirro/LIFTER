@@ -1,6 +1,6 @@
 # Plan Core Client Contract
 
-**STATUS: APPROVED (S27-R5)**
+**STATUS: APPROVED (S27-R5, S27-R6.1)**
 
 This is the shared TypeScript client contract for T008. Feature-owned workout and nutrition document schemas remain owned by F17/F18.
 
@@ -25,6 +25,8 @@ This is the shared TypeScript client contract for T008. Feature-owned workout an
 | `PublishRequest` | `{ planId, expectedPublishedVersion, operationKey }`. `expectedPublishedVersion` is the only publish CAS input; `version` and `publishedVersion` are read-side metadata only. Publish appends a revision under the same Plan ID. | `spec.md:15,27-28`; `plan.md:13-18`; F16 `contracts/catalog-api.md:47-49`; S27-R5 rule 2 |
 | `DraftWriteData` | `{ planId, draft }`; `planId` equals the request's Plan ID. `draft` is private. | `spec.md:15,27-28`; `lib/plan-core/schemas.ts:124-131,359-365`; S27-R5 rule 4 |
 | `PublishData` | `{ planId, revision }`; `planId` equals the request's Plan ID and `revision` is its appended immutable revision. | `spec.md:15,27-28`; `lib/plan-core/schemas.ts:183-194,359-365`; S27-R5 rule 4 |
+| `CreatePlanRequest` | `{ createMode: 'blank' | 'template' | 'existing_plan', kind: 'workout' | 'nutrition', templateId?, sourcePlanId?, operationKey }`. `templateId` is required only for `template`; `sourcePlanId` is required only for `existing_plan`; other combinations are `invalid_input`. | S27-R6.1 |
+| `CreatePlanData` | Success data is the root DTO of the newly created plan; source plans are never mutated and replay uses the shared ledger. | S27-R6.1 |
 
 ## Response envelope and errors
 
@@ -41,6 +43,4 @@ Success is `{ status: 'ok', replayed: boolean, data }`. `replayed` is passed thr
 
 The error union is closed. Unknown server statuses map to `unavailable`; do not pass through unknown text or status values. A local `PlanCoreValidationError` with code `invalid_plan_core` maps to `invalid_input`.
 
-## OPEN QUESTION
 
-- The approved rules do not define the client transport operation for explicit Create New Plan (including its operation-key request shape). T008 is scoped to root/draft/revision parsing and save/publish; create remains with the separate create-flow contract/task.
