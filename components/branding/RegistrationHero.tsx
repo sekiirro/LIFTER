@@ -14,7 +14,7 @@ import type { Locale } from '../../lib/design/preferences';
 import { modes } from '../../lib/design/tokens';
 import {
   adaptiveDimmingFromBackdropLuminances,
-  applyHeroSamplingFallback,
+  enterHeroSamplingFallback,
   conservativeBackdropLuminance,
   photoToneFromLuminance,
   selectHeroLayoutMode,
@@ -171,6 +171,10 @@ export function RegistrationHero({
     return () => query.removeEventListener('change', update);
   }, []);
 
+  const enterSamplingFallback = useCallback((stage: HTMLElement) => {
+    enterHeroSamplingFallback(stage, setSamplingFallback);
+  }, []);
+
   const updateArtworkSamples = useCallback(() => {
     const stage = stageRef.current;
     if (!stage) return;
@@ -187,8 +191,7 @@ export function RegistrationHero({
       !image.complete ||
       !image.naturalWidth
     ) {
-      setSamplingFallback(true);
-      applyHeroSamplingFallback(stage);
+      enterSamplingFallback(stage);
       return;
     }
 
@@ -224,8 +227,7 @@ export function RegistrationHero({
         contentBox(textArea),
       );
       if (!textRegion) {
-        setSamplingFallback(true);
-        applyHeroSamplingFallback(stage);
+        enterSamplingFallback(stage);
         return;
       }
       const textPhoto = sampleArtwork(
@@ -243,8 +245,7 @@ export function RegistrationHero({
         3,
       );
       if (!textPhoto || !bottomEdge) {
-        setSamplingFallback(true);
-        applyHeroSamplingFallback(stage);
+        enterSamplingFallback(stage);
         return;
       }
       const peakLuminance = conservativeBackdropLuminance(textPhoto.luminances);
@@ -282,10 +283,9 @@ export function RegistrationHero({
     } catch {
       // A failed canvas read falls back to the opaque token card rather than
       // guessing a treatment over artwork that was never measured.
-      setSamplingFallback(true);
-      applyHeroSamplingFallback(stage);
+      enterSamplingFallback(stage);
     }
-  }, []);
+  }, [enterSamplingFallback]);
 
   useEffect(() => {
     const stage = stageRef.current;
@@ -296,8 +296,8 @@ export function RegistrationHero({
     } else {
       // A new artwork that has not loaded yet must not keep the previous
       // sample: clear it so the card can use the opaque fallback.
-      if (stage?.dataset.photoStatsReady === 'true')
-        applyHeroSamplingFallback(stage);
+      if (stage?.dataset.photoStatsReady === 'true' && stage)
+        enterSamplingFallback(stage);
       image?.addEventListener('load', updateArtworkSamples, { once: true });
     }
     window.addEventListener('resize', updateArtworkSamples);
@@ -305,7 +305,7 @@ export function RegistrationHero({
       image?.removeEventListener('load', updateArtworkSamples);
       window.removeEventListener('resize', updateArtworkSamples);
     };
-  }, [updateArtworkSamples, banner?.src]);
+  }, [enterSamplingFallback, updateArtworkSamples, banner?.src]);
 
   const sourceStyle = {
     '--hero-dark-error-fg': modes.dark.error.fg,

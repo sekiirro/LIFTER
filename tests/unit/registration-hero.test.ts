@@ -9,6 +9,7 @@ import {
   adaptiveDimmingFromLuminance,
   applyHeroSamplingFallback,
   conservativeBackdropLuminance,
+  enterHeroSamplingFallback,
   photoToneFromLuminance,
   selectHeroLayoutMode,
 } from '../../components/branding/registration-hero';
@@ -127,21 +128,21 @@ describe('production registration hero conservative backdrop sampling', () => {
   });
 });
 
-describe('production registration hero sampling fallback', () => {
-  function fakeStage(dataset: Record<string, string> = {}) {
-    const properties = new Map<string, string>();
-    const style = {
-      setProperty: (name: string, value: string) => {
-        properties.set(name, value);
-      },
-      removeProperty: (name: string) => {
-        properties.delete(name);
-      },
-      getPropertyValue: (name: string) => properties.get(name) ?? '',
-    } as unknown as CSSStyleDeclaration;
-    return { dataset: { ...dataset } as DOMStringMap, style };
-  }
+function fakeStage(dataset: Record<string, string> = {}) {
+  const properties = new Map<string, string>();
+  const style = {
+    setProperty: (name: string, value: string) => {
+      properties.set(name, value);
+    },
+    removeProperty: (name: string) => {
+      properties.delete(name);
+    },
+    getPropertyValue: (name: string) => properties.get(name) ?? '',
+  } as unknown as CSSStyleDeclaration;
+  return { dataset: { ...dataset } as DOMStringMap, style };
+}
 
+describe('production registration hero sampling fallback', () => {
   it('clears the sampled state and resets the dimming when sampling fails', () => {
     const stage = fakeStage({
       photoTone: 'bright',
@@ -185,9 +186,49 @@ describe('production registration hero sampling fallback', () => {
 
   it('drives the opaque fallback from the React render, not an attribute re-match', () => {
     expect(heroComponentSource).toContain('styles.samplingFallback');
-    expect(heroComponentSource).toContain('setSamplingFallback(true)');
     expect(heroComponentSource).toContain('setSamplingFallback(false)');
     expect(heroStylesSource).not.toContain("[data-photo-sampling='fallback']");
+  });
+});
+
+describe('production registration hero fallback state', () => {
+  it('clears the sample and renders the opaque fallback together', () => {
+    const stage = fakeStage({
+      photoTone: 'bright',
+      photoStatsReady: 'true',
+    });
+    stage.style.setProperty('--hero-adaptive-dimming', '0.8082');
+    stage.style.setProperty('--hero-adaptive-dimming-percent', '80.82%');
+    const fallbackStates: boolean[] = [];
+
+    enterHeroSamplingFallback(stage, (fallback) => {
+      fallbackStates.push(fallback);
+    });
+
+    expect(fallbackStates).toEqual([true]);
+    expect(stage.dataset.photoSampling).toBe('fallback');
+    expect(stage.dataset.photoTone).toBeUndefined();
+    expect(stage.style.getPropertyValue('--hero-adaptive-dimming')).toBe('0');
+    expect(
+      stage.style.getPropertyValue('--hero-adaptive-dimming-percent'),
+    ).toBe('0%');
+  });
+
+  it('routes every failure path and artwork change through the same entry point', () => {
+    expect(heroComponentSource).toContain(
+      'enterHeroSamplingFallback(stage, setSamplingFallback)',
+    );
+    // No path may clear the sampled values without the rendered fallback.
+    expect(heroComponentSource).not.toContain(
+      'applyHeroSamplingFallback(stage)',
+    );
+    expect(heroComponentSource).toMatch(
+      /photoStatsReady === 'true'[\s\S]{0,160}enterSamplingFallback\(stage\)/,
+    );
+    const failurePaths = heroComponentSource.match(
+      /enterSamplingFallback\(stage\)/g,
+    );
+    expect(failurePaths?.length).toBeGreaterThanOrEqual(5);
   });
 });
 
