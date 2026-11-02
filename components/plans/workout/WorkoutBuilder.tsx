@@ -13,6 +13,7 @@ import {
 } from '../../../lib/plans/workout/builder-actions';
 import { reorderWorkoutDays } from '../../../lib/plans/workout/document-ops';
 import { formatDigits } from '../../../lib/i18n/format-digits';
+import { parseBuilderNumber } from '../../../lib/plans/workout/builder-input';
 import type { WorkoutBuilderFixture } from '../../../lib/plans/workout/builder-fixtures';
 import type {
   WorkoutDay,
@@ -33,15 +34,6 @@ type Props = {
 };
 const uuid = () => globalThis.crypto.randomUUID();
 const shallow = <T,>(value: T): T => structuredClone(value);
-
-function normalizeDigits(value: string): string {
-  return value
-    .replace(/[٠-٩۰-۹]/g, (digit) => {
-      const code = digit.charCodeAt(0);
-      return String(code >= 0x06f0 ? code - 0x06f0 : code - 0x0660);
-    })
-    .replace(/٫/g, '.');
-}
 
 function names(fixture: WorkoutBuilderFixture, locale: Locale) {
   return new Map(
@@ -153,8 +145,8 @@ export function WorkoutBuilder({ locale, messages: m, fixture }: Props) {
     field: 'value' | 'min' | 'max',
     value: string,
   ) => {
-    const n = Number(normalizeDigits(value));
-    if (!Number.isFinite(n) || n <= 0) return set;
+    const n = parseBuilderNumber(value, 'reps');
+    if (n === null || n === undefined) return set;
     const reps = 'value' in set.reps ? { value: n } : { ...set.reps };
     if (field === 'value' && 'value' in reps) reps.value = n;
     else if (field !== 'value' && !('value' in reps)) reps[field] = n;
@@ -693,25 +685,27 @@ export function WorkoutBuilder({ locale, messages: m, fixture }: Props) {
                                   inputMode="decimal"
                                   value={formatDigits(set.load.value, locale)}
                                   onChange={(event) => {
-                                    const value = normalizeDigits(
+                                    const value = parseBuilderNumber(
                                       event.target.value,
+                                      'load',
                                     );
-                                    if (/^\d*(\.\d*)?$/.test(value))
-                                      setSet(
-                                        day.id,
-                                        item.id,
-                                        set.id,
-                                        (current) => ({
-                                          ...current,
-                                          load:
-                                            current.load.mode === 'bodyweight'
-                                              ? current.load
-                                              : {
-                                                  ...current.load,
-                                                  value,
-                                                },
-                                        }),
-                                      );
+                                    if (value === null || value === undefined)
+                                      return;
+                                    setSet(
+                                      day.id,
+                                      item.id,
+                                      set.id,
+                                      (current) => ({
+                                        ...current,
+                                        load:
+                                          current.load.mode === 'bodyweight'
+                                            ? current.load
+                                            : {
+                                                ...current.load,
+                                                value,
+                                              },
+                                      }),
+                                    );
                                   }}
                                 />
                               </label>
@@ -751,14 +745,14 @@ export function WorkoutBuilder({ locale, messages: m, fixture }: Props) {
                               inputMode="numeric"
                               value={formatDigits(set.restSec ?? '', locale)}
                               onChange={(event) => {
-                                const value = normalizeDigits(
+                                const value = parseBuilderNumber(
                                   event.target.value,
+                                  'rest',
                                 );
-                                if (!/^\d*$/.test(value)) return;
+                                if (value === null) return;
                                 setSet(day.id, item.id, set.id, (current) => ({
                                   ...current,
-                                  restSec:
-                                    value === '' ? undefined : Number(value),
+                                  restSec: value,
                                 }));
                               }}
                             />
@@ -770,13 +764,14 @@ export function WorkoutBuilder({ locale, messages: m, fixture }: Props) {
                               inputMode="numeric"
                               value={formatDigits(set.rir ?? '', locale)}
                               onChange={(event) => {
-                                const value = normalizeDigits(
+                                const value = parseBuilderNumber(
                                   event.target.value,
+                                  'rir',
                                 );
-                                if (!/^\d*$/.test(value)) return;
+                                if (value === null) return;
                                 setSet(day.id, item.id, set.id, (current) => ({
                                   ...current,
-                                  rir: value === '' ? undefined : Number(value),
+                                  rir: value,
                                 }));
                               }}
                             />
