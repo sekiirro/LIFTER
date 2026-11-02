@@ -4,18 +4,20 @@ import { createServerClient } from '@supabase/ssr';
 import { expect, test, type BrowserContext } from '@playwright/test';
 import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
+
+const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 for (const locale of ['ar', 'en'] as const)
   test(`${locale}: anonymous package route redirects safely and login passes axe`, async ({
     page,
     context,
   }) => {
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: locale, url: 'http://localhost:3000' },
+      { name: LOCALE_COOKIE, value: locale, url: origin },
     ]);
     const path = '/packages?workspace=00000000-0000-0000-0000-000000000001';
     await page.goto(path);
     await expect(page).toHaveURL(
-      `http://localhost:3000/login?next=${encodeURIComponent(path)}`,
+      `${origin}/login?next=${encodeURIComponent(path)}`,
     );
     await expect(page.locator('html')).toHaveAttribute(
       'dir',
@@ -70,7 +72,7 @@ test.describe('local-stack authenticated package acceptance (required for review
       collected.map(({ name, value }) => ({
         name,
         value,
-        url: 'http://localhost:3000',
+        url: origin,
       })),
     );
   }
@@ -103,7 +105,7 @@ test.describe('local-stack authenticated package acceptance (required for review
     }) => {
       await signIn(context, fixture.po);
       await context.addCookies([
-        { name: LOCALE_COOKIE, value: locale, url: 'http://localhost:3000' },
+        { name: LOCALE_COOKIE, value: locale, url: origin },
       ]);
       const m = getMessages(locale);
       await page.goto(`/packages?workspace=${fixture.wsA.id}`);
@@ -202,7 +204,7 @@ test.describe('local-stack authenticated package acceptance (required for review
       await expect(row).toHaveCount(2);
       for (const theme of ['light', 'dark']) {
         await context.addCookies([
-          { name: THEME_COOKIE, value: theme, url: 'http://localhost:3000' },
+          { name: THEME_COOKIE, value: theme, url: origin },
         ]);
         await page.reload();
         await page.setViewportSize({ width: 390, height: 844 });

@@ -19,6 +19,14 @@ const matrix = [
   { locale: 'en', theme: 'dark', width: 1440, height: 900 },
 ] as const;
 
+function getBaseUrl() {
+  const baseURL = test.info().project.use.baseURL;
+  if (typeof baseURL !== 'string') {
+    throw new Error('Forms E2E requires the configured Playwright baseURL');
+  }
+  return baseURL;
+}
+
 async function preparePreview(
   page: import('@playwright/test').Page,
   locale: 'ar' | 'en',
@@ -47,11 +55,11 @@ async function preparePreview(
     .click();
   await page
     .getByLabel(messages['forms.staffEnglishQuestion'])
-    .nth(0)
+    .first()
     .fill('Sex');
   await page
     .getByLabel(messages['forms.staffArabicQuestion'])
-    .nth(0)
+    .first()
     .fill('الجنس');
   await page
     .getByLabel(messages['forms.staffEnglishOption'])
@@ -72,11 +80,11 @@ async function preparePreview(
     .click();
   await page
     .getByLabel(messages['forms.staffEnglishQuestion'])
-    .nth(1)
+    .first()
     .fill('Health notice');
   await page
     .getByLabel(messages['forms.staffArabicQuestion'])
-    .nth(1)
+    .first()
     .fill('تنبيه صحي');
   await page
     .getByLabel(messages['forms.staffDisplayTextEnglish'])
@@ -90,11 +98,11 @@ async function preparePreview(
     .click();
   await page
     .getByLabel(messages['forms.staffEnglishQuestion'])
-    .nth(2)
+    .first()
     .fill('Meals per day');
   await page
     .getByLabel(messages['forms.staffArabicQuestion'])
-    .nth(2)
+    .first()
     .fill('الوجبات يوميًا');
 
   await page
@@ -102,11 +110,11 @@ async function preparePreview(
     .click();
   await page
     .getByLabel(messages['forms.staffEnglishQuestion'])
-    .nth(3)
+    .first()
     .fill('Training timing');
   await page
     .getByLabel(messages['forms.staffArabicQuestion'])
-    .nth(3)
+    .first()
     .fill('موعد التمرين');
 
   await page
@@ -114,11 +122,11 @@ async function preparePreview(
     .click();
   await page
     .getByLabel(messages['forms.staffEnglishQuestion'])
-    .nth(4)
+    .first()
     .fill('Body-fat reference');
   await page
     .getByLabel(messages['forms.staffArabicQuestion'])
-    .nth(4)
+    .first()
     .fill('مرجع نسبة الدهون');
   await page
     .getByRole('button', { name: messages['forms.staffAddOption'] })
@@ -150,6 +158,7 @@ for (const variant of matrix) {
     page,
     context,
   }) => {
+    const baseURL = getBaseUrl();
     await page.setViewportSize({
       width: variant.width,
       height: variant.height,
@@ -158,12 +167,12 @@ for (const variant of matrix) {
       {
         name: 'lifter_locale',
         value: variant.locale,
-        url: 'http://localhost:3000',
+        url: baseURL,
       },
       {
         name: 'lifter_theme',
         value: variant.theme,
-        url: 'http://localhost:3000',
+        url: baseURL,
       },
     ]);
     await preparePreview(page, variant.locale);
@@ -195,10 +204,11 @@ test('Builder can reorder and remove fields and preview a conditional branch by 
   page,
   context,
 }) => {
+  const baseURL = getBaseUrl();
   const messages = getMessages('en');
   await context.addCookies([
-    { name: 'lifter_locale', value: 'en', url: 'http://localhost:3000' },
-    { name: 'lifter_theme', value: 'light', url: 'http://localhost:3000' },
+    { name: 'lifter_locale', value: 'en', url: baseURL },
+    { name: 'lifter_theme', value: 'light', url: baseURL },
   ]);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/showcase/forms/staff');
@@ -224,23 +234,25 @@ test('Builder can reorder and remove fields and preview a conditional branch by 
     .click();
   await page
     .getByLabel(messages['forms.staffEnglishQuestion'])
-    .nth(1)
+    .first()
     .fill('Conditional child');
   await page
     .getByLabel(messages['forms.staffArabicQuestion'])
-    .nth(1)
+    .first()
     .fill('سؤال فرعي');
-  await page.getByLabel(messages['forms.staffConditional']).nth(1).check();
+  await page.getByLabel(messages['forms.staffConditional']).check();
   await expect(
     page.getByLabel(messages['forms.staffConditionQuestion']),
   ).toBeVisible();
   await page
     .getByRole('button', { name: messages['forms.staffMoveQuestionUp'] })
-    .nth(1)
+    .first()
     .click();
-  await expect(
-    page.getByLabel(messages['forms.staffEnglishQuestion']).first(),
-  ).toHaveValue('Conditional child');
+  const questionItems = page
+    .getByRole('list', { name: messages['forms.staffQuestionCount'] })
+    .getByRole('button');
+  await expect(questionItems.nth(0)).toContainText('Conditional child');
+  await expect(questionItems.nth(1)).toContainText('Parent question');
   await page
     .getByRole('button', { name: messages['forms.staffPreviewForm'] })
     .focus();
@@ -265,10 +277,11 @@ test('Builder publishes a previewed draft as a published form', async ({
   page,
   context,
 }) => {
+  const baseURL = getBaseUrl();
   const messages = getMessages('en');
   await context.addCookies([
-    { name: 'lifter_locale', value: 'en', url: 'http://localhost:3000' },
-    { name: 'lifter_theme', value: 'light', url: 'http://localhost:3000' },
+    { name: 'lifter_locale', value: 'en', url: baseURL },
+    { name: 'lifter_theme', value: 'light', url: baseURL },
   ]);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/showcase/forms/staff');

@@ -74,7 +74,12 @@ test.afterAll(async () => {
 });
 
 async function signIn(page: Page) {
-  const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3315';
+  const origin = test.info().project.use.baseURL;
+  if (typeof origin !== 'string') {
+    throw new Error(
+      'Forms route E2E requires the configured Playwright baseURL',
+    );
+  }
   await page.context().addCookies([
     { name: 'lifter_locale', value: 'en', url: origin },
     { name: 'lifter_theme', value: 'light', url: origin },
@@ -95,7 +100,12 @@ test('production Forms is authenticated, workspace-scoped, bilingual, and access
   page,
 }) => {
   await signIn(page);
-  const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3315';
+  const origin = test.info().project.use.baseURL;
+  if (typeof origin !== 'string') {
+    throw new Error(
+      'Forms route E2E requires the configured Playwright baseURL',
+    );
+  }
   for (const locale of ['ar', 'en'] as const) {
     for (const theme of ['light', 'dark'] as const) {
       for (const width of [390, 1440] as const) {
