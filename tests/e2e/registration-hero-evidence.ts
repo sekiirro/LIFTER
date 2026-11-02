@@ -1,5 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
-import { expect, type Page } from '@playwright/test';
+import { expect, type Locator, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -18,7 +18,7 @@ import {
  * touch targets, focus ring and axe. Screenshots and geometry are written to
  * the run's OS temp directory, never into the repository.
  */
-export const heroEvidenceDirectory = join(tmpdir(), 'lifter-s25-hero-r1');
+export const heroEvidenceDirectory = join(tmpdir(), 'lifter-s26-hero-r2');
 
 export async function captureHeroScreenshot(page: Page, name: string) {
   await mkdir(heroEvidenceDirectory, { recursive: true });
@@ -67,22 +67,33 @@ function contrast(foreground: number, background: number) {
   return (lighter + 0.05) / (darker + 0.05);
 }
 
-function cssLuminance(color: string) {
+type Rgb = [number, number, number];
+
+function parseRenderedColor(color: string): { rgb: Rgb; alpha: number } {
   const hex = color.match(/^#([\da-f]{6})$/i)?.[1];
   if (hex) {
-    return luminance(
-      Number.parseInt(hex.slice(0, 2), 16),
-      Number.parseInt(hex.slice(2, 4), 16),
-      Number.parseInt(hex.slice(4, 6), 16),
-    );
+    return {
+      rgb: [
+        Number.parseInt(hex.slice(0, 2), 16),
+        Number.parseInt(hex.slice(2, 4), 16),
+        Number.parseInt(hex.slice(4, 6), 16),
+      ],
+      alpha: 1,
+    };
   }
-  const channels = color
-    .match(/[\d.]+/g)
-    ?.slice(0, 3)
-    .map(Number);
-  if (!channels || channels.length !== 3)
+  const channels = color.match(/[\d.]+/g)?.map(Number) ?? [];
+  if (channels.length < 3)
     throw new Error(`Unsupported rendered color: ${color}`);
-  return luminance(channels[0]!, channels[1]!, channels[2]!);
+  const scale = /^color\(srgb/i.test(color) ? 255 : 1;
+  return {
+    rgb: [channels[0]! * scale, channels[1]! * scale, channels[2]! * scale],
+    alpha: channels[3] ?? 1,
+  };
+}
+
+function cssLuminance(color: string) {
+  const { rgb } = parseRenderedColor(color);
+  return luminance(rgb[0], rgb[1], rgb[2]);
 }
 
 function paeth(left: number, above: number, upperLeft: number) {
@@ -164,6 +175,121 @@ function pixelHex(pixel: number[]) {
   return pixel.map((channel) => channel.toString(16).padStart(2, '0')).join('');
 }
 
+/**
+ * Read the rendered backdrop behind an element.
+ *
+ * The element is hidden for the capture only, so the screenshot shows the
+ * pixels the text is painted over: the dimmed artwork, the card fill and
+ * the surface decoration. The element color is restored right after.
+ */
+async function renderedBackdrop(
+  page: Page,
+  target: Locator,
+  points: { x: number; y: number }[],
+) {
+  const color = await target.evaluate(
+    (element) => getComputedStyle(element).color,
+  );
+  await target.evaluate((element) => {
+    (element as HTMLElement).style.visibility = 'hidden';
+  });
+  const png = await page.screenshot();
+  await target.evaluate((element) => {
+    (element as HTMLElement).style.visibility = '';
+  });
+  const samples = points.map(
+    (point) => screenshotPixel(png, point.x, point.y) as Rgb,
+  );
+  return { color, samples };
+}
+
+/**
+ * The rendered backdrop behind the hero heading keeps white text at 4.5:1
+ * or better, even when a bright local patch sits under the text.
+ */
+export async function expectHeroTextBackdropContrast(page: Page) {
+  const heading = page.locator('.formPlate h1, h1').first();
+  await expect(heading).toBeVisible();
+  const box = await heading.boundingBox();
+  if (!box) throw new Error('Hero heading is not measurable');
+  const y = Math.round(box.y + box.height / 2);
+  const points = Array.from({ length: 9 }, (_, index) => ({
+    x: Math.round(box.x + (box.width * index) / 8),
+    y,
+  }));
+  const measure = async () => {
+    const { color, samples } = await renderedBackdrop(page, heading, points);
+    const foreground = parseRenderedColor(color);
+    const worst = samples.reduce((brightest, sample) =>
+      luminance(sample[0], sample[1], sample[2]) >=
+      luminance(brightest[0], brightest[1], brightest[2])
+        ? sample
+        : brightest,
+    );
+    const ratio = contrast(
+      luminance(foreground.rgb[0], foreground.rgb[1], foreground.rgb[2]),
+      luminance(worst[0], worst[1], worst[2]),
+    );
+    return { ratio, backdrop: worst, color, alpha: foreground.alpha };
+  };
+  // The dimming is committed after the artwork is sampled, so the assertion
+  // waits for the painted surface instead of reading a pre-commit frame.
+  await expect
+    .poll(async () => (await measure()).ratio, {
+      timeout: 15_000,
+      intervals: [100, 250, 500],
+      message: 'the hero text keeps 4.5:1 over the painted backdrop',
+    })
+    .toBeGreaterThanOrEqual(4.5);
+  const result = await measure();
+  expect(result.alpha).toBe(1);
+  return result;
+}
+
+/**
+ * The preference label sits on a translucent pill over the artwork, so the
+ * label text itself has to carry the contrast.
+ */
+export async function expectHeroPreferenceLabelContrast(page: Page) {
+  const label = page
+    .locator('[data-testid="registration-hero-preferences"] label[for]')
+    .first();
+  await expect(label).toBeVisible();
+  const box = await label.boundingBox();
+  if (!box) throw new Error('Preference label is not measurable');
+  const measure = async () => {
+    const { color, samples } = await renderedBackdrop(page, label, [
+      {
+        x: Math.round(box.x + box.width / 2),
+        y: Math.round(box.y + box.height / 2),
+      },
+    ]);
+    const foreground = parseRenderedColor(color);
+    const backdrop = samples[0]!;
+    const composited = foreground.rgb.map(
+      (channel, index) =>
+        foreground.alpha * channel +
+        (1 - foreground.alpha) * (backdrop[index] ?? 0),
+    ) as Rgb;
+    const ratio = contrast(
+      luminance(composited[0], composited[1], composited[2]),
+      luminance(backdrop[0], backdrop[1], backdrop[2]),
+    );
+    return { ratio, backdrop, color, alpha: foreground.alpha };
+  };
+  await expect
+    .poll(async () => (await measure()).ratio, {
+      timeout: 15_000,
+      intervals: [100, 250, 500],
+      message: 'the preference label keeps 4.5:1 over the painted pill',
+    })
+    .toBeGreaterThanOrEqual(4.5);
+  const result = await measure();
+  expect(result.alpha).toBe(1);
+  expect(parseRenderedColor(result.color).rgb).toEqual([255, 255, 255]);
+  return result;
+}
+
 /** Approved prototype material contract for the glass card shell. */
 export async function expectHeroMaterialContract(page: Page) {
   const card = page.locator('[data-registration-card="premium-centered"]');
@@ -231,6 +357,8 @@ export async function expectHeroTextContrast(page: Page) {
       photoLuminance: Number(
         stage.style.getPropertyValue('--hero-photo-luminance'),
       ),
+      photoAverageLuminance: Number(stage.dataset.photoAverageLuminance ?? ''),
+      photoSampling: stage.dataset.photoSampling ?? '',
       adaptiveDimming: Number(
         stage.style.getPropertyValue('--hero-adaptive-dimming'),
       ),
@@ -273,6 +401,10 @@ export async function expectHeroTextContrast(page: Page) {
   expect(surface.labelColor).toBe('rgb(255, 255, 255)');
   expect(surface.headingColor).toBe('rgb(255, 255, 255)');
   expect(Number.isFinite(surface.photoLuminance)).toBe(true);
+  expect(Number.isFinite(surface.photoAverageLuminance)).toBe(true);
+  expect(surface.photoLuminance).toBeGreaterThanOrEqual(
+    surface.photoAverageLuminance,
+  );
   const expectedAdaptiveDimming = adaptiveDimmingFromLuminance(
     surface.photoLuminance,
   );

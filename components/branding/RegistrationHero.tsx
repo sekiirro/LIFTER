@@ -13,7 +13,8 @@ import { Card } from '../ui/Card';
 import type { Locale } from '../../lib/design/preferences';
 import { modes } from '../../lib/design/tokens';
 import {
-  adaptiveDimmingFromLuminance,
+  adaptiveDimmingFromBackdropLuminances,
+  conservativeBackdropLuminance,
   photoToneFromLuminance,
   selectHeroLayoutMode,
   type HeroViewport,
@@ -35,16 +36,34 @@ function luminance(red: number, green: number, blue: number): number {
   return 0.2126 * linear(red) + 0.7152 * linear(green) + 0.0722 * linear(blue);
 }
 
-function sampleAverage(
+const SAMPLE_CANVAS_WIDTH = 96;
+const SAMPLE_CANVAS_HEIGHT = 48;
+
+type ArtworkSample = {
+  averageLuminance: number;
+  luminances: number[];
+  red: number;
+  green: number;
+  blue: number;
+};
+
+/**
+ * Read one artwork region into a small luminance grid.
+ *
+ * The grid keeps every sampled cell so the caller can pick a conservative
+ * upper bound for the region instead of only its average.
+ */
+function sampleArtwork(
   image: HTMLImageElement,
   x: number,
   y: number,
   width: number,
   height: number,
-) {
+): ArtworkSample | null {
+  if (width <= 0 || height <= 0) return null;
   const canvas = document.createElement('canvas');
-  canvas.width = 96;
-  canvas.height = 48;
+  canvas.width = SAMPLE_CANVAS_WIDTH;
+  canvas.height = SAMPLE_CANVAS_HEIGHT;
   const context = canvas.getContext('2d', { willReadFrequently: true });
   if (!context) return null;
   context.drawImage(
@@ -59,24 +78,71 @@ function sampleAverage(
     canvas.height,
   );
   const pixels = context.getImageData(0, 0, canvas.width, canvas.height).data;
+  const luminances: number[] = [];
   let red = 0;
   let green = 0;
   let blue = 0;
-  let light = 0;
-  let count = 0;
   for (let index = 0; index < pixels.length; index += 4) {
-    red += pixels[index]!;
-    green += pixels[index + 1]!;
-    blue += pixels[index + 2]!;
-    light += luminance(pixels[index]!, pixels[index + 1]!, pixels[index + 2]!);
-    count += 1;
+    const pixelRed = pixels[index]!;
+    const pixelGreen = pixels[index + 1]!;
+    const pixelBlue = pixels[index + 2]!;
+    red += pixelRed;
+    green += pixelGreen;
+    blue += pixelBlue;
+    luminances.push(luminance(pixelRed, pixelGreen, pixelBlue));
   }
+  if (!luminances.length) return null;
+  const count = luminances.length;
+  const total = luminances.reduce((sum, value) => sum + value, 0);
   return {
+    averageLuminance: total / count,
+    luminances,
     red: Math.round(red / count),
     green: Math.round(green / count),
     blue: Math.round(blue / count),
-    luminance: light / count,
   };
+}
+
+type ViewportRect = {
+  left: number;
+  top: number;
+  right: number;
+  bottom: number;
+};
+
+/** The padding-free content box of an element: where the hero text lives. */
+function contentBox(element: HTMLElement): ViewportRect {
+  const rect = element.getBoundingClientRect();
+  const style = getComputedStyle(element);
+  const inset = (value: string) => Number.parseFloat(value) || 0;
+  return {
+    left: rect.left + inset(style.paddingLeft),
+    top: rect.top + inset(style.paddingTop),
+    right: rect.right - inset(style.paddingRight),
+    bottom: rect.bottom - inset(style.paddingBottom),
+  };
+}
+
+/** Map a viewport rectangle onto the source pixels of the artwork. */
+function sourceRegion(
+  image: HTMLImageElement,
+  imageRect: DOMRect,
+  renderedLeft: number,
+  renderedTop: number,
+  scale: number,
+  rect: ViewportRect,
+) {
+  const left = Math.max(rect.left, imageRect.left);
+  const right = Math.min(rect.right, imageRect.right);
+  const top = Math.max(rect.top, imageRect.top);
+  const bottom = Math.min(rect.bottom, imageRect.bottom);
+  if (right <= left || bottom <= top) return null;
+  const x = Math.max(0, (left - renderedLeft) / scale);
+  const y = Math.max(0, (top - renderedTop) / scale);
+  const width = Math.min(image.naturalWidth - x, (right - left) / scale);
+  const height = Math.min(image.naturalHeight - y, (bottom - top) / scale);
+  if (width <= 0 || height <= 0) return null;
+  return { x, y, width, height };
 }
 
 export function RegistrationHero({
@@ -105,12 +171,22 @@ export function RegistrationHero({
 
   const updateArtworkSamples = useCallback(() => {
     const stage = stageRef.current;
-    const image = stage?.querySelector<HTMLImageElement>('[data-hero-image]');
-    const card = stage?.querySelector<HTMLElement>(
+    if (!stage) return;
+    if (stage.dataset.hasBanner !== 'true') return;
+    const image = stage.querySelector<HTMLImageElement>('[data-hero-image]');
+    const card = stage.querySelector<HTMLElement>(
       '[data-testid="registration-hero-card"]',
     );
-    if (!stage || !image || !card || !image.complete || !image.naturalWidth)
+    const textArea = stage.querySelector<HTMLElement>('[data-hero-text-area]');
+    if (
+      !image ||
+      !card ||
+      !textArea ||
+      !image.complete ||
+      !image.naturalWidth
+    ) {
       return;
+    }
 
     try {
       const scale = Math.max(
@@ -127,48 +203,52 @@ export function RegistrationHero({
         return fallback;
       };
       const imageRect = image.getBoundingClientRect();
-      const cardRect = card.getBoundingClientRect();
       const renderedLeft =
         imageRect.left +
         (imageRect.width - renderedWidth) * ratio(position[0], 0.5);
       const renderedTop =
         imageRect.top +
         (imageRect.height - renderedHeight) * ratio(position[1], 0.5);
-      const left = Math.max(cardRect.left, imageRect.left);
-      const right = Math.min(cardRect.right, imageRect.right);
-      const top = Math.max(cardRect.top, imageRect.top);
-      const bottom = Math.min(cardRect.bottom, imageRect.bottom);
-      if (right <= left || bottom <= top) return;
-      const sourceX = Math.max(0, (left - renderedLeft) / scale);
-      const sourceY = Math.max(0, (top - renderedTop) / scale);
-      const sourceWidth = Math.min(
-        image.naturalWidth - sourceX,
-        (right - left) / scale,
-      );
-      const sourceHeight = Math.min(
-        image.naturalHeight - sourceY,
-        (bottom - top) / scale,
-      );
-      const cardPhoto = sampleAverage(
+      // The contrast-critical region is the card content box, where the
+      // heading and the form labels are painted over the artwork.
+      const textRegion = sourceRegion(
         image,
-        sourceX,
-        sourceY,
-        sourceWidth,
-        sourceHeight,
+        imageRect,
+        renderedLeft,
+        renderedTop,
+        scale,
+        contentBox(textArea),
       );
-      const bottomEdge = sampleAverage(
+      if (!textRegion) {
+        return;
+      }
+      const textPhoto = sampleArtwork(
+        image,
+        textRegion.x,
+        textRegion.y,
+        textRegion.width,
+        textRegion.height,
+      );
+      const bottomEdge = sampleArtwork(
         image,
         0,
         image.naturalHeight - 3,
         image.naturalWidth,
         3,
       );
-      if (!cardPhoto || !bottomEdge) return;
-      const adaptiveDimming = adaptiveDimmingFromLuminance(cardPhoto.luminance);
+      if (!textPhoto || !bottomEdge) {
+        return;
+      }
+      const peakLuminance = conservativeBackdropLuminance(textPhoto.luminances);
+      const adaptiveDimming = adaptiveDimmingFromBackdropLuminances(
+        textPhoto.luminances,
+      );
       stage.style.setProperty(
         '--hero-photo-luminance',
-        cardPhoto.luminance.toString(),
+        peakLuminance.toString(),
       );
+      stage.dataset.photoAverageLuminance =
+        textPhoto.averageLuminance.toString();
       stage.style.setProperty(
         '--hero-adaptive-dimming',
         adaptiveDimming.toString(),
@@ -177,7 +257,9 @@ export function RegistrationHero({
         '--hero-adaptive-dimming-percent',
         `${adaptiveDimming * 100}%`,
       );
-      stage.dataset.photoTone = photoToneFromLuminance(cardPhoto.luminance);
+      stage.dataset.photoTone = photoToneFromLuminance(
+        textPhoto.averageLuminance,
+      );
       stage.style.setProperty(
         '--hero-bottom-average',
         `rgb(${bottomEdge.red} ${bottomEdge.green} ${bottomEdge.blue})`,
@@ -186,20 +268,25 @@ export function RegistrationHero({
         '--hero-mobile-mid',
         `color-mix(in oklab, rgb(${bottomEdge.red} ${bottomEdge.green} ${bottomEdge.blue}) 62%, var(--color-bg))`,
       );
+      delete stage.dataset.photoSampling;
       stage.dataset.photoStatsReady = 'true';
     } catch {
-      // A failed canvas read keeps the neutral CSS fallback rather than guessing.
+      // The artwork sample failed; the next measurement retries it.
+      return;
     }
   }, []);
 
   useEffect(() => {
-    const image =
-      stageRef.current?.querySelector<HTMLImageElement>('[data-hero-image]');
+    const stage = stageRef.current;
+    const image = stage?.querySelector<HTMLImageElement>('[data-hero-image]');
     if (image?.complete) {
       if (image.naturalWidth) image.dataset.loaded = 'true';
       updateArtworkSamples();
     } else {
-      image?.addEventListener('load', updateArtworkSamples, { once: true });
+      // A new artwork that has not loaded yet must not keep the previous
+      // sample: clear it so the card can use the opaque fallback.
+      if (stage?.dataset.photoStatsReady === 'true')
+        image?.addEventListener('load', updateArtworkSamples, { once: true });
     }
     window.addEventListener('resize', updateArtworkSamples);
     return () => {
@@ -265,7 +352,9 @@ export function RegistrationHero({
           data-locale={locale}
           dir={locale === 'ar' ? 'rtl' : 'ltr'}
         >
-          <div className={styles.glassContent}>{children}</div>
+          <div className={styles.glassContent} data-hero-text-area="">
+            {children}
+          </div>
         </Card>
       </div>
     </main>

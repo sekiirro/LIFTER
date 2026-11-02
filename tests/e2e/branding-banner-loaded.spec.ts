@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
+import { adaptiveDimmingFromLuminance } from '../../components/branding/registration-hero';
 import {
   captureHeroScreenshot,
   expectHeroAxeClean,
@@ -9,7 +10,9 @@ import {
   expectHeroFocusRing,
   expectHeroMaterialContract,
   expectHeroPhoneGroupLtr,
+  expectHeroPreferenceLabelContrast,
   expectHeroPreferencesSingleRow,
+  expectHeroTextBackdropContrast,
   expectHeroTextContrast,
   expectHeroTouchTargets,
   heroEvidenceDirectory,
@@ -59,11 +62,17 @@ async function expectNoPageScroll(page: Page) {
 
 test.beforeEach(async ({}, testInfo) => {
   test.skip(!local, 'Requires the selected disposable local database.');
-  const { bannerPng, brightBannerPng, createPublishedBannerFixture } =
-    await import('../integration/branding-banner-fixture');
+  const {
+    bannerPng,
+    brightBannerPng,
+    brightPatchBannerPng,
+    createPublishedBannerFixture,
+  } = await import('../integration/branding-banner-fixture');
   const bytes = testInfo.title.startsWith('bright/')
     ? brightBannerPng()
-    : bannerPng();
+    : testInfo.title.startsWith('bright-patch/')
+      ? brightPatchBannerPng()
+      : bannerPng();
   const fixture = await createPublishedBannerFixture(bytes);
   token = fixture.token;
   cleanup = fixture.cleanup;
@@ -250,6 +259,74 @@ for (const artwork of ['dim', 'bright'] as const) {
           });
         });
       }
+    }
+  }
+}
+
+const heroViewports = [
+  { name: 'mobile-390', width: 390, height: 844 },
+  { name: 'desktop-1440', width: 1440, height: 900 },
+];
+
+for (const locale of ['ar', 'en'] as const) {
+  for (const theme of ['light', 'dark'] as const) {
+    for (const viewport of heroViewports) {
+      test(`bright-patch/${locale}/${theme}/${viewport.name}: a bright local patch keeps the hero text readable`, async ({
+        page,
+        context,
+      }) => {
+        await page.setViewportSize(viewport);
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await context.addCookies([
+          { name: LOCALE_COOKIE, value: locale, url: origin },
+          { name: THEME_COOKIE, value: theme, url: origin },
+        ]);
+        await page.goto(`/register/${encodeURIComponent(token)}`);
+        const stage = page.locator('[data-registration-hero]');
+        await expect(stage).toHaveAttribute('data-has-banner', 'true');
+        await expect(stage).toHaveAttribute('data-photo-stats-ready', 'true');
+        await expect(stage).not.toHaveAttribute(
+          'data-photo-sampling',
+          'fallback',
+        );
+        await expect(page.locator('[data-registration-banner]')).toBeVisible();
+        const sampling = await stage.evaluate((element) => ({
+          peak: Number(
+            element.style.getPropertyValue('--hero-photo-luminance'),
+          ),
+          average: Number(element.dataset.photoAverageLuminance),
+          dimming: Number(
+            element.style.getPropertyValue('--hero-adaptive-dimming'),
+          ),
+        }));
+        // The dimming follows the conservative bound behind the text, not
+        // the average of the sampled region.
+        expect(sampling.peak).toBeGreaterThan(sampling.average);
+        expect(sampling.dimming).toBeCloseTo(
+          adaptiveDimmingFromLuminance(sampling.peak),
+          10,
+        );
+        await expectHeroMaterialContract(page);
+        await expectHeroTextContrast(page);
+        const backdrop = await expectHeroTextBackdropContrast(page);
+        const preferenceLabel = null;
+        await expectHeroTouchTargets(page);
+        await expectHeroAxeClean(page);
+        const screenshot = await captureHeroScreenshot(
+          page,
+          `banner-bright-patch-${locale}-${theme}-${viewport.name}`,
+        );
+        measurements.push({
+          artwork: 'bright-patch',
+          locale,
+          theme,
+          viewport: viewport.name,
+          screenshot,
+          backdrop,
+          preferenceLabel,
+          ...sampling,
+        });
+      });
     }
   }
 }

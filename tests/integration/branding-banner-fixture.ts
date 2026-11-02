@@ -63,6 +63,51 @@ export function brightBannerPng(): Buffer {
   );
 }
 
+/**
+ * Dark artwork with bright local patches.
+ *
+ * The patches sit under the desktop card text area, the mobile card text
+ * area and the desktop preference pill, so an average-only dimming leaves a
+ * bright region directly behind white text.
+ */
+export function brightPatchBannerPng(width = 316, height = 158): Buffer {
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header[8] = 8;
+  header[9] = 6;
+  const base = [26, 28, 36];
+  const patch = [245, 245, 245];
+  const patches = [
+    { x0: 175, x1: 270, y0: 5, y1: 45 },
+    { x0: 150, x1: 216, y0: 118, y1: 150 },
+    { x0: 18, x1: 70, y0: 0, y1: 14 },
+  ];
+  const pixels = Buffer.alloc(height * (width * 4 + 1));
+  for (let row = 0; row < height; row += 1) {
+    const offset = row * (width * 4 + 1);
+    pixels[offset] = 0;
+    for (let x = 0; x < width; x += 1) {
+      const bright = patches.some(
+        (area) =>
+          x >= area.x0 && x < area.x1 && row >= area.y0 && row < area.y1,
+      );
+      const channels = bright ? patch : base;
+      const at = offset + 1 + x * 4;
+      pixels[at] = channels[0]!;
+      pixels[at + 1] = channels[1]!;
+      pixels[at + 2] = channels[2]!;
+      pixels[at + 3] = 255;
+    }
+  }
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    chunk('IHDR', header),
+    chunk('IDAT', deflateSync(pixels)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+}
+
 export async function createPublishedBannerFixture(
   bytes: Buffer = bannerPng(),
 ) {

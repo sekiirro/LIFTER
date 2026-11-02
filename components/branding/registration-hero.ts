@@ -55,3 +55,33 @@ export function adaptiveDimmingFromLuminance(luminance: number): number {
     Math.max(0, Math.max(existingCurve, contrastRequiredDimming)),
   );
 }
+
+/**
+ * Conservative upper bound of the artwork luminance behind the hero text.
+ *
+ * The glass card paints one dimming value across the whole surface, so the
+ * contrast-critical input is the brightest backdrop under the text rather
+ * than the average of the sampled region: a bright local patch behind a
+ * label can sit well above the full-overlap average. The maximum of the
+ * sampled cell luminances is the tightest conservative bound the same canvas
+ * sample can provide.
+ */
+export function conservativeBackdropLuminance(
+  luminances: readonly number[],
+): number {
+  let peak = 0;
+  for (const value of luminances) {
+    if (!Number.isFinite(value)) continue;
+    peak = Math.max(peak, Math.min(1, Math.max(0, value)));
+  }
+  return peak;
+}
+
+/** Adaptive dimming derived from the conservative backdrop bound. */
+export function adaptiveDimmingFromBackdropLuminances(
+  luminances: readonly number[],
+): number {
+  return adaptiveDimmingFromLuminance(
+    conservativeBackdropLuminance(luminances),
+  );
+}

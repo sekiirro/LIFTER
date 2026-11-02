@@ -5,7 +5,9 @@ import {
   PHONE_NUMBER_GROUP_GAP,
   HERO_CARD_FILL_ALPHA,
   MAX_ADAPTIVE_DIMMING,
+  adaptiveDimmingFromBackdropLuminances,
   adaptiveDimmingFromLuminance,
+  conservativeBackdropLuminance,
   photoToneFromLuminance,
   selectHeroLayoutMode,
 } from '../../components/branding/registration-hero';
@@ -16,6 +18,14 @@ const signupFormSource = readFileSync(
 );
 const signupStylesSource = readFileSync(
   'app/register/[token]/signup.module.css',
+  'utf8',
+);
+const heroStylesSource = readFileSync(
+  'components/branding/registration-hero.module.css',
+  'utf8',
+);
+const heroComponentSource = readFileSync(
+  'components/branding/RegistrationHero.tsx',
   'utf8',
 );
 
@@ -71,6 +81,48 @@ describe('production registration hero adaptive dimming', () => {
     expect(adaptiveDimmingFromLuminance(1)).toBe(MAX_ADAPTIVE_DIMMING);
     expect(MAX_ADAPTIVE_DIMMING).toBeCloseTo(245 / 297, 12);
     expect(adaptiveDimmingFromLuminance(Number.NaN)).toBe(0);
+  });
+});
+
+describe('production registration hero conservative backdrop sampling', () => {
+  // Dark artwork with a bright local patch behind the hero text.
+  const DARK_BACKDROP_LUMINANCE = 0.0129;
+  const BRIGHT_PATCH_LUMINANCE = 0.9131;
+  const sampledLuminances = [
+    ...Array.from({ length: 75 }, () => DARK_BACKDROP_LUMINANCE),
+    ...Array.from({ length: 25 }, () => BRIGHT_PATCH_LUMINANCE),
+  ];
+  const averageLuminance =
+    sampledLuminances.reduce((sum, value) => sum + value, 0) /
+    sampledLuminances.length;
+
+  it('dims from the conservative upper bound behind the text', () => {
+    const conservative = conservativeBackdropLuminance(sampledLuminances);
+    expect(conservative).toBeCloseTo(BRIGHT_PATCH_LUMINANCE, 6);
+    expect(conservative).toBeGreaterThan(averageLuminance);
+
+    const dimming = adaptiveDimmingFromBackdropLuminances(sampledLuminances);
+    expect(dimming).toBeCloseTo(0.80825, 4);
+    const backdrop =
+      (1 - HERO_CARD_FILL_ALPHA) * conservative * (1 - dimming) +
+      HERO_CARD_FILL_ALPHA;
+    expect(1.05 / (backdrop + 0.05)).toBeGreaterThanOrEqual(4.5);
+  });
+
+  it('leaves the bright patch below 4.5:1 when the average drives the dimming', () => {
+    const dimming = adaptiveDimmingFromLuminance(averageLuminance);
+    const backdrop =
+      (1 - HERO_CARD_FILL_ALPHA) * BRIGHT_PATCH_LUMINANCE * (1 - dimming) +
+      HERO_CARD_FILL_ALPHA;
+    expect(1.05 / (backdrop + 0.05)).toBeLessThan(4.5);
+  });
+
+  it('samples the card content box through the shared conservative bound', () => {
+    expect(heroComponentSource).toContain(
+      'adaptiveDimmingFromBackdropLuminances(',
+    );
+    expect(heroComponentSource).toContain('conservativeBackdropLuminance(');
+    expect(heroComponentSource).toContain('data-hero-text-area');
   });
 });
 
