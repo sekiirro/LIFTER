@@ -103,10 +103,10 @@ const draft: StaffFormDraft = {
   revision: 0,
 };
 
-function builderMarkup(form: StaffFormDraft = draft) {
+function builderMarkup(form: StaffFormDraft = draft, locale: 'en' | 'ar' = 'en') {
   return renderToStaticMarkup(
     createElement(FormBuilder, {
-      locale: 'en',
+      locale,
       actorRole: 'trainer',
       form,
       allForms: [],
@@ -125,6 +125,22 @@ function builderMarkup(form: StaffFormDraft = draft) {
 }
 
 describe('S14 staff form Builder', () => {
+  it('renders one selected question editor with a compact, localized outline', () => {
+    const english = builderMarkup();
+    expect(
+      (english.match(/data-testid="question-outline-item"/gu) ?? []).length,
+    ).toBe(draft.questions.length);
+    expect(english.match(/data-testid="question-editor"/gu)).toHaveLength(1);
+    expect(english).toContain('aria-expanded="true"');
+    expect(english).toContain('Required');
+    expect(english).toContain('Slider');
+
+    const arabic = builderMarkup(draft, 'ar');
+    expect(arabic).toContain('الجوع');
+    expect(arabic).toContain('مطلوب');
+    expect(arabic).toContain('مقياس منزلق');
+  });
+
   it('exposes every engine field type and authoring action with localized names', () => {
     const html = builderMarkup();
     for (const type of [

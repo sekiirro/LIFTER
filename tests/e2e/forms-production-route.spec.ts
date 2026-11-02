@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
 import { admin, checked, sql } from '../integration/harness';
 
-const screenshotDir = join(tmpdir(), 'lifter-s26-f15-forms-route');
+const screenshotDir = join(tmpdir(), 'lifter-s26-f15-forms-route-r2');
 const runTag = `f15-route-${randomUUID()}`;
 const db = sql();
 let workspaceId = '';
@@ -207,4 +207,47 @@ test('anonymous and Sales users receive no production Forms content', async ({
     0,
   );
   await expect(page.getByRole('main')).toHaveCount(0);
+});
+
+test('production Builder stays compact and supports keyboard question editing', async ({
+  page,
+}) => {
+  await signIn(page);
+  const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3315';
+  await page.setViewportSize({ width: 1440, height: 1000 });
+  await page.context().addCookies([
+    { name: 'lifter_locale', value: 'en', url: origin },
+    { name: 'lifter_theme', value: 'light', url: origin },
+  ]);
+  await page.goto(`/forms?workspace=${workspaceId}`);
+  await expect(page.getByLabel('Arabic form name')).toHaveValue('خطوتك الأولى');
+
+  const height = await page.evaluate(() => document.documentElement.scrollHeight);
+  expect(height).toBeLessThan(3000);
+
+  const outline = page.getByRole('list', { name: 'Questions' });
+  const items = outline.getByTestId('question-outline-item');
+  expect(await items.count()).toBeGreaterThan(1);
+  const first = items.first().getByRole('button');
+  const second = items.nth(1).getByRole('button');
+  await expect(first).toHaveAttribute('aria-expanded', 'true');
+  await first.focus();
+  await page.keyboard.press('Escape');
+  await expect(first).toHaveAttribute('aria-expanded', 'false');
+  await page.keyboard.press('Enter');
+  await expect(first).toHaveAttribute('aria-expanded', 'true');
+  await second.focus();
+  await page.keyboard.press('Enter');
+  await expect(second).toHaveAttribute('aria-expanded', 'true');
+  await expect(first).toHaveAttribute('aria-expanded', 'false');
+  await expect(page.getByTestId('question-editor')).toHaveCount(1);
+
+  const firstSummary = items.first().getByTestId('question-summary-title');
+  const originalFirst = await firstSummary.textContent();
+  const moveDown = items.first().getByRole('button', { name: 'Move question down' });
+  await moveDown.focus();
+  await page.keyboard.press('Enter');
+  await expect(items.nth(1).getByTestId('question-summary-title')).toHaveText(
+    originalFirst ?? '',
+  );
 });
