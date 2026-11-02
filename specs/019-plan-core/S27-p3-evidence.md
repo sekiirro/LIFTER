@@ -25,11 +25,13 @@
 
 | Gate | Result |
 | --- | --- |
-| `npm run test` | Pending final run |
-| `npm run lint` | Pending final run |
-| `npm run typecheck` | Pending final run |
-| `npm run format:check` | Pending final run |
-| `npm run build` | Pending final run |
-| `npm run check:secrets` | Pending final run |
-| `npm run size` | Pending final run |
-| `git diff --check` | Pending final run |
+| `npm run test` | Pass — 143 files, 2,033 tests |
+| `npm run lint` | Pass |
+| `npm run typecheck` | Pass |
+| `npm run format:check` | Pass |
+| `npm run build` | Pass |
+| `npm run check:secrets` | Pass |
+| `npm run size` | Pass — web 8,309.37 KiB; cron 11.76 KiB |
+| `git diff --check` | Pass |
+
+The first complete gate attempt found a strict draft-content type error, a failure-envelope generic typing error, and a lint warning in the client. They were corrected in `98b4645`; the full gate run on that corrected head passed all gates above.
