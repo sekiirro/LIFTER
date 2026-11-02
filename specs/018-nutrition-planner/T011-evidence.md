@@ -13,6 +13,22 @@
 
 The focused suite began with **2 failing, 11 passing**: Arabic text contained Latin digits and the editor did not render an alias/unavailable projection. After implementation it passed **13/13**. The full Vitest run passed **1,768/1,768 tests across 109 files**.
 
+Focused test list:
+
+1. Renders one unified original-first list.
+2. Calculates each alternative from its own food snapshot and portion.
+3. Requires a validated positive portion before showing macros.
+4. Never adjusts quantities automatically or offers AI/auto-adjust controls.
+5. Shows no delta-versus-original comparison.
+6. Caps alternatives at three and explains the disabled add action.
+7. Reorders and removes alternatives without changing retained IDs/quantities.
+8. Updates a quantity in place and changes IDs on food replacement.
+9. Renders Arabic RTL and English LTR copy with isolated numbers.
+10. Renders Arabic UI digits using Arabic-Indic numerals.
+11. Resolves chained frozen references and renders removed targets unavailable.
+12. Provides keyboard move/remove actions with boundary controls disabled.
+13. Formats macro display integers without changing exact macro calculation.
+
 | Temporary mutant | Assertion that failed | Result after restoration |
 | --- | --- | --- |
 | Disabled the max-three guard | `caps the list at three alternatives…` — expected `max_alternatives_exceeded`, received no error | Guard restored; full suite passed |
