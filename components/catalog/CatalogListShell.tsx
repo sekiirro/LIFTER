@@ -189,7 +189,11 @@ export function CatalogListShell({
 
       {status === 'ready' && (
         <p className={styles.count} role="status" data-testid="catalog-count">
-          {formatCatalogCount(m['catalog.resultsCount'], visible.length, locale)}
+          {formatCatalogCount(
+            m['catalog.resultsCount'],
+            visible.length,
+            locale,
+          )}
         </p>
       )}
 
