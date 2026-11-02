@@ -322,7 +322,7 @@ for (const locale of ['ar', 'en'] as const) {
     await page.setViewportSize({ width: 390, height: 844 });
     await context.addCookies([
       { name: LOCALE_COOKIE, value: locale, url: origin },
-      { name: THEME_COOKIE, value: 'light', url: origin },
+      { name: THEME_COOKIE, value: 'dark', url: origin },
     ]);
     await page.emulateMedia({ media: 'print' });
     await page.goto(`/register/${token}`);

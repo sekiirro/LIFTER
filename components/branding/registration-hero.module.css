@@ -788,8 +788,8 @@
 
   .formPlate,
   .formPlate h1,
-  .glassContent :global([data-registration-identity]),
-  .glassContent :global([data-brand-name]),
+  .glassContent [data-registration-identity],
+  .glassContent [data-brand-name],
   .form > label,
   .field,
   .message,
@@ -923,11 +923,12 @@
 
   .stage .fieldControl,
   .stage .countryPicker,
-  .stage .phoneNumber :global([data-testid='country-calling-code']) {
-    color: var(--color-print-text);
+  .stage .phoneNumber [data-testid='country-calling-code'] {
+    color: var(--color-print-text) !important;
+    -webkit-text-fill-color: var(--color-print-text) !important;
   }
 
-  .stage .form :global(input::placeholder) {
+  .stage .form input::placeholder {
     color: var(--color-print-text);
   }
 
@@ -939,5 +940,12 @@
   .stage .fieldError,
   .stage .message[data-result-status='invalid_input'] {
     color: var(--color-print-text);
+  }
+
+  .stage .form > button {
+    border: 1px solid var(--color-print-text);
+    background: var(--color-print-bg);
+    color: var(--color-print-text);
+    box-shadow: none;
   }
 }
