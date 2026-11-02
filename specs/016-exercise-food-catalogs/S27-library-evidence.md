@@ -5,8 +5,8 @@
 | Task | Status | Evidence |
 | --- | --- | --- |
 | T037 | Implemented | Production list/search route, bounded pagination, filters, no-seed empty state; focused route tests and Stack C catalog server integration pass. |
-| T038 | Blocked at contract boundary | S27-R2 requires existing exercise `*_safe` views, but the merged schema contains no exercise safe views. Only food safe views exist. Creating views/grants or reading base tables would violate the binding ruling. |
-| T039 | Add implemented; Edit blocked on T038 | Server action calls existing create/version/workspace RPC wall, operation UUID idempotency, generic UI errors, PO global and PO/WO/Trainer workspace access. Edit requires current detail payload to prefill the new version. |
+| T038 | Implemented in S28 | S27-R2a migration creates the two privacy-safe views and `catalog_exercise_detail`; integration and route tests cover roles, denial equivalence, alias resolution, Removed state, variation isolation, and view grants. |
+| T039 | Implemented in S28 | Edit route prefills the current immutable version and uses the existing version RPC with expected-version CAS and idempotency key. |
 | T040 | Partially verified | Role tests, no-seed integration, Playwright matrix, copy approval, and repository gates recorded in the run report. Full Stack C integration has existing Vault-dependent failures. |
 
 ## Copy approval
@@ -22,6 +22,17 @@ These seven S27 strings were added after the approved batch and remain DRAFT in 
 - `catalog.editorGlobalScope`
 - `catalog.editorWorkspaceScope`
 - `catalog.editorWorkspace`
+- `catalog.detailTitle`
+- `catalog.detailVersion`
+- `catalog.detailWorkspace`
+- `catalog.detailVideo`
+- `catalog.detailOpenVideo`
+- `catalog.detailNoVideo`
+- `catalog.detailMergedTo`
+- `catalog.editAsNewVersion`
+- `catalog.editorErrorTextTooLong`
+- `catalog.foodErrorTooLong`
+- `catalog.editorSecondaryMuscles`
 
 ## Design gate
 

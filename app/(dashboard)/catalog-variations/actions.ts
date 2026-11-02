@@ -41,10 +41,26 @@ export async function loadWorkspaceVideoVariationsAction(
   exerciseId?: string,
 ): Promise<VideoVariationLoadResult> {
   if (!workspaceId.trim()) return { status: 'invalid' };
-  const result = await search({ kind: 'variation', query: '', workspaceId });
-  if (result.status !== 'ok') return result;
-  if (!Array.isArray(result.data)) return { status: 'unavailable' };
-  const rows = result.data.flatMap((value) => {
+  const variationRows: unknown[] = [];
+  let cursor: string | null = null;
+  do {
+    const page = await search({
+      kind: 'variation',
+      query: '',
+      workspaceId,
+      filters: { page_size: 50 },
+      cursor,
+    });
+    if (page.status !== 'ok') return page;
+    if (!Array.isArray(page.data)) return { status: 'unavailable' };
+    variationRows.push(...page.data);
+    const last = page.data.at(-1) as Record<string, unknown> | undefined;
+    cursor =
+      page.data.length === 50 && typeof last?.result_id === 'string'
+        ? last.result_id
+        : null;
+  } while (cursor);
+  const rows = variationRows.flatMap((value) => {
     if (!value || typeof value !== 'object') return [];
     const row = value as Record<string, unknown>;
     if (

@@ -2,6 +2,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import Page from '../../app/(app)/exercise-library/[exerciseId]/page';
+import EditPage from '../../app/(app)/exercise-library/[exerciseId]/edit/page';
 import { en } from '../../lib/i18n/messages/en';
 
 const m = vi.hoisted(() => ({
@@ -16,6 +17,10 @@ vi.mock('../../lib/auth/actor', () => ({ requireActor: m.actor }));
 vi.mock('../../lib/catalog/server', () => ({
   exerciseDetail: m.detail,
   authoringWorkspaces: m.workspaces,
+}));
+vi.mock('../../app/(app)/exercise-library/ExerciseAuthoringForm', () => ({
+  ExerciseAuthoringForm: () =>
+    createElement('div', { 'data-testid': 'version-editor' }),
 }));
 vi.mock('next/headers', () => ({ cookies: m.cookies }));
 vi.mock('next/navigation', () => ({
@@ -123,6 +128,30 @@ describe('production exercise detail route', () => {
           workspace: '55555555-5555-4555-8555-555555555555',
         }),
       }),
+    ).rejects.toThrow('404');
+    expect(m.detail).not.toHaveBeenCalled();
+  });
+});
+
+describe('edit as a new immutable version', () => {
+  it('loads the current version into the PO version action with compare-and-swap', async () => {
+    const html = renderToStaticMarkup(
+      await EditPage({ params: Promise.resolve({ exerciseId: id }) }),
+    );
+    expect(html).toContain(en['catalog.editAsNewVersion']);
+    expect(html).toContain('Detail exercise');
+    expect(m.detail).toHaveBeenCalledWith({ exerciseId: id });
+    expect(html).toContain('data-testid="version-editor"');
+  });
+
+  it('hides the version editor from non-PO roles', async () => {
+    m.actor.mockResolvedValue({
+      userId: 'trainer',
+      role: 'trainer',
+      activeWorkspaceIds: [workspaceId],
+    });
+    await expect(
+      EditPage({ params: Promise.resolve({ exerciseId: id }) }),
     ).rejects.toThrow('404');
     expect(m.detail).not.toHaveBeenCalled();
   });

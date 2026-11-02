@@ -73,16 +73,28 @@ export function FoodCreateFlow({
     setWorkspaceId(selectedWorkspaceId);
     setAlternativeSaveBlocked(false);
     setState('saving');
-    const result = await reviewFoodDuplicatesAction(nextDraft);
+    let result: FoodDuplicateReviewResult;
+    try {
+      result = await reviewFoodDuplicatesAction(nextDraft);
+    } catch {
+      setState('error');
+      return;
+    }
     if (result.status === 'exact' || result.status === 'near')
       setReview(result);
     else if (result.status === 'none') {
-      const saved = await saveCatalogFoodAction(
-        nextDraft,
-        workspaceId,
-        false,
-        operationKeyFor(nextDraft, workspaceId, false),
-      );
+      let saved;
+      try {
+        saved = await saveCatalogFoodAction(
+          nextDraft,
+          selectedWorkspaceId,
+          false,
+          operationKeyFor(nextDraft, selectedWorkspaceId, false),
+        );
+      } catch {
+        setState('error');
+        return;
+      }
       setAlternativeSaveBlocked(saved.status === 'unsupported_alternatives');
       setState(saved.status === 'ok' ? 'success' : 'error');
       if (saved.status === 'ok') operationKey.current = null;
@@ -91,12 +103,19 @@ export function FoodCreateFlow({
   async function confirmNear() {
     setAlternativeSaveBlocked(false);
     setState('saving');
-    const result = await saveCatalogFoodAction(
-      draft,
-      workspaceId,
-      true,
-      operationKeyFor(draft, workspaceId, true),
-    );
+    let result;
+    try {
+      result = await saveCatalogFoodAction(
+        draft,
+        workspaceId,
+        true,
+        operationKeyFor(draft, workspaceId, true),
+      );
+    } catch {
+      setState('error');
+      setReview(null);
+      return;
+    }
     setAlternativeSaveBlocked(result.status === 'unsupported_alternatives');
     setState(result.status === 'ok' ? 'success' : 'error');
     setReview(null);

@@ -37,6 +37,7 @@ export function VideoVariationFlow({
   );
   const [workspaceLoadKey, setWorkspaceLoadKey] = useState(0);
   const key = useRef<{ fingerprint: string; value: string } | null>(null);
+  const loadSequence = useRef(0);
 
   async function submit(
     draft: VideoVariationDraft,
@@ -46,11 +47,17 @@ export function VideoVariationFlow({
     const fingerprint = JSON.stringify([draft, expectedVersion]);
     if (!key.current || key.current.fingerprint !== fingerprint)
       key.current = { fingerprint, value: crypto.randomUUID() };
-    const result = await saveVideoVariationAction(
-      draft,
-      expectedVersion,
-      key.current.value,
-    );
+    let result;
+    try {
+      result = await saveVideoVariationAction(
+        draft,
+        expectedVersion,
+        key.current.value,
+      );
+    } catch {
+      setStatus('error');
+      return;
+    }
     setStatus(result.status === 'ok' ? 'saved' : 'error');
     if (result.status === 'ok') {
       setSelectedMapping({
@@ -63,6 +70,7 @@ export function VideoVariationFlow({
   }
 
   function selectWorkspace(workspaceId: string) {
+    loadSequence.current += 1;
     setSelectedWorkspaceId(workspaceId);
     setSelectedMapping(null);
     setSelectedExerciseId('');
@@ -71,12 +79,21 @@ export function VideoVariationFlow({
   }
 
   async function selectExercise(workspaceId: string, exerciseId: string) {
+    const sequence = ++loadSequence.current;
     setSelectedExerciseId(exerciseId);
+    setSelectedMapping(null);
     setStatus('saving');
-    const result = await loadWorkspaceVideoVariationsAction(
-      workspaceId,
-      exerciseId,
-    );
+    let result;
+    try {
+      result = await loadWorkspaceVideoVariationsAction(
+        workspaceId,
+        exerciseId,
+      );
+    } catch {
+      if (sequence === loadSequence.current) setStatus('error');
+      return;
+    }
+    if (sequence !== loadSequence.current) return;
     if (result.status !== 'ok') {
       setStatus('error');
       return;

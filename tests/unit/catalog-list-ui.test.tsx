@@ -129,6 +129,15 @@ describe('catalog list shell presentation', () => {
     expect(html).not.toContain('data-testid="catalog-list"');
   });
 
+  it('renders no-results when the server returns no rows for an active filter', () => {
+    const html = render({
+      items: [],
+      initialFilters: { muscleGroup: 'chest' },
+    });
+    expect(html).toContain(ar['catalog.noResultsTitle']);
+    expect(html).not.toContain(ar['catalog.emptyTitle']);
+  });
+
   it('renders a safe retryable error without item data', () => {
     const html = render({ status: 'error', onRetry: () => {} });
     expect(html).toContain('role="alert"');

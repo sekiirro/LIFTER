@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { Alert } from '../../../../../components/ui/Alert';
+import { Bidi } from '../../../../../components/ui/Bidi';
 import { requireActor } from '../../../../../lib/auth/actor';
 import { exerciseDetail } from '../../../../../lib/catalog/server';
 import { normalizeExerciseInput } from '../../../../../lib/catalog/schemas';
@@ -48,6 +49,11 @@ export default async function EditExercisePage({
       <header className={styles.header}>
         <div>
           <h1>{m['catalog.editAsNewVersion']}</h1>
+          <p>
+            <Bidi dir="auto">
+              {exercise.names[locale] || exercise.names.en}
+            </Bidi>
+          </p>
           <p>
             {m['catalog.detailVersion']}: {row.version}
           </p>

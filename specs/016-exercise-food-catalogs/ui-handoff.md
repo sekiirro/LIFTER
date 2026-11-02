@@ -47,7 +47,7 @@ The UI must use the server wall in `lib/catalog/server.ts` through server compon
 | `createFood`, `versionFood` | Food save action; creator/PO authorization and operation keys remain server enforced |
 | `writeVariation`, `transitionVariation` | `app/(dashboard)/catalog-variations/actions.ts`; selected workspace is bound on every write |
 
-All `catalog.*` keys in `lib/i18n/messages/ar.ts` and `lib/i18n/messages/en.ts` remain DRAFT pending PO review. Keep copy in these message catalogs; do not bake UI copy into F17/F18 fixtures or route files. Numeral presentation stays centralized in `lib/i18n/format.ts`, with Arabic and Latin numeral systems selected by locale.
+The 186 F16 rows included in the approved S26 batch remain byte-exact and approved. Only keys added after that batch are DRAFT; keep copy in these message catalogs and do not bake UI copy into F17/F18 fixtures or route files. Numeral presentation stays centralized in `lib/i18n/format.ts`, with Arabic and Latin numeral systems selected by locale.
 
 ## T036 Frontend Design Gate
 

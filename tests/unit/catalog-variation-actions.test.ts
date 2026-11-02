@@ -95,6 +95,8 @@ describe('catalog variation actions', () => {
       kind: 'variation',
       query: '',
       workspaceId: 'workspace-selected',
+      filters: { page_size: 50 },
+      cursor: null,
     });
   });
 });

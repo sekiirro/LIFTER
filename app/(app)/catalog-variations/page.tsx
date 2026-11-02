@@ -46,11 +46,33 @@ export default async function CatalogVariationsPage({
   if (!actor.role) notFound();
   const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
   const messages = getMessages(locale);
-  const [workspaceResult, exerciseResult] = await Promise.all([
-    authoringWorkspaces(),
-    search({ kind: 'exercise', query: '' }),
-  ]);
-  if (workspaceResult.status !== 'ok' || exerciseResult.status !== 'ok')
+  const workspaceResult = await authoringWorkspaces();
+  const exerciseRows: unknown[] = [];
+  let cursor: string | null = null;
+  let exerciseStatus = 'ok';
+  do {
+    const page = await search({
+      kind: 'exercise',
+      query: '',
+      filters: { page_size: 50 },
+      cursor,
+    });
+    if (page.status !== 'ok') {
+      exerciseStatus = page.status;
+      break;
+    }
+    if (!Array.isArray(page.data)) {
+      exerciseStatus = 'unavailable';
+      break;
+    }
+    exerciseRows.push(...page.data);
+    const last = page.data.at(-1) as Record<string, unknown> | undefined;
+    cursor =
+      page.data.length === 50 && typeof last?.result_id === 'string'
+        ? last.result_id
+        : null;
+  } while (cursor);
+  if (workspaceResult.status !== 'ok' || exerciseStatus !== 'ok')
     return (
       <main className={styles.main} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
         <h1>{messages['catalog.videoVariationTitle']}</h1>
@@ -64,7 +86,7 @@ export default async function CatalogVariationsPage({
     id,
     label: name,
   }));
-  const exercises = exerciseOptions(exerciseResult.data, locale);
+  const exercises = exerciseOptions(exerciseRows, locale);
   if (!workspaces.length)
     return (
       <main className={styles.main} dir={locale === 'ar' ? 'rtl' : 'ltr'}>

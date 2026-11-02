@@ -62,6 +62,8 @@ export function CatalogListShell({
     initialCatalogShellState(kind, initialQuery, initialFilters),
   );
   const visible = selectCatalogItems(items, state.search);
+  const hasSearch =
+    state.query.trim().length > 0 || hasActiveCatalogFilters(state.filters);
   const filterKeys = CATALOG_FILTER_KEYS[kind];
   const canClear =
     state.query.length > 0 || hasActiveCatalogFilters(state.filters);
@@ -215,7 +217,7 @@ export function CatalogListShell({
           retryLabel={m['catalog.retry']}
           onRetry={onRetry ?? noop}
         />
-      ) : items.length === 0 ? (
+      ) : items.length === 0 && !hasSearch ? (
         <EmptyState
           title={m['catalog.emptyTitle']}
           description={m['catalog.emptyDescription']}

@@ -134,17 +134,19 @@ export function FoodEditor({
     value: FoodEditorDraft[K],
   ) {
     setDraft((prev) => ({ ...prev, [key]: value }));
-    const errorKey = ({
-      nameAr: 'name',
-      nameEn: 'name',
-      productIdentity: 'productIdentity',
-      preparationIdentity: 'preparationIdentity',
-      kcal: 'kcal',
-      protein: 'protein',
-      carbs: 'carbs',
-      fat: 'fat',
-      fiber: 'fiber',
-    } as Partial<Record<keyof FoodEditorDraft, keyof FoodEditorErrors>>)[key];
+    const errorKey = (
+      {
+        nameAr: 'name',
+        nameEn: 'name',
+        productIdentity: 'productIdentity',
+        preparationIdentity: 'preparationIdentity',
+        kcal: 'kcal',
+        protein: 'protein',
+        carbs: 'carbs',
+        fat: 'fat',
+        fiber: 'fiber',
+      } as Partial<Record<keyof FoodEditorDraft, keyof FoodEditorErrors>>
+    )[key];
     if (errorKey) {
       setErrors((previous) => {
         if (!(errorKey in previous)) return previous;
@@ -223,11 +225,11 @@ export function FoodEditor({
       ? m['catalog.foodErrorRequired']
       : code === 'too_long'
         ? m['catalog.foodErrorTooLong']
-      : code === 'macros_exceed_basis'
-        ? localized('catalog.foodErrorMacroLimit', { amount: 100 })
-        : code
-          ? m['catalog.foodErrorNumeric']
-          : undefined;
+        : code === 'macros_exceed_basis'
+          ? localized('catalog.foodErrorMacroLimit', { amount: 100 })
+          : code
+            ? m['catalog.foodErrorNumeric']
+            : undefined;
   const identityFields = [
     ['productIdentity', m['catalog.foodProduct'], draft.productIdentity],
     [
@@ -466,9 +468,7 @@ export function FoodEditor({
             <div className={styles.grid} key={index}>
               <Field
                 label={m['catalog.foodServingAr']}
-                error={
-                  err(errors.servingLabel)
-                }
+                error={err(errors.servingLabel)}
                 inputProps={{
                   id: `${base}-serving-ar-${index}`,
                   value: serving.labelAr,
@@ -480,9 +480,7 @@ export function FoodEditor({
               />
               <Field
                 label={m['catalog.foodServingEn']}
-                error={
-                  err(errors.servingLabel)
-                }
+                error={err(errors.servingLabel)}
                 inputProps={{
                   id: `${base}-serving-en-${index}`,
                   value: serving.labelEn,
@@ -599,7 +597,11 @@ export function FoodEditor({
                   onChange: (e) =>
                     setAlternative(index, 'portionUnit', e.currentTarget.value),
                 }}
-                error={errors.alternativeUnits?.[index] ? m['catalog.foodErrorTooLong'] : undefined}
+                error={
+                  errors.alternativeUnits?.[index]
+                    ? m['catalog.foodErrorTooLong']
+                    : undefined
+                }
               />
               <Button
                 variant="secondary"

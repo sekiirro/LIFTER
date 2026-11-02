@@ -68,6 +68,11 @@
   border: 1px solid var(--color-border-strong);
   border-radius: var(--radius-button);
 }
+.error {
+  margin: 0;
+  color: var(--color-error-fg);
+  font-size: var(--text-sm);
+}
 .actions {
   display: flex;
   flex-wrap: wrap;
