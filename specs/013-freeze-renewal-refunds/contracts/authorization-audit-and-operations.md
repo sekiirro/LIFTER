@@ -1,0 +1,14 @@
+# Contract: Authorization, audit and operational safety
+
+- Enforce server authorization and forced-RLS authorization; PO global scope still requires a real workspace row. WO/Sales require current own-workspace membership. Return generic `not_permitted` for foreign, missing or revoked targets.
+- `manage_freeze` and `record_payment` apply to PO/WO/Trainer/Sales as approved. `record_refund` is explicitly PO-only. Keep TypeScript and SQL maps equal in both directions, preserving F12 Sales approval removal and F14 `manage_branding`.
+
+**F12/F14 integrated contract:** F12 `role_has_capability()` maps `record_refund` only to `platform_owner`, and the latest merged `has_workspace_access()` requires an authenticated actor plus either PO status or a live membership. F14 adds `manage_branding` for PO/WO while keeping workspace checks separate. F13's final forward reconciliation at `20261103129200_f13_f14_capability_reconciliation.sql` preserves that mapping, F12 Sales approval removal, Trainer `record_payment`/`manage_freeze`, PO/WO/Sales collection and schedule scope, and PO-only refund. The TypeScript and SQL matrices are compared across the full capability catalog in both directions.
+- Every new definer function uses a restricted explicit owner, `SECURITY DEFINER`, empty search path, qualified names, no dynamic SQL, revoked default EXECUTE and narrow grants. Internal P4 seams are not granted to authenticated callers.
+- Rebuild shared `audit_row_change()` and `app_private.role_has_capability()` from the latest integrated F12/F14 bodies. Audit failures roll back business writes. Audit includes only allow-listed identifiers, bounded codes, revisions, dates, minor-unit strings, currency and correlation IDs.
+- The F14 `public.registration_link_open(text)` wrapper and its renamed `registration_link_open_f10_base(text)` remain intact: F10 validation/consumption and F14 render-handle issuance stay in the base, while the wrapper adds the version-bound branding projection. F13 does not redefine either function.
+- No raw errors, SQL/messages, payloads, PII, secrets, commission or free text in logs, audit/jobs fields, receipts or client views.
+- Preserve delivered productivity after refund; no payroll reversal, fabricated productivity or automatic discipline.
+
+- Refund commits a durable idempotent Auth-lockout outbox row with deactivation. A server-only worker uses the Auth Admin API, bounded retries/backoff, completion recording, and a safe operational alert to PO/WO after persistent failure. Do not log secrets, provider messages, user identifiers or client PII.
+- The Supabase Custom Access Token hook uses invoker security, `search_path=''`, and grants limited to `supabase_auth_admin`; it rejects sign-in/refresh token issuance from committed client deactivation. The hook's error is fixed and PII-free. Existing JWT natural expiry is accepted.

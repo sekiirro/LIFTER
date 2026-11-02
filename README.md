@@ -103,10 +103,9 @@ directory and stop if the ACL change fails. After parsing, delete the raw file
 
 ## Local database & isolation tests
 
-For local integration and browser runs, select the intended profile first by
-setting `LIFTER_SUPABASE_STACK` to `a`, `b`, `c`, or `d`. Endpoint variables can
-also identify a configured local profile; without either a selector or a complete
-matching endpoint pair, local commands refuse to guess.
+For local integration and browser runs, explicitly set `LIFTER_SUPABASE_STACK`
+to `a`, `b`, `c`, or `d`. Endpoint variables provide connection
+details but never select a profile; commands refuse to run without the selector.
 
 Profiles `a` and `b` are tracked in the repository. Profiles `c` and `d` are
 local agent-lane profiles and must be provisioned in the lane's worktree before

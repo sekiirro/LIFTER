@@ -20,6 +20,32 @@ type RpcMethods = {
     args: { id: string; lease: string; error_code: string; permanent: boolean };
     result: string | null;
   };
+  alert_expired_refund_auth_lockouts: {
+    args: { p_limit: number; p_checked_at: string };
+    result: number;
+  };
+  claim_refund_auth_lockout_jobs: {
+    args: { p_limit: number };
+    result: Array<{
+      id: string;
+      auth_user_id: string;
+      attempts: number;
+      status: 'pending' | 'retry';
+    }>;
+  };
+  complete_refund_auth_lockout_job: {
+    args: { p_id: string; p_completed_at: string };
+    result: boolean;
+  };
+  retry_refund_auth_lockout_job: {
+    args: {
+      p_id: string;
+      p_attempt: number;
+      p_retry_at: string;
+      p_safe_error_code: 'provider_unavailable' | 'auth_admin_unavailable';
+    };
+    result: boolean;
+  };
 };
 
 export type Rpc = <Name extends keyof RpcMethods>(
