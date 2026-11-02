@@ -43,9 +43,7 @@ test('workspace staff see scoped templates and can operate the editor by keyboar
     page.getByRole('button', { name: /Make it Global/ }),
   ).toHaveCount(0);
 
-  const globalTemplate = page.getByTestId(
-    `template-${GLOBAL_TEMPLATE_ID}`,
-  );
+  const globalTemplate = page.getByTestId(`template-${GLOBAL_TEMPLATE_ID}`);
   await expect(globalTemplate.getByText('Read only')).toBeVisible();
   await expect(
     globalTemplate.getByRole('button', { name: /^Edit:/ }),
@@ -54,7 +52,9 @@ test('workspace staff see scoped templates and can operate the editor by keyboar
   const workspaceTemplate = page.getByTestId(
     `template-${WORKSPACE_TEMPLATE_ID}`,
   );
-  const edit = workspaceTemplate.getByRole('button', { name: 'Edit: Progressive push' });
+  const edit = workspaceTemplate.getByRole('button', {
+    name: 'Edit: Progressive push',
+  });
   await edit.focus();
   await expect(edit).toBeFocused();
   await page.keyboard.press('Enter');
@@ -143,13 +143,10 @@ test('template manager renders the bilingual responsive matrix without axe viola
         );
         expect(
           await page.evaluate(
-            () =>
-              document.documentElement.scrollWidth <= window.innerWidth,
+            () => document.documentElement.scrollWidth <= window.innerWidth,
           ),
         ).toBe(true);
-        await page.evaluate(() =>
-          document.fonts.ready.then(() => undefined),
-        );
+        await page.evaluate(() => document.fonts.ready.then(() => undefined));
         const accessibility = await new AxeBuilder({ page }).analyze();
         expect(accessibility.violations).toEqual([]);
         await page.screenshot({

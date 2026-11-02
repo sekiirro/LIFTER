@@ -7,9 +7,7 @@ import type {
 } from './schema';
 
 export type WorkoutTemplateActorRole =
-  | 'platform_owner'
-  | 'workspace_owner'
-  | 'trainer';
+  'platform_owner' | 'workspace_owner' | 'trainer';
 
 export type WorkoutTemplateActor = {
   role: WorkoutTemplateActorRole;
@@ -89,9 +87,7 @@ export function listVisibleTemplates(
   );
   const pageCount = Math.ceil(visible.length / normalizedPageSize);
   const normalizedPage =
-    pageCount === 0
-      ? 1
-      : Math.min(pageCount, Math.max(1, Math.trunc(page)));
+    pageCount === 0 ? 1 : Math.min(pageCount, Math.max(1, Math.trunc(page)));
   const start = (normalizedPage - 1) * normalizedPageSize;
 
   return {
@@ -103,9 +99,7 @@ export function listVisibleTemplates(
   };
 }
 
-export function canManageGlobalTemplates(
-  actor: WorkoutTemplateActor,
-): boolean {
+export function canManageGlobalTemplates(actor: WorkoutTemplateActor): boolean {
   return actor.role === 'platform_owner';
 }
 

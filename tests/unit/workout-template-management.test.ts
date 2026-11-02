@@ -153,7 +153,10 @@ describe('F17 workout template management', () => {
       listVisibleTemplates(trainer, [retired]).items.map((item) => item.id),
     ).toEqual(['retired']);
     expect(() =>
-      loadTemplateIntoDraft(retired, document('10000000-0000-4000-8000-000000000099')),
+      loadTemplateIntoDraft(
+        retired,
+        document('10000000-0000-4000-8000-000000000099'),
+      ),
     ).toThrow(WorkoutTemplateManagementError);
   });
 
@@ -170,11 +173,19 @@ describe('F17 workout template management', () => {
     expect(loaded.days).toHaveLength(2);
     expect(copiedDay.id).not.toBe(source.document.days[0]!.id);
     expect(copiedItem.id).not.toBe(source.document.days[0]!.items![0]!.id);
-    expect(copiedSet.id).not.toBe(source.document.days[0]!.items![0]!.sets[0]!.id);
+    expect(copiedSet.id).not.toBe(
+      source.document.days[0]!.items![0]!.sets[0]!.id,
+    );
     expect(copiedDay.title).toBe(source.document.days[0]!.title);
-    expect(copiedItem.exercise).toEqual(source.document.days[0]!.items![0]!.exercise);
-    expect(copiedSet.reps).toEqual(source.document.days[0]!.items![0]!.sets[0]!.reps);
-    expect(copiedSet.load).toEqual(source.document.days[0]!.items![0]!.sets[0]!.load);
+    expect(copiedItem.exercise).toEqual(
+      source.document.days[0]!.items![0]!.exercise,
+    );
+    expect(copiedSet.reps).toEqual(
+      source.document.days[0]!.items![0]!.sets[0]!.reps,
+    );
+    expect(copiedSet.load).toEqual(
+      source.document.days[0]!.items![0]!.sets[0]!.load,
+    );
     expect(source.document).toEqual(originalDocument);
   });
 
@@ -232,9 +243,9 @@ describe('F17 workout template management', () => {
       document: document('10000000-0000-4000-8000-000000000001'),
     };
 
-    expect(() => createGlobalTemplate(trainer, globalInput, idFactory())).toThrow(
-      WorkoutTemplateManagementError,
-    );
+    expect(() =>
+      createGlobalTemplate(trainer, globalInput, idFactory()),
+    ).toThrow(WorkoutTemplateManagementError);
     expect(
       createGlobalTemplate(platformOwner, globalInput, idFactory()).scope,
     ).toBe('global');

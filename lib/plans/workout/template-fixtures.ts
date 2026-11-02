@@ -60,11 +60,9 @@ export function createWorkoutTemplateFixture(
 ): WorkoutTemplateFixture {
   const workspaceId = 'workspace-a';
   const globalName = locale === 'ar' ? 'قاعدة السكوات' : 'Squat foundation';
-  const workspaceName =
-    locale === 'ar' ? 'دفع متدرّج' : 'Progressive push';
+  const workspaceName = locale === 'ar' ? 'دفع متدرّج' : 'Progressive push';
   const retiredName = locale === 'ar' ? 'دفع قديم' : 'Legacy push';
-  const ineligibleName =
-    locale === 'ar' ? 'جلسة مرجعية' : 'Reference session';
+  const ineligibleName = locale === 'ar' ? 'جلسة مرجعية' : 'Reference session';
 
   return {
     workspaceId,

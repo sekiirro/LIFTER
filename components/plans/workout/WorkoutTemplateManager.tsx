@@ -108,9 +108,8 @@ export function WorkoutTemplateManager({
   const [draft, setDraft] = useState(initialDraft);
   const [page, setPage] = useState(1);
   const [editor, setEditor] = useState<TemplateEditor | null>(null);
-  const [retireTarget, setRetireTarget] = useState<WorkoutTemplateProjection | null>(
-    null,
-  );
+  const [retireTarget, setRetireTarget] =
+    useState<WorkoutTemplateProjection | null>(null);
   const [status, setStatus] = useState<StatusMessage | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
   const [pending, setPending] = useState<string | null>(null);
@@ -363,7 +362,11 @@ export function WorkoutTemplateManager({
       ) : null}
 
       {status ? (
-        <Alert tone={status.tone} title={status.text} data-testid="template-status" />
+        <Alert
+          tone={status.tone}
+          title={status.text}
+          data-testid="template-status"
+        />
       ) : null}
 
       <section className={styles.list} aria-labelledby="template-list-title">
@@ -409,7 +412,9 @@ export function WorkoutTemplateManager({
                         {statusLabel}
                       </span>
                       {template.scope === 'global' && !po ? (
-                        <span className={styles.badge}>{m['templates.readOnly']}</span>
+                        <span className={styles.badge}>
+                          {m['templates.readOnly']}
+                        </span>
                       ) : null}
                     </div>
                     <h4>
@@ -473,12 +478,17 @@ export function WorkoutTemplateManager({
                       <Button
                         variant="secondary"
                         data-template-action="make-global"
-                        disabled={!template.promotionEligible || pending !== null}
+                        disabled={
+                          !template.promotionEligible || pending !== null
+                        }
                         loading={pending === `promote:${template.id}`}
                         loadingLabel={m['templates.promoting']}
-                        aria-label={formatMessage(m['templates.makeGlobalNamed'], {
-                          name: template.name,
-                        })}
+                        aria-label={formatMessage(
+                          m['templates.makeGlobalNamed'],
+                          {
+                            name: template.name,
+                          },
+                        )}
                         onClick={() => void makeGlobal(template)}
                       >
                         {m['templates.makeGlobal']}
@@ -491,7 +501,10 @@ export function WorkoutTemplateManager({
           </ul>
         )}
 
-        <nav className={styles.pagination} aria-label={m['templates.listTitle']}>
+        <nav
+          className={styles.pagination}
+          aria-label={m['templates.listTitle']}
+        >
           <Button
             variant="secondary"
             disabled={pageResult.page <= 1}
@@ -509,9 +522,7 @@ export function WorkoutTemplateManager({
             variant="secondary"
             disabled={pageResult.page >= pageResult.pageCount}
             onClick={() =>
-              setPage((current) =>
-                Math.min(pageResult.pageCount, current + 1),
-              )
+              setPage((current) => Math.min(pageResult.pageCount, current + 1))
             }
           >
             {m['templates.next']}

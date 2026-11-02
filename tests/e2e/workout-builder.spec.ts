@@ -9,8 +9,6 @@ const screenshotDirectory = path.join(tmpdir(), 'lifter-s26-f17-builder');
 const baseUrl = 'http://localhost:3417';
 
 const PUSH_DAY_ID = '10000000-0000-4000-8000-000000000001';
-const PULL_DAY_ID = '10000000-0000-4000-8000-000000000002';
-const REST_DAY_ID = '10000000-0000-4000-8000-000000000003';
 const BENCH_ITEM_ID = '20000000-0000-4000-8000-000000000001';
 const ROW_ITEM_ID = '20000000-0000-4000-8000-000000000002';
 const BENCH_SET_ID = '30000000-0000-4000-8000-000000000001';
@@ -50,14 +48,15 @@ test('workout builder supports keyboard movement with stable ids', async ({
   await expect(moveDown).toBeFocused();
   await page.keyboard.press('Enter');
 
-  await expect(page.getByTestId(`builder-day-${PUSH_DAY_ID}`).locator('[data-item-id]').nth(0)).toHaveAttribute(
-    'data-item-id',
-    ROW_ITEM_ID,
-  );
-  await expect(page.getByTestId(`builder-item-${BENCH_ITEM_ID}`)).toHaveAttribute(
-    'data-item-id',
-    BENCH_ITEM_ID,
-  );
+  await expect(
+    page
+      .getByTestId(`builder-day-${PUSH_DAY_ID}`)
+      .locator('[data-item-id]')
+      .nth(0),
+  ).toHaveAttribute('data-item-id', ROW_ITEM_ID);
+  await expect(
+    page.getByTestId(`builder-item-${BENCH_ITEM_ID}`),
+  ).toHaveAttribute('data-item-id', BENCH_ITEM_ID);
   await expect(page.getByTestId(`builder-set-${BENCH_SET_ID}`)).toBeVisible();
 });
 
@@ -73,9 +72,7 @@ test('workout builder duplicate remaps ids and preserves authored values', async
     .locator('[data-set-id]')
     .first()
     .getAttribute('data-set-id');
-  const sourceNotes = await source
-    .getByLabel('Exercise notes')
-    .inputValue();
+  const sourceNotes = await source.getByLabel('Exercise notes').inputValue();
 
   await source.getByRole('button', { name: 'Duplicate Bench press' }).click();
 
@@ -119,13 +116,10 @@ test('workout builder renders bilingual responsive states without axe violations
         );
         expect(
           await page.evaluate(
-            () =>
-              document.documentElement.scrollWidth <= window.innerWidth,
+            () => document.documentElement.scrollWidth <= window.innerWidth,
           ),
         ).toBe(true);
-        await page.evaluate(() =>
-          document.fonts.ready.then(() => undefined),
-        );
+        await page.evaluate(() => document.fonts.ready.then(() => undefined));
         const accessibility = await new AxeBuilder({ page }).analyze();
         expect(accessibility.violations).toEqual([]);
         await page.screenshot({

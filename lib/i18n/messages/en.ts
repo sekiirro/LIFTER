@@ -437,7 +437,8 @@ export const en: Record<keyof typeof ar, string> = {
   'templates.editorTitleWorkspace': 'Workspace template',
   'templates.editorTitleGlobal': 'Global template',
   'templates.name': 'Template name',
-  'templates.nameHint': 'Use a clear name that the workspace team will recognize.',
+  'templates.nameHint':
+    'Use a clear name that the workspace team will recognize.',
   'templates.description': 'Description',
   'templates.save': 'Save template',
   'templates.cancel': 'Cancel',
@@ -446,7 +447,8 @@ export const en: Record<keyof typeof ar, string> = {
   'templates.next': 'Next page',
   'templates.pageOf': 'Page {page} of {total}',
   'templates.draftTitle': 'Independent draft',
-  'templates.draftEmpty': 'The draft is empty. Load a template to create a copy.',
+  'templates.draftEmpty':
+    'The draft is empty. Load a template to create a copy.',
   'templates.draftDay': 'Day: {name}',
   'templates.draftDays': '{count} copied days',
   'templates.copyNotice':
@@ -478,7 +480,8 @@ export const en: Record<keyof typeof ar, string> = {
   'templates.errorPromotionNotAllowed': 'You cannot promote this template.',
   'templates.errorTemplateNotFound':
     'This template is no longer available in the preview.',
-  'templates.errorUnknown': 'The action could not be completed in this preview.',
+  'templates.errorUnknown':
+    'The action could not be completed in this preview.',
   'volume.title': 'Weekly volume',
   'volume.intro':
     'Working-set credit per muscle group. A primary muscle earns a full credit per set; a secondary muscle earns half.',
