@@ -163,6 +163,14 @@ for (const locale of ['ar', 'en'] as const) {
         await expect(
           page.getByText(m['catalog.detailOpenVideo']),
         ).toBeVisible();
+        const workspaceSelector = page.getByLabel(m['catalog.editorWorkspace']);
+        await workspaceSelector.focus();
+        await page.keyboard.press('Tab');
+        const workspaceSubmit = page.getByRole('button', {
+          name: m['catalog.searchSubmit'],
+        });
+        await expect(workspaceSubmit).toBeFocused();
+        await expect(workspaceSubmit).toHaveCSS('outline-style', 'solid');
         await assertAxe(page);
         await page.screenshot({
           path: join(
@@ -173,7 +181,14 @@ for (const locale of ['ar', 'en'] as const) {
         });
 
         await page.goto(`/exercise-library/${exerciseId}/edit`);
-        await expect(page.getByTestId('exercise-editor')).toBeVisible();
+        const editEditor = page.getByTestId('exercise-editor');
+        await expect(editEditor).toBeVisible();
+        const nameAr = editEditor.getByLabel(m['catalog.editorNameAr']);
+        await nameAr.focus();
+        await page.keyboard.press('Tab');
+        await expect(
+          editEditor.getByLabel(m['catalog.editorNameEn']),
+        ).toBeFocused();
         await assertAxe(page);
         await page.screenshot({
           path: join(
