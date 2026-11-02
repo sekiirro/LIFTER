@@ -114,3 +114,9 @@ Options for the architect/PO:
 3. Keep integer display but add an explicit UI rule that reconciles meal displays to the day total. This preserves integer precision but needs a new allocation rule for assigning residual grams to meals.
 
 Recommendation: option 2, because it gives every displayed value the same deterministic precision rule without changing exact calculations or stored totals. The architect/PO must resolve the spec conflict before the totals implementation and requested editor screenshots can be completed.
+
+### Mutation and final gates
+
+- **Localization mutation:** after commit `1d7a4d4`, backed up `NutritionTemplateManager.tsx` to OS temp, temporarily changed the `nutritionTemplates.platform` branch to render `template.origin`, and reran the focused suite. It failed at `tests/unit/NutritionTemplateManager.test.tsx:121` because the AR markup again contained `Platform`. Restored from backup; `git diff --exit-code -- components/plans/NutritionTemplateManager.tsx` passed.
+- **Final implementation gates:** unit suite (clean required environment): 112 files / 1,787 tests PASS; lint PASS; typecheck PASS; format:check PASS; build PASS; check:secrets PASS; git diff --check PASS. The UI commit adds no dependency. No database, Supabase stack, migration, or Docker was used.
+- **Design review:** only existing components/tokens and the localized message catalog are used; no color, spacing, radius, typography, or shared component changes. Arabic text is in the existing RTL/Bidi flow. Showcase contrast and accessibility remain clear across both themes; Playwright plus axe passed all 8 locale/theme cases (0 axe violations across 20 tested viewport renders). The two 1440px Arabic template captures were reviewed; platform and workspace origins are Arabic.
