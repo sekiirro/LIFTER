@@ -263,12 +263,12 @@ export function WorkoutTemplateManager({
             inputProps={{
               value: editor.name,
               required: true,
-              onChange: (event) =>
+              onChange: (event) => {
+                const value = event.currentTarget.value;
                 setEditor((current) =>
-                  current
-                    ? { ...current, name: event.currentTarget.value }
-                    : current,
-                ),
+                  current ? { ...current, name: value } : current,
+                );
+              },
             }}
           />
           <label className={styles.textareaLabel}>
@@ -276,13 +276,12 @@ export function WorkoutTemplateManager({
             <textarea
               value={editor.description}
               rows={3}
-              onChange={(event) =>
+              onChange={(event) => {
+                const value = event.currentTarget.value;
                 setEditor((current) =>
-                  current
-                    ? { ...current, description: event.currentTarget.value }
-                    : current,
-                )
-              }
+                  current ? { ...current, description: value } : current,
+                );
+              }}
             />
           </label>
           <div className={styles.actions}>
