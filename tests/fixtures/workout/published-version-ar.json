@@ -1,0 +1,47 @@
+{
+  "status": "published",
+  "planId": "plan-ar-001",
+  "version": 3,
+  "sourceRevision": 7,
+  "schemaVersion": 1,
+  "document": {
+    "days": [
+      {
+        "id": "10000000-0000-4000-8000-000000000021",
+        "kind": "session",
+        "title": "يوم الدفع",
+        "items": [
+          {
+            "id": "20000000-0000-4000-8000-000000000021",
+            "exercise": {
+              "source": "global",
+              "id": "bench-press",
+              "version": 1
+            },
+            "sets": [
+              {
+                "id": "30000000-0000-4000-8000-000000000021",
+                "type": "working",
+                "reps": { "value": 10 },
+                "load": {
+                  "mode": "added_weight",
+                  "value": "20.5",
+                  "unit": "kg"
+                },
+                "restSec": 90,
+                "rir": 2,
+                "notes": "تكرارات منظمة"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000022",
+        "kind": "rest",
+        "title": "راحة"
+      }
+    ],
+    "notes": "الأسبوع الأول"
+  }
+}

@@ -1,0 +1,68 @@
+{
+  "status": "published",
+  "planId": "plan-en-001",
+  "version": 2,
+  "sourceRevision": 5,
+  "schemaVersion": 1,
+  "document": {
+    "days": [
+      {
+        "id": "10000000-0000-4000-8000-000000000011",
+        "kind": "session",
+        "title": "Push day",
+        "items": [
+          {
+            "id": "20000000-0000-4000-8000-000000000011",
+            "exercise": {
+              "source": "global",
+              "id": "bench-press",
+              "version": 1
+            },
+            "sets": [
+              {
+                "id": "30000000-0000-4000-8000-000000000011",
+                "type": "working",
+                "reps": { "value": 10 },
+                "load": {
+                  "mode": "added_weight",
+                  "value": "20.5",
+                  "unit": "kg"
+                },
+                "restSec": 90,
+                "rir": 2,
+                "notes": "=SUM(A1:A2)"
+              },
+              {
+                "id": "30000000-0000-4000-8000-000000000012",
+                "type": "working",
+                "reps": { "min": 8, "max": 10 },
+                "load": { "mode": "bodyweight" },
+                "notes": "+1"
+              },
+              {
+                "id": "30000000-0000-4000-8000-000000000013",
+                "type": "warmup",
+                "reps": { "value": 5 },
+                "load": { "mode": "assisted", "value": "2", "unit": "lb" },
+                "notes": "-1"
+              },
+              {
+                "id": "30000000-0000-4000-8000-000000000014",
+                "type": "working",
+                "reps": { "value": 12 },
+                "load": { "mode": "bodyweight" },
+                "notes": "@coach"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "id": "10000000-0000-4000-8000-000000000012",
+        "kind": "rest",
+        "title": "Recovery"
+      }
+    ],
+    "notes": "Week one"
+  }
+}
