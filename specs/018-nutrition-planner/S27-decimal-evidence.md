@@ -34,7 +34,9 @@ Both mutations used a file backup, never `git checkout --`. `git diff --check` w
 
 ## Rendered evidence and axe
 
-Playwright ran on the existing F18 showcase route `/showcase/f18-plan-editor` at `http://localhost:3418` only, with no stack environment variables. Four locale/theme cases (AR-RTL and EN-LTR × light and dark) each ran at 390 px and 1440 px: **4/4 tests passed**, **8/8 axe scans reported 0 violations**, with no horizontal overflow.
+Playwright ran on the existing F18 showcase routes at `http://localhost:3418` only, with no stack environment variables. Four locale/theme cases (AR-RTL and EN-LTR × light and dark) each ran at 390 px and 1440 px on `/showcase/f18-plan-editor`: **4/4 tests passed**, **8/8 axe scans reported 0 violations**, with no horizontal overflow.
+
+The existing F18 template manager suite also ran on `/showcase/f18-templates` at 390, 768 and 1440 px: **4/4 tests passed**, **12/12 axe scans reported 0 violations**. Its captures are in `%TEMP%/lifter-s27-f18-templates` (`C:\Users\NEW LAP\AppData\Local\Temp\lifter-s27-f18-templates`). Across both F18 showcase suites: **8/8 tests passed** and **20/20 axe scans reported 0 violations**.
 
 Runtime assertions confirm the rendered values, not just unit output:
 
