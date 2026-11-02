@@ -252,6 +252,49 @@ describe('F17 workout template management', () => {
     expect(promoted.id).not.toBe('workspace');
   });
 
+  it('exposes stable reason codes for governed failures', () => {
+    const capture = (run: () => unknown): WorkoutTemplateManagementError => {
+      try {
+        run();
+      } catch (error) {
+        return error as WorkoutTemplateManagementError;
+      }
+      throw new Error('Expected the operation to fail');
+    };
+
+    expect(
+      capture(() =>
+        createGlobalTemplate(
+          trainer,
+          {
+            name: 'Global foundation',
+            document: document('10000000-0000-4000-8000-000000000001'),
+          },
+          idFactory(),
+        ),
+      ).code,
+    ).toBe('global_governance_po_only');
+
+    expect(
+      capture(() =>
+        loadTemplateIntoDraft(
+          template('retired', { status: 'retired' }),
+          document('10000000-0000-4000-8000-000000000099'),
+        ),
+      ).code,
+    ).toBe('retired_template_not_loadable');
+
+    expect(
+      capture(() =>
+        promoteTemplateToGlobal(
+          platformOwner,
+          template('workspace', { promotionEligible: false }),
+          idFactory(),
+        ),
+      ).code,
+    ).toBe('promotion_not_eligible');
+  });
+
   it('retires workspace templates for authorized staff but not global templates', () => {
     const retired = retireTemplate(trainer, template('workspace'));
 

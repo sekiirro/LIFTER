@@ -463,6 +463,22 @@ export const en: Record<keyof typeof ar, string> = {
     'The template cannot be loaded into new drafts after it is retired.',
   'templates.confirmRetire': 'Retire template',
   'templates.templateCount': '{count} templates',
+  'templates.saving': 'Saving…',
+  'templates.loadingIntoDraft': 'Loading a copy…',
+  'templates.retiring': 'Retiring…',
+  'templates.promoting': 'Publishing globally…',
+  'templates.errorRetired': 'Retired templates cannot be loaded into a draft.',
+  'templates.errorNotAuthorized':
+    'You are not allowed to manage these templates.',
+  'templates.errorWorkspaceMismatch': 'This action targets another workspace.',
+  'templates.errorGlobalGovernance':
+    'Only the platform owner can govern global templates.',
+  'templates.errorEditNotAllowed': 'You cannot edit this template.',
+  'templates.errorRetireNotAllowed': 'You cannot retire this template.',
+  'templates.errorPromotionNotAllowed': 'You cannot promote this template.',
+  'templates.errorTemplateNotFound':
+    'This template is no longer available in the preview.',
+  'templates.errorUnknown': 'The action could not be completed in this preview.',
   'volume.title': 'Weekly volume',
   'volume.intro':
     'Working-set credit per muscle group. A primary muscle earns a full credit per set; a secondary muscle earns half.',

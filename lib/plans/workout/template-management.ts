@@ -41,12 +41,28 @@ export type WorkoutTemplatePage = {
 
 export const TEMPLATE_PAGE_SIZE = 20;
 
-export class WorkoutTemplateManagementError extends Error {
-  readonly code = 'invalid_workout_template_operation';
+/**
+ * Stable, UI-agnostic reason codes. The interface layer maps them to
+ * localized copy so domain messages never leak into the product surface.
+ */
+export type WorkoutTemplateManagementErrorCode =
+  | 'retired_template_not_loadable'
+  | 'actor_not_authorized'
+  | 'workspace_mismatch'
+  | 'name_required'
+  | 'global_governance_po_only'
+  | 'edit_not_allowed'
+  | 'retire_not_allowed'
+  | 'promotion_not_allowed'
+  | 'promotion_not_eligible';
 
-  constructor(message: string) {
+export class WorkoutTemplateManagementError extends Error {
+  readonly code: WorkoutTemplateManagementErrorCode;
+
+  constructor(code: WorkoutTemplateManagementErrorCode, message: string) {
     super(message);
     this.name = 'WorkoutTemplateManagementError';
+    this.code = code;
   }
 }
 
@@ -199,6 +215,7 @@ export function loadTemplateIntoDraft(
 ): WorkoutDocument {
   if (template.status === 'retired') {
     throw new WorkoutTemplateManagementError(
+      'retired_template_not_loadable',
       'Retired templates cannot be loaded into a draft',
     );
   }
@@ -229,6 +246,7 @@ function requireAuthorizedStaff(actor: WorkoutTemplateActor): void {
     actor.role !== 'trainer'
   ) {
     throw new WorkoutTemplateManagementError(
+      'actor_not_authorized',
       'This actor cannot manage workout templates',
     );
   }
@@ -247,11 +265,15 @@ export function createWorkspaceTemplate(
   requireAuthorizedStaff(actor);
   if (input.workspaceId !== actor.workspaceId) {
     throw new WorkoutTemplateManagementError(
+      'workspace_mismatch',
       'Workspace templates must use the explicitly selected workspace',
     );
   }
   if (!input.name.trim()) {
-    throw new WorkoutTemplateManagementError('Template name is required');
+    throw new WorkoutTemplateManagementError(
+      'name_required',
+      'Template name is required',
+    );
   }
   return {
     id: idFactory(),
@@ -275,11 +297,15 @@ export function createGlobalTemplate(
 ): WorkoutTemplateProjection {
   if (!canManageGlobalTemplates(actor)) {
     throw new WorkoutTemplateManagementError(
+      'global_governance_po_only',
       'Only platform owners can create global templates',
     );
   }
   if (!input.name.trim()) {
-    throw new WorkoutTemplateManagementError('Template name is required');
+    throw new WorkoutTemplateManagementError(
+      'name_required',
+      'Template name is required',
+    );
   }
   return {
     id: idFactory(),
@@ -302,11 +328,15 @@ export function editTemplate(
 ): WorkoutTemplateProjection {
   if (!canEditTemplate(actor, template)) {
     throw new WorkoutTemplateManagementError(
+      'edit_not_allowed',
       'This actor cannot edit the selected template',
     );
   }
   if (!patch.name.trim()) {
-    throw new WorkoutTemplateManagementError('Template name is required');
+    throw new WorkoutTemplateManagementError(
+      'name_required',
+      'Template name is required',
+    );
   }
   return {
     ...template,
@@ -325,6 +355,7 @@ export function retireTemplate(
 ): WorkoutTemplateProjection {
   if (!canEditTemplate(actor, template)) {
     throw new WorkoutTemplateManagementError(
+      'retire_not_allowed',
       'This actor cannot retire the selected template',
     );
   }
@@ -342,16 +373,23 @@ export function promoteTemplateToGlobal(
 ): WorkoutTemplateProjection {
   if (!canManageGlobalTemplates(actor)) {
     throw new WorkoutTemplateManagementError(
+      'global_governance_po_only',
       'Only platform owners can make a workspace template global',
     );
   }
   if (
     template.scope !== 'workspace' ||
     template.status !== 'active' ||
-    !template.promotionEligible ||
     template.workspaceId !== actor.workspaceId
   ) {
     throw new WorkoutTemplateManagementError(
+      'promotion_not_allowed',
+      'This actor cannot promote the selected template',
+    );
+  }
+  if (!template.promotionEligible) {
+    throw new WorkoutTemplateManagementError(
+      'promotion_not_eligible',
       'This workspace template is not eligible to become global',
     );
   }

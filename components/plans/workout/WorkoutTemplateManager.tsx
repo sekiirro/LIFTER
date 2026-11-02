@@ -17,6 +17,7 @@ import {
   retireTemplate,
   WorkoutTemplateManagementError,
   type WorkoutTemplateActor,
+  type WorkoutTemplateManagementErrorCode,
   type WorkoutTemplateProjection,
   type WorkoutTemplateScope,
 } from '../../../lib/plans/workout/template-management';
@@ -38,6 +39,31 @@ type StatusMessage = {
   tone: 'success' | 'error';
   text: string;
 };
+
+/**
+ * DESIGN.md Q48 asks for an inline pending affordance on save-style actions.
+ * The preview has no stack round-trip, so a short deterministic delay stands in
+ * for the future server acknowledgement.
+ */
+const PREVIEW_LATENCY_MS = 180;
+
+const ERROR_MESSAGE_KEYS: Record<WorkoutTemplateManagementErrorCode, string> = {
+  retired_template_not_loadable: 'templates.errorRetired',
+  actor_not_authorized: 'templates.errorNotAuthorized',
+  workspace_mismatch: 'templates.errorWorkspaceMismatch',
+  name_required: 'templates.invalidName',
+  global_governance_po_only: 'templates.errorGlobalGovernance',
+  edit_not_allowed: 'templates.errorEditNotAllowed',
+  retire_not_allowed: 'templates.errorRetireNotAllowed',
+  promotion_not_allowed: 'templates.errorPromotionNotAllowed',
+  promotion_not_eligible: 'templates.notEligible',
+};
+
+function previewDelay(): Promise<void> {
+  return new Promise((resolve) => {
+    setTimeout(resolve, PREVIEW_LATENCY_MS);
+  });
+}
 
 export type WorkoutTemplateManagerProps = {
   actor: WorkoutTemplateActor;
@@ -87,6 +113,7 @@ export function WorkoutTemplateManager({
   );
   const [status, setStatus] = useState<StatusMessage | null>(null);
   const [formError, setFormError] = useState<string | null>(null);
+  const [pending, setPending] = useState<string | null>(null);
 
   const pageResult = useMemo(
     () => listVisibleTemplates(actor, templates, page),
@@ -96,6 +123,14 @@ export function WorkoutTemplateManager({
 
   function announce(text: string, tone: StatusMessage['tone'] = 'success') {
     setStatus({ tone, text });
+  }
+
+  function localizedError(error: unknown): string {
+    if (error instanceof WorkoutTemplateManagementError) {
+      const key = ERROR_MESSAGE_KEYS[error.code];
+      if (key) return m[key as keyof typeof m];
+    }
+    return m['templates.errorUnknown'];
   }
 
   function openCreate(scope: WorkoutTemplateScope) {
@@ -114,19 +149,24 @@ export function WorkoutTemplateManager({
     });
   }
 
-  function saveTemplate() {
-    if (!editor) return;
+  async function saveTemplate() {
+    if (!editor || pending) return;
     if (!editor.name.trim()) {
       setFormError(m['templates.invalidName']);
       return;
     }
 
+    setPending('save');
     try {
+      await previewDelay();
       if (editor.templateId) {
         const current = templates.find(
           (template) => template.id === editor.templateId,
         );
-        if (!current) throw new WorkoutTemplateManagementError('Template not found');
+        if (!current) {
+          setFormError(m['templates.errorTemplateNotFound']);
+          return;
+        }
         const updated = editTemplate(actor, current, {
           name: editor.name,
           description: editor.description,
@@ -159,28 +199,31 @@ export function WorkoutTemplateManager({
       setEditor(null);
       setFormError(null);
     } catch (error) {
-      setFormError(
-        error instanceof Error ? error.message : m['templates.invalidName'],
-      );
+      setFormError(localizedError(error));
+    } finally {
+      setPending(null);
     }
   }
 
-  function loadTemplate(template: WorkoutTemplateProjection) {
-    if (!canLoadTemplate(actor, template)) return;
+  async function loadTemplate(template: WorkoutTemplateProjection) {
+    if (!canLoadTemplate(actor, template) || pending) return;
+    setPending(`load:${template.id}`);
     try {
+      await previewDelay();
       setDraft((currentDraft) => loadTemplateIntoDraft(template, currentDraft));
       announce(m['templates.loaded']);
     } catch (error) {
-      announce(
-        error instanceof Error ? error.message : m['templates.invalidName'],
-        'error',
-      );
+      announce(localizedError(error), 'error');
+    } finally {
+      setPending(null);
     }
   }
 
-  function confirmRetire() {
-    if (!retireTarget) return;
+  async function confirmRetire() {
+    if (!retireTarget || pending) return;
+    setPending('retire');
     try {
+      await previewDelay();
       const retired = retireTemplate(actor, retireTarget);
       setTemplates((currentTemplates) =>
         currentTemplates.map((template) =>
@@ -191,23 +234,24 @@ export function WorkoutTemplateManager({
       announce(m['templates.retiredMessage']);
     } catch (error) {
       setRetireTarget(null);
-      announce(
-        error instanceof Error ? error.message : m['templates.invalidName'],
-        'error',
-      );
+      announce(localizedError(error), 'error');
+    } finally {
+      setPending(null);
     }
   }
 
-  function makeGlobal(template: WorkoutTemplateProjection) {
+  async function makeGlobal(template: WorkoutTemplateProjection) {
+    if (pending) return;
+    setPending(`promote:${template.id}`);
     try {
+      await previewDelay();
       const promoted = promoteTemplateToGlobal(actor, template);
       setTemplates((currentTemplates) => [...currentTemplates, promoted]);
       announce(m['templates.promoted']);
     } catch (error) {
-      announce(
-        error instanceof Error ? error.message : m['templates.notEligible'],
-        'error',
-      );
+      announce(localizedError(error), 'error');
+    } finally {
+      setPending(null);
     }
   }
 
@@ -223,7 +267,8 @@ export function WorkoutTemplateManager({
         <div>
           <p className={styles.context}>
             {po ? m['templates.poView'] : m['templates.staffView']} ·{' '}
-            {m['templates.selectedWorkspace']}: {actor.workspaceId}
+            {m['templates.selectedWorkspace']}:{' '}
+            <Bidi dir="ltr">{actor.workspaceId}</Bidi>
           </p>
           <h2>{m['templates.listTitle']}</h2>
           <p>{m['templates.copyNotice']}</p>
@@ -232,13 +277,25 @@ export function WorkoutTemplateManager({
       </header>
 
       <div className={styles.toolbar}>
-        <Button onClick={() => openCreate('workspace')}>
+        <Button
+          disabled={pending !== null}
+          onClick={() => openCreate('workspace')}
+        >
           {m['templates.createWorkspace']}
         </Button>
         {po ? (
-          <Button onClick={() => openCreate('global')}>
-            {m['templates.createGlobal']}
-          </Button>
+          <div
+            className={styles.governance}
+            role="group"
+            aria-label={m['templates.globalGovernance']}
+          >
+            <Button
+              disabled={pending !== null}
+              onClick={() => openCreate('global')}
+            >
+              {m['templates.createGlobal']}
+            </Button>
+          </div>
         ) : null}
       </div>
 
@@ -247,7 +304,7 @@ export function WorkoutTemplateManager({
           className={styles.editor}
           onSubmit={(event) => {
             event.preventDefault();
-            saveTemplate();
+            void saveTemplate();
           }}
           aria-labelledby="template-editor-title"
         >
@@ -285,7 +342,13 @@ export function WorkoutTemplateManager({
             />
           </label>
           <div className={styles.actions}>
-            <Button type="submit">{m['templates.save']}</Button>
+            <Button
+              type="submit"
+              loading={pending === 'save'}
+              loadingLabel={m['templates.saving']}
+            >
+              {m['templates.save']}
+            </Button>
             <Button
               variant="secondary"
               onClick={() => {
@@ -368,11 +431,13 @@ export function WorkoutTemplateManager({
                     <Button
                       variant="secondary"
                       data-template-action="load"
-                      disabled={!loadable}
+                      disabled={!loadable || pending !== null}
+                      loading={pending === `load:${template.id}`}
+                      loadingLabel={m['templates.loadingIntoDraft']}
                       aria-label={formatMessage(m['templates.loadNamed'], {
                         name: template.name,
                       })}
-                      onClick={() => loadTemplate(template)}
+                      onClick={() => void loadTemplate(template)}
                     >
                       {m['templates.load']}
                     </Button>
@@ -381,6 +446,7 @@ export function WorkoutTemplateManager({
                         variant="secondary"
                         data-template-action="edit"
                         data-template-scope={template.scope}
+                        disabled={pending !== null}
                         aria-label={formatMessage(m['templates.editNamed'], {
                           name: template.name,
                         })}
@@ -394,6 +460,7 @@ export function WorkoutTemplateManager({
                         variant="destructive"
                         data-template-action="retire"
                         data-template-scope={template.scope}
+                        disabled={pending !== null}
                         aria-label={formatMessage(m['templates.retireNamed'], {
                           name: template.name,
                         })}
@@ -406,11 +473,13 @@ export function WorkoutTemplateManager({
                       <Button
                         variant="secondary"
                         data-template-action="make-global"
-                        disabled={!template.promotionEligible}
+                        disabled={!template.promotionEligible || pending !== null}
+                        loading={pending === `promote:${template.id}`}
+                        loadingLabel={m['templates.promoting']}
                         aria-label={formatMessage(m['templates.makeGlobalNamed'], {
                           name: template.name,
                         })}
-                        onClick={() => makeGlobal(template)}
+                        onClick={() => void makeGlobal(template)}
                       >
                         {m['templates.makeGlobal']}
                       </Button>
@@ -481,7 +550,8 @@ export function WorkoutTemplateManager({
         confirmLabel={m['templates.confirmRetire']}
         cancelLabel={m['templates.cancel']}
         tone="destructive"
-        onConfirm={confirmRetire}
+        loading={pending === 'retire'}
+        onConfirm={() => void confirmRetire()}
         onCancel={() => setRetireTarget(null)}
       />
     </section>
