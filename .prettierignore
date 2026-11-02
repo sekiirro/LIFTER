@@ -6,6 +6,7 @@ docs
 .specify
 .claude
 .agents
+.impeccable
 LIFTER_Claude_Files
 node_modules
 coverage

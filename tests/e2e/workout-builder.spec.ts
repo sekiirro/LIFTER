@@ -42,6 +42,8 @@ test('workout builder supports keyboard movement with stable ids', async ({
   const row = page.getByTestId(`builder-item-${ROW_ITEM_ID}`);
   await expect(bench).toBeVisible();
   await expect(row).toBeVisible();
+  await expect(page.getByTestId(`builder-day-${PULL_DAY_ID}`)).toBeVisible();
+  await expect(page.getByTestId(`builder-day-${REST_DAY_ID}`)).toBeVisible();
 
   const moveDown = page.getByRole('button', {
     name: 'Move Bench press down',
@@ -50,14 +52,15 @@ test('workout builder supports keyboard movement with stable ids', async ({
   await expect(moveDown).toBeFocused();
   await page.keyboard.press('Enter');
 
-  await expect(page.getByTestId(`builder-day-${PUSH_DAY_ID}`).locator('[data-item-id]').nth(0)).toHaveAttribute(
-    'data-item-id',
-    ROW_ITEM_ID,
-  );
-  await expect(page.getByTestId(`builder-item-${BENCH_ITEM_ID}`)).toHaveAttribute(
-    'data-item-id',
-    BENCH_ITEM_ID,
-  );
+  await expect(
+    page
+      .getByTestId(`builder-day-${PUSH_DAY_ID}`)
+      .locator('[data-item-id]')
+      .nth(0),
+  ).toHaveAttribute('data-item-id', ROW_ITEM_ID);
+  await expect(
+    page.getByTestId(`builder-item-${BENCH_ITEM_ID}`),
+  ).toHaveAttribute('data-item-id', BENCH_ITEM_ID);
   await expect(page.getByTestId(`builder-set-${BENCH_SET_ID}`)).toBeVisible();
 });
 
@@ -73,9 +76,7 @@ test('workout builder duplicate remaps ids and preserves authored values', async
     .locator('[data-set-id]')
     .first()
     .getAttribute('data-set-id');
-  const sourceNotes = await source
-    .getByLabel('Exercise notes')
-    .inputValue();
+  const sourceNotes = await source.getByLabel('Exercise notes').inputValue();
 
   await source.getByRole('button', { name: 'Duplicate Bench press' }).click();
 
@@ -92,6 +93,33 @@ test('workout builder duplicate remaps ids and preserves authored values', async
   expect(duplicateId).not.toBe(BENCH_ITEM_ID);
   expect(duplicateSetId).not.toBe(sourceSetId);
   await expect(duplicate.getByLabel('Exercise notes')).toHaveValue(sourceNotes);
+});
+
+test('workout builder drags an exercise across days without changing ids', async ({
+  page,
+  context,
+}) => {
+  await setPreferences(context, 'en', 'light');
+  await page.setViewportSize({ width: 1280, height: 5000 });
+  await page.goto('/showcase/workout-builder?locale=en');
+
+  const bench = page.getByTestId(`builder-item-${BENCH_ITEM_ID}`);
+  const setId = await bench
+    .locator('[data-set-id]')
+    .first()
+    .getAttribute('data-set-id');
+  const pullDay = page.getByTestId(`builder-day-${PULL_DAY_ID}`);
+  await bench.getByLabel('Drag exercise: Bench press').dragTo(pullDay, {
+    targetPosition: { x: 30, y: 30 },
+  });
+
+  const movedBench = pullDay.locator(`[data-item-id="${BENCH_ITEM_ID}"]`);
+  await expect(movedBench).toBeVisible();
+  await expect(movedBench).toHaveAttribute('data-item-id', BENCH_ITEM_ID);
+  await expect(movedBench.locator('[data-set-id]').first()).toHaveAttribute(
+    'data-set-id',
+    setId ?? '',
+  );
 });
 
 test('workout builder renders bilingual responsive states without axe violations', async ({
@@ -119,13 +147,10 @@ test('workout builder renders bilingual responsive states without axe violations
         );
         expect(
           await page.evaluate(
-            () =>
-              document.documentElement.scrollWidth <= window.innerWidth,
+            () => document.documentElement.scrollWidth <= window.innerWidth,
           ),
         ).toBe(true);
-        await page.evaluate(() =>
-          document.fonts.ready.then(() => undefined),
-        );
+        await page.evaluate(() => document.fonts.ready.then(() => undefined));
         const accessibility = await new AxeBuilder({ page }).analyze();
         expect(accessibility.violations).toEqual([]);
         await page.screenshot({

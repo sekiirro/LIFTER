@@ -72,12 +72,12 @@ export function createWorkoutBuilderFixture(
   locale: Locale,
 ): WorkoutBuilderFixture {
   const names = {
-    bench: locale === 'ar' ? 'ضغط البار' : 'Bench press',
-    row: locale === 'ar' ? ' تجديف' : 'Row',
-    squat: locale === 'ar' ? 'القرفصاء' : 'Squat',
-    deadlift: locale === 'ar' ? 'الرفعة الميتة' : 'Deadlift',
-    incline: locale === 'ar' ? 'ضغط مائل' : 'Incline press',
-    db: locale === 'ar' ? 'ضغط Dumbbell' : 'Dumbbell press',
+    bench: { ar: 'ضغط البار', en: 'Bench press' },
+    row: { ar: 'تجديف', en: 'Row' },
+    squat: { ar: 'القرفصاء', en: 'Squat' },
+    deadlift: { ar: 'الرفعة الميتة', en: 'Deadlift' },
+    incline: { ar: 'ضغط مائل', en: 'Incline press' },
+    db: { ar: 'ضغط دمبل', en: 'Dumbbell press' },
   } as const;
 
   return {
@@ -95,7 +95,8 @@ export function createWorkoutBuilderFixture(
             {
               id: BENCH_ITEM_ID,
               exercise: BENCH,
-              notes: locale === 'ar' ? 'توقّف عند الأسفل.' : 'Pause at the bottom.',
+              notes:
+                locale === 'ar' ? 'توقّف عند الأسفل.' : 'Pause at the bottom.',
               alternatives: [DB_PRESS],
               sets: [
                 {
@@ -116,10 +117,7 @@ export function createWorkoutBuilderFixture(
                   load: { mode: 'added_weight', value: '22.5', unit: 'kg' },
                   restSec: 120,
                   rir: 2,
-                  notes:
-                    locale === 'ar'
-                      ? 'إيقاع متحكم.'
-                      : 'Controlled tempo.',
+                  notes: locale === 'ar' ? 'إيقاع متحكم.' : 'Controlled tempo.',
                 },
               ],
             },
@@ -228,9 +226,9 @@ export function createWorkoutBuilderFixture(
       },
     ],
     videoReferences: {
-      [BENCH_ITEM_ID]: 'https://video.example.test/bench-press',
-      [ROW_ITEM_ID]: 'https://video.example.test/row',
-      [SQUAT_ITEM_ID]: 'https://video.example.test/squat',
+      'bench-press': 'https://video.example.test/bench-press',
+      row: 'https://video.example.test/row',
+      squat: 'https://video.example.test/squat',
     },
   };
 }
