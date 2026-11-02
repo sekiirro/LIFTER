@@ -17,9 +17,9 @@ it('consumes a short-lived hashed token once and revokes a link on membership lo
       await tx`insert into app_private.f15_telegram_link_tokens(token_hash,user_id,expires_at)
       values(extensions.digest(${token},'sha256'),${f.trainerA.userId},clock_timestamp()+interval '10 minutes')`;
       const [first] =
-        await tx`select app_private.consume_f15_telegram_link_token(${token},'10101') result`;
+        await tx`select app_private.consume_f15_telegram_start(10001,${token},'10101') result`;
       const [replay] =
-        await tx`select app_private.consume_f15_telegram_link_token(${token},'10101') result`;
+        await tx`select app_private.consume_f15_telegram_start(10001,${token},'10101') result`;
       expect(first!.result).toBe(true);
       expect(replay!.result).toBe(false);
       const expired = randomUUID()
@@ -29,7 +29,7 @@ it('consumes a short-lived hashed token once and revokes a link on membership lo
       await tx`insert into app_private.f15_telegram_link_tokens(token_hash,user_id,expires_at)
       values(extensions.digest(${expired},'sha256'),${f.trainerA.userId},clock_timestamp()-interval '1 second')`;
       const [expiredResult] =
-        await tx`select app_private.consume_f15_telegram_link_token(${expired},'10101') result`;
+        await tx`select app_private.consume_f15_telegram_start(10002,${expired},'10101') result`;
       expect(expiredResult!.result).toBe(false);
       const [revokedMembership] =
         await tx`select workspace_id from public.workspace_memberships

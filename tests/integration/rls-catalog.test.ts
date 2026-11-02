@@ -72,6 +72,7 @@ const registrationPrivate = [
   'f15_alert_inbox_after_occurrence',
   'f15_telegram_membership_revoke',
   'consume_f15_telegram_link_token',
+  'consume_f15_telegram_start',
 ];
 const brandingPrivate = [
   'branding_actor_id',
@@ -1090,6 +1091,7 @@ describe('registration security catalog', () => {
       'app_private.f15_client_alert_schedule_insert()',
       'app_private.write_f15_in_app_alert(uuid)',
       'app_private.f15_alert_inbox_after_occurrence()',
+      'app_private.consume_f15_telegram_start(bigint,text,text)',
       'app_private.register_f15_trainer_alert_schedule(uuid,uuid,uuid,timestamptz)',
       'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)',
       'public.read_form_alert_inbox(integer,timestamptz)',
@@ -1097,6 +1099,7 @@ describe('registration security catalog', () => {
       'public.prepare_f15_telegram_delivery(uuid,uuid)',
       'public.claim_f15_telegram_delivery(uuid)',
       'public.claim_f15_form_alert_jobs(integer,integer)',
+      'public.consume_f15_telegram_start(bigint,text,text)',
       'public.record_renewal(jsonb)',
     ];
     for (const name of signatures) {
@@ -1111,17 +1114,19 @@ describe('registration security catalog', () => {
       for (const role of ['anon', 'authenticated', 'service_role']) {
         const [g] =
           await db`select has_function_privilege(${role},${name},'EXECUTE') as allowed`;
-        expect(g!.allowed).toBe(
+        expect(g!.allowed, `${role} ${name}`).toBe(
           name.startsWith('public.') &&
             ((role === 'authenticated' &&
               !name.includes('prepare_f15_telegram_delivery') &&
               !name.includes('claim_f15_telegram_delivery') &&
-              !name.includes('claim_f15_form_alert_jobs')) ||
+              !name.includes('claim_f15_form_alert_jobs') &&
+              !name.includes('consume_f15_telegram_start')) ||
               (role === 'anon' && name.includes('registration_link_open')) ||
               (role === 'service_role' &&
                 (name.includes('prepare_f15_telegram_delivery') ||
                   name.includes('claim_f15_telegram_delivery') ||
-                  name.includes('claim_f15_form_alert_jobs')))),
+                  name.includes('claim_f15_form_alert_jobs') ||
+                  name.includes('consume_f15_telegram_start')))),
         );
       }
     }

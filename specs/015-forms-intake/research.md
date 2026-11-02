@@ -95,11 +95,12 @@
   Manual delivery remains an opaque caller-keyed occurrence. Each stored
   occurrence snapshots its eligible audience once and receives independent
   assignment rows and deadlines.
-- T016 is deliberately channel-agnostic while the delivery channel remains an
-  open PO decision. It materializes client-late and D-03 Trainer-late schedules,
+- T016 materializes client-late and D-03 Trainer-late schedules,
   stage/recipient occurrences, authorization-checked IDs-only `public.jobs`
-  enqueueing, and IDs-only audit events. There is no email, in-app or other
-  delivery adapter and no channel choice in this implementation.
+  enqueueing, and IDs-only audit events. S25-PO-8 resolves the delivery
+  channels: in-app is always on; Telegram is optional for explicitly linked
+  staff; email is out of scope. The scheduler remains disabled pending separate
+  PO approval.
 - Client-late clocks are independent from D-03 Trainer-late clocks: a client
   alert is due to the assigned, currently authorized Trainer at deadline+24h;
   if no eligible Trainer exists then PO+WO receive the +24h stage, and PO+WO
@@ -109,3 +110,22 @@
   uses the owner-only F11 activation/deactivation pattern and is not activated
   by the migration; explicit-time integration tests call the private evaluator
   core directly.
+
+## S25-PO-8 / S25-R4 channel boundary
+
+- The in-app inbox is the mandatory channel. Inbox rows contain opaque IDs and
+  stage metadata, are readable only by the current authorized recipient, and
+  are audited when read or marked read. Inbox retention follows the source
+  assignment under RET-3.
+- Telegram is staff-only and opt-in through a single-use, ten-minute `/start`
+  token stored only as a hash. A verified Telegram webhook secret is checked
+  with a constant-time comparison before body parsing. Webhook update IDs are
+  stored for replay prevention; raw request bodies are not stored.
+- Membership loss and explicit unlink revoke the chat binding. Delivery checks
+  current authorization and link state immediately before send. Telegram
+  content is generic text with only an in-app inbox link; client names, answers
+  and health data are excluded. Tests use a fake transport; the server runtime
+  reads `TELEGRAM_BOT_TOKEN` without putting its value in source or logs.
+- Email and external delivery adapters other than Telegram are out of scope.
+  Scheduler activation is not included in any migration and needs separate PO
+  approval.

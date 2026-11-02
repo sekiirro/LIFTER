@@ -12,7 +12,9 @@ export function validTelegramWebhookSecret(
 
 export function parseTelegramStart(body: unknown) {
   if (!body || typeof body !== 'object') return null;
-  const message = (body as Record<string, unknown>).message;
+  const payload = body as Record<string, unknown>;
+  const updateId = payload.update_id;
+  const message = payload.message;
   if (!message || typeof message !== 'object') return null;
   const record = message as Record<string, unknown>;
   const from = record.from;
@@ -23,6 +25,9 @@ export function parseTelegramStart(body: unknown) {
   const chatRecord = chat as Record<string, unknown>;
   const text = record.text;
   if (
+    typeof updateId !== 'number' ||
+    !Number.isSafeInteger(updateId) ||
+    updateId < 0 ||
     typeof text !== 'string' ||
     !text.startsWith('/start ') ||
     typeof sender.id !== 'number' ||
@@ -32,6 +37,6 @@ export function parseTelegramStart(body: unknown) {
     return null;
   const token = text.slice(7).trim();
   return /^[a-f0-9]{64}$/.test(token)
-    ? { token, chatId: String(chatRecord.id) }
+    ? { token, chatId: String(chatRecord.id), updateId }
     : null;
 }

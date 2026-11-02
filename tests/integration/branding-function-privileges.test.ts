@@ -213,11 +213,14 @@ describe('F14 definer function privileges', () => {
       },
       { signature: 'public.branding_gc_claim(integer)' },
       { signature: 'public.branding_gc_finalize(uuid)' },
+      { signature: 'public.claim_f15_telegram_delivery(uuid)' },
       { signature: 'public.claim_refund_auth_lockout_jobs(integer)' },
       {
         signature:
           'public.complete_refund_auth_lockout_job(uuid, timestamp with time zone)',
       },
+      { signature: 'public.consume_f15_telegram_start(bigint, text, text)' },
+      { signature: 'public.prepare_f15_telegram_delivery(uuid, uuid)' },
       {
         signature:
           'public.retry_refund_auth_lockout_job(uuid, integer, timestamp with time zone, text)',

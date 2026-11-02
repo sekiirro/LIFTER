@@ -206,6 +206,23 @@ it('requires a current staff link for Telegram and claims a channel delivery onc
       const [replay] = await tx`select public.prepare_f15_telegram_delivery(
       ${occurrenceId},${f.trainerA.userId}) as result`;
       expect(replay!.result).toEqual({ status: 'already_delivered' });
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({
+        sub: f.trainerA.userId,
+        role: 'authenticated',
+      })},true)`;
+      await tx`set local role authenticated`;
+      const [unlinkedSelf] =
+        await tx`select public.unlink_f15_telegram() as result`;
+      expect(unlinkedSelf!.result).toBe(true);
+      await tx`reset role`;
+      const [afterUnlink] =
+        await tx`select public.prepare_f15_telegram_delivery(
+      ${occurrenceId},${f.trainerA.userId}) as result`;
+      expect(afterUnlink!.result).toEqual({ status: 'unlinked' });
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({
+        sub: f.po.userId,
+        role: 'authenticated',
+      })},true)`;
       const [membership] =
         await tx`select workspace_id from public.workspace_memberships
       where user_id=${f.trainerA.userId} and revoked_at is null limit 1`;
@@ -288,7 +305,7 @@ it('kills a cross-recipient inbox-read mutant', async () => {
 it('kills a duplicate in-app delivery mutant', async () => {
   await expectMutation('per-channel delivery uniqueness', () =>
     db.begin(async (tx) => {
-      const { f, occurrenceId } = await fixture(tx);
+      const { occurrenceId } = await fixture(tx);
       const source = await definition(tx, writeName);
       const mutant = source.replace(
         /on conflict \(workspace_id,alert_occurrence_id,stage,recipient_user_id,channel\)\s+do nothing/,

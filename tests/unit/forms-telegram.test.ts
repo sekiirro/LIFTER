@@ -20,15 +20,17 @@ describe('staff Telegram link and delivery primitives', () => {
     const token = 'a'.repeat(64);
     expect(
       parseTelegramStart({
+        update_id: 3,
         message: {
           text: `/start ${token}`,
           from: { id: 12 },
           chat: { id: 12 },
         },
       }),
-    ).toEqual({ token, chatId: '12' });
+    ).toEqual({ token, chatId: '12', updateId: 3 });
     expect(
       parseTelegramStart({
+        update_id: 3,
         message: {
           text: `/start ${token}`,
           from: { id: 12 },
@@ -38,6 +40,7 @@ describe('staff Telegram link and delivery primitives', () => {
     ).toBeNull();
     expect(
       parseTelegramStart({
+        update_id: 3,
         message: { text: '/start', from: { id: 12 }, chat: { id: 12 } },
       }),
     ).toBeNull();

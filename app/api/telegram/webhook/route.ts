@@ -24,7 +24,8 @@ export async function POST(request: NextRequest) {
   const client = createAdminClient();
   if (!client)
     return NextResponse.json({ status: 'unavailable' }, { status: 503 });
-  const { data, error } = await client.rpc('consume_f15_telegram_link_token', {
+  const { data, error } = await client.rpc('consume_f15_telegram_start', {
+    p_update_id: start.updateId,
     p_token: start.token,
     p_chat_id: start.chatId,
   });
