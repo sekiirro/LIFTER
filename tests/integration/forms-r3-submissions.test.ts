@@ -7,6 +7,7 @@ import {
   registered,
   request,
   sqlCall,
+  worker,
 } from './registration-approval-operations-fixture';
 
 const db = sql();
@@ -241,4 +242,95 @@ it('T013 commits one complete original, revision, audit, and frozen D-03 SLA', a
       throw rollback;
     }),
   ).rejects.toBe(rollback);
+});
+
+it('T013 concurrent identical submits return one idempotent result and persist one original', async () => {
+  const context = await clientContext();
+  const client = await registered(context);
+  const formId = randomUUID();
+  const assignmentId = randomUUID();
+  const policy = `t013-race-${randomUUID()}`;
+  const intentKey = randomUUID();
+  const definition = {
+    questions: [
+      { id: 'basic', sectionId: 'basic', type: 'shortText', required: true },
+      { id: 'training', sectionId: 'training', type: 'shortText', required: true },
+      { id: 'nutrition', sectionId: 'nutrition', type: 'shortText', required: true },
+    ],
+  };
+  const answers = { basic: 'ready', training: 'strength', nutrition: 'balanced' };
+  const clientDb = sql();
+  const first = worker(`t013-submit-a-${randomUUID()}`);
+  const second = worker(`t013-submit-b-${randomUUID()}`);
+  try {
+    const approved = await clientDb.begin((tx) =>
+      sqlCall(tx, context.po.userId, 'approve', request(context, client)),
+    );
+    expect(approved.status).toBe('ok');
+    await clientDb`
+      insert into app_private.terms_policy_versions(version,policy_kind,status)
+      values(${policy},'terms','published')
+    `;
+    await clientDb`insert into public.forms(id,workspace_id,name)
+      values(${formId},${context.wsA.id},'T013 submit race')`;
+    await clientDb`
+      insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
+      values(${context.wsA.id},${formId},1,${policy},${clientDb.json(definition)},'published')
+    `;
+    await clientDb`
+      insert into public.form_assignments(id,workspace_id,client_id,form_id,version_number,terms_policy_version,version_snapshot)
+      values(${assignmentId},${context.wsA.id},${client.id},${formId},1,${policy},${clientDb.json(definition)})
+    `;
+    await clientDb`select set_config('request.jwt.claims',${JSON.stringify({ sub: client.userId, role: 'authenticated' })},false)`;
+    await clientDb`set role authenticated`;
+    await clientDb`
+      select public.save_form_draft(${context.wsA.id},${assignmentId},0,${randomUUID()},${clientDb.json(answers)})
+    `;
+    await clientDb`reset role`;
+
+    const submit = (connection: typeof first) =>
+      connection.begin(async (tx) => {
+        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: client.userId, role: 'authenticated' })},true)`;
+        await tx`set local role authenticated`;
+        const [row] = await tx`
+          select public.submit_form_assignment(${context.wsA.id},${assignmentId},1,${intentKey}) as result
+        `;
+        return row?.result;
+      });
+    const [resultA, resultB] = await Promise.all([submit(first), submit(second)]);
+    expect(resultA).toMatchObject({ status: 'submitted' });
+    expect(resultB).toEqual(resultA);
+    expect(
+      await clientDb`select
+        (select count(*)::int from app_private.form_submissions where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as submissions,
+        (select count(*)::int from app_private.form_submission_slas where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as slas,
+        (select count(*)::int from public.form_answer_revisions where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}) as revisions,
+        (select count(*)::int from public.audit_events where action='form.submitted' and target_id=${assignmentId}) as audits`,
+    ).toEqual([{ submissions: 1, slas: 1, revisions: 1, audits: 1 }]);
+  } finally {
+    await Promise.all([clientDb.end(), first.end(), second.end()]);
+  }
+});
+
+it('T013 detects removal of submit row locks and the original-submission uniqueness key', async () => {
+  const [functionRow] = await db`
+    select pg_get_functiondef('public.submit_form_assignment(uuid,uuid,integer,uuid)'::regprocedure) as body
+  `;
+  const body = functionRow?.body as string;
+  const assignmentLock =
+    'where a.workspace_id=p_workspace_id and a.id=p_assignment_id for update';
+  const draftLock =
+    'where d.workspace_id=p_workspace_id and d.assignment_id=p_assignment_id for update';
+  expect(body).toContain(assignmentLock);
+  expect(body).toContain(draftLock);
+  const lockMutant = body.replaceAll(' for update', '');
+  expect(lockMutant).not.toContain(assignmentLock);
+  expect(lockMutant).not.toContain(draftLock);
+
+  const [constraint] = await db`
+    select pg_get_constraintdef(oid) as definition
+    from pg_constraint
+    where conrelid='app_private.form_submissions'::regclass and contype='p'
+  `;
+  expect(constraint?.definition).toMatch(/primary key \(workspace_id, assignment_id\)/iu);
 });

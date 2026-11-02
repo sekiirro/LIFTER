@@ -40,6 +40,9 @@ export async function POST(
   if (
     typeof body !== 'object' ||
     body === null ||
+    Object.keys(body).some(
+      (key) => !['expected_revision', 'intent_key'].includes(key),
+    ) ||
     !('expected_revision' in body) ||
     !Number.isInteger(body.expected_revision) ||
     (body.expected_revision as number) < 1 ||

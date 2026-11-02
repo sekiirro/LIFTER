@@ -77,4 +77,29 @@ describe('T013 submission validation', () => {
       expect(route).not.toMatch(/error\.message|JSON\.stringify\(error\)/);
     }
   });
+
+  it('kills route-validator bypass and raw-provider-error mutants', () => {
+    const submitPath =
+      'app/api/forms/assignments/[assignmentId]/submit/route.ts';
+    const correctionPath =
+      'app/api/forms/assignments/[assignmentId]/corrections/route.ts';
+    const submitRoute = readFileSync(submitPath, 'utf8');
+    const correctionRoute = readFileSync(correctionPath, 'utf8');
+    const assertValidatorPresent = (source: string, marker: string) => {
+      expect(source).toContain(marker);
+      expect(source).not.toMatch(/error\.message|JSON\.stringify\(error\)/);
+    };
+
+    const bypassed = submitRoute.replace(
+      'validateFormSubmission(',
+      'skipSubmissionValidation(',
+    );
+    expect(() => assertValidatorPresent(bypassed, 'validateFormSubmission(')).toThrow();
+
+    const leaked = correctionRoute.replace(
+      "response({ status: 'unavailable' }, 503)",
+      'response({ status: error.message }, 503)',
+    );
+    expect(() => assertValidatorPresent(leaked, 'validateCorrectionRequest(')).toThrow();
+  });
 });

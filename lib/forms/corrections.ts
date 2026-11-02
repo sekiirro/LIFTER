@@ -25,6 +25,15 @@ export function validateCorrectionRequest(
 ): CorrectionValidation {
   if (
     !isRecord(value) ||
+    Object.keys(value).some(
+      (key) =>
+        ![
+          'expected_revision',
+          'intent_key',
+          'answer_values',
+          'correction_note',
+        ].includes(key),
+    ) ||
     !Number.isInteger(value.expected_revision) ||
     (value.expected_revision as number) < 1 ||
     typeof value.intent_key !== 'string' ||
