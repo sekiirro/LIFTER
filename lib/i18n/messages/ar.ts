@@ -382,6 +382,9 @@ export const ar = {
   'forms.previous': 'السؤال السابق',
   'forms.next': 'السؤال التالي',
   'forms.saveDraft': 'حفظ المسودة',
+  'forms.saveNow': 'احفظ الآن',
+  'forms.retrySave': 'أعد المحاولة',
+  'forms.unsaved': 'هناك تغييرات غير محفوظة.',
   'forms.submit': 'إرسال الإجابات',
   'forms.saveCorrection': 'حفظ التصحيح',
   'forms.draftSaved': 'تم حفظ المسودة.',
@@ -535,7 +538,7 @@ export const ar = {
   'forms.staffPrivacy.personal': 'بيانات شخصية',
   'forms.staffPrivacy.health': 'بيانات صحية',
   'forms.staffPurpose': 'الغرض من البيانات',
-  'forms.staffPurpose.n12Series': 'اختيار سلسلة صور N12',
+  'forms.staffPurpose.n12Series': 'اختيار سلسلة صور {series}',
   'forms.staffBoolean.yes': 'نعم',
   'forms.staffBoolean.no': 'لا',
   'forms.staffMealNumber': 'الوجبة',
@@ -606,8 +609,8 @@ export const ar = {
     'ينتقل تنبيه المدرّب عند إعادة الإسناد دون إعادة ضبط الساعة. أبلغ المالكين المخوّلين حاليًا فقط.',
   'forms.staffTrainerLate': 'تنبيهات تأخر المدرّب',
   'forms.staffTrainerLatePolicy':
-    'يبقى مسار D-03 منفصلًا: مهلة استدراك سبعة أيام، منع التكرار، تنبيه أولي للمدرّب المكلّف، معالجة إعادة الإسناد، ثم التصعيد المتزامن للمالكين بعد 24 ساعة دون حل.',
-  'forms.staffD03Deadline': 'مهلة تسليم D-03',
+    'يبقى مسار {workflow} منفصلًا: مهلة استدراك {recoveryDays} أيام، منع التكرار، تنبيه أولي للمدرّب المكلّف، معالجة إعادة الإسناد، ثم التصعيد المتزامن للمالكين بعد {escalationHours} ساعة دون حل.',
+  'forms.staffD03Deadline': 'مهلة تسليم {deadline}',
   'forms.staffSyntheticOnly':
     'معاينة تجريبية فقط. لا يبدأ التنبيه الفعلي قبل توافر بيانات التسليم والمدرّب المعتمدة.',
 } as const;

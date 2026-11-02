@@ -5,6 +5,7 @@ type SafeRouteResult = {
   status?: unknown;
   revision?: unknown;
   answers?: unknown;
+  httpStatus?: number;
 };
 
 function isRecord(value: unknown): value is Record<string, unknown> {
@@ -28,7 +29,9 @@ async function post(
       },
     );
     const result: unknown = await response.json();
-    return isRecord(result) ? (result as SafeRouteResult) : null;
+    return isRecord(result)
+      ? { ...(result as SafeRouteResult), httpStatus: response.status }
+      : { httpStatus: response.status };
   } catch {
     return null;
   }
@@ -77,15 +80,24 @@ export function createAuthorizedFormsClientAdapter(): FormsClientAdapter {
         answers: result.answers as FormAnswerSet,
       };
     },
-    saveDraft: async ({ assignmentId, expectedRevision, answers }) => {
+    saveDraft: async ({
+      assignmentId,
+      expectedRevision,
+      answers,
+      intentKey,
+    }) => {
       const result = await post(assignmentId, 'draft', {
         expected_revision: expectedRevision,
-        intent_key: crypto.randomUUID(),
+        intent_key: intentKey ?? crypto.randomUUID(),
         answer_values: answers,
       });
       if (result?.status === 'saved')
         return { status: 'saved', revision: revision(result) };
-      return { status: isConflict(result?.status) ? 'conflict' : 'error' };
+      if (isConflict(result?.status)) return { status: 'conflict' };
+      return {
+        status:
+          !result || (result.httpStatus ?? 0) >= 500 ? 'retryable' : 'error',
+      };
     },
     submit: async ({ assignmentId, expectedRevision, answers }) => {
       const saved = await post(assignmentId, 'draft', {
@@ -114,7 +126,11 @@ export function createAuthorizedFormsClientAdapter(): FormsClientAdapter {
       });
       if (result?.status === 'corrected')
         return { status: 'saved', revision: revision(result) };
-      return { status: isConflict(result?.status) ? 'conflict' : 'error' };
+      if (isConflict(result?.status)) return { status: 'conflict' };
+      return {
+        status:
+          !result || (result.httpStatus ?? 0) >= 500 ? 'retryable' : 'error',
+      };
     },
   };
 }

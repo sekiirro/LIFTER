@@ -4,6 +4,7 @@ import { useId, type ChangeEvent, type ReactNode } from 'react';
 import { Bidi } from '../ui/Bidi';
 import { countTextAnswer } from '../../lib/forms/validation';
 import { getMessages } from '../../lib/i18n';
+import { formatUiNumber, localizeUiDigits } from '../../lib/i18n/format-digits';
 import type { Locale } from '../../lib/design/preferences';
 import styles from './TextAnswerField.module.css';
 
@@ -22,6 +23,7 @@ export type TextAnswerFieldProps = {
 function formatCounter(
   template: string,
   values: { used: number; limit: number; remaining: number },
+  locale: Locale,
 ): ReactNode[] {
   return template
     .split(/(\{used\}|\{limit\}|\{remaining\})/g)
@@ -30,11 +32,11 @@ function formatCounter(
       if (part.startsWith('{') && key in values) {
         return (
           <Bidi key={`${key}-${index}`} dir="ltr">
-            {values[key]}
+            {formatUiNumber(values[key], locale)}
           </Bidi>
         );
       }
-      return part;
+      return locale === 'ar' ? localizeUiDigits(part, locale) : part;
     });
 }
 
@@ -93,7 +95,7 @@ export function TextAnswerField({
         <textarea className={styles.control} {...controlProps} />
       )}
       <p className={styles.counter} id={counterId}>
-        {formatCounter(messages['forms.counter'], count)}
+        {formatCounter(messages['forms.counter'], count, locale)}
       </p>
       {count.over && (
         <p className={styles.error} id={errorId}>

@@ -1,6 +1,7 @@
 import { getMessages } from '../../lib/i18n';
 import type { Locale } from '../../lib/design/preferences';
 import { Bidi } from '../ui/Bidi';
+import { formatUiNumber, localizeUiDigits } from '../../lib/i18n/format-digits';
 import styles from './QuestionFlow.module.css';
 
 export type AnswerHistoryEntry = {
@@ -34,7 +35,11 @@ export function CorrectionHistory({
                   .map((part, index) => (
                     <span key={index}>
                       {part}
-                      {index === 0 && <Bidi dir="ltr">{entry.version}</Bidi>}
+                      {index === 0 && (
+                        <Bidi dir="ltr">
+                          {formatUiNumber(entry.version, locale)}
+                        </Bidi>
+                      )}
                     </span>
                   ))}
               </h3>
@@ -52,7 +57,11 @@ export function CorrectionHistory({
                     <dd>
                       {Array.isArray(answer)
                         ? answer.join(', ')
-                        : String(answer)}
+                        : typeof answer === 'number'
+                          ? formatUiNumber(answer, locale)
+                          : locale === 'ar' && typeof answer === 'string'
+                            ? localizeUiDigits(answer, locale)
+                            : String(answer)}
                     </dd>
                   </div>
                 ))}

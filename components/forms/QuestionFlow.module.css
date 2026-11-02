@@ -11,6 +11,13 @@
   font-size: var(--text-2xl);
 }
 
+.saveStatus {
+  min-block-size: 1.5em;
+  margin: 0;
+  color: var(--color-text-muted);
+  font-size: var(--text-sm);
+}
+
 .flow {
   display: grid;
   gap: var(--space-6);

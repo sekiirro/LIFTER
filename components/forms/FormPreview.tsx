@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { Bidi } from '../ui/Bidi';
+import { formatUiNumber } from '../../lib/i18n/format-digits';
 import { Button } from '../ui/Button';
 import type { Locale } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
@@ -151,7 +152,7 @@ function PreviewQuestion({
           max={maximum}
           step={step}
           value={score}
-          aria-valuetext={`${score} / ${maximum}`}
+          aria-valuetext={`${formatUiNumber(score, locale)} / ${formatUiNumber(maximum, locale)}`}
           onChange={(event) =>
             writeAnswer(
               setAnswers,
@@ -161,7 +162,8 @@ function PreviewQuestion({
           }
         />
         <output aria-live="polite">
-          <Bidi>{score}</Bidi>/<Bidi>{maximum}</Bidi>
+          <Bidi>{formatUiNumber(score, locale)}</Bidi>/
+          <Bidi>{formatUiNumber(maximum, locale)}</Bidi>
         </output>
         {question.labels && (
           <div className={styles.formHeader}>

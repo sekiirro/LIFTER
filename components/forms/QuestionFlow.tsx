@@ -1,6 +1,6 @@
 'use client';
 
-import { useMemo, useState, type FormEvent } from 'react';
+import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { evaluateProgression } from '../../lib/forms/progression';
 import {
   answersForClientProgression,
@@ -13,6 +13,12 @@ import type {
   FormQuestion,
 } from '../../lib/forms/validation';
 import { getMessages } from '../../lib/i18n';
+import { formatUiNumber } from '../../lib/i18n/format-digits';
+import {
+  nextAutosaveRetryDelay,
+  scheduleDraftAutosave,
+  withAutosaveTimeout,
+} from '../../lib/forms/autosave-timing';
 import type { Locale } from '../../lib/design/preferences';
 import { Button } from '../ui/Button';
 import { Alert } from '../ui/Alert';
@@ -29,18 +35,23 @@ export type LabeledQuestion = FormQuestion & {
   description?: { en: string; ar: string };
 };
 
-function progressMessage(template: string, current: number, total: number) {
+function progressMessage(
+  template: string,
+  current: number,
+  total: number,
+  locale: Locale,
+) {
   return template.split(/(\{current\}|\{total\})/g).map((part, index) => {
     if (part === '{current}')
       return (
         <Bidi key={`current-${index}`} dir="ltr">
-          {current}
+          {formatUiNumber(current, locale)}
         </Bidi>
       );
     if (part === '{total}')
       return (
         <Bidi key={`total-${index}`} dir="ltr">
-          {total}
+          {formatUiNumber(total, locale)}
         </Bidi>
       );
     return part;
@@ -57,7 +68,11 @@ export type FormsClientAdapter = {
     assignmentId: string;
     expectedRevision: number;
     answers: FormAnswerSet;
-  }) => Promise<{ status: 'saved' | 'conflict' | 'error'; revision?: number }>;
+    intentKey?: string;
+  }) => Promise<{
+    status: 'saved' | 'conflict' | 'error' | 'retryable';
+    revision?: number;
+  }>;
   submit: (input: {
     assignmentId: string;
     expectedRevision: number;
@@ -70,7 +85,10 @@ export type FormsClientAdapter = {
     assignmentId: string;
     expectedRevision: number;
     answers: FormAnswerSet;
-  }) => Promise<{ status: 'saved' | 'conflict' | 'error'; revision?: number }>;
+  }) => Promise<{
+    status: 'saved' | 'conflict' | 'error' | 'retryable';
+    revision?: number;
+  }>;
 };
 
 type Props = {
@@ -130,6 +148,19 @@ export function QuestionFlow({
   const [hasSubmitted, setHasSubmitted] = useState(
     initialState === 'submitted',
   );
+  const [dirty, setDirty] = useState(false);
+  const dirtyRef = useRef(false);
+  const [saving, setSaving] = useState(false);
+  const [saveError, setSaveError] = useState(false);
+  const latestAnswers = useRef(answers);
+  const saveRef = useRef<() => Promise<boolean>>(async () => true);
+  const inFlight = useRef(false);
+  const pending = useRef(false);
+  const conflicted = useRef(initialState === 'conflict');
+  const wakeRetry = useRef<(() => void) | undefined>(undefined);
+  const intentKey = useRef<string | undefined>(undefined);
+  const revisionRef = useRef(revision);
+  const dirtySince = useRef<number | undefined>(undefined);
   const [questionId, setQuestionId] = useState<string | undefined>();
   const progression = useMemo(
     () =>
@@ -167,6 +198,13 @@ export function QuestionFlow({
     };
     const currentAnswers = applicableClientAnswers(runtimeQuestions, next);
     setAnswers(currentAnswers);
+    latestAnswers.current = currentAnswers;
+    if (inFlight.current) pending.current = true;
+    else intentKey.current = crypto.randomUUID();
+    if (!dirtyRef.current) dirtySince.current = Date.now();
+    dirtyRef.current = true;
+    setDirty(true);
+    setSaveError(false);
     const nextProgression = evaluateProgression({
       questions: runtimeQuestions,
       answers: currentAnswers,
@@ -176,37 +214,171 @@ export function QuestionFlow({
     setState('ready');
   }
 
-  async function persist(correcting = false) {
+  async function persist(correcting = false, force = false) {
+    if (conflicted.current) return false;
+    if (inFlight.current) {
+      if (wakeRetry.current) wakeRetry.current();
+      return false;
+    }
+    if (!dirtyRef.current && !correcting && !force) return true;
+    inFlight.current = true;
+    setSaving(true);
+    setSaveError(false);
     setState('saving');
+    const snapshot = applicableClientAnswers(
+      runtimeQuestions,
+      latestAnswers.current,
+    );
+    const thisIntent = intentKey.current ?? crypto.randomUUID();
+    intentKey.current = thisIntent;
     try {
-      const result = correcting
-        ? await adapter.correct({
-            assignmentId,
-            expectedRevision: revision,
-            answers: applicableClientAnswers(runtimeQuestions, answers),
-          })
-        : await adapter.saveDraft({
-            assignmentId,
-            expectedRevision: revision,
-            answers: applicableClientAnswers(runtimeQuestions, answers),
+      let retry = 0;
+      while (true) {
+        setSaving(true);
+        let result: Awaited<ReturnType<typeof adapter.saveDraft>>;
+        try {
+          const operation = correcting
+            ? adapter.correct({
+                assignmentId,
+                expectedRevision: revisionRef.current,
+                answers: snapshot,
+              })
+            : adapter.saveDraft({
+                assignmentId,
+                expectedRevision: revisionRef.current,
+                answers: snapshot,
+                intentKey: thisIntent,
+              });
+          result = await withAutosaveTimeout(operation);
+        } catch {
+          setSaveError(true);
+          setState('save-error');
+          setSaving(false);
+          retry += 1;
+          const delay = nextAutosaveRetryDelay(retry);
+          await new Promise<void>((resolve) => {
+            const timer = setTimeout(() => {
+              wakeRetry.current = undefined;
+              resolve();
+            }, delay);
+            wakeRetry.current = () => {
+              clearTimeout(timer);
+              wakeRetry.current = undefined;
+              resolve();
+            };
           });
-      if (result.status === 'conflict') setState('conflict');
-      else if (result.status === 'error') setState('save-error');
-      else {
-        setRevision(result.revision ?? revision + 1);
-        setState('saved');
+          continue;
+        }
+        if (result.status === 'conflict') {
+          conflicted.current = true;
+          pending.current = false;
+          setState('conflict');
+          return false;
+        }
+        if (result.status === 'saved') {
+          setSaveError(false);
+          const nextRevision = result.revision ?? revisionRef.current + 1;
+          revisionRef.current = nextRevision;
+          setRevision(nextRevision);
+          const changedDuringSave =
+            JSON.stringify(snapshot) !==
+            JSON.stringify(
+              applicableClientAnswers(runtimeQuestions, latestAnswers.current),
+            );
+          dirtyRef.current = changedDuringSave;
+          setDirty(changedDuringSave);
+          if (!changedDuringSave) dirtySince.current = undefined;
+          setState(changedDuringSave ? 'ready' : 'saved');
+          intentKey.current = changedDuringSave
+            ? crypto.randomUUID()
+            : undefined;
+          return true;
+        }
+        if (result.status === 'error') {
+          setSaveError(true);
+          setState('save-error');
+          if (
+            JSON.stringify(snapshot) !==
+            JSON.stringify(
+              applicableClientAnswers(runtimeQuestions, latestAnswers.current),
+            )
+          ) {
+            intentKey.current = crypto.randomUUID();
+          }
+          return false;
+        }
+        setSaveError(true);
+        setState('save-error');
+        setSaving(false);
+        retry += 1;
+        const delay = nextAutosaveRetryDelay(retry);
+        await new Promise<void>((resolve) => {
+          const timer = setTimeout(() => {
+            wakeRetry.current = undefined;
+            resolve();
+          }, delay);
+          wakeRetry.current = () => {
+            clearTimeout(timer);
+            wakeRetry.current = undefined;
+            resolve();
+          };
+        });
       }
-    } catch {
-      setState('save-error');
+    } finally {
+      inFlight.current = false;
+      setSaving(false);
+      if (pending.current && !conflicted.current) {
+        pending.current = false;
+        void saveRef.current();
+      }
     }
   }
+
+  useEffect(() => {
+    saveRef.current = () => persist(hasSubmitted);
+  });
+
+  useEffect(() => {
+    if (
+      !dirty ||
+      state === 'conflict' ||
+      state === 'submitted' ||
+      state === 'saving' ||
+      inFlight.current
+    )
+      return;
+    return scheduleDraftAutosave(
+      () => void saveRef.current(),
+      dirtySince.current ?? Date.now(),
+    );
+  }, [answers, dirty, state]);
+
+  useEffect(() => {
+    const immediate = () => {
+      if (document.visibilityState === 'hidden') void saveRef.current();
+    };
+    const pagehide = () => void saveRef.current();
+    const beforeunload = (event: BeforeUnloadEvent) => {
+      if (!dirty && !saving && !saveError) return;
+      event.preventDefault();
+      event.returnValue = '';
+    };
+    document.addEventListener('visibilitychange', immediate);
+    window.addEventListener('pagehide', pagehide);
+    window.addEventListener('beforeunload', beforeunload);
+    return () => {
+      document.removeEventListener('visibilitychange', immediate);
+      window.removeEventListener('pagehide', pagehide);
+      window.removeEventListener('beforeunload', beforeunload);
+    };
+  }, [dirty, saving, saveError]);
 
   async function reloadLatestDraft() {
     setState('loading');
     try {
       const result = await adapter.reloadDraft({ assignmentId });
       if (result.status !== 'loaded' || result.revision === undefined) {
-        setState('save-error');
+        setState('conflict');
         return;
       }
       const latest = applicableClientAnswers(
@@ -214,16 +386,28 @@ export function QuestionFlow({
         result.answers ?? {},
       );
       setAnswers(latest);
+      latestAnswers.current = latest;
       setRevision(result.revision);
+      revisionRef.current = result.revision;
+      conflicted.current = false;
+      dirtyRef.current = false;
+      setDirty(false);
+      dirtySince.current = undefined;
+      setSaveError(false);
       setQuestionId(undefined);
       setState('ready');
     } catch {
-      setState('save-error');
+      setState('conflict');
     }
   }
 
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
+    while (inFlight.current) {
+      await new Promise((resolve) => setTimeout(resolve, 25));
+    }
+    if (conflicted.current) return;
+    if (dirtyRef.current && !(await persist())) return;
     const validation = validateAnswerSet(
       runtimeQuestions,
       applicableClientAnswers(runtimeQuestions, answers),
@@ -246,12 +430,12 @@ export function QuestionFlow({
       const result = hasSubmitted
         ? await adapter.correct({
             assignmentId,
-            expectedRevision: revision,
+            expectedRevision: revisionRef.current,
             answers: applicableClientAnswers(runtimeQuestions, answers),
           })
         : await adapter.submit({
             assignmentId,
-            expectedRevision: revision,
+            expectedRevision: revisionRef.current,
             answers,
           });
       if (result.status === 'submitted' || result.status === 'saved') {
@@ -282,8 +466,7 @@ export function QuestionFlow({
   }
 
   const submitted = state === 'submitted';
-  const locked =
-    state === 'conflict' || state === 'saving' || state === 'submitting';
+  const locked = state === 'conflict' || state === 'submitting';
   return (
     <main className={styles.main}>
       <h1>{messages['forms.title']}</h1>
@@ -314,11 +497,18 @@ export function QuestionFlow({
               messages['forms.progress'],
               index + 1,
               progression.applicableQuestionIds.length,
+              locale,
             )}
           </p>
           <section
             aria-label={current.title[locale]}
             className={styles.question}
+            onBlurCapture={(event) => {
+              const target = event.relatedTarget;
+              const submitAttempt =
+                target instanceof HTMLButtonElement && target.type === 'submit';
+              if (dirty && !submitAttempt) void saveRef.current();
+            }}
           >
             {current.privacy === 'health' && (
               <p>{messages['forms.aboutHealthData']}</p>
@@ -347,9 +537,10 @@ export function QuestionFlow({
             <Button
               variant="secondary"
               disabled={locked || !progression.previousQuestionId}
-              onClick={() =>
+              onClick={() => (
+                void saveRef.current(),
                 setQuestionId(progression.previousQuestionId ?? undefined)
-              }
+              )}
             >
               {messages['forms.previous']}
             </Button>
@@ -357,9 +548,10 @@ export function QuestionFlow({
               <Button
                 type="button"
                 disabled={locked}
-                onClick={() =>
+                onClick={() => (
+                  void saveRef.current(),
                   setQuestionId(progression.nextQuestionId ?? undefined)
-                }
+                )}
               >
                 {messages['forms.next']}
               </Button>
@@ -381,20 +573,35 @@ export function QuestionFlow({
             <div className={styles.saveRow}>
               <Button
                 variant="secondary"
-                disabled={locked}
-                onClick={() => void persist()}
+                disabled={saving || (locked && !saveError)}
+                onClick={() => void persist(false, true)}
               >
-                {state === 'saving'
-                  ? messages['forms.saving']
-                  : messages['forms.saveDraft']}
+                {saveError
+                  ? messages['forms.retrySave']
+                  : messages['forms.saveNow']}
               </Button>
-              {state === 'saved' && (
-                <p role="status">{messages['forms.draftSaved']}</p>
-              )}
             </div>
           )}
         </form>
       )}
+      <p
+        className={styles.saveStatus}
+        role="status"
+        aria-live="polite"
+        aria-atomic="true"
+      >
+        {state === 'conflict'
+          ? messages['forms.conflictTitle']
+          : saving
+            ? messages['forms.saving']
+            : saveError
+              ? messages['forms.saveFailed']
+              : dirty
+                ? messages['forms.unsaved']
+                : state === 'saved'
+                  ? messages['forms.draftSaved']
+                  : ''}
+      </p>
       {submitted && relationshipActive && (
         <Button variant="secondary" onClick={() => setState('ready')}>
           {messages['forms.correct']}

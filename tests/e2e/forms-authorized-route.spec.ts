@@ -13,9 +13,10 @@ import {
 import { sql } from '../integration/harness';
 import { deriveBrand } from '../../lib/design/color';
 import { brandToCssVars } from '../../lib/design/tokens-css';
+import { getMessages } from '../../lib/i18n';
 
 const db = sql();
-const screenshotDir = join(tmpdir(), 'lifter-s26-f15-t022');
+const screenshotDir = join(tmpdir(), 'lifter-s26-f15-autosave');
 let assignmentId = '';
 let email = '';
 let password = '';
@@ -274,4 +275,165 @@ test('sample workspace brand scope leaves semantic status tokens intact in light
       .analyze();
     expect(violations.violations).toEqual([]);
   }
+});
+
+test('real route autosave exposes each state, retries failures, and records save-to-ack latency', async ({
+  page,
+}) => {
+  await signIn(page);
+  let mode: 'normal' | 'slow' | 'error' | 'conflict' = 'normal';
+  let failedIntentKey = '';
+  let retryIntentKey = '';
+  let conflictSaveCount = 0;
+  let slowSaveCount = 0;
+  await page.route('**/api/forms/assignments/*/draft', async (route) => {
+    if (route.request().method() !== 'POST') return route.continue();
+    const intentKey = String(route.request().postDataJSON()?.intent_key ?? '');
+    if (mode === 'error') failedIntentKey = intentKey;
+    else if (failedIntentKey && mode === 'normal') retryIntentKey = intentKey;
+    if (mode === 'slow') {
+      slowSaveCount += 1;
+      await new Promise((resolve) => setTimeout(resolve, 700));
+    }
+    if (mode === 'error')
+      return route.fulfill({
+        status: 503,
+        contentType: 'application/json',
+        body: JSON.stringify({ status: 'error' }),
+      });
+    if (mode === 'conflict') {
+      conflictSaveCount += 1;
+      return route.fulfill({
+        status: 409,
+        contentType: 'application/json',
+        body: JSON.stringify({ status: 'conflict' }),
+      });
+    }
+    return route.continue();
+  });
+
+  for (const locale of ['ar', 'en'] as const) {
+    const theme = locale === 'ar' ? 'dark' : 'light';
+    const messages = getMessages(locale);
+    const statusText = {
+      unsaved: messages['forms.unsaved'],
+      saving: messages['forms.saving'],
+      saved: messages['forms.draftSaved'],
+      failed: messages['forms.saveFailed'],
+      conflict: messages['forms.conflictTitle'],
+    };
+    await page.context().addCookies([
+      {
+        name: 'lifter_locale',
+        value: locale,
+        url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+      },
+      {
+        name: 'lifter_theme',
+        value: theme,
+        url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+      },
+    ]);
+    for (const width of [390, 1440] as const) {
+      await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
+      await page.goto(`/forms/${assignmentId}`);
+      const field = page.getByRole('textbox').first();
+      await expect(field).toBeVisible();
+      const capture = async (state: string) => {
+        const violations = await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+          .analyze();
+        expect(violations.violations).toEqual([]);
+        await page.screenshot({
+          path: join(screenshotDir, `${locale}-${theme}-${width}-${state}.png`),
+          fullPage: true,
+        });
+      };
+
+      mode = 'normal';
+      await field.fill(`unsaved ${locale} ${width}`);
+      await expect(page.getByRole('status')).toHaveText(statusText.unsaved);
+      await capture('unsaved');
+
+      mode = 'slow';
+      const slowBefore = slowSaveCount;
+      await field.fill(`saving ${locale} ${width}`);
+      await expect(page.getByRole('status')).toHaveText(statusText.saving);
+      await field.fill(`coalesced ${locale} ${width}`);
+      await capture('saving');
+      await expect(page.getByRole('status')).toHaveText(statusText.saved, {
+        timeout: 10_000,
+      });
+      expect(slowSaveCount - slowBefore).toBe(2);
+      await capture('saved');
+
+      mode = 'error';
+      await field.fill(`failed ${locale} ${width}`);
+      await expect(page.getByRole('status')).toHaveText(statusText.failed);
+      await capture('failed');
+      mode = 'normal';
+      await page
+        .getByRole('button', { name: messages['forms.retrySave'] })
+        .click();
+      await expect(page.getByRole('status')).toHaveText(statusText.saved, {
+        timeout: 10_000,
+      });
+      expect(retryIntentKey).toBe(failedIntentKey);
+      failedIntentKey = '';
+      retryIntentKey = '';
+
+      mode = 'conflict';
+      await field.fill(`conflict ${locale} ${width}`);
+      await expect(page.getByRole('status')).toHaveText(statusText.conflict);
+      await expect(
+        page.getByRole('button', { name: messages['forms.reloadDraft'] }),
+      ).toBeVisible();
+      await capture('conflict');
+      const savesAtConflict = conflictSaveCount;
+      await page.waitForTimeout(1_600);
+      expect(conflictSaveCount).toBe(savesAtConflict);
+      mode = 'normal';
+      await page
+        .getByRole('button', { name: messages['forms.reloadDraft'] })
+        .click();
+      await expect(field).toHaveValue(`failed ${locale} ${width}`);
+    }
+  }
+
+  await page.context().addCookies([
+    {
+      name: 'lifter_locale',
+      value: 'en',
+      url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+    },
+    {
+      name: 'lifter_theme',
+      value: 'light',
+      url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+    },
+  ]);
+  await page.goto(`/forms/${assignmentId}`);
+  const field = page.getByRole('textbox', { name: 'Your goal' });
+  const samples: number[] = [];
+  for (let sample = 0; sample < 8; sample += 1) {
+    const responsePromise = page.waitForResponse(
+      (response) =>
+        response.url().includes('/api/forms/assignments/') &&
+        response.url().endsWith('/draft') &&
+        response.request().method() === 'POST',
+    );
+    await field.fill(`latency sample ${sample}`);
+    const response = await responsePromise;
+    const timing = response.request().timing();
+    await expect(page.getByRole('status')).toHaveText('Draft saved.', {
+      timeout: 10_000,
+    });
+    samples.push(timing.responseEnd - timing.startTime);
+  }
+  samples.sort((a, b) => a - b);
+  const percentile = (p: number) =>
+    Math.round(samples[Math.ceil(p * samples.length) - 1]!);
+  console.log(
+    `F15 autosave local save-to-ack: p50=${percentile(0.5)}ms p95=${percentile(0.95)}ms samples=${samples.length}`,
+  );
 });

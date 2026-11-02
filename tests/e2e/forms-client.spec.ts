@@ -62,7 +62,7 @@ test('client flow supports draft save and blocks incomplete submission accessibl
     { name: 'lifter_theme', value: 'light', url: 'http://localhost:3000' },
   ]);
   await page.goto('/showcase/forms');
-  await page.getByRole('button', { name: 'Save draft' }).click();
+  await page.getByRole('button', { name: 'Save now' }).click();
   await expect(
     page.getByRole('status').filter({ hasText: 'Draft saved.' }),
   ).toBeVisible();

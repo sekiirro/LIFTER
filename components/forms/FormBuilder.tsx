@@ -2,6 +2,7 @@
 
 import { useState } from 'react';
 import { Bidi } from '../ui/Bidi';
+import { formatUiNumber } from '../../lib/i18n/format-digits';
 import { Button } from '../ui/Button';
 import { TextAnswerField } from './TextAnswerField';
 import { FormPreview } from './FormPreview';
@@ -485,8 +486,13 @@ export function FormBuilder({
             </p>
             <p className={styles.countLine}>
               {messages['forms.staffQuestionCount']}:{' '}
-              <Bidi>{form.questions.length}</Bidi> /{' '}
-              <Bidi>{APPROVED_FORM_BOUNDS.maxQuestionsPerForm}</Bidi>
+              <Bidi>{formatUiNumber(form.questions.length, locale)}</Bidi> /{' '}
+              <Bidi>
+                {formatUiNumber(
+                  APPROVED_FORM_BOUNDS.maxQuestionsPerForm,
+                  locale,
+                )}
+              </Bidi>
             </p>
           </div>
 
@@ -536,7 +542,7 @@ export function FormBuilder({
               {Array.from({ length: 14 }, (_, index) => index + 1).map(
                 (days) => (
                   <option key={days} value={days}>
-                    <Bidi>{days}</Bidi>
+                    <Bidi>{formatUiNumber(days, locale)}</Bidi>
                   </option>
                 ),
               )}
@@ -594,12 +600,18 @@ export function FormBuilder({
                   <fieldset className={styles.section} key={section.id}>
                     <legend>
                       {messages['forms.staffSection']}{' '}
-                      <Bidi>{sectionIndex + 1}</Bidi>
+                      <Bidi>{formatUiNumber(sectionIndex + 1, locale)}</Bidi>
                       <span className={styles.hint}>
                         {' '}
-                        (<Bidi>{questions.length}</Bidi> /{' '}
+                        (<Bidi>
+                          {formatUiNumber(questions.length, locale)}
+                        </Bidi>{' '}
+                        /{' '}
                         <Bidi>
-                          {APPROVED_FORM_BOUNDS.maxQuestionsPerSection}
+                          {formatUiNumber(
+                            APPROVED_FORM_BOUNDS.maxQuestionsPerSection,
+                            locale,
+                          )}
                         </Bidi>
                         )
                       </span>
@@ -858,7 +870,19 @@ export function FormBuilder({
                                     {messages['forms.staffPurpose.none']}
                                   </option>
                                   <option value="n12-series">
-                                    {messages['forms.staffPurpose.n12Series']}
+                                    {
+                                      messages[
+                                        'forms.staffPurpose.n12Series'
+                                      ].split('{series}')[0]
+                                    }
+                                    <Bidi dir="ltr">
+                                      N{formatUiNumber(12, locale)}
+                                    </Bidi>
+                                    {
+                                      messages[
+                                        'forms.staffPurpose.n12Series'
+                                      ].split('{series}')[1]
+                                    }
                                   </option>
                                 </select>
                               </label>
@@ -870,7 +894,8 @@ export function FormBuilder({
                                         'forms.staffAnswerCharacterLimit'
                                       ]
                                     }{' '}
-                                    <Bidi>1</Bidi>– <Bidi>{max}</Bidi>
+                                    <Bidi>{formatUiNumber(1, locale)}</Bidi>–{' '}
+                                    <Bidi>{formatUiNumber(max, locale)}</Bidi>
                                   </span>
                                   <input
                                     type="number"

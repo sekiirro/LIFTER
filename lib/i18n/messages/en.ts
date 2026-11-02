@@ -395,6 +395,9 @@ export const en: Record<keyof typeof ar, string> = {
   'forms.previous': 'Previous question',
   'forms.next': 'Next question',
   'forms.saveDraft': 'Save draft',
+  'forms.saveNow': 'Save now',
+  'forms.retrySave': 'Retry save',
+  'forms.unsaved': 'Unsaved changes.',
   'forms.submit': 'Submit answers',
   'forms.saveCorrection': 'Save correction',
   'forms.draftSaved': 'Draft saved.',
@@ -554,7 +557,7 @@ export const en: Record<keyof typeof ar, string> = {
   'forms.staffPrivacy.personal': 'Personal data',
   'forms.staffPrivacy.health': 'Health data',
   'forms.staffPurpose': 'Data purpose',
-  'forms.staffPurpose.n12Series': 'Select the N12 image series',
+  'forms.staffPurpose.n12Series': 'Select the {series} image series',
   'forms.staffBoolean.yes': 'Yes',
   'forms.staffBoolean.no': 'No',
   'forms.staffMealNumber': 'Meal',
@@ -628,8 +631,8 @@ export const en: Record<keyof typeof ar, string> = {
     'On reassignment, transfer the Trainer alert without resetting its clock. Notify only currently authorized owners.',
   'forms.staffTrainerLate': 'Trainer delivery alerts',
   'forms.staffTrainerLatePolicy':
-    'Keep the separate D-03 workflow: seven-day catch-up, deduplication, initial alert to the assigned Trainer, reassignment handling, then simultaneous escalation to both owners after 24 hours unresolved.',
-  'forms.staffD03Deadline': 'D-03 delivery deadline',
+    'Keep the separate {workflow} workflow: {recoveryDays}-day catch-up, deduplication, initial alert to the assigned Trainer, reassignment handling, then simultaneous escalation to both owners after {escalationHours} hours unresolved.',
+  'forms.staffD03Deadline': '{deadline} delivery deadline',
   'forms.staffSyntheticOnly':
     'Synthetic preview only. Real-data alerting waits for authoritative delivery and Trainer facts.',
 };
