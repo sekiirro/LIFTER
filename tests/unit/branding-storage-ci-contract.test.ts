@@ -25,10 +25,11 @@ describe('F14 Storage CI lane contract', () => {
     ]) {
       const spec = readFileSync(file, 'utf8');
       const guard = spec.indexOf('test.skip(!local');
+      const failFastGuard = spec.indexOf('if (!local)');
       const fixtureImport = spec.indexOf("await import('../integration/");
       expect(spec).toContain('process.env.API_URL');
-      expect(guard).toBeGreaterThanOrEqual(0);
-      expect(guard).toBeLessThan(fixtureImport);
+      expect(Math.max(guard, failFastGuard)).toBeGreaterThanOrEqual(0);
+      expect(Math.max(guard, failFastGuard)).toBeLessThan(fixtureImport);
     }
     expect(workflow).toContain(
       'tests/integration/branding-storage-context.test.ts',

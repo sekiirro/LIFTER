@@ -40,7 +40,8 @@ const geometryEvidence: {
 }[] = [];
 
 test.beforeAll(async () => {
-  if (!local) return;
+  if (!local)
+    throw new Error('Requires the selected disposable local database.');
   const { registrationFixture, checked } =
     await import('../integration/registration-links-fixture');
   fixture = await registrationFixture();
@@ -75,7 +76,6 @@ test.beforeAll(async () => {
 });
 
 test.beforeEach(async () => {
-  if (!local) return;
   if (!fixture) throw new Error('Stack-B registration fixture is missing');
   const { secret, issue, checked } =
     await import('../integration/registration-links-fixture');
@@ -128,7 +128,6 @@ for (const locale of ['ar', 'en'] as const) {
         page,
         context,
       }) => {
-        test.skip(!local, 'Requires the selected disposable local database.');
         await page.setViewportSize(viewport);
         await context.addCookies([
           { name: LOCALE_COOKIE, value: locale, url: origin },
@@ -318,7 +317,6 @@ for (const locale of ['ar', 'en'] as const) {
     page,
     context,
   }) => {
-    test.skip(!local, 'Requires the selected disposable local database.');
     await page.setViewportSize({ width: 390, height: 844 });
     await context.addCookies([
       { name: LOCALE_COOKIE, value: locale, url: origin },

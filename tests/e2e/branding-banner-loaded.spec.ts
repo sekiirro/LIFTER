@@ -30,6 +30,13 @@ const viewports = [
   { name: 'tablet-768', width: 768, height: 1024 },
   { name: 'desktop-1440', width: 1440, height: 900 },
 ];
+const darkPatchCases = (['ar', 'en'] as const)
+  .flatMap((locale) =>
+    (['light', 'dark'] as const).flatMap((theme) =>
+      viewports.map((viewport) => ({ locale, theme, viewport })),
+    ),
+  )
+  .filter(({ theme }) => theme === 'light');
 let token = '';
 let cleanup: (() => Promise<void>) | null = null;
 const measurements: Record<string, unknown>[] = [];
@@ -63,7 +70,8 @@ async function expectNoPageScroll(page: Page) {
 }
 
 test.beforeEach(async ({}, testInfo) => {
-  test.skip(!local, 'Requires the selected disposable local database.');
+  if (!local)
+    throw new Error('Requires the selected disposable local database.');
   const {
     bannerPng,
     brightBannerPng,
@@ -451,57 +459,65 @@ for (const locale of ['ar', 'en'] as const) {
         });
       });
 
-      test(`dark-patch/${locale}/${theme}/${viewport.name}: bright artwork with dark pixels behind the text keeps the card opaque`, async ({
-        page,
-        context,
-      }) => {
-        test.skip(theme !== 'light', 'The light theme paints the bright card.');
-        await page.setViewportSize(viewport);
-        await page.emulateMedia({ reducedMotion: 'reduce' });
-        await context.addCookies([
-          { name: LOCALE_COOKIE, value: locale, url: origin },
-          { name: THEME_COOKIE, value: theme, url: origin },
-        ]);
-        await page.goto(`/register/${encodeURIComponent(token)}`);
-        const stage = page.locator('[data-registration-hero]');
-        await expect(stage).toHaveAttribute('data-has-banner', 'true');
-        await expect(stage).toHaveAttribute('data-photo-stats-ready', 'true');
-        await expect(stage).toHaveAttribute('data-photo-tone', 'bright');
-        const sampling = await stage.evaluate((element) => ({
-          peak: Number(
-            element.style.getPropertyValue('--hero-photo-luminance'),
-          ),
-          average: Number(element.dataset.photoAverageLuminance),
-          darkest: Number(element.dataset.photoDarkestLuminance),
-          dimming: Number(
-            element.style.getPropertyValue('--hero-adaptive-dimming'),
-          ),
-          opaque: element.className.includes('opaqueBrightCard'),
-        }));
-        // The artwork averages bright but still holds dark pixels behind the
-        // text, so the card has to stay opaque.
-        expect(sampling.average).toBeGreaterThan(0.58);
-        expect(sampling.darkest).toBeLessThan(0.05);
-        expect(sampling.opaque).toBe(true);
-        await expectHeroMaterialContract(page);
-        await expectHeroTextContrast(page);
-        const backdrop = await expectHeroTextBackdropContrast(page);
-        await expectHeroTouchTargets(page);
-        await expectHeroAxeClean(page);
-        const screenshot = await captureHeroScreenshot(
+      if (
+        darkPatchCases.some(
+          (testCase) =>
+            testCase.locale === locale &&
+            testCase.theme === theme &&
+            testCase.viewport.name === viewport.name,
+        )
+      ) {
+        test(`dark-patch/${locale}/${theme}/${viewport.name}: bright artwork with dark pixels behind the text keeps the card opaque`, async ({
           page,
-          `banner-dark-patch-${locale}-${theme}-${viewport.name}`,
-        );
-        measurements.push({
-          artwork: 'dark-patch',
-          locale,
-          theme,
-          viewport: viewport.name,
-          screenshot,
-          backdrop,
-          ...sampling,
+          context,
+        }) => {
+          await page.setViewportSize(viewport);
+          await page.emulateMedia({ reducedMotion: 'reduce' });
+          await context.addCookies([
+            { name: LOCALE_COOKIE, value: locale, url: origin },
+            { name: THEME_COOKIE, value: theme, url: origin },
+          ]);
+          await page.goto(`/register/${encodeURIComponent(token)}`);
+          const stage = page.locator('[data-registration-hero]');
+          await expect(stage).toHaveAttribute('data-has-banner', 'true');
+          await expect(stage).toHaveAttribute('data-photo-stats-ready', 'true');
+          await expect(stage).toHaveAttribute('data-photo-tone', 'bright');
+          const sampling = await stage.evaluate((element) => ({
+            peak: Number(
+              element.style.getPropertyValue('--hero-photo-luminance'),
+            ),
+            average: Number(element.dataset.photoAverageLuminance),
+            darkest: Number(element.dataset.photoDarkestLuminance),
+            dimming: Number(
+              element.style.getPropertyValue('--hero-adaptive-dimming'),
+            ),
+            opaque: element.className.includes('opaqueBrightCard'),
+          }));
+          // The artwork averages bright but still holds dark pixels behind the
+          // text, so the card has to stay opaque.
+          expect(sampling.average).toBeGreaterThan(0.58);
+          expect(sampling.darkest).toBeLessThan(0.05);
+          expect(sampling.opaque).toBe(true);
+          await expectHeroMaterialContract(page);
+          await expectHeroTextContrast(page);
+          const backdrop = await expectHeroTextBackdropContrast(page);
+          await expectHeroTouchTargets(page);
+          await expectHeroAxeClean(page);
+          const screenshot = await captureHeroScreenshot(
+            page,
+            `banner-dark-patch-${locale}-${theme}-${viewport.name}`,
+          );
+          measurements.push({
+            artwork: 'dark-patch',
+            locale,
+            theme,
+            viewport: viewport.name,
+            screenshot,
+            backdrop,
+            ...sampling,
+          });
         });
-      });
+      }
 
       test(`sampling-fallback/${locale}/${theme}/${viewport.name}: a failed artwork sample falls back to an opaque card`, async ({
         page,
