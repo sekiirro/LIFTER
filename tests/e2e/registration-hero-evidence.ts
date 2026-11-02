@@ -18,7 +18,7 @@ import {
  * touch targets, focus ring and axe. Screenshots and geometry are written to
  * the run's OS temp directory, never into the repository.
  */
-export const heroEvidenceDirectory = join(tmpdir(), 'lifter-s26-hero-r2');
+export const heroEvidenceDirectory = join(tmpdir(), 'lifter-s26-hero-r3');
 
 export async function captureHeroScreenshot(page: Page, name: string) {
   await mkdir(heroEvidenceDirectory, { recursive: true });
