@@ -39,6 +39,7 @@
   display: grid;
   gap: var(--space-2);
   font-weight: 600;
+  justify-self: start;
 }
 
 .selectField select,
@@ -51,6 +52,11 @@
   background: var(--color-card);
   color: var(--color-text);
   font: inherit;
+}
+
+.selectField select {
+  inline-size: max-content;
+  max-inline-size: 100%;
 }
 
 .days,
@@ -77,8 +83,8 @@
 
 .item {
   display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 15rem), 1fr));
-  align-items: end;
+  grid-template-columns: minmax(0, 1fr) auto;
+  align-items: center;
   gap: var(--space-3);
   padding-block: var(--space-3);
   border-block-end: 1px solid var(--color-border);
@@ -94,7 +100,8 @@
   gap: var(--space-2);
 }
 .quantity input {
-  inline-size: 100%;
+  inline-size: 8ch;
+  max-inline-size: 100%;
   font-variant-numeric: tabular-nums;
 }
 .totals {

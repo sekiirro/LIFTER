@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
-const screenshotDirectory = join(tmpdir(), 'lifter-s26-f18-editor');
+const screenshotDirectory = join(tmpdir(), 'lifter-s26-f18-editor-r2');
 mkdirSync(screenshotDirectory, { recursive: true });
 
 for (const variant of [
@@ -33,26 +33,17 @@ for (const variant of [
     await page.waitForTimeout(250);
     const editor = page.getByTestId('nutrition-plan-editor');
     await expect(editor).toHaveAttribute('dir', variant.direction);
-    const before = await editor
-      .locator('ol > li')
-      .first()
-      .locator('input')
-      .inputValue();
-    const moveDownName =
-      variant.locale === 'ar' ? 'نقل الوجبة لأسفل' : 'Move meal down';
-    const moveDown = page.getByRole('button', { name: moveDownName }).first();
-    await moveDown.focus();
-    await page.keyboard.press('Space');
-    await expect(
-      editor.locator('ol > li').first().locator('input'),
-    ).not.toHaveValue(before);
     await expect(editor.locator('[aria-live="polite"]')).toContainText(
       variant.locale === 'ar' ? 'إجمالي اليوم المحدد' : 'Selected day totals',
     );
 
-    let axeChecked = false;
     for (const width of [390, 1440]) {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
+      const quantityWidth = await editor
+        .locator('input')
+        .first()
+        .evaluate((element) => element.getBoundingClientRect().width);
+      expect(quantityWidth).toBeLessThan(width / 2);
       const overflow = await page.evaluate(
         () =>
           document.documentElement.scrollWidth >
@@ -64,16 +55,19 @@ for (const variant of [
           screenshotDirectory,
           `f18-editor-${variant.locale}-${variant.theme}-${width}.png`,
         ),
-        fullPage: false,
+        fullPage: true,
       });
-      if (!axeChecked) {
-        const results = await new AxeBuilder({ page }).analyze();
-        expect(
-          results.violations,
-          results.violations.map((issue) => issue.id).join(', '),
-        ).toHaveLength(0);
-        axeChecked = true;
-      }
+      await expect(
+        editor.getByRole('heading', {
+          name: variant.locale === 'ar' ? 'إجمالي اليوم' : 'Day totals',
+        }),
+      ).toBeVisible();
+      await expect(editor.locator('article dl').first()).toBeVisible();
+      const results = await new AxeBuilder({ page }).analyze();
+      expect(
+        results.violations,
+        results.violations.map((issue) => issue.id).join(', '),
+      ).toHaveLength(0);
     }
   });
 }

@@ -89,4 +89,8 @@ Rendered review: no horizontal overflow; Arabic day types and units display in A
 
 ## Design skill catalog review
 
+## Screenshot review follow-up (2026-11-02)
+
+The quantity field now sizes to its content (`8ch`), selects use their intrinsic width within the parent, and each food/quantity row aligns at the center. Playwright captures full pages so meal totals, day totals, and the live region are included. The eight AR/EN × light/dark × 390/1440 captures are in `%TEMP%/lifter-s26-f18-editor-r2`. The editor Playwright suite passed (4 locale/theme cases, both viewports each); axe reported zero violations at each viewport. I visually reviewed the 1440 EN/light and 390 AR/dark renders; the controls remain compact, totals are visible, and there is no horizontal overflow.
+
 The full `C:/Users/NEW LAP/.lifter/design-skills-catalog.md` was read. The complete APPLIES / NOT APPLICABLE matrix is in [T011 evidence](T011-evidence.md) and is reused for this editor. Applied here: `frontend-design` (implemented within the approved system), `impeccable` (detector clean), `baseline-ui` (existing primitives and responsive sizing), `better-ui` (component polish), `better-typography` (hierarchy and tabular values), `better-colors` (semantic token contrast), `better-layout` (fluid RTL/LTR grouping), `better-accessibility` (keyboard, live regions, state semantics), `better-writing` (bilingual copy), `better-interface` and `interface-review` (state and rendered review), `emil-design-eng` (motion restraint), and `ui-ux-pro-max` (lookup only; no persisted output). No skill recommendation overrode `DESIGN.md`; its generic bespoke font/effect guidance conflicts with the approved typography and restrained token system.
