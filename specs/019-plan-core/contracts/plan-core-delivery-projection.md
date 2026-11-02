@@ -1,32 +1,30 @@
 # Plan Core Client Delivery Projection
 
-**STATUS: PROPOSED — architect review required**
+**STATUS: APPROVED (S27-R5)**
 
-This proposal describes T017's client-facing read projection. It is derived from the approved lifecycle and delivery contracts; it does not authorize or define a database read path.
+This contract specifies the pure T017 client projection over already-authorized typed delivery, activation, and published-revision inputs. It does not define a database read path.
 
-## Projection fields
+## Visible projection fields
 
-| Field / projection element | Proposed contract | Source |
+| Field | Contract | Source |
 | --- | --- | --- |
-| `planId` | Stable plan identity for a published plan. Do not expose a private draft as a client plan. | `spec.md:15,27-28`; `lib/plan-core/schemas.ts:359-365` |
-| `publishedRevision` | Reference to the immutable revision used for the delivered plan; the payload is the explicit feature snapshot, not a live catalog read. | `spec.md:15,27,45`; F16 `contracts/export-read-isolation.md:3-5` |
-| `delivery.kind` | Workout and nutrition are separate delivery kinds and may be delivered on different days. | `spec.md:21,30,39-40`; `lib/plan-core/delivery-contract.ts:23,43-51` |
-| `delivery.planId` | Plan identity associated with this first-delivery record. | `lib/plan-core/delivery-contract.ts:43-48`; Plan Core `data-model.md:5` |
-| `delivery.deliveredAt` | Timestamp of the successful first-delivery record, if the client projection is approved to expose it. | `lib/plan-core/delivery-contract.ts:43-51`; Plan Core `data-model.md:5` |
-| `activation.status` | Proposed `pending` until an activation record exists; `complete` only after the exactly-once activation commits. Delivery status remains independent from activation status. | `spec.md:21,31,39-41`; Plan Core `data-model.md:5` |
-| `activation.activatedAt` | Present only for a completed activation and recorded by the activation transaction after both first deliveries are verified. | Plan Core `data-model.md:5` |
+| `planId` | Stable identity of the delivered plan; retained across published revisions. | `spec.md:15,27-28`; S27-R5 rules 8, 12 |
+| `kind` | `workout` or `nutrition`, corresponding to the independently delivered plan kind. | `spec.md:21,30,39-40`; Plan Core `data-model.md:5` |
+| `revisionNumber` | Revision number of the latest published revision returned for this delivered Plan ID. | `spec.md:27,39-41`; `lib/plan-core/schemas.ts:183-194`; S27-R5 rule 12 |
+| `publishedAt` | Timestamp for the latest published revision. | S27-R5 rule 9; `lib/plan-core/schemas.ts:258-268` (`createdAt` source field) |
+| `content` | Feature envelope `{ kind, schemaVersion, document }`, joined by `(plan_id, revision_id)`; never a live catalog read. | S27-R5 rules 3, 8; F16 `contracts/export-read-isolation.md:3-5` |
+| `delivery.status` | `delivered` when the first-delivery record exists for this plan/kind; otherwise `not_delivered`. | Plan Core `data-model.md:5`; `lib/plan-core/delivery-contract.ts:43-51`; S27-R5 rule 9 |
+| `activation.status` | `pending` until activation commits; `complete` after the activation record commits. A queued retry remains `pending`. | `spec.md:21,31,39-41`; Plan Core `data-model.md:5`; S27-R5 rules 9, 11 |
 
-## Ownership and visibility boundary
+Only these fields are client-visible. Never project delivery IDs, operation keys, author IDs, internal version counters, or retry/outbox state. Do not project any draft fields.
 
-- A client projection contains published plan snapshots only; a private draft is never included. F16 exposes no client catalog endpoint or live catalog read. Sources: `spec.md:15,28`; F16 `contracts/export-read-isolation.md:3-5`.
-- Workout and nutrition deliveries are projected independently. One delivery does not imply activation. Both durable delivery records lead to activation, or a durable activation retry before delivery commit; exact replay must not duplicate delivery, activation, or productivity credit. Sources: `spec.md:21,30-31,39-41`; Plan Core `data-model.md:5`.
-- A delivery row is bound to workspace, subscription, kind, client, plan, and immutable plan version in the canonical P4 contract. A client read must be scoped to its own subscription/plan relation; the exact authorization relation and query boundary remain open. Source: Plan Core `data-model.md:5`; `tasks.md:36` (client self-ownership).
+## Projection and ownership rules
 
-## OPEN QUESTIONS
+- Return the latest **published** revision of a delivered plan, under its existing Plan ID. Later revisions become visible without a re-delivery step and do not restart activation. Sources: `spec.md:15,27-28,41`; S27-R5 rule 12.
+- Resolve revision content by `(plan_id, revision_id)` and use its immutable feature envelope and T018 catalog snapshots. Do not call live catalog reads. Sources: S27-R5 rules 3, 7-8; F16 `contracts/export-read-isolation.md:3-5`.
+- The caller supplies already-authorized inputs scoped by `auth.uid()` → `clients.auth_user_id` → that client → their own subscription. Unknown, foreign, or deactivated clients are denied with `not_permitted`; the projector itself performs no authorization or I/O. Source: S27-R5 rule 10.
+- Delivery and activation remain separate states. A single delivery does not activate; if both deliveries exist and activation retry is queued but uncommitted, return `activation.status: 'pending'`. Sources: `spec.md:21,30-31,39-41`; Plan Core `data-model.md:5`; S27-R5 rules 9, 11.
 
-- Does `plan_version_id` reference `ImmutableRevisionRef.revisionId`, another published-version identifier, or a separate F17/F18 version row? The P4 contract names the field but does not map it to the shared TypeScript revision fields.
-- What exact F17/F18 payload is returned as `publishedRevision`, and how does the read join that payload to `(plan_id, plan_version_id)`? The shared Plan Core revision schema contains metadata only; feature payload schemas are owned by F17/F18.
-- Are `planId`, `deliveredAt`, revision IDs/version numbers, and delivery IDs visible to clients, or should the projection expose only plan content and delivery state? The source contracts define stored fields and snapshot visibility but do not enumerate the client JSON shape.
-- Which authenticated client identity and subscription relation establish self-ownership, and what is the exact authorized projection/read contract? T019 names client self-ownership but no claim or join implementation.
-- If both delivery rows exist and durable activation retry is queued but activation has not committed, should the client see only `pending`, or a separate retry state? PC-FR-005 guarantees durability but specifies no retry-status projection.
-- Does a later published revision replace the client's delivered snapshot immediately or only after a new explicit delivery? The lifecycle spec says later revisions do not restart activation but does not specify client re-delivery visibility.
+## OPEN QUESTION
+
+- S27-R5 names `publishedAt` but does not explicitly state whether its input is the revision's `createdAt` value or a distinct publish timestamp. The current shared revision DTO names `createdAt`; architect clarification is needed before binding that mapping in code.
