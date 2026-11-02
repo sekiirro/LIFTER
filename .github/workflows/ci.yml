@@ -20,20 +20,6 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - uses: supabase/setup-cli@v1
-        with:
-          version: 2.122.0
-      - name: Resolve the Linux Supabase CLI binary
-        if: env.LIFTER_CI_ISOLATED == 'true'
-        shell: bash
-        run: |
-          cli="$(find "$RUNNER_TEMP" -maxdepth 3 -type f -name supabase -executable -print -quit)"
-          if [ -z "$cli" ]; then
-            echo 'Linux Supabase CLI binary was not found in RUNNER_TEMP' >&2
-            exit 1
-          fi
-          "$cli" --version
-          echo "LIFTER_SUPABASE_CLI=$cli" >> "$GITHUB_ENV"
       - run: npm ci
       - name: Validate migration timestamps
         run: npm run check:migration-timestamps
@@ -80,6 +66,20 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+      - name: Resolve the Linux Supabase CLI binary
+        if: env.LIFTER_CI_ISOLATED == 'true'
+        shell: bash
+        run: |
+          cli="$(find "$RUNNER_TEMP" -maxdepth 3 -type f -name supabase -executable -print -quit)"
+          if [ -z "$cli" ]; then
+            echo 'Linux Supabase CLI binary was not found in RUNNER_TEMP' >&2
+            exit 1
+          fi
+          "$cli" --version
+          echo "LIFTER_SUPABASE_CLI=$cli" >> "$GITHUB_ENV"
       - run: npm ci
       - name: Isolate self-hosted Supabase identity and ports
         if: env.LIFTER_CI_ISOLATED == 'true'
