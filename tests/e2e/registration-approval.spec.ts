@@ -292,11 +292,11 @@ test('client status updates after PO rejection and reconsideration without signi
         name: messages['registrationApproval.confirmPayment'],
       })
       .check();
-    await staffPage
-      .getByRole('button', {
-        name: messages['registrationApproval.reconsider'],
-      })
-      .click();
+    const reconsiderButton = staffPage.getByRole('button', {
+      name: messages['registrationApproval.reconsider'],
+    });
+    await expect(reconsiderButton).toBeEnabled();
+    await reconsiderButton.click();
     await expect(
       staffPage.getByText(messages['registrationApproval.success']),
     ).toBeVisible();

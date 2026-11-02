@@ -13,6 +13,7 @@ export function PaymentConfirmation({
   onConfirm,
   submitLabel,
   pending = false,
+  canSubmit = true,
   messages,
 }: {
   amountMinor: string;
@@ -21,6 +22,7 @@ export function PaymentConfirmation({
   onConfirm: (confirmed: boolean, requestKey: string) => void;
   submitLabel?: string;
   pending?: boolean;
+  canSubmit?: boolean;
   messages: Messages;
 }) {
   const [confirmed, setConfirmed] = useState(false);
@@ -42,7 +44,7 @@ export function PaymentConfirmation({
       </label>
       <p aria-live="polite" className={styles.live} />
       <Button
-        disabled={!confirmed || pending}
+        disabled={!confirmed || pending || !canSubmit}
         loading={pending}
         loadingLabel={messages['registrationApproval.pendingAction']}
         onClick={() => onConfirm(confirmed, requestKey)}
