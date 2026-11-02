@@ -201,6 +201,7 @@ describe('staff Telegram link and delivery primitives', () => {
   );
 
   it('routes transport failure through the bounded jobs retry path', async () => {
+    const canary = 'forms-private-canary-provider-token';
     const calls: Array<[string, Record<string, unknown> | undefined]> = [];
     const client = {
       async rpc(name: string, args?: Record<string, unknown>) {
@@ -235,12 +236,13 @@ describe('staff Telegram link and delivery primitives', () => {
       client,
       transport: {
         async send() {
-          throw new Error('fake transport failure');
+          throw new Error(canary);
         },
       },
       appUrl: 'https://example.test',
     });
     expect(result.failed).toBe(1);
+    expect(JSON.stringify(calls)).not.toContain(canary);
     expect(calls.find(([name]) => name === 'jobs_fail')?.[1]).toMatchObject({
       error_code: 'telegram_transport',
       permanent: false,
