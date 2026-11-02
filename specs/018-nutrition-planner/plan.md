@@ -24,7 +24,7 @@ As FR-002; quantities/targets/totals are decimal strings. Published versions add
 
 ### Macro algorithm
 
-`lib/plans/nutrition/macros.ts` (TypeScript, BigInt rational arithmetic on decimal strings) and `app_private.nutrition_compute_totals(document, snapshots)` (SQL `numeric`, no intermediate rounding). One shared golden-fixture set (500 cases incl. precision boundaries) run by both Vitest and the SQL integration suite; algorithm version recorded per schema version. Calories and macros display as integers while calculations and storage retain exact decimals (D18-4=C).
+`lib/plans/nutrition/macros.ts` (TypeScript, BigInt rational arithmetic on decimal strings) and `app_private.nutrition_compute_totals(document, snapshots)` (SQL `numeric`, no intermediate rounding). One shared golden-fixture set (500 cases incl. precision boundaries) run by both Vitest and the SQL integration suite; algorithm version recorded per schema version. Calories display as integers; macro grams below 10 g display one decimal and at or above 10 g display as integers, while calculations and storage retain exact decimals (D18-4=C). Amended by S27-PO-2 (2026-11-02): macro grams < 10 g display one decimal; >= 10 g integer; calculation unchanged.
 
 ### Publish path
 
@@ -70,7 +70,7 @@ Hard: F16 merged; Plan Core PR merged; F13 merged (eligibility). Parallel with t
 
 ## Approved PO decisions
 
-D18-1 global templates PO-only; workspace templates by authorized staff; PO Make it Global safely without private data/references. D18-2=A targets optional, totals always calculated. D18-4=C calories/macros display as integers while exact decimals remain in calculations/storage. D18-6 optional HTTPS YouTube/Google Drive recipe/preparation link, hidden entirely when absent. D18-9=A selection persists while authorized and valid, otherwise coach default. (PO S20 Message B section 3.)
+D18-1 global templates PO-only; workspace templates by authorized staff; PO Make it Global safely without private data/references. D18-2=A targets optional, totals always calculated. D18-4=C calories display as integers and macro grams display one decimal below 10 g and as integers at or above 10 g while exact decimals remain in calculations/storage. Amended by S27-PO-2 (2026-11-02): macro grams < 10 g display one decimal; >= 10 g integer; calculation unchanged. D18-6 optional HTTPS YouTube/Google Drive recipe/preparation link, hidden entirely when absent. D18-9=A selection persists while authorized and valid, otherwise coach default. (PO S20 Message B section 3.)
 
 ## Deferred implementation detail
 

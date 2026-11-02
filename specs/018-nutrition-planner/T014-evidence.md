@@ -103,11 +103,13 @@ The full `C:/Users/NEW LAP/.lifter/design-skills-catalog.md` was read. The compl
 - **GREEN:** The platform origin now uses the bilingual `nutritionTemplates.platform` message, marked DRAFT in both catalogs. The Arabic showcase uses `مساحة العمل أ` for the sample workspace origin. Focused unit suite: 10 passed. Showcase Playwright: 8 cases passed; axe: 0 violations at tested viewports. Captures reviewed in `C:/Users/NEW LAP/.lifter/runs/s26-luna-f18-followup` (`f18-templates-ar-light-1440.png`, `f18-templates-ar-dark-1440.png`).
 - The screenshot test supports `F18_SCREENSHOT_DIR` and `F18_SCREENSHOT_FILTER`, allowing only requested captures while the full showcase checks run.
 
-### Totals display rule — blocked on specification conflict
+### Totals display rule — resolved by S27-PO-2
 
 The request's S26-R7 default would show each macro as an integer at or above 10 g and one decimal below 10 g, summing unrounded item values. However, the approved feature specification is not silent: FR-003 and the acceptance scenario at `spec.md:23`, plus `plan.md:27` and `plan.md:73` (D18-4=C), explicitly require calories and macros to display as integers. Under that approved rule the 0.4 g + 0.8 g example can display as meal values 0 g and 1 g at the day level. Applying S26-R7 would override the approved PO decision, so no totals code, 0.4 + 0.8 assertion, or totals mutation was committed.
 
 Options for the architect/PO:
+
+**Resolved by S27-PO-2 (2026-11-02):** option 2 is approved. The PO decision is: "F18: Approved one-decimal display below 10 g, retaining full calculation precision." This open question is closed. Macro gram values (protein, carbohydrate, fat, fiber) below 10 g display exactly one decimal place and values at or above 10 g display as integers, rounded half-up from the exact unrounded value at display time. A value below 10 g that rounds to 10.0 displays as `10`; zero displays as `0`. Calories stay integer. Calculations, storage, and golden fixtures are unchanged. The options below are retained as historical record.
 
 1. Keep D18-4=C integer display everywhere; accept that independently rounded meal displays can sum differently from the day display. This preserves the current approved spec.
 2. Replace D18-4=C with S26-R7; exact calculations/storage remain unchanged, while meal/day displays share the >=10 integer / <10 one-decimal rule. This removes the reported small-value contradiction and defines the requested 0.4 + 0.8 fixture outcome.
