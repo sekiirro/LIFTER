@@ -46,6 +46,7 @@ export default defineConfig([
     '.open-next/**',
     '.wrangler/**',
     'node_modules/**',
+    'vendor/glisse/dist/**',
     'coverage/**',
     'test-results/**',
     'playwright-report/**',

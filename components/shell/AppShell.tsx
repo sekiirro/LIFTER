@@ -12,7 +12,7 @@ import styles from './AppShell.module.css';
 
 export type ShellNavigationProps = {
   items: readonly NavItem[];
-  activeKey: NavKey;
+  activeKey?: NavKey;
   hrefFor?: (key: NavKey) => string;
   messages: Messages;
   className?: string;
