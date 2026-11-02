@@ -28,6 +28,21 @@ beforeEach(() => {
 });
 
 describe('catalog server authorization and RPC boundary', () => {
+  it('forwards canonical exercise filter keys and value shapes to the session RPC', async () => {
+    const filters = {
+      primary_muscle_code: 'chest',
+      equipment_codes: ['barbell', 'cable'],
+    };
+    await catalog().search({ kind: 'exercise', query: '', filters });
+    expect(rpc).toHaveBeenCalledWith('catalog_search', {
+      kind: 'exercise',
+      query: '',
+      filters,
+      cursor: null,
+      workspace_id: null,
+    });
+  });
+
   it('applies the role parity fixture to search and writes before calling RPC', async () => {
     const cases = [
       ['platform_owner', true],
@@ -115,6 +130,52 @@ describe('catalog server authorization and RPC boundary', () => {
     expect(rpc).toHaveBeenCalledTimes(11);
   });
 
+  it('denies non-PO roles before every PO-only mutation RPC', async () => {
+    const deniedRoles = ['workspace_owner', 'trainer', 'sales', null] as const;
+    for (const role of deniedRoles) {
+      currentActor = { userId: 'actor', role, activeWorkspaceIds: [ws] };
+      rpc.mockClear();
+      const actions = catalog();
+      const results = await Promise.all([
+        actions.createExercise({ operationKey: key, request: {} }),
+        actions.versionExercise({
+          operationKey: key,
+          id: ws,
+          expectedVersion: 1,
+          request: {},
+        }),
+        actions.transitionExercise({
+          operationKey: key,
+          id: ws,
+          expectedVersion: 0,
+          transition: 'remove',
+        }),
+        actions.mergeExercise({
+          operationKey: key,
+          id: ws,
+          targetId: 'target',
+          expectedVersion: 0,
+        }),
+        actions.transitionFood({
+          operationKey: key,
+          id: ws,
+          expectedVersion: 0,
+          transition: 'remove',
+        }),
+        actions.mergeFood({
+          operationKey: key,
+          id: ws,
+          targetId: 'target',
+          expectedVersion: 0,
+        }),
+      ]);
+      expect(results).toEqual(
+        Array.from({ length: 6 }, () => ({ status: 'not_permitted' })),
+      );
+      expect(rpc).not.toHaveBeenCalled();
+    }
+  });
+
   it('blocks an unassigned workspace and a revoked membership before RPC', async () => {
     currentActor = {
       userId: 'actor',
@@ -170,6 +231,7 @@ describe('catalog server authorization and RPC boundary', () => {
       p_expected_version: 1,
       p_operation_key: key,
       p_request: {},
+      p_alternatives: [],
     });
   });
 
@@ -233,6 +295,7 @@ describe('catalog server authorization and RPC boundary', () => {
       }),
     ];
     await Promise.all(calls);
+    expect(rpc).toHaveBeenCalledTimes(11);
     for (const [, args] of rpc.mock.calls)
       expect(args.p_operation_key).toBe(key);
     rpc.mockClear();
@@ -243,6 +306,76 @@ describe('catalog server authorization and RPC boundary', () => {
       }),
     ).toEqual({ status: 'invalid' });
     expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('forwards merge revision names and returns a successful PO merge', async () => {
+    rpc.mockResolvedValueOnce({
+      data: { exercise_id: ws, superseded_by: 'target' },
+      error: null,
+    });
+    await expect(
+      catalog().mergeExercise({
+        operationKey: key,
+        id: ws,
+        targetId: 'target',
+        expectedVersion: 2,
+      }),
+    ).resolves.toEqual({
+      status: 'ok',
+      data: { exercise_id: ws, superseded_by: 'target' },
+    });
+    expect(rpc).toHaveBeenCalledWith('catalog_merge_exercise', {
+      p_source_id: ws,
+      p_target_id: 'target',
+      p_expected_source_revision: 2,
+      p_operation_key: key,
+    });
+  });
+
+  it('forwards typed food alternatives through create and version RPCs', async () => {
+    const food = {
+      operationKey: key,
+      id: ws,
+      expectedVersion: 1,
+      request: { name_en: 'source' },
+      alternatives: [
+        {
+          foodId: '44444444-4444-4444-8444-444444444444',
+          version: 2,
+          sourcePortion: 100,
+          alternativePortion: 150,
+        },
+      ],
+    };
+    await catalog().createFood({ ...food, workspaceId: ws });
+    expect(rpc).toHaveBeenLastCalledWith('catalog_create_food', {
+      p_operation_key: key,
+      p_origin_workspace_id: ws,
+      p_request: food.request,
+      p_alternatives: [
+        {
+          alternative_food_id: '44444444-4444-4444-8444-444444444444',
+          alternative_version: 2,
+          source_portion: 100,
+          alternative_portion: 150,
+        },
+      ],
+    });
+    await catalog().versionFood(food);
+    expect(rpc).toHaveBeenLastCalledWith('catalog_version_food', {
+      p_food_id: ws,
+      p_expected_version: 1,
+      p_operation_key: key,
+      p_request: food.request,
+      p_alternatives: [
+        {
+          alternative_food_id: '44444444-4444-4444-8444-444444444444',
+          alternative_version: 2,
+          source_portion: 100,
+          alternative_portion: 150,
+        },
+      ],
+    });
   });
 
   it('maps authorization and missing rows identically and never returns raw database messages', async () => {
@@ -270,5 +403,37 @@ describe('catalog server authorization and RPC boundary', () => {
     });
     expect(result).toEqual({ status: 'unavailable' });
     expect(JSON.stringify(result)).not.toContain('raw confidential detail');
+  });
+
+  it('maps quota 23514 before generic conflicts while preserving other conflicts', async () => {
+    for (const message of [
+      'catalog_food_creator_limit',
+      'catalog_food_platform_limit',
+      'catalog_food_active_limit',
+    ]) {
+      for (const code of ['23514', 'P0001']) {
+        rpc.mockResolvedValueOnce({ data: null, error: { code, message } });
+        expect(
+          await catalog().createFood({ operationKey: key, request: {} }),
+        ).toEqual({ status: 'limit' });
+      }
+    }
+    rpc.mockResolvedValueOnce({
+      data: null,
+      error: {
+        code: '23514',
+        message: 'catalog_food_near_match_confirmation_required',
+      },
+    });
+    expect(
+      await catalog().createFood({ operationKey: key, request: {} }),
+    ).toEqual({ status: 'conflict' });
+    rpc.mockResolvedValueOnce({
+      data: null,
+      error: { code: '23505', message: 'catalog_food_creator_limit' },
+    });
+    expect(
+      await catalog().createFood({ operationKey: key, request: {} }),
+    ).toEqual({ status: 'conflict' });
   });
 });

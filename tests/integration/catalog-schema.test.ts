@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { afterAll, describe, expect, it } from 'vitest';
 import { sql } from './harness';
 
@@ -35,21 +37,10 @@ const expectedEquipment = [
   'other',
 ];
 
-async function rowCount(table: 'exercises' | 'foods') {
-  const [relation] = await db`
-    select to_regclass(${`public.${table}`})::text as name
-  `;
-  if (!relation?.name) return 0;
-  const rows = await db.unsafe(
-    `select count(*)::int as count from public.${table}`,
-  );
-  return rows[0]?.count ?? 0;
-}
-
 afterAll(async () => db.end());
 
 describe('catalog taxonomy foundation', () => {
-  it('seeds the exact approved versioned bilingual taxonomy and no catalog entries', async () => {
+  it('seeds the exact approved versioned bilingual taxonomy', async () => {
     const terms = await db`
       select t.kind, t.code, v.label_en, v.label_ar, v.version
       from public.taxonomy_terms t
@@ -75,7 +66,16 @@ describe('catalog taxonomy foundation', () => {
           term.label_ar.trim() && term.label_en.trim() && term.version === 1,
       ),
     ).toBe(true);
-    expect(await rowCount('exercises')).toBe(0);
-    expect(await rowCount('foods')).toBe(0);
+  });
+
+  it('keeps catalog content out of the taxonomy seed migration', () => {
+    const seed = readFileSync(
+      resolve(
+        process.cwd(),
+        'supabase/migrations/20261106090000_catalog_taxonomy.sql',
+      ),
+      'utf8',
+    );
+    expect(seed).not.toMatch(/insert\s+into\s+public\.(?:exercises|foods)\b/i);
   });
 });

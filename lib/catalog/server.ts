@@ -14,7 +14,10 @@ export type CatalogResult<T = unknown> =
 export type CatalogSearchInput = {
   kind: string;
   query: string;
-  filters?: Record<string, unknown>;
+  filters?: Record<string, unknown> & {
+    primary_muscle_code?: string;
+    equipment_codes?: string[];
+  };
   cursor?: string | null;
   workspaceId?: string | null;
 };
@@ -26,6 +29,15 @@ export type CatalogMutation = {
   expectedVersion?: number | null;
   transition?: 'remove' | 'restore';
   request?: Record<string, unknown>;
+};
+export type CatalogAlternativeInput = {
+  foodId: string;
+  version: number;
+  sourcePortion: number;
+  alternativePortion: number;
+};
+export type CatalogFoodMutation = CatalogMutation & {
+  alternatives?: CatalogAlternativeInput[];
 };
 export type CatalogDependencies = {
   session: () => Promise<SessionClient | null>;
@@ -57,14 +69,7 @@ const operationNames = {
 function mapError(error: RpcError): CatalogStatus {
   if (error.code === '42501' || error.code === 'P0002') return 'not_permitted';
   if (
-    error.code === '40001' ||
-    error.code === '23505' ||
-    error.code === '23514'
-  )
-    return 'conflict';
-  if (error.code === '22023') return 'invalid';
-  if (
-    error.code === 'P0001' &&
+    ['23514', 'P0001'].includes(error.code ?? '') &&
     [
       'catalog_food_creator_limit',
       'catalog_food_platform_limit',
@@ -72,6 +77,13 @@ function mapError(error: RpcError): CatalogStatus {
     ].includes(error.message ?? '')
   )
     return 'limit';
+  if (
+    error.code === '40001' ||
+    error.code === '23505' ||
+    error.code === '23514'
+  )
+    return 'conflict';
+  if (error.code === '22023') return 'invalid';
   return 'unavailable';
 }
 
@@ -192,7 +204,7 @@ export function createCatalogServer(deps: CatalogDependencies) {
       mutate(i, operationNames.mergeExercise, isPO, (x) => ({
         p_source_id: x.id,
         p_target_id: x.targetId,
-        p_expected_revision: x.expectedVersion,
+        p_expected_source_revision: x.expectedVersion,
         p_operation_key: x.operationKey,
       })),
     writeWorkspaceExercise: (i: CatalogMutation) =>
@@ -234,7 +246,7 @@ export function createCatalogServer(deps: CatalogDependencies) {
           p_operation_key: x.operationKey,
         }),
       ),
-    createFood: (i: CatalogMutation) =>
+    createFood: (i: CatalogFoodMutation) =>
       mutate(
         i,
         operationNames.createFood,
@@ -243,9 +255,15 @@ export function createCatalogServer(deps: CatalogDependencies) {
           p_operation_key: x.operationKey,
           p_origin_workspace_id: x.workspaceId ?? null,
           p_request: x.request,
+          p_alternatives: (i.alternatives ?? []).map((alternative) => ({
+            alternative_food_id: alternative.foodId,
+            alternative_version: alternative.version,
+            source_portion: alternative.sourcePortion,
+            alternative_portion: alternative.alternativePortion,
+          })),
         }),
       ),
-    versionFood: async (i: CatalogMutation) => {
+    versionFood: async (i: CatalogFoodMutation) => {
       const ready = await prepare(
         (a) =>
           isPO(a) ||
@@ -272,6 +290,12 @@ export function createCatalogServer(deps: CatalogDependencies) {
         p_expected_version: i.expectedVersion,
         p_operation_key: i.operationKey,
         p_request: i.request,
+        p_alternatives: (i.alternatives ?? []).map((alternative) => ({
+          alternative_food_id: alternative.foodId,
+          alternative_version: alternative.version,
+          source_portion: alternative.sourcePortion,
+          alternative_portion: alternative.alternativePortion,
+        })),
       });
     },
     transitionFood: (i: CatalogMutation) =>
@@ -285,7 +309,7 @@ export function createCatalogServer(deps: CatalogDependencies) {
       mutate(i, operationNames.mergeFood, isPO, (x) => ({
         p_source_id: x.id,
         p_target_id: x.targetId,
-        p_expected_revision: x.expectedVersion,
+        p_expected_source_revision: x.expectedVersion,
         p_operation_key: x.operationKey,
       })),
   };

@@ -174,6 +174,8 @@ export function toFoodSnapshot(
     names.ar = asString(rawNames.ar, 'name ar');
   if (rawNames.en !== undefined && rawNames.en !== null)
     names.en = asString(rawNames.en, 'name en');
+  if (!names.ar && !names.en)
+    throw new Error('food snapshot requires at least one localized name');
 
   const basis = asString(version.basis, 'basis') as 'g' | 'ml';
   if (basis !== 'g' && basis !== 'ml') {
@@ -405,20 +407,92 @@ function validateExerciseSnapshotImpl(obj: unknown): ExerciseSnapshot {
     throw new Error('names must be an object');
   const names = snap.names as Record<string, unknown>;
   assertNoUnknownKeys(names, ['ar', 'en'], 'names');
-  if (names.ar !== undefined && typeof names.ar !== 'string')
-    throw new Error('names.ar must be a string');
-  if (names.en !== undefined && typeof names.en !== 'string')
-    throw new Error('names.en must be a string');
-  if (typeof snap.primaryMuscle !== 'string')
-    throw new Error('primaryMuscle must be a string');
+  if (typeof names.ar !== 'string' || !names.ar.trim())
+    throw new Error('names.ar must be a non-empty string');
+  if (typeof names.en !== 'string' || !names.en.trim())
+    throw new Error('names.en must be a non-empty string');
+  if (typeof snap.primaryMuscle !== 'string' || !snap.primaryMuscle.trim())
+    throw new Error('primaryMuscle must be a non-empty string');
   if (!Array.isArray(snap.secondaryMuscles))
     throw new Error('secondaryMuscles must be an array');
-  if (typeof snap.equipment !== 'string')
-    throw new Error('equipment must be a string');
+  if (
+    !snap.secondaryMuscles.every(
+      (muscle) => typeof muscle === 'string' && muscle.trim().length > 0,
+    )
+  )
+    throw new Error('secondaryMuscles must contain non-empty strings');
+  if (typeof snap.equipment !== 'string' || !snap.equipment.trim())
+    throw new Error('equipment must be a non-empty string');
   if (snap.defaults !== undefined) {
     if (typeof snap.defaults !== 'object' || Array.isArray(snap.defaults))
       throw new Error('defaults must be an object');
-    // basic check; nested keys validated loosely
+    const defaults = snap.defaults as Record<string, unknown>;
+    assertNoUnknownKeys(
+      defaults,
+      [
+        'warmupSets',
+        'workingSets',
+        'reps',
+        'restSeconds',
+        'rir',
+        'alternativeExerciseIds',
+      ],
+      'defaults',
+    );
+    for (const key of ['warmupSets', 'workingSets', 'restSeconds'] as const) {
+      if (
+        defaults[key] !== undefined &&
+        (typeof defaults[key] !== 'number' ||
+          !Number.isFinite(defaults[key]) ||
+          defaults[key] < 0)
+      )
+        throw new Error(`defaults.${key} must be a non-negative number`);
+    }
+    if (
+      defaults.alternativeExerciseIds !== undefined &&
+      (!Array.isArray(defaults.alternativeExerciseIds) ||
+        !defaults.alternativeExerciseIds.every(
+          (id) => typeof id === 'string' && id.trim(),
+        ))
+    )
+      throw new Error('defaults.alternativeExerciseIds must be strings');
+    if (
+      defaults.rir !== undefined &&
+      defaults.rir !== null &&
+      (typeof defaults.rir !== 'number' ||
+        !Number.isFinite(defaults.rir) ||
+        defaults.rir < 0)
+    )
+      throw new Error('defaults.rir must be a non-negative number or null');
+    if (defaults.reps !== undefined) {
+      if (
+        !defaults.reps ||
+        typeof defaults.reps !== 'object' ||
+        Array.isArray(defaults.reps)
+      )
+        throw new Error('defaults.reps must be an object');
+      const reps = defaults.reps as Record<string, unknown>;
+      if (reps.kind === 'fixed') {
+        assertNoUnknownKeys(reps, ['kind', 'value'], 'defaults.reps');
+        if (
+          typeof reps.value !== 'number' ||
+          !Number.isFinite(reps.value) ||
+          reps.value <= 0
+        )
+          throw new Error('defaults.reps.value must be positive');
+      } else if (reps.kind === 'range') {
+        assertNoUnknownKeys(reps, ['kind', 'min', 'max'], 'defaults.reps');
+        if (
+          typeof reps.min !== 'number' ||
+          !Number.isFinite(reps.min) ||
+          reps.min <= 0 ||
+          typeof reps.max !== 'number' ||
+          !Number.isFinite(reps.max) ||
+          reps.max < reps.min
+        )
+          throw new Error('defaults.reps range is invalid');
+      } else throw new Error('defaults.reps.kind is invalid');
+    }
   }
   return obj as ExerciseSnapshot;
 }
@@ -442,12 +516,28 @@ function validateFoodSnapshotImpl(obj: unknown): FoodSnapshot {
     throw new Error('names must be an object');
   const names = snap.names as Record<string, unknown>;
   assertNoUnknownKeys(names, ['ar', 'en'], 'names');
+  if (
+    !(['ar', 'en'] as const).some(
+      (locale) => typeof names[locale] === 'string' && names[locale].trim(),
+    )
+  )
+    throw new Error('names must contain at least one non-empty locale');
+  for (const locale of ['ar', 'en'] as const) {
+    if (
+      names[locale] !== undefined &&
+      (typeof names[locale] !== 'string' || !names[locale].trim())
+    )
+      throw new Error(`names.${locale} must be a non-empty string`);
+  }
   if (snap.basis !== 'g' && snap.basis !== 'ml')
     throw new Error('basis must be g or ml');
-  if (typeof snap.productIdentity !== 'string')
-    throw new Error('productIdentity must be a string');
-  if (typeof snap.preparationIdentity !== 'string')
-    throw new Error('preparationIdentity must be a string');
+  if (typeof snap.productIdentity !== 'string' || !snap.productIdentity.trim())
+    throw new Error('productIdentity must be a non-empty string');
+  if (
+    typeof snap.preparationIdentity !== 'string' ||
+    !snap.preparationIdentity.trim()
+  )
+    throw new Error('preparationIdentity must be a non-empty string');
   if (
     snap.weighingState !== 'raw' &&
     snap.weighingState !== 'cooked' &&
@@ -455,14 +545,16 @@ function validateFoodSnapshotImpl(obj: unknown): FoodSnapshot {
   )
     throw new Error('weighingState invalid');
   for (const f of ['kcal', 'protein', 'carbs', 'fat'] as const) {
-    if (typeof snap[f] !== 'number' || !Number.isFinite(snap[f]))
-      throw new Error(`${f} must be a finite number`);
+    if (typeof snap[f] !== 'number' || !Number.isFinite(snap[f]) || snap[f] < 0)
+      throw new Error(`${f} must be a non-negative finite number`);
   }
   if (
     snap.fiber !== null &&
-    (typeof snap.fiber !== 'number' || !Number.isFinite(snap.fiber))
+    (typeof snap.fiber !== 'number' ||
+      !Number.isFinite(snap.fiber) ||
+      snap.fiber < 0)
   )
-    throw new Error('fiber must be a finite number or null');
+    throw new Error('fiber must be a non-negative finite number or null');
   if (
     !snap.serving ||
     typeof snap.serving !== 'object' ||
@@ -480,17 +572,25 @@ function validateFoodSnapshotImpl(obj: unknown): FoodSnapshot {
   if (typeof serving.servingId !== 'string' || !serving.servingId.trim())
     throw new Error('servingId must be a non-empty string');
   if (
-    serving.labels &&
-    (typeof serving.labels !== 'object' || Array.isArray(serving.labels))
+    !serving.labels ||
+    typeof serving.labels !== 'object' ||
+    Array.isArray(serving.labels)
   )
     throw new Error('labels must be an object');
   const labels = serving.labels as Record<string, unknown> | undefined;
-  if (labels) assertNoUnknownKeys(labels, ['ar', 'en'], 'labels');
+  assertNoUnknownKeys(labels!, ['ar', 'en'], 'labels');
+  if (
+    Object.values(labels!).some(
+      (label) => typeof label !== 'string' || !label.trim(),
+    )
+  )
+    throw new Error('labels values must be non-empty strings');
   if (
     typeof serving.basisQuantity !== 'number' ||
-    !Number.isFinite(serving.basisQuantity)
+    !Number.isFinite(serving.basisQuantity) ||
+    serving.basisQuantity <= 0
   )
-    throw new Error('basisQuantity must be a finite number');
+    throw new Error('basisQuantity must be a positive finite number');
   return obj as FoodSnapshot;
 }
 

@@ -16,7 +16,7 @@ const globalTables = [
   'foods',
   'food_versions',
   'food_serving_units',
-  'food_alternatives',
+  'food_default_alternatives',
 ];
 const workspaceTables = [
   'workspace_exercises',

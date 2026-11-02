@@ -1,6 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import postgres from 'postgres';
-import { afterAll, beforeAll, describe, expect, it } from 'vitest';
+import { afterAll, beforeAll, beforeEach, describe, expect, it } from 'vitest';
 import { sql, twoWorkspaceFixture } from './harness';
 
 const db = sql();
@@ -91,6 +91,11 @@ beforeAll(async () => {
 
 afterAll(async () => Promise.all([db.end(), concurrentDb.end()]));
 
+beforeEach(async () => {
+  await db`update public.catalog_addition_limits
+    set created_at = statement_timestamp() - interval '25 hours'`;
+});
+
 describe('D16-10 food addition limits', () => {
   it('allows exactly ten creator additions, keeps replay quota-neutral, then rejects the eleventh', async () => {
     const actor = trainerA.userId;
@@ -148,8 +153,10 @@ describe('D16-10 food addition limits', () => {
   });
 
   it('accepts the 100th platform addition and rejects the 101st', async () => {
+    await db`update public.catalog_addition_limits
+      set created_at = statement_timestamp() - interval '25 hours'`;
     const count =
-      await db`select count(*)::int as count from public.foods where created_at >= now() - interval '24 hours'`;
+      await db`select count(*)::int as count from public.catalog_addition_limits where created_at >= now() - interval '24 hours'`;
     const missing = 99 - Number(count[0]?.count);
     expect(missing).toBeGreaterThanOrEqual(0);
     await expect(

@@ -1,6 +1,6 @@
 # Implementation Plan: F16 Exercise & Food Catalogs
 
-**Spec**: spec.md (same folder) | **Status**: PO-approved plan; implementation not started (debate.md is historical)
+**Spec**: spec.md (same folder) | **Status**: PO-approved plan; database and server implementation is present in F16 PR #34; UI tasks T023/T029/T030/T033/T036 remain in the separate follow-on PR. Debate decisions remain historical and the PO-approved scope is unchanged.
 
 ## Summary
 
@@ -55,7 +55,7 @@ Routes under `app/(dashboard)/catalog/{exercises,foods}`: list + search + filter
 1. RED tests first: TypeScript/SQL action-scope parity for every mutation and read; Sales/client/unauthenticated denial; non-creator/non-PO food-version denial; creator/origin masking in global views, duplicate candidates, errors, pagination and audit; wrong/missing workspace ID denied for search, detail/history, variation/video reads and export joins, including cross-workspace existence/count/error non-disclosure; non-HTTPS YouTube/Google Drive-only URL rejection and credential-bearing URL rejection; membership revoked between precheck and commit; required macros, non-finite/negative/out-of-column-range values, macro-sum exactly 100 accepted and >100 rejected with no epsilon, positive same-basis serving equivalence, at least one serving, max THREE food alternatives, D16-5 kcal-only warning; exact duplicate keys across language, basis, product/preparation identity and raw/cooked state; Remove releases keys, Restore re-reserves them atomically, duplicate-key collision leaves food removed, concurrent restore/key collisions, and merge key release; per-creator and platform 24-hour boundary tests for PO/WO/Trainer, concurrent requests, replay quota neutrality, active-food count at 9,999/10,000 for Add/Restore/Remove/Merge, and rollback on rejection; Remove/Restore authorization and no-cascade plan preservation; merge terminal resolution, alias flattening and cycle rejection; operation-key replay/hash conflict; stale-version conflict; variation identity remains canonical; taxonomy versioning is non-retroactive; Arabic normalization across collations; `ExerciseSnapshotV1`/`FoodSnapshotV1` fixtures preserve values while video resolution stays dynamic.
 2. Integration on one dedicated local Supabase stack (assigned at kickoff; one lane per stack).
 3. Playwright + axe AR/EN light/dark mobile/desktop; perf fixture 10k foods for search.
-4. Full gates once on the final head; CodeRabbit; CI window; PO exact-SHA approval.
+4. Full gates once on the final head; CodeRabbit; CI window. Immediately before merge, obtain PO approval for the exact current head, record `po_approved_head == headRefOid`, and merge with `--match-head-commit` for that SHA. If the head changes, repeat PO approval and all applicable gate checks before merging.
 
 ## Resolved implementation detail
 

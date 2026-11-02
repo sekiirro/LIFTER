@@ -190,6 +190,36 @@ describe('catalog snapshot (T031)', () => {
     expect(() => parseSnapshot(obj)).toThrow();
   });
 
+  it('parse rejects missing exercise locales and non-string secondary muscles', () => {
+    const snapshot = toExerciseSnapshot(exerciseVersion);
+    const missingLocale = JSON.parse(serializeSnapshot(snapshot));
+    missingLocale.names = { en: 'Exercise' };
+    expect(() => parseSnapshot(missingLocale)).toThrow(/names\.ar/);
+    const invalidMuscle = JSON.parse(serializeSnapshot(snapshot));
+    invalidMuscle.secondaryMuscles = ['Biceps', 7];
+    expect(() => parseSnapshot(invalidMuscle)).toThrow(/secondaryMuscles/);
+  });
+
+  it('parse and food builder require at least one non-empty food name', () => {
+    const snapshot = toFoodSnapshot(rawFoodVersion, 'srv-100');
+    const missingNames = JSON.parse(serializeSnapshot(snapshot));
+    missingNames.names = {};
+    expect(() => parseSnapshot(missingNames)).toThrow(/at least one/);
+    expect(() =>
+      toFoodSnapshot({ ...rawFoodVersion, names: {} }, 'srv-100'),
+    ).toThrow(/at least one/);
+  });
+
+  it('parse rejects mistyped nested labels and snapshot values', () => {
+    const snapshot = toFoodSnapshot(rawFoodVersion, 'srv-100');
+    const invalidLabel = JSON.parse(serializeSnapshot(snapshot));
+    invalidLabel.serving.labels.en = 3;
+    expect(() => parseSnapshot(invalidLabel)).toThrow(/labels/);
+    const invalidNutrition = JSON.parse(serializeSnapshot(snapshot));
+    invalidNutrition.kcal = -1;
+    expect(() => parseSnapshot(invalidNutrition)).toThrow(/kcal/);
+  });
+
   it('raw and cooked food snapshots stay distinct', () => {
     const raw = serializeSnapshot(toFoodSnapshot(rawFoodVersion, 'srv-100'));
     const cooked = serializeSnapshot(
