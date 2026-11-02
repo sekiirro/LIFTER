@@ -1,8 +1,9 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
 import { FoodEditor } from '../../components/catalog/FoodEditor';
 import { DuplicateReview } from '../../components/catalog/DuplicateReview';
+import { selectExistingFood } from '../../components/catalog/DuplicateReview';
 import {
   buildFoodEditorInput,
   validateFoodEditorDraft,
@@ -28,6 +29,58 @@ const base: FoodEditorDraft = {
 };
 
 describe('food editor (T029)', () => {
+  it('uses one numeral system in every Arabic editor and duplicate text node', () => {
+    const candidate = {
+      id: 'food-existing',
+      names: { ar: 'أرز مطبوخ', en: 'Cooked rice' },
+      basis: 'g' as const,
+      kcal: 130,
+    };
+    const editor = renderToStaticMarkup(
+      createElement(FoodEditor, {
+        locale: 'ar',
+        initialDraft: base,
+        status: 'ready',
+      }),
+    );
+    const duplicate = renderToStaticMarkup(
+      createElement(DuplicateReview, {
+        locale: 'ar',
+        role: 'trainer',
+        state: 'near',
+        candidates: [candidate],
+      }),
+    );
+    for (const markup of [editor, duplicate]) {
+      const visibleText = markup.replace(/<[^>]*>/g, ' ');
+      expect(visibleText).not.toMatch(/[0-9]/);
+      expect(visibleText).toMatch(/[\u0660-\u0669]/);
+    }
+    expect(editor).toContain('١٠٠');
+    expect(duplicate).toContain('١٣٠');
+  });
+
+  it('exposes an exact-match selection action and returns the selected candidate', () => {
+    const candidate = {
+      id: 'food-existing',
+      names: { en: 'Cooked rice' },
+      basis: 'g' as const,
+      kcal: 130,
+    };
+    const callback = vi.fn();
+    const markup = renderToStaticMarkup(
+      createElement(DuplicateReview, {
+        locale: 'en',
+        role: 'trainer',
+        state: 'exact',
+        candidates: [candidate],
+        onSelectExisting: callback,
+      }),
+    );
+    expect(markup).toContain('select-existing-food-existing');
+    selectExistingFood(candidate, callback);
+    expect(callback).toHaveBeenCalledWith(candidate);
+  });
   it('preserves canonical identity and separate weighing state in payload', () => {
     expect(buildFoodEditorInput(base)).toMatchObject({
       basis: 'g',
@@ -83,7 +136,9 @@ describe('food editor (T029)', () => {
       }),
     );
     expect(markup).toContain('per 100');
-    expect(markup).toContain(en['catalog.foodKcalWarningOnly']);
+    expect(markup).toContain(
+      'Calories differ from the 4/4/9 macro estimate. This warning will not prevent saving.',
+    );
     expect(markup).toContain('aria-describedby=');
     expect(markup).toContain('data-food-identity="canonical"');
     expect(

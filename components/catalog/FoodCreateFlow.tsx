@@ -18,6 +18,7 @@ export function FoodCreateFlow({
   workspaces = [],
   initialDraft,
   alternatives = [],
+  onSelectExisting,
 }: {
   locale: Locale;
   role: 'po' | 'workspace_owner' | 'trainer';
@@ -27,6 +28,9 @@ export function FoodCreateFlow({
     id: string;
     names: Partial<Record<'ar' | 'en', string>>;
   }[];
+  onSelectExisting?: (
+    candidate: import('../../lib/catalog/food-editor').DuplicateCandidate,
+  ) => void;
 }) {
   const m = getMessages(locale);
   const [state, setState] = useState<'ready' | 'saving' | 'error' | 'success'>(
@@ -35,6 +39,9 @@ export function FoodCreateFlow({
   const [review, setReview] = useState<FoodDuplicateReviewResult | null>(null);
   const [draft, setDraft] = useState(initialDraft);
   const [alternativeSaveBlocked, setAlternativeSaveBlocked] = useState(false);
+  const [selectedExisting, setSelectedExisting] = useState<
+    import('../../lib/catalog/food-editor').DuplicateCandidate | null
+  >(null);
   const operationKey = useRef<{ fingerprint: string; key: string } | null>(
     null,
   );
@@ -61,6 +68,7 @@ export function FoodCreateFlow({
     nextDraft: FoodEditorDraft,
     selectedWorkspaceId: string | null,
   ) {
+    setSelectedExisting(null);
     setDraft(nextDraft);
     setWorkspaceId(selectedWorkspaceId);
     setAlternativeSaveBlocked(false);
@@ -102,14 +110,27 @@ export function FoodCreateFlow({
         state={review.status}
         candidates={review.candidates}
         onConfirm={confirmNear}
+        onSelectExisting={(candidate) => {
+          setSelectedExisting(candidate);
+          onSelectExisting?.(candidate);
+        }}
         onCancel={() => {
           setReview(null);
+          setSelectedExisting(null);
           setState('ready');
         }}
       />
     );
   return (
     <>
+      {selectedExisting && (
+        <p role="status">
+          {m['catalog.duplicateExistingSelected']}{' '}
+          {selectedExisting.names[locale] ??
+            selectedExisting.names.en ??
+            selectedExisting.names.ar}
+        </p>
+      )}
       {state === 'error' && (
         <p role="alert">
           {alternativeSaveBlocked

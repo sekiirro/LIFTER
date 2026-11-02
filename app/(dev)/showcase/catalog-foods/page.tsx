@@ -1,6 +1,6 @@
 import { notFound } from 'next/navigation';
 import { FoodEditor } from '../../../../components/catalog/FoodEditor';
-import { DuplicateReview } from '../../../../components/catalog/DuplicateReview';
+import { CatalogFoodsShowcaseClient } from './CatalogFoodsShowcaseClient';
 import { isShowcaseEnabled } from '../../../../lib/design/showcase';
 import { LOCALE_COOKIE, parseLocale } from '../../../../lib/design/preferences';
 import { cookies } from 'next/headers';
@@ -26,15 +26,6 @@ const fixture: FoodEditorDraft = {
   ],
 };
 
-const candidates = [
-  {
-    id: 'fixture-food-1',
-    names: { ar: 'أرز مطبوخ', en: 'Cooked rice' },
-    basis: 'g' as const,
-    kcal: 130,
-  },
-];
-
 export default async function CatalogFoodsShowcase({
   searchParams,
 }: {
@@ -47,13 +38,8 @@ export default async function CatalogFoodsShowcase({
   return (
     <main className={styles.main} data-testid="catalog-foods-showcase">
       <h1>{m['catalog.foodPreviewHeading']}</h1>
-      {state === 'exact' || state === 'near' ? (
-        <DuplicateReview
-          locale={locale}
-          role="trainer"
-          state={state}
-          candidates={candidates}
-        />
+      {state === 'exact' || state === 'near' || state === 'video' ? (
+        <CatalogFoodsShowcaseClient locale={locale} state={state} />
       ) : (
         <FoodEditor
           locale={locale}

@@ -7,8 +7,16 @@ import { Bidi } from '../ui/Bidi';
 import type { Locale } from '../../lib/design/preferences';
 import { dirFor } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
+import { formatNumber, interpolateNumbers } from '../../lib/i18n/format';
 import type { DuplicateCandidate } from '../../lib/catalog/food-editor';
 import styles from './FoodEditor.module.css';
+
+export function selectExistingFood(
+  candidate: DuplicateCandidate,
+  onSelectExisting: (candidate: DuplicateCandidate) => void,
+) {
+  onSelectExisting(candidate);
+}
 
 export type DuplicateReviewProps = {
   locale: Locale;
@@ -17,6 +25,7 @@ export type DuplicateReviewProps = {
   candidates: readonly DuplicateCandidate[];
   onConfirm?: () => void;
   onCancel?: () => void;
+  onSelectExisting?: (candidate: DuplicateCandidate) => void;
 };
 
 export function DuplicateReview({
@@ -26,8 +35,11 @@ export function DuplicateReview({
   candidates,
   onConfirm,
   onCancel,
+  onSelectExisting,
 }: DuplicateReviewProps) {
   const m = getMessages(locale);
+  const localized = (key: keyof typeof m) =>
+    interpolateNumbers(m[key], { amount: 100 }, locale);
   const [confirmed, setConfirmed] = useState(false);
   if (state === 'none') return null;
   const exact = state === 'exact';
@@ -63,14 +75,26 @@ export function DuplicateReview({
                 </Bidi>
               </strong>
               <span>
-                <Bidi dir="ltr">
-                  {candidate.kcal} {m['catalog.foodKcalUnit']}
+                <Bidi dir="auto">
+                  {formatNumber(candidate.kcal, locale)}{' '}
+                  {m['catalog.foodKcalUnit']}
                 </Bidi>{' '}
                 /{' '}
                 {candidate.basis === 'g'
-                  ? m['catalog.foodPer100g']
-                  : m['catalog.foodPer100ml']}
+                  ? localized('catalog.foodPer100g')
+                  : localized('catalog.foodPer100ml')}
               </span>
+              {exact && onSelectExisting && (
+                <Button
+                  variant="secondary"
+                  onClick={() =>
+                    selectExistingFood(candidate, onSelectExisting)
+                  }
+                  data-testid={`select-existing-${candidate.id}`}
+                >
+                  {m['catalog.duplicateSelectExisting']}
+                </Button>
+              )}
             </li>
           ))}
         </ul>

@@ -511,9 +511,9 @@ export const ar = {
   'catalog.foodCooked': 'مطبوخ',
   'catalog.foodNotApplicable': 'لا ينطبق',
   'catalog.foodBasis': 'وحدة القياس المرجعية',
-  'catalog.foodPer100g': 'لكل ١٠٠ غ',
-  'catalog.foodPer100ml': 'لكل ١٠٠ مل',
-  'catalog.foodNutrition': 'القيم الغذائية لكل ١٠٠',
+  'catalog.foodPer100g': 'لكل {amount} غ',
+  'catalog.foodPer100ml': 'لكل {amount} مل',
+  'catalog.foodNutrition': 'القيم الغذائية لكل {amount}',
   'catalog.foodKcal': 'الطاقة (سعرة حرارية)',
   'catalog.foodKcalUnit': 'سعرة حرارية',
   'catalog.foodProtein': 'البروتين (غ)',
@@ -521,7 +521,7 @@ export const ar = {
   'catalog.foodFat': 'الدهون (غ)',
   'catalog.foodFiber': 'الألياف (غ)، اختياري',
   'catalog.foodKcalWarningOnly':
-    'تختلف السعرات عن تقدير المغذيات بمعادلة ٤/٤/٩. لن يمنع هذا التحذير الحفظ.',
+    'تختلف السعرات عن تقدير المغذيات بمعادلة {protein}/{carbs}/{fat}. لن يمنع هذا التحذير الحفظ.',
   'catalog.foodServings': 'وحدات الحصة',
   'catalog.foodServingAr': 'اسم الحصة بالعربية',
   'catalog.foodServingEn': 'اسم الحصة بالإنجليزية',
@@ -542,7 +542,7 @@ export const ar = {
   'catalog.foodErrorSummaryLink': 'انتقل إلى الحقل الذي يحتاج إلى تصحيح',
   'catalog.foodErrorNumeric': 'أدخل رقمًا لا يقل عن صفر.',
   'catalog.foodErrorMacroLimit':
-    'يجب ألا يتجاوز مجموع البروتين والكربوهيدرات والدهون ١٠٠ غ.',
+    'يجب ألا يتجاوز مجموع البروتين والكربوهيدرات والدهون {amount} غ.',
   'catalog.foodErrorServing': 'أدخل مكافئ حصة أكبر من صفر.',
   'catalog.foodErrorServingLabel': 'أدخل اسم الحصة بالعربية أو الإنجليزية.',
   'catalog.foodErrorAlternativePortion': 'أدخل كمية حصة أكبر من صفر.',
@@ -563,4 +563,27 @@ export const ar = {
   'catalog.duplicateContinue': 'متابعة إضافة هذا الطعام',
   'catalog.duplicateCancel': 'العودة إلى التعديل',
   'catalog.duplicateNoCandidates': 'لم يتم العثور على أطعمة مطابقة.',
+  'catalog.duplicateSelectExisting': 'اختيار الطعام الموجود',
+  'catalog.duplicateExistingSelected': 'تم اختيار الطعام الموجود.',
+  'catalog.videoVariationTitle': 'فيديو التمرين لمساحة العمل',
+  'catalog.videoVariationWorkspace': 'مساحة العمل المحددة',
+  'catalog.videoVariationExercise': 'التمرين العام',
+  'catalog.videoVariationUrl': 'رابط الفيديو',
+  'catalog.videoVariationNote': 'ملاحظة خاصة بمساحة العمل',
+  'catalog.videoVariationSave': 'حفظ ربط الفيديو',
+  'catalog.videoVariationSaving': 'جارٍ حفظ ربط الفيديو',
+  'catalog.videoVariationSaved': 'تم حفظ ربط الفيديو.',
+  'catalog.videoVariationInvalidUrl':
+    'استخدم رابطًا آمنًا من يوتيوب أو جوجل درايف فقط.',
+  'catalog.videoVariationRequired': 'أدخل رابط فيديو صالحًا أو ملاحظة.',
+  'catalog.videoVariationWorkspaceRequired': 'اختر مساحة العمل صراحةً.',
+  'catalog.videoVariationExerciseRequired': 'اختر تمرينًا عامًا.',
+  'catalog.videoVariationUnavailable': 'تعذّر حفظ ربط الفيديو. حاول مرة أخرى.',
+  'catalog.videoVariationForeignOnly':
+    'تظهر هنا روابط مساحة العمل المحددة فقط.',
+  'catalog.videoVariationNoWorkspace':
+    'لا توجد مساحة عمل متاحة لك لإدارة ربط فيديو.',
+  'catalog.videoVariationNoExercise':
+    'لا توجد تمارين عامة متاحة لربط فيديو بها.',
+  'catalog.videoVariationNoteTooLong': 'يجب ألا تتجاوز الملاحظة {amount} حرف.',
 } as const;

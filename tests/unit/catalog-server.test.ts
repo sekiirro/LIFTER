@@ -9,8 +9,9 @@ vi.mock('server-only', () => ({}));
 const key = '11111111-1111-4111-8111-111111111111';
 const ws = '22222222-2222-4222-8222-222222222222';
 const rpc = vi.fn();
+const from = vi.fn();
 let currentActor: Actor | null;
-const client = { rpc, auth: {}, from: vi.fn() } as never;
+const client = { rpc, auth: {}, from } as never;
 const deps: CatalogDependencies = {
   session: async () => client,
   actor: async () => currentActor,
@@ -62,6 +63,72 @@ describe('catalog server authorization and RPC boundary', () => {
       status: 'not_permitted',
     });
     expect(rpc).not.toHaveBeenCalled();
+  });
+
+  it('lists only coaching-authorized workspaces for staff and all visible workspaces for PO', async () => {
+    const otherWorkspace = '44444444-4444-4444-8444-444444444444';
+    const order = vi.fn().mockResolvedValue({
+      data: [
+        { id: ws, name: 'Authorized' },
+        { id: otherWorkspace, name: 'Foreign' },
+      ],
+      error: null,
+    });
+    const select = vi.fn(() => ({ order }));
+    from.mockReturnValue({ select });
+    currentActor = {
+      userId: 'actor',
+      role: 'trainer',
+      activeWorkspaceIds: [ws],
+    };
+    expect(await catalog().authoringWorkspaces()).toEqual({
+      status: 'ok',
+      data: [{ id: ws, name: 'Authorized' }],
+    });
+    expect(select).toHaveBeenCalledWith('id,name');
+    expect(order).toHaveBeenCalledWith('name');
+    currentActor = {
+      userId: 'actor',
+      role: 'platform_owner',
+      activeWorkspaceIds: [],
+    };
+    expect(await catalog().authoringWorkspaces()).toEqual({
+      status: 'ok',
+      data: [
+        { id: ws, name: 'Authorized' },
+        { id: otherWorkspace, name: 'Foreign' },
+      ],
+    });
+  });
+
+  it('binds variation writes to current staff membership and permits PO selection', async () => {
+    const input = {
+      operationKey: key,
+      workspaceId: ws,
+      id: '55555555-5555-4555-8555-555555555555',
+      request: { video_url: 'https://youtu.be/abcdefghijk' },
+    };
+    currentActor = { userId: 'actor', role: 'trainer', activeWorkspaceIds: [] };
+    rpc.mockClear();
+    expect(await catalog().writeVariation(input)).toEqual({
+      status: 'not_permitted',
+    });
+    expect(rpc).not.toHaveBeenCalled();
+    currentActor = {
+      userId: 'owner',
+      role: 'platform_owner',
+      activeWorkspaceIds: [],
+    };
+    expect(await catalog().writeVariation(input)).toMatchObject({
+      status: 'ok',
+    });
+    expect(rpc).toHaveBeenCalledWith('catalog_write_variation', {
+      p_workspace_id: ws,
+      p_exercise_id: input.id,
+      p_expected_version: undefined,
+      p_operation_key: key,
+      p_request: input.request,
+    });
   });
 
   it('applies the role parity fixture to search and writes before calling RPC', async () => {

@@ -15,6 +15,7 @@ describe('exact money', () => {
   );
   it('uses zero and three decimal metadata', () => {
     expect(formatMinorUnits('1234', 'JPY', 'en')).toContain('1,234');
+    expect(formatMinorUnits('12345', 'JPY', 'ar')).toContain('١٢٬٣٤٥');
     expect(formatMinorUnits('1234', 'KWD', 'en')).toContain('1.234');
     expect(formatMinorUnits('9007199254740993', 'USD', 'en')).toContain(
       '90,071,992,547,409.93',

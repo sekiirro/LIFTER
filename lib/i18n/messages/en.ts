@@ -529,9 +529,9 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.foodCooked': 'Cooked',
   'catalog.foodNotApplicable': 'Not applicable',
   'catalog.foodBasis': 'Reference basis',
-  'catalog.foodPer100g': 'Per 100 g',
-  'catalog.foodPer100ml': 'Per 100 ml',
-  'catalog.foodNutrition': 'Nutrition per 100',
+  'catalog.foodPer100g': 'Per {amount} g',
+  'catalog.foodPer100ml': 'Per {amount} ml',
+  'catalog.foodNutrition': 'Nutrition per {amount}',
   'catalog.foodKcal': 'Energy (kcal)',
   'catalog.foodKcalUnit': 'kcal',
   'catalog.foodProtein': 'Protein (g)',
@@ -539,7 +539,7 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.foodFat': 'Fat (g)',
   'catalog.foodFiber': 'Fiber (g), optional',
   'catalog.foodKcalWarningOnly':
-    'Calories differ from the 4/4/9 macro estimate. This warning will not prevent saving.',
+    'Calories differ from the {protein}/{carbs}/{fat} macro estimate. This warning will not prevent saving.',
   'catalog.foodServings': 'Serving units',
   'catalog.foodServingAr': 'Serving label in Arabic',
   'catalog.foodServingEn': 'Serving label in English',
@@ -560,7 +560,7 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.foodErrorSummaryLink': 'Go to the field that needs attention',
   'catalog.foodErrorNumeric': 'Enter a number greater than or equal to zero.',
   'catalog.foodErrorMacroLimit':
-    'Combined protein, carbohydrates and fat must not exceed 100 g.',
+    'Combined protein, carbohydrates and fat must not exceed {amount} g.',
   'catalog.foodErrorServing': 'Enter a serving equivalent greater than zero.',
   'catalog.foodErrorServingLabel': 'Enter a serving name in Arabic or English.',
   'catalog.foodErrorAlternativePortion': 'Enter a portion greater than zero.',
@@ -581,4 +581,29 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.duplicateContinue': 'Continue with this food',
   'catalog.duplicateCancel': 'Back to editing',
   'catalog.duplicateNoCandidates': 'No matching foods were found.',
+  'catalog.duplicateSelectExisting': 'Select existing food',
+  'catalog.duplicateExistingSelected': 'Existing food selected.',
+  'catalog.videoVariationTitle': 'Workspace exercise video',
+  'catalog.videoVariationWorkspace': 'Selected workspace',
+  'catalog.videoVariationExercise': 'Global exercise',
+  'catalog.videoVariationUrl': 'HTTPS video URL',
+  'catalog.videoVariationNote': 'Workspace only note',
+  'catalog.videoVariationSave': 'Save video mapping',
+  'catalog.videoVariationSaving': 'Saving video mapping',
+  'catalog.videoVariationSaved': 'Video mapping saved.',
+  'catalog.videoVariationInvalidUrl':
+    'Use an HTTPS YouTube or Google Drive URL only.',
+  'catalog.videoVariationRequired': 'Enter a valid video URL or a note.',
+  'catalog.videoVariationWorkspaceRequired': 'Choose a workspace explicitly.',
+  'catalog.videoVariationExerciseRequired': 'Choose a global exercise.',
+  'catalog.videoVariationUnavailable':
+    'Could not save the video mapping. Try again.',
+  'catalog.videoVariationForeignOnly':
+    'Only mappings for the selected workspace appear here.',
+  'catalog.videoVariationNoWorkspace':
+    'No workspace is available for you to manage video mappings.',
+  'catalog.videoVariationNoExercise':
+    'No global exercises are available for video mappings.',
+  'catalog.videoVariationNoteTooLong':
+    'The note must be {amount} characters or fewer.',
 };

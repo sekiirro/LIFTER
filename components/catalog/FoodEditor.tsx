@@ -8,6 +8,7 @@ import { Field } from '../ui/Field';
 import type { Locale } from '../../lib/design/preferences';
 import { dirFor } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
+import { interpolateNumbers } from '../../lib/i18n/format';
 import {
   buildFoodEditorInput,
   foodWarnings,
@@ -49,6 +50,8 @@ export function FoodEditor({
   onSubmit,
 }: FoodEditorProps) {
   const m = getMessages(locale);
+  const localized = (key: keyof typeof m, values: Record<string, number>) =>
+    interpolateNumbers(m[key], values, locale);
   const base = useId();
   const [draft, setDraft] = useState(initialDraft);
   const [errors, setErrors] = useState(initialErrors);
@@ -165,7 +168,7 @@ export function FoodEditor({
     code === 'required'
       ? m['catalog.foodErrorRequired']
       : code === 'macros_exceed_basis'
-        ? m['catalog.foodErrorMacroLimit']
+        ? localized('catalog.foodErrorMacroLimit', { amount: 100 })
         : code
           ? m['catalog.foodErrorNumeric']
           : undefined;
@@ -196,8 +199,13 @@ export function FoodEditor({
       <header className={styles.header}>
         <h2 id={`${base}-title`}>{m['catalog.foodEditorTitle']}</h2>
         <p>
-          <Bidi dir="ltr">{m['catalog.foodPer100g']}</Bidi> /{' '}
-          <Bidi dir="ltr">{m['catalog.foodPer100ml']}</Bidi>
+          <Bidi dir="auto">
+            {localized('catalog.foodPer100g', { amount: 100 })}
+          </Bidi>{' '}
+          /{' '}
+          <Bidi dir="auto">
+            {localized('catalog.foodPer100ml', { amount: 100 })}
+          </Bidi>
         </p>
       </header>
       {status === 'error' && (
@@ -345,19 +353,23 @@ export function FoodEditor({
                   update('basis', e.currentTarget.value as 'g' | 'ml')
                 }
               >
-                <option value="g">{m['catalog.foodPer100g']}</option>
-                <option value="ml">{m['catalog.foodPer100ml']}</option>
+                <option value="g">
+                  {localized('catalog.foodPer100g', { amount: 100 })}
+                </option>
+                <option value="ml">
+                  {localized('catalog.foodPer100ml', { amount: 100 })}
+                </option>
               </select>
             </div>
           </div>
         </fieldset>
         <fieldset className={styles.group}>
           <legend>
-            {m['catalog.foodNutrition']} —{' '}
-            <Bidi dir="ltr">
+            {localized('catalog.foodNutrition', { amount: 100 })} —{' '}
+            <Bidi dir="auto">
               {draft.basis === 'g'
-                ? m['catalog.foodPer100g']
-                : m['catalog.foodPer100ml']}
+                ? localized('catalog.foodPer100g', { amount: 100 })
+                : localized('catalog.foodPer100ml', { amount: 100 })}
             </Bidi>
           </legend>
           <div className={styles.grid}>
@@ -381,7 +393,11 @@ export function FoodEditor({
           </div>
           {warn && (
             <Alert tone="warning" title={m['catalog.foodKcal']}>
-              {m['catalog.foodKcalWarningOnly']}
+              {localized('catalog.foodKcalWarningOnly', {
+                protein: 4,
+                carbs: 4,
+                fat: 9,
+              })}
             </Alert>
           )}
         </fieldset>

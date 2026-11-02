@@ -36,6 +36,7 @@ export type FoodDuplicateQuery = {
   weighingState: 'raw' | 'cooked' | 'not_applicable';
   kcal: number;
 };
+export type CatalogWorkspaceOption = { id: string; name: string };
 export type CatalogDependencies = {
   session: () => Promise<SessionClient | null>;
   actor: (client: SessionClient) => Promise<Actor | null>;
@@ -161,6 +162,36 @@ export function createCatalogServer(deps: CatalogDependencies) {
     return rpc(ready.client!, name, args(input));
   }
   return {
+    authoringWorkspaces() {
+      return (async (): Promise<CatalogResult<CatalogWorkspaceOption[]>> => {
+        const ready = await prepare((a) => isPO(a) || coachingSomewhere(a));
+        if (ready.result)
+          return { status: ready.result.status } as CatalogResult<
+            CatalogWorkspaceOption[]
+          >;
+        try {
+          const response = await ready
+            .client!.from('workspaces')
+            .select('id,name')
+            .order('name');
+          if (response.error || !response.data)
+            return { status: 'unavailable' };
+          const workspaces = response.data.filter(
+            (workspace: { id: string }) =>
+              isPO(ready.actor!) || scoped(ready.actor!, workspace.id),
+          );
+          return {
+            status: 'ok',
+            data: workspaces.map((workspace: { id: string; name: string }) => ({
+              id: workspace.id,
+              name: workspace.name,
+            })),
+          };
+        } catch {
+          return { status: 'unavailable' };
+        }
+      })();
+    },
     foodDuplicateCandidates(input: FoodDuplicateQuery) {
       return (async (): Promise<CatalogResult> => {
         const ready = await prepare(coachingSomewhere);
@@ -236,7 +267,7 @@ export function createCatalogServer(deps: CatalogDependencies) {
       mutate(
         i,
         operationNames.writeVariation,
-        (a) => scoped(a, i.workspaceId),
+        (a) => isPO(a) || scoped(a, i.workspaceId),
         (x) => ({
           p_workspace_id: x.workspaceId,
           p_exercise_id: x.id,
@@ -320,6 +351,7 @@ const catalog = createCatalogServer({
   actor: loadSessionActor,
 });
 export const {
+  authoringWorkspaces,
   foodDuplicateCandidates,
   search,
   createExercise,
