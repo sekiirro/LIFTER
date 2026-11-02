@@ -1,6 +1,6 @@
 # F15 Data Model (Logical)
 
-This is a logical model, not a schema migration. Tenant-owned records carry `workspace_id`; relationships use composite `(workspace_id,id)` keys and forced RLS. Exact columns, indexes, policies and retention implementation require the verified F15 isolated stack and latest merged F12/F14 baselines.
+This is a logical model, not a schema migration. Tenant-owned records carry `workspace_id`; relationships use composite `(workspace_id,id)` keys and forced RLS. S25-PO-8 and S25-R4 require always-on in-app delivery and optional Telegram only for explicitly linked staff. No Email. Telegram carries generic text plus an in-app link and never names, answers or health data. Exact columns, indexes, policies and retention implementation require the verified F15 isolated stack and latest merged F12/F14 baselines.
 
 ## Entities
 
@@ -25,8 +25,12 @@ This is a logical model, not a schema migration. Tenant-owned records carry `wor
 | Submission | Original accepted complete submission | Exactly one per initial obligation; immutable original instant and answer revision. |
 | SlaObligation | Frozen D-03 start/day-five/deadline facts | Starts at first accepted complete submission of the selected onboarding form; correction never resets; rule ID `cairo-d03-v1`. This is the Trainer delivery deadline, distinct from each assignment’s client-submission deadline. |
 | ProcessingJob | Bounded assignment/backfill/alert/purge work item | Narrow internal authority, idempotent state, safe error code only; no raw error/body/answer. |
-| DelayOccurrence | Logical late interval tied to client-submission assignment or D-03 SLA | Client-late: Trainer at deadline+24h; PO+WO at +48h, reassignment transfers without reset, and no Trainer routes to PO+WO. Trainer-late D-03 preserves existing Q4 rules. Current authorization is checked at delivery. |
-| AlertDelivery | Recipient/stage delivery state | IDs only; dedup occurrence × stage × recipient; reauthorize at delivery/read. |
+| DelayOccurrence | Logical late interval tied to client-submission assignment or D-03 SLA | Client-late: Trainer at deadline+24h; PO+WO at +48h, reassignment transfers without reset, and no Trainer routes to PO+WO. Trainer-late D-03 preserves existing Q4 rules. Current authorization is checked at enqueue and delivery. |
+| AlertDelivery | Per-channel delivery state for one occurrence/stage/recipient | IDs only; unique `(workspace_id, occurrence_id, stage, recipient_user_id, channel)` for `in_app` or `telegram`; reauthorize at enqueue/delivery/read. Telegram is created only for an explicitly linked staff account. |
+| InAppAlertInbox | Recipient-owned in-app notification created from the T016 alert queue | One row per alert delivery/channel; forced RLS and audited reader restrict reads to the recipient. Mark-read is recipient-only and audited. IDs/codes only; source record/relationship-end retention, purged within 30 days. |
+| TelegramLinkToken | One-time staff account-link authorization for the bot `/start` deep link | Random short-lived token, hash only at rest, single use, bound to the authenticated staff user. Expired/used token rejects without revealing account state. |
+| TelegramAccountLink | Explicit staff-to-Telegram private chat binding | Persist Telegram chat ID, never username as identity proof; unique staff user and chat. Staff unlink is supported; workspace membership loss revokes the link. |
+| TelegramUpdateReceipt | Webhook update idempotency state | Unique Telegram update ID; record no raw body or token. Verify configured secret header using constant-time comparison before processing. |
 | Audit evidence | Append-only safe access/mutation facts | Identifiers and allow-listed codes only; no answer/authored text/note/PII. Read audit failure blocks data return. |
 
 ## Relationship sketch

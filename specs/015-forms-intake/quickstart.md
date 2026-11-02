@@ -13,13 +13,16 @@ git diff --check
 
 Do not run application tests, database integrations, Docker, Supabase CLI, or `psql` as part of planning. This feature may not use Stack A (F12) or Stack B (F14). No command here authorizes cloud access, deployment, a PR merge, historic migration edits, or destructive cleanup.
 
+## S25-PO-8 / S25-R4 alert channels
+
+S25-PO-8 (verbatim): “**PO Decision — F15:** In-App + Telegram approved. No Email. Preserve escalation rules, prevent duplicates, protect sensitive data, and keep the scheduler disabled until approved. Update specs and handoff.” S25-R4 makes in-app always on and Telegram optional only for explicitly linked staff; email is forbidden. Preserve the D-03/client escalation policy and deduplicate per alert stage, recipient and channel. In-app rows are recipient-only, audited when resolving sensitive IDs, markable as read and retained with the source record under RET-3. Telegram linking uses a single-use short-lived `/start` token whose hash alone is stored. Validate Telegram's webhook secret header with constant-time comparison before parsing updates; bind the verified chat ID, never a username. Unlink and membership-loss revocation disable delivery. Telegram text is generic and includes only an in-app link; no names, answers, health data, token or raw update body may enter jobs, audit or logs. Use fake transport only in tests. Runtime server configuration key names are `TELEGRAM_BOT_TOKEN` and `TELEGRAM_WEBHOOK_SECRET`; this document contains no values. No migration may activate the scheduler. Activation remains disabled pending separate PO approval.
 ## Future execution prerequisites
 
 1. Obtain PO approval of the completed plan and tasks before implementation. This approval is not implied by the approved correction matrix or the Step 1 decision-record commit.
 2. Reconcile the actual latest F12 and F14 integration heads, all migrations including unmerged review fixes, and the complete current bodies of `audit_row_change`, `role_has_capability`, `has_workspace_access`, and F12 guards. Preserve the F12 bidirectional capability-parity test and F14 `manage_branding` change. Do not use stale branch bodies.
 3. Assign and verify a NEW isolated F15 database stack and exclusive lock before any DB-dependent task. Record project identity, distinct ports/endpoints, selector, isolation proof and lock owner without printing credentials. If the stack is unavailable or mismatched, stop DB work; never fall back to A or B.
 4. Allocate each F15 migration timestamp only after rechecking every actual F12/F14 migration. Use forward-only migrations. The plan reserves no timestamp.
-5. Use synthetic fixtures only. No real client Forms data until the 30-day all-copy retention review and applicable production-readiness gates are evidenced. Do not activate alert scheduling in a migration.
+5. Use synthetic fixtures only. No real client Forms data until the 30-day all-copy retention review and applicable production-readiness gates are evidenced. Do not activate alert scheduling in a migration or enable Telegram delivery outside the fake test transport without the required runtime configuration and PO scheduler approval.
 6. Any rendered-UI implementation brief must append `C:/Users/NEW LAP/.lifter/briefs/frontend-design-gate.txt` and follow `DESIGN.md`.
 
 ## Stack D reset and local provisioning
