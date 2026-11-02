@@ -278,11 +278,13 @@
 }
 
 .form {
+  --hero-form-control-text: #fff;
+
   display: grid;
   gap: var(--space-3);
   max-inline-size: none;
   margin: 0;
-  color: #fff;
+  color: var(--hero-form-control-text);
 }
 
 .form > label,
@@ -346,7 +348,8 @@
   border-radius: inherit;
   outline: 0;
   background: transparent !important;
-  color: #fff !important;
+  color: var(--hero-form-control-text) !important;
+  -webkit-text-fill-color: var(--hero-form-control-text) !important;
   font: inherit;
   font-weight: 400;
 }
@@ -379,10 +382,6 @@
 
 .fieldControl[data-error='true']::before {
   display: none;
-}
-
-.form :global(input[aria-invalid='true']) {
-  color: #fff !important;
 }
 
 .fieldError {
@@ -495,6 +494,11 @@
   color: var(--color-text);
 }
 
+.noArtwork .form,
+.samplingFallback .form {
+  --hero-form-control-text: var(--color-text);
+}
+
 .noArtwork .fieldControl,
 .samplingFallback .fieldControl,
 .noArtwork .countryPicker,
@@ -516,8 +520,8 @@
 .samplingFallback .form :global(select),
 .noArtwork .phoneNumber :global([data-testid='country-calling-code']),
 .samplingFallback .phoneNumber :global([data-testid='country-calling-code']) {
-  color: var(--color-text) !important;
-  -webkit-text-fill-color: var(--color-text) !important;
+  color: var(--hero-form-control-text) !important;
+  -webkit-text-fill-color: var(--hero-form-control-text) !important;
 }
 
 .noArtwork .form :global(input::placeholder),
@@ -565,6 +569,10 @@
   );
   color: var(--color-text);
   scrollbar-color: var(--color-border-strong) transparent;
+}
+
+:global([data-theme='light']) .stage[data-photo-tone='bright'] .form {
+  --hero-form-control-text: var(--color-text);
 }
 
 /*
@@ -626,8 +634,16 @@
   .stage[data-photo-tone='bright']
   .form
   :global(select) {
-  color: var(--color-text) !important;
-  -webkit-text-fill-color: var(--color-text) !important;
+  color: var(--hero-form-control-text) !important;
+  -webkit-text-fill-color: var(--hero-form-control-text) !important;
+}
+
+:global([data-theme='light'])
+  .stage[data-photo-tone='bright']
+  .form
+  :global(input) {
+  color: var(--hero-form-control-text) !important;
+  -webkit-text-fill-color: var(--hero-form-control-text) !important;
 }
 
 :global([data-theme='light'])
@@ -680,8 +696,12 @@
 
   .stage .form :global(input),
   .stage .form :global(select) {
-    color: var(--color-text) !important;
-    -webkit-text-fill-color: var(--color-text) !important;
+    color: var(--hero-form-control-text) !important;
+    -webkit-text-fill-color: var(--hero-form-control-text) !important;
+  }
+
+  .stage .form {
+    --hero-form-control-text: var(--color-text);
   }
 
   .stage .form :global(input::placeholder) {
@@ -784,6 +804,10 @@
     color: var(--color-text);
   }
 
+  .stage .form {
+    --hero-form-control-text: var(--color-text);
+  }
+
   .stage .glassCard.glassCard {
     border: 2px solid var(--color-border-strong);
     background: var(--color-card);
@@ -814,7 +838,7 @@
   .form :global(input),
   .form :global(select),
   .phoneNumber :global([data-testid='country-calling-code']) {
-    color: var(--color-text) !important;
+    color: var(--hero-form-control-text) !important;
   }
 
   .fieldError,
@@ -828,6 +852,10 @@
   .noArtwork {
     background: Canvas;
     color: CanvasText;
+  }
+
+  .stage .form {
+    --hero-form-control-text: CanvasText;
   }
 
   .artwork,

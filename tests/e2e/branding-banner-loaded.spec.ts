@@ -268,6 +268,118 @@ for (const artwork of ['dim', 'bright'] as const) {
   }
 }
 
+async function expectInvalidInputContrast(page: Page) {
+  const result = await page.evaluate(() => {
+    const invalid = document.querySelector<HTMLInputElement>(
+      'input[name="password"][aria-invalid="true"]',
+    );
+    const valid =
+      document.querySelector<HTMLInputElement>('input[name="name"]');
+    if (!invalid || !valid)
+      throw new Error('Expected valid and invalid inputs');
+    const color = getComputedStyle(invalid).color;
+    const validColor = getComputedStyle(valid).color;
+    const background = getComputedStyle(
+      invalid.closest('[class*="fieldControl"]')!,
+    ).backgroundColor;
+    const channels = (value: string) =>
+      value
+        .match(/[\d.]+/g)
+        ?.slice(0, 3)
+        .map(Number) ?? [];
+    const luminance = (value: string) => {
+      const rgb = channels(value).map((channel) => {
+        const normalized = channel / 255;
+        return normalized <= 0.04045
+          ? normalized / 12.92
+          : ((normalized + 0.055) / 1.055) ** 2.4;
+      });
+      return 0.2126 * rgb[0]! + 0.7152 * rgb[1]! + 0.0722 * rgb[2]!;
+    };
+    const fg = luminance(color);
+    const bg = luminance(background);
+    return {
+      color,
+      validColor,
+      background,
+      ratio: (Math.max(fg, bg) + 0.05) / (Math.min(fg, bg) + 0.05),
+    };
+  });
+  expect(result.color, 'invalid field must share the valid field color').toBe(
+    result.validColor,
+  );
+  expect(
+    result.ratio,
+    `${result.color} on ${result.background}`,
+  ).toBeGreaterThanOrEqual(4.5);
+}
+
+for (const locale of ['ar', 'en'] as const) {
+  for (const theme of ['light', 'dark'] as const) {
+    test(`bright/invalid/${locale}/${theme}/mobile-390: preference keeps invalid text readable`, async ({
+      page,
+      context,
+    }) => {
+      await page.setViewportSize({ width: 390, height: 844 });
+      await page.emulateMedia({
+        reducedMotion: 'reduce',
+        reducedTransparency: 'reduce',
+        contrast: 'more',
+      });
+      await context.addCookies([
+        { name: LOCALE_COOKIE, value: locale, url: origin },
+        { name: THEME_COOKIE, value: theme, url: origin },
+      ]);
+      await page.goto(`/register/${encodeURIComponent(token)}`);
+      const stage = page.locator('[data-registration-hero]');
+      await expect(stage).toHaveAttribute('data-photo-tone', 'mid');
+      await page.locator('input[name="name"]').fill('Contrast Test');
+      await page.locator('input[name="email"]').fill('contrast@example.test');
+      await page.locator('input[type="tel"]').fill('1001234567');
+      await page.locator('input[name="password"]').fill('short');
+      await page.locator('form button[type="submit"]').click();
+      const invalid = page.locator('input[name="password"]');
+      await expect(invalid).toHaveAttribute('aria-invalid', 'true');
+      await expectInvalidInputContrast(page);
+      await expectHeroAxeClean(page);
+      await captureHeroScreenshot(
+        page,
+        `invalid-${locale}-${theme}-mobile-390`,
+      );
+    });
+  }
+}
+
+test('dim/invalid/en/light/mobile-390: preference keeps invalid text readable', async ({
+  page,
+  context,
+}) => {
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.emulateMedia({
+    reducedMotion: 'reduce',
+    reducedTransparency: 'reduce',
+    contrast: 'more',
+  });
+  await context.addCookies([
+    { name: LOCALE_COOKIE, value: 'en', url: origin },
+    { name: THEME_COOKIE, value: 'light', url: origin },
+  ]);
+  await page.goto(`/register/${encodeURIComponent(token)}`);
+  const stage = page.locator('[data-registration-hero]');
+  await expect(stage).toHaveAttribute('data-photo-tone', 'dim');
+  await page.locator('input[name="name"]').fill('Contrast Test');
+  await page.locator('input[name="email"]').fill('contrast@example.test');
+  await page.locator('input[type="tel"]').fill('1001234567');
+  await page.locator('input[name="password"]').fill('short');
+  await page.locator('form button[type="submit"]').click();
+  await expect(page.locator('input[name="password"]')).toHaveAttribute(
+    'aria-invalid',
+    'true',
+  );
+  await expectInvalidInputContrast(page);
+  await expectHeroAxeClean(page);
+});
+
 const heroViewports = [
   { name: 'mobile-390', width: 390, height: 844 },
   { name: 'desktop-1440', width: 1440, height: 900 },
