@@ -96,6 +96,18 @@ describe('production exercise detail route', () => {
     expect(m.detail).toHaveBeenCalledWith({ exerciseId: id, workspaceId });
   });
 
+  it('uses localized fallback text instead of exposing a workspace id', async () => {
+    m.workspaces.mockResolvedValue({ status: 'ok', data: [] });
+    const html = renderToStaticMarkup(
+      await Page({
+        params: Promise.resolve({ exerciseId: id }),
+        searchParams: Promise.resolve({ workspace: workspaceId }),
+      }),
+    );
+    expect(html).toContain(en['catalog.editorWorkspace']);
+    expect(html).not.toContain(`>${workspaceId}</option>`);
+  });
+
   it.each(['sales', 'client', null])(
     'returns the same 404 for %s',
     async (role) => {

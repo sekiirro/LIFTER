@@ -39,6 +39,8 @@ export default async function ExerciseDetailPage({
     notFound();
   const [{ exerciseId }, query] = await Promise.all([params, searchParams]);
   if (!UUID.test(exerciseId)) notFound();
+  const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
+  const m = getMessages(locale);
   let workspaceId: string | null = null;
   let workspaceOptions: { id: string; name: string }[] = [];
   const workspaces = await authoringWorkspaces();
@@ -64,12 +66,13 @@ export default async function ExerciseDetailPage({
   if (actor.role !== 'platform_owner' && !workspaceId) notFound();
   workspaceOptions = allowed;
   if (workspaceId && !allowed.some((item) => item.id === workspaceId)) {
-    workspaceOptions = [...allowed, { id: workspaceId, name: workspaceId }];
+    workspaceOptions = [
+      ...allowed,
+      { id: workspaceId, name: m['catalog.editorWorkspace'] },
+    ];
   }
   const result = await exerciseDetail({ exerciseId, workspaceId });
   if (result.status === 'not_permitted') notFound();
-  const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
-  const m = getMessages(locale);
   const row =
     result.status === 'ok' && Array.isArray(result.data)
       ? (result.data[0] as Record<string, unknown> | undefined)
