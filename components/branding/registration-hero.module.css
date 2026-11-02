@@ -660,7 +660,7 @@
   .stage .message,
   .stage .fieldControl,
   .stage .countryPicker,
-  .stage .phoneNumber :global([data-testid='country-calling-code']) {
+  .stage .phoneNumber [data-testid='country-calling-code'] {
     color: var(--color-text);
   }
 
@@ -674,7 +674,7 @@
     --hero-form-control-text: var(--color-text);
   }
 
-  .stage .form :global(input::placeholder) {
+  .stage .form input::placeholder {
     color: var(--color-text);
   }
 
@@ -914,6 +914,30 @@
   .form > label,
   .field,
   .message {
+    color: var(--color-print-text);
+  }
+
+  .stage .form {
+    --hero-form-control-text: var(--color-print-text);
+  }
+
+  .stage .fieldControl,
+  .stage .countryPicker,
+  .stage .phoneNumber :global([data-testid='country-calling-code']) {
+    color: var(--color-print-text);
+  }
+
+  .stage .form :global(input::placeholder) {
+    color: var(--color-print-text);
+  }
+
+  .stage .form select option {
+    background: var(--color-print-bg);
+    color: var(--color-print-text);
+  }
+
+  .stage .fieldError,
+  .stage .message[data-result-status='invalid_input'] {
     color: var(--color-print-text);
   }
 }

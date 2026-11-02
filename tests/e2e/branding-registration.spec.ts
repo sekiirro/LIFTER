@@ -293,3 +293,68 @@ test('invalid registration remains generic, neutral, and form-free', async ({
   await expect(page.locator('[data-registration-card] form')).toHaveCount(0);
   await expectHeroAxeClean(page);
 });
+
+function contrastAgainstWhite(color: string) {
+  const channels =
+    color
+      .match(/[\d.]+/g)
+      ?.slice(0, 3)
+      .map(Number) ?? [];
+  if (channels.length !== 3)
+    throw new Error(`Unsupported computed text color: ${color}`);
+  const linear = channels.map((channel) => {
+    const normalized = channel / 255;
+    return normalized <= 0.04045
+      ? normalized / 12.92
+      : ((normalized + 0.055) / 1.055) ** 2.4;
+  });
+  const luminance =
+    0.2126 * linear[0]! + 0.7152 * linear[1]! + 0.0722 * linear[2]!;
+  return 1.05 / (luminance + 0.05);
+}
+
+for (const locale of ['ar', 'en'] as const) {
+  test(`print/${locale}/mobile-390: filled registration controls remain readable on paper`, async ({
+    page,
+    context,
+  }) => {
+    test.skip(!local, 'Requires the selected disposable local database.');
+    await page.setViewportSize({ width: 390, height: 844 });
+    await context.addCookies([
+      { name: LOCALE_COOKIE, value: locale, url: origin },
+      { name: THEME_COOKIE, value: 'light', url: origin },
+    ]);
+    await page.emulateMedia({ media: 'print' });
+    await page.goto(`/register/${token}`);
+    await expect(page.locator('form')).toBeVisible();
+    await page.locator('input[name="name"]').fill('Printed Registration');
+    await page.locator('input[name="email"]').fill('printed@example.test');
+    await page.locator('input[type="tel"]').fill('1001234567');
+    await page.locator('input[name="password"]').fill('PrintedPass123!');
+
+    const rendered = await page.evaluate(() => {
+      const input =
+        document.querySelector<HTMLInputElement>('input[name="name"]');
+      const callingCode = document.querySelector<HTMLElement>(
+        '[data-testid="country-calling-code"]',
+      );
+      if (!input || !callingCode)
+        throw new Error('Registration controls missing');
+      return {
+        printMedia: matchMedia('print').matches,
+        inputColor: getComputedStyle(input).color,
+        inputFillColor: getComputedStyle(input).webkitTextFillColor,
+        callingCodeColor: getComputedStyle(callingCode).color,
+      };
+    });
+    expect(rendered.printMedia).toBe(true);
+    expect(rendered.inputFillColor).toBe(rendered.inputColor);
+    expect(contrastAgainstWhite(rendered.inputColor)).toBeGreaterThanOrEqual(
+      4.5,
+    );
+    expect(
+      contrastAgainstWhite(rendered.callingCodeColor),
+    ).toBeGreaterThanOrEqual(4.5);
+    await captureHeroScreenshot(page, `print-registration-${locale}-390`);
+  });
+}
