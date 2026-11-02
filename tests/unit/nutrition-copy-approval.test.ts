@@ -9,9 +9,9 @@ import {
 const arMessages: Record<string, string> = ar;
 const enMessages: Record<string, string> = en;
 
-describe('S27-PO-2 approved F18 copy', () => {
-  it('stores every approved F18 batch row in the fixture', () => {
-    expect(f18ApprovedCopyKeys).toHaveLength(67);
+describe('approved F18 copy (S27-PO-2 / S28-PO-2)', () => {
+  it('stores every approved F18 copy row in the fixture', () => {
+    expect(f18ApprovedCopyKeys).toHaveLength(97);
   });
 
   it.each(f18ApprovedCopyKeys)('matches approved Arabic copy for %s', (key) => {

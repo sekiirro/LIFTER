@@ -1,5 +1,5 @@
-// Approved F18 copy from the S27-PO-2 batch (all rows APPROVED (S27-PO-2)).
-// Generated from s26-draft-copy-batch.csv; tests must not read the CSV.
+// Approved F18 copy: 67 S27-PO-2 rows plus 30 S28-PO-2 nutritionTemplates rows.
+// Tests pin source-controlled AR/EN values and must not read the CSV.
 export const f18ApprovedCopy = {
   'nutritionAlternatives.actionsLabel': {
     ar: 'إجراءات البديل',
@@ -148,6 +148,126 @@ export const f18ApprovedCopy = {
   'nutritionAlternatives.unit': {
     ar: 'الوحدة',
     en: 'Unit',
+  },
+  'nutritionTemplates.title': {
+    ar: 'قوالب التغذية',
+    en: 'Nutrition templates',
+  },
+  'nutritionTemplates.intro': {
+    ar: 'تصفّح الإصدارات المعتمدة وحمّل نسخة إلى مسودة خطة جديدة.',
+    en: 'Browse approved versions and load one into a new plan draft.',
+  },
+  'nutritionTemplates.global': {
+    ar: 'قوالب عامة',
+    en: 'Global templates',
+  },
+  'nutritionTemplates.workspace': {
+    ar: 'قوالب مساحة العمل',
+    en: 'Workspace templates',
+  },
+  'nutritionTemplates.create': {
+    ar: 'إنشاء قالب',
+    en: 'Create template',
+  },
+  'nutritionTemplates.createGlobal': {
+    ar: 'إنشاء قالب عام',
+    en: 'Create global template',
+  },
+  'nutritionTemplates.createVersion': {
+    ar: 'إنشاء إصدار',
+    en: 'Create version',
+  },
+  'nutritionTemplates.retire': {
+    ar: 'إيقاف القالب',
+    en: 'Retire template',
+  },
+  'nutritionTemplates.makeGlobal': {
+    ar: 'جعله عامًا',
+    en: 'Make it Global',
+  },
+  'nutritionTemplates.retired': {
+    ar: 'متوقف',
+    en: 'Retired',
+  },
+  'nutritionTemplates.origin': {
+    ar: 'المصدر',
+    en: 'Origin',
+  },
+  'nutritionTemplates.platform': {
+    ar: 'المنصة',
+    en: 'Platform',
+  },
+  'nutritionTemplates.versions': {
+    ar: 'إصدارات القالب',
+    en: 'Template versions',
+  },
+  'nutritionTemplates.version': {
+    ar: 'الإصدار',
+    en: 'Version',
+  },
+  'nutritionTemplates.loadVersion': {
+    ar: 'تحميل الإصدار إلى مسودة',
+    en: 'Load version into draft',
+  },
+  'nutritionTemplates.loaded': {
+    ar: 'أصبحت نسخة من هذا الإصدار جاهزة في المسودة.',
+    en: 'A copy of this version is ready in the draft.',
+  },
+  'nutritionTemplates.actionError': {
+    ar: 'تعذر تحميل هذا القالب. حاول مرة أخرى.',
+    en: 'This template could not be loaded. Try again.',
+  },
+  'nutritionTemplates.empty': {
+    ar: 'لا توجد قوالب في هذا القسم بعد.',
+    en: 'No templates in this section yet.',
+  },
+  'nutritionTemplates.previous': {
+    ar: 'الصفحة السابقة',
+    en: 'Previous page',
+  },
+  'nutritionTemplates.next': {
+    ar: 'الصفحة التالية',
+    en: 'Next page',
+  },
+  'nutritionTemplates.page': {
+    ar: 'الصفحة',
+    en: 'Page',
+  },
+  'nutritionTemplates.of': {
+    ar: 'من',
+    en: 'of',
+  },
+  'nutritionTemplates.loading': {
+    ar: 'جارٍ تحميل قوالب التغذية…',
+    en: 'Loading nutrition templates…',
+  },
+  'nutritionTemplates.errorTitle': {
+    ar: 'تعذر تحميل القوالب',
+    en: 'Unable to load templates',
+  },
+  'nutritionTemplates.errorDescription': {
+    ar: 'حاول تحميل قائمة القوالب مرة أخرى.',
+    en: 'Try loading the template list again.',
+  },
+  'nutritionTemplates.retry': {
+    ar: 'إعادة المحاولة',
+    en: 'Retry',
+  },
+  'nutritionTemplates.noAccess': {
+    ar: 'ليس لديك صلاحية الوصول إلى قوالب التغذية.',
+    en: 'You do not have access to nutrition templates.',
+  },
+  'nutritionTemplates.previewTitle': {
+    ar: 'إدارة قوالب التغذية',
+    en: 'Nutrition template manager',
+  },
+  'nutritionTemplates.previewIntro': {
+    ar: 'راجع قوالب مساحة العمل والقوالب العامة ببيانات تجريبية.',
+    en: 'Review workspace and global templates using sample data.',
+  },
+  'nutritionTemplates.previewNotice': {
+    ar: 'للعرض فقط. القوالب وهمية ولا يُحفظ أي شيء.',
+    en: 'Showcase only. Templates are mocked; nothing is saved.',
   },
   'nutritionPlan.addMeal': {
     ar: 'إضافة وجبة',
