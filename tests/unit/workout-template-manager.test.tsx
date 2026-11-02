@@ -51,19 +51,15 @@ describe('F17 workout template manager UI', () => {
   });
 
   it('renders every numeric value with Arabic-Indic digits in Arabic', () => {
-    const html = render(
-      { role: 'trainer', workspaceId: 'workspace-a' },
-      'ar',
-      {
-        days: [
-          {
-            id: 'e1000000-0000-4000-8000-000000000001',
-            kind: 'rest',
-            title: 'يوم الراحة',
-          },
-        ],
-      },
-    );
+    const html = render({ role: 'trainer', workspaceId: 'workspace-a' }, 'ar', {
+      days: [
+        {
+          id: 'e1000000-0000-4000-8000-000000000001',
+          kind: 'rest',
+          title: 'يوم الراحة',
+        },
+      ],
+    });
 
     expect(html).toContain('٤ قوالب');
     expect(html).toContain('الإصدار:');
