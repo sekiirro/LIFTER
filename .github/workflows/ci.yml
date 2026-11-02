@@ -64,35 +64,8 @@ jobs:
           persist-credentials: false
       - name: Isolate self-hosted Supabase identity and ports
         if: env.LIFTER_CI_ISOLATED == 'true'
-        shell: bash
         run: |
-          cp supabase/config.toml "$RUNNER_TEMP/lifter-ci-config.toml"
-          python3 - <<'PY'
-          import os
-          from pathlib import Path
-
-          source = Path(os.environ["RUNNER_TEMP"]) / "lifter-ci-config.toml"
-          config = Path("supabase/config.toml")
-          text = source.read_text()
-          replacements = {
-              'project_id = "lifter"': 'project_id = "lifter-stack-ci"',
-              "port = 54320": "port = 55420",
-              "port = 54321": "port = 55421",
-              "port = 54322": "port = 55422",
-              "port = 54323": "port = 55423",
-              "port = 54324": "port = 55424",
-              "smtp_port = 54325": "smtp_port = 55425",
-              "pop3_port = 54326": "pop3_port = 55426",
-              "port = 54327": "port = 55427",
-              "inspector_port = 8083": "inspector_port = 55428",
-              "port = 54329": "port = 55429",
-          }
-          for before, after in replacements.items():
-              if text.count(before) != 1:
-                  raise SystemExit(f"Expected exactly one Supabase config value: {before}")
-              text = text.replace(before, after, 1)
-          config.write_text(text)
-          PY
+          node scripts/ci-supabase-config.mjs supabase/config.toml rewrite
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -112,7 +85,13 @@ jobs:
         with:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
-      - run: supabase start -x studio,inbucket,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+      - name: Clear prior self-hosted Supabase state and wait for ports
+        if: env.LIFTER_CI_ISOLATED == 'true'
+        run: |
+          supabase stop --project-id lifter-stack-ci --no-backup
+          node scripts/ci-supabase-config.mjs supabase/config.toml assert-clean
+          node scripts/ci-supabase-config.mjs supabase/config.toml wait
+      - run: supabase start -x studio,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
       - name: Export local stack environment
         run: supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
       - name: Export app server environment
@@ -140,6 +119,8 @@ jobs:
       - run: |
           if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
             supabase stop --project-id lifter-stack-ci --no-backup
+            node scripts/ci-supabase-config.mjs supabase/config.toml assert-clean
+            node scripts/ci-supabase-config.mjs supabase/config.toml wait
           else
             supabase stop --no-backup
           fi
@@ -160,35 +141,8 @@ jobs:
           persist-credentials: false
       - name: Isolate self-hosted Supabase identity and ports
         if: env.LIFTER_CI_ISOLATED == 'true'
-        shell: bash
         run: |
-          cp supabase/config.toml "$RUNNER_TEMP/lifter-ci-config.toml"
-          python3 - <<'PY'
-          import os
-          from pathlib import Path
-
-          source = Path(os.environ["RUNNER_TEMP"]) / "lifter-ci-config.toml"
-          config = Path("supabase/config.toml")
-          text = source.read_text()
-          replacements = {
-              'project_id = "lifter"': 'project_id = "lifter-stack-ci"',
-              "port = 54320": "port = 55420",
-              "port = 54321": "port = 55421",
-              "port = 54322": "port = 55422",
-              "port = 54323": "port = 55423",
-              "port = 54324": "port = 55424",
-              "smtp_port = 54325": "smtp_port = 55425",
-              "pop3_port = 54326": "pop3_port = 55426",
-              "port = 54327": "port = 55427",
-              "inspector_port = 8083": "inspector_port = 55428",
-              "port = 54329": "port = 55429",
-          }
-          for before, after in replacements.items():
-              if text.count(before) != 1:
-                  raise SystemExit(f"Expected exactly one Supabase config value: {before}")
-              text = text.replace(before, after, 1)
-          config.write_text(text)
-          PY
+          node scripts/ci-supabase-config.mjs supabase/config.toml rewrite
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -204,7 +158,13 @@ jobs:
         with:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
-      - run: supabase start -x studio,inbucket,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+      - name: Clear prior self-hosted Supabase state and wait for ports
+        if: env.LIFTER_CI_ISOLATED == 'true'
+        run: |
+          supabase stop --project-id lifter-stack-ci --no-backup
+          node scripts/ci-supabase-config.mjs supabase/config.toml assert-clean
+          node scripts/ci-supabase-config.mjs supabase/config.toml wait
+      - run: supabase start -x studio,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
       - name: Export local stack environment
         run: supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
       - name: Export app server environment
@@ -246,6 +206,8 @@ jobs:
       - run: |
           if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
             supabase stop --project-id lifter-stack-ci --no-backup
+            node scripts/ci-supabase-config.mjs supabase/config.toml assert-clean
+            node scripts/ci-supabase-config.mjs supabase/config.toml wait
           else
             supabase stop --no-backup
           fi

@@ -8,15 +8,17 @@ Docker CE runs inside `lifter-ci` and uses that distro's `/var/run/docker.sock`.
 
 The repo variable `LIFTER_CI_RUNNER` selects the runner for all three existing CI jobs. If the variable is unset, the workflow uses `ubuntu-latest`. Setting it to `self-hosted` selects `lifter-wsl`. Playwright 1.64.1's Chromium OS dependencies are provisioned once in the distro; the self-hosted workflow downloads the pinned browser without requesting root access. Return to GitHub-hosted runners by unsetting the variable:
 
+The self-hosted runner must never be online while the repository is public. If a temporary visibility change is ever required by another operation, stop the `lifter-wsl` service before making the repository public and keep it stopped until the repository is private again.
+
 ```sh
 gh variable delete LIFTER_CI_RUNNER --repo sekiirro/LIFTER
 ```
 
 ## Supabase isolation and cleanup
 
-The self-hosted integration and storage jobs work from their own checkout copy of `supabase/config.toml`. They change its project id to `lifter-stack-ci` and move configured ports to 55420–55429. The repo's tracked config remains unchanged. `LIFTER_SUPABASE_STACK=ci` makes the existing local-stack helpers validate the CI project id, ports, loopback endpoints, and container names just as they validate stacks A–D.
+The self-hosted integration and storage jobs work from their own checkout copy of `supabase/config.toml`. They change its project id to `lifter-stack-ci` and map API, database, shadow database, Studio, mail, analytics, edge inspector, and pooler ports to the unique range 56420–56429. The repo's tracked config remains unchanged. `LIFTER_SUPABASE_STACK=ci` makes the existing local-stack helpers validate the CI project id, ports, loopback endpoints, and container names just as they validate stacks A–D.
 
-One runner means jobs queue instead of sharing Docker concurrently. Each Supabase job has an unconditional cleanup step that runs `supabase stop --project-id lifter-stack-ci --no-backup`, removing that project's containers and volumes from the dedicated engine. The workflow does not run Docker prune commands.
+The single registered runner executes one job at a time, so Supabase jobs queue rather than sharing Docker concurrently. Before each self-hosted Supabase start, the job stops only `lifter-stack-ci` and waits for every mapped port to become bindable. The unconditional cleanup step stops that project and waits for port release again. Exclude names use the names accepted by the pinned Supabase CLI; the mail service is `mailpit`, even though its config section is still named `[inbucket]`. The workflow does not run Docker prune commands.
 
 ## Startup and service operations
 
