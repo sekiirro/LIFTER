@@ -31,7 +31,7 @@ describe.runIf(
   process.env.LIFTER_F15_T018_RED === '1' &&
     process.env.LIFTER_SUPABASE_STACK === 'd',
 )(
-  'T018 RED boundary is opt-in on Stack D; skipped otherwise while Closure source is unresolved',
+  'T018 synthetic lifecycle proof (opt in with LIFTER_F15_T018_RED=1 on Stack D)',
   () => {
     it('starts retention at the authoritative refund/deactivation timestamp, not approval or assignment', async () => {
       const f = await clientContext();
@@ -62,16 +62,20 @@ describe.runIf(
         expect(source!.refund_at).toEqual(source!.deactivated_at);
 
         const windows = await tx`
-      select source_kind,ended_at
+      select source_kind,source_event_id,ended_at,purge_after
       from app_private.form_retention_windows
       where workspace_id=${f.wsA.id} and client_id=${ids.client}
     `;
-        expect(windows).toEqual(
-          expect.arrayContaining([
-            { source_kind: 'refund', ended_at: source!.refund_at },
-            { source_kind: 'deactivation', ended_at: source!.deactivated_at },
-          ]),
-        );
+        expect(windows).toEqual([
+          expect.objectContaining({
+            source_kind: 'refund',
+            source_event_id: expect.any(String),
+            ended_at: source!.refund_at,
+            purge_after: new Date(
+              new Date(source!.deactivated_at).getTime() + 30 * 24 * 60 * 60 * 1000,
+            ),
+          }),
+        ]);
       });
     });
     afterAll(() => db.end());
