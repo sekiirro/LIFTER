@@ -2,6 +2,7 @@
 
 ## RED / GREEN
 
+- **Sequence note:** T014/T022 did not capture a pre-implementation RED run. The failing RED evidence below comes from the requested post-commit mutation checks; the implementation was already present when the focused UI tests were added.
 - T014 RED: disabling the meal-down operation left the first quantity at `160`; the Playwright keyboard-reorder assertion failed because it expected the displayed first item to change. Replacing locale direction with `ltr` failed the `dir="rtl"` assertion.
 - T014 GREEN: the editor unit suite passed **4/4**; the model suite passed **4/4**. Single-day and seven-day structures, day-type assignment, conditional meal visibility, exact quantity editing, reorder/duplicate ID mapping, and `macros.ts` totals are covered.
 - T022 RED: changing the live region from `polite` to `off` failed the `aria-live="polite"` assertion. Disabling the move operation failed the browser keyboard-reorder assertion.
