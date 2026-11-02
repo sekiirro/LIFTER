@@ -2,6 +2,7 @@ import { expect, test } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
+import { modes } from '../../lib/design/tokens';
 import {
   captureHeroScreenshot,
   expectHeroAxeClean,
@@ -287,6 +288,7 @@ for (const { locale, theme, osTheme } of printRegistrationCases) {
     context,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
+    const resolvedTheme = theme === 'follow-device' ? osTheme : theme;
     await page.emulateMedia({ colorScheme: osTheme, reducedMotion: 'reduce' });
     const cookies: { name: string; value: string; url: string }[] = [
       { name: LOCALE_COOKIE, value: locale, url: origin },
@@ -300,7 +302,23 @@ for (const { locale, theme, osTheme } of printRegistrationCases) {
     await page.locator('input[type="tel"]').fill('1001234567');
     await page.locator('input[name="password"]').fill('StrongPrint42!');
     await expectHeroAxeClean(page);
-    await page.emulateMedia({ media: 'print' });
+    await page.emulateMedia({ media: 'print', colorScheme: osTheme });
+    const expectedTokens = await page.evaluate(
+      ({ card, text }) => {
+        const probe = document.createElement('span');
+        probe.style.backgroundColor = card;
+        probe.style.color = text;
+        document.body.append(probe);
+        const resolved = getComputedStyle(probe);
+        const tokens = {
+          card: resolved.backgroundColor,
+          text: resolved.color,
+        };
+        probe.remove();
+        return tokens;
+      },
+      { card: modes[resolvedTheme].card, text: modes[resolvedTheme].text },
+    );
 
     const contrast = await page.evaluate(() => {
       const root = getComputedStyle(document.documentElement);
@@ -373,7 +391,9 @@ for (const { locale, theme, osTheme } of printRegistrationCases) {
         theme: document.documentElement.dataset.theme,
       };
     });
-    expect(contrast.theme).toBe(theme);
+    expect(contrast.theme).toBe(theme === 'follow-device' ? undefined : theme);
+    expect(contrast.tokenCard).toBe(expectedTokens.card);
+    expect(contrast.tokenText).toBe(expectedTokens.text);
     expect(contrast.card).toBe(contrast.tokenCard);
     expect(contrast.inputColor).toBe(contrast.tokenText);
     expect(contrast.inputFill).toBe(contrast.tokenText);
