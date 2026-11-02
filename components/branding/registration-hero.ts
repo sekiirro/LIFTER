@@ -86,6 +86,52 @@ export function adaptiveDimmingFromBackdropLuminances(
   );
 }
 
+/**
+ * Darkest sampled luminance in the contrast-critical region.
+ *
+ * The translucent white card of the light theme mixes its fill in sRGB, so a
+ * near-black pixel behind the text survives the mix and can drop the dark
+ * token text below the 4.5:1 contrast limit.
+ */
+export function darkestBackdropLuminance(
+  luminances: readonly number[],
+): number {
+  let darkest = 1;
+  for (const value of luminances) {
+    if (!Number.isFinite(value)) continue;
+    darkest = Math.min(darkest, Math.min(1, Math.max(0, value)));
+  }
+  return darkest;
+}
+
+/**
+ * A near-black pixel below this luminance cannot sit under the translucent
+ * white card of the light theme.
+ */
+export const DARK_BACKDROP_LUMINANCE_THRESHOLD = 0.05;
+
+/**
+ * Decide whether the light-theme card has to stay opaque.
+ *
+ * A bright average is not enough for the translucent white card: dark pixels
+ * in the text region show through the sRGB mix and break the contrast of the
+ * dark token text. The card stays opaque when the text region holds dark
+ * pixels, and the average alone still decides the tone.
+ */
+export function needsOpaqueBrightCard({
+  averageLuminance,
+  darkestLuminance,
+}: {
+  averageLuminance: number;
+  darkestLuminance: number;
+}): boolean {
+  return (
+    photoToneFromLuminance(averageLuminance) === 'bright' &&
+    Number.isFinite(darkestLuminance) &&
+    darkestLuminance < DARK_BACKDROP_LUMINANCE_THRESHOLD
+  );
+}
+
 export type HeroSamplingTarget = {
   dataset: DOMStringMap;
   style: CSSStyleDeclaration;

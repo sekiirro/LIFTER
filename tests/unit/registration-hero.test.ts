@@ -9,7 +9,9 @@ import {
   adaptiveDimmingFromLuminance,
   applyHeroSamplingFallback,
   conservativeBackdropLuminance,
+  darkestBackdropLuminance,
   enterHeroSamplingFallback,
+  needsOpaqueBrightCard,
   photoToneFromLuminance,
   selectHeroLayoutMode,
 } from '../../components/branding/registration-hero';
@@ -229,6 +231,43 @@ describe('production registration hero fallback state', () => {
       /enterSamplingFallback\(stage\)/g,
     );
     expect(failurePaths?.length).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe('production registration hero light-theme card treatment', () => {
+  it('reads the darkest sampled pixel behind the text', () => {
+    expect(darkestBackdropLuminance([0.68, 0.61, 0.0, 0.64])).toBe(0);
+    expect(darkestBackdropLuminance([0.68, 0.61])).toBeCloseTo(0.61, 6);
+    expect(darkestBackdropLuminance([])).toBe(1);
+  });
+
+  it('keeps the bright card opaque when the text region holds dark pixels', () => {
+    expect(
+      needsOpaqueBrightCard({
+        averageLuminance: 0.63,
+        darkestLuminance: 0.01,
+      }),
+    ).toBe(true);
+    expect(
+      needsOpaqueBrightCard({
+        averageLuminance: 0.63,
+        darkestLuminance: 0.4,
+      }),
+    ).toBe(false);
+    expect(
+      needsOpaqueBrightCard({
+        averageLuminance: 0.4,
+        darkestLuminance: 0.01,
+      }),
+    ).toBe(false);
+  });
+
+  it('renders the opaque bright card from the sampled text region', () => {
+    expect(heroComponentSource).toContain('needsOpaqueBrightCard(');
+    expect(heroComponentSource).toContain('styles.opaqueBrightCard');
+    expect(heroStylesSource).toContain(
+      '--hero-adaptive-glass-fill-percent: 100%',
+    );
   });
 });
 

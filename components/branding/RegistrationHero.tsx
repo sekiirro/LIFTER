@@ -15,7 +15,9 @@ import { modes } from '../../lib/design/tokens';
 import {
   adaptiveDimmingFromBackdropLuminances,
   enterHeroSamplingFallback,
+  needsOpaqueBrightCard,
   conservativeBackdropLuminance,
+  darkestBackdropLuminance,
   photoToneFromLuminance,
   selectHeroLayoutMode,
   type HeroViewport,
@@ -160,6 +162,7 @@ export function RegistrationHero({
   const stageRef = useRef<HTMLElement>(null);
   const [viewport, setViewport] = useState<HeroViewport>('desktop');
   const [samplingFallback, setSamplingFallback] = useState(false);
+  const [opaqueBrightCard, setOpaqueBrightCard] = useState(false);
   const hasBanner = Boolean(banner?.src);
   const layoutMode = selectHeroLayoutMode({ hasBanner, viewport });
 
@@ -269,6 +272,15 @@ export function RegistrationHero({
       stage.dataset.photoTone = photoToneFromLuminance(
         textPhoto.averageLuminance,
       );
+      // A bright average can still hide near-black pixels behind the text,
+      // so the light-theme card only stays translucent when the sampled text
+      // region has no dark pixels.
+      setOpaqueBrightCard(
+        needsOpaqueBrightCard({
+          averageLuminance: textPhoto.averageLuminance,
+          darkestLuminance: darkestBackdropLuminance(textPhoto.luminances),
+        }),
+      );
       stage.style.setProperty(
         '--hero-bottom-average',
         `rgb(${bottomEdge.red} ${bottomEdge.green} ${bottomEdge.blue})`,
@@ -316,7 +328,7 @@ export function RegistrationHero({
       ref={stageRef}
       className={`${styles.stage} ${hasBanner ? '' : styles.noArtwork} ${
         samplingFallback ? styles.samplingFallback : ''
-      }`}
+      } ${opaqueBrightCard ? styles.opaqueBrightCard : ''}`}
       data-testid="registration-hero"
       data-registration-hero=""
       data-hero-layout={layoutMode}

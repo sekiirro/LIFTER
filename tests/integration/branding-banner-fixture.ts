@@ -108,6 +108,53 @@ export function brightPatchBannerPng(width = 316, height = 158): Buffer {
   ]);
 }
 
+/**
+ * Mostly bright artwork with near-black patches behind the hero text.
+ *
+ * The average stays above the bright tone threshold while the sampled text
+ * region still holds dark pixels, which is the case the light theme has to
+ * answer with an opaque card.
+ */
+export function brightWithDarkPatchBannerPng(
+  width = 316,
+  height = 158,
+): Buffer {
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header[8] = 8;
+  header[9] = 6;
+  const base = [215, 215, 215];
+  const patch = [0, 0, 0];
+  const patches = [
+    { x0: 200, x1: 230, y0: 12, y1: 30 },
+    { x0: 165, x1: 195, y0: 126, y1: 142 },
+  ];
+  const pixels = Buffer.alloc(height * (width * 4 + 1));
+  for (let row = 0; row < height; row += 1) {
+    const offset = row * (width * 4 + 1);
+    pixels[offset] = 0;
+    for (let x = 0; x < width; x += 1) {
+      const dark = patches.some(
+        (area) =>
+          x >= area.x0 && x < area.x1 && row >= area.y0 && row < area.y1,
+      );
+      const channels = dark ? patch : base;
+      const at = offset + 1 + x * 4;
+      pixels[at] = channels[0]!;
+      pixels[at + 1] = channels[1]!;
+      pixels[at + 2] = channels[2]!;
+      pixels[at + 3] = 255;
+    }
+  }
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    chunk('IHDR', header),
+    chunk('IDAT', deflateSync(pixels)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+}
+
 export async function createPublishedBannerFixture(
   bytes: Buffer = bannerPng(),
 ) {

@@ -567,6 +567,16 @@
   scrollbar-color: var(--color-border-strong) transparent;
 }
 
+/*
+ * Dark pixels behind the text survive the translucent white card, so the
+ * light-theme card stays opaque when the sampled text region holds them.
+ */
+:global([data-theme='light'])
+  .stage.opaqueBrightCard[data-photo-tone='bright']
+  .glassCard {
+  --hero-adaptive-glass-fill-percent: 100%;
+}
+
 :global([data-theme='light']) .stage[data-photo-tone='bright'] .fieldControl,
 :global([data-theme='light']) .stage[data-photo-tone='bright'] .countryPicker {
   border: 1px solid var(--color-border-strong);
