@@ -1,12 +1,16 @@
-import { createHash } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
 import { afterAll, expect, it } from 'vitest';
-import { probe, sql } from './client-accounts-fixture';
+import { identity, probe, sql } from './client-accounts-fixture';
 
-// Phase 1: authored only. Run on Stack A after the lock is released.
+// F11 schedule contract replayed only on isolated Stack C for this lane.
 const db = sql();
 const jobName = 'lifter-f11-purge-signup';
-const command = 'select app_private.purge_client_signup_attempts();';
-const helpers = ['purge_schedule_activate', 'purge_schedule_deactivate'];
+const command = 'select app_private.purge_f11_retained_data();';
+const helpers = [
+  'purge_schedule_activate',
+  'purge_schedule_deactivate',
+  'purge_f11_retained_data',
+];
 afterAll(() => db.end());
 
 it('installs pg_cron in pg_catalog and leaves ZERO F11 jobs after migration', async () => {
@@ -15,7 +19,7 @@ it('installs pg_cron in pg_catalog and leaves ZERO F11 jobs after migration', as
   ).toEqual([{ nspname: 'pg_catalog' }]);
   // Includes inactive placeholders, alternate F11 names, and unnamed purge jobs.
   expect(
-    await db`select jobid from cron.job where jobname like 'lifter-f11-%' or command ilike '%purge_client_signup_attempts%'`,
+    await db`select jobid from cron.job where jobname like 'lifter-f11-%' or command ilike '%purge_f11_retained_data%'`,
   ).toHaveLength(0);
 });
 
@@ -29,7 +33,7 @@ it('activates exactly one owner job, replaces it idempotently and deactivates tw
     for (let i = 0; i < 2; i++) {
       await tx`select app_private.purge_schedule_activate()`;
       const jobs =
-        await tx`select jobid,jobname,schedule,command,username,active,database from cron.job where jobname like 'lifter-f11-%' or command ilike '%purge_client_signup_attempts%'`;
+        await tx`select jobid,jobname,schedule,command,username,active,database from cron.job where jobname like 'lifter-f11-%' or command ilike '%purge_f11_retained_data%'`;
       expect(jobs).toHaveLength(1);
       const [database] = await tx`select current_database() as name`;
       expect(jobs[0]).toMatchObject({
@@ -119,6 +123,34 @@ for (const role of ['anon', 'authenticated', 'service_role']) {
   });
 }
 
+it('F11 retention wrapper runs both purges and is restricted to postgres', async () => {
+  const [fn] =
+    await db`select prosrc, prosecdef, proconfig, pg_get_userbyid(proowner) as owner
+    from pg_proc where oid=to_regprocedure('app_private.purge_f11_retained_data()')`;
+  expect(fn).toMatchObject({ owner: 'postgres', prosecdef: false });
+  expect(fn!.proconfig).toEqual(['search_path=""']);
+  expect(fn!.prosrc).toContain(
+    'perform app_private.purge_client_signup_attempts()',
+  );
+  expect(fn!.prosrc).toContain('perform app_private.purge_operation_keys()');
+  await probe(async (tx) => {
+    const actor = await identity(tx);
+    const [attempt] =
+      await tx`insert into app_private.client_signup_attempts(outcome_class, created_at)
+      values ('failure', clock_timestamp() - interval '31 days') returning id`;
+    const key = randomUUID();
+    await tx`insert into app_private.operation_keys(actor_user_id, action, operation_key, request_hash, result, created_at)
+      values (${actor.id}, 'catalog.food_created', ${key}, ${`sha256:${'c'.repeat(64)}`}, '{}'::jsonb,
+        clock_timestamp() - interval '31 days')`;
+    await tx`select app_private.purge_f11_retained_data()`;
+    expect(
+      await tx`select 1 from app_private.client_signup_attempts where id=${attempt!.id}`,
+    ).toHaveLength(0);
+    expect(
+      await tx`select 1 from app_private.operation_keys where actor_user_id=${actor.id} and operation_key=${key}`,
+    ).toHaveLength(0);
+  });
+});
 it('preserves installed cleanup/policy bodies byte-for-byte except newline conventions', async () => {
   // Pinned from ac50a64, not recomputed from possibly mutated migration files.
   const bodies: Record<string, string> = {

@@ -380,10 +380,14 @@ export async function pendingHttpAccess(
           bigint: 1,
           boolean: false,
           bytea: '\\x00',
+          numeric: 1,
           'timestamp with time zone': new Date().toISOString(),
           'uuid[]': [],
         };
-        if (!(type in values)) throw new Error('Uncovered HTTP RPC type');
+        if (!(type in values))
+          throw new Error(
+            'Uncovered HTTP RPC type ' + type + ' for ' + fn.proname,
+          );
         args[fn.proargnames[i]] = values[type];
       });
       const result = await client.rpc(fn.proname, args);
