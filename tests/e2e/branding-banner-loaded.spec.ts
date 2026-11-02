@@ -14,6 +14,7 @@ import {
   expectHeroPreferenceSelectContrast,
   expectHeroPreferencesSingleRow,
   expectHeroSamplingFallback,
+  expectHeroResolvedThemeContract,
   expectHeroTextBackdropContrast,
   expectHeroTextContrast,
   expectHeroTouchTargets,
@@ -37,6 +38,35 @@ const darkPatchCases = (['ar', 'en'] as const)
     ),
   )
   .filter(({ theme }) => theme === 'light');
+const themeContractCases = (
+  ['light', 'dark', 'follow-device'] as const
+).flatMap((theme) =>
+  (['light', 'dark'] as const).flatMap((osTheme) =>
+    (
+      [
+        'bright',
+        'dim',
+        'bright-patch',
+        'dark-patch',
+        'sampling-fallback',
+      ] as const
+    ).flatMap((artwork) =>
+      (['ar', 'en'] as const).flatMap((locale) =>
+        [
+          { name: 'mobile-360', width: 360, height: 800 },
+          { name: 'mobile-390', width: 390, height: 844 },
+          { name: 'desktop-1440', width: 1440, height: 900 },
+        ].map((viewport) => ({
+          theme,
+          osTheme,
+          artwork,
+          locale,
+          viewport,
+        })),
+      ),
+    ),
+  ),
+);
 let token = '';
 let cleanup: (() => Promise<void>) | null = null;
 const measurements: Record<string, unknown>[] = [];
@@ -79,13 +109,16 @@ test.beforeEach(async ({}, testInfo) => {
     brightWithDarkPatchBannerPng,
     createPublishedBannerFixture,
   } = await import('../integration/branding-banner-fixture');
-  const bytes = testInfo.title.startsWith('bright/')
-    ? brightBannerPng()
-    : testInfo.title.startsWith('bright-patch/')
-      ? brightPatchBannerPng()
-      : testInfo.title.startsWith('dark-patch/')
-        ? brightWithDarkPatchBannerPng()
-        : bannerPng();
+  const bytes =
+    testInfo.title.startsWith('bright/') || testInfo.title.includes('/bright/')
+      ? brightBannerPng()
+      : testInfo.title.startsWith('bright-patch/') ||
+          testInfo.title.includes('/bright-patch/')
+        ? brightPatchBannerPng()
+        : testInfo.title.startsWith('dark-patch/') ||
+            testInfo.title.includes('/dark-patch/')
+          ? brightWithDarkPatchBannerPng()
+          : bannerPng();
   const fixture = await createPublishedBannerFixture(bytes);
   token = fixture.token;
   cleanup = fixture.cleanup;
@@ -104,6 +137,80 @@ test.afterAll(async () => {
     `${JSON.stringify(measurements, null, 2)}\n`,
   );
 });
+
+for (const {
+  theme,
+  osTheme,
+  artwork,
+  locale,
+  viewport,
+} of themeContractCases) {
+  test(`theme-contract/${artwork}/${theme}/os-${osTheme}/${locale}/${viewport.name}: card follows resolved theme`, async ({
+    page,
+    context,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({ colorScheme: osTheme, reducedMotion: 'reduce' });
+    const cookies: { name: string; value: string; url: string }[] = [
+      { name: LOCALE_COOKIE, value: locale, url: origin },
+    ];
+    if (theme !== 'follow-device')
+      cookies.push({ name: THEME_COOKIE, value: theme, url: origin });
+    await context.addCookies(cookies);
+
+    if (artwork === 'sampling-fallback') {
+      await page.addInitScript(() => {
+        const original = HTMLCanvasElement.prototype.getContext;
+        HTMLCanvasElement.prototype.getContext = function (
+          this: HTMLCanvasElement,
+          type: string,
+          ...rest: unknown[]
+        ) {
+          const context = (
+            original as unknown as (
+              ...args: unknown[]
+            ) => CanvasRenderingContext2D | null
+          ).call(this, type, ...rest);
+          if (type !== '2d' || !context) return context;
+          context.getImageData = () => {
+            throw new DOMException(
+              'Simulated cross-origin artwork',
+              'SecurityError',
+            );
+          };
+          return context;
+        } as unknown as HTMLCanvasElement['getContext'];
+      });
+    }
+
+    await page.goto(`/register/${encodeURIComponent(token)}`);
+    const stage = page.locator('[data-registration-hero]');
+    await expect(stage).toHaveAttribute('data-has-banner', 'true');
+    if (artwork === 'sampling-fallback')
+      await expect(stage).toHaveAttribute('data-photo-sampling', 'fallback');
+    else await expect(stage).toHaveAttribute('data-photo-stats-ready', 'true');
+
+    const surface = await expectHeroResolvedThemeContract(page);
+    const resolvedTheme = theme === 'follow-device' ? osTheme : theme;
+    expect(surface.theme).toBe(
+      theme === 'follow-device' ? 'system' : resolvedTheme,
+    );
+    const screenshot = await captureHeroScreenshot(
+      page,
+      `theme-contract-${artwork}-${theme}-os-${osTheme}-${locale}-${viewport.name}`,
+    );
+    measurements.push({
+      artwork,
+      theme,
+      osTheme,
+      resolvedTheme,
+      locale,
+      viewport: viewport.name,
+      screenshot,
+      surface,
+    });
+  });
+}
 
 for (const artwork of ['dim', 'bright'] as const) {
   for (const locale of ['ar', 'en'] as const) {

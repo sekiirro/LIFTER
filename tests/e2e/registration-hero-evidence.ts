@@ -18,7 +18,8 @@ import {
  * touch targets, focus ring and axe. Screenshots and geometry are written to
  * the run's OS temp directory, never into the repository.
  */
-export const heroEvidenceDirectory = join(tmpdir(), 'lifter-s26-hero-r3');
+export const heroEvidenceDirectory =
+  process.env.HERO_EVIDENCE_DIR ?? join(tmpdir(), 'lifter-s26-hero-r3');
 
 export async function captureHeroScreenshot(page: Page, name: string) {
   await mkdir(heroEvidenceDirectory, { recursive: true });
@@ -560,6 +561,53 @@ export async function expectHeroTextContrast(page: Page) {
     contrast(cssLuminance(surface.labelColor), effectiveLuminance),
   ).toBeGreaterThanOrEqual(4.5);
   return buttonContrast;
+}
+
+/** The registration card must use the resolved theme tokens regardless of artwork. */
+export async function expectHeroResolvedThemeContract(page: Page) {
+  const surface = await page.evaluate(() => {
+    const card = document.querySelector<HTMLElement>(
+      '[data-registration-card="premium-centered"]',
+    );
+    const label = document.querySelector<HTMLElement>(
+      'form label > span:first-child',
+    );
+    const heading = document.querySelector<HTMLElement>('.formPlate h1, h1');
+    if (!card || !label || !heading)
+      throw new Error('Hero resolved-theme targets unavailable');
+    const root = getComputedStyle(document.documentElement);
+    const tokenProbe = document.createElement('span');
+    tokenProbe.style.backgroundColor = root
+      .getPropertyValue('--color-card')
+      .trim();
+    tokenProbe.style.color = root.getPropertyValue('--color-text').trim();
+    document.body.append(tokenProbe);
+    const tokens = getComputedStyle(tokenProbe);
+    const resolved = {
+      card: tokens.backgroundColor,
+      text: tokens.color,
+    };
+    tokenProbe.remove();
+    return {
+      cardBackground: getComputedStyle(card).backgroundColor,
+      labelColor: getComputedStyle(label).color,
+      headingColor: getComputedStyle(heading).color,
+      tokenCard: resolved.card,
+      tokenText: resolved.text,
+      theme: document.documentElement.dataset.theme ?? 'system',
+    };
+  });
+
+  expect(surface.cardBackground).toBe(surface.tokenCard);
+  expect(surface.labelColor).toBe(surface.tokenText);
+  expect(surface.headingColor).toBe(surface.tokenText);
+  expect(
+    contrast(
+      cssLuminance(surface.labelColor),
+      cssLuminance(surface.cardBackground),
+    ),
+  ).toBeGreaterThanOrEqual(4.5);
+  return surface;
 }
 
 /** The floating preference controls remain one compact row on narrow phones. */
