@@ -11,9 +11,11 @@ import {
   conservativeBackdropLuminance,
   darkestBackdropLuminance,
   enterHeroSamplingFallback,
+  heroArtworkState,
   needsOpaqueBrightCard,
   photoToneFromLuminance,
   selectHeroLayoutMode,
+  subscribeToHeroArtwork,
 } from '../../components/branding/registration-hero';
 
 const signupFormSource = readFileSync(
@@ -231,6 +233,86 @@ describe('production registration hero fallback state', () => {
       /enterSamplingFallback\(stage\)/g,
     );
     expect(failurePaths?.length).toBeGreaterThanOrEqual(5);
+  });
+});
+
+describe('production registration hero artwork events', () => {
+  it('routes a failed artwork request to the opaque fallback', () => {
+    const listeners = new Map<string, () => void>();
+    const image = {
+      complete: false,
+      naturalWidth: 0,
+      addEventListener: (type: string, listener: () => void) => {
+        listeners.set(type, listener);
+      },
+      removeEventListener: (type: string) => {
+        listeners.delete(type);
+      },
+    };
+    const stage = fakeStage({});
+    const fallbackStates: boolean[] = [];
+
+    const cleanup = subscribeToHeroArtwork(image, {
+      onLoaded: () => {},
+      onFailed: () =>
+        enterHeroSamplingFallback(stage, (fallback) =>
+          fallbackStates.push(fallback),
+        ),
+    });
+
+    expect(listeners.has('load')).toBe(true);
+    expect(listeners.has('error')).toBe(true);
+    listeners.get('error')?.();
+
+    expect(fallbackStates).toEqual([true]);
+    expect(stage.dataset.photoSampling).toBe('fallback');
+    expect(stage.dataset.photoStatsReady).toBe('false');
+
+    cleanup();
+    expect(listeners.size).toBe(0);
+  });
+
+  it('treats a complete but broken artwork as a failure', () => {
+    expect(heroArtworkState({ complete: true, naturalWidth: 0 })).toBe(
+      'failed',
+    );
+    expect(heroArtworkState({ complete: true, naturalWidth: 320 })).toBe(
+      'loaded',
+    );
+    expect(heroArtworkState({ complete: false, naturalWidth: 0 })).toBe(
+      'pending',
+    );
+
+    const stage = fakeStage({});
+    const fallbackStates: boolean[] = [];
+    const cleanup = subscribeToHeroArtwork(
+      {
+        complete: true,
+        naturalWidth: 0,
+        addEventListener: () => {},
+        removeEventListener: () => {},
+      },
+      {
+        onLoaded: () => {},
+        onFailed: () =>
+          enterHeroSamplingFallback(stage, (fallback) =>
+            fallbackStates.push(fallback),
+          ),
+      },
+    );
+
+    expect(fallbackStates).toEqual([true]);
+    expect(stage.dataset.photoSampling).toBe('fallback');
+    cleanup();
+  });
+
+  it('subscribes the hero to the artwork error event', () => {
+    expect(heroComponentSource).toContain('subscribeToHeroArtwork(image, {');
+    expect(heroComponentSource).toMatch(
+      /onFailed:[\s\S]{0,160}enterSamplingFallback\(stage\)/,
+    );
+    expect(heroComponentSource).not.toMatch(/addEventListener\('load'/);
+    expect(heroComponentSource).not.toMatch(/removeEventListener\('load'/);
   });
 });
 

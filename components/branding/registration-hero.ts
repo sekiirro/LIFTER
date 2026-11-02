@@ -172,3 +172,63 @@ export function enterHeroSamplingFallback(
   setFallback(true);
   applyHeroSamplingFallback(stage);
 }
+
+/** The artwork element contract the hero sampler relies on. */
+export type HeroArtworkImage = {
+  complete: boolean;
+  naturalWidth: number;
+  addEventListener: (type: string, listener: () => void) => void;
+  removeEventListener: (type: string, listener: () => void) => void;
+};
+
+export type HeroArtworkState = 'loaded' | 'failed' | 'pending';
+
+/**
+ * The load state of the hero artwork.
+ *
+ * A complete image without any natural width is a broken image: the request
+ * failed before the hero could attach its listener.
+ */
+export function heroArtworkState(image: {
+  complete: boolean;
+  naturalWidth: number;
+}): HeroArtworkState {
+  if (!image.complete) return 'pending';
+  return image.naturalWidth > 0 ? 'loaded' : 'failed';
+}
+
+/**
+ * Subscribe to the hero artwork events.
+ *
+ * A failed request has to reach the opaque fallback as well, and a listener
+ * attached after the request already failed would never fire. The load
+ * state is therefore checked first, and both listeners are removed again
+ * when the artwork changes or the hero unmounts.
+ */
+export function subscribeToHeroArtwork(
+  image: HeroArtworkImage,
+  handlers: {
+    onLoaded: () => void;
+    onFailed: () => void;
+    onPending?: () => void;
+  },
+): () => void {
+  const state = heroArtworkState(image);
+  if (state === 'loaded') {
+    handlers.onLoaded();
+    return () => {};
+  }
+  if (state === 'failed') {
+    handlers.onFailed();
+    return () => {};
+  }
+  handlers.onPending?.();
+  const handleLoad = () => handlers.onLoaded();
+  const handleError = () => handlers.onFailed();
+  image.addEventListener('load', handleLoad);
+  image.addEventListener('error', handleError);
+  return () => {
+    image.removeEventListener('load', handleLoad);
+    image.removeEventListener('error', handleError);
+  };
+}

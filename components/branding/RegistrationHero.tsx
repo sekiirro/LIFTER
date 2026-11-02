@@ -20,6 +20,7 @@ import {
   darkestBackdropLuminance,
   photoToneFromLuminance,
   selectHeroLayoutMode,
+  subscribeToHeroArtwork,
   type HeroViewport,
 } from './registration-hero';
 import glass from './liquid-glass.module.css';
@@ -306,19 +307,29 @@ export function RegistrationHero({
   useEffect(() => {
     const stage = stageRef.current;
     const image = stage?.querySelector<HTMLImageElement>('[data-hero-image]');
-    if (image?.complete) {
-      if (image.naturalWidth) image.dataset.loaded = 'true';
-      updateArtworkSamples();
-    } else {
-      // A new artwork that has not loaded yet must not keep the previous
-      // sample: clear it so the card can use the opaque fallback.
-      if (stage?.dataset.photoStatsReady === 'true' && stage)
-        enterSamplingFallback(stage);
-      image?.addEventListener('load', updateArtworkSamples, { once: true });
-    }
+    // A failed request never paints artwork, so it has to reach the opaque
+    // fallback as well. A listener attached after the request already failed
+    // would never fire, which is why the load state is checked first.
+    const unsubscribe = image
+      ? subscribeToHeroArtwork(image, {
+          onLoaded: () => {
+            if (image.naturalWidth) image.dataset.loaded = 'true';
+            updateArtworkSamples();
+          },
+          onFailed: () => {
+            if (stage) enterSamplingFallback(stage);
+          },
+          onPending: () => {
+            // A new artwork that has not loaded yet must not keep the previous
+            // sample: clear it so the card can use the opaque fallback.
+            if (stage?.dataset.photoStatsReady === 'true' && stage)
+              enterSamplingFallback(stage);
+          },
+        })
+      : () => {};
     window.addEventListener('resize', updateArtworkSamples);
     return () => {
-      image?.removeEventListener('load', updateArtworkSamples);
+      unsubscribe();
       window.removeEventListener('resize', updateArtworkSamples);
     };
   }, [enterSamplingFallback, updateArtworkSamples, banner?.src]);
