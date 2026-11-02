@@ -339,6 +339,7 @@ for (const locale of ['ar', 'en'] as const) {
       await page.locator('form button[type="submit"]').click();
       const invalid = page.locator('input[name="password"]');
       await expect(invalid).toHaveAttribute('aria-invalid', 'true');
+      await expect(invalid).toBeEnabled();
       await expectInvalidInputContrast(page);
       await expectHeroAxeClean(page);
       await captureHeroScreenshot(
@@ -370,10 +371,9 @@ test('dim/invalid/en/light/mobile-390: preference keeps invalid text readable', 
   await page.locator('input[type="tel"]').fill('1001234567');
   await page.locator('input[name="password"]').fill('short');
   await page.locator('form button[type="submit"]').click();
-  await expect(page.locator('input[name="password"]')).toHaveAttribute(
-    'aria-invalid',
-    'true',
-  );
+  const invalid = page.locator('input[name="password"]');
+  await expect(invalid).toHaveAttribute('aria-invalid', 'true');
+  await expect(invalid).toBeEnabled();
   await expectInvalidInputContrast(page);
   await expectHeroAxeClean(page);
 });

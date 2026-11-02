@@ -371,7 +371,8 @@
 
 .form :global(input:disabled),
 .form :global(select:disabled) {
-  color: rgba(255, 255, 255, 0.68) !important;
+  color: var(--hero-form-control-text) !important;
+  -webkit-text-fill-color: var(--hero-form-control-text) !important;
   opacity: 0.76;
 }
 
