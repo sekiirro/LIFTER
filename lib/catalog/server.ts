@@ -40,8 +40,6 @@ export type FoodDuplicateQuery = {
   kcal: number;
 };
 export type CatalogWorkspaceOption = { id: string; name: string };
-export type CatalogAlternativeInput = { foodId: string; version: number; sourcePortion: number; alternativePortion: number };
-export type CatalogFoodMutation = CatalogMutation & { alternatives?: CatalogAlternativeInput[] };
 export type CatalogAlternativeInput = {
   foodId: string;
   version: number;

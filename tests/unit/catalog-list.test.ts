@@ -199,8 +199,8 @@ describe('catalog list projection', () => {
     expect(hasActiveCatalogFilters({})).toBe(false);
     expect(hasActiveCatalogFilters({ basis: 'g' })).toBe(true);
     expect(hasActiveCatalogFilters({ muscleGroup: '' })).toBe(false);
-    expect(formatCatalogCount('النتائج: {count}', 3)).toBe('النتائج: 3');
-    expect(formatCatalogCount('Results: {count}', 0)).toBe('Results: 0');
+    expect(formatCatalogCount('النتائج: {count}', 3, 'ar')).toBe('النتائج: 3');
+    expect(formatCatalogCount('Results: {count}', 0, 'en')).toBe('Results: 0');
   });
 
   it('recognizes the two supported catalog kinds', () => {

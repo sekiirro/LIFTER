@@ -109,6 +109,19 @@ describe('catalog list shell presentation', () => {
     expect(html).not.toContain('data-testid="catalog-list"');
   });
 
+  it('renders exercise rows and offers manual Add in the empty state', () => {
+    const rows = render({ locale: 'en', items: mockExerciseItems });
+    expect(rows).toContain('Barbell Bench Press');
+    const empty = render({
+      locale: 'en',
+      items: [],
+      emptyActionHref: '/exercise-library/new',
+      emptyActionLabel: 'Add exercise',
+    });
+    expect(empty).toContain('href="/exercise-library/new"');
+    expect(empty).toContain('Add exercise');
+  });
+
   it('renders the no-results state when the submitted search matches nothing', () => {
     const html = render({ initialQuery: 'zzzz-no-match' });
     expect(html).toContain(ar['catalog.noResultsTitle']);

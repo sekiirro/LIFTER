@@ -68,6 +68,20 @@ function trackedServer(actor: (typeof actors)[number]) {
 }
 
 describe('catalog server authorization uses the signed-in user RPC path', () => {
+  it('serves a no-seed filtered library page through the session catalog wall', async () => {
+    const result = await server(workspaces.trainerA).search({
+      kind: 'exercise',
+      query: `s27-empty-${randomUUID()}`,
+      filters: {
+        primary_muscle_code: 'chest',
+        equipment_codes: ['barbell'],
+        page_size: 21,
+      },
+    });
+    expect(result.status).toBe('ok');
+    if (result.status === 'ok') expect(result.data).toEqual([]);
+  });
+
   it('matches the six role states for catalog search and the principal mutation classes', async () => {
     const expectedRead = [true, true, true, false, false, false];
     const expectedGlobalWrite = [true, false, false, false, false, false];

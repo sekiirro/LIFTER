@@ -37,6 +37,8 @@ export type CatalogListShellProps = {
   initialFilters?: CatalogSearchFilters;
   onSearch?: (search: ReturnType<typeof buildCatalogSearch>) => void;
   onRetry?: () => void;
+  emptyActionHref?: string;
+  emptyActionLabel?: string;
 };
 
 const noop = () => {};
@@ -50,6 +52,8 @@ export function CatalogListShell({
   initialFilters = {},
   onSearch,
   onRetry,
+  emptyActionHref,
+  emptyActionLabel,
 }: CatalogListShellProps) {
   const m = getMessages(locale);
   const titleId = useId();
@@ -185,7 +189,7 @@ export function CatalogListShell({
 
       {status === 'ready' && (
         <p className={styles.count} role="status" data-testid="catalog-count">
-          {formatCatalogCount(m['catalog.resultsCount'], visible.length)}
+          {formatCatalogCount(m['catalog.resultsCount'], visible.length, locale)}
         </p>
       )}
 
@@ -211,7 +215,13 @@ export function CatalogListShell({
         <EmptyState
           title={m['catalog.emptyTitle']}
           description={m['catalog.emptyDescription']}
-        />
+        >
+          {emptyActionHref && emptyActionLabel ? (
+            <a className={styles.emptyAction} href={emptyActionHref}>
+              {emptyActionLabel}
+            </a>
+          ) : null}
+        </EmptyState>
       ) : visible.length === 0 ? (
         <NoResults
           title={m['catalog.noResultsTitle']}
