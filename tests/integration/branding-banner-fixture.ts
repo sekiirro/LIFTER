@@ -127,7 +127,7 @@ export function brightWithDarkPatchBannerPng(
   const base = [215, 215, 215];
   const patch = [0, 0, 0];
   const patches = [
-    { x0: 200, x1: 230, y0: 12, y1: 30 },
+    { x0: 200, x1: 230, y0: 48, y1: 66 },
     { x0: 165, x1: 195, y0: 126, y1: 142 },
   ];
   const pixels = Buffer.alloc(height * (width * 4 + 1));

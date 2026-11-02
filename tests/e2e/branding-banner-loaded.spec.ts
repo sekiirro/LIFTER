@@ -362,6 +362,7 @@ for (const locale of ['ar', 'en'] as const) {
             element.style.getPropertyValue('--hero-photo-luminance'),
           ),
           average: Number(element.dataset.photoAverageLuminance),
+          darkest: Number(element.dataset.photoDarkestLuminance),
           dimming: Number(
             element.style.getPropertyValue('--hero-adaptive-dimming'),
           ),
@@ -370,6 +371,7 @@ for (const locale of ['ar', 'en'] as const) {
         // The artwork averages bright but still holds dark pixels behind the
         // text, so the card has to stay opaque.
         expect(sampling.average).toBeGreaterThan(0.58);
+        expect(sampling.darkest).toBeLessThan(0.05);
         expect(sampling.opaque).toBe(true);
         await expectHeroMaterialContract(page);
         await expectHeroTextContrast(page);

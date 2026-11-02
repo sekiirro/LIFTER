@@ -261,6 +261,9 @@ export function RegistrationHero({
       );
       stage.dataset.photoAverageLuminance =
         textPhoto.averageLuminance.toString();
+      stage.dataset.photoDarkestLuminance = darkestBackdropLuminance(
+        textPhoto.luminances,
+      ).toString();
       stage.style.setProperty(
         '--hero-adaptive-dimming',
         adaptiveDimming.toString(),
@@ -275,10 +278,11 @@ export function RegistrationHero({
       // A bright average can still hide near-black pixels behind the text,
       // so the light-theme card only stays translucent when the sampled text
       // region has no dark pixels.
+      const darkestLuminance = darkestBackdropLuminance(textPhoto.luminances);
       setOpaqueBrightCard(
         needsOpaqueBrightCard({
           averageLuminance: textPhoto.averageLuminance,
-          darkestLuminance: darkestBackdropLuminance(textPhoto.luminances),
+          darkestLuminance,
         }),
       );
       stage.style.setProperty(
