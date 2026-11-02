@@ -444,6 +444,7 @@ export const en: Record<keyof typeof ar, string> = {
   'nutritionPlan.previewNotice':
     'Showcase only. Plan and foods are mocked; nothing is saved.',
   'nutritionPlan.totalsAnnouncement': 'Selected day totals',
+  'nutritionPlan.totalsUnavailable': 'Totals could not be calculated',
   'nutritionAlternatives.moveUp': 'Move up',
   'nutritionAlternatives.moveDown': 'Move down',
   'nutritionAlternatives.remove': 'Remove',

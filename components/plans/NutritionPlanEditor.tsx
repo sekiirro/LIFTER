@@ -40,7 +40,10 @@ export type NutritionPlanEditorProps = {
 function id(): string {
   return (
     globalThis.crypto?.randomUUID?.() ??
-    `nutrition-${Date.now()}-${Math.random()}`
+    'xxxxxxxx-xxxx-4xxx-yxxx-xxxxxxxxxxxx'.replace(/[xy]/g, (token) => {
+      const random = Math.floor(Math.random() * 16);
+      return (token === 'x' ? random : (random & 0x3) | 0x8).toString(16);
+    })
   );
 }
 
@@ -325,10 +328,9 @@ export function NutritionPlanEditor({
           >
             {document.dayTypes.map((type) => (
               <option key={type.id} value={type.id}>
-                {type.name ||
-                  (type.trainingDay
-                    ? messages['nutritionPlan.trainingDay']
-                    : messages['nutritionPlan.restDay'])}
+                {type.trainingDay
+                  ? messages['nutritionPlan.trainingDay']
+                  : messages['nutritionPlan.restDay']}
               </option>
             ))}
           </select>
@@ -457,7 +459,7 @@ export function NutritionPlanEditor({
                   `${messages[`nutritionAlternatives.${name}`]} ${localizedDigits(Math.round(Number(totals[name])).toString(), locale)} ${name === 'calories' ? messages['nutritionAlternatives.kilocalories'] : formatUnit('g')}`,
               )
               .join(', ')
-          : '—'}
+          : messages['nutritionPlan.totalsUnavailable']}
       </p>
     </Card>
   );

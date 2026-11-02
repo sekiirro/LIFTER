@@ -81,6 +81,8 @@ describe('F18 nutrition plan editor', () => {
     const ar = render();
     expect(ar).toContain('dir="rtl"');
     expect(ar).toContain(getMessages('ar')['nutritionPlan.sevenDay']);
+    expect(ar).toContain(getMessages('ar')['nutritionPlan.trainingDay']);
+    expect(ar).not.toContain('>Training</option>');
     expect(ar).toContain('aria-live="polite"');
     expect(ar).toContain(
       new Intl.NumberFormat('ar', { numberingSystem: 'arab' }).format(125),
@@ -95,6 +97,8 @@ describe('F18 nutrition plan editor', () => {
     const html = render();
     expect(html).toContain(getMessages('ar')['nutritionPlan.moveUp']);
     expect(html).toContain(getMessages('ar')['nutritionPlan.moveDown']);
+    expect(html).toMatch(/<button[^>]*aria-label="نقل الوجبة لأعلى"[^>]*>/);
+    expect(html).toMatch(/<button[^>]*aria-label="نقل الوجبة لأسفل"[^>]*>/);
     expect(html).toContain('aria-pressed="true"');
     expect(html).toMatch(/aria-label="نقل الوجبة لأعلى"[^>]*disabled/);
   });
@@ -113,5 +117,16 @@ describe('F18 nutrition plan editor', () => {
     expect(render({ state: 'conflict' })).toContain(
       getMessages('ar')['nutritionPlan.conflictTitle'],
     );
+  });
+
+  it('supports the single-day document structure as well as seven days', () => {
+    const singleDay = {
+      ...document,
+      structure: { kind: 'single_day' as const, implicitDayTypeId: trainingId },
+    };
+    const html = render({ document: singleDay });
+    expect(html).toContain('value="single_day" selected=""');
+    expect(html).not.toContain('aria-label="Day"');
+    expect(html).toContain(getMessages('ar')['nutritionPlan.dayTotals']);
   });
 });

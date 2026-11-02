@@ -428,6 +428,7 @@ export const ar = {
   'nutritionPlan.previewNotice':
     'للعرض فقط. الخطة والأغذية وهمية ولا يُحفظ أي شيء.',
   'nutritionPlan.totalsAnnouncement': 'إجمالي اليوم المحدد',
+  'nutritionPlan.totalsUnavailable': 'تعذر حساب الإجماليات',
   'nutritionAlternatives.moveUp': 'نقل لأعلى',
   'nutritionAlternatives.moveDown': 'نقل لأسفل',
   'nutritionAlternatives.remove': 'حذف',
