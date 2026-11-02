@@ -7,6 +7,7 @@ import {
 } from 'node:fs';
 import { join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
+import type { Sql, TransactionSql } from 'postgres';
 import { afterAll, expect, it } from 'vitest';
 import { sql } from './registration-approval-operations-fixture';
 
@@ -29,7 +30,7 @@ const serviceFunctions = new Set([
   'prepare_f15_telegram_delivery',
 ]);
 
-async function assertAlertFunctionAcl(connection = db) {
+async function assertAlertFunctionAcl(connection: Sql | TransactionSql = db) {
   const functions = await connection`
     select n.nspname as schema_name,p.proname,p.proconfig,
       pg_catalog.pg_get_userbyid(p.proowner) as owner,
