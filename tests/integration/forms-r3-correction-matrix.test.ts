@@ -159,6 +159,26 @@ it('T014 enforces correction and audited history access for Client, Trainer, WO,
       expect(foreignWrite?.result).toEqual({ status: 'not_permitted' });
       await tx`reset role`;
 
+      const [readerDefinition] = await tx`
+        select pg_get_functiondef('public.read_form_answer(uuid,uuid,text)'::regprocedure) as definition
+      `;
+      const crossTenantMutant = String(readerDefinition!.definition).replace(
+        "or not app_private.has_workspace_access(p_workspace_id, 'read_form_answers')",
+        'or false',
+      );
+      expect(crossTenantMutant).not.toBe(readerDefinition!.definition);
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp.unsafe(crossTenantMutant);
+          await act(sp, context.trainerA.userId);
+          const [mutantRead] = await sp`
+            select public.read_form_answer(${otherContext.wsA.id},${foreignWorkspace.assignmentId},'history') as result
+          `;
+          expect(mutantRead?.result).toBeNull();
+          await sp`reset role`;
+        }),
+      ).rejects.toThrow();
+
       await act(tx, context.po.userId);
       const inventedWorkspaceId = randomUUID();
       const [inventedWorkspaceRead] = await tx`

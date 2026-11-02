@@ -58,7 +58,11 @@ describe('T048 personal-data authorization and erasure', () => {
     const formId = randomUUID();
     const assignmentId = randomUUID();
     const workspaceId = clientTarget.workspaceId;
-    const answer = { ordinary: 'synthetic answer', health: 'synthetic value' };
+    const answer = {
+      ordinary: 'synthetic answer',
+      sex: 'female',
+      health: 'synthetic value',
+    };
 
     await db.begin(async (tx) => {
       await tx`
@@ -101,6 +105,7 @@ describe('T048 personal-data authorization and erasure', () => {
         expect(result.error, `${label} direct ${table} read`).not.toBeNull();
         expect(JSON.stringify(result.data)).not.toContain('synthetic answer');
         expect(JSON.stringify(result.data)).not.toContain('synthetic value');
+        expect(JSON.stringify(result.data)).not.toContain('female');
       }
 
       const embedded = await actor
@@ -110,6 +115,7 @@ describe('T048 personal-data authorization and erasure', () => {
       expect(embedded.error, `${label} assignment answer embed`).not.toBeNull();
       expect(JSON.stringify(embedded.data)).not.toContain('synthetic answer');
       expect(JSON.stringify(embedded.data)).not.toContain('synthetic value');
+      expect(JSON.stringify(embedded.data)).not.toContain('female');
 
       for (const table of ['forms', 'form_versions', 'form_assignments']) {
         const result = await actor.from(table).select('*');
@@ -136,6 +142,115 @@ describe('T048 personal-data authorization and erasure', () => {
           or p.prosrc ilike '%form_answer_drafts%')
     `;
     expect(callableAnswerRpcs).toEqual([]);
+  });
+
+  it('purges the target tenant sex answer while preserving another tenant answer', async () => {
+    const targetContext = await clientContext();
+    const otherContext = await clientContext();
+    const targetForm = randomUUID();
+    const otherForm = randomUUID();
+    const targetAssignment = randomUUID();
+    const otherAssignment = randomUUID();
+    const targetPolicy = `s14-purge-${randomUUID()}`;
+    const otherPolicy = `s14-purge-${randomUUID()}`;
+    const rollback = new Error('synthetic tenant erasure rollback');
+
+    await expect(
+      db.begin(async (tx) => {
+        const targetClient = await pending(tx, targetContext);
+        const otherClient = await pending(tx, otherContext);
+        for (const [context, formId, policy, assignmentId, clientId] of [
+          [
+            targetContext,
+            targetForm,
+            targetPolicy,
+            targetAssignment,
+            targetClient.id,
+          ],
+          [
+            otherContext,
+            otherForm,
+            otherPolicy,
+            otherAssignment,
+            otherClient.id,
+          ],
+        ] as const) {
+          await tx`
+            insert into app_private.terms_policy_versions(version,policy_kind,status)
+            values(${policy},'terms','published')
+          `;
+          await tx`insert into public.forms(id,workspace_id,name)
+            values(${formId},${context.wsA.id},'Synthetic privacy erasure form')`;
+          await tx`
+            insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
+            values(${context.wsA.id},${formId},1,${policy},${tx.json({ questions: [] })},'published')
+          `;
+          await tx`
+            insert into public.form_assignments(id,workspace_id,client_id,form_id,version_number,terms_policy_version,version_snapshot)
+            values(${assignmentId},${context.wsA.id},${clientId},${formId},1,${policy},${tx.json({ questions: [] })})
+          `;
+          await tx`
+            insert into public.form_answer_revisions(workspace_id,assignment_id,revision,answer_values)
+            values(${context.wsA.id},${assignmentId},1,${tx.json({ sex: 'female', marker: 'synthetic' })})
+          `;
+          await tx`
+            insert into public.form_answer_drafts(workspace_id,assignment_id,revision,answer_values)
+            values(${context.wsA.id},${assignmentId},1,${tx.json({ sex: 'female', marker: 'synthetic draft' })})
+          `;
+        }
+        await tx`
+          insert into app_private.form_retention_windows(workspace_id,client_id,source_event_id,source_kind,ended_at)
+          values(${targetContext.wsA.id},${targetClient.id},${randomUUID()},'deactivation',clock_timestamp()-interval '31 days')
+        `;
+
+        const [result] = await tx`
+          select app_private.purge_ended_form_answers(${targetContext.wsA.id},${targetClient.id}) as result
+        `;
+        expect(result?.result).toMatchObject({ status: 'purged' });
+        expect(
+          await tx`select 1 from public.form_answer_revisions where assignment_id=${targetAssignment}`,
+        ).toHaveLength(0);
+        expect(
+          await tx`select 1 from public.form_answer_drafts where assignment_id=${targetAssignment}`,
+        ).toHaveLength(0);
+        expect(
+          await tx`select answer_values from public.form_answer_revisions where assignment_id=${otherAssignment}`,
+        ).toEqual([{ answer_values: { sex: 'female', marker: 'synthetic' } }]);
+        expect(
+          await tx`select answer_values from public.form_answer_drafts where assignment_id=${otherAssignment}`,
+        ).toEqual([
+          { answer_values: { sex: 'female', marker: 'synthetic draft' } },
+        ]);
+
+        await expect(
+          tx.savepoint(async (sp) => {
+            await sp.unsafe(`create or replace function app_private.purge_ended_form_answers(p_workspace_id uuid,p_client_id uuid)
+              returns jsonb language plpgsql security definer set search_path = '' as $$
+              declare target record;
+              begin
+                for target in select distinct workspace_id,client_id from public.form_assignments loop
+                  perform pg_catalog.set_config('app_private.f15_retention_purge',target.workspace_id::text||':'||target.client_id::text,true);
+                  delete from public.form_answer_drafts d where d.workspace_id=target.workspace_id and d.assignment_id in (
+                    select a.id from public.form_assignments a where a.workspace_id=target.workspace_id and a.client_id=target.client_id
+                  );
+                  delete from public.form_answer_revisions r where r.workspace_id=target.workspace_id and r.assignment_id in (
+                    select a.id from public.form_assignments a where a.workspace_id=target.workspace_id and a.client_id=target.client_id
+                  );
+                end loop;
+                return '{"status":"purged"}'::jsonb;
+              end
+              $$`);
+            await sp`
+              select app_private.purge_ended_form_answers(${targetContext.wsA.id},${targetClient.id})
+            `;
+            expect(
+              await sp`select answer_values from public.form_answer_revisions where assignment_id=${otherAssignment}`,
+            ).toHaveLength(1);
+          }),
+        ).rejects.toThrow();
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
   });
 
   it('requires the shared Forms answer-read capability and denies Sales/unknown', async () => {

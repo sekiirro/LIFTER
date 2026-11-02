@@ -74,9 +74,9 @@ describe('T004 single audited answer reader', () => {
     const assignmentId = randomUUID();
     const policy = `t004-${randomUUID()}`;
     const definition = { questions: [{ id: 'q1', type: 'short_text' }] };
-    const firstAnswers = { q1: 'first synthetic revision' };
-    const secondAnswers = { q1: 'second synthetic revision' };
-    const draftAnswers = { q1: 'synthetic draft' };
+    const firstAnswers = { q1: 'first synthetic revision', sex: 'female' };
+    const secondAnswers = { q1: 'second synthetic revision', sex: 'female' };
+    const draftAnswers = { q1: 'synthetic draft', sex: 'female' };
     const rollback = new Error('rollback T004 role reader fixture');
 
     await expect(
@@ -156,6 +156,38 @@ describe('T004 single audited answer reader', () => {
           await tx`select count(*)::int as count from public.audit_events
             where action='form.answer_viewed' and target_id=${assignmentId}`,
         ).toEqual([{ count: 12 }]);
+        const [auditDetails] = await tx`
+          select coalesce(jsonb_agg(details),'[]'::jsonb) as details
+          from public.audit_events
+          where action='form.answer_viewed' and target_id=${assignmentId}
+        `;
+        expect(JSON.stringify(auditDetails!.details)).not.toContain('female');
+
+        const [readerDefinition] = await tx`
+          select pg_get_functiondef('public.read_form_answer(uuid,uuid,text)'::regprocedure) as definition
+        `;
+        const auditLeakMutant = String(readerDefinition!.definition).replace(
+          "jsonb_build_object('view', p_view, 'revision', viewed_revision)",
+          "jsonb_build_object('view', p_view, 'revision', viewed_revision, 'sex', answer_result->>'sex')",
+        );
+        expect(auditLeakMutant).not.toBe(readerDefinition!.definition);
+        await expect(
+          tx.savepoint(async (sp) => {
+            await sp.unsafe(auditLeakMutant);
+            await sp`select set_config('request.jwt.claims',${JSON.stringify({ sub: context.trainerA.userId, role: 'authenticated' })},true)`;
+            await sp`set local role authenticated`;
+            await sp`select public.read_form_answer(${context.wsA.id},${assignmentId},'current')`;
+            await sp`reset role`;
+            const [mutantAudit] = await sp`
+              select coalesce(jsonb_agg(details),'[]'::jsonb) as details
+              from public.audit_events
+              where action='form.answer_viewed' and target_id=${assignmentId}
+            `;
+            expect(JSON.stringify(mutantAudit!.details)).not.toContain(
+              'female',
+            );
+          }),
+        ).rejects.toThrow();
         throw rollback;
       }),
     ).rejects.toBe(rollback);
