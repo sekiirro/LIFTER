@@ -15,28 +15,34 @@ const exerciseSnapshot = {
 
 describe('Plan Core catalog snapshot references', () => {
   it('requires an explicit immutable catalog identity and version', () => {
-    expect(() => normalizeCatalogSnapshotRef({
-      kind: 'exercise',
-      identityId: exerciseSnapshot.exerciseId,
-      snapshot: exerciseSnapshot,
-    })).toThrow(/version/i);
+    expect(() =>
+      normalizeCatalogSnapshotRef({
+        kind: 'exercise',
+        identityId: exerciseSnapshot.exerciseId,
+        snapshot: exerciseSnapshot,
+      }),
+    ).toThrow(/version/i);
 
-    expect(() => normalizeCatalogSnapshotRef({
-      kind: 'exercise',
-      identityId: exerciseSnapshot.exerciseId,
-      version: 7,
-      snapshot: { ...exerciseSnapshot, version: undefined },
-    })).toThrow(/version/i);
+    expect(() =>
+      normalizeCatalogSnapshotRef({
+        kind: 'exercise',
+        identityId: exerciseSnapshot.exerciseId,
+        version: 7,
+        snapshot: { ...exerciseSnapshot, version: undefined },
+      }),
+    ).toThrow(/version/i);
   });
 
   it('rejects a live pointer in place of a frozen snapshot', () => {
-    expect(() => normalizeCatalogSnapshotRef({
-      kind: 'exercise',
-      identityId: exerciseSnapshot.exerciseId,
-      version: 7,
-      snapshot: { exerciseId: exerciseSnapshot.exerciseId, version: 7 },
-      live: true,
-    })).toThrow();
+    expect(() =>
+      normalizeCatalogSnapshotRef({
+        kind: 'exercise',
+        identityId: exerciseSnapshot.exerciseId,
+        version: 7,
+        snapshot: { exerciseId: exerciseSnapshot.exerciseId, version: 7 },
+        live: true,
+      }),
+    ).toThrow();
   });
 
   it('pins and freezes the exact catalog version in a plan revision', () => {
@@ -50,9 +56,11 @@ describe('Plan Core catalog snapshot references', () => {
     });
     expect(Object.isFrozen(reference)).toBe(true);
     expect(Object.isFrozen(reference.snapshot)).toBe(true);
-    expect(() => normalizeCatalogSnapshotRef({
-      ...reference,
-      version: 8,
-    })).toThrow(/match/i);
+    expect(() =>
+      normalizeCatalogSnapshotRef({
+        ...reference,
+        version: 8,
+      }),
+    ).toThrow(/match/i);
   });
 });
