@@ -89,3 +89,5 @@ Security, authorization, audit, idempotency, retention and scheduler tasks name 
 - Existing exact-head CI, security, review and explicit PO merge gates. This plan does not claim they have been checked.
 
 No update to `docs/13-production-readiness.md` is made by this planning artifact; any readiness-register change belongs in an explicitly authorized readiness update.
+
+The delivery worker also reads `TELEGRAM_BOT_USERNAME` to build the staff bot link and `APP_URL` to build the in-app inbox link. These are configuration key names only; tests use fake transport and local example URLs.

@@ -180,6 +180,45 @@ it('writes one IDs-only in-app delivery per queued occurrence and audits recipie
   ).rejects.toBe(rollback);
 });
 
+it('requires a current staff link for Telegram and claims a channel delivery once', async () => {
+  await expect(
+    db.begin(async (tx) => {
+      const { f, occurrenceId } = await fixture(tx);
+      const [unlinked] = await tx`select public.prepare_f15_telegram_delivery(
+      ${occurrenceId},${f.trainerA.userId}) as result`;
+      expect(unlinked!.result).toEqual({ status: 'unlinked' });
+      const token = randomUUID()
+        .replaceAll('-', '')
+        .padEnd(64, 'c')
+        .slice(0, 64);
+      await tx`insert into app_private.f15_telegram_link_tokens(token_hash,user_id,expires_at)
+      values(extensions.digest(${token},'sha256'),${f.trainerA.userId},clock_timestamp()+interval '10 minutes')`;
+      const [linked] =
+        await tx`select app_private.consume_f15_telegram_link_token(${token},'12345') as result`;
+      expect(linked!.result).toBe(true);
+      const [ready] = await tx`select public.prepare_f15_telegram_delivery(
+      ${occurrenceId},${f.trainerA.userId}) as result`;
+      const context = ready!.result as { status: string; delivery_id: string };
+      expect(context.status).toBe('ready');
+      const [chat] =
+        await tx`select public.claim_f15_telegram_delivery(${context.delivery_id}) as result`;
+      expect(chat!.result).toBe('12345');
+      const [replay] = await tx`select public.prepare_f15_telegram_delivery(
+      ${occurrenceId},${f.trainerA.userId}) as result`;
+      expect(replay!.result).toEqual({ status: 'already_delivered' });
+      const [membership] =
+        await tx`select workspace_id from public.workspace_memberships
+      where user_id=${f.trainerA.userId} and revoked_at is null limit 1`;
+      await tx`update public.workspace_memberships set revoked_at=clock_timestamp(),revoked_by=${f.po.userId}
+      where workspace_id=${membership!.workspace_id} and user_id=${f.trainerA.userId}`;
+      const [revoked] = await tx`select public.prepare_f15_telegram_delivery(
+      ${occurrenceId},${f.trainerA.userId}) as result`;
+      expect(revoked!.result).toEqual({ status: 'unavailable' });
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
+
 it('forces recipient-only inbox RLS and exposes only authenticated reader RPCs', async () => {
   const tables = await db`
     select c.relname,c.relrowsecurity,c.relforcerowsecurity

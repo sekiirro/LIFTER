@@ -70,6 +70,8 @@ const registrationPrivate = [
   'f15_alert_schedule_audit',
   'write_f15_in_app_alert',
   'f15_alert_inbox_after_occurrence',
+  'f15_telegram_membership_revoke',
+  'consume_f15_telegram_link_token',
 ];
 const brandingPrivate = [
   'branding_actor_id',
@@ -1048,7 +1050,8 @@ describe('registration security catalog', () => {
           (name) =>
             !name.startsWith('f13_') &&
             !name.startsWith('f15_') &&
-            !name.startsWith('write_f15_'),
+            !name.startsWith('write_f15_') &&
+            !name.startsWith('consume_f15_'),
         )
         .map(
           (n) =>
@@ -1091,6 +1094,9 @@ describe('registration security catalog', () => {
       'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)',
       'public.read_form_alert_inbox(integer,timestamptz)',
       'public.mark_form_alert_read(uuid)',
+      'public.prepare_f15_telegram_delivery(uuid,uuid)',
+      'public.claim_f15_telegram_delivery(uuid)',
+      'public.claim_f15_form_alert_jobs(integer,integer)',
       'public.record_renewal(jsonb)',
     ];
     for (const name of signatures) {
@@ -1107,8 +1113,15 @@ describe('registration security catalog', () => {
           await db`select has_function_privilege(${role},${name},'EXECUTE') as allowed`;
         expect(g!.allowed).toBe(
           name.startsWith('public.') &&
-            (role === 'authenticated' ||
-              (role === 'anon' && name.includes('registration_link_open'))),
+            ((role === 'authenticated' &&
+              !name.includes('prepare_f15_telegram_delivery') &&
+              !name.includes('claim_f15_telegram_delivery') &&
+              !name.includes('claim_f15_form_alert_jobs')) ||
+              (role === 'anon' && name.includes('registration_link_open')) ||
+              (role === 'service_role' &&
+                (name.includes('prepare_f15_telegram_delivery') ||
+                  name.includes('claim_f15_telegram_delivery') ||
+                  name.includes('claim_f15_form_alert_jobs')))),
         );
       }
     }
