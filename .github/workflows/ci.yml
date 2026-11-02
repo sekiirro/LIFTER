@@ -9,7 +9,9 @@ permissions:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && fromJSON('["self-hosted","linux","x64","lifter-wsl"]') || 'ubuntu-latest' }}
+    env:
+      LIFTER_CI_ISOLATED: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,20 +42,57 @@ jobs:
       - run: npm run check:secrets
       - run: npm run build:cron
       - run: npm run size
-      - run: npx playwright install --with-deps chromium
+      - run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
 
   integration:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && fromJSON('["self-hosted","linux","x64","lifter-wsl"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     env:
-      LIFTER_SUPABASE_STACK: a
+      LIFTER_CI_ISOLATED: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' }}
+      LIFTER_SUPABASE_STACK: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && 'ci' || 'a' }}
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Isolate self-hosted Supabase identity and ports
+        if: env.LIFTER_CI_ISOLATED == 'true'
+        shell: bash
+        run: |
+          cp supabase/config.toml "$RUNNER_TEMP/lifter-ci-config.toml"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          source = Path(os.environ["RUNNER_TEMP"]) / "lifter-ci-config.toml"
+          config = Path("supabase/config.toml")
+          text = source.read_text()
+          replacements = {
+              'project_id = "lifter"': 'project_id = "lifter-stack-ci"',
+              "port = 54320": "port = 55420",
+              "port = 54321": "port = 55421",
+              "port = 54322": "port = 55422",
+              "port = 54323": "port = 55423",
+              "port = 54324": "port = 55424",
+              "smtp_port = 54325": "smtp_port = 55425",
+              "pop3_port = 54326": "pop3_port = 55426",
+              "port = 54327": "port = 55427",
+              "inspector_port = 8083": "inspector_port = 55428",
+              "port = 54329": "port = 55429",
+          }
+          for before, after in replacements.items():
+              if text.count(before) != 1:
+                  raise SystemExit(f"Expected exactly one Supabase config value: {before}")
+              text = text.replace(before, after, 1)
+          config.write_text(text)
+          PY
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -87,27 +126,69 @@ jobs:
       - name: Assert shared password policy DB parity
         run: npm run test:integration -- tests/integration/password-policy-parity.test.ts
       - run: npm run test:integration
-      - run: npx playwright install --with-deps chromium
+      - run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
       - name: Run full Playwright suite against the local stack
         run: npm run e2e -- --workers=1
         env:
           LOCAL_SUPABASE_STORAGE_TEST: 'true'
           LOCAL_SUPABASE_PROVIDER_FAULT_TEST: 'true'
-      - run: supabase stop --no-backup
+      - run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            supabase stop --project-id lifter-stack-ci --no-backup
+          else
+            supabase stop --no-backup
+          fi
         if: always()
 
   storage:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && fromJSON('["self-hosted","linux","x64","lifter-wsl"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     env:
-      LIFTER_SUPABASE_STACK: a
+      LIFTER_CI_ISOLATED: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' }}
+      LIFTER_SUPABASE_STACK: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && 'ci' || 'a' }}
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
           persist-credentials: false
+      - name: Isolate self-hosted Supabase identity and ports
+        if: env.LIFTER_CI_ISOLATED == 'true'
+        shell: bash
+        run: |
+          cp supabase/config.toml "$RUNNER_TEMP/lifter-ci-config.toml"
+          python3 - <<'PY'
+          import os
+          from pathlib import Path
+
+          source = Path(os.environ["RUNNER_TEMP"]) / "lifter-ci-config.toml"
+          config = Path("supabase/config.toml")
+          text = source.read_text()
+          replacements = {
+              'project_id = "lifter"': 'project_id = "lifter-stack-ci"',
+              "port = 54320": "port = 55420",
+              "port = 54321": "port = 55421",
+              "port = 54322": "port = 55422",
+              "port = 54323": "port = 55423",
+              "port = 54324": "port = 55424",
+              "smtp_port = 54325": "smtp_port = 55425",
+              "pop3_port = 54326": "pop3_port = 55426",
+              "port = 54327": "port = 55427",
+              "inspector_port = 8083": "inspector_port = 55428",
+              "port = 54329": "port = 55429",
+          }
+          for before, after in replacements.items():
+              if text.count(before) != 1:
+                  raise SystemExit(f"Expected exactly one Supabase config value: {before}")
+              text = text.replace(before, after, 1)
+          config.write_text(text)
+          PY
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -136,7 +217,12 @@ jobs:
         run: node scripts/wait-storage-ready.mjs
       - name: Provision local Vault signup keys
         run: node tests/integration/client-accounts-provision.mjs
-      - run: npx playwright install --with-deps chromium
+      - run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
       - name: Run all F14 Storage integrations with zero skips
         run: |
           npm run test:integration -- \
@@ -157,5 +243,10 @@ jobs:
           node scripts/assert-storage-suite-zero-skips.mjs playwright "$RUNNER_TEMP/branding-storage-playwright.json"
         env:
           LOCAL_SUPABASE_STORAGE_TEST: 'true'
-      - run: supabase stop --no-backup
+      - run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            supabase stop --project-id lifter-stack-ci --no-backup
+          else
+            supabase stop --no-backup
+          fi
         if: always()

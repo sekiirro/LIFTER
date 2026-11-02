@@ -17,9 +17,18 @@ it('runs the full Playwright suite after local-stack integration tests', () => {
   expect(supabaseStart).toBeDefined();
   expect(supabaseStart).not.toMatch(/-x[^\n]*\bstorage-api\b/);
   expect(integration).toMatch(FULL_INTEGRATION_RUN);
-  expect(integration).toContain(
-    'run: npx playwright install --with-deps chromium',
+  const isolatedInstallCondition = integration.indexOf(
+    `if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then`,
   );
+  const isolatedBrowserInstall = integration.indexOf(
+    'npx playwright install chromium',
+  );
+  const hostedBrowserInstall = integration.indexOf(
+    'npx playwright install --with-deps chromium',
+  );
+  expect(isolatedInstallCondition).toBeGreaterThanOrEqual(0);
+  expect(isolatedInstallCondition).toBeLessThan(isolatedBrowserInstall);
+  expect(isolatedBrowserInstall).toBeLessThan(hostedBrowserInstall);
   expect(integration).toContain('run: npm run e2e -- --workers=1');
   expect(integration).toContain("LOCAL_SUPABASE_PROVIDER_FAULT_TEST: 'true'");
   expect(integration).toContain('SUPABASE_URL=$API_URL');
@@ -30,9 +39,9 @@ it('runs the full Playwright suite after local-stack integration tests', () => {
     integration.indexOf('run: npm run e2e -- --workers=1'),
   );
   expect(integration.search(FULL_INTEGRATION_RUN)).toBeLessThan(
-    integration.indexOf('run: npx playwright install --with-deps chromium'),
+    hostedBrowserInstall,
   );
-  expect(
-    integration.indexOf('run: npx playwright install --with-deps chromium'),
-  ).toBeLessThan(integration.indexOf('run: npm run e2e -- --workers=1'));
+  expect(hostedBrowserInstall).toBeLessThan(
+    integration.indexOf('run: npm run e2e -- --workers=1'),
+  );
 });

@@ -31,19 +31,19 @@ function valueFor(configText, section, key) {
 /** @param {Record<string, string | undefined>} [env] */
 export function selectStack(env = process.env) {
   const requested = env.LIFTER_SUPABASE_STACK;
-  if (requested && !['a', 'b', 'c', 'd'].includes(requested))
+  if (requested && !['a', 'b', 'c', 'd', 'ci'].includes(requested))
     throw new Error('Unsupported local Supabase stack');
   if (requested) return requested;
   throw new Error(
-    'No local Supabase stack selected. Set LIFTER_SUPABASE_STACK to a, b, c, or d.',
+    'No local Supabase stack selected. Set LIFTER_SUPABASE_STACK to a, b, c, d, or ci.',
   );
 }
 
 export function getStackConfig(stack = 'a', root = process.cwd()) {
-  if (!['a', 'b', 'c', 'd'].includes(stack))
+  if (!['a', 'b', 'c', 'd', 'ci'].includes(stack))
     throw new Error('Unsupported local Supabase stack');
   const configPath =
-    stack === 'a'
+    stack === 'a' || stack === 'ci'
       ? path.join(root, 'supabase', 'config.toml')
       : path.join(root, `supabase-stack-${stack}`, 'supabase', 'config.toml');
   if (!existsSync(configPath)) {
@@ -69,9 +69,12 @@ export function getStackConfig(stack = 'a', root = process.cwd()) {
     projectId,
     configPath,
     configText,
-    workdir: stack === 'a' ? root : path.join(root, `supabase-stack-${stack}`),
+    workdir:
+      stack === 'a' || stack === 'ci'
+        ? root
+        : path.join(root, `supabase-stack-${stack}`),
     envFile:
-      stack === 'a'
+      stack === 'a' || stack === 'ci'
         ? path.join(root, '.env.local')
         : path.join(root, `.env.stack-${stack}`),
     apiPort: ports[0],
@@ -115,7 +118,7 @@ export function assertLocalStackTarget({
 
 export function loadSelectedStackEnv(env = process.env, root = process.cwd()) {
   const stack = selectStack(env, root);
-  if (stack === 'a') return stack;
+  if (stack === 'a' || stack === 'ci') return stack;
   const envFile = getStackConfig(stack, root).envFile;
   let contents;
   try {
