@@ -1,4 +1,10 @@
-import type { WorkoutDocument } from './schema';
+import type {
+  WorkoutDay,
+  WorkoutDocument,
+  WorkoutExerciseReference,
+  WorkoutItem,
+  WorkoutSet,
+} from './schema';
 
 export type WorkoutTemplateActorRole =
   | 'platform_owner'
@@ -35,84 +41,328 @@ export type WorkoutTemplatePage = {
 
 export const TEMPLATE_PAGE_SIZE = 20;
 
-// RED scaffold: the implementation replaces these deliberately incorrect
-// projections after the failing scope/pagination assertions are recorded.
+export class WorkoutTemplateManagementError extends Error {
+  readonly code = 'invalid_workout_template_operation';
+
+  constructor(message: string) {
+    super(message);
+    this.name = 'WorkoutTemplateManagementError';
+  }
+}
+
+function isVisibleTemplate(
+  actor: WorkoutTemplateActor,
+  template: WorkoutTemplateProjection,
+): boolean {
+  if (template.scope === 'global') return true;
+  return template.workspaceId === actor.workspaceId;
+}
+
 export function listVisibleTemplates(
-  _actor: WorkoutTemplateActor,
-  _templates: readonly WorkoutTemplateProjection[],
-  _page = 1,
-  _pageSize = TEMPLATE_PAGE_SIZE,
+  actor: WorkoutTemplateActor,
+  templates: readonly WorkoutTemplateProjection[],
+  page = 1,
+  pageSize = TEMPLATE_PAGE_SIZE,
 ): WorkoutTemplatePage {
-  return { items: [], total: 0, page: 1, pageSize: TEMPLATE_PAGE_SIZE, pageCount: 0 };
+  const normalizedPageSize = Math.min(
+    TEMPLATE_PAGE_SIZE,
+    Math.max(1, Math.trunc(pageSize)),
+  );
+  const visible = templates.filter((template) =>
+    isVisibleTemplate(actor, template),
+  );
+  const pageCount = Math.ceil(visible.length / normalizedPageSize);
+  const normalizedPage =
+    pageCount === 0
+      ? 1
+      : Math.min(pageCount, Math.max(1, Math.trunc(page)));
+  const start = (normalizedPage - 1) * normalizedPageSize;
+
+  return {
+    items: visible.slice(start, start + normalizedPageSize),
+    total: visible.length,
+    page: normalizedPage,
+    pageSize: normalizedPageSize,
+    pageCount,
+  };
 }
 
 export function canManageGlobalTemplates(
-  _actor: WorkoutTemplateActor,
+  actor: WorkoutTemplateActor,
 ): boolean {
-  return false;
+  return actor.role === 'platform_owner';
 }
 
 export function canEditTemplate(
-  _actor: WorkoutTemplateActor,
-  _template: WorkoutTemplateProjection,
+  actor: WorkoutTemplateActor,
+  template: WorkoutTemplateProjection,
 ): boolean {
-  return false;
+  if (template.status === 'retired') return false;
+  if (template.scope === 'global') {
+    return canManageGlobalTemplates(actor);
+  }
+  return (
+    template.workspaceId === actor.workspaceId &&
+    (actor.role === 'platform_owner' ||
+      actor.role === 'workspace_owner' ||
+      actor.role === 'trainer')
+  );
 }
 
 export function canLoadTemplate(
-  _actor: WorkoutTemplateActor,
-  _template: WorkoutTemplateProjection,
+  actor: WorkoutTemplateActor,
+  template: WorkoutTemplateProjection,
 ): boolean {
-  return false;
+  return template.status === 'active' && isVisibleTemplate(actor, template);
+}
+
+function cloneExerciseReference(
+  reference: WorkoutExerciseReference,
+): WorkoutExerciseReference {
+  return {
+    ...reference,
+    ...(reference.variation === undefined
+      ? {}
+      : { variation: { ...reference.variation } }),
+  };
+}
+
+function cloneSet(set: WorkoutSet, id: string): WorkoutSet {
+  return {
+    ...set,
+    id,
+    reps: { ...set.reps },
+    load: { ...set.load },
+  };
+}
+
+function cloneItem(
+  item: WorkoutItem,
+  id: string,
+  setIds: readonly string[],
+): WorkoutItem {
+  return {
+    ...item,
+    id,
+    exercise: cloneExerciseReference(item.exercise),
+    ...(item.alternatives === undefined
+      ? {}
+      : {
+          alternatives: item.alternatives.map(cloneExerciseReference),
+        }),
+    sets: item.sets.map((set, index) => cloneSet(set, setIds[index]!)),
+  };
+}
+
+function cloneDay(
+  day: WorkoutDay,
+  id: string,
+  itemIds: readonly string[],
+  setIdsByItemId: ReadonlyMap<string, readonly string[]>,
+): WorkoutDay {
+  return {
+    ...day,
+    id,
+    ...(day.items === undefined
+      ? {}
+      : {
+          items: day.items.map((item, index) =>
+            cloneItem(item, itemIds[index]!, setIdsByItemId.get(item.id) ?? []),
+          ),
+        }),
+  };
+}
+
+function cloneDocument(document: WorkoutDocument): WorkoutDocument {
+  return {
+    ...document,
+    days: document.days.map((day) =>
+      cloneDay(
+        day,
+        day.id,
+        (day.items ?? []).map((item) => item.id),
+        new Map(
+          (day.items ?? []).map((item) => [
+            item.id,
+            item.sets.map((set) => set.id),
+          ]),
+        ),
+      ),
+    ),
+  };
 }
 
 export function loadTemplateIntoDraft(
-  _template: WorkoutTemplateProjection,
+  template: WorkoutTemplateProjection,
   draft: WorkoutDocument,
-  _idFactory: () => string = () => crypto.randomUUID(),
+  idFactory: () => string = () => crypto.randomUUID(),
 ): WorkoutDocument {
-  return draft;
+  if (template.status === 'retired') {
+    throw new WorkoutTemplateManagementError(
+      'Retired templates cannot be loaded into a draft',
+    );
+  }
+
+  const copiedDays = template.document.days.map((day) => {
+    const dayId = idFactory();
+    const itemIds = (day.items ?? []).map(() => idFactory());
+    const setIdsByItemId = new Map<string, readonly string[]>();
+    for (const item of day.items ?? []) {
+      setIdsByItemId.set(
+        item.id,
+        item.sets.map(() => idFactory()),
+      );
+    }
+    return cloneDay(day, dayId, itemIds, setIdsByItemId);
+  });
+
+  return {
+    ...cloneDocument(draft),
+    days: [...cloneDocument(draft).days, ...copiedDays],
+  };
+}
+
+function requireAuthorizedStaff(actor: WorkoutTemplateActor): void {
+  if (
+    actor.role !== 'platform_owner' &&
+    actor.role !== 'workspace_owner' &&
+    actor.role !== 'trainer'
+  ) {
+    throw new WorkoutTemplateManagementError(
+      'This actor cannot manage workout templates',
+    );
+  }
 }
 
 export function createWorkspaceTemplate(
-  _actor: WorkoutTemplateActor,
-  _input: {
+  actor: WorkoutTemplateActor,
+  input: {
     workspaceId: string;
     name: string;
     description?: string;
     document: WorkoutDocument;
   },
-  _idFactory: () => string = () => crypto.randomUUID(),
+  idFactory: () => string = () => crypto.randomUUID(),
 ): WorkoutTemplateProjection {
-  throw new Error('Not implemented');
+  requireAuthorizedStaff(actor);
+  if (input.workspaceId !== actor.workspaceId) {
+    throw new WorkoutTemplateManagementError(
+      'Workspace templates must use the explicitly selected workspace',
+    );
+  }
+  if (!input.name.trim()) {
+    throw new WorkoutTemplateManagementError('Template name is required');
+  }
+  return {
+    id: idFactory(),
+    scope: 'workspace',
+    workspaceId: input.workspaceId,
+    name: input.name.trim(),
+    ...(input.description?.trim()
+      ? { description: input.description.trim() }
+      : {}),
+    version: 1,
+    status: 'active',
+    document: cloneDocument(input.document),
+    promotionEligible: true,
+  };
 }
 
 export function createGlobalTemplate(
-  _actor: WorkoutTemplateActor,
-  _input: { name: string; description?: string; document: WorkoutDocument },
-  _idFactory: () => string = () => crypto.randomUUID(),
+  actor: WorkoutTemplateActor,
+  input: { name: string; description?: string; document: WorkoutDocument },
+  idFactory: () => string = () => crypto.randomUUID(),
 ): WorkoutTemplateProjection {
-  throw new Error('Not implemented');
+  if (!canManageGlobalTemplates(actor)) {
+    throw new WorkoutTemplateManagementError(
+      'Only platform owners can create global templates',
+    );
+  }
+  if (!input.name.trim()) {
+    throw new WorkoutTemplateManagementError('Template name is required');
+  }
+  return {
+    id: idFactory(),
+    scope: 'global',
+    name: input.name.trim(),
+    ...(input.description?.trim()
+      ? { description: input.description.trim() }
+      : {}),
+    version: 1,
+    status: 'active',
+    document: cloneDocument(input.document),
+    promotionEligible: false,
+  };
 }
 
 export function editTemplate(
-  _actor: WorkoutTemplateActor,
+  actor: WorkoutTemplateActor,
   template: WorkoutTemplateProjection,
-  _patch: { name: string; description?: string; document: WorkoutDocument },
+  patch: { name: string; description?: string; document: WorkoutDocument },
 ): WorkoutTemplateProjection {
-  return template;
+  if (!canEditTemplate(actor, template)) {
+    throw new WorkoutTemplateManagementError(
+      'This actor cannot edit the selected template',
+    );
+  }
+  if (!patch.name.trim()) {
+    throw new WorkoutTemplateManagementError('Template name is required');
+  }
+  return {
+    ...template,
+    name: patch.name.trim(),
+    ...(patch.description?.trim()
+      ? { description: patch.description.trim() }
+      : { description: undefined }),
+    version: template.version + 1,
+    document: cloneDocument(patch.document),
+  };
 }
 
 export function retireTemplate(
-  _actor: WorkoutTemplateActor,
+  actor: WorkoutTemplateActor,
   template: WorkoutTemplateProjection,
 ): WorkoutTemplateProjection {
-  return template;
+  if (!canEditTemplate(actor, template)) {
+    throw new WorkoutTemplateManagementError(
+      'This actor cannot retire the selected template',
+    );
+  }
+  return {
+    ...template,
+    status: 'retired',
+    version: template.version + 1,
+  };
 }
 
 export function promoteTemplateToGlobal(
-  _actor: WorkoutTemplateActor,
+  actor: WorkoutTemplateActor,
   template: WorkoutTemplateProjection,
+  idFactory: () => string = () => crypto.randomUUID(),
 ): WorkoutTemplateProjection {
-  return template;
+  if (!canManageGlobalTemplates(actor)) {
+    throw new WorkoutTemplateManagementError(
+      'Only platform owners can make a workspace template global',
+    );
+  }
+  if (
+    template.scope !== 'workspace' ||
+    template.status !== 'active' ||
+    !template.promotionEligible ||
+    template.workspaceId !== actor.workspaceId
+  ) {
+    throw new WorkoutTemplateManagementError(
+      'This workspace template is not eligible to become global',
+    );
+  }
+  return {
+    id: idFactory(),
+    scope: 'global',
+    name: template.name,
+    ...(template.description ? { description: template.description } : {}),
+    version: 1,
+    status: 'active',
+    document: cloneDocument(template.document),
+    promotionEligible: false,
+  };
 }
