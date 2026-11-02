@@ -62,7 +62,7 @@ Planning only. Every task is a 30-60 minute unit. Begin with its negative or con
 ## Phase 6 — UI
 
 - [x] **T036 (50m) — Plan builder UI.** [INDEPENDENT] `OWNER=MiniMax`. Sessions and rest days, exercises, warm-up/working sets with per-set reps/load/rest/RIR/notes, notes, manual alternatives and video refs; reorder, drag across days, duplicate exercises/days; keyboard move up/down/to-day controls. RED first. **Mutation:** remove a keyboard alternative or id preservation and prove UI test fails. No direct DB.
-- [ ] **T037 (50m) — Template management UI.** [INDEPENDENT] `OWNER=MiniMax`. List global/workspace templates, load into draft, create/edit workspace templates, PO global governance controls. RED first. **Mutation:** remove scope gating or load copy semantics and prove tests fail. No direct DB.
+- [x] **T037 (50m) — Template management UI.** [INDEPENDENT] `OWNER=MiniMax`. List global/workspace templates, load into draft, create/edit workspace templates, PO global governance controls. RED first. **Mutation:** remove scope gating or load copy semantics and prove tests fail. No direct DB.
 - [ ] **T038 (50m) — Ready/publish UI and conflict handling.** [NEEDS-PLAN-CORE] `OWNER=MiniMax`. Ready & Publish action, Save as Draft, conflict display, no-op autosave readiness preservation. RED first. **Mutation:** clear readiness on no-op autosave or hide conflict and prove tests fail. No direct DB.
 - [ ] **T039 (50m) — AR/EN Playwright and accessibility fixtures.** [INDEPENDENT] `OWNER=MiniMax`. Catalog/plan list, search, add/edit, reorder in AR RTL and EN, keyboard and axe, mobile/desktop, light/dark. RED first. **Mutation:** remove one role-gated control, accessible name or RTL direction assertion and prove suite fails. No direct DB.
 
