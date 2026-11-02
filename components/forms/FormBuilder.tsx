@@ -474,6 +474,7 @@ export function FormBuilder({
       {allForms.length > 0 && (
         <ul
           className={styles.formList}
+          data-testid="saved-form-list"
           aria-label={messages['forms.staffSavedForms']}
         >
           {allForms.map((savedForm) => (
@@ -745,6 +746,7 @@ export function FormBuilder({
                     >
                       <ol
                         className={styles.questionOutline}
+                        data-testid="question-outline"
                         aria-label={messages['forms.staffQuestionCount']}
                       >
                         {questions.map(({ question }) => {

@@ -200,12 +200,6 @@
   gap: var(--space-1);
 }
 
-.questionOutline {
-  max-block-size: 28vh;
-  overflow: auto;
-  overscroll-behavior: contain;
-}
-
 .questionOutlineItem {
   min-inline-size: 0;
 }
@@ -369,6 +363,8 @@
   grid-auto-columns: max-content;
   overflow-x: auto;
   padding-block: var(--space-1);
+  padding-inline-start: 0;
+  list-style: none;
 }
 
 @media (max-width: 40rem) {
@@ -395,9 +391,5 @@
 @media (max-width: 63.999rem) {
   .questionEditorLayout {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .questionOutline {
-    max-block-size: 45vh;
   }
 }
