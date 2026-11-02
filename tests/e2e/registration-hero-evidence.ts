@@ -247,47 +247,78 @@ export async function expectHeroTextBackdropContrast(page: Page) {
 }
 
 /**
- * The preference label sits on a translucent pill over the artwork, so the
- * label text itself has to carry the contrast.
+ * A failed artwork sample leaves an opaque token card with readable text.
  */
-export async function expectHeroPreferenceLabelContrast(page: Page) {
-  const label = page
-    .locator('[data-testid="registration-hero-preferences"] label[for]')
-    .first();
-  await expect(label).toBeVisible();
-  const box = await label.boundingBox();
-  if (!box) throw new Error('Preference label is not measurable');
-  const measure = async () => {
-    const { color, samples } = await renderedBackdrop(page, label, [
-      {
-        x: Math.round(box.x + box.width / 2),
-        y: Math.round(box.y + box.height / 2),
-      },
-    ]);
-    const foreground = parseRenderedColor(color);
-    const backdrop = samples[0]!;
-    const composited = foreground.rgb.map(
-      (channel, index) =>
-        foreground.alpha * channel +
-        (1 - foreground.alpha) * (backdrop[index] ?? 0),
-    ) as Rgb;
-    const ratio = contrast(
-      luminance(composited[0], composited[1], composited[2]),
-      luminance(backdrop[0], backdrop[1], backdrop[2]),
-    );
-    return { ratio, backdrop, color, alpha: foreground.alpha };
-  };
+export async function expectHeroSamplingFallback(page: Page) {
+  const readSurface = () =>
+    page.evaluate(() => {
+      const stage = document.querySelector<HTMLElement>(
+        '[data-registration-hero]',
+      );
+      const card = document.querySelector<HTMLElement>(
+        '[data-registration-card="premium-centered"]',
+      );
+      const label = document.querySelector<HTMLElement>(
+        'form label > span:first-child',
+      );
+      if (!stage || !card || !label)
+        throw new Error('Hero fallback targets unavailable');
+      const probeCard = document.createElement('span');
+      probeCard.style.background = 'var(--color-card)';
+      document.body.append(probeCard);
+      const resolvedCard = getComputedStyle(probeCard).backgroundColor;
+      probeCard.remove();
+      const probeText = document.createElement('span');
+      probeText.style.color = 'var(--color-text)';
+      document.body.append(probeText);
+      const resolvedText = getComputedStyle(probeText).color;
+      probeText.remove();
+      const cardBackground = getComputedStyle(card).backgroundColor;
+      const labelColor = getComputedStyle(label).color;
+      return {
+        sampling: stage.dataset.photoSampling ?? '',
+        statsReady: stage.dataset.photoStatsReady ?? '',
+        photoTone: stage.dataset.photoTone ?? '',
+        dimming: stage.style.getPropertyValue('--hero-adaptive-dimming'),
+        dimmingPercent: stage.style.getPropertyValue(
+          '--hero-adaptive-dimming-percent',
+        ),
+        photoLuminance: stage.style.getPropertyValue('--hero-photo-luminance'),
+        cardBackground,
+        resolvedCard,
+        labelColor,
+        resolvedText,
+        opaque: cardBackground === resolvedCard && labelColor === resolvedText,
+      };
+    });
+
+  // The fallback surface is committed by React, so the assertion waits for
+  // the opaque card to be painted instead of reading a pre-commit frame.
   await expect
-    .poll(async () => (await measure()).ratio, {
+    .poll(async () => (await readSurface()).opaque, {
       timeout: 15_000,
       intervals: [100, 250, 500],
-      message: 'the preference label keeps 4.5:1 over the painted pill',
+      message: 'the sampling fallback card is painted opaque',
     })
-    .toBeGreaterThanOrEqual(4.5);
-  const result = await measure();
-  expect(result.alpha).toBe(1);
-  expect(parseRenderedColor(result.color).rgb).toEqual([255, 255, 255]);
-  return result;
+    .toBe(true);
+
+  const surface = await readSurface();
+  expect(surface.sampling).toBe('fallback');
+  expect(surface.statsReady).toBe('false');
+  expect(surface.photoTone).toBe('');
+  expect(surface.dimming).toBe('0');
+  expect(surface.dimmingPercent).toBe('0%');
+  expect(surface.photoLuminance).toBe('');
+  const card = parseRenderedColor(surface.cardBackground);
+  expect(card.alpha).toBe(1);
+  expect(surface.cardBackground).toBe(surface.resolvedCard);
+  expect(surface.labelColor).toBe(surface.resolvedText);
+  const ratio = contrast(
+    cssLuminance(surface.labelColor),
+    cssLuminance(surface.cardBackground),
+  );
+  expect(ratio).toBeGreaterThanOrEqual(4.5);
+  return { ratio, ...surface };
 }
 
 /** Approved prototype material contract for the glass card shell. */

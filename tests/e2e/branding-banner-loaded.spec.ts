@@ -10,8 +10,8 @@ import {
   expectHeroFocusRing,
   expectHeroMaterialContract,
   expectHeroPhoneGroupLtr,
-  expectHeroPreferenceLabelContrast,
   expectHeroPreferencesSingleRow,
+  expectHeroSamplingFallback,
   expectHeroTextBackdropContrast,
   expectHeroTextContrast,
   expectHeroTouchTargets,
@@ -325,6 +325,63 @@ for (const locale of ['ar', 'en'] as const) {
           backdrop,
           preferenceLabel,
           ...sampling,
+        });
+      });
+
+      test(`sampling-fallback/${locale}/${theme}/${viewport.name}: a failed artwork sample falls back to an opaque card`, async ({
+        page,
+        context,
+      }) => {
+        await page.setViewportSize(viewport);
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await context.addCookies([
+          { name: LOCALE_COOKIE, value: locale, url: origin },
+          { name: THEME_COOKIE, value: theme, url: origin },
+        ]);
+        // Simulate a tainted canvas: the artwork read fails after the image
+        // has loaded, so the hero has to use its opaque fallback.
+        await page.addInitScript(() => {
+          const original = HTMLCanvasElement.prototype.getContext;
+          HTMLCanvasElement.prototype.getContext = function (
+            this: HTMLCanvasElement,
+            type: string,
+            ...rest: unknown[]
+          ) {
+            const context = (
+              original as unknown as (
+                ...args: unknown[]
+              ) => CanvasRenderingContext2D | null
+            ).call(this, type, ...rest);
+            if (type !== '2d' || !context) return context;
+            context.getImageData = () => {
+              throw new DOMException(
+                'Simulated cross-origin artwork',
+                'SecurityError',
+              );
+            };
+            return context;
+          } as unknown as HTMLCanvasElement['getContext'];
+        });
+        await page.goto(`/register/${encodeURIComponent(token)}`);
+        const stage = page.locator('[data-registration-hero]');
+        await expect(stage).toHaveAttribute('data-has-banner', 'true');
+        await expect(stage).toHaveAttribute('data-photo-sampling', 'fallback');
+        await expect(page.locator('[data-registration-banner]')).toBeVisible();
+        await expectHeroMaterialContract(page);
+        const fallback = await expectHeroSamplingFallback(page);
+        await expectHeroTouchTargets(page);
+        await expectHeroAxeClean(page);
+        const screenshot = await captureHeroScreenshot(
+          page,
+          `banner-sampling-fallback-${locale}-${theme}-${viewport.name}`,
+        );
+        measurements.push({
+          artwork: 'sampling-fallback',
+          locale,
+          theme,
+          viewport: viewport.name,
+          screenshot,
+          fallback,
         });
       });
     }

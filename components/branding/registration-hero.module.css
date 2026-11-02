@@ -466,7 +466,9 @@
   display: none;
 }
 
-.noArtwork .glassCard.glassCard {
+/* A failed artwork sample and a missing artwork share the opaque card. */
+.noArtwork .glassCard.glassCard,
+.samplingFallback .glassCard.glassCard {
   background: var(--color-card);
   color: var(--color-text);
   box-shadow:
@@ -476,40 +478,56 @@
 }
 
 .noArtwork .formPlate,
+.samplingFallback .formPlate,
 .noArtwork .formPlate h1,
+.samplingFallback .formPlate h1,
 .noArtwork .glassContent :global([data-registration-identity]),
+.samplingFallback .glassContent :global([data-registration-identity]),
 .noArtwork .glassContent :global([data-brand-name]),
+.samplingFallback .glassContent :global([data-brand-name]),
 .noArtwork .form > label,
+.samplingFallback .form > label,
 .noArtwork .field,
-.noArtwork .message {
+.samplingFallback .field,
+.noArtwork .message,
+.samplingFallback .message {
   color: var(--color-text);
 }
 
 .noArtwork .fieldControl,
-.noArtwork .countryPicker {
+.samplingFallback .fieldControl,
+.noArtwork .countryPicker,
+.samplingFallback .countryPicker {
   border: 2px solid var(--color-border-strong);
   background: var(--color-card-raised);
   color: var(--color-text);
 }
 
-.noArtwork .fieldControl[data-error='true'] {
+.noArtwork .fieldControl[data-error='true'],
+.samplingFallback .fieldControl[data-error='true'] {
   border-width: 2px;
   border-color: var(--hero-error-edge, var(--color-error-fg));
 }
 
 .noArtwork .form :global(input),
+.samplingFallback .form :global(input),
 .noArtwork .form :global(select),
-.noArtwork .phoneNumber :global([data-testid='country-calling-code']) {
+.samplingFallback .form :global(select),
+.noArtwork .phoneNumber :global([data-testid='country-calling-code']),
+.samplingFallback .phoneNumber :global([data-testid='country-calling-code']) {
   color: var(--color-text) !important;
   -webkit-text-fill-color: var(--color-text) !important;
 }
 
-.noArtwork .form :global(input::placeholder) {
+.noArtwork .form :global(input::placeholder),
+.samplingFallback .form :global(input::placeholder) {
   color: var(--color-text-muted);
 }
 
 .noArtwork .fieldError,
-.noArtwork .message[data-result-status='invalid_input'] {
+.samplingFallback .fieldError,
+.noArtwork .message[data-result-status='invalid_input'],
+.samplingFallback .message[data-result-status='invalid_input'] {
   color: var(--color-error-fg);
 }
 

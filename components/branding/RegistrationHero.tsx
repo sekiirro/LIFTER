@@ -14,6 +14,7 @@ import type { Locale } from '../../lib/design/preferences';
 import { modes } from '../../lib/design/tokens';
 import {
   adaptiveDimmingFromBackdropLuminances,
+  applyHeroSamplingFallback,
   conservativeBackdropLuminance,
   photoToneFromLuminance,
   selectHeroLayoutMode,
@@ -158,6 +159,7 @@ export function RegistrationHero({
 }) {
   const stageRef = useRef<HTMLElement>(null);
   const [viewport, setViewport] = useState<HeroViewport>('desktop');
+  const [samplingFallback, setSamplingFallback] = useState(false);
   const hasBanner = Boolean(banner?.src);
   const layoutMode = selectHeroLayoutMode({ hasBanner, viewport });
 
@@ -185,6 +187,8 @@ export function RegistrationHero({
       !image.complete ||
       !image.naturalWidth
     ) {
+      setSamplingFallback(true);
+      applyHeroSamplingFallback(stage);
       return;
     }
 
@@ -220,6 +224,8 @@ export function RegistrationHero({
         contentBox(textArea),
       );
       if (!textRegion) {
+        setSamplingFallback(true);
+        applyHeroSamplingFallback(stage);
         return;
       }
       const textPhoto = sampleArtwork(
@@ -237,6 +243,8 @@ export function RegistrationHero({
         3,
       );
       if (!textPhoto || !bottomEdge) {
+        setSamplingFallback(true);
+        applyHeroSamplingFallback(stage);
         return;
       }
       const peakLuminance = conservativeBackdropLuminance(textPhoto.luminances);
@@ -270,9 +278,12 @@ export function RegistrationHero({
       );
       delete stage.dataset.photoSampling;
       stage.dataset.photoStatsReady = 'true';
+      setSamplingFallback(false);
     } catch {
-      // The artwork sample failed; the next measurement retries it.
-      return;
+      // A failed canvas read falls back to the opaque token card rather than
+      // guessing a treatment over artwork that was never measured.
+      setSamplingFallback(true);
+      applyHeroSamplingFallback(stage);
     }
   }, []);
 
@@ -286,7 +297,8 @@ export function RegistrationHero({
       // A new artwork that has not loaded yet must not keep the previous
       // sample: clear it so the card can use the opaque fallback.
       if (stage?.dataset.photoStatsReady === 'true')
-        image?.addEventListener('load', updateArtworkSamples, { once: true });
+        applyHeroSamplingFallback(stage);
+      image?.addEventListener('load', updateArtworkSamples, { once: true });
     }
     window.addEventListener('resize', updateArtworkSamples);
     return () => {
@@ -302,7 +314,9 @@ export function RegistrationHero({
   return (
     <main
       ref={stageRef}
-      className={`${styles.stage} ${hasBanner ? '' : styles.noArtwork}`}
+      className={`${styles.stage} ${hasBanner ? '' : styles.noArtwork} ${
+        samplingFallback ? styles.samplingFallback : ''
+      }`}
       data-testid="registration-hero"
       data-registration-hero=""
       data-hero-layout={layoutMode}

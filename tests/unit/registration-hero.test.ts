@@ -7,6 +7,7 @@ import {
   MAX_ADAPTIVE_DIMMING,
   adaptiveDimmingFromBackdropLuminances,
   adaptiveDimmingFromLuminance,
+  applyHeroSamplingFallback,
   conservativeBackdropLuminance,
   photoToneFromLuminance,
   selectHeroLayoutMode,
@@ -123,6 +124,70 @@ describe('production registration hero conservative backdrop sampling', () => {
     );
     expect(heroComponentSource).toContain('conservativeBackdropLuminance(');
     expect(heroComponentSource).toContain('data-hero-text-area');
+  });
+});
+
+describe('production registration hero sampling fallback', () => {
+  function fakeStage(dataset: Record<string, string> = {}) {
+    const properties = new Map<string, string>();
+    const style = {
+      setProperty: (name: string, value: string) => {
+        properties.set(name, value);
+      },
+      removeProperty: (name: string) => {
+        properties.delete(name);
+      },
+      getPropertyValue: (name: string) => properties.get(name) ?? '',
+    } as unknown as CSSStyleDeclaration;
+    return { dataset: { ...dataset } as DOMStringMap, style };
+  }
+
+  it('clears the sampled state and resets the dimming when sampling fails', () => {
+    const stage = fakeStage({
+      photoTone: 'bright',
+      photoStatsReady: 'true',
+      photoAverageLuminance: '0.2381',
+    });
+    stage.style.setProperty('--hero-photo-luminance', '0.9131');
+    stage.style.setProperty('--hero-adaptive-dimming', '0.8082');
+    stage.style.setProperty('--hero-adaptive-dimming-percent', '80.82%');
+    stage.style.setProperty('--hero-bottom-average', 'rgb(26 28 36)');
+    stage.style.setProperty(
+      '--hero-mobile-mid',
+      'color-mix(in oklab, red, blue)',
+    );
+
+    applyHeroSamplingFallback(stage);
+
+    expect(stage.dataset.photoSampling).toBe('fallback');
+    expect(stage.dataset.photoStatsReady).toBe('false');
+    expect(stage.dataset.photoTone).toBeUndefined();
+    expect(stage.dataset.photoAverageLuminance).toBeUndefined();
+    expect(stage.style.getPropertyValue('--hero-photo-luminance')).toBe('');
+    expect(stage.style.getPropertyValue('--hero-adaptive-dimming')).toBe('0');
+    expect(
+      stage.style.getPropertyValue('--hero-adaptive-dimming-percent'),
+    ).toBe('0%');
+    expect(stage.style.getPropertyValue('--hero-bottom-average')).toBe('');
+    expect(stage.style.getPropertyValue('--hero-mobile-mid')).toBe('');
+  });
+
+  it('paints the opaque token card while the sampling fallback is active', () => {
+    const fallbackCard = heroStylesSource.match(
+      /\.noArtwork \.glassCard\.glassCard,\s*\.samplingFallback \.glassCard\.glassCard\s*\{(?<body>[^}]*)\}/,
+    );
+    expect(fallbackCard?.groups?.body).toMatch(
+      /background:\s*var\(--color-card\)/,
+    );
+    expect(fallbackCard?.groups?.body).toMatch(/color:\s*var\(--color-text\)/);
+    expect(heroStylesSource).toContain('.samplingFallback .formPlate,');
+  });
+
+  it('drives the opaque fallback from the React render, not an attribute re-match', () => {
+    expect(heroComponentSource).toContain('styles.samplingFallback');
+    expect(heroComponentSource).toContain('setSamplingFallback(true)');
+    expect(heroComponentSource).toContain('setSamplingFallback(false)');
+    expect(heroStylesSource).not.toContain("[data-photo-sampling='fallback']");
   });
 });
 

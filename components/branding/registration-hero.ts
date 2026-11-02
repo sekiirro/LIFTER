@@ -85,3 +85,28 @@ export function adaptiveDimmingFromBackdropLuminances(
     conservativeBackdropLuminance(luminances),
   );
 }
+
+export type HeroSamplingTarget = {
+  dataset: DOMStringMap;
+  style: CSSStyleDeclaration;
+};
+
+/**
+ * Sampling fallback state.
+ *
+ * Every failed artwork sample clears the previously sampled tone, luminance
+ * and dimming so the card can fall back to the opaque token surface instead
+ * of keeping a stale treatment over artwork that was never measured.
+ */
+export function applyHeroSamplingFallback(stage: HeroSamplingTarget): void {
+  delete stage.dataset.photoTone;
+  delete stage.dataset.photoAverageLuminance;
+  stage.dataset.photoStatsReady = 'false';
+  stage.dataset.photoSampling = 'fallback';
+  stage.style.removeProperty('--hero-photo-luminance');
+  stage.style.removeProperty('--hero-photo-average-luminance');
+  stage.style.setProperty('--hero-adaptive-dimming', '0');
+  stage.style.setProperty('--hero-adaptive-dimming-percent', '0%');
+  stage.style.removeProperty('--hero-bottom-average');
+  stage.style.removeProperty('--hero-mobile-mid');
+}
