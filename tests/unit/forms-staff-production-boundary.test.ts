@@ -20,7 +20,11 @@ describe('production staff Forms route boundary', () => {
       'utf8',
     );
     const productionClient = readFileSync(
-      resolve(root, 'components/forms/ProductionFormsConsole.tsx'),
+      resolve(root, 'app/(app)/forms/ProductionFormsConsole.tsx'),
+      'utf8',
+    );
+    const serverActions = readFileSync(
+      resolve(root, 'app/(app)/forms/actions.ts'),
       'utf8',
     );
     const staffConsole = readFileSync(
@@ -40,7 +44,12 @@ describe('production staff Forms route boundary', () => {
     expect(route).toContain('requireActor');
     expect(route).toContain('author_forms');
     expect(route).toContain('activeWorkspaceIds');
-    expect(productionClient).toContain('createPersistedFormsStaffAdapter');
+    expect(serverActions).toContain("'use server'");
+    expect(serverActions).toContain('createSessionClient');
+    expect(serverActions).toContain('createPersistedFormsStaffAdapter');
+    expect(serverActions).toContain('author_forms');
+    expect(productionClient).not.toMatch(/@supabase\//u);
+    expect(productionClient).not.toContain('createBrowserClient');
     expect(productionClient).not.toContain('mock-staff-adapter');
     expect(productionClient).not.toContain('FormsStaffDemo');
     expect(staffConsole).not.toContain('mock-staff-adapter');

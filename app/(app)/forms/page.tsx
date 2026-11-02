@@ -4,7 +4,7 @@ import { requireActor } from '../../../lib/auth/actor';
 import { roleHasCapability } from '../../../lib/auth/capabilities';
 import { createSessionClient } from '../../../lib/supabase/server';
 import { LOCALE_COOKIE, parseLocale } from '../../../lib/design/preferences';
-import { ProductionFormsConsole } from '../../../components/forms/ProductionFormsConsole';
+import { ProductionFormsConsole } from './ProductionFormsConsole';
 
 type Workspace = { id: string; name: string };
 
@@ -32,10 +32,6 @@ export default async function FormsStaffPage({
   const workspace = selected ?? workspaces[0]!;
   const store = await cookies();
   const locale = parseLocale(store.get(LOCALE_COOKIE)?.value);
-  const publicUrl = process.env.NEXT_PUBLIC_SUPABASE_URL;
-  const anonKey = process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY;
-  if (!publicUrl || !anonKey) notFound();
-
   return (
     <ProductionFormsConsole
       key={workspace.id}
@@ -49,8 +45,6 @@ export default async function FormsStaffPage({
       }
       workspaceId={workspace.id}
       workspaces={workspaces}
-      supabaseUrl={publicUrl}
-      supabaseAnonKey={anonKey}
     />
   );
 }
