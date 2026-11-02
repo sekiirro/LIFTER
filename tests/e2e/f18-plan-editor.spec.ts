@@ -21,18 +21,32 @@ for (const variant of [
       {
         name: 'lifter_locale',
         value: variant.locale,
-        url: 'http://127.0.0.1:3418',
+        url: 'http://localhost:3418',
       },
       {
         name: 'lifter_theme',
         value: variant.theme,
-        url: 'http://127.0.0.1:3418',
+        url: 'http://localhost:3418',
       },
     ]);
     await page.goto('/showcase/f18-plan-editor');
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
     await page.waitForTimeout(250);
     const editor = page.getByTestId('nutrition-plan-editor');
     await expect(editor).toHaveAttribute('dir', variant.direction);
+    const before = await editor
+      .locator('ol > li')
+      .first()
+      .locator('input')
+      .inputValue();
+    const moveDownName =
+      variant.locale === 'ar' ? 'نقل الوجبة لأسفل' : 'Move meal down';
+    const moveDown = editor.getByRole('button', { name: moveDownName }).first();
+    await moveDown.focus();
+    await page.keyboard.press('Space');
+    await expect(
+      editor.locator('ol > li').first().locator('input'),
+    ).not.toHaveValue(before);
     await expect(editor.locator('[aria-live="polite"]')).toContainText(
       variant.locale === 'ar' ? 'إجمالي اليوم المحدد' : 'Selected day totals',
     );

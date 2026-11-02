@@ -6,6 +6,7 @@ import { Bidi } from '../ui/Bidi';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
 import { dirFor, type Locale } from '../../lib/design/preferences';
+import { formatDigits } from '../../lib/i18n/format-digits';
 import { getMessages } from '../../lib/i18n';
 import type { NutritionFoodSnapshot } from '../../lib/plans/nutrition/macros';
 import type {
@@ -53,17 +54,6 @@ function normalizeDigits(value: string): string {
       return String(code >= 0x06f0 ? code - 0x06f0 : code - 0x0660);
     })
     .replace(/٫/g, '.');
-}
-
-function localizedDigits(value: string, locale: Locale): string {
-  return locale === 'ar'
-    ? value.replace(/[0-9]/g, (digit) =>
-        new Intl.NumberFormat('ar', {
-          useGrouping: false,
-          numberingSystem: 'arab',
-        }).format(Number(digit)),
-      )
-    : value;
 }
 
 export function NutritionPlanEditor({
@@ -178,7 +168,7 @@ export function NutritionPlanEditor({
             <dt>{messages[`nutritionAlternatives.${name}`]}</dt>
             <dd>
               <Bidi dir="ltr">
-                {localizedDigits(
+                {formatDigits(
                   Math.round(Number(values[name])).toString(),
                   locale,
                 )}{' '}
@@ -311,7 +301,7 @@ export function NutritionPlanEditor({
               onClick={() => setSelectedDay(day.dayIndex)}
             >
               {messages['nutritionPlan.day']}{' '}
-              {localizedDigits(String(day.dayIndex + 1), locale)}
+              {formatDigits(String(day.dayIndex + 1), locale)}
             </Button>
           ))}
         </nav>
@@ -355,7 +345,7 @@ export function NutritionPlanEditor({
                 <div className={styles.mealHeader}>
                   <h4>
                     {messages['nutritionPlan.meal']}{' '}
-                    {localizedDigits(String(index + 1), locale)}
+                    {formatDigits(String(index + 1), locale)}
                   </h4>
                   <div className={styles.actions}>
                     <Button
@@ -403,7 +393,7 @@ export function NutritionPlanEditor({
                             <input
                               type="text"
                               inputMode="decimal"
-                              value={localizedDigits(
+                              value={formatDigits(
                                 item.quantity.value,
                                 locale,
                               )}
@@ -455,7 +445,7 @@ export function NutritionPlanEditor({
           ? (['calories', 'protein', 'carbs', 'fat'] as const)
               .map(
                 (name) =>
-                  `${messages[`nutritionAlternatives.${name}`]} ${localizedDigits(Math.round(Number(totals[name])).toString(), locale)} ${name === 'calories' ? messages['nutritionAlternatives.kilocalories'] : formatUnit('g')}`,
+                  `${messages[`nutritionAlternatives.${name}`]} ${formatDigits(Math.round(Number(totals[name])).toString(), locale)} ${name === 'calories' ? messages['nutritionAlternatives.kilocalories'] : formatUnit('g')}`,
               )
               .join(', ')
           : messages['nutritionPlan.totalsUnavailable']}
