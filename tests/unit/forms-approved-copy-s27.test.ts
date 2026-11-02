@@ -7,7 +7,14 @@ describe('S27 approved F15 copy', () => {
   it('matches the approved Arabic and English strings exactly', () => {
     expect(approvedF15Copy).toHaveLength(227);
 
-    for (const row of approvedF15Copy) {
+    for (const row of [
+      ...approvedF15Copy,
+      {
+        key: 'forms.staffQuestionOptional',
+        ar: 'اختياري',
+        en: 'Optional',
+      },
+    ]) {
       const key = row.key as keyof typeof ar;
       expect(ar[key], `${row.key} Arabic`).toBe(row.ar);
       expect(en[key], `${row.key} English`).toBe(row.en);
