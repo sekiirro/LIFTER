@@ -55,6 +55,26 @@ for (const variant of [
       variant.locale === 'ar' ? 'إجمالي اليوم المحدد' : 'Selected day totals',
     );
 
+    const dayTotals = editor.locator(
+      `dl[aria-label="${variant.locale === 'ar' ? 'إجمالي اليوم' : 'Day totals'}"]`,
+    );
+    await expect(dayTotals).toContainText(
+      variant.locale === 'ar' ? '٦.٥' : '6.5',
+    );
+    await expect(dayTotals).toContainText(
+      variant.locale === 'ar' ? '٠.٧' : '0.7',
+    );
+    const mealTotals = editor.locator(
+      `dl[aria-label="${variant.locale === 'ar' ? 'إجمالي الوجبة' : 'Meal totals'}"]`,
+    );
+    await expect(mealTotals).toHaveCount(2);
+    await expect(mealTotals.first()).toContainText(
+      variant.locale === 'ar' ? '٢.٢' : '2.2',
+    );
+    await expect(mealTotals.nth(1)).toContainText(
+      variant.locale === 'ar' ? '٤.٣' : '4.3',
+    );
+
     for (const width of [390, 1440]) {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
       const quantityWidth = await editor
