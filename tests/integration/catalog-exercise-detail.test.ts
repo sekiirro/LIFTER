@@ -220,6 +220,15 @@ describe('authorized exercise detail projection', () => {
     });
   });
 
+  it('keeps the explicit global catalog read gate on the detail RPC', async () => {
+    const result = await db.unsafe(
+      "select pg_catalog.pg_get_functiondef('public.catalog_exercise_detail(uuid,uuid)'::regprocedure) as definition",
+    );
+    expect(result[0]?.definition).toContain(
+      'not app_private.catalog_can_read_global()',
+    );
+  });
+
   it('exposes only the privacy-safe view columns and authenticated grants', async () => {
     const result = await db`
       select c.relname as name, c.reloptions, pg_catalog.pg_get_userbyid(c.relowner) as owner,
