@@ -402,7 +402,9 @@ export async function pendingHttpAccess(
             'materialize_intake_assignment_occurrence',
           ].includes(fn.proname) &&
             result.data?.status === 'not_found') ||
-          (['record_refund', 'record_renewal', 'close_client'].includes(fn.proname)
+          (['record_refund', 'record_renewal', 'close_client'].includes(
+            fn.proname,
+          )
             ? result.data?.status === 'not_permitted'
             : ['subscription_freeze_operation'].includes(fn.proname) &&
               result.data?.status === 'invalid_input'),

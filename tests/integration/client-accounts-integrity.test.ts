@@ -108,7 +108,9 @@ it('clients: every required field is NOT NULL, generated id/time and pending-onl
   );
   expect(
     columns
-      .filter((c) => !['deactivated_at', 'deactivation_reason'].includes(c.attname))
+      .filter(
+        (c) => !['deactivated_at', 'deactivation_reason'].includes(c.attname),
+      )
       .filter(
         (c) =>
           ![

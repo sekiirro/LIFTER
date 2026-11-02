@@ -27,20 +27,23 @@ async function refund(
   }
 }
 
-async function closeClient(tx: TransactionSql, actorId: string, input: Record<string, unknown>) {
+async function closeClient(
+  tx: TransactionSql,
+  actorId: string,
+  input: Record<string, unknown>,
+) {
   await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: actorId, role: 'authenticated' })},true)`;
   await tx`set local role authenticated`;
   try {
-    const [row] = await tx`select public.close_client(${tx.json(input as never)}) as result`;
+    const [row] =
+      await tx`select public.close_client(${tx.json(input as never)}) as result`;
     return row!.result as { status: string; operation_id?: string };
   } finally {
     await tx`reset role`;
   }
 }
 
-describe.runIf(
-  process.env.LIFTER_SUPABASE_STACK === 'd',
-)(
+describe.runIf(process.env.LIFTER_SUPABASE_STACK === 'd')(
   'T018 synthetic lifecycle proof (Stack D only; no cron activation)',
   () => {
     it('starts retention at the authoritative refund/deactivation timestamp, not approval or assignment', async () => {
@@ -93,7 +96,8 @@ describe.runIf(
             source_event_id: expect.any(String),
             ended_at: source!.refund_at,
             purge_after: new Date(
-              new Date(source!.deactivated_at).getTime() + 30 * 24 * 60 * 60 * 1000,
+              new Date(source!.deactivated_at).getTime() +
+                30 * 24 * 60 * 60 * 1000,
             ),
           }),
         ]);
@@ -109,8 +113,14 @@ describe.runIf(
             has_function_privilege('authenticated',p.oid,'execute') as authenticated_can_activate
           from pg_proc p where p.oid='app_private.f15_forms_purge_schedule_activate()'::regprocedure
         `;
-        expect(schedule).toEqual({ owner: 'postgres', prosecdef: false, authenticated_can_activate: false });
-        expect(await tx`select count(*)::int as count from cron.job`).toEqual([{ count: 0 }]);
+        expect(schedule).toEqual({
+          owner: 'postgres',
+          prosecdef: false,
+          authenticated_can_activate: false,
+        });
+        expect(await tx`select count(*)::int as count from cron.job`).toEqual([
+          { count: 0 },
+        ]);
         const key = randomUUID();
         const formId = randomUUID();
         const assignmentId = randomUUID();
@@ -169,8 +179,12 @@ describe.runIf(
         `;
         expect(fact).toMatchObject({
           deactivation_reason: 'closure',
-          lockout_user: (await tx`select auth_user_id from public.clients where id=${ids.client}`)[0]!.auth_user_id,
-          auth_lockout_user: (await tx`select auth_user_id from public.clients where id=${ids.client}`)[0]!.auth_user_id,
+          lockout_user: (
+            await tx`select auth_user_id from public.clients where id=${ids.client}`
+          )[0]!.auth_user_id,
+          auth_lockout_user: (
+            await tx`select auth_user_id from public.clients where id=${ids.client}`
+          )[0]!.auth_user_id,
           window_count: 1,
           audit_count: 1,
         });
@@ -183,16 +197,24 @@ describe.runIf(
           source_event_id: fact!.operation_id,
           source_kind: 'closure',
           ended_at: fact!.deactivated_at,
-          purge_after: new Date(new Date(fact!.deactivated_at).getTime() + 30 * 24 * 60 * 60 * 1000),
+          purge_after: new Date(
+            new Date(fact!.deactivated_at).getTime() + 30 * 24 * 60 * 60 * 1000,
+          ),
         });
         expect(new Date(window!.ended_at).getTime()).toBeGreaterThan(
-          new Date((await tx`select created_at from public.form_assignments where workspace_id=${f.wsA.id} and id=${assignmentId}`)[0]!.created_at).getTime(),
+          new Date(
+            (
+              await tx`select created_at from public.form_assignments where workspace_id=${f.wsA.id} and id=${assignmentId}`
+            )[0]!.created_at,
+          ).getTime(),
         );
-        expect(await closeClient(tx, f.po.userId, {
-          workspace_id: f.wsA.id,
-          client_id: ids.client,
-          request_key: key,
-        })).toEqual(result);
+        expect(
+          await closeClient(tx, f.po.userId, {
+            workspace_id: f.wsA.id,
+            client_id: ids.client,
+            request_key: key,
+          }),
+        ).toEqual(result);
         const financialAfter = await tx`
           select
             (select count(*)::int from public.payment_events where workspace_id=${f.wsA.id} and subscription_id=${ids.subscription}) as payments,
@@ -201,43 +223,70 @@ describe.runIf(
             (select count(*)::int from public.subscription_obligation_cancellations where workspace_id=${f.wsA.id} and subscription_id=${ids.subscription}) as cancellations
         `;
         expect(financialAfter).toEqual(financialBefore);
-        const [auditCountBefore] = await tx`select count(*)::int as count from public.audit_events where workspace_id=${f.wsA.id}`;
-        expect(await tx`select app_private.purge_ended_form_answers_at(
+        const [auditCountBefore] =
+          await tx`select count(*)::int as count from public.audit_events where workspace_id=${f.wsA.id}`;
+        expect(
+          await tx`select app_private.purge_ended_form_answers_at(
           ${f.wsA.id},${ids.client},(select purge_after from app_private.form_retention_windows
-            where workspace_id=${f.wsA.id} and client_id=${ids.client})) as result`).toMatchObject([
+            where workspace_id=${f.wsA.id} and client_id=${ids.client})) as result`,
+        ).toMatchObject([
           { result: { status: 'purged', revisions: 2, drafts: 1 } },
         ]);
         for (const table of [
-          'public.form_answer_revisions', 'public.form_answer_drafts',
-          'app_private.form_corrections', 'app_private.form_correction_intents',
-          'app_private.form_submissions', 'app_private.form_submission_slas',
+          'public.form_answer_revisions',
+          'public.form_answer_drafts',
+          'app_private.form_corrections',
+          'app_private.form_correction_intents',
+          'app_private.form_submissions',
+          'app_private.form_submission_slas',
           'app_private.form_submission_intents',
         ]) {
-          const [row] = await tx.unsafe(`select count(*)::int as count from ${table} where workspace_id=$1 and assignment_id=$2`, [f.wsA.id, assignmentId]);
+          const [row] = await tx.unsafe(
+            `select count(*)::int as count from ${table} where workspace_id=$1 and assignment_id=$2`,
+            [f.wsA.id, assignmentId],
+          );
           expect(row?.count, table).toBe(0);
         }
-        expect(await tx`select id from public.forms where id=${formId}`).toHaveLength(1);
-        expect(await tx`select count(*)::int as count from public.audit_events where workspace_id=${f.wsA.id}`).toEqual([auditCountBefore]);
-        expect(await tx`select app_private.purge_ended_form_answers_at(
+        expect(
+          await tx`select id from public.forms where id=${formId}`,
+        ).toHaveLength(1);
+        expect(
+          await tx`select count(*)::int as count from public.audit_events where workspace_id=${f.wsA.id}`,
+        ).toEqual([auditCountBefore]);
+        expect(
+          await tx`select app_private.purge_ended_form_answers_at(
           ${f.wsA.id},${ids.client},(select purge_after from app_private.form_retention_windows
-            where workspace_id=${f.wsA.id} and client_id=${ids.client})) as result`).toMatchObject([
+            where workspace_id=${f.wsA.id} and client_id=${ids.client})) as result`,
+        ).toMatchObject([
           { result: { status: 'purged', revisions: 0, drafts: 0 } },
         ]);
-        expect(await tx`select id from public.forms where id=${formId}`).toHaveLength(1);
-        expect(await tx`select count(*)::int as count from public.audit_events where workspace_id=${f.wsA.id}`).toEqual([auditCountBefore]);
-        expect(await tx`
+        expect(
+          await tx`select id from public.forms where id=${formId}`,
+        ).toHaveLength(1);
+        expect(
+          await tx`select count(*)::int as count from public.audit_events where workspace_id=${f.wsA.id}`,
+        ).toEqual([auditCountBefore]);
+        expect(
+          await tx`
           select
             (select count(*)::int from public.payment_events where workspace_id=${f.wsA.id} and subscription_id=${ids.subscription}) as payments,
             (select count(*)::int from public.refund_operations where workspace_id=${f.wsA.id} and client_id=${ids.client}) as refunds,
             (select count(*)::int from public.refund_allocation_events where workspace_id=${f.wsA.id} and subscription_id=${ids.subscription}) as allocations,
             (select count(*)::int from public.subscription_obligation_cancellations where workspace_id=${f.wsA.id} and subscription_id=${ids.subscription}) as cancellations
-        `).toEqual(financialBefore);
-        expect(await tx`select count(*)::int as count from cron.job`).toEqual([{ count: 0 }]);
-        await expect(tx.savepoint(async (sp) => {
-          await sp`update public.clients set deactivation_reason='refund' where workspace_id=${f.wsA.id} and id=${ids.client}`;
-        })).rejects.toThrow();
+        `,
+        ).toEqual(financialBefore);
+        expect(await tx`select count(*)::int as count from cron.job`).toEqual([
+          { count: 0 },
+        ]);
+        await expect(
+          tx.savepoint(async (sp) => {
+            await sp`update public.clients set deactivation_reason='refund' where workspace_id=${f.wsA.id} and id=${ids.client}`;
+          }),
+        ).rejects.toThrow();
         await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: (await tx`select auth_user_id from public.clients where id=${ids.client}`)[0]!.auth_user_id, role: 'authenticated' })},true)`;
-        expect(await tx`select app_private.client_has_access(${f.wsA.id},${ids.client}) as allowed`).toEqual([{ allowed: false }]);
+        expect(
+          await tx`select app_private.client_has_access(${f.wsA.id},${ids.client}) as allowed`,
+        ).toEqual([{ allowed: false }]);
       });
     });
     afterAll(() => db.end());
