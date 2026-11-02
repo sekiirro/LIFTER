@@ -19,12 +19,7 @@ export default async function ShellPage({
   const role = parseDemoRole((await searchParams).role);
   const navigation = getNavigation(role);
   return (
-    <AppShell
-      role={role}
-      activeKey="home"
-      hrefFor={(key) => `?role=${role}#${key}`}
-      messages={m}
-    >
+    <AppShell role={role} activeKey="home" messages={m}>
       <div className={styles.demoContent}>
         <h1>{m['showcase.shell']}</h1>
         <RoleSelector role={role} messages={m} />

@@ -50,13 +50,7 @@ export function ShellDemo({
       <RoleSelector role={role} messages={m} preview />
       <div className={styles.previewFrame}>
         <div className={styles.previewScale}>
-          <AppShell
-            role={role}
-            activeKey="home"
-            messages={m}
-            contentAs="div"
-            hrefFor={(key) => `?role=${role}#${key}`}
-          >
+          <AppShell role={role} activeKey="home" messages={m} contentAs="div">
             <div className={styles.demoContent}>
               <h3>{m['nav.home']}</h3>
               <p>{m['showcase.shellDescription']}</p>

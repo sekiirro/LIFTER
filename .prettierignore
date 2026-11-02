@@ -10,4 +10,5 @@ LIFTER_Claude_Files
 node_modules
 coverage
 package-lock.json
+vendor/glisse
 DESIGN.md

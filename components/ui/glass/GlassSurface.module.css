@@ -1,0 +1,158 @@
+.surface {
+  isolation: isolate;
+  border: 1px solid color-mix(in srgb, var(--color-text) 4.5%, transparent);
+  color: var(--color-text);
+  background-color: color-mix(in srgb, var(--color-card) 82%, transparent);
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 62%, transparent),
+    0 10px 28px color-mix(in srgb, black 6%, transparent),
+    0 2px 7px color-mix(in srgb, black 8%, transparent);
+  --lg-edge: color-mix(in srgb, var(--color-text) 4.5%, transparent);
+  --lg-drop: transparent;
+  --lg-glass: color-mix(in srgb, var(--color-card) 58%, transparent);
+  --lg-glass-bend: 0.45;
+  --lg-rim-shine: 0.3;
+}
+
+.surface:global(.lg-glass)::after {
+  content: none;
+}
+
+.surface:global(.lg-glass)[data-rim] {
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, white 42%, transparent),
+    0 12px 32px color-mix(in srgb, black 18%, transparent),
+    0 2px 8px color-mix(in srgb, black 6%, transparent);
+}
+
+@supports not (background-color: color-mix(in srgb, white 88%, transparent)) {
+  .surface:global(.lg-glass) {
+    border-color: var(--color-border-strong);
+  }
+}
+
+.surface.regular {
+  --lg-blur: 4px;
+  backdrop-filter: blur(4px) var(--lg-filter, saturate(1.15));
+  -webkit-backdrop-filter: blur(4px) var(--lg-filter, saturate(1.15));
+}
+
+.surface.strong {
+  --lg-blur: 8px;
+  backdrop-filter: blur(8px) var(--lg-filter, saturate(1.15));
+  -webkit-backdrop-filter: blur(8px) var(--lg-filter, saturate(1.15));
+}
+
+.surface.edge {
+  --lg-blur: 0px;
+  border-color: var(--color-border-strong);
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+.surface.surface.solid {
+  --lg-glass-bend: 0;
+  --lg-rim-shine: 0;
+  border-color: var(--color-border-strong);
+  background: var(--color-card);
+  box-shadow: none;
+  backdrop-filter: none !important;
+  -webkit-backdrop-filter: none !important;
+}
+
+.surface[data-glass-runtime='static'] {
+  --lg-glass-bend: 0;
+  --lg-rim-shine: 0;
+  border-color: var(--color-border-strong);
+  background: var(--color-card);
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .surface:global(.lg-glass) {
+    --lg-glass-bend: 0;
+    --lg-rim-shine: 0;
+    border-color: var(--color-border-strong);
+    background: var(--color-card);
+    box-shadow: none;
+  }
+}
+
+@supports not (background-color: color-mix(in srgb, white 88%, transparent)) {
+  .surface:global(.lg-glass) {
+    --lg-glass-bend: 0;
+    --lg-rim-shine: 0;
+    border-color: var(--color-border-strong);
+    background: var(--color-card);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .surface:global(.lg-glass) {
+    --lg-glass-bend: 0;
+    --lg-rim-shine: 0;
+    border: 2px solid var(--color-border-strong);
+    background: var(--color-card);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
+
+@media (prefers-contrast: more) {
+  .surface a:focus-visible {
+    outline: 3px solid var(--color-text);
+    outline-offset: 2px;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .surface:global(.lg-glass) {
+    --lg-glass-bend: 0;
+    --lg-rim-shine: 0;
+    background: var(--color-card);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    transition: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .surface:global(.lg-glass) {
+    --lg-glass-bend: 0;
+    --lg-rim-shine: 0;
+    border: 2px solid CanvasText;
+    color: CanvasText;
+    background: Canvas;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .surface a:focus-visible {
+    outline: 3px solid CanvasText;
+  }
+}
+
+@media print {
+  .surface:global(.lg-glass) {
+    --lg-glass-bend: 0;
+    --lg-rim-shine: 0;
+    border: 1px solid currentColor;
+    color: var(--color-print-text);
+    background: var(--color-print-bg);
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+}
