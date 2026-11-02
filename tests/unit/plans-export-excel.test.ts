@@ -30,6 +30,17 @@ async function readBack(
 }
 
 describe('F17 ExcelJS published workout export', () => {
+  it('writes the workbook to a buffer and re-opens the generated ZIP workbook', async () => {
+    const built = await buildWorkoutWorkbook(english, 'en');
+    const buffer = await built.xlsx.writeBuffer();
+    expect(buffer.byteLength).toBeGreaterThan(0);
+
+    const reopened = new ExcelJS.Workbook();
+    await reopened.xlsx.load(buffer as unknown as ArrayBuffer);
+    expect(reopened.worksheets.map((sheet) => sheet.name)).toEqual(['Workout']);
+    expect(reopened.getWorksheet('Workout')!.views[0]?.rightToLeft).toBe(false);
+  });
+
   it('builds an English workbook with the expected sheet, headers, and string cells', async () => {
     const workbook = await readBack(english, 'en');
     expect(workbook.worksheets.map((sheet) => sheet.name)).toEqual(['Workout']);
