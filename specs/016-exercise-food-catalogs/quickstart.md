@@ -1,6 +1,6 @@
 # F16 Quickstart and Gates
 
-Planning handoff only. No database stack is assigned to F16; the architect will assign one before implementation. Do not start, reset, migrate, inspect, or otherwise touch any stack before that assignment.
+S25-PO-3 assigned Stack C for F16. This quickstart records the Stack C-only local workflow; production remains outside this lane.
 
 ## Migration window
 
@@ -12,6 +12,10 @@ F16 may use migration timestamps from **20261106000000 through 20261106195959 UT
 2. Confirm the exact current audit trigger/function body and append-only audit grants before audit-touching migration work.
 3. PO supplies the D16-4 food dataset and explicitly approves the audited import before any catalog data import. Until then, seed only 18 muscle taxonomy codes and 10 equipment taxonomy codes; no exercise/food records.
 4. Maintain tests-first RED -> GREEN and mutation checks for every security guard. Stop if TS/SQL permission parity or cross-workspace isolation is not proven.
+
+## Local Stack C account-test setup
+
+After every clean local Stack C database reset, run `tests/integration/client-accounts-provision.mjs` through the approved `supabase-safe.mjs` Stack C wrapper before running shared client account integration tests. The provisioner installs the local Vault values those signup tests require; without it, `client_signup_admit` can return `signup_unavailable`. Never copy or print the generated secret values. Run the provisioner from the repository root after the reset and before `client-accounts-catalog.test.ts`.
 
 ## Planned gates
 

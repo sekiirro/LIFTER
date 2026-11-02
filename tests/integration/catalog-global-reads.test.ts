@@ -150,4 +150,26 @@ describe('global catalog RLS and read RPC authorization', () => {
       expect((error as Error).message).toBe(rollbackMarker);
     }
   });
+
+  it('denies unauthorized catalog_search actors before validating request filters', async () => {
+    const deniedActors = actors.filter((actor) =>
+      ['Sales', 'Client', 'Unknown/unauthenticated'].includes(actor.state),
+    );
+    await db.begin(async (tx) => {
+      await tx`select set_config('role', 'authenticated', true)`;
+      for (const actor of deniedActors) {
+        await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: actor.userId, role: 'authenticated' })}, true)`;
+        await expect(
+          tx.savepoint(
+            async (sp) =>
+              sp`select * from public.catalog_search('food', null, null::jsonb, null, null)`,
+          ),
+          actor.state,
+        ).rejects.toMatchObject({
+          code: '42501',
+          message: 'not_permitted',
+        });
+      }
+    });
+  });
 });
