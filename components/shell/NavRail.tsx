@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Icon } from '../icons/Icon';
 import { GlassSurface } from '../ui/glass/GlassSurface';
 import type { ShellNavigationProps } from './AppShell';
@@ -31,7 +32,7 @@ export function NavRail({
               tooltipTestId={`tooltip-${item.key}`}
               portalToBody
             >
-              <a
+              <Link
                 href={hrefFor(item.key)}
                 className={styles.link}
                 aria-label={messages[item.labelKey]}
@@ -39,7 +40,7 @@ export function NavRail({
                 data-nav-key={item.key}
               >
                 <Icon name={item.icon} />
-              </a>
+              </Link>
             </AccessibleTooltip>
           ))}
       </div>

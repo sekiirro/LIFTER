@@ -3,6 +3,47 @@ import { expectTooltipBesideTrigger } from './tooltip-geometry';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 
+test.describe('client-side shell navigation', () => {
+  test.use({ javaScriptEnabled: true });
+
+  test('keeps the document and enhanced GlassSurface mounted between destinations', async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== 'chromium',
+      'Client navigation preservation uses desktop Chromium.',
+    );
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.addInitScript(() => {
+      (
+        window as Window & { __shellDocumentMarker?: string }
+      ).__shellDocumentMarker = crypto.randomUUID();
+    });
+    await page.goto(new URL('/showcase/shell?role=trainer', origin).toString());
+    const marker = await page.evaluate(
+      () =>
+        (window as Window & { __shellDocumentMarker?: string })
+          .__shellDocumentMarker,
+    );
+    const rail = page.getByTestId('nav-rail');
+    await expect(rail).toHaveAttribute('data-glass-runtime', 'enhanced', {
+      timeout: 15_000,
+    });
+    await rail
+      .getByRole('link', { name: getMessages('en')['nav.clients'] })
+      .click();
+    await expect(page).toHaveURL(/\/showcase\/shell\?role=trainer#clients$/);
+    await expect(rail).toHaveAttribute('data-glass-runtime', 'enhanced');
+    expect(
+      await page.evaluate(
+        () =>
+          (window as Window & { __shellDocumentMarker?: string })
+            .__shellDocumentMarker,
+      ),
+    ).toBe(marker);
+  });
+});
+
 // Both navigation variants and role selection must work without client JavaScript.
 test.use({ javaScriptEnabled: false });
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';

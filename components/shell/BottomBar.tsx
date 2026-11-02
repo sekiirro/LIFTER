@@ -1,3 +1,4 @@
+import Link from 'next/link';
 import { Icon } from '../icons/Icon';
 import { GlassSurface } from '../ui/glass/GlassSurface';
 import type { ShellNavigationProps } from './AppShell';
@@ -20,7 +21,7 @@ export function BottomBar({
       className={[styles.bar, className].filter(Boolean).join(' ')}
     >
       {items.map((item) => (
-        <a
+        <Link
           key={item.key}
           href={hrefFor(item.key)}
           className={styles.link}
@@ -29,7 +30,7 @@ export function BottomBar({
         >
           <Icon name={item.icon} />
           <span data-testid="bottom-label">{messages[item.labelKey]}</span>
-        </a>
+        </Link>
       ))}
     </GlassSurface>
   );
