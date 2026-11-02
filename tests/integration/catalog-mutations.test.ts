@@ -1180,7 +1180,7 @@ describe('F16 mutation probes', () => {
           throw new Error('duplicate candidate function definition missing');
         stage = 'basis mutation';
         await tx.unsafe(
-          definition.sql.replace('and v.basis = p_basis', 'and true'),
+          definition.sql.replaceAll('and v.basis = p_basis', 'and true'),
         );
         await tx`select set_config('role', 'authenticated', true)`;
         await tx`select set_config('request.jwt.claims', ${JSON.stringify({ sub: trainerA.userId, role: 'authenticated' })}, true)`;
@@ -1193,7 +1193,14 @@ describe('F16 mutation probes', () => {
         }, 'removing basis equality must break the near-candidate identity assertion');
         stage = 'threshold mutation';
         await tx`select set_config('role', 'postgres', true)`;
-        await tx.unsafe(definition.sql.replaceAll('>= 0.90', '>= 0.50'));
+        await tx.unsafe(
+          definition.sql
+            .replaceAll('>= 0.90', '>= 0.50')
+            .replace(
+              'SET "pg_trgm.similarity_threshold" TO \'0.90\'',
+              'SET "pg_trgm.similarity_threshold" TO \'0.50\'',
+            ),
+        );
         await tx`select set_config('role', 'authenticated', true)`;
         const score = await tx`select extensions.similarity(
           app_private.normalize_ar_en_v1(${name}), app_private.normalize_ar_en_v1(${midSimilarityName})

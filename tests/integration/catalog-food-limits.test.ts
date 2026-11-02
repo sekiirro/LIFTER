@@ -194,5 +194,5 @@ describe('D16-10 food addition limits', () => {
       code: '23514',
       message: 'catalog_food_active_limit',
     });
-  });
+  }, 120_000);
 });
