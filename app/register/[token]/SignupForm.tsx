@@ -4,7 +4,6 @@ import { useActionState, useEffect, useRef, useState } from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Bidi } from '../../../components/ui/Bidi';
 import {
-  initialSignupResult,
   runSignupActionSafely,
   signupResult,
   type SignupLocale,
@@ -65,7 +64,7 @@ export function SignupForm({
         submittingRef.current = false;
       }
     },
-    initialSignupResult,
+    signupResult('invalid_input', locale),
   );
   const [country, setCountry] = useState('EG');
   const [nationalNumber, setNationalNumber] = useState('');

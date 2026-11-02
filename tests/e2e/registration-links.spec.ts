@@ -275,7 +275,9 @@ test.describe('local public registration states (required for review)', () => {
     await expect(
       page.locator('main [name="email"], main [name="password"]'),
     ).toHaveCount(2);
-    await expect(page.getByLabel(m['clientSignup.name'])).toBeVisible();
+    await expect(
+      page.getByLabel(m['clientSignup.name'], { exact: true }),
+    ).toBeVisible();
     await expect(page.getByLabel(m['clientSignup.email'])).toBeVisible();
     await expect(page.getByLabel(m['clientSignup.password'])).toBeVisible();
     expect(await violations(page)).toEqual([]);

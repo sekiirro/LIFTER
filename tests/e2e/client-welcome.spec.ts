@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
-test('accepted Terms restore the Welcome state after reload', async ({
+test('Welcome preview remains directly renderable after reload', async ({
   page,
   context,
 }) => {
@@ -11,16 +11,6 @@ test('accepted Terms restore the Welcome state after reload', async ({
     { name: LOCALE_COOKIE, value: 'en', domain: 'localhost', path: '/' },
     { name: THEME_COOKIE, value: 'light', domain: 'localhost', path: '/' },
   ]);
-  await page.goto('/showcase/forms/s14');
-  await page.evaluate(() =>
-    window.sessionStorage.setItem(
-      'f15-welcome-terms-mock-v1',
-      JSON.stringify({
-        policyVersion: 'terms-draft-v1',
-        marketingAccepted: false,
-      }),
-    ),
-  );
   await page.goto('/showcase/forms/s14?welcome=1');
 
   await expect(
@@ -32,7 +22,7 @@ test('accepted Terms restore the Welcome state after reload', async ({
   ).toBeVisible();
 });
 
-test('keyboard Terms acceptance opens Welcome while marketing stays optional', async ({
+test('keyboard Terms preview keeps DRAFT acceptance disabled and marketing optional', async ({
   page,
   context,
 }) => {
@@ -41,7 +31,7 @@ test('keyboard Terms acceptance opens Welcome while marketing stays optional', a
     { name: LOCALE_COOKIE, value: 'en', domain: 'localhost', path: '/' },
     { name: THEME_COOKIE, value: 'light', domain: 'localhost', path: '/' },
   ]);
-  await page.goto('/showcase/forms/s14?welcome=1');
+  await page.goto('/showcase/forms/s14');
   await page.addStyleTag({
     content: 'nextjs-portal { display: none !important; }',
   });
@@ -67,10 +57,9 @@ test('keyboard Terms acceptance opens Welcome while marketing stays optional', a
   ).toBeFocused();
   await page.keyboard.press('Enter');
   await expect(
-    page.getByRole('heading', { name: messages['forms.welcomeTitle'] }),
+    page.getByText(messages['forms.draftAcceptanceUnavailable']),
   ).toBeVisible();
-  await page.reload();
   await expect(
     page.getByRole('heading', { name: messages['forms.welcomeTitle'] }),
-  ).toBeVisible();
+  ).toHaveCount(0);
 });

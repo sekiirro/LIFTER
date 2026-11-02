@@ -1,6 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
-import { createServer, type Server } from 'node:http';
 import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
@@ -8,42 +7,31 @@ import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
 const origin = process.env.APP_ORIGIN ?? 'http://localhost:3000';
-const token = `${'A'.repeat(42)}A`;
 const screenshotDirectory = join(tmpdir(), 'lifter-f15-signup');
-let mockSupabase: Server;
-let registrationOpenRequests = 0;
+const local = Boolean(
+  process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
+);
+let token: string;
 
 test.describe.serial('T038 invitation signup UI', () => {
   test.beforeAll(async () => {
-    mockSupabase = createServer((request, response) => {
-      if (request.url === '/rest/v1/rpc/registration_link_open') {
-        registrationOpenRequests += 1;
-        response.writeHead(200, { 'content-type': 'application/json' });
-        response.end(
-          JSON.stringify({ status: 'valid', workspace_name: 'Lifter Studio' }),
-        );
-        return;
-      }
-      response.writeHead(404, { 'content-type': 'application/json' });
-      response.end(JSON.stringify({ message: 'not found' }));
-    });
-    await new Promise<void>((resolve, reject) => {
-      mockSupabase.once('error', reject);
-      mockSupabase.listen(31339, '127.0.0.1', resolve);
-    });
-    await mkdir(screenshotDirectory, { recursive: true });
-  });
-
-  test.afterAll(async () => {
-    await new Promise<void>((resolve, reject) =>
-      mockSupabase.close((error) => (error ? reject(error) : resolve())),
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
+    const { registrationFixture, secret, issue, checked } =
+      await import('../integration/registration-links-fixture');
+    const fixture = await registrationFixture();
+    const issued = secret();
+    checked(
+      await issue(fixture, fixture.po.client, { token_hash: issued.hash }),
     );
+    token = issued.token;
+    await mkdir(screenshotDirectory, { recursive: true });
   });
 
   test('renders and passes axe across RTL/LTR, themes, mobile and desktop', async ({
     page,
     context,
   }) => {
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
     for (const locale of ['ar', 'en'] as const) {
       const messages = getMessages(locale);
       for (const theme of ['light', 'dark'] as const) {
@@ -60,7 +48,6 @@ test.describe.serial('T038 invitation signup UI', () => {
             { name: THEME_COOKIE, value: theme, url: origin },
           ]);
           await page.goto(`/register/${token}`);
-          expect(registrationOpenRequests).toBeGreaterThan(0);
           await expect(page.locator('html')).toHaveAttribute(
             'dir',
             locale === 'ar' ? 'rtl' : 'ltr',
@@ -105,6 +92,7 @@ test.describe.serial('T038 invitation signup UI', () => {
     page,
     context,
   }) => {
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
     const messages = getMessages('en');
     await context.addCookies([
       { name: LOCALE_COOKIE, value: 'en', url: origin },
@@ -138,10 +126,11 @@ test.describe.serial('T038 invitation signup UI', () => {
     expect(page.url()).toContain('/register/');
   });
 
-  test('keeps action failures generic and does not create a browser session', async ({
+  test('rejects unexpected signup fields generically without a browser session', async ({
     page,
     context,
   }) => {
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
     const messages = getMessages('en');
     await context.addCookies([
       { name: LOCALE_COOKIE, value: 'en', url: origin },
@@ -166,6 +155,12 @@ test.describe.serial('T038 invitation signup UI', () => {
     await page
       .getByLabel(messages['clientSignup.password'], { exact: true })
       .fill('Complex!2345');
+    await page.locator('form').evaluate((form) => {
+      const unexpected = document.createElement('input');
+      unexpected.name = 'unexpected';
+      unexpected.value = 'untrusted';
+      form.append(unexpected);
+    });
     await page
       .getByRole('button', { name: messages['clientSignup.submit'] })
       .click();

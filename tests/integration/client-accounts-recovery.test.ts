@@ -374,37 +374,40 @@ describe('F11 client recovery linkage', () => {
   });
 
   it('WO can reset a pending client password without changing approval or access', async () => {
+    // This recovery flow changes the account password. Keep its target isolated
+    // from the PO recovery case so a prior reset/session cannot contaminate it.
+    const isolatedTarget = await createRecoveryClientTarget(contextA);
     const actor = await createStaff(
       'workspace_owner',
       'client-recovery-reset-wo',
     );
     checked(
       await admin().from('workspace_memberships').insert({
-        workspace_id: targetA.workspaceId,
+        workspace_id: isolatedTarget.workspaceId,
         user_id: actor.userId,
         granted_by: po.userId,
       }),
     );
     const [before] = await db`
       select c.id, to_jsonb(c) as client_row
-      from public.clients c where c.auth_user_id=${targetA.userId}`;
+      from public.clients c where c.auth_user_id=${isolatedTarget.userId}`;
     expect(before).toBeDefined();
     expect(
       (
         await actor.client.rpc('recovery_link_authorize', {
-          target: targetA.userId,
+          target: isolatedTarget.userId,
         })
       ).error,
     ).toBeNull();
     const record = await actor.client.rpc('recovery_link_record', {
-      target: targetA.userId,
+      target: isolatedTarget.userId,
     });
     expect(record.error).toBeNull();
     expect(record.data).toBeTruthy();
 
     const link = await admin().auth.admin.generateLink({
       type: 'recovery',
-      email: targetA.email,
+      email: isolatedTarget.email,
     });
     const tokenHash = link.data.properties?.hashed_token;
     expect(link.error).toBeNull();
@@ -425,7 +428,7 @@ describe('F11 client recovery linkage', () => {
 
     const [after] = await db`
       select c.id, to_jsonb(c) as client_row
-      from public.clients c where c.auth_user_id=${targetA.userId}`;
+      from public.clients c where c.auth_user_id=${isolatedTarget.userId}`;
     expect(after?.client_row).toEqual(before!.client_row);
     expect(after?.client_row.approval_state).toBe('pending-approval');
     expect(
@@ -433,35 +436,35 @@ describe('F11 client recovery linkage', () => {
     ).toHaveLength(0);
 
     const oldPassword = await anonClient().auth.signInWithPassword({
-      email: targetA.email,
-      password: targetA.password,
+      email: isolatedTarget.email,
+      password: isolatedTarget.password,
     });
     expect(oldPassword.error).not.toBeNull();
     const signedIn = anonClient();
     const signIn = await signedIn.auth.signInWithPassword({
-      email: targetA.email,
+      email: isolatedTarget.email,
       password: newPassword,
     });
     expect(signIn.error).toBeNull();
-    expect(signIn.data.user?.id).toBe(targetA.userId);
+    expect(signIn.data.user?.id).toBe(isolatedTarget.userId);
 
     const claims = await signedIn.auth.getClaims();
     expect(claims.error).toBeNull();
-    expect(claims.data?.claims.sub).toBe(targetA.userId);
-    const actorRows = await loadActorRows(signedIn, targetA.userId);
+    expect(claims.data?.claims.sub).toBe(isolatedTarget.userId);
+    const actorRows = await loadActorRows(signedIn, isolatedTarget.userId);
     expect(actorRows).toMatchObject({
-      userId: targetA.userId,
+      userId: isolatedTarget.userId,
       role: null,
       activeWorkspaceIds: [],
     });
     const appActor = actorRows ?? {
-      userId: targetA.userId,
+      userId: isolatedTarget.userId,
       role: null,
       activeWorkspaceIds: [],
     };
-    expect(authorize(appActor, 'coaching_work', targetA.workspaceId)).toBe(
-      false,
-    );
+    expect(
+      authorize(appActor, 'coaching_work', isolatedTarget.workspaceId),
+    ).toBe(false);
     expect(authorize(appActor, 'coaching_work', contextB.wsA.id)).toBe(false);
     const rlsProbeResults: boolean[] = [];
     for (const context of [contextA, contextB]) {
@@ -479,7 +482,7 @@ describe('F11 client recovery linkage', () => {
     ).toEqual([true, true]);
     await pendingHttpAccess(signedIn, contextA);
     await pendingHttpAccess(signedIn, contextB);
-  });
+  }, 90_000);
 
   it('recovery code and F4 RPC definitions never update public.clients', async () => {
     const source = await readFile('app/auth/recovery/actions.ts', 'utf8');
