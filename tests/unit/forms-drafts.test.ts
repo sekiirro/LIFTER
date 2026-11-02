@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { validateDraftAnswers } from '../../lib/forms/drafts';
 
 const snapshot = {
@@ -38,5 +39,27 @@ describe('T012 server draft validation', () => {
       ok: false,
       code: 'invalid',
     });
+  });
+
+  it('keeps the answer route validator before the draft write and safe on network errors', () => {
+    const route = readFileSync(
+      'app/api/forms/assignments/[assignmentId]/draft/route.ts',
+      'utf8',
+    );
+    const validatorIndex = route.indexOf('validateDraftAnswers(');
+    const writeIndex = route.indexOf("client.rpc('save_form_draft'");
+    expect(validatorIndex).toBeGreaterThanOrEqual(0);
+    expect(writeIndex).toBeGreaterThan(validatorIndex);
+    expect(route).toContain('status: valid.code');
+    expect(route).toContain("response({ status: 'unavailable' }, 503)");
+    expect(route).not.toMatch(/error\.message|JSON\.stringify\(error\)/);
+
+    const bypassMutant = route.replace(
+      'validateDraftAnswers(',
+      'skipDraftValidation(',
+    );
+    const mutantValidatorIndex = bypassMutant.indexOf('validateDraftAnswers(');
+    expect(mutantValidatorIndex).toBe(-1);
+    expect(mutantValidatorIndex).not.toBeGreaterThanOrEqual(0);
   });
 });

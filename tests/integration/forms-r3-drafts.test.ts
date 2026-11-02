@@ -11,6 +11,7 @@ import {
 const db = sql();
 afterAll(() => db.end());
 const rollback = new Error('rollback T012 synthetic autosave fixture');
+const boundRollback = new Error('rollback T012 database-bound mutation');
 
 it('T012 acknowledges drafts, binds retries, rejects stale and late writes', async () => {
   const context = await clientContext();
@@ -37,7 +38,12 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
           )
         ).status,
       ).toBe('ok');
-      const definition = { questions: [{ id: 'q1', type: 'short_text' }] };
+      const definition = {
+        questions: Array.from({ length: 60 }, (_, index) => ({
+          id: index === 0 ? 'q1' : `q${index + 1}`,
+          type: 'short_text',
+        })),
+      };
       await tx`
         insert into app_private.terms_policy_versions(version,policy_kind,status)
         values(${policy},'terms','published')
@@ -55,6 +61,58 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
       await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: client.userId, role: 'authenticated' })},true)`;
       await tx`set local role authenticated`;
 
+      const [definitionRow] = await tx`
+        select pg_catalog.pg_get_functiondef(
+          'public.save_form_draft(uuid,uuid,integer,uuid,jsonb)'::regprocedure
+        ) as definition
+      `;
+      const originalDefinition = definitionRow!.definition as string;
+      const boundMutants = [
+        {
+          name: 'total payload',
+          pattern: /payload_bytes > 262144/,
+          expected: 'payload_too_large',
+          values: Object.fromEntries(
+            Array.from({ length: 60 }, (_, index) => [
+              `q${index + 1}`,
+              Array.from({ length: 1200 }, () => 'x'),
+            ]),
+          ),
+        },
+        {
+          name: 'single answer bytes',
+          pattern:
+            /answer_bytes > 4096 or \(max_chars is not null and answer_chars > max_chars\)/,
+          expected: 'answer_too_long',
+          values: { q1: 'x'.repeat(4097) },
+        },
+      ] as const;
+      for (const mutant of boundMutants) {
+        let mutationKilled = false;
+        await expect(
+          tx.savepoint(async (sp) => {
+            await sp`reset role`;
+            const changed = originalDefinition.replace(mutant.pattern, 'false');
+            expect(changed, mutant.name).not.toBe(originalDefinition);
+            await sp.unsafe(changed);
+            await sp`grant execute on function public.save_form_draft(uuid,uuid,integer,uuid,jsonb) to authenticated`;
+            await sp`set local role authenticated`;
+            const [result] = await sp`
+              select public.save_form_draft(
+                ${context.wsA.id},${assignmentId},0,${randomUUID()},${sp.json(mutant.values)}
+              ) as result
+            `;
+            try {
+              expect(result?.result).toMatchObject({ status: mutant.expected });
+            } catch {
+              mutationKilled = true;
+            }
+            throw boundRollback;
+          }),
+        ).rejects.toBe(boundRollback);
+        expect(mutationKilled, `${mutant.name} bound mutant`).toBe(true);
+      }
+
       const save = (
         expectedRevision: number,
         key: string,
@@ -71,6 +129,33 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
       expect(await save(0, selectionKey, { q1: 'first draft' })).toEqual([
         { result: first },
       ]);
+      let intentMutationKilled = false;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`reset role`;
+          const changed = originalDefinition.replace(
+            /if found then\s+if prior\.request_hash=request_hash then return prior\.result; end if;\s+return jsonb_build_object\('status','conflict','revision',current_revision\);\s+end if;/,
+            'if found then return prior.result; end if;',
+          );
+          expect(changed).not.toBe(originalDefinition);
+          await sp.unsafe(changed);
+          await sp`grant execute on function public.save_form_draft(uuid,uuid,integer,uuid,jsonb) to authenticated`;
+          await sp`set local role authenticated`;
+          const [result] = await sp`
+            select public.save_form_draft(
+              ${context.wsA.id},${assignmentId},0,${selectionKey},${sp.json({ q1: 'altered intent' })}
+            ) as result
+          `;
+          try {
+            expect(result?.result).toMatchObject({ status: 'conflict' });
+          } catch {
+            intentMutationKilled = true;
+          }
+          throw boundRollback;
+        }),
+      ).rejects.toBe(boundRollback);
+      expect(intentMutationKilled, 'altered-intent replay mutant').toBe(true);
+
       expect(await save(0, changedKey, { q1: 'changed intent' })).toEqual([
         {
           result: { status: 'conflict', revision: 1 },
@@ -87,6 +172,39 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
           where action='form.draft_saved' and target_id=${assignmentId}`,
       ).toEqual([{ count: 1 }]);
       await tx`set local role authenticated`;
+
+      let auditMutationKilled = false;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`reset role`;
+          const changed = originalDefinition.replace(
+            /  insert into public\.audit_events\(actor_user_id,action,target_table,target_id,workspace_id,details\)\s+values\(auth\.uid\(\),'form\.draft_saved','form_answer_drafts',p_assignment_id,p_workspace_id,\s+jsonb_build_object\('revision',next_revision\)\);/,
+            '  null;',
+          );
+          expect(changed).not.toBe(originalDefinition);
+          await sp.unsafe(changed);
+          await sp`grant execute on function public.save_form_draft(uuid,uuid,integer,uuid,jsonb) to authenticated`;
+          await sp`set local role authenticated`;
+          const [result] = await sp`
+            select public.save_form_draft(
+              ${context.wsA.id},${assignmentId},1,${randomUUID()},${sp.json({ q1: 'audit mutant' })}
+            ) as result
+          `;
+          await sp`reset role`;
+          const [count] = await sp`
+            select count(*)::int as count from public.audit_events
+            where action='form.draft_saved' and target_id=${assignmentId}
+          `;
+          try {
+            expect(result?.result).toMatchObject({ status: 'saved' });
+            expect(count?.count).toBe(2);
+          } catch {
+            auditMutationKilled = true;
+          }
+          throw boundRollback;
+        }),
+      ).rejects.toBe(boundRollback);
+      expect(auditMutationKilled, 'draft audit omission mutant').toBe(true);
 
       const second = (await save(1, nextKey, { q1: 'second draft' }))[0]
         ?.result;
@@ -114,6 +232,7 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
           where workspace_id=p_workspace_id and assignment_id=p_assignment_id;
           return jsonb_build_object('status','saved','revision',p_expected_revision+1);
         end $$`);
+        await sp`grant execute on function public.save_form_draft(uuid,uuid,integer,uuid,jsonb) to authenticated`;
         await sp`set local role authenticated`;
         const mutated = await sp`select public.save_form_draft(
           ${context.wsA.id},${assignmentId},1,${randomUUID()},${sp.json({ q1: 'mutated stale overwrite' })}
