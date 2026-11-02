@@ -13,7 +13,9 @@ const PULL_DAY_ID = '10000000-0000-4000-8000-000000000002';
 const REST_DAY_ID = '10000000-0000-4000-8000-000000000003';
 const BENCH_ITEM_ID = '20000000-0000-4000-8000-000000000001';
 const ROW_ITEM_ID = '20000000-0000-4000-8000-000000000002';
+const BENCH_WARMUP_SET_ID = '30000000-0000-4000-8000-000000000001';
 const BENCH_SET_ID = '30000000-0000-4000-8000-000000000001';
+const BENCH_WORKING_SET_ID = '30000000-0000-4000-8000-000000000002';
 
 async function setPreferences(
   context: BrowserContext,
@@ -120,6 +122,54 @@ test('workout builder drags an exercise across days without changing ids', async
     'data-set-id',
     setId ?? '',
   );
+});
+
+test('workout builder renders Arabic-Indic digits and stores canonical input values', async ({
+  page,
+  context,
+}) => {
+  await setPreferences(context, 'ar', 'light');
+  await page.goto('/showcase/workout-builder?locale=ar');
+
+  const pushDay = page.getByTestId(`builder-day-${PUSH_DAY_ID}`);
+  await expect(pushDay.locator('header').locator('span').first()).toHaveText(
+    '١',
+  );
+
+  const bench = page.getByTestId(`builder-item-${BENCH_ITEM_ID}`);
+  await expect(
+    bench.locator('div').first().locator('span').nth(1),
+  ).toHaveText('١');
+
+  const warmup = page.getByTestId(`builder-set-${BENCH_WARMUP_SET_ID}`);
+  await expect(warmup.locator('legend')).toHaveText('المجموعة ١');
+  await expect(warmup.getByLabel('التكرارات', { exact: true })).toHaveValue(
+    '١٠',
+  );
+  await expect(warmup.getByLabel('مدة الراحة (بالثواني)')).toHaveValue('٤٥');
+
+  const working = page.getByTestId(`builder-set-${BENCH_WORKING_SET_ID}`);
+  await expect(working.getByLabel('الحد الأدنى')).toHaveValue('٨');
+  await expect(working.getByLabel('الحد الأقصى')).toHaveValue('١٠');
+  await expect(working.getByLabel('قيمة الحمل')).toHaveValue('٢٢.٥');
+  await expect(working.getByLabel('مدة الراحة (بالثواني)')).toHaveValue('١٢٠');
+  await expect(working.getByLabel('التكرارات المتبقية')).toHaveValue('٢');
+
+  await working.getByLabel('قيمة الحمل').fill('٣٤٫٥');
+  await expect(working.getByLabel('قيمة الحمل')).toHaveValue('٣٤.٥');
+  await working.getByLabel('مدة الراحة (بالثواني)').fill('٩٠');
+  await expect(working.getByLabel('مدة الراحة (بالثواني)')).toHaveValue('٩٠');
+
+  await page.getByTestId('language-select').selectOption('en');
+  await expect(page.getByTestId('workout-builder')).toHaveAttribute(
+    'lang',
+    'en',
+  );
+  const workingInEnglish = page.getByTestId(
+    `builder-set-${BENCH_WORKING_SET_ID}`,
+  );
+  await expect(workingInEnglish.getByLabel('Load value')).toHaveValue('34.5');
+  await expect(workingInEnglish.getByLabel('Rest (seconds)')).toHaveValue('90');
 });
 
 test('workout builder renders bilingual responsive states without axe violations', async ({
