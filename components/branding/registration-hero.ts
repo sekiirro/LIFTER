@@ -110,3 +110,19 @@ export function applyHeroSamplingFallback(stage: HeroSamplingTarget): void {
   stage.style.removeProperty('--hero-bottom-average');
   stage.style.removeProperty('--hero-mobile-mid');
 }
+
+/**
+ * Enter the opaque sampling fallback.
+ *
+ * The cleared sample and the rendered fallback state are committed together,
+ * so the card can never keep the glass treatment over artwork that was never
+ * measured. Every failure path and every artwork change goes through this
+ * one entry point.
+ */
+export function enterHeroSamplingFallback(
+  stage: HeroSamplingTarget,
+  setFallback: (fallback: boolean) => void,
+): void {
+  setFallback(true);
+  applyHeroSamplingFallback(stage);
+}
