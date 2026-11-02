@@ -128,6 +128,9 @@ describe('catalog server authorization and RPC boundary', () => {
       p_expected_version: undefined,
       p_operation_key: key,
       p_request: input.request,
+    });
+  });
+
   it('forwards canonical exercise filter keys and value shapes to the session RPC', async () => {
     const filters = {
       primary_muscle_code: 'chest',
@@ -140,7 +143,6 @@ describe('catalog server authorization and RPC boundary', () => {
       filters,
       cursor: null,
       workspace_id: null,
-
     });
   });
 
