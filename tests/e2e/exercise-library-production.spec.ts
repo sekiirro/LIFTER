@@ -1,4 +1,5 @@
 import AxeBuilder from '@axe-core/playwright';
+import { randomUUID } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -7,15 +8,14 @@ import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3437';
-const screenshotDir = join(tmpdir(), 'lifter-s27-f16-library');
+const screenshotDir = join(tmpdir(), 'lifter-s28-f16-lib3');
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
 let fixture: Awaited<
-  ReturnType<
-    (typeof import('../integration/branding-dashboard-fixture'))['createBrandingDashboardFixtures']
-  >
+  ReturnType<(typeof import('../integration/harness'))['twoWorkspaceFixture']>
 >;
+let exerciseId: string;
 
 async function authenticate(
   page: Page,
@@ -27,7 +27,7 @@ async function authenticate(
     { name: THEME_COOKIE, value: theme, url: origin },
     {
       name: 'sb-127-auth-token',
-      value: `base64-${Buffer.from(JSON.stringify(fixture.editor.session)).toString('base64url')}`,
+      value: `base64-${Buffer.from(JSON.stringify((await fixture.po.client.auth.getSession()).data.session)).toString('base64url')}`,
       url: origin,
       httpOnly: true,
       sameSite: 'Lax',
@@ -51,14 +51,44 @@ async function assertAxe(page: Page) {
 
 test.beforeAll(async () => {
   test.skip(!local, 'Requires the selected disposable local database.');
-  const { createBrandingDashboardFixtures } =
-    await import('../integration/branding-dashboard-fixture');
-  fixture = await createBrandingDashboardFixtures();
+  const { twoWorkspaceFixture } = await import('../integration/harness');
+  fixture = await twoWorkspaceFixture();
+  const created = await fixture.po.client.rpc('catalog_create_exercise', {
+    p_operation_key: randomUUID(),
+    p_request: {
+      name_ar: 'تمرين اختبار تفاصيل المكتبة',
+      name_en: 'S28 persisted integration exercise',
+      primary_muscle_code: 'chest',
+      secondary_muscle_codes: ['triceps'],
+      equipment_codes: ['barbell'],
+      defaults: {
+        warmup_sets: 1,
+        working_sets: 3,
+        reps: { min: 8, max: 12 },
+        rest_seconds: 90,
+        rir: 2,
+        alternative_exercise_ids: [],
+      },
+    },
+  });
+  if (created.error) throw new Error(created.error.message);
+  exerciseId = created.data.exercise_id;
+  const variation = await fixture.po.client.rpc('catalog_write_variation', {
+    p_workspace_id: fixture.wsA.id,
+    p_exercise_id: exerciseId,
+    p_expected_version: null,
+    p_operation_key: randomUUID(),
+    p_request: { video_url: 'https://youtu.be/abcdefghijk', note: '' },
+  });
+  if (variation.error) throw new Error(variation.error.message);
   await mkdir(screenshotDir, { recursive: true });
 });
 
 test.afterAll(async () => {
-  await fixture?.close();
+  if (local) {
+    const { sql } = await import('../integration/harness');
+    await sql().end();
+  }
 });
 
 for (const locale of ['ar', 'en'] as const) {
@@ -122,6 +152,33 @@ for (const locale of ['ar', 'en'] as const) {
           path: join(
             screenshotDir,
             `${locale}-${theme}-${viewport.name}-add.png`,
+          ),
+          fullPage: true,
+        });
+
+        await page.goto(
+          `/exercise-library/${exerciseId}?workspace=${fixture.wsA.id}`,
+        );
+        await expect(page.getByTestId('exercise-detail')).toBeVisible();
+        await expect(
+          page.getByText(m['catalog.detailOpenVideo']),
+        ).toBeVisible();
+        await assertAxe(page);
+        await page.screenshot({
+          path: join(
+            screenshotDir,
+            `${locale}-${theme}-${viewport.name}-detail.png`,
+          ),
+          fullPage: true,
+        });
+
+        await page.goto(`/exercise-library/${exerciseId}/edit`);
+        await expect(page.getByTestId('exercise-editor')).toBeVisible();
+        await assertAxe(page);
+        await page.screenshot({
+          path: join(
+            screenshotDir,
+            `${locale}-${theme}-${viewport.name}-edit.png`,
           ),
           fullPage: true,
         });
