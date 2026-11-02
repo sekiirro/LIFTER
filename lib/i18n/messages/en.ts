@@ -409,9 +409,7 @@ export const en: Record<keyof typeof ar, string> = {
   'nutritionAlternatives.fat': 'Fat',
   'nutritionAlternatives.kilocalories': 'kcal',
   'nutritionAlternatives.grams': 'g',
-  // DRAFT (PO copy batch): unit labels in Arabic nutrition editor.
   'nutritionAlternatives.milliliters': 'ml',
-  // DRAFT (PO copy batch): nutrition plan editor.
   'nutritionPlan.title': 'Nutrition plan editor',
   'nutritionPlan.structure': 'Plan structure',
   'nutritionPlan.singleDay': 'Repeating single day',

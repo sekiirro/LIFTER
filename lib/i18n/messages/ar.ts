@@ -394,9 +394,7 @@ export const ar = {
   'nutritionAlternatives.fat': 'الدهون',
   'nutritionAlternatives.kilocalories': 'سعرة',
   'nutritionAlternatives.grams': 'غ',
-  // DRAFT (PO copy batch): unit labels in Arabic nutrition editor.
   'nutritionAlternatives.milliliters': 'مل',
-  // DRAFT (PO copy batch): nutrition plan editor.
   'nutritionPlan.title': 'محرر خطة التغذية',
   'nutritionPlan.structure': 'بنية الخطة',
   'nutritionPlan.singleDay': 'يوم واحد متكرر',
