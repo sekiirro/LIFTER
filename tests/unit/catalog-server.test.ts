@@ -125,7 +125,7 @@ describe('catalog server authorization and RPC boundary', () => {
     expect(rpc).toHaveBeenCalledWith('catalog_write_variation', {
       p_workspace_id: ws,
       p_exercise_id: input.id,
-      p_expected_version: undefined,
+      p_expected_version: null,
       p_operation_key: key,
       p_request: input.request,
     });

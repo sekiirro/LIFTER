@@ -1,0 +1,131 @@
+import AxeBuilder from '@axe-core/playwright';
+import { expect, test, type Page } from '@playwright/test';
+import { mkdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
+import { getMessages } from '../../lib/i18n';
+
+const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3437';
+const screenshotDir = join(tmpdir(), 'lifter-s27-f16-library');
+const local = Boolean(
+  process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
+);
+let fixture: Awaited<
+  ReturnType<
+    (typeof import('../integration/branding-dashboard-fixture'))['createBrandingDashboardFixtures']
+  >
+>;
+
+async function authenticate(
+  page: Page,
+  locale: 'ar' | 'en',
+  theme: 'light' | 'dark',
+) {
+  await page.context().addCookies([
+    { name: LOCALE_COOKIE, value: locale, url: origin },
+    { name: THEME_COOKIE, value: theme, url: origin },
+    {
+      name: 'sb-127-auth-token',
+      value: `base64-${Buffer.from(JSON.stringify(fixture.editor.session)).toString('base64url')}`,
+      url: origin,
+      httpOnly: true,
+      sameSite: 'Lax',
+    },
+  ]);
+}
+
+async function assertAxe(page: Page) {
+  const result = await new AxeBuilder({ page })
+    .withTags([
+      'wcag2a',
+      'wcag2aa',
+      'wcag21a',
+      'wcag21aa',
+      'wcag22a',
+      'wcag22aa',
+    ])
+    .analyze();
+  expect(result.violations).toEqual([]);
+}
+
+test.beforeAll(async () => {
+  test.skip(!local, 'Requires the selected disposable local database.');
+  const { createBrandingDashboardFixtures } =
+    await import('../integration/branding-dashboard-fixture');
+  fixture = await createBrandingDashboardFixtures();
+  await mkdir(screenshotDir, { recursive: true });
+});
+
+test.afterAll(async () => {
+  await fixture?.close();
+});
+
+for (const locale of ['ar', 'en'] as const) {
+  for (const theme of ['light', 'dark'] as const) {
+    for (const viewport of [
+      { name: '390', width: 390, height: 844 },
+      { name: '1440', width: 1440, height: 900 },
+    ]) {
+      test(`${locale} ${theme} ${viewport.name}: production library and manual Add`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({
+          width: viewport.width,
+          height: viewport.height,
+        });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await authenticate(page, locale, theme);
+        await page.goto('/exercise-library');
+        const m = getMessages(locale);
+        await expect(page.locator('html')).toHaveAttribute('lang', locale);
+        await expect(page.locator('html')).toHaveAttribute(
+          'dir',
+          locale === 'ar' ? 'rtl' : 'ltr',
+        );
+        await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+        await expect(
+          page.getByRole('heading', {
+            level: 1,
+            name: m['catalog.exerciseTitle'],
+          }),
+        ).toBeVisible();
+        await expect(
+          page.getByRole('link', { name: m['catalog.addExercise'] }),
+        ).toBeVisible();
+        const search = page.getByRole('searchbox', {
+          name: m['catalog.searchLabel'],
+        });
+        await search.focus();
+        await expect(search).toHaveCSS('outline-style', 'solid');
+        await page.screenshot({
+          path: join(
+            screenshotDir,
+            `${locale}-${theme}-${viewport.name}-library.png`,
+          ),
+          fullPage: true,
+        });
+        await assertAxe(page);
+
+        await page.goto('/exercise-library/new');
+        const editor = page.getByTestId('exercise-editor');
+        await expect(editor).toBeVisible();
+        await expect(editor).toHaveAttribute(
+          'dir',
+          locale === 'ar' ? 'rtl' : 'ltr',
+        );
+        const firstField = editor.getByLabel(m['catalog.editorNameAr']);
+        await firstField.focus();
+        await expect(firstField).toBeFocused();
+        await assertAxe(page);
+        await page.screenshot({
+          path: join(
+            screenshotDir,
+            `${locale}-${theme}-${viewport.name}-add.png`,
+          ),
+          fullPage: true,
+        });
+      });
+    }
+  }
+}

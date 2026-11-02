@@ -415,7 +415,7 @@ export const en: Record<keyof typeof ar, string> = {
   'registrationApproval.statusDenied': 'This status page is not available.',
   'registrationApproval.statusRedirectFallback':
     'Automatic navigation did not complete. Continue to the home page.',
-  // DRAFT (T017): catalog list/search interface copy pending PO approval.
+  // S26 copy batch: approved strings are locked by catalog-approved-copy.test.ts.
   'catalog.exerciseTitle': 'Exercise library',
   'catalog.exerciseIntro':
     'Search available exercises and filter by primary muscle or equipment.',
@@ -435,7 +435,7 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.loading': 'Loading the library…',
   'catalog.emptyTitle': 'Nothing here yet',
   'catalog.emptyDescription': 'Library items will appear here once added.',
-  // DRAFT (S27): manual exercise library authoring copy pending PO review.
+  // DRAFT (S27): these seven new authoring and navigation strings are outside the S26 batch.
   'catalog.addExercise': 'Add exercise',
   'catalog.nextPage': 'Next page',
   'catalog.paginationLabel': 'Exercise library pagination',
@@ -469,11 +469,10 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.stateEmpty': 'Empty',
   'catalog.stateNoResults': 'No results',
   'catalog.stateError': 'Error',
-  // DRAFT (T022): exercise editor interface copy pending PO approval.
+  // S26 copy batch: approved exercise editor strings are locked by catalog-approved-copy.test.ts.
   'catalog.editorTitle': 'Exercise editor',
   'catalog.editorIntroGlobal':
     'Create a global exercise or edit its plan defaults. These values populate a plan and coaches may override them.',
-  // DRAFT (F16): scope-aware exercise editor subtitle pending PO approval.
   'catalog.editorIntroWorkspace':
     'Create an exercise for this workspace or edit its plan defaults. Coaches may override these values when adding the exercise to a plan.',
   'catalog.editorDefaultsTitle': 'Plan defaults',
@@ -531,7 +530,7 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.editorErrorChoice': 'Choose a value from the list.',
   'catalog.editorErrorTooManyAlternatives':
     'Choose no more than three alternatives.',
-  // DRAFT (T022): showcase controls for the exercise editor preview.
+  // S26 copy batch: approved showcase labels are locked by catalog-approved-copy.test.ts.
   'catalog.showcaseView': 'View',
   'catalog.showcaseViewList': 'List',
   'catalog.showcaseViewEditor': 'Exercise editor',

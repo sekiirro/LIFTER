@@ -3,7 +3,11 @@
 import { useRef, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { ExerciseEditor } from '../../../components/catalog/ExerciseEditor';
-import type { ExerciseScope, CatalogStaffRole, ExerciseEditorDraft } from '../../../lib/catalog/exercise-editor';
+import type {
+  ExerciseScope,
+  CatalogStaffRole,
+  ExerciseEditorDraft,
+} from '../../../lib/catalog/exercise-editor';
 import type { Locale } from '../../../lib/design/preferences';
 import { getMessages } from '../../../lib/i18n';
 import { saveExerciseAction } from './actions';

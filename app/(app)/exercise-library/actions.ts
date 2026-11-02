@@ -9,7 +9,10 @@ import {
   type CatalogMutation,
   type CatalogResult,
 } from '../../../lib/catalog/server';
-import { buildExerciseInput, type ExerciseEditorDraft } from '../../../lib/catalog/exercise-editor';
+import {
+  buildExerciseInput,
+  type ExerciseEditorDraft,
+} from '../../../lib/catalog/exercise-editor';
 
 export type SaveExerciseInput = {
   draft: ExerciseEditorDraft;
@@ -20,7 +23,9 @@ export type SaveExerciseInput = {
   expectedVersion?: number;
 };
 
-function requestFor(draft: ExerciseEditorDraft): Record<string, unknown> | null {
+function requestFor(
+  draft: ExerciseEditorDraft,
+): Record<string, unknown> | null {
   const exercise = buildExerciseInput(draft);
   if (!exercise) return null;
   const defaults = exercise.defaults;
@@ -77,7 +82,8 @@ export async function saveExerciseAction(
       : createExercise({ operationKey: input.operationKey, request });
   }
 
-  if (input.scope !== 'workspace' ||
+  if (
+    input.scope !== 'workspace' ||
     !input.workspaceId ||
     (!isPlatformOwner && !workspaceRole) ||
     !authorize(actor, 'coaching_work', input.workspaceId)

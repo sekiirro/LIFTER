@@ -46,7 +46,10 @@ export function ExerciseLibraryResults({
         onSearch={(searchState) => search(searchState)}
       />
       {nextHref ? (
-        <nav aria-label={m['catalog.paginationLabel']} className={styles.pagination}>
+        <nav
+          aria-label={m['catalog.paginationLabel']}
+          className={styles.pagination}
+        >
           <Button variant="secondary" onClick={() => router.push(nextHref)}>
             {m['catalog.nextPage']}
           </Button>

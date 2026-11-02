@@ -15,8 +15,14 @@ vi.mock('../../lib/catalog/server', () => ({ search: m.search }));
 vi.mock('next/headers', () => ({ cookies: m.cookies }));
 vi.mock('next/navigation', () => ({ notFound: m.notFound }));
 vi.mock('../../app/(app)/exercise-library/ExerciseLibraryResults', () => ({
-  ExerciseLibraryResults: (props: { items: readonly { names: { en: string } }[] }) =>
-    createElement('div', { 'data-testid': 'exercise-results' }, props.items.map((item) => item.names.en).join(',')),
+  ExerciseLibraryResults: (props: {
+    items: readonly { names: { en: string } }[];
+  }) =>
+    createElement(
+      'div',
+      { 'data-testid': 'exercise-results' },
+      props.items.map((item) => item.names.en).join(','),
+    ),
 }));
 
 const ws = '22222222-2222-4222-8222-222222222222';
@@ -47,22 +53,37 @@ beforeEach(() => {
 });
 
 describe('production exercise library route', () => {
-  it.each(['sales', 'client', null])('denies %s with generic 404 before search', async (role) => {
-    m.actor.mockResolvedValue({ userId: ws, role, activeWorkspaceIds: [ws] });
-    await expect(Page({ searchParams: Promise.resolve({}) })).rejects.toThrow('404');
-    expect(m.search).not.toHaveBeenCalled();
-  });
+  it.each(['sales', 'client', null])(
+    'denies %s with generic 404 before search',
+    async (role) => {
+      m.actor.mockResolvedValue({ userId: ws, role, activeWorkspaceIds: [ws] });
+      await expect(Page({ searchParams: Promise.resolve({}) })).rejects.toThrow(
+        '404',
+      );
+      expect(m.search).not.toHaveBeenCalled();
+    },
+  );
 
   it('uses only the authenticated catalog search wall with a bounded page', async () => {
     const html = renderToStaticMarkup(
-      await Page({ searchParams: Promise.resolve({ q: 'press', muscle: 'chest', equipment: 'barbell' }) }),
+      await Page({
+        searchParams: Promise.resolve({
+          q: 'press',
+          muscle: 'chest',
+          equipment: 'barbell',
+        }),
+      }),
     );
     expect(html).toContain('Library test exercise');
     expect(html).not.toContain('Barbell Bench Press');
     expect(m.search).toHaveBeenCalledWith({
       kind: 'exercise',
       query: 'press',
-      filters: { primary_muscle_code: 'chest', equipment_codes: ['barbell'], page_size: 21 },
+      filters: {
+        primary_muscle_code: 'chest',
+        equipment_codes: ['barbell'],
+        page_size: 21,
+      },
       cursor: null,
     });
   });

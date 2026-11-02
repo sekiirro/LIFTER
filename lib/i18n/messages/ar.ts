@@ -401,7 +401,7 @@ export const ar = {
   'registrationApproval.statusDenied': 'صفحة الحالة هذه غير متاحة.',
   'registrationApproval.statusRedirectFallback':
     'لم يكتمل الانتقال التلقائي. يمكنك المتابعة إلى الصفحة الرئيسية.',
-  // DRAFT (T017): catalog list/search interface copy pending PO approval.
+  // S26 copy batch: approved strings are locked by catalog-approved-copy.test.ts.
   'catalog.exerciseTitle': 'مكتبة التمارين',
   'catalog.exerciseIntro':
     'ابحث في التمارين المتاحة وصفّها حسب العضلة الأساسية أو المعدات.',
@@ -421,7 +421,7 @@ export const ar = {
   'catalog.loading': 'جارٍ تحميل المكتبة…',
   'catalog.emptyTitle': 'لا توجد عناصر بعد',
   'catalog.emptyDescription': 'ستظهر عناصر المكتبة هنا بعد إضافتها.',
-  // DRAFT (S27): manual exercise library authoring copy pending PO review.
+  // DRAFT (S27): these seven new authoring and navigation strings are outside the S26 batch.
   'catalog.addExercise': 'إضافة تمرين',
   'catalog.nextPage': 'الصفحة التالية',
   'catalog.paginationLabel': 'ترقيم صفحات مكتبة التمارين',
@@ -455,11 +455,10 @@ export const ar = {
   'catalog.stateEmpty': 'فارغة',
   'catalog.stateNoResults': 'لا نتائج',
   'catalog.stateError': 'خطأ',
-  // DRAFT (T022): exercise editor interface copy pending PO approval.
+  // S26 copy batch: approved exercise editor strings are locked by catalog-approved-copy.test.ts.
   'catalog.editorTitle': 'محرر التمرين',
   'catalog.editorIntroGlobal':
     'أنشئ تمرينًا عالميًا أو حرّر إعداداته الافتراضية للخطة. تُستخدم هذه القيم عند إضافة التمرين، ويمكن للمدرّب تجاوزها.',
-  // DRAFT (F16): scope-aware exercise editor subtitle pending PO approval.
   'catalog.editorIntroWorkspace':
     'أنشئ تمرينًا لهذه المساحة أو حرّر إعداداته الافتراضية. يمكن للمدرّبين تجاوزها عند إضافة التمرين إلى خطة.',
   'catalog.editorDefaultsTitle': 'إعدادات الخطة الافتراضية',
@@ -513,7 +512,7 @@ export const ar = {
     'يجب ألا يتجاوز الحد الأدنى للتكرارات الحد الأقصى.',
   'catalog.editorErrorChoice': 'اختر قيمة من القائمة.',
   'catalog.editorErrorTooManyAlternatives': 'اختر ثلاثة بدائل كحد أقصى.',
-  // DRAFT (T022): showcase controls for the exercise editor preview.
+  // S26 copy batch: approved showcase labels are locked by catalog-approved-copy.test.ts.
   'catalog.showcaseView': 'العرض',
   'catalog.showcaseViewList': 'القائمة',
   'catalog.showcaseViewEditor': 'محرر التمرين',

@@ -4,13 +4,18 @@ import { Alert } from '../../../components/ui/Alert';
 import { requireActor } from '../../../lib/auth/actor';
 import { search } from '../../../lib/catalog/server';
 import type { CatalogExerciseListItem } from '../../../lib/catalog/list';
-import { LOCALE_COOKIE, dirFor, parseLocale } from '../../../lib/design/preferences';
+import {
+  LOCALE_COOKIE,
+  dirFor,
+  parseLocale,
+} from '../../../lib/design/preferences';
 import { getMessages } from '../../../lib/i18n';
 import { ExerciseLibraryResults } from './ExerciseLibraryResults';
 import styles from './exercise-library.module.css';
 
 const PAGE_SIZE = 20;
-const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+const UUID =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 type SearchParams = {
   q?: string | string[];
@@ -28,20 +33,36 @@ function exerciseRows(data: unknown): CatalogExerciseListItem[] {
   return data.flatMap((item) => {
     if (!item || typeof item !== 'object') return [];
     const row = item as Record<string, unknown>;
-    if (typeof row.result_id !== 'string' || !row.result_payload || typeof row.result_payload !== 'object') return [];
+    if (
+      typeof row.result_id !== 'string' ||
+      !row.result_payload ||
+      typeof row.result_payload !== 'object'
+    )
+      return [];
     const payload = row.result_payload as Record<string, unknown>;
     const nameAr = payload.name_ar;
     const nameEn = payload.name_en;
-    const equipment = Array.isArray(payload.equipment_codes) ? payload.equipment_codes[0] : undefined;
-    if (typeof nameAr !== 'string' || typeof nameEn !== 'string' || typeof payload.primary_muscle_code !== 'string' || typeof equipment !== 'string') return [];
-    return [{
-      id: row.result_id,
-      kind: 'exercise' as const,
-      names: { ar: nameAr, en: nameEn },
-      primaryMuscle: payload.primary_muscle_code as CatalogExerciseListItem['primaryMuscle'],
-      equipment: equipment as CatalogExerciseListItem['equipment'],
-      lifecycleState: 'active' as const,
-    }];
+    const equipment = Array.isArray(payload.equipment_codes)
+      ? payload.equipment_codes[0]
+      : undefined;
+    if (
+      typeof nameAr !== 'string' ||
+      typeof nameEn !== 'string' ||
+      typeof payload.primary_muscle_code !== 'string' ||
+      typeof equipment !== 'string'
+    )
+      return [];
+    return [
+      {
+        id: row.result_id,
+        kind: 'exercise' as const,
+        names: { ar: nameAr, en: nameEn },
+        primaryMuscle:
+          payload.primary_muscle_code as CatalogExerciseListItem['primaryMuscle'],
+        equipment: equipment as CatalogExerciseListItem['equipment'],
+        lifecycleState: 'active' as const,
+      },
+    ];
   });
 }
 
@@ -51,7 +72,13 @@ export default async function ExerciseLibraryPage({
   searchParams: Promise<SearchParams>;
 }) {
   const actor = await requireActor();
-  if (!actor.role || !(['platform_owner', 'workspace_owner', 'trainer'] as string[]).includes(actor.role)) notFound();
+  if (
+    !actor.role ||
+    !(['platform_owner', 'workspace_owner', 'trainer'] as string[]).includes(
+      actor.role,
+    )
+  )
+    notFound();
   const params = await searchParams;
   const q = value(params.q).slice(0, 120);
   const muscle = value(params.muscle);
@@ -78,7 +105,9 @@ export default async function ExerciseLibraryPage({
             <h1>{m['catalog.exerciseTitle']}</h1>
             <p>{m['catalog.exerciseIntro']}</p>
           </div>
-          <a className={styles.action} href="/exercise-library/new">{m['catalog.addExercise']}</a>
+          <a className={styles.action} href="/exercise-library/new">
+            {m['catalog.addExercise']}
+          </a>
         </header>
         <Alert tone="error" title={m['catalog.errorTitle']} />
       </main>
@@ -98,7 +127,9 @@ export default async function ExerciseLibraryPage({
           <h1>{m['catalog.exerciseTitle']}</h1>
           <p>{m['catalog.exerciseIntro']}</p>
         </div>
-        <a className={styles.action} href="/exercise-library/new">{m['catalog.addExercise']}</a>
+        <a className={styles.action} href="/exercise-library/new">
+          {m['catalog.addExercise']}
+        </a>
       </header>
       <ExerciseLibraryResults
         key={`${q}:${muscle}:${equipment}:${cursorValue}`}
