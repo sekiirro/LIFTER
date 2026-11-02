@@ -1,0 +1,373 @@
+{
+  "source": "tests/fixtures/workout-role-parity.json",
+  "roles": [
+    "platform_owner",
+    "workspace_owner",
+    "trainer",
+    "sales",
+    "client",
+    "unknown"
+  ],
+  "rows": [
+    {
+      "operation": "plan.read",
+      "role": "platform_owner",
+      "allowed": true,
+      "scope": "any_explicit_workspace"
+    },
+    {
+      "operation": "plan.read",
+      "role": "workspace_owner",
+      "allowed": true,
+      "scope": "own_workspace_coaching_work"
+    },
+    {
+      "operation": "plan.read",
+      "role": "trainer",
+      "allowed": true,
+      "scope": "own_workspace_coaching_work"
+    },
+    {
+      "operation": "plan.read",
+      "role": "sales",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "plan.read",
+      "role": "client",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "plan.read",
+      "role": "unknown",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "plan.mutate",
+      "role": "platform_owner",
+      "allowed": true,
+      "scope": "any_explicit_workspace"
+    },
+    {
+      "operation": "plan.mutate",
+      "role": "workspace_owner",
+      "allowed": true,
+      "scope": "own_workspace_coaching_work"
+    },
+    {
+      "operation": "plan.mutate",
+      "role": "trainer",
+      "allowed": true,
+      "scope": "own_workspace_coaching_work"
+    },
+    {
+      "operation": "plan.mutate",
+      "role": "sales",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "plan.mutate",
+      "role": "client",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "plan.mutate",
+      "role": "unknown",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "template.global_read",
+      "role": "platform_owner",
+      "allowed": true,
+      "scope": "global"
+    },
+    {
+      "operation": "template.global_read",
+      "role": "workspace_owner",
+      "allowed": true,
+      "scope": "coaching_work_any_workspace"
+    },
+    {
+      "operation": "template.global_read",
+      "role": "trainer",
+      "allowed": true,
+      "scope": "coaching_work_any_workspace"
+    },
+    {
+      "operation": "template.global_read",
+      "role": "sales",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "template.global_read",
+      "role": "client",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "template.global_read",
+      "role": "unknown",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "template.workspace_read",
+      "role": "platform_owner",
+      "allowed": true,
+      "scope": "any_explicit_workspace"
+    },
+    {
+      "operation": "template.workspace_read",
+      "role": "workspace_owner",
+      "allowed": true,
+      "scope": "template_workspace_coaching_work"
+    },
+    {
+      "operation": "template.workspace_read",
+      "role": "trainer",
+      "allowed": true,
+      "scope": "template_workspace_coaching_work"
+    },
+    {
+      "operation": "template.workspace_read",
+      "role": "sales",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "template.workspace_read",
+      "role": "client",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "template.workspace_read",
+      "role": "unknown",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "template.workspace_write",
+      "role": "platform_owner",
+      "allowed": true,
+      "scope": "any_explicit_workspace"
+    },
+    {
+      "operation": "template.workspace_write",
+      "role": "workspace_owner",
+      "allowed": true,
+      "scope": "template_workspace_coaching_work"
+    },
+    {
+      "operation": "template.workspace_write",
+      "role": "trainer",
+      "allowed": true,
+      "scope": "template_workspace_coaching_work"
+    },
+    {
+      "operation": "template.workspace_write",
+      "role": "sales",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "template.workspace_write",
+      "role": "client",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "template.workspace_write",
+      "role": "unknown",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "template.global_governance",
+      "role": "platform_owner",
+      "allowed": true,
+      "scope": "global_governance"
+    },
+    {
+      "operation": "template.global_governance",
+      "role": "workspace_owner",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "template.global_governance",
+      "role": "trainer",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "template.global_governance",
+      "role": "sales",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "template.global_governance",
+      "role": "client",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "template.global_governance",
+      "role": "unknown",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "template.load_into_draft",
+      "role": "platform_owner",
+      "allowed": true,
+      "scope": "any_explicit_plan_workspace_and_visible_template"
+    },
+    {
+      "operation": "template.load_into_draft",
+      "role": "workspace_owner",
+      "allowed": true,
+      "scope": "own_plan_workspace_and_visible_template"
+    },
+    {
+      "operation": "template.load_into_draft",
+      "role": "trainer",
+      "allowed": true,
+      "scope": "own_plan_workspace_and_visible_template"
+    },
+    {
+      "operation": "template.load_into_draft",
+      "role": "sales",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "template.load_into_draft",
+      "role": "client",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "template.load_into_draft",
+      "role": "unknown",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "export.published_pdf",
+      "role": "platform_owner",
+      "allowed": true,
+      "scope": "any_explicit_plan_workspace"
+    },
+    {
+      "operation": "export.published_pdf",
+      "role": "workspace_owner",
+      "allowed": true,
+      "scope": "own_plan_workspace_coaching_work"
+    },
+    {
+      "operation": "export.published_pdf",
+      "role": "trainer",
+      "allowed": true,
+      "scope": "own_plan_workspace_coaching_work"
+    },
+    {
+      "operation": "export.published_pdf",
+      "role": "sales",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "export.published_pdf",
+      "role": "client",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "export.published_pdf",
+      "role": "unknown",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "export.published_excel",
+      "role": "platform_owner",
+      "allowed": true,
+      "scope": "any_explicit_plan_workspace"
+    },
+    {
+      "operation": "export.published_excel",
+      "role": "workspace_owner",
+      "allowed": true,
+      "scope": "own_plan_workspace_coaching_work"
+    },
+    {
+      "operation": "export.published_excel",
+      "role": "trainer",
+      "allowed": true,
+      "scope": "own_plan_workspace_coaching_work"
+    },
+    {
+      "operation": "export.published_excel",
+      "role": "sales",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "export.published_excel",
+      "role": "client",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "export.published_excel",
+      "role": "unknown",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "volume.read",
+      "role": "platform_owner",
+      "allowed": true,
+      "scope": "any_explicit_plan_workspace"
+    },
+    {
+      "operation": "volume.read",
+      "role": "workspace_owner",
+      "allowed": true,
+      "scope": "own_plan_workspace_coaching_work"
+    },
+    {
+      "operation": "volume.read",
+      "role": "trainer",
+      "allowed": true,
+      "scope": "own_plan_workspace_coaching_work"
+    },
+    {
+      "operation": "volume.read",
+      "role": "sales",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "volume.read",
+      "role": "client",
+      "allowed": false,
+      "scope": "none"
+    },
+    {
+      "operation": "volume.read",
+      "role": "unknown",
+      "allowed": false,
+      "scope": "none"
+    }
+  ]
+}

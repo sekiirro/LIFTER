@@ -1,0 +1,230 @@
+{
+  "title": "F17 role authorization matrix for TypeScript and SQL parity",
+  "sources": [
+    "specs/017-workout-planner/spec.md#FR-006",
+    "specs/017-workout-planner/spec.md#FR-011",
+    "specs/017-workout-planner/spec.md#FR-012",
+    "specs/017-workout-planner/plan.md#Authorization",
+    "lib/auth/capabilities.ts",
+    "F16 catalog-api.md#Role-authorization-matrix"
+  ],
+  "policy": "PO may act on an explicitly selected workspace per authorize(); WO and Trainer need current coaching_work membership. Global template reads follow F16. Global template governance is PO-only. Client and unknown roles have no F17 staff surface.",
+  "roles": [
+    { "id": "platform_owner", "label": "PO" },
+    { "id": "workspace_owner", "label": "WO" },
+    { "id": "trainer", "label": "Trainer" },
+    { "id": "sales", "label": "Sales" },
+    { "id": "client", "label": "Client" },
+    { "id": "unknown", "label": "Unknown/unauthenticated" }
+  ],
+  "operations": [
+    {
+      "id": "plan.read",
+      "description": "Read a workout plan in its workspace",
+      "tsRule": "workspace_coaching_work",
+      "permissions": {
+        "platform_owner": {
+          "decision": "allow",
+          "scope": "any_explicit_workspace"
+        },
+        "workspace_owner": {
+          "decision": "allow",
+          "scope": "own_workspace_coaching_work"
+        },
+        "trainer": {
+          "decision": "allow",
+          "scope": "own_workspace_coaching_work"
+        },
+        "sales": { "decision": "deny", "scope": "none" },
+        "client": { "decision": "deny", "scope": "none" },
+        "unknown": { "decision": "deny", "scope": "none" }
+      }
+    },
+    {
+      "id": "plan.mutate",
+      "description": "Save a draft or publish a workout plan",
+      "tsRule": "workspace_coaching_work",
+      "permissions": {
+        "platform_owner": {
+          "decision": "allow",
+          "scope": "any_explicit_workspace"
+        },
+        "workspace_owner": {
+          "decision": "allow",
+          "scope": "own_workspace_coaching_work"
+        },
+        "trainer": {
+          "decision": "allow",
+          "scope": "own_workspace_coaching_work"
+        },
+        "sales": { "decision": "deny", "scope": "none" },
+        "client": { "decision": "deny", "scope": "none" },
+        "unknown": { "decision": "deny", "scope": "none" }
+      }
+    },
+    {
+      "id": "template.global_read",
+      "description": "Read global workout templates",
+      "tsRule": "global_coaching_read",
+      "permissions": {
+        "platform_owner": { "decision": "allow", "scope": "global" },
+        "workspace_owner": {
+          "decision": "allow",
+          "scope": "coaching_work_any_workspace"
+        },
+        "trainer": {
+          "decision": "allow",
+          "scope": "coaching_work_any_workspace"
+        },
+        "sales": { "decision": "deny", "scope": "none" },
+        "client": { "decision": "deny", "scope": "none" },
+        "unknown": { "decision": "deny", "scope": "none" }
+      }
+    },
+    {
+      "id": "template.workspace_read",
+      "description": "Read a workspace template",
+      "tsRule": "workspace_coaching_work",
+      "permissions": {
+        "platform_owner": {
+          "decision": "allow",
+          "scope": "any_explicit_workspace"
+        },
+        "workspace_owner": {
+          "decision": "allow",
+          "scope": "template_workspace_coaching_work"
+        },
+        "trainer": {
+          "decision": "allow",
+          "scope": "template_workspace_coaching_work"
+        },
+        "sales": { "decision": "deny", "scope": "none" },
+        "client": { "decision": "deny", "scope": "none" },
+        "unknown": { "decision": "deny", "scope": "none" }
+      }
+    },
+    {
+      "id": "template.workspace_write",
+      "description": "Create, version, or retire a workspace template",
+      "tsRule": "workspace_coaching_work",
+      "permissions": {
+        "platform_owner": {
+          "decision": "allow",
+          "scope": "any_explicit_workspace"
+        },
+        "workspace_owner": {
+          "decision": "allow",
+          "scope": "template_workspace_coaching_work"
+        },
+        "trainer": {
+          "decision": "allow",
+          "scope": "template_workspace_coaching_work"
+        },
+        "sales": { "decision": "deny", "scope": "none" },
+        "client": { "decision": "deny", "scope": "none" },
+        "unknown": { "decision": "deny", "scope": "none" }
+      }
+    },
+    {
+      "id": "template.global_governance",
+      "description": "Create, version, retire, or promote a global template",
+      "tsRule": "platform_owner_only",
+      "permissions": {
+        "platform_owner": { "decision": "allow", "scope": "global_governance" },
+        "workspace_owner": { "decision": "deny", "scope": "none" },
+        "trainer": { "decision": "deny", "scope": "none" },
+        "sales": { "decision": "deny", "scope": "none" },
+        "client": { "decision": "deny", "scope": "none" },
+        "unknown": { "decision": "deny", "scope": "none" }
+      }
+    },
+    {
+      "id": "template.load_into_draft",
+      "description": "Load a visible template version into an authorized plan draft",
+      "tsRule": "plan_workspace_and_template_visibility",
+      "permissions": {
+        "platform_owner": {
+          "decision": "allow",
+          "scope": "any_explicit_plan_workspace_and_visible_template"
+        },
+        "workspace_owner": {
+          "decision": "allow",
+          "scope": "own_plan_workspace_and_visible_template"
+        },
+        "trainer": {
+          "decision": "allow",
+          "scope": "own_plan_workspace_and_visible_template"
+        },
+        "sales": { "decision": "deny", "scope": "none" },
+        "client": { "decision": "deny", "scope": "none" },
+        "unknown": { "decision": "deny", "scope": "none" }
+      }
+    },
+    {
+      "id": "export.published_pdf",
+      "description": "Export an authorized published plan version as PDF",
+      "tsRule": "workspace_coaching_work_and_published_only",
+      "permissions": {
+        "platform_owner": {
+          "decision": "allow",
+          "scope": "any_explicit_plan_workspace"
+        },
+        "workspace_owner": {
+          "decision": "allow",
+          "scope": "own_plan_workspace_coaching_work"
+        },
+        "trainer": {
+          "decision": "allow",
+          "scope": "own_plan_workspace_coaching_work"
+        },
+        "sales": { "decision": "deny", "scope": "none" },
+        "client": { "decision": "deny", "scope": "none" },
+        "unknown": { "decision": "deny", "scope": "none" }
+      }
+    },
+    {
+      "id": "export.published_excel",
+      "description": "Export an authorized published plan version as Excel",
+      "tsRule": "workspace_coaching_work_and_published_only",
+      "permissions": {
+        "platform_owner": {
+          "decision": "allow",
+          "scope": "any_explicit_plan_workspace"
+        },
+        "workspace_owner": {
+          "decision": "allow",
+          "scope": "own_plan_workspace_coaching_work"
+        },
+        "trainer": {
+          "decision": "allow",
+          "scope": "own_plan_workspace_coaching_work"
+        },
+        "sales": { "decision": "deny", "scope": "none" },
+        "client": { "decision": "deny", "scope": "none" },
+        "unknown": { "decision": "deny", "scope": "none" }
+      }
+    },
+    {
+      "id": "volume.read",
+      "description": "Read per-session or per-week volume for an authorized plan",
+      "tsRule": "workspace_coaching_work",
+      "permissions": {
+        "platform_owner": {
+          "decision": "allow",
+          "scope": "any_explicit_plan_workspace"
+        },
+        "workspace_owner": {
+          "decision": "allow",
+          "scope": "own_plan_workspace_coaching_work"
+        },
+        "trainer": {
+          "decision": "allow",
+          "scope": "own_plan_workspace_coaching_work"
+        },
+        "sales": { "decision": "deny", "scope": "none" },
+        "client": { "decision": "deny", "scope": "none" },
+        "unknown": { "decision": "deny", "scope": "none" }
+      }
+    }
+  ]
+}
