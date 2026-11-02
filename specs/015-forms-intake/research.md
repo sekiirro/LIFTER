@@ -76,19 +76,36 @@
   arbitrary cron expressions and time zones are not accepted.
 - A recurrence scheduled while frozen or inactive is skipped. Resume uses the
   next scheduled date after service resumes; it does not replay missed dates.
-- Renewal delivery is due only on the Cairo date where F13 projection changes
-  from `future` on the prior date to `active` on the service-start date. A
-  freeze that reflows an unstarted renewal moves that date; an early payment
-  does not change the projection. A worker delayed beyond that date does not
-  create a late renewal occurrence.
+- Renewal delivery is due on or after the projected F13 service start when the
+  projection is `active`. A freeze that reflows an unstarted renewal moves that
+  service start; e.g. a projected start on day 10 frozen through day 12 reflows
+  to day 15, so evaluation on day 10 queues nothing and evaluation on day 15
+  queues `renewal:<subscription-id>` once. Early payment does not change this
+  date. A missed evaluation day is safely materialized later by the idempotent
+  renewal key; recurring dates skipped while frozen or inactive remain skipped
+  and are not replayed.
 - No cron schedule is activated by migrations. T017's owner-only activation
   gate remains separate.
 - A recurring occurrence is addressed as `recurring:<Cairo-date>` and is valid
   only on a date on or after `recurrence_starts_on` whose offset is divisible
   by `recurrence_interval_days`. A renewal occurrence is addressed as
-  `renewal:<subscription-id>` and is valid only when F13 reports `future` on
-  the prior Cairo date and `active` on the current Cairo date. This makes the
+  `renewal:<subscription-id>` and is valid when the actual projected service
+  start is on or before evaluation and F13 reports `active`. This makes the
   projection, including F13 freeze reflow, authoritative over payment time.
   Manual delivery remains an opaque caller-keyed occurrence. Each stored
   occurrence snapshots its eligible audience once and receives independent
   assignment rows and deadlines.
+- T016 is deliberately channel-agnostic while the delivery channel remains an
+  open PO decision. It materializes client-late and D-03 Trainer-late schedules,
+  stage/recipient occurrences, authorization-checked IDs-only `public.jobs`
+  enqueueing, and IDs-only audit events. There is no email, in-app or other
+  delivery adapter and no channel choice in this implementation.
+- Client-late clocks are independent from D-03 Trainer-late clocks: a client
+  alert is due to the assigned, currently authorized Trainer at deadline+24h;
+  if no eligible Trainer exists then PO+WO receive the +24h stage, and PO+WO
+  receive the +48h stage in either case. Reassignment changes the recipient
+  without changing the original deadline. D-03 Trainer-late retains its existing
+  Q4 initial and owner-escalation timing/catch-up rules. T017's pg_cron schedule
+  uses the owner-only F11 activation/deactivation pattern and is not activated
+  by the migration; explicit-time integration tests call the private evaluator
+  core directly.
