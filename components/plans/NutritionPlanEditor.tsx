@@ -8,6 +8,7 @@ import { Card } from '../ui/Card';
 import { dirFor, type Locale } from '../../lib/design/preferences';
 import { formatDigits } from '../../lib/i18n/format-digits';
 import { getMessages } from '../../lib/i18n';
+import { formatNutritionMacroDisplay } from '../../lib/plans/nutrition/display';
 import type { NutritionFoodSnapshot } from '../../lib/plans/nutrition/macros';
 import type {
   NutritionDocument,
@@ -168,10 +169,7 @@ export function NutritionPlanEditor({
             <dt>{messages[`nutritionAlternatives.${name}`]}</dt>
             <dd>
               <Bidi dir="ltr">
-                {formatDigits(
-                  Math.round(Number(values[name])).toString(),
-                  locale,
-                )}{' '}
+                {formatNutritionMacroDisplay(values[name], name, locale)}{' '}
                 {name === 'calories'
                   ? messages['nutritionAlternatives.kilocalories']
                   : formatUnit('g')}
@@ -442,7 +440,7 @@ export function NutritionPlanEditor({
           ? (['calories', 'protein', 'carbs', 'fat'] as const)
               .map(
                 (name) =>
-                  `${messages[`nutritionAlternatives.${name}`]} ${formatDigits(Math.round(Number(totals[name])).toString(), locale)} ${name === 'calories' ? messages['nutritionAlternatives.kilocalories'] : formatUnit('g')}`,
+                  `${messages[`nutritionAlternatives.${name}`]} ${formatNutritionMacroDisplay(totals[name], name, locale)} ${name === 'calories' ? messages['nutritionAlternatives.kilocalories'] : formatUnit('g')}`,
               )
               .join(', ')
           : messages['nutritionPlan.totalsUnavailable']}

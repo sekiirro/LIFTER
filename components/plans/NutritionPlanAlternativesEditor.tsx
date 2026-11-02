@@ -9,6 +9,7 @@ import { ConfirmDialog } from '../ui/ConfirmDialog';
 import { Field } from '../ui/Field';
 import { dirFor, type Locale } from '../../lib/design/preferences';
 import { getMessages, type Messages } from '../../lib/i18n';
+import { formatNutritionMacroDisplay } from '../../lib/plans/nutrition/display';
 import { NUTRITION_ID_CONTINUITY_RULES } from '../../lib/plans/nutrition/id-continuity';
 import {
   computeNutritionMacro,
@@ -81,7 +82,6 @@ export type ValidatedNutritionAlternativeDraft = {
   calculation: NutritionMacroCalculation;
 };
 
-const CANONICAL_DECIMAL_PATTERN = /^(?:0|[1-9][0-9]*)(?:\.([0-9]+))?$/;
 const QUANTITY_DECIMAL_PATTERN = /^(?:0|[1-9][0-9]*)(?:\.[0-9]{1,3})?$/;
 const ARABIC_INDIC_DIGITS = Array.from({ length: 10 }, (_, digit) =>
   new Intl.NumberFormat('ar', {
@@ -336,26 +336,6 @@ export function replaceAlternativeFoodDraft(
   );
 }
 
-export function formatNutritionMacroInteger(
-  value: string,
-  locale: Locale = 'en',
-): string {
-  const match = CANONICAL_DECIMAL_PATTERN.exec(value.trim());
-  if (!match) {
-    throw new NutritionAlternativesEditorError(
-      'invalid_macro_value',
-      `macro value ${value} is not a non-negative canonical decimal`,
-    );
-  }
-
-  const whole = BigInt(value.trim().split('.')[0]!);
-  const fraction = match[1] ?? '';
-  const integer = (
-    fraction[0] !== undefined && fraction[0] >= '5' ? whole + 1n : whole
-  ).toString();
-  return localizeDigits(integer, locale);
-}
-
 function localizeDigits(value: string, locale: Locale): string {
   if (locale === 'en') return value;
   return value.replace(
@@ -423,7 +403,7 @@ function MacroSummary({
               <dd style={macroValueStyle}>
                 <Bidi dir="ltr">
                   <span data-macro={name}>
-                    {formatNutritionMacroInteger(macros[name], locale)}
+                    {formatNutritionMacroDisplay(macros[name], name, locale)}
                   </span>{' '}
                   <span>{macroUnit(name, messages)}</span>
                 </Bidi>

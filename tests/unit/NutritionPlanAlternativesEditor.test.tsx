@@ -6,7 +6,6 @@ import {
   NutritionAlternativesEditorError,
   NutritionPlanAlternativesEditor,
   addAlternativeDraft,
-  formatNutritionMacroInteger,
   moveAlternativeDraft,
   removeAlternativeDraft,
   replaceAlternativeFoodDraft,
@@ -21,6 +20,7 @@ import {
   computeNutritionMacro,
   type NutritionFoodSnapshot,
 } from '../../lib/plans/nutrition/macros';
+import { formatNutritionMacroDisplay } from '../../lib/plans/nutrition/display';
 import { getMessages } from '../../lib/i18n';
 
 const itemId = '00000000-0000-4000-8000-000000000010';
@@ -153,7 +153,7 @@ function expectMacro(
   value: string,
 ): void {
   expect(html).toContain(
-    `data-macro="${name}">${formatNutritionMacroInteger(value)}<`,
+    `data-macro="${name}">${formatNutritionMacroDisplay(value, name)}<`,
   );
 }
 
@@ -502,11 +502,13 @@ describe('F18 nutrition manual alternatives editor', () => {
     expect(html).toContain('data-testid="confirm-dialog"');
   });
 
-  it('formats macro values as integers without changing the exact calculation', () => {
-    expect(formatNutritionMacroInteger('247.5000')).toBe('248');
-    expect(formatNutritionMacroInteger('155.6000')).toBe('156');
-    expect(formatNutritionMacroInteger('99.4999')).toBe('99');
-    expect(formatNutritionMacroInteger('0.0000')).toBe('0');
+  it('formats macro values with the shared display rule without changing the exact calculation', () => {
+    expect(formatNutritionMacroDisplay('247.5000', 'calories')).toBe('248');
+    expect(formatNutritionMacroDisplay('155.6000', 'calories')).toBe('156');
+    expect(formatNutritionMacroDisplay('99.4999', 'calories')).toBe('99');
+    expect(formatNutritionMacroDisplay('0.0000', 'protein')).toBe('0');
+    expect(formatNutritionMacroDisplay('5.6000', 'protein')).toBe('5.6');
+    expect(formatNutritionMacroDisplay('9.9500', 'fat')).toBe('10');
     expect(
       computeNutritionMacro({
         snapshot: rice.snapshot,
