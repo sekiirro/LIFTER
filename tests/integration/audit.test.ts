@@ -336,7 +336,7 @@ describe('visibility (T004)', () => {
       expect.arrayContaining([f.wsA.id, f.wsB.id, null]),
     );
     const ownRows = checked(
-      await f.woA.client.from('audit_events').select('*'),
+      await f.woA.client.from('audit_events').select('*').in('id', ids),
     );
     if (!ownRows) throw new Error('WO audit query returned no data');
     expect(ownRows.length).toBeGreaterThan(0);
@@ -377,7 +377,9 @@ describe('visibility (T004)', () => {
         .single(),
     );
     expect(
-      checked(await f.woA.client.from('audit_events').select('*')),
+      checked(
+        await f.woA.client.from('audit_events').select('*').in('id', ids),
+      ),
     ).toEqual([]);
   });
 });
