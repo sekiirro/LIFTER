@@ -200,6 +200,36 @@ describe('Plan Core client', () => {
     });
   });
 
+  it('accepts schemaVersion as a finite number', async () => {
+    const contentWithNumericSchemaVersion = { ...content, schemaVersion: 1.5 };
+    const transport: PlanCoreTransport = {
+      getRoot: vi.fn(),
+      writeDraft: vi.fn().mockResolvedValue({
+        status: 'ok',
+        replayed: false,
+        data: {
+          planId: PLAN_ID,
+          draft: {
+            planId: PLAN_ID,
+            visibility: 'private',
+            content: contentWithNumericSchemaVersion,
+          },
+        },
+      }),
+      publish: vi.fn(),
+    };
+
+    const result = await createPlanCoreClient(transport).writeDraft({
+      planId: PLAN_ID,
+      expectedDraftRevision: 0,
+      content: contentWithNumericSchemaVersion,
+      operationKey: OPERATION_KEY,
+      intent: 'autosave',
+    });
+
+    expect(result.data.draft.content?.schemaVersion).toBe(1.5);
+  });
+
   it('maps an unknown server status to the closed unavailable error', async () => {
     const transport: PlanCoreTransport = {
       getRoot: vi
@@ -222,12 +252,10 @@ describe('Plan Core client', () => {
 
   it('maps known status failures without exposing server detail text', async () => {
     const client = createPlanCoreClient({
-      getRoot: vi
-        .fn()
-        .mockResolvedValue({
-          status: 'not_permitted',
-          detail: 'private detail',
-        }),
+      getRoot: vi.fn().mockResolvedValue({
+        status: 'not_permitted',
+        detail: 'private detail',
+      }),
       writeDraft: vi.fn(),
       publish: vi.fn(),
     });

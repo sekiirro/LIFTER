@@ -205,11 +205,13 @@ export function normalizePlanContentEnvelope(
   if (value.kind !== 'workout' && value.kind !== 'nutrition') {
     throw new PlanCoreValidationError('Plan content kind is invalid');
   }
-  const schemaVersion = requireInteger(
-    value.schemaVersion,
-    'Schema version',
-    1,
-  );
+  if (
+    typeof value.schemaVersion !== 'number' ||
+    !Number.isFinite(value.schemaVersion)
+  ) {
+    throw new PlanCoreValidationError('Schema version must be a finite number');
+  }
+  const schemaVersion = value.schemaVersion;
   if (!Object.hasOwn(value, 'document')) {
     throw new PlanCoreValidationError('Plan content document is required');
   }
