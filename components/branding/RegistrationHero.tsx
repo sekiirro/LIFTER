@@ -15,10 +15,12 @@ import { modes } from '../../lib/design/tokens';
 import {
   adaptiveDimmingFromBackdropLuminances,
   enterHeroSamplingFallback,
+  heroArtworkState,
   needsOpaqueBrightCard,
   conservativeBackdropLuminance,
   darkestBackdropLuminance,
   photoToneFromLuminance,
+  observeHeroTextRegion,
   selectHeroLayoutMode,
   subscribeToHeroArtwork,
   type HeroViewport,
@@ -333,6 +335,28 @@ export function RegistrationHero({
       window.removeEventListener('resize', updateArtworkSamples);
     };
   }, [enterSamplingFallback, updateArtworkSamples, banner?.src]);
+
+  useEffect(() => {
+    const stage = stageRef.current;
+    const textArea = stage?.querySelector<HTMLElement>('[data-hero-text-area]');
+    // The sampled region is the card text box, so a geometry change
+    // invalidates the measurement. Browsers without a ResizeObserver keep
+    // the window resize path in charge.
+    const stopObserving = textArea
+      ? observeHeroTextRegion(textArea, () => {
+          const image =
+            stage?.querySelector<HTMLImageElement>('[data-hero-image]');
+          // Only artwork that really loaded can be resampled; a failed
+          // request keeps the opaque fallback.
+          if (image && heroArtworkState(image) === 'loaded') {
+            updateArtworkSamples();
+          }
+        })
+      : null;
+    return () => {
+      stopObserving?.();
+    };
+  }, [updateArtworkSamples, banner?.src]);
 
   const sourceStyle = {
     '--hero-dark-error-fg': modes.dark.error.fg,

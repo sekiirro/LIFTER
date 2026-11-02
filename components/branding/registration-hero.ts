@@ -232,3 +232,66 @@ export function subscribeToHeroArtwork(
     image.removeEventListener('error', handleError);
   };
 }
+
+/** The resize entry contract the hero sampler relies on. */
+export type HeroResizeEntry = {
+  contentRect: { width: number; height: number };
+};
+
+export type HeroResizeObserver = {
+  observe: (target: Element) => void;
+  disconnect: () => void;
+};
+
+/**
+ * Resample the hero artwork when the sampled text region changes size.
+ *
+ * The card text region is exactly the region the contrast sample is
+ * measured from, so a geometry change (a reflow, a longer form, a
+ * different viewport) invalidates that sample. The resample is coalesced
+ * into a single animation frame and entries whose rounded size did not
+ * change are ignored, so the observer can never loop. The returned cleanup
+ * disconnects the observer; browsers without a ResizeObserver keep the
+ * window resize path in charge.
+ */
+export function observeHeroTextRegion(
+  target: Element,
+  onResize: () => void,
+): (() => void) | null {
+  const Observer = (
+    globalThis as {
+      ResizeObserver?: new (
+        callback: (entries: HeroResizeEntry[]) => void,
+      ) => HeroResizeObserver;
+    }
+  ).ResizeObserver;
+  if (!Observer) return null;
+  let lastWidth: number | null = null;
+  let lastHeight: number | null = null;
+  let frame: number | null = null;
+  const observer = new Observer((entries) => {
+    for (const entry of entries) {
+      const width = Math.round(entry.contentRect.width);
+      const height = Math.round(entry.contentRect.height);
+      const changed =
+        lastWidth !== null &&
+        lastHeight !== null &&
+        (width !== lastWidth || height !== lastHeight);
+      lastWidth = width;
+      lastHeight = height;
+      if (!changed || frame !== null) continue;
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        onResize();
+      });
+    }
+  });
+  observer.observe(target);
+  return () => {
+    if (frame !== null) {
+      cancelAnimationFrame(frame);
+      frame = null;
+    }
+    observer.disconnect();
+  };
+}

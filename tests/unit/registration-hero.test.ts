@@ -1,5 +1,5 @@
 import { readFileSync } from 'node:fs';
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   PHONE_NUMBER_GROUP_DIRECTION,
   PHONE_NUMBER_GROUP_GAP,
@@ -12,7 +12,9 @@ import {
   darkestBackdropLuminance,
   enterHeroSamplingFallback,
   heroArtworkState,
+  type HeroResizeEntry,
   needsOpaqueBrightCard,
+  observeHeroTextRegion,
   photoToneFromLuminance,
   selectHeroLayoutMode,
   subscribeToHeroArtwork,
@@ -131,6 +133,23 @@ describe('production registration hero conservative backdrop sampling', () => {
     expect(heroComponentSource).toContain('data-hero-text-area');
   });
 });
+
+class MockResizeObserver {
+  static instances: MockResizeObserver[] = [];
+  callback: (entries: HeroResizeEntry[]) => void;
+  observed: unknown[] = [];
+  disconnected = false;
+  constructor(callback: (entries: HeroResizeEntry[]) => void) {
+    this.callback = callback;
+    MockResizeObserver.instances.push(this);
+  }
+  observe(target: unknown) {
+    this.observed.push(target);
+  }
+  disconnect() {
+    this.disconnected = true;
+  }
+}
 
 function fakeStage(dataset: Record<string, string> = {}) {
   const properties = new Map<string, string>();
@@ -313,6 +332,74 @@ describe('production registration hero artwork events', () => {
     );
     expect(heroComponentSource).not.toMatch(/addEventListener\('load'/);
     expect(heroComponentSource).not.toMatch(/removeEventListener\('load'/);
+  });
+});
+
+describe('production registration hero geometry changes', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('resamples once per animation frame when the text region changes size', () => {
+    const frames: Array<() => void> = [];
+    MockResizeObserver.instances = [];
+
+    vi.stubGlobal('ResizeObserver', MockResizeObserver);
+    vi.stubGlobal('requestAnimationFrame', (callback: () => void) => {
+      frames.push(callback);
+      return frames.length;
+    });
+    vi.stubGlobal('cancelAnimationFrame', () => {});
+
+    let resamples = 0;
+    const target = {} as Element;
+    const stop = observeHeroTextRegion(target, () => {
+      resamples += 1;
+    });
+    expect(stop).not.toBeNull();
+    const observer = MockResizeObserver.instances[0]!;
+    expect(observer.observed).toEqual([target]);
+
+    // ResizeObserver reports the initial size; that establishes a baseline.
+    observer.callback([{ contentRect: { width: 100, height: 50 } }]);
+    expect(frames.length).toBe(0);
+    observer.callback([{ contentRect: { width: 120, height: 50 } }]);
+    observer.callback([{ contentRect: { width: 120, height: 50 } }]);
+    // The changed size is coalesced into one frame.
+    expect(frames.length).toBe(1);
+    expect(resamples).toBe(0);
+    frames[0]!();
+    expect(resamples).toBe(1);
+
+    // An unchanged size never schedules another resample.
+    observer.callback([{ contentRect: { width: 120, height: 50 } }]);
+    expect(frames.length).toBe(1);
+    expect(resamples).toBe(1);
+
+    observer.callback([{ contentRect: { width: 140, height: 50 } }]);
+    expect(frames.length).toBe(2);
+    frames[1]!();
+    expect(resamples).toBe(2);
+
+    stop?.();
+    expect(observer.disconnected).toBe(true);
+  });
+
+  it('keeps the window resize path when the browser has no ResizeObserver', () => {
+    vi.stubGlobal('ResizeObserver', undefined);
+    const stop = observeHeroTextRegion({} as Element, () => {});
+    expect(stop).toBeNull();
+    expect(heroComponentSource).toContain(
+      "window.addEventListener('resize', updateArtworkSamples)",
+    );
+  });
+
+  it('observes the sampled text region and disconnects on artwork change', () => {
+    expect(heroComponentSource).toContain('observeHeroTextRegion(textArea');
+    expect(heroComponentSource).toContain('stopObserving?.()');
+    expect(heroComponentSource).toMatch(
+      /\}, \[updateArtworkSamples, banner\?\.src\]\);/,
+    );
   });
 });
 
