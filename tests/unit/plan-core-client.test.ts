@@ -50,7 +50,12 @@ describe('Plan Core client', () => {
           publishedVersion: 2,
           readiness: 'published',
           draft: { planId: PLAN_ID, visibility: 'private', content },
-          currentRevision: revision,
+          currentRevision: {
+            planId: revision.planId,
+            revisionId: revision.revisionId,
+            revisionNumber: revision.revisionNumber,
+            createdAt: revision.createdAt,
+          },
         },
       }),
       writeDraft: vi.fn(),
@@ -74,7 +79,10 @@ describe('Plan Core client', () => {
       writeDraft: vi.fn().mockResolvedValue({
         status: 'ok',
         replayed: true,
-        data: { planId: PLAN_ID, draft: { planId: PLAN_ID, visibility: 'private', content } },
+        data: {
+          planId: PLAN_ID,
+          draft: { planId: PLAN_ID, visibility: 'private', content },
+        },
       }),
       publish: vi.fn(),
     };
@@ -91,7 +99,10 @@ describe('Plan Core client', () => {
     expect(result).toEqual({
       status: 'ok',
       replayed: true,
-      data: { planId: PLAN_ID, draft: expect.objectContaining({ planId: PLAN_ID }) },
+      data: {
+        planId: PLAN_ID,
+        draft: expect.objectContaining({ planId: PLAN_ID }),
+      },
     });
     expect(transport.writeDraft).toHaveBeenCalledWith({
       planId: PLAN_ID,
@@ -108,18 +119,23 @@ describe('Plan Core client', () => {
       writeDraft: vi.fn().mockResolvedValue({
         status: 'ok',
         replayed: false,
-        data: { planId: REVISION_ID, draft: { planId: REVISION_ID, visibility: 'private' } },
+        data: {
+          planId: REVISION_ID,
+          draft: { planId: REVISION_ID, visibility: 'private' },
+        },
       }),
       publish: vi.fn(),
     };
 
-    await expect(createPlanCoreClient(transport).writeDraft({
-      planId: PLAN_ID,
-      expectedDraftRevision: 0,
-      content,
-      operationKey: OPERATION_KEY,
-      intent: 'save_draft',
-    })).rejects.toMatchObject({ code: 'unavailable' });
+    await expect(
+      createPlanCoreClient(transport).writeDraft({
+        planId: PLAN_ID,
+        expectedDraftRevision: 0,
+        content,
+        operationKey: OPERATION_KEY,
+        intent: 'save_draft',
+      }),
+    ).rejects.toMatchObject({ code: 'unavailable' });
   });
 
   it('publishes with expectedPublishedVersion only and retains the Plan ID', async () => {
@@ -142,6 +158,8 @@ describe('Plan Core client', () => {
 
     expect(result.data.planId).toBe(PLAN_ID);
     expect(result.data.revision.revisionId).toBe(REVISION_ID);
+    expect(Object.isFrozen(result.data.revision)).toBe(true);
+    expect(Object.isFrozen(result.data.revision.content.document)).toBe(true);
     expect(transport.publish).toHaveBeenCalledWith({
       planId: PLAN_ID,
       expectedPublishedVersion: 1,
@@ -151,21 +169,31 @@ describe('Plan Core client', () => {
 
   it('rejects version and publishedVersion as publish inputs before transport', async () => {
     const publish = vi.fn();
-    const client = createPlanCoreClient({ getRoot: vi.fn(), writeDraft: vi.fn(), publish });
+    const client = createPlanCoreClient({
+      getRoot: vi.fn(),
+      writeDraft: vi.fn(),
+      publish,
+    });
 
     for (const extra of [{ version: 2 }, { publishedVersion: 2 }]) {
-      await expect(client.publish({
-        planId: PLAN_ID,
-        expectedPublishedVersion: 1,
-        operationKey: OPERATION_KEY,
-        ...extra,
-      } as never)).rejects.toMatchObject({ code: 'invalid_input' });
+      await expect(
+        client.publish({
+          planId: PLAN_ID,
+          expectedPublishedVersion: 1,
+          operationKey: OPERATION_KEY,
+          ...extra,
+        } as never),
+      ).rejects.toMatchObject({ code: 'invalid_input' });
     }
     expect(publish).not.toHaveBeenCalled();
   });
 
   it('maps local invalid_plan_core validation to invalid_input', async () => {
-    const client = createPlanCoreClient({ getRoot: vi.fn(), writeDraft: vi.fn(), publish: vi.fn() });
+    const client = createPlanCoreClient({
+      getRoot: vi.fn(),
+      writeDraft: vi.fn(),
+      publish: vi.fn(),
+    });
 
     await expect(client.getRoot('not-a-plan-id')).rejects.toMatchObject({
       code: 'invalid_input',
@@ -174,15 +202,19 @@ describe('Plan Core client', () => {
 
   it('maps an unknown server status to the closed unavailable error', async () => {
     const transport: PlanCoreTransport = {
-      getRoot: vi.fn().mockResolvedValue({ status: 'future_secret_error', detail: 'hidden' }),
+      getRoot: vi
+        .fn()
+        .mockResolvedValue({ status: 'future_secret_error', detail: 'hidden' }),
       writeDraft: vi.fn(),
       publish: vi.fn(),
     };
 
-    await expect(createPlanCoreClient(transport).getRoot(PLAN_ID)).rejects.toBeInstanceOf(
-      PlanCoreClientError,
-    );
-    await expect(createPlanCoreClient(transport).getRoot(PLAN_ID)).rejects.toMatchObject({
+    await expect(
+      createPlanCoreClient(transport).getRoot(PLAN_ID),
+    ).rejects.toBeInstanceOf(PlanCoreClientError);
+    await expect(
+      createPlanCoreClient(transport).getRoot(PLAN_ID),
+    ).rejects.toMatchObject({
       code: 'unavailable',
       message: 'Plan Core request unavailable',
     });
@@ -190,7 +222,12 @@ describe('Plan Core client', () => {
 
   it('maps known status failures without exposing server detail text', async () => {
     const client = createPlanCoreClient({
-      getRoot: vi.fn().mockResolvedValue({ status: 'not_permitted', detail: 'private detail' }),
+      getRoot: vi
+        .fn()
+        .mockResolvedValue({
+          status: 'not_permitted',
+          detail: 'private detail',
+        }),
       writeDraft: vi.fn(),
       publish: vi.fn(),
     });
