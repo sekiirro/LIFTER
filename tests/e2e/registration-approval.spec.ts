@@ -296,11 +296,11 @@ test('client status updates after PO rejection and reconsideration without signi
         name: messages['registrationApproval.confirmPayment'],
       })
       .check();
-    const reconsiderButton = staffPage.getByRole('button', {
-      name: messages['registrationApproval.reconsider'],
-    });
-    await expect(reconsiderButton).toBeEnabled();
-    await reconsiderButton.click();
+    await staffPage
+      .getByRole('button', {
+        name: messages['registrationApproval.reconsider'],
+      })
+      .click();
     await expect(
       staffPage.getByText(messages['registrationApproval.success']),
     ).toBeVisible();

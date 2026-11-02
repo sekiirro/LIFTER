@@ -166,7 +166,6 @@ export function ApprovalReview({
             currency={currencyDue}
             requestKey=""
             pending={pending}
-            canSubmit={Boolean(paymentDate)}
             onConfirm={(confirmed) => {
               if (confirmed && paymentDate) void run('approve');
               else setNotice(messages['registrationApproval.paymentDateHint']);
@@ -188,7 +187,6 @@ export function ApprovalReview({
           currency={currencyDue}
           requestKey=""
           pending={pending}
-          canSubmit={Boolean(paymentDate)}
           submitLabel={messages['registrationApproval.reconsider']}
           onConfirm={(confirmed) => {
             if (confirmed && paymentDate) void run('reconsider');
