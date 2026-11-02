@@ -443,7 +443,7 @@ export const en: Record<keyof typeof ar, string> = {
     'Showcase only. Plan and foods are mocked; nothing is saved.',
   'nutritionPlan.totalsAnnouncement': 'Selected day totals',
   'nutritionPlan.totalsUnavailable': 'Totals could not be calculated',
-  // DRAFT (T012 template manager; pending PO copy approval).
+  // APPROVED (S28-PO-2): T012 template manager copy approved.
   'nutritionTemplates.title': 'Nutrition templates',
   'nutritionTemplates.intro':
     'Browse approved versions and load one into a new plan draft.',

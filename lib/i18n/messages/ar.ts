@@ -427,7 +427,7 @@ export const ar = {
     'للعرض فقط. الخطة والأغذية وهمية ولا يُحفظ أي شيء.',
   'nutritionPlan.totalsAnnouncement': 'إجمالي اليوم المحدد',
   'nutritionPlan.totalsUnavailable': 'تعذر حساب الإجماليات',
-  // DRAFT (T012 template manager; pending PO copy approval).
+  // APPROVED (S28-PO-2): T012 template manager copy approved.
   'nutritionTemplates.title': 'قوالب التغذية',
   'nutritionTemplates.intro':
     'تصفّح الإصدارات المعتمدة وحمّل نسخة إلى مسودة خطة جديدة.',
