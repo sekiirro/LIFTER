@@ -108,6 +108,62 @@ describe('staff Telegram link and delivery primitives', () => {
     expect(calls).toContain('jobs_complete');
   });
 
+  it('sends one generic message through a fake transport for a replayed channel job', async () => {
+    const alertId = '123e4567-e89b-12d3-a456-426614174000';
+    const calls: string[] = [];
+    let preparation = 0;
+    const client = {
+      async rpc(name: string) {
+        calls.push(name);
+        if (name === 'claim_f15_form_alert_jobs')
+          return {
+            data: [
+              {
+                id: 'job-first',
+                lease_token: 'lease-first',
+                kind: 'forms.alert',
+                payload: { alert_id: alertId, recipient_id: 'recipient-id' },
+              },
+              {
+                id: 'job-replay',
+                lease_token: 'lease-replay',
+                kind: 'forms.alert',
+                payload: { alert_id: alertId, recipient_id: 'recipient-id' },
+              },
+            ],
+            error: null,
+          };
+        if (name === 'prepare_f15_telegram_delivery') {
+          preparation++;
+          return {
+            data:
+              preparation === 1
+                ? { status: 'ready', delivery_id: 'delivery-id' }
+                : { status: 'already_delivered' },
+            error: null,
+          };
+        }
+        if (name === 'claim_f15_telegram_delivery')
+          return { data: '12345', error: null };
+        return { data: true, error: null };
+      },
+    };
+    const send = vi.fn().mockResolvedValue(undefined);
+    const result = await runTelegramJobs({
+      client,
+      transport: { send },
+      appUrl: 'https://example.test',
+    });
+
+    expect(result).toEqual({ completed: 2, failed: 0 });
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(send).toHaveBeenCalledWith({
+      chatId: '12345',
+      text: 'You have a new form alert. Open your in-app inbox: https://example.test/forms/alerts',
+    });
+    expect(calls).toContain('jobs_complete');
+  });
+
   it.each(['unlinked', 'unavailable'])(
     'never sends to %s recipient',
     async (status) => {
