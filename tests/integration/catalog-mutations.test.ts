@@ -962,6 +962,16 @@ describe('F16 mutation probes', () => {
     const maxMarker = 'rollback_food_alternative_max_mutation';
     try {
       await db.begin(async (tx) => {
+        const [definition] = await tx`
+          select pg_catalog.pg_get_functiondef(
+            'app_private.apply_food_default_alternatives(uuid,integer,jsonb)'::regprocedure
+          ) as body`;
+        const mutated = String(definition?.body).replace(
+          /if\s+requested_count\s*>\s*3\s+then\s+raise exception 'catalog_food_alternatives_invalid' using errcode\s*=\s*'22023';\s+end if;/i,
+          '',
+        );
+        expect(mutated).not.toBe(definition?.body);
+        await tx.unsafe(mutated);
         await tx`alter table public.food_default_alternatives
           drop constraint food_alternatives_position_check`;
         const targets = await Promise.all(
