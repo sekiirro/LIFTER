@@ -1,8 +1,10 @@
 # F17 T036 evidence — workout plan builder
 
-**Branch:** `017-workout-planner`  
-**Scope:** mocked local projection only; no database, migration, stack, Docker, or new dependency.  
-**Handoff slice:** `9e153f6` (`feat(f17): stage workout builder copy and fixture`).  
+**Branch:** `017-workout-planner`
+
+**Scope:** mocked local projection only; no database, migration, stack, Docker, or new dependency.
+
+**Handoff slice:** `9e153f6` (`feat(f17): stage workout builder copy and fixture`).
 **Implementation commit:** recorded in the release summary after this evidence is committed.
 
 ## RED / GREEN
