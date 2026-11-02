@@ -10,6 +10,7 @@ import { dirFor } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 import { interpolateNumbers } from '../../lib/i18n/format';
 import {
+  MAX_CATALOG_TEXT_LENGTH,
   buildFoodEditorInput,
   foodWarnings,
   validateFoodEditorDraft,
@@ -59,7 +60,7 @@ export function FoodEditor({
   const [workspaceError, setWorkspaceError] = useState(false);
   const [submitAttempted, setSubmitAttempted] = useState(false);
   const warn = foodWarnings(draft).length > 0;
-  const editing = status === 'ready';
+  const editing = status !== 'saving';
   const nutritionLabels = {
     kcal: m['catalog.foodKcal'],
     protein: m['catalog.foodProtein'],
@@ -106,6 +107,14 @@ export function FoodEditor({
           },
         ]
       : []),
+    ...(errors.alternativeUnits?.some(Boolean)
+      ? [
+          {
+            target: `${base}-portion-unit-${errors.alternativeUnits.findIndex(Boolean)}`,
+            label: m['catalog.foodAlternativeUnit'],
+          },
+        ]
+      : []),
     ...(errors.alternatives
       ? [
           {
@@ -125,12 +134,39 @@ export function FoodEditor({
     value: FoodEditorDraft[K],
   ) {
     setDraft((prev) => ({ ...prev, [key]: value }));
+    const errorKey = ({
+      nameAr: 'name',
+      nameEn: 'name',
+      productIdentity: 'productIdentity',
+      preparationIdentity: 'preparationIdentity',
+      kcal: 'kcal',
+      protein: 'protein',
+      carbs: 'carbs',
+      fat: 'fat',
+      fiber: 'fiber',
+    } as Partial<Record<keyof FoodEditorDraft, keyof FoodEditorErrors>>)[key];
+    if (errorKey) {
+      setErrors((previous) => {
+        if (!(errorKey in previous)) return previous;
+        const next = { ...previous };
+        delete next[errorKey];
+        return next;
+      });
+    }
   }
   function setServing(
     index: number,
     key: 'labelAr' | 'labelEn' | 'basisQuantity',
     value: string,
   ) {
+    setErrors((previous) => {
+      if (key === 'basisQuantity' && !previous.serving) return previous;
+      if (key !== 'basisQuantity' && !previous.servingLabel) return previous;
+      const next = { ...previous };
+      if (key === 'basisQuantity') delete next.serving;
+      else delete next.servingLabel;
+      return next;
+    });
     update(
       'servings',
       draft.servings.map((item, i) =>
@@ -143,6 +179,24 @@ export function FoodEditor({
     key: 'foodId' | 'portionQuantity' | 'portionUnit',
     value: string,
   ) {
+    setErrors((previous) => {
+      if (key === 'portionQuantity' && !previous.alternativePortions?.[index])
+        return previous;
+      if (key === 'portionUnit' && !previous.alternativeUnits?.[index])
+        return previous;
+      const next = { ...previous };
+      if (key === 'portionQuantity' && next.alternativePortions) {
+        next.alternativePortions = next.alternativePortions.map((value, i) =>
+          i === index ? undefined : value,
+        );
+      }
+      if (key === 'portionUnit' && next.alternativeUnits) {
+        next.alternativeUnits = next.alternativeUnits.map((value, i) =>
+          i === index ? undefined : value,
+        );
+      }
+      return next;
+    });
     update(
       'alternatives',
       draft.alternatives.map((item, i) =>
@@ -167,6 +221,8 @@ export function FoodEditor({
   const err = (code: string | undefined) =>
     code === 'required'
       ? m['catalog.foodErrorRequired']
+      : code === 'too_long'
+        ? m['catalog.foodErrorTooLong']
       : code === 'macros_exceed_basis'
         ? localized('catalog.foodErrorMacroLimit', { amount: 100 })
         : code
@@ -248,6 +304,7 @@ export function FoodEditor({
               inputProps={{
                 id: `${base}-name-ar`,
                 value: draft.nameAr,
+                maxLength: MAX_CATALOG_TEXT_LENGTH,
                 disabled: !editing,
                 dir: 'rtl',
                 onChange: (e) => update('nameAr', e.currentTarget.value),
@@ -259,6 +316,7 @@ export function FoodEditor({
               inputProps={{
                 id: `${base}-name-en`,
                 value: draft.nameEn,
+                maxLength: MAX_CATALOG_TEXT_LENGTH,
                 disabled: !editing,
                 dir: 'ltr',
                 onChange: (e) => update('nameEn', e.currentTarget.value),
@@ -316,6 +374,7 @@ export function FoodEditor({
                 inputProps={{
                   id: `${base}-${key}`,
                   value,
+                  maxLength: MAX_CATALOG_TEXT_LENGTH,
                   disabled: !editing,
                   onChange: (e) => update(key, e.currentTarget.value),
                 }}
@@ -408,13 +467,12 @@ export function FoodEditor({
               <Field
                 label={m['catalog.foodServingAr']}
                 error={
-                  errors.servingLabel
-                    ? m['catalog.foodErrorServingLabel']
-                    : undefined
+                  err(errors.servingLabel)
                 }
                 inputProps={{
                   id: `${base}-serving-ar-${index}`,
                   value: serving.labelAr,
+                  maxLength: MAX_CATALOG_TEXT_LENGTH,
                   disabled: !editing,
                   onChange: (e) =>
                     setServing(index, 'labelAr', e.currentTarget.value),
@@ -423,13 +481,12 @@ export function FoodEditor({
               <Field
                 label={m['catalog.foodServingEn']}
                 error={
-                  errors.servingLabel
-                    ? m['catalog.foodErrorServingLabel']
-                    : undefined
+                  err(errors.servingLabel)
                 }
                 inputProps={{
                   id: `${base}-serving-en-${index}`,
                   value: serving.labelEn,
+                  maxLength: MAX_CATALOG_TEXT_LENGTH,
                   disabled: !editing,
                   onChange: (e) =>
                     setServing(index, 'labelEn', e.currentTarget.value),
@@ -537,10 +594,12 @@ export function FoodEditor({
                 inputProps={{
                   id: `${base}-portion-unit-${index}`,
                   value: item.portionUnit,
+                  maxLength: 40,
                   disabled: !editing,
                   onChange: (e) =>
                     setAlternative(index, 'portionUnit', e.currentTarget.value),
                 }}
+                error={errors.alternativeUnits?.[index] ? m['catalog.foodErrorTooLong'] : undefined}
               />
               <Button
                 variant="secondary"

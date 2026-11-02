@@ -178,6 +178,8 @@ export type NormalizedCatalogSearch = {
 };
 
 export const MAX_SEARCH_PAGE_SIZE = 50;
+export const MAX_CATALOG_TEXT_LENGTH = 120;
+export const MAX_CATALOG_NOTE_LENGTH = 2000;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
@@ -190,7 +192,7 @@ function isFiniteNumber(value: unknown): value is number {
 function normalizeLocalizedText(
   value: unknown,
   label: string,
-  options: { required?: boolean } = {},
+  options: { required?: boolean; maxLength?: number } = {},
 ): Partial<Record<CatalogLocale, string>> {
   if (!isRecord(value)) {
     throw new CatalogValidationError(`${label} must be an object`);
@@ -210,6 +212,15 @@ function normalizeLocalizedText(
       throw new CatalogValidationError(`${label} values must be text`);
     }
     const normalized = text.trim();
+    if (
+      normalized &&
+      options.maxLength !== undefined &&
+      Array.from(normalized).length > options.maxLength
+    ) {
+      throw new CatalogValidationError(
+        `${label} must be ${options.maxLength} characters or fewer`,
+      );
+    }
     if (normalized) result[locale] = normalized;
   }
 
@@ -234,11 +245,24 @@ function requireEnum<T extends string>(
   return value as T;
 }
 
-function requireNonEmptyString(value: unknown, label: string): string {
+function requireNonEmptyString(
+  value: unknown,
+  label: string,
+  maxLength?: number,
+): string {
   if (typeof value !== 'string' || !value.trim()) {
     throw new CatalogValidationError(`${label} is required`);
   }
-  return value.trim();
+  const normalized = value.trim();
+  if (
+    maxLength !== undefined &&
+    Array.from(normalized).length > maxLength
+  ) {
+    throw new CatalogValidationError(
+      `${label} must be ${maxLength} characters or fewer`,
+    );
+  }
+  return normalized;
 }
 
 function requireFiniteNonNegative(value: unknown, label: string): number {
@@ -373,7 +397,10 @@ export function normalizeExerciseInput(input: unknown): NormalizedExercise {
     throw new CatalogValidationError('Exercise input must be an object');
   }
 
-  const names = normalizeLocalizedText(input.names, 'name', { required: true });
+  const names = normalizeLocalizedText(input.names, 'name', {
+    required: true,
+    maxLength: MAX_CATALOG_TEXT_LENGTH,
+  });
   if (!names.ar || !names.en) {
     throw new CatalogValidationError(
       'Both ar and en exercise names are required',
@@ -400,7 +427,9 @@ export function normalizeExerciseInput(input: unknown): NormalizedExercise {
   const notes =
     input.notes === undefined
       ? undefined
-      : normalizeLocalizedText(input.notes, 'note');
+      : normalizeLocalizedText(input.notes, 'note', {
+          maxLength: MAX_CATALOG_NOTE_LENGTH,
+        });
 
   const defaults = normalizeExerciseDefaults(input.defaults);
 
@@ -431,6 +460,7 @@ export function normalizeServingInput(input: unknown): NormalizedServing {
 
   const labels = normalizeLocalizedText(input.labels, 'serving label', {
     required: true,
+    maxLength: MAX_CATALOG_TEXT_LENGTH,
   });
   if (!labels.ar && !labels.en) {
     throw new CatalogValidationError(
@@ -472,6 +502,7 @@ function normalizeAlternative(
       : requireNonEmptyString(
           input.portionUnit,
           `Alternative ${index + 1} portion unit`,
+          40,
         );
 
   return {
@@ -486,7 +517,10 @@ export function normalizeFoodInput(input: unknown): NormalizedFood {
     throw new CatalogValidationError('Food input must be an object');
   }
 
-  const names = normalizeLocalizedText(input.names, 'name', { required: true });
+  const names = normalizeLocalizedText(input.names, 'name', {
+    required: true,
+    maxLength: MAX_CATALOG_TEXT_LENGTH,
+  });
   if (!names.ar && !names.en) {
     throw new CatalogValidationError(
       'At least one food name locale is required',
@@ -498,10 +532,12 @@ export function normalizeFoodInput(input: unknown): NormalizedFood {
   const productIdentity = requireNonEmptyString(
     input.productIdentity,
     'Product identity',
+    MAX_CATALOG_TEXT_LENGTH,
   );
   const preparationIdentity = requireNonEmptyString(
     input.preparationIdentity,
     'Preparation identity',
+    MAX_CATALOG_TEXT_LENGTH,
   );
   const weighingState = requireEnum(
     input.weighingState,

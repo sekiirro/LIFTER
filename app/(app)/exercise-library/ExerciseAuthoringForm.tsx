@@ -9,7 +9,7 @@ import type {
   ExerciseEditorDraft,
 } from '../../../lib/catalog/exercise-editor';
 import type { Locale } from '../../../lib/design/preferences';
-import { getMessages } from '../../../lib/i18n';
+import type { NormalizedExercise } from '../../../lib/catalog/schemas';
 import { saveExerciseAction } from './actions';
 
 export function ExerciseAuthoringForm({
@@ -19,6 +19,7 @@ export function ExerciseAuthoringForm({
   workspaceId,
   id,
   expectedVersion,
+  exercise,
 }: {
   locale: Locale;
   role: CatalogStaffRole;
@@ -26,26 +27,45 @@ export function ExerciseAuthoringForm({
   workspaceId: string | null;
   id?: string;
   expectedVersion?: number;
+  exercise?: NormalizedExercise;
 }) {
   const router = useRouter();
   const [status, setStatus] = useState<'ready' | 'saving' | 'error'>('ready');
-  const operationKey = useRef(globalThis.crypto.randomUUID());
-  const m = getMessages(locale);
+  const operationKey = useRef<{ fingerprint: string; key: string } | null>(
+    null,
+  );
   async function submit(draft: ExerciseEditorDraft) {
     setStatus('saving');
-    const result = await saveExerciseAction({
+    const fingerprint = JSON.stringify([
       draft,
       scope,
       workspaceId,
-      operationKey: operationKey.current,
       id,
       expectedVersion,
-    });
-    if (result.status === 'ok') {
-      router.push('/exercise-library');
-      return;
+    ]);
+    if (operationKey.current?.fingerprint !== fingerprint) {
+      operationKey.current = {
+        fingerprint,
+        key: globalThis.crypto.randomUUID(),
+      };
     }
-    setStatus('error');
+    try {
+      const result = await saveExerciseAction({
+        draft,
+        scope,
+        workspaceId,
+        operationKey: operationKey.current.key,
+        id,
+        expectedVersion,
+      });
+      if (result.status === 'ok') {
+        router.push(id ? `/exercise-library/${id}` : '/exercise-library');
+        return;
+      }
+      setStatus('error');
+    } catch {
+      setStatus('error');
+    }
   }
   return (
     <>
@@ -55,11 +75,9 @@ export function ExerciseAuthoringForm({
         scope={scope}
         hasCoachingWork={scope === 'workspace'}
         status={status}
+        exercise={exercise}
         onSubmit={submit}
       />
-      {status === 'error' ? (
-        <p role="alert">{m['catalog.editorStatusErrorDescription']}</p>
-      ) : null}
     </>
   );
 }

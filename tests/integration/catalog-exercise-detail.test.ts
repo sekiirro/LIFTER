@@ -129,7 +129,12 @@ describe('authorized exercise detail projection', () => {
         values (${terminalId}, ${po.userId}, 1)`;
       await tx`insert into public.exercise_versions(exercise_id, version, payload, created_by)
         values (${terminalId}, 1, ${tx.json(payload('Terminal survivor'))}, ${po.userId})`;
-      await tx`update public.exercises set lifecycle_state = 'merged', superseded_by = ${terminalId} where id = ${aliasId}`;
+      await asActor(
+        tx,
+        po.userId,
+        () =>
+          tx`select public.catalog_merge_exercise(${aliasId}, ${terminalId}, 0, ${randomUUID()})`,
+      );
       const merged = await asActor(
         tx,
         trainer.userId,
@@ -145,7 +150,12 @@ describe('authorized exercise detail projection', () => {
           lifecycle_state: 'active',
         },
       ]);
-      await tx`update public.exercises set lifecycle_state = 'removed', superseded_by = null where id = ${terminalId}`;
+      await asActor(
+        tx,
+        po.userId,
+        () =>
+          tx`select public.catalog_transition_exercise(${terminalId}, 0, 'remove', ${randomUUID()})`,
+      );
       const removed = await asActor(
         tx,
         trainer.userId,

@@ -90,6 +90,17 @@ describe('production exercise authoring actions', () => {
     expect(mocks.writeWorkspaceExercise).not.toHaveBeenCalled();
   });
 
+  it('rejects text over the schema bound before calling a write RPC', async () => {
+    const result = await saveExerciseAction({
+      draft: { ...draft, names: { ar: draft.names.ar, en: 'X'.repeat(121) } },
+      scope: 'global',
+      workspaceId: null,
+      operationKey: '11111111-1111-4111-8111-111111111111',
+    });
+    expect(result).toEqual({ status: 'invalid' });
+    expect(mocks.createExercise).not.toHaveBeenCalled();
+  });
+
   it.each(['sales', 'client', null] as const)(
     'does not permit %s to author exercises',
     async (role) => {

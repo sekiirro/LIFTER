@@ -108,6 +108,18 @@ describe('exercise editor defaults presentation', () => {
 });
 
 describe('exercise editor fixed-vs-range validation', () => {
+  it('rejects names beyond the approved schema length', () => {
+    const errors = validateExerciseEditorDraft(
+      draft({ names: { ar: 'Øª'.repeat(121), en: 'Long name' } }),
+    );
+    expect(errors.nameAr).toBe('text_too_long');
+    expect(
+      buildExerciseInput(
+        draft({ names: { ar: 'Øª'.repeat(121), en: 'Long name' } }),
+      ),
+    ).toBeNull();
+  });
+
   it('rejects a range whose minimum exceeds its maximum', () => {
     const errors = validateExerciseEditorDraft(
       draft({ repsMode: 'range', repsMin: '12', repsMax: '8' }),

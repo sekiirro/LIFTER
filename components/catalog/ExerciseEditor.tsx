@@ -7,6 +7,7 @@ import { Button } from '../ui/Button';
 import { Field } from '../ui/Field';
 import {
   EQUIPMENT_CODES,
+  MAX_CATALOG_TEXT_LENGTH,
   MUSCLE_GROUP_CODES,
   type CatalogLifecycleState,
   type CatalogLocale,
@@ -61,6 +62,7 @@ const ERROR_MESSAGE_KEYS: Record<ExerciseEditorErrorCode, keyof Messages> = {
   range_order: 'catalog.editorErrorRangeOrder',
   invalid_choice: 'catalog.editorErrorChoice',
   too_many_alternatives: 'catalog.editorErrorTooManyAlternatives',
+  text_too_long: 'catalog.editorErrorTextTooLong',
 };
 
 function errorText(
@@ -343,6 +345,7 @@ export function ExerciseEditor({
               inputProps={{
                 id: `${base}-name-ar`,
                 value: draft.names.ar,
+                maxLength: MAX_CATALOG_TEXT_LENGTH,
                 disabled: !canEdit,
                 onChange: (event) => setName('ar', event.currentTarget.value),
               }}
@@ -353,6 +356,7 @@ export function ExerciseEditor({
               inputProps={{
                 id: `${base}-name-en`,
                 value: draft.names.en,
+                maxLength: MAX_CATALOG_TEXT_LENGTH,
                 disabled: !canEdit,
                 onChange: (event) => setName('en', event.currentTarget.value),
               }}

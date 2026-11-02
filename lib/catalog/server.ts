@@ -40,6 +40,20 @@ export type FoodDuplicateQuery = {
   kcal: number;
 };
 export type CatalogWorkspaceOption = { id: string; name: string };
+export type CatalogExerciseDetailRow = {
+  exercise_id: string;
+  version: number;
+  payload: Record<string, unknown>;
+  created_at: string;
+  created_by: string | null;
+  origin_workspace_id: string | null;
+  name_ar: string;
+  name_en: string;
+  requested_id: string;
+  survivor_id: string;
+  lifecycle_state: 'active' | 'removed';
+  variation: { workspace_id: string; video_url: string } | null;
+};
 export type CatalogAlternativeInput = {
   foodId: string;
   version: number;
@@ -236,6 +250,27 @@ export function createCatalogServer(deps: CatalogDependencies) {
         });
       })();
     },
+    exerciseDetail(input: { exerciseId: string; workspaceId?: string | null }) {
+      return (async (): Promise<CatalogResult<CatalogExerciseDetailRow[]>> => {
+        const ready = await prepare(
+          (actor) =>
+            coachingSomewhere(actor) &&
+            (!input.workspaceId || scoped(actor, input.workspaceId)),
+        );
+        if (ready.result)
+          return { status: ready.result.status } as CatalogResult<
+            CatalogExerciseDetailRow[]
+          >;
+        return rpc<CatalogExerciseDetailRow[]>(
+          ready.client!,
+          'catalog_exercise_detail',
+          {
+            p_exercise_id: input.exerciseId,
+            p_workspace_id: input.workspaceId ?? null,
+          },
+        );
+      })();
+    },
     createExercise: (i: CatalogMutation) =>
       mutate(i, operationNames.createExercise, isPO, (x) => ({
         p_operation_key: x.operationKey,
@@ -378,6 +413,7 @@ export const {
   authoringWorkspaces,
   foodDuplicateCandidates,
   search,
+  exerciseDetail,
   createExercise,
   versionExercise,
   transitionExercise,

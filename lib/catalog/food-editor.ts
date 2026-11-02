@@ -1,9 +1,12 @@
 import {
+  MAX_CATALOG_TEXT_LENGTH,
   validateFoodInput,
   type FoodInput,
   type FoodValidationWarning,
   type ServingInput,
 } from './schemas';
+
+export { MAX_CATALOG_TEXT_LENGTH } from './schemas';
 
 export type FoodEditorDraft = {
   nameAr: string;
@@ -26,18 +29,19 @@ export type FoodEditorDraft = {
 };
 
 export type FoodEditorErrors = {
-  name?: 'required';
-  productIdentity?: 'required';
-  preparationIdentity?: 'required';
+  name?: 'required' | 'too_long';
+  productIdentity?: 'required' | 'too_long';
+  preparationIdentity?: 'required' | 'too_long';
   kcal?: 'required' | 'nonnegative';
   protein?: 'required' | 'nonnegative' | 'macros_exceed_basis';
   carbs?: 'required' | 'nonnegative' | 'macros_exceed_basis';
   fat?: 'required' | 'nonnegative' | 'macros_exceed_basis';
   fiber?: 'nonnegative';
   serving?: 'required' | 'positive';
-  servingLabel?: 'required';
+  servingLabel?: 'required' | 'too_long';
   alternatives?: 'too_many';
   alternativePortions?: ('positive' | undefined)[];
+  alternativeUnits?: (boolean | undefined)[];
 };
 
 function number(value: string): number {
@@ -48,10 +52,28 @@ export function validateFoodEditorDraft(
   draft: FoodEditorDraft,
 ): FoodEditorErrors {
   const errors: FoodEditorErrors = {};
-  if (!draft.nameAr.trim() && !draft.nameEn.trim()) errors.name = 'required';
+  if (
+    [draft.nameAr, draft.nameEn].some(
+      (value) => Array.from(value.trim()).length > MAX_CATALOG_TEXT_LENGTH,
+    )
+  ) {
+    errors.name = 'too_long';
+  } else if (!draft.nameAr.trim() && !draft.nameEn.trim()) {
+    errors.name = 'required';
+  }
   if (!draft.productIdentity.trim()) errors.productIdentity = 'required';
-  if (!draft.preparationIdentity.trim())
+  else if (
+    Array.from(draft.productIdentity.trim()).length > MAX_CATALOG_TEXT_LENGTH
+  )
+    errors.productIdentity = 'too_long';
+  if (!draft.preparationIdentity.trim()) {
     errors.preparationIdentity = 'required';
+  } else if (
+    Array.from(draft.preparationIdentity.trim()).length >
+    MAX_CATALOG_TEXT_LENGTH
+  ) {
+    errors.preparationIdentity = 'too_long';
+  }
   for (const key of ['kcal', 'protein', 'carbs', 'fat'] as const) {
     const value = number(draft[key]);
     if (!Number.isFinite(value)) errors[key] = 'required';
@@ -80,11 +102,13 @@ export function validateFoodEditorDraft(
     )
   )
     errors.serving = 'positive';
-  if (
-    draft.servings.some(
-      (serving) => !serving.labelAr.trim() && !serving.labelEn.trim(),
-    )
-  ) {
+  if (draft.servings.some((serving) =>
+    [serving.labelAr, serving.labelEn].some(
+      (label) => Array.from(label.trim()).length > MAX_CATALOG_TEXT_LENGTH,
+    ),
+  )) {
+    errors.servingLabel = 'too_long';
+  } else if (draft.servings.some((serving) => !serving.labelAr.trim() && !serving.labelEn.trim())) {
     errors.servingLabel = 'required';
   }
   if (draft.alternatives.length > 3) errors.alternatives = 'too_many';
@@ -95,6 +119,10 @@ export function validateFoodEditorDraft(
       : 'positive',
   );
   if (portions.some(Boolean)) errors.alternativePortions = portions;
+  const units = draft.alternatives.map((item) =>
+    Array.from(item.portionUnit.trim()).length > 40 ? true : undefined,
+  );
+  if (units.some(Boolean)) errors.alternativeUnits = units;
   return errors;
 }
 

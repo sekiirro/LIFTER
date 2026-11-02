@@ -520,6 +520,17 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.editorStatusError': 'Unable to save the exercise',
   'catalog.editorStatusErrorDescription':
     'Your changes were not saved. Try again.',
+  'catalog.detailTitle': 'Exercise details',
+  'catalog.detailVersion': 'Current version',
+  'catalog.detailWorkspace': 'Workspace variation',
+  'catalog.detailVideo': 'Exercise video reference',
+  'catalog.detailOpenVideo': 'Open video reference',
+  'catalog.detailNoVideo': 'No video reference is available for this workspace.',
+  'catalog.detailMergedTo': 'This exercise has been merged into the active exercise:',
+  'catalog.editorSecondaryMuscles': 'Secondary muscles',
+  'catalog.editAsNewVersion': 'Edit as new version',
+  'catalog.editorErrorTextTooLong': 'Use 120 characters or fewer.',
+  'catalog.foodErrorTooLong': 'The text is too long for this field.',
   'catalog.editorErrorRequired': 'This field is required.',
   'catalog.editorErrorPositiveInteger':
     'Enter a whole number greater than zero.',
