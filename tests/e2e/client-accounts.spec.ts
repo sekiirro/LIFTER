@@ -16,6 +16,7 @@ import {
 } from './server-log-capture';
 import { scanSensitiveLogLines } from './server-log-privacy';
 import { parsePhoneNumber } from 'libphonenumber-js';
+import { generateEgyptianMobile } from './egyptian-mobile';
 
 const origin = 'http://localhost:3000';
 const local = Boolean(
@@ -427,10 +428,7 @@ async function fillSignup(
     .fill(values.email);
   await page
     .getByRole('textbox', { name: m['clientSignup.phone'] })
-    .fill(
-      values.phone ??
-        `0101234${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`,
-    );
+    .fill(values.phone ?? generateEgyptianMobile());
   await page
     .getByLabel(m['clientSignup.password'], { exact: true })
     .fill('Complex!2345');
@@ -543,7 +541,7 @@ for (const locale of ['ar', 'en'] as const) {
     const id = randomUUID();
     const name = `Privacy Example ${id}`;
     const email = `privacy-${id}@example.test`;
-    const phone = `0101234${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`;
+    const phone = generateEgyptianMobile();
     const phoneE164 = `+20${phone.slice(1)}`;
     const password = `Privacy!${id.replaceAll('-', '').slice(0, 12)}`;
     const ip = '203.0.113.20';
@@ -1170,7 +1168,7 @@ for (const locale of ['ar', 'en'] as const) {
       kind: 'pending' | 'active' | 'staff' | 'archived',
     ) => {
       const email = `u8-${kind}-${randomUUID()}@example.test`;
-      const phone = `010${String(randomInt(0, 100_000_000)).padStart(8, '0')}`;
+      const phone = generateEgyptianMobile();
       const phoneE164 = `+20${phone.slice(1)}`;
       if (kind === 'pending') {
         const token = await issueSignupToken(locale === 'en');

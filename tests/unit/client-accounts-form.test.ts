@@ -81,6 +81,23 @@ it('T027 app phone adapter composes E.164 from the selected country without echo
   }
 });
 
+it('generates 10,000 unique Egyptian mobile numbers accepted by normalizePhone', async () => {
+  const [{ normalizePhone }, { generateEgyptianMobile }] = await Promise.all([
+    import('../../lib/client-accounts/phone'),
+    import('../e2e/egyptian-mobile'),
+  ]);
+  const numbers = Array.from({ length: 10_000 }, generateEgyptianMobile);
+  const normalized = numbers.map((nationalNumber) =>
+    normalizePhone(JSON.stringify({ country: 'EG', nationalNumber })),
+  );
+
+  expect(new Set(numbers).size).toBe(10_000);
+  expect(numbers.every((number) => /^010[01269]\d{7}$/.test(number))).toBe(
+    true,
+  );
+  expect(normalized.every((number) => number !== null)).toBe(true);
+});
+
 it('T027 provides a country selector defaulting to Egypt and keeps phone parsing out of the client bundle', () => {
   const page = source('app/register/[token]/page.tsx');
   const form = source('app/register/[token]/SignupForm.tsx');

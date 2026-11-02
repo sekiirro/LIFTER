@@ -93,6 +93,12 @@ beforeEach(() => {
   mock.session.mockResolvedValue({
     from: () => ({
       select: () => ({
+        eq: () => ({
+          maybeSingle: async () => ({
+            data: { id: workspace },
+            error: null,
+          }),
+        }),
         order: () => ({
           in: async () => ({
             data: [{ id: workspace, name: 'Studio' }],
