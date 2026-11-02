@@ -11,6 +11,7 @@ import {
   expectHeroMaterialContract,
   expectHeroPhoneGroupLtr,
   expectHeroPreferenceLabelContrast,
+  expectHeroPreferenceSelectContrast,
   expectHeroPreferencesSingleRow,
   expectHeroSamplingFallback,
   expectHeroTextBackdropContrast,
@@ -314,6 +315,10 @@ for (const locale of ['ar', 'en'] as const) {
           viewport.width >= 768
             ? await expectHeroPreferenceLabelContrast(page)
             : null;
+        const preferenceSelect =
+          viewport.width >= 768
+            ? await expectHeroPreferenceSelectContrast(page)
+            : null;
         await expectHeroTouchTargets(page);
         await expectHeroAxeClean(page);
         const screenshot = await captureHeroScreenshot(
@@ -328,6 +333,7 @@ for (const locale of ['ar', 'en'] as const) {
           screenshot,
           backdrop,
           preferenceLabel,
+          preferenceSelect,
           ...sampling,
         });
       });

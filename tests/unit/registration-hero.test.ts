@@ -241,6 +241,18 @@ describe('production registration hero preference labels', () => {
     expect(labelRule?.groups?.body).not.toMatch(/rgba\(/);
     expect(labelRule?.groups?.body).toMatch(/font-size:\s*var\(--text-xs\)/);
   });
+
+  it('keeps the language select readable over bright artwork', () => {
+    const selectRule = heroStylesSource.match(
+      /\.preferences :global\(select\)\s*\{(?<body>[^}]*)\}/,
+    );
+    const body = selectRule?.groups?.body ?? '';
+    expect(body).toMatch(/color:\s*#fff;/);
+    // A translucent white fill lets bright artwork through the control and
+    // drops the white option text below 4.5:1.
+    expect(body).not.toMatch(/background:\s*rgba\(255,\s*255,\s*255/);
+    expect(body).toMatch(/background:\s*rgba\(10,\s*11,\s*13,\s*0\.72\);/);
+  });
 });
 
 describe('production registration phone grouping', () => {

@@ -73,7 +73,8 @@
   padding-inline: var(--space-2);
   border: 0;
   border-radius: var(--radius-button);
-  background: rgba(255, 255, 255, 0.12);
+  /* A dark fill keeps the white option text readable over bright artwork. */
+  background: rgba(10, 11, 13, 0.72);
   color: #fff;
   font-size: var(--text-xs);
 }

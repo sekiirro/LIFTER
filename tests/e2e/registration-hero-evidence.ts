@@ -291,6 +291,67 @@ export async function expectHeroPreferenceLabelContrast(page: Page) {
 }
 
 /**
+ * The language select sits on a translucent control over the artwork, so the
+ * white option text has to carry the contrast against the rendered surface.
+ *
+ * The select paints its own translucent fill over the pill, so the surface is
+ * measured by compositing the rendered control fill over the painted pixel
+ * behind it.
+ */
+export async function expectHeroPreferenceSelectContrast(page: Page) {
+  const select = page.locator('[data-testid="language-select"]').first();
+  await expect(select).toBeVisible();
+  const box = await select.boundingBox();
+  if (!box) throw new Error('Language select is not measurable');
+  const point = {
+    x: Math.round(box.x + box.width / 2),
+    y: Math.round(box.y + box.height / 2),
+  };
+  const measure = async () => {
+    const styles = await select.evaluate((element) => ({
+      color: getComputedStyle(element).color,
+      background: getComputedStyle(element).backgroundColor,
+    }));
+    const foreground = parseRenderedColor(styles.color);
+    const fill = parseRenderedColor(styles.background);
+    await select.evaluate((element) => {
+      (element as HTMLElement).style.visibility = 'hidden';
+    });
+    const png = await page.screenshot();
+    await select.evaluate((element) => {
+      (element as HTMLElement).style.visibility = '';
+    });
+    const behind = screenshotPixel(png, point.x, point.y) as Rgb;
+    const surface = fill.rgb.map(
+      (channel, index) =>
+        fill.alpha * channel + (1 - fill.alpha) * (behind[index] ?? 0),
+    ) as Rgb;
+    const composited = foreground.rgb.map(
+      (channel, index) =>
+        foreground.alpha * channel +
+        (1 - foreground.alpha) * (surface[index] ?? 0),
+    ) as Rgb;
+    const ratio = contrast(
+      luminance(composited[0], composited[1], composited[2]),
+      luminance(surface[0], surface[1], surface[2]),
+    );
+    return { ratio, surface, behind, color: styles.color };
+  };
+  await expect
+    .poll(async () => (await measure()).ratio, {
+      timeout: 15_000,
+      intervals: [100, 250, 500],
+      message: 'the language select text keeps 4.5:1 over the painted pill',
+    })
+    .toBeGreaterThanOrEqual(4.5);
+  const result = await measure();
+  const foreground = parseRenderedColor(result.color);
+  expect(foreground.alpha).toBe(1);
+  expect(foreground.rgb).toEqual([255, 255, 255]);
+  return result;
+}
+
+/**
  * A failed artwork sample leaves an opaque token card with readable text.
  */
 export async function expectHeroSamplingFallback(page: Page) {
