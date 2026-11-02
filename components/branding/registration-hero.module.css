@@ -63,7 +63,7 @@
 }
 
 .preferences :global(label[for]) {
-  color: rgba(255, 255, 255, 0.72);
+  color: #fff;
   font-size: var(--text-xs);
 }
 

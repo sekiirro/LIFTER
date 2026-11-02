@@ -191,6 +191,17 @@ describe('production registration hero sampling fallback', () => {
   });
 });
 
+describe('production registration hero preference labels', () => {
+  it('keeps the preference label text opaque over bright artwork', () => {
+    const labelRule = heroStylesSource.match(
+      /\.preferences :global\(label\[for\]\)\s*\{(?<body>[^}]*)\}/,
+    );
+    expect(labelRule?.groups?.body).toMatch(/color:\s*#fff;/);
+    expect(labelRule?.groups?.body).not.toMatch(/rgba\(/);
+    expect(labelRule?.groups?.body).toMatch(/font-size:\s*var\(--text-xs\)/);
+  });
+});
+
 describe('production registration phone grouping', () => {
   it('keeps the calling code and national digits in one LTR group', () => {
     expect(PHONE_NUMBER_GROUP_DIRECTION).toBe('ltr');

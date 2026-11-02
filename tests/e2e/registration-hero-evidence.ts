@@ -247,6 +247,50 @@ export async function expectHeroTextBackdropContrast(page: Page) {
 }
 
 /**
+ * The preference label sits on a translucent pill over the artwork, so the
+ * label text itself has to carry the contrast.
+ */
+export async function expectHeroPreferenceLabelContrast(page: Page) {
+  const label = page
+    .locator('[data-testid="registration-hero-preferences"] label[for]')
+    .first();
+  await expect(label).toBeVisible();
+  const box = await label.boundingBox();
+  if (!box) throw new Error('Preference label is not measurable');
+  const measure = async () => {
+    const { color, samples } = await renderedBackdrop(page, label, [
+      {
+        x: Math.round(box.x + box.width / 2),
+        y: Math.round(box.y + box.height / 2),
+      },
+    ]);
+    const foreground = parseRenderedColor(color);
+    const backdrop = samples[0]!;
+    const composited = foreground.rgb.map(
+      (channel, index) =>
+        foreground.alpha * channel +
+        (1 - foreground.alpha) * (backdrop[index] ?? 0),
+    ) as Rgb;
+    const ratio = contrast(
+      luminance(composited[0], composited[1], composited[2]),
+      luminance(backdrop[0], backdrop[1], backdrop[2]),
+    );
+    return { ratio, backdrop, color, alpha: foreground.alpha };
+  };
+  await expect
+    .poll(async () => (await measure()).ratio, {
+      timeout: 15_000,
+      intervals: [100, 250, 500],
+      message: 'the preference label keeps 4.5:1 over the painted pill',
+    })
+    .toBeGreaterThanOrEqual(4.5);
+  const result = await measure();
+  expect(result.alpha).toBe(1);
+  expect(parseRenderedColor(result.color).rgb).toEqual([255, 255, 255]);
+  return result;
+}
+
+/**
  * A failed artwork sample leaves an opaque token card with readable text.
  */
 export async function expectHeroSamplingFallback(page: Page) {

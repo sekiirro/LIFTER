@@ -10,6 +10,7 @@ import {
   expectHeroFocusRing,
   expectHeroMaterialContract,
   expectHeroPhoneGroupLtr,
+  expectHeroPreferenceLabelContrast,
   expectHeroPreferencesSingleRow,
   expectHeroSamplingFallback,
   expectHeroTextBackdropContrast,
@@ -309,7 +310,10 @@ for (const locale of ['ar', 'en'] as const) {
         await expectHeroMaterialContract(page);
         await expectHeroTextContrast(page);
         const backdrop = await expectHeroTextBackdropContrast(page);
-        const preferenceLabel = null;
+        const preferenceLabel =
+          viewport.width >= 768
+            ? await expectHeroPreferenceLabelContrast(page)
+            : null;
         await expectHeroTouchTargets(page);
         await expectHeroAxeClean(page);
         const screenshot = await captureHeroScreenshot(
