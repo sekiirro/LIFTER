@@ -34,6 +34,8 @@
 | `npm run check:secrets` | Pass. |
 | `git diff --check` | Pass. |
 
+Stack D container `StartedAt` at round start, immediately before the final gates, and after the final gates: `2026-11-02T02:49:43.191849795Z` at all three checks. No reset occurred.
+
 The first whole-repository Playwright attempt was not clean (46 passed, 9 skipped, 4 did not run, with unrelated suite failures and a server-log global-teardown error). The required scoped F15 Playwright run above passed after using one worker.
 
 ## Rendered evidence
