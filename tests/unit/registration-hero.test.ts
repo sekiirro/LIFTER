@@ -3,17 +3,12 @@ import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   PHONE_NUMBER_GROUP_DIRECTION,
   PHONE_NUMBER_GROUP_GAP,
-  HERO_CARD_FILL_ALPHA,
-  MAX_ADAPTIVE_DIMMING,
-  adaptiveDimmingFromBackdropLuminances,
-  adaptiveDimmingFromLuminance,
   applyHeroSamplingFallback,
   conservativeBackdropLuminance,
   darkestBackdropLuminance,
   enterHeroSamplingFallback,
   heroArtworkState,
   type HeroResizeEntry,
-  needsOpaqueBrightCard,
   observeHeroTextRegion,
   photoToneFromLuminance,
   selectHeroLayoutMode,
@@ -60,35 +55,16 @@ describe('production registration hero layout', () => {
   });
 });
 
-describe('production registration hero adaptive dimming', () => {
-  it.each([0, 0.1, 0.183, 0.3, 0.5, 0.7, 0.9, 1])(
-    'keeps white text at 4.5:1 or better for artwork luminance %s',
-    (luminance) => {
-      const dimming = adaptiveDimmingFromLuminance(luminance);
-      const backdropLuminance =
-        (1 - HERO_CARD_FILL_ALPHA) * luminance * (1 - dimming) +
-        HERO_CARD_FILL_ALPHA;
-      const contrast = 1.05 / (backdropLuminance + 0.05);
-      expect(contrast).toBeGreaterThanOrEqual(4.5);
-    },
-  );
-
-  it('keeps dark artwork undimmed', () => {
-    expect(adaptiveDimmingFromLuminance(0.05)).toBe(0);
+describe('production registration hero artwork diagnostics', () => {
+  it('classifies sampled image tone without coupling it to the card treatment', () => {
     expect(photoToneFromLuminance(0.05)).toBe('dim');
-  });
-
-  it('dims bright artwork using the contrast-safe curve', () => {
-    expect(adaptiveDimmingFromLuminance(0.5)).toBeCloseTo(0.6498, 4);
     expect(photoToneFromLuminance(0.5)).toBe('mid');
     expect(photoToneFromLuminance(0.9)).toBe('bright');
-  });
-
-  it('clamps invalid and extreme luminance inputs', () => {
-    expect(adaptiveDimmingFromLuminance(-1)).toBe(0);
-    expect(adaptiveDimmingFromLuminance(1)).toBe(MAX_ADAPTIVE_DIMMING);
-    expect(MAX_ADAPTIVE_DIMMING).toBeCloseTo(245 / 297, 12);
-    expect(adaptiveDimmingFromLuminance(Number.NaN)).toBe(0);
+    expect(heroStylesSource).not.toMatch(/data-photo-tone[^}]*\.glassCard/);
+    expect(heroStylesSource).not.toContain(
+      '--hero-adaptive-glass-fill-percent',
+    );
+    expect(heroComponentSource).not.toContain('opaqueBrightCard');
   });
 });
 
@@ -104,33 +80,18 @@ describe('production registration hero conservative backdrop sampling', () => {
     sampledLuminances.reduce((sum, value) => sum + value, 0) /
     sampledLuminances.length;
 
-  it('dims from the conservative upper bound behind the text', () => {
+  it('retains the brightest sample as an artwork diagnostic', () => {
     const conservative = conservativeBackdropLuminance(sampledLuminances);
     expect(conservative).toBeCloseTo(BRIGHT_PATCH_LUMINANCE, 6);
     expect(conservative).toBeGreaterThan(averageLuminance);
-
-    const dimming = adaptiveDimmingFromBackdropLuminances(sampledLuminances);
-    expect(dimming).toBeCloseTo(0.80825, 4);
-    const backdrop =
-      (1 - HERO_CARD_FILL_ALPHA) * conservative * (1 - dimming) +
-      HERO_CARD_FILL_ALPHA;
-    expect(1.05 / (backdrop + 0.05)).toBeGreaterThanOrEqual(4.5);
   });
 
-  it('leaves the bright patch below 4.5:1 when the average drives the dimming', () => {
-    const dimming = adaptiveDimmingFromLuminance(averageLuminance);
-    const backdrop =
-      (1 - HERO_CARD_FILL_ALPHA) * BRIGHT_PATCH_LUMINANCE * (1 - dimming) +
-      HERO_CARD_FILL_ALPHA;
-    expect(1.05 / (backdrop + 0.05)).toBeLessThan(4.5);
-  });
-
-  it('samples the card content box through the shared conservative bound', () => {
+  it('samples the content region without changing card theme', () => {
     expect(heroComponentSource).toContain(
-      'adaptiveDimmingFromBackdropLuminances(',
+      'conservativeBackdropLuminance(textPhoto.luminances)',
     );
-    expect(heroComponentSource).toContain('conservativeBackdropLuminance(');
     expect(heroComponentSource).toContain('data-hero-text-area');
+    expect(heroComponentSource).not.toContain('needsOpaqueBrightCard(');
   });
 });
 
@@ -166,15 +127,14 @@ function fakeStage(dataset: Record<string, string> = {}) {
 }
 
 describe('production registration hero sampling fallback', () => {
-  it('clears the sampled state and resets the dimming when sampling fails', () => {
+  it('clears sampled state and artwork-derived substrate values on failure', () => {
     const stage = fakeStage({
       photoTone: 'bright',
       photoStatsReady: 'true',
       photoAverageLuminance: '0.2381',
+      photoDarkestLuminance: '0.0129',
     });
     stage.style.setProperty('--hero-photo-luminance', '0.9131');
-    stage.style.setProperty('--hero-adaptive-dimming', '0.8082');
-    stage.style.setProperty('--hero-adaptive-dimming-percent', '80.82%');
     stage.style.setProperty('--hero-bottom-average', 'rgb(26 28 36)');
     stage.style.setProperty(
       '--hero-mobile-mid',
@@ -187,11 +147,8 @@ describe('production registration hero sampling fallback', () => {
     expect(stage.dataset.photoStatsReady).toBe('false');
     expect(stage.dataset.photoTone).toBeUndefined();
     expect(stage.dataset.photoAverageLuminance).toBeUndefined();
+    expect(stage.dataset.photoDarkestLuminance).toBeUndefined();
     expect(stage.style.getPropertyValue('--hero-photo-luminance')).toBe('');
-    expect(stage.style.getPropertyValue('--hero-adaptive-dimming')).toBe('0');
-    expect(
-      stage.style.getPropertyValue('--hero-adaptive-dimming-percent'),
-    ).toBe('0%');
     expect(stage.style.getPropertyValue('--hero-bottom-average')).toBe('');
     expect(stage.style.getPropertyValue('--hero-mobile-mid')).toBe('');
   });
@@ -220,8 +177,6 @@ describe('production registration hero fallback state', () => {
       photoTone: 'bright',
       photoStatsReady: 'true',
     });
-    stage.style.setProperty('--hero-adaptive-dimming', '0.8082');
-    stage.style.setProperty('--hero-adaptive-dimming-percent', '80.82%');
     const fallbackStates: boolean[] = [];
 
     enterHeroSamplingFallback(stage, (fallback) => {
@@ -231,10 +186,6 @@ describe('production registration hero fallback state', () => {
     expect(fallbackStates).toEqual([true]);
     expect(stage.dataset.photoSampling).toBe('fallback');
     expect(stage.dataset.photoTone).toBeUndefined();
-    expect(stage.style.getPropertyValue('--hero-adaptive-dimming')).toBe('0');
-    expect(
-      stage.style.getPropertyValue('--hero-adaptive-dimming-percent'),
-    ).toBe('0%');
   });
 
   it('routes every failure path and artwork change through the same entry point', () => {
@@ -403,40 +354,22 @@ describe('production registration hero geometry changes', () => {
   });
 });
 
-describe('production registration hero light-theme card treatment', () => {
+describe('production registration hero card theme contract', () => {
   it('reads the darkest sampled pixel behind the text', () => {
     expect(darkestBackdropLuminance([0.68, 0.61, 0.0, 0.64])).toBe(0);
     expect(darkestBackdropLuminance([0.68, 0.61])).toBeCloseTo(0.61, 6);
     expect(darkestBackdropLuminance([])).toBe(1);
   });
 
-  it('keeps the bright card opaque when the text region holds dark pixels', () => {
-    expect(
-      needsOpaqueBrightCard({
-        averageLuminance: 0.63,
-        darkestLuminance: 0.01,
-      }),
-    ).toBe(true);
-    expect(
-      needsOpaqueBrightCard({
-        averageLuminance: 0.63,
-        darkestLuminance: 0.4,
-      }),
-    ).toBe(false);
-    expect(
-      needsOpaqueBrightCard({
-        averageLuminance: 0.4,
-        darkestLuminance: 0.01,
-      }),
-    ).toBe(false);
-  });
-
-  it('renders the opaque bright card from the sampled text region', () => {
-    expect(heroComponentSource).toContain('needsOpaqueBrightCard(');
-    expect(heroComponentSource).toContain('styles.opaqueBrightCard');
-    expect(heroStylesSource).toContain(
-      '--hero-adaptive-glass-fill-percent: 100%',
+  it('sources the card, form and control colors from theme tokens', () => {
+    expect(heroStylesSource).toMatch(
+      /\.glassCard\.glassCard\s*\{[^}]*background:\s*var\(--color-card\)[^}]*color:\s*var\(--color-text\)/s,
     );
+    expect(heroStylesSource).toContain(
+      '--hero-form-control-text: var(--color-text)',
+    );
+    expect(heroStylesSource).not.toContain('--hero-adaptive-dimming');
+    expect(heroStylesSource).not.toContain('opaqueBrightCard');
   });
 });
 

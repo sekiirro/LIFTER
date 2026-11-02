@@ -13,10 +13,8 @@ import { Card } from '../ui/Card';
 import type { Locale } from '../../lib/design/preferences';
 import { modes } from '../../lib/design/tokens';
 import {
-  adaptiveDimmingFromBackdropLuminances,
   enterHeroSamplingFallback,
   heroArtworkState,
-  needsOpaqueBrightCard,
   conservativeBackdropLuminance,
   darkestBackdropLuminance,
   photoToneFromLuminance,
@@ -167,7 +165,6 @@ export function RegistrationHero({
   const stageRef = useRef<HTMLElement>(null);
   const [viewport, setViewport] = useState<HeroViewport>('desktop');
   const [samplingFallback, setSamplingFallback] = useState(false);
-  const [opaqueBrightCard, setOpaqueBrightCard] = useState(false);
   const hasBanner = Boolean(banner?.src);
   const layoutMode = selectHeroLayoutMode({ hasBanner, viewport });
 
@@ -257,9 +254,6 @@ export function RegistrationHero({
         return;
       }
       const peakLuminance = conservativeBackdropLuminance(textPhoto.luminances);
-      const adaptiveDimming = adaptiveDimmingFromBackdropLuminances(
-        textPhoto.luminances,
-      );
       stage.style.setProperty(
         '--hero-photo-luminance',
         peakLuminance.toString(),
@@ -269,26 +263,8 @@ export function RegistrationHero({
       stage.dataset.photoDarkestLuminance = darkestBackdropLuminance(
         textPhoto.luminances,
       ).toString();
-      stage.style.setProperty(
-        '--hero-adaptive-dimming',
-        adaptiveDimming.toString(),
-      );
-      stage.style.setProperty(
-        '--hero-adaptive-dimming-percent',
-        `${adaptiveDimming * 100}%`,
-      );
       stage.dataset.photoTone = photoToneFromLuminance(
         textPhoto.averageLuminance,
-      );
-      // A bright average can still hide near-black pixels behind the text,
-      // so the light-theme card only stays translucent when the sampled text
-      // region has no dark pixels.
-      const darkestLuminance = darkestBackdropLuminance(textPhoto.luminances);
-      setOpaqueBrightCard(
-        needsOpaqueBrightCard({
-          averageLuminance: textPhoto.averageLuminance,
-          darkestLuminance,
-        }),
       );
       stage.style.setProperty(
         '--hero-bottom-average',
@@ -369,7 +345,7 @@ export function RegistrationHero({
       ref={stageRef}
       className={`${styles.stage} ${hasBanner ? '' : styles.noArtwork} ${
         samplingFallback ? styles.samplingFallback : ''
-      } ${opaqueBrightCard ? styles.opaqueBrightCard : ''}`}
+      }`}
       data-testid="registration-hero"
       data-registration-hero=""
       data-hero-layout={layoutMode}

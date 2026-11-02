@@ -2,7 +2,6 @@ import { expect, test, type Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
-import { adaptiveDimmingFromLuminance } from '../../components/branding/registration-hero';
 import {
   captureHeroScreenshot,
   expectHeroAxeClean,
@@ -195,6 +194,7 @@ for (const {
     expect(surface.theme).toBe(
       theme === 'follow-device' ? 'system' : resolvedTheme,
     );
+    await expectHeroAxeClean(page);
     const screenshot = await captureHeroScreenshot(
       page,
       `theme-contract-${artwork}-${theme}-os-${osTheme}-${locale}-${viewport.name}`,
@@ -357,8 +357,6 @@ for (const artwork of ['dim', 'bright'] as const) {
               photoTone: element.dataset.photoTone ?? '',
               photoLuminance:
                 element.style.getPropertyValue('--hero-photo-luminance') || '',
-              adaptiveDimming:
-                element.style.getPropertyValue('--hero-adaptive-dimming') || '',
             }));
           measurements.push({
             artwork,
@@ -525,17 +523,9 @@ for (const locale of ['ar', 'en'] as const) {
             element.style.getPropertyValue('--hero-photo-luminance'),
           ),
           average: Number(element.dataset.photoAverageLuminance),
-          dimming: Number(
-            element.style.getPropertyValue('--hero-adaptive-dimming'),
-          ),
         }));
-        // The dimming follows the conservative bound behind the text, not
-        // the average of the sampled region.
+        // Keep artwork diagnostics for the conservative upper bound.
         expect(sampling.peak).toBeGreaterThan(sampling.average);
-        expect(sampling.dimming).toBeCloseTo(
-          adaptiveDimmingFromLuminance(sampling.peak),
-          10,
-        );
         await expectHeroMaterialContract(page);
         await expectHeroTextContrast(page);
         const backdrop = await expectHeroTextBackdropContrast(page);
@@ -574,7 +564,7 @@ for (const locale of ['ar', 'en'] as const) {
             testCase.viewport.name === viewport.name,
         )
       ) {
-        test(`dark-patch/${locale}/${theme}/${viewport.name}: bright artwork with dark pixels behind the text keeps the card opaque`, async ({
+        test(`dark-patch/${locale}/${theme}/${viewport.name}: bright artwork with dark pixels keeps the card on-theme`, async ({
           page,
           context,
         }) => {
@@ -595,18 +585,14 @@ for (const locale of ['ar', 'en'] as const) {
             ),
             average: Number(element.dataset.photoAverageLuminance),
             darkest: Number(element.dataset.photoDarkestLuminance),
-            dimming: Number(
-              element.style.getPropertyValue('--hero-adaptive-dimming'),
-            ),
-            opaque: element.className.includes('opaqueBrightCard'),
           }));
           // The artwork averages bright but still holds dark pixels behind the
-          // text, so the card has to stay opaque.
+          // text; its tone remains diagnostic and does not select the card.
           expect(sampling.average).toBeGreaterThan(0.58);
           expect(sampling.darkest).toBeLessThan(0.05);
-          expect(sampling.opaque).toBe(true);
           await expectHeroMaterialContract(page);
           await expectHeroTextContrast(page);
+          await expectHeroResolvedThemeContract(page);
           const backdrop = await expectHeroTextBackdropContrast(page);
           await expectHeroTouchTargets(page);
           await expectHeroAxeClean(page);

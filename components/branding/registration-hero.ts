@@ -23,48 +23,8 @@ export function photoToneFromLuminance(luminance: number): HeroPhotoTone {
   return 'dim';
 }
 
-// Maximum composited backdrop luminance for 4.5:1 contrast against white text.
-export const MAX_BACKDROP_LUMINANCE_FOR_WHITE_TEXT = 1.05 / 4.5 - 0.05;
-
-// The glass card mixes its white 1% fill with the dimmed black fill.
-export const HERO_CARD_FILL_ALPHA = 0.01;
-
-// The cap reaches the contrast limit after the card fill is composited.
-export const MAX_ADAPTIVE_DIMMING =
-  1 -
-  (MAX_BACKDROP_LUMINANCE_FOR_WHITE_TEXT - HERO_CARD_FILL_ALPHA) /
-    (1 - HERO_CARD_FILL_ALPHA) +
-  Number.EPSILON;
-
-export function adaptiveDimmingFromLuminance(luminance: number): number {
-  if (!Number.isFinite(luminance)) return 0;
-  const boundedLuminance = Math.min(1, Math.max(0, luminance));
-  const existingCurve = Math.min(
-    0.72,
-    Math.max(0, (boundedLuminance - 0.18) * 1.33),
-  );
-  const contrastRequiredDimming =
-    boundedLuminance > 0
-      ? 1 -
-        (MAX_BACKDROP_LUMINANCE_FOR_WHITE_TEXT - HERO_CARD_FILL_ALPHA) /
-          ((1 - HERO_CARD_FILL_ALPHA) * boundedLuminance) +
-        Number.EPSILON
-      : 0;
-  return Math.min(
-    MAX_ADAPTIVE_DIMMING,
-    Math.max(0, Math.max(existingCurve, contrastRequiredDimming)),
-  );
-}
-
 /**
- * Conservative upper bound of the artwork luminance behind the hero text.
- *
- * The glass card paints one dimming value across the whole surface, so the
- * contrast-critical input is the brightest backdrop under the text rather
- * than the average of the sampled region: a bright local patch behind a
- * label can sit well above the full-overlap average. The maximum of the
- * sampled cell luminances is the tightest conservative bound the same canvas
- * sample can provide.
+ * Brightest sampled cell in the card region, retained for artwork diagnostics.
  */
 export function conservativeBackdropLuminance(
   luminances: readonly number[],
@@ -77,21 +37,8 @@ export function conservativeBackdropLuminance(
   return peak;
 }
 
-/** Adaptive dimming derived from the conservative backdrop bound. */
-export function adaptiveDimmingFromBackdropLuminances(
-  luminances: readonly number[],
-): number {
-  return adaptiveDimmingFromLuminance(
-    conservativeBackdropLuminance(luminances),
-  );
-}
-
 /**
- * Darkest sampled luminance in the contrast-critical region.
- *
- * The translucent white card of the light theme mixes its fill in sRGB, so a
- * near-black pixel behind the text survives the mix and can drop the dark
- * token text below the 4.5:1 contrast limit.
+ * Darkest sampled luminance in the card region, retained for artwork diagnostics.
  */
 export function darkestBackdropLuminance(
   luminances: readonly number[],
@@ -104,34 +51,6 @@ export function darkestBackdropLuminance(
   return darkest;
 }
 
-/**
- * A near-black pixel below this luminance cannot sit under the translucent
- * white card of the light theme.
- */
-export const DARK_BACKDROP_LUMINANCE_THRESHOLD = 0.05;
-
-/**
- * Decide whether the light-theme card has to stay opaque.
- *
- * A bright average is not enough for the translucent white card: dark pixels
- * in the text region show through the sRGB mix and break the contrast of the
- * dark token text. The card stays opaque when the text region holds dark
- * pixels, and the average alone still decides the tone.
- */
-export function needsOpaqueBrightCard({
-  averageLuminance,
-  darkestLuminance,
-}: {
-  averageLuminance: number;
-  darkestLuminance: number;
-}): boolean {
-  return (
-    photoToneFromLuminance(averageLuminance) === 'bright' &&
-    Number.isFinite(darkestLuminance) &&
-    darkestLuminance < DARK_BACKDROP_LUMINANCE_THRESHOLD
-  );
-}
-
 export type HeroSamplingTarget = {
   dataset: DOMStringMap;
   style: CSSStyleDeclaration;
@@ -140,19 +59,17 @@ export type HeroSamplingTarget = {
 /**
  * Sampling fallback state.
  *
- * Every failed artwork sample clears the previously sampled tone, luminance
- * and dimming so the card can fall back to the opaque token surface instead
- * of keeping a stale treatment over artwork that was never measured.
+ * Every failed artwork sample clears the previously sampled diagnostics and
+ * image-derived substrate values so stale measurements are not retained.
  */
 export function applyHeroSamplingFallback(stage: HeroSamplingTarget): void {
   delete stage.dataset.photoTone;
   delete stage.dataset.photoAverageLuminance;
+  delete stage.dataset.photoDarkestLuminance;
   stage.dataset.photoStatsReady = 'false';
   stage.dataset.photoSampling = 'fallback';
   stage.style.removeProperty('--hero-photo-luminance');
   stage.style.removeProperty('--hero-photo-average-luminance');
-  stage.style.setProperty('--hero-adaptive-dimming', '0');
-  stage.style.setProperty('--hero-adaptive-dimming-percent', '0%');
   stage.style.removeProperty('--hero-bottom-average');
   stage.style.removeProperty('--hero-mobile-mid');
 }

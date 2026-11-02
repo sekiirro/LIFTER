@@ -4,11 +4,6 @@ import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { inflateSync } from 'node:zlib';
-import {
-  HERO_CARD_FILL_ALPHA,
-  MAX_ADAPTIVE_DIMMING,
-  adaptiveDimmingFromLuminance,
-} from '../../components/branding/registration-hero';
 
 /**
  * Shared production registration-hero evidence helpers.
@@ -385,10 +380,6 @@ export async function expectHeroSamplingFallback(page: Page) {
         sampling: stage.dataset.photoSampling ?? '',
         statsReady: stage.dataset.photoStatsReady ?? '',
         photoTone: stage.dataset.photoTone ?? '',
-        dimming: stage.style.getPropertyValue('--hero-adaptive-dimming'),
-        dimmingPercent: stage.style.getPropertyValue(
-          '--hero-adaptive-dimming-percent',
-        ),
         photoLuminance: stage.style.getPropertyValue('--hero-photo-luminance'),
         cardBackground,
         resolvedCard,
@@ -412,8 +403,6 @@ export async function expectHeroSamplingFallback(page: Page) {
   expect(surface.sampling).toBe('fallback');
   expect(surface.statsReady).toBe('false');
   expect(surface.photoTone).toBe('');
-  expect(surface.dimming).toBe('0');
-  expect(surface.dimmingPercent).toBe('0%');
   expect(surface.photoLuminance).toBe('');
   const card = parseRenderedColor(surface.cardBackground);
   expect(card.alpha).toBe(1);
@@ -450,23 +439,9 @@ export async function expectHeroMaterialContract(page: Page) {
   expect(shell.rimBackground).toContain('linear-gradient');
 }
 
-/**
- * Contrast evidence for the hero surface.
- *
- * Glass mode: the white form text sits on the dimmed photo. The hero samples
- * the luminance behind the card (`--hero-photo-luminance`) and applies the
- * approved adaptive dimming, so the effective backdrop luminance is the
- * sampled value scaled by the remaining transparency, then composited with
- * the card's own 1% white fill.
- *
- * Token mode (no artwork, or a bright photo in the light theme): the form
- * text uses the theme tokens, so the token pair is measured directly.
- */
+/** Contrast evidence for the registration form's resolved theme surface. */
 export async function expectHeroTextContrast(page: Page) {
   const surface = await page.evaluate(() => {
-    const stage = document.querySelector<HTMLElement>(
-      '[data-registration-hero]',
-    );
     const card = document.querySelector<HTMLElement>(
       '[data-registration-card="premium-centered"]',
     );
@@ -477,89 +452,46 @@ export async function expectHeroTextContrast(page: Page) {
     const button = document.querySelector<HTMLButtonElement>(
       'form button[type="submit"]',
     );
-    if (!stage || !card || !label || !heading || !button)
+    if (!card || !label || !heading || !button)
       throw new Error('Hero contrast targets unavailable');
     const root = getComputedStyle(document.documentElement);
     const buttonStyle = getComputedStyle(button);
-    const tokenText = root.getPropertyValue('--color-text').trim();
-    const probe = document.createElement('span');
-    probe.style.color = tokenText;
-    document.body.append(probe);
-    const resolvedTokenText = getComputedStyle(probe).color;
-    probe.remove();
+    const tokenProbe = document.createElement('span');
+    tokenProbe.style.backgroundColor = root
+      .getPropertyValue('--color-card')
+      .trim();
+    tokenProbe.style.color = root.getPropertyValue('--color-text').trim();
+    document.body.append(tokenProbe);
+    const tokens = getComputedStyle(tokenProbe);
+    const tokenCard = tokens.backgroundColor;
+    const tokenText = tokens.color;
+    tokenProbe.remove();
     return {
-      hasBanner: stage.dataset.hasBanner === 'true',
-      theme: document.documentElement.dataset.theme ?? '',
-      photoTone: stage.dataset.photoTone ?? '',
-      photoLuminance: Number(
-        stage.style.getPropertyValue('--hero-photo-luminance'),
-      ),
-      photoAverageLuminance: Number(stage.dataset.photoAverageLuminance ?? ''),
-      photoSampling: stage.dataset.photoSampling ?? '',
-      adaptiveDimming: Number(
-        stage.style.getPropertyValue('--hero-adaptive-dimming'),
-      ),
-      adaptiveDimmingPercent: Number.parseFloat(
-        stage.style.getPropertyValue('--hero-adaptive-dimming-percent'),
-      ),
       labelColor: getComputedStyle(label).color,
       headingColor: getComputedStyle(heading).color,
       cardBackground: getComputedStyle(card).backgroundColor,
       buttonColor: buttonStyle.color,
       buttonBackground: buttonStyle.backgroundColor,
-      buttonBorderColor: buttonStyle.borderTopColor,
-      buttonBorderStyle: buttonStyle.borderTopStyle,
-      buttonBorderWidth: buttonStyle.borderTopWidth,
-      tokenTextColor: resolvedTokenText,
+      tokenCard,
+      tokenText,
     };
   });
+
+  expect(surface.cardBackground).toBe(surface.tokenCard);
+  expect(surface.labelColor).toBe(surface.tokenText);
+  expect(surface.headingColor).toBe(surface.tokenText);
+  expect(
+    contrast(
+      cssLuminance(surface.labelColor),
+      cssLuminance(surface.cardBackground),
+    ),
+  ).toBeGreaterThanOrEqual(4.5);
 
   const buttonContrast = contrast(
     cssLuminance(surface.buttonColor),
     cssLuminance(surface.buttonBackground),
   );
   expect(buttonContrast).toBeGreaterThanOrEqual(4.5);
-
-  const tokenMode =
-    !surface.hasBanner ||
-    (surface.theme === 'light' && surface.photoTone === 'bright');
-  if (tokenMode) {
-    expect(surface.labelColor).toBe(surface.tokenTextColor);
-    expect(surface.headingColor).toBe(surface.tokenTextColor);
-    expect(
-      contrast(
-        cssLuminance(surface.labelColor),
-        cssLuminance(surface.cardBackground),
-      ),
-    ).toBeGreaterThanOrEqual(4.5);
-    return buttonContrast;
-  }
-
-  expect(surface.labelColor).toBe('rgb(255, 255, 255)');
-  expect(surface.headingColor).toBe('rgb(255, 255, 255)');
-  expect(Number.isFinite(surface.photoLuminance)).toBe(true);
-  expect(Number.isFinite(surface.photoAverageLuminance)).toBe(true);
-  // The conservative bound is the brightest sampled cell, so it can only
-  // trail the sampled mean by the rounding error of that mean.
-  expect(surface.photoLuminance).toBeGreaterThanOrEqual(
-    surface.photoAverageLuminance - 1e-9,
-  );
-  const expectedAdaptiveDimming = adaptiveDimmingFromLuminance(
-    surface.photoLuminance,
-  );
-  expect(surface.adaptiveDimming).toBeGreaterThanOrEqual(0);
-  expect(surface.adaptiveDimming).toBeLessThanOrEqual(MAX_ADAPTIVE_DIMMING);
-  expect(surface.adaptiveDimmingPercent).toBeGreaterThanOrEqual(
-    expectedAdaptiveDimming * 100,
-  );
-  const effectiveLuminance =
-    (1 - HERO_CARD_FILL_ALPHA) *
-      surface.photoLuminance *
-      (1 - surface.adaptiveDimmingPercent / 100) +
-    HERO_CARD_FILL_ALPHA;
-  expect(
-    contrast(cssLuminance(surface.labelColor), effectiveLuminance),
-  ).toBeGreaterThanOrEqual(4.5);
   return buttonContrast;
 }
 
