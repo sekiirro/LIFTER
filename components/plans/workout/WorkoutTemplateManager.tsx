@@ -3,6 +3,7 @@
 import { useMemo, useState } from 'react';
 import type { Locale } from '../../../lib/design/preferences';
 import { getMessages } from '../../../lib/i18n';
+import { formatDigits } from '../../../lib/i18n/format-digits';
 import type { WorkoutDocument } from '../../../lib/plans/workout/schema';
 import {
   canEditTemplate,
@@ -79,10 +80,6 @@ function formatMessage(
   return template.replace(/\{(\w+)\}/g, (match, key: string) =>
     key in values ? String(values[key]) : match,
   );
-}
-
-function formatNumber(value: number, locale: Locale): string {
-  return new Intl.NumberFormat(locale).format(value);
 }
 
 function restDayDocument(title: string): WorkoutDocument {
@@ -374,7 +371,7 @@ export function WorkoutTemplateManager({
           <h3 id="template-list-title">{m['templates.listTitle']}</h3>
           <p>
             {formatMessage(m['templates.templateCount'], {
-              count: formatNumber(pageResult.total, locale),
+              count: formatDigits(pageResult.total, locale),
             })}
           </p>
         </div>
@@ -428,7 +425,7 @@ export function WorkoutTemplateManager({
                     <p className={styles.version}>
                       {m['templates.version']}:{' '}
                       <Bidi dir="ltr">
-                        {formatNumber(template.version, locale)}
+                        {formatDigits(template.version, locale)}
                       </Bidi>
                     </p>
                   </div>
@@ -514,8 +511,8 @@ export function WorkoutTemplateManager({
           </Button>
           <span aria-live="polite">
             {formatMessage(m['templates.pageOf'], {
-              page: formatNumber(pageResult.page, locale),
-              total: formatNumber(Math.max(1, pageResult.pageCount), locale),
+              page: formatDigits(pageResult.page, locale),
+              total: formatDigits(Math.max(1, pageResult.pageCount), locale),
             })}
           </span>
           <Button
@@ -537,7 +534,7 @@ export function WorkoutTemplateManager({
             {draft.days.length === 0
               ? m['templates.draftEmpty']
               : formatMessage(m['templates.draftDays'], {
-                  count: formatNumber(draft.days.length, locale),
+                  count: formatDigits(draft.days.length, locale),
                 })}
           </p>
         </div>
