@@ -387,4 +387,51 @@ export const en: Record<keyof typeof ar, string> = {
   'registrationApproval.statusDenied': 'This status page is not available.',
   'registrationApproval.statusRedirectFallback':
     'Automatic navigation did not complete. Continue to the home page.',
+  'nutritionAlternatives.title': 'Manual alternatives',
+  'nutritionAlternatives.intro':
+    'Add up to three coach-approved alternatives. Each alternative uses its own food, portion quantity, and calculated macros.',
+  'nutritionAlternatives.original': 'Original',
+  'nutritionAlternatives.alternative': 'Alternative',
+  'nutritionAlternatives.add': 'Add alternative',
+  'nutritionAlternatives.limitHelp':
+    'You can add up to three alternatives for this item.',
+  'nutritionAlternatives.addDisabledLimit':
+    'Three alternatives is the maximum. Remove one to add another.',
+  'nutritionAlternatives.food': 'Food',
+  'nutritionAlternatives.quantity': 'Portion quantity',
+  'nutritionAlternatives.unit': 'Unit',
+  'nutritionAlternatives.quantityHint':
+    'Macros are calculated from this quantity.',
+  'nutritionAlternatives.calculatedMacros': 'Calculated macros',
+  'nutritionAlternatives.calories': 'Calories',
+  'nutritionAlternatives.protein': 'Protein',
+  'nutritionAlternatives.carbs': 'Carbs',
+  'nutritionAlternatives.fat': 'Fat',
+  'nutritionAlternatives.kilocalories': 'kcal',
+  'nutritionAlternatives.grams': 'g',
+  'nutritionAlternatives.moveUp': 'Move up',
+  'nutritionAlternatives.moveDown': 'Move down',
+  'nutritionAlternatives.remove': 'Remove',
+  'nutritionAlternatives.unifiedListLabel': 'Alternatives, original item first',
+  'nutritionAlternatives.manualOnly':
+    'Quantities are entered manually, and macros are calculated from the food and portion. Quantities are never changed automatically, and no suggestions are generated.',
+  'nutritionAlternatives.invalidQuantity':
+    'Enter a quantity greater than 0 with at most three decimal places.',
+  'nutritionAlternatives.unavailableFood':
+    'This food is not in the current list, so its macros cannot be recalculated here.',
+  'nutritionAlternatives.macrosUnavailable':
+    'Enter a valid quantity to see calculated macros.',
+  'nutritionAlternatives.errorTitle': 'Could not update alternatives',
+  'nutritionAlternatives.removeTitle': 'Remove alternative?',
+  'nutritionAlternatives.removeDescription':
+    'This alternative, its portion, and its calculated macros will be removed from the draft.',
+  'nutritionAlternatives.removeConfirm': 'Remove alternative',
+  'nutritionAlternatives.removeCancel': 'Keep alternative',
+  'nutritionAlternatives.empty': 'No manual alternatives yet.',
+  'nutritionAlternatives.actionsLabel': 'Alternative actions',
+  'nutritionAlternatives.previewTitle': 'Nutrition alternatives editor',
+  'nutritionAlternatives.previewIntro':
+    'Developer preview of the coach-configured manual alternatives editor with mocked catalog and plan data.',
+  'nutritionAlternatives.previewNotice':
+    'Showcase only. Foods and plan values are mocked; nothing is saved.',
 };

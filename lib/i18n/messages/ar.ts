@@ -373,4 +373,50 @@ export const ar = {
   'registrationApproval.statusDenied': 'صفحة الحالة هذه غير متاحة.',
   'registrationApproval.statusRedirectFallback':
     'لم يكتمل الانتقال التلقائي. يمكنك المتابعة إلى الصفحة الرئيسية.',
+  'nutritionAlternatives.title': 'البدائل اليدوية',
+  'nutritionAlternatives.intro':
+    'أضف حتى ثلاثة بدائل معتمدة من المدرب. لكل بديل غذاؤه وكمية حصته وماكروزه المحسوبة.',
+  'nutritionAlternatives.original': 'الأصلي',
+  'nutritionAlternatives.alternative': 'بديل',
+  'nutritionAlternatives.add': 'إضافة بديل',
+  'nutritionAlternatives.limitHelp':
+    'يمكنك إضافة ثلاثة بدائل كحد أقصى لهذا العنصر.',
+  'nutritionAlternatives.addDisabledLimit':
+    'الحد الأقصى ثلاثة بدائل. احذف بديلًا لإضافة بديل آخر.',
+  'nutritionAlternatives.food': 'الغذاء',
+  'nutritionAlternatives.quantity': 'كمية الحصة',
+  'nutritionAlternatives.unit': 'الوحدة',
+  'nutritionAlternatives.quantityHint': 'تُحسب الماكروز من هذه الكمية.',
+  'nutritionAlternatives.calculatedMacros': 'الماكروز المحسوبة',
+  'nutritionAlternatives.calories': 'السعرات',
+  'nutritionAlternatives.protein': 'البروتين',
+  'nutritionAlternatives.carbs': 'الكربوهيدرات',
+  'nutritionAlternatives.fat': 'الدهون',
+  'nutritionAlternatives.kilocalories': 'سعرة',
+  'nutritionAlternatives.grams': 'غ',
+  'nutritionAlternatives.moveUp': 'نقل لأعلى',
+  'nutritionAlternatives.moveDown': 'نقل لأسفل',
+  'nutritionAlternatives.remove': 'حذف',
+  'nutritionAlternatives.unifiedListLabel': 'البدائل، العنصر الأصلي أولًا',
+  'nutritionAlternatives.manualOnly':
+    'تُدخل الكميات يدويًا، وتُحسب الماكروز من الغذاء والكمية. لا تُعدّل الكميات تلقائيًا، ولا تُنشأ اقتراحات.',
+  'nutritionAlternatives.invalidQuantity':
+    'أدخل كمية أكبر من صفر بحد أقصى ثلاث خانات عشرية.',
+  'nutritionAlternatives.unavailableFood':
+    'هذا الغذاء غير موجود في القائمة الحالية، لذلك لا يمكن إعادة حساب ماكروزه هنا.',
+  'nutritionAlternatives.macrosUnavailable':
+    'أدخل كمية صحيحة لعرض الماكروز المحسوبة.',
+  'nutritionAlternatives.errorTitle': 'تعذر تحديث البدائل',
+  'nutritionAlternatives.removeTitle': 'حذف البديل؟',
+  'nutritionAlternatives.removeDescription':
+    'سيُحذف هذا البديل وكميته وماكروزه المحسوبة من المسودة.',
+  'nutritionAlternatives.removeConfirm': 'حذف البديل',
+  'nutritionAlternatives.removeCancel': 'إبقاء البديل',
+  'nutritionAlternatives.empty': 'لا توجد بدائل يدوية بعد.',
+  'nutritionAlternatives.actionsLabel': 'إجراءات البديل',
+  'nutritionAlternatives.previewTitle': 'محرر بدائل التغذية',
+  'nutritionAlternatives.previewIntro':
+    'معاينة تطويرية لمحرر البدائل اليدوية الذي يضبطه المدرب، ببيانات أغذية وخطط وهمية.',
+  'nutritionAlternatives.previewNotice':
+    'للعرض فقط. الأغذية وقيم الخطة وهمية، ولا يُحفظ أي شيء.',
 } as const;

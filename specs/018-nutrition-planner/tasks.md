@@ -53,7 +53,7 @@
 
 ## Phase 5 — Coach alternatives UI
 
-- [ ] **T011 (45m) — Build coach manual alternative configuration UI.** `OWNER=MiniMax`. **[INDEPENDENT]**. Exact files: `components/plans/NutritionPlanAlternativesEditor.tsx`, `tests/unit/NutritionPlanAlternativesEditor.test.tsx`. RED: alternatives require validated portion quantity with calculated macros, unified list, no AI auto-adjust, no delta-versus-original display. GREEN: UI holds. **Mutation:** remove the max-three guard or allow AI auto-adjust or delta display and prove the test fails. No direct DB.
+- [x] **T011 (45m) — Build coach manual alternative configuration UI.** `OWNER=MiniMax`. **[INDEPENDENT]**. Exact files: `components/plans/NutritionPlanAlternativesEditor.tsx`, `tests/unit/NutritionPlanAlternativesEditor.test.tsx`. RED: alternatives require validated portion quantity with calculated macros, unified list, no AI auto-adjust, no delta-versus-original display. GREEN: UI holds. **Mutation:** remove the max-three guard or allow AI auto-adjust or delta display and prove the test fails. No direct DB. Evidence: [T011 report](T011-evidence.md).
 
 ## Phase 6 — Template management UI
 
