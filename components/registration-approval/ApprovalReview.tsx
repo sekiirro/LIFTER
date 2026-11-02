@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
+import { useRef, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import type { Role } from '../../lib/auth/capabilities';
 import type { Messages } from '../../lib/i18n';
@@ -17,6 +17,10 @@ import { PaymentConfirmation } from './PaymentConfirmation';
 import { PaymentHistory } from './PaymentHistory';
 import { createApprovalRequestKeyStore } from './approval-request-keys';
 import styles from './registration-approval.module.css';
+
+const subscribeToHydration = () => () => {};
+const getHydratedSnapshot = () => true;
+const getServerHydrationSnapshot = () => false;
 
 type Item = {
   client_id: string;
@@ -62,10 +66,13 @@ export function ApprovalReview({
   const [notice, setNotice] = useState('');
   const [paymentDate, setPaymentDate] = useState('');
   const [pending, setPending] = useState(false);
-  const [hydrated, setHydrated] = useState(false);
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    getHydratedSnapshot,
+    getServerHydrationSnapshot,
+  );
   const requestKey = useRef(createApprovalRequestKeyStore()).current;
   const owner = role === 'platform_owner';
-  useEffect(() => setHydrated(true), []);
   const run = async (action: 'approve' | 'reject' | 'reconsider') => {
     setPending(true);
     try {
