@@ -78,7 +78,13 @@ Rendered review: no horizontal overflow; Arabic day types and units display in A
 - **States:** PASS — ready, loading, empty, error, conflict, and disabled boundary controls are covered. Pending/saved states do not apply to this mocked, non-persisting editor.
 - **Copy:** PASS — all new labels and states are in `lib/i18n/messages/{ar,en}.ts` as DRAFT; Arabic digits are localized.
 - **Responsive screenshots:** PASS — eight real rendered captures listed above; no overflow; captures reviewed and no re-shot was needed.
-- **Tests and size:** pending final gates below; no dependency added.
+- **Tests and size:** PASS — final gates: `npm test` 111 files / 1,777 tests, lint, typecheck, format:check, build, check:secrets, `git diff --check`, and size all passed. No dependency added.
+
+## Final gate record
+
+- Unit tests ran with `API_URL`, `DB_URL`, `ANON_KEY`, `SERVICE_ROLE_KEY`, `LIFTER_SUPABASE_STACK`, `SUPABASE_SAFE_CLI`, and all `SUPABASE_*` variables unset.
+- `npm run build`, `npm run lint`, `npm run typecheck`, `npm run format:check`, `npm run check:secrets`, `npm run size`, and `git diff --check`: PASS.
+- Showcase Playwright: 4/4 locale/theme cases passed; keyboard move and mobile/desktop overflow checks passed; axe: 0 violations in all four locale/theme cases.
 
 ## Design skill catalog review
 
