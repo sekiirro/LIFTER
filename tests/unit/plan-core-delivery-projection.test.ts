@@ -64,6 +64,13 @@ const delivery: FirstDeliveryRecord = {
   kind: 'workout',
   deliveredAt: '2026-10-02T10:00:00.000Z',
 };
+const nutritionDelivery: FirstDeliveryRecord = {
+  deliveryId: 'aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa',
+  subscriptionId: SUBSCRIPTION_ID,
+  planId: PLAN_ID,
+  kind: 'nutrition',
+  deliveredAt: '2026-10-03T10:00:00.000Z',
+};
 
 const input = {
   subscriptionId: SUBSCRIPTION_ID,
@@ -99,7 +106,11 @@ describe('Plan Core client delivery projection', () => {
   });
 
   it('keeps activation pending after one delivery and while durable retry is uncommitted', () => {
-    const result = projectClientDelivery({ ...input, activation: null });
+    const result = projectClientDelivery({
+      ...input,
+      deliveries: [delivery, nutritionDelivery],
+      activation: null,
+    });
     expect(result?.delivery.status).toBe('delivered');
     expect(result?.activation.status).toBe('pending');
   });
