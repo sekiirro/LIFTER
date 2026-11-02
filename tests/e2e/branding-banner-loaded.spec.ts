@@ -66,6 +66,17 @@ const themeContractCases = (
     ),
   ),
 );
+const invalidThemeCases = (['ar', 'en'] as const).flatMap((locale) =>
+  (['light', 'dark', 'follow-device'] as const).flatMap((theme) =>
+    (['light', 'dark'] as const).flatMap((osTheme) =>
+      [
+        { name: 'mobile-360', width: 360, height: 800 },
+        { name: 'mobile-390', width: 390, height: 844 },
+        { name: 'desktop-1440', width: 1440, height: 900 },
+      ].map((viewport) => ({ locale, theme, osTheme, viewport })),
+    ),
+  ),
+);
 let token = '';
 let cleanup: (() => Promise<void>) | null = null;
 const measurements: Record<string, unknown>[] = [];
@@ -427,40 +438,41 @@ async function expectInvalidInputContrast(page: Page) {
   ).toBeGreaterThanOrEqual(4.5);
 }
 
-for (const locale of ['ar', 'en'] as const) {
-  for (const theme of ['light', 'dark'] as const) {
-    test(`bright/invalid/${locale}/${theme}/mobile-390: preference keeps invalid text readable`, async ({
-      page,
-      context,
-    }) => {
-      await page.setViewportSize({ width: 390, height: 844 });
-      await page.emulateMedia({
-        reducedMotion: 'reduce',
-        contrast: 'more',
-      });
-      await context.addCookies([
-        { name: LOCALE_COOKIE, value: locale, url: origin },
-        { name: THEME_COOKIE, value: theme, url: origin },
-      ]);
-      await page.goto(`/register/${encodeURIComponent(token)}`);
-      const stage = page.locator('[data-registration-hero]');
-      await expect(stage).toHaveAttribute('data-photo-tone', 'mid');
-      await page.locator('input[name="name"]').fill('Contrast Test');
-      await page.locator('input[name="email"]').fill('contrast@example.test');
-      await page.locator('input[type="tel"]').fill('1001234567');
-      await page.locator('input[name="password"]').fill('short');
-      await page.locator('form button[type="submit"]').click();
-      const invalid = page.locator('input[name="password"]');
-      await expect(invalid).toHaveAttribute('aria-invalid', 'true');
-      await expect(invalid).toBeEnabled();
-      await expectInvalidInputContrast(page);
-      await expectHeroAxeClean(page);
-      await captureHeroScreenshot(
-        page,
-        `invalid-${locale}-${theme}-mobile-390`,
-      );
+for (const { locale, theme, osTheme, viewport } of invalidThemeCases) {
+  test(`bright/invalid/${locale}/${theme}/os-${osTheme}/${viewport.name}: preference keeps invalid text readable`, async ({
+    page,
+    context,
+  }) => {
+    await page.setViewportSize(viewport);
+    await page.emulateMedia({
+      colorScheme: osTheme,
+      reducedMotion: 'reduce',
+      contrast: 'more',
     });
-  }
+    const cookies: { name: string; value: string; url: string }[] = [
+      { name: LOCALE_COOKIE, value: locale, url: origin },
+    ];
+    if (theme !== 'follow-device')
+      cookies.push({ name: THEME_COOKIE, value: theme, url: origin });
+    await context.addCookies(cookies);
+    await page.goto(`/register/${encodeURIComponent(token)}`);
+    const stage = page.locator('[data-registration-hero]');
+    await expect(stage).toHaveAttribute('data-photo-tone', 'mid');
+    await page.locator('input[name="name"]').fill('Contrast Test');
+    await page.locator('input[name="email"]').fill('contrast@example.test');
+    await page.locator('input[type="tel"]').fill('1001234567');
+    await page.locator('input[name="password"]').fill('short');
+    await page.locator('form button[type="submit"]').click();
+    const invalid = page.locator('input[name="password"]');
+    await expect(invalid).toHaveAttribute('aria-invalid', 'true');
+    await expect(invalid).toBeEnabled();
+    await expectInvalidInputContrast(page);
+    await expectHeroAxeClean(page);
+    await captureHeroScreenshot(
+      page,
+      `invalid-${locale}-${theme}-os-${osTheme}-${viewport.name}`,
+    );
+  });
 }
 
 test('dim/invalid/en/light/mobile-390: preference keeps invalid text readable', async ({

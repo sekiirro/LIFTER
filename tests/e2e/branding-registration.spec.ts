@@ -21,7 +21,13 @@ const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
 const printRegistrationCases = (['ar', 'en'] as const).flatMap((locale) =>
-  (['light', 'dark'] as const).map((theme) => ({ locale, theme })),
+  (['light', 'dark', 'follow-device'] as const).flatMap((theme) =>
+    (['light', 'dark'] as const).map((osTheme) => ({
+      locale,
+      theme,
+      osTheme,
+    })),
+  ),
 );
 let fixture: RegistrationFixture | null = null;
 let token = '';
@@ -275,16 +281,19 @@ for (const locale of ['ar', 'en'] as const) {
   }
 }
 
-for (const { locale, theme } of printRegistrationCases) {
-  test(`print/${locale}/${theme}: filled registration follows theme tokens`, async ({
+for (const { locale, theme, osTheme } of printRegistrationCases) {
+  test(`print/${locale}/${theme}/os-${osTheme}: filled registration follows theme tokens`, async ({
     page,
     context,
   }) => {
     await page.setViewportSize({ width: 390, height: 844 });
-    await context.addCookies([
+    await page.emulateMedia({ colorScheme: osTheme, reducedMotion: 'reduce' });
+    const cookies: { name: string; value: string; url: string }[] = [
       { name: LOCALE_COOKIE, value: locale, url: origin },
-      { name: THEME_COOKIE, value: theme, url: origin },
-    ]);
+    ];
+    if (theme !== 'follow-device')
+      cookies.push({ name: THEME_COOKIE, value: theme, url: origin });
+    await context.addCookies(cookies);
     await page.goto(`/register/${token}`);
     await page.locator('input[name="name"]').fill('Print Contrast');
     await page.locator('input[name="email"]').fill('print@example.test');
@@ -373,7 +382,10 @@ for (const { locale, theme } of printRegistrationCases) {
     expect(contrast.inputRatio).toBeGreaterThanOrEqual(4.5);
     expect(contrast.callingRatio).toBeGreaterThanOrEqual(4.5);
     expect(contrast.inputValue).toBe('Print Contrast');
-    await captureHeroScreenshot(page, `print-registration-${locale}-${theme}`);
+    await captureHeroScreenshot(
+      page,
+      `print-registration-${locale}-${theme}-os-${osTheme}`,
+    );
   });
 }
 

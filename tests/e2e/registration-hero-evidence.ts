@@ -721,7 +721,7 @@ export async function expectHeroButtonBoundary(page: Page) {
   );
   const backdropColor = pixelHex(screenshotPixel(image, x, backdropY));
   const fillEdgeRatio = contrast(
-    cssLuminance(`#${borderColor}`),
+    cssLuminance(`#${faceColor}`),
     cssLuminance(`#${backdropColor}`),
   );
   const outerEdgeRatio = contrast(
@@ -733,6 +733,7 @@ export async function expectHeroButtonBoundary(page: Page) {
     cssLuminance(`#${faceColor}`),
   );
   const ratio = Math.max(fillEdgeRatio, outerEdgeRatio, faceEdgeRatio);
+  expect(fillEdgeRatio).toBeGreaterThanOrEqual(3);
   expect(ratio).toBeGreaterThanOrEqual(3);
   return {
     ratio,
