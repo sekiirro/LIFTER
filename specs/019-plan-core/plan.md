@@ -18,6 +18,10 @@ Implement one shared plan identity, draft/revision, readiness, first-delivery, a
 - Canonical plan-root mutation order for F17/F18 writers: authorize -> lock the stable plan root -> check the idempotency ledger -> for an exact replay, recheck current actor authorization after lock waits before returning the stored result; otherwise lock draft or selection rows as applicable -> re-read expected revision/current published version -> recheck current actor authorization (staff membership/capability or client self-ownership, as applicable) -> validate/write and append one audit event. For explicit Create New Plan, when the root does not exist yet, acquire a transaction-scoped creation lock keyed by actor and operation identity, check the ledger, then create the root in that transaction. Operations on template roots lock the template identity before the ledger; template creation uses a deterministic creation lock until the root exists. Template load into a draft follows the plan-root order and reads an immutable template version.
 - F17/F18 use the shared contract and domain-specific schemas/writers; do not add `publish_pair` or a required `initial_delivery` pair.
 
+## Canonical activation and delivery contract
+
+The canonical P4 activation and first-delivery contract is in [data-model.md](data-model.md). It carries forward the registration data-model handoff without changing F12's data-model text.
+
 ## Migration range
 
 `20261106200000`-`20261106235959` inclusive, valid UTC times. F16 ends at `20261106195959`; no overlap.
