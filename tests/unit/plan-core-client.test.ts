@@ -266,3 +266,20 @@ describe('Plan Core client', () => {
     });
   });
 });
+
+  it('creates a new plan through the explicit create transport', async () => {
+    const create = vi.fn().mockResolvedValue({
+      status: 'ok',
+      replayed: false,
+      data: { planId: PLAN_ID, readiness: 'draft' },
+    });
+    const client = createPlanCoreClient({
+      getRoot: vi.fn(), writeDraft: vi.fn(), publish: vi.fn(), create,
+    });
+    await client.create({
+      createMode: 'blank', kind: 'workout', operationKey: OPERATION_KEY,
+    });
+    expect(create).toHaveBeenCalledWith({
+      createMode: 'blank', kind: 'workout', operationKey: OPERATION_KEY,
+    });
+  });
