@@ -17,6 +17,19 @@ Observable contract only. Exact SQL argument types and transport schemas remain 
 
 `coaching_work` is checked against current membership on every request. PO's global authority does not require a workspace membership, but a PO writing a workspace row supplies and authorizes that workspace. Denials are generic and do not reveal whether foreign-workspace IDs or global creator/origin metadata exist.
 
+### Executable app-wall matrix (T032)
+
+| App-wall operation | PO | WO | Trainer | Sales | Client | Unknown/unauthenticated | Mutation assertion |
+|---|---|---|---|---|---|---|---|
+| Global search | Allow without membership | Allow with current coaching membership | Same as WO | Deny | Deny | Deny | Removing the role guard makes the no-RPC denial assertion fail. |
+| Global exercise create/version/lifecycle/merge | Allow | Deny | Deny | Deny | Deny | Deny | Removing the PO guard makes the no-RPC role assertions fail. |
+| Workspace exercise/variation write | Allow for explicitly scoped authorized workspace | Own current workspace | Own current workspace | Deny | Deny | Deny | Removing the scope/membership guard makes foreign and revoked workspace assertions fail. |
+| Food create | Allow, with optional origin workspace | Current coaching membership | Current coaching membership | Deny | Deny | Deny | Removing the role/scope guard makes the no-RPC denial assertions fail. |
+| Food version | Allow | Current creator only | Current creator only | Deny | Deny | Deny | Making creator preflight always true causes the non-creator assertion to fail. |
+| Food lifecycle/merge | Allow | Deny | Deny | Deny | Deny | Deny | Removing the PO guard makes the no-RPC role assertions fail. |
+
+Unit mutation checks also prove that replacing the production session-client boundary with service-role access, exposing a raw database error, or dropping UUIDv4 operation-key forwarding fails. The role/session integration test runs against Stack C RPCs; Client and unknown have no staff role and are denied by the same non-disclosing app-wall rule.
+
 ## Two-wall and SQL parity contract
 
 - TypeScript server actions/services call `authorize()` before validation, resolve explicit scope, and do not treat hidden controls as access control.
