@@ -5,8 +5,11 @@ import { tmpdir } from 'node:os';
 import path from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
-const screenshotDirectory = path.join(tmpdir(), 'lifter-s27-f17-templates');
-const baseUrl = 'http://localhost:3427';
+const screenshotDirectory = path.join(
+  tmpdir(),
+  process.env.LIFTER_SCREENSHOT_DIR ?? 'lifter-s28-f17-finish',
+);
+const baseUrl = 'http://localhost:3417';
 const GLOBAL_TEMPLATE_ID = 'a1000000-0000-4000-8000-000000000001';
 const WORKSPACE_TEMPLATE_ID = 'a1000000-0000-4000-8000-000000000002';
 const RETIRED_TEMPLATE_ID = 'a1000000-0000-4000-8000-000000000003';
@@ -152,7 +155,7 @@ test('template manager renders the bilingual responsive matrix without axe viola
         await page.screenshot({
           path: path.join(
             screenshotDirectory,
-            `${locale}-${theme}-${viewport.name}.png`,
+            `templates-${locale}-${theme}-${viewport.name}.png`,
           ),
           fullPage: true,
         });

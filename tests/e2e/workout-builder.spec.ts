@@ -209,7 +209,7 @@ test('workout builder renders bilingual responsive states without axe violations
         await page.screenshot({
           path: path.join(
             screenshotDirectory,
-            `${locale}-${theme}-${viewport.name}.png`,
+            `builder-${locale}-${theme}-${viewport.name}.png`,
           ),
           fullPage: true,
         });
