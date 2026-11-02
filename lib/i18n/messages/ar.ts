@@ -426,7 +426,9 @@ export const ar = {
   'volume.samplePull': 'يوم السحب',
   'volume.sampleLegs': 'يوم الأرجل',
   'volume.sampleRecovery': 'الاستشفاء',
-  // DRAFT (F17 T036): workout plan-builder copy pending PO review.
+  // APPROVED (S27-PO-2): rest field label.
+  'builder.restHint': 'مدة الراحة (بالثواني)',
+  // DRAFT (F17 T036): remaining workout plan-builder copy pending PO review.
   'builder.showcaseTitle': 'منشئ برنامج التمرين',
   'builder.showcaseIntro':
     'عينة تفاعلية لبناء الأيام والتمارين والمجموعات دون حفظ أي بيانات.',
@@ -465,7 +467,6 @@ export const ar = {
   'builder.unit': 'الوحدة',
   'builder.kg': 'كجم',
   'builder.lb': 'رطل',
-  'builder.restHint': 'بالثواني',
   'builder.rirHint': 'التكرارات المتبقية',
   'builder.setNotes': 'ملاحظات المجموعة',
   'builder.exerciseNotes': 'ملاحظات التمرين',

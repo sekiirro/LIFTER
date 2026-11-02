@@ -440,7 +440,9 @@ export const en: Record<keyof typeof ar, string> = {
   'volume.samplePull': 'Pull day',
   'volume.sampleLegs': 'Leg day',
   'volume.sampleRecovery': 'Recovery',
-  // DRAFT (F17 T036): workout plan-builder copy pending PO review.
+  // APPROVED (S27-PO-2): rest field label.
+  'builder.restHint': 'Rest (seconds)',
+  // DRAFT (F17 T036): remaining workout plan-builder copy pending PO review.
   'builder.showcaseTitle': 'Workout plan builder',
   'builder.showcaseIntro':
     'An interactive sample for building days, exercises, and sets without saving any data.',
@@ -479,7 +481,6 @@ export const en: Record<keyof typeof ar, string> = {
   'builder.unit': 'Unit',
   'builder.kg': 'kg',
   'builder.lb': 'lb',
-  'builder.restHint': 'In seconds',
   'builder.rirHint': 'Reps in reserve',
   'builder.setNotes': 'Set notes',
   'builder.exerciseNotes': 'Exercise notes',

@@ -137,9 +137,9 @@ test('workout builder renders Arabic-Indic digits and stores canonical input val
   );
 
   const bench = page.getByTestId(`builder-item-${BENCH_ITEM_ID}`);
-  await expect(
-    bench.locator('div').first().locator('span').nth(1),
-  ).toHaveText('١');
+  await expect(bench.locator('div').first().locator('span').nth(1)).toHaveText(
+    '١',
+  );
 
   const warmup = page.getByTestId(`builder-set-${BENCH_WARMUP_SET_ID}`);
   await expect(warmup.locator('legend')).toHaveText('المجموعة ١');

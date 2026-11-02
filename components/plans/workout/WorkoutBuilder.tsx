@@ -12,6 +12,7 @@ import {
   moveBuilderItemBy,
 } from '../../../lib/plans/workout/builder-actions';
 import { reorderWorkoutDays } from '../../../lib/plans/workout/document-ops';
+import { formatDigits } from '../../../lib/i18n/format-digits';
 import type { WorkoutBuilderFixture } from '../../../lib/plans/workout/builder-fixtures';
 import type {
   WorkoutDay,
@@ -32,6 +33,15 @@ type Props = {
 };
 const uuid = () => globalThis.crypto.randomUUID();
 const shallow = <T,>(value: T): T => structuredClone(value);
+
+function normalizeDigits(value: string): string {
+  return value
+    .replace(/[٠-٩۰-۹]/g, (digit) => {
+      const code = digit.charCodeAt(0);
+      return String(code >= 0x06f0 ? code - 0x06f0 : code - 0x0660);
+    })
+    .replace(/٫/g, '.');
+}
 
 function names(fixture: WorkoutBuilderFixture, locale: Locale) {
   return new Map(
@@ -143,7 +153,7 @@ export function WorkoutBuilder({ locale, messages: m, fixture }: Props) {
     field: 'value' | 'min' | 'max',
     value: string,
   ) => {
-    const n = Number(value);
+    const n = Number(normalizeDigits(value));
     if (!Number.isFinite(n) || n <= 0) return set;
     const reps = 'value' in set.reps ? { value: n } : { ...set.reps };
     if (field === 'value' && 'value' in reps) reps.value = n;
@@ -249,9 +259,7 @@ export function WorkoutBuilder({ locale, messages: m, fixture }: Props) {
               }}
             >
               <span className={styles.dayNumber}>
-                {new Intl.NumberFormat(locale, { useGrouping: false }).format(
-                  dayIndex + 1,
-                )}
+                {formatDigits(dayIndex + 1, locale)}
               </span>
               <span
                 className={styles.dragHandle}
@@ -384,9 +392,7 @@ export function WorkoutBuilder({ locale, messages: m, fixture }: Props) {
                           {m['builder.dragExercise']}
                         </span>
                         <span className={styles.itemIndex}>
-                          {new Intl.NumberFormat(locale, {
-                            useGrouping: false,
-                          }).format(itemIndex + 1)}
+                          {formatDigits(itemIndex + 1, locale)}
                         </span>
                         <strong>
                           <Bidi>{refName(item.exercise)}</Bidi>
@@ -547,9 +553,7 @@ export function WorkoutBuilder({ locale, messages: m, fixture }: Props) {
                           <legend>
                             {m['builder.setNumber'].replace(
                               '{number}',
-                              new Intl.NumberFormat(locale, {
-                                useGrouping: false,
-                              }).format(setIndex + 1),
+                              formatDigits(setIndex + 1, locale),
                             )}
                           </legend>
                           <label>
@@ -628,9 +632,9 @@ export function WorkoutBuilder({ locale, messages: m, fixture }: Props) {
                             <label>
                               {m['builder.reps']}
                               <input
-                                type="number"
-                                min="1"
-                                value={set.reps.value}
+                                type="text"
+                                inputMode="numeric"
+                                value={formatDigits(set.reps.value, locale)}
                                 onChange={(event) =>
                                   setSet(day.id, item.id, set.id, (current) =>
                                     patchReps(
@@ -647,9 +651,9 @@ export function WorkoutBuilder({ locale, messages: m, fixture }: Props) {
                               <label>
                                 {m['builder.min']}
                                 <input
-                                  type="number"
-                                  min="1"
-                                  value={set.reps.min}
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={formatDigits(set.reps.min, locale)}
                                   onChange={(event) =>
                                     setSet(day.id, item.id, set.id, (current) =>
                                       patchReps(
@@ -664,9 +668,9 @@ export function WorkoutBuilder({ locale, messages: m, fixture }: Props) {
                               <label>
                                 {m['builder.max']}
                                 <input
-                                  type="number"
-                                  min="1"
-                                  value={set.reps.max}
+                                  type="text"
+                                  inputMode="numeric"
+                                  value={formatDigits(set.reps.max, locale)}
                                   onChange={(event) =>
                                     setSet(day.id, item.id, set.id, (current) =>
                                       patchReps(
@@ -687,11 +691,12 @@ export function WorkoutBuilder({ locale, messages: m, fixture }: Props) {
                                 <input
                                   type="text"
                                   inputMode="decimal"
-                                  value={set.load.value}
+                                  value={formatDigits(set.load.value, locale)}
                                   onChange={(event) => {
-                                    if (
-                                      /^\d*(\.\d*)?$/.test(event.target.value)
-                                    )
+                                    const value = normalizeDigits(
+                                      event.target.value,
+                                    );
+                                    if (/^\d*(\.\d*)?$/.test(value))
                                       setSet(
                                         day.id,
                                         item.id,
@@ -703,7 +708,7 @@ export function WorkoutBuilder({ locale, messages: m, fixture }: Props) {
                                               ? current.load
                                               : {
                                                   ...current.load,
-                                                  value: event.target.value,
+                                                  value,
                                                 },
                                         }),
                                       );
@@ -742,35 +747,38 @@ export function WorkoutBuilder({ locale, messages: m, fixture }: Props) {
                           <label>
                             {m['builder.restHint']}
                             <input
-                              type="number"
-                              min="0"
-                              value={set.restSec ?? ''}
-                              onChange={(event) =>
+                              type="text"
+                              inputMode="numeric"
+                              value={formatDigits(set.restSec ?? '', locale)}
+                              onChange={(event) => {
+                                const value = normalizeDigits(
+                                  event.target.value,
+                                );
+                                if (!/^\d*$/.test(value)) return;
                                 setSet(day.id, item.id, set.id, (current) => ({
                                   ...current,
                                   restSec:
-                                    event.target.value === ''
-                                      ? undefined
-                                      : Number(event.target.value),
-                                }))
-                              }
+                                    value === '' ? undefined : Number(value),
+                                }));
+                              }}
                             />
                           </label>
                           <label>
                             {m['builder.rirHint']}
                             <input
-                              type="number"
-                              min="0"
-                              value={set.rir ?? ''}
-                              onChange={(event) =>
+                              type="text"
+                              inputMode="numeric"
+                              value={formatDigits(set.rir ?? '', locale)}
+                              onChange={(event) => {
+                                const value = normalizeDigits(
+                                  event.target.value,
+                                );
+                                if (!/^\d*$/.test(value)) return;
                                 setSet(day.id, item.id, set.id, (current) => ({
                                   ...current,
-                                  rir:
-                                    event.target.value === ''
-                                      ? undefined
-                                      : Number(event.target.value),
-                                }))
-                              }
+                                  rir: value === '' ? undefined : Number(value),
+                                }));
+                              }}
                             />
                           </label>
                           <label className={styles.wide}>
