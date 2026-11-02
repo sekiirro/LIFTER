@@ -9,6 +9,8 @@ const snapshot = {
       sectionId: 'basic',
       type: 'shortText',
       required: false,
+      title: { en: 'Short answer', ar: 'إجابة قصيرة' },
+      description: { en: 'Optional copy', ar: 'نسخة اختيارية' },
     },
     {
       id: 'long',

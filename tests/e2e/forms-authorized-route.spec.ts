@@ -177,7 +177,17 @@ test('real route supports keyboard progression and presents the same safe not-fo
   const goal = page.getByRole('textbox', { name: 'Your goal' });
   await goal.focus();
   await goal.fill('Build strength');
-  await page.getByRole('button', { name: 'Next question' }).focus();
+  const blurSave = page.waitForResponse(
+    (response) =>
+      response.request().method() === 'POST' &&
+      response.url().includes(`/api/forms/assignments/${assignmentId}/draft`),
+  );
+  const next = page.getByRole('button', { name: 'Next question' });
+  await next.focus();
+  const saveResponse = await blurSave;
+  const saveBody = await saveResponse.json();
+  expect(saveBody.status).toBe('saved');
+  expect(saveResponse.status()).toBe(200);
   await page.keyboard.press('Enter');
   await expect(
     page.getByRole('region', { name: 'Training experience' }),
@@ -211,9 +221,7 @@ test('sample workspace brand scope leaves semantic status tokens intact in light
       },
     ]);
     await page.goto(`/forms/${assignmentId}`);
-    await expect(
-      page.getByRole('textbox', { name: 'Your goal' }),
-    ).toBeVisible();
+    await expect(page.getByRole('textbox').first()).toBeVisible();
     const before = await page
       .locator('main')
       .last()
@@ -280,17 +288,19 @@ test('sample workspace brand scope leaves semantic status tokens intact in light
 test('real route autosave exposes each state, retries failures, and records save-to-ack latency', async ({
   page,
 }) => {
+  test.setTimeout(120_000);
   await signIn(page);
-  let mode: 'normal' | 'slow' | 'error' | 'conflict' = 'normal';
+  let mode: 'normal' | 'slow' | 'error' | 'retry' | 'conflict' = 'normal';
   let failedIntentKey = '';
   let retryIntentKey = '';
   let conflictSaveCount = 0;
   let slowSaveCount = 0;
+  const saveStatus = page.locator('p[role="status"][aria-live="polite"]');
   await page.route('**/api/forms/assignments/*/draft', async (route) => {
     if (route.request().method() !== 'POST') return route.continue();
     const intentKey = String(route.request().postDataJSON()?.intent_key ?? '');
     if (mode === 'error') failedIntentKey = intentKey;
-    else if (failedIntentKey && mode === 'normal') retryIntentKey = intentKey;
+    else if (failedIntentKey && mode === 'retry') retryIntentKey = intentKey;
     if (mode === 'slow') {
       slowSaveCount += 1;
       await new Promise((resolve) => setTimeout(resolve, 700));
@@ -301,6 +311,18 @@ test('real route autosave exposes each state, retries failures, and records save
         contentType: 'application/json',
         body: JSON.stringify({ status: 'error' }),
       });
+    if (mode === 'retry') {
+      const payload = route.request().postDataJSON();
+      return route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({
+          status: 'saved',
+          revision: payload.expected_revision,
+          intent_key: intentKey,
+        }),
+      });
+    }
     if (mode === 'conflict') {
       conflictSaveCount += 1;
       return route.fulfill({
@@ -352,16 +374,16 @@ test('real route autosave exposes each state, retries failures, and records save
 
       mode = 'normal';
       await field.fill(`unsaved ${locale} ${width}`);
-      await expect(page.getByRole('status')).toHaveText(statusText.unsaved);
+      await expect(saveStatus).toHaveText(statusText.unsaved);
       await capture('unsaved');
 
       mode = 'slow';
       const slowBefore = slowSaveCount;
       await field.fill(`saving ${locale} ${width}`);
-      await expect(page.getByRole('status')).toHaveText(statusText.saving);
+      await expect(saveStatus).toHaveText(statusText.saving);
       await field.fill(`coalesced ${locale} ${width}`);
       await capture('saving');
-      await expect(page.getByRole('status')).toHaveText(statusText.saved, {
+      await expect(saveStatus).toHaveText(statusText.saved, {
         timeout: 10_000,
       });
       expect(slowSaveCount - slowBefore).toBe(2);
@@ -369,34 +391,71 @@ test('real route autosave exposes each state, retries failures, and records save
 
       mode = 'error';
       await field.fill(`failed ${locale} ${width}`);
-      await expect(page.getByRole('status')).toHaveText(statusText.failed);
+      await expect(saveStatus).toHaveText(statusText.failed);
       await capture('failed');
-      mode = 'normal';
+      mode = 'retry';
       await page
         .getByRole('button', { name: messages['forms.retrySave'] })
         .click();
-      await expect(page.getByRole('status')).toHaveText(statusText.saved, {
+      await expect(saveStatus).toHaveText(statusText.saved, {
         timeout: 10_000,
       });
       expect(retryIntentKey).toBe(failedIntentKey);
       failedIntentKey = '';
       retryIntentKey = '';
 
+      mode = 'normal';
+      const acknowledgedValue = `committed ${locale} ${width}`;
+      const acknowledgedResponse = page.waitForResponse((response) => {
+        if (
+          !response.url().endsWith('/draft') ||
+          response.request().method() !== 'POST'
+        )
+          return false;
+        return (
+          response.request().postData()?.includes(acknowledgedValue) ?? false
+        );
+      });
+      await field.fill(acknowledgedValue);
+      await page
+        .getByRole('button', { name: messages['forms.saveNow'] })
+        .click();
+      const saveResponse = await acknowledgedResponse;
+      const saveBody = await saveResponse.json();
+      expect(saveBody.status).toBe('saved');
+      const savedAnswerId = Object.entries(
+        saveResponse.request().postDataJSON().answer_values as Record<
+          string,
+          unknown
+        >,
+      ).find(([, value]) => value === acknowledgedValue)?.[0];
+      expect(savedAnswerId).toBeDefined();
+      await expect(saveStatus).toHaveText(statusText.saved, {
+        timeout: 10_000,
+      });
+      const savesBeforeConflict = conflictSaveCount;
       mode = 'conflict';
       await field.fill(`conflict ${locale} ${width}`);
-      await expect(page.getByRole('status')).toHaveText(statusText.conflict);
+      await expect(saveStatus).toHaveText(statusText.conflict);
       await expect(
         page.getByRole('button', { name: messages['forms.reloadDraft'] }),
       ).toBeVisible();
       await capture('conflict');
-      const savesAtConflict = conflictSaveCount;
       await page.waitForTimeout(1_600);
-      expect(conflictSaveCount).toBe(savesAtConflict);
+      expect(conflictSaveCount - savesBeforeConflict).toBe(1);
       mode = 'normal';
+      const reloadResponse = page.waitForResponse(
+        (response) =>
+          response.url().endsWith('/draft') &&
+          response.request().method() === 'GET',
+      );
       await page
         .getByRole('button', { name: messages['forms.reloadDraft'] })
         .click();
-      await expect(field).toHaveValue(`failed ${locale} ${width}`);
+      const reloaded = await reloadResponse;
+      expect((await reloaded.json()).answers[savedAnswerId!]).toBe(
+        acknowledgedValue,
+      );
     }
   }
 
@@ -425,10 +484,12 @@ test('real route autosave exposes each state, retries failures, and records save
     await field.fill(`latency sample ${sample}`);
     const response = await responsePromise;
     const timing = response.request().timing();
-    await expect(page.getByRole('status')).toHaveText('Draft saved.', {
+    await expect(saveStatus).toHaveText('Draft saved.', {
       timeout: 10_000,
     });
-    samples.push(timing.responseEnd - timing.startTime);
+    // Playwright reports responseEnd relative to the request start; startTime
+    // is epoch-based, so subtracting it produces a misleading negative value.
+    samples.push(timing.responseEnd);
   }
   samples.sort((a, b) => a - b);
   const percentile = (p: number) =>

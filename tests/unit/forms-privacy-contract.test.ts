@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import {
   formsPrivateNoStoreHeaders,
   mapFormsPublicError,
@@ -6,6 +6,8 @@ import {
 } from '../../lib/forms/privacy-contract';
 
 describe('T005 private Forms transport and safe errors', () => {
+  afterEach(() => vi.unstubAllEnvs());
+
   it('requires HTTPS and marks answer responses private and non-cacheable', () => {
     expect(
       requestUsesHttps(new Request('https://forms.example.test/answers')),
@@ -17,6 +19,17 @@ describe('T005 private Forms transport and safe errors', () => {
     expect(headers.get('cache-control')).toBe('private, no-store, max-age=0');
     expect(headers.get('pragma')).toBe('no-cache');
     expect(headers.get('vary')).toContain('Authorization');
+  });
+
+  it('allows explicit local e2e HTTP only on loopback hosts', () => {
+    vi.stubEnv('LIFTER_E2E_ALLOW_HTTP', 'true');
+    expect(requestUsesHttps(new Request('http://localhost:3000/forms'))).toBe(
+      true,
+    );
+    expect(requestUsesHttps(new Request('http://127.0.0.1/forms'))).toBe(true);
+    expect(
+      requestUsesHttps(new Request('http://forms.example.test/forms')),
+    ).toBe(false);
   });
 
   it('allow-lists public errors and never reflects provider/database canaries', () => {

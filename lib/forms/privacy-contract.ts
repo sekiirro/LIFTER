@@ -18,7 +18,13 @@ export function formsPrivateNoStoreHeaders(): HeadersInit {
 
 /** Use the externally visible URL supplied by the server framework; do not trust forwarded headers here. */
 export function requestUsesHttps(request: Request): boolean {
-  return new URL(request.url).protocol === 'https:';
+  const url = new URL(request.url);
+  if (url.protocol === 'https:') return true;
+  return (
+    process.env.LIFTER_E2E_ALLOW_HTTP === 'true' &&
+    url.protocol === 'http:' &&
+    ['localhost', '127.0.0.1', '[::1]'].includes(url.hostname)
+  );
 }
 
 /** Convert internal failures to a short allow-listed code without reflecting error details. */
