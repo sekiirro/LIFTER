@@ -1,0 +1,25 @@
+{
+  "foodId": "food-cooked",
+  "version": 2,
+  "names": {
+    "ar": "أرز مطبوخ",
+    "en": "Rice cooked"
+  },
+  "basis": "g",
+  "productIdentity": "rice",
+  "preparationIdentity": "boiled",
+  "weighingState": "cooked",
+  "kcal": 130,
+  "protein": 2.7,
+  "carbs": 28,
+  "fat": 0.3,
+  "fiber": 0.4,
+  "serving": {
+    "servingId": "srv-100",
+    "labels": {
+      "ar": "100 غ",
+      "en": "100 g"
+    },
+    "basisQuantity": 100
+  }
+}
