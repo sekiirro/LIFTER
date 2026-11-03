@@ -3,13 +3,15 @@ import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 
+const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+
 for (const locale of ['ar', 'en'] as const) {
   test(`${locale}: login and recovery are accessible`, async ({
     page,
     context,
   }) => {
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: locale, url: 'http://localhost:3000' },
+      { name: LOCALE_COOKIE, value: locale, url: origin },
     ]);
     const m = getMessages(locale);
     for (const path of [
@@ -49,7 +51,7 @@ test('anonymous pages redirect with a same-site return path', async ({
   for (const path of ['/', '/some/unknown/path']) {
     await page.goto(path);
     await expect(page).toHaveURL(
-      `http://localhost:3000/login?next=${encodeURIComponent(path)}`,
+      `${origin}/login?next=${encodeURIComponent(path)}`,
     );
   }
   await page.goto('/login?next=//evil.example');

@@ -110,7 +110,7 @@ test.describe.serial('T038 invitation signup UI', () => {
       { exact: true },
     );
     await nameField.focus();
-    await page.keyboard.press('Tab');
+    await nameField.press('Tab');
     await expect(dateOfBirthField).toBeFocused();
     await nameField.fill('Heba');
     await dateOfBirthField.fill('2026-10-30');
