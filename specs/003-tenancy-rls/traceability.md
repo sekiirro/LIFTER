@@ -1,6 +1,6 @@
 # F3 Traceability - static source review
 
-Analyzed source commit: `d04ef52` (`origin/main` at branch creation). Code, migrations, workflow and tests were inspected statically; no tests or CI jobs were run. VERIFIED requires a concrete asserting test.
+Analyzed spec/plan/tasks head: `3237afa`. Code/test evidence baseline: `d04ef52` (branch base; this documentation amendment changed no source or test files). Code, migrations, workflow and tests were inspected statically; no tests or CI jobs were run. VERIFIED requires a concrete asserting test.
 
 | Requirement | Task(s) | Test(s) (file::test name) | Evidence | Status | Gap |
 |---|---|---|---|---|---|
@@ -20,10 +20,10 @@ Analyzed source commit: `d04ef52` (`origin/main` at branch creation). Code, migr
 | SC-002 | T005,T008,T009,T013 | `tests/integration/isolation.test.ts::(a) trainer A reads only A, including a targeted foreign lookup`; `tests/integration/governance.test.ts::${actor} cannot perform any governance write in A or B` | Commit `d04ef52` | PARTIAL | Multiple identities and negative cases are asserted, but not the entire per-table/per-governance-write/four-identity count. |
 | SC-003 | T004,T010,T013 | `tests/integration/matrix-parity.test.ts::T005 bidirectional parity: ${role} / ${capability}` | Commit `d04ef52` | VERIFIED | - |
 | SC-004 | T002,T006,T011-T013 | NOT-FOUND: no test asserts PR trigger, absence of secrets, and no-deploy together | `.github/workflows/ci.yml` statically inspected; commit `d04ef52` | PARTIAL | Workflow shows push/PR and integration jobs; no test enforces all constraints. |
-| FR-013 | T014,T016 | NOT-FOUND: no test asserts Workspace Owner active-member roster visibility for this approved scope | S30-PO-3 Q7; commit `d04ef52` | NOT-FOUND | Roster boundary and visible member fields await PO clarification; implementation and tests are future work. |
-| FR-014 | T015,T016 | NOT-FOUND: no database guard or asserting test for final-Platform-Owner removal/demotion exists | S30-PO-3 Q8; commit `d04ef52` | NOT-FOUND | Concurrent mutation behavior and database failure contract await PO clarification; implementation and tests are future work. |
-| SC-005 | T015,T016 | NOT-FOUND: no executed mutation test proves final-PO denial and add-first transfer | S30-PO-3 Q8; commit `d04ef52` | NOT-FOUND | Requires forward-only migration, executed sequential/concurrent mutation tests, and security review. |
-| SC-006 | T014,T016 | NOT-FOUND: no executed RLS mutation test proves the clarified active-member roster scope | S30-PO-3 Q7; commit `d04ef52` | NOT-FOUND | Requires PO scope decision, RLS change, executed positive/negative mutations, and security review. |
+| FR-013 | T014,T016 | NOT-FOUND: no test asserts Workspace Owner active-member roster visibility for this approved scope | S30-PO-3 Q7 + architect clarification S30-R8; evidence baseline `d04ef52` | NOT-FOUND | Approved scope is explicit in spec; no RLS implementation or asserting mutation test exists on the evidence baseline. |
+| FR-014 | T015,T016 | NOT-FOUND: no database guard or asserting test for final-Platform-Owner removal/demotion exists | S30-PO-3 Q8 + architect clarification S30-R8; evidence baseline `d04ef52` | NOT-FOUND | Approved operations, serialization, and generic error convention are explicit in spec; no guard or asserting mutation test exists on the evidence baseline. |
+| SC-005 | T015,T016 | NOT-FOUND: no executed mutation test proves final-PO denial and add-first transfer | S30-PO-3 Q8 + architect clarification S30-R8; evidence baseline `d04ef52` | NOT-FOUND | Requires forward-only migration, executed tests for each protected operation and concurrent demotions, and security review. |
+| SC-006 | T014,T016 | NOT-FOUND: no executed RLS mutation test proves the clarified active-member roster scope | S30-PO-3 Q7 + architect clarification S30-R8; evidence baseline `d04ef52` | NOT-FOUND | Requires RLS change, executed positive/negative mutations for the approved scope, and security review. |
 
 ## Static verification notes
 

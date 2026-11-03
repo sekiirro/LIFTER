@@ -1,49 +1,47 @@
 # Spec Kit Analyze — F3 governance amendment
 
-- Date: 2026-11-03 (refreshed after explicit open-ambiguity statement)
-- Analyzed source commit: `d04ef52` (`origin/main` at branch creation). This amendment is documentation-only.
-- Scope: S30-PO-3 Q6 source record and Q7 active-member roster / Q8 final-PO guard.
-- Method: static analysis of spec, plan, tasks, test/code tree and Constitution v1.5.0. No tests or builds run.
+- Date: 2026-11-03
+- Analyzed spec/plan/tasks head: `3237afa` (S30-R8 clarification commit).
+- Static code/test evidence baseline: `d04ef52` (the branch base; no code or test files changed in this amendment).
+- Scope: existing F3 plus the S30-PO-3 Q7/Q8 governance amendment reconciled by architect ruling S30-R8.
+- Method: static analysis of spec, plan, tasks, traceability, source tree and Constitution v1.5.0. No tests, builds, or CI were run.
 
 ## Inventory and entry check
 
-- Present at base: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `quickstart.md`, `contracts/db-contract.md`, `tasks.md`, `checklists/requirements.md`. `checklists/analyze.md` and `traceability.md` were missing and are added in this cycle.
-- Existing requirements: FR-001..FR-012, SC-001..SC-004, Given/When/Then user stories. This amendment adds FR-013..FR-014, SC-005..SC-006 and two explicit scenario groups.
-- Clarifications cite S30-PO-3 Q6/Q7/Q8. Unresolved product questions are listed in the out-of-repository SK-A PO register.
-- Plan covers forward-only database RLS/guard design, executed mutation tests and security review. T014..T016 are FR tagged and unchecked. S30-PO-3 Q6 is recorded as resolved in spec and plan.
-- Entry gate for implementation: FAIL pending PO clarification and architect security review.
+- Present: `spec.md`, `plan.md`, `research.md`, `data-model.md`, `quickstart.md`, `contracts/db-contract.md`, `tasks.md`, `checklists/requirements.md`, `traceability.md`, and this analysis.
+- `spec.md` has numbered FRs including FR-013/014, measurable SC-005/006, and Given/When/Then scenarios for both governance behaviors, including concurrent last-PO demotions.
+- Clarifications quote S30-PO-3 Q7/Q8 verbatim, cite `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md`, and identify S30-R8 as architect clarification of already-approved behavior. They explicitly say no open ambiguities remain within this approved F3 governance scope. Contact/profile fields are explicitly out of scope.
+- `plan.md` covers an RLS scope for the current Workspace Owner's own workspace, the existing active predicate, a forward-only guard, serialization, the generic privileged-operation error convention, mutation tests, and security review.
+- `tasks.md` has FR-tagged T014/T015/T016. The implementation and evidence tasks remain unchecked; no new task is started in this documentation review.
+- Entry check for a future implementation round: requirements and scenarios PASS; clarification PASS for this scope; plan/tasks PASS; Analyze is dated after spec/plan/tasks and has zero open CRITICAL/HIGH spec defects. Implementation still requires the listed mutation tests and architect security review.
 
 ## Findings
 
 | ID | Category | Severity | Location | Finding | Disposition |
 |---|---|---|---|---|---|
-| A1 | Ambiguity / access scope | HIGH | `spec.md` FR-013; PO register SK-003-04..06 | Q7 approves active-member visibility but does not define workspace boundary or which member fields a WO can read. | Do not implement FR-013 until PO answers. |
-| A2 | Ambiguity / data semantics | MEDIUM | `spec.md` FR-013 / SC-006; PO register SK-003-06 | The existing membership model distinguishes active/revoked, but Q7 does not separately state whether `revoked_at IS NULL` is the accepted active predicate for this roster. | Confirm PO interpretation before policy and tests. |
-| A3 | Concurrency / lockout | HIGH | `spec.md` FR-014; PO register SK-003-08 | Q8 approves a database guard but not concurrent remove/demote serialization or behavior when two mutations race. | Keep implementation blocked pending decision and architect review. |
-| A4 | Failure contract | MEDIUM | `spec.md` FR-014 / SC-005; PO register SK-003-09 | Database rejection is approved, but the SQL/API error contract is unspecified. | Do not add user-facing error semantics until PO decides. |
-| A5 | Traceability | MEDIUM | `traceability.md` FR-013/FR-014 and SC-005/SC-006 rows | No shipped code or asserting tests for FR-013/FR-014 or SC-005/SC-006 exist on analyzed commit; the existing 16 FR/SC rows are also mapped statically. | Rows correctly remain NOT-FOUND; tests are future tasks. |
-| A6 | Cross-artifact task coverage | LOW | `tasks.md` T014..T016 | Amendment tasks are tagged; T016 is shared review/evidence work. | Coverage recorded 2/2 FRs; 2/2 SCs. |
-| A7 | Operation semantics | HIGH | `spec.md` FR-014 / SC-005; PO register SK-003-10 | Q8 says the database refuses to "remove" the final PO but does not identify whether this means staff-profile deletion, auth-user deletion, role demotion, or another operation. | Do not choose the protected mutation; T015/T016 remain blocked pending PO decision. |
+| None | — | — | — | No open duplication, ambiguity, underspecification, task coverage, terminology, or constitution defect remains in this amendment. | S30-R8 resolves the earlier scope, active-state, concurrency, operation, and failure-contract questions within the PO-approved Q7/Q8 scope. |
 
 ## Coverage and constitution
 
-- FR to task coverage: 2/2 (100%); SC to task coverage: 2/2 (100%).
-- Task to requirement coverage: all amendment tasks map to FR-013/FR-014. T014/T015/T016 remain unchecked.
-- Constitution v1.5.0 review: Principle I isolation and Principle III least-authority governance make RLS/security review relevant; Principle VI requires preserving membership history. No implementation-level conformity claim is made before code and executed tests exist.
+- FR-to-task coverage: FR-013 and FR-014 each map to implementation and shared review/evidence tasks (2/2, 100%).
+- SC-to-task coverage: SC-005 and SC-006 map to T014/T015/T016 (2/2, 100%).
+- Every amendment task maps to FR-013/014 and/or SC-005/006; no orphan governance task found.
+- Constitution v1.5.0: Principle I requires workspace isolation; Principle III requires least-authority governance; Principle VI preserves membership history. The clarified own-workspace boundary and active predicate are consistent with these principles. The analysis makes no implementation-conformity claim without code and executed tests.
 
 ## Static traceability
 
-`traceability.md` contains 20 feature rows: 6 VERIFIED, 10 PARTIAL, 4 NOT-FOUND, 0 DEFERRED. All 16 existing FR/SC test citations were checked on the analyzed commit; the four amendment rows are NOT-FOUND. No test suite was run.
+`traceability.md` covers 20 feature rows: 6 VERIFIED, 10 PARTIAL, 4 NOT-FOUND, 0 DEFERRED. The existing feature citations are statically checked against `d04ef52`. FR-013/FR-014 and SC-005/SC-006 remain NOT-FOUND because no implementation or asserting tests exist on the evidence baseline. No test suite or CI job was run.
+
+## Implementation gates (not Analyze defects)
+
+- T014/T015/T016 must remain open until the forward-only implementation, executed positive/negative mutation tests (including two concurrent demotions and every protected operation), and architect security review are complete.
+- This is an implementation evidence/security gate, not an unresolved spec question or open CRITICAL/HIGH analysis finding.
 
 ## Verdict
 
-**FAIL — implementation gate blocked**: 3 HIGH, 3 MEDIUM, 1 LOW. The requirements capture only PO-approved behavior; open subquestions remain escalated. Do not implement until the HIGH items are resolved.
+**PASS — 0 open findings** (0 CRITICAL, 0 HIGH, 0 MEDIUM, 0 LOW). The governance amendment is ready for implementation planning under its explicit tests and security-review gates; this static document review does not claim implementation completion.
 
 ## History
 
-- Refresh: spec clarification explicitly lists the open ambiguities and points to the external SK-A register; no ambiguity was resolved.
-
-- Refresh: Q6 provenance is now reflected in spec and plan; T014/T015 precede T016 in the task dependency graph. "Remove" operation semantics are separately escalated as SK-003-10. The PO register consolidates roster field and contact visibility in SK-003-05. The FR-006 literal matrix test plus bidirectional parity prove the approved S30-PO-3 Q6 coaching_work roles; FR-006 is VERIFIED.
-
-- First SK-A amendment analysis on `origin/main` `d04ef52`; no prior Analyze history.
-- Refresh: plan ND-F3-2/ND-F3-3 now quote the resolved S30-PO-3 Q7/Q8 behavior and link the remaining subquestions to SK-003-04..09. No requirement meaning changed.
+- 2026-11-03, base analysis on `d04ef52`: found open scope/active-state questions (A1/A2), concurrency and failure-contract questions (A3/A4), missing implementation evidence (A5), coverage note (A6), and undefined removal operation (A7). The HIGH questions were routed as SK-003-04..10.
+- 2026-11-03, refreshed on `3237afa`: S30-R8 closed the scope questions as architect clarification of the existing PO-approved Q7/Q8 behavior. Implementation tests and security review remain gates, not specification defects. No PO question was raised.
