@@ -97,6 +97,7 @@ type Props = {
   adapter: FormsClientAdapter;
   assignmentId: string;
   initialAnswers?: FormAnswerSet;
+  profileValues?: Readonly<Record<string, string>>;
   initialRevision?: number;
   initialState?:
     'ready' | 'loading' | 'missing-required' | 'submitted' | 'conflict';
@@ -110,6 +111,7 @@ export function QuestionFlow({
   adapter,
   assignmentId,
   initialAnswers = {},
+  profileValues = {},
   initialRevision = 1,
   initialState = 'ready',
   history = [],
@@ -527,6 +529,7 @@ export function QuestionFlow({
             <QuestionControl
               question={current}
               value={answers[current.id]}
+              profileValue={profileValues[current.id]}
               locale={locale}
               messages={messages}
               disabled={locked}
@@ -620,6 +623,7 @@ export function QuestionFlow({
 function QuestionControl({
   question,
   value,
+  profileValue,
   locale,
   messages,
   disabled,
@@ -627,11 +631,24 @@ function QuestionControl({
 }: {
   question: LabeledQuestion;
   value: FormAnswer | undefined;
+  profileValue: string | undefined;
   locale: Locale;
   messages: ReturnType<typeof getMessages>;
   disabled: boolean;
   onChange: (value: FormAnswer) => void;
 }) {
+  if (question.type === 'profileText' || question.type === 'computedAge') {
+    return (
+      <output
+        className={styles.profileValue}
+        aria-label={question.title[locale]}
+      >
+        <Bidi dir={question.type === 'computedAge' ? 'ltr' : 'auto'}>
+          {profileValue ?? ''}
+        </Bidi>
+      </output>
+    );
+  }
   if (question.type === 'shortText' || question.type === 'longText') {
     return (
       <TextAnswerField

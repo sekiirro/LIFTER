@@ -3,6 +3,7 @@ import type { AnswerHistoryEntry } from '../../components/forms/CorrectionHistor
 import type { LabeledQuestion } from '../../components/forms/QuestionFlow';
 import type { FormAnswerSet } from './validation';
 import { applicableClientAnswers } from './client-answer-state';
+import { buildProfilePrefill, type SignupProfile } from './profile-prefill';
 import { createSessionClient } from '../supabase/server';
 
 type LoadedAssignment = {
@@ -12,6 +13,7 @@ type LoadedAssignment = {
   initialRevision: number;
   initialState: 'ready' | 'submitted';
   history: readonly AnswerHistoryEntry[];
+  profileValues: Readonly<Record<string, string>>;
 };
 
 export type ClientAssignmentResult =
@@ -79,6 +81,17 @@ export async function loadClientAssignment(
       ? localizedQuestions(snapshot.questions)
       : null;
     if (!questions) return { status: 'not_found' };
+    const rawProfile = context.signup_profile;
+    const signupProfile: SignupProfile | null =
+      record(rawProfile) &&
+      typeof rawProfile.full_name === 'string' &&
+      (typeof rawProfile.date_of_birth === 'string' ||
+        rawProfile.date_of_birth === null)
+        ? {
+            fullName: rawProfile.full_name,
+            dateOfBirth: rawProfile.date_of_birth,
+          }
+        : null;
 
     const { data: draftData, error: draftError } = await client.rpc(
       'read_client_form_draft',
@@ -131,6 +144,7 @@ export async function loadClientAssignment(
       initialRevision: latest?.version ?? (draftData.revision as number),
       initialState: latest ? 'submitted' : 'ready',
       history: visibleHistory,
+      profileValues: buildProfilePrefill(questions, signupProfile, new Date()),
     };
   } catch {
     return { status: 'unavailable' };

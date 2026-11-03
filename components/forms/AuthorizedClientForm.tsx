@@ -23,6 +23,7 @@ export function AuthorizedClientForm({
       adapter={adapter}
       assignmentId={assignmentId}
       initialAnswers={assignment.initialAnswers}
+      profileValues={assignment.profileValues}
       initialRevision={assignment.initialRevision}
       initialState={assignment.initialState}
       history={assignment.history}

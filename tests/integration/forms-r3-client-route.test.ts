@@ -98,6 +98,10 @@ it('T022 exposes only the signed client assignment and audited answer reads', as
     expect(own.context).toMatchObject({
       workspace_id: context.wsA.id,
       version_snapshot: definition,
+      signup_profile: {
+        full_name: 'U3 synthetic test',
+        date_of_birth: '1990-04-12',
+      },
     });
     expect(own.draft).toEqual({
       status: 'loaded',

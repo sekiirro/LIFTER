@@ -16,7 +16,7 @@ import { brandToCssVars } from '../../lib/design/tokens-css';
 import { getMessages } from '../../lib/i18n';
 
 const db = sql();
-const screenshotDir = join(tmpdir(), 'lifter-s26-f15-autosave');
+const screenshotDir = join(tmpdir(), 'lifter-s29-f15-h5');
 let assignmentId = '';
 let email = '';
 let password = '';
@@ -39,6 +39,22 @@ test.beforeAll(async () => {
   const policy = `t022-e2e-${randomUUID()}`;
   const definition = {
     questions: [
+      {
+        id: 'B01',
+        sectionId: 'basic',
+        type: 'profileText',
+        required: false,
+        profileField: 'fullName',
+        title: { en: 'Full name', ar: '' },
+      },
+      {
+        id: 'B02',
+        sectionId: 'basic',
+        type: 'computedAge',
+        required: false,
+        dateOfBirthField: 'dateOfBirth',
+        title: { en: 'Age', ar: '' },
+      },
       {
         id: 'goal',
         sectionId: 'basic',
@@ -139,6 +155,18 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
             name: locale === 'en' ? 'Client intake' : 'بيانات العميل',
           }),
         ).toBeVisible();
+        await expect(page.locator('output')).toHaveText('U3 synthetic test');
+        await page.screenshot({
+          path: join(screenshotDir, `${locale}-${theme}-${width}-b01.png`),
+          fullPage: true,
+        });
+        await page.getByRole('button').nth(1).click();
+        await expect(page.locator('output')).toHaveText('36');
+        await page.screenshot({
+          path: join(screenshotDir, `${locale}-${theme}-${width}-b02.png`),
+          fullPage: true,
+        });
+        await page.getByRole('button').nth(1).click();
         await expect(
           page.getByRole('textbox', {
             name: locale === 'en' ? 'Your goal' : 'هدفك',
@@ -149,7 +177,7 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
           .analyze();
         expect(violations.violations).toEqual([]);
         await page.screenshot({
-          path: join(screenshotDir, `${locale}-${theme}-${width}.png`),
+          path: join(screenshotDir, `${locale}-${theme}-${width}-goal.png`),
           fullPage: true,
         });
       }
