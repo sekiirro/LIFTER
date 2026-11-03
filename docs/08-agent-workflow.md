@@ -8,30 +8,34 @@ applies to every unit that changes rendered UI.
 
 - **Claude - architect, orchestrator, independent reviewer.** Drafts briefs and technical designs,
   manages dependencies and merge order, reviews actual diffs and evidence, and presents unresolved
-  product or design decisions to the PO. Claude does not code or run Git, tests, or Docker; read-only
-  `gh` inspection is allowed.
+  product or design decisions to the PO. Claude may independently run read-only verification commands
+  (Git read commands, `gh` read queries, `docker inspect`, and SELECT-only database reads). Claude
+  performs no repository writes, migrations, test runs, or stack modifications; agents execute those
+  actions. (S29-PO-3 Q4)
+- No AI agent may independently make product decisions, whether discovered during Specify, Clarify,
+  Analyze, implementation, or reviews. Clarify is mandatory for every feature and records ?zero open
+  ambiguities? explicitly when none exist. Before implementation, the current Analyze must postdate the
+  latest spec, plan, or tasks change and have zero open CRITICAL/HIGH findings. Unresolved product
+  decisions are presented as numbered MCQs with options, implications, and a recommendation; wait for
+  explicit PO approval. (S29-PO-2; S29-PO-3 Q1-Q2)
 - **Delegated agents (Codex, or OpenCode for the GLM tier) own implementation and Git operations.** They own bounded implementation and checks. Codex may delegate eligible low-risk work through OpenCode; writers do not approve their own work.
 
 ## Adaptive Model Routing
 
-Choose the cheapest capable reliable model allowed by the task's risk and sensitivity. Escalate
-GLM -> Luna -> Sol when capability or reliability evidence requires it; do not down-route a sensitive
-or high-risk task.
+Use the current PO-approved model and agent allocation records. High-risk work (security, Auth, RLS,
+SECURITY DEFINER, migrations, admission, Storage policies, and financial logic) requires independent
+architect review and executed mutation tests; never expand sensitive permissions without PO approval.
+Third-party/free models must not receive secrets or `.env` values. PO-approved free-model use excludes
+secrets, client data, and sensitive tasks (S13; S29-PO-3 Q3). Model-routing details and eligibility
+require PO source support; see the S30 compliance report for any item still needing source confirmation.
 
-- **GLM 5.3 Flash free:** `opencode/glm-5.3-flash-free` through OpenCode using the
-  `opencode-delegate` skill. Eligible for documentation, implementation, CI workflows, configuration
-  and other low- to moderate-risk tasks when complexity, risk, cost and the performance log support
-  it; give it fully specified briefs. The architect independently reviews every GLM change, and an
-  agent proves the relevant tests and checks pass before it is committed or merged. Route genuinely
-  high-risk security, Auth, RLS, SECURITY DEFINER, migrations, admission, Storage policies and
-  financial logic to Luna High or Sol Medium. Never give a third-party-routed model secrets or `.env`
-  values.
-- **Luna High:** `gpt-6-luna` at `high` is the standard for moderate work and tasks not suited to GLM.
-- **Sol Medium:** `gpt-6.1-sol` at `medium` is for complex, security-sensitive, or otherwise high-risk
-  work, including spec-debate critiques. Record a one-line reason for each Sol dispatch.
-- **Prohibited:** Sol High and any `xhigh` effort. The maximum tier is Sol Medium.
-- **No permitted tier available:** if every permitted tier is unavailable or at capacity, the architect stops the delegation and asks the PO for direction; it never retries without limit or substitutes a model outside the permitted tiers.
-- The architect maintains `~/.lifter/model-performance-log.md` outside the repository, with one row per delegation: model, effort, task class, outcome, review notes, and cost. Verify actual model and effort in each delegation result.
+- **Free/third-party models:** Never provide secrets or `.env` values; S13 also excludes client data
+  and sensitive tasks from PO-approved free-model use. S29-PO-3 Q3 requires independent architect
+  review and executed mutation tests for high-risk work. Do not expand sensitive permissions without PO
+  approval. Specific model/task eligibility must follow an explicit PO source; do not infer it from
+  agent capacity or prior technical recommendations.
+- Current Luna/MiniMax assignments and remaining Hero work follow the latest PO records (S25-PO-9 and S29-PO-1). Do not generalize a feature-specific assignment into a global model-risk rule.
+- If the applicable PO source does not establish model eligibility or escalation, record a PO-decision-needed item and do not route that task based on inference.
 
 ## Mandatory Spec Debate
 
@@ -79,7 +83,7 @@ Before asking the PO to approve a merge to `main`, require items 1-5 on the exac
 1. A completed CodeRabbit review is APPROVED on the exact PR head (`commit_id == headRefOid`), with no later CHANGES_REQUESTED or DISMISSED review.
 2. PR `reviewDecision` is APPROVED.
 3. There are zero unresolved review threads and all actionable findings are resolved.
-4. Both GitHub Actions CI runs for the PR head are completed with success, and required security checks are green: the `push`-event run with `headSha == headRefOid` is the independent, non-author rerun of typecheck, lint, unit, and applicable integration/e2e gates; the `pull_request`-event run checks the merge result with current `main`. Agent-reported local results never substitute. Claude (architect) does not run tests or git and verifies both runs.
+4. Both GitHub Actions CI runs for the PR head are completed with success, and required security checks are green: the `push`-event run with `headSha == headRefOid` is the independent, non-author rerun of typecheck, lint, unit, and applicable integration/e2e gates; the `pull_request`-event run checks the merge result with current `main`. Agent-reported local results never substitute. Claude (architect) does not run tests or Git writes and verifies both runs.
 5. The architect has independently reviewed the actual diff and evidence.
 
 Then ask the PO for explicit merge approval and record the approved head SHA with that approval.
