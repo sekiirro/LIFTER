@@ -1,7 +1,7 @@
 # Spec Kit Analyze — F14 Production Registration Hero (S30 Glisse option 1a / 1b)
 
-- Date: 2026-11-03
-- Analyzed base: `abda24cb9ef585c6edfe22d2e82f6c8318b4b250` (`014-hero-glisse`, S29 reviewed ACCEPTED-PARTIAL) plus the S30 working-tree implementation of S30-PO-2 (option 1a) and S30-PO-6 (90% tint).
+- Date: 2026-11-03 (Round 5, after the executed evidence)
+- Analyzed base: `abda24cb9ef585c6edfe22d2e82f6c8318b4b250` (`014-hero-glisse`, S29 reviewed ACCEPTED-PARTIAL) plus the S30 working-tree implementation of S30-PO-2 (option 1a) and S30-PO-6 (90% tint), committed as `1ba237432e22377d4ad74e2d49aa8b69aebe2dc1`.
 - Inputs: `spec.md` (FR-026..FR-030, SC-018..SC-022, Hero acceptance scenarios, `## Clarifications`), `plan.md` (Hero scope mapping), `tasks.md` (T052..T056), `hero-implementation-plan.md`, `traceability.md`, `.specify/memory/constitution.md` v1.4.0.
 - Scope: T052 only — the Hero-scoped dense dark-form field surface and the dark-theme form/CTA tint (FR-027 theme resolution, FR-029 approved Glisse treatment; SC-019, SC-021). FR-028 (signup fields) and FR-030 (preferences pill) are owned by other tasks/lanes and are not touched here.
 - Method: read-only cross-artifact review per `.claude/skills/speckit-analyze/SKILL.md`; `.specify/extensions.yml` is absent, so no extension hooks apply; no tests were executed for this Analyze; the running work started before this Analyze is revalidated below (S29-PO-3 Q5).
@@ -52,7 +52,7 @@ T052 maps to FR-026, FR-027 and FR-029, and to SC-018, SC-019 and SC-021; every 
 
 ## Next actions
 
-Complete T052: run the focused unit source test, the 48-row contrast matrix on dev and production, the two executed mutations, and the 32-capture screenshot matrix with axe; then tick T052 and cite that evidence in `traceability.md`, and keep T055/T056 open.
+T052 implementation and assertions are complete on code head `1ba2374`: unit 32/32, dev matrix 54/54, production matrix 54/54, 32/32 screenshots with axe 0, and both required mutations killed and restored with `git diff --exit-code` clean. T052 stays unchecked until the PO visual review of the regenerated screenshot matrix against prototype `97debaf` closes the remaining FR-026 gap (A3); `T055` (hosted CI / CodeRabbit / performance evidence) and `T056` (final requirement reconciliation) remain open with their owners.
 
 ## History
 
@@ -60,3 +60,4 @@ Complete T052: run the focused unit source test, the 48-row contrast matrix on d
 - Round 2 at `e0a012f98e2d7c4a76b89037b7517a525ba1934b`: accepted static traceability/decision citations for the F14 Hero scope.
 - Round 3 at `75aa62a6495bd9b2675b6e2f993eb283fdb8611b`: accepted FR-026..030 / SC-018..022 and T052..T056 committed to `spec.md`, `plan.md`, `tasks.md`, `hero-implementation-plan.md`.
 - Round 4 at this file (2026-11-03, `014-hero-glisse`): accepted Hero coverage applied to this branch, S30-PO-2/S30-PO-6 recorded in the Clarifications and plans, and the running T052 work revalidated per S29-PO-3 Q5. Coverage remains complete with 0 CRITICAL/HIGH findings.
+- Round 5 at this file (2026-11-03, after the executed evidence was recorded): the T052 assertions executed and passed on code head `1ba2374` (unit 32/32; dev matrix 54 expected / 0 unexpected; production matrix 54 expected / 0 unexpected; 32 screenshots with axe 0; mutation (i) and (ii) killed and restored with a clean `git diff --exit-code`). FR-027, FR-029, SC-019 and SC-021 are VERIFIED; FR-026 and SC-018 stay PARTIAL on the named prototype-review gap (A3), so T052 remains unchecked. No CRITICAL/HIGH finding was introduced.
