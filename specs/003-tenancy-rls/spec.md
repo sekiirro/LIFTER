@@ -128,7 +128,7 @@ The database prevents removal or demotion of the final Platform Owner. The PO-ap
 - S30-PO-3 Q6 resolves the existing `coaching_work` matrix source: PO/WO/Trainer are allowed and Sales is denied. No code changes are part of this documentation cycle.
 - S30-PO-3 Q7 approves Workspace Owner visibility of active members for roster administration. Roster boundary and visible member fields remain open PO questions.
 - S30-PO-3 Q8 approves a database guard against removing or demoting the final Platform Owner, with transfer by adding a new PO first. Concurrency and mutation failure details remain open PO questions.
-- No further product behavior is inferred by this amendment. Open questions and blockers are listed in the SK-A PO decision register.
+- Open ambiguities remain for roster boundary, visible fields, active-state semantics, final-PO removal operation, concurrency, and failure contract. Each is listed with options and blocked work in the SK-A PO decision register at `C:/Users/NEW LAP/.lifter/runs/s30-luna-sk-a6/po-decisions.md`; this amendment resolves none of those items.
 
 ### Key Entities
 

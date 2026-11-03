@@ -1,6 +1,6 @@
 # Spec Kit Analyze — F3 governance amendment
 
-- Date: 2026-11-03 (refreshed after Q6 provenance, task dependency, and PO-item cross-reference reconciliation)
+- Date: 2026-11-03 (refreshed after explicit open-ambiguity statement)
 - Analyzed source commit: `d04ef52` (`origin/main` at branch creation). This amendment is documentation-only.
 - Scope: S30-PO-3 Q6 source record and Q7 active-member roster / Q8 final-PO guard.
 - Method: static analysis of spec, plan, tasks, test/code tree and Constitution v1.5.0. No tests or builds run.
@@ -41,6 +41,8 @@
 **FAIL — implementation gate blocked**: 3 HIGH, 3 MEDIUM, 1 LOW. The requirements capture only PO-approved behavior; open subquestions remain escalated. Do not implement until the HIGH items are resolved.
 
 ## History
+
+- Refresh: spec clarification explicitly lists the open ambiguities and points to the external SK-A register; no ambiguity was resolved.
 
 - Refresh: Q6 provenance is now reflected in spec and plan; T014/T015 precede T016 in the task dependency graph. "Remove" operation semantics are separately escalated as SK-003-10. The PO register consolidates roster field and contact visibility in SK-003-05. The FR-006 literal matrix test plus bidirectional parity prove the approved S30-PO-3 Q6 coaching_work roles; FR-006 is VERIFIED.
 
