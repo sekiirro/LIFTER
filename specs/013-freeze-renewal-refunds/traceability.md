@@ -8,9 +8,9 @@ Static source inspection and review of historical evidence recorded in `tasks.md
 | FR-002 | T002,T005,T007,T010,T017 | `tests/integration/matrix-parity.test.ts`; TypeScript/SQL parity checks recorded by T017 | VERIFIED |
 | FR-003 | T001,T009,T012,T013,T017 | `tests/unit/refund-ledger.test.ts`; `refund-allocation.test.ts`; F12 ledger contract probes | VERIFIED |
 | FR-004 | T006,T007 | `tests/unit/freeze-calendar.test.ts` gap/fold and Cairo boundary cases | VERIFIED |
-| FR-005 | T007,T011,T012,T014 | `tests/integration/freeze-lifecycle.test.ts::T008 preserves F12 activation and delivered-access facts...`; renewal activation tests | VERIFIED |
+| FR-005 | T007,T011,T012,T014 | `tests/integration/freeze-lifecycle.test.ts::T008 preserves F12 activation and delivered-access facts...` (asserts freeze triggers and table existence only); no named assertion covers no activation or delivery on full refund | PARTIAL |
 | FR-006 | T006-T008 | `tests/integration/freeze-lifecycle.test.ts::T008 has a serialized freeze operation...`; unit duration/overlap tests | VERIFIED |
-| FR-007 | T007,T011 | `tests/integration/freeze-lifecycle.test.ts::T008 committed-style freeze facts feed the existing entitlement projection...` | VERIFIED |
+| FR-007 | T007,T008,T011 | `tests/integration/freeze-lifecycle.test.ts::T008 committed-style freeze facts feed the existing entitlement projection...` | VERIFIED |
 | FR-008 | T006-T008 | `tests/integration/freeze-lifecycle.test.ts` Stop boundary/day-credit cases; `tests/unit/freeze-lifecycle.test.ts` | VERIFIED |
 | FR-009 | T007-T008 | `tests/integration/freeze-lifecycle.test.ts` Remove/reversal and delivered-access clamp cases | VERIFIED |
 | FR-010 | T007,T010,T011 | `tests/integration/renewal-operations.test.ts::T010 reuses F12 installment snapshots and anchors renewal dues...`; freeze schedule invariants | VERIFIED |
@@ -57,6 +57,6 @@ Static source inspection and review of historical evidence recorded in `tasks.md
 
 ## Summary
 
-- Functional requirements: 33 VERIFIED, 3 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- Functional requirements: 32 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Success criteria: 9 VERIFIED, 5 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
-- Total: 42 VERIFIED / 8 PARTIAL. Static review only; no tests were run. T019 remains open; T020 is `[DEFERRED: docs/04-changes-and-questions.md D-20]`.
+- Total: 41 VERIFIED / 9 PARTIAL. Static review only; no tests were run. T019 remains open; T020 is `[DEFERRED: docs/04-changes-and-questions.md D-20]`.
