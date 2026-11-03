@@ -326,6 +326,22 @@ These are architect-flagged implementation consequences, not additional PO decis
 
 Only unresolved policy remains here. Former questions decided by the Session 12/13 PO records are closed and mapped below.
 
+## Clarifications
+
+### Session 2026-11-03 — compliance reconciliation
+
+- **Decision register:** `docs/04-changes-and-questions.md` D-13, D-15, and D-20; S22-PO-5 in `C:/Users/NEW LAP/.lifter/briefs/s22-po-decisions-verbatim.md`; final F13 decisions and retention constraints in this specification.
+- **Result:** No new ambiguity in the merged F13 product scope. ND-01 and ND-08 remain resolved as already recorded. T019's retention feasibility and B4 audit/client retention remain open under D-20 and are escalated; no retention value is inferred. T020 is `[DEFERRED: docs/04-changes-and-questions.md D-20]` because D-20 limits development/testing to local Docker and provides no hosted non-production project.
+- **Evidence limit:** Static source/test inspection only. No hosted, production, or stack actions and no test suites were run in this lane.
+
+## Clarifications
+
+### Session 2026-11-03 — compliance reconciliation
+
+- **Decision register:** `docs/04-changes-and-questions.md` D-13, D-15, and D-20; S22-PO-5 in `C:/Users/NEW LAP/.lifter/briefs/s22-po-decisions-verbatim.md`; final F13 decisions and retention constraints in this specification.
+- **Result:** No new ambiguity in the merged F13 product scope. ND-01 and ND-08 remain resolved as already recorded. T019's retention feasibility and B4 audit/client retention remain open under D-20 and are escalated; no retention value is inferred. T020 is `[DEFERRED: docs/04-changes-and-questions.md D-20]` because D-20 limits development/testing to local Docker and provides no hosted non-production project.
+- **Evidence limit:** Static source/test inspection only. No hosted, production, or stack actions and no test suites were run in this lane.
+
 - **ND-01 — DECIDED 2026-10-29 (Final PO APPROVAL):** Freeze duration is 1–30 calendar days; freezes do not overlap, while sequential freezes are allowed. The Apply day counts as frozen and the STOP day is excluded. This closes freeze duration and overlap policy.
 - **ND-08 — DECIDED 2026-10-29 (Final PO APPROVAL):** Purchases remain financially independent. A refund never automatically refunds or shifts another purchase. PO-1 global client deactivation applies; any other-purchase resolution is manual. This closes cross-purchase refund policy.
 
