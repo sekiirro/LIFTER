@@ -146,4 +146,66 @@ describe('FoodCreateFlow save errors', () => {
     });
     expect(container.querySelectorAll('[role="alert"]')).toHaveLength(1);
   });
+
+  it('locks near-match confirmation and cancellation while save is pending', async () => {
+    actions.review.mockResolvedValue({
+      status: 'near',
+      candidates: [
+        {
+          id: 'similar-rice',
+          names: { en: 'Rice' },
+          basis: 'g',
+          kcal: 130,
+        },
+      ],
+    });
+    let resolveSave!: (value: { status: 'ok' }) => void;
+    actions.save.mockReturnValue(
+      new Promise<{ status: 'ok' }>((resolve) => {
+        resolveSave = resolve;
+      }),
+    );
+    await act(async () => {
+      root.render(
+        createElement(FoodCreateFlow, {
+          locale: 'en',
+          role: 'po',
+          initialDraft: draft,
+        }),
+      );
+    });
+    await act(async () => {
+      container.querySelector('button')?.click();
+    });
+    const confirmation = container.querySelector<HTMLInputElement>(
+      'input[type="checkbox"]',
+    );
+    expect(confirmation).not.toBeNull();
+    await act(async () => confirmation!.click());
+    const buttons = [...container.querySelectorAll('button')];
+    const confirm = buttons.find((button) =>
+      button.textContent?.includes(en['catalog.duplicateContinue']),
+    );
+    const cancel = buttons.find((button) =>
+      button.textContent?.includes(en['catalog.duplicateCancel']),
+    );
+    expect(confirm).toBeDefined();
+    expect(cancel).toBeDefined();
+    await act(async () => {
+      confirm!.click();
+      confirm!.click();
+    });
+
+    expect(actions.save).toHaveBeenCalledTimes(1);
+    expect(confirm!.disabled).toBe(true);
+    expect(cancel!.disabled).toBe(true);
+    await act(async () => {
+      cancel!.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+    });
+    expect(container.querySelector('[data-testid="duplicate-review"]')).not.toBe(
+      null,
+    );
+
+    await act(async () => resolveSave({ status: 'ok' }));
+  });
 });
