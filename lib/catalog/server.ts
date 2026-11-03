@@ -314,7 +314,10 @@ export function createCatalogServer(deps: CatalogDependencies) {
       mutate(
         i,
         operationNames.writeVariation,
-        (a) => isPO(a) || scoped(a, i.workspaceId),
+        (a) =>
+          typeof i.workspaceId === 'string' &&
+          i.workspaceId.trim().length > 0 &&
+          (isPO(a) || scoped(a, i.workspaceId)),
         (x) => ({
           p_workspace_id: x.workspaceId,
           p_exercise_id: x.id,
