@@ -272,6 +272,79 @@ it('keeps D-03 Trainer-late Q4 stages independent, supports seven-day catch-up, 
   ).rejects.toBe(rollback);
 });
 
+it('skips finished client-late schedules before taking a bounded evaluator batch', async () => {
+  const f = await clientContext();
+  const client = await registered(f);
+  await expect(
+    db.begin(async (tx) => {
+      const submittedAssignment = await formAssignment(
+        tx,
+        f.wsA.id,
+        client.id,
+        '2026-04-01T00:00:00.000Z',
+        f.po.userId,
+      );
+      const completedStageAssignment = await formAssignment(
+        tx,
+        f.wsA.id,
+        client.id,
+        '2026-04-02T00:00:00.000Z',
+        f.po.userId,
+      );
+      for (const assignmentId of [
+        submittedAssignment,
+        completedStageAssignment,
+      ]) {
+        await tx`update app_private.form_alert_schedules
+          set trainer_user_id=${f.trainerA.userId}
+          where workspace_id=${f.wsA.id} and source_assignment_id=${assignmentId}
+            and alert_kind='client_late'`;
+      }
+      await tx`insert into public.form_answer_revisions(
+        workspace_id,assignment_id,revision,answer_values
+      ) values(${f.wsA.id},${submittedAssignment},1,${tx.json({})})`;
+      await tx`insert into app_private.form_submissions(
+        workspace_id,assignment_id,revision,submitted_at
+      ) values(${f.wsA.id},${submittedAssignment},1,'2026-04-01T01:00:00Z')`;
+      const [finishedSchedule] = await tx`
+        select id from app_private.form_alert_schedules
+        where workspace_id=${f.wsA.id} and source_assignment_id=${completedStageAssignment}
+          and alert_kind='client_late'
+      `;
+      await tx`
+        insert into app_private.form_alert_occurrences(
+          workspace_id,schedule_id,stage,recipient_user_id,job_id,enqueued_at
+        ) values
+          (${f.wsA.id},${finishedSchedule?.id},'client_owners_48h',${f.po.userId},null,'2026-04-04T00:00:00Z'),
+          (${f.wsA.id},${finishedSchedule?.id},'client_owners_48h',${f.woA.userId},null,'2026-04-04T00:00:00Z')
+      `;
+
+      const trainerAssignment = await formAssignment(
+        tx,
+        f.wsA.id,
+        client.id,
+        null,
+        f.po.userId,
+      );
+      const [trainerSchedule] = await tx`
+        insert into app_private.form_alert_schedules(
+          workspace_id,source_assignment_id,alert_kind,deadline_at,trainer_user_id
+        ) values(
+          ${f.wsA.id},${trainerAssignment},'trainer_late','2026-04-10T00:00:00Z',${f.trainerA.userId}
+        ) returning id
+      `;
+      const result = await core(tx, f.wsA.id, '2026-04-12T00:00:00Z', 1);
+      expect(result.status).toBe('ok');
+      const occurrence = await tx`
+        select id from app_private.form_alert_occurrences
+        where workspace_id=${f.wsA.id} and schedule_id=${trainerSchedule?.id}
+      `;
+      expect(occurrence.length).toBeGreaterThan(0);
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
+
 it('rechecks recipient authorization at enqueue time and returns a safe error for invalid evaluation input', async () => {
   const f = await clientContext();
   const client = await registered(f);
