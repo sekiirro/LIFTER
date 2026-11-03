@@ -34,12 +34,13 @@ Changes were checked against the current code. Current edits include:
 - Stack D focused integration: `forms-r3-assignment-invariants.test.ts`, 2/2 passed through S30-R7 Node launcher and safe wrapper.
 - `npx tsc --noEmit`: passed.
 - `git diff --check`: passed before report generation.
-- Prettier write applied to the changed files; format check is still required.
+- Prettier check on all changed source, test, and report files: passed. `git diff --check`: passed.
 - Full unit/lint/typecheck/build/build:edge/secrets/size/migration/full Stack D/full Playwright gates were not run. No CodeRabbit review was requested in this boundary.
 
 ## Review state and blob changes
 
-- CodeRabbit latest known review head remains `c976d661593cb3b40287c35282cc538af45dbace`; this round did not request another review. The 9 threads listed at the start of h7b are still open pending commit replies/resolutions; NY4I remains actionable.
-- Signup blob: `app/register/[token]/SignupForm.tsx`, prior h6 blob `77f8a6c:app/register/[token]/SignupForm.tsx`; current blob is recorded by the commit.
+- CodeRabbit latest review head remains `c976d661593cb3b40287c35282cc538af45dbace`; no new review was requested. Eight addressed threads were replied to and resolved with commit `93d7be92485a14c4dd84af53d43d09629eab5ccd`; unresolved count is 1 (`PRRT_kwDOVYgYQ86zNY4I`).
+- SIGNUP BLOB CHANGES: `app/register/[token]/SignupForm.tsx`, prior blob `77f8a6c`; new blob `a3a5fac373af2d551ba171eede396a8081aae0d2`.
 - PO-DECISION-NEEDED: none found in these fixes.
 - This report records a partial boundary; T009/T024 task status was not changed.
+
