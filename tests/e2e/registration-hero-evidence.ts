@@ -794,3 +794,291 @@ export async function expectHeroFocusRing(page: Page) {
   // Leave the surface in its resting state for the matrix capture.
   await input.evaluate((element) => element.blur());
 }
+
+/** Measure the filled-button boundary without changing the existing helper. */
+export async function measureHeroButtonBoundary(page: Page) {
+  await page.locator('form button[type="submit"]').scrollIntoViewIfNeeded();
+  const geometry = await page.evaluate(() => {
+    const stage = document.querySelector<HTMLElement>(
+      '[data-registration-hero]',
+    );
+    const button = document.querySelector<HTMLButtonElement>(
+      'form button[type="submit"]',
+    );
+    if (!stage || !button) throw new Error('Hero submit button unavailable');
+    const style = getComputedStyle(button);
+    const root = getComputedStyle(document.documentElement);
+    return {
+      hasBanner: stage.dataset.hasBanner === 'true',
+      background: style.backgroundColor,
+      borderColor: style.borderTopColor,
+      borderStyle: style.borderTopStyle,
+      borderWidth: style.borderTopWidth,
+      brandFill: root.getPropertyValue('--brand-fill').trim(),
+      x:
+        button.getBoundingClientRect().x +
+        button.getBoundingClientRect().width / 2,
+      y: button.getBoundingClientRect().y,
+    };
+  });
+  if (!geometry.hasBanner) return null;
+  const image = await page.screenshot();
+  const dimensions = await page.evaluate(() => ({
+    width: innerWidth,
+    height: innerHeight,
+  }));
+  const x = Math.min(dimensions.width - 1, Math.max(0, Math.round(geometry.x)));
+  const borderY = Math.min(
+    dimensions.height - 1,
+    Math.max(0, Math.round(geometry.y)),
+  );
+  const backdropY = Math.max(0, borderY - 4);
+  const borderColor = pixelHex(screenshotPixel(image, x, borderY));
+  const ringColor = pixelHex(
+    screenshotPixel(image, x, Math.max(0, borderY - 1)),
+  );
+  const faceColor = pixelHex(
+    screenshotPixel(image, x, Math.min(dimensions.height - 1, borderY + 2)),
+  );
+  const backdropColor = pixelHex(screenshotPixel(image, x, backdropY));
+  const fillEdgeRatio = contrast(
+    cssLuminance(`#${faceColor}`),
+    cssLuminance(`#${backdropColor}`),
+  );
+  const outerEdgeRatio = contrast(
+    cssLuminance(`#${ringColor}`),
+    cssLuminance(`#${backdropColor}`),
+  );
+  const faceEdgeRatio = contrast(
+    cssLuminance(`#${borderColor}`),
+    cssLuminance(`#${faceColor}`),
+  );
+  return {
+    ratio: Math.max(fillEdgeRatio, outerEdgeRatio, faceEdgeRatio),
+    fillEdgeRatio,
+    outerEdgeRatio,
+    faceEdgeRatio,
+    borderColor: `#${borderColor}`,
+    ringColor: `#${ringColor}`,
+    backdropColor: `#${backdropColor}`,
+  };
+}
+
+export type HeroGlisseContrastEvidence = {
+  body: number;
+  label: number;
+  link: number | null;
+  button: number;
+  minText: number;
+  fieldBorder: number;
+  focusRing: number;
+  minNonText: number;
+};
+
+function composite(foreground: Rgb, alpha: number, background: Rgb): Rgb {
+  return foreground.map(
+    (channel, index) =>
+      alpha * channel + (1 - alpha) * (background[index] ?? 0),
+  ) as Rgb;
+}
+
+function pointsForRect(rect: {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}) {
+  const xPoints = Array.from({ length: 7 }, (_, index) =>
+    Math.round(rect.x + (rect.width * index) / 6),
+  );
+  const yPoints = Array.from({ length: 3 }, (_, index) =>
+    Math.round(rect.y + (rect.height * index) / 2),
+  );
+  return yPoints.flatMap((y) => xPoints.map((x) => ({ x, y })));
+}
+
+function minimumTextContrast(color: string, samples: Rgb[]) {
+  const foreground = parseRenderedColor(color);
+  return Math.min(
+    ...samples.map((backdrop) =>
+      contrast(
+        luminance(...composite(foreground.rgb, foreground.alpha, backdrop)),
+        luminance(backdrop[0], backdrop[1], backdrop[2]),
+      ),
+    ),
+  );
+}
+
+/**
+ * Measure the rendered contrast of the production hero controls over the
+ * translucent Glisse card. Text pixels are temporarily hidden so the samples
+ * contain the actual card/artwork composite, including the 8px backdrop blur.
+ */
+export async function measureHeroGlisseContrast(
+  page: Page,
+): Promise<HeroGlisseContrastEvidence> {
+  const heading = page.locator('.formPlate h1, h1').first();
+  const label = page.locator('form label > span:first-child').first();
+  const button = page.locator('form button[type="submit"]').first();
+  const link = page.locator('.formPlate a, form a').first();
+
+  await heading.scrollIntoViewIfNeeded();
+  const headingBox = await heading.boundingBox();
+  if (!headingBox) throw new Error('Hero heading is not measurable');
+  const headingBackdrop = await renderedBackdrop(
+    page,
+    heading,
+    pointsForRect(headingBox),
+  );
+  const body = minimumTextContrast(
+    headingBackdrop.color,
+    headingBackdrop.samples,
+  );
+
+  await label.scrollIntoViewIfNeeded();
+  const labelBox = await label.boundingBox();
+  if (!labelBox) throw new Error('Hero label is not measurable');
+  const labelBackdrop = await renderedBackdrop(
+    page,
+    label,
+    pointsForRect(labelBox),
+  );
+  const labelRatio = minimumTextContrast(
+    labelBackdrop.color,
+    labelBackdrop.samples,
+  );
+
+  let linkRatio: number | null = null;
+  if (await link.count()) {
+    await link.scrollIntoViewIfNeeded();
+    const linkBox = await link.boundingBox();
+    if (!linkBox) throw new Error('Hero link is not measurable');
+    const linkBackdrop = await renderedBackdrop(
+      page,
+      link,
+      pointsForRect(linkBox),
+    );
+    linkRatio = minimumTextContrast(linkBackdrop.color, linkBackdrop.samples);
+  }
+
+  await button.scrollIntoViewIfNeeded();
+  const buttonEvidence = await button.evaluate((element) => {
+    const style = getComputedStyle(element);
+    const color = style.color;
+    const range = document.createRange();
+    range.selectNodeContents(element);
+    const rect = range.getBoundingClientRect();
+    const previousColor = element.style.color;
+    const previousFill = element.style.webkitTextFillColor;
+    element.style.color = 'transparent';
+    element.style.webkitTextFillColor = 'transparent';
+    return {
+      color,
+      rect: {
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height,
+      },
+      previousColor,
+      previousFill,
+    };
+  });
+  const buttonPng = await page.screenshot();
+  await button.evaluate(
+    (element, restore) => {
+      element.style.color = restore.color;
+      element.style.webkitTextFillColor = restore.fill;
+    },
+    {
+      color: buttonEvidence.previousColor,
+      fill: buttonEvidence.previousFill,
+    },
+  );
+  const buttonSamples = pointsForRect(buttonEvidence.rect).map((point) =>
+    screenshotPixel(buttonPng, point.x, point.y),
+  ) as Rgb[];
+  const buttonRatio = minimumTextContrast(buttonEvidence.color, buttonSamples);
+
+  const focusInput = page.locator('input[name="name"]');
+  await focusInput.scrollIntoViewIfNeeded();
+  await focusInput.focus();
+  await page.waitForTimeout(100);
+  const nonText = await page.evaluate(() => {
+    const field = document.querySelector<HTMLElement>(
+      'form label > span:nth-child(2)',
+    );
+    if (!field) throw new Error('Hero non-text targets unavailable');
+    const fieldStyle = getComputedStyle(field);
+    const ringStyle = getComputedStyle(field, '::after');
+    const root = getComputedStyle(document.documentElement);
+    const rect = field.getBoundingClientRect();
+    const tokenProbe = document.createElement('span');
+    tokenProbe.style.backgroundColor = root
+      .getPropertyValue('--color-card')
+      .trim();
+    tokenProbe.style.color = root
+      .getPropertyValue('--color-border-strong')
+      .trim();
+    document.body.append(tokenProbe);
+    const tokens = getComputedStyle(tokenProbe);
+    const tokenCard = tokens.backgroundColor;
+    const tokenBorder = tokens.color;
+    tokenProbe.remove();
+    return {
+      borderColor: tokenBorder,
+      fieldBackground: root.getPropertyValue('--color-card-raised').trim(),
+      ringColor: ringStyle.borderTopColor,
+      ringWidth: ringStyle.borderTopWidth,
+      tokenCard,
+      rect: {
+        x: rect.x,
+        y: rect.y,
+        width: rect.width,
+        height: rect.height,
+      },
+      fieldBackgroundColor: fieldStyle.backgroundColor,
+    };
+  });
+  const focusPng = await page.screenshot();
+  const focusX = Math.max(
+    0,
+    Math.round(nonText.rect.x + nonText.rect.width / 2),
+  );
+  const ringY = Math.max(0, Math.floor(nonText.rect.y) - 1);
+  const innerY = Math.max(0, Math.ceil(nonText.rect.y) + 3);
+  const outerY = Math.max(0, Math.floor(nonText.rect.y) - 5);
+  const ringPixel = screenshotPixel(focusPng, focusX, ringY) as Rgb;
+  const innerPixel = screenshotPixel(focusPng, focusX, innerY) as Rgb;
+  const outerPixel = screenshotPixel(focusPng, focusX, outerY) as Rgb;
+  const fieldBorder = contrast(
+    cssLuminance(nonText.borderColor),
+    cssLuminance(nonText.fieldBackground),
+  );
+  const focusRing = Math.min(
+    contrast(
+      luminance(ringPixel[0], ringPixel[1], ringPixel[2]),
+      luminance(innerPixel[0], innerPixel[1], innerPixel[2]),
+    ),
+    contrast(
+      luminance(ringPixel[0], ringPixel[1], ringPixel[2]),
+      luminance(outerPixel[0], outerPixel[1], outerPixel[2]),
+    ),
+  );
+  await page
+    .locator('input[name="name"]')
+    .evaluate((element) => element.blur());
+
+  const minText = Math.min(body, labelRatio, buttonRatio);
+  const minNonText = Math.min(fieldBorder, focusRing);
+  return {
+    body,
+    label: labelRatio,
+    link: linkRatio,
+    button: buttonRatio,
+    minText,
+    fieldBorder,
+    focusRing,
+    minNonText,
+  };
+}
