@@ -193,6 +193,42 @@ describe('food editor (T029)', () => {
     expect(container.querySelector('a[href$="-alternative-0"]')).not.toBeNull();
   });
 
+  it('clears alternative errors when a row is removed', async () => {
+    const twoAlternatives = {
+      ...base,
+      alternatives: [
+        { foodId: '', portionQuantity: '', portionUnit: '' },
+        { foodId: '', portionQuantity: '', portionUnit: '' },
+      ],
+    };
+    await act(async () => {
+      root.render(
+        createElement(FoodEditor, {
+          locale: 'en',
+          initialDraft: twoAlternatives,
+          initialErrors: {
+            alternativeFoods: ['required', 'required'],
+            alternativePortions: ['positive', 'positive'],
+            alternativeUnits: ['required', 'required'],
+            alternatives: 'too_many',
+          },
+        }),
+      );
+    });
+    await act(async () => {
+      container
+        .querySelectorAll('button')
+        .item(1)
+        ?.dispatchEvent(new dom.MouseEvent('click', { bubbles: true }));
+    });
+    expect(
+      container.querySelector('a[href$="-alternative-0"]'),
+    ).toBeNull();
+    expect(container.querySelector('[id$="-alternatives-error"]')).toBeNull();
+    expect(container.querySelector('select[id$="-alternative-0"]')?.getAttribute('aria-invalid')).toBeNull();
+    expect(container.querySelector('input[id$="-portion-0"]')?.getAttribute('aria-invalid')).toBeNull();
+  });
+
   it('clears all dependent macro errors once the macro sum is valid', () => {
     const invalid = { ...base, protein: '40', carbs: '40', fat: '30' };
     const errors = validateFoodEditorDraft(invalid);
