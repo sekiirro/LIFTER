@@ -63,7 +63,7 @@ describe('variation mapping load failures', () => {
       expect(exercise).not.toBeNull();
       await act(async () => {
         exercise!.value = 'exercise-a';
-        exercise!.dispatchEvent(new dom.Event('change', { bubbles: true }));
+        exercise!.dispatchEvent(new dom.Event('change', { bubbles: true }) as unknown as Event);
         await Promise.resolve();
         await Promise.resolve();
       });
@@ -78,7 +78,7 @@ describe('variation mapping load failures', () => {
         container
           .querySelector('form')
           ?.dispatchEvent(
-            new dom.Event('submit', { bubbles: true, cancelable: true }),
+            new dom.Event('submit', { bubbles: true, cancelable: true }) as unknown as Event,
           );
         await Promise.resolve();
       });
