@@ -8,7 +8,7 @@
 
 - Present: `spec.md` (FR-001..008, SC-001..004 and three user-story scenario groups with Given/When/Then), `plan.md`, `tasks.md`, `checklists/requirements.md`.
 - Missing at base: `checklists/analyze.md`, `traceability.md`, standalone Clarifications section.
-- Clarification: plan `NEEDS DECISION` states ?None blocking?; configurable defaults are technical and dead-letter alerting is deferred to the notifications feature. No unresolved product ambiguity identified for F6 scope.
+- Clarification: plan `NEEDS DECISION` states None blocking; configurable defaults are technical and dead-letter alerting is deferred to the notifications feature. No unresolved product ambiguity identified for F6 scope.
 - Plan/tasks: all 8 FRs map to T001-T008; the existing task descriptions lacked explicit FR tags. This review added tags without changing task meaning or checkboxes.
 - Constitution I, VII, IX and platform delivery constraints reviewed; no conflict found.
 - Entry gate: spec/scenarios PASS; plan/tasks PASS after tags; clarification state recorded; Analyze is current with 0 open CRITICAL/HIGH findings.
@@ -29,13 +29,13 @@ FR-to-task mapping is 8/8 (100%). Task-to-FR mapping is explicit after this repa
 
 ## Verdict
 
-**PASS WITH DOCUMENTATION REPAIR** ? 0 CRITICAL, 0 HIGH, 0 open MEDIUM, 0 LOW. One prior MEDIUM traceability issue is resolved by FR-tagging T001-T008.
+**PASS WITH DOCUMENTATION REPAIR** | 0 CRITICAL, 0 HIGH, 0 open MEDIUM, 0 LOW. One prior MEDIUM traceability issue is resolved by FR-tagging T001-T008.
 
 ## History
 
 - First SK-A merged-feature analysis on `origin/main` `ed88574`; no earlier Analyze history existed.
 
-## Review refresh ? 2026-11-03
+## Review refresh - 2026-11-03
 
 - Replaced corrupted question-mark delimiters in the clarification and verdict. The FR tags are retained because the SK-A common repair method explicitly requires tasks to be tagged with their FR IDs; no task descriptions or checkboxes were changed in this documentation repair.
 - Refreshed after static review of the seven follow-up CodeRabbit findings.
