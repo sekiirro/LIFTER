@@ -221,7 +221,9 @@ test.describe.serial('T038 invitation signup UI', () => {
     await usernameField.fill('system');
 
     await mkdir(s31ScreenshotDirectory, { recursive: true });
-    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+    await page.addStyleTag({
+      content: 'nextjs-portal { display: none !important; }',
+    });
     await nameField.focus();
     await page.screenshot({
       path: join(s31ScreenshotDirectory, 'signup-focus-ring-en-light-390.png'),
@@ -356,7 +358,9 @@ test.describe.serial('T038 invitation signup UI', () => {
       '',
     );
     await mkdir(s31ScreenshotDirectory, { recursive: true });
-    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+    await page.addStyleTag({
+      content: 'nextjs-portal { display: none !important; }',
+    });
     await page.screenshot({
       path: join(s31ScreenshotDirectory, 'signup-success-en-light-390.png'),
       fullPage: true,
