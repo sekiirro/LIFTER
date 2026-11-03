@@ -47,3 +47,44 @@ Feature-specific workout and nutrition document schemas, catalog snapshots, calc
 ## Source trace
 
 PO S20 Message B section 4 and the S20 handoff section 0-S20-FINAL, REQUIRED NEXT SESSION RECONCILIATION item 1. These are binding overrides under DR-03.
+
+
+## Success criteria (approved S29-PO-5 / S30-PO-4 Q4)
+
+### SC-001 - Stable plan identity and private drafts
+
+**Success criterion:** For an existing plan, editing, saving a draft, and publishing retain its Plan ID; changes in a private draft are not client-visible before Ready & Publish succeeds, and publishing appends a revision to that same plan.
+
+**Given/When/Then:** Given a published plan with Plan ID P, when authorized staff edit it and save the draft, then the plan remains P and the draft is not client-visible. When Ready & Publish succeeds, then the published revision is appended under P and the draft changes become visible through the published plan.
+
+### SC-002 - Explicit creation only
+
+**Success criterion:** Exactly one new Plan ID is created by an explicit Create New Plan action; edits, autosaves, Save as Draft, Ready & Publish, and retries create no additional plan.
+
+**Given/When/Then:** Given an authorized actor and an existing plan, when the actor edits, autosaves, saves a draft, publishes, or retries any such operation, then no additional Plan ID is created. When the actor explicitly chooses Create New Plan from blank, a template, or an authorized existing plan, then exactly one new Plan ID is created.
+
+### SC-003 - Independent first deliveries
+
+**Success criterion:** The first workout and first nutrition plans can each be delivered successfully on separate days; the first successful delivery alone does not activate the subscription, and the second successful first delivery completes the two-delivery condition.
+
+**Given/When/Then:** Given a subscription without either first delivery, when its first workout plan is successfully delivered, then that delivery remains durable and the subscription is not activated. When its first nutrition plan is successfully delivered on a later day, then both independent first-delivery records exist and the activation condition is met.
+
+### SC-004 - Durable, idempotent activation
+
+**Success criterion:** After both independent first deliveries succeed, activation and its single productivity unit complete exactly once, either with the second delivery or through a durable activation retry; concurrent, retried and exactly replayed deliveries yield one durable result per first plan and create no duplicate activations or productivity units.
+
+**Given/When/Then:** Given both first-delivery records, when the second delivery succeeds and activation completes in that transaction, then one activation and one productivity unit exist. Given activation cannot complete with that delivery, when the delivery commits, then a durable activation retry exists. When retry or exact replay is processed, then activation eventually succeeds once and there is one productivity unit.
+
+### SC-005 - Later revisions preserve activation state
+
+**Success criterion:** Later edits and published revisions preserve immutable revision, authorship, and audit history and do not change subscription activation state or productivity credit.
+
+**Given/When/Then:** Given a subscription activated after both first deliveries, when staff edit and publish a later revision, then the revision is appended with its authorship and audit evidence, while activation state and productivity credit remain unchanged.
+
+
+
+## Clarifications
+
+- S29-PO-5 answer "B" approved drafting measurable SCs and Given/When/Then for PC-FR-001..007 and PO S20 Message B, with PO approval required for exact wording before commit.
+- S30-PO-4 Q4 answered verbatim: "A: Approve with my 2 changes (Recommended)". The accepted edits are the SC-004 addition of "concurrent" delivery outcomes and SC-005 use of "productivity credit"; exact accepted criteria and scenarios are recorded above.
+- No open ambiguity remains in SC-001..SC-005. Existing implementation dependencies and unverified work remain tracked in `plan.md` and `tasks.md`; they are not requirement ambiguities.
