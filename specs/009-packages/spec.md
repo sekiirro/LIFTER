@@ -127,6 +127,14 @@ The PO opens `/packages` from the signed-in landing, selects a workspace, create
 
 These data/policy decisions do not block local development. Existing [production readiness](../../docs/07-production-readiness.md) gates remain open; this feature authorizes no deployment or cloud migration.
 
+## Clarifications
+
+### Session 2026-11-03 — compliance reconciliation
+
+- **Decision register:** `docs/04-changes-and-questions.md` D-09/D-10, D-11, D-13, and D-17; `NEEDS DECISION` ND-F9-1..5 above.
+- **Result:** ND-F9-1..5 remain open as written. This clarification does not resolve or narrow them. They do not block local development; they remain decision gates for the affected product policy/catalog and production uses. No other ambiguity was identified in the merged F9 scope.
+- **Evidence limit:** Static source/test inspection only; no tests were executed in this lane.
+
 ## Assumptions
 
 - Existing auth, tenancy, audit and Design System from `origin/main` are reused. This run writes artifacts only; Claude's independent implementation review remains required.
