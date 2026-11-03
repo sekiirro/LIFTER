@@ -1,9 +1,9 @@
 # Analyze: F8 Free-tier Validation Prep
 
 - **Date:** 2026-11-03
-- **Analyzed commit:** `f08ee556eb22f6b33ddd4297251e868ea82e1a16` (Part 3 branch head before the local F8 Clarify/task-tag edits; edits included in this analysis)
+- **Analyzed revisions:** baseline `f08ee556eb22f6b33ddd4297251e868ea82e1a16`; final evidence review `0449b10075254be9bd31ce6296cf0404abea63d8` (includes the Clarifications and task scope tags). This follow-up clarifies tag semantics without changing requirements, evidence status, or task completion.
 - **Scope:** static consistency and evidence review; no tests, deployments, cloud queries, or stack actions performed.
-- **Inventory:** `spec.md` (FR-001..008, SC-001..004, scenarios, ND-F8-1..3), `plan.md`, `tasks.md`, `checklists/requirements.md`, scripts/tests/report/quickstart; no prior feature `checklists/analyze.md` or `traceability.md`.
+- **Inventory:** `spec.md` (FR-001..008, SC-001..004, scenarios, ND-F8-1..3), `plan.md`, `tasks.md`, `checklists/requirements.md`, scripts/tests/report/quickstart; the baseline had no feature-level `checklists/analyze.md` or `traceability.md`, which this S30 reconciliation adds.
 
 ## Findings
 
@@ -15,7 +15,7 @@
 
 ## Coverage and consistency
 
-- FR-to-task mapping: 8/8. SC-to-task mapping: 4/4. Task IDs are now tagged with FR/SC scope; no task checkbox changed.
+- FR-to-task mapping: 8/8. SC-to-task mapping: 4/4. Task FR/SC tags describe implementation scope; they do not identify evidence owners. `traceability.md` maps each criterion to cited evidence and may list a different task ID. No task checkbox changed.
 - The Clarifications entry preserves preparation-only scope and all missing inputs/approvals.
 - Static checks/tests were inspected; no tests, local stacks, cloud APIs, or deployments were run. Historical checked tasks T010/T011 are not re-executed here.
 

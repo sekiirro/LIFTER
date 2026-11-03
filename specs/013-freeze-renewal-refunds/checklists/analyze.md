@@ -33,9 +33,9 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 ## S30 current-head refresh
 
 - **Date:** 2026-11-03
-- **Analyzed commit:** `506e3bf4135b49319e0bdabab4d5166e2d608f5b` (Part 3 branch head before the local Clarify/T020 status update)
+- **Analyzed revisions:** baseline `506e3bf4135b49319e0bdabab4d5166e2d608f5b`; S30 current-head static review `0449b10075254be9bd31ce6296cf0404abea63d8`, including the final Clarifications and T020 D-20 deferral.
 - **Scope:** current `spec.md`, `plan.md`, `tasks.md`, existing analysis history, code/tests, and D-20/B4 production readiness. Static review only; no tests, stack operations, hosted queries, or deployments.
-- **Entry inventory:** 36 FRs and 14 SCs; plan/tasks exist; existing requirements and analysis checklists exist; Clarifications added after the named head. T001-T018 are checked with historical evidence, T019 remains open, and T020 is now explicitly deferred by D-20.
+- **Entry inventory:** 36 FRs and 14 SCs; plan/tasks exist; existing requirements and analysis checklists exist; Clarifications at the reviewed head cite D-13, D-15, D-20, and S22-PO-5. T001-T018 are checked with historical evidence, T019 remains open, and T020 is explicitly deferred by D-20.
 
 ### Findings
 

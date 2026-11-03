@@ -1,6 +1,6 @@
 # Traceability: F8 Free-tier Validation Prep
 
-Static source inspection only. No tests, stacks, deployments, cloud queries, or secret scans were run in this compliance lane. VERIFIED means a concrete asserting test/control exists, not that it was freshly executed.
+Static source inspection only. No tests, stacks, deployments, cloud queries, or secret scans were run in this compliance lane. VERIFIED means a concrete asserting test/control exists, not that it was freshly executed. Task FR/SC tags identify implementation scope; matrix task IDs identify the cited evidence owner and need not match scope tags.
 
 | Requirement | Task(s) | Asserting test/control | Evidence | Status |
 |---|---|---|---|---|

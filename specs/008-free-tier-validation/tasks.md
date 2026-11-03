@@ -9,6 +9,8 @@
 - Don't touch `LIFTER_Claude_Files/`, `DESIGN.md`, `docs/`, `.specify/` or `specs/` (except checking tasks off).
 - Codex sandbox: vitest with `--configLoader native --pool threads`.
 
+**Task tag semantics:** FR/SC tags on tasks indicate implementation scope, not evidence ownership. The `traceability.md` matrix maps requirements and success criteria to cited assertions or controls; its task IDs identify evidence owners and may differ from scope tags.
+
 ## Phase 1: Foundational
 
 - [x] T001 [P] `scripts/free-tier/lib/stats.mjs` + `.d.mts` (FR-004, FR-007):
