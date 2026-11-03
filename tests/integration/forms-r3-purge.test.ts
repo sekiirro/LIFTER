@@ -142,6 +142,10 @@ it('T018 purges all answer-bearing lifecycle rows after the source event + 30 da
         insert into app_private.form_submission_intents(workspace_id,assignment_id,intent_key,request_hash,result)
         values(${context.wsA.id},${assignmentId},${intentKey},decode(repeat('ab',32),'hex'),${tx.json({ status: 'submitted' })})
       `;
+      await tx`
+        insert into app_private.form_draft_intents(workspace_id,assignment_id,intent_key,request_hash,result)
+        values(${context.wsA.id},${assignmentId},${randomUUID()},decode(repeat('ef',32),'hex'),${tx.json({ status: 'saved' })})
+      `;
       for (const sourceKind of ['closure', 'refund', 'deactivation'] as const) {
         await tx`
           insert into app_private.form_retention_windows(workspace_id,client_id,source_event_id,source_kind,ended_at)
@@ -160,6 +164,7 @@ it('T018 purges all answer-bearing lifecycle rows after the source event + 30 da
         'app_private.form_submissions',
         'app_private.form_submission_slas',
         'app_private.form_submission_intents',
+        'app_private.form_draft_intents',
         'app_private.form_corrections',
         'app_private.form_correction_intents',
       ]) {
@@ -169,6 +174,45 @@ it('T018 purges all answer-bearing lifecycle rows after the source event + 30 da
         );
         expect(row?.count, table).toBe(0);
       }
+      let draftIntentMutationKilled = false;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`
+            insert into app_private.form_draft_intents(
+              workspace_id,assignment_id,intent_key,request_hash,result
+            ) values(
+              ${context.wsA.id},${assignmentId},${randomUUID()},
+              decode(repeat('ef',32),'hex'),${sp.json({ status: 'saved' })}
+            )
+          `;
+          const [functionRow] = await sp`
+            select pg_catalog.pg_get_functiondef(
+              'app_private.purge_ended_form_answers_at(uuid,uuid,timestamptz)'::regprocedure
+            ) as body
+          `;
+          const source = functionRow?.body as string;
+          const start = source.indexOf(
+            'delete from app_private.form_draft_intents',
+          );
+          const end = source.indexOf(';', start);
+          expect(start).toBeGreaterThanOrEqual(0);
+          expect(end).toBeGreaterThan(start);
+          const mutant = source.slice(0, start) + source.slice(end + 1);
+          await sp.unsafe(mutant);
+          await sp`select app_private.purge_ended_form_answers(${context.wsA.id},${client.id})`;
+          const [remaining] = await sp`
+            select count(*)::int as count from app_private.form_draft_intents
+            where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}
+          `;
+          try {
+            expect(remaining?.count).toBe(0);
+          } catch {
+            draftIntentMutationKilled = true;
+          }
+          throw rollback;
+        }),
+      ).rejects.toBe(rollback);
+      expect(draftIntentMutationKilled).toBe(true);
       expect(
         await tx`select id from public.forms where id=${formId}`,
       ).toHaveLength(1);
@@ -229,6 +273,42 @@ it('T018 purges all answer-bearing lifecycle rows after the source event + 30 da
         }),
       ).rejects.toBe(rollback);
       expect(purgeMutationKilled).toBe(true);
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
+
+it('T018 purge runner advances beyond completed clients in a bounded batch', async () => {
+  const context = await clientContext();
+  const first = await registered(context);
+  const second = await registered(context);
+  const firstEvent = randomUUID();
+  const secondEvent = randomUUID();
+
+  await expect(
+    db.begin(async (tx) => {
+      await tx`
+        insert into app_private.form_retention_windows(
+          workspace_id,client_id,source_event_id,source_kind,ended_at
+        ) values
+          (${context.wsA.id},${first.id},${firstEvent},'closure',clock_timestamp()-interval '40 days'),
+          (${context.wsA.id},${second.id},${secondEvent},'refund',clock_timestamp()-interval '35 days')
+      `;
+      const [firstBatch] = await tx`
+        select app_private.f15_forms_purge_run_batch(1) as purged
+      `;
+      expect(firstBatch?.purged).toBe(1);
+      const [secondBatch] = await tx`
+        select app_private.f15_forms_purge_run_batch(1) as purged
+      `;
+      expect(secondBatch?.purged).toBe(1);
+      const completed = await tx`
+        select client_id from app_private.form_purge_completions
+        where workspace_id=${context.wsA.id}
+      `;
+      expect(completed.map((row) => row.client_id).sort()).toEqual(
+        [first.id, second.id].sort(),
+      );
       throw rollback;
     }),
   ).rejects.toBe(rollback);
