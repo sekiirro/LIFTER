@@ -48,7 +48,7 @@ Post-design re-check: no new violations. The amendment is the only deviation, an
 
 This documentation delta records only the merged Glisse Liquid Glass surfaces approved in S21-PO-1/2/6 and accepted for merge by S27-PO-1, S28-PO-1 and S28-PO-2. PR #28 shipped the floating mobile navigation capsule, desktop dock, floating action controls, accessible popover menu, deferred refraction on capable devices, and static fallbacks for unsupported/preferences/constrained/over-budget cases. Dense data, forms and financial content remain mostly solid (S21-PO-1; PR #28 body). The merged commit is `12bcad944c9366f17afc00a36bd14586c5f2e77a`.
 
-No implementation change is planned. Existing requirements and NEEDS DECISION rows remain in force; the new FR-027..FR-029 and SC-008..SC-009 cover only the merged PR #28 behavior. The exact measurable TBT gate comes from S21-PO-6: median delta no greater than +50 ms against baseline, using 15 interleaved paired samples per arm; PR #28 reports desktop −4 ms [−22,+6] and mobile −3 ms [−12,+6].
+No implementation change is planned. Existing requirements and NEEDS DECISION rows remain in force; the new FR-027..FR-029 and SC-008..SC-009 cover only the merged PR #28 behavior. The exact measurable TBT gate comes from S21-PO-6: median delta no greater than +50 ms against baseline, using 15 interleaved paired samples per arm; PR #28 reports desktop −4 ms [−22,+6] and mobile −3 ms [−12,+6]. The raw report outputs are absent from this checkout, T046 remains open, and SC-008 is PARTIAL; these PR-reported medians are not locally verified evidence.
 
 ## NEEDS DECISION (PO open items, DESIGN.md §11; provisional values only, not presented as approved)
 
