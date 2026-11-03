@@ -36,7 +36,7 @@ Evidence commits: original Design System implementation `be29751`, `e2df0cd`, `b
 | FR-028 | T043, T046, T048, T049 | Existing unit tests cover fallback selection and the browser test covers over-budget focus identity; T048-T049 remain unchecked for Q16 and all fallback conditions | PARTIAL |
 | FR-029 | T045 | `tests/unit/glass-popover-menu.test.tsx::opens on ArrowUp at the last item and on ArrowDown at the first`; `::moves focus with arrows and wraps at either end`; `::supports Home and End and closes without trapping Tab`; `::returns focus to the trigger on Escape`; `::activates the focused item with Space`; `tests/e2e/glass.spec.ts::popover ArrowDown navigation works after enhancement` | VERIFIED |
 | SC-001 | T007 | `tests/unit/tokens-contrast.test.ts` contrast assertions for both modes and sample colors | VERIFIED |
-| SC-002 | T031 | `tests/e2e/a11y.spec.ts` AR/EN Ã— dark/light axe matrix | VERIFIED |
+| SC-002 | T031 | `tests/e2e/a11y.spec.ts` AR/EN × dark/light axe matrix | VERIFIED |
 | SC-003 | T032, T036, T045 | `tests/e2e/components.spec.ts` keyboard cases; `tests/e2e/shell.spec.ts` desktop/mobile keyboard cases | VERIFIED |
 | SC-004 | T019 | `tests/e2e/theme-locale.spec.ts::cookies are already reflected in response HTML`; device color tests | VERIFIED |
 | SC-005 | T010 | `tests/unit/messages.test.ts::has identical nonempty catalogs` | VERIFIED |
