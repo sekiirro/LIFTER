@@ -224,6 +224,11 @@ for (const locale of ['ar', 'en'] as const) {
           );
         expect(options.length).toBeGreaterThan(0);
         expect(options.every(({ value, label }) => value !== label)).toBe(true);
+        expect(
+          await page.evaluate(
+            () => document.documentElement.scrollWidth <= window.innerWidth,
+          ),
+        ).toBe(true);
         await assertAxe(page);
         await page.screenshot({
           path: join(
