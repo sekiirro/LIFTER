@@ -33,6 +33,7 @@ export type FoodEditorProps = {
   initialErrors?: FoodEditorErrors;
   alternatives?: readonly FoodAlternativeOption[];
   status?: 'ready' | 'saving' | 'error' | 'success';
+  saveErrorDescription?: string;
   onSubmit?: (
     input: ReturnType<typeof buildFoodEditorInput>,
     draft: FoodEditorDraft,
@@ -49,6 +50,7 @@ export function FoodEditor({
   initialErrors = {},
   alternatives = [],
   status = 'ready',
+  saveErrorDescription,
   onSubmit,
 }: FoodEditorProps) {
   const m = getMessages(locale);
@@ -276,7 +278,7 @@ export function FoodEditor({
       </header>
       {status === 'error' && (
         <Alert tone="error" title={m['catalog.foodSaveError']}>
-          <p>{m['catalog.foodSaveErrorDescription']}</p>
+          <p>{saveErrorDescription ?? m['catalog.foodSaveErrorDescription']}</p>
         </Alert>
       )}
       {status === 'success' && (

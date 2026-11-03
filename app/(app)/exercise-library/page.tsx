@@ -86,7 +86,12 @@ export default async function ExerciseLibraryPage({
   const muscle = value(params.muscle);
   const equipment = value(params.equipment);
   const cursorValue = value(params.cursor);
-  const workspaceId = value(params.workspace) || null;
+  const workspaceId =
+    params.workspace === undefined
+      ? null
+      : typeof params.workspace === 'string' && UUID.test(params.workspace)
+        ? params.workspace
+        : notFound();
   if (
     workspaceId &&
     actor.role !== 'platform_owner' &&

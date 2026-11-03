@@ -34,7 +34,10 @@ const foodIds = (query = '', filters = {}) =>
 describe('catalog list projection', () => {
   it('uses the submitted query when pending input changes the live query', () => {
     const initial = initialCatalogShellState('exercise', 'previous search');
-    const edited = reduceCatalogShellState(initial, { type: 'query', value: '' });
+    const edited = reduceCatalogShellState(initial, {
+      type: 'query',
+      value: '',
+    });
     expect(edited.query).toBe('');
     expect(hasSubmittedCatalogSearch(edited.search)).toBe(true);
   });

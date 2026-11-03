@@ -152,13 +152,6 @@ export function FoodCreateFlow({
             selectedExisting.names.ar}
         </p>
       )}
-      {state === 'error' && (
-        <p role="alert">
-          {alternativeSaveBlocked
-            ? m['catalog.foodAlternativeSaveUnavailable']
-            : m['catalog.foodSaveErrorDescription']}
-        </p>
-      )}
       <FoodEditor
         locale={locale}
         role={role}
@@ -167,6 +160,11 @@ export function FoodCreateFlow({
         initialDraft={draft}
         alternatives={alternatives}
         status={state}
+        saveErrorDescription={
+          alternativeSaveBlocked
+            ? m['catalog.foodAlternativeSaveUnavailable']
+            : m['catalog.foodSaveErrorDescription']
+        }
         onSubmit={(_, nextDraft, selectedWorkspaceId) => {
           void inspect(nextDraft, selectedWorkspaceId);
         }}

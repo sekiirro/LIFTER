@@ -20,6 +20,7 @@ vi.mock('../../components/catalog/FoodEditor', () => ({
   FoodEditor: (props: {
     initialDraft: FoodEditorDraft;
     status?: 'ready' | 'saving' | 'error' | 'success';
+    saveErrorDescription?: string;
     onSubmit?: (
       input: unknown,
       draft: FoodEditorDraft,
@@ -29,7 +30,9 @@ vi.mock('../../components/catalog/FoodEditor', () => ({
     createElement(
       'div',
       null,
-      props.status === 'error' ? createElement('div', { role: 'alert' }, 'Save failed') : null,
+      props.status === 'error'
+        ? createElement('div', { role: 'alert' }, props.saveErrorDescription)
+        : null,
       createElement(
         'button',
         {
@@ -128,11 +131,13 @@ describe('FoodCreateFlow save errors', () => {
     actions.review.mockResolvedValue({ status: 'none' });
     actions.save.mockResolvedValue({ status: 'invalid' });
     await act(async () => {
-      root.render(createElement(FoodCreateFlow, {
-        locale: 'en',
-        role: 'po',
-        initialDraft: draft,
-      }));
+      root.render(
+        createElement(FoodCreateFlow, {
+          locale: 'en',
+          role: 'po',
+          initialDraft: draft,
+        }),
+      );
     });
     await act(async () => {
       container.querySelector('button')?.click();

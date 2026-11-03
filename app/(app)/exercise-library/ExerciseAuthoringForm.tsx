@@ -20,6 +20,7 @@ export function ExerciseAuthoringForm({
   id,
   expectedVersion,
   exercise,
+  instructions,
 }: {
   locale: Locale;
   role: CatalogStaffRole;
@@ -28,6 +29,7 @@ export function ExerciseAuthoringForm({
   id?: string;
   expectedVersion?: number;
   exercise?: NormalizedExercise;
+  instructions?: Partial<Record<'ar' | 'en', string>>;
 }) {
   const router = useRouter();
   const [status, setStatus] = useState<'ready' | 'saving' | 'error'>('ready');
@@ -57,6 +59,7 @@ export function ExerciseAuthoringForm({
         operationKey: operationKey.current.key,
         id,
         expectedVersion,
+        instructions,
       });
       if (result.status === 'ok') {
         const libraryHref = workspaceId

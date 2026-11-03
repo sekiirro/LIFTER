@@ -14,6 +14,7 @@ import {
   catalogSearchKeyAction,
   formatCatalogCount,
   hasActiveCatalogFilters,
+  hasSubmittedCatalogSearch,
   initialCatalogShellState,
   reduceCatalogShellState,
   selectCatalogItems,
@@ -66,8 +67,7 @@ export function CatalogListShell({
   const visible = serverFiltered
     ? items
     : selectCatalogItems(items, state.search);
-  const hasSearch =
-    state.query.trim().length > 0 || hasActiveCatalogFilters(state.filters);
+  const hasSearch = hasSubmittedCatalogSearch(state.search);
   const filterKeys = CATALOG_FILTER_KEYS[kind];
   const canClear =
     state.query.length > 0 || hasActiveCatalogFilters(state.filters);

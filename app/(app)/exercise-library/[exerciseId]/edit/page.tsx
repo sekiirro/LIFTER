@@ -43,6 +43,15 @@ export default async function EditExercisePage({
   }
   const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
   const m = getMessages(locale);
+  const payload = row.payload as Record<string, unknown>;
+  const instructions = {
+    ...(typeof payload.instructions_ar === 'string'
+      ? { ar: payload.instructions_ar }
+      : {}),
+    ...(typeof payload.instructions_en === 'string'
+      ? { en: payload.instructions_en }
+      : {}),
+  };
   return (
     <main className={styles.main} dir={dirFor(locale)} lang={locale}>
       <header className={styles.header}>
@@ -66,6 +75,7 @@ export default async function EditExercisePage({
         id={row.exercise_id}
         expectedVersion={row.version}
         exercise={exercise}
+        instructions={instructions}
       />
     </main>
   );

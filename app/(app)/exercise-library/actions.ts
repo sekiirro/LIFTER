@@ -21,10 +21,12 @@ export type SaveExerciseInput = {
   operationKey: string;
   id?: string;
   expectedVersion?: number;
+  instructions?: Partial<Record<'ar' | 'en', string>>;
 };
 
 function requestFor(
   draft: ExerciseEditorDraft,
+  instructions?: Partial<Record<'ar' | 'en', string>>,
 ): Record<string, unknown> | null {
   const exercise = buildExerciseInput(draft);
   if (!exercise) return null;
@@ -37,6 +39,12 @@ function requestFor(
       ? { secondary_muscle_codes: exercise.secondaryMuscles }
       : {}),
     equipment_codes: [exercise.equipment],
+    ...(instructions?.ar === undefined
+      ? {}
+      : { instructions_ar: instructions.ar }),
+    ...(instructions?.en === undefined
+      ? {}
+      : { instructions_en: instructions.en }),
     defaults: {
       ...(defaults?.warmupSets === undefined
         ? {}
@@ -69,7 +77,7 @@ export async function saveExerciseAction(
     actor.role === 'workspace_owner' || actor.role === 'trainer';
   if (input.scope === 'global') {
     if (!isPlatformOwner) return { status: 'not_permitted' };
-    const request = requestFor(input.draft);
+    const request = requestFor(input.draft, input.instructions);
     if (!request) return { status: 'invalid' };
     const mutation: CatalogMutation = {
       operationKey: input.operationKey,
@@ -89,7 +97,7 @@ export async function saveExerciseAction(
     !authorize(actor, 'coaching_work', input.workspaceId)
   )
     return { status: 'not_permitted' };
-  const request = requestFor(input.draft);
+  const request = requestFor(input.draft, input.instructions);
   if (!request) return { status: 'invalid' };
   return writeWorkspaceExercise({
     operationKey: input.operationKey,

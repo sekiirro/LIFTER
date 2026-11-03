@@ -28,11 +28,12 @@ export function exerciseOptions(data: unknown, locale: 'ar' | 'en') {
     const name = names[locale];
     const fallback = names[locale === 'ar' ? 'en' : 'ar'];
     const label =
-      typeof name === 'string'
+      typeof name === 'string' && name.trim()
         ? name
-        : typeof fallback === 'string'
+        : typeof fallback === 'string' && fallback.trim()
           ? fallback
-          : row.result_id;
+          : null;
+    if (!label) return [];
     return [{ id: row.result_id, label }];
   });
 }
