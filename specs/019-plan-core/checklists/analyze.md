@@ -1,7 +1,8 @@
 # Spec Kit Analyze - Shared Plan Core
 
 - Date: 2026-11-03
-- Analyzed source commit: `e413089` (`origin/019-plan-core` at branch creation).
+- Static code/test evidence baseline: `e4130898db1f4e794bd7dff5a4f42b2a3ed320c7` (`origin/019-plan-core` at branch creation).
+- Spec/task artifact revision reviewed: `c0e6d12631d164c357357468337201a2081a53e6`; the spec/task content is carried unchanged into this Analyze refresh. The evidence baseline above applies only to code and test source.
 - Scope: accepted SC-001..SC-005 and their Given/When/Then scenarios; task reference normalization.
 - Method: static Spec Kit cross-artifact and code/test-source analysis. No test suite or build was run.
 
