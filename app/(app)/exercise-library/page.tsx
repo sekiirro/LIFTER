@@ -134,9 +134,11 @@ export default async function ExerciseLibraryPage({
         <Alert tone="error" title={m['catalog.errorTitle']} />
       </main>
     );
-  const rows = exerciseRows(result.data);
+  const rawRows = Array.isArray(result.data) ? result.data : [];
+  const rows = exerciseRows(rawRows);
   const page = rows.slice(0, PAGE_SIZE);
-  const nextCursor = rows.length > PAGE_SIZE ? page.at(-1)?.id : undefined;
+  const hasMore = rawRows.length > PAGE_SIZE;
+  const nextCursor = hasMore ? page.at(-1)?.id : undefined;
   const nextParams = new URLSearchParams();
   if (q) nextParams.set('q', q);
   if (muscle) nextParams.set('muscle', muscle);
