@@ -80,6 +80,37 @@ beforeEach(() => {
 });
 
 describe('production exercise detail route', () => {
+  it.each([
+    'not-a-uuid',
+    '55555555-5555-4555-8555-555555555555/extra',
+    [
+      '55555555-5555-4555-8555-555555555555',
+      '66666666-6666-4666-8666-666666666666',
+    ],
+  ])(
+    'returns the generic 404 for malformed workspace query %s before detail lookup',
+    async (workspace) => {
+      await expect(
+        Page({
+          params: Promise.resolve({ exerciseId: id }),
+          searchParams: Promise.resolve({ workspace }),
+        }),
+      ).rejects.toThrow('404');
+      expect(m.detail).not.toHaveBeenCalled();
+    },
+  );
+
+  it('preserves an explicitly empty workspace query for platform-owner global detail', async () => {
+    await Page({
+      params: Promise.resolve({ exerciseId: id }),
+      searchParams: Promise.resolve({ workspace: '' }),
+    });
+    expect(m.detail).toHaveBeenCalledWith({
+      exerciseId: id,
+      workspaceId: null,
+    });
+  });
+
   it('shows the current version, lifecycle, exact defaults, and authorized variation', async () => {
     const html = renderToStaticMarkup(
       await Page({
