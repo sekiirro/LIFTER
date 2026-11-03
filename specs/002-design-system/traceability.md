@@ -1,4 +1,4 @@
-# Design System traceability
+﻿# Design System traceability
 
 Static verification only; no test suite was run for this reconciliation. Test names below were inspected in the checked-out source. `VERIFIED` means a concrete test exists and asserts the requirement; `PARTIAL` means no direct asserting test/evidence was found in this static pass.
 
@@ -36,15 +36,17 @@ Evidence commits: original Design System implementation `be29751`, `e2df0cd`, `b
 | FR-028 | T043, T046 | `tests/unit/glass-surface.test.tsx::enables refraction only when the browser and preferences allow it`; `tests/e2e/glass.spec.ts::keeps the dock link node focused when over-budget enhancement falls back`; `scripts/perf/glass-tbt-ab.mjs` is a measurement harness | VERIFIED |
 | FR-029 | T045 | `tests/unit/glass-popover-menu.test.tsx::opens on ArrowUp at the last item and on ArrowDown at the first`; `::moves focus with arrows and wraps at either end`; `::supports Home and End and closes without trapping Tab`; `::returns focus to the trigger on Escape`; `::activates the focused item with Space`; `tests/e2e/glass.spec.ts::popover ArrowDown navigation works after enhancement` | VERIFIED |
 | SC-001 | T007 | `tests/unit/tokens-contrast.test.ts` contrast assertions for both modes and sample colors | VERIFIED |
-| SC-002 | T031 | `tests/e2e/a11y.spec.ts` AR/EN × dark/light axe matrix | VERIFIED |
+| SC-002 | T031 | `tests/e2e/a11y.spec.ts` AR/EN Ã— dark/light axe matrix | VERIFIED |
 | SC-003 | T032, T036, T045 | `tests/e2e/components.spec.ts` keyboard cases; `tests/e2e/shell.spec.ts` desktop/mobile keyboard cases | VERIFIED |
 | SC-004 | T019 | `tests/e2e/theme-locale.spec.ts::cookies are already reflected in response HTML`; device color tests | VERIFIED |
 | SC-005 | T010 | `tests/unit/messages.test.ts::has identical nonempty catalogs` | VERIFIED |
 | SC-006 | T038-T039 | `tests/e2e/print.spec.ts::Arabic print sample hides screen controls and exports its PDF`; print-spike report | VERIFIED |
 | SC-007 | T042 | CI build-size check was referenced by T042; a concrete assertion test or executed CI run was not re-verified in this static pass | PARTIAL |
 | SC-008 | T046 | PR #28 body reports 15 paired samples and passing median deltas; local report outputs r1-r8 are referenced but not present in this checkout; measurement not rerun | PARTIAL |
+| SC-010 | T047-T048 | Static inspection: components/shell/NavRail.tsx:16-45, components/shell/NavRail.module.css:1-20, components/shell/AppShell.module.css:13-20, components/ui/AccessibleTooltip.tsx:79-90,173-184; existing hover/focus test references were not executed in this lane | PARTIAL |
 | SC-009 | T043 | `tests/unit/glass-surface.test.tsx::enables refraction only when the browser and preferences allow it`; `tests/e2e/glass.spec.ts::keeps the dock link node focused when over-budget enhancement falls back` | VERIFIED |
 
 ## Static verification note
 
 No tests were executed. Task T046 remains unchecked because its performance run output is absent from this checkout; the PR description's summary was inspected but does not replace the requested evidence artifact.
+
