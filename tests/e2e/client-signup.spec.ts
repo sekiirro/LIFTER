@@ -130,6 +130,9 @@ test.describe.serial('T038 invitation signup UI', () => {
       'aria-describedby',
       'signup-name-error',
     );
+    await dateOfBirthField.focus();
+    await dateOfBirthField.fill('2000-01-01');
+    await expect(dateOfBirthField).toBeFocused();
     await nameField.fill('Heba Sami Nabil');
     await expect(nameField).not.toHaveAttribute('aria-invalid');
     await expect(nameField).not.toHaveAttribute('aria-describedby');

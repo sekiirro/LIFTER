@@ -3,6 +3,7 @@ import {
   buildTelegramMessage,
   deliverTelegramAlert,
   runTelegramJobs,
+  telegramHttpTransport,
 } from '../../lib/forms/telegram-delivery';
 import {
   parseTelegramStart,
@@ -72,6 +73,27 @@ describe('staff Telegram link and delivery primitives', () => {
         appUrl: 'http://example.test',
       }),
     ).toBeNull();
+  });
+
+  it('bounds the Telegram HTTP request to ten seconds', async () => {
+    const timeout = vi.spyOn(AbortSignal, 'timeout');
+    const fetch = vi
+      .fn()
+      .mockResolvedValue(
+        new Response(JSON.stringify({ ok: true }), { status: 200 }),
+      );
+    vi.stubGlobal('fetch', fetch);
+    try {
+      await telegramHttpTransport('test-token').send({
+        chatId: '12',
+        text: 'A generic alert is ready.',
+      });
+      expect(timeout).toHaveBeenCalledWith(10_000);
+      expect(fetch.mock.calls[0]?.[1]?.signal).toBeInstanceOf(AbortSignal);
+    } finally {
+      timeout.mockRestore();
+      vi.unstubAllGlobals();
+    }
   });
 
   it('completes jobs without a send for an already delivered occurrence', async () => {

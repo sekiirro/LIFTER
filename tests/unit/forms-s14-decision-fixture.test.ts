@@ -21,13 +21,15 @@ const spec = readFileSync(
 );
 
 describe('S14 PO decision fixture', () => {
-  it('marks all P1/P2/P3 and EN intake copy as pending PO review', () => {
-    expect(decisions.P1_sex.copy_status).toContain('DRAFT');
+  it('marks only unapproved P2 and EN intake copy as pending PO review', () => {
+    expect(decisions.P1_sex.copy_status).toContain(
+      'Approved verbatim by PO S30-PO-1 Q2 at 5084916',
+    );
     expect(decisions.P2_health_notice.copy_status).toContain(
       'PO approval required',
     );
     expect(decisions.P3_consent.terms_copy_status).toContain(
-      'PO approval required',
+      'Approved verbatim by PO S30-PO-1 Q2 at 5084916',
     );
     expect(decisions.P3_consent.terms_card).toContain('post-Nutrition');
     expect(decisions.P3_consent.marketing).toContain('separate optional');
@@ -36,9 +38,7 @@ describe('S14 PO decision fixture', () => {
       'All EN translations in this table remain pending PO review.',
     );
     expect(cases.pendingCopy).toEqual([
-      'P1_sex',
       'P2_health_notice',
-      'P3_terms',
       'EN_intake_translations',
     ]);
   });

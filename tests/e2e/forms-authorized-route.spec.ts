@@ -675,5 +675,8 @@ test('submitted answer edits wait for explicit correction and use the latest rev
     await expect(
       page.getByText('Your answers were submitted.', { exact: true }),
     ).toBeVisible();
+    await expect(
+      page.getByText(getMessages('en')['forms.unsaved'], { exact: true }),
+    ).toHaveCount(0);
   }
 });

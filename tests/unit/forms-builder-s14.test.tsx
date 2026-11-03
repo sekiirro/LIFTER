@@ -6,6 +6,7 @@ import {
   FormPreview,
   matchesPreviewCondition,
   localizedFormCopy,
+  previewInputValue,
 } from '../../components/forms/FormPreview';
 import { createMockFormsStaffAdapter } from '../../lib/forms/mock-staff-adapter';
 import type { StaffFormDraft } from '../../lib/forms/staff-contracts';
@@ -210,6 +211,11 @@ describe('S14 staff form Builder', () => {
 });
 
 describe('FormPreview conditions', () => {
+  it('keeps numeric answer values visible in controlled preview inputs', () => {
+    expect(previewInputValue(72.5)).toBe('72.5');
+    expect(previewInputValue(['72.5'])).toBe('');
+  });
+
   it('matches contains against multi-choice answer arrays like runtime progression', () => {
     expect(
       matchesPreviewCondition(

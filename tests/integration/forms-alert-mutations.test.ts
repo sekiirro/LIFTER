@@ -20,9 +20,10 @@ const migrationPath = new URL(
 
 async function definition(identity: string) {
   const [row] = await db`
-    select pg_catalog.pg_get_functiondef(${identity}::regprocedure) as body
+    select pg_catalog.pg_get_functiondef(${identity}::regprocedure) as body,
+      md5(pg_catalog.pg_get_functiondef(${identity}::regprocedure)) as md5
   `;
-  return row!.body as string;
+  return { body: row!.body as string, md5: row!.md5 as string };
 }
 
 async function withCommittedFunctionMutant(
@@ -32,15 +33,23 @@ async function withCommittedFunctionMutant(
 ) {
   const connection = sql();
   const original = await definition(identity);
-  const mutant = mutate(original);
-  if (!mutant || mutant === original)
+  const mutant = mutate(original.body);
+  if (!mutant || mutant === original.body)
     throw new Error(`Mutation did not change ${identity}`);
   try {
     await connection.unsafe(mutant);
     await body();
   } finally {
-    await connection.unsafe(original);
-    await connection.end();
+    try {
+      await connection.unsafe(original.body);
+      const [restored] = await connection`
+        select md5(pg_catalog.pg_get_functiondef(${identity}::regprocedure)) as md5
+      `;
+      if (restored?.md5 !== original.md5)
+        throw new Error(`Mutation restore hash mismatch for ${identity}`);
+    } finally {
+      await connection.end();
+    }
   }
 }
 
@@ -210,7 +219,7 @@ it('kills combined clocks, reassignment deadline reset, and omitted-owner mutant
     await withCommittedFunctionMutant(
       CORE,
       (source) =>
-        source.replace(
+        source.replaceAll(
           "sp.role='workspace_owner'::public.staff_role",
           "sp.role='sales'::public.staff_role",
         ),

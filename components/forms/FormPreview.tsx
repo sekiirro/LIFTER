@@ -31,6 +31,12 @@ export function localizedFormCopy(
   return value[locale]?.trim() || value.en.trim();
 }
 
+export function previewInputValue(value: FormAnswer | undefined): string {
+  return typeof value === 'string' || typeof value === 'number'
+    ? String(value)
+    : '';
+}
+
 function optionText(
   question: StaffFormQuestion,
   value: string,
@@ -111,8 +117,7 @@ function PreviewQuestion({
   const messages = getMessages(locale);
   const label = localizedFormCopy(question.label, locale);
   const value = answers[question.id];
-  const valueText =
-    typeof value === 'string' || typeof value === 'number' ? String(value) : '';
+  const valueText = previewInputValue(value);
   const choices = question.choices ?? [];
   const unit = question.unit ? localizedFormCopy(question.unit, locale) : '';
 

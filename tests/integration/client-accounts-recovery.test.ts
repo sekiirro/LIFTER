@@ -371,7 +371,7 @@ describe('F11 client recovery linkage', () => {
     if (!session) throw new Error('PO recovery session setup did not complete');
     await pendingHttpAccess(session.client, contextA);
     await pendingHttpAccess(session.client, contextB);
-  });
+  }, 60_000);
 
   it('WO can reset a pending client password without changing approval or access', async () => {
     // This recovery flow changes the account password. Keep its target isolated

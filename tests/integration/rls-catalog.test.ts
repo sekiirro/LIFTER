@@ -263,6 +263,7 @@ describe('tenancy security catalog (T007)', () => {
         'f15_alert_schedule_run',
         'f15_client_alert_schedule_insert',
         'f15_forms_purge_run',
+        'f15_forms_purge_run_batch',
         'f15_forms_purge_schedule_activate',
         'f15_forms_purge_schedule_deactivate',
         'purge_ended_form_answers_at',
@@ -323,19 +324,22 @@ describe('tenancy security catalog (T007)', () => {
       ].sort(),
     );
     for (const row of rows) {
-      expect(row.prosecdef).toBe(
+      expect(row.prosecdef, row.proname).toBe(
         ![
           'audit_events_immutable',
           'f15_answer_is_present',
           'f15_question_applies',
           'f15_submission_complete',
           'f15_valid_builder_definition',
+          'guard_form_answer_revision_immutable',
+          'guard_form_correction_immutable',
           'f15_onboarding_provisioning_marker_immutable',
           'f15_alert_schedule_activate',
           'f15_alert_schedule_deactivate',
           'f15_alert_schedule_immutable',
           'f15_alert_schedule_run',
           'f15_forms_purge_run',
+          'f15_forms_purge_run_batch',
           'f15_forms_purge_schedule_activate',
           'f15_forms_purge_schedule_deactivate',
           'register_f15_trainer_alert_schedule',
@@ -395,6 +399,7 @@ describe('tenancy security catalog (T007)', () => {
               'f15_builder_cached_result',
               'f15_builder_store_result',
               'f15_forms_purge_run',
+              'f15_forms_purge_run_batch',
               'f15_forms_purge_schedule_activate',
               'f15_forms_purge_schedule_deactivate',
               'purge_ended_form_answers_at',

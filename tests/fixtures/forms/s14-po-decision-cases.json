@@ -1,10 +1,5 @@
 {
-  "pendingCopy": [
-    "P1_sex",
-    "P2_health_notice",
-    "P3_terms",
-    "EN_intake_translations"
-  ],
+  "pendingCopy": ["P2_health_notice", "EN_intake_translations"],
   "parentIds": [
     "B01",
     "B02",
