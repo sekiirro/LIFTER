@@ -42,9 +42,10 @@ beforeEach(() => {
   vi.stubGlobal('document', dom.document);
   vi.stubGlobal('HTMLElement', dom.HTMLElement);
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
-  container = dom.document.createElement('div');
-  dom.document.body.append(container);
-  root = createRoot(container);
+  const element = dom.document.createElement('div');
+  dom.document.body.append(element);
+  container = element as unknown as HTMLElement;
+  root = createRoot(container as unknown as Parameters<typeof createRoot>[0]);
 });
 
 afterEach(async () => {
@@ -301,7 +302,10 @@ describe('food editor error-summary focus', () => {
 
     await act(async () => {
       form!.dispatchEvent(
-        new dom.Event('submit', { bubbles: true, cancelable: true }),
+        new dom.Event('submit', {
+          bubbles: true,
+          cancelable: true,
+        }) as unknown as Event,
       );
     });
     const summary = container.querySelector('[id$="-error-summary"]');
@@ -328,6 +332,7 @@ describe('food editor error-summary focus', () => {
           { onChange: (event: { currentTarget: HTMLInputElement }) => void }
         >
       )[reactPropsKey!];
+      if (!props) throw new Error('React input props missing');
       props.onChange({ currentTarget: protein! });
     });
 

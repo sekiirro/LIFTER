@@ -61,9 +61,10 @@ beforeEach(() => {
   vi.stubGlobal('document', window.document);
   vi.stubGlobal('HTMLElement', window.HTMLElement);
   vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
-  container = window.document.createElement('div');
-  window.document.body.append(container);
-  root = createRoot(container);
+  const element = window.document.createElement('div');
+  window.document.body.append(element);
+  container = element as unknown as HTMLElement;
+  root = createRoot(container as unknown as Parameters<typeof createRoot>[0]);
   actions.review.mockResolvedValue({
     status: 'exact',
     candidates: [
@@ -101,7 +102,9 @@ describe('FoodCreateFlow existing-item selection', () => {
     await act(async () => {
       container
         .querySelector('[data-testid="select-existing-existing-rice"]')
-        ?.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+        ?.dispatchEvent(
+          new window.MouseEvent('click', { bubbles: true }) as unknown as Event,
+        );
     });
 
     expect(container.querySelector('[data-testid="duplicate-review"]')).toBe(
