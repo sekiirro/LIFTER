@@ -31,6 +31,10 @@ import {
 import { getMessages } from '../../../../lib/i18n';
 import { CatalogPreview } from './CatalogPreview';
 import styles from './page.module.css';
+import {
+  buildCatalogShowcaseHref,
+  type CatalogShowcaseHrefParams,
+} from '../../../../lib/catalog/showcase-href';
 
 type PreviewState = 'ready' | 'loading' | 'empty' | 'noResults' | 'error';
 type ShowcaseView = 'list' | 'editor';
@@ -101,18 +105,11 @@ function statusFor(state: PreviewState): CatalogListStatus {
   return 'ready';
 }
 
-type ShowcaseQuery = {
-  kind: CatalogListKind;
-  state: PreviewState;
-  view: ShowcaseView;
-  role: ShowcaseRole;
-  reps: ShowcaseReps;
-  scope: ShowcaseScope;
-  coachingWork: boolean;
-};
+type ShowcaseQuery = CatalogShowcaseHrefParams & { sampleBrand: boolean };
 
 function hrefFor(query: ShowcaseQuery): string {
-  return `/showcase/catalog?kind=${query.kind}&state=${query.state}&view=${query.view}&role=${query.role}&reps=${query.reps}&scope=${query.scope}&coachingWork=${query.coachingWork}`;
+  const { sampleBrand, ...params } = query;
+  return buildCatalogShowcaseHref(params, sampleBrand);
 }
 
 export default async function CatalogShowcasePage({
@@ -151,6 +148,7 @@ export default async function CatalogShowcasePage({
     reps,
     scope,
     coachingWork,
+    sampleBrand,
   };
   const allItems = kind === 'exercise' ? mockExerciseItems : mockFoodItems;
   const items = previewState === 'empty' ? [] : allItems;
