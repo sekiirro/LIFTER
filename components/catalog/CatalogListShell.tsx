@@ -32,6 +32,7 @@ export type CatalogListShellProps = {
   locale: Locale;
   kind: CatalogListKind;
   items: readonly CatalogListItem[];
+  serverFiltered?: boolean;
   status?: CatalogListStatus;
   initialQuery?: string;
   initialFilters?: CatalogSearchFilters;
@@ -47,6 +48,7 @@ export function CatalogListShell({
   locale,
   kind,
   items,
+  serverFiltered = false,
   status = 'ready',
   initialQuery = '',
   initialFilters = {},
@@ -61,7 +63,9 @@ export function CatalogListShell({
   const [state, dispatch] = useReducer(reduceCatalogShellState, undefined, () =>
     initialCatalogShellState(kind, initialQuery, initialFilters),
   );
-  const visible = selectCatalogItems(items, state.search);
+  const visible = serverFiltered
+    ? items
+    : selectCatalogItems(items, state.search);
   const hasSearch =
     state.query.trim().length > 0 || hasActiveCatalogFilters(state.filters);
   const filterKeys = CATALOG_FILTER_KEYS[kind];

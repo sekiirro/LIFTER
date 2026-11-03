@@ -42,6 +42,7 @@ export function ExerciseLibraryResults({
         locale={locale}
         kind="exercise"
         items={items}
+        serverFiltered
         initialQuery={query}
         initialFilters={filters}
         emptyActionHref={
