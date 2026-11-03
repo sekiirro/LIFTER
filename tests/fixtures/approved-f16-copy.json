@@ -700,6 +700,5 @@
     "key": "catalog.videoVariationWorkspaceRequired",
     "ar": "اختر مساحة العمل صراحةً.",
     "en": "Choose a workspace explicitly."
-  },
-  { "key": "catalog.showcaseKendoWorkspace", "ar": "مساحة كيندو التجريبية", "en": "Kendo demo workspace" }
+  }
 ]
