@@ -111,7 +111,7 @@ and purge scheduling migrations introduce no replacement audit body. Latest main
 `20261031130000_purge_scheduling_pg_cron.sql`. The four U2–U5 F12 migrations run
 from `20261101120000_registration_approval_model.sql` through
 `20261101123000_registration_approval_reads.sql`, strictly after it. The planned
-U1F wrapper migration is `20261101124000_flexible_registration_link_terms.sql`,
+U1F wrapper migration is `20261101131000_flexible_registration_link_terms_forward.sql`,
 after those four migrations.
 
 Session-12 architect/user instruction supersedes historical Stack-B prerequisites:
