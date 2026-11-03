@@ -13,7 +13,7 @@ Static source inspection only. No tests were run in this compliance lane. VERIFI
 | FR-007 | T017-T020 | `tests/unit/recovery-link.test.ts::denies a foreign workspace despite a successful preflight`; integration generic denial cases | Source/test on `d04ef52` | VERIFIED |
 | FR-008 | T017-T021, T024 | `scripts/check-client-secrets.mjs`; CI configuration and static asset scan control | Source on `d04ef52`; scan not executed in this lane | PARTIAL |
 | FR-009 | T020-T022 | `tests/integration/auth-recovery.test.ts` exact audit attribution and audit/write rollback cases | Source/test on `d04ef52` | VERIFIED |
-| FR-010 | T020-T022 | `tests/integration/auth-recovery.test.ts::enforces the per-target limit across actors...`; `enforces the actor limit...` | Source/test on `d04ef52`; production threshold remains ND-F4-4 | VERIFIED |
+| FR-010 | T020-T022 | `tests/integration/auth-recovery.test.ts::enforces the per-target limit across actors...`; `enforces the actor limit...` | Source/test on `d04ef52`; production threshold remains open under ND-F4-4 | PARTIAL |
 | FR-011 | T019-T020, T024 | `tests/e2e/auth.spec.ts::closing the recovery dialog clears the displayed link`; log/scrub controls | Source/test on `d04ef52` | VERIFIED |
 | FR-012 | T017-T022 | `tests/integration/auth-recovery.test.ts::supersedes an earlier unused hash`; `rejects an expired hash`; single-use test | Source/test on `d04ef52`; ND-F4-3 is resolved in spec | VERIFIED |
 | FR-013 | T017-T023 | `tests/integration/auth-recovery.test.ts::consumes once, sets a password and signs in with that password`; recovery action tests | Source/test on `d04ef52` | VERIFIED |
@@ -29,6 +29,6 @@ Static source inspection only. No tests were run in this compliance lane. VERIFI
 
 ## Summary
 
-- Functional requirements: 13 VERIFIED, 2 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- Functional requirements: 12 VERIFIED, 3 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Success criteria: 5 VERIFIED, 2 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Static verification only; no tests or scans executed. T030 remains unchecked. ND-F4-1, ND-F4-2, ND-F4-4..7 remain open.
