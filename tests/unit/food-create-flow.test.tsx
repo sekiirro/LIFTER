@@ -56,7 +56,9 @@ const draft: FoodEditorDraft = {
   carbs: '28',
   fat: '0.3',
   fiber: '',
-  servings: [{ labelAr: '\u062D\u0635\u0629', labelEn: 'serving', basisQuantity: '100' }],
+  servings: [
+    { labelAr: '\u062D\u0635\u0629', labelEn: 'serving', basisQuantity: '100' },
+  ],
   alternatives: [],
 };
 

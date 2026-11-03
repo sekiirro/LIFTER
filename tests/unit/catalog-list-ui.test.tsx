@@ -126,7 +126,10 @@ describe('catalog list shell presentation', () => {
     const row = {
       id: 'server-match',
       kind: 'exercise' as const,
-      names: { ar: '\u0627\u062E\u062A\u0628\u0627\u0631', en: 'Server matched row' },
+      names: {
+        ar: '\u0627\u062E\u062A\u0628\u0627\u0631',
+        en: 'Server matched row',
+      },
       primaryMuscle: 'chest' as const,
       equipment: 'barbell' as const,
       lifecycleState: 'active' as const,

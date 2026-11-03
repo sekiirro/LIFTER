@@ -124,7 +124,9 @@ describe('exercise editor fixed-vs-range validation', () => {
     );
     expect(errors.nameAr).toBe('text_too_long');
     expect(
-      buildExerciseInput(draft({ names: { ar: nameOverLimit, en: 'Long name' } })),
+      buildExerciseInput(
+        draft({ names: { ar: nameOverLimit, en: 'Long name' } }),
+      ),
     ).toBeNull();
   });
 
