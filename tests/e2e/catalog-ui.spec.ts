@@ -163,6 +163,11 @@ for (const row of matrix) {
       `/showcase/catalog?kind=food&view=list&role=trainer${brandParam}`,
     );
     await assertBrandScope(page, row);
+    const editorHref = await page
+      .getByTestId('catalog-view-editor')
+      .getAttribute('href');
+    if (row.brand === 'sample') expect(editorHref).toContain('brand=sample');
+    else expect(editorHref).not.toContain('brand=sample');
     const list = page.getByTestId('catalog-shell');
     await expect(list).toHaveAttribute('dir', row.direction);
     await expect(list).toHaveAttribute('lang', row.locale);
