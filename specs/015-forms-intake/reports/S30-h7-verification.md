@@ -1,4 +1,4 @@
-﻿# S30 h7 verification — blocked at Stack D wrapper
+# S30 h7 verification — blocked at Stack D wrapper
 
 ## Boundary and entry gate
 
@@ -21,7 +21,7 @@ The safe wrapper returned exactly:
 
 The refusal is explained by `C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs:73-84`: the exec allowlist contains Node, npm, npx and git, but not PowerShell. It rejected the child before status-environment injection. Therefore no missing injected environment NAME was observable (missing NAME: none determined); no credentials or values were read or printed.
 
-The brief makes the exact h6 Stack D invocation binding, and the earlier wrapper rule says to stop if the wrapper refuses. I stopped before code or database changes. The current repo branch boundary is still the already committed/pushed `c976d66`; this report records the blocker only.
+The brief makes the exact h6 Stack D invocation binding, and the earlier wrapper rule says to stop if the wrapper refuses. I stopped before code or database changes. Code changes remain at `c976d66`; the only h7 branch change is this blocker report, committed and pushed as `09edff9`.
 
 ## Review thread disposition at stop
 
