@@ -231,6 +231,20 @@ export function FoodEditor({
       ),
     );
   }
+  function removeAlternative(index: number) {
+    update(
+      'alternatives',
+      draft.alternatives.filter((_, i) => i !== index),
+    );
+    setErrors((previous) => {
+      const next = { ...previous };
+      delete next.alternativeFoods;
+      delete next.alternativePortions;
+      delete next.alternativeUnits;
+      delete next.alternatives;
+      return next;
+    });
+  }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     setSubmitCount((count) => count + 1);
@@ -647,12 +661,7 @@ export function FoodEditor({
               <Button
                 variant="secondary"
                 disabled={!editing}
-                onClick={() =>
-                  update(
-                    'alternatives',
-                    draft.alternatives.filter((_, i) => i !== index),
-                  )
-                }
+                onClick={() => removeAlternative(index)}
               >
                 {m['catalog.foodAlternativeRemove']}
               </Button>
