@@ -57,7 +57,10 @@ describe('catalog variations workspace gate', () => {
     },
   );
 
-  it.each([['en', en], ['ar', ar]] as const)(
+  it.each([
+    ['en', en],
+    ['ar', ar],
+  ] as const)(
     'shows localized library-load copy when exercise search fails (%s)',
     async (locale, messages) => {
       mocks.cookies.mockResolvedValue({ get: () => ({ value: locale }) });

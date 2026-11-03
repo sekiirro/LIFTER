@@ -24,10 +24,7 @@ export default async function CatalogVariationsPage({
     return (
       <main className={styles.main} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
         <h1>{messages['catalog.videoVariationTitle']}</h1>
-        <Alert
-          tone="error"
-          title={messages['catalog.errorTitle']}
-        />
+        <Alert tone="error" title={messages['catalog.errorTitle']} />
       </main>
     );
   const workspaces = workspaceResult.data.map(({ id, name }) => ({
@@ -70,10 +67,7 @@ export default async function CatalogVariationsPage({
     return (
       <main className={styles.main} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
         <h1>{messages['catalog.videoVariationTitle']}</h1>
-        <Alert
-          tone="error"
-          title={messages['catalog.errorTitle']}
-        />
+        <Alert tone="error" title={messages['catalog.errorTitle']} />
       </main>
     );
   const exercises = exerciseOptions(exerciseRows, locale);
