@@ -137,6 +137,13 @@ export function SignupForm({
       ['name', 'dateOfBirth', 'username', 'telegramUsername'] as const
     ).find((field) => identityInvalidFields.includes(field));
     if (firstIdentityError) {
+      const activeElement = document.activeElement;
+      if (
+        activeElement instanceof HTMLElement &&
+        formRef.current?.contains(activeElement) &&
+        activeElement !== formRef.current.querySelector('button[type="submit"]')
+      )
+        return;
       const identityRefs = {
         name: nameRef,
         dateOfBirth: dateOfBirthRef,

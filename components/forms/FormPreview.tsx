@@ -111,7 +111,8 @@ function PreviewQuestion({
   const messages = getMessages(locale);
   const label = localizedFormCopy(question.label, locale);
   const value = answers[question.id];
-  const valueText = typeof value === 'string' ? value : '';
+  const valueText =
+    typeof value === 'string' || typeof value === 'number' ? String(value) : '';
   const choices = question.choices ?? [];
   const unit = question.unit ? localizedFormCopy(question.unit, locale) : '';
 

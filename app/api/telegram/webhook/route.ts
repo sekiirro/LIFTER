@@ -17,7 +17,7 @@ export async function POST(request: NextRequest) {
   try {
     body = await request.json();
   } catch {
-    return NextResponse.json({ status: 'invalid' }, { status: 400 });
+    return NextResponse.json({ status: 'invalid' }, { status: 200 });
   }
   const start = parseTelegramStart(body);
   if (!start) return NextResponse.json({ status: 'ignored' }, { status: 200 });
@@ -33,6 +33,6 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ status: 'unavailable' }, { status: 503 });
   return NextResponse.json(
     { status: data ? 'linked' : 'invalid' },
-    { status: data ? 200 : 404 },
+    { status: 200 },
   );
 }

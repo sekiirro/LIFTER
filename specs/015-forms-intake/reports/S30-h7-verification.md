@@ -1,63 +1,45 @@
-# S30 h7 verification — blocked at Stack D wrapper
+﻿# S30 h7b verification — stopped at committed boundary
 
-## Boundary and entry gate
+## Boundary and gates
 
-- C: free at start: 27.87 GB; required minimum: 15 GB.
-- Branch: `015-forms-intake`; starting HEAD: `c976d661593cb3b40287c35282cc538af45dbace`; initial worktree clean.
-- PR #44 base: `main`; changedFiles 284; mergeStateStatus `UNSTABLE`.
-- Remote migration version scan: 4,290 migration-path entries across origin refs; maximum `20261107000000`; no collision in the architect-authorized `20261107001000–20261107009999` interval at scan time.
-- Spec Kit entry: FR-006/FR-008, measurable scenarios, plan and tasks cover the submission scope. Analyze remains FAIL per architect handoff (T049 FR trace issue); proceeding was allowed only under the existing-PR Q6 exception.
-- Stack D lifecycle was not touched. No Stack D test, mutation, fingerprint query or migration was run in h7.
+- C: free at start: 27.27 GiB; current free: 27.26 GiB (required minimum 15 GB).
+- Branch `015-forms-intake`; starting HEAD `ba0f2adfe2cbef7bd737a5751e8fdca678d63150`; clean before this round.
+- PR #44 base `main`, changedFiles 290. Stack D was not started, stopped, reset, or migrated except through the safe wrapper; wrapper launcher probe succeeded. Earlier documented D fingerprint: expected StartedAt `2026-11-02T18:43:05.538142345Z`, cron.job 0. This round's before/after fingerprint was not collected.
+- Spec Kit scope is the existing-PR Q6 exception only. Analyze remains FAIL per the architect handoff (T049); no new feature task or requirements were added.
+- Full Design Gate is incomplete: rendered UI files changed, but the mandated complete skill catalog review and applicable skill load/self-review were not completed. This is an outstanding gate, not a pass.
+- No new user-facing strings. Signup blob change listed below.
 
-## Blocking wrapper refusal
+## Findings addressed in this boundary
 
-The binding h6 invocation launches a child PowerShell command:
+Changes were checked against the current code. Current edits include:
 
-`node "C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs" --stack D --workdir "C:/Users/NEW LAP/Desktop/LFTR-p2/supabase-stack-d" exec -- powershell -NoProfile -Command "..."`
-
-The safe wrapper returned exactly:
-
-`exec refused: command is not on the supabase-safe allowlist.`
-
-The refusal is explained by `C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs:73-84`: the exec allowlist contains Node, npm, npx and git, but not PowerShell. It rejected the child before status-environment injection. Therefore no missing injected environment NAME was observable (missing NAME: none determined); no credentials or values were read or printed.
-
-The brief makes the exact h6 Stack D invocation binding, and the earlier wrapper rule says to stop if the wrapper refuses. I stopped before code or database changes. Code changes remain at `c976d66`; the only h7 branch change is this blocker report, committed and pushed as `09edff9`.
-
-## Review thread disposition at stop
-
-No thread was replied to, reopened, resolved, or fixed in h7. The six previously resolved actionable threads remain in GitHub's resolved state without an h7 fix; the other thirteen remain unresolved. Every item is blocked by the wrapper refusal and the mandatory stop rule.
-
-| Thread | Path:line | Classification from h7 scope | h7 state / reason |
+| Thread | Finding | Change | Evidence |
 |---|---|---|---|
-| `PRRT_kwDOVYgYQ86y-b5N` | `lib/forms/submissions.ts:64` | Actionable; FR-006/FR-008 | Not reissued or fixed; wrapper stop. |
-| `PRRT_kwDOVYgYQ86y-b5h` | `supabase/migrations/20261104013000_f15_immutable_answer_corrections.sql:75` | Actionable data validation | Not reissued or fixed; wrapper stop. |
-| `PRRT_kwDOVYgYQ86y-b5o` | `supabase/migrations/20261104015000_f15_immutable_answer_revisions.sql:8` | Actionable security/authorization | Not reissued or fixed; wrapper stop. |
-| `PRRT_kwDOVYgYQ86y-b5y` | `supabase/migrations/20261104030900_f15_alert_evaluation_scope.sql:31` | Actionable alert starvation | Not reissued or fixed; wrapper stop. |
-| `PRRT_kwDOVYgYQ86y-b58` | `supabase/migrations/20261104032300_f15_purge_owner_consumer.sql:44` | Actionable purge privacy | Not reissued or fixed; wrapper stop. |
-| `PRRT_kwDOVYgYQ86y-b6B` | `supabase/migrations/20261104032300_f15_purge_owner_consumer.sql:72` | Actionable purge starvation | Not reissued or fixed; wrapper stop. |
-| `PRRT_kwDOVYgYQ86zMtVd` | `components/forms/FormPreview.tsx:357` | Actionable preview behavior | Unresolved; wrapper stop. |
-| `PRRT_kwDOVYgYQ86zMtVs` | `components/forms/QuestionFlow.tsx:451` | Actionable correction dirty state | Unresolved; wrapper stop. |
-| `PRRT_kwDOVYgYQ86zMtV5` | `tests/e2e/forms-authorized-route.spec.ts:210` | Actionable test expectation | Unresolved; wrapper stop. |
-| `PRRT_kwDOVYgYQ86zNY1t` | `app/api/telegram/webhook/route.ts:37` | Actionable webhook retry behavior | Unresolved; wrapper stop. |
-| `PRRT_kwDOVYgYQ86zNY2b` | `app/register/[token]/SignupForm.tsx:148` | Actionable signup focus behavior | Unresolved; wrapper stop. |
-| `PRRT_kwDOVYgYQ86zNY2s` | `lib/forms/telegram-delivery.ts:188` | Actionable bounded delivery | Unresolved; wrapper stop. |
-| `PRRT_kwDOVYgYQ86zNY3A` | `lib/i18n/messages/ar.ts:603` | Approved PO S30-PO-5 exact spelling fix | Unresolved; authorized copy change not reached. |
-| `PRRT_kwDOVYgYQ86zNY3V` | `supabase/migrations/20261104011000_f15_atomic_form_submission.sql:133` | Actionable FR-006/FR-008 forward fix | Unresolved; authorized new migration/test not reached. |
-| `PRRT_kwDOVYgYQ86zNY3s` | `supabase/migrations/20261104030800_f15_alert_schedules.sql:143` | Actionable alert batching | Unresolved; wrapper stop. |
-| `PRRT_kwDOVYgYQ86zNY3v` | `supabase/migrations/20261104031200_f15_telegram_links.sql:10` | Actionable relinking | Unresolved; wrapper stop. |
-| `PRRT_kwDOVYgYQ86zNY35` | `tests/e2e/forms-production-route.spec.ts:248` | Actionable test origin | Unresolved; wrapper stop. |
-| `PRRT_kwDOVYgYQ86zNY4I` | `tests/integration/forms-alert-mutations.test.ts:45` | Actionable mutant cleanup | Unresolved; wrapper stop. |
-| `PRRT_kwDOVYgYQ86zNY4P` | `tests/integration/forms-r3-assignment-invariants.test.ts:111` | Actionable mutation assertion | Unresolved; wrapper stop. |
+| `PRRT_kwDOVYgYQ86zMtVd` | Number input in builder preview lost its displayed value after input | `FormPreview` stringifies numeric answer values for controlled input | `components/forms/FormPreview.tsx` |
+| `PRRT_kwDOVYgYQ86zMtVs` | Successful answer correction left dirty/save state set | Clear dirty refs/state only when latest answers still equal the submitted correction snapshot | `components/forms/QuestionFlow.tsx` |
+| `PRRT_kwDOVYgYQ86zMtV5` | Authorized-route age assertion was fixed at 36 | Derive expected value using `calculateAgeInCairo('1990-04-12', new Date())` | `tests/e2e/forms-authorized-route.spec.ts` |
+| `PRRT_kwDOVYgYQ86zNY1t` | Authenticated terminal Telegram payload/replay response used retry-triggering non-2xx | Authenticated invalid JSON and invalid/replayed start now return 200 | `app/api/telegram/webhook/route.ts` |
+| `PRRT_kwDOVYgYQ86zNY2b` | Signup validation effect could refocus during identity edits | Do not steal focus when another form control already has focus | `app/register/[token]/SignupForm.tsx` |
+| `PRRT_kwDOVYgYQ86zNY2s` | Telegram sendMessage fetch had no bound | Add a 10-second abort timeout | `lib/forms/telegram-delivery.ts` |
+| `PRRT_kwDOVYgYQ86zNY35` | E2E locale/theme cookies used hard-coded fallback origin | Use configured Playwright project baseURL and require it | `tests/e2e/forms-production-route.spec.ts` |
+| `PRRT_kwDOVYgYQ86zNY4P` | Assignment mutation test used an unconditional failing assertion | Query matching initial-occurrence rows and assert one row after dropping uniqueness | `tests/integration/forms-r3-assignment-invariants.test.ts` |
 
-## RED/GREEN, migrations, gates and D fingerprint
+## Remaining blocker
 
-- RED/GREEN: no h7 tests were run.
-- Mutations: none executed; no security fix was attempted.
-- New migrations: none created; no version allocated. The remote uniqueness scan was read-only.
-- Gates: not run in h7 because work stopped before any implementation.
-- Stack D before/after fingerprint: not queried in h7; no stack operation was issued. h6's last recorded fingerprint is not represented as an h7 measurement.
-- Signup blob changes: none in h7. h6's prior `SignupForm.tsx` hash change remains the only recorded change.
-- S30-PO-1 Q2 sex-label and Terms copy un-DRAFT work: not reached. No copy changed.
-- PO-DECISION-NEEDED: none newly introduced in h7 before the block. Approved S30-PO-1 Q2 and S30-PO-5 changes remain unimplemented.
-- CodeRabbit: no h7 review requested. The h6 review remains on `c976d66`; h7 did not change the reviewed code head before this report commit.
+`PRRT_kwDOVYgYQ86zNY4I` asks that committed SQL function mutants cannot survive abrupt process termination. The current helper installs a globally visible committed `CREATE OR REPLACE FUNCTION` mutation so other concurrent sessions can observe it; normal cleanup restores it in `finally`. The integration harness connects all sessions to one shared Stack D database. A transaction-local mutation would be invisible to the multiple independent connections used by these tests, including the concurrency assertions. The harness has no isolated per-test database lifecycle, and no safe rollback mechanism for a process death was found. I did not invent a watchdog or alter Stack D lifecycle. This finding remains actionable and unresolved; the full h7 closeout is blocked here.
 
+## Verification completed
+
+- Focused unit suites: 5 files, 27 tests passed (forms builder, correction, profile prefill, Telegram, signup form).
+- Stack D focused integration: `forms-r3-assignment-invariants.test.ts`, 2/2 passed through S30-R7 Node launcher and safe wrapper.
+- `npx tsc --noEmit`: passed.
+- `git diff --check`: passed before report generation.
+- Prettier write applied to the changed files; format check is still required.
+- Full unit/lint/typecheck/build/build:edge/secrets/size/migration/full Stack D/full Playwright gates were not run. No CodeRabbit review was requested in this boundary.
+
+## Review state and blob changes
+
+- CodeRabbit latest known review head remains `c976d661593cb3b40287c35282cc538af45dbace`; this round did not request another review. The 9 threads listed at the start of h7b are still open pending commit replies/resolutions; NY4I remains actionable.
+- Signup blob: `app/register/[token]/SignupForm.tsx`, prior h6 blob `77f8a6c:app/register/[token]/SignupForm.tsx`; current blob is recorded by the commit.
+- PO-DECISION-NEEDED: none found in these fixes.
+- This report records a partial boundary; T009/T024 task status was not changed.

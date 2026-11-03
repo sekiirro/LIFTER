@@ -103,7 +103,13 @@ describe('T007 assignment snapshot and T010 one-time assignment', () => {
           await insertDuplicate(sp);
           let assertionDetectedMutation = false;
           try {
-            expect(true, 'duplicate assignment must be rejected').toBe(false);
+            const rows = await sp`
+              select 1 from public.form_assignments
+              where workspace_id=${f.context.wsA.id} and client_id=${f.client.id}
+                and form_id=${f.form} and occurrence_key='initial'`;
+            expect(rows, 'duplicate assignment must be rejected').toHaveLength(
+              1,
+            );
           } catch {
             assertionDetectedMutation = true;
           }

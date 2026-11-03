@@ -184,6 +184,7 @@ export function telegramHttpTransport(token: string): TelegramTransport {
             disable_web_page_preview: true,
           }),
           redirect: 'error',
+          signal: AbortSignal.timeout(10_000),
         },
       );
       if (!response.ok) throw new Error('telegram_transport');

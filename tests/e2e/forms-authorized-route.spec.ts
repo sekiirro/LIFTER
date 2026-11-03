@@ -14,6 +14,7 @@ import { sql } from '../integration/harness';
 import { deriveBrand } from '../../lib/design/color';
 import { brandToCssVars } from '../../lib/design/tokens-css';
 import { getMessages } from '../../lib/i18n';
+import { calculateAgeInCairo } from '../../lib/forms/validation';
 
 const db = sql();
 const screenshotDir = join(tmpdir(), 'lifter-s29-f15-h5');
@@ -207,7 +208,9 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
           fullPage: true,
         });
         await page.getByRole('button').nth(1).click();
-        await expect(page.locator('output')).toHaveText('36');
+        await expect(page.locator('output')).toHaveText(
+          String(calculateAgeInCairo('1990-04-12', new Date())),
+        );
         await expect(
           page.getByRole('heading', {
             level: 2,

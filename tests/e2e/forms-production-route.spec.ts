@@ -241,7 +241,9 @@ test('anonymous and Sales users receive no production Forms content', async ({
       role: 'sales',
     }),
   );
-  const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3315';
+  const origin = test.info().project.use.baseURL;
+  if (typeof origin !== 'string')
+    throw new Error('Playwright baseURL is required');
   await page.context().addCookies([
     { name: 'lifter_locale', value: 'en', url: origin },
     { name: 'lifter_theme', value: 'light', url: origin },
@@ -262,7 +264,9 @@ test('production Builder stays compact and supports keyboard question editing', 
   page,
 }) => {
   await signIn(page);
-  const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://127.0.0.1:3315';
+  const origin = test.info().project.use.baseURL;
+  if (typeof origin !== 'string')
+    throw new Error('Playwright baseURL is required');
   await page.setViewportSize({ width: 1440, height: 1000 });
   await page.context().addCookies([
     { name: 'lifter_locale', value: 'en', url: origin },

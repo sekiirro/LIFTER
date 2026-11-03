@@ -431,11 +431,15 @@ export function QuestionFlow({
     }
     setState('submitting');
     try {
+      const correctionAnswers = applicableClientAnswers(
+        runtimeQuestions,
+        answers,
+      );
       const result = hasSubmitted
         ? await adapter.correct({
             assignmentId,
             expectedRevision: revisionRef.current,
-            answers: applicableClientAnswers(runtimeQuestions, answers),
+            answers: correctionAnswers,
           })
         : await adapter.submit({
             assignmentId,
@@ -443,6 +447,15 @@ export function QuestionFlow({
             answers,
           });
       if (result.status === 'submitted' || result.status === 'saved') {
+        if (
+          hasSubmitted &&
+          JSON.stringify(correctionAnswers) ===
+            JSON.stringify(latestAnswers.current)
+        ) {
+          dirtyRef.current = false;
+          setDirty(false);
+          dirtySince.current = undefined;
+        }
         setHasSubmitted(true);
         if ('revision' in result && result.revision) {
           revisionRef.current = result.revision;
