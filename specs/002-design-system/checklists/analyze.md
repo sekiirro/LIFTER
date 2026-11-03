@@ -1,7 +1,7 @@
 # Specification Analysis Report: Design System Foundation
 
 **Date:** 2026-11-03  
-**Analysed commit:** `e69688af3ea4e1ad4968b0d2b1d1c65fd0f8ab91`  
+**Analysed commit:** `a9b37cc744cd29ef4ae0fb49f8ef69c9c2bc10e3`  
 **Scope:** Existing Design System artifacts plus the PR #28 Glisse delta only.  
 **Method:** Static inspection; no tests or runtime commands were executed. The `speckit-analyze` prerequisite check passed with `SPECIFY_FEATURE_DIRECTORY=specs/002-design-system`; no extension hooks are configured.
 
@@ -68,4 +68,4 @@
 
 ## History
 
-- 2026-11-03: Initial S30 reconciliation of PR #28 scope at `e69688a`.
+- 2026-11-03: Initial S30 reconciliation of PR #28 scope at `e69688a`; refreshed source quotations and citations against `a9b37cc` with no new findings.
