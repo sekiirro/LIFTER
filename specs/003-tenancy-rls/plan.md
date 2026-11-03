@@ -37,17 +37,11 @@ A pure TypeScript `authorize()` mirrors the same matrix. A reusable integration 
 | Platform | Supabase per Architecture v3. Local stack in CI at $0. ✅ |
 | Workflow | Integration tests join the CI gate (Roadmap QG-2). ✅ |
 
-## NEEDS DECISION (deny-by-default until the PO decides)
+## Resolved decisions
 
-| # | Item | F3 handling |
-|---|---|---|
-| ND-F3-2 | Can a WO see other members of their own workspace? | S30-PO-3 Q7 approves "WO sees active members" for roster administration. Workspace boundary, active predicate, and visible fields remain open; see PO items SK-003-04..07. |
-| ND-F3-3 | Who may manage the PO role itself (bootstrap, last-PO protection) | Initial PO bootstrap remains operator-managed. S30-PO-3 Q8 approves a database guard against removing or demoting the final PO and transfer by adding a new PO first. Concurrent behavior and failure contract remain open; see PO items SK-003-08..09. |
-
-## Resolved decision
-
-- **ND-F3-1 resolved by S30-PO-3 Q6:** "PO/WO/Trainer, deny Sales (Recommended)". Sales remains denied `coaching_work`.
-
+- **ND-F3-1 resolved by S30-PO-3 Q6:** “PO/WO/Trainer, deny Sales (Recommended)”. Sales remains denied `coaching_work`.
+- **ND-F3-2 resolved for this approved scope by S30-PO-3 Q7 and S30-R8:** a current Workspace Owner sees only active membership fields for their own workspace (`user_id`, `workspace_id`, `granted_at`, `revoked_at`, plus the associated `staff_profiles.role`). `revoked_at IS NULL` defines active. Profile/contact fields are out of scope.
+- **ND-F3-3 resolved for this approved scope by S30-PO-3 Q8 and S30-R8:** preserve at least one Platform Owner under concurrent changes; protect role changes/demotions, staff-profile or membership deletion/revocation, and auth-user deletion cascades; serialize role changes; reuse the existing generic privileged-operation error convention. No new user-facing copy. Bootstrap remains operator-managed.
 ## Project Structure
 
 ```text
@@ -76,10 +70,10 @@ docs/BOOTSTRAP.md? → no: README section "Local database & isolation tests" + P
 
 ## S30-PO-3 governance amendment plan (documentation proposal)
 
-- **FR-013 / SC-006 — active-member roster**: add a narrowly scoped database RLS policy/helper path for the Workspace Owner roster. Do not choose workspace-boundary or member-field visibility until the PO answers the open clarifications. Require executed positive and negative mutation tests for active, revoked, in-scope, and out-of-scope cases, plus security review before implementation acceptance.
-- **FR-014 / SC-005 — final-PO guard**: use a database-enforced guard in a forward-only migration so removal or demotion cannot leave zero Platform Owners. Design must account for concurrent demotions/removals; do not settle locking/serialization or client-visible error semantics until the PO decision is recorded. Require executed concurrent and sequential mutation tests and security review before implementation acceptance.
+- **FR-013 / SC-006 — active-member roster**: add a database RLS policy/helper path permitting a current Workspace Owner to read active membership fields only within their own workspace (`user_id`, `workspace_id`, `granted_at`, `revoked_at`, plus the associated `staff_profiles.role`); `revoked_at IS NULL` defines active in the existing schema. Profile/contact fields are out of scope. Require executed positive/negative mutations for active, revoked, same-workspace, and foreign-workspace rows, plus security review before implementation acceptance.
+- **FR-014 / SC-005 — final-PO guard**: use a database-enforced guard in a forward-only migration so role changes/demotions, staff-profile or membership deletion/revocation, and auth-user deletion cascades cannot leave zero Platform Owners. Serialize Platform-Owner role changes (for example, with an advisory or row lock); reuse the existing generic `not_permitted` / SQLSTATE `42501` convention evidenced at `supabase/migrations/20261028120000_auth_recovery_links.sql:144-151`, with no new user-facing copy. Require executed tests for every protected operation, add-first transfer, and two concurrent demotions, plus architect security review before implementation acceptance.
 - No migration or code is authored in this cycle. High-risk RLS/auth changes require architect review and executed mutation tests.
 
 ### Clarification status
 
-S30-PO-3 Q7 and Q8 approve the behavior, while details listed in the external SK-A register at `C:/Users/NEW LAP/.lifter/runs/s30-luna-sk-a6/po-decisions.md` remain open. Existing ND-F3-2 (member visibility) and ND-F3-3 (last-PO protection) are superseded only to the extent of the approved behavior; do not treat their unresolved subquestions as answered.
+S30-PO-3 Q7 and Q8 provide the approved behavior; S30-R8 records architect clarifications of that behavior. No open product ambiguities remain for this scope. S30-R8 is not a new product decision and is not a source for unrelated features.

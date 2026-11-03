@@ -109,8 +109,8 @@ A Workspace Owner can see active members for roster administration. The PO-appro
 
 **Acceptance Scenarios**:
 
-1. **Given** a Workspace Owner and active members, **When** the Owner requests the member roster, **Then** the database permits the approved active-member roster visibility (S30-PO-3 Q7: “WO sees active members”).
-2. **Given** revoked membership rows or a membership outside the permitted roster scope, **When** the Owner requests the roster, **Then** visibility follows the PO-clarified active-state and workspace-boundary rules; those details are blocked pending clarification.
+1. **Given** a user who currently holds the Workspace Owner role in workspace A and active membership rows in A, **When** they request the roster, **Then** the database permits only membership-row columns for active members of A; active means `revoked_at IS NULL` (S30-PO-3 Q7; S30-R8).
+2. **Given** a revoked membership row or a membership in another workspace, **When** the Workspace Owner requests the roster for A, **Then** the row is not visible. Profile/contact fields such as names, email, and phone are outside this roster scope (S30-R8).
 
 #### User Story 6 — Protect the final Platform Owner (Priority: P1)
 
@@ -120,15 +120,16 @@ The database prevents removal or demotion of the final Platform Owner. The PO-ap
 
 **Acceptance Scenarios**:
 
-1. **Given** exactly one Platform Owner, **When** an operation would remove or demote that final Platform Owner, **Then** the database refuses the operation.
-2. **Given** a new Platform Owner has first been added, **When** the previous Platform Owner is demoted, **Then** the database permits the transfer without leaving zero Platform Owners.
+1. **Given** exactly one Platform Owner, **When** a role change/demotion, staff-profile or membership deletion/revocation, or auth-user deletion cascade would leave zero Platform Owners, **Then** the database refuses the operation using the existing generic privileged-operation error convention (S30-R8).
+2. **Given** a new Platform Owner has first been added, **When** the previous Platform Owner is demoted or removed, **Then** the database permits the operation while at least one Platform Owner remains (S30-PO-3 Q8).
+3. **Given** two transactions concurrently attempt to demote distinct Platform Owners when exactly two exist, **When** both mutations are serialized by the guard, **Then** at most one demotion succeeds and at least one Platform Owner remains (S30-R8).
 
 #### Clarifications
 
 - S30-PO-3 Q6 resolves the existing `coaching_work` matrix source: PO/WO/Trainer are allowed and Sales is denied. No code changes are part of this documentation cycle.
-- S30-PO-3 Q7 approves Workspace Owner visibility of active members for roster administration. Roster boundary and visible member fields remain open PO questions.
-- S30-PO-3 Q8 approves a database guard against removing or demoting the final Platform Owner, with transfer by adding a new PO first. Concurrency and mutation failure details remain open PO questions.
-- Open ambiguities remain for roster boundary, visible fields, active-state semantics, final-PO removal operation, concurrency, and failure contract. Each is listed with options and blocked work in the SK-A PO decision register at `C:/Users/NEW LAP/.lifter/runs/s30-luna-sk-a6/po-decisions.md`; this amendment resolves none of those items.
+- S30-PO-3 Q7 approves “WO sees active members” and “Supports roster administration. Needs RLS change, tests and security review.” S30-R8 clarifies the approved scope: the requesting user must currently hold the Workspace Owner role in that workspace; visibility is limited to that workspace and existing membership-row columns (`user_id`, `role`, `workspace_id`, `created_at`, `revoked_at` as modeled). Active is `revoked_at IS NULL` in `supabase/migrations/20261027120000_tenancy.sql`. Profile/contact fields (including names, email, and phone) are explicitly out of scope.
+- S30-PO-3 Q8 approves: “The database refuses to remove or demote the final Platform Owner. Simple and prevents lockout. Transfer works by adding a new PO first.” S30-R8 clarifies that the invariant must hold under concurrency; serialize Platform-Owner role changes and protect every operation that could leave zero Platform Owners: role change/demotion, staff-profile or membership deletion/revocation, and auth-user deletion cascades. Reuse the existing generic `not_permitted` / SQLSTATE `42501` privileged-operation convention evidenced in `supabase/migrations/20261028120000_auth_recovery_links.sql:144-151`; do not add user-facing copy.
+- S30-R8 is an architect clarification of the already-approved S30-PO-3 Q7/Q8 behavior, not a new product decision. No open ambiguities remain within the approved F3 governance scope. Other requirements in the existing F3 specification are unchanged.
 
 ### Key Entities
 
@@ -150,12 +151,12 @@ The database prevents removal or demotion of the final Platform Owner. The PO-ap
 - Audit events for governance writes come with F5 (audit log). F3 records `granted_by`/`revoked_by` columns now, and F5 adds audit emission.
 - Docker is not available on the reviewer's machine, so integration tests are verified in Linux CI. Unit tests run locally.
 - S30-PO-3 Q6 resolves the `coaching_work` matrix: "PO/WO/Trainer, deny Sales (Recommended)"; Sales remains denied.
-- WO visibility of other members' memberships in their own workspace isn't specified in the sources. F3 allows only PO + self, and it is listed as NEEDS DECISION.
+- S30-PO-3 Q7, as clarified by S30-R8, permits Workspace Owners to see active membership rows in their own workspace for roster administration; profile/contact fields are out of scope.
 
 ### Governance amendment requirements and success criteria (S30-PO-3)
 
-- **FR-013**: The database MUST permit a Workspace Owner to see active members for roster administration, as approved by S30-PO-3 Q7: “WO sees active members” and “Supports roster administration. Needs RLS change, tests and security review.” The exact roster boundary and member fields are subject to the recorded PO clarifications.
-- **FR-014**: The database MUST refuse to remove or demote the final Platform Owner. Transfer MUST work by adding a new Platform Owner first, as approved by S30-PO-3 Q8: “The database refuses to remove or demote the final Platform Owner. Simple and prevents lockout. Transfer works by adding a new PO first.”
+- **FR-013**: For a requesting user who currently holds the Workspace Owner role in workspace W, the database MUST permit visibility of active membership rows in W only, limited to the existing membership-row columns `user_id`, associated `staff_profiles.role`, `workspace_id`, `granted_at`, and `revoked_at`; “active” MUST mean `revoked_at IS NULL` in the existing model. Profile/contact fields (including names, email, and phone) are out of scope. This records S30-PO-3 Q7 (“WO sees active members”; “Supports roster administration. Needs RLS change, tests and security review.”) as clarified by S30-R8.
+- **FR-014**: The database MUST preserve at least one Platform Owner under concurrent mutations. It MUST serialize Platform-Owner role changes and refuse any operation that would leave zero Platform Owners, including role change/demotion, staff-profile or membership deletion/revocation, and auth-user deletion cascades. It MUST permit transfer after another Platform Owner is added first, as approved by S30-PO-3 Q8: “The database refuses to remove or demote the final Platform Owner. Simple and prevents lockout. Transfer works by adding a new PO first.” Refused privileged operations MUST use the existing generic `not_permitted` / SQLSTATE `42501` convention, with no new user-facing copy (S30-R8).
 
-- **SC-005**: In executed database mutation tests, 100% of attempts that would remove or demote the final Platform Owner are rejected, and an add-new-PO-first transfer leaves at least one Platform Owner.
-- **SC-006**: After the PO clarifies the roster boundary and visible fields, 100% of executed RLS mutation cases enforce that approved active-member visibility for Workspace Owners and deny out-of-scope visibility.
+- **SC-005**: Executed database mutation tests reject 100% of role changes/demotions, staff-profile or membership deletions/revocations, and auth-user deletion cascades that would leave zero Platform Owners; two concurrent demotions when exactly two Platform Owners exist leave at least one Platform Owner; and add-new-PO-first transfer succeeds without leaving zero Platform Owners.
+- **SC-006**: Executed RLS mutation tests permit a current Workspace Owner to read 100% of active membership rows and only the existing membership-row columns in their own workspace, and return zero rows for revoked memberships or other workspaces; profile/contact fields remain inaccessible through this roster scope.
