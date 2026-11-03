@@ -191,6 +191,18 @@ export function SignupForm({
         );
         if (!validation.value) {
           event.preventDefault();
+          const firstIdentityError = (
+            ['name', 'dateOfBirth', 'username', 'telegramUsername'] as const
+          ).find((field) => validation.invalidFields.includes(field));
+          if (firstIdentityError) {
+            const identityRefs = {
+              name: nameRef,
+              dateOfBirth: dateOfBirthRef,
+              username: usernameRef,
+              telegramUsername: telegramUsernameRef,
+            } as const;
+            identityRefs[firstIdentityError].current?.focus();
+          }
           setSubmitted(true);
           setTouchedIdentityFields([
             'name',

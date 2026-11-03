@@ -133,6 +133,12 @@ test.describe.serial('T038 invitation signup UI', () => {
     await dateOfBirthField.focus();
     await dateOfBirthField.fill('2000-01-01');
     await expect(dateOfBirthField).toBeFocused();
+    const usernameField = page.getByLabel(messages['clientSignup.username'], {
+      exact: true,
+    });
+    await usernameField.focus();
+    await usernameField.press('Enter');
+    await expect(nameField).toBeFocused();
     await nameField.fill('Heba Sami Nabil');
     await expect(nameField).not.toHaveAttribute('aria-invalid');
     await expect(nameField).not.toHaveAttribute('aria-describedby');
