@@ -112,3 +112,11 @@ Each build reports the edge-worker size against the official Workers size limit 
 - The Worker size limit comes from the official Cloudflare limits page (checked 2026-10-27: 64 MiB uncompressed, no compressed limit) and stays overridable via `WORKER_SIZE_LIMIT_KIB`.
 - Design system, i18n/RTL, auth, tenancy, schema, jobs and backups are separate P0 features.
 - The GitHub remote exists. CodeRabbit reviews are enabled separately once configured.
+
+## Clarifications
+
+### Session 2026-11-03 — merged-scope compliance reconciliation
+
+- **Decision register:** `docs/04-changes-and-questions.md` and `docs/01-traceability.md`; this entry is limited to the original merged scaffold FR-001..FR-014. Self-hosted CI coverage FR-015..FR-020 is separately owned by SK-A4 and is not duplicated here.
+- **Result:** Zero open ambiguities in the original scaffold behavior and artifact scope described by FR-001..FR-014. Current CI contains later integration/storage jobs with optional Docker Hub credentials; whether FR-009's original no-secrets constraint applies only to the original baseline job or to the evolved workflow is raised separately for PO decision.
+- **Evidence limit:** Static repository inspection only; no tests or CI were run in this lane.
