@@ -12,16 +12,16 @@
 | FR-005 | T006-T010 | `tests/integration/client-accounts-integrity.test.ts` issued snapshot binding; `tests/integration/client-accounts-verification.md` U2 | VERIFIED |
 | FR-006 | T010-T015,T023-T030 | `tests/integration/client-accounts-signup.test.ts` generic invalid and duplicate response assertions; `tests/integration/client-accounts-verification.md` | VERIFIED |
 | FR-007 | T006-T010,T023-T030 | `client-accounts-integrity.test.ts` active identity uniqueness; archived-state behavior remains deferred by ND-F11-9a/9b | PARTIAL |
-| FR-008 | T006-T010,T023-T030,T031-T034 | `client-accounts-integrity.test.ts` RLS/tenant isolation; `client-accounts-recovery.test.ts` scoped recovery; verification.md | VERIFIED |
-| FR-009 | T003-T010,T019-T024 | `client-accounts-schema.test.ts`, `client-accounts-admission.test.ts` policy/grant assertions; verification.md | VERIFIED |
+| FR-008 | T006-T010,T023-T030,T031-T034 | `client-accounts-integrity.test.ts` RLS/tenant isolation; `client-accounts-recovery.test.ts` scoped recovery; `tests/integration/client-accounts-verification.md` | VERIFIED |
+| FR-009 | T003-T010,T019-T024 | `client-accounts-schema.test.ts`, `client-accounts-admission.test.ts` policy/grant assertions; `tests/integration/client-accounts-verification.md` | VERIFIED |
 | FR-010 | T011,T019-T020,T041-T044 | `client-accounts-audit.test.ts`, `client-accounts-purge-schedule.test.ts`; signup-attempt retention asserted; other audit retention remains open under ND-F5-1/B4 | PARTIAL |
 | FR-011 | T003-T005,T010-T015,T019-T030,T035-T038 | `password-policy.test.ts`, `client-accounts-signup.test.ts`, `client-accounts-admission.test.ts`; verification.md | VERIFIED |
 | FR-012 | T031-T034 | `client-accounts-recovery.test.ts`; verification.md U7 | VERIFIED |
 | FR-013 | T023-T030,T035-T038 | registration form unit/integration assertions and `client-accounts-verification.md` U8 evidence | VERIFIED |
 | FR-014 | T023-T030,T035-T038 | `client-accounts-signup.test.ts` response headers/privacy assertions; `client-accounts-verification.md` | VERIFIED |
 | FR-015 | T006-T015,T023-T030 | `client-accounts-integrity.test.ts` pending state/no access; signup completion assertions | VERIFIED |
-| FR-016 | T021-T030,T035-T038 | `client-accounts-signup.test.ts` signed-in visitor/manual sign-out assertions; verification.md | VERIFIED |
-| FR-017 | T003-T005 | `auth-signup-policy.test.ts` anonymous signup disabled and staff/recovery regression assertions; verification.md U1 | VERIFIED |
+| FR-016 | T021-T030,T035-T038 | `client-accounts-signup.test.ts` signed-in visitor/manual sign-out assertions; `tests/integration/client-accounts-verification.md` | VERIFIED |
+| FR-017 | T003-T005 | `auth-signup-policy.test.ts` anonymous signup disabled and staff/recovery regression assertions; `tests/integration/client-accounts-verification.md` U1 | VERIFIED |
 | SC-001..SC-010, SC-012 | T001-T044 as mapped in `tasks.md` | Requirement-specific tests listed above; `client-accounts-verification.md` captures historical executed results and acceptance evidence | VERIFIED |
 | SC-011 | T007-T010,T023-T024,T029-T030,T044 | `client-accounts-integrity.test.ts` and signup duplicate privacy assertions prove generic collision response; archive/reviewer criteria remain deferred | PARTIAL |
 

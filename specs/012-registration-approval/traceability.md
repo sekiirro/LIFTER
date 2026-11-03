@@ -1,4 +1,4 @@
-﻿# Traceability: F12 Registration approval and payments
+# Traceability: F12 Registration approval and payments
 
 Static source inspection only. No test suite was executed in this compliance lane. VERIFIED means a concrete test exists and asserts the mapped behavior; task checkboxes are not changed based on this static review.
 
@@ -25,7 +25,7 @@ Static source inspection only. No test suite was executed in this compliance lan
 | SC-004..005 | T024-T032, T038-T043 | self-status and client-access integration tests | Code/tests on `d04ef52` | VERIFIED |
 | SC-006..007 | T008-T022, T042, T044 | `tests/integration/registration-approval-replay.test.ts`; audit and integrity tests | Code/tests on `d04ef52`; mutation campaign T044 not executed in this lane | PARTIAL |
 | SC-008 | T033-T043, T045 | message/component unit tests; `tests/e2e/registration-approval-a11y.spec.ts` exists | Code/tests on `d04ef52`; rendered/a11y gates not executed in this lane | PARTIAL |
-| SC-010..011 | T019-T022, T038-T043 | Cairo correction and bounded-status tests | Code/tests on `d04ef52` | VERIFIED |
+| SC-011 | T019-T022, T038-T043 | Cairo correction and bounded-status tests | Code/tests on `d04ef52` | VERIFIED |
 
 ## Summary
 
