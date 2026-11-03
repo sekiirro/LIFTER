@@ -1,0 +1,27 @@
+# F3 Traceability ? static source review
+
+Analyzed source commit: `ed88574ae09c722b1f6ded4fc0b66122bbeb4f13`. Code, migrations, workflow and tests were inspected statically; no tests or CI jobs were run. VERIFIED requires a concrete asserting test.
+
+| Requirement | Task(s) | Test(s) (file::test name) | Evidence | Status | Gap |
+|---|---|---|---|---|---|
+| FR-001 | T002,T008,T013 | `tests/integration/rls-catalog.test.ts::'%s forces RLS and has least-privilege grants' (it.each staff_profiles/workspaces/workspace_memberships)` (parameterized for tenancy tables); `tests/integration/isolation.test.ts::(c) PO without membership reads both workspaces and every fixture membership/profile` | Migration `20261027120000_tenancy.sql`; commit `ed88574` | PARTIAL | Table visibility/RLS is asserted; no full schema assertion checks every required column and one-role-per-identity condition. |
+| FR-002 | T002,T008,T013 | `tests/integration/rls-catalog.test.ts::has all restrictive foreign keys including workspace pair and same-offer triple` | Migration and catalog source; commit `ed88574` | PARTIAL | Static catalog test exists, but the broad all-migrations inventory does not clearly assert every F3 tenant-owned table/relationship pair. |
+| FR-003 | T002,T006-T008,T013 | `tests/integration/rls-catalog.test.ts::'%s forces RLS and has least-privilege grants' (it.each staff_profiles/workspaces/workspace_memberships)` | Migration and catalog source; commit `ed88574` | VERIFIED | ? |
+| FR-004 | T002-T004,T008,T013 | `tests/unit/authorize.test.ts::allows PO without memberships for every known capability, denying unknowns`; `tests/integration/matrix-parity.test.ts::manage_branding is PO-wide, WO-own-workspace, and denied to other roles` | `lib/auth/authorize.ts`, tenancy SQL helpers; commit `ed88574` | VERIFIED | ? |
+| FR-005 | T002,T009,T013 | `tests/integration/governance.test.ts::PO creates/updates workspace and staff, grants/revokes, rejects duplicates, then re-grants with history`; `tests/integration/governance.test.ts::DELETE is denied to every application role, including PO and anon` | Migration and governance source; commit `ed88574` | VERIFIED | ? |
+| FR-006 | T002-T004,T010,T013 | `tests/unit/authorize.test.ts::denies unknown capability for a member`; `tests/integration/matrix-parity.test.ts::T005 bidirectional parity: ${role} / ${capability}` | Authorization matrix and parity source; commit `ed88574` | PARTIAL | Tests verify implemented matrix; PO source for `coaching_work` and Sales denial is explicitly unconfirmed. |
+| FR-007 | T003-T005,T010,T013 | `tests/unit/authorize.test.ts::denies a null role even with membership`; `tests/unit/authorize.test.ts::treats revoked membership as absent` | `lib/auth/authorize.ts`; commit `ed88574` | VERIFIED | ? |
+| FR-008 | T004,T006,T010,T013 | `tests/integration/matrix-parity.test.ts::T005 bidirectional parity: ${role} / ${capability}` | App/DB parity source; commit `ed88574` | VERIFIED | ? |
+| FR-009 | T001,T005,T008,T012,T013 | `tests/integration/isolation.test.ts::(a) trainer A reads only A, including a targeted foreign lookup`; `tests/integration/isolation.test.ts::(d) anonymous reads return no data or permission denied` | `tests/integration/harness.ts`; commit `ed88574` | PARTIAL | Tests prove representative table/helper isolation; task states full per-table/per-role matrix but no single assertion proves all required combinations. |
+| FR-010 | T001,T006,T007,T011-T013 | NOT-FOUND: no test asserts the CI workflow starts a fresh database on every PR with no secrets/deploy | `.github/workflows/ci.yml` statically inspected; commit `ed88574` | PARTIAL | Workflow wiring is present; no asserting test for triggers/secret/deploy constraints. |
+| FR-011 | T002,T013 | NOT-FOUND: no test asserts migrations are forward-only/non-destructive | Migrations statically inspected; commit `ed88574` | PARTIAL | No migration-policy assertion located. |
+| FR-012 | T002,T005,T012-T013 | NOT-FOUND: no test scans all migrations/seeds/test output for PII | Harness uses synthetic fixture identities; commit `ed88574` | PARTIAL | No complete asserting PII scan located. |
+| SC-001 | T002,T006-T008,T013 | `tests/integration/rls-catalog.test.ts::'%s forces RLS and has least-privilege grants' (it.each staff_profiles/workspaces/workspace_memberships)` | Commit `ed88574` | VERIFIED | ? |
+| SC-002 | T005,T008,T009,T013 | `tests/integration/isolation.test.ts::(a) trainer A reads only A, including a targeted foreign lookup`; `tests/integration/governance.test.ts::${actor} cannot perform any governance write in A or B` | Commit `ed88574` | PARTIAL | Tests assert multiple identities and negative cases, but no single test inventories the full per-table ? per-governance-write ? four-identity count required by the SC. |
+| SC-003 | T004,T010,T013 | `tests/integration/matrix-parity.test.ts::T005 bidirectional parity: ${role} / ${capability}` | Commit `ed88574` | VERIFIED | ? |
+| SC-004 | T002,T006,T011-T013 | NOT-FOUND: no test asserts PR trigger, absence of secrets, and no-deploy together | `.github/workflows/ci.yml` statically inspected; commit `ed88574` | PARTIAL | Workflow file shows push/PR and integration jobs; no test enforces all SC constraints. |
+
+## Static verification notes
+
+- Test file paths and names above were checked against the `ed88574` source tree. No test suite or workflow was run.
+- PO items SK-003-01..03 remain open. No row is marked DEFERRED because no cited PO record resolves these questions.
