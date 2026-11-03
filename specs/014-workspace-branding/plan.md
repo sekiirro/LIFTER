@@ -149,6 +149,10 @@ No constitution exception is requested. The necessary additional complexity is b
 
 `readServerEnv()` currently requires `SUPABASE_SERVICE_ROLE_KEY` even for session clients. A separate least-privilege hygiene follow-up is proposed to the PO. F14 must not add new code paths that depend on that requirement. The existing Worker already holds the service-role key for the PO-approved D-19 manual recovery link (authenticated, capability-scoped staff route); restricted F14 identities narrow authority for the public unauthenticated image route but do not remove that key from the Worker.
 
+## F14b owner-facing scope mapping (S20 PO-approved)
+
+The F14b implementation completes the owner-facing portion of FR-009 and is specified by FR-019-FR-025 and SC-012-SC-017 in `spec.md`. F14b tasks remain in the pending section of `tasks.md` and stay unchecked until their acceptance evidence is executed and recorded. The seven approved decisions are cited in those FRs from `s20-po-final-decisions-verbatim.md`, F14b decisions 1-7.
+
 ## Final PO decisions — effects in the plan (2026-10-29)
 
 - **PA-F14-1 — Decided (F14-1)**: Hero Banner is image-only with AR/EN alt text and locale fallback, no text overlay; required confirmation in UI and validation flows.

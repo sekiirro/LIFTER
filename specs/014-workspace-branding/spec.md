@@ -101,6 +101,20 @@ As a registration visitor with a valid F10 token, I see the latest published ide
 - A logo/banner processing, upload or persistence step fails: the previous asset is preserved; durable state enables reconciliation; reference-safe cleanup never deletes a referenced object.
 - A valid F10 open is in grace while F11 signup is past strict expiry: F14 preserves each existing contract; it does not resolve or alter ND-F11-4a.
 
+## F14b acceptance scenarios (S20 PO-approved decisions)
+
+1. **Given** an authorized workspace editor selects a valid logo file, **When** the file is selected, **Then** the reusable Upload Card starts upload automatically and never publishes the branding draft. Source: S20-PO F14b decision 2: "Automatically upload upon file selection; NEVER automatically publish."
+2. **Given** an authorized editor selects a valid Hero Banner, **When** the editor confirms that it contains identity content only, **Then** the reusable Upload Card uploads it; without confirmation it does not upload. Source: S20-PO F14b decision 3: "Banner-only content confirmation."
+3. **Given** an upload succeeds or fails, **When** the result is shown, **Then** the card shows a thumbnail and clear recovery/error state, with Retry available after failure. Source: S20-PO F14b decision 1: "Reusable Upload Card with thumbnail, Retry and clear errors."
+4. **Given** either banner description is supplied, **When** the editor saves the draft, **Then** at least one language is required and the available description is used when the other is absent. Source: S20-PO F14b decision 4: "Alt text required in one language minimum; fallback to the other."
+5. **Given** an editor previews branding, **When** they open preview, **Then** it uses the existing Workspace Builder Preview tab and creates no duplicate preview screen. Source: S20-PO F14b decision 5: "Reuse existing Workspace Builder Preview tab; no duplicate preview screen."
+6. **Given** a logo or banner is already attached, **When** the editor replaces or removes it, **Then** the existing controls provide Replace and Remove with safe fallback behavior. Source: S20-PO F14b decision 6: "Replace AND Remove with safe fallback."
+7. **Given** the upload editor is rendered in Arabic or English, **When** the labels, helper text, and failure message are shown, **Then** the approved bilingual copy is used and actual server limits are shown without invented numeric limits. Source: S20-PO F14b decision 7 (approved AR/EN copy and "Show actual server limits, not invented ones.").
+
+## Clarifications
+
+F14b product decisions 1-7 are resolved by `C:\Users\NEW LAP\.lifter\briefs\s20-po-final-decisions-verbatim.md`, F14b decision record (2026-10-29), and S29-PO-3 Q7 authorizes complete Spec Kit coverage. No open product ambiguities remain for these seven approved decisions. Implementation/release evidence gates already recorded in the F14 plan remain open where unproven; they are not product ambiguities.
+
 ## Requirements
 
 ### Functional Requirements
@@ -123,6 +137,13 @@ As a registration visitor with a valid F10 token, I see the latest published ide
 - **FR-016**: Branding changes MUST remain presentational. They MUST NOT change finance, permissions, security boundaries, signup behavior, or workspace authorization.
 - **FR-017**: F14 implementation MUST include a required Storage-enabled CI lane with readiness checks and zero permitted skips. Run F11 pending-client Storage denials alongside F14 bucket/path policy checks, including direct API attempts; use isolated fixtures and update F11 isolated-runner stack-restoration assumptions. No skipped Storage tests are permitted. Hosted-infrastructure proof is required before Production. This spec does not authorize CI, application, Storage or production changes.
 - **FR-018**: Bucket-qualified `storage.objects` policies MUST enforce workspace-prefixed paths and independently verified capability/scope. Anonymous listing/direct reads, cross-workspace access and mutation of published objects MUST be denied. Public image delivery MUST NOT fall back to service-role; any other server credential exception MUST be narrowly scoped, audited and documented for architect review, because service-role authority bypasses RLS broadly and the existing Worker also holds a service-role key for the PO-approved D-19 authenticated, capability-scoped manual recovery route.
+- **FR-019**: The owner-facing logo and Hero Banner controls MUST use one reusable Upload Card that shows a thumbnail, Retry, and clear errors. Source: S20-PO F14b decision 1: "Reusable Upload Card with thumbnail, Retry and clear errors."
+- **FR-020**: Selecting a valid file MUST start upload automatically; upload MUST NOT automatically publish the branding draft. Source: S20-PO F14b decision 2: "Automatically upload upon file selection; NEVER automatically publish."
+- **FR-021**: Before uploading a Hero Banner, the editor MUST confirm that the image contains identity content only; this confirmation applies to the banner and not the logo. Source: S20-PO F14b decision 3: "Banner-only content confirmation."
+- **FR-022**: Banner alt text MUST be required in at least one supported language; when the other language is absent, the available description MUST be used as fallback. Source: S20-PO F14b decision 4: "Alt text required in one language minimum; fallback to the other."
+- **FR-023**: Branding preview MUST reuse the existing Workspace Builder Preview tab and MUST NOT add a duplicate preview screen. Source: S20-PO F14b decision 5: "Reuse existing Workspace Builder Preview tab; no duplicate preview screen."
+- **FR-024**: The owner-facing upload controls MUST provide Replace and Remove with safe fallback behavior. Source: S20-PO F14b decision 6: "Replace AND Remove with safe fallback."
+- **FR-025**: Upload UI labels, helper text and errors MUST use the approved Arabic and English copy in S20-PO F14b decision 7; displayed upload limits MUST be actual server limits and MUST NOT be invented. Source: S20-PO F14b decision 7 (approved AR/EN copy; "Show actual server limits, not invented ones.").
 
 ### Architect Decisions (technical constraints)
 
@@ -187,6 +208,12 @@ The focused critique and architect response are recorded in [spec debate r2](res
 - **SC-009**: Anonymous listing/direct reads, cross-workspace Storage access and published-object mutation are denied by bucket-qualified workspace-path policies plus independent capability/scope checks, including direct API attempts.
 - **SC-010**: A required Storage-enabled CI lane runs with readiness checks and zero skipped Storage cases, including F11 pending-client denials and F14 bucket/path policy cases. Storage backup/restore evidence and the capacity model against verified Storage allowances and the 70% exit trigger are available before production approval; hosted-infrastructure proof and no service-role fallback for public images are explicit release gates.
 - **SC-011**: For each authorized surface, brand contrast is verified on real backgrounds/states; banner text remains off imagery or uses a guaranteed-contrast existing-token scrim, and semantic tokens are unchanged. Workspace switches discard late responses and no-scope views use neutral defaults.
+- **SC-012**: The owner-facing editor uses one reusable Upload Card for both asset roles and exposes thumbnail, Retry and clear error states for each applicable outcome. (FR-019)
+- **SC-013**: For 100% of valid selected files, upload starts on selection (or immediately after required banner confirmation); zero upload actions publish the draft. (FR-020, FR-021)
+- **SC-014**: Draft save accepts a banner description when either supported language has text, rejects the state with neither, and uses the supplied language when its counterpart is absent. (FR-022)
+- **SC-015**: The editor exposes the existing Workspace Builder Preview tab and adds zero duplicate preview screens. (FR-023)
+- **SC-016**: Both logo and banner cards expose Replace and Remove; failure preserves the current attached asset. (FR-024)
+- **SC-017**: Every F14b label/helper/error message has the approved Arabic and English value, and displayed limits equal server-reported limits with no invented numeric limit. (FR-025)
 
 ## Assumptions and Dependencies
 

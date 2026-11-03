@@ -1,6 +1,6 @@
 # Spec Kit Analyze ? F14b owner-facing branding
 
-- Date: 2026-11-03
+- Date: 2026-11-03 (S30 refresh after accepted patch)
 - Analysed commit: `630c3dbfa3e5422e7793de2cf65165e586301eef` (`origin/014b-branding-uploads`)
 - Scope: F14b owner-facing upload controls and banner alt-text editor; shared F14 core artifacts are inventoried because F14b is a sub-scope.
 - Method: read-only cross-artifact analysis plus static test/source verification. No tests were run.
@@ -44,5 +44,8 @@ No F14b-specific conflict identified against `.specify/memory/constitution.md` p
 - Verdict: **PASS WITH OPEN MEDIUM FINDINGS**. No open CRITICAL/HIGH finding.
 
 ## History
+
+- **S30 refresh:** applied the architect-accepted `014b-proposed-edits.patch` to shared F14 `spec.md`, `plan.md`, and `tasks.md`; refreshed the current analysis after those spec edits. Static traceability remains 5 VERIFIED / 8 PARTIAL (11/11 cited files/tests resolved per architect review); no test suite was run.
+- **Routing note:** the FR-016 context region in the F14 spec will need a mechanical merge when the accepted F14b patch meets the Hero patch; IDs do not overlap.
 
 - Round 2 review artifacts under generic names were rejected because F14b does have the shared F14 artifacts and collided with F14 paths. Corrective round 3 removes those two generic additions and uses `analyze-f14b.md` and `traceability-f14b.md`.
