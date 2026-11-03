@@ -64,7 +64,7 @@ Screenshots and `INDEX.md`: `%TEMP%/lifter-s29-f15-h5/`. The index links the 24 
 | States | PASS. Existing authorized-route tests cover loading/recovery, save, retry, conflict, and pending behavior; profile null/missing DOB is unit-covered. |
 | Copy | PASS. No new application strings; reused approved bilingual question labels and Bidi isolation. |
 | Matrix / screenshots | PASS. Eight AR/EN × light/dark × 390/1440 combinations with B01/B02/Goal, indexed under the requested temp directory and reviewed. |
-| Tests / dependencies / size | PASS. Unit, D integration, and route E2E passed; no dependency added; web bundle is within budget (13.29%). |
+| Tests / dependencies / size | Unit, focused D integration and route E2E passed; final full D integration has two timeouts (see gate table). No dependency added; web bundle is within budget (13.29%). |
 
 ### Design skills assessment
 
@@ -130,7 +130,7 @@ Read the full `C:/Users/NEW LAP/.lifter/design-skills-catalog.md`. Catalog entri
 
 ## Gates, task state, and Stack D
 
-The complete final-head gate sweep is recorded below after the report commit. The previous code-head sweep passed: unit 2,302; lint; typecheck; format; build; edge build; secrets; size (web 8,712.85 KiB / 13.29%, cron 11.76 KiB / 0.02%); migration timestamp check (156 files, 11 documented exceptions); diff check; and Stack D integration (120 files, 1,595 pass / 2 expected skips). The focused route E2E passed 4/4, including the eight-cell profile matrix and axe scans on all three screens.
+On report commit `2120d6301eea6a71cedb9e92ccef234e20fb8af5`, all non-integration gates passed: unit 2,302; lint; typecheck; format; build; edge build; secrets; size (web 8,712.85 KiB / 13.29%, cron 11.76 KiB / 0.02%); migration timestamp check (156 files, 11 documented merged exceptions); diff check. The prior code-head full integration passed (120 files, 1,595 passed / 2 expected skips), but the final-head full integration rerun did not: 118 files passed, 2 failed and 2 skipped; 1,593 tests passed, 2 failed and 2 skipped. The failures were 30-second timeouts in `client-accounts-recovery.test.ts` (safe-column RLS probes) and `client-accounts-catalog.test.ts` (narrow 30-day purge). A focused rerun passed the catalog file (22/22); the recovery timeout persisted. No application or database changes were made in response. The focused route E2E passed 4/4, including the eight-cell profile matrix and axe scans on all three screens.
 
 | Gate | Result |
 |---|---|
@@ -144,11 +144,11 @@ The complete final-head gate sweep is recorded below after the report commit. Th
 | Size | PASS — web 13.29%, cron 0.02% |
 | Migration timestamps | PASS — 156 validated, 11 documented merged exceptions |
 | `git diff --check` | PASS |
-| Full Stack D integration | PASS — 120 files, 1,595 passed, 2 expected skips |
+| Full Stack D integration | FAIL - 118 files passed, 2 timed out, 2 skipped; 1,593 tests passed, 2 failed, 2 skipped. Focused rerun: catalog 22/22 passed; recovery timeout persisted. |
 | Full Playwright | 288 passed, 5 shared pre-existing failures, 15 expected skips; 0 branch-only failures |
 
 - T009 is already checked complete in `specs/015-forms-intake/tasks.md`; this round adds runtime profile prefill coverage but changes no task text.
-- T024 remains open: full acceptance still has the five shared package/registration failures and expected suite skips, so the complete no-failure acceptance evidence required for closure is not present.
+- T024 remains open: full acceptance has five shared package/registration Playwright failures and the final full D integration run has one persistent recovery-test timeout; complete passing acceptance evidence is not present.
 - T029 remains open/blocked on its database prerequisites; h5 made no D1 deletion change.
 - Stack D was not started, stopped, or reset. Exact recorded `StartedAt` remains `2026-11-02T18:43:05.538142345Z`. Read-only DB fingerprint before and after: `pg_postmaster_start_time=2026-11-02 18:43:08.017082+00`, `cron.job=0`, 156 migration rows. Scheduler E2E opt-in was not set.
 - CodeRabbit at this report snapshot: no h5 review request yet. Historical requests on #44 were skipped (one for non-default stacked base; the later run for 326 files over the 300-file cap). After final-head gates, one manual full-review request is required; if the check is skipped, stop and report that state. No review threads are treated as clean until an actual non-skipped review completes.
