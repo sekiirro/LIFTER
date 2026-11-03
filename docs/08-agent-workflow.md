@@ -25,7 +25,7 @@ applies to every unit that changes rendered UI.
 
 Route according to task complexity, security risk, model capability, and quota (S22-PO-9 rule 5).
 
-- **Current allocation:** Two Luna Medium slots, one MiniMax at highest effort, and Big Pickle, Beam, and Flint through OpenCode; Kilo Code's two best available free models are the fallback when OpenCode free quotas are exhausted (S22-PO-9 rule 2). S25-PO-9 adds a fourth Luna slot at Medium effort (architect interpretation), superseding S22-PO-9's two-Luna capacity cap.
+- **Current allocation:** Four Luna Medium slots, one MiniMax at highest effort, and Big Pickle, Beam, and Flint through OpenCode; Kilo Code's two best available free models are the fallback when OpenCode free quotas are exhausted (S22-PO-9 rule 2; S25-PO-4 raised Luna capacity to three, and S25-PO-9 superseded that cap with a fourth slot).
 - **Retained tier rules:** The D-27 sequence GLM 5.3 Flash -> Luna -> Sol Medium remains subject to current allocations. S13 session 14 reserves Sol Medium for exceptionally difficult tasks or when GLM and Luna fail; S13 requires explicit PO approval before Sol use. Sol High and xhigh remain prohibited, and the architect stops to request PO direction if no permitted tier is available (D-27).
 - **Performance records:** Keep one performance-log row per delegation, including model, effort, task class, outcome, review notes, and cost (D-27).
 - **Free/third-party restrictions:** Free models receive no secrets, client data, or sensitive tasks (S13 PO Kilo guardrail); third-party/free models receive no secrets or .env values (S22-PO-9; S29-PO-3 Q3). Do not infer a separate sensitive-code category.
@@ -78,13 +78,13 @@ Before asking the PO to approve a merge to `main`, require items 1-6 on the exac
 1. A completed CodeRabbit review is APPROVED on the exact PR head (`commit_id == headRefOid`), with no later CHANGES_REQUESTED or DISMISSED review.
 2. PR `reviewDecision` is APPROVED.
 3. There are zero unresolved review threads and all actionable findings are resolved.
-4. Both GitHub Actions CI runs for the PR head are completed with success, and required security checks are green: the `push`-event run with `headSha == headRefOid` is the independent, non-author rerun of typecheck, lint, unit, and applicable integration/e2e gates; the `pull_request`-event run checks the merge result with current `main`. Agent-reported local results never substitute. Claude (architect) does not run tests or Git writes and verifies both runs.
+4. Both GitHub Actions CI runs are completed with success and required security checks are green. Verify the push-event run has `headSha == headRefOid` and record its run ID and conclusion; verify the pull_request-event run checks the merge result with current `main` and record its run ID and conclusion. Agent-reported local results never substitute. Claude (architect) does not run tests or Git writes and verifies both runs.
 5. The architect has independently reviewed the actual diff and evidence.
-6. The isolation gate, money gate, AR and EN UI check, log-scrub check, and acceptance criteria verified against [01-traceability.md](01-traceability.md) are satisfied.
+6. The isolation gate, money gate, AR and EN UI check, log-scrub check, and acceptance criteria verified against [01-traceability.md](01-traceability.md) are satisfied. For high-risk work, executed mutation-test evidence is recorded in the feature traceability artifact and independently reviewed (S29-PO-3 Q3).
 
 Then ask the PO for explicit merge approval and record the approved head SHA with that approval.
 
-7. Merge only after that approval, immediately re-checking items 1-6 and `po_approved_head == headRefOid`. If the head changed after PO approval, the approval lapses; re-satisfy items 1-6 on the new head and obtain new explicit PO approval. Use `gh pr merge <n> --merge --match-head-commit <po_approved_head>`.
+7. Merge only after that approval, immediately re-checking items 1-6 and `po_approved_head == headRefOid`. If the head changed after PO approval, the approval lapses; re-satisfy items 1-6 on the new head and obtain new explicit PO approval. If `main` moved after the green `pull_request` run, rerun CI on the updated merge result before merging. Use `gh pr merge <n> --merge --match-head-commit <po_approved_head>`.
 
 Never use `--admin`, `--auto`, or `--delete-branch`. Branch protection returns 403 on the current private Free plan, so this gate is process-only.
 
