@@ -68,7 +68,7 @@ function trackedServer(actor: (typeof actors)[number]) {
 }
 
 describe('catalog server authorization uses the signed-in user RPC path', () => {
-  it('serves a no-seed filtered library page through the session catalog wall', async () => {
+  it('serves an empty filtered search through the session catalog wall', async () => {
     const result = await server(workspaces.trainerA).search({
       kind: 'exercise',
       query: `s27-empty-${randomUUID()}`,
