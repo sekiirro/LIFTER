@@ -59,7 +59,7 @@ export function FoodEditor({
   const [errors, setErrors] = useState(initialErrors);
   const [workspaceId, setWorkspaceId] = useState(initialWorkspaceId);
   const [workspaceError, setWorkspaceError] = useState(false);
-  const [submitAttempted, setSubmitAttempted] = useState(false);
+  const [submitCount, setSubmitCount] = useState(0);
   const warn = foodWarnings(draft).length > 0;
   const editing = status !== 'saving';
   const nutritionLabels = {
@@ -126,10 +126,10 @@ export function FoodEditor({
       : []),
   ];
   useEffect(() => {
-    if (submitAttempted && errorSummaryEntries.length) {
+    if (submitCount > 0) {
       document.getElementById(`${base}-error-summary`)?.focus();
     }
-  }, [base, errors, submitAttempted, errorSummaryEntries.length]);
+  }, [base, submitCount]);
   function update<K extends keyof FoodEditorDraft>(
     key: K,
     value: FoodEditorDraft[K],
@@ -216,7 +216,7 @@ export function FoodEditor({
   }
   function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
-    setSubmitAttempted(true);
+    setSubmitCount((count) => count + 1);
     const next = validateFoodEditorDraft(draft);
     setErrors(next);
     if (Object.keys(next).length) return;

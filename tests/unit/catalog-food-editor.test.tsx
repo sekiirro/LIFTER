@@ -283,7 +283,7 @@ describe('duplicate review (T030)', () => {
 
 describe('food editor error-summary focus', () => {
   it('does not steal focus from an edited field after an invalid submit', async () => {
-    const invalidDraft = { ...base, nameAr: '', kcal: '-1' };
+    const invalidDraft = { ...base, nameAr: '', kcal: '-1', protein: '101' };
     await act(async () => {
       root.render(
         createElement(FoodEditor, {
@@ -293,11 +293,11 @@ describe('food editor error-summary focus', () => {
       );
     });
     const form = container.querySelector('form');
-    const nameAr = container.querySelector<HTMLInputElement>(
-      'input[id$="-name-ar"]',
+    const protein = container.querySelector<HTMLInputElement>(
+      'input[id$="-protein"]',
     );
     expect(form).not.toBeNull();
-    expect(nameAr).not.toBeNull();
+    expect(protein).not.toBeNull();
 
     await act(async () => {
       form!.dispatchEvent(
@@ -306,12 +306,34 @@ describe('food editor error-summary focus', () => {
     });
     const summary = container.querySelector('[id$="-error-summary"]');
     expect(dom.document.activeElement).toBe(summary);
-
-    await act(async () => {
-      nameAr!.value = 'Rice';
-      nameAr!.dispatchEvent(new dom.Event('input', { bubbles: true }));
+    let refocusedSummary = false;
+    summary!.addEventListener('focus', () => {
+      refocusedSummary = true;
     });
 
-    expect(dom.document.activeElement).toBe(nameAr);
+    await act(async () => {
+      protein!.focus();
+      const setter = Object.getOwnPropertyDescriptor(
+        dom.HTMLInputElement.prototype,
+        'value',
+      )!.set!;
+      setter.call(protein, '3');
+      const reactPropsKey = Object.keys(protein!).find((key) =>
+        key.startsWith('__reactProps'),
+      );
+      expect(reactPropsKey).toBeDefined();
+      const props = (
+        protein as unknown as Record<
+          string,
+          { onChange: (event: { currentTarget: HTMLInputElement }) => void }
+        >
+      )[reactPropsKey!];
+      props.onChange({ currentTarget: protein! });
+    });
+
+    expect(protein!.value).toBe('3');
+    expect(container.querySelector('[id$="-error-summary"]')).not.toBeNull();
+    expect(dom.document.activeElement).toBe(protein);
+    expect(refocusedSummary).toBe(false);
   });
 });
