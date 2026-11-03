@@ -1,7 +1,7 @@
 # Specification Analysis Report: Design System Foundation
 
 **Date:** 2026-11-04
-**Analysed commit:** 15c550b0789e2a0f3e7703b35dd0f2ea6bf4ec84 (Q16 task definitions, traceability, and SC-007 task-tag corrections are included; static analysis only)
+**Analysed commit:** d17a20f0ca6436ddbdd65c50fc4803748a25a133 (Q16 tasks and FR-028/SC-009 evidence gaps are included; static analysis only)
 **Scope:** Existing Design System artifacts, PR #28 Glass delta, and S30-PO-8 Q16 desktop sidebar correction.
 **Method:** Static inspection; no tests or runtime commands were executed. The `speckit-analyze` prerequisite check passed with `SPECIFY_FEATURE_DIRECTORY=specs/002-design-system`; no extension hooks are configured.
 
@@ -43,7 +43,7 @@
 | FR-025 | Yes | T041 | Governance/docs; test not applicable |
 | FR-026 | Yes | T040 and plan NEEDS DECISION table | Open items retained |
 | FR-027 | Yes | T043-T045, T047 | Q16 desktop sidebar and approved floating surfaces |
-| FR-028 | Yes | T043, T046, T048 | Capability/preferences, fallback, and Q16 sidebar review |
+| FR-028 | Yes | T043, T046, T048-T049 | Existing fallback evidence; follow-up tasks remain unchecked |
 | FR-029 | Yes | T045 | Popover keyboard behavior |
 | SC-001 | Yes | T007 | Contrast matrix |
 | SC-002 | Yes | T031 | Four-mode axe matrix |
@@ -53,22 +53,22 @@
 | SC-006 | Yes | T038, T039 | Print spike report |
 | SC-007 | Yes | T003, T042 | Build-size gate; execution not re-verified |
 | SC-008 | Yes | T046 | PO threshold; source report absent |
-| SC-009 | Yes | T043, T045, T048 | Fallback and focus assertions; T048 remains unchecked |
+| SC-009 | Yes | T043, T049 | Browser focus identity covers over-budget only; T049 remains unchecked for other fallback conditions |
 | SC-010 | Yes | T047, T048 | Q16 sidebar properties; tasks remain unchecked pending later implementation/review |
 
 ## Metrics
 
 - Requirements: 29 FRs + 10 SCs = 39
-- Tasks: 48
+- Tasks: 49
 - Requirement/task coverage: 39/39 (100%)
 - Unmapped tasks: 0
 - Open ambiguities in PR #28 and Q16 scope: 0; logical side follows existing inline-start implementation and document direction
 - Duplication findings: 0
 - CRITICAL: 0; HIGH: 0; MEDIUM: 2; LOW: 0
-- Verdict: **PASS WITH MEDIUM EVIDENCE GAPS**. The mandatory entry gate is satisfied: no open CRITICAL/HIGH findings. T046 remains open; no implementation is performed or authorized by this documentation analysis. T047-T048 remain unchecked pending the later implementation/review lane.
+- Verdict: **PASS WITH MEDIUM EVIDENCE GAPS**. The mandatory entry gate is satisfied: no open CRITICAL/HIGH findings. T046 remains open; no implementation is performed or authorized by this documentation analysis. T047-T049 remain unchecked pending the later implementation/review lane.
 
 ## History
 
-- 2026-11-04: Refreshed after traceability/task correction commit 15c550b0789e2a0f3e7703b35dd0f2ea6bf4ec84; FR-026 remains PARTIAL because no executable asserting test is recorded; 0 CRITICAL/HIGH findings. Static inspection only.
+- 2026-11-04: Refreshed after fallback-evidence task/traceability commit d17a20f0ca6436ddbdd65c50fc4803748a25a133; T049 is unchecked and FR-028/SC-009 remain PARTIAL pending later browser verification; 0 CRITICAL/HIGH findings. Static inspection only.
 
 - 2026-11-03: Initial S30 reconciliation of PR #28 scope at `e69688a`; refreshed source quotations and citations against `a9b37cc` with no new findings.
