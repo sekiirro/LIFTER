@@ -20,4 +20,4 @@
 
 ## Phase 4: Review (Claude)
 
-- [x] T007 [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007] Local Docker run of the full integration suite. Negative check: a temporary migration that drops the UPDATE guard trigger must make the T003 tests fail; then remove it. CI is green.
+- [ ] T007 [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007] Local Docker run of the full integration suite. Negative check: a temporary migration that drops the UPDATE guard trigger must make the T003 tests fail; then remove it.

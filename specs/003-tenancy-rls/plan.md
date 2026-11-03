@@ -41,7 +41,7 @@ A pure TypeScript `authorize()` mirrors the same matrix. A reusable integration 
 
 | # | Item | F3 handling |
 |---|---|---|
-| ND-F3-1 | Sales coaching rights (Register, Open) | `coaching_work` is denied for Sales |
+| ND-F3-1 | Sales coaching rights (Resolved: S30-PO-3 Q6) | `coaching_work` is allowed for PO/WO/Trainer and denied for Sales, per the PO decision |
 | ND-F3-2 | Can a WO see other members of their own workspace? | Not in the sources. Only the PO and the member themselves can read membership rows. |
 | ND-F3-3 | Who may manage the PO role itself (bootstrap, last-PO protection) | The first PO is bootstrapped by an operator SQL script (documented, not automated). No last-PO guard. |
 

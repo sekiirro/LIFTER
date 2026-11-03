@@ -1,37 +1,37 @@
 # Spec Kit Analyze - F3 Workspace Tenancy, Permission Matrix & RLS
 
-- Date: 2026-11-03
+- Date: 2026-11-03 (refreshed after S30-PO-3 Q6-Q8 record and static traceability corrections)
 - Analyzed source commit: `ed88574ae09c722b1f6ded4fc0b66122bbeb4f13` (`origin/main` at branch creation); task FR tags are part of this docs change.
 - Method: static cross-artifact, migration, workflow, and test-source review. No tests or CI jobs were run.
 
 ## Inventory and entry check
 
 - Present: `spec.md` (FR-001..012, SC-001..004, four GWT story groups), `plan.md`, `tasks.md`, `research.md`, `data-model.md`, `contracts/db-contract.md`, `quickstart.md`, `checklists/requirements.md`.
-- Missing at base: Analyze, traceability, standalone Clarifications section.
-- Clarifications: plan `NEEDS DECISION` records Sales coaching rights, WO membership visibility, and PO bootstrap/last-PO protection. FR-006 itself says Sales denial is unconfirmed. All are in the PO register for this round; the clarification entry gate remains incomplete.
-- Plan/tasks: 12 FRs map to T001-T013; explicit FR tags added to each task. No requirement or checkbox changed.
-- Constitution I, III, VII, VIII and IX reviewed; role boundaries and deny-by-default are central requirements. Product/security ambiguities remain open.
+- Missing at original base: Analyze, traceability, standalone Clarifications section; Clarifications now records S30-PO-3 Q6-Q8.
+- Clarifications: S30-PO-3 Q6 resolves `coaching_work` as PO/WO/Trainer and denies Sales. Q7 approves WO visibility of active members; Q8 approves a database guard against removing/demoting the final PO. These new behaviors are routed to a separate Spec Kit cycle and are not claimed as implemented by this baseline.
+- Plan/tasks: 12 FRs map to T001-T013; explicit FR tags reconcile task scope with traceability. No task checkbox changed. Clarification records cite S30-PO-3.
+- Constitution I, III, VII, VIII and IX reviewed; role boundaries and deny-by-default are central requirements. Q7/Q8 implementation details remain scoped to the new governance feature cycle.
 
 ## Findings
 
 | ID | Category | Severity | Location | Finding | Recommendation |
 |---|---|---|---|---|---|
-| A1 | Permission decision | HIGH | `spec.md:48,92`; `plan.md:44`; D-09 `docs/04-changes-and-questions.md:15` | `coaching_work` for PO/WO/Trainer is added beyond D-09's listed matrix, and Sales denial is explicitly marked unconfirmed. The actual authorization matrix is therefore not fully PO-sourced. | Keep Sales denied by default; PO must confirm the complete `coaching_work` role matrix. Raised as SK-003-01. |
-| A2 | Membership visibility | MEDIUM | `plan.md:45`; `spec.md` User Story 1 / Edge Cases | Whether a WO may read other members' rows in its own workspace is not specified by the cited sources; current behavior permits PO and self only. | Preserve least privilege; ask PO whether this remains the intended policy. Raised as SK-003-02. |
-| A3 | PO bootstrap / last-owner protection | HIGH | `plan.md:46`; `research.md:17` | The first PO is inserted by operator SQL and there is no last-PO protection. The plan records this but no cited PO decision resolves acceptable bootstrap, recovery, or lockout behavior. | Do not infer a guard or recovery flow; PO must choose the governance policy. Raised as SK-003-03. |
+| A1 | Evidence coverage | MEDIUM | `traceability.md` FR-003 | Signed-session isolation tests cover representative roles/tables, but do not establish deny-by-default policy predicates across every table and role. | Keep FR-003 PARTIAL until complete policy-predicate evidence exists. |
+| A2 | Evidence coverage | MEDIUM | `traceability.md` FR-004 | Catalog hardening and a representative authenticated identity check exist, but the tests do not establish every helper condition or every attempted identity-widening path. | Keep FR-004 PARTIAL pending broader assertions. |
 
 ## Coverage and constitution
 
-FR-to-task mapping is 12/12 (100%) after the explicit tags. No checkboxes changed. Constitution I/III support isolation and PO-only governance; the open role matrix and last-PO behavior need PO resolution rather than reinterpretation.
+FR-to-task mapping is 12/12 (100%) after the explicit tags. No checkboxes changed. Constitution I/III support isolation and PO-only governance; the remaining evidence gaps are explicit, and Q7/Q8 implementation is routed to the new governance cycle.
 
 ## Static traceability
 
-`traceability.md`: 7 VERIFIED, 9 PARTIAL, 0 NOT-FOUND, 0 DEFERRED across 16 FR/SC rows. Exact test paths and names were checked statically; no test suite or CI was run. PARTIAL rows identify gaps in composite/schema assertions, source confirmation, coverage breadth, CI workflow assertions, migration direction, and PII scans.
+`traceability.md`: 5 VERIFIED, 11 PARTIAL, 0 NOT-FOUND, 0 DEFERRED across 16 FR/SC rows. Exact test paths and names were checked statically; no test suite or CI was run. PARTIAL rows identify gaps in composite/schema assertions, source confirmation, coverage breadth, CI workflow assertions, migration direction, and PII scans.
 
 ## Verdict
 
-**FAIL** ? 0 CRITICAL, 2 HIGH, 1 MEDIUM, 0 LOW. The PO permission and account-governance decisions remain open, so the feature's acceptance gate is not complete.
+**PASS WITH OPEN MEDIUM EVIDENCE GAPS** ? 0 CRITICAL, 0 HIGH, 2 MEDIUM, 0 LOW. Decision records close prior PO ambiguities; two newly approved behaviors require the separate cycle. Static traceability retains PARTIAL rows for gaps in assertion breadth.
 
 ## History
 
-- First SK-A merged-feature review on `origin/main` `ed88574`; no earlier Analyze history existed.
+- First SK-A merged-feature review on `origin/main` `ed88574`; initial verdict 0 CRITICAL, 2 HIGH, 1 MEDIUM, 0 LOW.
+- S30-PO-3 Q6-Q8 refresh: Q6 resolved; Q7/Q8 behaviors routed to a new Spec Kit cycle. Analyze refreshed alongside task/traceability corrections; static only.

@@ -27,7 +27,7 @@ FR-to-task mapping is 7/7 (100%); task tags are now explicit. No checkbox change
 
 ## Static traceability
 
-`traceability.md`: 7 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED across 11 FR/SC rows. Exact test names were checked statically; no tests were run. PARTIAL rows cover unasserted schema details, full PII classes, helper pattern testing, and retention/access questions.
+`traceability.md`: 7 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED across 11 FR/SC rows. Exact test names were checked statically; no tests were run. PARTIAL rows are FR-001, FR-004, FR-006 and SC-004. ND-F5-1 (retention) and ND-F5-2 (future Trainer access) are separate open decisions, not traceability gaps.
 
 ## Verdict
 

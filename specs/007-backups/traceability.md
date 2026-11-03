@@ -16,7 +16,7 @@ Analyzed source commit: `ed88574ae09c722b1f6ded4fc0b66122bbeb4f13`. Tests were i
 | SC-002 | T003,T007 | `tests/unit/backup-manifest.test.ts::rejects one-byte tampering before any decryption` | Commit `ed88574` | PARTIAL | Tamper detection is asserted; wrong-key end-to-end failure has no asserting test located. |
 | SC-003 | T004,T007 | `tests/unit/backup-streams.test.ts::encrypts a multi-chunk stream and decrypts it without a plaintext file` | Commit `ed88574` | VERIFIED | Test verifies encrypted multi-chunk output and absence of a plaintext dump file for the stream helper. |
 | SC-004 | T002 | `tests/unit/backup-retention.test.ts::retains the exact union over eighteen months, two backups per day` | Commit `ed88574` | VERIFIED | ? |
-| D-14 storage coverage (not represented by an FR) | ? | NOT-FOUND: no test for storage-object export or restore | `scripts/backup/backup.mjs:54-58` throws `STORAGE_EXPORT_UNSUPPORTED` when bucket count is nonzero; F14 migrations create `branding-staging` and `branding-validated`; D-14 requires storage exports | NOT-FOUND | Add complete Spec Kit coverage for approved D-14 storage backup/restore scope via PO/architect routing; no requirement was invented here. |
+| D-14 storage coverage (not represented by an FR) | ? | NOT-FOUND: no test for storage-object export or restore | `scripts/backup/backup.mjs:56-58` throws `STORAGE_EXPORT_UNSUPPORTED` when bucket count is nonzero; F14 migrations create `branding-staging` and `branding-validated`; D-14 requires storage exports | NOT-FOUND | Architect routing: D-14 already approves storage exports; route storage export/restore into F7 as a later Spec Kit cycle. |
 
 ## Static verification notes
 
