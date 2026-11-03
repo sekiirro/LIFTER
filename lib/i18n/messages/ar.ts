@@ -444,6 +444,7 @@ export const ar = {
   'catalog.carbs': 'الكربوهيدرات',
   'catalog.fat': 'الدهون',
   'catalog.showcaseTitle': 'غلاف قائمة المكتبة',
+  'catalog.showcaseKendoWorkspace': 'مساحة كيندو التجريبية',
   'catalog.showcaseIntro':
     'معاينة عربية أولًا مع الإنجليزية، والبحث وعوامل التصفية والحالات.',
   'catalog.showcaseNotice':
@@ -597,7 +598,7 @@ export const ar = {
   'catalog.foodSaving': 'جارٍ حفظ الطعام',
   'catalog.foodSaveError': 'تعذّر حفظ الطعام',
   'catalog.foodSaveErrorDescription':
-    'لم يُحفظ الطعام. تحقق من الاتصال ثم حاول مرة أخرى.',
+    'تعذّر تأكيد الحفظ. راجع قائمة الطعام قبل إعادة المحاولة.',
   'catalog.duplicateExactTitle': 'هذا الطعام موجود بالفعل',
   'catalog.duplicateNearTitle': 'مراجعة الأطعمة المتشابهة',
   'catalog.duplicateExactDescription':

@@ -458,6 +458,7 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.carbs': 'Carbohydrates',
   'catalog.fat': 'Fat',
   'catalog.showcaseTitle': 'Catalog list shell',
+  'catalog.showcaseKendoWorkspace': 'Kendo demo workspace',
   'catalog.showcaseIntro':
     'Arabic-first and English preview with search, filters, and states.',
   'catalog.showcaseNotice':
@@ -617,7 +618,7 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.foodSaving': 'Saving food',
   'catalog.foodSaveError': 'Unable to save the food',
   'catalog.foodSaveErrorDescription':
-    'Your food was not saved. Check your connection and try again.',
+    "We couldn't confirm the save. Check the food list before retrying.",
   'catalog.duplicateExactTitle': 'This food already exists',
   'catalog.duplicateNearTitle': 'Review similar foods',
   'catalog.duplicateExactDescription':

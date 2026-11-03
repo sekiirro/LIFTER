@@ -47,7 +47,7 @@ export default async function CatalogFoodsShowcase({
           locale={locale}
           role="trainer"
           workspaces={[
-            { id: 'fixture-kendo', label: 'Kendo — demo workspace' },
+            { id: 'fixture-kendo', label: m['catalog.showcaseKendoWorkspace'] },
           ]}
           initialDraft={fixture}
           alternatives={[

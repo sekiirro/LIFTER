@@ -55,10 +55,7 @@ export function CatalogFoodsShowcaseClient({
           workspaces={[
             {
               id: 'fixture-kendo',
-              label:
-                locale === 'ar'
-                  ? 'مساحة كيندو التجريبية'
-                  : 'Kendo demo workspace',
+              label: messages['catalog.showcaseKendoWorkspace'],
             },
             {
               id: 'fixture-north',

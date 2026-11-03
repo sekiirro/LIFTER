@@ -21,5 +21,12 @@ describe('S30 PO-approved F16 copy', () => {
       'utf8',
     );
     expect(page).toContain("label: m['catalog.showcaseKendoWorkspace']");
+    const client = readFileSync(
+      'app/(dev)/showcase/catalog-foods/CatalogFoodsShowcaseClient.tsx',
+      'utf8',
+    );
+    expect(client).toContain(
+      "label: messages['catalog.showcaseKendoWorkspace']",
+    );
   });
 });
