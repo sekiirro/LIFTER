@@ -16,16 +16,16 @@
 
 | Requirement key | Has task? | Task IDs | Notes |
 |---|---:|---|---|
-| FR-001 | Yes | T006, T007, T008 | Token definitions and CSS assertions |
-| FR-002 | Yes | T006, T007 | Light/dark surfaces and contrast |
-| FR-003 | Yes | T004, T005, T007, T022 | Brand derivation and contrast |
+| FR-001 | Yes | T006, T008 | Token definitions and CSS assertions |
+| FR-002 | Yes | T006 | Light/dark surfaces and contrast |
+| FR-003 | Yes | T004, T005, T007, T008, T022 | Brand derivation and contrast |
 | FR-004 | Yes | T006, T007, T022, T029 | Semantic colors |
-| FR-005 | Yes | T004, T005, T007, T020, T022 | Workspace brand validation |
+| FR-005 | Yes | T004, T005, T007, T008, T020, T022 | Workspace brand validation |
 | FR-006 | Yes | T009, T011, T015, T019 | Theme preference |
-| FR-007 | Yes | T006, T007 | Token radii/surfaces; direct radius assertion not found |
+| FR-007 | Yes | T006 | Token radii/surfaces; direct radius assertion not found |
 | FR-008 | Yes | T009, T010, T011, T016, T019 | Locale and direction |
-| FR-009 | Yes | T012, T013, T017, T034, T036 | RTL/logical CSS |
-| FR-010 | Yes | T017, T018 | Bidi rendering; direct order assertion not found |
+| FR-009 | Yes | T012, T013 | RTL/logical CSS |
+| FR-010 | Yes | T017 | Bidi rendering; direct order assertion not found |
 | FR-011 | Yes | T010, T016 | Message catalog parity |
 | FR-012 | Yes | T001, T011 | Font setup; direct selection assertion not found |
 | FR-013 | Yes | T012 | Icon implementation; direct icon-name assertion not found |
@@ -36,14 +36,14 @@
 | FR-018 | Yes | T027, T030, T031, T032 | Loading/empty/error states |
 | FR-019 | Yes | T028, T029, T030, T031, T032 | Toast/alert behavior |
 | FR-020 | Yes | T006, T011, T023, T027, T032 | Motion/reduced motion |
-| FR-021 | Yes | T033-T036, T047-T048 | Existing responsive navigation; Q16 tasks remain unchecked pending verification |
+| FR-021 | Yes | T034, T036, T047, T048 | Existing responsive navigation; Q16 tasks remain unchecked pending verification |
 | FR-022 | Yes | T033, T034, T036 | Role navigation |
 | FR-023 | Yes | T001, T002, T014, T018, T021, T030, T035, T040 | Showcase and gate |
 | FR-024 | Yes | T037, T038, T039 | Print sample/report |
 | FR-025 | Yes | T041 | Governance/docs; test not applicable |
-| FR-026 | Yes | T040 and plan NEEDS DECISION table | Open items retained |
-| FR-027 | Yes | T043-T045, T047 | Q16 desktop sidebar and approved floating surfaces |
-| FR-028 | Yes | T043, T046, T048-T049 | Existing fallback evidence; follow-up tasks remain unchecked |
+| FR-026 | Yes | T040 | Open items retained |
+| FR-027 | Yes | T043, T044, T045, T047 | Q16 desktop sidebar and approved floating surfaces |
+| FR-028 | Yes | T043, T046, T048, T049 | Existing fallback evidence; follow-up tasks remain unchecked |
 | FR-029 | Yes | T045 | Popover keyboard behavior |
 | SC-001 | Yes | T007 | Contrast matrix |
 | SC-002 | Yes | T031 | Four-mode axe matrix |
@@ -68,6 +68,8 @@
 - Verdict: **PASS WITH MEDIUM EVIDENCE GAPS**. The mandatory entry gate is satisfied: no open CRITICAL/HIGH findings. T046 remains open; no implementation is performed or authorized by this documentation analysis. T047-T049 remain unchecked pending the later implementation/review lane.
 
 ## History
+
+- 2026-11-04: Reconciled all functional-requirement task columns against the FR tags declared in tasks.md and traceability.md; 0 CRITICAL/HIGH findings. No spec/plan/tasks requirements changed; static inspection only.
 
 - 2026-11-04: Refreshed after task/traceability alignment commit 70b9e2fc55149b86cbddd9a8a6e540f941815c15; 0 CRITICAL/HIGH findings; FR-021 and SC-007/008/009/010 remain PARTIAL where evidence is missing. Static inspection only.
 
