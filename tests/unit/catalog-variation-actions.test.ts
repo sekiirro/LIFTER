@@ -59,6 +59,34 @@ describe('catalog variation actions', () => {
     expect(writeVariation).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['null draft', null],
+    ['missing draft', {}],
+    ['non-string workspace id', { workspaceId: null }],
+    ['non-string exercise id', { workspaceId: 'workspace-selected', exerciseId: 7 }],
+    ['non-string video url', {
+      workspaceId: 'workspace-selected',
+      exerciseId: 'exercise-global',
+      videoUrl: {},
+      note: '',
+    }],
+    ['non-string note', {
+      workspaceId: 'workspace-selected',
+      exerciseId: 'exercise-global',
+      videoUrl: '',
+      note: null,
+    }],
+  ])('returns invalid for a malformed %s without throwing', async (_case, draft) => {
+    await expect(
+      saveVideoVariationAction(
+        draft as never,
+        null,
+        '11111111-1111-4111-8111-111111111111',
+      ),
+    ).resolves.toEqual({ status: 'invalid' });
+    expect(writeVariation).not.toHaveBeenCalled();
+  });
+
   it('loads only the explicit selected workspace and filters mismatched projections', async () => {
     search.mockResolvedValue({
       status: 'ok',
