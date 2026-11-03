@@ -256,6 +256,17 @@
   color: var(--color-text);
 }
 
+/* S30-PO-6: the dark-theme form/CTA tint is 90% of the existing --color-card token. */
+:global(:where([data-theme='dark'])) .stage .formPlate {
+  background: color-mix(in srgb, var(--color-card) 90%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:where(html:not([data-theme='light']))) .stage .formPlate {
+    background: color-mix(in srgb, var(--color-card) 90%, transparent);
+  }
+}
+
 .formPlate h1 {
   margin-block: 0;
   color: var(--color-text);
@@ -322,6 +333,36 @@
     inset 0 -1px 2px rgba(0, 0, 0, 0.18);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+}
+
+/*
+ * S30 option 1a — deterministic Hero field surface.
+ *
+ * `.fieldControl` and the shared `.liquidGlassEdge` recipe both declare the
+ * field background at the same specificity, so the resolved surface depended
+ * on the stylesheet order: dev painted a near-transparent field while
+ * production painted the token surface. The Hero-scoped rules below outrank
+ * the shared edge recipe, so dev and production resolve the same surface.
+ *
+ * Dark themes (explicit dark and follow-OS dark) resolve to the existing
+ * `--color-card` token; light themes keep the existing `--color-card-raised`
+ * token.
+ */
+.stage .fieldControl,
+.stage .countryPicker {
+  background: var(--color-card-raised);
+}
+
+:global(:where([data-theme='dark'])) .stage .fieldControl,
+:global(:where([data-theme='dark'])) .stage .countryPicker {
+  background: var(--color-card);
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:where(html:not([data-theme='light']))) .stage .fieldControl,
+  :global(:where(html:not([data-theme='light']))) .stage .countryPicker {
+    background: var(--color-card);
+  }
 }
 
 .fieldControl:has(input:focus-visible),
@@ -720,6 +761,11 @@
     color: var(--color-text);
   }
 
+  /* The dense dark form tint is off for reduced-capability surfaces. */
+  .stage .formPlate {
+    background: transparent;
+  }
+
   .phoneNumber :global([data-testid='country-calling-code']) {
     color: var(--hero-form-control-text) !important;
   }
@@ -727,6 +773,18 @@
   .fieldError,
   .message[data-result-status='invalid_input'] {
     color: var(--color-error-fg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Reduced motion keeps the opaque card, so the dense form treatment is off. */
+  .stage .fieldControl,
+  .stage .countryPicker {
+    background: var(--color-card-raised);
+  }
+
+  .stage .formPlate {
+    background: transparent;
   }
 }
 
@@ -747,15 +805,15 @@
   }
 
   .glassCard,
-  .formPlate,
+  .stage .formPlate,
   .formPlate h1,
   .glassContent :global([data-registration-identity]),
   .glassContent :global([data-brand-name]),
   .form > label,
   .field,
   .message,
-  .fieldControl,
-  .countryPicker {
+  .stage .fieldControl,
+  .stage .countryPicker {
     background: Canvas;
     color: CanvasText;
   }
@@ -845,6 +903,10 @@
 
   .stage .form {
     --hero-form-control-text: var(--color-text);
+  }
+
+  .stage .formPlate {
+    background: transparent;
   }
 
   .stage .fieldControl,
