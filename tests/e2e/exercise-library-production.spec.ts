@@ -8,7 +8,8 @@ import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3437';
-const screenshotDir = join(tmpdir(), 'lifter-s28-f16-lib4');
+const screenshotDir =
+  process.env.LIFTER_SCREENSHOT_DIR ?? join(tmpdir(), 'lifter-s28-f16-lib4');
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
@@ -194,6 +195,30 @@ for (const locale of ['ar', 'en'] as const) {
           path: join(
             screenshotDir,
             `${locale}-${theme}-${viewport.name}-edit.png`,
+          ),
+          fullPage: true,
+        });
+
+        await page.goto('/catalog-variations');
+        await expect(
+          page.getByRole('heading', {
+            level: 1,
+            name: m['catalog.videoVariationTitle'],
+          }),
+        ).toBeVisible();
+        const exerciseSelect = page.getByLabel(
+          m['catalog.videoVariationExercise'],
+        );
+        await expect(
+          exerciseSelect.getByRole('option', {
+            name: 'S28 persisted integration exercise',
+          }),
+        ).toBeVisible();
+        await assertAxe(page);
+        await page.screenshot({
+          path: join(
+            screenshotDir,
+            `${locale}-${theme}-${viewport.name}-variation.png`,
           ),
           fullPage: true,
         });
