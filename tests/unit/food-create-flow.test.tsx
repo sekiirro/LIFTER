@@ -202,9 +202,9 @@ describe('FoodCreateFlow save errors', () => {
     await act(async () => {
       cancel!.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
     });
-    expect(container.querySelector('[data-testid="duplicate-review"]')).not.toBe(
-      null,
-    );
+    expect(
+      container.querySelector('[data-testid="duplicate-review"]'),
+    ).not.toBe(null);
 
     await act(async () => resolveSave({ status: 'ok' }));
   });

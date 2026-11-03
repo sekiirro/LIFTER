@@ -45,6 +45,7 @@ export function FoodCreateFlow({
   const operationKey = useRef<{ fingerprint: string; key: string } | null>(
     null,
   );
+  const savePending = useRef(false);
   function operationKeyFor(
     nextDraft: FoodEditorDraft,
     selectedWorkspaceId: string | null,
@@ -80,9 +81,10 @@ export function FoodCreateFlow({
       setState('error');
       return;
     }
-    if (result.status === 'exact' || result.status === 'near')
+    if (result.status === 'exact' || result.status === 'near') {
       setReview(result);
-    else if (result.status === 'none') {
+      setState('ready');
+    } else if (result.status === 'none') {
       let saved;
       try {
         saved = await saveCatalogFoodAction(
@@ -101,6 +103,8 @@ export function FoodCreateFlow({
     } else setState('error');
   }
   async function confirmNear() {
+    if (savePending.current) return;
+    savePending.current = true;
     setAlternativeSaveBlocked(false);
     setState('saving');
     let result;
@@ -115,6 +119,8 @@ export function FoodCreateFlow({
       setState('error');
       setReview(null);
       return;
+    } finally {
+      savePending.current = false;
     }
     setAlternativeSaveBlocked(result.status === 'unsupported_alternatives');
     setState(result.status === 'ok' ? 'success' : 'error');
@@ -127,15 +133,18 @@ export function FoodCreateFlow({
         locale={locale}
         role={role}
         state={review.status}
+        pending={state === 'saving'}
         candidates={review.candidates}
         onConfirm={confirmNear}
         onSelectExisting={(candidate) => {
+          if (savePending.current) return;
           setSelectedExisting(candidate);
           setReview(null);
           setState('ready');
           onSelectExisting?.(candidate);
         }}
         onCancel={() => {
+          if (savePending.current) return;
           setReview(null);
           setSelectedExisting(null);
           setState('ready');

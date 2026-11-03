@@ -23,6 +23,7 @@ export type DuplicateReviewProps = {
   role: 'po' | 'workspace_owner' | 'trainer' | 'sales' | 'client';
   state: 'none' | 'exact' | 'near';
   candidates: readonly DuplicateCandidate[];
+  pending?: boolean;
   onConfirm?: () => void;
   onCancel?: () => void;
   onSelectExisting?: (candidate: DuplicateCandidate) => void;
@@ -33,6 +34,7 @@ export function DuplicateReview({
   role,
   state,
   candidates,
+  pending = false,
   onConfirm,
   onCancel,
   onSelectExisting,
@@ -55,6 +57,7 @@ export function DuplicateReview({
       data-catalog-role={role}
       data-testid="duplicate-review"
       aria-labelledby="duplicate-review-title"
+      aria-busy={pending || undefined}
     >
       <h2 id="duplicate-review-title">{title}</h2>
       <Alert tone={exact ? 'error' : 'warning'} title={title}>
@@ -114,16 +117,17 @@ export function DuplicateReview({
               <input
                 type="checkbox"
                 checked={confirmed}
+                disabled={pending}
                 onChange={(event) => setConfirmed(event.currentTarget.checked)}
               />{' '}
               {m['catalog.duplicateConfirm']}
             </label>
           </div>
           <div className={styles.actions}>
-            <Button disabled={!confirmed} onClick={onConfirm}>
+            <Button disabled={pending || !confirmed} onClick={onConfirm}>
               {m['catalog.duplicateContinue']}
             </Button>
-            <Button variant="secondary" onClick={onCancel}>
+            <Button variant="secondary" disabled={pending} onClick={onCancel}>
               {m['catalog.duplicateCancel']}
             </Button>
           </div>
