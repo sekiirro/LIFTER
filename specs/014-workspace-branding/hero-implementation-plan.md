@@ -1,5 +1,11 @@
 # Production registration hero — implementation plan (chunk 1)
 
+## Spec and PO traceability
+
+This plan implements only the F14 Hero requirements FR-026-FR-030 and SC-018-SC-022 in `spec.md`, under S29-PO-3 Q7. The approved visual source is prototype `97debaf`; S20 approval preserves Emerald `#059669`, layout, Apple Liquid Glass treatment, mobile behavior and tokens. S27-PO-1 governs Light/Dark/Follow Device and print theme. S28-PO-4 governs registration fields and age calculation; F15 owns Intake prefill. S21-PO-1 and S28-PO-5 govern approved Glisse use and preservation constraints; S29-PO-1 authorizes continuation of remaining Glisse work. S23-PO-5 governs the no-banner mobile preferences pill.
+
+Every Hero implementation task must carry the matching FR IDs. Existing work without an asserting test remains open; this plan does not treat evidence artifacts or unexecuted suites as completed tasks.
+
 ## Scope and production entry point
 
 - Route: `app/register/[token]/page.tsx` (`/register/:token`), valid-link branch only.
