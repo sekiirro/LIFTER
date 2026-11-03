@@ -8,6 +8,8 @@ const db = postgres(process.env.DB_URL ?? '', { max: 1, connect_timeout: 10 });
 afterAll(() => db.end());
 
 const rollback = new Error('T006 synthetic fixture rollback');
+type JSONObject = { [key: string]: postgres.JSONValue };
+type MutableDefinition = JSONObject & { questions: JSONObject[] };
 
 async function expectInvariantFailure(body: () => Promise<void>) {
   let failure: unknown;
@@ -113,16 +115,16 @@ describe('T006/T009 persisted Builder writes', () => {
   it('rejects choices on non-choice types and contains on a non-multiChoice source', async () => {
     await expect(
       db.begin(async (tx) => {
-        const invalidChoices = structuredClone(definition()) as {
-          questions: Array<Record<string, unknown>>;
-        };
+        const invalidChoices = structuredClone(
+          definition(),
+        ) as unknown as MutableDefinition;
         invalidChoices.questions[0]!.choices = ['unexpected'];
         const choicesResult = await tx`
           select app_private.f15_valid_builder_definition(${tx.json(invalidChoices)},false) as valid`;
         expect(choicesResult[0]?.valid).toBe(false);
-        const invalidContains = structuredClone(definition()) as {
-          questions: Array<Record<string, unknown>>;
-        };
+        const invalidContains = structuredClone(
+          definition(),
+        ) as unknown as MutableDefinition;
         invalidContains.questions[1]!.when = {
           mode: 'all',
           conditions: [
@@ -148,7 +150,9 @@ describe('T006/T009 persisted Builder writes', () => {
         ),
       async () =>
         expectInvariantFailure(async () => {
-          const invalid = structuredClone(definition());
+          const invalid = structuredClone(
+            definition(),
+          ) as unknown as MutableDefinition;
           invalid.questions[0]!.choices = ['unexpected'];
           const [row] =
             await db`select app_private.f15_valid_builder_definition(${db.json(invalid)},false) as valid`;
@@ -164,7 +168,7 @@ describe('T006/T009 persisted Builder writes', () => {
         ),
       async () =>
         expectInvariantFailure(async () => {
-          const invalid = definition();
+          const invalid = definition() as unknown as MutableDefinition;
           invalid.questions[1]!.when = {
             mode: 'all',
             conditions: [
