@@ -25,8 +25,18 @@ export function exerciseOptions(data: unknown, locale: 'ar' | 'en') {
       payload.names && typeof payload.names === 'object'
         ? (payload.names as Record<string, unknown>)
         : {};
-    const name = names[locale];
-    const fallback = names[locale === 'ar' ? 'en' : 'ar'];
+    const localizedPayloadName =
+      payload[locale === 'ar' ? 'name_ar' : 'name_en'];
+    const fallbackPayloadName =
+      payload[locale === 'ar' ? 'name_en' : 'name_ar'];
+    const name =
+      typeof localizedPayloadName === 'string' && localizedPayloadName.trim()
+        ? localizedPayloadName
+        : names[locale];
+    const fallback =
+      typeof fallbackPayloadName === 'string' && fallbackPayloadName.trim()
+        ? fallbackPayloadName
+        : names[locale === 'ar' ? 'en' : 'ar'];
     const label =
       typeof name === 'string' && name.trim()
         ? name
