@@ -600,7 +600,7 @@ export const ar = {
   'forms.staffRetired': 'تم إيقاف الاستمارة.',
   'forms.staffCopied': 'أصبحت نسخة المسودة جاهزة للتحرير.',
   'forms.staffResult.invalid':
-    'أضف اسمًا عربيًا وإنجليزيًا للاستماراة وقسمًا وسؤالًا قبل النشر.',
+    'أضف اسمًا عربيًا وإنجليزيًا للاستمارة وقسمًا وسؤالًا قبل النشر.',
   'forms.staffResult.conflict':
     'تغيرت هذه المسودة في مكان آخر. أعد تحميل أحدث نسخة قبل الحفظ.',
   'forms.staffResult.forbidden':

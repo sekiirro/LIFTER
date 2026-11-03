@@ -10,7 +10,7 @@
       "female": "female",
       "male-cinematic": "unused"
     },
-    "copy_status": "DRAFT COPY - PO approval required; not part of verbatim canonical copy",
+    "copy_status": "Approved verbatim by PO S30-PO-1 Q2 at 5084916",
     "ar": {
       "question": "النوع",
       "male": "ذكر",
@@ -46,7 +46,7 @@
     "terms_card": "post-Nutrition; unchecked required T&C box records policy version and server timestamp",
     "marketing": "separate optional unchecked consent at Terms Card",
     "intake_complete": "only after required T&C acceptance",
-    "terms_copy_status": "DRAFT - PO approval required"
+    "terms_copy_status": "Approved verbatim by PO S30-PO-1 Q2 at 5084916"
   },
   "P4_meals": {
     "status": "PO-approved deviation from canonical copy",
@@ -68,6 +68,6 @@
     "terms_card": "premium card using existing card/checkbox components",
     "n11_motion": "150-250ms with prefers-reduced-motion",
     "reserved_usernames": "platform/system/role words plus workspace identifiers",
-    "terms_copy": "DRAFT until PO approves"
+    "terms_copy": "Approved verbatim by PO S30-PO-1 Q2 at 5084916"
   }
 }

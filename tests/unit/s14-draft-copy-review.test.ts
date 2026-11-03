@@ -19,34 +19,32 @@ const spec = readFileSync(
 );
 
 describe('S14 draft-copy PO review package', () => {
-  it('lists every copy item awaiting approval and its exact source path', () => {
-    expect(report).toContain('## Awaiting PO approval');
+  it('lists every remaining copy item awaiting approval and its exact source path', () => {
+    expect(report).toContain('## Remaining copy awaiting PO approval');
     for (const item of [
-      'T&C Arabic',
-      'T&C English',
       'Health notice Arabic',
       'Health notice English',
-      'Sex question and labels Arabic',
-      'Sex question and labels English',
       'EN intake translations',
     ])
       expect(report).toContain(item);
     expect(report).toContain(
-      'specs/015-forms-intake/reports/S14-terms-draft.md',
-    );
-    expect(report).toContain(
       'specs/015-forms-intake/fixtures/s14-po-decisions.json',
     );
+    expect(report).toContain('S30-PO-1 Q2 approved Terms AR/EN');
     expect(report).toContain('specs/015-forms-intake/spec.md');
   });
 
-  it('keeps all approval-required copy visibly draft', () => {
+  it('keeps remaining approval-required copy visibly draft and records approved Terms/sex copy', () => {
     expect(report).toContain('DRAFT — pending PO approval');
-    expect(decisions.P1_sex.copy_status).toContain('DRAFT COPY');
+    expect(decisions.P1_sex.copy_status).toContain(
+      'Approved verbatim by PO S30-PO-1 Q2 at 5084916',
+    );
     expect(decisions.P2_health_notice.copy_status).toContain(
       'PO approval required',
     );
-    expect(decisions.P3_consent.terms_copy_status).toContain('DRAFT');
+    expect(decisions.P3_consent.terms_copy_status).toContain(
+      'Approved verbatim by PO S30-PO-1 Q2 at 5084916',
+    );
     expect(spec).toContain('Each is pending PO review before publication.');
     expect(spec).toContain(
       'All EN translations in this table remain pending PO review.',
