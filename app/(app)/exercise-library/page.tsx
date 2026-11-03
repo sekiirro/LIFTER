@@ -23,6 +23,7 @@ type SearchParams = {
   muscle?: string | string[];
   equipment?: string | string[];
   cursor?: string | string[];
+  workspace?: string | string[];
 };
 
 function value(input: string | string[] | undefined): string {
@@ -85,15 +86,23 @@ export default async function ExerciseLibraryPage({
   const muscle = value(params.muscle);
   const equipment = value(params.equipment);
   const cursorValue = value(params.cursor);
+  const workspaceId = value(params.workspace) || null;
+  if (
+    workspaceId &&
+    actor.role !== 'platform_owner' &&
+    !actor.activeWorkspaceIds.includes(workspaceId)
+  )
+    notFound();
   if (cursorValue && !UUID.test(cursorValue)) notFound();
   const filters: Record<string, unknown> = { page_size: PAGE_SIZE + 1 };
   if (muscle) filters.primary_muscle_code = muscle;
   if (equipment) filters.equipment_codes = [equipment];
   const result = await search({
-    kind: 'exercise',
+    kind: workspaceId ? 'workspace_exercise' : 'exercise',
     query: q,
     filters,
     cursor: cursorValue || null,
+    ...(workspaceId ? { workspaceId } : {}),
   });
   if (result.status === 'not_permitted') notFound();
   const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
@@ -106,7 +115,14 @@ export default async function ExerciseLibraryPage({
             <h1>{m['catalog.exerciseTitle']}</h1>
             <p>{m['catalog.exerciseIntro']}</p>
           </div>
-          <Link className={styles.action} href="/exercise-library/new">
+          <Link
+            className={styles.action}
+            href={
+              workspaceId
+                ? `/exercise-library/new?scope=workspace&workspace=${encodeURIComponent(workspaceId)}`
+                : '/exercise-library/new'
+            }
+          >
             {m['catalog.addExercise']}
           </Link>
         </header>
@@ -120,6 +136,7 @@ export default async function ExerciseLibraryPage({
   if (q) nextParams.set('q', q);
   if (muscle) nextParams.set('muscle', muscle);
   if (equipment) nextParams.set('equipment', equipment);
+  if (workspaceId) nextParams.set('workspace', workspaceId);
   if (nextCursor) nextParams.set('cursor', nextCursor);
   return (
     <main className={styles.main} dir={dirFor(locale)} lang={locale}>
@@ -128,7 +145,14 @@ export default async function ExerciseLibraryPage({
           <h1>{m['catalog.exerciseTitle']}</h1>
           <p>{m['catalog.exerciseIntro']}</p>
         </div>
-        <Link className={styles.action} href="/exercise-library/new">
+        <Link
+          className={styles.action}
+          href={
+            workspaceId
+              ? `/exercise-library/new?scope=workspace&workspace=${encodeURIComponent(workspaceId)}`
+              : '/exercise-library/new'
+          }
+        >
           {m['catalog.addExercise']}
         </Link>
       </header>
@@ -138,6 +162,7 @@ export default async function ExerciseLibraryPage({
         items={page}
         query={q}
         filters={{ muscleGroup: muscle, equipment }}
+        workspaceId={workspaceId}
         nextHref={nextCursor ? `/exercise-library?${nextParams}` : null}
       />
     </main>

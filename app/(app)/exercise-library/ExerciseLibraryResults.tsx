@@ -14,12 +14,14 @@ export function ExerciseLibraryResults({
   items,
   query,
   filters,
+  workspaceId,
   nextHref,
 }: {
   locale: Locale;
   items: readonly CatalogExerciseListItem[];
   query: string;
   filters: CatalogSearchFilters;
+  workspaceId?: string | null;
   nextHref: string | null;
 }) {
   const router = useRouter();
@@ -31,6 +33,7 @@ export function ExerciseLibraryResults({
       params.set('muscle', value.filters.muscleGroup);
     if (value.filters.equipment)
       params.set('equipment', value.filters.equipment);
+    if (workspaceId) params.set('workspace', workspaceId);
     router.push(`/exercise-library${params.size ? `?${params}` : ''}`);
   }
   return (
@@ -41,7 +44,11 @@ export function ExerciseLibraryResults({
         items={items}
         initialQuery={query}
         initialFilters={filters}
-        emptyActionHref="/exercise-library/new"
+        emptyActionHref={
+          workspaceId
+            ? `/exercise-library/new?scope=workspace&workspace=${encodeURIComponent(workspaceId)}`
+            : '/exercise-library/new'
+        }
         emptyActionLabel={m['catalog.addExercise']}
         onSearch={(searchState) => search(searchState)}
       />

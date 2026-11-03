@@ -59,7 +59,10 @@ export function ExerciseAuthoringForm({
         expectedVersion,
       });
       if (result.status === 'ok') {
-        router.push(id ? `/exercise-library/${id}` : '/exercise-library');
+        const libraryHref = workspaceId
+          ? `/exercise-library?workspace=${encodeURIComponent(workspaceId)}`
+          : '/exercise-library';
+        router.push(id ? `/exercise-library/${id}` : libraryHref);
         return;
       }
       setStatus('error');
