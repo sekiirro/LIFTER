@@ -42,12 +42,8 @@ describe('approved signup profile contract', () => {
 
   it('uses the Cairo calendar date across the UTC midnight boundary', () => {
     const justAfterCairoMidnight = new Date('2026-06-15T22:30:00.000Z');
-    expect(
-      calculateSignupAge('2000-06-16', justAfterCairoMidnight),
-    ).toBe(26);
-    expect(
-      calculateSignupAge('2000-06-17', justAfterCairoMidnight),
-    ).toBe(25);
+    expect(calculateSignupAge('2000-06-16', justAfterCairoMidnight)).toBe(26);
+    expect(calculateSignupAge('2000-06-17', justAfterCairoMidnight)).toBe(25);
   });
 
   it('rejects reserved and workspace-identifying usernames', () => {

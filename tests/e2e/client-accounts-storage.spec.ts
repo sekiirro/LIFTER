@@ -103,7 +103,9 @@ test('a real pending-client JWT cannot read or write Storage', async ({
     await page.goto(`/register/${link.token}`);
     await page.getByLabel('Name', { exact: true }).fill('Storage Test Fixture');
     await page.getByLabel('Date of birth', { exact: true }).fill('1990-04-12');
-    await page.getByLabel('Username', { exact: true }).fill(`storage-${randomUUID().slice(0, 8)}`);
+    await page
+      .getByLabel('Username', { exact: true })
+      .fill(`storage-${randomUUID().slice(0, 8)}`);
     await page.getByLabel('Email', { exact: true }).fill(email);
     await page
       .getByRole('textbox', { name: 'Phone number' })
