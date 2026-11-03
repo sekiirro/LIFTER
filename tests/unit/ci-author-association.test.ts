@@ -17,7 +17,13 @@ describe('self-hosted CI author association policy', () => {
     );
 
     const allowed = new Set(['OWNER']);
-    for (const association of ['OWNER', 'MEMBER', 'COLLABORATOR', 'CONTRIBUTOR', 'NONE']) {
+    for (const association of [
+      'OWNER',
+      'MEMBER',
+      'COLLABORATOR',
+      'CONTRIBUTOR',
+      'NONE',
+    ]) {
       const isOwner = allowed.has(association);
       expect(isOwner).toBe(association === 'OWNER');
       expect(isOwner ? 'self-hosted' : 'ubuntu-latest').toBe(
