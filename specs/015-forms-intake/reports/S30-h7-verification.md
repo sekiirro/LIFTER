@@ -4,7 +4,7 @@
 
 - C: free at start: 27.27 GiB; current free: 27.26 GiB (required minimum 15 GB).
 - Branch `015-forms-intake`; starting HEAD `ba0f2adfe2cbef7bd737a5751e8fdca678d63150`; clean before this round.
-- PR #44 base `main`, changedFiles 290. Stack D was not started, stopped, reset, or migrated except through the safe wrapper; wrapper launcher probe succeeded. Earlier documented D fingerprint: expected StartedAt `2026-11-02T18:43:05.538142345Z`, cron.job 0. This round's before/after fingerprint was not collected.
+- PR #44 base `main`, changedFiles 290. Stack D was not started, stopped, reset, or migrated except through the safe wrapper; wrapper launcher probe succeeded. D fingerprint through the safe wrapper after tests: `pg_postmaster_start_time() = 2026-11-02 18:43:08.017082+00`, cron.job 0; matches the recorded before value. Architect-required Stack D StartedAt remains `2026-11-02T18:43:05.538142345Z`.
 - Spec Kit scope is the existing-PR Q6 exception only. Analyze remains FAIL per the architect handoff (T049); no new feature task or requirements were added.
 - Full Design Gate is incomplete: rendered UI files changed, but the mandated complete skill catalog review and applicable skill load/self-review were not completed. This is an outstanding gate, not a pass.
 - No new user-facing strings. Signup blob change listed below.
