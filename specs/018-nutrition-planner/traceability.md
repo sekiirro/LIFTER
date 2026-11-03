@@ -7,12 +7,12 @@ Analysed commit: `066636358f7256e10426efae2290112f15a62e14`. No tests were run. 
 | Requirement | Task(s) | Test(s) | Evidence | Status |
 |---|---|---|---|---|
 | FR-001 | T004, T009, T010 | Plan Core contract absent | Lifecycle delegates to PC-FR-001..007 | PARTIAL |
-| FR-001b | T003, T009, T010 | `tests/unit/nutrition-operation-keys.test.ts` if present | SQL ledger/replay checks not confirmed | PARTIAL |
+| FR-001b | T003, T009, T010 | NOT-FOUND: no current-head test asserting the shared operation-key ledger/replay behavior was located in F18 unit/e2e tests | SQL ledger/replay behavior lacks a concrete asserting test citation | NOT-FOUND |
 | FR-002 | T001, T006, T014 | `tests/unit/nutrition-schema.test.ts::rejects single_day without implicitDayTypeId`; `...::accepts a valid seven_day document with day types` | Named schema assertions at current head | VERIFIED |
 | FR-003 | T002, T008, T014 | `tests/unit/nutrition-macros.test.ts::does not derive an aggregate by adding already-rounded item values`; `tests/golden/nutrition-macros.ts` | TS calculation fixture/assertion; SQL parity task T008 remains pending | PARTIAL |
 | FR-004 | T002, T008 | `tests/unit/nutrition-schema.test.ts` | Unit conversion schema coverage exists; full invalid-swap gate not statically mapped | PARTIAL |
 | FR-005 | T003, T008, T009, T016 | `tests/unit/nutrition-id-continuity.test.ts::duplicates an item with new descendant ids and no inherited choice` | Continuity helper tests; persistence/selection partially implemented | PARTIAL |
-| FR-006 | T009-T011 | `tests/unit/nutrition-template-schema.test.ts` (if present) | Verify template test file on checkout before relying; DB/RLS tasks pending | PARTIAL |
+| FR-006 | T009-T011 | `tests/unit/nutrition-schema.test.ts::accepts an item with manual alternatives referencing exact food version ids — FR-002 (spec.md:85)` | `0666363`; real test checks a valid alternative reference, but not maximum count, portion validation/macros, or persistence | PARTIAL |
 | FR-007 | T007, T012 | Plan Core acceptance contract absent | Selection/activation relies on PC lifecycle | PARTIAL |
 | FR-008 | T006, T009, T013, T019 | `tests/unit/nutrition-id-continuity.test.ts` | Snapshot/selection persistence not proven end-to-end | PARTIAL |
 | FR-009 | T005, T010, T011, T013 | `tests/unit/nutrition-display.test.ts::shows one decimal below 10 g and an integer at or above 10 g` | Display rounding behavior asserted | VERIFIED |
