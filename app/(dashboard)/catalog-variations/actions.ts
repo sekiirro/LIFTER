@@ -54,6 +54,18 @@ export async function loadWorkspaceVideoVariationsAction(
     if (page.status !== 'ok') return page;
     if (!Array.isArray(page.data)) return { status: 'unavailable' };
     variationRows.push(...page.data);
+    if (
+      exerciseId !== undefined &&
+      page.data.some(
+        (value) =>
+          value !== null &&
+          typeof value === 'object' &&
+          (value as Record<string, unknown>).result_workspace_id ===
+            workspaceId &&
+          (value as Record<string, unknown>).result_id === exerciseId,
+      )
+    )
+      break;
     const last = page.data.at(-1) as Record<string, unknown> | undefined;
     cursor =
       page.data.length === 50 && typeof last?.result_id === 'string'
