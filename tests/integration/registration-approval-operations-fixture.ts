@@ -61,7 +61,7 @@ export async function registered(
   if (admission.status !== 'admitted')
     throw new Error('U3 real admission fixture failed');
   const fields = {
-    name: 'U3 synthetic',
+    name: 'U3 synthetic client',
     email: `u3-${randomUUID()}@example.test`,
     phone:
       '+201' +
@@ -70,6 +70,9 @@ export async function registered(
         .padStart(11, '0')
         .slice(-11),
     password: 'Synthetic9!' + randomUUID().replaceAll('-', ''),
+    date_of_birth: '1990-04-12',
+    username: `u3-${randomUUID()}`,
+    telegram_username: '',
   };
   const signed = checked(
     await f.actors.anon.client.rpc('client_signup', {

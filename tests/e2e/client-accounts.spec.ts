@@ -419,6 +419,8 @@ async function fillSignup(
   await page
     .getByLabel(m['clientSignup.name'], { exact: true })
     .fill(values.name);
+  await page.getByLabel(m['clientSignup.dateOfBirth'], { exact: true }).fill('1990-04-12');
+  await page.getByLabel(m['clientSignup.username'], { exact: true }).fill(`client-${randomUUID().slice(0, 8)}`);
   await page
     .getByLabel(m['clientSignup.email'], { exact: true })
     .fill(values.email);
