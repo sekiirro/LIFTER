@@ -131,6 +131,29 @@ describe('catalog server authorization and RPC boundary', () => {
     });
   });
 
+  it.each([
+    ['missing', undefined],
+    ['empty', ''],
+    ['whitespace-only', '   '],
+  ])(
+    'requires an explicit non-empty workspace for PO variation writes (%s)',
+    async (_kind, workspaceId) => {
+      currentActor = {
+        userId: 'owner',
+        role: 'platform_owner',
+        activeWorkspaceIds: [],
+      };
+      const result = await catalog().writeVariation({
+        operationKey: key,
+        workspaceId,
+        id: ws,
+        request: { video_url: 'https://youtu.be/abcdefghijk' },
+      });
+      expect(result).toEqual({ status: 'not_permitted' });
+      expect(rpc).not.toHaveBeenCalled();
+    },
+  );
+
   it('forwards canonical exercise filter keys and value shapes to the session RPC', async () => {
     const filters = {
       primary_muscle_code: 'chest',
