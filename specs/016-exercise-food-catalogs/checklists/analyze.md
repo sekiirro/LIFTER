@@ -66,7 +66,7 @@ Verdict: FAIL. Findings then: A1 HIGH (`.specify/feature.json` missing), A2 HIGH
 
 ## S30-PO-9 amendment analysis
 
-**Date:** 2026-11-03
+**Date:** 2026-11-03 (revalidated after T041 blocker detail)
 **Scope:** Spec/plan/task amendment for PO-approved exercise UI governance placement.
 **Authority:** S30-PO-9 verbatim in `spec.md` and `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md` (S30-Q17).
 **Clarifications:** No open PO ambiguity remains about exercise Add/Edit, Remove placement, confirmation, Merge/Restore visibility, permission matrix, or historical preservation. Existing approved keys are available for action, confirm/cancel and result: `catalog.editorRemove`, `dialog.confirm`, `dialog.cancel`, `catalog.editorLifecycleRemoved`; no new copy is needed.
