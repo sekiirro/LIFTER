@@ -152,4 +152,30 @@ describe('production exercise library route', () => {
       `href="/exercise-library/new?scope=workspace&amp;workspace=${ws}"`,
     );
   });
+
+  it('uses the raw page count when an unmappable lookahead row is returned', async () => {
+    const pageRows = Array.from({ length: 20 }, (_, index) => ({
+      ...exercise,
+      result_id: `33333333-3333-4333-8333-${String(index + 1).padStart(12, '0')}`,
+    }));
+    m.search.mockResolvedValue({
+      status: 'ok',
+      data: [
+        ...pageRows,
+        {
+          result_id: '33333333-3333-4333-8333-000000000021',
+          result_payload: { name_en: 'Unmappable lookahead row' },
+        },
+      ],
+    });
+
+    const html = renderToStaticMarkup(
+      await Page({ searchParams: Promise.resolve({}) }),
+    );
+
+    expect(html).toContain(
+      'data-next-href="/exercise-library?cursor=33333333-3333-4333-8333-000000000020"',
+    );
+    expect(html.match(/Library test exercise/g)).toHaveLength(20);
+  });
 });
