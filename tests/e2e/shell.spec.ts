@@ -1,3 +1,4 @@
+﻿import { testOrigin } from './test-origin.mjs';
 import { expect, test } from '@playwright/test';
 import { expectTooltipBesideTrigger } from './tooltip-geometry';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
@@ -60,7 +61,7 @@ test.describe('client-side shell navigation', () => {
 
 // Both navigation variants and role selection must work without client JavaScript.
 test.use({ javaScriptEnabled: false });
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const origin = testOrigin;
 const trainerMobileKeys = [
   'home',
   'clients',
@@ -144,7 +145,7 @@ for (const locale of ['ar', 'en'] as const) {
 
       await page.setViewportSize({ width: 1280, height: 720 });
       const dockBox = await page.getByTestId('nav-rail').boundingBox();
-      if (!dockBox) throw new Error('Expected visible dock at 1280×720');
+      if (!dockBox) throw new Error('Expected visible dock at 1280Ã—720');
       expect(dockBox.y).toBeGreaterThanOrEqual(0);
       expect(dockBox.y + dockBox.height).toBeLessThanOrEqual(720);
     });

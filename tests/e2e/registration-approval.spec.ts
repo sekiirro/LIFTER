@@ -1,3 +1,4 @@
+﻿import { testOrigin } from './test-origin.mjs';
 import { expect, test, type BrowserContext } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { createServerClient } from '@supabase/ssr';
@@ -9,7 +10,7 @@ import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE } from '../../lib/design/preferences';
 import { createPendingClient } from './registration-approval-fixture';
 
-const origin = 'http://localhost:3000';
+const origin = testOrigin;
 
 async function signIn(
   context: BrowserContext,

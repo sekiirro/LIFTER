@@ -84,6 +84,9 @@ jobs:
       - name: Isolate self-hosted Supabase identity and ports
         if: env.LIFTER_CI_ISOLATED == 'true'
         run: node scripts/ci-supabase-config.mjs supabase/config.toml rewrite
+      - name: Assert self-hosted app port is free
+        if: env.LIFTER_CI_ISOLATED == 'true'
+        run: node scripts/ci-app-port.mjs assert-free
       - name: Assert runtime Unicode pin
         run: |
           node -p process.versions.unicode
@@ -116,10 +119,14 @@ jobs:
           fi
       - name: Export app server environment
         run: |
+          APP_PORT="$(node scripts/ci-app-port.mjs select "$LIFTER_CI_ISOLATED")"
+          APP_ORIGIN="http://localhost:$APP_PORT"
           echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
           echo "SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
           echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
-          echo "APP_ORIGIN=http://localhost:3000" >> "$GITHUB_ENV"
+          echo "PORT=$APP_PORT" >> "$GITHUB_ENV"
+          echo "APP_ORIGIN=$APP_ORIGIN" >> "$GITHUB_ENV"
+          echo "PLAYWRIGHT_BASE_URL=$APP_ORIGIN" >> "$GITHUB_ENV"
       - name: Provision local Vault signup keys
         run: node tests/integration/client-accounts-provision.mjs
       - name: Assert shared password policy DB parity
@@ -141,6 +148,7 @@ jobs:
             "$LIFTER_SUPABASE_CLI" stop --project-id lifter-stack-ci --no-backup
             node scripts/ci-supabase-config.mjs supabase/config.toml assert-clean
             node scripts/ci-supabase-config.mjs supabase/config.toml wait
+            docker image prune --force
           else
             supabase stop --no-backup
           fi
@@ -181,6 +189,9 @@ jobs:
       - name: Isolate self-hosted Supabase identity and ports
         if: env.LIFTER_CI_ISOLATED == 'true'
         run: node scripts/ci-supabase-config.mjs supabase/config.toml rewrite
+      - name: Assert self-hosted app port is free
+        if: env.LIFTER_CI_ISOLATED == 'true'
+        run: node scripts/ci-app-port.mjs assert-free
       - name: Login to Docker Hub
         if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
         # docker/login-action v4.6.0
@@ -209,10 +220,14 @@ jobs:
           fi
       - name: Export app server environment
         run: |
+          APP_PORT="$(node scripts/ci-app-port.mjs select "$LIFTER_CI_ISOLATED")"
+          APP_ORIGIN="http://localhost:$APP_PORT"
           echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
           echo "SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
           echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
-          echo "APP_ORIGIN=http://localhost:3000" >> "$GITHUB_ENV"
+          echo "PORT=$APP_PORT" >> "$GITHUB_ENV"
+          echo "APP_ORIGIN=$APP_ORIGIN" >> "$GITHUB_ENV"
+          echo "PLAYWRIGHT_BASE_URL=$APP_ORIGIN" >> "$GITHUB_ENV"
       - name: Wait for Storage readiness
         run: node scripts/wait-storage-ready.mjs
       - name: Provision local Vault signup keys
@@ -248,6 +263,7 @@ jobs:
             "$LIFTER_SUPABASE_CLI" stop --project-id lifter-stack-ci --no-backup
             node scripts/ci-supabase-config.mjs supabase/config.toml assert-clean
             node scripts/ci-supabase-config.mjs supabase/config.toml wait
+            docker image prune --force
           else
             supabase stop --no-backup
           fi

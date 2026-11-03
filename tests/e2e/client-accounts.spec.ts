@@ -1,3 +1,4 @@
+﻿import { testOrigin } from './test-origin.mjs';
 import { expect, test, type Page } from '@playwright/test';
 import { localSupabaseContainer } from '../integration/local-docker';
 import { execFileSync } from 'node:child_process';
@@ -17,7 +18,7 @@ import { scanSensitiveLogLines } from './server-log-privacy';
 import { parsePhoneNumber } from 'libphonenumber-js';
 import { generateEgyptianMobile } from './egyptian-mobile';
 
-const origin = 'http://localhost:3000';
+const origin = testOrigin;
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );

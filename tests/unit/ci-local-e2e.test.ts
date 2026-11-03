@@ -43,7 +43,19 @@ it('runs the full Playwright suite after local-stack integration tests', () => {
   expect(integration).toContain('SUPABASE_URL=$API_URL');
   expect(integration).toContain('SUPABASE_ANON_KEY=$ANON_KEY');
   expect(integration).toContain('SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY');
-  expect(integration).toContain('APP_ORIGIN=http://localhost:3000');
+  expect(integration).toContain(
+    'node scripts/ci-app-port.mjs select "$LIFTER_CI_ISOLATED"',
+  );
+  expect(integration).toContain(
+    'run: node scripts/ci-app-port.mjs assert-free',
+  );
+  expect(
+    integration.indexOf('Assert self-hosted app port is free'),
+  ).toBeLessThan(integration.indexOf(' start -x '));
+  expect(integration).toContain('echo "APP_ORIGIN=$APP_ORIGIN"');
+  expect(integration).toContain('echo "PLAYWRIGHT_BASE_URL=$APP_ORIGIN"');
+  expect(integration).not.toContain('APP_ORIGIN=http://localhost:3000');
+  expect(integration).toContain('docker image prune --force');
   expect(integration.indexOf('Export app server environment')).toBeLessThan(
     integration.indexOf('run: npm run e2e -- --workers=1'),
   );
@@ -53,4 +65,16 @@ it('runs the full Playwright suite after local-stack integration tests', () => {
   expect(hostedBrowserInstall).toBeLessThan(
     integration.indexOf('run: npm run e2e -- --workers=1'),
   );
+});
+
+it('keeps the storage job on the selected app port and checks it before startup', () => {
+  const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
+  const [, integrationAndStorage = ''] = workflow.split(/^  integration:\s*$/m);
+  const [, storage = ''] = integrationAndStorage.split(/^  storage:\s*$/m);
+  expect(storage).toContain('run: node scripts/ci-app-port.mjs assert-free');
+  expect(storage).toContain(
+    'node scripts/ci-app-port.mjs select "$LIFTER_CI_ISOLATED"',
+  );
+  expect(storage).toContain('echo "PLAYWRIGHT_BASE_URL=$APP_ORIGIN"');
+  expect(storage).toContain('docker image prune --force');
 });

@@ -1,8 +1,9 @@
+﻿import { testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
-const origin = 'http://localhost:3000';
+const origin = testOrigin;
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
@@ -50,7 +51,7 @@ for (const locale of ['ar', 'en'] as const) {
         );
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
         await expect(
-          page.getByLabel(locale === 'ar' ? 'الدولة' : 'Country'),
+          page.getByLabel(locale === 'ar' ? 'Ø§Ù„Ø¯ÙˆÙ„Ø©' : 'Country'),
         ).toHaveValue('EG');
         await expect(page.getByLabel(/telegram/i)).toHaveCount(0);
         const results = await new AxeBuilder({ page })
@@ -78,22 +79,25 @@ for (const locale of ['ar', 'en'] as const) {
     ]);
     await page.goto(`/register/${validToken}`);
     await page.waitForLoadState('networkidle');
-    const name = page.getByLabel(locale === 'ar' ? 'الاسم' : 'Name', {
+    const name = page.getByLabel(locale === 'ar' ? 'Ø§Ù„Ø§Ø³Ù…' : 'Name', {
       exact: true,
     });
     const email = page.getByLabel(
-      locale === 'ar' ? 'البريد الإلكتروني' : 'Email',
+      locale === 'ar' ? 'Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ' : 'Email',
       { exact: true },
     );
-    const country = page.getByLabel(locale === 'ar' ? 'الدولة' : 'Country', {
-      exact: true,
-    });
+    const country = page.getByLabel(
+      locale === 'ar' ? 'Ø§Ù„Ø¯ÙˆÙ„Ø©' : 'Country',
+      {
+        exact: true,
+      },
+    );
     const phone = page.getByLabel(
-      locale === 'ar' ? 'رقم الهاتف' : 'Phone number',
+      locale === 'ar' ? 'Ø±Ù‚Ù… Ø§Ù„Ù‡Ø§ØªÙ' : 'Phone number',
       { exact: true },
     );
     const password = page.getByLabel(
-      locale === 'ar' ? 'كلمة المرور' : 'Password',
+      locale === 'ar' ? 'ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±' : 'Password',
       { exact: true },
     );
     await name.focus();
@@ -125,7 +129,7 @@ for (const locale of ['ar', 'en'] as const) {
     await intercepted;
     await expect(submit).toBeDisabled();
     await expect(page.getByRole('status')).toContainText(
-      locale === 'ar' ? 'جارٍ الإرسال' : 'Submitting',
+      locale === 'ar' ? 'Ø¬Ø§Ø±Ù Ø§Ù„Ø¥Ø±Ø³Ø§Ù„' : 'Submitting',
     );
     release();
     const invalidFields = [

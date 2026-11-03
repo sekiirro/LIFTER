@@ -1,3 +1,4 @@
+﻿import { testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type BrowserContext } from '@playwright/test';
 import { copyFile, mkdir } from 'node:fs/promises';
@@ -7,7 +8,7 @@ import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { createPendingClient } from './registration-approval-fixture';
 
-const origin = 'http://localhost:3000';
+const origin = testOrigin;
 const local = Boolean(process.env.DB_URL || process.env.SUPABASE_DB_URL);
 const axeTags = ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'];
 

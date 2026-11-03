@@ -1,3 +1,4 @@
+﻿import { testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { createServerClient } from '@supabase/ssr';
 import { randomBytes } from 'node:crypto';
@@ -6,7 +7,7 @@ import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
-const origin = 'http://localhost:3000';
+const origin = testOrigin;
 const local = Boolean(process.env.DB_URL || process.env.SUPABASE_DB_URL);
 const axeTags = ['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'];
 
