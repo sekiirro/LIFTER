@@ -6,9 +6,19 @@ import {
   request,
   sql,
 } from './registration-approval-operations-fixture';
+import { withCrashSafeFunctionMutant } from './function-drift-guard';
 
 const db = sql();
 afterAll(() => db.end());
+async function expectInvariantFailure(body: () => Promise<void>) {
+  let failure: unknown;
+  try {
+    await body();
+  } catch (error) {
+    failure = error;
+  }
+  expect(failure, 'the named invariant must kill the mutant').toBeDefined();
+}
 async function createForm(workspaceId: string, termsVersion?: string) {
   const policy = termsVersion ?? `t010-${randomUUID()}`;
   const formId = randomUUID();
@@ -114,17 +124,56 @@ describe('T010/T023 per-form assignment policy', () => {
       },
     );
     expect(explicitNull.data).toEqual({ status: 'not_found' });
+    await withCrashSafeFunctionMutant(
+      'public.configure_intake_assignment_policy(uuid,uuid,integer,text,uuid[],text,jsonb,jsonb)',
+      (definition) =>
+        definition.replace(
+          /or \(p_trigger_kind='recurring' and \(coalesce\(p_timing->>'recurrence_interval_days',''\) !~ '\^\[0-9\]\+\$'\s+or coalesce\(\(p_timing->>'recurrence_interval_days'\)::integer,0\) not between 1 and 365 or\s+/,
+          "or (p_trigger_kind='recurring' and (",
+        ),
+      async () =>
+        expectInvariantFailure(async () => {
+          const mutant = await context.po.client.rpc(
+            'configure_intake_assignment_policy',
+            {
+              ...policyArgs(
+                context.wsA.id,
+                formId,
+                'all_active_clients',
+                'recurring',
+              ),
+              p_timing: {
+                client_deadline_days: 3,
+                recurrence_interval_days: null,
+                recurrence_starts_on: cairoToday,
+              },
+            },
+          );
+          expect(mutant.data).toEqual({ status: 'not_found' });
+        }),
+    );
     await db`update app_private.form_assignment_policies set timing=${db.json({ client_deadline_days: 3, recurrence_interval_days: null, recurrence_starts_on: cairoToday })}
       where workspace_id=${context.wsA.id} and form_id=${formId}`;
-    const materialized = await context.po.client.rpc(
-      'materialize_intake_assignment_occurrence',
-      {
-        p_workspace_id: context.wsA.id,
-        p_form_id: formId,
-        p_occurrence_key: `recurring:${cairoToday}`,
-      },
+    await withCrashSafeFunctionMutant(
+      'app_private.materialize_intake_assignment_occurrence_core(uuid,uuid,text,date)',
+      (definition) =>
+        definition.replace(
+          /if coalesce\(policy\.timing->>'recurrence_interval_days',''\) !~ '\^\[0-9\]\+\$'\s+or coalesce\(\(policy\.timing->>'recurrence_interval_days'\)::integer,0\) not between 1 and 365\s+or\s+/,
+          'if ',
+        ),
+      async () =>
+        expectInvariantFailure(async () => {
+          const materialized = await context.po.client.rpc(
+            'materialize_intake_assignment_occurrence',
+            {
+              p_workspace_id: context.wsA.id,
+              p_form_id: formId,
+              p_occurrence_key: `recurring:${cairoToday}`,
+            },
+          );
+          expect(materialized.data).toEqual({ status: 'not_found' });
+        }),
     );
-    expect(materialized.data).toEqual({ status: 'not_found' });
   });
 
   it('S25-R2 uses F12 approved_at rather than client created_at for onboarding cutoff', async () => {
