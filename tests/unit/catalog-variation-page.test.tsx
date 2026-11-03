@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from 'vitest';
+import { describe, expect, it } from 'vitest';
 import { exerciseOptions } from '../../lib/catalog/exercise-options';
 
 describe('catalog variation exercise options', () => {
