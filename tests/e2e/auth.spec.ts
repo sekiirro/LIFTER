@@ -1,4 +1,4 @@
-import { testOrigin } from './test-origin.mjs';
+import { buildLoginRedirectUrl, testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE } from '../../lib/design/preferences';
@@ -49,9 +49,7 @@ test('anonymous pages redirect with a same-site return path', async ({
 }) => {
   for (const path of ['/', '/some/unknown/path']) {
     await page.goto(path);
-    await expect(page).toHaveURL(
-      `${testOrigin}/login?next=${encodeURIComponent(path)}`,
-    );
+    await expect(page).toHaveURL(buildLoginRedirectUrl(path));
   }
   await page.goto('/login?next=//evil.example');
   await expect(page.locator('input[name="next"]')).toHaveValue('/');

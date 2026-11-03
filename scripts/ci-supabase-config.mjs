@@ -35,6 +35,31 @@ export function selectCiPortMap(base = CI_PORT_BASE) {
   );
 }
 
+export function validateCiConfigPortMap(config, portMap) {
+  const entries = Object.entries(portMap).map(([path, expected]) => ({
+    path,
+    expected,
+    actual: path.split('.').reduce((value, key) => value?.[key], config),
+  }));
+  const values = entries.map(({ actual }) => actual);
+  if (values.some((port) => !Number.isInteger(port)))
+    throw new Error(
+      'CI Supabase config does not contain a unique port for every service',
+    );
+  if (entries.some(({ expected, actual }) => actual !== expected)) {
+    const mismatch = entries.find(
+      ({ expected, actual }) => actual !== expected,
+    );
+    throw new Error(
+      `CI Supabase port ${mismatch.path} does not match its mapped port`,
+    );
+  }
+  if (new Set(values).size !== values.length)
+    throw new Error(
+      'CI Supabase config does not contain a unique port for every service',
+    );
+}
+
 export async function rewriteCiSupabaseConfig(
   source,
   portMap = selectCiPortMap(),
@@ -51,7 +76,7 @@ export async function rewriteCiSupabaseConfig(
       const header = line.match(/^\s*\[([^\]]+)\]\s*(?:#.*)?(?:\r?\n)?$/);
       if (header) section = header[1];
       const entry = line.match(
-        /^(\s*)([A-Za-z0-9_]+)(\s*=\s*)(\d+)(\s*(?:#.*)?(?:\r?\n)?)$/,
+        /^(\s*)([A-Za-z0-9_]+)(\s*=\s*)(\d(?:_?\d)*)(\s*(?:#.*)?(?:\r?\n)?)$/,
       );
       if (!entry) return line;
       const path = `${section}.${entry[2]}`;
@@ -63,17 +88,11 @@ export async function rewriteCiSupabaseConfig(
     .replace(/^project_id\s*=\s*"lifter"/m, `project_id = "${CI_PROJECT_ID}"`);
 
   const config = TOML.parse(rewritten);
-  const values = Object.keys(portMap).map((path) =>
-    path.split('.').reduce((value, key) => value?.[key], config),
-  );
-  if (
-    config.project_id !== CI_PROJECT_ID ||
-    values.some((port) => !Number.isInteger(port)) ||
-    new Set(values).size !== values.length
-  )
+  if (config.project_id !== CI_PROJECT_ID)
     throw new Error(
       'CI Supabase config does not contain a unique port for every service',
     );
+  validateCiConfigPortMap(config, portMap);
   return rewritten;
 }
 

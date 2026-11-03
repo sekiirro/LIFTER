@@ -1,4 +1,4 @@
-import { testOrigin } from './test-origin.mjs';
+import { buildLoginRedirectUrl, testOrigin } from './test-origin.mjs';
 import { randomUUID } from 'node:crypto';
 import AxeBuilder from '@axe-core/playwright';
 import { createServerClient } from '@supabase/ssr';
@@ -15,9 +15,7 @@ for (const locale of ['ar', 'en'] as const)
     ]);
     const path = '/packages?workspace=00000000-0000-0000-0000-000000000001';
     await page.goto(path);
-    await expect(page).toHaveURL(
-      `${testOrigin}/login?next=${encodeURIComponent(path)}`,
-    );
+    await expect(page).toHaveURL(buildLoginRedirectUrl(path));
     await expect(page.locator('html')).toHaveAttribute(
       'dir',
       locale === 'ar' ? 'rtl' : 'ltr',
