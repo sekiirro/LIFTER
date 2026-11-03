@@ -1,6 +1,6 @@
 # Spec Kit Analyze - F3 Workspace Tenancy, Permission Matrix & RLS
 
-- Date: 2026-11-03 (refreshed after S30-PO-3 Q6-Q8 record and static traceability corrections)
+- Date: 2026-11-03 (refreshed after S30-PO-3 Q6-Q8 and S30 round 6 review corrections)
 - Analyzed source commit: `ed88574ae09c722b1f6ded4fc0b66122bbeb4f13` (`origin/main` at branch creation); task FR tags are part of this docs change.
 - Method: static cross-artifact, migration, workflow, and test-source review. No tests or CI jobs were run.
 
@@ -8,9 +8,9 @@
 
 - Present: `spec.md` (FR-001..012, SC-001..004, four GWT story groups), `plan.md`, `tasks.md`, `research.md`, `data-model.md`, `contracts/db-contract.md`, `quickstart.md`, `checklists/requirements.md`.
 - Missing at original base: Analyze, traceability, standalone Clarifications section; Clarifications now records S30-PO-3 Q6-Q8.
-- Clarifications: S30-PO-3 Q6 resolves `coaching_work` as PO/WO/Trainer and denies Sales. Q7 approves WO visibility of active members; Q8 approves a database guard against removing/demoting the final PO. These new behaviors are routed to a separate Spec Kit cycle and are not claimed as implemented by this baseline.
-- Plan/tasks: 12 FRs map to T001-T013; explicit FR tags reconcile task scope with traceability. No task checkbox changed. Clarification records cite S30-PO-3.
-- Constitution I, III, VII, VIII and IX reviewed; role boundaries and deny-by-default are central requirements. Q7/Q8 implementation details remain scoped to the new governance feature cycle.
+- Clarifications: S30-PO-3 Q6 resolves `coaching_work` as PO/WO/Trainer and denies Sales. Q7 records the future-cycle decision `WO sees active members`; Q8 records a database guard on the final PO. Scope details and implementation acceptance are routed to the separate governance cycle, not implemented by this baseline.
+- Plan/tasks: 12 FRs map to T001-T013; explicit FR tags reconcile task scope with traceability. No task checkbox changed. Clarifications and the plan resolved-decisions section cite S30-PO-3.
+- Constitution I, III, VII, VIII and IX reviewed; role boundaries and deny-by-default are central requirements. Q7/Q8 scope details remain in the new governance feature cycle.
 
 ## Findings
 
@@ -34,4 +34,4 @@ FR-to-task mapping is 12/12 (100%) after the explicit tags. No checkboxes change
 ## History
 
 - First SK-A merged-feature review on `origin/main` `ed88574`; initial verdict 0 CRITICAL, 2 HIGH, 1 MEDIUM, 0 LOW.
-- S30-PO-3 Q6-Q8 refresh: Q6 resolved; Q7/Q8 behaviors routed to a new Spec Kit cycle. Analyze refreshed alongside task/traceability corrections; static only.
+- S30-PO-3 Q6-Q8 refresh: Q6 resolved; Q7/Q8 recorded as future-cycle decisions. Round 6 clarified the source and fixed task/traceability mappings. Static only; no suite run.
