@@ -32,7 +32,9 @@ describe('exercise row input mapping', () => {
 
   it('does not coerce malformed array members into catalog identifiers', () => {
     const row = validRow();
-    row.payload.defaults.alternative_exercise_ids = [null];
+    (row.payload.defaults as Record<string, unknown>)[
+      'alternative_exercise_ids'
+    ] = [null];
     expect(exerciseInput(row)).toBeNull();
   });
 });
