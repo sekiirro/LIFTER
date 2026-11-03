@@ -20,5 +20,5 @@ Static source inspection only. No tests, stacks, deployments, cloud queries, or 
 ## Summary
 
 - Functional requirements: 6 VERIFIED, 2 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
-- Success criteria: 1 VERIFIED, 3 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- Success criteria: 0 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Static verification only. T010/T011 remain historically checked but were not executed in this lane. ND-F8-1..3 remain open.
