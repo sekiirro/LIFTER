@@ -4,12 +4,16 @@ import { buildProfilePrefill } from '../../lib/forms/profile-prefill';
 const questions = [
   {
     id: 'B01',
+    sectionId: 'basic',
     type: 'profileText' as const,
+    required: false,
     profileField: 'fullName' as const,
   },
   {
     id: 'B02',
+    sectionId: 'basic',
     type: 'computedAge' as const,
+    required: false,
     dateOfBirthField: 'dateOfBirth' as const,
   },
 ];
@@ -49,7 +53,12 @@ describe('client intake signup profile prefill', () => {
   it('only binds declared read-only profile fields and tolerates a missing DOB', () => {
     const expanded = [
       ...questions,
-      { id: 'custom', type: 'shortText' as const },
+      {
+        id: 'custom',
+        sectionId: 'basic',
+        type: 'shortText' as const,
+        required: false,
+      },
     ];
     expect(
       buildProfilePrefill(
