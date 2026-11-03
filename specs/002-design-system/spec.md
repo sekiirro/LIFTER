@@ -113,7 +113,7 @@ Users see the approved Glisse Liquid Glass treatment on the floating navigation 
 1. **Given** the Trainer or Client shell at a narrow viewport, **When** the shell renders, **Then** the existing mobile bottom navigation is presented as the shipped floating capsule; at a wide viewport, the shipped desktop navigation dock is presented.
 2. **Given** a supported browser and preferences that permit refraction, **When** the deferred enhancement initializes, **Then** the floating surface reports the enhanced runtime while its focused navigation node remains the same node.
 3. **Given** unsupported backdrop filtering, reduced transparency, increased contrast, forced colors, reduced motion, constrained-device state, an explicit solid fallback, or an initialization over-budget condition, **When** a glass surface is rendered or initialization is attempted, **Then** it uses the static/solid fallback and remains operable.
-4. **Given** a floating action or popover menu, **When** the user opens and navigates the menu by keyboard, **Then** the menu trigger exposes its expanded state, focus follows the supported arrow/Home/End controls, Escape restores trigger focus, and Tab closes the menu without trapping focus.
+4. **Given** a floating action or popover menu, **When** the user opens and navigates the menu by keyboard, **Then** the menu trigger exposes its expanded state, focus follows the supported arrow/Home/End controls, Space activates the focused item, Escape restores trigger focus, and Tab closes the menu without trapping focus.
 5. **Given** dense data, forms, or financial content, **When** the approved glass surfaces are used in the feature, **Then** those content areas remain mostly solid.
 
 **Clarifications**
