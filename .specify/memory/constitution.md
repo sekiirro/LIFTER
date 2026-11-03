@@ -155,10 +155,12 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   review; `reviewDecision` APPROVED; zero unresolved threads and all actionable findings resolved;
   both GitHub Actions CI runs for the PR head completed successfully and required security checks
   are green: record each run's ID and attempt; every required job concludes `success` and has a step
-  count greater than zero (zero steps means NOT EXECUTED); the `push` run has `head_sha == headRefOid`;
-  and the `pull_request` run belongs to this PR number, has a head SHA equal to `headRefOid`, and
-  tests the merge result with current `main`. Record this evidence in the PR body or feature report.
-  If `main` advances, re-evaluate the gate on the new merge result (S30-R10); and
+  count greater than zero (zero steps means NOT EXECUTED); the `push` run has
+  `head_sha == headRefOid`. For the `pull_request` run, require this PR number and
+  `github.event.pull_request.head.sha == headRefOid`; record its `GITHUB_SHA` / `head_sha`
+  separately as the merge-result SHA and verify it tests current `main`. For a main-branch push,
+  `head_sha` must equal the exact merge commit. Record both PR-head and merge-result SHAs in the PR
+  body or feature report (S30-R10). If `main` advances, re-evaluate on the new merge result; and
   independent architect review of the diff and evidence. Intermediate sub-branch merges into a
   parent feature branch require Claude review and green relevant CI on the exact head and do not
   bypass this main merge gate (see docs/08 and D-26). Ask the PO for explicit merge approval and
