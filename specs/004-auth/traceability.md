@@ -29,6 +29,6 @@ Static source inspection only. No tests were run in this compliance lane. VERIFI
 
 ## Summary
 
-- Functional requirements: 12 VERIFIED, 3 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- Functional requirements: 11 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Success criteria: 5 VERIFIED, 2 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Static verification only; no tests or scans executed. T030 remains unchecked. ND-F4-1, ND-F4-2, ND-F4-4..7 remain open.
