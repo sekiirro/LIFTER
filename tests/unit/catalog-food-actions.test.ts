@@ -115,4 +115,19 @@ describe('catalog food server actions', () => {
       /private-user|private-workspace|created_by|origin_workspace_id/,
     );
   });
+
+  it('skips duplicate candidates whose kcal value is missing or non-numeric', async () => {
+    candidatesMock.mockResolvedValue({
+      status: 'ok',
+      data: [
+        { food_id: 'food-missing-kcal', match_type: 'near' },
+        { food_id: 'food-string-kcal', match_type: 'near', kcal: '130' },
+      ],
+    });
+
+    expect(await reviewFoodDuplicatesAction(draft)).toEqual({
+      status: 'none',
+      candidates: [],
+    });
+  });
 });
