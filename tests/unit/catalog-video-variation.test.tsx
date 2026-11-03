@@ -111,10 +111,26 @@ describe('workspace video variation UI (T023)', () => {
     expect(url).not.toBeNull();
 
     await act(async () => {
-      url!.value = 'https://youtu.be/newvideo123';
-      url!.dispatchEvent(new dom.Event('input', { bubbles: true }));
+      const nextUrl = 'https://youtu.be/newvideo123';
+      const setter = Object.getOwnPropertyDescriptor(
+        dom.HTMLInputElement.prototype,
+        'value',
+      )!.set!;
+      setter.call(url, nextUrl);
+      const reactPropsKey = Object.keys(url!).find((key) =>
+        key.startsWith('__reactProps'),
+      );
+      expect(reactPropsKey).toBeDefined();
+      const props = (
+        url as unknown as Record<
+          string,
+          { onChange: (event: { currentTarget: HTMLInputElement }) => void }
+        >
+      )[reactPropsKey!];
+      props.onChange({ currentTarget: url! });
     });
 
+    expect(url!.value).toBe('https://youtu.be/newvideo123');
     expect(container.textContent).not.toContain(
       en['catalog.videoVariationSaved'],
     );

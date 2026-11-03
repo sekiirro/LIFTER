@@ -57,7 +57,16 @@ export function VideoVariationEditor({
   const [localStatus, setLocalStatus] = useState<
     'ready' | 'saving' | 'saved' | 'error'
   >('ready');
-  const status = externalStatus ?? localStatus;
+  const draftDiffersFromMapping =
+    mapping !== null &&
+    (workspaceId !== mapping.workspaceId ||
+      exerciseId !== mapping.exerciseId ||
+      videoUrl !== mapping.videoUrl ||
+      note !== mapping.note);
+  const status =
+    externalStatus === 'saved' && draftDiffersFromMapping
+      ? 'ready'
+      : (externalStatus ?? localStatus);
 
   function selectWorkspace(nextId: string) {
     const blank = resetVariationForWorkspace(nextId);
