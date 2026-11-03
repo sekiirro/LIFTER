@@ -1,9 +1,5 @@
 import { describe, expect, it, vi } from 'vitest';
-import { exerciseOptions } from '../../app/(app)/catalog-variations/page';
-
-vi.mock('next/headers', () => ({ cookies: vi.fn() }));
-vi.mock('next/navigation', () => ({ notFound: vi.fn() }));
-vi.mock('server-only', () => ({}));
+import { exerciseOptions } from '../../lib/catalog/exercise-options';
 
 describe('catalog variation exercise options', () => {
   it('uses the RPC localized name and falls back to the other locale', () => {
