@@ -41,6 +41,58 @@ it('consumes a short-lived hashed token once and revokes a link on membership lo
         await tx`select revoked_at from app_private.f15_telegram_links where user_id=${f.trainerA.userId}`;
       expect(link, 'linked Telegram row').toBeDefined();
       expect(link!.revoked_at).not.toBeNull();
+
+      const relinkToken = randomUUID()
+        .replaceAll('-', '')
+        .padEnd(64, 'c')
+        .slice(0, 64);
+      await tx`insert into app_private.f15_telegram_link_tokens(token_hash,user_id,expires_at)
+        values(extensions.digest(${relinkToken},'sha256'),${f.trainerB.userId},clock_timestamp()+interval '10 minutes')`;
+      const [relinked] = await tx`
+        select app_private.consume_f15_telegram_start(10003,${relinkToken},'10101') result
+      `;
+      expect(relinked?.result).toBe(true);
+      const [newOwner] = await tx`
+        select user_id,revoked_at from app_private.f15_telegram_links
+        where chat_id='10101' and revoked_at is null
+      `;
+      expect(newOwner).toMatchObject({
+        user_id: f.trainerB.userId,
+        revoked_at: null,
+      });
+      let revokedChatUniqueMutationKilled = false;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`delete from app_private.f15_telegram_links
+            where user_id=${f.trainerB.userId}`;
+          await sp`drop index app_private.f15_telegram_links_active_chat_id_unique`;
+          await sp`alter table app_private.f15_telegram_links
+            add constraint f15_telegram_links_chat_id_key unique(chat_id)`;
+          const mutantToken = randomUUID()
+            .replaceAll('-', '')
+            .padEnd(64, 'd')
+            .slice(0, 64);
+          await sp`insert into app_private.f15_telegram_link_tokens(
+            token_hash,user_id,expires_at
+          ) values(
+            extensions.digest(${mutantToken},'sha256'),${f.trainerB.userId},
+            clock_timestamp()+interval '10 minutes'
+          )`;
+          try {
+            const [mutant] = await sp.savepoint(
+              async (probe) =>
+                probe`select app_private.consume_f15_telegram_start(
+                10004,${mutantToken},'10101'
+              ) result`,
+            );
+            expect(mutant?.result).toBe(true);
+          } catch {
+            revokedChatUniqueMutationKilled = true;
+          }
+          throw rollback;
+        }),
+      ).rejects.toBe(rollback);
+      expect(revokedChatUniqueMutationKilled).toBe(true);
       throw rollback;
     }),
   ).rejects.toBe(rollback);
