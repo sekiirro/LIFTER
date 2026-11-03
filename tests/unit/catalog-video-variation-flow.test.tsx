@@ -77,14 +77,12 @@ describe('variation mapping load failures', () => {
       expect(container.querySelector('[role="alert"]')).not.toBeNull();
 
       await act(async () => {
-        container
-          .querySelector('form')
-          ?.dispatchEvent(
-            new dom.Event('submit', {
-              bubbles: true,
-              cancelable: true,
-            }) as unknown as Event,
-          );
+        container.querySelector('form')?.dispatchEvent(
+          new dom.Event('submit', {
+            bubbles: true,
+            cancelable: true,
+          }) as unknown as Event,
+        );
         await Promise.resolve();
       });
       expect(save).not.toHaveBeenCalled();
