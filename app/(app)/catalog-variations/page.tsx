@@ -9,7 +9,7 @@ import { LOCALE_COOKIE, parseLocale } from '../../../lib/design/preferences';
 import { getMessages } from '../../../lib/i18n';
 import styles from './catalog-variations.module.css';
 
-function exerciseOptions(data: unknown, locale: 'ar' | 'en') {
+export function exerciseOptions(data: unknown, locale: 'ar' | 'en') {
   if (!Array.isArray(data)) return [];
   return data.flatMap((value) => {
     if (!value || typeof value !== 'object') return [];

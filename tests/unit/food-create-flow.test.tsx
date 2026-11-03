@@ -19,6 +19,7 @@ vi.mock('../../app/(dashboard)/catalog-foods/actions', () => ({
 vi.mock('../../components/catalog/FoodEditor', () => ({
   FoodEditor: (props: {
     initialDraft: FoodEditorDraft;
+    status?: 'ready' | 'saving' | 'error' | 'success';
     onSubmit?: (
       input: unknown,
       draft: FoodEditorDraft,
@@ -26,12 +27,17 @@ vi.mock('../../components/catalog/FoodEditor', () => ({
     ) => void;
   }) =>
     createElement(
-      'button',
-      {
-        type: 'button',
-        onClick: () => props.onSubmit?.(null, props.initialDraft, null),
-      },
-      'Start duplicate review',
+      'div',
+      null,
+      props.status === 'error' ? createElement('div', { role: 'alert' }, 'Save failed') : null,
+      createElement(
+        'button',
+        {
+          type: 'button',
+          onClick: () => props.onSubmit?.(null, props.initialDraft, null),
+        },
+        'Start duplicate review',
+      ),
     ),
 }));
 
@@ -114,5 +120,23 @@ describe('FoodCreateFlow existing-item selection', () => {
       en['catalog.duplicateExistingSelected'],
     );
     expect(container.textContent).toContain('Cooked rice');
+  });
+});
+
+describe('FoodCreateFlow save errors', () => {
+  it('renders exactly one live alert for a failed save', async () => {
+    actions.review.mockResolvedValue({ status: 'none' });
+    actions.save.mockResolvedValue({ status: 'invalid' });
+    await act(async () => {
+      root.render(createElement(FoodCreateFlow, {
+        locale: 'en',
+        role: 'po',
+        initialDraft: draft,
+      }));
+    });
+    await act(async () => {
+      container.querySelector('button')?.click();
+    });
+    expect(container.querySelectorAll('[role="alert"]')).toHaveLength(1);
   });
 });

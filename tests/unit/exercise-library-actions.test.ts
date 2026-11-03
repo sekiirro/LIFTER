@@ -146,6 +146,27 @@ describe('production exercise authoring actions', () => {
     );
   });
 
+  it('carries current bilingual instructions into a new version when unchanged', async () => {
+    await saveExerciseAction({
+      draft,
+      scope: 'global',
+      workspaceId: null,
+      operationKey: '11111111-1111-4111-8111-111111111111',
+      id: 'exercise-a',
+      expectedVersion: 2,
+      instructions: { ar: 'تعليمات قائمة', en: 'Existing instructions' },
+    } as Parameters<typeof saveExerciseAction>[0]);
+
+    expect(mocks.versionExercise).toHaveBeenCalledWith(
+      expect.objectContaining({
+        request: expect.objectContaining({
+          instructions_ar: 'تعليمات قائمة',
+          instructions_en: 'Existing instructions',
+        }),
+      }),
+    );
+  });
+
   it('does not reveal or write to another workspace', async () => {
     mocks.actor.mockResolvedValue({
       userId: 'trainer',

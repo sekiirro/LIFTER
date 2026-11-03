@@ -5,6 +5,7 @@ import {
   catalogSearchKeyAction,
   formatCatalogCount,
   hasActiveCatalogFilters,
+  hasSubmittedCatalogSearch,
   initialCatalogShellState,
   isCatalogListKind,
   reduceCatalogShellState,
@@ -31,6 +32,13 @@ const foodIds = (query = '', filters = {}) =>
   ).map((item) => item.id);
 
 describe('catalog list projection', () => {
+  it('uses the submitted query when pending input changes the live query', () => {
+    const initial = initialCatalogShellState('exercise', 'previous search');
+    const edited = reduceCatalogShellState(initial, { type: 'query', value: '' });
+    expect(edited.query).toBe('');
+    expect(hasSubmittedCatalogSearch(edited.search)).toBe(true);
+  });
+
   it('keeps only active items of the requested kind', () => {
     expect(exerciseIds()).toEqual([
       'mock-exercise-1',

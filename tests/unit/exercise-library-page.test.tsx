@@ -72,6 +72,16 @@ describe('production exercise library route', () => {
     },
   );
 
+  it.each(['not-a-uuid', '22222222-2222-4222-8222-222222222222/extra'])(
+    'denies malformed workspace input %s before search',
+    async (workspace) => {
+      await expect(
+        Page({ searchParams: Promise.resolve({ workspace }) }),
+      ).rejects.toThrow('404');
+      expect(m.search).not.toHaveBeenCalled();
+    },
+  );
+
   it('uses only the authenticated catalog search wall with a bounded page', async () => {
     const html = renderToStaticMarkup(
       await Page({
