@@ -108,6 +108,14 @@ Strict equality at expiry/grace is invalid; opening early must not shorten expir
 
 Existing [production gates](../../docs/07-production-readiness.md), including B4 and recovery decisions, remain open. ND-F4 expiry/limits do not replace F10's fixed 24 hours or its own rate decision. Local work/PRs remain permitted; no deployment/cloud migration is authorized.
 
+## Clarifications
+
+### Session 2026-11-03 — compliance reconciliation
+
+- **Decision register:** `docs/04-changes-and-questions.md` D-17 and D-23; the F12 final PO decision record dated 2026-10-29; and the carried F9 decisions listed above.
+- **Result:** The approved F12 flexible-installment delta is represented by the existing F10 addendum and FR-004/SC-002. ND-F10-1..5 remain open, and carried ND-F9-1..5 remain as already escalated in SK-009-01..05. No open item is resolved in this clarification; no new ambiguity beyond those recorded was identified for the merged F10 scope.
+- **Evidence limit:** Static artifact/code/test review only; no tests were executed in this lane.
+
 ## Assumptions and Constitution Check
 
 I/III: two walls, unchanged capabilities, scoped safe reads and composite FKs. II/V: immutable exact-money snapshots; no payment recording or earned-commission calculation. IV: only issued/open contract; F11, branding, revocation, sales and financial workflows excluded. VI: no people decisions. VII: hashes/secrets confined, safe audit/no logs. VIII: AR/EN Design System and states. IX: locked transactions, set-once markers and pure tested clock. Single forward migration is future work only.
