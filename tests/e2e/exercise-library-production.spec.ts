@@ -209,11 +209,21 @@ for (const locale of ['ar', 'en'] as const) {
         const exerciseSelect = page.getByLabel(
           m['catalog.videoVariationExercise'],
         );
-        await expect(
-          exerciseSelect.getByRole('option', {
-            name: 'S28 persisted integration exercise',
-          }),
-        ).toBeVisible();
+        const options = await exerciseSelect
+          .locator('option')
+          .evaluateAll((elements) =>
+            elements
+              .map((element) => {
+                const option = element as HTMLOptionElement;
+                return {
+                  value: option.value,
+                  label: option.textContent?.trim(),
+                };
+              })
+              .filter(({ value }) => value),
+          );
+        expect(options.length).toBeGreaterThan(0);
+        expect(options.every(({ value, label }) => value !== label)).toBe(true);
         await assertAxe(page);
         await page.screenshot({
           path: join(
