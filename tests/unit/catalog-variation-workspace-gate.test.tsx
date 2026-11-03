@@ -20,7 +20,11 @@ vi.mock('../../lib/catalog/server', () => ({
 vi.mock('../../components/catalog/VideoVariationFlow', () => ({
   VideoVariationFlow: () => createElement('div', null, 'variation flow'),
 }));
-vi.mock('next/navigation', () => ({ notFound: () => { throw new Error('404'); } }));
+vi.mock('next/navigation', () => ({
+  notFound: () => {
+    throw new Error('404');
+  },
+}));
 
 beforeEach(() => {
   vi.resetAllMocks();

@@ -36,9 +36,7 @@ export function exerciseInput(
       typeof payload.primary_muscle_code === 'string'
         ? payload.primary_muscle_code
         : '',
-    secondaryMuscles: Array.isArray(secondaryMuscles)
-      ? secondaryMuscles
-      : [],
+    secondaryMuscles: Array.isArray(secondaryMuscles) ? secondaryMuscles : [],
     equipment: typeof equipment === 'string' ? equipment : '',
     lifecycleState: row.lifecycle_state === 'removed' ? 'removed' : 'active',
     defaults: {
