@@ -156,9 +156,7 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   both GitHub Actions CI runs for the PR head completed successfully and required security checks
   are green: record each run's ID and attempt; every required job concludes `success` and has a step
   count greater than zero (zero steps means NOT EXECUTED); the `push` run has
-  `head_sha == headRefOid`. For the `pull_request` run, require this PR number and
-  `github.event.pull_request.head.sha == headRefOid`; record its `GITHUB_SHA` / `head_sha`
-  separately as the merge-result SHA and verify it tests current `main`. For a main-branch push,
+  `head_sha == headRefOid`. For the `pull_request` run, require this PR number, run `head_sha == headRefOid`, and `github.event.pull_request.head.sha == headRefOid`; record `head_sha` as the PR-head SHA and `GITHUB_SHA` separately as the merge-result SHA. Obtain `GITHUB_SHA` from the run logs or a workflow step that prints it, never use `head_sha` as the merge-result SHA, and verify the merge-result commit has the PR head and current `main` commit as parents. For a main-branch push,
   `head_sha` must equal the exact merge commit. Record both PR-head and merge-result SHAs in the PR
   body or feature report (S30-R10). If `main` advances, re-evaluate on the new merge result; and
   independent architect review of the diff and evidence. Intermediate sub-branch merges into a
