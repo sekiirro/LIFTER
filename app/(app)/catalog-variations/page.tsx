@@ -20,6 +20,27 @@ export default async function CatalogVariationsPage({
   const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
   const messages = getMessages(locale);
   const workspaceResult = await authoringWorkspaces();
+  if (workspaceResult.status !== 'ok')
+    return (
+      <main className={styles.main} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+        <h1>{messages['catalog.videoVariationTitle']}</h1>
+        <Alert
+          tone="error"
+          title={messages['catalog.videoVariationUnavailable']}
+        />
+      </main>
+    );
+  const workspaces = workspaceResult.data.map(({ id, name }) => ({
+    id,
+    label: name,
+  }));
+  if (!workspaces.length)
+    return (
+      <main className={styles.main} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
+        <h1>{messages['catalog.videoVariationTitle']}</h1>
+        <EmptyState title={messages['catalog.videoVariationNoWorkspace']} />
+      </main>
+    );
   const exerciseRows: unknown[] = [];
   let cursor: string | null = null;
   let exerciseStatus = 'ok';
@@ -45,7 +66,7 @@ export default async function CatalogVariationsPage({
         ? last.result_id
         : null;
   } while (cursor);
-  if (workspaceResult.status !== 'ok' || exerciseStatus !== 'ok')
+  if (exerciseStatus !== 'ok')
     return (
       <main className={styles.main} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
         <h1>{messages['catalog.videoVariationTitle']}</h1>
@@ -55,18 +76,7 @@ export default async function CatalogVariationsPage({
         />
       </main>
     );
-  const workspaces = workspaceResult.data.map(({ id, name }) => ({
-    id,
-    label: name,
-  }));
   const exercises = exerciseOptions(exerciseRows, locale);
-  if (!workspaces.length)
-    return (
-      <main className={styles.main} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
-        <h1>{messages['catalog.videoVariationTitle']}</h1>
-        <EmptyState title={messages['catalog.videoVariationNoWorkspace']} />
-      </main>
-    );
   if (!exercises.length)
     return (
       <main className={styles.main} dir={locale === 'ar' ? 'rtl' : 'ltr'}>
