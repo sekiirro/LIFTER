@@ -122,6 +122,24 @@ describe('catalog list shell presentation', () => {
     expect(empty).toContain('Add exercise');
   });
 
+  it('does not re-filter a server-filtered exercise page on the client', () => {
+    const row = {
+      id: 'server-match',
+      kind: 'exercise' as const,
+      names: { ar: 'Ø§Ø®ØªØ¨Ø§Ø±', en: 'Server matched row' },
+      primaryMuscle: 'chest' as const,
+      equipment: 'barbell' as const,
+      lifecycleState: 'active' as const,
+    };
+    const html = render({
+      locale: 'en',
+      items: [row],
+      serverFiltered: true,
+      initialFilters: { equipment: 'dumbbell' },
+    });
+    expect(html).toContain('Server matched row');
+  });
+
   it('renders the no-results state when the submitted search matches nothing', () => {
     const html = render({ initialQuery: 'zzzz-no-match' });
     expect(html).toContain(ar['catalog.noResultsTitle']);

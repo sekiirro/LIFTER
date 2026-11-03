@@ -1,6 +1,9 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it, vi } from 'vitest';
+import { act } from 'react';
+import { createRoot, type Root } from 'react-dom/client';
+import { Window } from 'happy-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { FoodEditor } from '../../components/catalog/FoodEditor';
 import { DuplicateReview } from '../../components/catalog/DuplicateReview';
 import { selectExistingFood } from '../../components/catalog/DuplicateReview';
@@ -28,6 +31,27 @@ const base: FoodEditorDraft = {
   servings: [{ labelAr: 'حصة', labelEn: 'serving', basisQuantity: '100' }],
   alternatives: [],
 };
+
+let dom: Window;
+let root: Root;
+let container: HTMLElement;
+
+beforeEach(() => {
+  dom = new Window();
+  vi.stubGlobal('window', dom);
+  vi.stubGlobal('document', dom.document);
+  vi.stubGlobal('HTMLElement', dom.HTMLElement);
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  container = dom.document.createElement('div');
+  dom.document.body.append(container);
+  root = createRoot(container);
+});
+
+afterEach(async () => {
+  await act(async () => root.unmount());
+  dom.happyDOM.abort();
+  vi.unstubAllGlobals();
+});
 
 describe('food editor (T029)', () => {
   it('uses one numeral system in every Arabic editor and duplicate text node', () => {
@@ -254,5 +278,40 @@ describe('duplicate review (T030)', () => {
       /<button[^>]*disabled=""[^>]*>Continue with this food/,
     );
     expect(markup).not.toContain('data-testid="duplicate-provenance"');
+  });
+});
+
+describe('food editor error-summary focus', () => {
+  it('does not steal focus from an edited field after an invalid submit', async () => {
+    const invalidDraft = { ...base, nameAr: '', kcal: '-1' };
+    await act(async () => {
+      root.render(
+        createElement(FoodEditor, {
+          locale: 'en',
+          initialDraft: invalidDraft,
+        }),
+      );
+    });
+    const form = container.querySelector('form');
+    const nameAr = container.querySelector<HTMLInputElement>(
+      'input[id$="-name-ar"]',
+    );
+    expect(form).not.toBeNull();
+    expect(nameAr).not.toBeNull();
+
+    await act(async () => {
+      form!.dispatchEvent(
+        new dom.Event('submit', { bubbles: true, cancelable: true }),
+      );
+    });
+    const summary = container.querySelector('[id$="-error-summary"]');
+    expect(dom.document.activeElement).toBe(summary);
+
+    await act(async () => {
+      nameAr!.value = 'Rice';
+      nameAr!.dispatchEvent(new dom.Event('input', { bubbles: true }));
+    });
+
+    expect(dom.document.activeElement).toBe(nameAr);
   });
 });

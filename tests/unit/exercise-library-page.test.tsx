@@ -17,10 +17,18 @@ vi.mock('next/navigation', () => ({ notFound: m.notFound }));
 vi.mock('../../app/(app)/exercise-library/ExerciseLibraryResults', () => ({
   ExerciseLibraryResults: (props: {
     items: readonly { names: { en: string } }[];
+    workspaceId?: string | null;
+    emptyActionHref?: string;
+    nextHref: string | null;
   }) =>
     createElement(
       'div',
-      { 'data-testid': 'exercise-results' },
+      {
+        'data-testid': 'exercise-results',
+        'data-workspace-id': props.workspaceId ?? '',
+        'data-add-href': props.emptyActionHref ?? '',
+        'data-next-href': props.nextHref ?? '',
+      },
       props.items.map((item) => item.names.en).join(','),
     ),
 }));
@@ -95,5 +103,46 @@ describe('production exercise library route', () => {
     );
     expect(html).toContain('href="/exercise-library/new"');
     expect(html).not.toContain('Barbell Bench Press');
+  });
+
+  it('preserves an authorized workspace through search, Add, and pagination', async () => {
+    const pageRows = Array.from({ length: 21 }, (_, index) => ({
+      ...exercise,
+      result_id: `33333333-3333-4333-8333-${String(index + 1).padStart(12, '0')}`,
+    }));
+    m.search.mockResolvedValue({ status: 'ok', data: pageRows });
+
+    const html = renderToStaticMarkup(
+      await Page({
+        searchParams: Promise.resolve({
+          workspace: ws,
+          q: 'press',
+          muscle: 'chest',
+          equipment: 'barbell',
+        }),
+      }),
+    );
+
+    expect(m.search).toHaveBeenCalledWith({
+      kind: 'workspace_exercise',
+      query: 'press',
+      filters: {
+        primary_muscle_code: 'chest',
+        equipment_codes: ['barbell'],
+        page_size: 21,
+      },
+      cursor: null,
+      workspaceId: ws,
+    });
+    expect(html).toContain(`data-workspace-id="${ws}"`);
+    expect(html).toContain(
+      `data-add-href="/exercise-library/new?scope=workspace&amp;workspace=${ws}"`,
+    );
+    expect(html).toContain(
+      `data-next-href="/exercise-library?workspace=${ws}&amp;q=press&amp;muscle=chest&amp;equipment=barbell&amp;cursor=33333333-3333-4333-8333-000000000020"`,
+    );
+    expect(html).toContain(
+      `href="/exercise-library/new?scope=workspace&amp;workspace=${ws}"`,
+    );
   });
 });

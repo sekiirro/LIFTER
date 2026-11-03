@@ -1,6 +1,9 @@
 import { createElement } from 'react';
+import { act } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { createRoot, type Root } from 'react-dom/client';
+import { Window } from 'happy-dom';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { VideoVariationEditor } from '../../components/catalog/VideoVariationEditor';
 import {
   buildVideoVariationRequest,
@@ -8,6 +11,28 @@ import {
   resetVariationForWorkspace,
   validateVideoVariationDraft,
 } from '../../lib/catalog/video-variation';
+import { en } from '../../lib/i18n/messages/en';
+
+let dom: Window;
+let root: Root;
+let container: HTMLElement;
+
+beforeEach(() => {
+  dom = new Window();
+  vi.stubGlobal('window', dom);
+  vi.stubGlobal('document', dom.document);
+  vi.stubGlobal('HTMLElement', dom.HTMLElement);
+  vi.stubGlobal('IS_REACT_ACT_ENVIRONMENT', true);
+  container = dom.document.createElement('div');
+  dom.document.body.append(container);
+  root = createRoot(container);
+});
+
+afterEach(async () => {
+  await act(async () => root.unmount());
+  dom.happyDOM.abort();
+  vi.unstubAllGlobals();
+});
 
 describe('workspace video variation UI (T023)', () => {
   const base = {
@@ -67,5 +92,31 @@ describe('workspace video variation UI (T023)', () => {
       videoUrl: '',
       note: '',
     });
+  });
+
+  it('clears the saved confirmation when the URL draft changes', async () => {
+    await act(async () => {
+      root.render(
+        createElement(VideoVariationEditor, {
+          locale: 'en',
+          workspaces: [{ id: base.workspaceId, label: 'Selected workspace' }],
+          exercises: [{ id: base.exerciseId, label: 'Squat' }],
+          mapping: { ...base, version: 1 },
+          status: 'saved',
+        }),
+      );
+    });
+    expect(container.textContent).toContain(en['catalog.videoVariationSaved']);
+    const url = container.querySelector<HTMLInputElement>('input[type="url"]');
+    expect(url).not.toBeNull();
+
+    await act(async () => {
+      url!.value = 'https://youtu.be/newvideo123';
+      url!.dispatchEvent(new dom.Event('input', { bubbles: true }));
+    });
+
+    expect(container.textContent).not.toContain(
+      en['catalog.videoVariationSaved'],
+    );
   });
 });
