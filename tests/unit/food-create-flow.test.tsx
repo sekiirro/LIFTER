@@ -200,7 +200,9 @@ describe('FoodCreateFlow save errors', () => {
     expect(confirm!.disabled).toBe(true);
     expect(cancel!.disabled).toBe(true);
     await act(async () => {
-      cancel!.dispatchEvent(new window.MouseEvent('click', { bubbles: true }));
+      cancel!.dispatchEvent(
+        new window.MouseEvent('click', { bubbles: true }) as unknown as Event,
+      );
     });
     expect(
       container.querySelector('[data-testid="duplicate-review"]'),
