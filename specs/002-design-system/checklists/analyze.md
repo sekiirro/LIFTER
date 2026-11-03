@@ -1,7 +1,7 @@
 # Specification Analysis Report: Design System Foundation
 
 **Date:** 2026-11-04
-**Analysed commit:** 7d5b4e52c98a55c71a6eb59fdf889717825cb4c6 (Q16 scope/precedence, tasks, traceability, and follow-up evidence gaps are included; static analysis only)
+**Analysed commit:** 52d55251148ec906c099af163d5ad6daf5f0e87d (Q16 precedence, fallback tasks, and partial requirement mappings are included; static analysis only)
 **Scope:** Existing Design System artifacts, PR #28 Glass delta, and S30-PO-8 Q16 desktop sidebar correction.
 **Method:** Static inspection; no tests or runtime commands were executed. The `speckit-analyze` prerequisite check passed with `SPECIFY_FEATURE_DIRECTORY=specs/002-design-system`; no extension hooks are configured.
 
@@ -36,7 +36,7 @@
 | FR-018 | Yes | T027, T030, T031, T032 | Loading/empty/error states |
 | FR-019 | Yes | T028, T029, T030, T031, T032 | Toast/alert behavior |
 | FR-020 | Yes | T006, T011, T023, T027, T032 | Motion/reduced motion |
-| FR-021 | Yes | T034, T036, T047, T048 | Q16 desktop sidebar and responsive navigation |
+| FR-021 | Yes | T033-T036, T047-T048 | Existing responsive navigation; Q16 tasks remain unchecked pending verification |
 | FR-022 | Yes | T033, T034, T036 | Role navigation |
 | FR-023 | Yes | T001, T002, T014, T018, T021, T030, T035, T040 | Showcase and gate |
 | FR-024 | Yes | T037, T038, T039 | Print sample/report |
@@ -51,9 +51,9 @@
 | SC-004 | Yes | T019 | First-paint theme/direction |
 | SC-005 | Yes | T010 | Catalog key parity |
 | SC-006 | Yes | T038, T039 | Print spike report |
-| SC-007 | Yes | T003, T042 | Build-size gate; execution not re-verified |
+| SC-007 | Yes | T042 | Build-size gate; execution not re-verified; T003 is not an SC-007 task |
 | SC-008 | Yes | T046 | PO threshold; source report absent |
-| SC-009 | Yes | T043, T049 | Browser focus identity covers over-budget only; T049 remains unchecked for other fallback conditions |
+| SC-009 | Yes | T043, T048-T049 | Existing focus evidence covers over-budget only; follow-up tasks remain unchecked |
 | SC-010 | Yes | T047, T048 | Q16 sidebar properties; tasks remain unchecked pending later implementation/review |
 
 ## Metrics
@@ -69,6 +69,6 @@
 
 ## History
 
-- 2026-11-04: Refreshed after Q16 scope/precedence commit 7d5b4e52c98a55c71a6eb59fdf889717825cb4c6; 0 CRITICAL/HIGH findings, 2 MEDIUM; T047-T049 remain unchecked and FR-027/FR-028/SC-009 remain PARTIAL pending later evidence. Static inspection only.
+- 2026-11-04: Refreshed after partial-mapping commit 52d55251148ec906c099af163d5ad6daf5f0e87d; FR-021 and SC-008/009/010 remain PARTIAL where evidence is incomplete; requirements checklist leaves measurable-outcomes completion unchecked; 0 CRITICAL/HIGH. Static inspection only.
 
 - 2026-11-03: Initial S30 reconciliation of PR #28 scope at `e69688a`; refreshed source quotations and citations against `a9b37cc` with no new findings.
