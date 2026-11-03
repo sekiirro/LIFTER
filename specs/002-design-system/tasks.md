@@ -8,7 +8,7 @@
 
 - [x] T001 Add exact-pinned deps `geist@1.8.2` and `@fontsource/ibm-plex-sans-arabic@5.3.0`, and devDep `@axe-core/playwright@4.14.0`, in `package.json` / `package-lock.json`. Confirm each package's LICENSE file is OFL-1.1 or MIT, and list them in the review notes. [FR: FR-012, FR-023]
 - [x] T002 Update `playwright.config.ts`: `webServer.env = { LIFTER_SHOWCASE: '1' }`, and change `webServer.url` to `/api/health` (unchanged). Add a second project `mobile-chromium` using `devices['Pixel 7']` that runs only `shell.spec.ts`. Keep the existing `chromium` project. [FR: FR-023]
-- [x] T003 [P] Add `components/**` and `lib/**` to Vitest/TS coverage as needed. Vitest stays `environment: 'node'` with `include: ['tests/unit/**/*.test.ts']`. [FR: SC-007]
+- [x] T003 [P] Add `components/**` and `lib/**` to Vitest/TS coverage as needed. Vitest stays `environment: 'node'` with `include: ['tests/unit/**/*.test.ts']`. [SC: SC-007]
 
 ## Phase 2: Foundational (blocks all stories)
 
@@ -78,7 +78,7 @@
 
 - [x] T040 README "Design system" section in `README.md`: token usage, logical-CSS rule, adding messages, the `LIFTER_SHOWCASE=1` showcase, BrandScope, and the open NEEDS DECISION items (with a link to the plan). [FR: FR-023, FR-026]
 - [x] T041 (Claude) Constitution v1.1.0 amendment (Principle VIII lime → emerald `#059669` with workspace-customizable brand colors and contrast guard), decision register D-18, and the Architecture UI row. These are docs only. [FR: FR-025]
-- [x] T042 (Claude) Full gate re-run: typecheck, lint, format:check, test, build, e2e (both projects); edge build and size on CI. [FR: SC-007]
+- [x] T042 (Claude) Full gate re-run: typecheck, lint, format:check, test, build, e2e (both projects); edge build and size on CI. [SC: SC-007]
 
 ## Phase 9: US6: Merged selective Liquid Glass coverage (PR #28)
 
