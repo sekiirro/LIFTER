@@ -32,8 +32,8 @@ Evidence commits: original Design System implementation `be29751`, `e2df0cd`, `b
 | FR-024 | T037-T039 | `tests/e2e/print.spec.ts::Arabic print sample hides screen controls and exports its PDF`; `specs/002-design-system/print-spike.md` | VERIFIED |
 | FR-025 | T041 | Constitution v1.1.0, D-18, and Architecture v3 UI-row diffs in commit `b57d404`; no test applicable to document content | PARTIAL |
 | FR-026 | T040 and plan NEEDS DECISION ND-1..ND-7 | `specs/002-design-system/plan.md` decision table is present; no executable asserting test is applicable or recorded | PARTIAL |
-| FR-027 | T043-T045 | `tests/unit/glass-surface.test.tsx::selects the requested material class and defaults to regular`; `tests/unit/glass-popover-menu.test.tsx::renders named toolbar and floating actions with a solid fallback option`; shell responsive tests | VERIFIED |
-| FR-028 | T043, T046 | `tests/unit/glass-surface.test.tsx::enables refraction only when the browser and preferences allow it`; `tests/e2e/glass.spec.ts::keeps the dock link node focused when over-budget enhancement falls back`; `scripts/perf/glass-tbt-ab.mjs` is a measurement harness | VERIFIED |
+| FR-027 | T043-T045, T047 | Existing PR #28 test evidence plus Q16 follow-up task T047, which remains unchecked | PARTIAL |
+| FR-028 | T043, T046, T048-T049 | Existing unit tests cover fallback selection and the browser test covers over-budget focus identity; T048-T049 remain unchecked for Q16 and all fallback conditions | PARTIAL |
 | FR-029 | T045 | `tests/unit/glass-popover-menu.test.tsx::opens on ArrowUp at the last item and on ArrowDown at the first`; `::moves focus with arrows and wraps at either end`; `::supports Home and End and closes without trapping Tab`; `::returns focus to the trigger on Escape`; `::activates the focused item with Space`; `tests/e2e/glass.spec.ts::popover ArrowDown navigation works after enhancement` | VERIFIED |
 | SC-001 | T007 | `tests/unit/tokens-contrast.test.ts` contrast assertions for both modes and sample colors | VERIFIED |
 | SC-002 | T031 | `tests/e2e/a11y.spec.ts` AR/EN Ã— dark/light axe matrix | VERIFIED |
@@ -44,7 +44,7 @@ Evidence commits: original Design System implementation `be29751`, `e2df0cd`, `b
 | SC-007 | T042 | CI build-size check was referenced by T042; a concrete assertion test or executed CI run was not re-verified in this static pass | PARTIAL |
 | SC-008 | T046 | PR #28 body reports 15 paired samples and passing median deltas; local report outputs r1-r8 are referenced but not present in this checkout; measurement not rerun | PARTIAL |
 | SC-010 | T047-T048 | Static inspection: components/shell/NavRail.tsx:16-45, components/shell/NavRail.module.css:1-20, components/shell/AppShell.module.css:13-20, components/ui/AccessibleTooltip.tsx:79-90,173-184; existing hover/focus test references were not executed in this lane | PARTIAL |
-| SC-009 | T043 | `tests/unit/glass-surface.test.tsx::enables refraction only when the browser and preferences allow it`; `tests/e2e/glass.spec.ts::keeps the dock link node focused when over-budget enhancement falls back` | VERIFIED |
+| SC-009 | T043, T049 | Existing unit tests cover fallback selection and browser focus identity for over-budget fallback only; T049 remains unchecked for remaining fallback conditions | PARTIAL |
 
 ## Static verification note
 

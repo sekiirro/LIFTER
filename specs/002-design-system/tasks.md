@@ -88,6 +88,7 @@
 - [ ] T046 [US6] Reproduce the approved paired TBT gate (15 interleaved samples per arm, desktop and mobile) and attach the evidence report to this feature. The merged PR description reports passing medians, but the run output is not in this checkout; no performance test was run during this static reconciliation. FR: FR-028; SC: SC-008.
 - [ ] T047 [US4/US6] In the later implementation lane, align the desktop navigation with S30-PO-8 Q16: vertical Liquid Glass sidebar at inline-start, icons only by default, and each icon name in a tooltip on pointer hover and keyboard focus. Preserve the approved glass style; route any code change through normal review gates. FR: FR-021, FR-027; SC: SC-010.
 - [ ] T048 [US4/US6] In the later implementation/review lane, verify the Q16 sidebar's vertical/logical placement, icons-only default, hover and keyboard-focus tooltips, and glass fallback; record executed test evidence and exact-SHA review. These tasks were not executed in this docs-only lane. FR: FR-021, FR-028; SC: SC-009, SC-010.
+- [ ] T049 [US6] In the later verification lane, add browser focus-identity coverage for every FR-028 fallback condition (unsupported capability, display preferences, constrained-device state, explicit solid fallback, and over-budget initialization); record executed results without weakening the requirement. FR: FR-028; SC: SC-009.
 
 ## Dependencies
 
