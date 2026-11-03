@@ -16,7 +16,9 @@ describe('self-hosted CI author association policy', () => {
       ]),
     );
 
-    const allowed = new Set(['OWNER']);
+    const associationList = gates?.[0].match(/fromJSON\('([^']+)'\)/)?.[1];
+    expect(associationList).toBe('["OWNER"]');
+    const allowed = new Set<string>(JSON.parse(associationList ?? '[]'));
     for (const association of [
       'OWNER',
       'MEMBER',
@@ -27,10 +29,10 @@ describe('self-hosted CI author association policy', () => {
       const isOwner = allowed.has(association);
       expect(isOwner).toBe(association === 'OWNER');
       expect(isOwner ? 'self-hosted' : 'ubuntu-latest').toBe(
-        association === 'OWNER' ? 'self-hosted' : 'ubuntu-latest',
+        isOwner ? 'self-hosted' : 'ubuntu-latest',
       );
       expect(isOwner ? 'secrets-available' : '').toBe(
-        association === 'OWNER' ? 'secrets-available' : '',
+        isOwner ? 'secrets-available' : '',
       );
     }
   });
