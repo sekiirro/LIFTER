@@ -63,3 +63,22 @@ Journeys = PRD-14 (A–G). `AT-*` = proposed acceptance test ids; each becomes a
 | F17 FR-001 through FR-016 | D17-1 through D17-9 and Plan Core | spec on branch 017-workout-planner (feature PR pending); PO S20 Message B sections 2 and 4 |
 | F18 FR-001 through FR-013 | D18-1/2/4/6/9 and Plan Core | spec on branch 018-nutrition-planner (feature PR pending); PO S20 Message B sections 3 and 4 |
 | F14b / Hero | Seven F14b decisions; approved prototype 97debaf | docs/04-changes-and-questions.md S20-22/23; DESIGN.md |
+
+## S30 Spec Kit traceability artifacts
+
+The following merged-feature compliance traceability maps were added by the S30 SK-B batch PR. They map each feature requirement and success criterion to tasks, existing asserting tests or evidence, and the static verification status. No claims below imply tests were re-executed in the documentation lane.
+
+| Feature | Traceability map |
+|---|---|
+| 012 Registration Approval | [specs/012-registration-approval/traceability.md](../specs/012-registration-approval/traceability.md) |
+| 009 Packages | [specs/009-packages/traceability.md](../specs/009-packages/traceability.md) |
+| 004 Authentication | [specs/004-auth/traceability.md](../specs/004-auth/traceability.md) |
+| 008 Free-tier Validation Prep | [specs/008-free-tier-validation/traceability.md](../specs/008-free-tier-validation/traceability.md) |
+| 010 Registration Links | [specs/010-registration-links/traceability.md](../specs/010-registration-links/traceability.md) |
+| 013 Freeze, Renewal, and Refunds | [specs/013-freeze-renewal-refunds/traceability.md](../specs/013-freeze-renewal-refunds/traceability.md) |
+| 014 Workspace Branding (core) | [specs/014-workspace-branding/traceability.md](../specs/014-workspace-branding/traceability.md) |
+| 011 Client Accounts and Signup | [specs/011-client-accounts/traceability.md](../specs/011-client-accounts/traceability.md) |
+| 001 Project Scaffold (original merged scope) | [specs/001-project-scaffold-ci/traceability.md](../specs/001-project-scaffold-ci/traceability.md) |
+| 002 Design System (merged scope) | [specs/002-design-system/traceability.md](../specs/002-design-system/traceability.md) |
+
+The separate S30 coverage for the PR #28 shipped Design System delta is tracked in its own docs-only PR and is not duplicated in the merged-scope map above. Features 003, 005, 006, and 007 remain assigned to the parallel compliance lane.
