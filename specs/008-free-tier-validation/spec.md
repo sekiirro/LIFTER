@@ -81,6 +81,14 @@ The PO receives one report in a fixed format. It shows each limit, the measured 
 - **ND-F8-2 — Deployment approval** for the measured run: which Cloudflare account, which Supabase organization/project (see the eligibility report), and the region (bounded by B4).
 - **ND-F8-3 — Authenticated route measurement**: whether a dedicated test account may be used against the approved staging environment.
 
+## Clarifications
+
+### Session 2026-11-03 — compliance reconciliation
+
+- **Decision register:** `docs/04-changes-and-questions.md` D-06 and the owner decision dated 2026-10-27 cited in this spec; ND-F8-1..3 remain unresolved.
+- **Result:** No new product or deployment decision is made. F8 remains preparation-only; actual environment measurements remain gated on explicit PO deployment approval. Missing pilot values and authenticated-route permission remain missing, not defaulted.
+- **Evidence limit:** Static source/test inspection only; no tests or cloud actions were performed in this lane.
+
 ## Assumptions
 
 - Limits are taken from the official pages on the date checked. Cloudflare Workers Free: 100,000 requests/day, 10 ms CPU per HTTP request, 64 MiB uncompressed Worker size (architecture, verified 2026-10-27). Supabase Free (pricing page, checked 2026-10-27): 2 active projects, 500 MB database, 5 GB egress + 5 GB cached egress, 1 GB storage, 50,000 MAU, no automatic backups, pause after 1 week of inactivity.
