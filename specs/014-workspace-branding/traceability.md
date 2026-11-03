@@ -57,3 +57,7 @@ Hero implementation base: `da56320af3cc8bba73a2e4f09258b7339a8a9504`. Test execu
 | SC-022 | T054, T055 | `tests/e2e/branding-registration.spec.ts::en/light/mobile-390: published registration brand` | `da56320` | VERIFIED | Exact 390px matrix case asserts pill/card geometry and token gap. |
 
 All cited test files and named/dynamically generated test titles above were located by static search on `da56320`. `tests/e2e/registration-hero-evidence.ts` is a helper file, not cited as a standalone test. No suite was run.
+
+### S30 r13 execution addendum (2026-11-03)
+
+The earlier static-only note above predates this run. Executed evidence for FR-028 / SC-020 is: `4bc81b2` and `1b53284`; `tests/unit/client-signup-validation.test.ts` (all profile assertions, including Cairo birthday boundary), `tests/integration/client-signup-transaction.test.ts::stores DOB, normalized username and optional Telegram in the atomic signup`, `tests/e2e/client-signup.spec.ts::renders the restored profile in AR/EN and light/dark without captures`, invalid/unexpected-input tests, and `tests/e2e/branding-registration.spec.ts::invalid registration remains generic, neutral, and form-free`. Full unit suite passed 1,734/1,734; Stack B integration passed 1/1. The screenshot-free Playwright matrix and invalid paths passed; its happy-path test remains blocked because the wrapped app runtime reported invalid/missing signup signing material. Therefore T053 is intentionally unchecked and FR-028 / SC-020 remain PARTIAL.
