@@ -1,7 +1,7 @@
 # Specification Analysis Report: Design System Foundation
 
 **Date:** 2026-11-04
-**Analysed commit:** d17a20f0ca6436ddbdd65c50fc4803748a25a133 (Q16 tasks and FR-028/SC-009 evidence gaps are included; static analysis only)
+**Analysed commit:** 7d5b4e52c98a55c71a6eb59fdf889717825cb4c6 (Q16 scope/precedence, tasks, traceability, and follow-up evidence gaps are included; static analysis only)
 **Scope:** Existing Design System artifacts, PR #28 Glass delta, and S30-PO-8 Q16 desktop sidebar correction.
 **Method:** Static inspection; no tests or runtime commands were executed. The `speckit-analyze` prerequisite check passed with `SPECIFY_FEATURE_DIRECTORY=specs/002-design-system`; no extension hooks are configured.
 
@@ -69,6 +69,6 @@
 
 ## History
 
-- 2026-11-04: Refreshed after fallback-evidence task/traceability commit d17a20f0ca6436ddbdd65c50fc4803748a25a133; T049 is unchecked and FR-028/SC-009 remain PARTIAL pending later browser verification; 0 CRITICAL/HIGH findings. Static inspection only.
+- 2026-11-04: Refreshed after Q16 scope/precedence commit 7d5b4e52c98a55c71a6eb59fdf889717825cb4c6; 0 CRITICAL/HIGH findings, 2 MEDIUM; T047-T049 remain unchecked and FR-027/FR-028/SC-009 remain PARTIAL pending later evidence. Static inspection only.
 
 - 2026-11-03: Initial S30 reconciliation of PR #28 scope at `e69688a`; refreshed source quotations and citations against `a9b37cc` with no new findings.
