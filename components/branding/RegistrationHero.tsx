@@ -9,9 +9,9 @@ import {
   type CSSProperties,
   type ReactNode,
 } from 'react';
-import { Card } from '../ui/Card';
 import type { Locale } from '../../lib/design/preferences';
 import { modes } from '../../lib/design/tokens';
+import { GlassSurface } from '../ui/glass/GlassSurface';
 import {
   enterHeroSamplingFallback,
   heroArtworkState,
@@ -23,7 +23,6 @@ import {
   subscribeToHeroArtwork,
   type HeroViewport,
 } from './registration-hero';
-import glass from './liquid-glass.module.css';
 import styles from './registration-hero.module.css';
 
 export type RegistrationHeroBanner = {
@@ -386,9 +385,10 @@ export function RegistrationHero({
         aria-hidden="true"
       />
       <div className={styles.glassFrame}>
-        <Card
-          as="article"
-          className={`${styles.glassCard} ${glass.liquidGlassStrong}`}
+        <GlassSurface
+          variant="strong"
+          role="article"
+          className={styles.glassCard}
           data-testid="registration-hero-card"
           data-registration-card="premium-centered"
           data-material="liquid-glass-strong"
@@ -398,7 +398,7 @@ export function RegistrationHero({
           <div className={styles.glassContent} data-hero-text-area="">
             {children}
           </div>
-        </Card>
+        </GlassSurface>
       </div>
     </main>
   );

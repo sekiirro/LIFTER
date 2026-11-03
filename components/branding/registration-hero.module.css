@@ -202,16 +202,21 @@
   display: block;
   inline-size: 100%;
   max-block-size: none;
+  overflow: hidden;
   overscroll-behavior: contain;
   padding: 0;
   border: 0;
   border-radius: var(--radius-card);
-  background: var(--color-card);
   color: var(--color-text);
   scrollbar-color: var(--color-border-strong) transparent;
 }
 
 .glassCard[data-material='liquid-glass-strong']::before {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  padding: 1.4px;
+  border-radius: inherit;
   background: linear-gradient(
     to bottom,
     rgba(255, 255, 255, 0.5) 0%,
@@ -221,6 +226,16 @@
     rgba(255, 255, 255, 0.2) 80%,
     rgba(255, 255, 255, 0.5) 100%
   );
+  content: '';
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
 }
 
 .glassContent {
@@ -541,14 +556,6 @@
   );
 }
 
-:global([data-theme='light']) .glassCard[data-material='liquid-glass-strong'] {
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.12),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.18),
-    0 28px 72px rgba(0, 0, 0, 0.3),
-    0 4px 14px rgba(0, 0, 0, 0.14);
-}
-
 @supports not (
   (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
 ) {
@@ -633,12 +640,7 @@
     overflow-y: auto;
   }
 
-  /* Approved prototype desktop material: 4px backdrop blur on the card. */
-  .glassCard[data-material='liquid-glass-strong'] {
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-  }
-
+  /* The Glisse surface owns the approved strong blur on every breakpoint. */
   .formPlate {
     gap: var(--space-4);
     padding: var(--space-4);
