@@ -45,7 +45,7 @@ vi.mock('../../components/catalog/FoodEditor', () => ({
 }));
 
 const draft: FoodEditorDraft = {
-  nameAr: 'Ø£Ø±Ø²',
+  nameAr: '\u0623\u0631\u0632',
   nameEn: 'Rice',
   basis: 'g',
   productIdentity: 'rice',
@@ -56,7 +56,7 @@ const draft: FoodEditorDraft = {
   carbs: '28',
   fat: '0.3',
   fiber: '',
-  servings: [{ labelAr: 'Ø­ØµØ©', labelEn: 'serving', basisQuantity: '100' }],
+  servings: [{ labelAr: '\u062D\u0635\u0629', labelEn: 'serving', basisQuantity: '100' }],
   alternatives: [],
 };
 

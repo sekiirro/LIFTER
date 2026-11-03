@@ -110,7 +110,7 @@ describe('exercise editor defaults presentation', () => {
 describe('exercise editor fixed-vs-range validation', () => {
   it('accepts a 120-code-point Arabic name and rejects 121 code points', () => {
     const nameAtLimit = '\u062A'.repeat(120);
-    const nameOverLimit = 'Øª'.repeat(121);
+    const nameOverLimit = '\u062A'.repeat(121);
     expect(Array.from(nameAtLimit)).toHaveLength(120);
     expect(Array.from(nameOverLimit)).toHaveLength(121);
 

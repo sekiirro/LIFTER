@@ -63,7 +63,7 @@ describe('catalog schemas', () => {
 
     it('rejects overlong names and invalid numeric defaults at the schema boundary', () => {
       const nameAtLimit = '\u062A'.repeat(120);
-      const nameOverLimit = 'Øª'.repeat(121);
+      const nameOverLimit = '\u062A'.repeat(121);
       expect(Array.from(nameAtLimit)).toHaveLength(120);
       expect(Array.from(nameOverLimit)).toHaveLength(121);
       expect(() =>
@@ -202,7 +202,7 @@ describe('catalog schemas', () => {
       expect(() =>
         normalizeFoodInput({
           ...validFood,
-          names: { ar: 'Ø£'.repeat(121), en: 'Rice' },
+          names: { ar: '\u062A'.repeat(121), en: 'Rice' },
         }),
       ).toThrow(/120|length/i);
       expect(() =>
