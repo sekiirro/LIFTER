@@ -1,24 +1,46 @@
-# Requirements Quality Checklist — F14b
+# Specification Quality Checklist: F14 — Workspace branding
 
-**Purpose**: Reviewer-owned requirements-quality check for the owner upload editor.  
-**Created**: 2026-11-03  
-**Canonical parent contract**: F14 `FR-009` on `origin/014-hero-impl` at `da56320af3cc8bba73a2e4f09258b7339a8a9504`.
+**Purpose**: Review requirements completeness and quality before planning.
+**Created**: 2026-10-28
+**Feature**: [spec.md](../spec.md)
+**Review Ownership**: This checklist records specification quality only. Checked items do not mean implementation, independent review, or PO approval is complete.
 
-## Requirement definition
+## Content Quality
 
-- [ ] CHK001 F14b has an in-branch approved spec with numbered FRs.
-- [ ] CHK002 F14b has measurable success criteria and Given/When/Then scenarios.
-- [ ] CHK003 PO S20-22 decisions are represented by explicit FR text or identified parent FR coverage.
-- [ ] CHK004 Each implementation task has a stable task ID and FR tags.
+- [x] Focused on user value and business needs.
+- [x] Written in user and stakeholder terms, with necessary security constraints stated as outcomes.
+- [x] Mandatory Spec Kit sections are present and populated.
+- [x] Scope and exclusions are explicit.
+- [ ] Contains no implementation details. **Not satisfied**: architect-mandated technical constraints are recorded explicitly and retained as explicit architecture constraints.
 
-## Scope and verification
+## Requirement Completeness
 
-- [ ] CHK005 A plan defines F14b touched scope and dependencies on the F14 private upload pipeline.
-- [x] CHK006 The inspected implementation retains server-authoritative validation and existing upload action boundaries.
-- [ ] CHK007 All seven PO-approved interaction behaviors map to asserting tests.
-- [ ] CHK008 Test execution evidence is recorded against the current branch head.
+- [x] No `[NEEDS CLARIFICATION]` placeholders remain; unresolved policy/design decisions have named ND-F14/DG-F14 IDs.
+- [ ] All requirements are fully unambiguous. **Not fully satisfied**: final PO decisions F14-1..8 and DG-F14-1..3 are recorded; exact role-specific upload limits depend on worst-case CPU/memory benchmarks, and banner aspect/height depends on the Frontend Design Gate prototype. Production evidence gates remain explicit.
+- [x] Success criteria are measurable and observable.
+- [x] Success criteria describe outcomes rather than a particular implementation stack.
+- [x] Primary user flows have acceptance scenarios, including edit, preview, publish, current-version replacement/collection, and public registration read.
+- [x] Security denials, stale edit/publish races, upload rejection and invalid-token behavior are covered.
+- [x] Edge cases and cross-feature boundaries are stated.
+- [x] Dependencies and assumptions are identified.
+- [x] Source material and the debate record are traceable through repository-relative links.
+- [x] The PO-approved focused r2 critique is recorded verbatim and the accepted architect response is traceable in-repo.
+- [x] All final PO decisions are recorded verbatim with date; remaining evidence/design gates are explicitly identified.
+
+## Feature Readiness
+
+- [ ] All functional requirements are unconditionally ready for implementation. **Not satisfied**: F14 requires Storage-enabled CI with zero skips, F11 pending-client Storage denials, F14 bucket/path/direct API checks, pinned Stack-B proxy/validator proof, hosted-infrastructure proof before Production, actual backup/restore and verified capacity. Upload caps depend on CPU/memory benchmarks and banner dimensions on the design prototype.
+- [x] User scenarios cover the principal editor and visitor journeys.
+- [x] Constitution principles and the mandatory Frontend Design Gate are checked.
+- [x] DG-F14-1..3 approved layouts and color explanation are recorded.
+- [x] Plan and tasks artifacts are present and track the finalized decisions; this reconciliation changes documentation only.
+- [x] The specification does not claim implementation, verification, or test completion.
 
 ## Notes
 
-- The F14b branch lacks its own core spec artifacts. This checklist records the gate gap; it does not create requirements.
-- Static inspection only; no tests were run. See `traceability.md`.
+- This checklist records quality only. Final PO decisions F14-1..8 are recorded in the spec; DG-F14-1..3 remain approved. The PO-approved focused debate is complete and all eight findings were accepted; see [spec debate r2](../research/spec-debate-r2-scope.md). Historical ten-version retention in the r1/r2 debate records is superseded by PO 2026-10-29 F14-5 and those records remain unchanged. Benchmark-derived upload caps, prototype-derived banner dimensions, pinned Stack-B proof, hosted-infrastructure proof, capacity/backup evidence and CI/F11 coordination remain delivery gates.
+- Architect technical decisions remain distinguished from PO decisions.
+- Supabase Storage supersedes architect B′. Preserve the PNG/WebP validation, metadata stripping, animation rejection, no-SVG policy, token gate, and no-store responses.
+- The banner's image-only behavior is confirmed by PO decision F14-1. Its aspect/height bounds follow the Frontend Design Gate prototype.
+- All UI must follow the Frontend Design Gate linked in the spec source references and DESIGN.md. DG-F14-1..3 specify the approved layouts and accessibility explanation.
+- No application tests, Docker, Supabase, implementation changes, or implementation gates are part of this documentation-only change.
