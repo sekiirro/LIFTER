@@ -1,7 +1,7 @@
 # Specification Analysis Report: Design System Foundation
 
 **Date:** 2026-11-04
-**Analysed commit:** 70b9e2fc55149b86cbddd9a8a6e540f941815c15 (all current task/traceability mappings and the SC-007 checklist note are included; static analysis only)
+**Analysed commit:** 135e192 (SC-003 task declarations now agree with the traceability/analyze mapping; static analysis only)
 **Scope:** Existing Design System artifacts, PR #28 Glass delta, and S30-PO-8 Q16 desktop sidebar correction.
 **Method:** Static inspection; no tests or runtime commands were executed. The `speckit-analyze` prerequisite check passed with `SPECIFY_FEATURE_DIRECTORY=specs/002-design-system`; no extension hooks are configured.
 
@@ -9,7 +9,7 @@
 
 | ID | Category | Severity | Location(s) | Summary | Recommendation |
 |---|---|---|---|---|---|
-| A1 | Verification coverage | MEDIUM | `traceability.md` FR-007, FR-010, FR-012, FR-013, FR-016, FR-025 and SC-007 | The artifact-to-code map is present, but this static pass found no direct asserting test for these rows (SC-007's CI result was not re-verified). They are explicitly `PARTIAL`, not reported as verified. | Add focused assertions or attach the authoritative executed build/document evidence when a later verification pass is authorized. |
+| A1 | Verification coverage | MEDIUM | `traceability.md` FR-007, FR-010, FR-012, FR-013, FR-016, FR-025, FR-026 and SC-007 | The artifact-to-code map is present, but this static pass found no direct asserting test for these rows (SC-007's CI result was not re-verified). They are explicitly `PARTIAL`, not reported as verified. | Add focused assertions or attach the authoritative executed build/document evidence when a later verification pass is authorized. |
 | A2 | Evidence completeness | MEDIUM | `spec.md` SC-008; `tasks.md` T046; `traceability.md` SC-008 | The PO-approved TBT threshold is measurable and PR #28's description reports passing medians, but the local run reports r1-r8 are absent. T046 remains unchecked and SC-008 is `PARTIAL`. | Attach the report outputs from the approved performance run; do not infer raw evidence from the PR summary. |
 
 ## Coverage Summary
