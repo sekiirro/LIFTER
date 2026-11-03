@@ -18,7 +18,7 @@ Static source inspection and review of historical evidence in `tasks.md`; no tes
 | FR-012 | T003,T024,T025,T028,T043 | branding read/proxy route and no-store response tests | VERIFIED |
 | FR-013 | T008,T024,T025,T033,T043 | `tests/unit/branding-registration-ui.test.tsx::uses a neutral localized fallback hero...`; locale fallback tests | VERIFIED |
 | FR-014 | T005,T014,T027,T043 | `tests/integration/branding-audit.test.ts::stores branding audit metadata without URLs, tokens, bytes, or authored text`; `::keeps audit rows detached from collectible targets and immutable`; `tests/integration/branding-publish.test.ts` single-event and audit-insertion rollback assertions | VERIFIED |
-| FR-015 | T024,T025,T033,T042,T043 | `tests/unit/branding-editor-ui.test.tsx::explains source and accessible adjusted colors...`; contrast matrix tests | VERIFIED |
+| FR-015 | T024,T025,T033,T042,T043 | `tests/unit/branding-editor-ui.test.tsx::explains source and accessible adjusted colors...`; contrast matrix tests; no evidence for T043 real-background/surface gate | PARTIAL |
 | FR-016 | T005,T010,T017,T023,T026,T043 | capability/storage-policy isolation tests and static branding service boundary assertions | VERIFIED |
 | FR-017 | T036-T041,T043 | `tests/unit/branding-storage-ci-contract.test.ts`; readiness and zero-skip tests; hosted CI proof remains a D-24 production gate | PARTIAL |
 | FR-018 | T010,T013,T014,T028,T033,T035,T040-T041,T043 | `tests/integration/branding-storage-policy.test.ts::keeps F14 buckets private...`; direct API denial cases; T040/T041 production backup/restore and acceptance evidence remains open | PARTIAL |
@@ -36,6 +36,6 @@ Static source inspection and review of historical evidence in `tasks.md`; no tes
 
 ## Summary
 
-- Functional requirements: 14 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- Functional requirements: 13 VERIFIED, 5 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Success criteria: 9 VERIFIED, 2 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Total: 23 VERIFIED / 6 PARTIAL. FR-009 is PARTIAL under S19-PO-2. T039-T041/T043 remain open; no PO source explicitly defers them. No tests or CI were rerun.
