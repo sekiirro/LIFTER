@@ -7,10 +7,21 @@ import {
   sql,
   sqlCall,
 } from './registration-approval-operations-fixture';
+import { withCrashSafeFunctionMutant } from './function-drift-guard';
 
 const db = sql();
 afterAll(() => db.end());
 const rollback = new Error('rollback T008 synthetic assignment consumer');
+
+async function expectInvariantFailure(body: () => Promise<void>) {
+  let failure: unknown;
+  try {
+    await body();
+  } catch (error) {
+    failure = error;
+  }
+  expect(failure, 'the named invariant must kill the mutant').toBeDefined();
+}
 
 async function createSelectionFixture(
   tx: Parameters<typeof sqlCall>[0],
@@ -125,4 +136,48 @@ it('T008 reconciles real F12 approval and F15 selection facts in either order, o
   ).rejects.toBe(rollback);
 
   expect(triggerMutationWouldBeCaught).toBe(true);
+});
+
+it('kills an approval assignment deadline-fact mutant', async () => {
+  const context = await clientContext();
+  const target = await registered(context);
+  await withCrashSafeFunctionMutant(
+    'app_private.reconcile_f15_form_assignment(uuid,uuid)',
+    (definition) =>
+      definition.replace(
+        "((snapshot_at at time zone 'Africa/Cairo')::date+4)",
+        "((snapshot_at at time zone 'Africa/Cairo')::date+5)",
+      ),
+    async () => {
+      await expectInvariantFailure(async () =>
+        expect(
+          db.begin(async (tx) => {
+            const fixture = await createSelectionFixture(tx, context.wsA.id);
+            await tx`
+              insert into app_private.form_assignment_selections
+                (workspace_id,client_id,form_id,version_number,terms_policy_version,selected_by)
+              values(${context.wsA.id},${target.id},${fixture.formId},1,${fixture.policy},${context.po.userId})
+            `;
+            const approval = await sqlCall(
+              tx,
+              context.po.userId,
+              'approve',
+              request(context, target),
+            );
+            expect(approval.status).toBe('ok');
+            const [assignment] = await tx`
+              select a.client_deadline_at,
+                (((a.audience_snapshot_at at time zone 'Africa/Cairo')::date+4)::timestamp at time zone 'Africa/Cairo')-interval '1 millisecond' as expected_deadline
+              from public.form_assignments a
+              where a.workspace_id=${context.wsA.id} and a.client_id=${target.id} and a.form_id=${fixture.formId}
+            `;
+            expect(assignment?.client_deadline_at).toEqual(
+              assignment?.expected_deadline,
+            );
+            throw rollback;
+          }),
+        ).rejects.toBe(rollback),
+      );
+    },
+  );
 });
