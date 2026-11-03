@@ -46,5 +46,5 @@ T001 → T002 → T003/T004/T005 → T006 → T007–T010 → T011 → T012 → 
 ## S30-PO-3 governance amendment tasks
 
 - [ ] T014 [FR-013, SC-006] Design and implement the approved Workspace Owner active-member roster RLS policy after PO decisions resolve workspace boundary and visible fields; include forward-only migration, executed positive/negative mutation tests, and security review.
-- [ ] T015 [FR-014, SC-005] Design and implement the database final-Platform-Owner guard in a forward-only migration; resolve concurrency/failure details first, then execute sequential and concurrent mutation tests and security review.
+- [ ] T015 [FR-014, SC-005] Design and implement the database final-Platform-Owner guard in a forward-only migration; resolve what database operation "remove" means, concurrency behavior, and failure details first, then execute sequential and concurrent mutation tests and security review.
 - [ ] T016 [FR-013, FR-014] Run architect security review and record executed mutation-test evidence for both governance behaviors before marking either implementation task complete.

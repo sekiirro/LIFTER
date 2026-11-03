@@ -45,7 +45,7 @@ Only the PO can create or change workspaces, grant or revoke memberships, and as
 
 ### User Story 3 - Shared permission matrix with deny-by-default (Priority: P1)
 
-An app-layer `authorize(actor, capability, workspace)` and the database capability check implement the same approved matrix (D-09, D-10). Anything not granted is denied, including unlisted Sales rights and Sales coaching work (unconfirmed).
+An app-layer `authorize(actor, capability, workspace)` and the database capability check implement the same approved matrix (D-09, D-10). Anything not granted is denied, including unlisted Sales rights and Sales coaching work, which S30-PO-3 Q6 resolves as PO/WO/Trainer allowed and Sales denied.
 
 **Why this priority**: The two-wall model in Architecture v3. The walls must not drift apart.
 
@@ -89,7 +89,7 @@ A reusable test harness provisions isolated fixtures (two workspaces, users per 
 - **FR-003**: Row-level security MUST be enabled and forced on every table in this feature, with deny-by-default policies keyed to the signed identity.
 - **FR-004**: A single database access helper MUST decide workspace access: PO → every workspace; otherwise an active membership plus a role that has the requested capability. It MUST be safe against search-path manipulation and MUST NOT be callable to widen another user's access.
 - **FR-005**: Governance writes (workspaces, memberships, roles) MUST be allowed only for the PO, at the database level.
-- **FR-006**: The capability matrix MUST be exactly the approved D-09/D-10 table in Architecture v3, plus a `coaching_work` capability for PO, WO and Trainer. Sales is denied `coaching_work`, which is unconfirmed (NEEDS SOURCE CONFIRMATION).
+- **FR-006**: The capability matrix MUST be exactly the approved D-09/D-10 table in Architecture v3, plus a `coaching_work` capability for PO, WO and Trainer. Sales is denied `coaching_work`, as resolved by S30-PO-3 Q6: "PO/WO/Trainer, deny Sales (Recommended)".
 - **FR-007**: An app-layer `authorize(actor, capability, workspaceId)` MUST implement the same matrix, deny by default, and be a pure function with no I/O.
 - **FR-008**: An automated parity test MUST prove that the app and database matrices agree for every role × capability.
 - **FR-009**: An isolation test harness MUST create fixtures through the documented local database tooling only, and MUST include foreign-workspace negative tests for every table and helper in this feature.
@@ -149,7 +149,7 @@ The database prevents removal or demotion of the final Platform Owner. The PO-ap
 - Login, sessions, password reset and client accounts are F4 and later. Tests mint sessions through the local auth stack's admin API.
 - Audit events for governance writes come with F5 (audit log). F3 records `granted_by`/`revoked_by` columns now, and F5 adds audit emission.
 - Docker is not available on the reviewer's machine, so integration tests are verified in Linux CI. Unit tests run locally.
-- The "Sales coaching rights" open item (Decision Register, Open) stays deny until the PO decides.
+- S30-PO-3 Q6 resolves the `coaching_work` matrix: "PO/WO/Trainer, deny Sales (Recommended)"; Sales remains denied.
 - WO visibility of other members' memberships in their own workspace isn't specified in the sources. F3 allows only PO + self, and it is listed as NEEDS DECISION.
 
 ### Governance amendment requirements and success criteria (S30-PO-3)

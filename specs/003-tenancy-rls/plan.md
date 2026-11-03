@@ -41,9 +41,12 @@ A pure TypeScript `authorize()` mirrors the same matrix. A reusable integration 
 
 | # | Item | F3 handling |
 |---|---|---|
-| ND-F3-1 | Sales coaching rights (Register, Open) | `coaching_work` is denied for Sales |
 | ND-F3-2 | Can a WO see other members of their own workspace? | S30-PO-3 Q7 approves "WO sees active members" for roster administration. Workspace boundary, active predicate, and visible fields remain open; see PO items SK-003-04..07. |
 | ND-F3-3 | Who may manage the PO role itself (bootstrap, last-PO protection) | Initial PO bootstrap remains operator-managed. S30-PO-3 Q8 approves a database guard against removing or demoting the final PO and transfer by adding a new PO first. Concurrent behavior and failure contract remain open; see PO items SK-003-08..09. |
+
+## Resolved decision
+
+- **ND-F3-1 resolved by S30-PO-3 Q6:** "PO/WO/Trainer, deny Sales (Recommended)". Sales remains denied `coaching_work`.
 
 ## Project Structure
 
@@ -79,4 +82,4 @@ docs/BOOTSTRAP.md? → no: README section "Local database & isolation tests" + P
 
 ### Clarification status
 
-S30-PO-3 Q7 and Q8 approve the behavior, while details listed in `../po-decisions.md` remain open. Existing ND-F3-2 (member visibility) and ND-F3-3 (last-PO protection) are superseded only to the extent of the approved behavior; do not treat their unresolved subquestions as answered.
+S30-PO-3 Q7 and Q8 approve the behavior, while details listed in the external SK-A register at `C:/Users/NEW LAP/.lifter/runs/s30-luna-sk-a6/po-decisions.md` remain open. Existing ND-F3-2 (member visibility) and ND-F3-3 (last-PO protection) are superseded only to the extent of the approved behavior; do not treat their unresolved subquestions as answered.
