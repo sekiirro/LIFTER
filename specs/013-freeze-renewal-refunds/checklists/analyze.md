@@ -33,7 +33,7 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 ## S30 current-head refresh
 
 - **Date:** 2026-11-03
-- **Analysed commit:** `506e3bf4135b49319e0bdabab4d5166e2d608f5b` (Part 3 branch head before the local Clarify/T020 status update)
+- **Analyzed commit:** `506e3bf4135b49319e0bdabab4d5166e2d608f5b` (Part 3 branch head before the local Clarify/T020 status update)
 - **Scope:** current `spec.md`, `plan.md`, `tasks.md`, existing analysis history, code/tests, and D-20/B4 production readiness. Static review only; no tests, stack operations, hosted queries, or deployments.
 - **Entry inventory:** 36 FRs and 14 SCs; plan/tasks exist; existing requirements and analysis checklists exist; Clarifications added after the named head. T001-T018 are checked with historical evidence, T019 remains open, and T020 is now explicitly deferred by D-20.
 
@@ -41,7 +41,7 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 
 | ID | Severity | Artifact | Finding | Disposition |
 |---|---|---|---|---|
-| F13-A01 | MEDIUM | `tasks.md:T019`; D-20; `docs/07-production-readiness.md` | RET-1..3 technical/legal feasibility across backups remains unresolved; B4 client/audit retention values remain open and block production with real client data. | Preserve T019 open and raise SK-013-01/02; no retention threshold or legal interpretation added. |
+| F13-A01 | MEDIUM | `tasks.md:T019`; D-20; `docs/13-production-readiness.md` | RET-1..3 technical/legal feasibility across backups remains unresolved; B4 client/audit retention values remain open and block production with real client data. | Preserve T019 open and record the existing B4 production blockers; no retention threshold or legal interpretation added. |
 | F13-A02 | MEDIUM | `tasks.md:T020`; D-20 | The task requires a hosted non-production Supabase project, while D-20 limits hosting to one production project and requires development/testing to use local Docker. | Mark T020 `[DEFERRED: docs/04-changes-and-questions.md D-20]`; this is directly sourced and does not claim the hosted proof passed. |
 
 ### Coverage and verdict

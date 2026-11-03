@@ -1,7 +1,7 @@
 # Analyze: F10 Registration Links
 
 - **Date:** 2026-11-03
-- **Analysed commit:** `5e68ef508a83e5747afbaa1968530371b1016a32` (Part 3 branch head before the local F10 clarification)
+- **Analyzed commit:** `5e68ef508a83e5747afbaa1968530371b1016a32` (Part 3 branch head before the local F10 clarification)
 - **Scope:** static artifact/source/evidence review; no tests executed.
 - **Inventory:** `spec.md` (FR-001..014, SC-001..006, scenarios, ND-F10 and carried ND-F9 decisions), `plan.md`, `tasks.md` (T001..T034 complete with prior evidence and FR/SC crosswalk), research, data-model, contracts, quickstart, F12 addendum, `checklists/requirements.md`; no feature `checklists/analyze.md` or `traceability.md` existed.
 

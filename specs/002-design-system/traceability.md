@@ -31,7 +31,7 @@
 | FR-025 | T041 | `docs/04-changes-and-questions.md` D-18, constitution and architecture records | VERIFIED |
 | FR-026 | T040 | Plan NEEDS DECISION register ND-1..ND-7 | VERIFIED |
 | SC-001 | T005-T008,T020-T022 | `tokens-contrast.test.ts`, `brand-fuzz.test.ts`, `components.spec.ts` | VERIFIED |
-| SC-002 | T019,T026,T036,T038 | `theme-locale.spec.ts`, `components.spec.ts`, `shell.spec.ts`, `print.spec.ts`; full axe matrix not rerun | PARTIAL |
+| SC-002 | T019,T026,T036,T038 | `theme-locale.spec.ts`, `components.spec.ts`, `shell.spec.ts`; full axe matrix not rerun | PARTIAL |
 | SC-003 | T019,T026,T036 | keyboard cases in `components.spec.ts` and `shell.spec.ts`; not rerun | PARTIAL |
 | SC-004 | T009,T011,T015-T019 | `preferences.test.ts`, `theme-locale.spec.ts` | VERIFIED |
 | SC-005 | T010 | `messages.test.ts` | VERIFIED |
@@ -43,4 +43,3 @@
 - FR: 22 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - SC: 4 VERIFIED, 3 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Historical task checkboxes remain unchanged. No tests were executed in this reconciliation.
-

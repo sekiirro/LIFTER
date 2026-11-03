@@ -293,8 +293,8 @@ The previous fixed second-offset-30 interpretation is superseded: 30 is the defa
 
 ## Clarifications
 
-### Session 2026-11-03 — compliance reconciliation
+### Session 2026-11-03 - compliance reconciliation
 
-- **Decision register:** `docs/04-changes-and-questions.md` D-23 records the F12 policy decisions; the final PO decision record dated 2026-10-29 in `C:/Users/NEW LAP/.lifter/briefs/po-decisions-2026-10-29.txt` records F12-1..9, including flexible installments, correction-month reversals, self-status, navigation, Cairo due dates, and safe retries.
+- **Decision register:** `docs/04-changes-and-questions.md` D-23 records and links to the merged F12 policy specification; this specification records F12-1..9, including flexible installments, correction-month reversals, self-status, navigation, Cairo due dates, and safe retries.
 - **Result:** Zero open ambiguities for the merged F12 scope reviewed here. The Trainer capability question explicitly belongs to P2 per FR-022 and D-23; it does not authorize a decision in F12.
 - **Evidence limit:** This is a static documentation reconciliation. No tests were executed in this lane; task execution checkboxes remain governed by their existing evidence and are not changed here.

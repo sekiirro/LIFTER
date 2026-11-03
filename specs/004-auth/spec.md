@@ -144,7 +144,7 @@ Anonymous visitors can reach only the sign-in page, the recovery (set new passwo
 
 ## Assumptions
 
-- The owner decisions of 2026-10-27 extend BRD line 104 (PO manual reset links) to WOs and authorized Trainers. They will be recorded as a decision-register entry (D-19) in this feature's PR for PO approval.
+- The owner decisions of 2026-10-27 extend BRD line 104 (PO manual reset links) to WOs and authorized Trainers and are recorded in the repository decision register at `docs/04-changes-and-questions.md` (D-19). The separate D-19 approval-status/source discrepancy remains open as described above.
 - Password rules (minimum length/strength) use the auth provider's configurable minimum. A stricter rule would be a later decision; none is stated in the sources.
 - Account lockout beyond the auth provider's built-in sign-in rate limiting is not required by the sources; no IP blocking is added.
 - Client sign-in uses the same flow once client accounts exist (P1). F4 tests use staff fixtures and an auth-only fixture for the client target.

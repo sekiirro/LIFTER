@@ -118,5 +118,5 @@ Each build reports the edge-worker size against the official Workers size limit 
 ### Session 2026-11-03 — merged-scope compliance reconciliation
 
 - **Decision register:** `docs/04-changes-and-questions.md` and `docs/01-traceability.md`; this entry is limited to the original merged scaffold FR-001..FR-014. Self-hosted CI coverage FR-015..FR-020 is separately owned by SK-A4 and is not duplicated here.
-- **Result:** Zero open ambiguities in the original scaffold behavior and artifact scope described by FR-001..FR-014. Current CI contains later integration/storage jobs with optional Docker Hub credentials; whether FR-009's original no-secrets constraint applies only to the original baseline job or to the evolved workflow is raised separately for PO decision.
+- **Result:** The original scaffold behavior and artifact scope remain as specified by FR-001..FR-014. One policy question remains open: whether FR-009's original no-secrets constraint applies only to the baseline job or to later integration/storage jobs that use optional Docker Hub credentials. No interpretation is made here.
 - **Evidence limit:** Static repository inspection only; no tests or CI were run in this lane.

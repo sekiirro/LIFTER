@@ -5,12 +5,12 @@
 
 | Requirement | Tasks | Asserting tests / evidence | Status |
 |---|---|---|---|
-| FR-001 | T001-T005,T023-T030,T035-T038 | `client-accounts-signup.test.ts` signup validation and `password-policy.test.ts` shared password policy; verification.md U1/U6 | VERIFIED |
-| FR-002 | T010-T015,T023-T030 | `client-accounts-signup.test.ts` invalid/expired link behavior; verification.md | VERIFIED |
-| FR-003 | T010-T015 | `client-accounts-integrity.test.ts` atomic signup and rollback; verification.md U2/U3/U4 | VERIFIED |
-| FR-004 | T010-T015,T023-T030 | `client-accounts-signup.test.ts` guarded consumption and expiry; verification.md | VERIFIED |
-| FR-005 | T006-T010 | `client-accounts-integrity.test.ts` issued snapshot binding; verification.md U2 | VERIFIED |
-| FR-006 | T010-T015,T023-T030 | `client-accounts-signup.test.ts` generic invalid and duplicate response assertions; verification.md | VERIFIED |
+| FR-001 | T001-T005,T023-T030,T035-T038 | `tests/integration/client-accounts-signup.test.ts` signup validation and `tests/unit/password-policy.test.ts` shared password policy; `tests/integration/client-accounts-verification.md` U1/U6 | VERIFIED |
+| FR-002 | T010-T015,T023-T030 | `tests/integration/client-accounts-signup.test.ts` invalid/expired link behavior; `tests/integration/client-accounts-verification.md` | VERIFIED |
+| FR-003 | T010-T015 | `tests/integration/client-accounts-integrity.test.ts` atomic signup and rollback; `tests/integration/client-accounts-verification.md` U2/U3/U4 | VERIFIED |
+| FR-004 | T010-T015,T023-T030 | `tests/integration/client-accounts-signup.test.ts` guarded consumption and expiry; `tests/integration/client-accounts-verification.md` | VERIFIED |
+| FR-005 | T006-T010 | `tests/integration/client-accounts-integrity.test.ts` issued snapshot binding; `tests/integration/client-accounts-verification.md` U2 | VERIFIED |
+| FR-006 | T010-T015,T023-T030 | `tests/integration/client-accounts-signup.test.ts` generic invalid and duplicate response assertions; `tests/integration/client-accounts-verification.md` | VERIFIED |
 | FR-007 | T006-T010,T023-T030 | `client-accounts-integrity.test.ts` active identity uniqueness; archived-state behavior remains deferred by ND-F11-9a/9b | PARTIAL |
 | FR-008 | T006-T010,T023-T030,T031-T034 | `client-accounts-integrity.test.ts` RLS/tenant isolation; `client-accounts-recovery.test.ts` scoped recovery; verification.md | VERIFIED |
 | FR-009 | T003-T010,T019-T024 | `client-accounts-schema.test.ts`, `client-accounts-admission.test.ts` policy/grant assertions; verification.md | VERIFIED |

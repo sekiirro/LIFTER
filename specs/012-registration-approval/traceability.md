@@ -29,6 +29,6 @@ Static source inspection only. No test suite was executed in this compliance lan
 
 ## Summary
 
-- Functional requirements: 23 VERIFIED, 6 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- Functional requirements: 24 VERIFIED, 5 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Success criteria: 7 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Execution: static verification only; no suite run. T050-T054 are not checked by this reconciliation.

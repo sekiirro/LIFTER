@@ -44,7 +44,7 @@ Static source inspection and review of historical evidence recorded in `tasks.md
 | SC-002 | T012-T014 | `tests/integration/refund-ledger-integrity.test.ts` successor, cancellation and immutability probes | VERIFIED |
 | SC-003 | T006-T008 | `tests/unit/freeze-calendar.test.ts`; `tests/integration/freeze-lifecycle.test.ts` Apply/Stop/Remove cases | VERIFIED |
 | SC-004 | T009-T011 | `tests/integration/renewal-operations.test.ts` predecessor/successor/date cases | VERIFIED |
-| SC-005 | T007,T014 | activation and no-delivery/refund cases in renewal/refund tests | VERIFIED |
+| SC-005 | T007,T014 | activation and no-delivery/refund behavior is required, but no located asserting test covers every stated no-delivery/productivity clause | PARTIAL |
 | SC-006 | T006 | `tests/unit/freeze-calendar.test.ts` Cairo DST gap/fold, leap-day and month-end fixtures | VERIFIED |
 | SC-007 | T013,T015,T017 | `tests/integration/refund-races.test.ts`; replay/serialization tests | VERIFIED |
 | SC-008 | T005,T008,T014,T017 | `tests/integration/matrix-parity.test.ts`, tenant/RLS and role-denial tests | VERIFIED |
@@ -58,5 +58,5 @@ Static source inspection and review of historical evidence recorded in `tasks.md
 ## Summary
 
 - Functional requirements: 32 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
-- Success criteria: 9 VERIFIED, 5 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
-- Total: 41 VERIFIED / 9 PARTIAL. Static review only; no tests were run. T019 remains open; T020 is `[DEFERRED: docs/04-changes-and-questions.md D-20]`.
+- Success criteria: 8 VERIFIED, 6 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- Total: 40 VERIFIED / 10 PARTIAL. Static review only; no tests were run. T019 remains open; T020 is `[DEFERRED: docs/04-changes-and-questions.md D-20]`.

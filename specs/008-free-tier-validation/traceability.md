@@ -12,13 +12,13 @@ Static source inspection only. No tests, stacks, deployments, cloud queries, or 
 | FR-006 | T007-T008 | `tests/unit/free-tier-projection.test.ts::reports absent and null volumes as MISSING...` | Code/test on `d04ef52` | VERIFIED |
 | FR-007 | T001, T004, T009, T011 | `docs/06-free-tier-report.md`; report sections and script output reviewed statically | Source/docs on `d04ef52`; no measurement run performed | PARTIAL |
 | FR-008 | T009, T011 | `docs/06-free-tier-report.md` records limits, official source links and check dates | Source/docs on `d04ef52`; source freshness not independently rechecked | PARTIAL |
-| SC-001 | T003-T004, T007, T009-T011 | Offline commands and report fields in `docs/06-free-tier-report.md` | Source/docs on `d04ef52` | VERIFIED |
+| SC-001 | T003-T004, T007, T009-T011 | Offline commands and report fields in `docs/06-free-tier-report.md`; full row-by-row completion evidence is not present | Source/docs on `d04ef52` | PARTIAL |
 | SC-002 | T001-T011 | Scope/tool inspection shows no deployment or cloud-resource mutation path; no runtime attempt made | Source on `d04ef52` | PARTIAL |
-| SC-003 | T005-T006, T008 | `tests/unit/free-tier-tail.test.ts::never prints fixture headers, queries, logs or exceptions` | Code/test on `d04ef52` | VERIFIED |
+| SC-003 | T005-T006, T008 | `tests/unit/free-tier-tail.test.ts::never prints fixture headers, queries, logs or exceptions`; only the tested tail-output path is asserted, not every tool output | Code/test on `d04ef52` | PARTIAL |
 | SC-004 | T005-T006, T009 | CLI help and README/quickstart procedure describe the post-approval commands without deployment steps | Source/docs on `d04ef52`; not run against a deployment | PARTIAL |
 
 ## Summary
 
 - Functional requirements: 6 VERIFIED, 2 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
-- Success criteria: 2 VERIFIED, 2 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- Success criteria: 1 VERIFIED, 3 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Static verification only. T010/T011 remain historically checked but were not executed in this lane. ND-F8-1..3 remain open.

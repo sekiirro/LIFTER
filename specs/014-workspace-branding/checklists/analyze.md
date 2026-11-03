@@ -1,7 +1,7 @@
 # Analyze: F14 Workspace Branding — merged core
 
 - **Date:** 2026-11-03
-- **Analysed commit:** `0e727eec8277831d433bd14a48800d341f148efb` (Part 3 head before the local F14 clarification/task tags)
+- **Analyzed commit:** `0e727eec8277831d433bd14a48800d341f148efb` (Part 3 head before the local F14 clarification/task tags)
 - **Scope:** core merged on main only; F14b owner-facing upload/alt-text UI excluded. Static artifact/source/evidence review; no tests executed.
 - **Inventory:** `spec.md` (FR-001..018, SC-001..011, scenarios, PO decisions), `plan.md`, `tasks.md`, research, data model/contracts/quickstart, `checklists/requirements.md`; no feature Analyze or traceability artifact existed.
 

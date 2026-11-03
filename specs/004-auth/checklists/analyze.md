@@ -1,7 +1,7 @@
 # Analyze: F4 Authentication and manual recovery
 
 - **Date:** 2026-11-03
-- **Analysed commit:** `43963eab79d0cd4f511267d3a0ede1181f201e2a` (Part 3 branch head before the local F4 clarification; clarification included in this review)
+- **Analyzed commit:** `43963eab79d0cd4f511267d3a0ede1181f201e2a` (Part 3 branch head before the local F4 clarification; clarification included in this review)
 - **Scope:** static consistency and evidence review; no tests executed.
 - **Inventory:** `spec.md` (FR-001..015, SC-001..007, scenarios and ND-F4 register), `plan.md`, `tasks.md`, research/quickstart/contracts/data-model, `checklists/requirements.md`; no prior feature `checklists/analyze.md` or `traceability.md`.
 

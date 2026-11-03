@@ -1,7 +1,7 @@
 # Analyze: F9 Packages and Package Versions
 
 - **Date:** 2026-11-03
-- **Analysed commit:** `c88b4f9f18d9b3983373300ee7cf14d297e8629a` (Part 3 branch head before the local F9 clarification; clarification added before this analysis)
+- **Analyzed commit:** `c88b4f9f18d9b3983373300ee7cf14d297e8629a` (Part 3 branch head; the clarification was added in commit `d04ef52` before analysis)
 - **Scope:** static consistency and evidence review; no tests executed.
 - **Inventory:** `spec.md` (FR-001..014, SC-001..006, acceptance scenarios, ND-F9-1..5, Clarifications), `plan.md`, `tasks.md`, research/model/contract/quickstart artifacts, `checklists/requirements.md`; no earlier `checklists/analyze.md` or `traceability.md`.
 

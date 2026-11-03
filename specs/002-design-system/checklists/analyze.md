@@ -4,7 +4,7 @@
 - **Analysed commit:** `6400e16aea973af9f5f5c6642fecc435061d6c3a` (before local clarification/artifact changes)
 - **Scope:** Existing merged F2 behavior, FR-001..FR-026 and SC-001..SC-007. The later PR #28 shipped-scope delta is separately documented in the Design System coverage PR; this analysis does not duplicate it.
 - **Inventory:** spec, plan, tasks, research, data-model, contracts/ui-contract, quickstart, print-spike, requirements checklist present; Analyze and traceability absent.
-- **Entry check:** Spec includes measurable SCs and Given/When/Then scenarios. Clarifications added citing PO/decision sources. Plan and FR-linked tasks cover current scope. Analyze was absent before this reconciliation, so no implementation work was started; all edits are documentation only.
+- **Entry check:** Spec includes measurable SCs and Given/When/Then scenarios. Clarifications added citing PO/decision sources. Plan and FR-linked tasks cover current scope. Analyze and traceability were absent before this reconciliation; this reconciliation changed documentation only and made no implementation-file changes.
 
 ## Findings
 
