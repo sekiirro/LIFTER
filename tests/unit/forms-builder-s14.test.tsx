@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { FormBuilder } from '../../components/forms/FormBuilder';
 import {
   FormPreview,
+  matchesPreviewCondition,
   localizedFormCopy,
 } from '../../components/forms/FormPreview';
 import { createMockFormsStaffAdapter } from '../../lib/forms/mock-staff-adapter';
@@ -205,6 +206,23 @@ describe('S14 staff form Builder', () => {
     expect(localizedFormCopy({ en: 'English label', ar: '' }, 'ar')).toBe(
       'English label',
     );
+  });
+});
+
+describe('FormPreview conditions', () => {
+  it('matches contains against multi-choice answer arrays like runtime progression', () => {
+    expect(
+      matchesPreviewCondition(
+        { questionId: 'source', operator: 'contains', value: 'alpha' },
+        { source: ['alpha', 'beta'] },
+      ),
+    ).toBe(true);
+    expect(
+      matchesPreviewCondition(
+        { questionId: 'source', operator: 'contains', value: 'missing' },
+        { source: ['alpha', 'beta'] },
+      ),
+    ).toBe(false);
   });
 });
 

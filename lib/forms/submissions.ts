@@ -28,7 +28,15 @@ export function validateFormSubmission(
   ) {
     return { ok: false, code: 'invalid' };
   }
-  const questions = snapshot.questions as FormQuestion[];
+  const questions = snapshot.questions.map((question) =>
+    isRecord(question)
+      ? Object.fromEntries(
+          Object.entries(question).filter(
+            ([key]) => key !== 'title' && key !== 'description',
+          ),
+        )
+      : question,
+  ) as FormQuestion[];
   const progression = evaluateProgression({
     questions,
     answers: answerValues as FormAnswerSet,

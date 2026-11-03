@@ -216,13 +216,18 @@ export function SignupForm({
           name="name"
           aria-label={messages.name}
           aria-describedby={
-            submitted && result.invalidFields?.includes('name')
+            (submitted || touchedIdentityFields.includes('name')) &&
+            (identityInvalidFields.includes('name') ||
+              result.invalidFields?.includes('name'))
               ? 'signup-name-error'
               : undefined
           }
           type="text"
           value={name}
-          onChange={(event) => setName(event.currentTarget.value)}
+          onChange={(event) => {
+            setName(event.currentTarget.value);
+            changeIdentityField('name');
+          }}
           autoComplete="name"
           required
           disabled={pending}

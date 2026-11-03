@@ -34,13 +34,13 @@ it('consumes a short-lived hashed token once and revokes a link on membership lo
       const [revokedMembership] =
         await tx`select workspace_id from public.workspace_memberships
       where user_id=${f.trainerA.userId} and revoked_at is null limit 1`;
-      if (revokedMembership) {
-        await tx`update public.workspace_memberships set revoked_at=clock_timestamp(),revoked_by=${f.po.userId}
-        where workspace_id=${revokedMembership.workspace_id} and user_id=${f.trainerA.userId}`;
-        const [link] =
-          await tx`select revoked_at from app_private.f15_telegram_links where user_id=${f.trainerA.userId}`;
-        expect(link!.revoked_at).not.toBeNull();
-      }
+      expect(revokedMembership, 'trainer fixture membership').toBeDefined();
+      await tx`update public.workspace_memberships set revoked_at=clock_timestamp(),revoked_by=${f.po.userId}
+        where workspace_id=${revokedMembership!.workspace_id} and user_id=${f.trainerA.userId}`;
+      const [link] =
+        await tx`select revoked_at from app_private.f15_telegram_links where user_id=${f.trainerA.userId}`;
+      expect(link, 'linked Telegram row').toBeDefined();
+      expect(link!.revoked_at).not.toBeNull();
       throw rollback;
     }),
   ).rejects.toBe(rollback);

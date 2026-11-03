@@ -3,7 +3,10 @@ import { renderToStaticMarkup } from 'react-dom/server';
 import { describe, expect, it, vi } from 'vitest';
 import { QuestionFlow } from '../../components/forms/QuestionFlow';
 import { TextAnswerField } from '../../components/forms/TextAnswerField';
-import { applicableClientAnswers } from '../../lib/forms/client-answer-state';
+import {
+  applicableClientAnswers,
+  setClientAnswer,
+} from '../../lib/forms/client-answer-state';
 
 const adapter = {
   reloadDraft: vi.fn(async () => ({
@@ -40,6 +43,25 @@ const questions = [
 ];
 
 describe('QuestionFlow', () => {
+  it('keeps existing answers when applicability cannot be evaluated', () => {
+    const malformedQuestions = [
+      {
+        ...questions[0]!,
+        unknownAuthoredField: true,
+      },
+    ];
+    const answers = { 'injury-yes': true, unrelated: 'keep me' };
+    expect(applicableClientAnswers(malformedQuestions, answers)).toEqual(
+      answers,
+    );
+  });
+
+  it('removes an answer when the client clears a numeric control', () => {
+    expect(
+      setClientAnswer({ weight: 0, other: 'preserved' }, 'weight', undefined),
+    ).toEqual({ other: 'preserved' });
+  });
+
   it('hides and erases a now-inapplicable answer from the client flow', () => {
     const html = renderToStaticMarkup(
       createElement(QuestionFlow, {

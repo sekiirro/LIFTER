@@ -55,6 +55,23 @@ describe('T013 submission validation', () => {
     });
   });
 
+  it('validates immutable snapshots after removing localized render copy', () => {
+    const localizedSnapshot = {
+      questions: snapshot.questions.map((question) => ({
+        ...question,
+        title: { en: 'Question', ar: 'سؤال' },
+        description: { en: 'Help text', ar: 'مساعدة' },
+      })),
+    };
+    expect(
+      validateFormSubmission(localizedSnapshot, {
+        b: 'basic',
+        t: 'training',
+        n: 'nutrition',
+      }),
+    ).toMatchObject({ ok: true });
+  });
+
   it('validates every submission and correction write before the RPC and never reflects provider errors', () => {
     const routes = [
       {

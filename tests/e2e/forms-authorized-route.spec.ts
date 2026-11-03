@@ -552,3 +552,95 @@ test('real route autosave exposes each state, retries failures, and records save
     `F15 autosave local save-to-ack: p50=${percentile(0.5)}ms p95=${percentile(0.95)}ms samples=${samples.length}`,
   );
 });
+
+test('submitted answer edits wait for explicit correction and use the latest revision', async ({
+  page,
+}) => {
+  await signIn(page);
+  await page.context().addCookies([
+    {
+      name: 'lifter_locale',
+      value: 'en',
+      url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+    },
+    {
+      name: 'lifter_theme',
+      value: 'light',
+      url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+    },
+  ]);
+  await page.goto(`/forms/${assignmentId}`);
+  await advanceToGoal(page);
+  const correctionBodies: Array<Record<string, unknown>> = [];
+  const draftRequests: string[] = [];
+  page.on('request', (request) => {
+    if (request.method() !== 'POST') return;
+    if (request.url().endsWith('/corrections'))
+      correctionBodies.push(request.postDataJSON() as Record<string, unknown>);
+    if (request.url().endsWith('/draft')) draftRequests.push(request.url());
+  });
+
+  await page.getByRole('textbox', { name: 'Your goal' }).fill('Build strength');
+  await expect(page.getByRole('status')).toHaveText('Draft saved.', {
+    timeout: 10_000,
+  });
+  await page.getByRole('button', { name: 'Next question' }).click();
+  await page
+    .getByRole('textbox', { name: 'Training experience' })
+    .fill('Two years');
+  await expect(page.getByRole('status')).toHaveText('Draft saved.', {
+    timeout: 10_000,
+  });
+  await expect(
+    page.getByRole('textbox', { name: 'Nutrition preferences' }),
+  ).toBeVisible();
+  await page
+    .getByRole('textbox', { name: 'Nutrition preferences' })
+    .fill('Balanced meals');
+  const submitResponse = page.waitForResponse(
+    (response) =>
+      response.url().endsWith('/submit') &&
+      response.request().method() === 'POST',
+  );
+  await page.getByRole('button', { name: 'Submit answers' }).click();
+  const submission = await submitResponse;
+  expect(submission.status()).toBe(200);
+  const submittedBody = await submission.json();
+  let expectedRevision = submittedBody.revision as number;
+  expect(expectedRevision).toBeGreaterThan(0);
+  await expect(
+    page.getByText('Your answers were submitted.', { exact: true }),
+  ).toBeVisible();
+  const draftsAtSubmission = draftRequests.length;
+
+  for (const [correctionIndex, value] of [
+    'Adjusted meals',
+    'Adjusted meals again',
+  ].entries()) {
+    await page
+      .getByRole('button', { name: 'Correct submitted answers' })
+      .click();
+    await page
+      .getByRole('textbox', { name: 'Nutrition preferences' })
+      .fill(value);
+    await page.evaluate(() => window.dispatchEvent(new Event('pagehide')));
+    await page.waitForTimeout(1_600);
+    expect(correctionBodies).toHaveLength(correctionIndex);
+    expect(draftRequests).toHaveLength(draftsAtSubmission);
+    const correctionResponse = page.waitForResponse(
+      (response) =>
+        response.url().endsWith('/corrections') &&
+        response.request().method() === 'POST',
+    );
+    await page.getByRole('button', { name: 'Save correction' }).click();
+    const response = await correctionResponse;
+    expect(response.status()).toBe(200);
+    expect(correctionBodies.at(-1)?.expected_revision).toBe(expectedRevision);
+    const correction = await response.json();
+    expect(correction.revision).toBe(expectedRevision + 1);
+    expectedRevision = correction.revision as number;
+    await expect(
+      page.getByText('Your answers were submitted.', { exact: true }),
+    ).toBeVisible();
+  }
+});

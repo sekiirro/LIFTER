@@ -126,6 +126,13 @@ test.describe.serial('T038 invitation signup UI', () => {
     await expect(
       page.getByText(messages['clientSignup.fieldError']).first(),
     ).toBeVisible();
+    await expect(nameField).toHaveAttribute(
+      'aria-describedby',
+      'signup-name-error',
+    );
+    await nameField.fill('Heba Sami Nabil');
+    await expect(nameField).not.toHaveAttribute('aria-invalid');
+    await expect(nameField).not.toHaveAttribute('aria-describedby');
     expect(page.url()).toContain('/register/');
   });
 

@@ -5,6 +5,7 @@ import { evaluateProgression } from '../../lib/forms/progression';
 import {
   answersForClientProgression,
   applicableClientAnswers,
+  setClientAnswer,
 } from '../../lib/forms/client-answer-state';
 import { validateAnswerSet } from '../../lib/forms/validation';
 import type {
@@ -199,11 +200,12 @@ export function QuestionFlow({
     ),
   }));
 
-  function updateAnswer(id: string, value: FormAnswer) {
-    const next = {
-      ...applicableClientAnswers(runtimeQuestions, answers),
-      [id]: value,
-    };
+  function updateAnswer(id: string, value: FormAnswer | undefined) {
+    const next = setClientAnswer(
+      applicableClientAnswers(runtimeQuestions, answers),
+      id,
+      value,
+    );
     const currentAnswers = applicableClientAnswers(runtimeQuestions, next);
     setAnswers(currentAnswers);
     latestAnswers.current = currentAnswers;
@@ -222,13 +224,13 @@ export function QuestionFlow({
     setState('ready');
   }
 
-  async function persist(correcting = false, force = false) {
+  async function persist(force = false) {
     if (conflicted.current) return false;
     if (inFlight.current) {
       if (wakeRetry.current) wakeRetry.current();
       return false;
     }
-    if (!dirtyRef.current && !correcting && !force) return true;
+    if (!dirtyRef.current && !force) return true;
     inFlight.current = true;
     setSaving(true);
     setSaveError(false);
@@ -245,18 +247,12 @@ export function QuestionFlow({
         setSaving(true);
         let result: Awaited<ReturnType<typeof adapter.saveDraft>>;
         try {
-          const operation = correcting
-            ? adapter.correct({
-                assignmentId,
-                expectedRevision: revisionRef.current,
-                answers: snapshot,
-              })
-            : adapter.saveDraft({
-                assignmentId,
-                expectedRevision: revisionRef.current,
-                answers: snapshot,
-                intentKey: thisIntent,
-              });
+          const operation = adapter.saveDraft({
+            assignmentId,
+            expectedRevision: revisionRef.current,
+            answers: snapshot,
+            intentKey: thisIntent,
+          });
           result = await withAutosaveTimeout(operation);
         } catch {
           setSaveError(true);
@@ -343,7 +339,7 @@ export function QuestionFlow({
   }
 
   useEffect(() => {
-    saveRef.current = () => persist(hasSubmitted);
+    saveRef.current = hasSubmitted ? async () => true : () => persist();
   });
 
   useEffect(() => {
@@ -415,7 +411,7 @@ export function QuestionFlow({
       await new Promise((resolve) => setTimeout(resolve, 25));
     }
     if (conflicted.current) return;
-    if (dirtyRef.current && !(await persist())) return;
+    if (!hasSubmitted && dirtyRef.current && !(await persist())) return;
     const validation = validateAnswerSet(
       runtimeQuestions,
       applicableClientAnswers(runtimeQuestions, answers),
@@ -448,8 +444,10 @@ export function QuestionFlow({
           });
       if (result.status === 'submitted' || result.status === 'saved') {
         setHasSubmitted(true);
-        if ('revision' in result && result.revision)
+        if ('revision' in result && result.revision) {
+          revisionRef.current = result.revision;
           setRevision(result.revision);
+        }
         setState('submitted');
       } else
         setState(result.status === 'conflict' ? 'conflict' : 'submit-error');
@@ -583,7 +581,7 @@ export function QuestionFlow({
               <Button
                 variant="secondary"
                 disabled={saving || (locked && !saveError)}
-                onClick={() => void persist(false, true)}
+                onClick={() => void persist(true)}
               >
                 {saveError
                   ? messages['forms.retrySave']
@@ -641,7 +639,7 @@ function QuestionControl({
   locale: Locale;
   messages: ReturnType<typeof getMessages>;
   disabled: boolean;
-  onChange: (value: FormAnswer) => void;
+  onChange: (value: FormAnswer | undefined) => void;
 }) {
   if (question.type === 'profileText' || question.type === 'computedAge') {
     return (
@@ -754,13 +752,20 @@ function QuestionControl({
           }
           min={question.validation?.min}
           max={question.validation?.max}
-          onChange={(event) =>
+          onChange={(event) => {
+            if (
+              question.type === 'number' &&
+              event.currentTarget.value === ''
+            ) {
+              onChange(undefined);
+              return;
+            }
             onChange(
               question.type === 'number'
                 ? Number(event.currentTarget.value)
                 : event.currentTarget.value,
-            )
-          }
+            );
+          }}
         />
       </label>
     );

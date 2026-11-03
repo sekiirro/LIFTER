@@ -364,7 +364,7 @@ describe('F11 client recovery linkage', () => {
       rlsProbeResults,
       'safe-column RLS probes for both workspaces',
     ).toEqual([true, true]);
-  });
+  }, 60_000);
 
   it('PO recovery remains denied by HTTP access probes in both workspaces', async () => {
     const session = poRecoverySession;

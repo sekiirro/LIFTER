@@ -4,8 +4,20 @@ import {
   countTextAnswer,
   measureTextAnswerBytes,
   type FormAnswerSet,
+  type FormAnswer,
   type FormQuestion,
 } from './validation';
+
+export function setClientAnswer(
+  answers: FormAnswerSet,
+  questionId: string,
+  value: FormAnswer | undefined,
+): FormAnswerSet {
+  const next = { ...answers };
+  if (value === undefined) delete next[questionId];
+  else next[questionId] = value;
+  return next;
+}
 
 export function answersForClientProgression<T extends FormQuestion>(
   questions: readonly T[],
@@ -48,6 +60,7 @@ export function applicableClientAnswers<T extends FormQuestion>(
     questions: runtimeQuestions,
     answers: answersForClientProgression(runtimeQuestions, answers),
   });
+  if (progression.errors.length > 0) return answers;
   const applicable = new Set(progression.applicableQuestionIds);
   return Object.fromEntries(
     Object.entries(answers).filter(([questionId]) =>

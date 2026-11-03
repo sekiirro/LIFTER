@@ -41,7 +41,7 @@ function optionText(
   return copy ? localizedFormCopy(copy, locale) : value;
 }
 
-function conditionMatches(
+export function matchesPreviewCondition(
   condition: ApplicabilityCondition,
   answers: FormAnswerSet,
 ): boolean {
@@ -53,12 +53,11 @@ function conditionMatches(
       (!Array.isArray(answer) || answer.length > 0)
     );
   }
-  if (answer === undefined || answer === '' || Array.isArray(answer)) {
-    return condition.operator === 'contains' ? false : false;
-  }
   if (condition.operator === 'contains') {
-    return typeof answer === 'string' && answer.includes(condition.value);
+    return Array.isArray(answer) && answer.includes(condition.value);
   }
+  if (answer === undefined || answer === '' || Array.isArray(answer))
+    return false;
   return condition.operator === 'equals'
     ? Object.is(answer, condition.value)
     : !Object.is(answer, condition.value);
@@ -78,7 +77,7 @@ function questionVisible(
     return (
       dependency !== undefined &&
       questionVisible(dependency, byId, answers, nextSeen) &&
-      conditionMatches(condition, answers)
+      matchesPreviewCondition(condition, answers)
     );
   });
   return question.when.mode === 'all'
