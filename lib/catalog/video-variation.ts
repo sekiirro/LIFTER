@@ -1,3 +1,5 @@
+import { MAX_CATALOG_NOTE_LENGTH } from './schemas';
+
 export type VideoVariationDraft = {
   workspaceId: string;
   exerciseId: string;
@@ -41,7 +43,8 @@ export function validateVideoVariationDraft(
   if (draft.videoUrl.trim() && !isAllowedCatalogVideoUrl(draft.videoUrl))
     errors.videoUrl = 'host';
   if (!draft.videoUrl.trim() && !draft.note.trim()) errors.content = 'required';
-  if (draft.note.length > 2000) errors.content = 'too_long';
+  if (Array.from(draft.note.trim()).length > MAX_CATALOG_NOTE_LENGTH)
+    errors.content = 'too_long';
   return errors;
 }
 

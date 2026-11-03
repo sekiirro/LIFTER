@@ -5,6 +5,7 @@ import { createRoot, type Root } from 'react-dom/client';
 import { Window } from 'happy-dom';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { VideoVariationEditor } from '../../components/catalog/VideoVariationEditor';
+import { MAX_CATALOG_NOTE_LENGTH } from '../../lib/catalog/schemas';
 import {
   buildVideoVariationRequest,
   isAllowedCatalogVideoUrl,
@@ -84,6 +85,49 @@ describe('workspace video variation UI (T023)', () => {
     expect(markup).toContain('https://youtu.be/abcdefghijk');
     expect(markup).not.toContain('Foreign workspace');
     expect(markup).toContain('type="submit"');
+  });
+
+  it('accepts 1,500 multi-code-unit emoji within the note code-point limit', () => {
+    expect(
+      validateVideoVariationDraft({ ...base, note: '🙂'.repeat(1_500) }),
+    ).toEqual({});
+  });
+
+  it('rejects a note over the shared Unicode code-point limit', () => {
+    expect(
+      validateVideoVariationDraft({
+        ...base,
+        note: 'a'.repeat(MAX_CATALOG_NOTE_LENGTH + 1),
+      }),
+    ).toMatchObject({ content: 'too_long' });
+  });
+
+  it('applies the code-point limit after trimming surrounding whitespace', () => {
+    expect(
+      validateVideoVariationDraft({
+        ...base,
+        note: ` \n${'a'.repeat(MAX_CATALOG_NOTE_LENGTH)} \t`,
+      }),
+    ).toEqual({});
+    expect(
+      validateVideoVariationDraft({
+        ...base,
+        note: ` \n${'a'.repeat(MAX_CATALOG_NOTE_LENGTH + 1)} \t`,
+      }),
+    ).toMatchObject({ content: 'too_long' });
+  });
+
+  it('does not apply a UTF-16 code-unit limit to the note input', () => {
+    const markup = renderToStaticMarkup(
+      createElement(VideoVariationEditor, {
+        locale: 'en',
+        workspaces: [{ id: base.workspaceId, label: 'Selected workspace' }],
+        exercises: [{ id: base.exerciseId, label: 'Squat' }],
+        mapping: { ...base, version: 1 },
+      }),
+    );
+
+    expect(markup).not.toMatch(/maxlength="2000"/i);
   });
 
   it('clears the previous workspace mapping before switching selection', () => {

@@ -8,6 +8,7 @@ import type { Locale } from '../../lib/design/preferences';
 import { dirFor } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 import { interpolateNumbers } from '../../lib/i18n/format';
+import { MAX_CATALOG_NOTE_LENGTH } from '../../lib/catalog/schemas';
 import {
   resetVariationForWorkspace,
   validateVideoVariationDraft,
@@ -118,7 +119,7 @@ export function VideoVariationEditor({
     if (code === 'too_long')
       return interpolateNumbers(
         m['catalog.videoVariationNoteTooLong'],
-        { amount: 2000 },
+        { amount: MAX_CATALOG_NOTE_LENGTH },
         locale,
       );
     return m['catalog.videoVariationRequired'];
@@ -224,7 +225,6 @@ export function VideoVariationEditor({
           inputProps={{
             id: `${base}-note`,
             type: 'text',
-            maxLength: 2000,
             value: note,
             disabled: status === 'saving',
             onChange: (event) => setNote(event.currentTarget.value),
