@@ -51,6 +51,12 @@ export default async function ExerciseDetailPage({
       : workspaces.data.filter((item) =>
           actor.activeWorkspaceIds.includes(item.id),
         );
+  if (
+    query.workspace !== undefined &&
+    query.workspace !== '' &&
+    (typeof query.workspace !== 'string' || !UUID.test(query.workspace))
+  )
+    notFound();
   const requested = typeof query.workspace === 'string' ? query.workspace : '';
   if (
     requested &&
