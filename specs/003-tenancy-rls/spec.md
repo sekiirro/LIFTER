@@ -97,6 +97,39 @@ A reusable test harness provisions isolated fixtures (two workspaces, users per 
 - **FR-011**: Migrations MUST be forward-only and non-destructive.
 - **FR-012**: No PII may appear in migrations, seeds or test output beyond synthetic test emails.
 
+### Governance amendment — S30-PO-3 Q7 and Q8
+
+This amendment extends the existing F3 tenancy and governance scope. It records only the two approved governance behaviors and leaves the identified implementation details open for PO clarification.
+
+#### User Story 5 — Workspace Owner member roster (Priority: P1)
+
+A Workspace Owner can see active members for roster administration. The PO-approved source states: “Supports roster administration. Needs RLS change, tests and security review.”
+
+**Independent Test**: At the database boundary, verify that the approved active-member roster visibility is scoped as decided by the PO and that the RLS mutation tests deny visibility outside that scope. Exact fields and roster boundary require clarification before implementation.
+
+**Acceptance Scenarios**:
+
+1. **Given** a Workspace Owner and active members, **When** the Owner requests the member roster, **Then** the database permits the approved active-member roster visibility (S30-PO-3 Q7: “WO sees active members”).
+2. **Given** revoked membership rows or a membership outside the permitted roster scope, **When** the Owner requests the roster, **Then** visibility follows the PO-clarified active-state and workspace-boundary rules; those details are blocked pending clarification.
+
+#### User Story 6 — Protect the final Platform Owner (Priority: P1)
+
+The database prevents removal or demotion of the final Platform Owner. The PO-approved source states: “The database refuses to remove or demote the final Platform Owner. Simple and prevents lockout. Transfer works by adding a new PO first.”
+
+**Independent Test**: Exercise database mutations for final-PO demotion/removal and add-first transfer with executed mutation tests after design review.
+
+**Acceptance Scenarios**:
+
+1. **Given** exactly one Platform Owner, **When** an operation would remove or demote that final Platform Owner, **Then** the database refuses the operation.
+2. **Given** a new Platform Owner has first been added, **When** the previous Platform Owner is demoted, **Then** the database permits the transfer without leaving zero Platform Owners.
+
+#### Clarifications
+
+- S30-PO-3 Q6 resolves the existing `coaching_work` matrix source: PO/WO/Trainer are allowed and Sales is denied. No code changes are part of this documentation cycle.
+- S30-PO-3 Q7 approves Workspace Owner visibility of active members for roster administration. Roster boundary and visible member fields remain open PO questions.
+- S30-PO-3 Q8 approves a database guard against removing or demoting the final Platform Owner, with transfer by adding a new PO first. Concurrency and mutation failure details remain open PO questions.
+- No further product behavior is inferred by this amendment. Open questions and blockers are listed in the SK-A PO decision register.
+
 ### Key Entities
 
 - **Workspace**: id, name, slug (unique), created_at, created_by.
@@ -118,3 +151,11 @@ A reusable test harness provisions isolated fixtures (two workspaces, users per 
 - Docker is not available on the reviewer's machine, so integration tests are verified in Linux CI. Unit tests run locally.
 - The "Sales coaching rights" open item (Decision Register, Open) stays deny until the PO decides.
 - WO visibility of other members' memberships in their own workspace isn't specified in the sources. F3 allows only PO + self, and it is listed as NEEDS DECISION.
+
+### Governance amendment requirements and success criteria (S30-PO-3)
+
+- **FR-013**: The database MUST permit a Workspace Owner to see active members for roster administration, as approved by S30-PO-3 Q7: “WO sees active members” and “Supports roster administration. Needs RLS change, tests and security review.” The exact roster boundary and member fields are subject to the recorded PO clarifications.
+- **FR-014**: The database MUST refuse to remove or demote the final Platform Owner. Transfer MUST work by adding a new Platform Owner first, as approved by S30-PO-3 Q8: “The database refuses to remove or demote the final Platform Owner. Simple and prevents lockout. Transfer works by adding a new PO first.”
+
+- **SC-005**: In executed database mutation tests, 100% of attempts that would remove or demote the final Platform Owner are rejected, and an add-new-PO-first transfer leaves at least one Platform Owner.
+- **SC-006**: After the PO clarifies the roster boundary and visible fields, 100% of executed RLS mutation cases enforce that approved active-member visibility for Workspace Owners and deny out-of-scope visibility.

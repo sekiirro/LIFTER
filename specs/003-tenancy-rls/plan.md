@@ -69,3 +69,14 @@ docs/BOOTSTRAP.md? → no: README section "Local database & isolation tests" + P
 | Deviation | Why | Simpler alternative rejected |
 |---|---|---|
 | The matrix exists in both TS and SQL | Two walls (Architecture v3). The database can't import TS. | A single source generating both needs a codegen step. The parity test gives the same guarantee. |
+
+
+## S30-PO-3 governance amendment plan (documentation proposal)
+
+- **FR-013 / SC-006 — active-member roster**: add a narrowly scoped database RLS policy/helper path for the Workspace Owner roster. Do not choose workspace-boundary or member-field visibility until the PO answers the open clarifications. Require executed positive and negative mutation tests for active, revoked, in-scope, and out-of-scope cases, plus security review before implementation acceptance.
+- **FR-014 / SC-005 — final-PO guard**: use a database-enforced guard in a forward-only migration so removal or demotion cannot leave zero Platform Owners. Design must account for concurrent demotions/removals; do not settle locking/serialization or client-visible error semantics until the PO decision is recorded. Require executed concurrent and sequential mutation tests and security review before implementation acceptance.
+- No migration or code is authored in this cycle. High-risk RLS/auth changes require architect review and executed mutation tests.
+
+### Clarification status
+
+S30-PO-3 Q7 and Q8 approve the behavior, while details listed in `../po-decisions.md` remain open. Existing ND-F3-2 (member visibility) and ND-F3-3 (last-PO protection) are superseded only to the extent of the approved behavior; do not treat their unresolved subquestions as answered.
