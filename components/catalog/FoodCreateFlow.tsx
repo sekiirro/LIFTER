@@ -131,6 +131,8 @@ export function FoodCreateFlow({
         onConfirm={confirmNear}
         onSelectExisting={(candidate) => {
           setSelectedExisting(candidate);
+          setReview(null);
+          setState('ready');
           onSelectExisting?.(candidate);
         }}
         onCancel={() => {
