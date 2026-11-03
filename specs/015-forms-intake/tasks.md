@@ -237,7 +237,7 @@ T030-T048 (19 tasks) are independently reviewable, tests-first units with one to
 
 ## Final shared capability reconciliation (after F14 and F13 merge)
 
-- [x] T049 Reconcile `app_private.role_has_capability` and TypeScript capability parity after both F14 and F13 are merged. Add only the approved F15 Forms capabilities; keep Sales and unknown roles/capabilities denied. The forward migration `20261104024000_f15_shared_forms_capability_reconciliation.sql` preserves the F13/F14 combined matrix. Source mappings: `specs/015-forms-intake/plan.md:74-76`.
+- [x] T049 [FR-022] Reconcile `app_private.role_has_capability` and TypeScript capability parity after both F14 and F13 are merged. Add only the approved F15 Forms capabilities; keep Sales and unknown roles/capabilities denied. The forward migration `20261104024000_f15_shared_forms_capability_reconciliation.sql` preserves the F13/F14 combined matrix. Source mappings: `specs/015-forms-intake/plan.md:74-76`.
   - RED before the F15 migration on Stack D: 10 tracked capability assertions failed across T003/T047/T048/T014/T006/T009. The pre-replay database also showed the expected F14 `manage_branding` parity gap.
   - GREEN after a fresh combined Stack D replay: 7 integration files, 39 selected tests passed, 0 failed; 442 were filtered. The T049 parity mutation probe passed (1/1), exercising Sales-grant, dropped Workspace Owner scope, and TypeScript-only capability mutants.
   - `author_forms`: Platform Owner, Workspace Owner, Trainer; Sales denied.
