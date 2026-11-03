@@ -163,7 +163,13 @@ export function QuestionFlow({
   const intentKey = useRef<string | undefined>(undefined);
   const revisionRef = useRef(revision);
   const dirtySince = useRef<number | undefined>(undefined);
-  const [questionId, setQuestionId] = useState<string | undefined>();
+  const [questionId, setQuestionId] = useState<string | undefined>(
+    () =>
+      evaluateProgression({
+        questions: runtimeQuestions,
+        answers: applicableClientAnswers(runtimeQuestions, initialAnswers),
+      }).applicableQuestionIds[0],
+  );
   const progression = useMemo(
     () =>
       evaluateProgression({

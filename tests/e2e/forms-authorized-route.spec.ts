@@ -45,7 +45,7 @@ test.beforeAll(async () => {
         type: 'profileText',
         required: false,
         profileField: 'fullName',
-        title: { en: 'Full name', ar: '' },
+        title: { en: 'Full name', ar: 'الاسم الثلاثي' },
       },
       {
         id: 'B02',
@@ -53,7 +53,7 @@ test.beforeAll(async () => {
         type: 'computedAge',
         required: false,
         dateOfBirthField: 'dateOfBirth',
-        title: { en: 'Age', ar: '' },
+        title: { en: 'Age', ar: 'العمر' },
       },
       {
         id: 'goal',
@@ -125,6 +125,11 @@ async function signIn(page: Page) {
   await expect(page).toHaveURL(/\/$/u);
 }
 
+async function advanceToGoal(page: Page) {
+  await page.getByRole('button').nth(1).click();
+  await page.getByRole('button').nth(1).click();
+}
+
 test('real authorized assignment renders the complete AR/EN theme and viewport matrix', async ({
   page,
 }) => {
@@ -156,12 +161,24 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
           }),
         ).toBeVisible();
         await expect(page.locator('output')).toHaveText('U3 synthetic test');
+        await expect(
+          page.getByRole('heading', {
+            level: 2,
+            name: locale === 'ar' ? 'الاسم الثلاثي' : 'Full name',
+          }),
+        ).toBeVisible();
         await page.screenshot({
           path: join(screenshotDir, `${locale}-${theme}-${width}-b01.png`),
           fullPage: true,
         });
         await page.getByRole('button').nth(1).click();
         await expect(page.locator('output')).toHaveText('36');
+        await expect(
+          page.getByRole('heading', {
+            level: 2,
+            name: locale === 'ar' ? 'العمر' : 'Age',
+          }),
+        ).toBeVisible();
         await page.screenshot({
           path: join(screenshotDir, `${locale}-${theme}-${width}-b02.png`),
           fullPage: true,
@@ -202,6 +219,7 @@ test('real route supports keyboard progression and presents the same safe not-fo
     },
   ]);
   await page.goto(`/forms/${assignmentId}`);
+  await advanceToGoal(page);
   const goal = page.getByRole('textbox', { name: 'Your goal' });
   await goal.focus();
   await goal.fill('Build strength');
@@ -249,7 +267,7 @@ test('sample workspace brand scope leaves semantic status tokens intact in light
       },
     ]);
     await page.goto(`/forms/${assignmentId}`);
-    await expect(page.getByRole('textbox').first()).toBeVisible();
+    await expect(page.locator('output')).toBeVisible();
     const before = await page
       .locator('main')
       .last()
@@ -387,6 +405,7 @@ test('real route autosave exposes each state, retries failures, and records save
     for (const width of [390, 1440] as const) {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
       await page.goto(`/forms/${assignmentId}`);
+      await advanceToGoal(page);
       const field = page.getByRole('textbox').first();
       await expect(field).toBeVisible();
       const capture = async (state: string) => {
@@ -500,6 +519,7 @@ test('real route autosave exposes each state, retries failures, and records save
     },
   ]);
   await page.goto(`/forms/${assignmentId}`);
+  await advanceToGoal(page);
   const field = page.getByRole('textbox', { name: 'Your goal' });
   const samples: number[] = [];
   for (let sample = 0; sample < 8; sample += 1) {

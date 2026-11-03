@@ -22,7 +22,7 @@ it('shows profile name and computed age in read-only outputs, while authored tex
       type: 'profileText' as const,
       required: false,
       profileField: 'fullName' as const,
-      title: { en: 'Full name', ar: '' },
+      title: { en: 'Full name', ar: 'الاسم الثلاثي' },
     },
     {
       id: 'B02',
@@ -30,7 +30,7 @@ it('shows profile name and computed age in read-only outputs, while authored tex
       type: 'computedAge' as const,
       required: false,
       dateOfBirthField: 'dateOfBirth' as const,
-      title: { en: 'Age', ar: '' },
+      title: { en: 'Age', ar: 'العمر' },
     },
     {
       id: 'goal',
@@ -73,4 +73,44 @@ it('shows profile name and computed age in read-only outputs, while authored tex
   expect(ageHtml).toContain('<output');
   expect(ageHtml).not.toContain('<input');
   expect(editableHtml).toContain('type="text"');
+});
+
+it('starts at the first applicable question in authored order, including optional read-only bindings', () => {
+  const questions = [
+    {
+      id: 'B01',
+      sectionId: 'basic',
+      type: 'profileText' as const,
+      required: false,
+      profileField: 'fullName' as const,
+      title: { en: 'Full name', ar: 'الاسم الثلاثي' },
+    },
+    {
+      id: 'B02',
+      sectionId: 'basic',
+      type: 'computedAge' as const,
+      required: false,
+      dateOfBirthField: 'dateOfBirth' as const,
+      title: { en: 'Age', ar: 'العمر' },
+    },
+    {
+      id: 'goal',
+      sectionId: 'basic',
+      type: 'shortText' as const,
+      required: true,
+      title: { en: 'Goal', ar: '' },
+    },
+  ];
+  const html = renderToStaticMarkup(
+    createElement(QuestionFlow, {
+      locale: 'en',
+      questions,
+      profileValues: { B01: 'Signup Full Name', B02: '25' },
+      adapter,
+      assignmentId: 'authored-order',
+    }),
+  );
+  expect(html).toContain('<h2>Full name</h2>');
+  expect(html).toContain('Signup Full Name');
+  expect(html).not.toContain('<h2>Goal</h2>');
 });
