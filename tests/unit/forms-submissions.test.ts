@@ -21,7 +21,21 @@ const snapshot = {
 };
 
 describe('T013 submission validation', () => {
-  it('allows only complete applicable answers across all substantive sections', () => {
+  it('accepts complete applicable answers without imposing section identifiers', () => {
+    expect(
+      validateFormSubmission(
+        {
+          questions: [
+            { id: 'name', sectionId: 'identity', type: 'shortText', required: true },
+            { id: 'goal', sectionId: 'goals', type: 'shortText', required: true },
+          ],
+        },
+        { name: 'Lina', goal: 'Strength' },
+      ),
+    ).toMatchObject({ ok: true });
+  });
+
+  it('allows only complete applicable required answers', () => {
     expect(
       validateFormSubmission(snapshot, {
         b: 'no',

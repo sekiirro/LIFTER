@@ -1,9 +1,5 @@
 import { evaluateProgression } from './progression';
-import {
-  isAnswered,
-  type FormAnswerSet,
-  type FormQuestion,
-} from './validation';
+import { type FormAnswerSet, type FormQuestion } from './validation';
 
 export type FormSubmissionValidation =
   | { ok: true; answerValues: FormAnswerSet }
@@ -48,19 +44,5 @@ export function validateFormSubmission(
   if (progression.errors.length > 0) return { ok: false, code: 'invalid' };
   if (!progression.complete) return { ok: false, code: 'incomplete' };
 
-  const applicable = new Set(progression.applicableQuestionIds);
-  const substantiveSections = new Set(['basic', 'training', 'nutrition']);
-  for (const section of substantiveSections) {
-    if (
-      !questions.some(
-        (question) =>
-          question.sectionId === section &&
-          applicable.has(question.id) &&
-          isAnswered((answerValues as FormAnswerSet)[question.id]),
-      )
-    ) {
-      return { ok: false, code: 'incomplete' };
-    }
-  }
   return { ok: true, answerValues: answerValues as FormAnswerSet };
 }

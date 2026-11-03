@@ -31,16 +31,16 @@ it('T013 commits one complete original, revision, audit, and frozen D-03 SLA', a
   };
   const definition = {
     questions: [
-      { id: 'basic', sectionId: 'basic', type: 'shortText', required: true },
+      { id: 'basic', sectionId: 'identity', type: 'shortText', required: true },
       {
         id: 'training',
-        sectionId: 'training',
+        sectionId: 'goals',
         type: 'shortText',
         required: true,
       },
       {
         id: 'nutrition',
-        sectionId: 'nutrition',
+        sectionId: 'context',
         type: 'shortText',
         required: true,
       },
@@ -89,14 +89,32 @@ it('T013 commits one complete original, revision, audit, and frozen D-03 SLA', a
       let completionMutationKilled = false;
       await expect(
         tx.savepoint(async (sp) => {
-          await sp.unsafe(`create or replace function app_private.f15_submission_complete(p_snapshot jsonb,p_answers jsonb)
-            returns boolean language sql immutable set search_path = '' as $$ select true $$`);
+          const [functionRow] = await sp`
+            select pg_get_functiondef(
+              'app_private.f15_submission_complete(jsonb,jsonb)'::regprocedure
+            ) as body
+          `;
+          const sectionLoopMutation = (functionRow?.body as string).replace(
+            '  return true;',
+            `  if exists (
+    select 1 from unnest(array['basic','training','nutrition']) required_section(section_id)
+    where not exists (
+      select 1 from jsonb_array_elements(p_snapshot->'questions') q(value)
+      where q.value->>'sectionId'=required_section.section_id
+        and app_private.f15_question_applies(p_snapshot->'questions',q.value,p_answers,0)
+        and app_private.f15_answer_is_present(p_answers->(q.value->>'id'))
+    )
+  ) then return false; end if;
+  return true;`,
+          );
+          expect(sectionLoopMutation).not.toBe(functionRow?.body);
+          await sp.unsafe(sectionLoopMutation);
           await sp`set local role authenticated`;
           const [mutated] = await sp`
             select public.submit_form_assignment(${context.wsA.id},${assignmentId},1,${randomUUID()}) as result
           `;
           try {
-            expect(mutated?.result).toEqual({ status: 'incomplete' });
+            expect(mutated?.result).toMatchObject({ status: 'submitted' });
           } catch {
             completionMutationKilled = true;
           }
@@ -109,6 +127,18 @@ it('T013 commits one complete original, revision, audit, and frozen D-03 SLA', a
         status: 'saved',
         revision: 2,
       });
+      const nonstandardRollback = new Error('rollback nonstandard sections probe');
+      let nonstandardResult: unknown;
+      await expect(
+        tx.savepoint(async (sp) => {
+          const [attempt] = await sp`
+            select public.submit_form_assignment(${context.wsA.id},${assignmentId},2,${randomUUID()}) as result
+          `;
+          nonstandardResult = attempt?.result;
+          throw nonstandardRollback;
+        }),
+      ).rejects.toBe(nonstandardRollback);
+      expect(nonstandardResult).toMatchObject({ status: 'submitted' });
 
       await tx`reset role`;
       await expect(
