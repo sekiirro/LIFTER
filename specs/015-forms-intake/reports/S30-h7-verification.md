@@ -1,4 +1,4 @@
-﻿# S30 h7b verification — stopped at committed boundary
+# S30 h7b verification — stopped at committed boundary
 
 ## Boundary and gates
 
@@ -43,4 +43,3 @@ Changes were checked against the current code. Current edits include:
 - SIGNUP BLOB CHANGES: `app/register/[token]/SignupForm.tsx`, prior blob `77f8a6c`; new blob `a3a5fac373af2d551ba171eede396a8081aae0d2`.
 - PO-DECISION-NEEDED: none found in these fixes.
 - This report records a partial boundary; T009/T024 task status was not changed.
-
