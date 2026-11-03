@@ -70,6 +70,9 @@ async function parity(left: string, right: string, stage: string) {
   }
 }
 
+// This path includes two real Auth sign-ins and the exhaustive safe-column
+// RLS probe across 45 public tables; measured Stack D runs exceed 30 seconds.
+const exhaustivePasswordParityTimeoutMs = 60_000;
 for (const boundary of ['ordinary', 'multibyte', '72-byte'] as const) {
   it(`C2/C3 ${boundary}: exhaustive pre/post parity and exact real password sign-in`, async () => {
     const s = await signupFixture(context);
@@ -123,7 +126,7 @@ for (const boundary of ['ordinary', 'multibyte', '72-byte'] as const) {
     expect(
       await db`select 1 from public.workspace_memberships where user_id=${id}`,
     ).toHaveLength(0);
-  });
+  }, exhaustivePasswordParityTimeoutMs);
 }
 
 for (const boundary of ['73-byte', 'NUL']) {
