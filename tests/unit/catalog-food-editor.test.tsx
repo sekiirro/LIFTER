@@ -216,11 +216,11 @@ describe('food editor (T029)', () => {
       );
     });
     await act(async () => {
-      container
-        .querySelectorAll('button')
-        .item(1)
+      [...container.querySelectorAll('button')]
+        .find((button) => button.textContent === en['catalog.foodAlternativeRemove'])
         ?.dispatchEvent(new dom.MouseEvent('click', { bubbles: true }));
     });
+    expect(container.querySelectorAll('select[id*="-alternative-"]')).toHaveLength(1);
     expect(
       container.querySelector('a[href$="-alternative-0"]'),
     ).toBeNull();
