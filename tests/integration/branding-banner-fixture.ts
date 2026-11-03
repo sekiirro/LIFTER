@@ -3,7 +3,7 @@ import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import { validateBrandingImage } from '../../lib/branding/image-validation';
 import { brandingValidatedObjectName } from '../../lib/branding/object-path';
-import { admin, sql } from './harness';
+import { admin, createStaff, sql } from './harness';
 import {
   registrationFixture,
   secret,
@@ -257,6 +257,47 @@ export async function createPublishedBannerFixture(
       await admin().storage.from('branding-staging').remove([stagingPath]);
       await admin().storage.from('branding-validated').remove([validatedPath]);
       await db.end();
+    },
+  };
+}
+
+/**
+ * One stable published artwork fixture with isolated links for a serial visual
+ * matrix. Separate tokens preserve per-test registration state without
+ * creating a full auth/workspace/package graph for every viewport case.
+ */
+export async function createPublishedBannerFixturePool(
+  bytes: Buffer = bannerPng(),
+) {
+  const fixture = await createPublishedBannerFixture(bytes);
+  const issueActors = [fixture.po, fixture.woA];
+  for (let index = 0; index < 4; index += 1) {
+    const owner = await createStaff(
+      'workspace_owner',
+      `banner-matrix-${index}`,
+    );
+    const membership = await admin().from('workspace_memberships').insert({
+      user_id: owner.userId,
+      workspace_id: fixture.wsA.id,
+      granted_by: fixture.po.userId,
+    });
+    if (membership.error)
+      throw new Error('Banner matrix issuer membership failed');
+    issueActors.push(owner);
+  }
+  return {
+    ...fixture,
+    issueActors,
+    issueToken: async (actorIndex: number) => {
+      const link = secret();
+      const actor = issueActors[actorIndex % issueActors.length];
+      if (!actor) throw new Error('Banner matrix issuer is missing');
+      const issued = await issue(fixture, actor.client, {
+        token_hash: link.hash,
+      });
+      if (issued.error)
+        throw new Error('Banner matrix registration link issuance failed');
+      return link.token;
     },
   };
 }

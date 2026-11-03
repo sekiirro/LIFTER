@@ -2,6 +2,7 @@ import { expect, test, type Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
+import { registrationIssueActorIndex } from './registration-issue-actor';
 import {
   captureHeroScreenshot,
   expectHeroAxeClean,
@@ -78,7 +79,14 @@ const invalidThemeCases = (['ar', 'en'] as const).flatMap((locale) =>
   ),
 );
 let token = '';
-let cleanup: (() => Promise<void>) | null = null;
+type ArtworkKey = 'bright' | 'dim' | 'bright-patch' | 'dark-patch';
+type BannerFixturePool = Awaited<
+  ReturnType<
+    typeof import('../integration/branding-banner-fixture').createPublishedBannerFixturePool
+  >
+>;
+const artworkFixtures = new Map<ArtworkKey, BannerFixturePool>();
+const artworkIssueCounts = new Map<ArtworkKey, number>();
 const measurements: Record<string, unknown>[] = [];
 type LayoutShiftLike = PerformanceEntry & {
   value: number;
@@ -109,7 +117,15 @@ async function expectNoPageScroll(page: Page) {
   return dimensions;
 }
 
-test.beforeEach(async ({}, testInfo) => {
+function artworkForTitle(title: string): ArtworkKey {
+  if (title.includes('bright-patch')) return 'bright-patch';
+  if (title.includes('dark-patch')) return 'dark-patch';
+  if (title.startsWith('bright/') || title.includes('/bright/'))
+    return 'bright';
+  return 'dim';
+}
+
+test.beforeAll(async () => {
   if (!local)
     throw new Error('Requires the selected disposable local database.');
   const {
@@ -117,29 +133,35 @@ test.beforeEach(async ({}, testInfo) => {
     brightBannerPng,
     brightPatchBannerPng,
     brightWithDarkPatchBannerPng,
-    createPublishedBannerFixture,
+    createPublishedBannerFixturePool,
   } = await import('../integration/branding-banner-fixture');
-  const bytes =
-    testInfo.title.startsWith('bright/') || testInfo.title.includes('/bright/')
-      ? brightBannerPng()
-      : testInfo.title.startsWith('bright-patch/') ||
-          testInfo.title.includes('/bright-patch/')
-        ? brightPatchBannerPng()
-        : testInfo.title.startsWith('dark-patch/') ||
-            testInfo.title.includes('/dark-patch/')
-          ? brightWithDarkPatchBannerPng()
-          : bannerPng();
-  const fixture = await createPublishedBannerFixture(bytes);
-  token = fixture.token;
-  cleanup = fixture.cleanup;
+  const configs: [ArtworkKey, Buffer][] = [
+    ['bright', brightBannerPng()],
+    ['dim', bannerPng()],
+    ['bright-patch', brightPatchBannerPng()],
+    ['dark-patch', brightWithDarkPatchBannerPng()],
+  ];
+  for (const [artwork, bytes] of configs) {
+    artworkFixtures.set(artwork, await createPublishedBannerFixturePool(bytes));
+    artworkIssueCounts.set(artwork, 1);
+  }
 });
 
-test.afterEach(async () => {
-  await cleanup?.();
-  cleanup = null;
+test.beforeEach(async ({}, testInfo) => {
+  const artwork = artworkForTitle(testInfo.title);
+  const fixture = artworkFixtures.get(artwork);
+  if (!fixture) throw new Error(`Missing ${artwork} banner fixture pool`);
+  const issueNumber = artworkIssueCounts.get(artwork) ?? 1;
+  artworkIssueCounts.set(artwork, issueNumber + 1);
+  const actorIndex = registrationIssueActorIndex(
+    issueNumber,
+    fixture.issueActors.length,
+  );
+  token = await fixture.issueToken(actorIndex);
 });
 
 test.afterAll(async () => {
+  for (const fixture of artworkFixtures.values()) await fixture.cleanup();
   if (measurements.length === 0) return;
   await mkdir(heroEvidenceDirectory, { recursive: true });
   await writeFile(

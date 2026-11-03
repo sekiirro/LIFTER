@@ -12,4 +12,23 @@ describe('registration fixture issue actors', () => {
     expect(counts).toEqual([15, 14]);
     expect(Math.max(...counts)).toBeLessThanOrEqual(20);
   });
+
+  it('keeps pooled banner cases below the 20-issue actor limit', () => {
+    const counts = Array.from({ length: 6 }, () => 0);
+    for (let issueNumber = 1; issueNumber <= 109; issueNumber++) {
+      const actorIndex = registrationIssueActorIndex(
+        issueNumber,
+        counts.length,
+      );
+      counts[actorIndex] = (counts[actorIndex] ?? 0) + 1;
+    }
+
+    expect(counts).toEqual([18, 19, 18, 18, 18, 18]);
+    expect(Math.max(...counts)).toBeLessThanOrEqual(20);
+  });
+
+  it('rejects an empty or invalid actor pool', () => {
+    expect(() => registrationIssueActorIndex(0, 0)).toThrow(RangeError);
+    expect(() => registrationIssueActorIndex(-1, 2)).toThrow(RangeError);
+  });
 });

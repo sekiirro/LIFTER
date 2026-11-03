@@ -1,3 +1,10 @@
-export function registrationIssueActorIndex(issueNumber: number): 0 | 1 {
-  return issueNumber % 2 === 0 ? 0 : 1;
+export function registrationIssueActorIndex(
+  issueNumber: number,
+  actorCount = 2,
+): number {
+  if (!Number.isInteger(issueNumber) || issueNumber < 0)
+    throw new RangeError('issueNumber must be a non-negative integer');
+  if (!Number.isInteger(actorCount) || actorCount < 1)
+    throw new RangeError('actorCount must be a positive integer');
+  return issueNumber % actorCount;
 }
