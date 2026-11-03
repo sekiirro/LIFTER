@@ -19,6 +19,8 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Validate migration timestamps
+        run: npm run check:migration-timestamps
       - name: Assert runtime Unicode pin
         run: |
           node -p process.versions.unicode
@@ -45,6 +47,7 @@ jobs:
     permissions:
       contents: read
     env:
+      LIFTER_SUPABASE_STACK: a
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:
@@ -98,6 +101,7 @@ jobs:
     permissions:
       contents: read
     env:
+      LIFTER_SUPABASE_STACK: a
       DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
       DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
     steps:

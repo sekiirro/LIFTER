@@ -1,11 +1,19 @@
+// @vitest-environment happy-dom
 import { describe, expect, it, vi } from 'vitest';
-import { createElement } from 'react';
+import { act, createElement } from 'react';
+import { createRoot } from 'react-dom/client';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { ApprovalReview } from '../../components/registration-approval/ApprovalReview';
 import { PaymentConfirmation } from '../../components/registration-approval/PaymentConfirmation';
 import { StatusBadge } from '../../components/registration-approval/StatusBadge';
 import { PaymentHistory } from '../../components/registration-approval/PaymentHistory';
 import { getMessages } from '../../lib/i18n';
+import {
+  approveRegistrationAction,
+  reconsiderRegistrationAction,
+} from '../../app/(app)/registration-approvals/actions';
+
+Object.assign(globalThis, { IS_REACT_ACT_ENVIRONMENT: true });
 
 vi.mock('../../app/(app)/registration-approvals/actions', () => ({
   approveRegistrationAction: vi.fn(),
@@ -34,6 +42,56 @@ const item = {
 const role = 'platform_owner' as const;
 
 describe('registration approval controls', () => {
+  it('keeps Approve and Reconsider enabled without a date and announces the hint without submitting', async () => {
+    const messages = getMessages('en');
+    for (const [approvalState, label, action] of [
+      [
+        'pending-approval',
+        messages['registrationApproval.submit'],
+        approveRegistrationAction,
+      ],
+      [
+        'rejected',
+        messages['registrationApproval.reconsider'],
+        reconsiderRegistrationAction,
+      ],
+    ] as const) {
+      vi.mocked(action).mockClear();
+      const host = document.createElement('div');
+      document.body.append(host);
+      const root = createRoot(host);
+      await act(async () => {
+        root.render(
+          createElement(ApprovalReview, {
+            item: { ...item, approval_state: approvalState },
+            workspaceId: '00000000-0000-0000-0000-000000000001',
+            role,
+            messages,
+          }),
+        );
+      });
+
+      const checkbox = host.querySelector<HTMLInputElement>(
+        'input[type="checkbox"]',
+      );
+      const button = Array.from(host.querySelectorAll('button')).find(
+        (candidate) => candidate.textContent?.trim() === label,
+      );
+      expect(checkbox).not.toBeNull();
+      expect(button).toBeDefined();
+      await act(async () => checkbox!.click());
+      expect(button!.disabled).toBe(false);
+      await act(async () => button!.click());
+
+      expect(host.querySelector('[role="alert"]')?.textContent).toContain(
+        messages['registrationApproval.paymentDateHint'],
+      );
+      expect(action).not.toHaveBeenCalled();
+
+      await act(async () => root.unmount());
+      host.remove();
+    }
+  });
   it('shows the full page review, exact read-only amount, date/code and PO actions', () => {
     const html = renderToStaticMarkup(
       createElement(ApprovalReview, {

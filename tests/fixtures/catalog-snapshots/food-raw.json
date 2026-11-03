@@ -1,0 +1,25 @@
+{
+  "foodId": "food-raw",
+  "version": 1,
+  "names": {
+    "ar": "أرز خام",
+    "en": "Rice raw"
+  },
+  "basis": "g",
+  "productIdentity": "rice",
+  "preparationIdentity": "raw grain",
+  "weighingState": "raw",
+  "kcal": 360,
+  "protein": 7,
+  "carbs": 78,
+  "fat": 0.7,
+  "fiber": 1.3,
+  "serving": {
+    "servingId": "srv-100",
+    "labels": {
+      "ar": "100 غ",
+      "en": "100 g"
+    },
+    "basisQuantity": 100
+  }
+}

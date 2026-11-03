@@ -1,17 +1,74 @@
 import { expect, test } from '@playwright/test';
+import { expectTooltipBesideTrigger } from './tooltip-geometry';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 
+test.describe('client-side shell navigation', () => {
+  test.use({ javaScriptEnabled: true });
+
+  test.beforeEach(async ({ context }) => {
+    await context.addCookies([
+      { name: LOCALE_COOKIE, value: 'en', url: origin },
+    ]);
+  });
+
+  test('keeps the document and enhanced GlassSurface mounted between destinations', async ({
+    page,
+  }, testInfo) => {
+    test.skip(
+      testInfo.project.name !== 'chromium',
+      'Client navigation preservation uses desktop Chromium.',
+    );
+    await page.setViewportSize({ width: 1280, height: 800 });
+    await page.addInitScript(() => {
+      Object.defineProperty(navigator, 'hardwareConcurrency', {
+        configurable: true,
+        value: 8,
+      });
+      Object.defineProperty(navigator, 'deviceMemory', {
+        configurable: true,
+        value: 8,
+      });
+      (
+        window as Window & { __shellDocumentMarker?: string }
+      ).__shellDocumentMarker = crypto.randomUUID();
+    });
+    await page.goto(new URL('/showcase/shell?role=trainer', origin).toString());
+    const marker = await page.evaluate(
+      () =>
+        (window as Window & { __shellDocumentMarker?: string })
+          .__shellDocumentMarker,
+    );
+    const rail = page.getByTestId('nav-rail');
+    await expect(rail).toHaveAttribute('data-glass-runtime', 'enhanced', {
+      timeout: 15_000,
+    });
+    await rail
+      .getByRole('link', { name: getMessages('en')['nav.clients'] })
+      .click();
+    await expect(page).toHaveURL(/\/showcase\/shell\?role=trainer#clients$/);
+    await expect(rail).toHaveAttribute('data-glass-runtime', 'enhanced');
+    expect(
+      await page.evaluate(
+        () =>
+          (window as Window & { __shellDocumentMarker?: string })
+            .__shellDocumentMarker,
+      ),
+    ).toBe(marker);
+  });
+});
+
 // Both navigation variants and role selection must work without client JavaScript.
 test.use({ javaScriptEnabled: false });
-const trainerKeys = [
+const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const trainerMobileKeys = [
   'home',
   'clients',
   'workout',
   'nutrition',
   'more',
 ] as const;
-const clientKeys = [
+const clientMobileKeys = [
   'home',
   'workout',
   'nutrition',
@@ -24,60 +81,193 @@ for (const locale of ['ar', 'en'] as const) {
     const m = getMessages(locale);
     test.beforeEach(async ({ context }) => {
       await context.addCookies([
-        { name: LOCALE_COOKIE, value: locale, url: 'http://localhost:3000' },
-        { name: THEME_COOKIE, value: 'light', url: 'http://localhost:3000' },
+        { name: LOCALE_COOKIE, value: locale, url: origin },
+        { name: THEME_COOKIE, value: 'light', url: origin },
       ]);
     });
 
-    test('desktop trainer rail follows order and direction and shows focus tooltips', async ({
+    test('desktop navigation preserves the content lane across responsive widths', async ({
       page,
     }, testInfo) => {
       test.skip(
         testInfo.project.name !== 'chromium',
         'Desktop rail assertions use chromium.',
       );
-      const response = await page.goto('/showcase/shell?role=trainer');
-      expect(response?.status()).toBe(200);
-      const rail = page.getByTestId('nav-rail');
-      await expect(rail).toBeVisible();
-      await expect(page.getByTestId('bottom-bar')).toBeHidden();
-      await expect(page.getByRole('navigation')).toHaveCount(1);
-      await expect(rail).toHaveAccessibleName(m['nav.label']);
-      const links = rail.getByRole('link');
-      await expect(links).toHaveCount(5);
-      for (const [index, key] of trainerKeys.entries()) {
-        await expect(links.nth(index)).toHaveAttribute('data-nav-key', key);
-        await expect(links.nth(index)).toHaveAccessibleName(m[`nav.${key}`]);
-        await expect(links.nth(index)).toHaveAttribute(
-          'href',
-          `?role=trainer#${key}`,
-        );
+      for (const [role, keys] of [
+        ['trainer', ['home', 'clients', 'workout', 'nutrition']],
+        ['client', ['home', 'workout', 'nutrition', 'progress']],
+      ] as const) {
+        const response = await page.goto(`/showcase/shell?role=${role}`);
+        expect(response?.status()).toBe(200);
+        const rail = page.getByTestId('nav-rail');
+        await expect(page.getByRole('navigation')).toHaveCount(1);
+        await expect(rail).toHaveAccessibleName(m['nav.label']);
+        const links = rail.getByRole('link');
+        await expect(links).toHaveCount(4);
+        await expect(rail.locator('[data-nav-key="more"]')).toHaveCount(0);
+        for (const [index, key] of keys.entries()) {
+          await expect(links.nth(index)).toHaveAttribute('data-nav-key', key);
+          await expect(links.nth(index)).toHaveAccessibleName(m[`nav.${key}`]);
+          await expect(links.nth(index)).toHaveAttribute(
+            'href',
+            `?role=${role}#${key}`,
+          );
+        }
+        await expect(links.first()).toHaveAttribute('aria-current', 'page');
+
+        for (const width of [1024, 1280, 1440]) {
+          await page.setViewportSize({ width, height: 900 });
+          const main = page.locator('main');
+          const mainBox = await main.boundingBox();
+          if (!mainBox) throw new Error('Expected visible main content');
+          expect(mainBox.x).toBe(0);
+          expect(mainBox.width).toBe(width);
+
+          if (width === 1024) {
+            await expect(rail).toBeHidden();
+            await expect(page.getByTestId('bottom-bar')).toBeVisible();
+            continue;
+          }
+
+          await expect(rail).toBeVisible();
+          await expect(page.getByTestId('bottom-bar')).toBeHidden();
+          const box = await rail.boundingBox();
+          if (!box) throw new Error('Expected visible desktop dock');
+          expect(box.height).toBeLessThan(900 / 2);
+
+          const laneStart = (width - 1024) / 2;
+          const laneEnd = laneStart + 1024;
+          if (locale === 'ar') expect(box.x).toBeGreaterThanOrEqual(laneEnd);
+          else expect(box.x + box.width).toBeLessThanOrEqual(laneStart);
+        }
       }
-      await expect(links.first()).toHaveAttribute('aria-current', 'page');
-      const box = await rail.boundingBox();
-      const viewport = page.viewportSize();
-      if (!box || !viewport)
-        throw new Error('Expected visible rail and viewport');
-      if (locale === 'ar')
-        expect(box.x).toBeGreaterThanOrEqual(viewport.width / 2);
-      else expect(box.x + box.width).toBeLessThanOrEqual(viewport.width / 2);
-      const padding = await page
-        .locator('main')
-        .evaluate((element) =>
-          parseFloat(getComputedStyle(element).paddingInlineStart),
-        );
-      expect(padding).toBe(box.width);
-      await expect(rail.getByTestId('tooltip-home')).toBeHidden();
-      await page.keyboard.press('Tab');
-      await expect(links.first()).toBeFocused();
-      await expect(rail.getByTestId('tooltip-home')).toBeVisible();
-      await expect(rail.getByTestId('tooltip-home')).toHaveText(m['nav.home']);
-      await expect(rail.getByTestId('tooltip-home')).toHaveAttribute(
-        'aria-hidden',
-        'true',
+
+      await page.setViewportSize({ width: 1280, height: 720 });
+      const dockBox = await page.getByTestId('nav-rail').boundingBox();
+      if (!dockBox) throw new Error('Expected visible dock at 1280×720');
+      expect(dockBox.y).toBeGreaterThanOrEqual(0);
+      expect(dockBox.y + dockBox.height).toBeLessThanOrEqual(720);
+    });
+
+    test('desktop keyboard tooltip is described and does not move the dock', async ({
+      browser,
+    }, testInfo) => {
+      test.skip(
+        testInfo.project.name !== 'chromium',
+        'Desktop tooltip assertions use chromium.',
       );
-      await page.keyboard.press('Tab');
-      await expect(rail.getByTestId('tooltip-clients')).toBeVisible();
+      const context = await browser.newContext({
+        javaScriptEnabled: true,
+        viewport: { width: 1280, height: 900 },
+      });
+      try {
+        await context.addCookies([
+          { name: LOCALE_COOKIE, value: locale, url: origin },
+          { name: THEME_COOKIE, value: 'light', url: origin },
+        ]);
+        const page = await context.newPage();
+        const response = await page.goto(
+          new URL('/showcase/shell?role=trainer', origin).toString(),
+        );
+        expect(response?.status()).toBe(200);
+        const rail = page.getByTestId('nav-rail');
+        const home = rail.getByRole('link', { name: m['nav.home'] });
+        const tooltip = page.getByTestId('tooltip-home');
+        await expect(tooltip).toBeHidden();
+        const before = await rail.boundingBox();
+        if (!before) throw new Error('Expected visible desktop dock');
+
+        await page.keyboard.press('Tab');
+        await expect(home).toBeFocused();
+        await expect(tooltip).toBeVisible();
+        await expect(tooltip).toHaveText(m['nav.home']);
+        await expect(tooltip).toHaveAttribute('aria-hidden', 'false');
+        const tooltipId = await tooltip.getAttribute('id');
+        expect(tooltipId).toBeTruthy();
+        await expect(home).not.toHaveAttribute('aria-describedby');
+
+        const after = await rail.boundingBox();
+        const tooltipBox = await tooltip.boundingBox();
+        if (!after || !tooltipBox)
+          throw new Error('Expected focused tooltip and unchanged dock');
+        expect(after).toEqual(before);
+        if (locale === 'ar')
+          expect(tooltipBox.x + tooltipBox.width).toBeLessThanOrEqual(after.x);
+        else expect(tooltipBox.x).toBeGreaterThanOrEqual(after.x + after.width);
+      } finally {
+        await context.close();
+      }
+    });
+
+    test('Arabic RTL portal tooltip stays content-sized beside its trigger in both themes', async ({
+      browser,
+    }, testInfo) => {
+      test.skip(
+        testInfo.project.name !== 'chromium',
+        'Desktop portal tooltip geometry uses Chromium.',
+      );
+      test.skip(locale !== 'ar', 'RTL geometry applies to Arabic.');
+
+      const context = await browser.newContext({
+        javaScriptEnabled: true,
+        viewport: { width: 1280, height: 800 },
+      });
+      try {
+        await context.addCookies([
+          { name: LOCALE_COOKIE, value: 'ar', url: origin },
+        ]);
+        const page = await context.newPage();
+        for (const colorScheme of ['light', 'dark'] as const) {
+          await context.addCookies([
+            { name: THEME_COOKIE, value: colorScheme, url: origin },
+          ]);
+          await page.emulateMedia({ colorScheme });
+          await page.goto(
+            new URL('/showcase/shell?role=trainer', origin).toString(),
+          );
+
+          const rail = page.getByTestId('nav-rail');
+          const link = rail.getByRole('link', { name: m['nav.home'] });
+          const tooltip = page.getByTestId('tooltip-home');
+          const checkGeometry = async () => {
+            await expect(tooltip).toHaveAttribute('data-visible', 'true');
+            await expectTooltipBesideTrigger(tooltip, link, 'rtl');
+            const [triggerBox, tooltipBox, measurement] = await Promise.all([
+              link.boundingBox(),
+              tooltip.boundingBox(),
+              tooltip.evaluate((element) => {
+                const style = getComputedStyle(element);
+                const range = document.createRange();
+                range.selectNodeContents(element);
+                return {
+                  textWidth: range.getBoundingClientRect().width,
+                  horizontalPadding:
+                    Number.parseFloat(style.paddingLeft) +
+                    Number.parseFloat(style.paddingRight),
+                };
+              }),
+            ]);
+            if (!triggerBox || !tooltipBox)
+              throw new Error('Expected visible trigger and tooltip');
+            expect(tooltipBox.width).toBeLessThanOrEqual(
+              measurement.textWidth + measurement.horizontalPadding + 4,
+            );
+            expect(tooltipBox.x + tooltipBox.width).toBeLessThanOrEqual(
+              triggerBox.x + 1,
+            );
+            expect(tooltipBox.x).toBeGreaterThan(0);
+          };
+
+          await link.hover();
+          await checkGeometry();
+          await page.mouse.move(0, 0);
+          await page.keyboard.press('Tab');
+          await expect(link).toBeFocused();
+          await checkGeometry();
+        }
+      } finally {
+        await context.close();
+      }
     });
 
     for (const role of ['trainer', 'client'] as const) {
@@ -94,7 +284,7 @@ for (const locale of ['ar', 'en'] as const) {
         await expect(page.getByTestId('nav-rail')).toBeHidden();
         await expect(page.getByRole('navigation')).toHaveCount(1);
         await expect(bottom).toHaveAccessibleName(m['nav.label']);
-        const keys = role === 'trainer' ? trainerKeys : clientKeys;
+        const keys = role === 'trainer' ? trainerMobileKeys : clientMobileKeys;
         const labels = bottom.getByTestId('bottom-label');
         await expect(labels).toHaveText(keys.map((key) => m[`nav.${key}`]));
         const links = bottom.getByRole('link');
@@ -112,6 +302,10 @@ for (const locale of ['ar', 'en'] as const) {
         await expect(links.first()).toHaveAttribute('aria-current', 'page');
         const bottomBox = await bottom.boundingBox();
         if (!bottomBox) throw new Error('Expected visible bottom bar');
+        const viewport = page.viewportSize();
+        if (!viewport) throw new Error('Expected mobile viewport');
+        expect(bottomBox.x).toBeGreaterThan(0);
+        expect(bottomBox.y + bottomBox.height).toBeLessThan(viewport.height);
         const padding = await page
           .locator('main')
           .evaluate((element) =>

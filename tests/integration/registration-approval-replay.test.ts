@@ -20,6 +20,7 @@ import {
   waitForLock,
   sqlCall,
   type Context,
+  type Request as OperationRequest,
   type Result,
 } from './registration-approval-operations-fixture';
 const db = sql();
@@ -124,23 +125,32 @@ it('T020 subscription lock blocks cross-obligation operations', async () => {
   }
 });
 it.each(['role', 'membership'] as const)(
-  'T020 collection replay denies revocation after target wait: %s',
+  'T020 replay denies authorization revocation after target wait: %s',
   async (mode) => {
-    const actor = await approver(f),
+    const actor = mode === 'role' ? f.po : await approver(f),
       p = await bought(f);
-    const reversal = await pay(
-      f.po.client,
-      'correct',
-      paymentRequest(f, p, 'correct'),
-    );
-    expect(reversal.status).toBe('ok');
-    const input = paymentRequest(f, p, 'collect', {
-      obligation_id: p.rows[0]!.id,
-      expected_installment_seq: 1,
-      expected_revision: 2,
-      expected_previous_event_id: reversal.receipt!.event_id,
-    });
-    expect((await pay(actor.client, 'collect', input)).status).toBe('ok');
+    const kind = mode === 'role' ? 'correct' : 'collect';
+    let input: OperationRequest;
+    if (mode === 'role') {
+      input = paymentRequest(f, p, 'correct');
+      const first = await pay(actor.client, 'correct', input);
+      expect(first.status).toBe('ok');
+      expect(await pay(actor.client, 'correct', input)).toEqual(first);
+    } else {
+      const reversal = await pay(
+        f.po.client,
+        'correct',
+        paymentRequest(f, p, 'correct'),
+      );
+      expect(reversal.status).toBe('ok');
+      input = paymentRequest(f, p, 'collect', {
+        obligation_id: p.rows[0]!.id,
+        expected_installment_seq: 1,
+        expected_revision: 2,
+        expected_previous_event_id: reversal.receipt!.event_id,
+      });
+      expect((await pay(actor.client, 'collect', input)).status).toBe('ok');
+    }
     const label = 'u4-revoke-' + randomUUID(),
       pending = worker(label),
       blocker = sql();
@@ -149,7 +159,7 @@ it.each(['role', 'membership'] as const)(
       await blocker.begin(async (tx) => {
         await tx`select id from public.clients where id=${p.t.id} for update`;
         flight = pending.begin((tx) =>
-          sqlPay(tx, actor.userId, 'collect', input),
+          sqlPay(tx, actor.userId, kind, input),
         ) as unknown as Promise<Result>;
         void flight.catch(() => undefined);
         expect(await waitForLock(db, label)).toBe(true);
@@ -161,6 +171,8 @@ it.each(['role', 'membership'] as const)(
       expect(await flight).toEqual({ status: 'not_permitted' });
     } finally {
       if (flight) await flight.catch(() => undefined);
+      if (mode === 'role')
+        await db`update public.staff_profiles set role='platform_owner' where user_id=${actor.userId}`;
       await pending.end();
       await blocker.end();
     }

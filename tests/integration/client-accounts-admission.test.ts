@@ -1,4 +1,3 @@
-import { localSupabaseContainer } from './local-docker';
 import { createHash, randomBytes, randomUUID } from 'node:crypto';
 import {
   proof,
@@ -9,6 +8,7 @@ import {
 } from './client-accounts-admission-fixture';
 import { anonClient } from './harness';
 import { spawnSync } from 'node:child_process';
+import { localSupabaseContainer } from '../../scripts/local-stack.mjs';
 
 it('admission uses only its single limits owner and unresolved limits roll back every write', async () => {
   const a = await signupFixture(f),

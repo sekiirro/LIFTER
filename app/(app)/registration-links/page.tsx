@@ -14,7 +14,9 @@ import styles from '../../../components/registration-links/registration-links.mo
 export default async function RegistrationLinksPage({
   searchParams,
 }: {
-  searchParams: Promise<{ workspace?: string | string[] }>;
+  searchParams: Promise<{
+    workspace?: string | string[];
+  }>;
 }) {
   const actor = await requireActor();
   if (!actor.role) notFound();

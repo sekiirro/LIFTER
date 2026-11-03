@@ -1,31 +1,43 @@
 .shell {
-  --rail-width: calc(var(--space-10) + var(--space-6));
-  --bottom-bar-size: calc(var(--touch-min) + var(--space-8));
+  --rail-width: calc(var(--touch-min) + var(--space-4) + 2px);
+  --bottom-bar-size: calc(var(--touch-min) + var(--space-4));
+  min-block-size: 100dvb;
+  background: var(--color-shell-gradient);
 }
 .content {
   min-block-size: var(--shell-min-block-size, 100dvb);
   padding-block-end: calc(
-    var(--bottom-bar-size) + env(safe-area-inset-bottom, 0px)
+    var(--bottom-bar-size) + env(safe-area-inset-bottom, 0px) + var(--space-8)
   );
 }
 .rail {
   display: none;
   position: fixed;
-  inset-inline-start: 0;
-  inset-block: 0;
-  inline-size: var(--rail-width);
+  inset-inline-start: max(
+    var(--space-4),
+    calc((100vw - min(100vw, 64rem)) / 2 - var(--rail-width) - var(--space-4))
+  );
+  inset-block-start: 50%;
+  inline-size: max-content;
+  max-block-size: calc(100dvb - 2 * var(--space-8));
   z-index: 5;
+  transform: translateY(-50%);
 }
 .bottom {
   display: flex;
   position: fixed;
-  inset-inline: 0;
-  inset-block-end: 0;
-  block-size: calc(var(--bottom-bar-size) + env(safe-area-inset-bottom, 0px));
+  inset-inline: var(--space-4);
+  inset-block-end: calc(env(safe-area-inset-bottom, 0px) + var(--space-4));
+  inline-size: auto;
+  max-inline-size: 34rem;
+  margin-block: 0;
+  margin-inline: auto;
   z-index: 5;
 }
 /* ND-3 provisional */
-@media (min-width: 48rem) {
+/* Keep the horizontal dock through 74.99rem. The fixed vertical dock needs
+   enough outside gutter to clear the unchanged 64rem content column. */
+@media (min-width: 75rem) {
   .rail {
     display: flex;
   }
@@ -33,7 +45,7 @@
     display: none;
   }
   .content {
-    padding-inline-start: var(--rail-width);
+    padding-inline-start: 0;
     padding-block-end: 0;
   }
 }
@@ -45,5 +57,17 @@
   .content {
     min-block-size: 0;
     padding: 0;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .shell {
+    background: var(--color-bg);
+  }
+}
+
+@media (forced-colors: active) {
+  .shell {
+    background: Canvas;
   }
 }
