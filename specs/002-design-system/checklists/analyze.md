@@ -1,8 +1,8 @@
 # Specification Analysis Report: Design System Foundation
 
-**Date:** 2026-11-03  
-**Analysed commit:** `a9b37cc744cd29ef4ae0fb49f8ef69c9c2bc10e3` (the PASS verdict and 38/38 coverage apply only to this revision; later commits, including `1711b4df25d7d6e5b1463859311c05a62f2cf3a1`, are not covered)
-**Scope:** Existing Design System artifacts plus the PR #28 Glisse delta only.  
+**Date:** 2026-11-04
+**Analysed commit:** `0366a8b7aa942d8288dd74e30d3b90b14735f572` (S30-PO-8 Q16 requirements and plan/tasks are included; static analysis only)
+**Scope:** Existing Design System artifacts, PR #28 Glass delta, and S30-PO-8 Q16 desktop sidebar correction.
 **Method:** Static inspection; no tests or runtime commands were executed. The `speckit-analyze` prerequisite check passed with `SPECIFY_FEATURE_DIRECTORY=specs/002-design-system`; no extension hooks are configured.
 
 ## Findings
@@ -36,14 +36,14 @@
 | FR-018 | Yes | T027, T030, T031, T032 | Loading/empty/error states |
 | FR-019 | Yes | T028, T029, T030, T031, T032 | Toast/alert behavior |
 | FR-020 | Yes | T006, T011, T023, T027, T032 | Motion/reduced motion |
-| FR-021 | Yes | T034, T036 | Responsive navigation |
+| FR-021 | Yes | T034, T036, T047, T048 | Q16 desktop sidebar and responsive navigation |
 | FR-022 | Yes | T033, T034, T036 | Role navigation |
 | FR-023 | Yes | T001, T002, T014, T018, T021, T030, T035, T040 | Showcase and gate |
 | FR-024 | Yes | T037, T038, T039 | Print sample/report |
 | FR-025 | Yes | T041 | Governance/docs; test not applicable |
 | FR-026 | Yes | T040 and plan NEEDS DECISION table | Open items retained |
-| FR-027 | Yes | T043, T044, T045 | PR #28 floating surfaces |
-| FR-028 | Yes | T043, T046 | Capability/preferences and fallback behavior |
+| FR-027 | Yes | T043-T045, T047 | Q16 desktop sidebar and approved floating surfaces |
+| FR-028 | Yes | T043, T046, T048 | Capability/preferences, fallback, and Q16 sidebar review |
 | FR-029 | Yes | T045 | Popover keyboard behavior |
 | SC-001 | Yes | T007 | Contrast matrix |
 | SC-002 | Yes | T031 | Four-mode axe matrix |
@@ -53,19 +53,22 @@
 | SC-006 | Yes | T038, T039 | Print spike report |
 | SC-007 | Yes | T003, T042 | Build-size gate; execution not re-verified |
 | SC-008 | Yes | T046 | PO threshold; source report absent |
-| SC-009 | Yes | T043, T045 | Fallback and focus assertions |
+| SC-009 | Yes | T043, T045, T048 | Fallback and focus assertions; T048 remains unchecked |
+| SC-010 | Yes | T047, T048 | Q16 sidebar properties; tasks remain unchecked pending later implementation/review |
 
 ## Metrics
 
-- Requirements: 29 FRs + 9 SCs = 38
-- Tasks: 46
-- Requirement/task coverage: 38/38 (100%)
+- Requirements: 29 FRs + 10 SCs = 39
+- Tasks: 48
+- Requirement/task coverage: 39/39 (100%)
 - Unmapped tasks: 0
-- Open ambiguities in PR #28 scope: 0 (explicitly recorded in `spec.md`)
+- Open ambiguities in PR #28 and Q16 scope: 0; logical side follows existing inline-start implementation and document direction
 - Duplication findings: 0
 - CRITICAL: 0; HIGH: 0; MEDIUM: 2; LOW: 0
-- Verdict: **PASS WITH MEDIUM EVIDENCE GAPS**. The mandatory entry gate is satisfied: no open CRITICAL/HIGH findings. T046 remains open; no new implementation is authorized by this analysis.
+- Verdict: **PASS WITH MEDIUM EVIDENCE GAPS**. The mandatory entry gate is satisfied: no open CRITICAL/HIGH findings. T046 remains open; no implementation is performed or authorized by this documentation analysis. T047-T048 remain unchecked pending the later implementation/review lane.
 
 ## History
+
+- 2026-11-04: Refreshed after Q16 spec/plan/tasks commit `0366a8b7aa942d8288dd74e30d3b90b14735f572`; 0 CRITICAL/HIGH findings. Static inspection only.
 
 - 2026-11-03: Initial S30 reconciliation of PR #28 scope at `e69688a`; refreshed source quotations and citations against `a9b37cc` with no new findings.
