@@ -384,6 +384,14 @@ describe('production registration hero card theme contract', () => {
     );
   });
 
+  it('keeps the form control text on the resolved theme token', () => {
+    expect(heroStylesSource).toContain(
+      '--hero-form-control-text: var(--color-text)',
+    );
+    expect(heroStylesSource).not.toContain('--hero-adaptive-dimming');
+    expect(heroStylesSource).not.toContain('opaqueBrightCard');
+  });
+
   it('leaves the hero card background and blur to the Glisse surface', () => {
     const baseCard = heroStylesSource.match(
       /\.glassCard\.glassCard\s*\{(?<body>[^}]*)\}/,
