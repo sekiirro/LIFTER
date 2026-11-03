@@ -28,9 +28,9 @@ Mutation checks used temporary assertion edits. Each mutant failed on the named 
 
 All screenshot files are in `%TEMP%\lifter-s26-f16-ui-3\` using `{locale}-{theme}-{viewport}-{brand}-{flow}.png`. The `flow` values are `list-search`, `exercise-edit-po`, `exercise-edit-trainer`, `food-add-edit`, `duplicate-exact`, `duplicate-near-confirmation`, and `variation`. The matrix was visually reviewed against `DESIGN.md` §12. No clipping, horizontal overflow, theme mismatch, or RTL/LTR direction defect was found in the rendered catalog components. The preview controls are excluded from captures; screenshots target the actual catalog component.
 
-### Surface gaps
+### Surface gaps (T033 snapshot; not the current route inventory)
 
-- No catalog detail route or detail component exists in this worktree. The test covers the list and all existing editor/review/variation surfaces and does not add a detail screen.
+- At the T033 review, this worktree had no catalog detail route or detail component. T038 later added the production exercise detail route under `app/(app)/exercise-library/[exerciseId]/`. Consult `tasks.md` for current implementation status. The T033 test covered the list and the then-existing editor/review/variation surfaces; it did not cover a detail screen.
 - Food add and edit reuse `FoodEditor`; the showcase presents the editor fixture and does not provide a separate production edit route.
 - The food showcase does not wire a save callback. Browser coverage therefore verifies editing and validation affordances without claiming persistence. Production mutation wiring is tested through the server actions and unit fixtures.
 - Food drafts with alternatives remain blocked at save until atomic alternatives persistence lands in PR #34. This known DB-lane dependency is unchanged.
