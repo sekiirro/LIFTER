@@ -11,7 +11,7 @@
 - [x] CHK002 Success criteria use measurable outcomes or explicitly defined thresholds.
 - [x] CHK003 User stories include Given/When/Then acceptance scenarios.
 - [x] CHK004 PO-approved decisions cite their decision source.
-- [ ] CHK005 Every requirement maps to task IDs explicitly in `tasks.md`.
+- [x] CHK005 Every requirement maps to task IDs explicitly in `tasks.md`.
 - [ ] CHK006 Each success criterion has current evidence for every stated measure.
 
 ## Scope and consistency
@@ -20,7 +20,7 @@
 - [x] CHK008 Workspace isolation, permissions and privacy requirements are explicit.
 - [x] CHK009 Versioning and non-retroactive behavior are explicit.
 - [x] CHK010 Required supporting plan, research, data model and contracts are present.
-- [ ] CHK011 Spec Kit feature metadata and analysis prerequisites are present and usable.
+- [x] CHK011 Spec Kit feature metadata and analysis prerequisites are present and usable in this worktree.
 - [x] CHK012 No unresolved F16 product decision is represented as settled by inference.
 
 ## Verification quality
@@ -32,6 +32,7 @@
 
 ## Notes
 
-- The task-to-FR mapping is inferred from task descriptions; FR tags are missing and supplied as a proposed diff.
+- Explicit task-to-FR tags were committed in `a7571707b02ccf9418ff293ebe30f6de98abe16d`.
+- `.specify/feature.json` is the machine-local Spec Kit pointer and remains ignored by the repository as intended.
 - Static review only; this lane did not execute tests. Existing checked tasks contain prior evidence references.
 - Do not interpret checklist markers as implementation completion.

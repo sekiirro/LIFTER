@@ -1,9 +1,9 @@
 # F16 Traceability
 
-**Analysed commit:** `f903683e659d9a0aa5d62b98f0917b8744a4d4f1`  
+**Analysed commit:** `a7571707b02ccf9418ff293ebe30f6de98abe16d`
 **Method:** Static inspection of source, test files and checked-in evidence only. No suite was run.
 
-Status is scoped to the checked-in implementation/test evidence at the analysed commit. Test names below are concrete assertions found in source; historical execution evidence is cited where available in `tasks.md`, `benchmark-s25.md`, `release-gate-s25.md`, `ui-handoff.md`, or `S27-library-evidence.md`.
+Status is scoped to the checked-in implementation/test evidence at the analysed commit. Test names below are concrete assertions found in source; historical execution evidence is cited where available in `tasks.md`, `benchmark-s25.md`, `release-gate-s25.md`, `ui-handoff.md`, or `S27-library-evidence.md`. Task FR tags were added in commit `a7571707b02ccf9418ff293ebe30f6de98abe16d`.
 
 | Requirement | Task(s) | Test(s) | Evidence | Status |
 |---|---|---|---|---|
