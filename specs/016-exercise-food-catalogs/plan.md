@@ -46,6 +46,8 @@ Mutation ordering is canonical across F16 writers: authorize action and explicit
 
 Routes under `app/(dashboard)/catalog/{exercises,foods}`: list + search + filters, detail with version history, add/edit forms (edit = new version), Remove and Restore where authorized, merge dialog (PO), variation editor (workspace). Remove is a non-destructive soft deletion. Shared Zod schemas in `lib/catalog/` reused by F17/F18. Frontend Design Gate applies; any design gap -> PO.
 
+S30-PO-9 exercise UI: lifecycle actions are removed from Exercise Add/Edit; Merge and Restore controls are absent from the exercise UI; Remove is offered only from Exercise Detail after explicit confirmation. Reuse existing bilingual keys `catalog.editorRemove` (action/confirmation title), `dialog.confirm` and `dialog.cancel` (confirmation controls), and `catalog.editorLifecycleRemoved` (result state); do not add copy. Do not change existing backend RPCs/migrations or mutate exercise data/history. `catalog_remove_workspace_exercise` is documented as not implemented (`contracts/catalog-api.md`); workspace-staff removal therefore remains blocked pending PO direction on the backend constraint.
+
 ### Snapshot contract (consumed by F17/F18)
 
 `lib/catalog/snapshot.ts` exports `ExerciseSnapshotV1`/`FoodSnapshotV1` and builders that take explicit versions only (FR-020), retaining canonical exercise identity only; selected workspace videos are resolved dynamically, not stored in plan-version snapshots. Frozen fixture contract tests; F17/F18 consume the same fixtures.

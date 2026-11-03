@@ -55,6 +55,7 @@ Corrections never rewrite history: an edit creates a new version, Remove hides a
 1. **Given** an authorized actor per the approved edit/merge matrix, **When** they merge food X into food Y, **Then** X is marked superseded by Y (no delete), new selection of X is redirected to Y, and an audit event records both identities.
 2. **Given** a removed or superseded entry, **When** a planner loads an existing draft containing it, **Then** the draft shows a non-blocking "removed/replaced" indicator and the stored values remain intact.
 3. **Given** a PO restores a removed global entry or authorized workspace staff restore a removed workspace exercise, **When** Restore succeeds, **Then** the same identity and current immutable version become selectable with one lifecycle/audit record; prior plan references and snapshots remain unchanged. **Given** X was merged into Y and Y is merged into Z, **Then** X is atomically redirected to Z; a later request targeting X resolves to active terminal Z, with no chain and no plan-reference rewrite.
+4. **Given** an authorized actor viewing an exercise detail, **When** they choose Remove, **Then** removal requires explicit confirmation before the existing authorized lifecycle operation is invoked; cancel leaves the exercise unchanged. Add/Edit has no lifecycle controls, and the exercise UI offers no Merge or Restore controls. Existing backend behavior and historical references remain unchanged.
 
 **Core removal rule**: Removing from the Catalog must never mean removing from clients' existing plans.
 
@@ -129,6 +130,11 @@ Staff browse, search (Arabic and English, with Arabic normalization), filter and
 ## Approved PO decisions
 
 D16-1a/b/c and D16-2 through D16-10 are approved and recorded in docs/04-changes-and-questions.md, S20-03 through S20-13. No D16 item remains open. The PO dataset is a future input; audit it and obtain import approval when supplied. Do not invent food values or exercise content.
+
+S30-PO-9 (verbatim, `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md`, S30-Q17):
+> Move the Remove action to the Exercise Detail page. Remove Merge and Restore from the UI entirely. Keep Add/Edit focused on exercise content. Preserve existing Remove permissions and require confirmation before removal. Do not delete backend data or alter historical references without separate approval. Update the specs and implementation through the normal review gates. No PR merges without my exact-SHA approval.
+
+For the exercise UI, Add/Edit contains no lifecycle controls; the only lifecycle action offered is Remove on Exercise Detail, after confirmation. Merge and Restore controls are absent from the exercise UI. Existing backend RPCs, migrations, exercise data, plan references, snapshots, and history are unchanged by this UI decision.
 
 ## Assumptions
 

@@ -63,3 +63,17 @@ Static analysis only; no test suite was run. Test source and prior evidence docu
 #### Round 1 — analysed `f903683e659d9a0aa5d62b98f0917b8744a4d4f1` on 2026-11-03
 
 Verdict: FAIL. Findings then: A1 HIGH (`.specify/feature.json` missing), A2 HIGH (tasks T001–T040 lacked FR tags), A3 MEDIUM (SC-003 timing), A4 MEDIUM (SC-005 production measures), A5 MEDIUM (no tests run by this static lane), A6 LOW (`checklists/requirements.md` missing). 25 traceability items were VERIFIED; SC-003 and SC-005 were PARTIAL; none were NOT-FOUND or DEFERRED. Repairs since that round: added task FR tags; created the local Spec Kit feature pointer in the format emitted by `Save-FeatureJson`; added the requirements checklist. The task-tag change was committed as `a7571707b02ccf9418ff293ebe30f6de98abe16d`.
+
+## S30-PO-9 amendment analysis
+
+**Date:** 2026-11-03
+**Scope:** Spec/plan/task amendment for PO-approved exercise UI governance placement.
+**Authority:** S30-PO-9 verbatim in `spec.md` and `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md` (S30-Q17).
+**Clarifications:** No open PO ambiguity remains about exercise Add/Edit, Remove placement, confirmation, Merge/Restore visibility, permission matrix, or historical preservation. Existing approved keys are available for action, confirm/cancel and result: `catalog.editorRemove`, `dialog.confirm`, `dialog.cancel`, `catalog.editorLifecycleRemoved`; no new copy is needed.
+**Traceability:** S30-PO-9 UI requirements are captured in the User Story 4 acceptance scenario, the S30-PO-9 plan subsection, and new FR-tagged task T041.
+
+| Finding | Severity | Evidence | Disposition |
+|---|---|---|---|
+| Workspace exercise Remove cannot be wired to an existing authorized backend operation without expanding backend scope. `contracts/catalog-api.md` says `catalog_remove_workspace_exercise` / `catalog_restore_workspace_exercise` are not implemented; `lib/catalog/server.ts` exposes `transitionExercise` with PO-only authorization. | MEDIUM | `specs/016-exercise-food-catalogs/contracts/catalog-api.md`; `lib/catalog/server.ts`; S30-PO-9 separately prohibits backend RPC/migration changes for this task. | PO-DECISION-NEEDED recorded in lib12 report. T041 remains unchecked until its full role matrix and mutation are verified. No backend guess encoded. |
+
+**Verdict:** PASS WITH MEDIUM blocker. 0 open CRITICAL, 0 open HIGH. Spec Kit entry criteria remain met; implementation is limited to independently supported UI behavior pending PO direction on workspace backend scope.
