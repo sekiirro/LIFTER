@@ -34,3 +34,8 @@ FR-to-task mapping is 8/8 (100%). Task-to-FR mapping is explicit after this repa
 ## History
 
 - First SK-A merged-feature analysis on `origin/main` `ed88574`; no earlier Analyze history existed.
+
+## Review refresh ? 2026-11-03
+
+- Replaced corrupted question-mark delimiters in the clarification and verdict. The FR tags are retained because the SK-A common repair method explicitly requires tasks to be tagged with their FR IDs; no task descriptions or checkboxes were changed in this documentation repair.
+- Refreshed after static review of the seven follow-up CodeRabbit findings.

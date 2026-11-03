@@ -30,4 +30,4 @@
 ## Phase 4: Docs and review
 
 - [x] T007 [FR-007, FR-008] README "Background jobs": enqueue from SQL, the deterministic key convention `<kind>:<workspace>:<entity>:<period>`, the no-PII payload rule, adding a handler, `build:cron`, and the deploy-time secret (`SUPABASE_URL`, `SUPABASE_SERVICE_ROLE_KEY` via `wrangler secret`, PO approval required).
-- [x] T008 [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008] (Claude) Local Docker integration run, a negative check (remove `skip locked` in a temp migration → (b) must fail, or the lease guard → (e) must fail), and green CI.
+- [ ] T008 (FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007, FR-008) (Claude) Local Docker integration run, a negative check (remove `skip locked` in a temp migration → (b) must fail, or the lease guard → (e) must fail), and green CI.

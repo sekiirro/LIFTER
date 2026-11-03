@@ -19,5 +19,7 @@ Analyzed source commit: `ed88574ae09c722b1f6ded4fc0b66122bbeb4f13`. Tests and so
 
 ## Static verification notes
 
+An em dash (`?`) in Gap means no additional gap beyond the stated VERIFIED status.
+
 - Test paths and exact names above were checked in the `ed88574` source tree; no suite was run.
 - No deferred status is used because the plan's future alerting scope is not an FR/SC requirement of this feature.
