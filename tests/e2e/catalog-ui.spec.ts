@@ -6,7 +6,7 @@ import { join } from 'node:path';
 import { ar } from '../../lib/i18n/messages/ar';
 import { en } from '../../lib/i18n/messages/en';
 
-const screenshotDir = join(tmpdir(), 'lifter-s26-f16-ui-3');
+const screenshotDir = join(tmpdir(), 'lifter-s28-f16-lib4');
 const testBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 mkdirSync(screenshotDir, { recursive: true });
 

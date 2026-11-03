@@ -8,7 +8,7 @@ import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3437';
-const screenshotDir = join(tmpdir(), 'lifter-s28-f16-lib3');
+const screenshotDir = join(tmpdir(), 'lifter-s28-f16-lib4');
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
