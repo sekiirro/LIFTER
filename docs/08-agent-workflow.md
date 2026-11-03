@@ -26,7 +26,9 @@ applies to every unit that changes rendered UI.
 Route according to task complexity, security risk, model capability, and quota (S22-PO-9 rule 5).
 
 - **Current allocation:** Four Luna Medium slots, one MiniMax at highest effort, and Big Pickle, Beam, and Flint through OpenCode; Kilo Code's two best available free models are the fallback when OpenCode free quotas are exhausted (S22-PO-9 rule 2; S25-PO-4 raised Luna capacity to three, and S25-PO-9 superseded that cap with a fourth slot).
-- **Retained tier rules:** The D-27 sequence GLM 5.3 Flash -> Luna -> Sol Medium remains subject to current allocations. S13 session 14 reserves Sol Medium for exceptionally difficult tasks or when GLM and Luna fail; S13 requires explicit PO approval before Sol use. Sol High and xhigh remain prohibited, and the architect stops to request PO direction if no permitted tier is available (D-27).
+- **Retained tier rules:** The D-27 sequence GLM 5.3 Flash -> Luna -> Sol Medium governs ordinary task routing. S13 session 14 reserves Sol Medium for exceptionally difficult tasks or when GLM and Luna fail and requires explicit PO approval before every Sol invocation. For the mandatory independent feature-critic role, the PO ruled (S30-PO-8 Q15, verbatim):
+  > Q15: Keep Sol Medium as the mandatory independent feature critic. Preserve the existing S13 rule requiring my explicit approval for each Sol invocation. Do not substitute Luna or other models, and do not skip critiques.
+  Q15 establishes this specific feature-critic use while preserving S13's per-invocation approval. Obtain approval before invoking Sol. Sol High and xhigh remain prohibited (D-27). Without approval, do not substitute another model or skip the critique; hold feature acceptance until the approved critique is complete. If no permitted tier is available for ordinary routing, stop and request PO direction; do not substitute a model (D-27).
 - **Performance records:** Keep one performance-log row per delegation, including model, effort, task class, outcome, review notes, and cost (D-27).
 - **Free/third-party restrictions:** Free models receive no secrets, client data, or sensitive tasks (S13 PO Kilo guardrail); third-party/free models receive no secrets or .env values (S22-PO-9; S29-PO-3 Q3). Do not infer a separate sensitive-code category.
 - **High-risk work:** Security, Auth, RLS, SECURITY DEFINER, migrations, admission, Storage policies, and financial logic require independent architect review and executed mutation tests. Never expand sensitive permissions without PO approval (S29-PO-3 Q3).
@@ -35,7 +37,7 @@ Route according to task complexity, security risk, model capability, and quota (
 ## Mandatory Spec Debate
 
 1. The architect drafts the feature spec and architecture.
-2. An independent Sol Medium critique challenges the spec and architecture.
+2. An independent Sol Medium critique challenges the spec and architecture for every feature. Each invocation requires explicit PO approval under S13 session 14, as reaffirmed by S30-PO-8 Q15; do not substitute another model or skip a critique. If approval is absent, hold feature acceptance until the approved critique is complete.
 3. The architect responds once by default. Additional rounds are only for significant unresolved
    issues.
 4. The architect incorporates the critique and presents unresolved product/design decisions to the
