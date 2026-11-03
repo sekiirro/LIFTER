@@ -95,6 +95,8 @@ As a registration visitor with a valid F10 token, I see the latest published ide
 
 Hero product behavior covered by FR-026-FR-030 is settled by the cited S20, S21, S23, S27, S28 and S29 PO records. No open product ambiguities remain for this Hero scope. F15 Intake prefill remains an explicit dependency owned by F15; no new Intake behavior is specified here. Current-head implementation and test gaps are tracked in `checklists/analyze.md` and `traceability.md`; those gaps do not authorize behavior changes.
 
+The dense-form surface and tint values for T052 are settled by two further PO records. S30-PO-2 (verbatim answer: "1a Dense form + tint (Recommended)"; approved option text: "Dark-theme fields use --color-card; a ~75% card tint goes behind the form/CTA. The ring keeps the exact brand colour and passes for all 38 brands. Production renders the same as dev. The form area looks slightly darker in dark theme. Hero only; no token or DESIGN.md change.") and S30-PO-6 (verbatim answer: "90% (Recommended)"; approved option text: "Clear margin on both checks; the dark form panel looks noticeably more solid than 75%. Production 48/48 already measured."), which sets the dark-theme form tint to 90% of the existing `--color-card` token. S30-PO-6 supersedes only the tint strength named in S30-PO-2; it does not change the Hero-only scope, the exact-brand-ring rule, the theme rules in FR-027, or the recorded contrast thresholds. No further Hero ambiguity is open for this scope.
+
 ## Edge Cases
 
 - Two editors save against the same draft revision: only the compare-and-set winner updates it; the other receives stale-edit feedback.

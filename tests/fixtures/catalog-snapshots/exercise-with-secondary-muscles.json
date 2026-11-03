@@ -1,0 +1,22 @@
+{
+  "exerciseId": "ex-1",
+  "version": 3,
+  "names": {
+    "ar": "تمرين",
+    "en": "Exercise"
+  },
+  "primaryMuscle": "chest",
+  "secondaryMuscles": ["biceps", "triceps"],
+  "equipment": "barbell",
+  "defaults": {
+    "warmupSets": 1,
+    "workingSets": 3,
+    "reps": {
+      "kind": "range",
+      "min": 8,
+      "max": 12
+    },
+    "restSeconds": 90,
+    "rir": 2
+  }
+}

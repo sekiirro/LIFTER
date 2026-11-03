@@ -1,5 +1,7 @@
 import { afterAll, beforeAll, expect, it } from 'vitest';
-import { randomUUID } from 'node:crypto';
+import { createHash, randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import {
   bought,
   clientContext,
@@ -100,7 +102,7 @@ it('T023 authorizes PO only for a real workspace, owners by active membership, S
       client_id: p.t.id,
       subscription_id: p.sid,
     });
-    const allowed = ['po', 'woA', 'salesA'].includes(name);
+    const allowed = ['po', 'woA', 'salesA', 'trainerA'].includes(name);
     if (!allowed) expect(status.data).toEqual({ status: 'not_permitted' });
     else {
       expect(status.error).toBeNull();
@@ -140,6 +142,35 @@ it('T023 represents obligations without a collection event as unpaid', async () 
       result.data as { obligations: Array<{ paid: boolean | null }> }
     ).obligations.map((obligation) => obligation.paid),
   ).toEqual([true, false, false]);
+});
+
+it('Q1 keeps the installed subscription payment status body equal to the latest forward migration', async () => {
+  const migration = readFileSync(
+    join(
+      process.cwd(),
+      'supabase',
+      'migrations',
+      '20261103130000_f13_review_guards_projection.sql',
+    ),
+    'utf8',
+  );
+  const expectedBody = migration.match(
+    /create\s+or\s+replace\s+function\s+public\.subscription_payment_status\b[\s\S]*?as\s+\$\$([\s\S]*?)\$\$\s*;/i,
+  )?.[1];
+  const [installed] = await db`
+    select pg_catalog.pg_get_functiondef(
+      'public.subscription_payment_status(uuid,uuid,uuid)'::regprocedure
+    ) as definition`;
+  const installedBody = installed!.definition.match(
+    /as\s+\$function\$([\s\S]*?)\$function\$/i,
+  )?.[1];
+  const hash = (body: string | undefined) =>
+    createHash('sha256')
+      .update((body ?? '').replace(/\s+/g, ' ').trim())
+      .digest('hex');
+  expect(expectedBody).toBeDefined();
+  expect(installedBody).toBeDefined();
+  expect(hash(installedBody)).toBe(hash(expectedBody));
 });
 
 it('T023 all queue and review projections enforce their role gates and omit commission', async () => {

@@ -173,7 +173,7 @@ test('pending client status renders accessibly in the twelve-cell visual matrix'
   }
 });
 
-test('pending client and non-approver staff cannot enter approval or payment dashboards', async ({
+test('pending clients and non-approver staff cannot enter approvals, while trainers can record payments', async ({
   page,
   context,
 }) => {
@@ -189,7 +189,7 @@ test('pending client and non-approver staff cannot enter approval or payment das
     {
       label: 'trainer',
       client: fixture.context.actors.trainerA.client,
-      denied: ['/registration-approvals', '/payments'],
+      denied: ['/registration-approvals'],
     },
     {
       label: 'sales',
@@ -208,7 +208,7 @@ test('pending client and non-approver staff cannot enter approval or payment das
       await page.goto(route);
       await expect(page.getByText('404', { exact: true })).toBeVisible();
     }
-    if (target.label === 'sales') {
+    if (target.label === 'trainer' || target.label === 'sales') {
       await page.goto('/payments');
       await expect(
         page.getByRole('heading', {

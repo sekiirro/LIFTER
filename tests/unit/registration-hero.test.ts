@@ -31,6 +31,14 @@ const heroComponentSource = readFileSync(
   'components/branding/RegistrationHero.tsx',
   'utf8',
 );
+const glassSurfaceSource = readFileSync(
+  'components/ui/glass/GlassSurface.tsx',
+  'utf8',
+);
+const glassSurfaceStylesSource = readFileSync(
+  'components/ui/glass/GlassSurface.module.css',
+  'utf8',
+);
 
 describe('production registration hero layout', () => {
   it('selects split art layout for a desktop banner', () => {
@@ -361,15 +369,189 @@ describe('production registration hero card theme contract', () => {
     expect(darkestBackdropLuminance([])).toBe(1);
   });
 
-  it('sources the card, form and control colors from theme tokens', () => {
-    expect(heroStylesSource).toMatch(
-      /\.glassCard\.glassCard\s*\{[^}]*background:\s*var\(--color-card\)[^}]*color:\s*var\(--color-text\)/s,
+  it('renders the card through the theme-tinted Glisse surface', () => {
+    expect(heroComponentSource).toContain('<GlassSurface');
+    expect(heroComponentSource).toContain('variant="strong"');
+    expect(heroComponentSource).toContain('role="article"');
+    expect(heroComponentSource).not.toContain("from '../ui/Card'");
+    expect(heroComponentSource).not.toContain('liquid-glass.module.css');
+    expect(glassSurfaceSource).toContain("'data-glass-surface': ''");
+    expect(glassSurfaceStylesSource).toMatch(
+      /background-color:\s*color-mix\(\s*in srgb,\s*var\(--color-card\) 82%,\s*transparent\s*\)/,
     );
+    expect(glassSurfaceStylesSource).toMatch(
+      /--lg-glass:\s*color-mix\(\s*in srgb,\s*var\(--color-card\) 58%,\s*transparent\s*\)/,
+    );
+  });
+
+  it('keeps the form control text on the resolved theme token', () => {
     expect(heroStylesSource).toContain(
       '--hero-form-control-text: var(--color-text)',
     );
     expect(heroStylesSource).not.toContain('--hero-adaptive-dimming');
     expect(heroStylesSource).not.toContain('opaqueBrightCard');
+  });
+
+  it('leaves the hero card background and blur to the Glisse surface', () => {
+    const baseCard = heroStylesSource.match(
+      /\.glassCard\.glassCard\s*\{(?<body>[^}]*)\}/,
+    );
+    expect(baseCard).not.toBeNull();
+    expect(baseCard!.groups!.body).not.toMatch(/background/);
+    expect(baseCard!.groups!.body).not.toMatch(/backdrop-filter/);
+    expect(baseCard!.groups!.body).toMatch(/overflow:\s*hidden/);
+    expect(heroStylesSource).not.toContain('blur(4px)');
+    expect(heroStylesSource).not.toContain('blur(8px)');
+  });
+
+  it('keeps the print reset for the Glisse blur', () => {
+    const printCard = heroStylesSource.match(
+      /@media print[\s\S]*?\.stage \.glassCard\.glassCard \{(?<body>[^}]*)\}/,
+    );
+    expect(printCard?.groups?.body).toMatch(
+      /background:\s*var\(--color-card\)/,
+    );
+    expect(printCard?.groups?.body).toMatch(/backdrop-filter:\s*none/);
+    expect(printCard?.groups?.body).toMatch(/-webkit-backdrop-filter:\s*none/);
+  });
+
+  it('keeps the opaque token card for every reduced-capability fallback', () => {
+    expect(glassSurfaceStylesSource).toMatch(
+      /@media \(prefers-reduced-transparency: reduce\), \(prefers-contrast: more\)[\s\S]*?background:\s*var\(--color-card\)/,
+    );
+    expect(glassSurfaceStylesSource).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*?background:\s*var\(--color-card\)/,
+    );
+    expect(glassSurfaceStylesSource).toMatch(
+      /@media \(forced-colors: active\)[\s\S]*?background:\s*Canvas/,
+    );
+    expect(glassSurfaceStylesSource).toMatch(
+      /@media print[\s\S]*?background:\s*var\(--color-print-bg\)/,
+    );
+    expect(glassSurfaceStylesSource).toMatch(
+      /@supports not \(\s*\(backdrop-filter: blur\(1px\)\) or \(-webkit-backdrop-filter: blur\(1px\)\)\s*\)[\s\S]*?background:\s*var\(--color-card\)/,
+    );
+  });
+});
+
+describe('production registration hero dense dark form', () => {
+  const darkFieldRule = heroStylesSource.match(
+    /:global\(:where\(\[data-theme='dark'\]\)\) \.stage \.fieldControl,\s*:global\(:where\(\[data-theme='dark'\]\)\) \.stage \.countryPicker\s*\{(?<body>[^}]*)\}/,
+  );
+  const osDarkFieldRule = heroStylesSource.match(
+    /@media \(prefers-color-scheme: dark\)\s*\{\s*:global\(:where\(html:not\(\[data-theme='light'\]\)\)\) \.stage \.fieldControl,\s*:global\(:where\(html:not\(\[data-theme='light'\]\)\)\) \.stage \.countryPicker\s*\{(?<body>[^}]*)\}/,
+  );
+  const baseFieldRule = heroStylesSource.match(
+    /\.stage \.fieldControl,\s*\.stage \.countryPicker\s*\{(?<body>[^}]*)\}/,
+  );
+  const darkTintRule = heroStylesSource.match(
+    /:global\(:where\(\[data-theme='dark'\]\)\) \.stage \.formPlate\s*\{(?<body>[^}]*)\}/,
+  );
+  const osDarkTintRule = heroStylesSource.match(
+    /@media \(prefers-color-scheme: dark\)\s*\{\s*:global\(:where\(html:not\(\[data-theme='light'\]\)\)\) \.stage \.formPlate\s*\{(?<body>[^}]*)\}/,
+  );
+
+  /** Count the class-level specificity components of a selector. */
+  function classComponents(selector: string): number {
+    return (selector.match(/\.[A-Za-z_][\w-]*/g) ?? []).length;
+  }
+
+  it('resolves the dark field surface to the existing card token', () => {
+    expect(darkFieldRule?.groups?.body).toMatch(
+      /background:\s*var\(--color-card\)/,
+    );
+    expect(osDarkFieldRule?.groups?.body).toMatch(
+      /background:\s*var\(--color-card\)/,
+    );
+    // Light themes keep the existing raised-card token.
+    expect(baseFieldRule?.groups?.body).toMatch(
+      /background:\s*var\(--color-card-raised\)/,
+    );
+  });
+
+  it('outranks the shared liquid glass edge recipe with a Hero-scoped selector', () => {
+    const darkSelector =
+      ":global(:where([data-theme='dark'])) .stage .fieldControl";
+    const sharedEdgeSelector = '.liquidGlassEdge';
+    expect(classComponents(darkSelector)).toBeGreaterThan(
+      classComponents(sharedEdgeSelector),
+    );
+    // The shared edge recipe stays untouched, so the Hero module owns the
+    // field surface in dev and production.
+    expect(heroStylesSource).toContain(
+      ":global(:where([data-theme='dark'])) .stage .fieldControl,",
+    );
+    expect(heroStylesSource).not.toMatch(
+      /\.fieldControl,\s*\.countryPicker\s*\{[^}]*background:\s*var\(--color-card\)/,
+    );
+  });
+
+  it('tints the dense form region with the existing card token', () => {
+    for (const rule of [darkTintRule, osDarkTintRule]) {
+      const body = rule?.groups?.body ?? '';
+      // The PO-approved tint strength is pinned: it is the measured value that
+      // keeps the exact brand ring and the filled button at 3:1 or better over
+      // the worst-case bright artwork.
+      expect(body).toMatch(
+        /background:\s*color-mix\(\s*in srgb,\s*var\(--color-card\) 90%,\s*transparent\s*\)/,
+      );
+      // No hard-coded colour and no new token in the tint.
+      expect(body).not.toMatch(/#[0-9a-f]{3,8}\b/i);
+      expect(body).not.toMatch(/\brgba?\(/);
+      expect(body).not.toMatch(/\bhsla?\(/);
+      expect(body).not.toMatch(/--[a-z0-9-]+\s*:/);
+    }
+  });
+
+  it('introduces no new custom property', () => {
+    const declared = new Set(
+      [...heroStylesSource.matchAll(/(--[a-z0-9-]+)\s*:/g)].map(
+        (match) => match[1],
+      ),
+    );
+    expect(declared).toEqual(
+      new Set([
+        '--hero-toned-substrate',
+        '--hero-bottom-average',
+        '--hero-error-edge',
+        '--hero-error-fg',
+        '--hero-form-control-text',
+      ]),
+    );
+  });
+
+  it('keeps the reduced-capability fallbacks on the existing surfaces', () => {
+    const reducedTransparency = heroStylesSource.match(
+      /@media \(prefers-reduced-transparency: reduce\), \(prefers-contrast: more\)[\s\S]*?\n\}\n/,
+    );
+    expect(reducedTransparency?.[0]).toMatch(
+      /\.stage \.fieldControl,\s*\.stage \.countryPicker\s*\{[^}]*background:\s*var\(--color-card-raised\)/,
+    );
+    expect(reducedTransparency?.[0]).toMatch(
+      /\.stage \.formPlate\s*\{\s*background:\s*transparent;\s*\}/,
+    );
+    const reducedMotion = heroStylesSource.match(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*?\n\}\n/,
+    );
+    expect(reducedMotion?.[0]).toMatch(
+      /\.stage \.fieldControl,\s*\.stage \.countryPicker\s*\{[^}]*background:\s*var\(--color-card-raised\)/,
+    );
+    expect(reducedMotion?.[0]).toMatch(
+      /\.stage \.formPlate\s*\{\s*background:\s*transparent;\s*\}/,
+    );
+    const forcedColors = heroStylesSource.match(
+      /@media \(forced-colors: active\)[\s\S]*?\n\}\n/,
+    );
+    expect(forcedColors?.[0]).toMatch(
+      /\.stage \.fieldControl,\s*\.stage \.countryPicker\s*\{[^}]*background:\s*Canvas/,
+    );
+    const print = heroStylesSource.match(/@media print[\s\S]*$/);
+    expect(print?.[0]).toMatch(
+      /\.stage \.formPlate\s*\{\s*background:\s*transparent;\s*\}/,
+    );
+    expect(print?.[0]).toMatch(
+      /\.stage \.fieldControl,\s*\.stage \.countryPicker\s*\{[^}]*background:\s*var\(--color-card-raised\)/,
+    );
   });
 });
 

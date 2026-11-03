@@ -380,9 +380,13 @@ export async function pendingHttpAccess(
           bigint: 1,
           boolean: false,
           bytea: '\\x00',
+          numeric: 1,
           'timestamp with time zone': new Date().toISOString(),
         };
-        if (!(type in values)) throw new Error('Uncovered HTTP RPC type');
+        if (!(type in values))
+          throw new Error(
+            'Uncovered HTTP RPC type ' + type + ' for ' + fn.proname,
+          );
         args[fn.proargnames[i]] = values[type];
       });
       const result = await client.rpc(fn.proname, args);
@@ -391,7 +395,11 @@ export async function pendingHttpAccess(
           result.data === null ||
           result.data === false ||
           (Array.isArray(result.data) && result.data.length === 0) ||
-          result.data?.status === 'invalid',
+          result.data?.status === 'invalid' ||
+          (['record_refund', 'record_renewal'].includes(fn.proname)
+            ? result.data?.status === 'not_permitted'
+            : ['subscription_freeze_operation'].includes(fn.proname) &&
+              result.data?.status === 'invalid_input'),
         fn.proname,
       );
     }

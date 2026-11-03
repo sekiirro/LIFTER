@@ -16,6 +16,7 @@ import {
   Skeleton,
 } from '../../../components/ui/States';
 import { useToast } from '../../../components/ui/Toast';
+import { GlassPopoverMenu } from '../../../components/ui/glass/GlassPopoverMenu';
 import styles from './showcase.module.css';
 
 export function ComponentDemos({ messages: m }: { messages: Messages }) {
@@ -79,6 +80,22 @@ export function ComponentDemos({ messages: m }: { messages: Messages }) {
             <span data-testid="click-count">{clicks}</span>
           </Bidi>
         </p>
+      </section>
+      <section
+        id="glass-menu"
+        aria-labelledby="glass-menu-title"
+        className={styles.section}
+      >
+        <h2 id="glass-menu-title">Glass popover menu</h2>
+        <GlassPopoverMenu
+          label="Showcase actions"
+          triggerLabel="Open showcase actions"
+          trigger="Actions"
+          items={[
+            { label: 'First action', href: '#first-action' },
+            { label: 'Second action', href: '#second-action' },
+          ]}
+        />
       </section>
       <section
         id="fields"

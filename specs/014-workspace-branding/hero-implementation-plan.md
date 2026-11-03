@@ -6,6 +6,8 @@ This plan implements only the F14 Hero requirements FR-026-FR-030 and SC-018-SC-
 
 Every Hero implementation task must carry the matching FR IDs. Existing work without an asserting test remains open; this plan does not treat evidence artifacts or unexecuted suites as completed tasks.
 
+S30-PO-2 (verbatim: "1a Dense form + tint (Recommended)") and S30-PO-6 (verbatim: "90% (Recommended)") settle the dense-form surface for T052: in explicit Dark and Follow-OS-dark, the Hero field controls resolve to the existing `--color-card` token through a Hero-scoped selector that outranks the shared edge recipe, and the form/CTA plate carries a 90% `--color-card` tint in the same two themes. Light, reduced-transparency, increased-contrast, reduced-motion, forced-colors and print keep the existing surfaces. No token, shared component or `DESIGN.md` change is in scope.
+
 ## Scope and production entry point
 
 - Route: `app/register/[token]/page.tsx` (`/register/:token`), valid-link branch only.

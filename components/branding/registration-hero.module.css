@@ -202,16 +202,21 @@
   display: block;
   inline-size: 100%;
   max-block-size: none;
+  overflow: hidden;
   overscroll-behavior: contain;
   padding: 0;
   border: 0;
   border-radius: var(--radius-card);
-  background: var(--color-card);
   color: var(--color-text);
   scrollbar-color: var(--color-border-strong) transparent;
 }
 
 .glassCard[data-material='liquid-glass-strong']::before {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  padding: 1.4px;
+  border-radius: inherit;
   background: linear-gradient(
     to bottom,
     rgba(255, 255, 255, 0.5) 0%,
@@ -221,6 +226,16 @@
     rgba(255, 255, 255, 0.2) 80%,
     rgba(255, 255, 255, 0.5) 100%
   );
+  content: '';
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
 }
 
 .glassContent {
@@ -239,6 +254,17 @@
   padding: var(--space-3);
   border-radius: calc(var(--radius-card) - var(--space-1));
   color: var(--color-text);
+}
+
+/* S30-PO-6: the dark-theme form/CTA tint is 90% of the existing --color-card token. */
+:global(:where([data-theme='dark'])) .stage .formPlate {
+  background: color-mix(in srgb, var(--color-card) 90%, transparent);
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:where(html:not([data-theme='light']))) .stage .formPlate {
+    background: color-mix(in srgb, var(--color-card) 90%, transparent);
+  }
 }
 
 .formPlate h1 {
@@ -307,6 +333,36 @@
     inset 0 -1px 2px rgba(0, 0, 0, 0.18);
   backdrop-filter: none;
   -webkit-backdrop-filter: none;
+}
+
+/*
+ * S30 option 1a — deterministic Hero field surface.
+ *
+ * `.fieldControl` and the shared `.liquidGlassEdge` recipe both declare the
+ * field background at the same specificity, so the resolved surface depended
+ * on the stylesheet order: dev painted a near-transparent field while
+ * production painted the token surface. The Hero-scoped rules below outrank
+ * the shared edge recipe, so dev and production resolve the same surface.
+ *
+ * Dark themes (explicit dark and follow-OS dark) resolve to the existing
+ * `--color-card` token; light themes keep the existing `--color-card-raised`
+ * token.
+ */
+.stage .fieldControl,
+.stage .countryPicker {
+  background: var(--color-card-raised);
+}
+
+:global(:where([data-theme='dark'])) .stage .fieldControl,
+:global(:where([data-theme='dark'])) .stage .countryPicker {
+  background: var(--color-card);
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(:where(html:not([data-theme='light']))) .stage .fieldControl,
+  :global(:where(html:not([data-theme='light']))) .stage .countryPicker {
+    background: var(--color-card);
+  }
 }
 
 .fieldControl:has(input:focus-visible),
@@ -541,14 +597,6 @@
   );
 }
 
-:global([data-theme='light']) .glassCard[data-material='liquid-glass-strong'] {
-  box-shadow:
-    inset 0 1px 1px rgba(255, 255, 255, 0.12),
-    inset 0 -1px 2px rgba(0, 0, 0, 0.18),
-    0 28px 72px rgba(0, 0, 0, 0.3),
-    0 4px 14px rgba(0, 0, 0, 0.14);
-}
-
 @supports not (
   (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
 ) {
@@ -633,12 +681,7 @@
     overflow-y: auto;
   }
 
-  /* Approved prototype desktop material: 4px backdrop blur on the card. */
-  .glassCard[data-material='liquid-glass-strong'] {
-    backdrop-filter: blur(4px);
-    -webkit-backdrop-filter: blur(4px);
-  }
-
+  /* The Glisse surface owns the approved strong blur on every breakpoint. */
   .formPlate {
     gap: var(--space-4);
     padding: var(--space-4);
@@ -718,6 +761,11 @@
     color: var(--color-text);
   }
 
+  /* The dense dark form tint is off for reduced-capability surfaces. */
+  .stage .formPlate {
+    background: transparent;
+  }
+
   .phoneNumber :global([data-testid='country-calling-code']) {
     color: var(--hero-form-control-text) !important;
   }
@@ -725,6 +773,18 @@
   .fieldError,
   .message[data-result-status='invalid_input'] {
     color: var(--color-error-fg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Reduced motion keeps the opaque card, so the dense form treatment is off. */
+  .stage .fieldControl,
+  .stage .countryPicker {
+    background: var(--color-card-raised);
+  }
+
+  .stage .formPlate {
+    background: transparent;
   }
 }
 
@@ -745,15 +805,15 @@
   }
 
   .glassCard,
-  .formPlate,
+  .stage .formPlate,
   .formPlate h1,
   .glassContent :global([data-registration-identity]),
   .glassContent :global([data-brand-name]),
   .form > label,
   .field,
   .message,
-  .fieldControl,
-  .countryPicker {
+  .stage .fieldControl,
+  .stage .countryPicker {
     background: Canvas;
     color: CanvasText;
   }
@@ -843,6 +903,10 @@
 
   .stage .form {
     --hero-form-control-text: var(--color-text);
+  }
+
+  .stage .formPlate {
+    background: transparent;
   }
 
   .stage .fieldControl,

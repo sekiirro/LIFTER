@@ -7,6 +7,21 @@ import {
 } from '../../lib/design/color';
 import { modes } from '../../lib/design/tokens';
 
+function tint(background: string, opacity: number) {
+  const source = background
+    .slice(1)
+    .match(/.{2}/g)!
+    .map((part) => Number.parseInt(part, 16));
+  const emerald = ['05', '96', '69'].map((part) => Number.parseInt(part, 16));
+  return `#${source
+    .map((channel, index) =>
+      Math.round(channel * (1 - opacity) + emerald[index]! * opacity)
+        .toString(16)
+        .padStart(2, '0'),
+    )
+    .join('')}` as `#${string}`;
+}
+
 describe.each(['light', 'dark'] as const)('%s contrast', (mode) => {
   const tokens = modes[mode];
   it('keeps body and muted text readable on both surfaces', () => {
@@ -17,6 +32,15 @@ describe.each(['light', 'dark'] as const)('%s contrast', (mode) => {
     expect(
       contrastRatio(tokens.borderStrong, tokens.card),
     ).toBeGreaterThanOrEqual(3);
+  });
+  it('keeps text and Emerald UI readable across the shell gradient tint', () => {
+    const opacity = mode === 'light' ? 0.03 : 0.02;
+    const stops = [tint(tokens.bg, opacity), tint(tokens.card, opacity)];
+    for (const bg of stops) {
+      for (const fg of [tokens.text, tokens.textMuted])
+        expect(contrastRatio(fg, bg)).toBeGreaterThanOrEqual(4.5);
+      expect(contrastRatio('#059669', bg)).toBeGreaterThanOrEqual(3);
+    }
   });
   it.each(['success', 'warning', 'error', 'info'] as const)(
     'keeps %s text readable',

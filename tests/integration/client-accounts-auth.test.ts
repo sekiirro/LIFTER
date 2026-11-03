@@ -1,11 +1,14 @@
-import { getStackConfig, selectStack } from '../../scripts/local-stack.mjs';
-import { localSupabaseContainer } from './local-docker';
 import { spawnSync } from 'node:child_process';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { anonClient, loadEnv } from './harness';
 import manifest from '../fixtures/client-accounts-auth-schema.json';
 import * as fixtures from './client-accounts-fixture';
 import { clientContext, signupFixture, sql } from './client-accounts-fixture';
+import {
+  getStackConfig,
+  localSupabaseContainer,
+  selectStack,
+} from '../../scripts/local-stack.mjs';
 
 const db = sql();
 const capturedSecrets: string[] = [];
@@ -13,7 +16,7 @@ const captureStart = new Date().toISOString();
 let context: Awaited<ReturnType<typeof clientContext>>;
 beforeAll(async () => {
   const env = loadEnv();
-  const config = getStackConfig(selectStack());
+  const config = getStackConfig(selectStack(process.env));
   expect(
     env.apiUrl === `http://127.0.0.1:${config.apiPort}`,
     'local Auth only',

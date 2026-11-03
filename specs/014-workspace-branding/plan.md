@@ -93,7 +93,7 @@ DB and Storage work runs locally only on stack B: project `lifter-stack-b`, port
 
 ## Hero scope mapping (S20-S29 PO decisions; S29-PO-3 Q7)
 
-The Production Registration Hero is governed by FR-026-FR-030 and SC-018-SC-022 in `spec.md`; `hero-implementation-plan.md` is the implementation detail plan and must remain subordinate to those requirements and quoted PO sources. Signup field restoration is an F14 requirement under FR-028. F15 owns Intake prefill and is a dependency; F14 must not duplicate the Intake behavior. Glisse requirements are limited to the approved Hero treatment, existing theme/brand/accessibility decisions and remaining authorized Glisse work.
+The Production Registration Hero is governed by FR-026-FR-030 and SC-018-SC-022 in `spec.md`; `hero-implementation-plan.md` is the implementation detail plan and must remain subordinate to those requirements and quoted PO sources. Signup field restoration is an F14 requirement under FR-028. F15 owns Intake prefill and is a dependency; F14 must not duplicate the Intake behavior. Glisse requirements are limited to the approved Hero treatment, existing theme/brand/accessibility decisions and remaining authorized Glisse work. S30-PO-2 (option 1a) and S30-PO-6 (90% `--color-card` tint) settle the dense dark-form field surface and the form/CTA tint for T052: the change stays inside the Hero module, reuses existing tokens, and leaves the shared glass recipes, token files and `DESIGN.md` untouched.
 
 ## Project Structure
 
