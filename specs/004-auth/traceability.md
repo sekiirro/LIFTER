@@ -17,7 +17,7 @@ Static source inspection only. No tests were run in this compliance lane. VERIFI
 | FR-011 | T019-T020, T024 | `tests/e2e/auth.spec.ts::closing the recovery dialog clears the displayed link`; log/scrub controls | Source/test on `d04ef52` | VERIFIED |
 | FR-012 | T017-T022 | `tests/integration/auth-recovery.test.ts::supersedes an earlier unused hash`; `rejects an expired hash`; single-use test | Source/test on `d04ef52`; ND-F4-3 is resolved in spec | VERIFIED |
 | FR-013 | T017-T023 | `tests/integration/auth-recovery.test.ts::consumes once, sets a password and signs in with that password`; recovery action tests | Source/test on `d04ef52` | VERIFIED |
-| FR-014 | T016, T018-T023 | `tests/e2e/auth.spec.ts::login and recovery are accessible` for Arabic and English | Source/test on `d04ef52` | VERIFIED |
+| FR-014 | T016, T018-T023 | `tests/e2e/auth.spec.ts::login and recovery are accessible` for Arabic and English | Source/test on `d04ef52`; no assertions found for keyboard access, loading states, complete input/error coverage, or Design System use | PARTIAL |
 | FR-015 | T016, T020-T025 | Middleware, recovery integration, and secret-scan checks mapped by tasks | Source/tests on `d04ef52`; no suite or secret scan executed | PARTIAL |
 | SC-001 | T016, T023 | `tests/e2e/auth.spec.ts::anonymous pages redirect with a same-site return path`; middleware tests | Source/test on `d04ef52` | VERIFIED |
 | SC-002 | T016, T020-T022 | forged-input and workspace matrix tests in auth middleware/recovery suites | Source/test on `d04ef52` | VERIFIED |
