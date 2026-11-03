@@ -54,7 +54,12 @@ export async function reviewFoodDuplicatesAction(
   const unique = new Map<string, DuplicateCandidate>();
   let exact = false;
   for (const row of rows) {
-    if (typeof row.food_id !== 'string' || typeof row.match_type !== 'string')
+    if (
+      typeof row.food_id !== 'string' ||
+      typeof row.match_type !== 'string' ||
+      typeof row.kcal !== 'number' ||
+      !Number.isFinite(row.kcal)
+    )
       continue;
     if (row.match_type === 'exact') exact = true;
     const names = {
@@ -65,7 +70,7 @@ export async function reviewFoodDuplicatesAction(
       id: row.food_id,
       names,
       basis: food.basis,
-      kcal: Number(row.kcal),
+      kcal: row.kcal,
     });
   }
   const candidates = [...unique.values()];
