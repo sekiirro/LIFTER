@@ -31,6 +31,14 @@ const heroComponentSource = readFileSync(
   'components/branding/RegistrationHero.tsx',
   'utf8',
 );
+const glassSurfaceSource = readFileSync(
+  'components/ui/glass/GlassSurface.tsx',
+  'utf8',
+);
+const glassSurfaceStylesSource = readFileSync(
+  'components/ui/glass/GlassSurface.module.css',
+  'utf8',
+);
 
 describe('production registration hero layout', () => {
   it('selects split art layout for a desktop banner', () => {
@@ -361,15 +369,60 @@ describe('production registration hero card theme contract', () => {
     expect(darkestBackdropLuminance([])).toBe(1);
   });
 
-  it('sources the card, form and control colors from theme tokens', () => {
-    expect(heroStylesSource).toMatch(
-      /\.glassCard\.glassCard\s*\{[^}]*background:\s*var\(--color-card\)[^}]*color:\s*var\(--color-text\)/s,
+  it('renders the card through the theme-tinted Glisse surface', () => {
+    expect(heroComponentSource).toContain('<GlassSurface');
+    expect(heroComponentSource).toContain('variant="strong"');
+    expect(heroComponentSource).toContain('role="article"');
+    expect(heroComponentSource).not.toContain("from '../ui/Card'");
+    expect(heroComponentSource).not.toContain('liquid-glass.module.css');
+    expect(glassSurfaceSource).toContain("'data-glass-surface': ''");
+    expect(glassSurfaceStylesSource).toMatch(
+      /background-color:\s*color-mix\(\s*in srgb,\s*var\(--color-card\) 82%,\s*transparent\s*\)/,
     );
-    expect(heroStylesSource).toContain(
-      '--hero-form-control-text: var(--color-text)',
+    expect(glassSurfaceStylesSource).toMatch(
+      /--lg-glass:\s*color-mix\(\s*in srgb,\s*var\(--color-card\) 58%,\s*transparent\s*\)/,
     );
-    expect(heroStylesSource).not.toContain('--hero-adaptive-dimming');
-    expect(heroStylesSource).not.toContain('opaqueBrightCard');
+  });
+
+  it('leaves the hero card background and blur to the Glisse surface', () => {
+    const baseCard = heroStylesSource.match(
+      /\.glassCard\.glassCard\s*\{(?<body>[^}]*)\}/,
+    );
+    expect(baseCard).not.toBeNull();
+    expect(baseCard!.groups!.body).not.toMatch(/background/);
+    expect(baseCard!.groups!.body).not.toMatch(/backdrop-filter/);
+    expect(baseCard!.groups!.body).toMatch(/overflow:\s*hidden/);
+    expect(heroStylesSource).not.toContain('blur(4px)');
+    expect(heroStylesSource).not.toContain('blur(8px)');
+  });
+
+  it('keeps the print reset for the Glisse blur', () => {
+    const printCard = heroStylesSource.match(
+      /@media print[\s\S]*?\.stage \.glassCard\.glassCard \{(?<body>[^}]*)\}/,
+    );
+    expect(printCard?.groups?.body).toMatch(
+      /background:\s*var\(--color-card\)/,
+    );
+    expect(printCard?.groups?.body).toMatch(/backdrop-filter:\s*none/);
+    expect(printCard?.groups?.body).toMatch(/-webkit-backdrop-filter:\s*none/);
+  });
+
+  it('keeps the opaque token card for every reduced-capability fallback', () => {
+    expect(glassSurfaceStylesSource).toMatch(
+      /@media \(prefers-reduced-transparency: reduce\), \(prefers-contrast: more\)[\s\S]*?background:\s*var\(--color-card\)/,
+    );
+    expect(glassSurfaceStylesSource).toMatch(
+      /@media \(prefers-reduced-motion: reduce\)[\s\S]*?background:\s*var\(--color-card\)/,
+    );
+    expect(glassSurfaceStylesSource).toMatch(
+      /@media \(forced-colors: active\)[\s\S]*?background:\s*Canvas/,
+    );
+    expect(glassSurfaceStylesSource).toMatch(
+      /@media print[\s\S]*?background:\s*var\(--color-print-bg\)/,
+    );
+    expect(glassSurfaceStylesSource).toMatch(
+      /@supports not \(\s*\(backdrop-filter: blur\(1px\)\) or \(-webkit-backdrop-filter: blur\(1px\)\)\s*\)[\s\S]*?background:\s*var\(--color-card\)/,
+    );
   });
 });
 
