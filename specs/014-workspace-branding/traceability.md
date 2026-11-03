@@ -38,3 +38,22 @@
 | SC-011 | T030–T035 | `tests/unit/branding-contrast-matrix.test.ts::<color> keeps brand text, controls, and focus within light/dark contrast requirements`; `tests/unit/registration-hero.test.ts::sources the card, form and control colors from theme tokens` | Test source; Glisse-specific PO-approved details lack FR | PARTIAL |
 
 Statuses reflect tests present in the source tree; this review did not run them. DEFERRED is used only for the F14b owner controls explicitly deferred under spec FR-009.
+
+## Hero scope rows (FR-026-FR-030 / SC-018-SC-022)
+
+Hero implementation base: `da56320af3cc8bba73a2e4f09258b7339a8a9504`. Test execution was not requested/performed; static verification only.
+
+| Requirement | Task(s) | Test(s) | Evidence | Status | Gap |
+|---|---|---|---|---|---|
+| FR-026 | T052, T055 | `tests/unit/registration-hero.test.ts::selects split art layout for a desktop banner`; `::selects stacked art layout for a mobile banner`; `tests/e2e/branding-registration.spec.ts::en/light/mobile-390: published registration brand` | `da56320`; static source/layout checks | PARTIAL | Tests assert layout and registration presentation, but no assertion directly compares the complete rendered design to approved prototype `97debaf` or checks every Emerald/token detail. |
+| FR-027 | T052, T055 | `tests/unit/registration-hero.test.ts::sources the card, form and control colors from theme tokens`; `tests/e2e/branding-registration.spec.ts::print/en/follow-device/os-dark: filled registration follows theme tokens` | `da56320` | VERIFIED | Theme matrix and print test compare resolved card/control tokens and preserved theme. |
+| FR-028 | T053, T056 | NOT-FOUND: no current-head asserting test for Three-part Full Name, Username, DOB, optional Telegram Username, DOB-derived age, or F15 handoff | `da56320`; source `app/register/[token]/SignupForm.tsx` lacks the approved fields | NOT-FOUND | Required regression assertions and implementation are absent on the analyzed branch. F15 owns Intake prefill. |
+| FR-029 | T052, T055, T056 | `tests/unit/registration-hero.test.ts::sources the card, form and control colors from theme tokens`; `tests/e2e/branding-registration.spec.ts::en/light/mobile-390: published registration brand` (invokes `expectHeroMaterialContract`) | `da56320` | PARTIAL | Material/card shell and contrast are asserted; no test asserts Glisse/refraction behavior or its performance constraint. |
+| FR-030 | T054, T055 | `tests/e2e/branding-registration.spec.ts::en/light/mobile-390: published registration brand` (asserts pill above card, near-center geometry, and token gap) | `da56320` | VERIFIED | The 390px no-banner case directly asserts no overlap and a positive existing spacing-token gap. |
+| SC-018 | T052, T055 | `tests/unit/registration-hero.test.ts::selects split art layout for a desktop banner`; `::selects stacked art layout for a mobile banner`; `tests/e2e/branding-registration.spec.ts::en/light/mobile-390: published registration brand` | `da56320` | PARTIAL | Specific layout behavior is asserted; not all approved design/token details are asserted. |
+| SC-019 | T052, T055 | `tests/e2e/branding-registration.spec.ts::print/en/follow-device/os-dark: filled registration follows theme tokens` | `da56320` | VERIFIED | Exercise includes explicit theme and OS theme combinations and asserts resolved token colors and form values remain. |
+| SC-020 | T053, T056 | NOT-FOUND: no current-head asserting signup-profile test covering the complete field/age/F15 boundary contract | `da56320` | NOT-FOUND | No such test or feature implementation exists on this analyzed branch. |
+| SC-021 | T052, T055 | `tests/e2e/branding-registration.spec.ts::en/light/mobile-390: published registration brand` (calls `expectHeroMaterialContract`, `expectHeroTextContrast`, and axe helper) | `da56320` | PARTIAL | Liquid Glass shell, contrast, and axe helpers are invoked; no measured Glisse/refraction performance test exists. |
+| SC-022 | T054, T055 | `tests/e2e/branding-registration.spec.ts::en/light/mobile-390: published registration brand` | `da56320` | VERIFIED | Exact 390px matrix case asserts pill/card geometry and token gap. |
+
+All cited test files and named/dynamically generated test titles above were located by static search on `da56320`. `tests/e2e/registration-hero-evidence.ts` is a helper file, not cited as a standalone test. No suite was run.
