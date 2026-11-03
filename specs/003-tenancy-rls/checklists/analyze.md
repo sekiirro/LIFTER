@@ -21,7 +21,7 @@
 | A2 | Ambiguity / data semantics | MEDIUM | `spec.md` FR-013 / SC-006; PO register SK-003-07 | The existing membership model distinguishes active/revoked, but Q7 does not separately state whether `revoked_at IS NULL` is the accepted active predicate for this roster. | Confirm PO interpretation before policy and tests. |
 | A3 | Concurrency / lockout | HIGH | `spec.md` FR-014; PO register SK-003-08 | Q8 approves a database guard but not concurrent remove/demote serialization or behavior when two mutations race. | Keep implementation blocked pending decision and architect review. |
 | A4 | Failure contract | MEDIUM | `spec.md` FR-014 / SC-005; PO register SK-003-09 | Database rejection is approved, but the SQL/API error contract is unspecified. | Do not add user-facing error semantics until PO decides. |
-| A5 | Traceability | MEDIUM | `traceability.md` new rows | No shipped code or asserting tests for FR-013/FR-014 or SC-005/SC-006 exist on analyzed commit. | Rows correctly remain NOT-FOUND; tests are future tasks. |
+| A5 | Traceability | MEDIUM | `traceability.md` FR-013/FR-014 and SC-005/SC-006 rows | No shipped code or asserting tests for FR-013/FR-014 or SC-005/SC-006 exist on analyzed commit; the existing 16 FR/SC rows are also mapped statically. | Rows correctly remain NOT-FOUND; tests are future tasks. |
 | A6 | Cross-artifact task coverage | LOW | `tasks.md` T014..T016 | Amendment tasks are tagged; T016 is shared review/evidence work. | Coverage recorded 2/2 FRs; 2/2 SCs. |
 
 ## Coverage and constitution
@@ -32,7 +32,7 @@
 
 ## Static traceability
 
-`traceability.md` contains 4 amendment rows: 0 VERIFIED, 0 PARTIAL, 4 NOT-FOUND, 0 DEFERRED. No test suite was run.
+`traceability.md` contains 20 feature rows: 5 VERIFIED, 11 PARTIAL, 4 NOT-FOUND, 0 DEFERRED. All 16 existing FR/SC test citations were checked on the analyzed commit; the four amendment rows are NOT-FOUND. No test suite was run.
 
 ## Verdict
 
