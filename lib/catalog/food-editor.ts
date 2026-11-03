@@ -40,6 +40,7 @@ export type FoodEditorErrors = {
   serving?: 'required' | 'positive';
   servingLabel?: 'required' | 'too_long';
   alternatives?: 'too_many';
+  alternativeFoods?: ('required' | undefined)[];
   alternativePortions?: ('positive' | undefined)[];
   alternativeUnits?: (boolean | undefined)[];
 };
@@ -136,6 +137,10 @@ export function validateFoodEditorDraft(
     errors.servingLabel = 'required';
   }
   if (draft.alternatives.length > 3) errors.alternatives = 'too_many';
+  const foods = draft.alternatives.map((item) =>
+    item.foodId.trim() ? undefined : 'required',
+  );
+  if (foods.some(Boolean)) errors.alternativeFoods = foods;
   const portions = draft.alternatives.map((item) =>
     Number.isFinite(number(item.portionQuantity)) &&
     number(item.portionQuantity) > 0

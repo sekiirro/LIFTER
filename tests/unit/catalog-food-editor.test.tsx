@@ -174,14 +174,12 @@ describe('food editor (T029)', () => {
       );
     });
     await act(async () => {
-      container
-        .querySelector('form')
-        ?.dispatchEvent(
-          new dom.Event('submit', {
-            bubbles: true,
-            cancelable: true,
-          }) as unknown as Event,
-        );
+      container.querySelector('form')?.dispatchEvent(
+        new dom.Event('submit', {
+          bubbles: true,
+          cancelable: true,
+        }) as unknown as Event,
+      );
     });
     const select = container.querySelector<HTMLSelectElement>(
       'select[id$="-alternative-0"]',

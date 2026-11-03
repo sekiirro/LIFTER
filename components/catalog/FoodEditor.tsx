@@ -102,6 +102,14 @@ export function FoodEditor({
           },
         ]
       : []),
+    ...(errors.alternativeFoods?.some(Boolean)
+      ? [
+          {
+            target: `${base}-alternative-${errors.alternativeFoods.findIndex(Boolean)}`,
+            label: m['catalog.foodAlternativeFood'],
+          },
+        ]
+      : []),
     ...(errors.alternativePortions?.some(Boolean)
       ? [
           {
@@ -192,11 +200,18 @@ export function FoodEditor({
     value: string,
   ) {
     setErrors((previous) => {
+      if (key === 'foodId' && !previous.alternativeFoods?.[index])
+        return previous;
       if (key === 'portionQuantity' && !previous.alternativePortions?.[index])
         return previous;
       if (key === 'portionUnit' && !previous.alternativeUnits?.[index])
         return previous;
       const next = { ...previous };
+      if (key === 'foodId' && next.alternativeFoods) {
+        next.alternativeFoods = next.alternativeFoods.map((value, i) =>
+          i === index ? undefined : value,
+        );
+      }
       if (key === 'portionQuantity' && next.alternativePortions) {
         next.alternativePortions = next.alternativePortions.map((value, i) =>
           i === index ? undefined : value,
@@ -561,6 +576,14 @@ export function FoodEditor({
                   id={`${base}-alternative-${index}`}
                   value={item.foodId}
                   disabled={!editing}
+                  aria-invalid={
+                    errors.alternativeFoods?.[index] ? true : undefined
+                  }
+                  aria-describedby={
+                    errors.alternativeFoods?.[index]
+                      ? `${base}-alternative-${index}-error`
+                      : undefined
+                  }
                   onChange={(e) =>
                     setAlternative(index, 'foodId', e.currentTarget.value)
                   }
@@ -574,6 +597,14 @@ export function FoodEditor({
                     </option>
                   ))}
                 </select>
+                {errors.alternativeFoods?.[index] && (
+                  <p
+                    id={`${base}-alternative-${index}-error`}
+                    className={styles.error}
+                  >
+                    {m['catalog.foodErrorRequired']}
+                  </p>
+                )}
               </div>
               <Field
                 label={m['catalog.foodAlternativePortion']}
