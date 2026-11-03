@@ -74,59 +74,63 @@ async function parity(left: string, right: string, stage: string) {
 // RLS probe across 45 public tables; measured Stack D runs exceed 30 seconds.
 const exhaustivePasswordParityTimeoutMs = 60_000;
 for (const boundary of ['ordinary', 'multibyte', '72-byte'] as const) {
-  it(`C2/C3 ${boundary}: exhaustive pre/post parity and exact real password sign-in`, async () => {
-    const s = await signupFixture(context);
-    if (boundary === 'multibyte') s.fields.password = '界'.repeat(20) + '9!';
-    if (boundary === '72-byte') s.fields.password = '界'.repeat(23) + 'a9!';
-    capturedSecrets.push(s.fields.password);
-    const reference = await fixtures.authReference(s.fields.password);
-    await fixtures.anonSignup(s);
-    const [user] =
-      await db`select id from auth.users where email=${s.fields.email}`;
-    const id = user!.id as string;
-    if (boundary === '72-byte')
-      expect(Buffer.byteLength(s.fields.password, 'utf8')).toBe(72);
-    const [cost] =
-      await db`select split_part(encrypted_password,'$',3)::integer = ${manifest.bcryptCost} as matches from auth.users where id=${id}`;
-    expect(cost!.matches, 'captured GoTrue bcrypt cost').toBe(true);
-    expect(
-      await db`select 1 from auth.sessions where user_id=${id}`,
-    ).toHaveLength(0);
-    await parity(id, reference.id, 'before sign-in');
-    const client = anonClient();
-    expect(
-      (
-        await client.auth.signInWithPassword({
-          email: s.fields.email,
-          password: 'X' + s.fields.password.slice(1),
-        })
-      ).error !== null,
-    ).toBe(true);
-    for (const [account, email] of [
-      [client, s.fields.email],
-      [anonClient(), reference.email!],
-    ] as const) {
-      const signed = await account.auth.signInWithPassword({
-        email,
-        password: s.fields.password,
-      });
-      expect(signed.error === null, 'GoTrue accepts crypt bcrypt').toBe(true);
-      expect(Boolean(signed.data.session)).toBe(true);
-    }
-    await parity(id, reference.id, 'after one sign-in');
-    await fixtures.pendingHttpAccess(client, context);
-    const claims = await client.auth.getClaims();
-    expect(claims.error === null).toBe(true);
-    await fixtures.probe((tx) =>
-      fixtures.pendingRlsAccess(tx, context, claims.data!.claims),
-    );
-    expect(
-      await db`select 1 from public.staff_profiles where user_id=${id}`,
-    ).toHaveLength(0);
-    expect(
-      await db`select 1 from public.workspace_memberships where user_id=${id}`,
-    ).toHaveLength(0);
-  }, exhaustivePasswordParityTimeoutMs);
+  it(
+    `C2/C3 ${boundary}: exhaustive pre/post parity and exact real password sign-in`,
+    async () => {
+      const s = await signupFixture(context);
+      if (boundary === 'multibyte') s.fields.password = '界'.repeat(20) + '9!';
+      if (boundary === '72-byte') s.fields.password = '界'.repeat(23) + 'a9!';
+      capturedSecrets.push(s.fields.password);
+      const reference = await fixtures.authReference(s.fields.password);
+      await fixtures.anonSignup(s);
+      const [user] =
+        await db`select id from auth.users where email=${s.fields.email}`;
+      const id = user!.id as string;
+      if (boundary === '72-byte')
+        expect(Buffer.byteLength(s.fields.password, 'utf8')).toBe(72);
+      const [cost] =
+        await db`select split_part(encrypted_password,'$',3)::integer = ${manifest.bcryptCost} as matches from auth.users where id=${id}`;
+      expect(cost!.matches, 'captured GoTrue bcrypt cost').toBe(true);
+      expect(
+        await db`select 1 from auth.sessions where user_id=${id}`,
+      ).toHaveLength(0);
+      await parity(id, reference.id, 'before sign-in');
+      const client = anonClient();
+      expect(
+        (
+          await client.auth.signInWithPassword({
+            email: s.fields.email,
+            password: 'X' + s.fields.password.slice(1),
+          })
+        ).error !== null,
+      ).toBe(true);
+      for (const [account, email] of [
+        [client, s.fields.email],
+        [anonClient(), reference.email!],
+      ] as const) {
+        const signed = await account.auth.signInWithPassword({
+          email,
+          password: s.fields.password,
+        });
+        expect(signed.error === null, 'GoTrue accepts crypt bcrypt').toBe(true);
+        expect(Boolean(signed.data.session)).toBe(true);
+      }
+      await parity(id, reference.id, 'after one sign-in');
+      await fixtures.pendingHttpAccess(client, context);
+      const claims = await client.auth.getClaims();
+      expect(claims.error === null).toBe(true);
+      await fixtures.probe((tx) =>
+        fixtures.pendingRlsAccess(tx, context, claims.data!.claims),
+      );
+      expect(
+        await db`select 1 from public.staff_profiles where user_id=${id}`,
+      ).toHaveLength(0);
+      expect(
+        await db`select 1 from public.workspace_memberships where user_id=${id}`,
+      ).toHaveLength(0);
+    },
+    exhaustivePasswordParityTimeoutMs,
+  );
 }
 
 for (const boundary of ['73-byte', 'NUL']) {
