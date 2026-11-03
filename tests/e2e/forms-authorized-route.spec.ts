@@ -130,6 +130,13 @@ async function advanceToGoal(page: Page) {
   await page.getByRole('button').nth(1).click();
 }
 
+async function expectAxeClean(page: Page) {
+  const violations = await new AxeBuilder({ page })
+    .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+    .analyze();
+  expect(violations.violations).toEqual([]);
+}
+
 test('real authorized assignment renders the complete AR/EN theme and viewport matrix', async ({
   page,
 }) => {
@@ -167,6 +174,7 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
             name: locale === 'ar' ? 'الاسم الثلاثي' : 'Full name',
           }),
         ).toBeVisible();
+        await expectAxeClean(page);
         await page.screenshot({
           path: join(screenshotDir, `${locale}-${theme}-${width}-b01.png`),
           fullPage: true,
@@ -179,6 +187,7 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
             name: locale === 'ar' ? 'العمر' : 'Age',
           }),
         ).toBeVisible();
+        await expectAxeClean(page);
         await page.screenshot({
           path: join(screenshotDir, `${locale}-${theme}-${width}-b02.png`),
           fullPage: true,
@@ -189,10 +198,7 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
             name: locale === 'en' ? 'Your goal' : 'هدفك',
           }),
         ).toBeVisible();
-        const violations = await new AxeBuilder({ page })
-          .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
-          .analyze();
-        expect(violations.violations).toEqual([]);
+        await expectAxeClean(page);
         await page.screenshot({
           path: join(screenshotDir, `${locale}-${theme}-${width}-goal.png`),
           fullPage: true,
