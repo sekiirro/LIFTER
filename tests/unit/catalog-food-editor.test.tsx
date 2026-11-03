@@ -217,16 +217,27 @@ describe('food editor (T029)', () => {
     });
     await act(async () => {
       [...container.querySelectorAll('button')]
-        .find((button) => button.textContent === en['catalog.foodAlternativeRemove'])
+        .find(
+          (button) =>
+            button.textContent === en['catalog.foodAlternativeRemove'],
+        )
         ?.dispatchEvent(new dom.MouseEvent('click', { bubbles: true }));
     });
-    expect(container.querySelectorAll('select[id*="-alternative-"]')).toHaveLength(1);
     expect(
-      container.querySelector('a[href$="-alternative-0"]'),
-    ).toBeNull();
+      container.querySelectorAll('select[id*="-alternative-"]'),
+    ).toHaveLength(1);
+    expect(container.querySelector('a[href$="-alternative-0"]')).toBeNull();
     expect(container.querySelector('[id$="-alternatives-error"]')).toBeNull();
-    expect(container.querySelector('select[id$="-alternative-0"]')?.getAttribute('aria-invalid')).toBeNull();
-    expect(container.querySelector('input[id$="-portion-0"]')?.getAttribute('aria-invalid')).toBeNull();
+    expect(
+      container
+        .querySelector('select[id$="-alternative-0"]')
+        ?.getAttribute('aria-invalid'),
+    ).toBeNull();
+    expect(
+      container
+        .querySelector('input[id$="-portion-0"]')
+        ?.getAttribute('aria-invalid'),
+    ).toBeNull();
   });
 
   it('clears all dependent macro errors once the macro sum is valid', () => {
