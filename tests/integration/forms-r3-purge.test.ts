@@ -52,6 +52,80 @@ it('T018 purges all answer-bearing lifecycle rows after the source event + 30 da
         insert into app_private.form_corrections(workspace_id,assignment_id,revision,actor_user_id,correction_note)
         values(${context.wsA.id},${assignmentId},2,${client.userId},'synthetic correction note')
       `;
+      let forgedPurgeMutationKilled = false;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`grant select, delete on public.form_answer_revisions, app_private.form_corrections to service_role`;
+          await sp`grant usage on schema app_private to service_role`;
+          await sp`select set_config(
+            'app_private.f15_retention_purge',
+            ${context.wsA.id + ':' + client.id},
+            true
+          )`;
+          await sp`set local role service_role`;
+          await expect(
+            sp.savepoint(async (probe) => {
+              await probe`delete from public.form_answer_revisions
+                where workspace_id=${context.wsA.id} and assignment_id=${assignmentId} and revision=1`;
+            }),
+          ).rejects.toThrow('form answer revisions are immutable');
+          await expect(
+            sp.savepoint(async (probe) => {
+              await probe`delete from app_private.form_corrections
+                where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}`;
+            }),
+          ).rejects.toThrow('form answer revisions are immutable');
+          await sp`reset role`;
+          await sp`revoke select, delete on public.form_answer_revisions, app_private.form_corrections from service_role`;
+          await sp`revoke usage on schema app_private from service_role`;
+          throw rollback;
+        }),
+      ).rejects.toBe(rollback);
+
+      await expect(
+        tx.savepoint(async (sp) => {
+          const [row] = await sp`
+            select pg_catalog.pg_get_functiondef(
+              'app_private.guard_form_answer_revision_immutable()'::regprocedure
+            ) as body
+          `;
+          const mutant = (row?.body as string).replace(
+            'SET search_path TO',
+            'SECURITY DEFINER SET search_path TO',
+          );
+          expect(mutant).not.toBe(row?.body);
+          await sp.unsafe(mutant);
+          await sp`grant select, delete on public.form_answer_revisions to service_role`;
+          await sp`grant usage on schema app_private to service_role`;
+          await sp`select set_config(
+            'app_private.f15_retention_purge',
+            ${context.wsA.id + ':' + client.id},
+            true
+          )`;
+          await sp`set local role service_role`;
+          let rejected = false;
+          try {
+            await sp.savepoint(async (probe) => {
+              await probe`delete from public.form_answer_revisions
+                where workspace_id=${context.wsA.id} and assignment_id=${assignmentId} and revision=1`;
+            });
+          } catch (error) {
+            rejected =
+              error instanceof Error &&
+              error.message.includes('form answer revisions are immutable');
+          }
+          await sp`reset role`;
+          await sp`revoke select, delete on public.form_answer_revisions from service_role`;
+          await sp`revoke usage on schema app_private from service_role`;
+          try {
+            expect(rejected).toBe(true);
+          } catch {
+            forgedPurgeMutationKilled = true;
+          }
+          throw rollback;
+        }),
+      ).rejects.toBe(rollback);
+      expect(forgedPurgeMutationKilled).toBe(true);
       await tx`
         insert into app_private.form_correction_intents(workspace_id,assignment_id,intent_key,request_hash,result)
         values(${context.wsA.id},${assignmentId},${randomUUID()},decode(repeat('cd',32),'hex'),${tx.json({ status: 'corrected' })})
