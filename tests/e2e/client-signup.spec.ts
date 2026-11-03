@@ -3,9 +3,10 @@ import { expect, test } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
-import { randomUUID } from 'node:crypto';
+import { randomInt, randomUUID } from 'node:crypto';
 import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
+import { expectHeroAxeClean } from './registration-hero-evidence';
 
 const origin =
   process.env.PLAYWRIGHT_BASE_URL ??
@@ -71,8 +72,13 @@ test.describe.serial('T038 invitation signup UI', () => {
             'email',
             'phone',
             'password',
-          ])
-            await expect(page.locator(`form [name="${field}"]`)).toBeVisible();
+          ]) {
+            const selector =
+              field === 'phone'
+                ? 'form input[type="tel"]'
+                : `form [name="${field}"]`;
+            await expect(page.locator(selector)).toBeVisible();
+          }
           await expect(page.locator('form input[type="checkbox"]')).toHaveCount(
             0,
           );
@@ -96,6 +102,54 @@ test.describe.serial('T038 invitation signup UI', () => {
             fullPage: true,
           });
         }
+      }
+    }
+  });
+
+  test('renders the restored profile in AR/EN and light/dark without captures', async ({
+    page,
+    context,
+  }) => {
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
+    for (const locale of ['ar', 'en'] as const) {
+      const messages = getMessages(locale) as SignupTestMessages;
+      for (const theme of ['light', 'dark'] as const) {
+        await page.setViewportSize({ width: 390, height: 844 });
+        await context.addCookies([
+          { name: LOCALE_COOKIE, value: locale, url: origin },
+          { name: THEME_COOKIE, value: theme, url: origin },
+        ]);
+        await page.goto(`/register/${token}`);
+        await expect(page.locator('html')).toHaveAttribute(
+          'dir',
+          locale === 'ar' ? 'rtl' : 'ltr',
+        );
+        await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
+        for (const field of [
+          'name',
+          'dateOfBirth',
+          'username',
+          'telegramUsername',
+          'email',
+          'phone',
+          'password',
+        ]) {
+          const selector =
+            field === 'phone'
+              ? 'form input[type="tel"]'
+              : `form [name="${field}"]`;
+          await expect(page.locator(selector)).toBeVisible();
+        }
+        await page
+          .getByLabel(messages['clientSignup.name'], { exact: true })
+          .focus();
+        await page.keyboard.press('Tab');
+        await expect(
+          page.getByLabel(messages['clientSignup.dateOfBirth'], {
+            exact: true,
+          }),
+        ).toBeFocused();
+        await expectHeroAxeClean(page);
       }
     }
   });
@@ -198,14 +252,32 @@ test.describe.serial('T038 invitation signup UI', () => {
       { name: THEME_COOKIE, value: 'light', url: origin },
     ]);
     await page.goto(`/register/${token}`);
-    await page.getByLabel(messages['clientSignup.name'], { exact: true }).fill('Heba Sami Nabil');
-    await page.getByLabel(messages['clientSignup.dateOfBirth'], { exact: true }).fill('1990-04-12');
-    await page.getByLabel(messages['clientSignup.username'], { exact: true }).fill(`heba-${randomUUID().slice(0, 8)}`);
-    await page.getByLabel(messages['clientSignup.email'], { exact: true }).fill(`signup-${randomUUID()}@example.test`);
-    await page.getByRole('textbox', { name: messages['clientSignup.phone'] }).fill('01012345678');
-    await page.getByLabel(messages['clientSignup.password'], { exact: true }).fill('Complex!2345');
-    await page.getByRole('button', { name: messages['clientSignup.submit'] }).click();
-    await expect(page.getByRole('status')).toHaveText(messages['clientSignup.complete']);
-    await expect(page.locator('form [name="telegramUsername"]')).toHaveValue('');
+    await page
+      .getByLabel(messages['clientSignup.name'], { exact: true })
+      .fill('Heba Sami Nabil');
+    await page
+      .getByLabel(messages['clientSignup.dateOfBirth'], { exact: true })
+      .fill('1990-04-12');
+    await page
+      .getByLabel(messages['clientSignup.username'], { exact: true })
+      .fill(`heba-${randomUUID().slice(0, 8)}`);
+    await page
+      .getByLabel(messages['clientSignup.email'], { exact: true })
+      .fill(`signup-${randomUUID()}@example.test`);
+    await page
+      .getByRole('textbox', { name: messages['clientSignup.phone'] })
+      .fill(`010${String(randomInt(0, 100_000_000)).padStart(8, '0')}`);
+    await page
+      .getByLabel(messages['clientSignup.password'], { exact: true })
+      .fill('Complex!2345');
+    await page
+      .getByRole('button', { name: messages['clientSignup.submit'] })
+      .click();
+    await expect(page.getByRole('status')).toHaveText(
+      messages['clientSignup.complete'],
+    );
+    await expect(page.locator('form [name="telegramUsername"]')).toHaveValue(
+      '',
+    );
   });
 });
