@@ -54,5 +54,3 @@ Playwright full-page screenshots: `%TEMP%/lifter-s28-f16-lib3` (32 PNGs: AR/EN Ã
 | Mark Removed active | Removal is covered by the lifecycle-state assertion in `tests/integration/catalog-exercise-detail.test.ts`; no separate UI-state mutant was run in S28. |
 
 S28 execution: dropping the detail read gate failed at `tests/integration/catalog-exercise-detail.test.ts:227`; returning a foreign workspace variation failed at `:87`; returning the requested merge alias instead of the terminal survivor failed at `:144`; revoking the authenticated safe-view grant failed at `:242`. Each mutant was restored, and the Stack C schema fingerprint matched before and after restoration.
-
-S28 execution: dropping the detail read gate failed at `tests/integration/catalog-exercise-detail.test.ts:227`; returning a foreign workspace variation failed at `:87`; returning the requested merge alias instead of the terminal survivor failed at `:144`; revoking the authenticated safe-view grant failed at `:242`. Each mutant was restored, and the Stack C schema fingerprint matched before and after restoration.
