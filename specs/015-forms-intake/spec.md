@@ -616,3 +616,9 @@ No deviation is proposed. Spec Debate is complete; this revision records the bin
 ### S17 F15 supersession (2026-10-30; PO decision section 3)
 
 Your First Step («خطوتك الأولى») is the default ordinary editable onboarding form in Forms. Its Arabic title is PO-approved verbatim by “Session 17 PO decision — F15 default form Arabic title”; the Arabic Forms section name «النماذج» is also PO-given. Workspace Owners may edit, replace, or select another onboarding form. Previously supplied S14 questions are editable starter content, not a fixed catalog. Assignment and delivery timing are configurable per form under Q3=D. There is no standalone health notice; use «عن بياناتك الصحية» / “About your health data” only where genuinely useful. This does not alter Terms Card consent. The T3 MCQ is closed. Published versions and assignment snapshots remain immutable.
+
+
+## Clarifications
+
+- **SK-015-01 resolved ? S30-PO-1 Q2.** The PO answer is ?Approve drafts verbatim.? The approval covers B06 labels ??????? / ????? / ?????? and English ?Sex? / ?Male? / ?Female?, plus the Arabic and English Terms & Conditions copy exactly as present at `origin/015-forms-intake` commit `5084916469414ca743afe980e31c69cf593587fe`. The pinned commit is the approved source of the full Terms text; any later change to these strings is DRAFT and requires new approval. This records the PO decision without changing requirement wording.
+- No open ambiguity remains for SK-015-01. Other readiness gates and open items remain as separately recorded in the plan.
