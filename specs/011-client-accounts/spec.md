@@ -12,6 +12,12 @@ Sources: [Constitution v1.1.0](../../.specify/memory/constitution.md); [roadmap]
 
 ## Clarifications
 
+### Session 2026-11-03 — compliance reconciliation
+
+- **Decision register:** `docs/04-changes-and-questions.md` D-08, D-16, D-19, and D-20; the existing F11 PO decisions in this section; ND-F11-9a/9b and ND-F11-7 below.
+- **Result:** Zero open ambiguities in the approved F11 signup behavior. Other audit retention (ND-F5-1/B4) and the archived-state/admin-review design (ND-F11-9a/9b) remain explicitly open/deferred; no retention period or archive workflow is inferred. The 30-day signup-attempt log retention remains the separately decided F11 rule.
+- **Evidence limit:** Static source/test inspection only; no tests were executed in this lane.
+
 PO decision 2026-10-28: per-IP admission means per full IPv4 address (including mapped IPv4) and per IPv6 /64 network. Attestations accept issued_at up to 5 seconds ahead of DB clock_timestamp(), with an inclusive maximum age of 60 seconds. Nonces expire at issued_at + 60 seconds (up to 65 seconds after first acceptance); cleanup uses strict expiry so replay remains rejected at both inclusive edges. Timing constants have one private owner.
 
 ### Session 2026-10-28
