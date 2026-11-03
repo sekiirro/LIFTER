@@ -83,6 +83,14 @@ export function VideoVariationFlow({
     setSelectedExerciseId(exerciseId);
     setSelectedMapping(null);
     setStatus('saving');
+
+    function rejectLoad() {
+      setSelectedExerciseId('');
+      setSelectedMapping(null);
+      setWorkspaceLoadKey((current) => current + 1);
+      setStatus('error');
+    }
+
     let result;
     try {
       result = await loadWorkspaceVideoVariationsAction(
@@ -90,12 +98,12 @@ export function VideoVariationFlow({
         exerciseId,
       );
     } catch {
-      if (sequence === loadSequence.current) setStatus('error');
+      if (sequence === loadSequence.current) rejectLoad();
       return;
     }
     if (sequence !== loadSequence.current) return;
     if (result.status !== 'ok') {
-      setStatus('error');
+      rejectLoad();
       return;
     }
     setSelectedMapping(result.data[0] ?? null);
