@@ -13,6 +13,9 @@ const origin =
   process.env.APP_ORIGIN ??
   'http://localhost:3000';
 const screenshotDirectory = join(tmpdir(), 'lifter-f15-signup');
+const s31ScreenshotDirectory =
+  process.env.HERO_R17_SCREENSHOT_DIR ??
+  join(tmpdir(), 'lifter-s31-hero-r17', 'signup-states');
 type SignupTestMessages = ReturnType<typeof getMessages> & {
   'clientSignup.dateOfBirth': string;
   'clientSignup.username': string;
@@ -199,6 +202,7 @@ test.describe.serial('T038 invitation signup UI', () => {
   }) => {
     test.skip(!local, 'Requires the disposable local Supabase stack.');
     const messages = getMessages('en') as SignupTestMessages;
+    await page.setViewportSize({ width: 390, height: 844 });
     await context.addCookies([
       { name: LOCALE_COOKIE, value: 'en', url: origin },
       { name: THEME_COOKIE, value: 'light', url: origin },
@@ -215,6 +219,15 @@ test.describe.serial('T038 invitation signup UI', () => {
       exact: true,
     });
     await usernameField.fill('system');
+
+    await mkdir(s31ScreenshotDirectory, { recursive: true });
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+    await nameField.focus();
+    await page.screenshot({
+      path: join(s31ScreenshotDirectory, 'signup-focus-ring-en-light-390.png'),
+      fullPage: true,
+    });
+    await expectHeroAxeClean(page);
 
     let focusedAfterErrorState = false;
     await page.exposeFunction(
@@ -247,6 +260,11 @@ test.describe.serial('T038 invitation signup UI', () => {
       'aria-describedby',
       'signup-name-error',
     );
+    await page.screenshot({
+      path: join(s31ScreenshotDirectory, 'signup-invalid-en-light-390.png'),
+      fullPage: true,
+    });
+    await expectHeroAxeClean(page);
   });
 
   test('rejects unexpected signup fields generically without a browser session', async ({
@@ -304,6 +322,7 @@ test.describe.serial('T038 invitation signup UI', () => {
   }) => {
     test.skip(!local, 'Requires the disposable local Supabase stack.');
     const messages = getMessages('en') as SignupTestMessages;
+    await page.setViewportSize({ width: 390, height: 844 });
     await context.addCookies([
       { name: LOCALE_COOKIE, value: 'en', url: origin },
       { name: THEME_COOKIE, value: 'light', url: origin },
@@ -336,5 +355,12 @@ test.describe.serial('T038 invitation signup UI', () => {
     await expect(page.locator('form [name="telegramUsername"]')).toHaveValue(
       '',
     );
+    await mkdir(s31ScreenshotDirectory, { recursive: true });
+    await page.addStyleTag({ content: 'nextjs-portal { display: none !important; }' });
+    await page.screenshot({
+      path: join(s31ScreenshotDirectory, 'signup-success-en-light-390.png'),
+      fullPage: true,
+    });
+    await expectHeroAxeClean(page);
   });
 });
