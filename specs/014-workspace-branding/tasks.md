@@ -237,6 +237,14 @@ Start F14b immediately after F14 merges, in parallel with F13/F15. F14b complete
 - T044 pinned stack-B context/operation proof blocks acceptance of U03 validator promotion, U04 validated-bucket policy, and U06 proxy. Execute it before those units are marked accepted regardless of its numeric position in this task file. Failure means stop and return to the architect.
 - T045/T046 cover bounded hashed render handles and live token/version/slot resolution; T047 covers restricted identity credentials and rotation; T048 covers exact route/header/privacy behavior; T049 covers validator receipts; T050 covers transactional GC claims; T051 covers definer ownership/grants and PO-vs-WO scope. Q-M21..Q-M30 map to these tasks in quickstart.
 
+## Hero production registration tasks (S29-PO-3 Q7)
+
+- [ ] **T052 [FR-026, FR-027, FR-029]** Reconcile the production Hero with approved prototype `97debaf`, selected Light/Dark/Follow Device theme, print theme, Emerald tokens and approved Glisse treatment. Keep implementation/screenshots open until current-head assertions and review evidence are recorded.
+- [ ] **T053 [FR-028]** Restore the S28-PO-4 registration fields and DOB-derived age with regression tests; preserve the approved design. F15 owns Intake prefill; coordinate the dependency and do not duplicate it.
+- [ ] **T054 [FR-030]** Preserve the floating preferences pill and offset the 390px no-banner card with an existing spacing token; assert no heading overlap.
+- [ ] **T055 [FR-026, FR-027, FR-029, FR-030]** Run and record the approved browser screenshot, theme, locale, viewport, accessibility, contrast, performance, CI, CodeRabbit and review evidence for the actual implementation head.
+- [ ] **T056 [FR-026, FR-027, FR-028, FR-029, FR-030]** Reconcile this requirement set after Hero implementation and close only tasks with executed passing assertions on that exact head.
+
 ## Verification stop conditions
 
 - Missing benchmark-derived upload caps, prototype-derived banner dimensions, Stack-B readiness, hosted proof, or capacity/backup evidence: stop dependent implementation/release tasks; do not fill gaps by assumption.
