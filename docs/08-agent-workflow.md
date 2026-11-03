@@ -13,8 +13,9 @@ applies to every unit that changes rendered UI.
   performs no repository writes, migrations, test runs, or stack modifications; agents execute those
   actions. (S29-PO-3 Q4)
 - No AI agent may independently make product decisions, whether discovered during Specify, Clarify,
-  Analyze, implementation, or reviews. Clarify is mandatory for every feature and records ?zero open
-  ambiguities? explicitly when none exist. Before implementation, the current Analyze must postdate the
+  Analyze, implementation, or reviews. Clarify is mandatory for every feature and records
+  "zero open ambiguities" explicitly when none exist. Before implementation, the current Analyze must
+  postdate the
   latest spec, plan, or tasks change and have zero open CRITICAL/HIGH findings. Unresolved product
   decisions are presented as numbered MCQs with options, implications, and a recommendation; wait for
   explicit PO approval. (S29-PO-2; S29-PO-3 Q1-Q2)
