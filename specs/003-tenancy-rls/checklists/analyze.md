@@ -1,6 +1,6 @@
 # Spec Kit Analyze — F3 governance amendment
 
-- Date: 2026-11-03 (refreshed after Q6 provenance and task dependency changes)
+- Date: 2026-11-03 (refreshed after Q6 provenance, task dependency, and PO-item cross-reference reconciliation)
 - Analyzed source commit: `d04ef52` (`origin/main` at branch creation). This amendment is documentation-only.
 - Scope: S30-PO-3 Q6 source record and Q7 active-member roster / Q8 final-PO guard.
 - Method: static analysis of spec, plan, tasks, test/code tree and Constitution v1.5.0. No tests or builds run.
@@ -18,7 +18,7 @@
 | ID | Category | Severity | Location | Finding | Disposition |
 |---|---|---|---|---|---|
 | A1 | Ambiguity / access scope | HIGH | `spec.md` FR-013; PO register SK-003-04..06 | Q7 approves active-member visibility but does not define workspace boundary or which member fields a WO can read. | Do not implement FR-013 until PO answers. |
-| A2 | Ambiguity / data semantics | MEDIUM | `spec.md` FR-013 / SC-006; PO register SK-003-07 | The existing membership model distinguishes active/revoked, but Q7 does not separately state whether `revoked_at IS NULL` is the accepted active predicate for this roster. | Confirm PO interpretation before policy and tests. |
+| A2 | Ambiguity / data semantics | MEDIUM | `spec.md` FR-013 / SC-006; PO register SK-003-06 | The existing membership model distinguishes active/revoked, but Q7 does not separately state whether `revoked_at IS NULL` is the accepted active predicate for this roster. | Confirm PO interpretation before policy and tests. |
 | A3 | Concurrency / lockout | HIGH | `spec.md` FR-014; PO register SK-003-08 | Q8 approves a database guard but not concurrent remove/demote serialization or behavior when two mutations race. | Keep implementation blocked pending decision and architect review. |
 | A7 | Operation semantics | HIGH | `spec.md` FR-014 / SC-005; PO register SK-003-10 | Q8 says the database refuses to "remove" the final PO but does not identify whether this means staff-profile deletion, auth-user deletion, role demotion, or another operation. | Do not choose the protected mutation; T015/T016 remain blocked pending PO decision. |
 | A4 | Failure contract | MEDIUM | `spec.md` FR-014 / SC-005; PO register SK-003-09 | Database rejection is approved, but the SQL/API error contract is unspecified. | Do not add user-facing error semantics until PO decides. |
@@ -42,7 +42,7 @@
 
 ## History
 
-- Refresh: Q6 provenance is now reflected in spec and plan; T014/T015 precede T016 in the task dependency graph. "Remove" operation semantics are separately escalated as SK-003-10. The FR-006 literal matrix test plus bidirectional parity prove the approved S30-PO-3 Q6 coaching_work roles; FR-006 is VERIFIED.
+- Refresh: Q6 provenance is now reflected in spec and plan; T014/T015 precede T016 in the task dependency graph. "Remove" operation semantics are separately escalated as SK-003-10. The PO register consolidates roster field and contact visibility in SK-003-05. The FR-006 literal matrix test plus bidirectional parity prove the approved S30-PO-3 Q6 coaching_work roles; FR-006 is VERIFIED.
 
 - First SK-A amendment analysis on `origin/main` `d04ef52`; no prior Analyze history.
 - Refresh: plan ND-F3-2/ND-F3-3 now quote the resolved S30-PO-3 Q7/Q8 behavior and link the remaining subquestions to SK-003-04..09. No requirement meaning changed.
