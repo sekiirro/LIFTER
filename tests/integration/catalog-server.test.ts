@@ -190,11 +190,12 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
 
   it('searches exercises created through the session wall by stored taxonomy payload keys', async () => {
     const action = server(workspaces.po);
+    const globalName = `Filter payload ${randomUUID()}`;
     const created = await action.createExercise({
       operationKey: fixtureKey(),
       request: {
         name_ar: `Ø§Ø®ØªØ¨Ø§Ø± ${randomUUID()}`,
-        name_en: `Filter payload ${randomUUID()}`,
+        name_en: globalName,
         primary_muscle_code: 'chest',
         secondary_muscle_codes: [],
         equipment_codes: ['barbell'],
@@ -206,12 +207,12 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
     const exerciseId = (created.data as { exercise_id: string }).exercise_id;
     const muscle = await action.search({
       kind: 'exercise',
-      query: '',
+      query: globalName,
       filters: { primary_muscle_code: 'chest' },
     });
     const equipment = await action.search({
       kind: 'exercise',
-      query: '',
+      query: globalName,
       filters: { equipment_codes: ['barbell'] },
     });
     expect(muscle.status).toBe('ok');
@@ -230,12 +231,13 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
     }
 
     const workspaceAction = server(workspaces.trainerA);
+    const workspaceName = `Workspace filter payload ${randomUUID()}`;
     const workspaceCreated = await workspaceAction.writeWorkspaceExercise({
       operationKey: fixtureKey(),
       workspaceId: workspaces.wsA.id,
       request: {
         name_ar: `Ø§Ø®ØªØ¨Ø§Ø± ${randomUUID()}`,
-        name_en: `Workspace filter payload ${randomUUID()}`,
+        name_en: workspaceName,
         primary_muscle_code: 'chest',
         secondary_muscle_codes: [],
         equipment_codes: ['barbell'],
@@ -249,7 +251,7 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
       ).exercise_id;
       const workspaceResult = await workspaceAction.search({
         kind: 'workspace_exercise',
-        query: '',
+        query: workspaceName,
         workspaceId: workspaces.wsA.id,
         filters: {
           primary_muscle_code: 'chest',
