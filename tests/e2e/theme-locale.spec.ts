@@ -1,4 +1,4 @@
-﻿import { testOrigin } from './test-origin.mjs';
+import { testOrigin } from './test-origin.mjs';
 import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { modes } from '../../lib/design/tokens';

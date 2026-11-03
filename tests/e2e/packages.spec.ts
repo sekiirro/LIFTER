@@ -1,4 +1,4 @@
-﻿import { testOrigin } from './test-origin.mjs';
+import { testOrigin } from './test-origin.mjs';
 import { randomUUID } from 'node:crypto';
 import AxeBuilder from '@axe-core/playwright';
 import { createServerClient } from '@supabase/ssr';

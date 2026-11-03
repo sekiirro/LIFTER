@@ -1,4 +1,4 @@
-﻿import { testOrigin } from './test-origin.mjs';
+import { testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type BrowserContext } from '@playwright/test';
 import { copyFile, mkdir } from 'node:fs/promises';

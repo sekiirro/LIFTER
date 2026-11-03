@@ -1,8 +1,8 @@
-﻿import { testOrigin } from './test-origin.mjs';
+import { testOrigin } from './test-origin.mjs';
 import { expect, test } from '@playwright/test';
 import { expectTooltipBesideTrigger } from './tooltip-geometry';
 
-const origin = testOrigin;
+const origin = process.env.PLAYWRIGHT_BASE_URL ?? testOrigin;
 
 test.describe('glass runtime focus behavior', () => {
   test.beforeEach(async ({ page }, testInfo) => {

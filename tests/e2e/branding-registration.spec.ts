@@ -1,4 +1,4 @@
-﻿import { testOrigin } from './test-origin.mjs';
+import { testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { copyFile, mkdir, writeFile } from 'node:fs/promises';
@@ -7,7 +7,7 @@ import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 import type { RegistrationFixture } from '../integration/registration-links-fixture';
 
-const origin = testOrigin;
+const origin = process.env.PLAYWRIGHT_BASE_URL ?? testOrigin;
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
@@ -41,7 +41,7 @@ test.beforeAll(async () => {
       workspace_id: fixture.wsA.id,
       expected_revision: 0,
       fields: {
-        name: { ar: 'Ø§Ù„Ù†Ø§Ø¯ÙŠ Ø§Ù„Ù…Ù†Ø´ÙˆØ±', en: 'Published Club' },
+        name: { ar: 'النادي المنشور', en: 'Published Club' },
         color: '#2563EB',
         bannerAlt: { ar: '', en: '' },
       },
@@ -58,7 +58,7 @@ test.beforeAll(async () => {
       workspace_id: fixture.wsA.id,
       expected_revision: draft,
       fields: {
-        name: { ar: 'Ù…Ø³ÙˆØ¯Ø© Ø§Ù„Ù†Ø§Ø¯ÙŠ', en: 'Unpublished Draft' },
+        name: { ar: 'مسودة النادي', en: 'Unpublished Draft' },
         color: '#8B5CF6',
         bannerAlt: { ar: '', en: '' },
       },
@@ -162,7 +162,7 @@ for (const locale of ['ar', 'en'] as const) {
         ).toBeVisible();
         await expect(page.locator('[data-brand-name]')).toBeVisible();
         await expect(page.locator('[data-brand-name]')).toHaveText(
-          locale === 'ar' ? 'Ø§Ù„Ù†Ø§Ø¯ÙŠ Ø§Ù„Ù…Ù†Ø´ÙˆØ±' : 'Published Club',
+          locale === 'ar' ? 'النادي المنشور' : 'Published Club',
         );
         await expect(page.locator('main')).not.toContainText(
           'Unpublished Draft',

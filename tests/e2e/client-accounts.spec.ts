@@ -1,4 +1,4 @@
-﻿import { testOrigin } from './test-origin.mjs';
+import { testOrigin } from './test-origin.mjs';
 import { expect, test, type Page } from '@playwright/test';
 import { localSupabaseContainer } from '../integration/local-docker';
 import { execFileSync } from 'node:child_process';

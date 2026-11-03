@@ -1,4 +1,4 @@
-﻿import { testOrigin } from './test-origin.mjs';
+import { testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { createServerClient } from '@supabase/ssr';
 import { randomBytes } from 'node:crypto';

@@ -1,4 +1,4 @@
-﻿import { testOrigin } from './test-origin.mjs';
+import { testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
@@ -6,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
-const origin = testOrigin;
+const origin = process.env.PLAYWRIGHT_BASE_URL ?? testOrigin;
 const temporaryDir = join(tmpdir(), `lifter-f14-ui-${process.pid}`);
 
 async function expectAxeClean(page: Page) {
@@ -111,7 +111,7 @@ for (const locale of ['ar', 'en'] as const) {
           await expect(portal).toBeVisible();
           await expect(
             portal.locator('[data-portal-preview-notice]'),
-          ).toContainText(locale === 'ar' ? 'Ù…Ø³ÙˆØ¯Ø©:' : 'DRAFT:');
+          ).toContainText(locale === 'ar' ? 'مسودة:' : 'DRAFT:');
           await expect(portal.locator('button, a, form, input')).toHaveCount(0);
           await expectAxeClean(page);
           const portalScreenshot = join(
@@ -149,7 +149,7 @@ for (const locale of ['ar', 'en'] as const) {
             page.locator('[data-preview-surface="registration"] h3'),
           ).toHaveText(localDraftName);
           await expect(page.locator('[data-current-published]')).toContainText(
-            locale === 'ar' ? 'Ø§Ù„Ù†Ø§Ø¯ÙŠ Ø§Ù„Ù…Ù†Ø´ÙˆØ±' : 'Published Club',
+            locale === 'ar' ? 'النادي المنشور' : 'Published Club',
           );
           await expectAxeClean(page);
           const previewTemporary = join(
@@ -177,7 +177,7 @@ for (const locale of ['ar', 'en'] as const) {
           );
           await expect(
             portal.locator('[data-portal-preview-notice]'),
-          ).toContainText(locale === 'ar' ? 'Ù…Ø³ÙˆØ¯Ø©:' : 'DRAFT:');
+          ).toContainText(locale === 'ar' ? 'مسودة:' : 'DRAFT:');
           await expect(portal.locator('button, a, form, input')).toHaveCount(0);
           await expectAxeClean(page);
           const portalScreenshot = join(

@@ -1,4 +1,4 @@
-﻿import { testOrigin } from './test-origin.mjs';
+import { testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
@@ -51,7 +51,7 @@ for (const locale of ['ar', 'en'] as const) {
         );
         await expect(page.locator('html')).toHaveAttribute('data-theme', theme);
         await expect(
-          page.getByLabel(locale === 'ar' ? 'Ø§Ù„Ø¯ÙˆÙ„Ø©' : 'Country'),
+          page.getByLabel(locale === 'ar' ? 'الدولة' : 'Country'),
         ).toHaveValue('EG');
         await expect(page.getByLabel(/telegram/i)).toHaveCount(0);
         const results = await new AxeBuilder({ page })
@@ -79,25 +79,22 @@ for (const locale of ['ar', 'en'] as const) {
     ]);
     await page.goto(`/register/${validToken}`);
     await page.waitForLoadState('networkidle');
-    const name = page.getByLabel(locale === 'ar' ? 'Ø§Ù„Ø§Ø³Ù…' : 'Name', {
+    const name = page.getByLabel(locale === 'ar' ? 'الاسم' : 'Name', {
       exact: true,
     });
     const email = page.getByLabel(
-      locale === 'ar' ? 'Ø§Ù„Ø¨Ø±ÙŠØ¯ Ø§Ù„Ø¥Ù„ÙƒØªØ±ÙˆÙ†ÙŠ' : 'Email',
+      locale === 'ar' ? 'البريد الإلكتروني' : 'Email',
       { exact: true },
     );
-    const country = page.getByLabel(
-      locale === 'ar' ? 'Ø§Ù„Ø¯ÙˆÙ„Ø©' : 'Country',
-      {
-        exact: true,
-      },
-    );
+    const country = page.getByLabel(locale === 'ar' ? 'الدولة' : 'Country', {
+      exact: true,
+    });
     const phone = page.getByLabel(
-      locale === 'ar' ? 'Ø±Ù‚Ù… Ø§Ù„Ù‡Ø§ØªÙ' : 'Phone number',
+      locale === 'ar' ? 'رقم الهاتف' : 'Phone number',
       { exact: true },
     );
     const password = page.getByLabel(
-      locale === 'ar' ? 'ÙƒÙ„Ù…Ø© Ø§Ù„Ù…Ø±ÙˆØ±' : 'Password',
+      locale === 'ar' ? 'كلمة المرور' : 'Password',
       { exact: true },
     );
     await name.focus();
@@ -129,7 +126,7 @@ for (const locale of ['ar', 'en'] as const) {
     await intercepted;
     await expect(submit).toBeDisabled();
     await expect(page.getByRole('status')).toContainText(
-      locale === 'ar' ? 'Ø¬Ø§Ø±Ù Ø§Ù„Ø¥Ø±Ø³Ø§Ù„' : 'Submitting',
+      locale === 'ar' ? 'جارٍ الإرسال' : 'Submitting',
     );
     release();
     const invalidFields = [

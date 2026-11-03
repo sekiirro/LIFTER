@@ -1,4 +1,4 @@
-﻿import { testOrigin } from './test-origin.mjs';
+import { testOrigin } from './test-origin.mjs';
 import { copyFile, mkdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';

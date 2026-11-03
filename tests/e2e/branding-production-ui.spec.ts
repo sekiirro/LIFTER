@@ -1,4 +1,4 @@
-﻿import { testOrigin } from './test-origin.mjs';
+import { testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -7,7 +7,7 @@ import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 
-const origin = testOrigin;
+const origin = process.env.PLAYWRIGHT_BASE_URL ?? testOrigin;
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
@@ -142,7 +142,7 @@ for (const locale of ['ar', 'en'] as const) {
           ),
           JSON.stringify(
             {
-              referenceCssPx: '44 Ã— 44 (reporting reference only)',
+              referenceCssPx: '44 × 44 (reporting reference only)',
               locale,
               theme,
               viewport: viewport.width,
