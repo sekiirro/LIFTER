@@ -1,0 +1,34 @@
+﻿# Traceability: F12 Registration approval and payments
+
+Static source inspection only. No test suite was executed in this compliance lane. VERIFIED means a concrete test exists and asserts the mapped behavior; task checkboxes are not changed based on this static review.
+
+| Requirement | Task(s) | Asserting test(s) | Evidence | Status |
+|---|---|---|---|---|
+| FR-001 | T006-T011, T014, T028 | `tests/unit/registration-approval-capabilities.test.ts::denies Sales approval while preserving Sales payment recording`; decision/role integration tests | Code and test files on `d04ef52` | VERIFIED |
+| FR-002..003 | T008-T017 | `tests/integration/registration-approval-integrity.test.ts::T009 valid initial graph...`; `tests/integration/registration-approval-audit.test.ts::T017 real approval RPC...` | Code/tests on `d04ef52` | VERIFIED |
+| FR-004..005, FR-009..010 | T004-T005, T009, T013, T018-T022 | `tests/integration/registration-approval-integrity.test.ts::T009 SQL commission agrees with BigInt...`; `tests/integration/registration-approval-corrections.test.ts::T019 correction negates stored original exactly...` | Code/tests on `d04ef52` | VERIFIED |
+| FR-006, FR-008, FR-017..018 | T008, T010, T023, T026, T028-T032, T042 | `tests/integration/registration-approval-client-access.test.ts::T042 real F11 client JWT...`; integrity and audit tests | Code/tests on `d04ef52` | VERIFIED |
+| FR-007 | T024, T026, T029, T031, T038-T043 | `tests/integration/registration-approval-client-access.test.ts::T024 zero-argument self status...`; `tests/unit/registration-approval-status-page.test.ts` | Code/tests on `d04ef52` | VERIFIED |
+| FR-011..012 | T015-T016, T020-T021, T028-T030, T042 | `tests/integration/registration-approval-replay.test.ts::T020 distinct-key concurrent correction...`; `tests/integration/registration-approval-integrity.test.ts` | Code/tests on `d04ef52` | VERIFIED |
+| FR-013 | T006-T009, T018, T021 | `tests/integration/registration-approval-activation.test.ts::T025 exact custom offsets survive across Cairo date...`; correction tests | Code/tests on `d04ef52` | VERIFIED |
+| FR-014..015, FR-025 | T019-T022, T035, T043 | `tests/integration/registration-approval-corrections.test.ts::T019 correction negates stored original exactly...` | Code/tests on `d04ef52` | VERIFIED |
+| FR-016 | T010-T017, T022, T044 | `tests/integration/registration-approval-audit.test.ts::T010 audit insertion failure aborts graph...` | Code/tests on `d04ef52` | VERIFIED |
+| FR-019..021 | T033-T043, T045 | `tests/unit/registration-approval-messages.test.ts`; component/page tests | Code/tests on `d04ef52`; rendered stack evidence not executed here | PARTIAL |
+| FR-022 | T013, T016-T017, T025-T027 | `tests/integration/registration-approval-audit.test.ts::T017 real approval RPC emits exactly one safe approval fact...` | Code/tests on `d04ef52`; P2 handoff in D-23 | VERIFIED |
+| FR-023 / SC-009 | T049-T054 | `tests/unit/registration-links-flexible.test.ts::requires exact price totals...`; `tests/integration/registration-links-flexible.test.ts::T050 flexible RPC delegates exact terms...`; named T053 UI test file absent | Code/tests/migration on `d04ef52`; migration `20261101131000_flexible_registration_link_terms_forward.sql` | PARTIAL |
+| FR-024 / SC-010 | T038-T043 | `tests/unit/registration-approval-status-page.test.ts`; `tests/unit/registration-approval-status-route.test.ts` | Code/tests on `d04ef52` | VERIFIED |
+| FR-026 | T014 | `tests/integration/registration-approval-decisions.test.ts::T014 only PO can reconsider...` | Code/tests on `d04ef52` | VERIFIED |
+| FR-027 | T018-T021 | `tests/integration/registration-approval-activation.test.ts`; correction sequence tests | Code/tests on `d04ef52` | VERIFIED |
+| FR-028 | T033-T034 | `tests/unit/registration-approval-page.test.ts`; `tests/unit/registration-approval-messages.test.ts` | Code/tests on `d04ef52`; rendered dashboard journey not executed here | PARTIAL |
+| FR-029 | T028, T033-T035 | `tests/unit/registration-approval-payment-request-keys.test.ts::reuses uncertain collection and correction keys...`; replay tests | Code/tests on `d04ef52` | VERIFIED |
+| SC-001..003 | T004-T005, T008-T022, T042 | integrity, correction, money and replay tests listed above | Code/tests on `d04ef52` | VERIFIED |
+| SC-004..005 | T024-T032, T038-T043 | self-status and client-access integration tests | Code/tests on `d04ef52` | VERIFIED |
+| SC-006..007 | T008-T022, T042, T044 | `tests/integration/registration-approval-replay.test.ts`; audit and integrity tests | Code/tests on `d04ef52`; mutation campaign T044 not executed in this lane | PARTIAL |
+| SC-008 | T033-T043, T045 | message/component unit tests; `tests/e2e/registration-approval-a11y.spec.ts` exists | Code/tests on `d04ef52`; rendered/a11y gates not executed in this lane | PARTIAL |
+| SC-010..011 | T019-T022, T038-T043 | Cairo correction and bounded-status tests | Code/tests on `d04ef52` | VERIFIED |
+
+## Summary
+
+- Functional requirements: 23 VERIFIED, 6 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- Success criteria: 7 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- Execution: static verification only; no suite run. T050-T054 are not checked by this reconciliation.
