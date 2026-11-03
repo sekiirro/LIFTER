@@ -103,9 +103,9 @@ jobs:
           node scripts/ci-supabase-config.mjs supabase/config.toml wait
       - run: |
           if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
-            "$LIFTER_SUPABASE_CLI" start -x studio,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+            "$LIFTER_SUPABASE_CLI" start -x studio,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
           else
-            supabase start -x studio,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+            supabase start -x studio,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
           fi
       - name: Export local stack environment
         run: |
@@ -196,9 +196,9 @@ jobs:
           node scripts/ci-supabase-config.mjs supabase/config.toml wait
       - run: |
           if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
-            "$LIFTER_SUPABASE_CLI" start -x studio,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+            "$LIFTER_SUPABASE_CLI" start -x studio,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
           else
-            supabase start -x studio,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+            supabase start -x studio,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
           fi
       - name: Export local stack environment
         run: |

@@ -20,9 +20,10 @@ it('runs the full Playwright suite after local-stack integration tests', () => {
   ];
   expect(supabaseStarts).toHaveLength(2);
   expect(supabaseStarts.map((match) => match[1])).toEqual([
-    'studio,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta',
-    'studio,mailpit,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta',
+    'studio,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta',
+    'studio,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta',
   ]);
+  expect(supabaseStarts.join('\n')).not.toMatch(/\bmailpit\b/);
   expect(supabaseStarts.join('\n')).not.toMatch(/\bstorage-api\b/);
   expect(integration).toMatch(FULL_INTEGRATION_RUN);
   const isolatedInstallCondition = integration.indexOf(
