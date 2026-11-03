@@ -1,5 +1,7 @@
 # Self-hosted GitHub Actions runner
 
+Pull requests use the persistent self-hosted runner, isolated Supabase stack, and Docker Hub credentials only when the PR author association is `OWNER`. `MEMBER`, `COLLABORATOR`, `CONTRIBUTOR`, and `NONE` use hosted runners, receive no isolated-stack setting, and receive no Docker Hub secrets. This is the Product Owner's S30-PO-4 Q10 decision ("Owner only").
+
 ## Architecture
 
 The repository uses a single repository-scoped runner named `lifter-wsl` with labels `self-hosted`, `linux`, `x64`, and `lifter-wsl`. It runs as the unprivileged `lifterrunner` account in the dedicated Ubuntu 24.04 WSL2 distro `lifter-ci`.
