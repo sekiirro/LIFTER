@@ -134,6 +134,14 @@ Anonymous visitors can reach only the sign-in page, the recovery (set new passwo
 - **ND-F4-6 — Staff recovery.** BRD lines 40/104/130 give the PO manual reset links without limiting them to clients. Should the PO also generate recovery links for staff accounts in F4? Not built until decided.
 - **ND-F4-7 — Self-service email reset timing.** BRD line 130 requires self-service email reset. With no external SMTP (owner decision), it is sequenced, not removed (D-07). When is SMTP introduced? Not built until decided.
 
+## Clarifications
+
+### Session 2026-11-03 — compliance reconciliation
+
+- **Decision register:** `docs/04-changes-and-questions.md` D-19 records the high-level Auth/manual-recovery scope; the feature's ND-F4-1, ND-F4-2, and ND-F4-4..7 remain explicitly open. ND-F4-3 has a recorded PO decision in the spec.
+- **Result:** No new product interpretation is made. The six listed sub-decisions remain open and the existing deny-by-default or not-built boundaries remain as written. `tasks.md:T030` also labels D-19 as pending PO approval, while D-19 is already present in the decision register; the approval status/source conflict is escalated separately.
+- **Evidence limit:** Static source/test inspection only; no tests were executed in this lane.
+
 ## Assumptions
 
 - The owner decisions of 2026-10-27 extend BRD line 104 (PO manual reset links) to WOs and authorized Trainers. They will be recorded as a decision-register entry (D-19) in this feature's PR for PO approval.
