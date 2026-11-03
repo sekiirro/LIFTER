@@ -26,7 +26,7 @@
 
 - [x] All functional requirements have clear acceptance criteria
 - [x] User scenarios cover primary flows
-- [x] Feature meets measurable outcomes defined in Success Criteria
+- [ ] Feature meets measurable outcomes defined in Success Criteria (SC-008, SC-009, and SC-010 remain PARTIAL)
 - [x] No implementation details leak into specification
 
 ## Notes

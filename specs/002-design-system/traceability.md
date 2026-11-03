@@ -26,7 +26,7 @@ Evidence commits: original Design System implementation `be29751`, `e2df0cd`, `b
 | FR-018 | T027, T030, T032 | `tests/e2e/components.spec.ts::Retry increments the demonstration counter` and `::a11y` showcase matrix | VERIFIED |
 | FR-019 | T028-T029, T030, T032 | `tests/e2e/components.spec.ts::toast uses the pre-existing polite region without moving focus, and dismisses`; `::auto-dismisses after five active seconds and pauses for hover and focus` | VERIFIED |
 | FR-020 | T006, T011, T032 | `tests/e2e/components.spec.ts::reduces button transitions and disables skeleton shimmer` | VERIFIED |
-| FR-021 | T033-T036 | `tests/e2e/shell.spec.ts::desktop navigation preserves the content lane across responsive widths`; mobile role bottom-bar cases | VERIFIED |
+| FR-021 | T033-T036, T047-T048 | Existing responsive-shell evidence; T047-T048 are unchecked for Q16 sidebar requirements | PARTIAL |
 | FR-022 | T033-T036 | `tests/unit/navigation.test.ts::defines the exact trainer order, labels, and icons`; `::defines the exact client order, labels, and icons`; shell role cases | VERIFIED |
 | FR-023 | T014, T018-T019, T030, T035 | `tests/unit/showcase-gate.test.ts::enables only the exact flag`; `tests/e2e/theme-locale.spec.ts::uses device colors without a theme cookie and serves the enabled showcase` | VERIFIED |
 | FR-024 | T037-T039 | `tests/e2e/print.spec.ts::Arabic print sample hides screen controls and exports its PDF`; `specs/002-design-system/print-spike.md` | VERIFIED |
@@ -44,7 +44,7 @@ Evidence commits: original Design System implementation `be29751`, `e2df0cd`, `b
 | SC-007 | T042 | CI build-size check was referenced by T042; a concrete assertion test or executed CI run was not re-verified in this static pass | PARTIAL |
 | SC-008 | T046 | PR #28 body reports 15 paired samples and passing median deltas; local report outputs r1-r8 are referenced but not present in this checkout; measurement not rerun | PARTIAL |
 | SC-010 | T047-T048 | Static inspection: components/shell/NavRail.tsx:16-45, components/shell/NavRail.module.css:1-20, components/shell/AppShell.module.css:13-20, components/ui/AccessibleTooltip.tsx:79-90,173-184; existing hover/focus test references were not executed in this lane | PARTIAL |
-| SC-009 | T043, T049 | Existing unit tests cover fallback selection and browser focus identity for over-budget fallback only; T049 remains unchecked for remaining fallback conditions | PARTIAL |
+| SC-009 | T043, T048-T049 | Existing unit tests cover fallback selection and browser focus identity for over-budget fallback only; T048-T049 remain unchecked for Q16/all fallback conditions | PARTIAL |
 
 ## Static verification note
 
