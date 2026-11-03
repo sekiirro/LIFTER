@@ -36,11 +36,27 @@ export type VideoVariationLoadResult =
         'not_permitted' | 'unavailable' | 'invalid' | 'conflict' | 'limit';
     };
 
+function isVideoVariationDraft(value: unknown): value is VideoVariationDraft {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
+  const draft = value as Record<string, unknown>;
+  return (
+    typeof draft.workspaceId === 'string' &&
+    typeof draft.exerciseId === 'string' &&
+    typeof draft.videoUrl === 'string' &&
+    typeof draft.note === 'string'
+  );
+}
+
 export async function loadWorkspaceVideoVariationsAction(
   workspaceId: string,
   exerciseId?: string,
 ): Promise<VideoVariationLoadResult> {
-  if (!workspaceId.trim()) return { status: 'invalid' };
+  if (
+    typeof workspaceId !== 'string' ||
+    !workspaceId.trim() ||
+    (exerciseId !== undefined && typeof exerciseId !== 'string')
+  )
+    return { status: 'invalid' };
   const variationRows: unknown[] = [];
   let cursor: string | null = null;
   do {
@@ -105,8 +121,16 @@ export async function saveVideoVariationAction(
   operationKey: string,
 ): Promise<CatalogResult> {
   if (
+    !isVideoVariationDraft(draft) ||
+    (expectedVersion !== null &&
+      (typeof expectedVersion !== 'number' ||
+        !Number.isInteger(expectedVersion))) ||
+    typeof operationKey !== 'string'
+  )
+    return { status: 'invalid' };
+  if (
     Object.keys(validateVideoVariationDraft(draft)).length ||
-    (!Number.isInteger(expectedVersion) && expectedVersion !== null) ||
+    (expectedVersion !== null && !Number.isInteger(expectedVersion)) ||
     !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
       operationKey,
     )

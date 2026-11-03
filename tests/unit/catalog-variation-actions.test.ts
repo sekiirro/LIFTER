@@ -87,6 +87,46 @@ describe('catalog variation actions', () => {
     expect(writeVariation).not.toHaveBeenCalled();
   });
 
+  it('returns invalid for a non-string operation key', async () => {
+    const result = await saveVideoVariationAction(
+      {
+        workspaceId: 'workspace-selected',
+        exerciseId: 'exercise-global',
+        videoUrl: 'https://youtu.be/abcdefghijk',
+        note: 'Local mapping',
+      },
+      null,
+      42 as never,
+    );
+    expect(result).toEqual({ status: 'invalid' });
+    expect(writeVariation).not.toHaveBeenCalled();
+  });
+
+  it('returns invalid for a non-number expected version', async () => {
+    const result = await saveVideoVariationAction(
+      {
+        workspaceId: 'workspace-selected',
+        exerciseId: 'exercise-global',
+        videoUrl: 'https://youtu.be/abcdefghijk',
+        note: 'Local mapping',
+      },
+      '1' as never,
+      '11111111-1111-4111-8111-111111111111',
+    );
+    expect(result).toEqual({ status: 'invalid' });
+    expect(writeVariation).not.toHaveBeenCalled();
+  });
+
+  it.each([null, 42, {}])(
+    'returns invalid for malformed workspace load arguments (%s)',
+    async (workspaceId) => {
+      await expect(
+        loadWorkspaceVideoVariationsAction(workspaceId as never),
+      ).resolves.toEqual({ status: 'invalid' });
+      expect(search).not.toHaveBeenCalled();
+    },
+  );
+
   it('loads only the explicit selected workspace and filters mismatched projections', async () => {
     search.mockResolvedValue({
       status: 'ok',
