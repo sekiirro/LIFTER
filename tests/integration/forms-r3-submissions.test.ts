@@ -127,7 +127,9 @@ it('T013 commits one complete original, revision, audit, and frozen D-03 SLA', a
         status: 'saved',
         revision: 2,
       });
-      const nonstandardRollback = new Error('rollback nonstandard sections probe');
+      const nonstandardRollback = new Error(
+        'rollback nonstandard sections probe',
+      );
       let nonstandardResult: unknown;
       await expect(
         tx.savepoint(async (sp) => {

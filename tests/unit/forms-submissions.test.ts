@@ -26,8 +26,18 @@ describe('T013 submission validation', () => {
       validateFormSubmission(
         {
           questions: [
-            { id: 'name', sectionId: 'identity', type: 'shortText', required: true },
-            { id: 'goal', sectionId: 'goals', type: 'shortText', required: true },
+            {
+              id: 'name',
+              sectionId: 'identity',
+              type: 'shortText',
+              required: true,
+            },
+            {
+              id: 'goal',
+              sectionId: 'goals',
+              type: 'shortText',
+              required: true,
+            },
           ],
         },
         { name: 'Lina', goal: 'Strength' },
