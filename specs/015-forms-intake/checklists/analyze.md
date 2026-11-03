@@ -17,14 +17,17 @@
 
 | ID | Category | Severity | Location | Finding | Recommendation |
 |---|---|---|---|---|---|
-| A1 | PO clarification | MEDIUM | `plan.md:106`; `spec.md` S14 stable inventory B06 and Terms Card | Sex-label and Terms AR/EN wording were draft pending PO approval. | Resolved by S30-PO-1 Q2, recorded in Clarifications with the approved source commit. |
-| A2 | Ambiguity statement | MEDIUM | `spec.md` decision sections; `plan.md:104-110` | Prior to this refresh, no explicit ?No open ambiguities? statement was recorded and SK-015-01 remained open. | Resolved: SK-015-01 is recorded; remaining readiness items are explicitly distinguished from unresolved product ambiguity. |
 | A3 | External readiness | MEDIUM | `plan.md:107-108`; FR-012/019/033; SC-014/015/020 | Local/synthetic evidence does not prove hosted backup/PITR retention feasibility or authoritative P4 facts. | Keep real-data readiness blocked until required evidence exists. |
-| A4 | Terminology / scope | LOW | `spec.md` FR-032; plan OPEN items | Future attachment storage is excluded, while SC-019/020 say ?wherever attachments exist?; conditional wording could be read as MVP scope. | Retain explicit no-MVP-storage scope; escalate only if intended scope differs. |
+| A4 | Terminology / scope | LOW | `spec.md` FR-032; plan OPEN items | Future attachment storage is excluded, while SC-019/020 say "wherever attachments exist"; conditional wording could be read as MVP scope. | Retain explicit no-MVP-storage scope; escalate only if intended scope differs. |
+
+## Resolved from prior analysis
+
+- **A1 - PO clarification (closed):** SK-015-01 copy ambiguity resolved by S30-PO-1 Q2 and pinned to source commit `5084916469414ca743afe980e31c69cf593587fe`.
+- **A2 - ambiguity statement (closed):** Clarifications now explicitly state no open ambiguity remains for SK-015-01; other readiness gates are listed separately.
 
 ## Coverage and constitution
 
-FR-to-task coverage is 39/39 (100%). T049 is now tagged to FR-022; other tasks are tagged or identify evidence/dependencies. Constitution principles I?IX reviewed; no direct textual conflict found. External readiness gaps remain gates, not exceptions. No task checkbox or requirement meaning changed.
+FR-to-task coverage is 39/39 (100%). T049 is now tagged to FR-022; other tasks are tagged or identify evidence/dependencies. Constitution principles I through IX reviewed; no direct textual conflict found. External readiness gaps remain gates, not exceptions. No task checkbox or requirement meaning changed.
 
 ## Static traceability
 
@@ -32,7 +35,7 @@ See `traceability.md`: 29 VERIFIED, 31 PARTIAL, 1 NOT-FOUND. An asserting test w
 
 ## Verdict
 
-**PASS WITH OPEN MEDIUM FINDINGS** ? 0 CRITICAL, 0 HIGH, 2 MEDIUM, 1 LOW. SK-015-01 is resolved; the remaining MEDIUM findings are external readiness gates.
+**PASS WITH OPEN MEDIUM FINDINGS** - 0 CRITICAL, 0 HIGH, 1 MEDIUM, 1 LOW. SK-015-01 is resolved; the remaining MEDIUM finding is an external readiness gate.
 
 ## History
 
