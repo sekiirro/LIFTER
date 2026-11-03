@@ -62,10 +62,20 @@ describe('catalog schemas', () => {
     });
 
     it('rejects overlong names and invalid numeric defaults at the schema boundary', () => {
+      const nameAtLimit = '\u062A'.repeat(120);
+      const nameOverLimit = 'Øª'.repeat(121);
+      expect(Array.from(nameAtLimit)).toHaveLength(120);
+      expect(Array.from(nameOverLimit)).toHaveLength(121);
       expect(() =>
         normalizeExerciseInput({
           ...validExercise,
-          names: { ar: 'Øª'.repeat(121), en: 'Exercise' },
+          names: { ar: nameAtLimit, en: 'Exercise' },
+        }),
+      ).not.toThrow();
+      expect(() =>
+        normalizeExerciseInput({
+          ...validExercise,
+          names: { ar: nameOverLimit, en: 'Exercise' },
         }),
       ).toThrow(/120|length/i);
       for (const workingSets of [Number.NaN, -1]) {

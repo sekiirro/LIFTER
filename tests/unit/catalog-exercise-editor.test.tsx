@@ -108,15 +108,23 @@ describe('exercise editor defaults presentation', () => {
 });
 
 describe('exercise editor fixed-vs-range validation', () => {
-  it('rejects names beyond the approved schema length', () => {
+  it('accepts a 120-code-point Arabic name and rejects 121 code points', () => {
+    const nameAtLimit = '\u062A'.repeat(120);
+    const nameOverLimit = 'Øª'.repeat(121);
+    expect(Array.from(nameAtLimit)).toHaveLength(120);
+    expect(Array.from(nameOverLimit)).toHaveLength(121);
+
+    expect(
+      validateExerciseEditorDraft(
+        draft({ names: { ar: nameAtLimit, en: 'Long name' } }),
+      ).nameAr,
+    ).toBeUndefined();
     const errors = validateExerciseEditorDraft(
-      draft({ names: { ar: 'Øª'.repeat(121), en: 'Long name' } }),
+      draft({ names: { ar: nameOverLimit, en: 'Long name' } }),
     );
     expect(errors.nameAr).toBe('text_too_long');
     expect(
-      buildExerciseInput(
-        draft({ names: { ar: 'Øª'.repeat(121), en: 'Long name' } }),
-      ),
+      buildExerciseInput(draft({ names: { ar: nameOverLimit, en: 'Long name' } })),
     ).toBeNull();
   });
 
