@@ -42,8 +42,8 @@ A pure TypeScript `authorize()` mirrors the same matrix. A reusable integration 
 | # | Item | F3 handling |
 |---|---|---|
 | ND-F3-1 | Sales coaching rights (Register, Open) | `coaching_work` is denied for Sales |
-| ND-F3-2 | Can a WO see other members of their own workspace? | Not in the sources. Only the PO and the member themselves can read membership rows. |
-| ND-F3-3 | Who may manage the PO role itself (bootstrap, last-PO protection) | The first PO is bootstrapped by an operator SQL script (documented, not automated). No last-PO guard. |
+| ND-F3-2 | Can a WO see other members of their own workspace? | S30-PO-3 Q7 approves "WO sees active members" for roster administration. Workspace boundary, active predicate, and visible fields remain open; see PO items SK-003-04..07. |
+| ND-F3-3 | Who may manage the PO role itself (bootstrap, last-PO protection) | Initial PO bootstrap remains operator-managed. S30-PO-3 Q8 approves a database guard against removing or demoting the final PO and transfer by adding a new PO first. Concurrent behavior and failure contract remain open; see PO items SK-003-08..09. |
 
 ## Project Structure
 
