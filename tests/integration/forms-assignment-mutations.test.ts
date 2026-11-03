@@ -377,10 +377,7 @@ it('kills payment-time, frozen-stop, inactive-stop, and freeze-catch-up mutants'
       tx,
       CORE,
       (definition) =>
-        definition.replace(
-          'if p_occurrence_key<>expected_key or today<',
-          'if false or today<',
-        ),
+        definition.replace('or p_occurrence_key<>expected_key', 'or false'),
       async () => {
         const skippedOccurrenceKey = `recurring:${today}`;
         const laterDate = await dateOffset(tx, today, 2);
