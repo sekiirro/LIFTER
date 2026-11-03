@@ -60,6 +60,7 @@ export type FormQuestion = {
   required: boolean;
   charLimit?: number;
   choices?: readonly string[];
+  optionLabels?: readonly LocalizedFormText[];
   validation?: FormValidationRules;
   when?: ApplicabilityRule;
   privacy?: 'personal' | 'health';

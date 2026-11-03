@@ -2,11 +2,22 @@ import { randomUUID } from 'node:crypto';
 import postgres from 'postgres';
 import { afterAll, describe, expect, it } from 'vitest';
 import { clientContext, pending } from './client-accounts-fixture';
+import { withCrashSafeFunctionMutant } from './function-drift-guard';
 
 const db = postgres(process.env.DB_URL ?? '', { max: 1, connect_timeout: 10 });
 afterAll(() => db.end());
 
 const rollback = new Error('T006 synthetic fixture rollback');
+
+async function expectInvariantFailure(body: () => Promise<void>) {
+  let failure: unknown;
+  try {
+    await body();
+  } catch (error) {
+    failure = error;
+  }
+  expect(failure, 'the named invariant must kill the mutant').toBeDefined();
+}
 
 async function workspace(tx: postgres.TransactionSql) {
   const actor = randomUUID();
@@ -70,6 +81,125 @@ function definition(label = 'Editable prompt') {
 }
 
 describe('T006/T009 persisted Builder writes', () => {
+  it('creates a new form and version on the first Save with revision zero', async () => {
+    await expect(
+      db.begin(async (tx) => {
+        const fixture = await workspace(tx);
+        const formId = randomUUID();
+        const policy = `first-save-${fixture.workspaceId}`;
+        await tx`insert into app_private.terms_policy_versions(version,policy_kind,status)
+          values(${policy},'terms','published')`;
+        const result = await tx`
+          select app_private.save_workspace_form_draft(
+            ${fixture.workspaceId},${formId},0,${tx.json(definition())},${randomUUID()},${fixture.actor},'First draft'
+          ) as result`;
+        expect(result[0]?.result).toMatchObject({
+          status: 'ok',
+          formId,
+          revision: 1,
+        });
+        const rows = await tx`
+          select f.name,v.version_number,v.status from public.forms f
+          join public.form_versions v on v.workspace_id=f.workspace_id and v.form_id=f.id
+          where f.workspace_id=${fixture.workspaceId} and f.id=${formId}`;
+        expect(rows).toEqual([
+          { name: 'First draft', version_number: 1, status: 'draft' },
+        ]);
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
+  });
+
+  it('rejects choices on non-choice types and contains on a non-multiChoice source', async () => {
+    await expect(
+      db.begin(async (tx) => {
+        const invalidChoices = structuredClone(definition()) as {
+          questions: Array<Record<string, unknown>>;
+        };
+        invalidChoices.questions[0]!.choices = ['unexpected'];
+        const choicesResult = await tx`
+          select app_private.f15_valid_builder_definition(${tx.json(invalidChoices)},false) as valid`;
+        expect(choicesResult[0]?.valid).toBe(false);
+        const invalidContains = structuredClone(definition()) as {
+          questions: Array<Record<string, unknown>>;
+        };
+        invalidContains.questions[1]!.when = {
+          mode: 'all',
+          conditions: [
+            { questionId: 'question-2', operator: 'contains', value: 'x' },
+          ],
+        };
+        const containsResult = await tx`
+          select app_private.f15_valid_builder_definition(${tx.json(invalidContains)},false) as valid`;
+        expect(containsResult[0]?.valid).toBe(false);
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
+  });
+
+  it('kills SQL validator parity mutants for choices and contains', async () => {
+    const identity = 'app_private.f15_valid_builder_definition(jsonb,boolean)';
+    await withCrashSafeFunctionMutant(
+      identity,
+      (body) =>
+        body.replace(
+          /\n\s*if question \? 'choices' and answer_type not in \('singleChoice','multiChoice','imageChoice','mealCount','derivedChoice'\) then return false; end if;/,
+          '\n    -- killed mutant',
+        ),
+      async () =>
+        expectInvariantFailure(async () => {
+          const invalid = structuredClone(definition());
+          invalid.questions[0]!.choices = ['unexpected'];
+          const [row] =
+            await db`select app_private.f15_valid_builder_definition(${db.json(invalid)},false) as valid`;
+          expect(row?.valid).toBe(false);
+        }),
+    );
+    await withCrashSafeFunctionMutant(
+      identity,
+      (body) =>
+        body.replace(
+          /\s*if exists\(select 1 from jsonb_array_elements\(question->'when'->'conditions'\) c\s*join jsonb_array_elements\(p_definition->'questions'\) parent\s*on parent\.value->>'id'=c\.value->>'questionId'\s*where c\.value->>'operator'='contains' and \(parent\.value->>'type'<>'multiChoice'\s*or not \(parent\.value->'choices' @> jsonb_build_array\(c\.value->'value'\)\)\)\) then return false; end if;/,
+          '\n    -- killed mutant',
+        ),
+      async () =>
+        expectInvariantFailure(async () => {
+          const invalid = definition();
+          invalid.questions[1]!.when = {
+            mode: 'all',
+            conditions: [
+              { questionId: 'question-2', operator: 'contains', value: 'x' },
+            ],
+          };
+          const [row] =
+            await db`select app_private.f15_valid_builder_definition(${db.json(invalid)},false) as valid`;
+          expect(row?.valid).toBe(false);
+        }),
+    );
+  });
+
+  it('kills the first-save missing-row RPC mutant', async () => {
+    await withCrashSafeFunctionMutant(
+      'app_private.save_workspace_form_draft(uuid,uuid,integer,jsonb,uuid,uuid,text)',
+      (body) =>
+        body.replace(
+          "if p_expected_revision<>0 then return jsonb_build_object('status','missing'); end if;",
+          "if true then return jsonb_build_object('status','missing'); end if;",
+        ),
+      async () =>
+        expectInvariantFailure(() =>
+          db.begin(async (tx) => {
+            const fixture = await workspace(tx);
+            const policy = `first-save-${fixture.workspaceId}`;
+            await tx`insert into app_private.terms_policy_versions(version,policy_kind,status) values(${policy},'terms','published')`;
+            const result =
+              await tx`select app_private.save_workspace_form_draft(${fixture.workspaceId},${randomUUID()},0,${tx.json(definition())},${randomUUID()},${fixture.actor},'First draft') as result`;
+            expect(result[0]?.result.status).toBe('ok');
+          }),
+        ),
+    );
+  });
+
   it('saves a draft with CAS and an idempotent request key, and audits once', async () => {
     await expect(
       db.begin(async (tx) => {

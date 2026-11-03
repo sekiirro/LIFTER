@@ -97,6 +97,22 @@ describe('T022 authorized client assignment adapter', () => {
     });
   });
 
+  it('normalizes staff-authored label copy to the client title shape', async () => {
+    (
+      context.version_snapshot.questions as unknown as Record<string, unknown>[]
+    )[0] = {
+      id: 'goal',
+      sectionId: 'basic',
+      type: 'shortText',
+      required: true,
+      label: { en: 'Your goal', ar: 'هدفك' },
+    };
+    expect(await loadClientAssignment(assignmentId)).toMatchObject({
+      status: 'loaded',
+      questions: [{ title: { en: 'Your goal', ar: 'هدفك' } }],
+    });
+  });
+
   it('removes values outside the current snapshot before sending history to the client', async () => {
     client.rpc.mockImplementation(async (name: string) => {
       if (name === 'read_form_assignment_context')

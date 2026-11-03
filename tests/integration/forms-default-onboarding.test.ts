@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import postgres from 'postgres';
 import { afterAll, describe, expect, it } from 'vitest';
+import { loadEnv } from './harness';
+import postgres from 'postgres';
 
-const db = postgres(process.env.DB_URL ?? '', { max: 4, connect_timeout: 10 });
+const db = postgres(loadEnv().dbUrl, { max: 4, connect_timeout: 10 });
 afterAll(() => db.end());
 
 const rollback = new Error('T009 synthetic fixture rollback');

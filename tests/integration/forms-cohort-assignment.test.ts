@@ -58,6 +58,75 @@ async function setFutureActivation(
 }
 
 describe('T010/T023 per-form assignment policy', () => {
+  it('rejects a missing recurrence interval in policy and materialization paths', async () => {
+    const context = await clientContext();
+    const formId = await createForm(context.wsA.id);
+    const cairoToday = new Intl.DateTimeFormat('en-CA', {
+      timeZone: 'Africa/Cairo',
+      year: 'numeric',
+      month: '2-digit',
+      day: '2-digit',
+    }).format(new Date());
+    const configured = await context.po.client.rpc(
+      'configure_intake_assignment_policy',
+      {
+        ...policyArgs(
+          context.wsA.id,
+          formId,
+          'all_active_clients',
+          'recurring',
+        ),
+        p_timing: {
+          client_deadline_days: 3,
+          recurrence_interval_days: 7,
+          recurrence_starts_on: cairoToday,
+        },
+      },
+    );
+    expect(configured.data).toEqual({ status: 'configured' });
+    const omitted = await context.po.client.rpc(
+      'configure_intake_assignment_policy',
+      {
+        ...policyArgs(
+          context.wsA.id,
+          formId,
+          'all_active_clients',
+          'recurring',
+        ),
+        p_timing: { client_deadline_days: 3, recurrence_starts_on: cairoToday },
+      },
+    );
+    expect(omitted.data).toEqual({ status: 'not_found' });
+    const explicitNull = await context.po.client.rpc(
+      'configure_intake_assignment_policy',
+      {
+        ...policyArgs(
+          context.wsA.id,
+          formId,
+          'all_active_clients',
+          'recurring',
+        ),
+        p_timing: {
+          client_deadline_days: 3,
+          recurrence_interval_days: null,
+          recurrence_starts_on: cairoToday,
+        },
+      },
+    );
+    expect(explicitNull.data).toEqual({ status: 'not_found' });
+    await db`update app_private.form_assignment_policies set timing=${db.json({ client_deadline_days: 3, recurrence_interval_days: null, recurrence_starts_on: cairoToday })}
+      where workspace_id=${context.wsA.id} and form_id=${formId}`;
+    const materialized = await context.po.client.rpc(
+      'materialize_intake_assignment_occurrence',
+      {
+        p_workspace_id: context.wsA.id,
+        p_form_id: formId,
+        p_occurrence_key: `recurring:${cairoToday}`,
+      },
+    );
+    expect(materialized.data).toEqual({ status: 'not_found' });
+  });
+
   it('S25-R2 uses F12 approved_at rather than client created_at for onboarding cutoff', async () => {
     const { context, client } = await futureApprovedClient();
     const formId = await createForm(context.wsA.id);

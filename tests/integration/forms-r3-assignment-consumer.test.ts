@@ -49,19 +49,31 @@ it('T008 reconciles real F12 approval and F15 selection facts in either order, o
       expect(
         await tx`select 1 from public.form_assignments where workspace_id=${context.wsA.id} and client_id=${selectionFirst.id}`,
       ).toHaveLength(0);
-      expect(
-        (
-          await sqlCall(
-            tx,
-            context.po.userId,
-            'approve',
-            request(context, selectionFirst),
-          )
-        ).status,
-      ).toBe('ok');
-      expect(
-        await tx`select 1 from public.form_assignments where workspace_id=${context.wsA.id} and client_id=${selectionFirst.id} and form_id=${first.formId}`,
-      ).toHaveLength(1);
+      const firstApproval = await sqlCall(
+        tx,
+        context.po.userId,
+        'approve',
+        request(context, selectionFirst),
+      );
+      expect(firstApproval.status).toBe('ok');
+      const initialAssignment = await tx`
+        select a.id,a.policy_id,a.configured_by,a.client_deadline_at,a.audience_snapshot_at,
+          s.deadline_at as schedule_deadline
+        from public.form_assignments a
+        left join app_private.form_alert_schedules s
+          on s.workspace_id=a.workspace_id and s.source_assignment_id=a.id and s.alert_kind='client_late'
+        where a.workspace_id=${context.wsA.id} and a.client_id=${selectionFirst.id} and a.form_id=${first.formId}`;
+      expect(initialAssignment).toHaveLength(1);
+      expect(initialAssignment[0]?.policy_id).toBeTruthy();
+      expect(initialAssignment[0]?.configured_by).toBe(context.po.userId);
+      expect(initialAssignment[0]?.client_deadline_at).toEqual(
+        initialAssignment[0]?.schedule_deadline,
+      );
+      const expectedDeadline = await tx`
+        select ((((${initialAssignment[0]!.audience_snapshot_at}::timestamptz at time zone 'Africa/Cairo')::date+4)::timestamp at time zone 'Africa/Cairo')-interval '1 millisecond') as deadline`;
+      expect(initialAssignment[0]?.client_deadline_at).toEqual(
+        expectedDeadline[0]?.deadline,
+      );
 
       const second = await createSelectionFixture(tx, context.wsA.id);
       expect(

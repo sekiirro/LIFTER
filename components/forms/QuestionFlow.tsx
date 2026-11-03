@@ -25,6 +25,11 @@ import { Button } from '../ui/Button';
 import { Alert } from '../ui/Alert';
 import { Bidi } from '../ui/Bidi';
 import { TextAnswerField } from './TextAnswerField';
+import Image from 'next/image';
+import {
+  deriveMealTimingOptions,
+  resolveN12ImageSeries,
+} from '../../lib/forms/progression';
 import {
   CorrectionHistory,
   type AnswerHistoryEntry,
@@ -34,6 +39,7 @@ import styles from './QuestionFlow.module.css';
 export type LabeledQuestion = FormQuestion & {
   title: { en: string; ar: string };
   description?: { en: string; ar: string };
+  optionLabels?: readonly { en: string; ar: string }[];
 };
 
 function progressMessage(
@@ -546,6 +552,7 @@ export function QuestionFlow({
             <QuestionControl
               question={current}
               value={answers[current.id]}
+              answers={answers}
               profileValue={profileValues[current.id]}
               locale={locale}
               messages={messages}
@@ -640,6 +647,7 @@ export function QuestionFlow({
 function QuestionControl({
   question,
   value,
+  answers,
   profileValue,
   locale,
   messages,
@@ -648,12 +656,20 @@ function QuestionControl({
 }: {
   question: LabeledQuestion;
   value: FormAnswer | undefined;
+  answers: FormAnswerSet;
   profileValue: string | undefined;
   locale: Locale;
   messages: ReturnType<typeof getMessages>;
   disabled: boolean;
   onChange: (value: FormAnswer | undefined) => void;
 }) {
+  const text = (value: { en: string; ar: string } | undefined) =>
+    value?.[locale] ?? '';
+  if (question.type === 'displayOnly') {
+    return (
+      <p role="note">{text(question.displayText) || question.title[locale]}</p>
+    );
+  }
   if (question.type === 'profileText' || question.type === 'computedAge') {
     return (
       <output
@@ -709,7 +725,7 @@ function QuestionControl({
         role="group"
         aria-label={question.title[locale]}
       >
-        {question.choices?.map((choice) => (
+        {question.choices?.map((choice, index) => (
           <label key={choice}>
             <input
               type="radio"
@@ -718,10 +734,132 @@ function QuestionControl({
               checked={value === choice}
               onChange={() => onChange(choice)}
             />
-            {choice}
+            {text(question.optionLabels?.[index]) || choice}
           </label>
         ))}
       </div>
+    );
+  }
+  if (question.type === 'slider') {
+    const minimum = question.validation?.min ?? 0;
+    const maximum = question.validation?.max ?? 10;
+    const step = question.validation?.step ?? 1;
+    const score = typeof value === 'number' ? value : minimum;
+    const feedback = question.feedbackBands?.find(
+      (band) => score >= band.min && score <= band.max,
+    )?.text;
+    return (
+      <div className={styles.inputField}>
+        <label htmlFor={`answer-${question.id}`}>
+          {question.title[locale]}
+        </label>
+        <input
+          id={`answer-${question.id}`}
+          type="range"
+          min={minimum}
+          max={maximum}
+          step={step}
+          value={score}
+          disabled={disabled}
+          aria-valuetext={`${formatUiNumber(score, locale)} / ${formatUiNumber(maximum, locale)}`}
+          onChange={(event) => onChange(Number(event.currentTarget.value))}
+        />
+        <output aria-live="polite">
+          <Bidi dir="ltr">{formatUiNumber(score, locale)}</Bidi>/
+          <Bidi dir="ltr">{formatUiNumber(maximum, locale)}</Bidi>
+        </output>
+        {question.labels && (
+          <div className={styles.sliderLabels}>
+            <span>{question.labels.minimum}</span>
+            {question.labels.middle && <span>{question.labels.middle}</span>}
+            <span>{question.labels.maximum}</span>
+          </div>
+        )}
+        {feedback && <p role="status">{feedback}</p>}
+      </div>
+    );
+  }
+  if (question.type === 'imageChoice') {
+    const series = resolveN12ImageSeries(
+      typeof answers.sex === 'string' ? answers.sex : undefined,
+    );
+    const allowed = (question.assetReferences ?? [])
+      .map((reference, index) => ({ reference, index }))
+      .filter(({ reference }) =>
+        /^\/images\/body-fat\/[a-z0-9-]+\.(?:webp|avif)$/.test(reference),
+      )
+      .filter(({ reference }) =>
+        series ? reference.includes(`/body-fat/${series}-`) : true,
+      );
+    return (
+      <fieldset className={styles.choices}>
+        <legend>{question.title[locale]}</legend>
+        {allowed.map(({ reference, index }) => {
+          const choice = question.choices?.[index];
+          if (!choice) return null;
+          const label = text(question.optionLabels?.[index]) || choice;
+          return (
+            <label key={reference}>
+              <input
+                type="radio"
+                name={question.id}
+                value={choice}
+                disabled={disabled}
+                checked={value === choice}
+                onChange={() => onChange(choice)}
+              />
+              <Image
+                src={reference}
+                alt={label}
+                width={384}
+                height={329}
+                sizes="(max-width: 40rem) 100vw, 24rem"
+                style={{ maxInlineSize: '100%', blockSize: 'auto' }}
+              />
+              <Bidi>{label}</Bidi>
+            </label>
+          );
+        })}
+      </fieldset>
+    );
+  }
+  if (question.type === 'mealCount' || question.type === 'derivedChoice') {
+    const choices =
+      question.type === 'mealCount'
+        ? (question.choices ?? [])
+        : deriveMealTimingOptions(
+            typeof answers[question.derivedOptions?.sourceQuestionId ?? ''] ===
+              'string' ||
+              typeof answers[
+                question.derivedOptions?.sourceQuestionId ?? ''
+              ] === 'number'
+              ? (answers[question.derivedOptions?.sourceQuestionId ?? ''] as
+                  string | number)
+              : '',
+          );
+    return (
+      <fieldset className={styles.choices}>
+        <legend>{question.title[locale]}</legend>
+        {choices.map((choice, index) => {
+          const label =
+            question.type === 'derivedChoice' && choice.startsWith('meal-')
+              ? `${messages['forms.staffMealNumber']} ${choice.slice(5)}`
+              : text(question.optionLabels?.[index]) || choice;
+          return (
+            <label key={choice}>
+              <input
+                type="radio"
+                name={question.id}
+                value={choice}
+                disabled={disabled}
+                checked={value === choice}
+                onChange={() => onChange(choice)}
+              />
+              {label}
+            </label>
+          );
+        })}
+      </fieldset>
     );
   }
   if (question.type === 'multiChoice') {
@@ -732,7 +870,7 @@ function QuestionControl({
         role="group"
         aria-label={question.title[locale]}
       >
-        {question.choices?.map((choice) => (
+        {question.choices?.map((choice, index) => (
           <label key={choice}>
             <input
               type="checkbox"
@@ -746,7 +884,7 @@ function QuestionControl({
                 )
               }
             />
-            {choice}
+            {text(question.optionLabels?.[index]) || choice}
           </label>
         ))}
       </div>

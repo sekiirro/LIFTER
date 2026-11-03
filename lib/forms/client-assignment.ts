@@ -31,14 +31,15 @@ function localizedQuestions(value: unknown): readonly LabeledQuestion[] | null {
   if (!Array.isArray(value)) return null;
   const questions: LabeledQuestion[] = [];
   for (const candidate of value) {
+    if (!record(candidate)) return null;
+    const copy = record(candidate.title) ? candidate.title : candidate.label;
     if (
-      !record(candidate) ||
-      !record(candidate.title) ||
-      typeof candidate.title.en !== 'string' ||
-      typeof candidate.title.ar !== 'string'
+      !record(copy) ||
+      typeof copy.en !== 'string' ||
+      typeof copy.ar !== 'string'
     )
       return null;
-    questions.push(candidate as unknown as LabeledQuestion);
+    questions.push({ ...candidate, title: copy } as unknown as LabeledQuestion);
   }
   return questions;
 }

@@ -293,19 +293,19 @@ test('Builder publishes a previewed draft as a published form', async ({
     .fill('Immutable published form');
   await page
     .getByLabel(messages['forms.staffArabicName'])
-    .fill('Ø§Ù„Ø§Ø³ØªØ¨ÙŠØ§Ù† Ø§Ù„Ù…Ù†Ø´ÙˆØ±');
+    .fill('الاستبيان المنشور');
   await page
     .getByRole('button', { name: messages['forms.staffAddSection'] })
     .click();
   await page.getByLabel(messages['forms.staffEnglishSection']).fill('General');
-  await page.getByLabel(messages['forms.staffArabicSection']).fill('Ø¹Ø§Ù…');
+  await page.getByLabel(messages['forms.staffArabicSection']).fill('عام');
   await page
     .getByRole('button', { name: messages['forms.staffAddQuestion'] })
     .click();
   await page
     .getByLabel(messages['forms.staffEnglishQuestion'])
     .fill('Question');
-  await page.getByLabel(messages['forms.staffArabicQuestion']).fill('Ø³Ø¤Ø§Ù„');
+  await page.getByLabel(messages['forms.staffArabicQuestion']).fill('سؤال');
   await page
     .getByRole('button', { name: messages['forms.staffPreviewForm'] })
     .click();

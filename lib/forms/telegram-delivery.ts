@@ -107,7 +107,17 @@ export async function runTelegramJobs(input: {
         p_delivery_id: context.delivery_id,
       },
     );
-    if (claimedDelivery.error || typeof claimedDelivery.data !== 'string') {
+    if (claimedDelivery.error) {
+      await input.client.rpc('jobs_fail', {
+        id: job.id,
+        lease: job.lease_token,
+        error_code: 'delivery_claim_unavailable',
+        permanent: false,
+      });
+      failed++;
+      continue;
+    }
+    if (typeof claimedDelivery.data !== 'string') {
       await input.client.rpc('jobs_complete', {
         id: job.id,
         lease: job.lease_token,

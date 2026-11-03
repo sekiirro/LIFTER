@@ -101,6 +101,70 @@ describe('QuestionFlow', () => {
     expect(html).toContain('Do you have an injury?');
   });
 
+  it('renders approved builder answer controls and localized display copy', () => {
+    const displayOnly = renderToStaticMarkup(
+      createElement(QuestionFlow, {
+        locale: 'en',
+        questions: [
+          {
+            id: 'note',
+            sectionId: 's',
+            type: 'displayOnly',
+            required: false,
+            title: { en: 'Heading', ar: 'عنوان' },
+            displayText: { en: 'Read this note', ar: 'اقرأ هذه الملاحظة' },
+          },
+        ],
+        adapter,
+        assignmentId: 'display-only',
+      }),
+    );
+    expect(displayOnly).toContain('Read this note');
+
+    const localizedChoice = renderToStaticMarkup(
+      createElement(QuestionFlow, {
+        locale: 'en',
+        questions: [
+          {
+            id: 'choice',
+            sectionId: 's',
+            type: 'singleChoice',
+            required: true,
+            title: { en: 'Choice', ar: 'اختيار' },
+            choices: ['raw'],
+            optionLabels: [{ en: 'Localized option', ar: 'خيار' }],
+          },
+        ],
+        adapter,
+        assignmentId: 'single-choice',
+      }),
+    );
+    expect(localizedChoice).toContain('Localized option');
+    expect(localizedChoice).not.toContain('>raw</label>');
+
+    const slider = renderToStaticMarkup(
+      createElement(QuestionFlow, {
+        locale: 'en',
+        questions: [
+          {
+            id: 'slider',
+            sectionId: 's',
+            type: 'slider',
+            required: true,
+            title: { en: 'Score', ar: 'التقييم' },
+            labels: { minimum: 'Low', middle: 'Mid', maximum: 'High' },
+            validation: { min: 0, max: 10, step: 1 },
+            feedbackBands: [{ min: 0, max: 10, text: 'Score feedback' }],
+          },
+        ],
+        adapter,
+        assignmentId: 'slider',
+      }),
+    );
+    expect(slider).toContain('type="range"');
+    expect(slider).toContain('Score feedback');
+  });
+
   it('keeps submitted history readable and removes correction after relationship end', () => {
     const html = renderToStaticMarkup(
       createElement(QuestionFlow, {

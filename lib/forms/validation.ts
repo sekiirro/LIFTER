@@ -116,6 +116,7 @@ const QUESTION_KEYS = new Set([
   'required',
   'charLimit',
   'choices',
+  'optionLabels',
   'validation',
   'when',
   'privacy',
@@ -396,6 +397,21 @@ export function validateFormDefinition(input: unknown): FormValidationIssue[] {
       }
     }
 
+    let optionLabels: readonly { en: string; ar: string }[] | undefined;
+    if (candidate.optionLabels !== undefined) {
+      if (
+        !Array.isArray(candidate.optionLabels) ||
+        candidate.optionLabels.length > APPROVED_FORM_BOUNDS.maxChoices ||
+        candidate.optionLabels.some((label) => !isLocalizedText(label)) ||
+        (choices !== undefined &&
+          candidate.optionLabels.length !== choices.length)
+      ) {
+        issues.push({ code: 'invalid_option_labels', questionId });
+      } else {
+        optionLabels = candidate.optionLabels as { en: string; ar: string }[];
+      }
+    }
+
     let validation: FormQuestion['validation'];
     if (candidate.validation !== undefined) {
       if (
@@ -468,6 +484,7 @@ export function validateFormDefinition(input: unknown): FormValidationIssue[] {
           ? { charLimit: candidate.charLimit as number }
           : {}),
         ...(choices === undefined ? {} : { choices }),
+        ...(optionLabels === undefined ? {} : { optionLabels }),
         ...(validation === undefined ? {} : { validation }),
         ...(when === undefined ? {} : { when }),
         ...(isSliderLabels(candidate.labels)

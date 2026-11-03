@@ -25,8 +25,8 @@ it('restores an abandoned committed function mutant from its migration and fails
     expect(original?.definition).toBeTruthy();
     try {
       const mutant = original!.definition.replace(
-        /\n\$function\$\s*$/,
-        '\n-- simulated abandoned mutation\n$function$',
+        /(\bas\s+\$[A-Za-z_]*\$)/i,
+        '$1\n-- simulated abandoned mutation',
       );
       expect(mutant).not.toBe(original!.definition);
       await applyFunctionDefinition(

@@ -185,7 +185,7 @@ it('enforces name, past DOB, and optional Telegram syntax at the transaction bou
       telegram_username: '',
     },
     { date_of_birth: cairoToday },
-    { date_of_birth: '2027-01-01' },
+    { date_of_birth: `${Number(cairoToday.slice(0, 4)) + 1}-01-01` },
     { telegram_username: 'not a valid handle' },
     { telegram_username: null },
   ];

@@ -60,7 +60,6 @@ Account details are required to manage identity and access. Email addresses and 
 ## S14 approval context
 
 - Historical S14 decision: a separate health-data notice appeared immediately before health questions without a checkbox or consent receipt. S17 supersedes the standalone UI; that draft is provenance only, not a pending ship approval. Minimal contextual guidance may use the PO-approved phrase only where genuinely useful.
-- Confirm whether the user-facing retention sentence should state the 30-day maximum while legal/technical all-copy retention remains a production gate.
 - Architect default: use existing premium card/checkbox components for the Terms Card; do not borrow YBS styling.
 
 
