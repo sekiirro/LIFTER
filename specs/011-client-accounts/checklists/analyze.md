@@ -10,7 +10,7 @@
 | ID | Severity | Artifact | Finding | Disposition |
 |---|---|---|---|---|
 | F11-A01 | MEDIUM | `spec.md:FR-010`, ND-F11-7; D-20 | Signup-attempt logs have a decided 30-day period, but other audit-event retention remains unresolved under B4/ND-F5-1. | Preserve the explicit separation and raise SK-011-01; do not infer a retention period for other audit events. |
-| F11-A02 | MEDIUM | `spec.md:FR-007`, ND-F11-9a/9b, SC-011 | Archived-state and admin-review design is explicitly deferred until ND-F5-1; archived collisions must continue to use generic D-08 output. | Preserve the bounded collision behavior and raise SK-011-02 for the later archive/reviewer decision. |
+| F11-A02 | MEDIUM | `spec.md:FR-007`, ND-F11-9a/9b, SC-011 | Archived-state and admin-review design remains open under ND-F11-9a/9b; archived collisions must continue to use generic D-08 output. | Preserve the bounded collision behavior and raise SK-011-02 for the later archive/reviewer decision. |
 
 ## Coverage and consistency
 

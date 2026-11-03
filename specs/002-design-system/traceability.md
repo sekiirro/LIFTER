@@ -1,4 +1,4 @@
-﻿# Design System Foundation — Traceability (merged scope)
+# Design System Foundation — Traceability (merged scope)
 
 **Scope:** Existing merged F2 FR-001..FR-026 and SC-001..SC-007. The PR #28 shipped delta is separately covered by the Design System coverage PR. Static inspection only; no tests run.
 
@@ -41,6 +41,6 @@
 ## Summary
 
 - FR: 22 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
-- SC: 3 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- SC: 4 VERIFIED, 3 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Historical task checkboxes remain unchanged. No tests were executed in this reconciliation.
 
