@@ -4,7 +4,7 @@ import { ar } from '../../lib/i18n/messages/ar';
 import { en } from '../../lib/i18n/messages/en';
 
 describe('approved F16 copy', () => {
-  it('ships every S26-approved Arabic and English string verbatim', () => {
+  it('ships every approved F16 Arabic and English string verbatim', () => {
     const rows = approvedF16Copy as {
       key: keyof typeof ar;
       ar: string;

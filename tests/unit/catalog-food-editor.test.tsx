@@ -209,7 +209,7 @@ describe('food editor (T029)', () => {
           initialErrors: {
             alternativeFoods: ['required', 'required'],
             alternativePortions: ['positive', 'positive'],
-            alternativeUnits: ['required', 'required'],
+            alternativeUnits: [true, true],
             alternatives: 'too_many',
           },
         }),
@@ -221,7 +221,9 @@ describe('food editor (T029)', () => {
           (button) =>
             button.textContent === en['catalog.foodAlternativeRemove'],
         )
-        ?.dispatchEvent(new dom.MouseEvent('click', { bubbles: true }));
+        ?.dispatchEvent(
+          new dom.MouseEvent('click', { bubbles: true }) as unknown as Event,
+        );
     });
     expect(
       container.querySelectorAll('select[id*="-alternative-"]'),

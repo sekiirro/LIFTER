@@ -469,8 +469,8 @@
   },
   {
     "key": "catalog.foodSaveErrorDescription",
-    "ar": "لم يُحفظ الطعام. تحقق من الاتصال ثم حاول مرة أخرى.",
-    "en": "Your food was not saved. Check your connection and try again."
+    "ar": "تعذّر تأكيد الحفظ. راجع قائمة الطعام قبل إعادة المحاولة.",
+    "en": "We couldn't confirm the save. Check the food list before retrying."
   },
   {
     "key": "catalog.foodSaveSuccess",
@@ -700,5 +700,6 @@
     "key": "catalog.videoVariationWorkspaceRequired",
     "ar": "اختر مساحة العمل صراحةً.",
     "en": "Choose a workspace explicitly."
-  }
+  },
+  { "key": "catalog.showcaseKendoWorkspace", "ar": "مساحة كيندو التجريبية", "en": "Kendo demo workspace" }
 ]
