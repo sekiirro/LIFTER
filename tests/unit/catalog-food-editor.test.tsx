@@ -153,6 +153,48 @@ describe('food editor (T029)', () => {
     ).toBe('positive');
   });
 
+  it('rejects blank alternative food ids and exposes the field error', async () => {
+    const invalidDraft = {
+      ...base,
+      alternatives: [{ foodId: ' ', portionQuantity: '50', portionUnit: 'g' }],
+    };
+    expect(validateFoodEditorDraft(invalidDraft).alternativeFoods?.[0]).toBe(
+      'required',
+    );
+    expect(buildFoodEditorInput(invalidDraft)).toBeNull();
+
+    const onSubmit = vi.fn();
+    await act(async () => {
+      root.render(
+        createElement(FoodEditor, {
+          locale: 'en',
+          initialDraft: invalidDraft,
+          onSubmit,
+        }),
+      );
+    });
+    await act(async () => {
+      container
+        .querySelector('form')
+        ?.dispatchEvent(
+          new dom.Event('submit', {
+            bubbles: true,
+            cancelable: true,
+          }) as unknown as Event,
+        );
+    });
+    const select = container.querySelector<HTMLSelectElement>(
+      'select[id$="-alternative-0"]',
+    );
+    expect(onSubmit).not.toHaveBeenCalled();
+    expect(select?.getAttribute('aria-invalid')).toBe('true');
+    expect(select?.getAttribute('aria-describedby')).toMatch(
+      /alternative-0-error/,
+    );
+    expect(container.textContent).toContain(en['catalog.foodErrorRequired']);
+    expect(container.querySelector('a[href$="-alternative-0"]')).not.toBeNull();
+  });
+
   it('clears all dependent macro errors once the macro sum is valid', () => {
     const invalid = { ...base, protein: '40', carbs: '40', fat: '30' };
     const errors = validateFoodEditorDraft(invalid);
