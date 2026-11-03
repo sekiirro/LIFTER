@@ -41,7 +41,7 @@ A pure TypeScript `authorize()` mirrors the same matrix. A reusable integration 
 
 - **ND-F3-1 resolved by S30-PO-3 Q6:** “PO/WO/Trainer, deny Sales (Recommended)”. Sales remains denied `coaching_work`.
 - **ND-F3-2 resolved for this approved scope by S30-PO-3 Q7 and S30-R8:** a current Workspace Owner sees only active membership fields for their own workspace (`user_id`, `workspace_id`, `granted_at`, `revoked_at`, plus the associated `staff_profiles.role`). `revoked_at IS NULL` defines active. Profile/contact fields are out of scope.
-- **ND-F3-3 resolved for this approved scope by S30-PO-3 Q8 and S30-R8:** preserve at least one Platform Owner under concurrent changes; protect role changes/demotions, staff-profile or membership deletion/revocation, and auth-user deletion cascades; serialize role changes; reuse the existing generic privileged-operation error convention. No new user-facing copy. Bootstrap remains operator-managed.
+- **ND-F3-3 resolved for this approved scope by S30-PO-3 Q8 and S30-R8:** preserve at least one Platform Owner under concurrent changes; protect role changes/demotions, staff-profile or membership deletion/revocation, and auth-user deletion cascades; serialize every protected mutation through the shared transaction lock described below; reuse the existing generic privileged-operation error convention. No new user-facing copy. Bootstrap remains operator-managed.
 ## Project Structure
 
 ```text
