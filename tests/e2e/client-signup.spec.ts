@@ -193,6 +193,62 @@ test.describe.serial('T038 invitation signup UI', () => {
     expect(page.url()).toContain('/register/');
   });
 
+  test('focuses the first invalid field after its ARIA error renders', async ({
+    page,
+    context,
+  }) => {
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
+    const messages = getMessages('en') as SignupTestMessages;
+    await context.addCookies([
+      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: THEME_COOKIE, value: 'light', url: origin },
+    ]);
+    await page.goto(`/register/${token}`);
+    const nameField = page.getByLabel(messages['clientSignup.name'], {
+      exact: true,
+    });
+    await nameField.fill('Heba');
+    await page
+      .getByLabel(messages['clientSignup.dateOfBirth'], { exact: true })
+      .fill('2026-10-30');
+    const usernameField = page.getByLabel(messages['clientSignup.username'], {
+      exact: true,
+    });
+    await usernameField.fill('system');
+
+    let focusedAfterErrorState = false;
+    await page.exposeFunction(
+      'captureSignupFocusState',
+      (hasRenderedErrorState: boolean) => {
+        focusedAfterErrorState = hasRenderedErrorState;
+      },
+    );
+    await nameField.evaluate((element) => {
+      const win = window as unknown as Window & {
+        captureSignupFocusState: (hasRenderedErrorState: boolean) => void;
+      };
+      element.addEventListener(
+        'focus',
+        () => {
+          const describedBy = element.getAttribute('aria-describedby');
+          win.captureSignupFocusState(
+            element.getAttribute('aria-invalid') === 'true' &&
+              Boolean(describedBy && document.getElementById(describedBy)),
+          );
+        },
+        { once: true },
+      );
+    });
+    await usernameField.focus();
+    await usernameField.press('Enter');
+    await expect(nameField).toBeFocused();
+    await expect.poll(() => focusedAfterErrorState).toBe(true);
+    await expect(nameField).toHaveAttribute(
+      'aria-describedby',
+      'signup-name-error',
+    );
+  });
+
   test('rejects unexpected signup fields generically without a browser session', async ({
     page,
     context,

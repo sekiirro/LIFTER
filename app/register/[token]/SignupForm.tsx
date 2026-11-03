@@ -84,6 +84,8 @@ export function SignupForm({
   const [identityInvalidFields, setIdentityInvalidFields] = useState<
     SignupIdentityField[]
   >([]);
+  const [identityFocusRequest, setIdentityFocusRequest] = useState(0);
+  const focusIdentityErrorAfterRenderRef = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
   const resultRef = useRef<HTMLParagraphElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -146,6 +148,18 @@ export function SignupForm({
         username: usernameRef,
         telegramUsername: telegramUsernameRef,
       } as const;
+      if (focusIdentityErrorAfterRenderRef.current) {
+        focusIdentityErrorAfterRenderRef.current = false;
+        identityRefs[firstIdentityError].current?.focus();
+        return;
+      }
+      const activeElement = document.activeElement;
+      if (
+        activeElement instanceof HTMLElement &&
+        formRef.current?.contains(activeElement) &&
+        activeElement !== formRef.current.querySelector('button[type="submit"]')
+      )
+        return;
       identityRefs[firstIdentityError].current?.focus();
       return;
     }
@@ -163,7 +177,7 @@ export function SignupForm({
       return;
     }
     resultRef.current?.focus();
-  }, [identityInvalidFields, result, submitted]);
+  }, [identityFocusRequest, identityInvalidFields, result, submitted]);
 
   if (result.status === 'sign_out_required')
     return (
@@ -187,6 +201,13 @@ export function SignupForm({
         );
         if (!validation.value) {
           event.preventDefault();
+          const firstIdentityError = (
+            ['name', 'dateOfBirth', 'username', 'telegramUsername'] as const
+          ).find((field) => validation.invalidFields.includes(field));
+          if (firstIdentityError) {
+            focusIdentityErrorAfterRenderRef.current = true;
+            setIdentityFocusRequest((request) => request + 1);
+          }
           setSubmitted(true);
           setTouchedIdentityFields([
             'name',
@@ -229,7 +250,9 @@ export function SignupForm({
             name="name"
             aria-label={messages.name}
             aria-describedby={
-              submitted && result.invalidFields?.includes('name')
+              (submitted || touchedIdentityFields.includes('name')) &&
+              (identityInvalidFields.includes('name') ||
+                result.invalidFields?.includes('name'))
                 ? 'signup-name-error'
                 : undefined
             }
