@@ -53,7 +53,7 @@
   - output the total vs `--limit-mb`
   - add `volumes.example.json` with every value `null` and a `_note: "ND-F8-1: pilot volumes NEEDS SOURCE CONFIRMATION"`
   - add `routes.example.json` listing `/login`, `/auth/recovery`, `/api/health`
-- [x] T008 [P] Unit tests `tests/unit/free-tier-{stats,routes,projection,tail,db}.test.ts`. The tail test parses the fixture, and asserts that the output text doesn't contain a fixture header value, a query-string value or a log message (FR-001..FR-008, SC-001..SC-004).
+- [x] T008 [P] Unit tests `tests/unit/free-tier-{stats,routes,projection,tail,db}.test.ts`. The tail test parses the fixture, and asserts that the output text doesn't contain a fixture header value, a query-string value or a log message (FR-001..FR-006, SC-003).
 
 ## Phase 5: Polish
 
