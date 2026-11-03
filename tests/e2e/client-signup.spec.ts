@@ -109,17 +109,38 @@ test.describe.serial('T038 invitation signup UI', () => {
       messages['clientSignup.dateOfBirth'],
       { exact: true },
     );
-    await nameField.focus();
-    await nameField.press('Tab');
-    await expect(dateOfBirthField).toBeFocused();
-    await nameField.fill('Heba');
     await dateOfBirthField.fill('2026-10-30');
-    await page
-      .getByLabel(messages['clientSignup.username'], { exact: true })
-      .fill('system');
-    await page
-      .getByRole('button', { name: messages['clientSignup.submit'] })
-      .click();
+    const usernameField = page.getByLabel(messages['clientSignup.username'], {
+      exact: true,
+    });
+    await usernameField.fill('system');
+    let focusedAfterErrorState = false;
+    await page.exposeFunction(
+      'captureSignupFocusState',
+      (hasRenderedErrorState: boolean) => {
+        focusedAfterErrorState = hasRenderedErrorState;
+      },
+    );
+    await nameField.evaluate((element) => {
+      const win = window as unknown as Window & {
+        captureSignupFocusState: (hasRenderedErrorState: boolean) => void;
+      };
+      element.addEventListener(
+        'focus',
+        () => {
+          const describedBy = element.getAttribute('aria-describedby');
+          win.captureSignupFocusState(
+            element.getAttribute('aria-invalid') === 'true' &&
+              Boolean(describedBy && document.getElementById(describedBy)),
+          );
+        },
+        { once: true },
+      );
+    });
+    await usernameField.focus();
+    await usernameField.press('Enter');
+    await expect(nameField).toBeFocused();
+    await expect.poll(() => focusedAfterErrorState).toBe(true);
     await expect(
       page.getByLabel(messages['clientSignup.name'], { exact: true }),
     ).toHaveAttribute('aria-invalid', 'true');
@@ -133,9 +154,6 @@ test.describe.serial('T038 invitation signup UI', () => {
     await dateOfBirthField.focus();
     await dateOfBirthField.fill('2000-01-01');
     await expect(dateOfBirthField).toBeFocused();
-    const usernameField = page.getByLabel(messages['clientSignup.username'], {
-      exact: true,
-    });
     await usernameField.focus();
     await usernameField.press('Enter');
     await expect(nameField).toBeFocused();

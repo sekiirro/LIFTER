@@ -16,6 +16,16 @@ export const guardedFunctions = [
     name: 'app_private.f15_alert_schedule_immutable',
   },
   {
+    identity: 'app_private.f15_alert_schedule_activate()',
+    migration: '20261104030800_f15_alert_schedules.sql',
+    name: 'app_private.f15_alert_schedule_activate',
+  },
+  {
+    identity: 'app_private.f15_alert_schedule_deactivate()',
+    migration: '20261104030800_f15_alert_schedules.sql',
+    name: 'app_private.f15_alert_schedule_deactivate',
+  },
+  {
     identity: 'app_private.branding_publish(uuid,bigint)',
     migration: '20261102152000_branding_shared_asset_retention.sql',
     name: 'app_private.branding_publish',
