@@ -29,4 +29,10 @@ describe('exercise row input mapping', () => {
       expect(() => normalizeExerciseInput(exerciseInput(row)!)).toThrow();
     },
   );
+
+  it('does not coerce malformed array members into catalog identifiers', () => {
+    const row = validRow();
+    row.payload.defaults.alternative_exercise_ids = [null];
+    expect(exerciseInput(row)).toBeNull();
+  });
 });

@@ -15,13 +15,31 @@ export function exerciseInput(
     defaults.reps && typeof defaults.reps === 'object'
       ? (defaults.reps as Record<string, unknown>)
       : null;
+  const secondaryMuscles = payload.secondary_muscle_codes;
+  if (
+    Array.isArray(secondaryMuscles) &&
+    secondaryMuscles.some((value) => typeof value !== 'string')
+  )
+    return null;
+  const alternativeExerciseIds = defaults.alternative_exercise_ids;
+  if (
+    Array.isArray(alternativeExerciseIds) &&
+    alternativeExerciseIds.some((value) => typeof value !== 'string')
+  )
+    return null;
   return {
-    names: { ar: String(row.name_ar), en: String(row.name_en) },
-    primaryMuscle: String(payload.primary_muscle_code),
-    secondaryMuscles: Array.isArray(payload.secondary_muscle_codes)
-      ? payload.secondary_muscle_codes.map(String)
+    names: {
+      ar: typeof row.name_ar === 'string' ? row.name_ar : undefined,
+      en: typeof row.name_en === 'string' ? row.name_en : undefined,
+    },
+    primaryMuscle:
+      typeof payload.primary_muscle_code === 'string'
+        ? payload.primary_muscle_code
+        : '',
+    secondaryMuscles: Array.isArray(secondaryMuscles)
+      ? secondaryMuscles
       : [],
-    equipment: String(equipment),
+    equipment: typeof equipment === 'string' ? equipment : '',
     lifecycleState: row.lifecycle_state === 'removed' ? 'removed' : 'active',
     defaults: {
       warmupSets:
@@ -46,8 +64,8 @@ export function exerciseInput(
         typeof defaults.rir === 'number' || defaults.rir === null
           ? defaults.rir
           : undefined,
-      alternativeExerciseIds: Array.isArray(defaults.alternative_exercise_ids)
-        ? defaults.alternative_exercise_ids.map(String)
+      alternativeExerciseIds: Array.isArray(alternativeExerciseIds)
+        ? alternativeExerciseIds
         : [],
     },
   };
