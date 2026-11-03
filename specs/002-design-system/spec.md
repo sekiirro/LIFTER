@@ -118,7 +118,8 @@ Users see the approved Glisse Liquid Glass treatment on the floating navigation 
 
 **Clarifications**
 
-- Decision record: S21-PO-1/2/6, S26-PO-4, S27-PO-1, S28-PO-1/2; implementation evidence: PR #28 body and merged commits, including final approved SHA `12bcad944c9366f17afc00a36bd14586c5f2e77a`; design reference: DESIGN.md §10 log and §12 review criteria.
+- Decision record: S21-PO-1/2/6, S26-PO-4, S27-PO-1, S28-PO-1/2; implementation evidence: PR #28 body and merged commits, including final approved SHA `12bcad944c9366f17afc00a36bd14586c5f2e77a`; design reference: DESIGN.md §10 log, §12 review criteria, and the approved Liquid Glass addition under “Public Hero.”
+- Source quotations: S21-PO-1: “Keep dense data, forms, and financial content mostly solid.” S21-PO-2: “Floating + real refraction” on floating surfaces, with “solid fallback.” S21-PO-6: “before any PR, TBT must be within +50 ms of baseline”; it also approved “Floating action buttons” and “Menus & popovers,” while the “Desktop rail stays solid.” DESIGN.md §10 records the trainer/client mobile navigation order; DESIGN.md §12 requires contrast, focus, screen-reader, and reduced-motion review. The PR #28 body describes “Deferred Glisse refraction” on capable devices and static fallback for constrained, reduced-transparency, increased-contrast, and forced-colors cases. S26-PO-4 says “approve merges separately by exact SHA.” S27-PO-1 requires rerun CI and CodeRabbit and exact-SHA approval if the head changes. S28-PO-1 states “PR #28 Merge Approved from me”; S28-PO-2 pins approval to exact SHA `12bcad9` and requires post-merge checks and main CI.
 - Zero open ambiguities remain for the PR #28 merged scope recorded here. Existing plan NEEDS DECISION items remain unchanged and outside this delta.
 
 ---
