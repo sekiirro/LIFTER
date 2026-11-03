@@ -82,6 +82,12 @@ vitest.config.ts  playwright.config.ts
 
 **Structure Decision**: A single app at the repo root. A monorepo isn't justified until a second deployable exists; the `telegram-webhook` and `cron` Workers arrive in later features and can live under `workers/` then.
 
+## Self-hosted CI operational plan (S28-PO-3; S29 infrastructure rules)
+
+S29-PO-3 Q7 authorizes complete CI coverage under Infrastructure. This operational scope is governed by FR-015-FR-020 and SC-006-SC-011 in `spec.md`. The existing hosted `ubuntu-latest` fallback stays available until full reliability evidence exists. The self-hosted runner is repository-scoped in the dedicated `lifter-ci` WSL2 distro with an independent Docker engine; the existing workflow selects it by `LIFTER_CI_RUNNER`. CI Supabase work uses project `lifter-stack-ci`, isolated ports 56420-56429 and app port 3990; cleanup must stop only that profile and release those ports. It must not change Stacks A-D or bind the reserved lane/Stack A-D/dynamic-port ranges documented in `docs/ci-self-hosted.md`.
+
+The S28 auto-start requirement is not accepted by the current logon-only Scheduled Task; the AtStartup trigger and actual reboot test remain open evidence gates. Until full end-to-end verification, keep the hosted fallback and current visibility procedures. For every temporary visibility CI window, follow FR-019/FR-020 and the source records: runner offline while PUBLIC, lock/watchdog, restore and verify PRIVATE, preserve all merge/review gates.
+
 ## Complexity Tracking
 
 None.

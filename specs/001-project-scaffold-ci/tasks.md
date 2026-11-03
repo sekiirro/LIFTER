@@ -39,6 +39,15 @@
 - [x] T014 Unit-test the size-report's pure comparison function in `tests/unit/size-report.test.ts` (under, equal and over the limit → exit code)
 - [x] T015 Run all Windows-capable quickstart steps; fix failures; run `npm run format`
 
+## Self-hosted CI acceptance (S28-PO-3)
+
+- [ ] T016 [FR-015] Revalidate Push and PR validate/integration/storage jobs on the final implementation head; preserve all baseline test and security gates. Record exact run IDs and statuses.
+- [ ] T017 [FR-016] Prove Stacks A-D remain unchanged and every isolated CI app/Supabase port is released, including WSL forwarding checks for reserved lane ports. Record before/after and port-leak evidence.
+- [ ] T018 [FR-017] After the PO-approved maintenance window, configure the required startup trigger and verify a real reboot starts WSL2, Docker and the runner automatically without manual logon. Retain runbook/reboot evidence.
+- [ ] T019 [FR-018, FR-019] Preserve the hosted fallback and merge approval gates; verify runner offline for every PUBLIC interval; only retire visibility switching after full end-to-end evidence and the PO-approved permanent-PRIVATE decision.
+- [ ] T020 [FR-020] For any authorized CI visibility window, hold the CI-window lock, start/confirm the watchdog before visibility changes, restore and verify PRIVATE before release, and record exact timestamps.
+
+
 **Review B3:** Windows gates + workflow inspection. `build:edge`/`size` are verified in Linux CI after the PO authorizes a push.
 
 ## Dependencies
