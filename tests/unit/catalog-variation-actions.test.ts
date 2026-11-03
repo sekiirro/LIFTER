@@ -99,4 +99,24 @@ describe('catalog variation actions', () => {
       cursor: null,
     });
   });
+
+  it('stops paging after collecting the page with the requested exercise', async () => {
+    const rows = Array.from({ length: 50 }, (_, index) => ({
+      result_id: `exercise-${String(index).padStart(2, '0')}`,
+      result_workspace_id: 'workspace-selected',
+      result_version: 1,
+      result_payload: { note: 'mapping' },
+    }));
+    search
+      .mockResolvedValueOnce({ status: 'ok', data: rows })
+      .mockResolvedValueOnce({ status: 'ok', data: [] });
+
+    const result = await loadWorkspaceVideoVariationsAction(
+      'workspace-selected',
+      'exercise-20',
+    );
+
+    expect(result.status).toBe('ok');
+    expect(search).toHaveBeenCalledTimes(1);
+  });
 });
