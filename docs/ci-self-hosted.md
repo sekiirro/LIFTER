@@ -1,6 +1,8 @@
 # Self-hosted GitHub Actions runner
 
-Pull requests use the persistent self-hosted runner, isolated Supabase stack, and Docker Hub credentials only when the PR author association is `OWNER`. `MEMBER`, `COLLABORATOR`, `CONTRIBUTOR`, and `NONE` use hosted runners, receive no isolated-stack setting, and receive no Docker Hub secrets. This is the Product Owner's S30-PO-4 Q10 decision ("Owner only").
+Push events use the persistent self-hosted runner, isolated Supabase stack, and Docker Hub credentials only when the pushing account is the repository owner. Pushes by anyone else use hosted runners and receive no isolation setting, isolated stack, or Docker Hub secrets. Pull requests retain the S30-PO-4 Q10 owner-only policy: only author association `OWNER` uses the persistent runner and credentials; `MEMBER`, `COLLABORATOR`, `CONTRIBUTOR`, and `NONE` use hosted runners and receive no isolated-stack setting or Docker Hub secrets. These rules follow Product Owner decision S30-PO-10 Q18 ("Self-hosted only if pusher is owner").
+
+The workflow conditions protect ordinary event routing. A pushed workflow can rewrite those conditions, so the Product Owner must also enable branch protection and restrict pushes to the repository owner. See the lane's `po-admin-steps.md` for this administrative action; no GitHub setting is changed by this code change.
 
 ## Architecture
 

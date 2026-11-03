@@ -9,9 +9,9 @@ permissions:
 
 jobs:
   validate:
-    runs-on: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && fromJSON('["self-hosted","linux","x64","lifter-wsl"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && fromJSON('["self-hosted","linux","x64","lifter-wsl"]') || 'ubuntu-latest' }}
     env:
-      LIFTER_CI_ISOLATED: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) }}
+      LIFTER_CI_ISOLATED: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -50,14 +50,14 @@ jobs:
           fi
 
   integration:
-    runs-on: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && fromJSON('["self-hosted","linux","x64","lifter-wsl"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && fromJSON('["self-hosted","linux","x64","lifter-wsl"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     env:
-      LIFTER_CI_ISOLATED: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) }}
-      LIFTER_SUPABASE_STACK: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && 'ci' || 'a' }}
-      DOCKERHUB_USERNAME: ${{ (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && secrets.DOCKERHUB_USERNAME || '' }}
-      DOCKERHUB_TOKEN: ${{ (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && secrets.DOCKERHUB_TOKEN || '' }}
+      LIFTER_CI_ISOLATED: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) }}
+      LIFTER_SUPABASE_STACK: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && 'ci' || 'a' }}
+      DOCKERHUB_USERNAME: ${{ (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && secrets.DOCKERHUB_USERNAME || '' }}
+      DOCKERHUB_TOKEN: ${{ (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && secrets.DOCKERHUB_TOKEN || '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -155,14 +155,14 @@ jobs:
         if: always()
 
   storage:
-    runs-on: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && fromJSON('["self-hosted","linux","x64","lifter-wsl"]') || 'ubuntu-latest' }}
+    runs-on: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && fromJSON('["self-hosted","linux","x64","lifter-wsl"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     env:
-      LIFTER_CI_ISOLATED: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) }}
-      LIFTER_SUPABASE_STACK: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && 'ci' || 'a' }}
-      DOCKERHUB_USERNAME: ${{ (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && secrets.DOCKERHUB_USERNAME || '' }}
-      DOCKERHUB_TOKEN: ${{ (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && secrets.DOCKERHUB_TOKEN || '' }}
+      LIFTER_CI_ISOLATED: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) }}
+      LIFTER_SUPABASE_STACK: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && 'ci' || 'a' }}
+      DOCKERHUB_USERNAME: ${{ (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && secrets.DOCKERHUB_USERNAME || '' }}
+      DOCKERHUB_TOKEN: ${{ (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && secrets.DOCKERHUB_TOKEN || '' }}
     steps:
       - uses: actions/checkout@v4
         with:
