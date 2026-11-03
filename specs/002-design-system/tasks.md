@@ -96,4 +96,4 @@ Setup → Foundational (T004–T014) → US1 → US2/US3 (parallel after US1's s
 
 ## Implementation strategy
 
-Batch 1 = Phases 1–2 (review). Batch 2 = US1–US3, the MVP (review). Batch 3 = US4–US5 + T040 (review). Claude does T039, T041 and T042. Phase 9 records PR #28's already merged Glass work; T046 remains open because only static evidence was inspected. T047-T048 are later-lane tasks for the Q16 correction and remain unchecked.
+Batch 1 = Phases 1–2 (review). Batch 2 = US1–US3, the MVP (review). Batch 3 = US4–US5 + T040 (review). Claude does T039, T041 and T042. Phase 9 records PR #28's already merged Glass work; T046 remains open because only static evidence was inspected. T047-T049 are later-lane tasks for the Q16 correction and FR-028 fallback verification, and remain unchecked.
