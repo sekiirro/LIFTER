@@ -1,6 +1,6 @@
 # Spec Kit Analyze — F3 governance amendment
 
-- Date: 2026-11-03
+- Date: 2026-11-03 (refreshed after reconciling the plan decision register)
 - Analyzed source commit: `d04ef52` (`origin/main` at branch creation). This amendment is documentation-only.
 - Scope: S30-PO-3 Q6 source record and Q7 active-member roster / Q8 final-PO guard.
 - Method: static analysis of spec, plan, tasks, test/code tree and Constitution v1.5.0. No tests or builds run.
@@ -41,3 +41,4 @@
 ## History
 
 - First SK-A amendment analysis on `origin/main` `d04ef52`; no prior Analyze history.
+- Refresh: plan ND-F3-2/ND-F3-3 now quote the resolved S30-PO-3 Q7/Q8 behavior and link the remaining subquestions to SK-003-04..09. No requirement meaning changed.
