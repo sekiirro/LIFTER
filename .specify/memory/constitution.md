@@ -154,8 +154,11 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   the exact PR head (`commit_id == headRefOid`), with no later CHANGES_REQUESTED or DISMISSED
   review; `reviewDecision` APPROVED; zero unresolved threads and all actionable findings resolved;
   both GitHub Actions CI runs for the PR head completed successfully and required security checks
-  are green: the `push` run has `headSha == headRefOid` and the `pull_request` run checks the merge
-  result; and
+  are green: record each run's ID and attempt; every required job concludes `success` and has a step
+  count greater than zero (zero steps means NOT EXECUTED); the `push` run has `head_sha == headRefOid`;
+  and the `pull_request` run belongs to this PR number, has a head SHA equal to `headRefOid`, and
+  tests the merge result with current `main`. Record this evidence in the PR body or feature report.
+  If `main` advances, re-evaluate the gate on the new merge result (S30-R10); and
   independent architect review of the diff and evidence. Intermediate sub-branch merges into a
   parent feature branch require Claude review and green relevant CI on the exact head and do not
   bypass this main merge gate (see docs/08 and D-26). Ask the PO for explicit merge approval and
@@ -168,10 +171,11 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Merge gates (from [docs/03-roadmap.md](../../docs/03-roadmap.md)): the `push`-event GitHub Actions
   CI run with `headSha == headRefOid` is the independent, non-author rerun of typecheck, lint, unit
   and applicable integration/e2e gates; the `pull_request`-event run checks the merge result with
-  current `main`. Both runs must complete successfully; agent-reported local gate results never
-  substitute. Claude (architect) does not run tests or Git writes and verifies both runs on that head.
+  current `main`. Both runs must complete successfully and have executed steps; agent-reported local
+  gate results never substitute. Claude (architect) does not run tests or Git writes and verifies
+  both runs on that head.
   Also require the isolation gate; the money gate; AR and EN UI check; log-scrub check; and acceptance
-  criteria verified against [docs/01-traceability.md](../../docs/01-traceability.md). High-risk changes also require executed mutation-test evidence recorded in the feature traceability artifact and independently reviewed before merge (S29-PO-3 Q3).
+  criteria verified against [docs/01-traceability.md](../../docs/01-traceability.md). High-risk changes also require executed mutation evidence (file:line kill, restore, diff exit 0) recorded in the feature's reports/verification file and referenced from `traceability.md` (S30-R10; S29-PO-3 Q3).
 - Only passing, reviewed work is committed.
 
 ## Governance
