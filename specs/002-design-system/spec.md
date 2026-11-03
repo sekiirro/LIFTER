@@ -5,6 +5,8 @@
 **Status**: Draft
 **Input**: User description: "P0-F2 Design System foundation: tokens for dark/light modes, emerald brand with accessible variants, semantic colors, workspace brand override with contrast guard, device-first theme with persisted manual choice, AR-first RTL + EN LTR, Geist + IBM Plex Sans Arabic, accessible base components and states, responsive app shell (desktop icon rail, mobile bottom bar) with Trainer/Client nav only, reduced motion, dev-only showcase, Arabic browser print spike. Constitution amendment lime → emerald."
 
+**Merged scope clarification (PR #28)**: The PO-approved Glisse work merged on `main` as PR #28 at `12bcad944c9366f17afc00a36bd14586c5f2e77a`. This spec delta describes only the shipped floating surfaces, Glisse enhancement/fallback behavior, and accessible floating actions/popover menu evidenced by that PR and PO records S21-PO-1/2/6, S26-PO-4, S27-PO-1, and S28-PO-1/2. It does not extend Liquid Glass to dense data, forms, or financial content.
+
 Governing documents: [DESIGN.md](../../DESIGN.md) (PO-approved design reference, 2026-10-27; supersedes earlier design assumptions), Constitution v1.0.0 → v1.1.0 (this feature), [Architecture v3](../../docs/02-architecture.md), [Roadmap P0](../../docs/03-roadmap.md), [Assessment](../../docs/00-assessment.md) (Arabic print spike in P0-F2).
 
 ## User Scenarios & Testing *(mandatory)*
@@ -98,6 +100,29 @@ A sample bilingual page printed through the browser to PDF shows correctly shape
 
 ---
 
+### User Story 6 - Selective floating Liquid Glass surfaces (Priority: P2)
+
+Users see the approved Glisse Liquid Glass treatment on the floating navigation surfaces and floating action/menu surfaces shipped in PR #28. Dense data, forms and financial content remain mostly solid. Where device capability or display preferences do not support the enhancement, the surfaces remain usable with a static fallback.
+
+**Why this priority**: It records the already merged, PO-approved design-system extension without broadening its approved surface area (S21-PO-1/2/6; PR #28; S28-PO-1/2).
+
+**Independent Test**: Inspect the floating navigation and action/menu surfaces in an eligible browser and in static-fallback conditions; operate the menu with keyboard input and confirm focus remains on the same control when enhancement starts or falls back.
+
+**Acceptance Scenarios**:
+
+1. **Given** the Trainer or Client shell at a narrow viewport, **When** the shell renders, **Then** the existing mobile bottom navigation is presented as the shipped floating capsule; at a wide viewport, the shipped desktop navigation dock is presented.
+2. **Given** a supported browser and preferences that permit refraction, **When** the deferred enhancement initializes, **Then** the floating surface reports the enhanced runtime while its focused navigation node remains the same node.
+3. **Given** unsupported backdrop filtering, reduced transparency, increased contrast, forced colors, reduced motion, constrained-device state, an explicit solid fallback, or an initialization over-budget condition, **When** a glass surface is rendered or initialization is attempted, **Then** it uses the static/solid fallback and remains operable.
+4. **Given** a floating action or popover menu, **When** the user opens and navigates the menu by keyboard, **Then** the menu trigger exposes its expanded state, focus follows the supported arrow/Home/End controls, Escape restores trigger focus, and Tab closes the menu without trapping focus.
+5. **Given** dense data, forms, or financial content, **When** the approved glass surfaces are used in the feature, **Then** those content areas remain mostly solid.
+
+**Clarifications**
+
+- Decision record: S21-PO-1/2/6, S26-PO-4, S27-PO-1, S28-PO-1/2; implementation evidence: PR #28 body and merged commits, including final approved SHA `12bcad944c9366f17afc00a36bd14586c5f2e77a`; design reference: DESIGN.md §10 log and §12 review criteria.
+- Zero open ambiguities remain for the PR #28 merged scope recorded here. Existing plan NEEDS DECISION items remain unchanged and outside this delta.
+
+---
+
 ### Edge Cases
 
 - Storage unavailable (private mode, blocked cookies): theme follows the device and language defaults to Arabic; nothing errors.
@@ -158,6 +183,9 @@ A sample bilingual page printed through the browser to PDF shows correctly shape
 
 - **FR-025**: Constitution Principle VIII and Architecture v3's UI row MUST be updated from "lime accent" to the approved emerald brand with workspace-customizable colors, with a decision-register entry and a version bump, pending PO approval at merge.
 - **FR-026**: Open items from DESIGN.md §11 touched by this feature (secondary token values beyond what is verified, final icon library, breakpoint numbers, minimum touch-target size, other roles' tabs, Arabic vs. Western digit shapes) MUST be listed as NEEDS DECISION in the plan, with no invented values presented as approved.
+- **FR-027**: The design system MUST provide the floating mobile navigation capsule, desktop navigation dock, floating action surfaces, and popover menu shipped in PR #28. Liquid Glass treatment is limited to those approved floating surfaces; dense data, forms, and financial content remain mostly solid. [S21-PO-1/2/6; PR #28; S28-PO-1/2]
+- **FR-028**: Glisse refraction MUST be deferred and MUST use a static/solid fallback when browser capability, user display preferences, constrained-device conditions, explicit fallback selection, or the shipped initialization budget prevents enhancement. The fallback MUST preserve keyboard operation and focused-node identity. [S21-PO-2/6; PR #28]
+- **FR-029**: The shipped floating popover menu MUST expose an accessible trigger and support the tested keyboard behavior: ArrowUp/ArrowDown initial focus and movement, Home/End, Space activation, Escape focus restoration, and Tab close without focus trapping. [S21-PO-1/2/6; PR #28]
 
 ### Key Entities
 
@@ -178,6 +206,8 @@ A sample bilingual page printed through the browser to PDF shows correctly shape
 - **SC-005**: AR and EN message catalogs have 100% matching keys.
 - **SC-006**: The print spike's report covers shaping, direction, mixed numbers, tables and hidden chrome, each marked pass or fail with evidence.
 - **SC-007**: The edge build stays within the free-tier size limit, with headroom reported.
+- **SC-008**: Across 15 interleaved paired TBT samples per arm, the median desktop and mobile TBT difference for the Glass change is no greater than +50 ms versus baseline. [S21-PO-6; PR #28 body]
+- **SC-009**: Automated capability/preference tests reject refraction for every listed unsupported or fallback condition, and a browser test confirms an over-budget initialization falls back without replacing the focused navigation node. [PR #28]
 
 ## Assumptions
 
