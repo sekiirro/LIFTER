@@ -2,6 +2,7 @@ import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 import CatalogVariationsPage from '../../app/(app)/catalog-variations/page';
+import { ar } from '../../lib/i18n/messages/ar';
 import { en } from '../../lib/i18n/messages/en';
 
 const mocks = vi.hoisted(() => ({
@@ -39,7 +40,7 @@ beforeEach(() => {
 
 describe('catalog variations workspace gate', () => {
   it.each([
-    [{ status: 'unavailable' }, en['catalog.videoVariationUnavailable']],
+    [{ status: 'unavailable' }, en['catalog.errorTitle']],
     [{ status: 'ok', data: [] }, en['catalog.videoVariationNoWorkspace']],
   ])(
     'does not search exercises when workspace loading returns %j',
@@ -53,6 +54,22 @@ describe('catalog variations workspace gate', () => {
 
       expect(mocks.search).not.toHaveBeenCalled();
       expect(html).toContain(expectedMessage);
+    },
+  );
+
+  it.each([['en', en], ['ar', ar]] as const)(
+    'shows localized library-load copy when exercise search fails (%s)',
+    async (locale, messages) => {
+      mocks.cookies.mockResolvedValue({ get: () => ({ value: locale }) });
+      mocks.search.mockResolvedValue({ status: 'unavailable' });
+
+      const html = renderToStaticMarkup(
+        await CatalogVariationsPage({ searchParams: Promise.resolve({}) }),
+      );
+
+      expect(html).toContain(messages['catalog.errorTitle']);
+      expect(html).not.toContain(messages['catalog.videoVariationUnavailable']);
+      expect(mocks.search).toHaveBeenCalledTimes(1);
     },
   );
 });

@@ -26,7 +26,7 @@ export default async function CatalogVariationsPage({
         <h1>{messages['catalog.videoVariationTitle']}</h1>
         <Alert
           tone="error"
-          title={messages['catalog.videoVariationUnavailable']}
+          title={messages['catalog.errorTitle']}
         />
       </main>
     );
@@ -72,7 +72,7 @@ export default async function CatalogVariationsPage({
         <h1>{messages['catalog.videoVariationTitle']}</h1>
         <Alert
           tone="error"
-          title={messages['catalog.videoVariationUnavailable']}
+          title={messages['catalog.errorTitle']}
         />
       </main>
     );
