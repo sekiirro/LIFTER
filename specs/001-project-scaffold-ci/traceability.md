@@ -1,0 +1,25 @@
+# Self-hosted CI Traceability
+
+Analyzed implementation commit: `80e1a1eccc6b8dad1fbf2996c23ebd0dc8374b7b` (`origin/ci-self-hosted-runner`). Tests were not run; this is static verification. Current-head status is distinguished from prior-run evidence.
+
+| Requirement | Task(s) | Test(s) / evidence | Evidence commit / record | Status | Gap |
+|---|---|---|---|---|---|
+| FR-015 | T016 | `tests/unit/ci-local-e2e.test.ts::runs the full Playwright suite after local-stack integration tests`; `.github/workflows/ci.yml` has push/PR triggers and validate/integration/storage jobs | `80e1a1e`; prior self-hosted runs 41554180851 (push) and 41560801898 (PR) succeeded on `3ee93a7`, not this head (`SESSION_HANDOFF.md:46-47`, `s29-queue.md:62-65`) | PARTIAL | No final-head three-green proof; handoff says prior green runs do not transfer and CI c is still running. Existing security workflow steps are statically present. |
+| FR-016 | T017 | `tests/unit/ci-app-port.test.ts::marks lane, Windows, and configured Stack A-D ports as forbidden`; `tests/unit/ci-supabase-config.test.ts::rewrites every configured service port, including shadow and mail ports` | `80e1a1e`; run isolation record `SESSION_HANDOFF.md:52-55` | PARTIAL | Tests assert configured port maps, not live Stacks A-D before/after. Current head has open port-3000 WSL-forwarding leak (`SESSION_HANDOFF.md:46-47`; `s29-queue.md:63`). |
+| FR-017 | T018 | NOT-FOUND: no test or current-head reboot record asserting automatic startup after machine reboot | `docs/ci-self-hosted.md` says the current Scheduled Task starts at user logon; an AtStartup trigger was denied without elevation; `SESSION_HANDOFF.md:54` says actual reboot test remains pending | NOT-FOUND | Current setup does not meet the auto-start-after-reboot requirement; a real reboot test is pending PO-scheduled maintenance. |
+| FR-018 | T019 | `tests/unit/ci-app-port.test.ts::keeps the hosted origin on 3000 and selects an isolated self-hosted port`; `docs/ci-self-hosted.md` documents unset-variable hosted fallback | `80e1a1e`; S28-PO-3 source `s28-po-decisions-verbatim.md:22-29` | PARTIAL | The test proves app-port selection, not runner fallback or visibility policy. Repository remains under switching procedures pending full E2E proof; permanent PRIVATE/no-switching gate is not yet satisfied. |
+| FR-019 | T019 | NOT-FOUND: no test/evidence demonstrating runner OFFLINE during every PUBLIC interval; operational rule is documented in `docs/ci-self-hosted.md` | `80e1a1e`; architect rule `SESSION_HANDOFF.md:119`; `s29-startup-prompt.md:79` | PARTIAL | Policy is documented; observed compliance evidence is absent. |
+| FR-020 | T020 | NOT-FOUND: no branch test or run record for the CI visibility-window lock/watchdog/restore protocol | `SESSION_HANDOFF.md:119`; `s29-startup-prompt.md:79` | NOT-FOUND | No exact window timestamps or evidence record found in the feature branch. |
+| SC-006 | T016 | `tests/unit/ci-local-e2e.test.ts::runs the full Playwright suite after local-stack integration tests`; workflow gates statically inspected | `80e1a1e`; run IDs above are on `3ee93a7` | PARTIAL | Required runs on the final head remain absent; this suite was not run by this review. |
+| SC-007 | T017 | `tests/unit/ci-app-port.test.ts::marks lane, Windows, and configured Stack A-D ports as forbidden`; `tests/unit/ci-supabase-config.test.ts::selects a contiguous, unique range and rejects invalid bases` | `80e1a1e`; Stack snapshot `SESSION_HANDOFF.md:52-55` | PARTIAL | No live final-head before/after proof; port-3000 forwarding leak is open. |
+| SC-008 | T018 | NOT-FOUND: no real reboot acceptance record or asserting test | Current startup/runbook state `docs/ci-self-hosted.md`; maintenance gate `SESSION_HANDOFF.md:54` | NOT-FOUND | Current Scheduled Task is logon-triggered; automatic start after reboot is unproven. |
+| SC-009 | T019 | `tests/unit/ci-app-port.test.ts::keeps the hosted origin on 3000 and selects an isolated self-hosted port`; `docs/ci-self-hosted.md` | `80e1a1e`; S28-PO-3 source | PARTIAL | Fallback selection is documented and port selection tested, but no end-to-end reliability proof or repo visibility procedure-retirement evidence. |
+| SC-010 | T019 | NOT-FOUND: no asserting test or observed event log for runner status across all PUBLIC intervals | S28 architect rule in `SESSION_HANDOFF.md:119` | NOT-FOUND | The no-online-while-public rule has no compliance evidence. |
+| SC-011 | T020 | NOT-FOUND: no test or record with lock/watchdog timestamps and verified PRIVATE restoration | `s29-startup-prompt.md:79` | NOT-FOUND | CI-window execution evidence absent. |
+
+## Static verification notes
+
+- All three named CI test files exist at `80e1a1e`; each cited test name was confirmed in its source.
+- `docs/ci-self-hosted.md`, `.github/workflows/ci.yml`, and current handoff/queue evidence were inspected statically.
+- Prior run IDs 41554180851 and 41560801898 are cited only as historical evidence on SHA `3ee93a7`; they are not claimed as current-head proof.
+- No tests, CI jobs, Docker operations, stack operations, runner operations or repository-visibility changes were performed.
