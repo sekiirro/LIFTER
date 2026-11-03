@@ -11,6 +11,7 @@
 |---|---|---|---|---|
 | F14-A01 | MEDIUM | `spec.md:FR-009`; S19 PO record | Owner-facing logo/banner upload controls and alt-text editor UI are explicitly deferred to F14b; FR-009 is therefore only partially complete. | Preserve PARTIAL status; do not include F14b work in this core reconciliation. |
 | F14-A02 | MEDIUM | `tasks.md:T039-T041,T043`; D-24 | Capacity, backup/restore, complete Q-M matrix, and final release/hosted evidence remain open. D-24 describes hosted verification as a production blocker; it does not explicitly defer these tasks. | Leave tasks unchecked and report as open production gates; do not mark deferred. |
+| F14-A03 | MEDIUM | `FR-011`; `traceability.md` | Proxy-response tests assert `private, no-store`, but no asserting test was located for registration-page render headers. | Keep FR-011 PARTIAL until a real render-header assertion and evidence are recorded; do not infer render behavior from proxy tests. |
 
 ## Coverage and consistency
 
@@ -20,4 +21,4 @@
 
 ## Verdict
 
-**PASS WITH MEDIUM EVIDENCE GAPS** — 0 CRITICAL, 0 HIGH, 2 MEDIUM; 29/29 FR/SC items mapped. Static review only.
+**PASS WITH MEDIUM EVIDENCE GAPS** — 0 CRITICAL, 0 HIGH, 3 MEDIUM; 29/29 FR/SC items mapped. Static review only.

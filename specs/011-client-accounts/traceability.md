@@ -1,6 +1,6 @@
 ﻿# F11 Client Accounts and Signup — Traceability
 
-**Analysed commit:** `0649423752419979d7f0eb3ef29ad2bf24689075` plus the documentation-only clarification in this commit.
+**Analysed commit:** `0649423752419979d7f0eb3ef29ad2bf24689075` plus the documentation-only clarification `ea75860483339fd40fdd5445f2ff6d4a71a35680`.
 **Method:** Static inspection of implementation, asserting test names and `tests/integration/client-accounts-verification.md`; no suite was run in this lane. Historical test results in the evidence document are cited, but not independently re-executed.
 
 | Requirement | Tasks | Asserting tests / evidence | Status |

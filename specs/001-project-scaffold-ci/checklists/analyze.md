@@ -1,7 +1,7 @@
 ﻿# Analyze: Project Scaffold & CI Baseline (original merged scope)
 
 - **Date:** 2026-11-03
-- **Analysed commit:** `ea75860483339fd40fdd5445f2ff6d4a71a35680` (before local clarification/artifact changes)
+- **Analyzed commit:** `ea75860483339fd40fdd5445f2ff6d4a71a35680` (before local clarification/artifact changes)
 - **Scope:** Original merged scope FR-001..FR-014 and SC-001..SC-005 only. Excludes SK-A4 self-hosted CI coverage FR-015..FR-020. Static review; no tests executed.
 - **Inventory:** spec, plan, tasks, research, quickstart, health contract, requirements checklist present; Analyze and traceability were absent.
 

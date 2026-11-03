@@ -1,7 +1,7 @@
 # Analyze: F11 Client Accounts and Signup
 
 - **Date:** 2026-11-03
-- **Analysed commit:** `0649423752419979d7f0eb3ef29ad2bf24689075` (Part 3 branch head before the local F11 clarification)
+- **Analyzed commit:** `0649423752419979d7f0eb3ef29ad2bf24689075` (Part 3 branch head before the local F11 clarification)
 - **Scope:** static artifact/source/evidence review; no tests executed.
 - **Inventory:** `spec.md` (FR-001..017, SC-001..012, PO Clarifications and decision register), `plan.md`, `tasks.md` (46 tasks and historical T046 PO approval), research/data-model/contract/quickstart, `checklists/requirements.md`; no feature Analyze or traceability artifact existed.
 
