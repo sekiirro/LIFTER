@@ -16,6 +16,7 @@ import {
   heroEvidenceDirectory,
 } from './registration-hero-evidence';
 import type { RegistrationFixture } from '../integration/registration-links-fixture';
+import { registrationIssueActorIndex } from './registration-issue-actor';
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
 const local = Boolean(
@@ -32,6 +33,7 @@ const printRegistrationCases = (['ar', 'en'] as const).flatMap((locale) =>
 );
 let fixture: RegistrationFixture | null = null;
 let token = '';
+let registrationIssueCount = 0;
 const geometryEvidence: {
   locale: string;
   theme: string;
@@ -90,7 +92,9 @@ test.beforeEach(async () => {
   const { secret, issue, checked } =
     await import('../integration/registration-links-fixture');
   const link = secret();
-  checked(await issue(fixture, fixture.po.client, { token_hash: link.hash }));
+  const actorIndex = registrationIssueActorIndex(registrationIssueCount++);
+  const actor = actorIndex === 0 ? fixture.po : fixture.woA;
+  checked(await issue(fixture, actor.client, { token_hash: link.hash }));
   const projection = await fixture.actors.anon.client.rpc(
     'registration_link_open',
     { token: link.token },
