@@ -135,19 +135,9 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 
 ## Development Workflow & Quality Gates
 
-- Every feature follows Spec Kit: Specify → Clarify (only if blocking) → Plan → Tasks → Analyze,
-  before any code.
-- Claude is the architect/orchestrator and independent reviewer; Claude does not code or run Git,
-  tests, or Docker (read-only `gh` is allowed). Delegated agents (Codex, or OpenCode for the GLM tier) own implementation and Git operations.
-  Adaptive model routing uses the cheapest capable reliable model allowed for task risk and
-  sensitivity, as specified in [docs/08-agent-workflow.md](../../docs/08-agent-workflow.md).
-  GLM 5.3 Flash may take implementation, CI workflow, configuration and other low- to moderate-risk
-  work when complexity, risk, cost and logged performance support it; the architect independently
-  reviews every GLM change and an agent proves the relevant tests pass before it lands. Genuinely
-  high-risk security, Auth, RLS, SECURITY DEFINER, migrations, admission, Storage policies and
-  financial logic go to Luna High or Sol Medium, and no third-party-routed model ever receives
-  secrets or `.env` values. Escalation is GLM 5.3 Flash -> Luna High -> Sol
-  Medium. Sol High and any xhigh effort are prohibited. If every permitted tier is unavailable or at capacity, the architect stops the delegation and asks the PO for direction; it never retries without limit or substitutes a model outside the permitted tiers. The architect maintains `~/.lifter/model-performance-log.md` outside the repository, with one row per delegation: model, effort, task class, outcome, review notes, and cost.
+- Every feature follows the mandatory workflow: Constitution → Specify → Clarify → Plan → Tasks → Analyze → Implement. Clarify is mandatory and records “zero open ambiguities” explicitly when none exist. Before implementation, the current Analyze must be dated after the latest spec, plan, or task change and have zero open CRITICAL or HIGH findings. (S29-PO-3 Q1)
+- Claude is the architect/orchestrator and independent reviewer. Claude may independently run read-only verification commands, including Git read commands, `gh` read queries, `docker inspect`, and SELECT-only database reads. Claude performs no repository writes, migrations, test runs, or stack modifications; agents execute those actions. (S29-PO-3 Q4)
+- High-risk work (security, Auth, RLS, SECURITY DEFINER, migrations, admission, Storage policies, and financial logic) requires independent architect review and executed mutation tests. Sensitive permissions MUST NOT be expanded without PO approval. Third-party/free models MUST NOT receive secrets or `.env` values. (S29-PO-3 Q3; S13; S19; S22-PO-9; S25-PO-9; S28-PO-5; S29-PO-1)
 - Mandatory Spec Debate: the architect drafts the spec and architecture; an independent Sol Medium
   critique follows; by default there is one response round, with more rounds only for significant
   unresolved issues. The architect incorporates critique and presents unresolved product/design
@@ -177,7 +167,7 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   CI run with `headSha == headRefOid` is the independent, non-author rerun of typecheck, lint, unit
   and applicable integration/e2e gates; the `pull_request`-event run checks the merge result with
   current `main`. Both runs must complete successfully; agent-reported local gate results never
-  substitute. Claude (architect) does not run tests or git and verifies both runs on that head. Also require the isolation gate;
+  substitute. Claude (architect) does not run tests or Git writes and verifies both runs on that head. Also require the isolation gate;
   the money gate; AR and EN UI check; log-scrub check; acceptance criteria verified against
   [docs/01-traceability.md](../../docs/01-traceability.md).
 - Only passing, reviewed work is committed.
@@ -186,6 +176,7 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 
 - This Constitution overrides conflicting practices, plans and briefs. Where the architecture or
   roadmap conflicts with it, the Constitution wins until amended.
+- No AI agent may independently make product decisions, whether discovered during Specify, Clarify, Analyze, implementation, or reviews. Unresolved decisions MUST be presented to the PO as numbered multiple-choice questions with options, implications, and a recommendation. Work requiring that decision waits for explicit PO approval. (S29-PO-2, verbatim)
 - Amendments require Product Owner approval, a decision-register entry, and a semantic version
   bump:
   - MAJOR: a principle is removed or redefined.
@@ -194,7 +185,7 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Every spec, plan and review MUST include a constitution check. Deviations MUST be justified in
   the plan's complexity tracking and approved before implementation.
 
-**Version**: 1.4.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-31 (D18-1 nutrition template ownership and shared Plan Core lifecycle, PO S20 Message B sections 3 and 4; prior amendments D-22, D-26 and D-27)
+**Version**: 1.5.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-03 (mandatory Spec Kit workflow, PO decision rule, architect read-only verification, and high-risk review requirements; S29-PO-3 Q1-Q4)
 
 ### Sync impact report and amendment note - 2026-10-29 (D-27)
 
@@ -203,3 +194,9 @@ Adaptive Model Routing and the six-agent concurrency limit were approved by the 
 ### Sync impact report and amendment note: 2026-10-31 (PO S20 Message B sections 3 and 4)
 
 The PO amended PRD-05/PRD-12 to allow workspace-owned nutrition templates managed by authorized staff alongside PO-managed global templates. The PO may Make it Global after private data and references are removed. Shared Plan Core now allows same-Plan-ID editing, private draft autosave, Save as Draft, one Ready & Publish action, independent first deliveries on different days, and exactly-once activation after both deliveries succeed. Specs 016 through 019, PRD/BRD, docs/03-roadmap.md, docs/04-changes-and-questions.md, docs/01-traceability.md, docs/10-feature-tracker.md and DESIGN.md record the matching contracts. D18-1 materially expands Principle IV/product scope; version bumped from 1.3.0 to 1.4.0.
+
+### Sync impact report and amendment note - 2026-11-03 (S29-PO-3 Q1-Q4)
+
+Version 1.4.0 to 1.5.0 (MINOR): materially expanded Development Workflow & Quality Gates and Governance. Clarify is mandatory for every feature; a current Analyze with zero open CRITICAL/HIGH findings is required before implementation. Added the verbatim S29-PO-2 Absolute PO Decision Rule and its numbered MCQ escalation process. Clarified Claude's read-only verification authority and prohibited repository writes, migrations, test runs, and stack modifications by Claude. High-risk work requires independent architect review and executed mutation tests; sensitive permissions are not expanded without PO approval; third-party/free models receive no secrets or `.env` values. Existing principles I-IX, delivery constraints, merge gates, CI/CodeRabbit/security rules, and prior amendment history are preserved.
+
+Dependent document updated in the same PR, separate commit: `docs/08-agent-workflow.md` aligns agent governance with the mandatory Spec Kit workflow, PO-only product decisions, high-risk review/mutation-test requirements, model data restrictions, and Claude read-only boundary (authority: S29-PO-2 and S29-PO-3 Q1-Q4). No `.specify/templates/*`, `.claude/skills/*`, or command files changed.
