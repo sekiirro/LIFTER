@@ -140,10 +140,11 @@ test.describe.serial('T038 invitation signup UI', () => {
               : `form [name="${field}"]`;
           await expect(page.locator(selector)).toBeVisible();
         }
-        await page
-          .getByLabel(messages['clientSignup.name'], { exact: true })
-          .focus();
-        await page.keyboard.press('Tab');
+        const nameField = page.getByLabel(messages['clientSignup.name'], {
+          exact: true,
+        });
+        await nameField.focus();
+        await nameField.press('Tab');
         await expect(
           page.getByLabel(messages['clientSignup.dateOfBirth'], {
             exact: true,
