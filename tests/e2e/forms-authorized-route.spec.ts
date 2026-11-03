@@ -130,6 +130,33 @@ async function advanceToGoal(page: Page) {
   await page.getByRole('button').nth(1).click();
 }
 
+async function createFreshAssignment(): Promise<string> {
+  const [source] = await db`
+    select workspace_id,client_id,form_id,version_number,terms_policy_version,version_snapshot
+    from public.form_assignments where id=${assignmentId}
+  `;
+  if (!source) throw new Error('Browser assignment fixture missing');
+  const freshFormId = randomUUID();
+  const freshId = randomUUID();
+  await db`
+    insert into public.forms(id,workspace_id,name)
+    values(${freshFormId},${source.workspace_id},${'T022 correction fixture ' + freshFormId})
+  `;
+  await db`
+    insert into public.form_versions
+      (workspace_id,form_id,version_number,terms_policy_version,definition,status)
+    values
+      (${source.workspace_id},${freshFormId},${source.version_number},${source.terms_policy_version},${db.json(source.version_snapshot)},'published')
+  `;
+  await db`
+    insert into public.form_assignments
+      (id,workspace_id,client_id,form_id,version_number,terms_policy_version,version_snapshot)
+    values
+      (${freshId},${source.workspace_id},${source.client_id},${freshFormId},${source.version_number},${source.terms_policy_version},${db.json(source.version_snapshot)})
+  `;
+  return freshId;
+}
+
 async function expectAxeClean(page: Page) {
   const violations = await new AxeBuilder({ page })
     .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
@@ -556,6 +583,9 @@ test('real route autosave exposes each state, retries failures, and records save
 test('submitted answer edits wait for explicit correction and use the latest revision', async ({
   page,
 }) => {
+  // Earlier autosave coverage persists a draft. A fresh assignment keeps this
+  // correction flow independent of that test's saved question progress.
+  const correctionAssignmentId = await createFreshAssignment();
   await signIn(page);
   await page.context().addCookies([
     {
@@ -569,7 +599,7 @@ test('submitted answer edits wait for explicit correction and use the latest rev
       url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
     },
   ]);
-  await page.goto(`/forms/${assignmentId}`);
+  await page.goto(`/forms/${correctionAssignmentId}`);
   await advanceToGoal(page);
   const correctionBodies: Array<Record<string, unknown>> = [];
   const draftRequests: string[] = [];
