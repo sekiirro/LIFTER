@@ -196,12 +196,12 @@ describe('exercise editor role gating', () => {
     }
   });
 
-  it('renders governance and save controls for the PO on a global exercise', () => {
+  it('keeps Add and Edit focused on exercise content for the PO', () => {
     const html = render({ role: 'po' });
-    expect(html).toContain('data-testid="exercise-governance"');
-    expect(html).toContain(en['catalog.editorRemove']);
-    expect(html).toContain(en['catalog.editorRestore']);
-    expect(html).toContain(en['catalog.editorMerge']);
+    expect(html).not.toContain('data-testid="exercise-governance"');
+    expect(html).not.toContain(en['catalog.editorRemove']);
+    expect(html).not.toContain(en['catalog.editorRestore']);
+    expect(html).not.toContain(en['catalog.editorMerge']);
     expect(html).toContain(en['catalog.editorSave']);
     expect(html).not.toContain('data-testid="exercise-read-only"');
     expect(html).not.toContain('disabled');
@@ -278,11 +278,13 @@ describe('exercise editor workspace scope', () => {
     }
   });
 
-  it('lets the PO edit both scopes and shows governance only on global', () => {
+  it('lets the PO edit both scopes without exercise lifecycle controls', () => {
     const globalHtml = render({ role: 'po', scope: 'global' });
     expect(canEditExercise('global', 'po', false)).toBe(true);
     expect(globalHtml).toContain(en['catalog.editorSave']);
-    expect(globalHtml).toContain('data-testid="exercise-governance"');
+    expect(globalHtml).not.toContain('data-testid="exercise-governance"');
+    expect(globalHtml).not.toContain(en['catalog.editorRestore']);
+    expect(globalHtml).not.toContain(en['catalog.editorMerge']);
     expect(globalHtml).not.toContain('data-testid="exercise-read-only"');
 
     const workspaceHtml = render({ role: 'po', scope: 'workspace' });

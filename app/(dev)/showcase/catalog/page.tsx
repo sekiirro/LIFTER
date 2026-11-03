@@ -196,7 +196,6 @@ export default async function CatalogShowcasePage({
             : mockExerciseEditorFixture
         }
         alternatives={mockExerciseAlternatives}
-        lifecycleState="active"
       />
     ) : (
       <CatalogPreview

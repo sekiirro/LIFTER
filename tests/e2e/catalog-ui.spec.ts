@@ -202,10 +202,16 @@ for (const row of matrix) {
     await assertBrandScope(page, row);
     const editor = page.getByTestId('exercise-editor');
     await expect(editor).toHaveAttribute('dir', row.direction);
-    await expect(editor.getByTestId('exercise-governance')).toBeVisible();
+    await expect(editor.getByTestId('exercise-governance')).toHaveCount(0);
     await expect(
       editor.getByRole('button', { name: m['catalog.editorRemove'] }),
-    ).toBeVisible();
+    ).toHaveCount(0);
+    await expect(
+      editor.getByRole('button', { name: m['catalog.editorRestore'] }),
+    ).toHaveCount(0);
+    await expect(
+      editor.getByRole('button', { name: m['catalog.editorMerge'] }),
+    ).toHaveCount(0);
     await assertAxeClean(page);
     await capture(editor, row, 'exercise-edit-po');
 
@@ -216,6 +222,12 @@ for (const row of matrix) {
     const staffEditor = page.getByTestId('exercise-editor');
     await expect(staffEditor).toHaveAttribute('dir', row.direction);
     await expect(staffEditor.getByTestId('exercise-governance')).toHaveCount(0);
+    await expect(
+      staffEditor.getByRole('button', { name: m['catalog.editorRestore'] }),
+    ).toHaveCount(0);
+    await expect(
+      staffEditor.getByRole('button', { name: m['catalog.editorMerge'] }),
+    ).toHaveCount(0);
     const workspaceExerciseName = staffEditor.getByLabel(
       m['catalog.editorNameEn'],
     );

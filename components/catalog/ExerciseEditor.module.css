@@ -29,8 +29,7 @@
 }
 
 .header p,
-.summary p,
-.governance p {
+.summary p {
   margin: 0;
   color: var(--color-text-muted);
   line-height: var(--line-height-body);
@@ -48,8 +47,7 @@
 }
 
 .meta,
-.summaryList,
-.lifecycle {
+.summaryList {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(8rem, 1fr));
   gap: var(--space-3);
@@ -57,23 +55,20 @@
 }
 
 .meta div,
-.summaryList div,
-.lifecycle div {
+.summaryList div {
   display: grid;
   gap: var(--space-1);
   min-inline-size: 0;
 }
 
 .meta dt,
-.summaryList dt,
-.lifecycle dt {
+.summaryList dt {
   color: var(--color-text-muted);
   font-size: var(--text-xs);
 }
 
 .meta dd,
-.summaryList dd,
-.lifecycle dd {
+.summaryList dd {
   margin: 0;
   overflow-wrap: anywhere;
   font-weight: 600;
@@ -89,7 +84,7 @@
 }
 
 .summary h3,
-.governance h3 {
+.summary h3 {
   margin: 0;
   font-size: var(--text-lg);
   line-height: var(--line-height-heading);
@@ -241,21 +236,6 @@
 }
 
 .actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: var(--space-2);
-}
-
-.governance {
-  display: grid;
-  gap: var(--space-3);
-  padding: var(--space-4);
-  border: 1px solid var(--color-border-strong);
-  border-radius: var(--radius-card);
-  background: var(--color-card-raised);
-}
-
-.governanceActions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--space-2);

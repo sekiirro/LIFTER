@@ -9,7 +9,6 @@ import {
   EQUIPMENT_CODES,
   MAX_CATALOG_TEXT_LENGTH,
   MUSCLE_GROUP_CODES,
-  type CatalogLifecycleState,
   type CatalogLocale,
   type ExerciseReps,
   type NormalizedExercise,
@@ -45,12 +44,8 @@ export type ExerciseEditorProps = {
   alternatives?: readonly ExerciseAlternativeOption[];
   initialDraft?: ExerciseEditorDraft;
   initialErrors?: ExerciseEditorErrors;
-  lifecycleState?: CatalogLifecycleState;
   status?: ExerciseEditorStatus;
   onSubmit?: (draft: ExerciseEditorDraft) => void;
-  onRemove?: () => void;
-  onRestore?: () => void;
-  onMerge?: () => void;
 };
 
 type Messages = ReturnType<typeof getMessages>;
@@ -119,12 +114,8 @@ export function ExerciseEditor({
   alternatives = [],
   initialDraft,
   initialErrors,
-  lifecycleState,
   status = 'ready',
   onSubmit,
-  onRemove,
-  onRestore,
-  onMerge,
 }: ExerciseEditorProps) {
   const m = getMessages(locale);
   const titleId = useId();
@@ -138,8 +129,6 @@ export function ExerciseEditor({
   );
 
   const canEdit = canEditExercise(scope, role, hasCoachingWork);
-  const canGovern = scope === 'global' && role === 'po';
-  const state = lifecycleState ?? exercise?.lifecycleState ?? 'active';
   const reps = repsFromDraft(draft);
   const repsText = formatExerciseReps(reps);
   const repsError =
@@ -150,12 +139,6 @@ export function ExerciseEditor({
     const option = alternativeOptions.find((item) => item.id === id);
     return option ? alternativeName(option, locale) : id;
   });
-
-  const lifecycleLabels: Record<CatalogLifecycleState, string> = {
-    active: m['catalog.editorLifecycleActive'],
-    removed: m['catalog.editorLifecycleRemoved'],
-    merged: m['catalog.editorLifecycleSuperseded'],
-  };
 
   function setValue<K extends keyof ExerciseEditorDraft>(
     key: K,
@@ -638,35 +621,6 @@ export function ExerciseEditor({
                   : m['catalog.editorSaveWorkspace']}
               </Button>
             </div>
-            {canGovern && (
-              <section
-                className={styles.governance}
-                data-testid="exercise-governance"
-                aria-labelledby={`${base}-governance`}
-              >
-                <h3 id={`${base}-governance`}>
-                  {m['catalog.editorGovernance']}
-                </h3>
-                <p>{m['catalog.editorGovernanceIntro']}</p>
-                <dl className={styles.lifecycle}>
-                  <div>
-                    <dt>{m['catalog.editorLifecycle']}</dt>
-                    <dd>{lifecycleLabels[state]}</dd>
-                  </div>
-                </dl>
-                <div className={styles.governanceActions}>
-                  <Button variant="destructive" onClick={onRemove}>
-                    {m['catalog.editorRemove']}
-                  </Button>
-                  <Button variant="secondary" onClick={onRestore}>
-                    {m['catalog.editorRestore']}
-                  </Button>
-                  <Button variant="secondary" onClick={onMerge}>
-                    {m['catalog.editorMerge']}
-                  </Button>
-                </div>
-              </section>
-            )}
           </>
         ) : (
           <p className={styles.readOnly} data-testid="exercise-read-only">
