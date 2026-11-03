@@ -168,12 +168,11 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   re-satisfy these checks on the new head and obtain new explicit PO approval. Use
   `gh pr merge <n> --merge --match-head-commit <po_approved_head>`. Never use `--admin`,
   `--auto`, or `--delete-branch`. This is process-only because branch protection returns 403.
-- Merge gates (from [docs/03-roadmap.md](../../docs/03-roadmap.md)): the `push`-event GitHub Actions
-  CI run with `headSha == headRefOid` is the independent, non-author rerun of typecheck, lint, unit
-  and applicable integration/e2e gates; the `pull_request`-event run checks the merge result with
-  current `main`. Both runs must complete successfully and have executed steps; agent-reported local
-  gate results never substitute. Claude (architect) does not run tests or Git writes and verifies
-  both runs on that head.
+- Supplementary merge gates (from [docs/03-roadmap.md](../../docs/03-roadmap.md)): apply the preceding
+  Main merge gate in full, including exact PR/head binding, run ID and attempt recording, per-job
+  `success` and positive step-count checks, current-main merge-result validation, and the CI rerun
+  required when `main` advances. Agent-reported local gate results never substitute. Claude
+  (architect) does not run tests or Git writes and verifies both runs on that head.
   Also require the isolation gate; the money gate; AR and EN UI check; log-scrub check; and acceptance
   criteria verified against [docs/01-traceability.md](../../docs/01-traceability.md). High-risk changes also require executed mutation evidence (file:line kill, restore, diff exit 0) recorded in the feature's reports/verification file and referenced from `traceability.md` (S30-R10; S29-PO-3 Q3).
 - Only passing, reviewed work is committed.
