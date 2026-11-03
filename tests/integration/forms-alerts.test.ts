@@ -319,6 +319,18 @@ it('skips finished client-late schedules before taking a bounded evaluator batch
           (${f.wsA.id},${finishedSchedule?.id},'client_owners_48h',${f.woA.userId},null,'2026-04-04T00:00:00Z')
       `;
 
+      const staleTrainerAssignment = await formAssignment(
+        tx,
+        f.wsA.id,
+        client.id,
+        null,
+        f.po.userId,
+      );
+      await tx`insert into app_private.form_alert_schedules(
+        workspace_id,source_assignment_id,alert_kind,deadline_at,trainer_user_id
+      ) values(
+        ${f.wsA.id},${staleTrainerAssignment},'trainer_late','2026-04-01T00:00:00Z',${f.trainerA.userId}
+      )`;
       const trainerAssignment = await formAssignment(
         tx,
         f.wsA.id,
