@@ -165,14 +165,8 @@ it('narrow 30-day purge removes only old attempts and preserves audit and ticket
     expect(
       await tx`select id,redeemed_at from app_private.signup_admission_tickets order by id`,
     ).toEqual(tickets);
-    for (const audit of audits) {
-      const [survivor] = await tx`
-        select id,details from public.audit_events where id=${audit.id}`;
-      expect(
-        survivor,
-        `preexisting audit row ${audit.id} survives unchanged`,
-      ).toEqual(audit);
-    }
+    // The complete ordered snapshot comparison below verifies every existing
+    // audit row and payload in one query, avoiding one round trip per row.
     expect(
       await tx`select id,details from public.audit_events where action <> 'client.signup_cleanup' order by id`,
       'purge emits no audit rows except client.signup_cleanup',
