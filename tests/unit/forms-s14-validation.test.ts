@@ -202,7 +202,15 @@ describe('S14 form definition types and privacy metadata', () => {
         sectionId: 'nutrition',
         type: 'derivedChoice',
         required: true,
-        choices: ['meal-1', 'meal-2', 'before-first', 'no-fixed-time'],
+        choices: [
+          'meal-1',
+          'meal-2',
+          'meal-3',
+          'meal-4',
+          'meal-5',
+          'before-first',
+          'no-fixed-time',
+        ],
         derivedOptions: {
           sourceQuestionId: 'N07.meal_count',
           fixedChoices: ['before-first', 'no-fixed-time'],
@@ -217,6 +225,29 @@ describe('S14 form definition types and privacy metadata', () => {
     ];
 
     expect(validateFormDefinition(questions)).toEqual([]);
+    expect(
+      validateAnswerSet(questions, {
+        'N07.meal_count': '2',
+        'N07.training_timing': 'meal-3',
+      }),
+    ).toContainEqual({
+      code: 'invalid_choice',
+      questionId: 'N07.training_timing',
+    });
+    expect(
+      validateAnswerSet(questions, {
+        'N07.meal_count': '3',
+        'N07.training_timing': 'meal-3',
+      }),
+    ).toEqual([]);
+    expect(
+      validateAnswerSet(questions, {
+        'N07.training_timing': 'meal-1',
+      }),
+    ).toContainEqual({
+      code: 'invalid_choice',
+      questionId: 'N07.training_timing',
+    });
     expect(
       validateAnswerSet(questions, { 'N07.meal_count': '6' }),
     ).toContainEqual({

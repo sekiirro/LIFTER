@@ -804,6 +804,25 @@ export function validateAnswerSet(
       ) {
         issues.push({ code: 'invalid_choice', questionId });
       }
+      if (question.type === 'derivedChoice') {
+        const parentId = question.derivedOptions?.sourceQuestionId;
+        const parentValue = parentId ? answers[parentId] : undefined;
+        const mealCount =
+          typeof parentValue === 'string' ? Number(parentValue) : Number.NaN;
+        const derivedChoices =
+          Number.isInteger(mealCount) && mealCount >= 2 && mealCount <= 5
+            ? [
+                ...Array.from(
+                  { length: mealCount },
+                  (_, index) => `meal-${index + 1}`,
+                ),
+                ...(question.derivedOptions?.fixedChoices ?? []),
+              ]
+            : [];
+        if (!derivedChoices.includes(value)) {
+          issues.push({ code: 'invalid_choice', questionId });
+        }
+      }
       if (
         question.type === 'date' &&
         !isEmptyAnswer(value) &&

@@ -8,6 +8,7 @@ import {
 import { sql } from './harness';
 
 const db = sql();
+const rollback = new Error('rollback Terms policy fixture');
 
 async function runTermsMutation<T>(
   signature: string,
@@ -47,88 +48,110 @@ async function approvedClient(context: Context) {
 async function asClient<T>(
   authUserId: string,
   work: (tx: TransactionSql) => Promise<T>,
+  transaction?: TransactionSql,
 ) {
-  return db.begin(async (tx) => {
+  const run = async (tx: TransactionSql) => {
     await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: authUserId, role: 'authenticated' })},true)`;
-    return work(tx);
-  });
+    await tx`set local role authenticated`;
+    try {
+      return await work(tx);
+    } finally {
+      await tx`reset role`;
+    }
+  };
+  return transaction ? run(transaction) : db.begin(run);
 }
 
 it('requires affirmative terms acceptance and records an immutable server-time receipt with independent marketing consent', async () => {
   const client = await approvedClient(await clientContext());
   const termsVersion = `terms-published-${client.id}`;
   const marketingVersion = `marketing-published-${client.id}`;
-  await db`
-    insert into app_private.terms_policy_versions(version,policy_kind,status)
-    values(${termsVersion},'terms','published'),(${marketingVersion},'marketing','published')`;
-
-  const missing = await asClient(
-    client.auth_user_id,
-    async (tx) =>
-      tx`select public.client_accept_terms(null,null,false,'2001-01-01T00:00:00Z'::timestamptz) as result`,
-  );
-  expect(missing[0]?.result).toMatchObject({ status: 'invalid' });
-
-  const accepted = await asClient(
-    client.auth_user_id,
-    async (tx) =>
-      tx`select public.client_accept_terms(${termsVersion},null,false,'2001-01-01T00:00:00Z'::timestamptz) as result`,
-  );
-  expect(accepted[0]?.result).toMatchObject({ status: 'accepted' });
-  const [receipt] = await db`
-    select id,workspace_id,policy_version,accepted_at
-    from app_private.terms_consent_receipts
-    where client_id=${client.id} and policy_version=${termsVersion}`;
-  expect(receipt).toMatchObject({
-    workspace_id: client.workspace_id,
-    policy_version: termsVersion,
-  });
-  expect(new Date(receipt!.accepted_at as string).getTime()).toBeGreaterThan(
-    Date.parse('2001-01-02T00:00:00Z'),
-  );
-  expect(
-    await db`select 1 from app_private.marketing_consent_receipts where client_id=${client.id}`,
-  ).toHaveLength(0);
-
-  const retry = await asClient(
-    client.auth_user_id,
-    async (tx) =>
-      tx`select public.client_accept_terms(${termsVersion},null,false,'2002-01-01T00:00:00Z'::timestamptz) as result`,
-  );
-  expect(retry[0]?.result).toEqual(accepted[0]?.result);
-  expect(
-    await db`select count(*)::integer as count from app_private.terms_consent_receipts where client_id=${client.id}`,
-  ).toMatchObject([{ count: 1 }]);
-  const completion = await asClient(
-    client.auth_user_id,
-    async (tx) =>
-      tx`select public.client_has_accepted_terms(${termsVersion}) as accepted`,
-  );
-  expect(completion[0]?.accepted).toBe(true);
-
-  await asClient(
-    client.auth_user_id,
-    async (tx) =>
-      tx`select public.client_accept_terms(${termsVersion},${marketingVersion},true,null)`,
-  );
-  expect(
-    await db`select policy_version from app_private.marketing_consent_receipts where client_id=${client.id}`,
-  ).toMatchObject([{ policy_version: marketingVersion }]);
-  expect(
-    await db`select count(*)::integer as count from app_private.terms_consent_receipts where client_id=${client.id}`,
-  ).toMatchObject([{ count: 1 }]);
-  expect(
-    await db`select action from public.audit_events where target_table='terms_consent_receipts' and target_id=${receipt!.id}`,
-  ).toMatchObject([{ action: 'client.terms_accepted' }]);
-  expect(
-    await db`select action from public.audit_events where target_table='marketing_consent_receipts' and target_id=(select id from app_private.marketing_consent_receipts where client_id=${client.id})`,
-  ).toMatchObject([{ action: 'client.marketing_consent_recorded' }]);
   await expect(
-    db`update app_private.terms_consent_receipts set accepted_at=clock_timestamp() where id=${receipt!.id}`,
-  ).rejects.toMatchObject({ code: '23514' });
-  await expect(
-    db`delete from app_private.terms_consent_receipts where id=${receipt!.id}`,
-  ).rejects.toMatchObject({ code: '23514' });
+    db.begin(async (tx) => {
+      await tx`
+        insert into app_private.terms_policy_versions(version,policy_kind,status)
+        values(${termsVersion},'terms','published'),(${marketingVersion},'marketing','published')`;
+      const missing = await asClient(
+        client.auth_user_id,
+        async (session) =>
+          session`select public.client_accept_terms(null,null,false,'2001-01-01T00:00:00Z'::timestamptz) as result`,
+        tx,
+      );
+      expect(missing[0]?.result).toMatchObject({ status: 'invalid' });
+
+      const accepted = await asClient(
+        client.auth_user_id,
+        async (session) =>
+          session`select public.client_accept_terms(${termsVersion},null,false,'2001-01-01T00:00:00Z'::timestamptz) as result`,
+        tx,
+      );
+      expect(accepted[0]?.result).toMatchObject({ status: 'accepted' });
+      const [receipt] = await tx`
+        select id,workspace_id,policy_version,accepted_at
+        from app_private.terms_consent_receipts
+        where client_id=${client.id} and policy_version=${termsVersion}`;
+      expect(receipt).toMatchObject({
+        workspace_id: client.workspace_id,
+        policy_version: termsVersion,
+      });
+      expect(
+        new Date(receipt!.accepted_at as string).getTime(),
+      ).toBeGreaterThan(Date.parse('2001-01-02T00:00:00Z'));
+      expect(
+        await tx`select 1 from app_private.marketing_consent_receipts where client_id=${client.id}`,
+      ).toHaveLength(0);
+
+      const retry = await asClient(
+        client.auth_user_id,
+        async (session) =>
+          session`select public.client_accept_terms(${termsVersion},null,false,'2002-01-01T00:00:00Z'::timestamptz) as result`,
+        tx,
+      );
+      expect(retry[0]?.result).toEqual(accepted[0]?.result);
+      expect(
+        await tx`select count(*)::integer as count from app_private.terms_consent_receipts where client_id=${client.id}`,
+      ).toMatchObject([{ count: 1 }]);
+      const completion = await asClient(
+        client.auth_user_id,
+        async (session) =>
+          session`select public.client_has_accepted_terms(${termsVersion}) as accepted`,
+        tx,
+      );
+      expect(completion[0]?.accepted).toBe(true);
+
+      await asClient(
+        client.auth_user_id,
+        async (session) =>
+          session`select public.client_accept_terms(${termsVersion},${marketingVersion},true,null)`,
+        tx,
+      );
+      expect(
+        await tx`select policy_version from app_private.marketing_consent_receipts where client_id=${client.id}`,
+      ).toMatchObject([{ policy_version: marketingVersion }]);
+      expect(
+        await tx`select count(*)::integer as count from app_private.terms_consent_receipts where client_id=${client.id}`,
+      ).toMatchObject([{ count: 1 }]);
+      expect(
+        await tx`select action from public.audit_events where target_table='terms_consent_receipts' and target_id=${receipt!.id}`,
+      ).toMatchObject([{ action: 'client.terms_accepted' }]);
+      expect(
+        await tx`select action from public.audit_events where target_table='marketing_consent_receipts' and target_id=(select id from app_private.marketing_consent_receipts where client_id=${client.id})`,
+      ).toMatchObject([{ action: 'client.marketing_consent_recorded' }]);
+      await expect(
+        tx.savepoint(
+          (sp) =>
+            sp`update app_private.terms_consent_receipts set accepted_at=clock_timestamp() where id=${receipt!.id}`,
+        ),
+      ).rejects.toMatchObject({ code: '23514' });
+      await expect(
+        tx.savepoint(
+          (sp) =>
+            sp`delete from app_private.terms_consent_receipts where id=${receipt!.id}`,
+        ),
+      ).rejects.toMatchObject({ code: '23514' });
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
 });
 
 it('rejects DRAFT policy receipts in production, ignores client timestamps, and keeps tenant reads private', async () => {
@@ -138,39 +161,47 @@ it('rejects DRAFT policy receipts in production, ignores client timestamps, and 
   const clientB = clientBApproved;
   const draftVersion = `terms-draft-${clientA.id}`;
   const clientBTermsVersion = `terms-published-${clientB.id}`;
-  await db`
-    insert into app_private.terms_policy_versions(version,policy_kind,status)
-    values(${draftVersion},'terms','draft'),(${clientBTermsVersion},'terms','published')`;
+  await expect(
+    db.begin(async (tx) => {
+      await tx`
+        insert into app_private.terms_policy_versions(version,policy_kind,status)
+        values(${draftVersion},'terms','draft'),(${clientBTermsVersion},'terms','published')`;
 
-  const acceptedForB = await asClient(
-    clientB.auth_user_id,
-    async (tx) =>
-      tx`select public.client_accept_terms(${clientBTermsVersion},null,false,null) as result`,
-  );
-  expect(acceptedForB[0]?.result).toMatchObject({ status: 'accepted' });
+      const acceptedForB = await asClient(
+        clientB.auth_user_id,
+        async (session) =>
+          session`select public.client_accept_terms(${clientBTermsVersion},null,false,null) as result`,
+        tx,
+      );
+      expect(acceptedForB[0]?.result).toMatchObject({ status: 'accepted' });
 
-  const draft = await asClient(
-    clientA.auth_user_id,
-    async (tx) =>
-      tx`select public.client_accept_terms(${draftVersion},null,false,null) as result`,
-  );
-  expect(draft[0]?.result).toMatchObject({ status: 'unavailable' });
+      const draft = await asClient(
+        clientA.auth_user_id,
+        async (session) =>
+          session`select public.client_accept_terms(${draftVersion},null,false,null) as result`,
+        tx,
+      );
+      expect(draft[0]?.result).toMatchObject({ status: 'unavailable' });
 
-  const crossTenant = await asClient(
-    clientA.auth_user_id,
-    async (tx) =>
-      tx`select public.client_has_accepted_terms(${clientBTermsVersion}) as accepted`,
-  );
-  expect(crossTenant[0]?.accepted).toBe(false);
-  expect(
-    await db`select relrowsecurity,relforcerowsecurity from pg_class where oid='app_private.terms_consent_receipts'::regclass`,
-  ).toMatchObject([{ relrowsecurity: true, relforcerowsecurity: true }]);
-  expect(
-    await db`select has_table_privilege('authenticated','app_private.terms_consent_receipts','select') as can_read`,
-  ).toMatchObject([{ can_read: false }]);
-  expect(
-    await db`select has_function_privilege('anon','public.client_accept_terms(text,text,boolean,timestamp with time zone)','execute') as anon_can_accept`,
-  ).toMatchObject([{ anon_can_accept: false }]);
+      const crossTenant = await asClient(
+        clientA.auth_user_id,
+        async (session) =>
+          session`select public.client_has_accepted_terms(${clientBTermsVersion}) as accepted`,
+        tx,
+      );
+      expect(crossTenant[0]?.accepted).toBe(false);
+      expect(
+        await tx`select relrowsecurity,relforcerowsecurity from pg_class where oid='app_private.terms_consent_receipts'::regclass`,
+      ).toMatchObject([{ relrowsecurity: true, relforcerowsecurity: true }]);
+      expect(
+        await tx`select has_table_privilege('authenticated','app_private.terms_consent_receipts','select') as can_read`,
+      ).toMatchObject([{ can_read: false }]);
+      expect(
+        await tx`select has_function_privilege('anon','public.client_accept_terms(text,text,boolean,timestamp with time zone)','execute') as anon_can_accept`,
+      ).toMatchObject([{ anon_can_accept: false }]);
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
 });
 
 it('catalog enforces forced RLS, minimal grants, definer hygiene, and the workspace username key', async () => {
@@ -294,16 +325,6 @@ it('mutation: cross-tenant Terms receipt reads are caught', async () => {
   const clientA = await approvedClient(await clientContext());
   const clientB = await approvedClient(await clientContext());
   const versionB = `cross-tenant-${clientB.id}`;
-  await db`
-    insert into app_private.terms_policy_versions(version,policy_kind,status)
-    values(${versionB},'terms','published')`;
-  const accepted = await asClient(
-    clientB.auth_user_id,
-    async (tx) =>
-      tx`select public.client_accept_terms(${versionB},null,false,null) as result`,
-  );
-  expect(accepted[0]?.result).toMatchObject({ status: 'accepted' });
-
   const crossTenant = await runTermsMutation(
     'public.client_has_accepted_terms(text)',
     (definition) =>
@@ -312,8 +333,22 @@ it('mutation: cross-tenant Terms receipt reads are caught', async () => {
         "where c.approval_state='approved'",
       ),
     async (tx) => {
-      await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: clientA.auth_user_id, role: 'authenticated' })},true)`;
-      return tx`select public.client_has_accepted_terms(${versionB}) as accepted`;
+      await tx`
+        insert into app_private.terms_policy_versions(version,policy_kind,status)
+        values(${versionB},'terms','published')`;
+      const accepted = await asClient(
+        clientB.auth_user_id,
+        async (session) =>
+          session`select public.client_accept_terms(${versionB},null,false,null) as result`,
+        tx,
+      );
+      expect(accepted[0]?.result).toMatchObject({ status: 'accepted' });
+      return asClient(
+        clientA.auth_user_id,
+        async (session) =>
+          session`select public.client_has_accepted_terms(${versionB}) as accepted`,
+        tx,
+      );
     },
   );
   expect(crossTenant?.[0]?.accepted).toBe(true);

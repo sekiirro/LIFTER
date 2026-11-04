@@ -23,6 +23,14 @@ export function normalizeSignupUsername(value: string): string {
   return value.normalize('NFKC').toLowerCase();
 }
 
+/** S32-PO-7: validate the normalized username without trimming or rewriting it. */
+export function isValidSignupUsername(value: unknown): value is string {
+  return (
+    typeof value === 'string' &&
+    /^[a-z0-9_.]{3,30}$/u.test(normalizeSignupUsername(value))
+  );
+}
+
 function compactIdentifier(value: string): string {
   return normalizeSignupUsername(value).replace(/[\s_.-]+/gu, '');
 }

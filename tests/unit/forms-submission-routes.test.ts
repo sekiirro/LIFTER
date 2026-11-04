@@ -6,7 +6,10 @@ vi.mock('../../lib/supabase/server', () => ({
   createSessionClient: mocks.createSessionClient,
 }));
 
-import { GET as readDraft } from '../../app/api/forms/assignments/[assignmentId]/draft/route';
+import {
+  GET as readDraft,
+  POST as saveDraft,
+} from '../../app/api/forms/assignments/[assignmentId]/draft/route';
 import { POST as submit } from '../../app/api/forms/assignments/[assignmentId]/submit/route';
 import { POST as correct } from '../../app/api/forms/assignments/[assignmentId]/corrections/route';
 
@@ -104,6 +107,27 @@ describe('T013 submission and correction HTTP validation', () => {
     );
   });
 
+  it('maps a submitted-draft result to a non-retryable conflict response', async () => {
+    client.rpc.mockImplementation(async (name: string) =>
+      name === 'read_form_assignment_context'
+        ? {
+            data: { workspace_id: 'workspace', version_snapshot: snapshot },
+            error: null,
+          }
+        : { data: { status: 'already_submitted' }, error: null },
+    );
+    const response = await saveDraft(
+      request(`/api/forms/assignments/${assignmentId}/draft`, {
+        expected_revision: 1,
+        intent_key: intentKey,
+        answer_values: validAnswers,
+      }),
+      { params: Promise.resolve({ assignmentId }) },
+    );
+    expect(response.status).toBe(409);
+    expect(await response.json()).toEqual({ status: 'already_submitted' });
+  });
+
   it('rejects malformed correction metadata before the correction RPC', async () => {
     const response = await correct(
       request(`/api/forms/assignments/${assignmentId}/corrections`, {
@@ -116,6 +140,39 @@ describe('T013 submission and correction HTTP validation', () => {
     );
     await expectSafeInvalid(response, 'invalid');
     expect(client.rpc).toHaveBeenCalledTimes(1);
+  });
+
+  it('validates correction answers against the authorized current assignment snapshot', async () => {
+    const currentSnapshot = {
+      questions: [
+        { id: 'current', sectionId: 'basic', type: 'shortText', required: false },
+      ],
+    };
+    client.rpc.mockImplementation(async (name: string) =>
+      name === 'read_form_correction_context'
+        ? {
+            data: {
+              workspace_id: 'workspace-current',
+              version_snapshot: currentSnapshot,
+            },
+            error: null,
+          }
+        : { data: { status: 'corrected' }, error: null },
+    );
+    const response = await correct(
+      request(`/api/forms/assignments/${assignmentId}/corrections`, {
+        expected_revision: 1,
+        intent_key: intentKey,
+        answer_values: { stale_question: 'old snapshot value' },
+        correction_note: 'synthetic note',
+      }),
+      { params: Promise.resolve({ assignmentId }) },
+    );
+    await expectSafeInvalid(response, 'invalid');
+    expect(client.rpc).toHaveBeenCalledTimes(1);
+    expect(client.rpc).toHaveBeenCalledWith('read_form_correction_context', {
+      p_assignment_id: assignmentId,
+    });
   });
 
   it('rejects unrecognized fields on both write-route envelopes', async () => {

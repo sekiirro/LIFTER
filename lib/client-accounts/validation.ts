@@ -3,6 +3,7 @@ import { exactKeys } from '../registration-links/validation';
 import {
   isPastCalendarDate,
   isReservedSignupUsername,
+  isValidSignupUsername,
   isValidTelegramUsername,
   normalizeSignupUsername,
   validateSignupName,
@@ -61,7 +62,7 @@ export function signupFields(value: unknown): SignupFields | null {
     typeof value.password !== 'string' ||
     !validatePassword(value.password).valid ||
     !isPastCalendarDate(dateOfBirth, new Date()) ||
-    !username.trim() ||
+    !isValidSignupUsername(username) ||
     isReservedSignupUsername(username) ||
     !isValidTelegramUsername(telegramUsername)
   )
@@ -106,8 +107,7 @@ export function validateSignupFields(value: unknown): {
   if (!isPastCalendarDate(value.dateOfBirth, new Date()))
     invalidFields.push('dateOfBirth');
   if (
-    typeof value.username !== 'string' ||
-    !value.username.trim() ||
+    !isValidSignupUsername(value.username) ||
     isReservedSignupUsername(
       typeof value.username === 'string' ? value.username : '',
     )

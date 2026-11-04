@@ -76,7 +76,8 @@ export async function POST(
     const statusCode =
       result?.status === 'saved'
         ? 200
-        : result?.status === 'conflict'
+        : result?.status === 'conflict' ||
+            result?.status === 'already_submitted'
           ? 409
           : result?.status === 'not_found'
             ? 404
