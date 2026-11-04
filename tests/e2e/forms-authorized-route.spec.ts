@@ -275,6 +275,24 @@ async function createFreshAssignment(
   return freshId;
 }
 
+async function createCorrectionAssignment(): Promise<string> {
+  const [source] = await db`
+    select version_snapshot from public.form_assignments where id=${assignmentId}
+  `;
+  if (!source || typeof source.version_snapshot !== 'object')
+    throw new Error('Browser assignment snapshot is missing');
+  const questions = (
+    source.version_snapshot as { questions?: Array<{ id?: unknown }> }
+  ).questions?.filter(({ id }) =>
+    ['B01', 'B02', 'B06', 'goal', 'training', 'nutrition'].includes(
+      String(id),
+    ),
+  );
+  if (questions?.length !== 6)
+    throw new Error('Required correction fixture questions are missing');
+  return createFreshAssignment({ questions });
+}
+
 async function createApprovedControlsAssignment(): Promise<string> {
   const [source] = await db`
     select version_snapshot from public.form_assignments where id=${assignmentId}
@@ -1017,7 +1035,7 @@ test('submitted answer edits wait for explicit correction and use the latest rev
 }) => {
   // Earlier autosave coverage persists a draft. A fresh assignment keeps this
   // correction flow independent of that test's saved question progress.
-  const correctionAssignmentId = await createFreshAssignment();
+  const correctionAssignmentId = await createCorrectionAssignment();
   await signIn(page);
   await page.context().addCookies([
     {
@@ -1045,25 +1063,30 @@ test('submitted answer edits wait for explicit correction and use the latest rev
   await expect(page.getByRole('status')).toHaveText('Draft saved.', {
     timeout: 10_000,
   });
-  await page.getByRole('button', { name: 'Next question' }).click();
-  await page
-    .getByRole('textbox', { name: 'Training experience' })
-    .fill('Two years');
+  const trainingQuestion = page.getByRole('region', {
+    name: 'Training experience',
+  });
+  await expect(trainingQuestion).toBeVisible();
+  await trainingQuestion.getByRole('textbox').fill('Two years');
   await expect(page.getByRole('status')).toHaveText('Draft saved.', {
     timeout: 10_000,
   });
-  await expect(
-    page.getByRole('textbox', { name: 'Nutrition preferences' }),
-  ).toBeVisible();
-  await page
-    .getByRole('textbox', { name: 'Nutrition preferences' })
-    .fill('Balanced meals');
+  const nutritionQuestion = page.getByRole('region', {
+    name: 'Nutrition preferences',
+  });
+  await expect(nutritionQuestion).toBeVisible();
+  await nutritionQuestion.getByRole('textbox').fill('Balanced meals');
+  const submitButton = page.getByRole('button', { name: 'Submit answers' });
+  await expect(page.getByRole('status')).toHaveText('Draft saved.', {
+    timeout: 10_000,
+  });
+  await expect(submitButton).toBeVisible();
   const submitResponse = page.waitForResponse(
     (response) =>
       response.url().endsWith('/submit') &&
       response.request().method() === 'POST',
   );
-  await page.getByRole('button', { name: 'Submit answers' }).click();
+  await submitButton.click();
   const submission = await submitResponse;
   expect(submission.status()).toBe(200);
   const submittedBody = await submission.json();
