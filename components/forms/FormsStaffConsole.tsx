@@ -135,70 +135,99 @@ export function FormsStaffConsole({
     if (!form) return;
     setBusy(true);
     setIssue('');
-    const result = await adapter.saveDraft(role, form);
-    acceptResult(result, messages['forms.staffSaved']);
-    setBusy(false);
+    try {
+      const result = await adapter.saveDraft(role, form);
+      acceptResult(result, messages['forms.staffSaved']);
+    } catch {
+      setIssue(messages['forms.staffResult.missing']);
+      setStatusMessage('');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function publish() {
     if (!form) return;
     setBusy(true);
     setIssue('');
-    const saved = await adapter.saveDraft(role, form);
-    if (saved.status !== 'ok') {
-      acceptResult(saved, '');
+    try {
+      const saved = await adapter.saveDraft(role, form);
+      if (saved.status !== 'ok') {
+        acceptResult(saved, '');
+        return;
+      }
+      const published = await adapter.publish(role, saved.form.id);
+      acceptResult(published, messages['forms.staffPublished']);
+    } catch {
+      setIssue(messages['forms.staffResult.missing']);
+      setStatusMessage('');
+    } finally {
       setBusy(false);
-      return;
     }
-    const published = await adapter.publish(role, saved.form.id);
-    acceptResult(published, messages['forms.staffPublished']);
-    setBusy(false);
   }
 
   async function retire() {
     if (!form) return;
     setBusy(true);
     setIssue('');
-    acceptResult(
-      await adapter.retire(role, form.id),
-      messages['forms.staffRetired'],
-    );
-    setBusy(false);
+    try {
+      acceptResult(
+        await adapter.retire(role, form.id),
+        messages['forms.staffRetired'],
+      );
+    } catch {
+      setIssue(messages['forms.staffResult.missing']);
+      setStatusMessage('');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function copy(formId: string) {
     setBusy(true);
     setIssue('');
-    const result = await adapter.copy(role, formId);
-    const copied = acceptResult(result, messages['forms.staffCopied']);
-    if (copied) setView('builder');
-    setBusy(false);
+    try {
+      const result = await adapter.copy(role, formId);
+      const copied = acceptResult(result, messages['forms.staffCopied']);
+      if (copied) setView('builder');
+    } catch {
+      setIssue(messages['forms.staffResult.missing']);
+      setStatusMessage('');
+    } finally {
+      setBusy(false);
+    }
   }
 
   async function selectDefaultOnboardingForm(formId: string) {
     setBusy(true);
     setIssue('');
-    const result = await adapter.selectDefaultOnboardingForm(role, formId);
-    if (result.status !== 'ok') {
-      const messageStatus =
-        result.status === 'unavailable' ? 'missing' : result.status;
-      setIssue(messages[`forms.staffResult.${messageStatus}`]);
+    try {
+      const result = await adapter.selectDefaultOnboardingForm(role, formId);
+      if (result.status !== 'ok') {
+        const messageStatus =
+          result.status === 'unavailable' ? 'missing' : result.status;
+        setIssue(messages[`forms.staffResult.${messageStatus}`]);
+        setStatusMessage('');
+      } else {
+        const selectedForm = snapshot?.forms.find((item) => item.id === formId);
+        if (selectedForm) setForm(selectedForm);
+        setSnapshot((current) =>
+          current
+            ? {
+                ...current,
+                defaultOnboardingFormId: formId,
+                defaultConfigurationError: false,
+              }
+            : current,
+        );
+        setStatusMessage(messages['forms.staffSaved']);
+      }
+    } catch {
+      setIssue(messages['forms.staffResult.missing']);
       setStatusMessage('');
-    } else {
-      const selectedForm = snapshot?.forms.find((item) => item.id === formId);
-      if (selectedForm) setForm(selectedForm);
-      setSnapshot((current) =>
-        current
-          ? {
-              ...current,
-              defaultOnboardingFormId: formId,
-              defaultConfigurationError: false,
-            }
-          : current,
-      );
-      setStatusMessage(messages['forms.staffSaved']);
+    } finally {
+      setBusy(false);
     }
-    setBusy(false);
   }
 
   async function create() {

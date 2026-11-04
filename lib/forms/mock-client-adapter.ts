@@ -46,6 +46,7 @@ export function createMockFormsClientAdapter(
   }
   return {
     reloadDraft: async ({ assignmentId }) => read(assignmentId),
+    reloadSubmitted: async ({ assignmentId }) => read(assignmentId),
     saveDraft: async ({ assignmentId, expectedRevision, answers }) =>
       save(assignmentId, expectedRevision, answers, false),
     correct: async ({ assignmentId, expectedRevision, answers }) =>

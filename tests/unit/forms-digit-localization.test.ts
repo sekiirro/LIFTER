@@ -31,6 +31,7 @@ describe('F15 Arabic numeral rendering', () => {
         ],
         adapter: {
           reloadDraft: async () => ({ status: 'loaded' as const }),
+          reloadSubmitted: async () => ({ status: 'loaded' as const }),
           saveDraft: async () => ({ status: 'saved' as const }),
           submit: async () => ({ status: 'submitted' as const }),
           correct: async () => ({ status: 'saved' as const }),

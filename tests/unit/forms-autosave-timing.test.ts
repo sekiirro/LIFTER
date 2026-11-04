@@ -91,4 +91,31 @@ describe('client draft autosave timing', () => {
     });
     expect(keys).toEqual([request.intentKey, request.intentKey]);
   });
+
+  it('reloads the latest submitted answer revision from the correction history endpoint', async () => {
+    const fetchMock = vi.fn(
+      async () =>
+        new Response(
+          JSON.stringify({
+            status: 'loaded',
+            revision: 7,
+            answers: { T03: '4' },
+          }),
+          { status: 200, headers: { 'content-type': 'application/json' } },
+        ),
+    );
+    vi.stubGlobal('fetch', fetchMock);
+    const adapter = createAuthorizedFormsClientAdapter();
+    expect(
+      await adapter.reloadSubmitted?.({ assignmentId: 'assignment' }),
+    ).toEqual({
+      status: 'loaded',
+      revision: 7,
+      answers: { T03: '4' },
+    });
+    expect(fetchMock).toHaveBeenCalledWith(
+      '/api/forms/assignments/assignment/corrections',
+      expect.objectContaining({ method: 'GET', cache: 'no-store' }),
+    );
+  });
 });

@@ -3,7 +3,9 @@ import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const origin = new URL(
+  process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+).origin;
 
 for (const locale of ['ar', 'en'] as const) {
   test(`${locale}: login and recovery are accessible`, async ({

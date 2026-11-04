@@ -14,6 +14,9 @@ const matrix = [
   { locale: 'en', theme: 'dark', width: 390, height: 844 },
   { locale: 'en', theme: 'dark', width: 1440, height: 1000 },
 ] as const;
+const baseOrigin = new URL(
+  process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+).origin;
 
 for (const variant of matrix) {
   test(`${variant.locale} ${variant.theme} ${variant.width}px staff preview is accessible`, async ({
@@ -27,12 +30,12 @@ for (const variant of matrix) {
       {
         name: 'lifter_locale',
         value: variant.locale,
-        url: 'http://localhost:3000',
+        url: baseOrigin,
       },
       {
         name: 'lifter_theme',
         value: variant.theme,
-        url: 'http://localhost:3000',
+        url: baseOrigin,
       },
     ]);
     await page.goto('/showcase/forms/staff');
@@ -65,12 +68,12 @@ for (const variant of matrix) {
       {
         name: 'lifter_locale',
         value: variant.locale,
-        url: 'http://localhost:3000',
+        url: baseOrigin,
       },
       {
         name: 'lifter_theme',
         value: variant.theme,
-        url: 'http://localhost:3000',
+        url: baseOrigin,
       },
     ]);
     await page.goto('/showcase/forms/staff');
@@ -127,12 +130,12 @@ for (const variant of matrix) {
       {
         name: 'lifter_locale',
         value: variant.locale,
-        url: 'http://localhost:3000',
+        url: baseOrigin,
       },
       {
         name: 'lifter_theme',
         value: variant.theme,
-        url: 'http://localhost:3000',
+        url: baseOrigin,
       },
     ]);
     await page.goto('/showcase/forms/staff');
@@ -182,12 +185,12 @@ for (const variant of matrix) {
       {
         name: 'lifter_locale',
         value: variant.locale,
-        url: 'http://localhost:3000',
+        url: baseOrigin,
       },
       {
         name: 'lifter_theme',
         value: variant.theme,
-        url: 'http://localhost:3000',
+        url: baseOrigin,
       },
     ]);
     await page.goto('/showcase/forms/staff?defaultConfigurationError=1');
@@ -222,8 +225,8 @@ test('staff can create, save, and publish a blank bilingual form draft', async (
   context,
 }) => {
   await context.addCookies([
-    { name: 'lifter_locale', value: 'en', url: 'http://localhost:3000' },
-    { name: 'lifter_theme', value: 'light', url: 'http://localhost:3000' },
+    { name: 'lifter_locale', value: 'en', url: baseOrigin },
+    { name: 'lifter_theme', value: 'light', url: baseOrigin },
   ]);
   await page.goto('/showcase/forms/staff');
   await page.getByRole('button', { name: 'Create a form' }).click();
@@ -251,7 +254,7 @@ test('staff views remain reachable through the keyboard path', async ({
   context,
 }) => {
   await context.addCookies([
-    { name: 'lifter_locale', value: 'en', url: 'http://localhost:3000' },
+    { name: 'lifter_locale', value: 'en', url: baseOrigin },
   ]);
   await page.goto('/showcase/forms/staff');
   const viewButtons = page.getByRole('group').getByRole('button');
@@ -270,8 +273,8 @@ test('intake and alert views keep client-late separate from Trainer-late policy'
 }) => {
   await page.setViewportSize({ width: 1440, height: 1000 });
   await context.addCookies([
-    { name: 'lifter_locale', value: 'en', url: 'http://localhost:3000' },
-    { name: 'lifter_theme', value: 'dark', url: 'http://localhost:3000' },
+    { name: 'lifter_locale', value: 'en', url: baseOrigin },
+    { name: 'lifter_theme', value: 'dark', url: baseOrigin },
   ]);
   await page.goto('/showcase/forms/staff');
   await page.getByRole('group').getByRole('button').nth(1).click();
@@ -308,8 +311,8 @@ test('Sales cannot publish workspace forms in the mock preview', async ({
   context,
 }) => {
   await context.addCookies([
-    { name: 'lifter_locale', value: 'en', url: 'http://localhost:3000' },
-    { name: 'lifter_theme', value: 'light', url: 'http://localhost:3000' },
+    { name: 'lifter_locale', value: 'en', url: baseOrigin },
+    { name: 'lifter_theme', value: 'light', url: baseOrigin },
   ]);
   await page.goto('/showcase/forms/staff');
   await page.getByLabel('Preview role').selectOption('sales');

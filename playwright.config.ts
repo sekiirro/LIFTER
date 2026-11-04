@@ -78,6 +78,6 @@ export default defineConfig({
       U8_SERVER_LOG_RAW_PATH: serverLogRawPath,
       U8_SERVER_LOG_SUMMARY_PATH: serverLogSummaryPath,
     },
-    reuseExistingServer: !process.env.CI,
+    reuseExistingServer: false,
   },
 });

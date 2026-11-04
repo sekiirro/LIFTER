@@ -112,6 +112,14 @@ export function SignupForm({
     phoneCountries.find((option) => option.code === country) ??
     phoneCountries.find((option) => option.code === 'EG');
 
+  function hasIdentityError(field: SignupIdentityField) {
+    return (
+      identityInvalidFields.includes(field) ||
+      (result.status === 'invalid_input' &&
+        result.invalidFields?.includes(field) === true)
+    );
+  }
+
   function validateTouchedField(field: SignupIdentityField) {
     if (!formRef.current) return;
     const validation = parseSignupIdentity(new FormData(formRef.current));
@@ -137,7 +145,7 @@ export function SignupForm({
     if (!submitted) return;
     const firstIdentityError = (
       ['name', 'dateOfBirth', 'username', 'telegramUsername'] as const
-    ).find((field) => identityInvalidFields.includes(field));
+    ).find(hasIdentityError);
     if (firstIdentityError) {
       const identityRefs = {
         name: nameRef,
@@ -238,8 +246,7 @@ export function SignupForm({
           aria-label={messages.name}
           aria-describedby={
             (submitted || touchedIdentityFields.includes('name')) &&
-            (identityInvalidFields.includes('name') ||
-              result.invalidFields?.includes('name'))
+            (hasIdentityError('name') || result.invalidFields?.includes('name'))
               ? 'signup-name-error'
               : undefined
           }
@@ -255,12 +262,11 @@ export function SignupForm({
           onBlur={() => blurIdentityField('name')}
           aria-invalid={
             (submitted || touchedIdentityFields.includes('name')) &&
-            (identityInvalidFields.includes('name') ||
-              result.invalidFields?.includes('name'))
+            (hasIdentityError('name') || result.invalidFields?.includes('name'))
           }
         />
         {(submitted || touchedIdentityFields.includes('name')) &&
-          (identityInvalidFields.includes('name') ||
+          (hasIdentityError('name') ||
             result.invalidFields?.includes('name')) && (
             <span id="signup-name-error" className={styles.fieldError}>
               {messages.fieldError}
@@ -275,7 +281,7 @@ export function SignupForm({
           aria-label={messages.dateOfBirth}
           aria-describedby={
             (submitted || touchedIdentityFields.includes('dateOfBirth')) &&
-            identityInvalidFields.includes('dateOfBirth')
+            hasIdentityError('dateOfBirth')
               ? 'signup-date-of-birth-error'
               : undefined
           }
@@ -291,11 +297,11 @@ export function SignupForm({
           disabled={pending}
           aria-invalid={
             (submitted || touchedIdentityFields.includes('dateOfBirth')) &&
-            identityInvalidFields.includes('dateOfBirth')
+            hasIdentityError('dateOfBirth')
           }
         />
         {(submitted || touchedIdentityFields.includes('dateOfBirth')) &&
-          identityInvalidFields.includes('dateOfBirth') && (
+          hasIdentityError('dateOfBirth') && (
             <span id="signup-date-of-birth-error" className={styles.fieldError}>
               {messages.fieldError}
             </span>
@@ -309,7 +315,7 @@ export function SignupForm({
           aria-label={messages.username}
           aria-describedby={
             (submitted || touchedIdentityFields.includes('username')) &&
-            identityInvalidFields.includes('username')
+            hasIdentityError('username')
               ? 'signup-username-error'
               : undefined
           }
@@ -325,11 +331,11 @@ export function SignupForm({
           disabled={pending}
           aria-invalid={
             (submitted || touchedIdentityFields.includes('username')) &&
-            identityInvalidFields.includes('username')
+            hasIdentityError('username')
           }
         />
         {(submitted || touchedIdentityFields.includes('username')) &&
-          identityInvalidFields.includes('username') && (
+          hasIdentityError('username') && (
             <span id="signup-username-error" className={styles.fieldError}>
               {messages.fieldError}
             </span>
@@ -345,7 +351,7 @@ export function SignupForm({
           aria-label={`${messages.telegramUsername} (${messages.optional})`}
           aria-describedby={
             (submitted || touchedIdentityFields.includes('telegramUsername')) &&
-            identityInvalidFields.includes('telegramUsername')
+            hasIdentityError('telegramUsername')
               ? 'signup-telegram-error'
               : undefined
           }
@@ -360,11 +366,11 @@ export function SignupForm({
           disabled={pending}
           aria-invalid={
             (submitted || touchedIdentityFields.includes('telegramUsername')) &&
-            identityInvalidFields.includes('telegramUsername')
+            hasIdentityError('telegramUsername')
           }
         />
         {(submitted || touchedIdentityFields.includes('telegramUsername')) &&
-          identityInvalidFields.includes('telegramUsername') && (
+          hasIdentityError('telegramUsername') && (
             <span id="signup-telegram-error" className={styles.fieldError}>
               {messages.fieldError}
             </span>

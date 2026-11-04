@@ -13,6 +13,9 @@ const matrix = [
   { locale: 'en', theme: 'dark', width: 390, height: 844 },
   { locale: 'en', theme: 'dark', width: 1440, height: 1000 },
 ] as const;
+const baseOrigin = new URL(
+  process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+).origin;
 
 for (const variant of matrix) {
   test(`${variant.locale} ${variant.theme} ${variant.width}px renders without axe violations`, async ({
@@ -26,12 +29,12 @@ for (const variant of matrix) {
       {
         name: 'lifter_locale',
         value: variant.locale,
-        url: 'http://localhost:3000',
+        url: baseOrigin,
       },
       {
         name: 'lifter_theme',
         value: variant.theme,
-        url: 'http://localhost:3000',
+        url: baseOrigin,
       },
     ]);
     await page.goto('/showcase/forms');
@@ -58,8 +61,8 @@ test('client flow supports draft save and blocks incomplete submission accessibl
   context,
 }) => {
   await context.addCookies([
-    { name: 'lifter_locale', value: 'en', url: 'http://localhost:3000' },
-    { name: 'lifter_theme', value: 'light', url: 'http://localhost:3000' },
+    { name: 'lifter_locale', value: 'en', url: baseOrigin },
+    { name: 'lifter_theme', value: 'light', url: baseOrigin },
   ]);
   await page.goto('/showcase/forms');
   await page.getByRole('button', { name: 'Save now' }).click();
@@ -85,8 +88,8 @@ test('removing a branch answer erases and hides the now-inapplicable answer', as
   context,
 }) => {
   await context.addCookies([
-    { name: 'lifter_locale', value: 'en', url: 'http://localhost:3000' },
-    { name: 'lifter_theme', value: 'light', url: 'http://localhost:3000' },
+    { name: 'lifter_locale', value: 'en', url: baseOrigin },
+    { name: 'lifter_theme', value: 'light', url: baseOrigin },
   ]);
   await page.goto('/showcase/forms');
   await page
@@ -119,8 +122,8 @@ test('keyboard users can advance into a conditional question', async ({
   context,
 }) => {
   await context.addCookies([
-    { name: 'lifter_locale', value: 'en', url: 'http://localhost:3000' },
-    { name: 'lifter_theme', value: 'light', url: 'http://localhost:3000' },
+    { name: 'lifter_locale', value: 'en', url: baseOrigin },
+    { name: 'lifter_theme', value: 'light', url: baseOrigin },
   ]);
   await page.goto('/showcase/forms');
   await page

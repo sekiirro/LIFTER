@@ -72,3 +72,57 @@ export async function POST(
     return response({ status: 'unavailable' }, 503);
   }
 }
+
+export async function GET(
+  request: NextRequest,
+  { params }: { params: Promise<{ assignmentId: string }> },
+) {
+  if (!requestUsesHttps(request))
+    return response({ status: 'unavailable' }, 400);
+  const { assignmentId } = await params;
+  if (!uuidPattern.test(assignmentId))
+    return response({ status: 'not_found' }, 404);
+  const client = await createSessionClient();
+  if (!client) return response({ status: 'unavailable' }, 503);
+  const { data: authData, error: authError } = await client.auth.getUser();
+  if (authError || !authData.user)
+    return response({ status: 'not_found' }, 404);
+
+  try {
+    const { data: context, error: contextError } = await client.rpc(
+      'read_form_assignment_context',
+      { p_assignment_id: assignmentId },
+    );
+    if (contextError || !context || typeof context !== 'object')
+      return response({ status: 'not_found' }, 404);
+    const workspaceId = (context as { workspace_id?: unknown }).workspace_id;
+    if (typeof workspaceId !== 'string')
+      return response({ status: 'not_found' }, 404);
+    const { data, error } = await client.rpc('read_form_answer', {
+      p_workspace_id: workspaceId,
+      p_assignment_id: assignmentId,
+      p_view: 'history',
+    });
+    if (error || !Array.isArray(data))
+      return response({ status: 'unavailable' }, 503);
+    const latest = data.at(-1);
+    if (
+      !latest ||
+      typeof latest !== 'object' ||
+      !Number.isSafeInteger((latest as { revision?: unknown }).revision) ||
+      typeof (latest as { answers?: unknown }).answers !== 'object' ||
+      (latest as { answers?: unknown }).answers === null
+    )
+      return response({ status: 'not_found' }, 404);
+    return response(
+      {
+        status: 'loaded',
+        revision: (latest as { revision: number }).revision,
+        answers: (latest as { answers: unknown }).answers,
+      },
+      200,
+    );
+  } catch {
+    return response({ status: 'unavailable' }, 503);
+  }
+}

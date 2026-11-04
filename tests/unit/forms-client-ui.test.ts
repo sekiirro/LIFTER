@@ -1,8 +1,14 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { describe, expect, it, vi } from 'vitest';
-import { QuestionFlow } from '../../components/forms/QuestionFlow';
+import {
+  QuestionFlow,
+  type LabeledQuestion,
+} from '../../components/forms/QuestionFlow';
 import { TextAnswerField } from '../../components/forms/TextAnswerField';
+import { getMessages } from '../../lib/i18n';
 import {
   answersForBudgetSelection,
   applicableClientAnswers,
@@ -13,6 +19,11 @@ const adapter = {
   reloadDraft: vi.fn(async () => ({
     status: 'loaded' as const,
     revision: 1,
+    answers: {},
+  })),
+  reloadSubmitted: vi.fn(async () => ({
+    status: 'loaded' as const,
+    revision: 2,
     answers: {},
   })),
   saveDraft: vi.fn(async () => ({ status: 'saved' as const, revision: 2 })),
@@ -42,8 +53,51 @@ const questions = [
     },
   },
 ];
+const starterQuestions = (
+  JSON.parse(
+    readFileSync(
+      resolve(process.cwd(), 'lib/forms/s14-starter-content.json'),
+      'utf8',
+    ),
+  ).questions as Array<LabeledQuestion & { label: { en: string; ar: string } }>
+).map(({ label, ...question }) => ({ ...question, title: label }));
 
 describe('QuestionFlow', () => {
+  it('isolates Arabic T03 and dynamic N07 Western digits with Bidi', () => {
+    const t03 = renderToStaticMarkup(
+      createElement(QuestionFlow, {
+        locale: 'ar',
+        questions: starterQuestions.filter((question) => question.id === 'T03'),
+        adapter,
+        assignmentId: 'arabic-copy',
+      }),
+    );
+    expect(t03).toContain('<bdi dir="ltr">2</bdi>');
+    expect(t03).toContain('<bdi dir="ltr">6</bdi>');
+    expect(getMessages('ar')['forms.afterMealNumber']).toBe(
+      'الوجبة رقم {number}',
+    );
+  });
+
+  it('localizes correction history question and option labels', () => {
+    const t03 = starterQuestions.find((question) => question.id === 'T03')!;
+    const html = renderToStaticMarkup(
+      createElement(QuestionFlow, {
+        locale: 'en',
+        questions: [t03],
+        adapter,
+        assignmentId: 'history-copy',
+        initialAnswers: { T03: '2' },
+        initialState: 'submitted',
+        history: [{ version: 1, answers: { T03: '2' } }],
+      }),
+    );
+    expect(html).toContain(
+      '<dt>How many days a week would you like to train?</dt>',
+    );
+    expect(html).toContain('<dd>2 days</dd>');
+  });
+
   it('keeps existing answers when applicability cannot be evaluated', () => {
     const malformedQuestions = [
       {
@@ -221,9 +275,9 @@ describe('QuestionFlow', () => {
       }),
     );
     expect(html).toContain('After which meal would you like to train?');
-    expect(html).toContain('After meal 1');
-    expect(html).toContain('After meal 2');
-    expect(html).toContain('After meal 3');
+    expect(html).toContain('After meal <bdi dir="ltr">1</bdi>');
+    expect(html).toContain('After meal <bdi dir="ltr">2</bdi>');
+    expect(html).toContain('After meal <bdi dir="ltr">3</bdi>');
     expect(html).not.toContain('After meal 4');
     expect(html).toContain('Before the first meal');
     expect(html).toContain('I don&#x27;t have a fixed time');
@@ -264,8 +318,8 @@ describe('QuestionFlow', () => {
         initialAnswers: { 'N07.meal_count': '3' },
       }),
     );
-    expect(arabicHtml).toContain('وجبة 1');
-    expect(arabicHtml).toContain('وجبة 3');
+    expect(arabicHtml).toContain('الوجبة رقم <bdi dir="ltr">1</bdi>');
+    expect(arabicHtml).toContain('الوجبة رقم <bdi dir="ltr">3</bdi>');
   });
 
   it('renders budget chips within the N08 question and prunes values when budget changes', () => {
@@ -450,4 +504,5 @@ it('counts an emoji as one Unicode code point in the answer counter', () => {
   expect(html).toContain('Characters:');
   expect(html).toContain('of');
   expect(html).toMatch(/149<\/bdi> remaining/);
+  expect(html).toContain('aria-live="polite"');
 });

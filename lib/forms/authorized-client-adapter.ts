@@ -80,6 +80,30 @@ export function createAuthorizedFormsClientAdapter(): FormsClientAdapter {
         answers: result.answers as FormAnswerSet,
       };
     },
+    reloadSubmitted: async ({ assignmentId }) => {
+      try {
+        const response = await fetch(
+          `/api/forms/assignments/${encodeURIComponent(assignmentId)}/corrections`,
+          { method: 'GET', cache: 'no-store', credentials: 'same-origin' },
+        );
+        const result: unknown = await response.json();
+        if (!response.ok || !isRecord(result)) return { status: 'error' };
+        const nextRevision = revision(result);
+        if (
+          result.status !== 'loaded' ||
+          nextRevision === undefined ||
+          !isRecord(result.answers)
+        )
+          return { status: 'error' };
+        return {
+          status: 'loaded',
+          revision: nextRevision,
+          answers: result.answers as FormAnswerSet,
+        };
+      } catch {
+        return { status: 'error' };
+      }
+    },
     saveDraft: async ({
       assignmentId,
       expectedRevision,

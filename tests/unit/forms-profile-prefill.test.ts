@@ -10,6 +10,11 @@ const adapter = {
     revision: 0,
     answers: {},
   })),
+  reloadSubmitted: vi.fn(async () => ({
+    status: 'loaded' as const,
+    revision: 0,
+    answers: {},
+  })),
   saveDraft: vi.fn(async () => ({ status: 'saved' as const, revision: 1 })),
   submit: vi.fn(async () => ({ status: 'submitted' as const })),
   correct: vi.fn(async () => ({ status: 'saved' as const, revision: 2 })),

@@ -105,7 +105,7 @@ export function TextAnswerField({
       <p
         className={styles.visuallyHidden}
         id={announcementId}
-        aria-live={count.used === limit ? 'polite' : 'off'}
+        aria-live="polite"
         aria-atomic="true"
       >
         {count.used === limit ? messages['forms.limitReached'] : ''}

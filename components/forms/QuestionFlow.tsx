@@ -72,6 +72,11 @@ export type FormsClientAdapter = {
     revision?: number;
     answers?: FormAnswerSet;
   }>;
+  reloadSubmitted?: (input: { assignmentId: string }) => Promise<{
+    status: 'loaded' | 'error';
+    revision?: number;
+    answers?: FormAnswerSet;
+  }>;
   saveDraft: (input: {
     assignmentId: string;
     expectedRevision: number;
@@ -393,7 +398,9 @@ export function QuestionFlow({
   async function reloadLatestDraft() {
     setState('loading');
     try {
-      const result = await adapter.reloadDraft({ assignmentId });
+      const result = await (hasSubmitted && adapter.reloadSubmitted
+        ? adapter.reloadSubmitted({ assignmentId })
+        : adapter.reloadDraft({ assignmentId }));
       if (result.status !== 'loaded' || result.revision === undefined) {
         setState('conflict');
         return;
@@ -659,7 +666,11 @@ export function QuestionFlow({
         <p>{messages['forms.correctionUnavailable']}</p>
       )}
       {visibleHistory.length > 0 && (
-        <CorrectionHistory locale={locale} entries={visibleHistory} />
+        <CorrectionHistory
+          locale={locale}
+          entries={visibleHistory}
+          questions={questions}
+        />
       )}
     </main>
   );
