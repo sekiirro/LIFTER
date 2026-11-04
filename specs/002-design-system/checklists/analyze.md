@@ -1,9 +1,9 @@
 # Specification Analysis Report: Design System Foundation
 
-**Date:** 2026-11-04 15:51 UTC
-**Analysed commit:** a09a403039911b0e7336a08f9be9b52f3b403e30 (S31 round-6 reconciliation of F2 test and criterion maps; static analysis only)
-**Scope:** Existing Design System artifacts, PR #28 Glass delta, S30-PO-8 Q16 desktop sidebar correction, and S31-PO-7 Q5 breakpoint/content-clearance decision.
-**Method:** Static inspection; no tests or runtime commands were executed. The `speckit-analyze` prerequisite check passed with `SPECIFY_FEATURE_DIRECTORY=specs/002-design-system`; no extension hooks are configured.
+**Date:** 2026-11-04 22:19 UTC
+**Analysed commit:** 6233642ced5fddc9e695eb28cf528f5f5ab56c89 (T034 FR-021 mapping correction; refreshed after review evidence update)
+**Scope:** Existing Design System artifacts, PR #28 Glass delta, S30-PO-8 Q16 desktop sidebar correction, S31-PO-7 Q5 breakpoint/content-clearance decision, T034 traceability correction, and SC-005 executed test evidence.
+**Method:** Static inspection of spec/plan/tasks/traceability and current source; the targeted `tests/unit/messages.test.ts::has identical nonempty catalogs` test was executed once (1 passed, 1 skipped). No other tests or runtime commands were executed. The `speckit-analyze` prerequisite check passed with `SPECIFY_FEATURE_DIRECTORY=specs/002-design-system`; no extension hooks are configured.
 
 ## Findings
 
@@ -37,7 +37,7 @@
 | FR-018 | Yes | T027, T030, T031, T032 | Loading/empty/error states |
 | FR-019 | Yes | T028, T029, T030, T031, T032 | Toast/alert behavior |
 | FR-020 | Yes | T006, T011, T023, T027, T032 | Motion/reduced motion |
-| FR-021 | Yes | T034, T036, T047, T048, T050, T051 | Existing responsive navigation; Q16/Q5 implementation and browser tasks remain unchecked |
+| FR-021 | Yes | T036, T047, T048, T050, T051 | T034 records the superseded 48rem behavior and is excluded from FR-021 evidence; Q16/Q5 implementation and browser tasks remain unchecked |
 | FR-022 | Yes | T033, T034, T036 | Role navigation |
 | FR-023 | Yes | T001, T002, T014, T018, T021, T030, T035, T040 | Showcase and gate |
 | FR-024 | Yes | T037, T038, T039 | Print sample/report |
@@ -50,7 +50,7 @@
 | SC-002 | Yes | T031 | Four-mode axe matrix |
 | SC-003 | Yes | T032, T034, T036, T045 | Keyboard use |
 | SC-004 | Yes | T019 | First-paint theme/direction |
-| SC-005 | Yes | T010 | Catalog key parity |
+| SC-005 | Yes | T010 | Catalog parity test executed on current local head; 1 passed |
 | SC-006 | Yes | T038, T039 | Print spike report |
 | SC-007 | No | — | Build-size gate remains PARTIAL; T042 is untagged and is not mapped to SC-007 |
 | SC-008 | Yes | T046 | PO threshold; source report absent |
@@ -76,5 +76,6 @@
 - 2026-11-04: Refreshed after task/traceability alignment commit 70b9e2fc55149b86cbddd9a8a6e540f941815c15; 0 CRITICAL/HIGH findings; FR-021 and SC-007/008/009/010 remain PARTIAL where evidence is missing. Static inspection only.
 - 2026-11-04: S31 round-6 mapping refresh: T034 is added to SC-003 in both mappings; untagged T042 is removed from SC-007 mappings. Task header now covers SC-001..SC-011. Static only; 0 CRITICAL/HIGH findings.
 - 2026-11-04: Refreshed against a09a403039911b0e7336a08f9be9b52f3b403e30 and corrected metrics: SC-007 is the sole uncovered requirement (39/40); T003 and T042 are the two unmapped tasks. Static only; 0 CRITICAL/HIGH findings.
+- 2026-11-05: Refreshed after commit 6233642 and SC-005 evidence entry. T034 is removed from FR-021 mapping; SC-005 cites the executed `tests/unit/messages.test.ts::has identical nonempty catalogs` result. Finding severity unchanged: CRITICAL 0, HIGH 0, MEDIUM 3, LOW 0.
 
 - 2026-11-03: Initial S30 reconciliation of PR #28 scope at `e69688a`; refreshed source quotations and citations against `a9b37cc` with no new findings.
