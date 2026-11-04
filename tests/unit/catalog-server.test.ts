@@ -302,6 +302,84 @@ describe('catalog server authorization and RPC boundary', () => {
     }
   });
 
+  it('authorizes and explicitly scopes workspace exercise detail and removal', async () => {
+    const exerciseId = '55555555-5555-4555-8555-555555555555';
+    currentActor = {
+      userId: 'po',
+      role: 'platform_owner',
+      activeWorkspaceIds: [],
+    };
+    await catalog().exerciseDetail({
+      exerciseId,
+      scope: 'workspace',
+      workspaceId: ws,
+    });
+    expect(rpc).toHaveBeenLastCalledWith('catalog_workspace_exercise_detail', {
+      p_exercise_id: exerciseId,
+      p_workspace_id: ws,
+    });
+    await catalog().removeWorkspaceExercise({
+      operationKey: key,
+      workspaceId: ws,
+      id: exerciseId,
+      expectedVersion: 3,
+    });
+    expect(rpc).toHaveBeenLastCalledWith('catalog_remove_workspace_exercise', {
+      p_workspace_id: ws,
+      p_exercise_id: exerciseId,
+      p_expected_revision: 3,
+      p_operation_key: key,
+    });
+
+    currentActor = {
+      userId: 'trainer',
+      role: 'trainer',
+      activeWorkspaceIds: [ws],
+    };
+    await catalog().exerciseDetail({
+      exerciseId,
+      scope: 'workspace',
+      workspaceId: ws,
+    });
+    await catalog().removeWorkspaceExercise({
+      operationKey: key,
+      workspaceId: ws,
+      id: exerciseId,
+      expectedVersion: 0,
+    });
+    currentActor = {
+      userId: 'trainer',
+      role: 'trainer',
+      activeWorkspaceIds: [ws],
+    };
+    rpc.mockClear();
+    expect(
+      await catalog().exerciseDetail({
+        exerciseId,
+        scope: 'workspace',
+        workspaceId: 'foreign',
+      }),
+    ).toEqual({ status: 'not_permitted' });
+    expect(
+      await catalog().removeWorkspaceExercise({
+        operationKey: key,
+        workspaceId: 'foreign',
+        id: exerciseId,
+        expectedVersion: 0,
+      }),
+    ).toEqual({ status: 'not_permitted' });
+    currentActor = { userId: 'sales', role: 'sales', activeWorkspaceIds: [ws] };
+    expect(
+      await catalog().removeWorkspaceExercise({
+        operationKey: key,
+        workspaceId: ws,
+        id: exerciseId,
+        expectedVersion: 0,
+      }),
+    ).toEqual({ status: 'not_permitted' });
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it('blocks an unassigned workspace and a revoked membership before RPC', async () => {
     currentActor = {
       userId: 'actor',

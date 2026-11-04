@@ -51,6 +51,13 @@ export function ExerciseLibraryResults({
             : '/exercise-library/new'
         }
         emptyActionLabel={m['catalog.addExercise']}
+        itemHref={(item) =>
+          `/exercise-library/${item.id}${
+            workspaceId
+              ? `?scope=workspace&workspace=${encodeURIComponent(workspaceId)}`
+              : ''
+          }`
+        }
         onSearch={(searchState) => search(searchState)}
       />
       {nextHref ? (

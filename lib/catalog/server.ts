@@ -52,6 +52,7 @@ export type CatalogExerciseDetailRow = {
   requested_id: string;
   survivor_id: string;
   lifecycle_state: 'active' | 'removed';
+  lifecycle_revision: number;
   variation: { workspace_id: string; video_url: string } | null;
 };
 export type CatalogAlternativeInput = {
@@ -80,6 +81,7 @@ const operationNames = {
   createExercise: 'catalog_create_exercise',
   versionExercise: 'catalog_version_exercise',
   transitionExercise: 'catalog_transition_exercise',
+  removeWorkspaceExercise: 'catalog_remove_workspace_exercise',
   mergeExercise: 'catalog_merge_exercise',
   writeWorkspaceExercise: 'catalog_write_workspace_exercise',
   writeVariation: 'catalog_write_variation',
@@ -250,12 +252,21 @@ export function createCatalogServer(deps: CatalogDependencies) {
         });
       })();
     },
-    exerciseDetail(input: { exerciseId: string; workspaceId?: string | null }) {
+    exerciseDetail(input: {
+      exerciseId: string;
+      scope?: 'global' | 'workspace';
+      workspaceId?: string | null;
+    }) {
       return (async (): Promise<CatalogResult<CatalogExerciseDetailRow[]>> => {
-        const ready = await prepare(
-          (actor) =>
-            coachingSomewhere(actor) &&
-            (!input.workspaceId || scoped(actor, input.workspaceId)),
+        const workspaceScope = input.scope === 'workspace';
+        const ready = await prepare((actor) =>
+          workspaceScope
+            ? !!input.workspaceId &&
+              (isPO(actor) || scoped(actor, input.workspaceId))
+            : coachingSomewhere(actor) &&
+              (!input.workspaceId ||
+                isPO(actor) ||
+                scoped(actor, input.workspaceId)),
         );
         if (ready.result)
           return { status: ready.result.status } as CatalogResult<
@@ -263,11 +274,18 @@ export function createCatalogServer(deps: CatalogDependencies) {
           >;
         return rpc<CatalogExerciseDetailRow[]>(
           ready.client!,
-          'catalog_exercise_detail',
-          {
-            p_exercise_id: input.exerciseId,
-            p_workspace_id: input.workspaceId ?? null,
-          },
+          workspaceScope
+            ? 'catalog_workspace_exercise_detail'
+            : 'catalog_exercise_detail',
+          workspaceScope
+            ? {
+                p_exercise_id: input.exerciseId,
+                p_workspace_id: input.workspaceId,
+              }
+            : {
+                p_exercise_id: input.exerciseId,
+                p_workspace_id: input.workspaceId ?? null,
+              },
         );
       })();
     },
@@ -290,6 +308,18 @@ export function createCatalogServer(deps: CatalogDependencies) {
         p_transition: x.transition,
         p_operation_key: x.operationKey,
       })),
+    removeWorkspaceExercise: (i: CatalogMutation) =>
+      mutate(
+        i,
+        operationNames.removeWorkspaceExercise,
+        (a) => isPO(a) || scoped(a, i.workspaceId),
+        (x) => ({
+          p_workspace_id: x.workspaceId,
+          p_exercise_id: x.id,
+          p_expected_revision: x.expectedVersion,
+          p_operation_key: x.operationKey,
+        }),
+      ),
     mergeExercise: (i: CatalogMutation) =>
       mutate(i, operationNames.mergeExercise, isPO, (x) => ({
         p_source_id: x.id,
@@ -420,6 +450,7 @@ export const {
   createExercise,
   versionExercise,
   transitionExercise,
+  removeWorkspaceExercise,
   mergeExercise,
   writeWorkspaceExercise,
   writeVariation,

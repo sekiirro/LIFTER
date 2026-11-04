@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useReducer, type FormEvent } from 'react';
+import Link from 'next/link';
 import { Bidi } from '../ui/Bidi';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -41,6 +42,7 @@ export type CatalogListShellProps = {
   onRetry?: () => void;
   emptyActionHref?: string;
   emptyActionLabel?: string;
+  itemHref?: (item: CatalogListItem) => string;
 };
 
 const noop = () => {};
@@ -57,6 +59,7 @@ export function CatalogListShell({
   onRetry,
   emptyActionHref,
   emptyActionLabel,
+  itemHref,
 }: CatalogListShellProps) {
   const m = getMessages(locale);
   const titleId = useId();
@@ -248,7 +251,13 @@ export function CatalogListShell({
               <Card as="article" className={styles.item}>
                 <div className={styles.itemHeader}>
                   <h3 className={styles.itemTitle}>
-                    <Bidi dir="auto">{catalogItemName(item, locale)}</Bidi>
+                    {itemHref ? (
+                      <Link className={styles.itemLink} href={itemHref(item)}>
+                        <Bidi dir="auto">{catalogItemName(item, locale)}</Bidi>
+                      </Link>
+                    ) : (
+                      <Bidi dir="auto">{catalogItemName(item, locale)}</Bidi>
+                    )}
                   </h3>
                   <span className={styles.kind}>
                     {m[`catalog.${item.kind}Kind`]}

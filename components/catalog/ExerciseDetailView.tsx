@@ -8,17 +8,24 @@ import type { Locale } from '../../lib/design/preferences';
 import { formatNumber } from '../../lib/i18n/format';
 import { getMessages } from '../../lib/i18n';
 import styles from './ExerciseDetailView.module.css';
+import { ExerciseDetailRemove } from './ExerciseDetailRemove';
 
 export function ExerciseDetailView({
   locale,
   row,
   exercise,
   canEdit,
+  canRemove,
+  scope,
+  workspaceId,
 }: {
   locale: Locale;
   row: CatalogExerciseDetailRow;
   exercise: NormalizedExercise;
   canEdit: boolean;
+  canRemove: boolean;
+  scope: 'global' | 'workspace';
+  workspaceId: string | null;
 }) {
   const m = getMessages(locale);
   const defaults = exercise.defaults;
@@ -66,6 +73,15 @@ export function ExerciseDetailView({
             >
               {m['catalog.editAsNewVersion']}
             </Link>
+          ) : null}
+          {canRemove && !aliasesToSurvivor ? (
+            <ExerciseDetailRemove
+              locale={locale}
+              scope={scope}
+              workspaceId={scope === 'workspace' ? workspaceId : null}
+              exerciseId={row.exercise_id}
+              expectedRevision={row.lifecycle_revision}
+            />
           ) : null}
         </header>
         <h3 className={styles.exerciseName}>

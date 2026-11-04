@@ -55,6 +55,7 @@ const row = {
   requested_id: id,
   survivor_id: id,
   lifecycle_state: 'active',
+  lifecycle_revision: 0,
   variation: {
     workspace_id: workspaceId,
     video_url: 'https://youtu.be/abcdefghijk',
@@ -107,6 +108,7 @@ describe('production exercise detail route', () => {
     });
     expect(m.detail).toHaveBeenCalledWith({
       exerciseId: id,
+      scope: 'global',
       workspaceId: null,
     });
   });
@@ -120,11 +122,56 @@ describe('production exercise detail route', () => {
     );
     expect(html).toContain(en['catalog.detailTitle']);
     expect(html).toContain(en['catalog.editorLifecycleActive']);
+    expect(html).not.toContain(en['catalog.editorRestore']);
+    expect(html).not.toContain(en['catalog.editorMerge']);
     expect(html).toContain('Detail exercise');
     expect(html).toContain('data-current-version="2"');
     expect(html).toContain('https://youtu.be/abcdefghijk');
     expect(html).toContain('<bdi dir="ltr">8–12</bdi>');
-    expect(m.detail).toHaveBeenCalledWith({ exerciseId: id, workspaceId });
+    expect(m.detail).toHaveBeenCalledWith({
+      exerciseId: id,
+      scope: 'global',
+      workspaceId,
+    });
+    expect(html).toContain(en['catalog.editorRemove']);
+  });
+
+  it('loads workspace detail in explicit tenant scope and exposes Remove to own workspace staff', async () => {
+    m.actor.mockResolvedValue({
+      userId: 'trainer',
+      role: 'trainer',
+      activeWorkspaceIds: [workspaceId],
+    });
+    const html = renderToStaticMarkup(
+      await Page({
+        params: Promise.resolve({ exerciseId: id }),
+        searchParams: Promise.resolve({
+          scope: 'workspace',
+          workspace: workspaceId,
+        }),
+      }),
+    );
+    expect(m.detail).toHaveBeenCalledWith({
+      exerciseId: id,
+      scope: 'workspace',
+      workspaceId,
+    });
+    expect(html).toContain(en['catalog.editorRemove']);
+  });
+
+  it('does not show global Remove to workspace staff', async () => {
+    m.actor.mockResolvedValue({
+      userId: 'trainer',
+      role: 'trainer',
+      activeWorkspaceIds: [workspaceId],
+    });
+    const html = renderToStaticMarkup(
+      await Page({
+        params: Promise.resolve({ exerciseId: id }),
+        searchParams: Promise.resolve({}),
+      }),
+    );
+    expect(html).not.toContain(en['catalog.editorRemove']);
   });
 
   it('uses localized fallback text instead of exposing a workspace id', async () => {

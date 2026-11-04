@@ -22,7 +22,10 @@ const UUID =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 type Props = {
   params: Promise<{ exerciseId: string }>;
-  searchParams: Promise<{ workspace?: string | string[] }>;
+  searchParams: Promise<{
+    workspace?: string | string[];
+    scope?: string | string[];
+  }>;
 };
 
 export default async function ExerciseDetailPage({
@@ -39,6 +42,13 @@ export default async function ExerciseDetailPage({
     notFound();
   const [{ exerciseId }, query] = await Promise.all([params, searchParams]);
   if (!UUID.test(exerciseId)) notFound();
+  if (
+    query.scope !== undefined &&
+    query.scope !== 'workspace' &&
+    query.scope !== 'global'
+  )
+    notFound();
+  const scope = query.scope === 'workspace' ? 'workspace' : 'global';
   const locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
   const m = getMessages(locale);
   let workspaceId: string | null = null;
@@ -70,6 +80,7 @@ export default async function ExerciseDetailPage({
       ? null
       : (actor.activeWorkspaceIds[0] ?? null));
   if (actor.role !== 'platform_owner' && !workspaceId) notFound();
+  if (scope === 'workspace' && !requested) notFound();
   workspaceOptions = allowed;
   if (workspaceId && !allowed.some((item) => item.id === workspaceId)) {
     workspaceOptions = [
@@ -77,7 +88,7 @@ export default async function ExerciseDetailPage({
       { id: workspaceId, name: m['catalog.editorWorkspace'] },
     ];
   }
-  const result = await exerciseDetail({ exerciseId, workspaceId });
+  const result = await exerciseDetail({ exerciseId, scope, workspaceId });
   if (result.status === 'not_permitted') notFound();
   const row =
     result.status === 'ok' && Array.isArray(result.data)
@@ -106,6 +117,9 @@ export default async function ExerciseDetailPage({
         </div>
         {workspaceOptions.length ? (
           <form method="get" className={styles.scopeForm}>
+            {scope === 'workspace' ? (
+              <input type="hidden" name="scope" value="workspace" />
+            ) : null}
             <label className={styles.scopeField} htmlFor="detail-workspace">
               <span>{m['catalog.editorWorkspace']}</span>
               <select
@@ -133,7 +147,17 @@ export default async function ExerciseDetailPage({
         locale={locale}
         row={row as never}
         exercise={exercise}
-        canEdit={actor.role === 'platform_owner'}
+        canEdit={scope === 'global' && actor.role === 'platform_owner'}
+        canRemove={
+          row.lifecycle_state === 'active' &&
+          (scope === 'global'
+            ? actor.role === 'platform_owner'
+            : actor.role === 'platform_owner' ||
+              actor.role === 'workspace_owner' ||
+              actor.role === 'trainer')
+        }
+        scope={scope}
+        workspaceId={workspaceId}
       />
     </main>
   );

@@ -21,18 +21,41 @@ async function authenticate(
   page: Page,
   locale: 'ar' | 'en',
   theme: 'light' | 'dark',
+  actor = fixture.po,
 ) {
   await page.context().addCookies([
     { name: LOCALE_COOKIE, value: locale, url: origin },
     { name: THEME_COOKIE, value: theme, url: origin },
     {
       name: 'sb-127-auth-token',
-      value: `base64-${Buffer.from(JSON.stringify((await fixture.po.client.auth.getSession()).data.session)).toString('base64url')}`,
+      value: `base64-${Buffer.from(JSON.stringify((await actor.client.auth.getSession()).data.session)).toString('base64url')}`,
       url: origin,
       httpOnly: true,
       sameSite: 'Lax',
     },
   ]);
+}
+
+async function createWorkspaceExercise() {
+  const result = await fixture.po.client.rpc(
+    'catalog_write_workspace_exercise',
+    {
+      p_workspace_id: fixture.wsA.id,
+      p_exercise_id: null,
+      p_expected_version: null,
+      p_operation_key: randomUUID(),
+      p_request: {
+        name_ar: 'تمرين إزالة من مساحة العمل',
+        name_en: `S31 workspace removal ${randomUUID()}`,
+        primary_muscle_code: 'chest',
+        secondary_muscle_codes: ['triceps'],
+        equipment_codes: ['barbell'],
+        defaults: { working_sets: 3 },
+      },
+    },
+  );
+  if (result.error) throw new Error(result.error.message);
+  return result.data.exercise_id as string;
 }
 
 async function assertAxe(page: Page) {
@@ -233,6 +256,70 @@ for (const locale of ['ar', 'en'] as const) {
           path: join(
             screenshotDir,
             `${locale}-${theme}-${viewport.name}-variation.png`,
+          ),
+          fullPage: true,
+        });
+      });
+
+      test(`${locale} ${theme} ${viewport.name}: workspace Remove confirmation and removed state`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({
+          width: viewport.width,
+          height: viewport.height,
+        });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await authenticate(page, locale, theme);
+        const id = await createWorkspaceExercise();
+        const href = `/exercise-library/${id}?scope=workspace&workspace=${fixture.wsA.id}`;
+        const m = getMessages(locale);
+        await page.goto(href);
+        const remove = page.getByRole('button', {
+          name: m['catalog.editorRemove'],
+        });
+        await expect(remove).toBeVisible();
+        await remove.focus();
+        await expect(remove).toHaveCSS('outline-style', 'solid');
+        await remove.click();
+        const dialog = page.getByRole('dialog');
+        await expect(dialog).toBeVisible();
+        await expect(
+          dialog.getByRole('heading', { name: m['catalog.editorRemove'] }),
+        ).toBeVisible();
+        await assertAxe(page);
+        await page.screenshot({
+          path: join(
+            screenshotDir,
+            `${locale}-${theme}-${viewport.name}-remove-dialog.png`,
+          ),
+          fullPage: true,
+        });
+
+        await dialog.getByRole('button', { name: m['dialog.cancel'] }).click();
+        await expect(
+          page.getByText(m['catalog.editorLifecycleActive']),
+        ).toBeVisible();
+        await expect(remove).toBeVisible();
+        await expect(dialog).not.toBeVisible();
+        await remove.click();
+        await page
+          .getByRole('dialog')
+          .getByRole('button', { name: m['dialog.confirm'] })
+          .click();
+        await expect(
+          page
+            .getByTestId('exercise-detail')
+            .getByText(m['catalog.editorLifecycleRemoved'])
+            .first(),
+        ).toBeVisible();
+        await expect(
+          page.getByRole('button', { name: m['catalog.editorRemove'] }),
+        ).toHaveCount(0);
+        await assertAxe(page);
+        await page.screenshot({
+          path: join(
+            screenshotDir,
+            `${locale}-${theme}-${viewport.name}-removed.png`,
           ),
           fullPage: true,
         });

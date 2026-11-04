@@ -109,6 +109,10 @@
   line-height: var(--line-height-heading);
 }
 
+.itemLink {
+  color: inherit;
+}
+
 .emptyAction {
   display: inline-flex;
   align-items: center;

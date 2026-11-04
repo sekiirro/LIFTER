@@ -90,6 +90,7 @@ describe('authorized exercise detail projection', () => {
         requested_id: exerciseId,
         survivor_id: exerciseId,
         lifecycle_state: 'active',
+        lifecycle_revision: 0,
         name_ar: 'تمرين اختبار التفاصيل',
         name_en: 'Current exercise payload',
         payload: payload('Current exercise payload'),
@@ -102,10 +103,14 @@ describe('authorized exercise detail projection', () => {
         tx,
         wo.userId,
         () =>
-          tx`select exercise_id, lifecycle_state from public.catalog_exercise_detail(${exerciseId}, ${wsA})`,
+          tx`select exercise_id, lifecycle_state, lifecycle_revision from public.catalog_exercise_detail(${exerciseId}, ${wsA})`,
       );
       expect(workspaceOwner).toEqual([
-        { exercise_id: exerciseId, lifecycle_state: 'active' },
+        {
+          exercise_id: exerciseId,
+          lifecycle_state: 'active',
+          lifecycle_revision: 0,
+        },
       ]);
       const foreign = await asActor(
         tx,
@@ -148,7 +153,7 @@ describe('authorized exercise detail projection', () => {
         tx,
         trainer.userId,
         () =>
-          tx`select requested_id, survivor_id, exercise_id, name_en, lifecycle_state from public.catalog_exercise_detail(${aliasId})`,
+          tx`select requested_id, survivor_id, exercise_id, name_en, lifecycle_state, lifecycle_revision from public.catalog_exercise_detail(${aliasId})`,
       );
       expect(merged).toEqual([
         {
@@ -157,6 +162,7 @@ describe('authorized exercise detail projection', () => {
           exercise_id: terminalId,
           name_en: 'Terminal survivor',
           lifecycle_state: 'active',
+          lifecycle_revision: 0,
         },
       ]);
       await asActor(
@@ -169,7 +175,7 @@ describe('authorized exercise detail projection', () => {
         tx,
         trainer.userId,
         () =>
-          tx`select requested_id, survivor_id, exercise_id, name_en, lifecycle_state from public.catalog_exercise_detail(${terminalId})`,
+          tx`select requested_id, survivor_id, exercise_id, name_en, lifecycle_state, lifecycle_revision from public.catalog_exercise_detail(${terminalId})`,
       );
       expect(removed).toEqual([
         {
@@ -178,6 +184,7 @@ describe('authorized exercise detail projection', () => {
           exercise_id: terminalId,
           name_en: 'Terminal survivor',
           lifecycle_state: 'removed',
+          lifecycle_revision: 1,
         },
       ]);
     });
@@ -282,6 +289,7 @@ describe('authorized exercise detail projection', () => {
           'created_at',
           'created_by',
           'origin_workspace_id',
+          'lifecycle_revision',
         ],
         authenticated_select: true,
         anon_select: false,
