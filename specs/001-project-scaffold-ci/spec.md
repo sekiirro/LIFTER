@@ -71,7 +71,24 @@ Each build reports the edge-worker size against the official Workers size limit 
 
 ---
 
-### Edge Cases
+#### User Story 5 - Cross-branch migration-version guard (Priority: P2)
+
+An implementer working against multiple fetched remote branches can detect, before merge, that two unmerged branches picked the same 14-digit migration version for different filenames — without touching the working tree.
+
+**Why this priority**: The S31 incident (`20261107030000` chosen by both `015-forms-intake` (F15 #44) and `016-catalog-ui` (F16 #43)) showed that the in-tree duplicate check cannot see across branches. S32-PO-3 authorises the preventive half of that incident ("prevent future duplicates"); the rename of #44 is a separate lane.
+
+**Independent Test**: With remote refs already fetched by the caller, run `npm run check:migration-versions:remote`; it enumerates `refs/remotes/origin/*`, lists each ref's `supabase/migrations` via `git ls-tree` without checkout, and exits non-zero reporting the version, both filenames and the carrying refs when one version maps to two different filenames; otherwise it exits 0.
+
+**Acceptance Scenarios**:
+
+1. **Given** two fetched remote refs each carry a `supabase/migrations` entry with the same 14-digit version and different filenames, **When** the cross-ref check runs, **Then** it exits non-zero and reports the version, both filenames, and the refs that carry them.
+2. **Given** several fetched remote refs carry the same version with the same filename, **When** the cross-ref check runs, **Then** it exits 0.
+3. **Given** no version maps to two different filenames across the fetched remote refs, **When** the cross-ref check runs, **Then** it exits 0 and prints a summary of the refs scanned.
+4. **Given** the default in-tree check (`npm run check:migration-timestamps`) runs, **When** it executes, **Then** its behaviour, output and CI wiring are unchanged by this amendment.
+
+---
+
+## Edge Cases
 
 - A missing local env file must not break typecheck, lint, unit tests or build. A committed example file documents the variables (with no values).
 - Windows and Linux developers produce the same results (line endings, path handling).
@@ -95,6 +112,7 @@ Each build reports the edge-worker size against the official Workers size limit 
 - **FR-012**: A README section MUST document prerequisites, commands and the gate list.
 - **FR-013**: Runtime and package-manager versions MUST be pinned for reproducibility (Node 24, `npm@11.17.0`, verified installed).
 - **FR-014**: The edge build and size report MUST run in Linux CI. The edge adapter's Windows support is limited, so these two checks are not required on Windows.
+- **FR-015**: The migration-timestamp tooling MUST provide an opt-in cross-branch mode (`node scripts/check-migration-timestamps.mjs --all-remote-refs`, exposed as npm script `check:migration-versions:remote`) that enumerates `refs/remotes/origin` via `git for-each-ref`, lists each ref's `supabase/migrations` via `git ls-tree` (no checkout), and exits non-zero when one 14-digit version maps to two different filenames on any refs, reporting the version, both filenames and the carrying refs. The same filename on several refs MUST NOT fail. The default in-tree mode MUST remain byte-for-byte behaviourally unchanged and MUST NOT perform any git or network access. The cross-ref mode MUST NOT make network calls beyond what the caller already fetched, MUST NOT check out or modify any ref, and MUST exclude the `refs/remotes/origin/HEAD` symbolic ref from enumeration.
 
 ## Success Criteria *(mandatory)*
 
@@ -105,6 +123,7 @@ Each build reports the edge-worker size against the official Workers size limit 
 - **SC-003**: The health endpoint responds successfully in 100% of smoke runs and exposes exactly 2 fields.
 - **SC-004**: The size report states the used percentage of the 64 MiB uncompressed Worker limit on every build.
 - **SC-005**: 0 deployments and 0 paid-service calls occur as part of this feature.
+- **SC-006**: Running `npm run check:migration-versions:remote` on a fetched repository reports every cross-branch same-version/different-filename pair (version, both filenames, carrying refs) in a single run and exits non-zero when at least one exists; same-filename-on-many-refs passes; the in-tree CI step output and exit behaviour are unchanged from before this amendment.
 
 ## Assumptions
 
@@ -112,3 +131,12 @@ Each build reports the edge-worker size against the official Workers size limit 
 - The Worker size limit comes from the official Cloudflare limits page (checked 2026-10-27: 64 MiB uncompressed, no compressed limit) and stays overridable via `WORKER_SIZE_LIMIT_KIB`.
 - Design system, i18n/RTL, auth, tenancy, schema, jobs and backups are separate P0 features.
 - The GitHub remote exists. CodeRabbit reviews are enabled separately once configured.
+
+## Clarifications
+
+### Session 2026-11-04 (S32 — placement of the cross-branch migration-version guard)
+
+- Q (architect ruling S32-R3, answering S32-PO-DECISION-1): which feature owns the cross-branch migration-version guard — a new numbered spec, `001-project-scaffold-ci`, `016-exercise-food-catalogs`, or a PO gate waiver? → A: `001-project-scaffold-ci`, as a CI-baseline tooling amendment. Reason (S32-R3, verbatim rationale): the migration-timestamp checker already runs as the CI step "Validate migration timestamps" (CI baseline, FR-009 family); a new numbered spec would consume a roadmap feature number. Spec placement for repo tooling is technical governance, not a product decision.
+- PO source: S32-PO-3 (verbatim): "Rename F15 #44's conflicting migration via git mv, preserve F16 #43, verify DB state, repair Stack D history if needed, rerun gates, and prevent future duplicates." Only "prevent future duplicates" is in scope in this amendment; the #44 rename, DB-state verification, Stack D history repair and gate reruns are separate lanes and are not changed here. S32-PO-2 Q4 classifies this lane as low-risk tooling + tests.
+- Scope of this amendment: FR-015, SC-006, User Story 5, task T016, the opt-in `--all-remote-refs` mode, its unit tests, and this Clarifications entry. The default in-tree mode and the CI step "Validate migration timestamps" are unchanged. No existing 001 requirement (FR-001..FR-014, SC-001..SC-005) is modified.
+- **No open ambiguities.** The guard is detection-and-fail only; it does not rename migrations, does not alter CI behaviour, and consumes only refs the caller already fetched.
