@@ -9,3 +9,9 @@
 ## Post-verification S33 re-analysis — 2026-11-04
 
 T900 has been marked complete only after its Playwright acceptance test passed on the committed code head. Traceability records commit `4d47ed6` and the executed test. S33 scope remains test-only; 0 open CRITICAL/HIGH findings.
+
+## S33 follow-up analyze ? 2026-11-04
+
+- Scope: unit test isolation for the public registration page (T901, FR-009/FR-014).
+- Explicit unauthenticated mock preserves the existing signed-out unit contract; no product behavior or auth policy changes.
+- Findings: 0 open CRITICAL, 0 open HIGH.

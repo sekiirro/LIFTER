@@ -101,3 +101,5 @@ No constitutional violation. Specific binding definer RPCs are a controlled exce
 ## S33-PO-4 test hygiene
 
 The S33 registration-links acceptance adjustment captures response status and rendered route content in heading-failure diagnostics. No product behavior or UI changes are in scope.
+
+The S33 unit-page test uses an explicit unauthenticated public-session mock to avoid coupling unit tests to local Stack environment variables.

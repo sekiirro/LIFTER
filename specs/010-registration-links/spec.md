@@ -119,3 +119,5 @@ Workflow: user explicitly authorizes transcription of Claude's binding plan by C
 ### Session 2026-11-04 — S33-PO-4
 
 PO source: S33-PO-4, “Fix stack drift, flaky tests, billing-related CI blockers, and PR/issue backlog organization.” S33 changes only registration-links Playwright failure diagnostics. It does not change route behavior, copy, authorization, or UI. No open ambiguities remain within this test-only scope.
+
+S33 follow-up clarification: `tests/unit/registration-links-page.test.ts` must keep its public session client mocked as unauthenticated so unit coverage is independent of injected local Supabase environment. This is test isolation only; no auth/session behavior changes.
