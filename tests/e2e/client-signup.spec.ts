@@ -1,10 +1,8 @@
-import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomInt, randomUUID } from 'node:crypto';
-import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { expectHeroAxeClean } from './registration-hero-evidence';
 
@@ -16,12 +14,6 @@ const s31ScreenshotDirectory =
   process.env.HERO_R17_SCREENSHOT_DIR ??
   join(tmpdir(), 'lifter-s31-hero-r18', 'signup-states');
 const screenshotDirectory = s31ScreenshotDirectory;
-type SignupTestMessages = ReturnType<typeof getMessages> & {
-  'clientSignup.dateOfBirth': string;
-  'clientSignup.username': string;
-  'clientSignup.telegramUsername': string;
-  'clientSignup.optional': string;
-};
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
@@ -47,7 +39,6 @@ test.describe.serial('T038 invitation signup UI', () => {
   }) => {
     test.skip(!local, 'Requires the disposable local Supabase stack.');
     for (const locale of ['ar', 'en'] as const) {
-      const messages = getMessages(locale) as SignupTestMessages;
       for (const theme of ['light', 'dark'] as const) {
         for (const viewport of [
           { name: 'mobile', width: 390, height: 844 },

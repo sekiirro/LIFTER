@@ -19,7 +19,8 @@ function setInputValue(input: HTMLInputElement, value: string) {
 }
 
 describe('signup result focus', () => {
-  let root: { render: (node: ReactNode) => void; unmount: () => void } | undefined;
+  let root:
+    { render: (node: ReactNode) => void; unmount: () => void } | undefined;
   let host: HTMLDivElement | undefined;
   let dom: JSDOM | undefined;
   let previousGlobals: Map<string, PropertyDescriptor | undefined> | undefined;

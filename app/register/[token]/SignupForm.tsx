@@ -174,10 +174,7 @@ export function SignupForm({
   useEffect(() => {
     if (!submitted || pending || submissionSequence === 0) return;
     const previous = previousResultFocusRef.current;
-    if (
-      previous?.result === result &&
-      previous.sequence === submissionSequence
-    )
+    if (previous?.result === result && previous.sequence === submissionSequence)
       return;
     previousResultFocusRef.current = {
       result,
