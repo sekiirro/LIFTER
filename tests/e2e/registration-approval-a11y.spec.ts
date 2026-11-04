@@ -1,4 +1,4 @@
-import { testOrigin } from './test-origin.mjs';
+import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type BrowserContext } from '@playwright/test';
 import { copyFile, mkdir } from 'node:fs/promises';
@@ -50,7 +50,7 @@ function sessionCookie(cookie: SessionCookie, now: number) {
   return {
     name: cookie.name,
     value: cookie.value,
-    url: origin,
+    url: getTestCookieOrigin(origin),
     expires,
     ...(options?.httpOnly !== undefined ? { httpOnly: options.httpOnly } : {}),
     ...(sameSite ? { sameSite } : {}),
@@ -123,8 +123,16 @@ test('pending client status renders accessibly in the twelve-cell visual matrix'
           height: viewport.height,
         });
         await context.addCookies([
-          { name: LOCALE_COOKIE, value: locale, url: origin },
-          { name: THEME_COOKIE, value: theme, url: origin },
+          {
+            name: LOCALE_COOKIE,
+            value: locale,
+            url: getTestCookieOrigin(origin),
+          },
+          {
+            name: THEME_COOKIE,
+            value: theme,
+            url: getTestCookieOrigin(origin),
+          },
         ]);
         await page.goto('/account/status');
         const messages = getMessages(locale);
@@ -198,7 +206,9 @@ test('pending clients and non-approver staff cannot enter approvals, while train
       denied: ['/registration-approvals'],
     },
   ];
-  await context.addCookies([{ name: LOCALE_COOKIE, value: 'en', url: origin }]);
+  await context.addCookies([
+    { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
+  ]);
   for (const target of targets) {
     await installSession(context, target.client);
     for (const path of target.denied) {

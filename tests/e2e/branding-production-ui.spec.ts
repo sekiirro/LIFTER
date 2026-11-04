@@ -1,4 +1,4 @@
-import { testOrigin } from './test-origin.mjs';
+import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -37,12 +37,12 @@ async function authenticate(
   theme: 'light' | 'dark',
 ) {
   await page.context().addCookies([
-    { name: LOCALE_COOKIE, value: locale, url: origin },
-    { name: THEME_COOKIE, value: theme, url: origin },
+    { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin(origin) },
+    { name: THEME_COOKIE, value: theme, url: getTestCookieOrigin(origin) },
     {
       name: 'sb-127-auth-token',
       value: `base64-${Buffer.from(JSON.stringify(account.session)).toString('base64url')}`,
-      url: origin,
+      url: getTestCookieOrigin(origin),
       httpOnly: true,
       sameSite: 'Lax',
     },
@@ -227,19 +227,21 @@ test('T034: a late first workspace read is discarded after a rapid switch', asyn
   await page.setViewportSize({ width: 768, height: 1024 });
   await page
     .context()
-    .addCookies([{ name: LOCALE_COOKIE, value: 'en', url: origin }]);
+    .addCookies([
+      { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
+    ]);
   await page.context().addCookies([
     {
       name: THEME_COOKIE,
       value: 'light',
-      url: origin,
+      url: getTestCookieOrigin(origin),
     },
   ]);
   await page.context().addCookies([
     {
       name: 'sb-127-auth-token',
       value: `base64-${Buffer.from(JSON.stringify(fixtures.editor.session)).toString('base64url')}`,
-      url: origin,
+      url: getTestCookieOrigin(origin),
       httpOnly: true,
       sameSite: 'Lax',
     },

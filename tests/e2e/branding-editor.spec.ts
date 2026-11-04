@@ -1,4 +1,4 @@
-import { testOrigin } from './test-origin.mjs';
+import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
@@ -30,8 +30,16 @@ for (const locale of ['ar', 'en'] as const) {
         await page.setViewportSize(viewport);
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await context.addCookies([
-          { name: LOCALE_COOKIE, value: locale, url: origin },
-          { name: THEME_COOKIE, value: theme, url: origin },
+          {
+            name: LOCALE_COOKIE,
+            value: locale,
+            url: getTestCookieOrigin(origin),
+          },
+          {
+            name: THEME_COOKIE,
+            value: theme,
+            url: getTestCookieOrigin(origin),
+          },
         ]);
         await page.goto('/showcase/f14-branding');
         await expect(page.locator('html')).toHaveAttribute('lang', locale);

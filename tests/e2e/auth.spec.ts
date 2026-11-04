@@ -1,4 +1,8 @@
-import { buildLoginRedirectUrl, testOrigin } from './test-origin.mjs';
+import {
+  getTestCookieOrigin,
+  buildLoginRedirectUrl,
+  testOrigin,
+} from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE } from '../../lib/design/preferences';
@@ -10,7 +14,7 @@ for (const locale of ['ar', 'en'] as const) {
     context,
   }) => {
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: locale, url: testOrigin },
+      { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin() },
     ]);
     const m = getMessages(locale);
     for (const path of [

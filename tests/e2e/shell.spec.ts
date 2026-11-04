@@ -1,4 +1,4 @@
-import { testOrigin } from './test-origin.mjs';
+import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
 import { expect, test } from '@playwright/test';
 import { expectTooltipBesideTrigger } from './tooltip-geometry';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
@@ -9,7 +9,7 @@ test.describe('client-side shell navigation', () => {
 
   test.beforeEach(async ({ context }) => {
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
     ]);
   });
 
@@ -82,8 +82,16 @@ for (const locale of ['ar', 'en'] as const) {
     const m = getMessages(locale);
     test.beforeEach(async ({ context }) => {
       await context.addCookies([
-        { name: LOCALE_COOKIE, value: locale, url: origin },
-        { name: THEME_COOKIE, value: 'light', url: origin },
+        {
+          name: LOCALE_COOKIE,
+          value: locale,
+          url: getTestCookieOrigin(origin),
+        },
+        {
+          name: THEME_COOKIE,
+          value: 'light',
+          url: getTestCookieOrigin(origin),
+        },
       ]);
     });
 
@@ -163,8 +171,16 @@ for (const locale of ['ar', 'en'] as const) {
       });
       try {
         await context.addCookies([
-          { name: LOCALE_COOKIE, value: locale, url: origin },
-          { name: THEME_COOKIE, value: 'light', url: origin },
+          {
+            name: LOCALE_COOKIE,
+            value: locale,
+            url: getTestCookieOrigin(origin),
+          },
+          {
+            name: THEME_COOKIE,
+            value: 'light',
+            url: getTestCookieOrigin(origin),
+          },
         ]);
         const page = await context.newPage();
         const response = await page.goto(
@@ -215,12 +231,20 @@ for (const locale of ['ar', 'en'] as const) {
       });
       try {
         await context.addCookies([
-          { name: LOCALE_COOKIE, value: 'ar', url: origin },
+          {
+            name: LOCALE_COOKIE,
+            value: 'ar',
+            url: getTestCookieOrigin(origin),
+          },
         ]);
         const page = await context.newPage();
         for (const colorScheme of ['light', 'dark'] as const) {
           await context.addCookies([
-            { name: THEME_COOKIE, value: colorScheme, url: origin },
+            {
+              name: THEME_COOKIE,
+              value: colorScheme,
+              url: getTestCookieOrigin(origin),
+            },
           ]);
           await page.emulateMedia({ colorScheme });
           await page.goto(

@@ -1,4 +1,4 @@
-import { testOrigin } from './test-origin.mjs';
+import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
@@ -40,8 +40,16 @@ for (const locale of ['ar', 'en'] as const) {
           height: viewport.height,
         });
         await context.addCookies([
-          { name: LOCALE_COOKIE, value: locale, url: origin },
-          { name: THEME_COOKIE, value: theme, url: origin },
+          {
+            name: LOCALE_COOKIE,
+            value: locale,
+            url: getTestCookieOrigin(origin),
+          },
+          {
+            name: THEME_COOKIE,
+            value: theme,
+            url: getTestCookieOrigin(origin),
+          },
         ]);
         await page.goto(`/register/${validToken}`);
         await expect(page.locator('html')).toHaveAttribute('lang', locale);
@@ -74,8 +82,8 @@ for (const locale of ['ar', 'en'] as const) {
   }) => {
     test.skip(!local, 'Requires the disposable local Supabase stack.');
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: locale, url: origin },
-      { name: THEME_COOKIE, value: 'light', url: origin },
+      { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin(origin) },
+      { name: THEME_COOKIE, value: 'light', url: getTestCookieOrigin(origin) },
     ]);
     await page.goto(`/register/${validToken}`);
     await page.waitForLoadState('networkidle');

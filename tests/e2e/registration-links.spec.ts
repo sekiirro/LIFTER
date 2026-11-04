@@ -1,4 +1,4 @@
-import { testOrigin } from './test-origin.mjs';
+import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { createServerClient } from '@supabase/ssr';
 import { randomBytes } from 'node:crypto';
@@ -60,7 +60,7 @@ function sessionCookie(cookie: SessionCookie, now: number) {
   return {
     name: cookie.name,
     value: cookie.value,
-    url: origin,
+    url: getTestCookieOrigin(origin),
     expires,
     ...(options?.httpOnly !== undefined ? { httpOnly: options.httpOnly } : {}),
     ...(sameSite ? { sameSite } : {}),
@@ -109,7 +109,7 @@ for (const locale of ['ar', 'en'] as const)
   }) => {
     const m = getMessages(locale);
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: locale, url: origin },
+      { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin(origin) },
     ]);
     for (const token of ['bogus', 'malformed-token', 'a'.repeat(41)]) {
       const response = await page.goto(`/register/${token}`);
@@ -151,7 +151,9 @@ test('trailing slash on /register/<token> is canonicalized before any login redi
   page,
   context,
 }) => {
-  await context.addCookies([{ name: LOCALE_COOKIE, value: 'en', url: origin }]);
+  await context.addCookies([
+    { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
+  ]);
   const token = 'a'.repeat(43);
   const raw = await page.request.get(`${origin}/register/${token}/`, {
     maxRedirects: 0,
@@ -222,7 +224,11 @@ test.describe('local public registration states (required for review)', () => {
     }) => {
       const m = getMessages(locale);
       await context.addCookies([
-        { name: LOCALE_COOKIE, value: locale, url: origin },
+        {
+          name: LOCALE_COOKIE,
+          value: locale,
+          url: getTestCookieOrigin(origin),
+        },
       ]);
       let reference: string | undefined;
       for (const [cause, token] of Object.entries(states)) {
@@ -257,7 +263,7 @@ test.describe('local public registration states (required for review)', () => {
     context,
   }) => {
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
     ]);
     const m = getMessages('en');
     const link = `${origin}/register/${validToken}`;
@@ -320,8 +326,16 @@ test.describe('required local authenticated registration acceptance', () => {
         const m = getMessages(locale);
         await context.grantPermissions(['clipboard-read', 'clipboard-write']);
         await context.addCookies([
-          { name: LOCALE_COOKIE, value: locale, url: origin },
-          { name: THEME_COOKIE, value: 'dark', url: origin },
+          {
+            name: LOCALE_COOKIE,
+            value: locale,
+            url: getTestCookieOrigin(origin),
+          },
+          {
+            name: THEME_COOKIE,
+            value: 'dark',
+            url: getTestCookieOrigin(origin),
+          },
         ]);
         await page.goto('/');
         await expect(
@@ -410,7 +424,11 @@ test.describe('required local authenticated registration acceptance', () => {
         ).toBeVisible();
         expect(await violations(page)).toEqual([]);
         await context.addCookies([
-          { name: THEME_COOKIE, value: 'light', url: origin },
+          {
+            name: THEME_COOKIE,
+            value: 'light',
+            url: getTestCookieOrigin(origin),
+          },
         ]);
         await page.setViewportSize({ width: 390, height: 844 });
         await page.reload();
@@ -466,7 +484,11 @@ test.describe('required local authenticated registration acceptance', () => {
         await signIn(context, f.actors[name]);
         const page = await context.newPage();
         await context.addCookies([
-          { name: LOCALE_COOKIE, value: 'en', url: origin },
+          {
+            name: LOCALE_COOKIE,
+            value: 'en',
+            url: getTestCookieOrigin(origin),
+          },
         ]);
         const denied = await page.goto(
           `/registration-links?workspace=${f.wsA.id}`,
@@ -554,7 +576,11 @@ test.describe('required local authenticated registration acceptance', () => {
         await signIn(context, f.actors[name]);
         const page = await context.newPage();
         await context.addCookies([
-          { name: LOCALE_COOKIE, value: 'en', url: origin },
+          {
+            name: LOCALE_COOKIE,
+            value: 'en',
+            url: getTestCookieOrigin(origin),
+          },
         ]);
         const response = await page.goto('/registration-links');
         if (name === 'noProfile') {
@@ -592,7 +618,7 @@ test.describe('required local authenticated registration acceptance', () => {
   }) => {
     await signIn(context, f.salesA);
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
     ]);
     await page.goto(`/registration-links?workspace=${f.wsA.id}`);
     await page.getByRole('button', { name: 'Issue link', exact: true }).click();
@@ -616,7 +642,7 @@ test.describe('required local authenticated registration acceptance', () => {
   }) => {
     await signIn(context, f.salesA);
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
     ]);
     await page.goto(`/registration-links?workspace=${f.wsA.id}`);
     await page.getByRole('button', { name: 'Issue link', exact: true }).click();
@@ -668,7 +694,7 @@ test.describe('required local authenticated registration acceptance', () => {
   }) => {
     await signIn(context, f.po);
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
     ]);
     await page.goto(`/registration-links?workspace=${f.wsA.id}`);
     let release!: () => void, received!: () => void;
