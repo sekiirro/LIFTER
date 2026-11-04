@@ -130,3 +130,54 @@ The task checkbox update records S32-PO-1 approval of the r18 visual review and 
 | R20-R8-A5 | LOW | Protected untracked `AGENTS.md` and `app/(dev)/showcase/rest/` remain in the worktree. | Excluded from staging. |
 
 **Verdict:** PASS for Spec Kit entry and revalidation. No open CRITICAL/HIGH findings. T057 and T060 are verified; T058 and T059 are intentionally open pending their recorded data/copy gates. The exact PO-approved T052 wording remains unchanged.
+
+## Round 9 — S33 r21 (2026-11-04)
+
+### Scope and entry check
+
+Revalidated after the S33 edits to `spec.md`, `plan.md`, and `tasks.md`. Scope: the approved Q9 constraint deferral and synthetic Stack-B audit (T058), Q10 EN copy / pending AR draft and Q11 clear-on-edit behavior (T059), plus refreshed username error-state UI evidence (T060). FR-028 and SC-023 cover the validation, server status, field association, focus, and constraint scope; Hero Given/When/Then scenarios 7–9 now cite the PO decisions. Tasks remain FR-tagged T058–T060. No open behavior ambiguity remains; Q9 remediation and Egyptian-colloquial AR copy are explicitly open approval gates.
+
+| Gate item | Result | Evidence |
+|---|---|---|
+| Numbered FRs, measurable SCs, Given/When/Then | PASS | `spec.md` FR-028, SC-023, scenarios 7–9. |
+| Clarifications / decision register; explicit ambiguity state | PASS | `spec.md` Clarifications cite S32-PO-9 Q9–Q11; no behavior ambiguity; AR copy and Q9 remediation approval remain open. |
+| Plan and task IDs tagged to FRs | PASS | `plan.md` S32 signup clarification records Q9–Q11; `tasks.md` T058–T060 [FR-028 / FR-008]. |
+| Analyze newer than spec/plan/tasks | PASS | This Round 9 is dated 2026-11-04 after those edits. |
+
+### Findings
+
+| ID | Severity | Finding | Disposition |
+|---|---|---|---|
+| R9-A1 | MEDIUM | Stack B has 21 synthetic existing usernames outside the allowed ASCII set; constraint rollout must await PO-approved remediation under Q9. | Keep T058 open. This run audits counts/pattern classes only; no data changes or constraint migration. |
+| R9-A2 | MEDIUM | Egyptian-colloquial AR unavailable and format-error strings await PO approval under Q10. | Keep generic AR field error. Do not ship the draft. |
+| R9-A3 | MEDIUM | Stack B history is 64 rows vs 113 branch migrations, with a remote-only version and 50 versions absent from history. | No repair; this is not the same-blob rename repair accepted on Stack D. Keep history sync outside the Hero run pending the separate decision. |
+
+**Coverage:** FR-028 / SC-023 map to T057–T059; screenshot evidence for signup rendering maps to T060/FR-008 and FR-028. No new schema or permission change is included. EN copy and username edit behavior are already decided in the PO register. The availability check remains submit-only.
+
+**Findings count:** 0 CRITICAL, 0 HIGH, 3 MEDIUM.
+
+**Verdict:** PASS for the existing-PR review fixes and non-schema work in this run. T058 database constraint and any Stack B history repair remain blocked by their recorded gates. T059 remains open until the AR draft is approved; T060 is open until the current-head screenshot and axe evidence is recorded in traceability.
+
+## Round 10 — S33 r21 copy clarification addendum (2026-11-04)
+
+This addendum follows the last `spec.md` edit, which replaced the stale copy-pending statement in acceptance scenario 7 with the exact EN string approved by S32-PO-9 Q10. It changes no user-visible behavior beyond the already-approved Q10 wording and leaves AR copy pending.
+
+- Entry gate: PASS. FR-028/SC-023 remain numbered and measurable; scenarios 7–9 cover Q3/Q7/Q10/Q11. Clarifications cite Q9–Q11, state no behavior ambiguity, and name the remaining Q9/AR approval gates. `plan.md` and T058–T060 remain FR-tagged.
+- Design: no new component, token, color, spacing, font, motion, or dependency; existing i18n keys and semantic error treatment only.
+- Security/privacy: taken and reserved results share the same string; no raw username data is logged or exposed.
+- Coverage/traceability: targeted unit file passes 7/7; r21 local format-error screenshot matrix passes 12/12 captures with axe 0. T060 checkbox/evidence remains pending until committed traceability.
+- Findings count: 0 CRITICAL, 0 HIGH, 3 MEDIUM (the Q9 remediation/data gate, pending AR copy, and Stack B migration-history mismatch from Round 9 remain open).
+
+**Verdict:** PASS for the current in-scope review/copy edits; all three medium gates remain as previously recorded. No migration or Stack B history change is authorized.
+
+
+## Round 11 — S33 r21 evidence revalidation (2026-11-04)
+
+This round follows the final r21 task-status and traceability edits. It records passing evidence for T060 on commit 9f0cd68; the requirement scope and approved behavior did not change. FR-028 still reflects Q9 constraint deferral, Q10 English approval with Arabic approval pending, and Q11 clear-on-edit / submit-only availability.
+
+- Entry gate: PASS. FR-028 and SC-023 remain numbered/measurable; acceptance scenarios 7–9 cover approved Q9–Q11 behavior. Clarifications cite S32-PO-9 and explicitly state no behavior ambiguity; PO decisions remain open only for remediation and the Arabic draft. Plan and tasks retain FR tags.
+- Evidence: `tests/unit/client-signup-focus.test.tsx` passed 7/7; `tests/e2e/client-signup-username-screenshots.spec.ts::captures invalid Username across locale, theme and viewport` passed 1/1 with 12 captures and axe 0 per capture. T060 is checked with commit/test evidence in `tasks.md`. T058 and T059 remain open.
+- Design/security: no design token, component, motion, dependency, schema, or data change. Username unavailability remains enumeration-neutral; client edits do not perform availability checks.
+- Findings count: 0 CRITICAL, 0 HIGH, 3 MEDIUM (Q9 remediation and constraint deferral; Q10 Arabic draft approval; Stack B migration-history mismatch).
+
+**Verdict:** PASS for current approved code/docs scope. T060 verified; T058 and T059 remain open pending their named PO decisions. No migration or Stack B repair is part of this work.
