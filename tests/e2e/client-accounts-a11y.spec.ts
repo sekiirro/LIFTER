@@ -1,6 +1,11 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
+import { randomUUID } from 'node:crypto';
+import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
+import { validateSignupIdentity } from '../../app/register/[token]/schema';
+import { join } from 'node:path';
+import { tmpdir } from 'node:os';
 
 const origin = 'http://localhost:3000';
 const local = Boolean(
@@ -52,15 +57,109 @@ for (const locale of ['ar', 'en'] as const) {
         await expect(
           page.getByLabel(locale === 'ar' ? 'الدولة' : 'Country'),
         ).toHaveValue('EG');
-        await expect(page.getByLabel(/telegram/i)).toHaveCount(0);
+        const telegram = page.getByLabel(
+          getMessages(locale)['clientSignup.telegramUsername'],
+          { exact: false },
+        );
+        await expect(telegram).toBeVisible();
+        await expect(telegram).not.toHaveAttribute('required', '');
         const results = await new AxeBuilder({ page })
           .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
           .analyze();
-        expect(
-          results.violations.filter((violation) =>
-            ['serious', 'critical'].includes(violation.impact ?? ''),
-          ),
-        ).toEqual([]);
+        expect(results.violations).toEqual([]);
+      });
+
+      test(`${locale} ${theme} ${viewport.name} duplicate error renders neutrally and is axe clean`, async ({
+        page,
+        context,
+      }, testInfo) => {
+        test.skip(!local, 'Requires the disposable local Supabase stack.');
+        const m = getMessages(locale);
+        const { secret, issue, checked } =
+          await import('../integration/registration-links-fixture');
+        const issued = secret();
+        checked(
+          await issue(fixture, fixture.woA.client, {
+            token_hash: issued.hash,
+          }),
+        );
+        await page.setViewportSize({
+          width: viewport.width,
+          height: viewport.height,
+        });
+        await context.addCookies([
+          { name: LOCALE_COOKIE, value: locale, url: origin },
+          { name: THEME_COOKIE, value: theme, url: origin },
+        ]);
+        await page.setExtraHTTPHeaders({
+          'CF-Connecting-IP': `203.0.113.${Math.floor(40 + Math.random() * 200)}`,
+        });
+        await page.goto(`/register/${issued.token}`);
+        await page
+          .getByLabel(m['clientSignup.name'], { exact: true })
+          .fill('Duplicate Example Person');
+        await page
+          .getByLabel(m['clientSignup.dateOfBirth'], { exact: true })
+          .fill('1990-04-12');
+        await page
+          .getByLabel(m['clientSignup.username'], { exact: true })
+          .fill(`member-${issued.token.slice(0, 8)}`);
+        await page
+          .getByLabel(m['clientSignup.email'], { exact: true })
+          .fill(fixture.po.email);
+        await page
+          .getByRole('textbox', { name: m['clientSignup.phone'] })
+          .fill('01012345678');
+        await page
+          .getByLabel(m['clientSignup.password'], { exact: true })
+          .fill('Complex!2345');
+        const identityFields = await page
+          .locator('form')
+          .evaluate((element) => {
+            const data = new FormData(element as HTMLFormElement);
+            return {
+              name: data.get('name'),
+              dateOfBirth: data.get('dateOfBirth'),
+              username: data.get('username'),
+              telegramUsername: data.get('telegramUsername'),
+            };
+          });
+        expect(validateSignupIdentity(identityFields).invalidFields).toEqual(
+          [],
+        );
+        const responsePromise = page.waitForResponse(
+          (response) => response.request().method() === 'POST',
+        );
+        await page
+          .getByRole('button', { name: m['clientSignup.submit'] })
+          .click();
+        expect((await responsePromise).status()).toBe(200);
+        const status = page.getByRole('status');
+        await expect(status).toHaveText(m['clientSignup.duplicate']);
+        await expect(status).toBeVisible();
+        await expect(status).toBeFocused();
+        for (const field of ['email', 'phone', 'username'] as const) {
+          const control = page.getByLabel(m[`clientSignup.${field}`], {
+            exact: true,
+          });
+          if (await control.count()) {
+            await expect(control).not.toHaveAttribute('aria-invalid', 'true');
+          }
+        }
+        const results = await new AxeBuilder({ page })
+          .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
+          .analyze();
+        expect(results.violations).toEqual([]);
+        const screenshotPath = join(
+          tmpdir(),
+          `lifter-s16-q2-${locale}-${theme}-${viewport.name}-${testInfo.workerIndex}.png`,
+        );
+        await page.screenshot({ path: screenshotPath, fullPage: true });
+        testInfo.attachments.push({
+          name: 'duplicate-error-screenshot',
+          path: screenshotPath,
+          contentType: 'image/png',
+        });
       });
     }
   }
@@ -78,26 +177,44 @@ for (const locale of ['ar', 'en'] as const) {
     ]);
     await page.goto(`/register/${validToken}`);
     await page.waitForLoadState('networkidle');
-    const name = page.getByLabel(locale === 'ar' ? 'الاسم' : 'Name', {
+    const messages = getMessages(locale);
+    const name = page.getByLabel(messages['clientSignup.name'], {
       exact: true,
     });
-    const email = page.getByLabel(
-      locale === 'ar' ? 'البريد الإلكتروني' : 'Email',
-      { exact: true },
-    );
-    const country = page.getByLabel(locale === 'ar' ? 'الدولة' : 'Country', {
+    const dateOfBirth = page.getByLabel(messages['clientSignup.dateOfBirth'], {
       exact: true,
     });
-    const phone = page.getByLabel(
-      locale === 'ar' ? 'رقم الهاتف' : 'Phone number',
-      { exact: true },
+    const username = page.getByLabel(messages['clientSignup.username'], {
+      exact: true,
+    });
+    const telegram = page.getByLabel(
+      messages['clientSignup.telegramUsername'],
+      { exact: false },
     );
-    const password = page.getByLabel(
-      locale === 'ar' ? 'كلمة المرور' : 'Password',
-      { exact: true },
-    );
+    const email = page.getByLabel(messages['clientSignup.email'], {
+      exact: true,
+    });
+    const country = page.getByLabel(messages['clientSignup.country'], {
+      exact: true,
+    });
+    const phone = page.getByLabel(messages['clientSignup.phone'], {
+      exact: true,
+    });
+    const password = page.getByLabel(messages['clientSignup.password'], {
+      exact: true,
+    });
     await name.focus();
     await expect(name).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(dateOfBirth).toBeFocused();
+    for (let step = 0; step < 4; step += 1) {
+      await page.keyboard.press('Tab');
+      if (await username.evaluate((field) => field === document.activeElement))
+        break;
+    }
+    await expect(username).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(telegram).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(email).toBeFocused();
     await page.keyboard.press('Tab');
@@ -107,9 +224,14 @@ for (const locale of ['ar', 'en'] as const) {
     await page.keyboard.press('Tab');
     await expect(password).toBeFocused();
     await page.keyboard.press('Tab');
-
     const submit = page.locator('form button[type="submit"]');
     await expect(submit).toBeFocused();
+
+    await name.fill('Keyboard Example Person');
+    await dateOfBirth.fill('1990-04-12');
+    await username.fill(`keyboard-${randomUUID().slice(0, 8)}`);
+    await email.fill('invalid');
+    await phone.fill('01012');
     let release!: () => void;
     let received!: () => void;
     const held = new Promise<void>((resolve) => (release = resolve));
@@ -125,11 +247,10 @@ for (const locale of ['ar', 'en'] as const) {
     await intercepted;
     await expect(submit).toBeDisabled();
     await expect(page.getByRole('status')).toContainText(
-      locale === 'ar' ? 'جارٍ الإرسال' : 'Submitting',
+      messages['clientSignup.pending'],
     );
     release();
     const invalidFields = [
-      [name, 'signup-name-error'],
       [email, 'signup-email-error'],
       [phone, 'signup-phone-error'],
       [password, 'signup-password-error'],
@@ -138,7 +259,7 @@ for (const locale of ['ar', 'en'] as const) {
       await expect(field).toHaveAttribute('aria-invalid', 'true');
       await expect(field).toHaveAttribute('aria-describedby', errorId);
     }
-    await expect(name).toBeFocused();
+    await expect(email).toBeFocused();
     await expect(page.locator('form p[role="alert"]')).toBeVisible();
     await page.unrouteAll();
   });

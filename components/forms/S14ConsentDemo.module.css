@@ -1,0 +1,9 @@
+.main {
+  display: grid;
+  gap: var(--space-6);
+  inline-size: calc(100% - var(--space-6));
+  max-inline-size: 42rem;
+  margin-inline: auto;
+  padding-block: var(--space-8);
+  color: var(--color-text);
+}
