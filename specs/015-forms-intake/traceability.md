@@ -26,3 +26,18 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 - Final `npm run test`: 189 files / 2,326 passed. Full-suite integration and unrelated Playwright failures are detailed in the S32 h12 run report. No changed F15 assertion failed.
 - N12 overflow regression: RED at 390px (document scrollWidth 431px, viewport 390px); GREEN after min-inline-size and flex shrink constraints; final Arabic screenshot shows percentage labels and radio controls within the viewport.
 - Rendered evidence: `%TEMP%/lifter-s32-f15-h12/INDEX.md` (210 screenshots).
+
+## S33 F15 split-fix traceability
+
+| Requirement | Task | Test/evidence | Commit |
+| --- | --- | --- | --- |
+| FR-026 / FR-036 / FR-037 — record S33-PO-3 verbatim and refresh Analyze | T061 | `spec.md`, `plan.md`, `checklists/analyze.md`; entry review PASS with 0 Critical / 0 High and no open ambiguity for authorized work. | `c044f51` |
+| FR-026 / FR-036 / FR-037 — exact Arabic T03/N07 copy; English unchanged | T062 | RED: `tests/unit/forms-s32-approved-intake.test.ts` failed on empty T03 Arabic labels and the old N07 Arabic template. GREEN: `uses the PO-approved exact T03 labels in both locales` and `uses the exact Arabic meal-number template from S33-PO-3`; canonical-byte fixture refreshed; final unit suite 189 files / 2,333 passed. | `14ac577`, `8fb3202` |
+| FR-026 / FR-036 / FR-037 — rendered AR/EN, theme, viewport, Bidi, axe and screenshots | T063 | `tests/e2e/forms-authorized-route.spec.ts::approved F15 controls render in both locales, themes, and widths`; Playwright 7/7 passed, axe clean for each captured state; reviewed 390px Arabic T03 and 1024px Arabic N07 light/dark screenshots. `%TEMP%/lifter-s33-f15-r1/INDEX.md`. | `c6406fd` |
+| FR-008 / FR-013 — ignore presentation-only label snapshot fields at server validation | T064 | `tests/unit/forms-submissions.test.ts::validates immutable snapshots after removing localized render copy`; full unit suite 189 files / 2,333 passed. | `2925ee7` |
+| FR-004 / FR-006 / FR-008 — SQL accepts approved B06 selector | T065 | Stack D `tests/integration/forms-builder-persistence.test.ts::accepts the approved B06 identifier for the N12 series selector`; 5 integration files / 82 passed; drift guard pins latest validator migration. | `3b19409`, `ea96a4e` |
+| FR-017 / FR-020 / FR-024 — active Telegram chat collision uses established invalid-link result | T066 | Stack D `tests/integration/forms-telegram-links.test.ts::rejects an active chat owned by another staff user without retrying the update`; 5 integration files / 82 passed. | `8359b88` |
+| FR-017 / FR-019 / FR-024 / FR-025 — stale Telegram delivery recovery and dead-lettering | T067 | Stack D `tests/integration/forms-alert-inbox.test.ts::recovers a stale Telegram delivery claim and dead-letters it when its job is exhausted`; fixture uses transaction time; 5 integration files / 82 passed. | `e49e1a2`, `a9d72fe` |
+| FR-024 / FR-025 — checked integration harness and caller-seeded pending-client RLS probe | T068 | Stack D `tests/integration/client-accounts-catalog.test.ts::pending synthetic JWT denies has_workspace_access and every catalog RLS table even with safe fixture grants`; 4 harness integration files / 36 passed. | `dfd3e65`, `57d38dc` |
+| FR-017 / FR-018 / FR-024 — evaluate revocation query under lock | T069 | Stack D `tests/integration/forms-alerts.test.ts::waits for a concurrent membership revocation and excludes the recipient at enqueue`; included in 5 integration files / 82 passed. | `e31fced` |
+| FR-026 / FR-036 / FR-037 — repair review evidence separators without changing decisions | T070 | `traceability.md` reviewed against S32 h12 evidence; change limited to damaged separators. | `8067bdb` |

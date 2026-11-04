@@ -19,21 +19,21 @@
 
 ## S33-PO-3 Arabic intake copy
 
-- [ ] T061 [FR-026/036/037] Record S33-PO-3 verbatim, update the Arabic T03/N07 specification and plan, and refresh Analyze with no open ambiguities before code changes.
-- [ ] T062 [FR-026/036/037] Add RED-first exact Arabic-copy unit assertions; implement Western-digit T03 labels `2`, `3`, `4`, `5`, `6` and N07 `الوجبة رقم {number}` dynamically; update canonical and test fixtures plus the F15 PO-decision register. Preserve English T03/N07 strings.
-- [ ] T063 [FR-026/036/037] Render the Arabic T03/N07 flow RTL in light/dark at 390px and 1024px; assert Western digits are not mirrored/reordered, run axe, capture screenshots and index them.
+- [x] T061 [FR-026/036/037] Record S33-PO-3 verbatim, update the Arabic T03/N07 specification and plan, and refresh Analyze with no open ambiguities before code changes.
+- [x] T062 [FR-026/036/037] Add RED-first exact Arabic-copy unit assertions; implement Western-digit T03 labels `2`, `3`, `4`, `5`, `6` and N07 `الوجبة رقم {number}` dynamically; update canonical and test fixtures plus the F15 PO-decision register. Preserve English T03/N07 strings.
+- [x] T063 [FR-026/036/037] Render the Arabic T03/N07 flow RTL in light/dark at 390px and 1024px; assert Western digits are not mirrored/reordered, run axe, capture screenshots and index them.
 
 ## S33 CodeRabbit review remediation
 
 These corrections are within the previously approved F15 scope. They do not add requirements or alter product copy/behavior outside the cited PO/spec contracts.
 
-- [ ] T064 [FR-008/013] Remove all presentation-only snapshot fields, including `label`, before server draft/submission/correction validation; retain regression coverage.
-- [ ] T065 [FR-004/006/008] Align SQL N12-series selector validation with the approved B06 identifier in a forward-only migration; verify against Stack D.
-- [ ] T066 [FR-017/020/024] Return the established invalid-link result for an already-owned active Telegram chat; verify update idempotency and token consumption on Stack D.
-- [ ] T067 [FR-017/019/024/025] Recover stale Telegram `sending` rows after the worker lease and move exhausted deliveries to `dead`; verify timeout, retry and exhaustion behavior on Stack D.
-- [ ] T068 [FR-024/025] Keep all four F15 SQL regression suites on the checked local-stack connection and make the pending-client RLS catalog probe inspect caller-seeded rows in its transaction.
-- [ ] T069 [FR-017/018/024] Execute the alert membership-revocation evaluator query while the lock is held and verify owner fallback on the subsequent pass.
-- [ ] T070 [FR-026/036/037] Repair damaged separators in existing F15 review evidence without changing recorded findings or decisions.
+- [x] T064 [FR-008/013] Remove all presentation-only snapshot fields, including `label`, before server draft/submission/correction validation; retain regression coverage.
+- [x] T065 [FR-004/006/008] Align SQL N12-series selector validation with the approved B06 identifier in a forward-only migration; verify against Stack D.
+- [x] T066 [FR-017/020/024] Return the established invalid-link result for an already-owned active Telegram chat; verify update idempotency and token consumption on Stack D.
+- [x] T067 [FR-017/019/024/025] Recover stale Telegram `sending` rows after the worker lease and move exhausted deliveries to `dead`; verify timeout, retry and exhaustion behavior on Stack D.
+- [x] T068 [FR-024/025] Keep all four F15 SQL regression suites on the checked local-stack connection and make the pending-client RLS catalog probe inspect caller-seeded rows in its transaction.
+- [x] T069 [FR-017/018/024] Execute the alert membership-revocation evaluator query while the lock is held and verify owner fallback on the subsequent pass.
+- [x] T070 [FR-026/036/037] Repair damaged separators in existing F15 review evidence without changing recorded findings or decisions.
 
 ## Phase 0: Stack and shared-contract prerequisites
 
