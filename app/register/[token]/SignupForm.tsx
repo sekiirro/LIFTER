@@ -157,16 +157,7 @@ export function SignupForm({
       if (focusIdentityErrorAfterRenderRef.current) {
         focusIdentityErrorAfterRenderRef.current = false;
         identityRefs[firstIdentityError].current?.focus();
-        return;
       }
-      const activeElement = document.activeElement;
-      if (
-        activeElement instanceof HTMLElement &&
-        formRef.current?.contains(activeElement) &&
-        activeElement !== formRef.current.querySelector('button[type="submit"]')
-      )
-        return;
-      identityRefs[firstIdentityError].current?.focus();
       return;
     }
   }, [identityFocusRequest, identityInvalidFields, submitted]);

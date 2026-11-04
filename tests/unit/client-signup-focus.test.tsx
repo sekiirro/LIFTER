@@ -173,4 +173,61 @@ describe('signup result focus', () => {
 
     expect(document.activeElement).not.toBe(email);
   });
+
+  it('does not refocus an identity field after the user leaves the form', async () => {
+    dom = new JSDOM('<!doctype html><html><body></body></html>', {
+      url: 'http://localhost/',
+    });
+    const globals = {
+      window: dom.window,
+      document: dom.window.document,
+      HTMLElement: dom.window.HTMLElement,
+      HTMLInputElement: dom.window.HTMLInputElement,
+      FormData: dom.window.FormData,
+      Event: dom.window.Event,
+      Node: dom.window.Node,
+      IS_REACT_ACT_ENVIRONMENT: true,
+    };
+    previousGlobals = new Map(
+      Object.keys(globals).map((key) => [
+        key,
+        Object.getOwnPropertyDescriptor(globalThis, key),
+      ]),
+    );
+    for (const [key, value] of Object.entries(globals))
+      Object.defineProperty(globalThis, key, { configurable: true, value });
+    const { createRoot } = await import('react-dom/client');
+    const action = vi.fn(async () => signupResult('unavailable', 'en'));
+    host = document.createElement('div');
+    document.body.append(host);
+    const outsideButton = document.createElement('button');
+    outsideButton.textContent = 'Outside form';
+    document.body.append(outsideButton);
+    root = createRoot(host);
+
+    await act(async () => {
+      root?.render(
+        createElement(SignupForm, {
+          action,
+          locale: 'en',
+          phoneCountries,
+        }),
+      );
+    });
+
+    const form = host.querySelector('form')!;
+    const name = host.querySelector<HTMLInputElement>('[name="name"]')!;
+    await act(async () => {
+      form.requestSubmit();
+    });
+    expect(action).not.toHaveBeenCalled();
+
+    await act(async () => {
+      outsideButton.focus();
+      setInputValue(name, 'Heba Sami Nabil');
+    });
+
+    expect(document.activeElement).toBe(outsideButton);
+    outsideButton.remove();
+  });
 });
