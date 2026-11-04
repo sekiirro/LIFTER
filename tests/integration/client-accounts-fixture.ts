@@ -452,7 +452,9 @@ export async function pendingRlsAccess(
 ) {
   if (
     seededClientId &&
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(seededClientId)
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(
+      seededClientId,
+    )
   )
     throw new Error('RLS probe requires the caller-seeded client UUID');
   const tables =
@@ -478,7 +480,11 @@ export async function pendingRlsAccess(
         const before = await tableTx.unsafe(
           `select ${uuidColumn} from ${target}${seedFilter} limit 1`,
         );
-        if (table.relname === 'clients' && seededClientId && before.length !== 1)
+        if (
+          table.relname === 'clients' &&
+          seededClientId &&
+          before.length !== 1
+        )
           throw new Error(
             'RLS probe cannot see the caller-seeded pending client',
           );
