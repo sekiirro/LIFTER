@@ -135,7 +135,10 @@ it('rejects N12 and derived definitions with absent required selector metadata',
     {
       ...base,
       questions: [
-        { ...derived, derivedOptions: { fixedChoices: ['before-first', 'no-fixed-time'] } },
+        {
+          ...derived,
+          derivedOptions: { fixedChoices: ['before-first', 'no-fixed-time'] },
+        },
       ],
     },
   ];
