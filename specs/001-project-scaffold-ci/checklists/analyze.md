@@ -30,3 +30,10 @@
 ## Verdict
 
 **PASS — 0 CRITICAL, 0 HIGH.** Implementation of T016 is authorized.
+
+## Post-implementation revalidation (2026-11-04, appended after commit `a1a4412`)
+
+- T016 was ticked `[x]` in tasks.md only after its tests executed and passed: RED first (7 failed, functions absent — 2026-11-04 07:50), then GREEN (12 passed in `tests/unit/migration-timestamps.test.ts` — 07:51; full unit suite 141 files / 2018 tests passed — 07:51 and 07:52; typecheck, lint, format:check, check:migration-timestamps, check:secrets all green on the implementation head).
+- spec/plan/tasks delta vs the pre-implementation pass: only the T016 checkbox flipped (commit `a1a4412`) and `traceability.md` was added (this commit); no requirement text changed. FR-015/SC-006/US5 are unchanged. Pre-implementation findings remain valid; none reopened.
+- Real-repo verification (post `git fetch origin --prune`, not part of the unit suite): `npm run check:migration-versions:remote` exits 1 and reports `20261107030000` — `20261107030000_catalog_workspace_exercise_remove.sql` (`refs/remotes/origin/016-catalog-ui`) vs `20261107030000_f15_slider_middle_label_required.sql` (`refs/remotes/origin/015-forms-intake`). Expected until the #44 rename lane lands; recorded, not fixed (S32-PO-3 lane split). CI (`ci.yml`) is unchanged.
+- **Revalidation result: PASS — 0 CRITICAL, 0 HIGH.** This file is dated after the last change to spec/plan/tasks (2026-11-04; tasks.md last changed in `a1a4412`, this addendum and traceability.md land after it).
