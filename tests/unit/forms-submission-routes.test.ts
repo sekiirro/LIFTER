@@ -118,6 +118,39 @@ describe('T013 submission and correction HTTP validation', () => {
     expect(client.rpc).toHaveBeenCalledTimes(1);
   });
 
+  it('validates correction answers against the authorized current assignment snapshot', async () => {
+    const currentSnapshot = {
+      questions: [
+        { id: 'current', sectionId: 'basic', type: 'shortText', required: false },
+      ],
+    };
+    client.rpc.mockImplementation(async (name: string) =>
+      name === 'read_form_correction_context'
+        ? {
+            data: {
+              workspace_id: 'workspace-current',
+              version_snapshot: currentSnapshot,
+            },
+            error: null,
+          }
+        : { data: { status: 'corrected' }, error: null },
+    );
+    const response = await correct(
+      request(`/api/forms/assignments/${assignmentId}/corrections`, {
+        expected_revision: 1,
+        intent_key: intentKey,
+        answer_values: { stale_question: 'old snapshot value' },
+        correction_note: 'synthetic note',
+      }),
+      { params: Promise.resolve({ assignmentId }) },
+    );
+    await expectSafeInvalid(response, 'invalid');
+    expect(client.rpc).toHaveBeenCalledTimes(1);
+    expect(client.rpc).toHaveBeenCalledWith('read_form_correction_context', {
+      p_assignment_id: assignmentId,
+    });
+  });
+
   it('rejects unrecognized fields on both write-route envelopes', async () => {
     const submitResponse = await submit(
       request(`/api/forms/assignments/${assignmentId}/submit`, {
