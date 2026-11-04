@@ -375,8 +375,7 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
         });
         await page.getByRole('button').nth(1).click();
         await expect(page.getByRole('radio')).toHaveCount(2);
-        await page.getByRole('radio').first().check();
-        await page.getByRole('button').nth(1).click();
+        await page.getByRole('radio').first().click({ noWaitAfter: true });
         await expect(
           page.getByRole('textbox', {
             name: locale === 'en' ? 'Your goal' : 'هدفك',
