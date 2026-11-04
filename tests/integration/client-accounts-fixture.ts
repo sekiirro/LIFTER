@@ -467,7 +467,7 @@ export async function pendingRlsAccess(
         // The selected constant exposes no protected field. Grant SELECT on a
         // safe UUID column to prevent missing privileges from hiding bad RLS.
         const [column] =
-          await tableTx`select attname from pg_attribute where attrelid=to_regclass(${table.nspname + '.' + table.relname}) and attnum>0 and atttypid='uuid'::regtype order by attnum limit 1`;
+          await tableTx`select attname from pg_attribute where attrelid=to_regclass(${table.nspname + '.' + table.relname}) and attnum>0 and atttypid='uuid'::regtype and attnotnull order by attnum limit 1`;
         if (!column) throw new Error('RLS probe needs a safe UUID column');
         const quote = (identifier: string) =>
           `"${identifier.replaceAll('"', '""')}"`;
@@ -495,7 +495,9 @@ export async function pendingRlsAccess(
             targetId,
           )
         )
-          throw new Error('RLS probe selected an invalid UUID target');
+          throw new Error(
+            `RLS probe selected an invalid UUID target from ${table.relname}.${column.attname}: ${targetId}`,
+          );
         const rowFilter = ` where ${uuidColumn}='${targetId}'::uuid`;
         await tableTx.unsafe(
           `grant select (${uuidColumn}) on ${target} to authenticated`,

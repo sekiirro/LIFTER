@@ -225,7 +225,7 @@ it('recovers a stale Telegram delivery claim and dead-letters it when its job is
         order by created_at desc limit 1`;
       expect(job).toBeDefined();
       await tx`update public.jobs set status='running',attempts=max_attempts,
-        lease_expires_at=clock_timestamp()-interval '1 second' where id=${job!.id}`;
+        lease_expires_at=now()-interval '1 second' where id=${job!.id}`;
       await tx`select public.claim_f15_form_alert_jobs(1,300)`;
       const [dead] = await tx`select status,claimed_at
         from app_private.form_alert_deliveries where id=${deliveryId}`;
