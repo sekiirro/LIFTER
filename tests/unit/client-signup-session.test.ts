@@ -38,7 +38,7 @@ function signupForm() {
   form.set('request_secret', requestSecret);
   form.set('name', 'Example Middle Person');
   form.set('dateOfBirth', '1990-04-12');
-  form.set('username', 'example-client');
+  form.set('username', 'example_client');
   form.set('telegramUsername', '');
   form.set('email', 'client@example.test');
   form.set(

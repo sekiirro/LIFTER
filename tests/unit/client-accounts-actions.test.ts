@@ -46,7 +46,7 @@ it('rejects empty email components and multiple separators through invalid field
       phone: '+201012345678',
       password: 'Strong9!Password',
       dateOfBirth: '1990-04-12',
-      username: 'example-user',
+      username: 'example_user',
       telegramUsername: '',
     });
     expect(validation.fields).toBeNull();
@@ -68,7 +68,7 @@ it('routes malformed email shapes to field validation before admission or collis
       phone: JSON.stringify({ country: 'EG', nationalNumber: '01012345678' }),
       password: 'Strong9!Password',
       dateOfBirth: '1990-04-12',
-      username: 'example-user',
+      username: 'example_user',
       telegramUsername: '',
     },
     origin: 'https://signup.example.test',
@@ -142,7 +142,7 @@ it('Q-M22 preserves database unavailable through the signup action result mappin
         phone: JSON.stringify({ country: 'EG', nationalNumber: '01012345678' }),
         password: 'Complex!2345',
         dateOfBirth: '1990-04-12',
-        username: 'example-user',
+        username: 'example_user',
         telegramUsername: '',
       },
       origin: 'https://signup.example.test',
@@ -174,7 +174,7 @@ it('T045 strict signup shape accepts the profile extension and rejects unknown f
     phone: '+201012345678',
     password: 'Complex!2345',
     dateOfBirth: '1990-04-12',
-    username: 'example-user',
+    username: 'example_user',
     telegramUsername: '',
   };
   expect(signupFields(accepted) !== null).toBe(true);
@@ -444,7 +444,7 @@ it('U6-R1 returns sign_out_required before admission or signup RPC calls', async
       phone: JSON.stringify({ country: 'EG', nationalNumber: '01012345678' }),
       password: 'Complex!2345',
       dateOfBirth: '1990-04-12',
-      username: 'example-user',
+      username: 'example_user',
       telegramUsername: '',
     },
     origin: 'https://signup.example.test',
