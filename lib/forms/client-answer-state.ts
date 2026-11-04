@@ -67,7 +67,8 @@ export function applicableClientAnswers<T extends FormQuestion>(
     (question) =>
       Object.fromEntries(
         Object.entries(question).filter(
-          ([key]) => key !== 'title' && key !== 'description',
+          ([key]) =>
+            key !== 'title' && key !== 'description' && key !== 'label',
         ),
       ) as unknown as FormQuestion,
   );
