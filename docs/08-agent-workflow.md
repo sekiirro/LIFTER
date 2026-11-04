@@ -31,7 +31,7 @@ Route according to task complexity, security risk, model capability, and quota (
   > Q15: Keep Sol Medium as the mandatory independent feature critic. Preserve the existing S13 rule requiring my explicit approval for each Sol invocation. Do not substitute Luna or other models, and do not skip critiques.
   Q15 establishes this specific feature-critic use while preserving S13's per-invocation approval. Obtain approval before invoking Sol. Sol High and xhigh remain prohibited (D-27). Without approval, do not substitute another model or skip the critique; hold feature acceptance until the approved critique is complete. If no permitted tier is available for ordinary routing, stop and request PO direction; do not substitute a model (D-27).
 - **Performance records:** Keep one performance-log row per delegation, including model, effort, task class, outcome, review notes, and cost (D-27).
-- **Development data and routing:** All development AI agents must use synthetic/test data only; no real client data may be shared during development or testing. Security-sensitive code work stays with approved paid models (Luna, Sol, Claude) (S31-PO-7 Q6). The PO clarification follows (S31-PO-8):
+- **Development data and routing:** All development AI agents must use synthetic/test data only; no real client data may be shared during development or testing. Security-sensitive code work stays with approved paid models (Luna High or Sol Medium; Sol still requires per-invocation PO approval per S30-PO-8 Q15) (S31-PO-7 Q6). The PO clarification follows (S31-PO-8):
   > S31-Q6 — PO clarification:
   > Development AI agents (Luna, Sol, Claude, MiniMax, etc.) must use synthetic data only. No real client data may be shared during development or testing.
   >
