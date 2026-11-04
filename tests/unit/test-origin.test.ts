@@ -56,17 +56,36 @@ function unsafeCookieUrlAssignments() {
   const unsafe: string[] = [];
   for (const path of typescriptFiles(e2eRoot)) {
     const source = readFileSync(path, 'utf8');
-    const sourceFile = ts.createSourceFile(path, source, ts.ScriptTarget.Latest, true);
+    const sourceFile = ts.createSourceFile(
+      path,
+      source,
+      ts.ScriptTarget.Latest,
+      true,
+    );
     const visit = (node: ts.Node) => {
-      if (ts.isPropertyAssignment(node) && node.name.getText(sourceFile) === 'url') {
+      if (
+        ts.isPropertyAssignment(node) &&
+        node.name.getText(sourceFile) === 'url'
+      ) {
         if (!isOriginHelperExpression(node.initializer, sourceFile)) {
-          const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
-          unsafe.push(`${relative(e2eRoot, path).replaceAll('\\', '/')}:${line + 1}`);
+          const { line } = sourceFile.getLineAndCharacterOfPosition(
+            node.getStart(sourceFile),
+          );
+          unsafe.push(
+            `${relative(e2eRoot, path).replaceAll('\\', '/')}:${line + 1}`,
+          );
         }
-      } else if (ts.isShorthandPropertyAssignment(node) && node.name.text === 'url') {
+      } else if (
+        ts.isShorthandPropertyAssignment(node) &&
+        node.name.text === 'url'
+      ) {
         if (!isOriginHelperExpression(node.name, sourceFile)) {
-          const { line } = sourceFile.getLineAndCharacterOfPosition(node.getStart(sourceFile));
-          unsafe.push(`${relative(e2eRoot, path).replaceAll('\\', '/')}:${line + 1}`);
+          const { line } = sourceFile.getLineAndCharacterOfPosition(
+            node.getStart(sourceFile),
+          );
+          unsafe.push(
+            `${relative(e2eRoot, path).replaceAll('\\', '/')}:${line + 1}`,
+          );
         }
       }
       ts.forEachChild(node, visit);
