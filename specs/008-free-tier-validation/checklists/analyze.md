@@ -22,3 +22,11 @@
 ## Verdict
 
 **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 3 MEDIUM; 12/12 FR/SC items mapped. Static evidence only.
+
+## S31 round 6 refresh
+
+- **Date:** 2026-11-04
+- **Reviewed after:** S31-PO-4 input and T012 were added to `spec.md`, `plan.md`, and `tasks.md`; no code/tests/cloud actions.
+- **Decision:** ND-F8-1 is decided as an illustrative pilot input: 2 workspaces × 150 clients/workspace × 2 staff/workspace × 2 plans/client × 2 new plan versions/client/month. T012 requires schema/unit verification before table-level values are recorded.
+- **Remaining gates:** ND-F8-2 hosting/staging and ND-F8-3 authenticated-route test-account approval remain open. No implementation or measurement is authorized.
+- **Coverage:** FR-to-task 8/8, SC-to-task 4/4; 0 CRITICAL/HIGH, 2 MEDIUM (ND-F8-2/3). Static only.

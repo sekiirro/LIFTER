@@ -501,9 +501,11 @@ logged or stored by LIFTER, and returned only after the issuance and audit event
 commit. Opening it does not consume it: the Continue action verifies it, then
 the account holder sets a new password.
 
-ND-F4-3 uses the provider OTP expiry, configured per environment. ND-F4-4
-placeholders live in `app_private.recovery_link_limits()`: 20 per actor and 3
-per target per rolling hour. Both values need owner decisions before production.
-P1 replaces `app_private.recovery_target_workspace`; until then, generation is
-denied for every target. Trainers remain denied pending ND-F4-1. F4 offers copy
-only, with no share button.
+ND-F4-3 requires 60-minute recovery-link expiry in every environment and an
+independent 15-minute recovery session. S31-PO-3 sets recovery generation
+limits at 10 per issuing staff account per rolling hour and 3 per client per
+rolling 24 hours across issuers. Existing configuration values have not been
+verified against these approved decisions. P1 supplies client lookup;
+S31-PO-2 approves clients-only scope, all workspace Trainers, and copy-only
+delivery. Approved Trainer and limit behavior remains unimplemented and needs
+its specified future implementation and verification gates.

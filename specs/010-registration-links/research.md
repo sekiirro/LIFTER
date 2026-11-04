@@ -44,7 +44,7 @@ Latest `app_private.audit_row_change()` is in `20261029120000_packages.sql`, not
 
 ## R8 — Rate limit, retry and generic failures
 
-Mirror F4's actor advisory transaction lock followed by in-window count and insert. One function `app_private.registration_link_limits()` contains clearly marked ND-F10-3 local/dev placeholders: **20 successful issuances per actor per rolling hour**. This is a reusable technical placeholder, not a source-backed policy or a production default. Count across all workspaces for that actor, preventing selector-based bypass. No per-IP or invented per-target limit.
+The existing `app_private.registration_link_limits()` is a technical placeholder (20 per actor per rolling hour) and does not conform to the approved policy. S31-PO-3 sets 50 successful issuances per authorized account per rolling 24 hours, across workspaces, including Trainer/WO/PO, with no exceptions or workspace resets. T035 tracks implementation, concurrency tests, and configuration verification; no code change is made in this lane.
 
 The supplied F10 error vocabulary has no rate_limited result. Map limit rejection to `unavailable`; tests inspect the limit behavior without exposing SQL details. All failed transactions leave no issuance event. Fixed RPC has no idempotency key: same supplied hash cannot create two links; a repeated hash returns generic failure, never recovers a URL. A fresh user-requested issuance uses fresh randomness. A lost delivery response may leave a valid undisclosed link; do not add replay storage or automatic blind action retries. Concurrent distinct issuance is allowed within the limit; this differs from single-use consumption.
 
@@ -81,4 +81,4 @@ Add only the `/register/<single segment>` public allow-list shape; keep `/regist
 | Backdated open fixtures vs fresh insert guard                      | Temporarily suspend only insert guard in isolated fixture setup, restore before subject calls; no public clock override.                                |
 | Prettier scoped command vs specs ignore rule                       | Run requested plain commands, then use --ignore-path .gitignore for effective write/check of all eight files; no ignore-config edits.                   |
 
-ND-F10-1..5 and ND-F9-1..5 remain open exactly as [spec.md](spec.md). Technical interpretations above remain reviewable; they do not settle those decisions. No source or protected policy document is edited in this run.
+ND-F10-1..3 are decided by S31-PO-3/4 and recorded in [spec.md](spec.md); ND-F10-4/5 remain open. ND-F9-1..3/5 remain open; ND-F9-4 remains denied by S31-PO-4. SK-009-01 belongs to the separate F9 specification lane. Approved behavior is recorded but not implemented. No source decision file is edited in this run.

@@ -10,13 +10,13 @@ F4 adds:
 - **Session refresh**: an edge `middleware.ts` that also routes anonymous visitors (public allow-list) to `/login`.
 - **Actor resolution**: a server-verified `getActor()` that feeds the existing `authorize()`.
 - **Recovery links, server-side**:
-  - a new capability, `generate_recovery_link` (PO, WO; Trainer denied pending ND-F4-1)
+  - a new capability, `generate_recovery_link` (PO/WO; all workspace Trainers may issue for clients in that workspace per S31-PO-2; future implementation requires a new spec cycle, RLS, tests, and security review)
   - an append-only `recovery_link_issuances` table audited as `recovery_link.generated`
   - DB-enforced rate limits
   - an authorize → generate → record ordering, so every link shown has exactly one audit row
 - **The `/auth/recovery` page**: it consumes a link only on POST, then sets a new password.
 
-Client targeting stays closed until P1 creates client accounts (ND-F4-5).
+Client targeting follows P1 client-account lookup (S31-PO-2 ND-F4-5). Approved Trainer and limit behavior is documented but not implemented; T032/T033 track future work.
 
 ## Technical Context
 
@@ -37,7 +37,7 @@ Client targeting stays closed until P1 creates client accounts (ND-F4-5).
 | I Isolation | The actor is derived server-side from a verified session. Generation is checked by the DB guard (`has_workspace_access` on the target's workspace) and app-layer `authorize()`. Denials are generic, so client existence isn't revealed. Foreign-workspace negative tests. ✅ |
 | III Least privilege | The new capability is limited to PO and WO, Trainer is deny-by-default until ND-F4-1, and Sales is denied. Matrix parity is tested. ✅ |
 | IV Scope | PO manual reset links: BRD lines 40/104/130. WO/Trainer extension: owner decision 2026-10-27, to be registered as D-19 (PO approval in this PR). Self-service email reset is sequenced, not removed (ND-F4-7, D-07). No 2FA or device-management screen (PRD-12). ✅ |
-| VII Privacy | Recovery tokens are hashed by the provider, single-use and expiring. LIFTER stores no secret. The link is shown once and never logged. The audit holds ids only. The service-role key is server-only, enforced by the build and a CI scan. ✅ — expiry value pending ND-F4-3 before production |
+| VII Privacy | Recovery tokens are hashed by the provider, single-use and expire after 60 minutes in every environment; recovery sessions last 15 minutes. LIFTER stores no secret. The link is shown once and never logged. The audit holds ids only. The service-role key is server-only, enforced by the build and a CI scan. Provider configuration verification remains T031. |
 | VIII UI | `/login` and `/auth/recovery` are built on Design System components, AR (RTL) default plus EN, with axe e2e. ✅ |
 | IX Reliability | Rate-limit and record use advisory-locked transactions, so concurrent requests can't exceed the limit. ✅ |
 | Platform | Edge middleware is the supported OpenNext path (research R1). No deploy. ✅ |
@@ -58,9 +58,9 @@ Generation sequence (server action `generateRecoveryLink(targetUserId)`):
 5. RPC `recovery_link_record(target)` with the user JWT. On failure → mapped as in step 2, and the link is discarded.
 6. Return `{ status: 'ok', link: buildRecoveryUrl(APP_ORIGIN, hashed_token) }`.
 
-## NEEDS DECISION
+## Decision status
 
-ND-F4-1..7, as listed in [spec.md](spec.md#needs-decision-owner-sub-decisions-not-invented-here). The interim behavior is deny or minimal in every case. ND-F4-3 (expiry) and ND-F4-4 (limits) must be decided before production.
+S31-PO-2/3 decisions are recorded in [spec.md](spec.md#decision-register-owner-sub-decisions). ND-F4-7 remains open; approved Trainer scope and limits await the future implementation cycle, and T031 verifies provider expiry configuration.
 
 ## Project Structure
 

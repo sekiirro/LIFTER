@@ -48,7 +48,7 @@ Static source inspection and review of historical evidence recorded in `tasks.md
 | SC-006 | T006 | `tests/unit/freeze-calendar.test.ts` Cairo DST gap/fold, leap-day and month-end fixtures | VERIFIED |
 | SC-007 | T013,T015,T017 | `tests/integration/refund-races.test.ts`; replay/serialization tests | VERIFIED |
 | SC-008 | T005,T008,T014,T017 | `tests/integration/matrix-parity.test.ts`, tenant/RLS and role-denial tests | VERIFIED |
-| SC-009 | T012-T016,T019-T020 | refund audit rollback/outbox/hook tests; retention and hosted hook evidence remain unavailable | PARTIAL |
+| SC-009 | T012-T016 | `tests/integration/refund-operations.test.ts::rejects an over-balance refund without writing any financial or lockout facts`; `tests/integration/refund-audit.test.ts::rolls back refund, audit, deactivation and lockout together when audit fails`; `::R7 rolls back refund, financial, cancellation, audit and receipt facts when outbox insertion fails`; `tests/integration/refund-auth-lockout-hook.test.ts::keeps sign-in allowed when deactivation is rolled back`; authorization and deactivation guard assertions in refund operations/integrity suites. No located asserting test injects a numeric overflow failure and verifies zero partial lifecycle/financial/receipt effects; retention and hosted-hook evidence belong to other criteria. | PARTIAL |
 | SC-010 | T007,T014-T017 | `tests/integration/freeze-lifecycle.test.ts` audit/replay and refund productivity/audit tests | VERIFIED |
 | SC-011 | T018 | No rendered UI is implemented in this feature; required later UI surface gate is documented, but no rendered verification artifact exists | PARTIAL |
 | SC-012 | T017 | F13 projection/input assertions are present; P4 consumer behavior is explicitly not claimed by F13 | PARTIAL |

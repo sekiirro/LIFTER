@@ -24,3 +24,11 @@
 ## Verdict
 
 **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 5 MEDIUM; 20/20 FR/SC items mapped. Static evidence only; historical evidence is not a fresh test run.
+
+## S31 round 6 refresh
+
+- **Date:** 2026-11-04
+- **Reviewed after:** S31-PO-3/4 updates to `spec.md`, `plan.md`, `tasks.md`, `research.md`, and `data-model.md`; no tests or implementation changes.
+- **Decisions:** ND-F10-1 no revocation, ND-F10-2 no business maximum, ND-F10-3 50/account/rolling 24 hours including Trainer/WO/PO, with no exceptions or per-workspace resets. ND-F9-4 remains denied per S31-PO-4; SK-009-01 remains in the separate F9 lane.
+- **Implementation gap:** current local 20/hour placeholder does not match the approved 50/24-hour rule. T035 is an unchecked future Spec Kit implementation task. ND-F10-4/5 and ND-F9-1..3/5 remain open.
+- **Coverage:** FR-to-task 14/14, SC-to-task 6/6; 0 CRITICAL/HIGH, 2 MEDIUM (remaining content/price decisions). Static only.

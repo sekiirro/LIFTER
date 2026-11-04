@@ -136,7 +136,7 @@ Independent test: the integration matrix plus the link lifecycle.
   - env vars (server only)
   - the local sign-in flow
   - how recovery links work (show once, never logged, audited)
-  - the ND-F4 placeholders: expiry = provider OTP expiry, set per environment; the rate-limit function
+  - the approved ND-F4-3 expiry of 60 minutes in all environments and independent 15-minute recovery session; S31-PO-3 limit values of 10 per issuer per rolling hour and 3 per client per rolling 24 hours across issuers; identify implementation/configuration verification gaps
   - that `recovery_target_workspace` is replaced in P1
   - that generation is denied for every target until then
 - [x] T027 Run locally (Codex sandbox flags): `npm run typecheck`, `npm run lint`, `npm run format:check`, `npm test`. All must be green before handing back.
@@ -145,7 +145,10 @@ Independent test: the integration matrix plus the link lifecycle.
 
 - [x] T028 Re-run all gates. Then `npm run build:edge` and `npm run check:secrets`.
 - [x] T029 Local Docker integration suite. Negative checks per [quickstart.md](quickstart.md) §6. e2e.
-- [ ] T030 Docs (Claude): register D-19 (owner decision, pending PO approval), traceability AT-AUTH-01. PR, CI, CodeRabbit.
+- [ ] T030 Docs (Claude): register approved D-19 as the scope authority and reconcile traceability AT-AUTH-01. S31-PO-2 directs closure; PO approval is confirmed, while current-head CI/CodeRabbit acceptance evidence remains pending. FR-006, FR-010, FR-012.
+- [ ] T031 Verify the configured recovery-link provider expiry in an approved safe environment against the 60-minute all-environment PO decision; record provider/configuration evidence. No implementation change is implied. FR-012; SC-005.
+- [ ] T032 Implement the approved all-workspace-Trainer recovery capability in a new Spec Kit cycle with RLS, tests, and security review. FR-006; SC-002.
+- [ ] T033 Implement the approved per-issuer and per-client rolling limits in a new Spec Kit cycle, including concurrency and configuration evidence. FR-010; SC-004.
 
 ## Dependencies & order
 

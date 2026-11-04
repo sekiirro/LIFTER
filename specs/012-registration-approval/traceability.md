@@ -14,7 +14,7 @@ Static source inspection only. No test suite was executed in this compliance lan
 | FR-014..015, FR-025 | T019-T022, T035, T043 | `tests/integration/registration-approval-corrections.test.ts::T019 correction negates stored original exactly...` | Code/tests on `d04ef52` | VERIFIED |
 | FR-016 | T010-T017, T022, T044 | `tests/integration/registration-approval-audit.test.ts::T010 audit insertion failure aborts graph...` | Code/tests on `d04ef52` | VERIFIED |
 | FR-019..021 | T033-T043, T045 | `tests/unit/registration-approval-messages.test.ts`; component/page tests | Code/tests on `d04ef52`; rendered stack evidence not executed here | PARTIAL |
-| FR-022 | T013, T016-T017, T025-T027 | `tests/integration/registration-approval-audit.test.ts::T017 real approval RPC emits exactly one safe approval fact...` | Code/tests on `d04ef52`; P2 handoff in D-23 | VERIFIED |
+| FR-022 | T013, T016-T017, T025-T027 | `tests/integration/registration-approval-audit.test.ts::T017 real approval RPC emits exactly one safe approval fact...` asserts approval audit emission only; P2 intake and workspace authorization assertions are not covered by this evidence | Code/tests on `d04ef52`; P2 handoff in D-23 | PARTIAL |
 | FR-023 / SC-009 | T049-T054 | `tests/unit/registration-links-flexible.test.ts::requires exact price totals...`; `tests/integration/registration-links-flexible.test.ts::T050 flexible RPC delegates exact terms...`; named T053 UI test file absent | Code/tests/migration on `d04ef52`; migration `20261101131000_flexible_registration_link_terms_forward.sql` | PARTIAL |
 | FR-024 / SC-010 | T038-T043 | `tests/unit/registration-approval-status-page.test.ts`; `tests/unit/registration-approval-status-route.test.ts` | Code/tests on `d04ef52` | VERIFIED |
 | FR-026 | T014 | `tests/integration/registration-approval-decisions.test.ts::T014 only PO can reconsider...` | Code/tests on `d04ef52` | VERIFIED |
@@ -29,6 +29,6 @@ Static source inspection only. No test suite was executed in this compliance lan
 
 ## Summary
 
-- Functional requirements: 24 VERIFIED, 5 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- Functional requirements: 23 VERIFIED, 6 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Success criteria: 7 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Execution: static verification only; no suite run. T050-T054 are not checked by this reconciliation.

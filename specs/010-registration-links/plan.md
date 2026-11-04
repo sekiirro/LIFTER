@@ -55,7 +55,7 @@ Both tables force RLS; safe invoker views expose exact money text and omit hash/
 
 Public UI decision for this increment: valid workspace name and validity message; generic invalid otherwise. No feature flag or Continue area is needed because no action/form is rendered. This is the minimal option explicitly allowed by binding design, not resolution of ND-F10-4. No price or package internals. Add exact public route shape to middleware; preserve no-referrer after response recreation and do not log request paths. Dynamic/no-store prevents secret-bearing request cache artifacts. Host logging verification remains a production obligation under the never-log rule.
 
-Staff UI uses accessible-workspace selector and F9 available/current terms, exact-money schedule editor for PO/WO/Sales, Copy-only show-once dialog and scoped recent statuses. Provisional staff price visible to Sales/Trainer (ND-F10-5 still open); commission omitted. Existing landing-link pattern only pending final navigation decision.
+Staff UI uses accessible-workspace selector and F9 available/current terms, exact-money schedule editor for PO/WO/Sales, Copy-only show-once dialog and scoped recent statuses. Price visibility remains open under ND-F10-5; commission stays omitted for Sales/Trainer under S31-PO-4 SK-009-04. Existing landing-link pattern only pending final navigation decision.
 
 ## Phase 2 — Tasks and gates
 
@@ -65,7 +65,7 @@ The current documentation-only run: fetch → branch from origin/009-packages �
 
 ## NEEDS DECISION
 
-ND-F10-1 staff cancellation (not built); ND-F10-2 count/offset/first-zero bounds (only stated invariants); ND-F10-3 rate values (20/hour marked local-only technical placeholder, production blocker); ND-F10-4 public content beyond name (minimal messages now); ND-F10-5 staff price visibility (provisional yes, confirm). Carry ND-F9-1 currencies, ND-F9-2 duration bounds, ND-F9-3 actual catalog, ND-F9-4 commission visibility denied and ND-F9-5 final navigation. All remain OPEN; all existing [production readiness gates](../../docs/07-production-readiness.md) remain.
+ND-F10-1 no revocation (S31-PO-3); ND-F10-2 no business maximum (S31-PO-4); ND-F10-3 50 per authorized issuing account per rolling 24 hours, Trainer/WO/PO included (S31-PO-3), recorded but not implemented; ND-F10-4 public content beyond name and ND-F10-5 price visibility remain open. Carry ND-F9-1 currencies, ND-F9-2 duration bounds, ND-F9-3 actual catalog, ND-F9-4 commission visibility remains denied (S31-PO-4), and ND-F9-5 final navigation. Existing [production readiness gates](../../docs/07-production-readiness.md) remain.
 
 ## Project Structure
 

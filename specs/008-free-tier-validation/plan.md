@@ -32,7 +32,7 @@ Runbook: README section "Free-tier validation" covering offline steps now, plus 
 
 | Principle | Status |
 |---|---|
-| IV Scope | Roadmap P0 spike. Volumes aren't invented (ND-F8-1). ✅ |
+| IV Scope | Roadmap P0 spike. Use the S31-PO-4 illustrative pilot inputs (2 workspaces × 150 clients/workspace × 2 staff/workspace × 2 plans/client × 2 new versions/client/month), after schema/unit verification. ✅ |
 | VII Privacy | No secrets or PII in output. The read-only DB session reads catalog stats and counts only, no row contents. ✅ |
 | Platform | $0. No deploy or resource creation without PO approval (FR-001). ✅ |
 | Workflow | Spec → Plan → Tasks. Codex implements, and Claude reviews. ✅ |

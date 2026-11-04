@@ -26,3 +26,11 @@
 ## Verdict
 
 **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 7 MEDIUM; 22/22 FR/SC items mapped. The open items do not authorize guessed product behavior.
+
+## S31 round 6 refresh
+
+- **Date:** 2026-11-04
+- **Reviewed after:** S31-PO-2/3 changes to `spec.md`, `plan.md`, `tasks.md`, `research.md`, `data-model.md`, and `README.md`; static only, no tests run.
+- **Decisions:** D-19 is approved as the scope authority. Trainer scope, copy-only delivery, client-only recovery, client lookup sequencing, and rate values are recorded per S31-PO-2/3. ND-F4-7 remains open.
+- **Evidence gaps:** approved Trainer permission and approved rate values are not implemented/asserted. Provider expiry configuration in every environment is not verified; T031 tracks that gap. T030 closure is PO-directed, but remains unchecked pending current-head review/CI gates under the task evidence rule.
+- **Coverage:** FR mapping 15/15, SC mapping 7/7; traceability reports 9 VERIFIED / 6 PARTIAL functional requirements and 4 VERIFIED / 3 PARTIAL success criteria. 0 CRITICAL, 0 HIGH; 7 MEDIUM. No new PO ambiguity found.

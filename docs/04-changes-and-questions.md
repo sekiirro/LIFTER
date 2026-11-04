@@ -22,7 +22,7 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 | D-16 | Identities | Staff and client accounts use separate emails. No dual-role accounts. |
 | D-17 | Installment total | Installment amounts must sum exactly to the PO-approved price |
 | D-18 | Design System | [DESIGN.md](../DESIGN.md) approved (2026-10-27): emerald `#059669` default brand (not lime), workspace-customizable colors with WCAG 2.2 AA contrast guard, dark + light modes (device first, manual choice persisted). Constitution VIII amended to v1.1.0. Open items in DESIGN.md §11 stay open. |
-| D-19 | Auth & manual recovery (2026-10-27) | Supabase Auth, no external SMTP for now. PO, WO and authorized Trainers may generate a manual recovery link from a client's profile, only server-side (privileged credentials never reach the browser), behind capability + workspace scope, audited (`recovery_link.generated`), shown once, never logged, rate-limited. Extends BRD line 104 (PO-only manual reset). Open sub-decisions ND-F4-1..7 in [specs/004-auth/spec.md](../specs/004-auth/spec.md). |
+| D-19 | Auth & manual recovery (2026-10-27; approved S31-PO-2) | Approved scope authority per S31-PO-2: clients only; all workspace Trainers may issue a link for any client in the workspace; copy-only delivery; keep as built/F4 owns recovery/client lookup from P1. S31-PO-3 sets 10 per issuing staff account per rolling hour and 3 per client per rolling 24 hours across issuers. ND-F4-3 remains 60 minutes in every environment; ND-F4-7 remains open. Decisions are recorded, not implemented; see [specs/004-auth/spec.md](../specs/004-auth/spec.md). |
 | D-20 | Hosting region (B4, part) (2026-10-27) | Supabase region **eu-central-1 (Frankfurt, EU)** for LIFTER is **APPROVED by the PO, including the legal question**. PO statement: YBS previously operated using German hosting without issues. Hosting: one dedicated LIFTER Free organization with **one** cloud project (production); development and testing use local Docker, with no cloud staging project. Never touch YBS. **B4 retention values remain OPEN** (client closure retention period, audit retention ND-F5-1) and still block production with real client data. |
 | D-21 | Cloudflare account (2026-10-27) | The Cloudflare **LIFTER** account (`c3a2ab30d3888eda7071b02916732b69`) is the only target; **Free**, confirmed by the PO on 2026-10-27, with no paid subscription. Both Wrangler configs pin this account id. The personal account is never used for LIFTER. |
 | D-22 | Workflow governance (2026-10-28) | Constitution 1.2.0 establishes PO-approved spec debate, agent/model routing, controlled parallel development, frontend design and main merge gates; see [docs/08-agent-workflow.md](08-agent-workflow.md) and [docs/09-frontend-design-gate.md](09-frontend-design-gate.md). |
@@ -50,7 +50,7 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 
 ## Open (does not block the Constitution)
 
-- **F4 auth sub-decisions (ND-F4-1..7):** Trainer permission, link delivery, link expiry, rate-limit values, client-target sequencing, staff recovery, self-service email reset timing. Expiry and limits gate production.
+- **F4 auth sub-decisions:** S31-PO-2/3 resolve Trainer scope, copy-only delivery, client-target sequencing, clients-only scope, and limit values; ND-F4-3 expiry is 60 minutes in every environment. ND-F4-7 self-service email reset timing remains open. Approved new behavior has not been implemented; configuration and implementation verification remain production gates.
 - **B4 (remaining):** client closure retention period and audit retention (ND-F5-1). Gates production with real client data only.
 - Outstanding production gates: [07-production-readiness.md](07-production-readiness.md). Per the PO (2026-10-27), these do not block local development or PR merges.
 - Remaining phase-gated decisions:
@@ -105,3 +105,22 @@ These numbered entries record PO Messages A/B, the final S20 handoff, and the S2
 ### Open items for PO
 
 No S20 decision above remains open. The PO-supplied D16-4 dataset is a future input, not an unresolved decision: audit it and obtain PO import approval when supplied. The S21-PO-1/2 Glisse-based selective Liquid Glass implementation is authorized and in progress on its separate branch; merging that work still needs explicit PO approval.
+
+## S31 PO decisions — recorded 2026-11-04
+
+These outcomes are transcribed from `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md`; feature specifications record the full scope and implementation status. This register does not authorize code changes.
+
+| ID | Decision | Source / effect |
+|---|---|---|
+| S31-PO-2 / SK-004-01 | “Confirm D-19 approved” — “D-19 becomes the scope authority; T030 closes; #52's D-19 item can be resolved.” D-19 is approved; T030 task status remains subject to the current-head evidence gate. | S31-PO-2; `specs/004-auth/spec.md`; #52 |
+| S31-PO-2 / SK-004-02 | All Trainers in a workspace may issue recovery links for any client in that workspace; implementation requires a new spec cycle, RLS, tests, and security review. | S31-PO-2; recorded, unimplemented |
+| S31-PO-2 / SK-004-03,05,06 | Copy-only; keep as built/F4 owns recovery/client lookup from P1; clients only. | S31-PO-2; `specs/004-auth/spec.md` |
+| S31-PO-3 / SK-004-04 | 10 per issuing staff account per rolling hour; 3 per client per rolling 24 hours across issuers. | S31-PO-3; recorded, implementation/configuration verification pending |
+| S31-PO-3 / SK-010-01,03 | No revocation. Registration-link limit: 50 per authorized issuing account per rolling 24 hours, including Trainer/WO/PO, no exceptions or per-workspace reset. | S31-PO-3; recorded, new behavior unimplemented; `specs/010-registration-links` |
+| S31-PO-4 / SK-010-02 | No business maximum. | S31-PO-4; `specs/010-registration-links` |
+| S31-PO-4 / SK-009-04 | Keep Sales/Trainer commission visibility denied. No edit to `specs/009`; separate F9 lane owns that specification. | S31-PO-4; carried decision |
+| S31-PO-4 / SK-008-01 | Illustrative pilot input: 2 workspaces × 150 clients/workspace × 2 staff/workspace × 2 plans/client × 2 new plan versions/client/month. Verify schema and units before measurement. | S31-PO-4; `specs/008-free-tier-validation`, T012 |
+| S31-PO-7 Q5 | Desktop navigation from 1024px; content clearance at 1024–1199px; screenshots at 1024 and 1440; phones/tablets retain bottom bar. | S31-PO-7 Q5; `specs/002-design-system` |
+| S31-PO-7 Q6 / S31-PO-8 | Development AI agents use synthetic data only. Future production Ask LIFTER AI/Telegram Bot may use minimum authorized workspace-scoped data through authenticated services, with verified identity, strict authorization, minimization, privacy safeguards, explicitly approved provider, and access disabled until separate security/privacy review and approval. | S31-PO-7 Q6; S31-PO-8 clarification; constitution and docs/08 |
+
+Existing production-readiness items remain open where already tracked: F8 hosting/staging and authenticated-route approval (ND-F8-2/3); F11 retention (B4); F13 retention and hosted-hook readiness (D-20); F10 public content and price visibility (ND-F10-4/5). They are existing gates, not new PO questions.

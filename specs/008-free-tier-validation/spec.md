@@ -77,7 +77,7 @@ The PO receives one report in a fixed format. It shows each limit, the measured 
 
 ## NEEDS DECISION
 
-- **ND-F8-1 — Pilot volumes** for the projection: clients per workspace, workspaces, staff, plans and versions per client per month. NEEDS SOURCE CONFIRMATION.
+- **ND-F8-1 — Pilot volumes. Decided (S31-PO-4, illustrative pilot only):** 2 workspaces × 150 clients/workspace × 2 staff/workspace × 2 plans/client × 2 new plan versions/client/month. This is an illustrative pilot input; verify schema and units before measurement.
 - **ND-F8-2 — Deployment approval** for the measured run: which Cloudflare account, which Supabase organization/project (see the eligibility report), and the region (bounded by B4).
 - **ND-F8-3 — Authenticated route measurement**: whether a dedicated test account may be used against the approved staging environment.
 
@@ -85,8 +85,8 @@ The PO receives one report in a fixed format. It shows each limit, the measured 
 
 ### Session 2026-11-03 — compliance reconciliation
 
-- **Decision register:** `docs/04-changes-and-questions.md` D-06 and the owner decision dated 2026-10-27 cited in this spec; ND-F8-1..3 remain unresolved.
-- **Result:** No new product or deployment decision is made. F8 remains preparation-only; actual environment measurements remain gated on explicit PO deployment approval. Missing pilot values and authenticated-route permission remain missing, not defaulted.
+- **Decision register:** `docs/04-changes-and-questions.md` D-06 and the owner decision dated 2026-10-27 cited in this spec; ND-F8-1 is decided by S31-PO-4. ND-F8-2/3 remain unresolved.
+- **Result:** S31-PO-4 supplies illustrative pilot values; T012 verifies schema units before recording table-level volumes. F8 remains preparation-only; actual environment measurements remain gated on explicit PO deployment approval. Authenticated-route permission remains open and is not defaulted.
 - **Evidence limit:** Static source/test inspection only; no tests or cloud actions were performed in this lane.
 
 ## Assumptions

@@ -49,3 +49,12 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - FR-to-task mapping: 36/36; SC-to-task mapping: 14/14. Existing T017 records cross-feature FR/SC reconciliation and T018 records runtime consumer boundaries.
 - Clarifications cite D-13, D-15, D-20, and S22-PO-5. Resolved ND-01/ND-08 remain closed; unresolved retention items are explicit.
 - **PASS WITH OPEN PRODUCTION BLOCKERS** — 0 CRITICAL, 0 HIGH, 2 MEDIUM; 50/50 FR/SC items mapped. Static evidence only; no tests executed.
+
+## S31 round 6 refresh
+
+- **Date:** 2026-11-04
+- **Analyzed commit:** `cb08f711716d7f0667dadb4fdce286c1a09cdc92` plus the S31 documentation updates to SC-009 traceability.
+- **Scope:** Spec/plan/tasks/traceability consistency only; no tests or code changed.
+- **Finding:** SC-009 has named evidence for over-balance validation, audit rollback, outbox rollback, deactivation rollback, authorization and hook behavior. No asserting test was found for an injected numeric overflow failure with zero partial lifecycle/financial/receipt effects. Retention and hosted-hook evidence are separate criteria and do not lower SC-009.
+- **Coverage:** FR mapping remains 36/36 and SC mapping 14/14. SC-009 stays PARTIAL for the specific numeric-overflow assertion gap; retention remains tracked under SC-010/FR-029 and hosted verification under SC-014/FR-019/035.
+- **Verdict:** 0 CRITICAL, 0 HIGH; 2 MEDIUM. Static source/test-name review only; no tests executed.

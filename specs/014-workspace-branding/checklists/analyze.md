@@ -1,7 +1,7 @@
 # Analyze: F14 Workspace Branding — merged core
 
 - **Date:** 2026-11-03
-- **Analyzed commit:** `0e727eec8277831d433bd14a48800d341f148efb` (Part 3 baseline); task-tag reconciliation is recorded at `0649423752419979d7f0eb3ef29ad2bf24689075` (adds FR/SC tags to T039-T043; the 18/18 and 11/11 mapping statement below reflects this later revision).
+- **Analyzed commit:** `0e727eec8277831d433bd14a48800d341f148efb` (Part 3 baseline); task-tag reconciliation is recorded at `0649423752419979d7f0eb3ef29ad2bf24689075` (adds FR/SC tags to T039-T041 and T043; T042 remains untagged; the 18/18 and 11/11 mapping statement below reflects this later revision).
 - **Scope:** core merged on main only; F14b owner-facing upload/alt-text UI excluded. Static artifact/source/evidence review; no tests executed.
 - **Inventory:** `spec.md` (FR-001..018, SC-001..011, scenarios, PO decisions), `plan.md`, `tasks.md`, research, data model/contracts/quickstart, `checklists/requirements.md`; no feature Analyze or traceability artifact existed.
 
@@ -11,11 +11,19 @@
 |---|---|---|---|---|
 | F14-A01 | MEDIUM | `spec.md:FR-009`; S19 PO record | Owner-facing logo/banner upload controls and alt-text editor UI are explicitly deferred to F14b; FR-009 is therefore only partially complete. | Preserve PARTIAL status; do not include F14b work in this core reconciliation. |
 | F14-A02 | MEDIUM | `tasks.md:T039-T041,T043`; D-24 | Capacity, backup/restore, complete Q-M matrix, and final release/hosted evidence remain open. D-24 describes hosted verification as a production blocker; it does not explicitly defer these tasks. | Leave tasks unchecked and report as open production gates; do not mark deferred. |
-| F14-A03 | MEDIUM | `FR-011`; `traceability.md` | Proxy-response tests assert `private, no-store`, but no asserting test was located for registration-page render headers. | Keep FR-011 PARTIAL until a real render-header assertion and evidence are recorded; do not infer render behavior from proxy tests. |
+| F14-A03 | MEDIUM | `FR-011`; `traceability.md` | Proxy-response tests assert `private, no-store`; registration-page tests assert no-store/referrer policy but no registration-route test asserts `private`. | Keep FR-011 PARTIAL until registration responses, including errors, assert `private, no-store`; do not infer render behavior from proxy tests. |
 
 ## Coverage and consistency
 
-- FR-to-task mapping: 18/18; SC-to-task mapping: 11/11. T039/T040/T041/T043 were tagged to their FR/SC coverage; no task status changed.
+- FR-to-task mapping: 18/18; SC-to-task mapping: 11/11. T039/T040/T041/T043 were tagged to their FR/SC coverage; no task status changed. FR-012/SC-005 remain PARTIAL because evidence does not cover unchanged signup authorization and entered form values.
+
+## S31 round 6 refresh
+
+- **Date:** 2026-11-04
+- **Analyzed commit:** `cb08f711716d7f0667dadb4fdce286c1a09cdc92` plus S31 documentation traceability correction.
+- **Scope:** F14 core traceability consistency; static only, no tests.
+- **Finding:** FR-011 remains PARTIAL specifically because no registration-route assertion for the `private` cache directive was located. FR-012 and SC-005 remain PARTIAL because assertions for unchanged signup authorization and entered values across publication were not located.
+- **Coverage:** 18/18 FR and 11/11 SC mapped; traceability totals 20 VERIFIED / 9 PARTIAL; no CRITICAL/HIGH findings; 3 MEDIUM remain.
 - Clarifications cite D-24 and S19-PO-2. Zero open product ambiguities remain in the core scope; the documented F14b deferral and production evidence gates are preserved.
 - Existing code and test assertions were inspected statically. No tests, CI, Stack B, Storage, or hosted verification were executed.
 

@@ -14,8 +14,8 @@ Static source inspection and review of historical evidence in `tasks.md`; no tes
 | FR-008 | T003,T010,T024,T025,T028,T042,T043 | `tests/unit/branding-registration-ui.test.tsx::renders the current published identity...`; portal placeholder is static | VERIFIED |
 | FR-009 | T009,T013,T014,T021,T022,T043 | `tests/integration/branding-banner-pipeline.test.ts::creates, validates, attaches, and publishes...`; `tests/integration/branding-publish.test.ts` alt-text guard/fallback; owner-facing editor deferred by S19-PO-2 | PARTIAL |
 | FR-010 | T003,T025,T028,T045,T046,T043 | `tests/integration/branding-proxy-resolution.test.ts::T046 live F10 grace/deadline is rechecked...`; F10 token-validating proxy tests | VERIFIED |
-| FR-011 | T003,T009,T025,T028,T043 | `tests/unit/branding-proxy-response.test.ts::returns only the current authorized image after a final token/version recheck` asserts `private, no-store`; `tests/integration/branding-proxy-resolution.test.ts` asserts the same header for valid and invalid proxy responses; no asserting test for registration-page render headers was located | PARTIAL |
-| FR-012 | T003,T024,T025,T028,T043 | branding read/proxy route and no-store response tests | VERIFIED |
+| FR-011 | T003,T009,T025,T028,T043 | `tests/unit/branding-proxy-response.test.ts::returns only the current authorized image after a final token/version recheck` and `tests/integration/branding-proxy-resolution.test.ts` assert `private, no-store`; registration-page `private` directive assertion not located | PARTIAL |
+| FR-012 | T003,T024,T025,T027,T028,T043 | branding read/proxy route and no-store response tests; current evidence does not cover unchanged signup authorization or entered form values across publication | PARTIAL |
 | FR-013 | T008,T024,T025,T033,T043 | `tests/unit/branding-registration-ui.test.tsx::uses a neutral localized fallback hero...`; locale fallback tests | VERIFIED |
 | FR-014 | T005,T014,T027,T043 | `tests/integration/branding-audit.test.ts::stores branding audit metadata without URLs, tokens, bytes, or authored text`; `::keeps audit rows detached from collectible targets and immutable`; `tests/integration/branding-publish.test.ts` single-event and audit-insertion rollback assertions | VERIFIED |
 | FR-015 | T024,T025,T033,T042,T043 | `tests/unit/branding-editor-ui.test.tsx::explains source and accessible adjusted colors...`; contrast matrix tests; no evidence for T043 real-background/surface gate | PARTIAL |
@@ -26,7 +26,7 @@ Static source inspection and review of historical evidence in `tasks.md`; no tes
 | SC-002 | T004-T005,T011,T027,T043 | stale edit, serialized publish, no-op, and audit rollback tests | VERIFIED |
 | SC-003 | T003,T025,T028,T043 | `tests/integration/branding-proxy-resolution.test.ts::T025 returns only version-bound published identity...`; neutral invalid-token UI test | VERIFIED |
 | SC-004 | T009,T014,T021,T022,T027,T050,T043 | image validator, banner pipeline, and reference-safe GC tests | VERIFIED |
-| SC-005 | T010,T024,T025,T028,T033,T043 | `tests/unit/branding-registration-ui.test.tsx` form/publication identity assertions | VERIFIED |
+| SC-005 | T010,T024,T025,T027,T028,T033,T043 | `tests/unit/branding-registration-ui.test.tsx` published identity assertions; no located assertion proves signup authorization and entered values remain unchanged | PARTIAL |
 | SC-006 | T007,T024,T033,T043 | `tests/unit/branding-contrast-matrix.test.ts::keeps brand text, controls, and focus within light/dark contrast requirements` | VERIFIED |
 | SC-007 | T003,T025,T028,T045,T046,T043 | proxy route/header and no-store assertions in `branding-public-read`/proxy tests | VERIFIED |
 | SC-008 | T003,T025,T028,T045,T046,T043 | `tests/integration/branding-proxy-resolution.test.ts` validity, binding, expiry and publication replacement cases | VERIFIED |
@@ -36,6 +36,6 @@ Static source inspection and review of historical evidence in `tasks.md`; no tes
 
 ## Summary
 
-- Functional requirements: 13 VERIFIED, 5 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
-- Success criteria: 9 VERIFIED, 2 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
-- Total: 23 VERIFIED / 6 PARTIAL. FR-009 is PARTIAL under S19-PO-2. T039-T041/T043 remain open; no PO source explicitly defers them. No tests or CI were rerun.
+- Functional requirements: 12 VERIFIED, 6 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- Success criteria: 8 VERIFIED, 3 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- Total: 20 VERIFIED / 9 PARTIAL. FR-009 is PARTIAL under S19-PO-2; FR-011 remains PARTIAL because the registration-page `private` directive assertion is missing; FR-012 and SC-005 remain PARTIAL because no assertion proves signup authorization and entered values remain unchanged. T039-T041/T043 remain open; no PO source explicitly defers them. No tests or CI were rerun.
