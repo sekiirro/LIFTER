@@ -73,3 +73,22 @@
 - Requirement semantics are unchanged; no FR/SC re-mapping is required. ND-F10-4/5 remain open; ND-F9-1..3/5 remain open; ND-F9-4 remains denied per S31-PO-4.
 - The S31 round 6 refresh section above remains the latest substantive dated analysis; this refresh documents the S33 fix-round-2 reconciliation only.
 - **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 2 MEDIUM (remaining content/price decisions), 3 LOW documentation-only corrections in this round; 20/20 FR/SC items mapped.
+
+## S33 SK-52 fix round 3 refresh
+
+- **Date:** 2026-11-04T20:55:00+02:00 (after the S33 PR #52 fix-round-3 edits).
+- **Analyzed commit:** this fix commit (S33 round 3 for PR #52; base `ff2174d`). The reviewed patch changes `research.md` (Staff price vs commission register row) and this refresh only. No `spec.md`, `plan.md` or `tasks.md` text changed.
+- **Scope:** static consistency and internal-consistency review; no tests, scans, stacks, or implementation actions performed.
+
+### Findings
+
+| ID | Severity | Artifact | Finding | Disposition |
+|---|---|---|---|---|
+| F10-R3-01 | LOW | `research.md:77` (Staff price vs commission row) | The row still stated both decisions remain open, stale vs the recorded S31-PO-4 decision (SK-009-04): ND-F9-4 Sales/Trainer commission visibility is denied, while ND-F10-5 price visibility remains open (interim binding default yes; PO confirmation required). | Corrected as a historical reconciliation, no history deleted: the 2026-10-27 row is marked historical and superseded by S31-PO-4 (SK-009-04); the row now records ND-F9-4 as denied (carried F9 decision; `specs/009` untouched, separate F9 lane) and ND-F10-5 as open. No requirement meaning changed; ND-F10-4/5 remain open and are not defaulted. |
+
+### Coverage and verdict
+
+- FR-to-task mapping remains 14/14; SC-to-task mapping remains 6/6 (20/20 total). No task status changed; T035 remains an unchecked future Spec Kit implementation task.
+- Requirement semantics are unchanged; no FR/SC re-mapping is required. ND-F10-4/5 remain open; ND-F9-1..3/5 remain open; ND-F9-4 remains denied per S31-PO-4.
+- The S31 round 6 refresh section above remains the latest substantive dated analysis; this refresh documents the S33 fix-round-3 reconciliation only.
+- **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 2 MEDIUM (remaining content/price decisions), 1 LOW documentation-only correction in this round; 20/20 FR/SC items mapped.
