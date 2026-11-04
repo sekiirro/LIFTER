@@ -67,6 +67,23 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
         ) as definition
       `;
       const originalDefinition = definitionRow!.definition as string;
+      let baselinePassed = false;
+      await expect(
+        tx.savepoint(async (sp) => {
+          const [baseline] = await sp`
+            select public.save_form_draft(
+              ${context.wsA.id},${assignmentId},0,${randomUUID()},${sp.json({ q1: 'baseline draft' })}
+            ) as result`;
+          expect(baseline?.result).toEqual({
+            status: 'saved',
+            revision: 1,
+            intent_key: expect.any(String),
+          });
+          baselinePassed = true;
+          throw boundRollback;
+        }),
+      ).rejects.toBe(boundRollback);
+      expect(baselinePassed, 'unmutated draft save must pass before mutants').toBe(true);
       const boundMutants = [
         {
           name: 'total payload',
