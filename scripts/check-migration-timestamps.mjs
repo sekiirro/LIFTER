@@ -99,6 +99,29 @@ export function findCrossRefVersionConflicts(refMigrations) {
   return conflicts.sort((a, b) => a.version.localeCompare(b.version));
 }
 
+// Parser for `git for-each-ref --format=%(refname) refs/remotes/origin` output.
+// Only the designated symbolic ref `refs/remotes/origin/HEAD` is excluded;
+// other refs whose last path segment is HEAD (e.g. `refs/remotes/origin/feature/HEAD`)
+// are kept so their migration conflicts are still checked.
+export function parseOriginRemoteRefs(refsOut) {
+  return refsOut
+    .split('\n')
+    .map((line) => line.trim())
+    .filter((line) => line && line !== 'refs/remotes/origin/HEAD');
+}
+
+// Parser for `git ls-tree -z --name-only` output. `-z` emits raw, NUL-delimited,
+// unquoted paths, so non-ASCII migration filenames are not dropped.
+export function parseMigrationTreeOutput(treeOut) {
+  return treeOut
+    .split('\0')
+    .map((entry) => entry.trim())
+    .filter(Boolean)
+    .map((entry) => path.posix.basename(entry))
+    .filter((name) => name.endsWith('.sql'))
+    .sort();
+}
+
 // `listRefMigrations` is injected so unit tests never touch a real repository.
 export async function checkRemoteRefs(listRefMigrations) {
   const refMigrations = await listRefMigrations();
@@ -116,28 +139,20 @@ async function listRemoteRefMigrations() {
     '--format=%(refname)',
     'refs/remotes/origin',
   ]);
-  const refs = refsOut
-    .split('\n')
-    .map((line) => line.trim())
-    .filter((line) => line && !line.endsWith('/HEAD'));
+  const refs = parseOriginRemoteRefs(refsOut);
 
   const results = [];
   for (const ref of refs) {
     const { stdout: treeOut } = await execFileAsync('git', [
       'ls-tree',
       '-r',
+      '-z',
       '--name-only',
       ref,
       '--',
       'supabase/migrations',
     ]);
-    const filenames = treeOut
-      .split('\n')
-      .map((line) => line.trim())
-      .filter(Boolean)
-      .map((entry) => path.posix.basename(entry))
-      .filter((name) => name.endsWith('.sql'))
-      .sort();
+    const filenames = parseMigrationTreeOutput(treeOut);
     results.push({ ref, filenames });
   }
   return results;

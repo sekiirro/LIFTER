@@ -3,6 +3,8 @@ import {
   ALLOWED_MERGED_TIMESTAMP_EXCEPTIONS,
   checkRemoteRefs,
   findCrossRefVersionConflicts,
+  parseMigrationTreeOutput,
+  parseOriginRemoteRefs,
   validateMigrationFilenames,
 } from '../../scripts/check-migration-timestamps.mjs';
 
@@ -45,6 +47,42 @@ describe('migration timestamp validation', () => {
     ).toContain(
       '20261106118000_new_invalid_migration.sql: invalid UTC migration timestamp 20261106118000',
     );
+  });
+});
+
+describe('remote-ref parsing helpers', () => {
+  it('excludes only refs/remotes/origin/HEAD and keeps other refs ending in /HEAD', () => {
+    const refs = parseOriginRemoteRefs(
+      [
+        'refs/remotes/origin/HEAD',
+        'refs/remotes/origin/main',
+        'refs/remotes/origin/feature/HEAD',
+        'refs/remotes/origin/015-forms-intake',
+        '',
+      ].join('\n'),
+    );
+    expect(refs).toEqual([
+      'refs/remotes/origin/main',
+      'refs/remotes/origin/feature/HEAD',
+      'refs/remotes/origin/015-forms-intake',
+    ]);
+  });
+
+  it('parses NUL-delimited ls-tree output without dropping non-ASCII filenames', () => {
+    const tree =
+      [
+        'supabase/migrations/20261107030000_catalog_workspace_exercise_remove.sql',
+        'supabase/migrations/20261108040000_catalógo_niño.sql',
+        'supabase/migrations/20261109050000_notes_ü.txt',
+      ].join('\0') + '\0';
+    expect(parseMigrationTreeOutput(tree)).toEqual([
+      '20261107030000_catalog_workspace_exercise_remove.sql',
+      '20261108040000_catalógo_niño.sql',
+    ]);
+  });
+
+  it('returns an empty list for empty ls-tree output', () => {
+    expect(parseMigrationTreeOutput('')).toEqual([]);
   });
 });
 
