@@ -12,16 +12,15 @@ const origin =
   process.env.PLAYWRIGHT_BASE_URL ??
   process.env.APP_ORIGIN ??
   'http://localhost:3000';
-const screenshotDirectory = join(tmpdir(), 'lifter-f15-signup');
 const s31ScreenshotDirectory =
   process.env.HERO_R17_SCREENSHOT_DIR ??
-  join(tmpdir(), 'lifter-s31-hero-r17', 'signup-states');
+  join(tmpdir(), 'lifter-s31-hero-r18', 'signup-states');
+const screenshotDirectory = s31ScreenshotDirectory;
 type SignupTestMessages = ReturnType<typeof getMessages> & {
   'clientSignup.dateOfBirth': string;
   'clientSignup.username': string;
   'clientSignup.telegramUsername': string;
   'clientSignup.optional': string;
-  'forms.termsCardTitle': string;
 };
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
@@ -63,6 +62,9 @@ test.describe.serial('T038 invitation signup UI', () => {
             { name: THEME_COOKIE, value: theme, url: origin },
           ]);
           await page.goto(`/register/${token}`);
+          await page.addStyleTag({
+            content: 'nextjs-portal { display: none !important; }',
+          });
           await expect(page.locator('html')).toHaveAttribute(
             'dir',
             locale === 'ar' ? 'rtl' : 'ltr',
@@ -87,16 +89,8 @@ test.describe.serial('T038 invitation signup UI', () => {
           );
           await expect(page.locator('form [name="sex"]')).toHaveCount(0);
           await expect(page.locator('form [name="health"]')).toHaveCount(0);
-          await expect(
-            page.getByText(messages['forms.termsCardTitle'], { exact: true }),
-          ).toHaveCount(0);
-          const serious = (
-            await new AxeBuilder({ page }).analyze()
-          ).violations.filter(
-            (violation) =>
-              violation.impact === 'serious' || violation.impact === 'critical',
-          );
-          expect(serious).toEqual([]);
+          await expect(page.locator('form [name="terms"]')).toHaveCount(0);
+          await expectHeroAxeClean(page);
           await page.screenshot({
             path: join(
               screenshotDirectory,
@@ -104,6 +98,18 @@ test.describe.serial('T038 invitation signup UI', () => {
             ),
             fullPage: true,
           });
+          if (viewport.name === 'desktop') {
+            await page
+              .locator('form button[type="submit"]')
+              .scrollIntoViewIfNeeded();
+            await page.screenshot({
+              path: join(
+                screenshotDirectory,
+                `${locale}-${theme}-desktop-cta.png`,
+              ),
+              fullPage: true,
+            });
+          }
         }
       }
     }

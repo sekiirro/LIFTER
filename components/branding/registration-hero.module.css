@@ -297,7 +297,7 @@
   overflow-wrap: anywhere;
 }
 
-.form {
+.stage .form {
   --hero-form-control-text: var(--color-text);
 
   display: grid;
@@ -681,6 +681,13 @@
     overflow-y: auto;
   }
 
+  /* Keep the centered, expanded profile card below the floating preferences. */
+  .noArtwork .glassContent {
+    max-block-size: calc(
+      100svh - 2 * (var(--space-4) + var(--touch-min))
+    );
+  }
+
   /* The Glisse surface owns the approved strong blur on every breakpoint. */
   .formPlate {
     gap: var(--space-4);
@@ -720,7 +727,7 @@
 }
 
 @media (max-width: 36rem) {
-  .phoneFields {
+  .stage .phoneFields {
     grid-template-columns: 1fr;
   }
 }

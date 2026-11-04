@@ -469,6 +469,18 @@ describe('production registration hero dense dark form', () => {
     );
   });
 
+  it('pins the Hero form density above the restored signup stylesheet rule', () => {
+    const formRule = heroStylesSource.match(
+      /\.stage \.form\s*\{(?<body>[^}]*)\}/,
+    );
+    expect(formRule?.groups?.body).toMatch(/gap:\s*var\(--space-3\)/);
+    expect(formRule?.groups?.body).toMatch(/max-inline-size:\s*none/);
+    expect(formRule?.groups?.body).toMatch(/margin:\s*0/);
+    expect(classComponents('.stage .form')).toBeGreaterThan(
+      classComponents('.form'),
+    );
+  });
+
   it('outranks the shared liquid glass edge recipe with a Hero-scoped selector', () => {
     const darkSelector =
       ":global(:where([data-theme='dark'])) .stage .fieldControl";

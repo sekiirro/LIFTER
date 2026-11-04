@@ -54,6 +54,7 @@ export function SignupForm({
   phoneCountries: PhoneCountryOption[];
 }) {
   const submittingRef = useRef(false);
+  const [submissionSequence, setSubmissionSequence] = useState(0);
   const [result, formAction, pending] = useActionState(
     async (previous: SignupPublicResult, formData: FormData) => {
       try {
@@ -65,6 +66,7 @@ export function SignupForm({
         );
       } finally {
         submittingRef.current = false;
+        setSubmissionSequence((sequence) => sequence + 1);
       }
     },
     signupResult('invalid_input', locale),
@@ -86,6 +88,10 @@ export function SignupForm({
   >([]);
   const [identityFocusRequest, setIdentityFocusRequest] = useState(0);
   const focusIdentityErrorAfterRenderRef = useRef(false);
+  const previousResultFocusRef = useRef<{
+    result: SignupPublicResult;
+    sequence: number;
+  } | null>(null);
   const formRef = useRef<HTMLFormElement>(null);
   const resultRef = useRef<HTMLParagraphElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -163,6 +169,20 @@ export function SignupForm({
       identityRefs[firstIdentityError].current?.focus();
       return;
     }
+  }, [identityFocusRequest, identityInvalidFields, submitted]);
+
+  useEffect(() => {
+    if (!submitted || pending || submissionSequence === 0) return;
+    const previous = previousResultFocusRef.current;
+    if (
+      previous?.result === result &&
+      previous.sequence === submissionSequence
+    )
+      return;
+    previousResultFocusRef.current = {
+      result,
+      sequence: submissionSequence,
+    };
     if (result.status === 'invalid_input' && result.invalidFields?.length) {
       const firstInvalid = (
         ['name', 'email', 'phone', 'password'] as const
@@ -177,7 +197,7 @@ export function SignupForm({
       return;
     }
     resultRef.current?.focus();
-  }, [identityFocusRequest, identityInvalidFields, result, submitted]);
+  }, [pending, result, submitted, submissionSequence]);
 
   if (result.status === 'sign_out_required')
     return (
