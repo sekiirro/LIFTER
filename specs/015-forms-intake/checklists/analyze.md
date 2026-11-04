@@ -3,6 +3,7 @@
 **Date:** 2026-11-04 (after S33-PO-3 and CodeRabbit remediation task updates to `spec.md`, `plan.md`, and `tasks.md`)
 **Final evidence refresh:** 2026-11-04 21:29 Africa/Cairo, after verified T061–T070 task evidence was recorded.
 **Review-thread scope refresh:** 2026-11-04 21:39 Africa/Cairo, after adding tasks T071–T077 for additional unresolved F15 review findings.
+**Entry review refresh:** 2026-11-04 22:25 Africa/Cairo, after adding T078/T079 for S33-PO-3 copy inventory and the existing FR-025 job-diagnostic safety regression.
 **PO-record consistency refresh:** 2026-11-04 21:54 Africa/Cairo, after correcting FR-039 and the data model to cite S30-PO-1 Q2 approval and documenting fresh-checkout junction setup.
 **PO-status reconciliation refresh:** 2026-11-04 22:11 Africa/Cairo, after reconciling the remaining Terms/sex-label status statements in spec.md, plan.md, and checklists/requirements.md with S30-PO-1 Q2; S31-R2/S32-PO-8 still govern remaining English translations.
 **Evidence refresh:** 2026-11-04 22:14 Africa/Cairo, after passing the T071–T077 targeted unit and Stack D integration checks and recording their commit/test evidence in traceability.md.
@@ -13,7 +14,7 @@
 - [x] `spec.md` has numbered FRs, measurable SCs, and Given/When/Then scenarios for this F15 intake scope. The touched requirements trace to FR-026/036/037 and existing SC coverage.
 - [x] Clarifications cite S32-PO-5, S32-PO-8, and S33-PO-3. **No open ambiguities remain for T061–T063.** Arabic T03 is Western digits exactly `2`, `3`, `4`, `5`, `6`; Arabic N07 uses `الوجبة رقم {number}` dynamically. English T03/N07 stays unchanged; unrelated EN rows remain pending PO review.
 - [x] `plan.md` covers the exact Arabic strings, N07 substitution, Bidi digit-order verification, axe, screenshots, and viewport/theme matrix.
-- [x] `tasks.md` adds T061–T063 tagged with FR-026/036/037, T064–T070 tagged with their existing F15 FRs, and T071–T077 for additional in-scope review fixes; new checkboxes stay open until tests pass on the final head.
+- [x] `tasks.md` adds T061–T063 tagged with FR-026/036/037, T064–T070 tagged with their existing F15 FRs, and T071–T079 for additional in-scope review fixes; T078/T079 remain open until evidence is recorded on the final stacked heads.
 - [x] This Analyze follows the updated specification, plan and tasks, dated 2026-11-04.
 
 ## Scope analysis
@@ -33,7 +34,9 @@
 
 ## Result
 
-**PASS for T061–T077 within the boundaries above.** Re-run Analyze after any further change to `spec.md`, `plan.md`, or `tasks.md` before implementation.
+**PASS for T061–T079 within the boundaries above.** T078/T079 are revalidated here for the A-owned stack before acceptance. Re-run Analyze after any further change to `spec.md`, `plan.md`, or `tasks.md` before implementation.
+
+**Scope extension — T078/T079:** T078 updates only the copy inventory to cite the already approved S33-PO-3 strings; T079 enforces the existing FR-025 rule that raw provider errors never enter `jobs.last_error` or dead-letter audit. These add no new user-visible copy, behavior, permissions, data retention, or product policy. T079's allow-list is derived from literal `jobs_fail` call sites in this repository; all caller-provided values remain synthetic. Entry review PASS for this extension: scope exists in FR-025 and the existing S33-PO-3 clarification; plan/tasks map the work; no design/UI decisions are involved; 0 CRITICAL / 0 HIGH findings; no open ambiguity for these authorized fixes.
 
 ## Review-thread scope revalidation
 

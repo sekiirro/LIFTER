@@ -10,6 +10,8 @@ S32-PO-3 authorizes renaming only the conflicting F15 slider-validator migration
 
 S32-PO-5 approves B01, B06, T03, T08, N07, N08, N11 and N12 as listed in `spec.md`, including exact English labels where supplied. S32-PO-8 Q5 authorizes the 2–6 values in both locales. S32-PO-8 Q6 supplies exact N07 English timing strings and authorizes dynamic options. S33-PO-3 now approves Arabic T03 labels exactly `2`, `3`, `4`, `5`, `6` (Western digits) and Arabic N07 dynamic label `الوجبة رقم {number}`; English T03/N07 copy remains unchanged. T061 records this PO clarification, updates the spec and analyzes the scope before implementation. T062 implements the approved Arabic-only copy with RED-first exact-string unit tests and updates the canonical/test fixtures and PO register. T063 verifies the rendered AR-RTL T03/N07 copy in light/dark at 390px and 1024px, with Bidi digit-order assertions, axe scans, screenshots, and evidence. T064–T070 track CodeRabbit corrections within existing F15 scope: server validation, SQL validator parity, Telegram link/delivery reliability, guarded RLS test harnesses, concurrency-test execution, and evidence encoding. All unrelated EN rows stay pending PO review.
 
+T078 reconciles the F15 copy inventory with the exact S33-PO-3 Arabic approvals while preserving all unrelated pending rows. T079 strengthens the existing FR-025 T005 safety test and database boundary so provider diagnostics cannot become persisted job or dead-letter audit text; it uses a synthetic canary and a mutation check.
+
 **Input**: Feature specification from `specs/015-forms-intake/spec.md`. This is a plan, not implementation authorization; implementation starts only after PO plan approval.
 
 ## Summary
