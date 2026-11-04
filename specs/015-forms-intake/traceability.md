@@ -13,9 +13,9 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 
 | Requirement | Task | Test/evidence | Commit |
 | --- | --- | --- | --- |
-| FR-026 / FR-036 / FR-037 — record Q5/Q6 decisions, update the approved scope, and refresh Analyze | T058 | `specs/015-forms-intake/checklists/analyze.md` dated 2026-11-04; 0 Critical / 0 High; Clarifications cite S32-PO-8 and state no open ambiguities for authorized work. | `6e6dd4b` |
-| FR-026 / FR-036 / FR-037 — implement exact approved English controls and behavior | T059 | `tests/unit/forms-s32-approved-intake.test.ts`; focused seven-file unit run passed 47/47; remaining English rows and T03 Arabic labels are still pending. | `6aebb8d` |
-| FR-026 / FR-036 / FR-037 — verify control order, conditions, assets, rendered matrix, and accessibility | T060 | `tests/e2e/forms-authorized-route.spec.ts::approved F15 controls render in both locales, themes, and widths`; `tests/e2e/forms-authorized-route.spec.ts::renders recorded new client controls across AR/EN, theme, and viewport matrix`; focused unit run 47/47; screenshots under `%TEMP%/lifter-s32-f15-h12`. | `6aebb8d` |
+| FR-026 / FR-036 / FR-037 â€” record Q5/Q6 decisions, update the approved scope, and refresh Analyze | T058 | `specs/015-forms-intake/checklists/analyze.md` dated 2026-11-04; 0 Critical / 0 High; Clarifications cite S32-PO-8 and state no open ambiguities for authorized work. | `6e6dd4b` |
+| FR-026 / FR-036 / FR-037 â€” implement exact approved English controls and behavior | T059 | `tests/unit/forms-s32-approved-intake.test.ts`; focused seven-file unit run passed 47/47; remaining English rows and T03 Arabic labels are still pending. | `6aebb8d` |
+| FR-026 / FR-036 / FR-037 â€” verify control order, conditions, assets, rendered matrix, and accessibility | T060 | `tests/e2e/forms-authorized-route.spec.ts::approved F15 controls render in both locales, themes, and widths`; `tests/e2e/forms-authorized-route.spec.ts::renders recorded new client controls across AR/EN, theme, and viewport matrix`; focused unit run 47/47; screenshots under `%TEMP%/lifter-s32-f15-h12`. | `6aebb8d` |
 
 ### T060 final-head evidence refresh (2026-11-04)
 

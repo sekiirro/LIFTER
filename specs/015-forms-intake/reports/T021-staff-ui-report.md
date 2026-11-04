@@ -1,4 +1,4 @@
-# T021 ? Staff forms UI report
+# T021 — Staff forms UI report
 
 Date: 2026-10-30
 Branch/base: 015-forms-intake / e2f2f426a82d47b992b6d89218db0713f157e98d
@@ -91,7 +91,7 @@ The complete catalog contains 55 skills. Each is classified below; the approved 
 | Accessibility              | PASS        | Native labels/buttons/select, pressed-state view picker, visible shared focus, status/alert semantics; a Playwright Tab/Enter path reaches intake and alerts; all matrix axe runs report zero violations.                                                    |
 | States                     | PASS        | Loading, load error, empty builder/intake, save/publish error/success, disabled Sales, busy actions, role and view interaction covered.                                                                                                                      |
 | Bilingual copy             | PASS        | New visible copy is in lib/i18n/messages/ar.ts and en.ts; no view copy is hard-coded.                                                                                                                                                                        |
-| Screenshot matrix          | PASS        | Builder, intake, and alerts rendered at AR-RTL/EN-LTR ? light/dark ? 390/1440. Initial dark active-button contrast issue was fixed by using a token-styled secondary selected state; final matrix reviewed.                                                  |
+| Screenshot matrix          | PASS        | Builder, intake, and alerts rendered at AR-RTL/EN-LTR × light/dark × 390/1440. Initial dark active-button contrast issue was fixed by using a token-styled secondary selected state; final matrix reviewed.                                                  |
 | Tests / dependency / size  | PASS        | Focused unit, complete unit suite, Playwright/axe matrix, typecheck, lint, Prettier, diff check, edge build and size; no new dependency.                                                                                                                     |
 
 Screenshots saved under C:\Users\NEW LAP\AppData\Local\Temp:
@@ -110,8 +110,8 @@ Screenshots saved under C:\Users\NEW LAP\AppData\Local\Temp:
 
 ## Verification record
 
-- Full unit suite: npm test ? 71 files, 1,451 passed, 0 failed, 0 skipped.
-- Browser suite: npm run e2e -- tests/e2e/forms-staff.spec.ts ? 20/20 passed; 24 rendered view variants (builder, intake, alerts ? AR-RTL/EN-LTR ? light/dark ? 390/1440) each ran axe with 0 violations.
+- Full unit suite: npm test — 71 files, 1,451 passed, 0 failed, 0 skipped.
+- Browser suite: npm run e2e -- tests/e2e/forms-staff.spec.ts — 20/20 passed; 24 rendered view variants (builder, intake, alerts ? AR-RTL/EN-LTR × light/dark × 390/1440) each ran axe with 0 violations.
 - npm run typecheck, npm run lint, Prettier check, and git diff --check passed.
 - npm run build:edge passed. OpenNext reported its existing Windows compatibility advisory and Next.js reported the middleware deprecation notice; build completed.
 - npm run size passed: web worker 6,942.65 KiB uncompressed / 1,436.82 KiB gzip (65,536 KiB limit); cron worker 2.85 KiB / 1.25 KiB gzip (65,536 KiB limit).
