@@ -6,7 +6,11 @@ Branch/PR: `015-forms-intake`, #44 (`main`)
 
 Starting code head: `3365f510f8dd60fd2283c41b5b2dfc911075bee8`
 
+Final implementation/test-fixture head: `9a8238ade032fa7157fe75039032b0f8ef6dff00`
+
 Implementation commit: `89c89ac` (Task: T033, T034; FR: FR-004, FR-006, FR-007, FR-026, FR-036, FR-037)
+
+Recorded-EN fixture source label: `9a8238a` (same Task/FR trailers; no behavior change).
 
 ## Scope and decision record
 
@@ -46,14 +50,14 @@ The baseline checkout was clean origin/main `d04ef52eb93df68b9361106a5ee4fd4fcae
 
 | Suite | Clean origin/main on D | Branch on D | Cause/evidence |
 | --- | --- | --- | --- |
-| `branding-owner-gc.test.ts` | Stale attached-upload assertion fails. | Two failures: stale `attached` status and missing expected old claim. | Main and branch share the stale attached failure; installed F14 function behavior is shared. Branch test delta is only crash-safe mutation capture/restore. The second branch failure is accumulated synthetic GC state; main/branch table counts recorded below. No non-F15 SQL change. |
+| `branding-owner-gc.test.ts` | Initial clean-main run reproduced stale attached upload; after the common-suite data accumulated, a focused main run had 3 failures/5 tests (T049 expected old claim absent, T050 stale `attached` status, and live same-content GC). | Full integration had T049 missing expected old claim and T050 stale `attached` status. | Main and branch both fail on the accumulated Stack D state. The branch test delta is only crash-safe mutation capture/restore. No non-F15 SQL change. |
 | `client-accounts-recovery.test.ts` | BeforeAll committed recovery fixture fails. | 13/13 PASS after batching the same safe-column/RPC/HTTP probes in groups of six. | Branch delta was probe timeouts and a separate work-order target. Serial checks across all public RLS tables and RPCs caused the timeout; bounded batches retain the same assertions. Isolated reset case passed 70.5s; full branch suite passed 146.63s. |
-| `branding-upload-recovery.test.ts` | Two failures: installed F14 attachment function contains the static stale-status update; stale GC row remains attached. | Same shared failures plus one GC batch result remains after expected cleanup. | Test file is identical to main and main CI passed it; clean main run reproduced the two failures on this accumulated D. The function body matches its defining migration; do not relax test or edit non-F15 SQL. |
-| `catalog-server` taxonomy | PASS. | Taxonomy result absent in branch common run. | Suite files equal main; branch result occurred after synthetic catalog data had accumulated. Counts before/after are below; main run passed. Environmental data contamination is supported by sequence and counts, not asserted as a code fix. |
+| `branding-upload-recovery.test.ts` | Initial clean-main common run reproduced the static F14 attachment-function assertion and stale GC row. A focused clean-main rerun after data accumulation failed those same 2/3 tests; the draft-reference case passed in isolation. | Full integration failed the same two plus the draft-reference case during the concurrent full run. | Test file is identical to main. The full-suite-only draft-reference failure did not reproduce in the focused main run; concurrent suites share mutable Stack D fixtures. The function body matches its defining migration. Do not relax tests or edit non-F15 SQL. |
+| `catalog-server` taxonomy | Initial clean-main common run passed. Focused clean-main rerun after data accumulation failed 1/6 tests at the same equipment taxonomy assertion as branch. | Taxonomy result absent in branch common run and the same taxonomy assertion failed in the full integration run. | Suite files equal main; reproducing the failure from the clean main worktree on the accumulated D establishes shared Stack D data state as the cause. Counts before/after are below. |
 | `audit.test.ts` visibility | Statement timeout. | SQLSTATE `57014` instead of expected `42501` (timeout). | Suite file equal to main. Large audit table grew from 204,576 to 208,254 rows during branch common run; clean main also hit statement timeout. |
 | Registration-link issue/open/integrity/flexible suites | PASS. | PASS. | 7-file common batch: all registration-link suites passed on both; no branch delta in those files. |
 
-Common-suite evidence: clean main 7 files, 106 passed / 3 failed (two branding-upload, one audit); branch 7 files, 104 passed / 5 failed (same shared failures plus one stale GC timeout and one catalog taxonomy result). Logs: `C:/Users/NEW LAP/.lifter/runs/s31-luna-f15-h10/main-suite.log`, `main-branch-diff-suite.log`, `branch-diff-suite.log`, `branch-client-recovery-final.log`, `branch-common-suites.log`.
+Common-suite evidence: clean main 7 files, 106 passed / 3 failed (two branding-upload, one audit); branch 7 files, 104 passed / 5 failed (same shared failures plus one stale GC timeout and one catalog taxonomy result). After data accumulated, focused origin/main reruns reproduced catalog taxonomy (1 failed/5 passed), branding owner GC (3 failed/2 passed), and branding upload recovery (2 failed/1 passed). Logs: `C:/Users/NEW LAP/.lifter/runs/s31-luna-f15-h10/main-suite.log`, `main-branch-diff-suite.log`, `branch-diff-suite.log`, `branch-client-recovery-final.log`, `branch-common-suites.log`.
 
 Relevant row counts immediately before → after the branch common run:
 
@@ -82,7 +86,7 @@ Full Stack D integration on the final implementation code before report commit: 
 
 ## S31-R2 — authorized-route matrix
 
-The new-control fixture uses recorded source strings only. EN labels come from `spec.md`’s “EN translation — PO review” table and are marked in the test fixture as draft awaiting PO review; Arabic comes from `fixtures/mandatory-intake-copy-ar.md` or an existing approved contextual phrase. No new product string was authored.
+The new-control fixture uses recorded source strings only. EN labels come from `spec.md`’s “EN translation — PO review” table and are explicitly labeled “EN = recorded draft pending PO review” in the test fixture and matrix INDEX; Arabic comes from `fixtures/mandatory-intake-copy-ar.md` or an existing approved contextual phrase. No new product string was authored.
 
 The requested screenshots were not captured. On Stack D, the existing authorized AR route test reached `/forms/<assignment>` after the login redirect but rendered the generic unavailable alert; no question or control rendered. The new controls test hit the same state. The focused final Playwright batch on port 3315 ran 55 tests: 46 passed, 4 failed, 5 did not run. Failures were the existing authorized form route, the AR and EN registration-links authenticated acceptance checks, and the late-issuance/workspace-switch case. Thus no new-control axe scan can be claimed. Evidence: `test-results/forms-authorized-route-rea-d6c6f-N-theme-and-viewport-matrix-chromium/error-context.md` and the focused Playwright run output.
 
@@ -108,7 +112,7 @@ The full local design-skills catalog was read. This delta adds no rendered produ
 
 | Gate | Result |
 | --- | --- |
-| Unit | 188 files / 2,318 tests passed, plus 6 unhandled errors in unchanged `tests/unit/registration-links-page.test.ts` (`store.getAll is not a function`). That test and `lib/supabase/public-session.ts` are unchanged from origin/main. |
+| Unit | 188 files / 2,318 tests passed, plus 6 unhandled errors in unchanged `tests/unit/registration-links-page.test.ts` (`store.getAll is not a function`). Clean origin/main reproduced 16 passing tests plus the same 6 errors in that file; the test and `lib/supabase/public-session.ts` are unchanged from origin/main. |
 | Lint | PASS, `npm run lint`. |
 | Typecheck | PASS, `npm run typecheck`. |
 | Format | PASS, `npm run format:check`. |
@@ -127,11 +131,11 @@ Signup blob changes vs `5084916` and `3365f51`: none. The Q1 Terms paragraph is 
 
 ## PR review and outstanding status
 
-- Pushed implementation commit `89c89ac` to PR #44.
+- Pushed implementation commit `89c89ac` and fixture-label follow-up `9a8238a` to PR #44.
 - Replied to `PRRT_kwDOVYgYQ86zTsYt` citing S31-PO-1 Q1 and the exact-copy regression. The thread was already resolved; it remains resolved.
 - Replied to and resolved `PRRT_kwDOVYgYQ86zTsYy` citing S31-PO-1 Q2, migration `20261107030000`, focused Stack D tests, and the prior parity fix in `3365f51`.
-- Paginated GraphQL review-thread query: 46 total threads, 1 page; before the TsYy resolution the only unresolved ID was TsYy. Final post-review count will be recorded after the required poll.
-- Posted the one `@coderabbitai full review` request at 2026-11-04 01:50:11 UTC. The full 40-minute poll ends no earlier than 02:30:11 UTC. Findings and final unresolved IDs remain pending until then.
+- Paginated GraphQL review-thread query after the poll: 46 total threads, 1 page, 0 unresolved IDs. The full unresolved-ID list is empty.
+- Posted the one `@coderabbitai full review` request (issue comment `6620349428`) at 2026-11-04 01:50:11 UTC. The required 40-minute poll completed at 02:31:06 UTC. CodeRabbit acknowledged the TsYt and TsYy replies at 01:50:13Z and 01:50:46Z; no separate full-review result or new finding was returned during the full poll. No second request was posted.
 - Do not merge while Stack D integration remains red.
 
 ## PO-DECISION-NEEDED
