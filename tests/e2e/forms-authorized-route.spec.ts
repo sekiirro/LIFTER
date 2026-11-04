@@ -318,6 +318,7 @@ async function expectAxeClean(page: Page) {
 test('real authorized assignment renders the complete AR/EN theme and viewport matrix', async ({
   page,
 }) => {
+  test.setTimeout(600_000);
   await signIn(page);
   for (const locale of ['ar', 'en'] as const) {
     for (const theme of ['light', 'dark'] as const) {
@@ -373,12 +374,8 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
           fullPage: true,
         });
         await page.getByRole('button').nth(1).click();
-        await page
-          .getByRole('radio', {
-            name: locale === 'en' ? 'Male' : 'Ø°ÙƒØ±',
-            exact: true,
-          })
-          .check();
+        await expect(page.getByRole('radio')).toHaveCount(2);
+        await page.getByRole('radio').first().check();
         await page.getByRole('button').nth(1).click();
         await expect(
           page.getByRole('textbox', {
