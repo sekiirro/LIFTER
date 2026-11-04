@@ -12,6 +12,14 @@ S32-PO-5 approves B01, B06, T03, T08, N07, N08, N11 and N12 as listed in `spec.m
 
 T078 reconciles the F15 copy inventory with the exact S33-PO-3 Arabic approvals while preserving all unrelated pending rows. T079 strengthens the existing FR-025 T005 safety test and database boundary so provider diagnostics cannot become persisted job or dead-letter audit text; it uses a synthetic canary and a mutation check.
 
+## S34 review remediation
+
+The S34 round-2 tasks T080–T095 re-verify open CodeRabbit findings against the current split heads and repair only defects already bounded by existing F15 FRs. Tasks with database behavior use Stack D only; changes to an already-pushed migration are forward-only, and all new migration IDs must be checked across origin refs immediately before commit and push. Test changes are RED-first. Security findings require mutation evidence. The four pending #57 PO decisions remain excluded from implementation. No new product behavior, copy, permissions, defaults, or retention policy is authorized by this plan.
+
+T080 covers username normalization and SQL name-boundary parity. T081 covers derived-answer and N12 selector validator parity. T082 covers correction RPC validation against the current snapshot. T083 covers transient Telegram preparation failures. T084 repairs the current quickstart commands and stale task evidence. T085 repairs the default-onboarding regression assertion and proves the mutation harness establishes its baseline. T086 permits an Arabic-only builder draft title while retaining the English title when present. T087 returns a non-retryable business result when autosave follows form submission. T088 scopes append-only Terms policy fixtures to rollback transactions. T089 removes a developer-local path from the canonical synthetic PO fixture.
+
+T090–T094 cover the remaining B-owned correction context, signup field-error handling, localized boolean history labels, RTL/LTR rendering of derived FormPreview labels, and copied-form reference integrity. T095 captures the real T03/N07 matrix at 390px, 1024px, and 1440px in AR-RTL/EN-LTR and light/dark, then aligns the evidence index exactly with the captures. This is evidence-only; it adds no visual or product decision.
+
 **Input**: Feature specification from `specs/015-forms-intake/spec.md`. This is a plan, not implementation authorization; implementation starts only after PO plan approval.
 
 ## Summary

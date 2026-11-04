@@ -58,11 +58,12 @@ Run these only under a separately approved implementation brief and after satisf
 npm run typecheck
 npm run test -- tests/unit/forms-authorization.test.ts
 npm run test -- tests/unit/forms-progression.test.ts
-npm run test:integration -- tests/integration/forms-rls.test.ts
-npm run test:integration -- tests/integration/forms-audited-read.test.ts
-npm run test:integration -- tests/integration/forms-assignment-races.test.ts
-npm run test:integration -- tests/integration/forms-corrections.test.ts
-npm run test:integration -- tests/integration/forms-alert-races.test.ts
+npm run test:integration -- tests/integration/forms-r3-core.test.ts
+npm run test:integration -- tests/integration/forms-r3-reader.test.ts
+npm run test:integration -- tests/integration/forms-r3-assignment-races.test.ts
+npm run test:integration -- tests/integration/forms-r3-submissions.test.ts
+npm run test:integration -- tests/integration/forms-r3-corrections.test.ts
+npm run test:integration -- tests/integration/forms-alerts.test.ts
 ```
 
 These are scoped examples, not permission to omit related regressions. Unit tests do not need a database; every integration test needs the verified, exclusively owned F15 stack. Run the full relevant unit, integration and e2e suites at the release task, with no unapproved skips. The private-repository CI billing limitation remains external; do not change repository visibility to bypass it.
