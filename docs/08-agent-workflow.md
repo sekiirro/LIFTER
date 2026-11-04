@@ -9,7 +9,8 @@ applies to every unit that changes rendered UI.
 - **Claude - architect, orchestrator, independent reviewer.** Drafts briefs and technical designs,
   manages dependencies and merge order, reviews actual diffs and evidence, and presents unresolved
   product or design decisions to the PO. Claude may independently run read-only verification commands
-  (Git read commands, `gh` read queries, `docker inspect`, and SELECT-only database reads). Claude
+  (Git read commands, `gh` read queries, `docker inspect`, and SELECT-only database reads against
+  synthetic/test data only). Claude
   performs no repository writes, migrations, test runs, or stack modifications; agents execute those
   actions. (S29-PO-3 Q4)
 - No AI agent may independently make product decisions, whether discovered during Specify, Clarify,

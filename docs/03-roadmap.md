@@ -37,7 +37,7 @@ Critical path: P0 tenancy/auth → P1 token+subscription+ledger → P3 planners 
 
 ## Quality gates (every feature, enforced by Claude review)
 
-1. Constitution, Specify, Clarify, Plan, Tasks, and Analyze are complete before code. Clarify explicitly records zero open ambiguities when none remain; Analyze is dated after the latest spec/plan/tasks change and has zero open CRITICAL/HIGH findings (S29-PO-2; S29-PO-3 Q1).
+1. Constitution, Specify, Clarify, Plan, Tasks, and Analyze are complete before code. Clarify explicitly records zero open ambiguities when none remain; Analyze is dated after the latest spec/plan/tasks change and has zero open CRITICAL/HIGH findings (S29-PO-2; S29-PO-3 Q1). Before implementation, complete the mandatory independent Sol Medium feature critique; each invocation requires explicit PO approval under S13 and S30-PO-8 Q15, with no model substitution or skipped critique. Follow docs/08 for explicit PO approval and unresolved-decision gates.
 2. Typecheck + lint + unit tests green in CI (integration tests join the CI gate from P0-F3, when the Supabase schema exists). Implementation agents execute tests; Claude verifies required CI evidence on the exact PR head and does not rerun tests locally.
 3. **Isolation gate:** every new tenant table has RLS + a composite FK, and every new endpoint/job/bot command has a foreign-workspace negative test.
 4. **Money gate:** ledger/payroll changes include immutability + idempotency tests. Amounts are integers only.
