@@ -295,17 +295,19 @@ The S14 starter material lists 26 parent IDs; IDs remain stable for questions re
 
 ### EN translation — PO review
 
-These English translations are for EN-mode only and do not replace or alter the Arabic fixture. Each is pending PO review before publication.
+These English translations are for EN-mode only and do not replace or alter the Arabic fixture. Unless explicitly listed in the S32-PO-5 approval note, each remains pending PO review before publication. S32-PO-5 approves the B01, B06, T03 range, T08, N07 timing behavior, N08, N11 range, and N12 control type only. Existing unapproved option and label translations remain pending.
+
+S32-PO-5 approves only these F15 items: B01 “Full name (three parts)”; B06 “Gender” with options “Male” and “Female”; T03 training frequency of 2–6 days/week; T08 “Training split”; N07 dynamic timing derived from selected meal count; N08 “What’s your food budget?”; N11 a 0–10 slider; and N12 body-fat image cards. The exact N07 English timing question and option strings were not supplied and remain pending PO review. All other EN rows and options in this table remain pending PO review. The canonical Arabic fixture remains unchanged.
 
 | Stable ID | EN-mode translation |
 | --- | --- |
-| B01 | Full name |
+| B01 | Full name (three parts) |
 | B02 | Age |
 | B03 | Do you have any chronic conditions? |
 | B03.details | Please describe your chronic conditions. |
 | B04 | What is your current weight? |
 | B05 | What is your occupation? |
-| B06 | Sex (draft; pending PO approval) |
+| B06 | Gender |
 | T01 | What is your near-term goal? |
 | T02 | Do you have any injuries? |
 | T02.details | Tell us about the injury. |
@@ -317,7 +319,7 @@ These English translations are for EN-mode only and do not replace or alter the 
 | T07 | Which exercises do you like most and dislike most? |
 | T07.liked | Exercises you like |
 | T07.disliked | Exercises you dislike |
-| T08 | Would you like to follow a particular training split? |
+| T08 | Training split |
 | T08.system | What training system would you like to follow? |
 | N01 | What is your goal for your nutrition plan? |
 | N01.cut.title | Fat loss |
@@ -340,7 +342,7 @@ These English translations are for EN-mode only and do not replace or alter the 
 | N06 | Tell us what a typical day of eating looks like for you. |
 | N07 | How many meals would you like to eat each day? (maximum: 5; PO-approved departure from canonical source) |
 | N07.training_timing | Nutrition 7 derived child | Derived single choice | After meal count is known, generate meal-number choices 1..N, where N is selected meal count (2 to 5). Also include «قبل أول وجبة» and «معنديش ميعاد ثابت». If meal count changes, replace stale choices and clear invalid prior selection; version/snapshot history remains immutable. |
-| N08 | What is your food budget like? |
+| N08 | What’s your food budget? |
 | N08.foods | Choose foods that fit your budget. |
 | N09 | Which foods do you like most and dislike most? |
 | N09.liked | Foods you like |
@@ -386,7 +388,15 @@ The five N01 titles/descriptions, T04/N03/N07/N08/N10 choices, N11 endpoint labe
 | N11.label.5 | Moderate hunger |
 | N11.label.10 | Very strong hunger |
 
-The T04, N08 budget and food-chip, and N12 percentage-specific option records are authored from their exact fixture values; do not paraphrase or manufacture missing card choices. All EN translations in this table remain pending PO review.
+The T04, N08 budget and food-chip, and N12 percentage-specific option records are authored from their exact fixture values; do not paraphrase or manufacture missing card choices. Every EN translation and option remains pending PO review except the exact items identified in the S32-PO-5 approval note above.
+
+## Clarifications — S32 (2026-11-04)
+
+- **Source:** S32-PO-3, verbatim in the S32 h11 lane brief. The colliding F15 migration is authorized to move by `git mv` to a unique valid version. Preserve F16 #43 and repair history only on Stack D if its read-only verification shows repair is needed. No SQL replay is authorized.
+- **Source:** S32-PO-5, verbatim in the S32 h11 lane brief. The approved F15 review scope is B01, B06, T03, T08, N07, N08, N11 and N12 as summarized above. Exact copy is approved only where PO supplied it. No other EN entry or canonical Arabic string is approved by this decision.
+- **Open ambiguity (blocked):** T03’s approved 2–6 days/week range conflicts with the canonical Arabic fixture’s 1–7 day options (`fixtures/mandatory-intake-copy-ar.md`, Training question 3). Preserve the Arabic fixture; do not change the shipped range until the PO resolves whether Arabic or the new range is authoritative.
+- **Open ambiguity (blocked):** N07’s dynamic timing behavior is approved, but S32-PO-5 provides no exact English question/options. Keep English timing copy pending PO review. Options and implications are recorded in the S32 h11 verification report.
+- **No open ambiguities remain for Part A’s migration rename and Stack D history reconciliation, or for the exact PO-supplied EN copy changes.** The two blocked Part B matters above are explicitly excluded from implementation pending PO decision.
 
 ### Signup extension, approval gate, consent and flow
 

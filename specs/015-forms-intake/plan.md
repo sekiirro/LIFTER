@@ -4,6 +4,12 @@
 
 **Plan status**: Base plan approved by PO 2026-10-29 (session 13); S14 amendment reflects binding decisions dated 2026-10-30. This documentation update is not a new implementation/merge approval.
 
+## S32 scope — migration collision and PO-approved F15 intake review
+
+S32-PO-3 authorizes renaming only the conflicting F15 slider-validator migration to a unique valid version, preserving the F16 migration on #43, reconciling Stack D migration history without replaying SQL, and rerunning gates. Task T055 covers the rename, filename consumer, Stack D read/repair/readiness proof and timestamp uniqueness scan; it uses the existing slider validation contract (FR-004/006/007/026/036/037).
+
+S32-PO-5 approves review of B01, B06, T03, T08, N07, N08, N11 and N12 as listed in `spec.md` and the exact English labels where supplied. Task T056 covers the PO-approved copy changes; T057 covers canonical fixture and implementation verification, RED/GREEN tests for unambiguous approved-scope differences, rendered accessibility checks and evidence. The canonical Arabic fixture is immutable in this scope. T03’s 2–6 requirement conflicts with the canonical Arabic 1–7 option range and must not be implemented until that conflict is resolved. N07’s exact English timing strings are likewise blocked pending explicit PO copy. These are escalations, not inferred defaults.
+
 **Input**: Feature specification from `specs/015-forms-intake/spec.md`. This is a plan, not implementation authorization; implementation starts only after PO plan approval.
 
 ## Summary

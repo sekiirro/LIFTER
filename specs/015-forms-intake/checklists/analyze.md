@@ -1,26 +1,29 @@
-# F15 Spec Kit Analyze
+# F15 Spec Kit Analyze — S32 h11
 
-**Status**: Base review and S14 v2 consistency pass completed 2026-10-30. No application implementation, database, Docker or Supabase verification is claimed. The canonical fixture byte comparison was rerun for v2 and recorded in `reports/S14-design-and-consistency-review.md`.
+**Date:** 2026-11-04 (after the S32 changes to `spec.md`, `plan.md`, and `tasks.md`)
+**Status:** Entry review for S32-PO-3 migration rename and S32-PO-5 F15 intake review.
 
-## Checks
+## Entry check
 
-- [x] `spec.md` ↔ `plan.md`: all 39 functional requirements (FR-001–FR-039), including S14 inventory, Builder, signup, consent and flow requirements, are represented in the implementation approach and task coverage index.
-- [x] `plan.md` ↔ `tasks.md`: every OPEN policy item names the exact affected task(s); independent work remains sequenced where it can proceed safely.
-- [x] Tasks have an FR or explicit decision/dependency trace, named disjoint owner files and DB classification (DB-free or Stack D). No task assigns F15 to Stacks A/B/C; F15 migration timestamps start at `20261104000000` and follow latest integrated F12/F14 history.
-- [x] Every implementation unit calls for focused tests first and RED→GREEN evidence; security, authorization, audit, idempotency, retention and scheduler units name mutation evidence.
-- [x] Capability parity is bidirectional and follows F12 and F14 integration; migration timestamps remain unallocated until all actual F12/F14 migrations are rechecked.
-- [x] Tenant isolation, client self-only access, staff current-workspace access, PO explicit-existing-workspace access, Sales denial, and fail-closed audited reads are required across answer, correction and history paths.
-- [x] The Final PO APPROVAL is reflected without adding attachment storage; FR-032 remains no MVP attachment feature/storage. Post-relationship-end correction eligibility remains OPEN.
-- [x] No application code or invented product policy is included. S14 UI tasks require the Frontend Design Gate and `DESIGN.md`; architect-approved visual defaults are recorded; implementation remains subject to the Frontend Design Gate.
-- [x] Retention feasibility/legal review, hosted copy evidence, P4 facts and private-CI limits remain explicit gates rather than claimed as verified.
+- [x] `spec.md` has numbered FRs, measurable SCs, and Given/When/Then acceptance scenarios for the affected form validation, builder, signup and intake behavior. Existing scope maps to FR-004/006/007/026/036/037/038 and their acceptance scenarios.
+- [x] Clarifications cite S32-PO-3 and S32-PO-5. No open ambiguities remain for Part A or exact PO-supplied EN copy; T03 canonical-range conflict and N07 unspecified English strings are explicitly marked blocked and excluded from implementation.
+- [x] `plan.md` describes the migration rename/history reconciliation and the approved intake review with the Arabic-fixture and copy boundaries.
+- [x] `tasks.md` has T055 [FR-004/006/007/026/036/037], T056 [FR-026/036/037/038], and T057 [FR-026/036/037]. Tasks remain unchecked pending implementation and test evidence.
+- [x] This Analyze is dated after all three changed artifacts (2026-11-04).
 
-## Findings and disposition
+## Scope analysis
 
-- **CRITICAL/HIGH**: none remain after correction.
-- **Resolved**: the draft plan referenced nonexistent T026/T027 tasks, associated cohort-first sequencing with T019, and mis-mapped hidden-answer, post-end correction, P4, and retention blockers. Updated references now point to T010, T011/T013/T020, T014/T020, T016/T017/T025, and T019/T025 as applicable.
-- **MEDIUM**: latest F12/F14 merge heads, shared SQL function bodies, actual migration ceiling and the F15 isolated stack cannot be verified during this DB-free planning step. T001 gates dependent implementation and requires those checks before timestamp allocation or database work.
-- **LOW**: none identified in the spec/plan/tasks consistency pass.
+- T055 is a metadata rename of the F15 `CREATE OR REPLACE FUNCTION` migration plus a filename reference, historical addendum, Stack D history proof/repair, and checks. It preserves the SQL bytes and explicitly excludes SQL replay and all other stacks.
+- T056 is limited to exact PO-supplied English entries. Other EN copy remains pending. T03’s 2–6 versus canonical Arabic 1–7 conflict is a blocker. N07 behavior may be verified, but exact English question/options are blocked until PO supplies them.
+- T057 verifies question order, conditions, option sets, N12 asset catalog/order/alt text and rendered UI. It does not authorize changing Arabic, inventing EN copy, or adding design tokens/components.
+- No CRITICAL or HIGH findings remain in the approved executable Part A scope. Two explicit product-copy/range blockers remain isolated from that scope and are recorded as PO decisions.
 
-## Coverage result
+## Findings
 
-The tasks coverage index maps FR-001 through FR-039 to at least one task (39/39). Cross-feature readiness and production gates are separate from functional requirements and are assigned to T001, T019, T024 and T025. S14 has 19 granular tests-first tasks across six disjoint-file lanes (DB-free or Stack D); no requirement is claimed runtime-verified here. Remaining PO gates are draft-copy approvals listed in `reports/S14-design-and-consistency-review.md`.
+- **CRITICAL:** 0
+- **HIGH:** 0
+- **MEDIUM / blocked:** T03 range reconciliation; exact N07 English timing copy. No implementation may assume a resolution.
+
+## Result
+
+**PASS for T055 and exact-copy portions of T056.** T03 range changes and N07 English strings remain blocked. T056/T057 implementation is agent-owned by S32-PO-5; orchestration/review only.

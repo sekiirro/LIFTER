@@ -8,6 +8,12 @@
 
 **Execution rule**: This is a future implementation plan. Every implementation unit writes its focused tests first and records RED, then implements and records GREEN. No task may use Stack A, Stack B or Stack C. DB-bearing S14 tasks use Stack D only, after isolation is verified and F12/F14 are integrated. Mutation evidence is required for every security, authorization, audit, idempotency and retention task. No implementation begins before PO plan approval and all named PO/design gates are closed.
 
+## S32 approved work
+
+- [ ] T055 [FR-004/006/007/026/036/037] **F15 migration collision rename and Stack D history reconciliation.** Rename only the colliding F15 slider-validator migration to a valid version unique across every fetched `origin/*` ref; preserve the F16 migration on #43. Update the filename-pinned drift guard and add a dated addendum to the historical S31-h10 verification report. Prove the SQL blob is byte-identical. Read Stack D history and the deployed function body first; repair only the two specified history rows if required, without applying or reverting SQL, then verify object body, migration-row count, `StartedAt`, and local/remote migration-list equality. Rerun readiness and timestamp scans before commit and push. Never use Stacks A/B/C. **No task checkbox until verification passes on the final head.**
+- [ ] T056 [FR-026/036/037/038] **Apply exact S32-PO-5 EN entries.** Update only the approved EN rows and options in `spec.md` and corresponding approved-copy artifacts/messages as authorized. Preserve all other EN rows as pending PO review and do not change canonical Arabic. B06 has exact “Gender”, “Male”, “Female”; B01, T08 and N08 use the exact approved text. N07 timing copy is blocked until PO supplies exact English strings. T03’s range is blocked because the canonical Arabic fixture remains 1–7. The task is agent-owned by S32-PO-5; no direct implementation by the orchestration/review role.
+- [ ] T057 [FR-026/036/037] **Verify intake order, conditional logic, options, assets and rendered UI.** Verify B01/B06/T03/T08/N07/N08/N11/N12 against the canonical Arabic fixture, decision fixture and implementation with file:line evidence. Add RED/GREEN tests only for unambiguous PO-approved differences, without editing Arabic or shipping unapproved N07 English strings. Check body-fat asset existence, loading, AR/EN alt text and ordering; run AR-RTL/EN-LTR × light/dark at 360/390/1024 for touched questions, with axe zero and screenshots indexed under the S32 temp directory. Agent-owned implementation; orchestration/review role records evidence and escalations.
+
 ## Phase 0: Stack and shared-contract prerequisites
 
 - [x] T001 [FR-020/022/024] Verify F12/F14 full migration/function/capability heads and Stack D isolation from Stacks A/B/C. Record project identity, ports, isolation proof and lock owner. Recheck the latest fully merged migration history, including later fixes, before timestamp allocation. F15 migrations start at `20261104000000` but must still sort after the latest F12/F14 migrations. **Evidence:** S26 Stack D identity/isolation/migration-history record in `quickstart.md`; local D migration list matches through `20261104031800`; latest capability/audit function sources recorded; Stack D wrapper and D-only container/network identity checked. **DB: Stack D only.**
@@ -131,7 +137,7 @@ Measured synthetic realistic payloads use that answer-value JSON UTF-8 rule: EN 
 | FR-023 | T005, T012, T019, T020, T032, T043, T048 |
 | FR-024 | T002, T004, T008, T012–T018, T024 |
 | FR-025 | T005, T016                        |
-| FR-026 | T030-T033, T036, T039, T042-T043 |
+| FR-026 | T030-T033, T036, T039, T042-T043, T055-T057 |
 | FR-027 | T021                              |
 | FR-028 | T022                              |
 | FR-029 | T020–T022, T024                   |
@@ -141,9 +147,9 @@ Measured synthetic realistic payloads use that answer-value JSON UTF-8 rule: EN 
 | FR-033 | T018, T019, T025                  |
 | FR-034 | T027                              |
 | FR-035 | T016, T028                        |
-| FR-036 | T006, T009, T030-T036, T040-T041, T047-T048 |
-| FR-037 | T030-T036, T040-T041, T047 |
-| FR-038 | T037-T039, T045 |
+| FR-036 | T006, T009, T030-T036, T040-T041, T047-T048, T055-T057 |
+| FR-037 | T030-T036, T040-T041, T047, T055-T057 |
+| FR-038 | T037-T039, T045, T056 |
 | FR-039 | T033, T037-T039, T042-T046 |
 
 ## Implementation strategy
