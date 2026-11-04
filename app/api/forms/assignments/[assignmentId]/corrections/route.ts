@@ -90,7 +90,7 @@ export async function GET(
 
   try {
     const { data: context, error: contextError } = await client.rpc(
-      'read_form_assignment_context',
+      'read_form_correction_context',
       { p_assignment_id: assignmentId },
     );
     if (contextError || !context || typeof context !== 'object')
