@@ -1,6 +1,12 @@
 'use client';
 
-import { useActionState, useEffect, useRef, useState } from 'react';
+import {
+  useActionState,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Bidi } from '../../../components/ui/Bidi';
 import {
@@ -112,13 +118,16 @@ export function SignupForm({
     phoneCountries.find((option) => option.code === country) ??
     phoneCountries.find((option) => option.code === 'EG');
 
-  function hasIdentityError(field: SignupIdentityField) {
-    return (
-      identityInvalidFields.includes(field) ||
-      (result.status === 'invalid_input' &&
-        result.invalidFields?.includes(field) === true)
-    );
-  }
+  const hasIdentityError = useCallback(
+    (field: SignupIdentityField) => {
+      return (
+        identityInvalidFields.includes(field) ||
+        (result.status === 'invalid_input' &&
+          result.invalidFields?.includes(field) === true)
+      );
+    },
+    [identityInvalidFields, result],
+  );
 
   function validateTouchedField(field: SignupIdentityField) {
     if (!formRef.current) return;
@@ -182,7 +191,7 @@ export function SignupForm({
       return;
     }
     resultRef.current?.focus();
-  }, [identityFocusRequest, identityInvalidFields, result, submitted]);
+  }, [hasIdentityError, identityFocusRequest, result, submitted]);
 
   if (result.status === 'sign_out_required')
     return (
