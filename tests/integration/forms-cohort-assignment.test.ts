@@ -67,7 +67,55 @@ async function setFutureActivation(
     ${randomUUID()}`;
 }
 
+async function setCurrentActivation(workspaceId: string, subscriptionId: string) {
+  await db`insert into public.subscription_activations(
+    workspace_id,subscription_id,activated_at,delivery_event_id
+  ) values(
+    ${workspaceId},${subscriptionId},clock_timestamp(),${randomUUID()}
+  )`;
+}
+
 describe('T010/T023 per-form assignment policy', () => {
+  it('excludes a deactivated client from an all-active audience snapshot', async () => {
+    const { context, client } = await futureApprovedClient();
+    const formId = await createForm(context.wsA.id);
+    const configured = await context.po.client.rpc(
+      'configure_intake_assignment_policy',
+      policyArgs(context.wsA.id, formId, 'all_active_clients', 'manual'),
+    );
+    expect(configured.data).toEqual({ status: 'configured' });
+    const approval = await context.po.client.rpc('registration_approve', {
+      request: request(context, client),
+    });
+    expect((approval.data as { status: string }).status).toBe('ok');
+    const subscriptionId = (
+      approval.data as { receipt: { subscription_id: string } }
+    ).receipt.subscription_id;
+    await setCurrentActivation(context.wsA.id, subscriptionId);
+    await db.begin(async (tx) => {
+      await tx`set local session_replication_role='replica'`;
+      await tx`update public.clients set deactivated_at=clock_timestamp(),deactivation_reason='closure'
+        where workspace_id=${context.wsA.id} and id=${client.id}`;
+    });
+
+    const result = await context.po.client.rpc(
+      'materialize_intake_assignment_occurrence',
+      {
+        p_workspace_id: context.wsA.id,
+        p_form_id: formId,
+        p_occurrence_key: `active-${client.id}`,
+      },
+    );
+    expect(result.data).toMatchObject({ status: 'materialized', count: 0 });
+    const [occurrence] = await db`
+      select audience_client_ids from app_private.form_assignment_occurrences o
+      join app_private.form_assignment_policies p
+        on p.workspace_id=o.workspace_id and p.id=o.policy_id
+      where o.workspace_id=${context.wsA.id} and p.form_id=${formId}
+    `;
+    expect(occurrence?.audience_client_ids).toEqual([]);
+  });
+
   it('rejects a missing recurrence interval in policy and materialization paths', async () => {
     const context = await clientContext();
     const formId = await createForm(context.wsA.id);

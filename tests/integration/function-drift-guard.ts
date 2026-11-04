@@ -24,12 +24,12 @@ export const guardedFunctions = [
   {
     identity:
       'app_private.materialize_intake_assignment_occurrence_core(uuid,uuid,text,date)',
-    migration: '20261107010000_f15_review_fixes.sql',
+    migration: '20261107032400_f15_active_client_initial_occurrences.sql',
     name: 'app_private.materialize_intake_assignment_occurrence_core',
   },
   {
     identity: 'app_private.reconcile_f15_form_assignment(uuid,uuid)',
-    migration: '20261107020000_f15_approval_assignment_facts_fix.sql',
+    migration: '20261107032400_f15_active_client_initial_occurrences.sql',
     name: 'app_private.reconcile_f15_form_assignment',
   },
   {
