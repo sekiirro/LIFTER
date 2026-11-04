@@ -1,5 +1,6 @@
 /** @vitest-environment happy-dom */
 import { act, createElement } from 'react';
+import { readFileSync } from 'node:fs';
 import { createRoot, type Root } from 'react-dom/client';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { ExerciseDetailRemove } from '../../components/catalog/ExerciseDetailRemove';
@@ -82,5 +83,34 @@ describe('Exercise Detail Remove confirmation', () => {
       operationKey: expect.stringMatching(/^[0-9a-f-]{36}$/i),
     });
     expect(host.textContent).toContain(en['catalog.editorLifecycleRemoved']);
+  });
+
+  it('keeps the dialog open and shows the removal failure inside it so the user can retry', async () => {
+    removeAction.mockResolvedValue({ status: 'unavailable' });
+    await render();
+    await act(async () => button(en['catalog.editorRemove']).click());
+    await act(async () => button(en['dialog.confirm']).click());
+    const dialog = host.querySelector('dialog');
+    expect(dialog?.hasAttribute('open')).toBe(true);
+    expect(dialog?.querySelector('[role="alert"]')?.textContent).toBe(
+      en['states.error.description'],
+    );
+    expect(dialog?.querySelector('[role="alert"]')).toBeTruthy();
+    expect(button(en['dialog.confirm'])).toBeTruthy();
+  });
+
+  it('maps the pending live region to a visually-hidden CSS-module class', async () => {
+    await render();
+    const liveRegion = host.querySelector('[aria-live="polite"]');
+    expect(liveRegion?.className).toBeTruthy();
+    expect(liveRegion?.className).not.toBe('undefined');
+    const styles = readFileSync(
+      'components/catalog/ExerciseDetailView.module.css',
+      'utf8',
+    );
+    expect(styles).toMatch(/\.srOnly\s*\{[^}]*position:\s*absolute/s);
+    expect(styles).toMatch(
+      /\.srOnly\s*\{[^}]*clip:\s*rect\(0,\s*0,\s*0,\s*0\)/s,
+    );
   });
 });

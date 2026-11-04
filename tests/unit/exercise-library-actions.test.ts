@@ -177,6 +177,110 @@ describe('production exercise authoring actions', () => {
     );
   });
 
+  it('preserves every equipment code when creating a new version from a multi-equipment exercise', async () => {
+    await saveExerciseAction({
+      draft,
+      scope: 'global',
+      workspaceId: null,
+      operationKey: '11111111-1111-4111-8111-111111111111',
+      id: '55555555-5555-4555-8555-555555555555',
+      expectedVersion: 2,
+      equipmentCodes: ['barbell', 'cable'],
+    } as Parameters<typeof saveExerciseAction>[0]);
+    expect(mocks.versionExercise).toHaveBeenCalledWith(
+      expect.objectContaining({
+        request: expect.objectContaining({
+          equipment_codes: ['barbell', 'cable'],
+        }),
+      }),
+    );
+  });
+
+  it('returns invalid for malformed save and remove payloads without throwing or calling an RPC', async () => {
+    for (const payload of [
+      null,
+      {},
+      { draft: { names: { ar: 'x', en: 'y' } } },
+    ])
+      await expect(saveExerciseAction(payload as never)).resolves.toEqual({
+        status: 'invalid',
+      });
+    for (const payload of [
+      null,
+      {},
+      { scope: 'workspace', expectedRevision: 'bad' },
+    ])
+      await expect(removeExerciseAction(payload as never)).resolves.toEqual({
+        status: 'invalid',
+      });
+    expect(mocks.actor).not.toHaveBeenCalled();
+    expect(mocks.createExercise).not.toHaveBeenCalled();
+    expect(mocks.versionExercise).not.toHaveBeenCalled();
+    expect(mocks.transitionExercise).not.toHaveBeenCalled();
+    expect(mocks.removeWorkspaceExercise).not.toHaveBeenCalled();
+  });
+
+  it('revalidates library and edited detail paths only after successful exercise mutations', async () => {
+    const { revalidatePath: revalidate } = await import('next/cache');
+    vi.mocked(revalidate).mockClear();
+    const id = '55555555-5555-4555-8555-555555555555';
+    mocks.versionExercise.mockResolvedValueOnce({ status: 'conflict' });
+    await saveExerciseAction({
+      draft,
+      scope: 'global',
+      workspaceId: null,
+      operationKey: '11111111-1111-4111-8111-111111111111',
+      id,
+      expectedVersion: 2,
+    });
+    expect(revalidate).not.toHaveBeenCalled();
+    await saveExerciseAction({
+      draft,
+      scope: 'global',
+      workspaceId: null,
+      operationKey: '11111111-1111-4111-8111-111111111111',
+      id,
+      expectedVersion: 2,
+    });
+    expect(revalidate).toHaveBeenCalledWith('/exercise-library');
+    expect(revalidate).toHaveBeenCalledWith(`/exercise-library/${id}`);
+    vi.mocked(revalidate).mockClear();
+    const removeInput = {
+      scope: 'global' as const,
+      workspaceId: null,
+      exerciseId: id,
+      expectedRevision: 0,
+      operationKey: '11111111-1111-4111-8111-111111111111',
+    };
+    mocks.transitionExercise.mockResolvedValueOnce({ status: 'unavailable' });
+    await removeExerciseAction(removeInput);
+    expect(revalidate).not.toHaveBeenCalled();
+    await removeExerciseAction(removeInput);
+    expect(revalidate).toHaveBeenCalledWith('/exercise-library');
+    expect(revalidate).toHaveBeenCalledWith(`/exercise-library/${id}`);
+    vi.mocked(revalidate).mockClear();
+    const workspaceId = '22222222-2222-4222-8222-222222222222';
+    mocks.actor.mockResolvedValue({
+      userId: 'trainer',
+      role: 'trainer',
+      activeWorkspaceIds: [workspaceId],
+    });
+    mocks.writeWorkspaceExercise.mockResolvedValueOnce({ status: 'conflict' });
+    const workspaceEdit = {
+      draft,
+      scope: 'workspace' as const,
+      workspaceId,
+      operationKey: '11111111-1111-4111-8111-111111111111',
+      id,
+      expectedVersion: 2,
+    };
+    await saveExerciseAction(workspaceEdit);
+    expect(revalidate).not.toHaveBeenCalled();
+    await saveExerciseAction(workspaceEdit);
+    expect(revalidate).toHaveBeenCalledWith('/exercise-library');
+    expect(revalidate).toHaveBeenCalledWith(`/exercise-library/${id}`);
+  });
+
   it('does not reveal or write to another workspace', async () => {
     mocks.actor.mockResolvedValue({
       userId: 'trainer',

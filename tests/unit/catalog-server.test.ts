@@ -401,6 +401,21 @@ describe('catalog server authorization and RPC boundary', () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
+  it.each([undefined, '', '   '])(
+    'requires an explicit non-empty workspace for PO workspace exercise removal (%s)',
+    async (workspaceId) => {
+      rpc.mockClear();
+      const result = await catalog().removeWorkspaceExercise({
+        operationKey: key,
+        workspaceId,
+        id: '55555555-5555-4555-8555-555555555555',
+        expectedVersion: 0,
+      });
+      expect(result).toEqual({ status: 'not_permitted' });
+      expect(rpc).not.toHaveBeenCalled();
+    },
+  );
+
   it('checks food creator authorization through a boolean, non-disclosing session RPC', async () => {
     currentActor = {
       userId: 'actor',

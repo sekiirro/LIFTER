@@ -76,6 +76,13 @@ export default async function EditExercisePage({
         expectedVersion={row.version}
         exercise={exercise}
         instructions={instructions}
+        equipmentCodes={
+          Array.isArray(payload.equipment_codes)
+            ? payload.equipment_codes.filter(
+                (code): code is string => typeof code === 'string',
+              )
+            : undefined
+        }
       />
     </main>
   );

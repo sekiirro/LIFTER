@@ -108,6 +108,10 @@ describe('exercise editor defaults presentation', () => {
 });
 
 describe('exercise editor fixed-vs-range validation', () => {
+  it('does not impose a UTF-16 maxLength on supplementary-plane name characters', () => {
+    const html = render();
+    expect(html).not.toMatch(/maxlength="120"/i);
+  });
   it('accepts a 120-code-point Arabic name and rejects 121 code points', () => {
     const nameAtLimit = '\u062A'.repeat(120);
     const nameOverLimit = '\u062A'.repeat(121);

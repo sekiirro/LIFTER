@@ -64,11 +64,6 @@ export function ExerciseDetailRemove({
       >
         {m['catalog.editorRemove']}
       </Button>
-      {failed ? (
-        <Alert tone="error" title={m['catalog.errorTitle']}>
-          {m['catalog.errorDescription']}
-        </Alert>
-      ) : null}
       <ConfirmDialog
         open={open}
         title={m['catalog.editorRemove']}
@@ -78,7 +73,11 @@ export function ExerciseDetailRemove({
         loading={pending}
         onConfirm={() => void confirmRemove()}
         onCancel={() => setOpen(false)}
-      />
+      >
+        {failed ? (
+          <Alert tone="error" title={m['states.error.description']} />
+        ) : null}
+      </ConfirmDialog>
       <span className={styles.srOnly} aria-live="polite">
         {pending ? m['catalog.loading'] : ''}
       </span>

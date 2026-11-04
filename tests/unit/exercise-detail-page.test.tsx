@@ -19,8 +19,11 @@ vi.mock('../../lib/catalog/server', () => ({
   authoringWorkspaces: m.workspaces,
 }));
 vi.mock('../../app/(app)/exercise-library/ExerciseAuthoringForm', () => ({
-  ExerciseAuthoringForm: () =>
-    createElement('div', { 'data-testid': 'version-editor' }),
+  ExerciseAuthoringForm: (props: { equipmentCodes?: string[] }) =>
+    createElement('div', {
+      'data-testid': 'version-editor',
+      'data-equipment-codes': props.equipmentCodes?.join(','),
+    }),
 }));
 vi.mock('next/headers', () => ({ cookies: m.cookies }));
 vi.mock('next/navigation', () => ({
@@ -253,6 +256,22 @@ describe('edit as a new immutable version', () => {
     expect(html).toContain('Detail exercise');
     expect(m.detail).toHaveBeenCalledWith({ exerciseId: id });
     expect(html).toContain('data-testid="version-editor"');
+  });
+
+  it('passes all existing equipment codes into the new version editor', async () => {
+    m.detail.mockResolvedValueOnce({
+      status: 'ok',
+      data: [
+        {
+          ...row,
+          payload: { ...row.payload, equipment_codes: ['barbell', 'cable'] },
+        },
+      ],
+    });
+    const html = renderToStaticMarkup(
+      await EditPage({ params: Promise.resolve({ exerciseId: id }) }),
+    );
+    expect(html).toContain('data-equipment-codes="barbell,cable"');
   });
 
   it('hides the version editor from non-PO roles', async () => {

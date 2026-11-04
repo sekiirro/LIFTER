@@ -16,6 +16,7 @@ import {
   buildExerciseInput,
   type ExerciseEditorDraft,
 } from '../../../lib/catalog/exercise-editor';
+import { EQUIPMENT_CODES } from '../../../lib/catalog/schemas';
 
 export type SaveExerciseInput = {
   draft: ExerciseEditorDraft;
@@ -25,6 +26,7 @@ export type SaveExerciseInput = {
   id?: string;
   expectedVersion?: number;
   instructions?: Partial<Record<'ar' | 'en', string>>;
+  equipmentCodes?: string[];
 };
 
 export type RemoveExerciseInput = {
@@ -38,9 +40,72 @@ export type RemoveExerciseInput = {
 const UUID_V4 =
   /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object' && !Array.isArray(value);
+}
+
+function validSavePayload(value: unknown): value is SaveExerciseInput {
+  if (
+    !isRecord(value) ||
+    !isRecord(value.draft) ||
+    !isRecord(value.draft.names)
+  )
+    return false;
+  const draft = value.draft;
+  const stringDraftFields = [
+    'primaryMuscle',
+    'equipment',
+    'warmupSets',
+    'workingSets',
+    'repsValue',
+    'repsMin',
+    'repsMax',
+    'restSeconds',
+    'rir',
+    'repsMode',
+  ];
+  return (
+    (value.scope === 'global' || value.scope === 'workspace') &&
+    (value.workspaceId === null || typeof value.workspaceId === 'string') &&
+    typeof value.operationKey === 'string' &&
+    typeof draft.names.ar === 'string' &&
+    typeof draft.names.en === 'string' &&
+    stringDraftFields.every((field) => typeof draft[field] === 'string') &&
+    Array.isArray(draft.secondaryMuscles) &&
+    draft.secondaryMuscles.every((code) => typeof code === 'string') &&
+    Array.isArray(draft.alternativeExerciseIds) &&
+    draft.alternativeExerciseIds.every((id) => typeof id === 'string') &&
+    UUID_V4.test(value.operationKey) &&
+    (value.id === undefined || typeof value.id === 'string') &&
+    (value.expectedVersion === undefined ||
+      (Number.isInteger(value.expectedVersion) &&
+        Number(value.expectedVersion) >= 0)) &&
+    (value.equipmentCodes === undefined ||
+      (Array.isArray(value.equipmentCodes) &&
+        value.equipmentCodes.every((code) => typeof code === 'string'))) &&
+    (value.instructions === undefined ||
+      (isRecord(value.instructions) &&
+        Object.values(value.instructions).every(
+          (text) => typeof text === 'string',
+        )))
+  );
+}
+
+function validRemovePayload(value: unknown): value is RemoveExerciseInput {
+  return (
+    isRecord(value) &&
+    (value.scope === 'global' || value.scope === 'workspace') &&
+    (value.workspaceId === null || typeof value.workspaceId === 'string') &&
+    typeof value.exerciseId === 'string' &&
+    Number.isInteger(value.expectedRevision) &&
+    typeof value.operationKey === 'string'
+  );
+}
+
 export async function removeExerciseAction(
   input: RemoveExerciseInput,
 ): Promise<CatalogResult> {
+  if (!validRemovePayload(input)) return { status: 'invalid' };
   const actor = await requireActor();
   if (
     !UUID_V4.test(input.exerciseId) ||
@@ -57,8 +122,10 @@ export async function removeExerciseAction(
       transition: 'remove',
       operationKey: input.operationKey,
     });
-    if (result.status === 'ok')
+    if (result.status === 'ok') {
+      revalidatePath('/exercise-library');
       revalidatePath(`/exercise-library/${input.exerciseId}`);
+    }
     return result;
   }
   if (
@@ -77,14 +144,17 @@ export async function removeExerciseAction(
     expectedVersion: input.expectedRevision,
     operationKey: input.operationKey,
   });
-  if (result.status === 'ok')
+  if (result.status === 'ok') {
+    revalidatePath('/exercise-library');
     revalidatePath(`/exercise-library/${input.exerciseId}`);
+  }
   return result;
 }
 
 function requestFor(
   draft: ExerciseEditorDraft,
   instructions?: Partial<Record<'ar' | 'en', string>>,
+  equipmentCodes?: string[],
 ): Record<string, unknown> | null {
   const exercise = buildExerciseInput(draft);
   if (!exercise) return null;
@@ -96,7 +166,11 @@ function requestFor(
     ...(exercise.secondaryMuscles?.length
       ? { secondary_muscle_codes: exercise.secondaryMuscles }
       : {}),
-    equipment_codes: [exercise.equipment],
+    equipment_codes: equipmentCodes?.length
+      ? equipmentCodes.filter((code) =>
+          EQUIPMENT_CODES.includes(code as (typeof EQUIPMENT_CODES)[number]),
+        )
+      : [exercise.equipment],
     ...(instructions?.ar === undefined
       ? {}
       : { instructions_ar: instructions.ar }),
@@ -129,13 +203,25 @@ function requestFor(
 export async function saveExerciseAction(
   input: SaveExerciseInput,
 ): Promise<CatalogResult> {
+  if (!validSavePayload(input)) return { status: 'invalid' };
   const actor = await requireActor();
   const isPlatformOwner = actor.role === 'platform_owner';
   const workspaceRole =
     actor.role === 'workspace_owner' || actor.role === 'trainer';
   if (input.scope === 'global') {
     if (!isPlatformOwner) return { status: 'not_permitted' };
-    const request = requestFor(input.draft, input.instructions);
+    if (
+      input.equipmentCodes?.some(
+        (code) =>
+          !EQUIPMENT_CODES.includes(code as (typeof EQUIPMENT_CODES)[number]),
+      )
+    )
+      return { status: 'invalid' };
+    const request = requestFor(
+      input.draft,
+      input.instructions,
+      input.id ? input.equipmentCodes : undefined,
+    );
     if (!request) return { status: 'invalid' };
     const mutation: CatalogMutation = {
       operationKey: input.operationKey,
@@ -143,9 +229,15 @@ export async function saveExerciseAction(
       expectedVersion: input.expectedVersion,
       request,
     };
-    return input.id
+    const result = input.id
       ? versionExercise(mutation)
       : createExercise({ operationKey: input.operationKey, request });
+    const completed = await result;
+    if (completed.status === 'ok') {
+      revalidatePath('/exercise-library');
+      if (input.id) revalidatePath(`/exercise-library/${input.id}`);
+    }
+    return completed;
   }
 
   if (
@@ -155,13 +247,25 @@ export async function saveExerciseAction(
     !authorize(actor, 'coaching_work', input.workspaceId)
   )
     return { status: 'not_permitted' };
+  if (
+    input.equipmentCodes?.some(
+      (code) =>
+        !EQUIPMENT_CODES.includes(code as (typeof EQUIPMENT_CODES)[number]),
+    )
+  )
+    return { status: 'invalid' };
   const request = requestFor(input.draft, input.instructions);
   if (!request) return { status: 'invalid' };
-  return writeWorkspaceExercise({
+  const result = await writeWorkspaceExercise({
     operationKey: input.operationKey,
     workspaceId: input.workspaceId,
     id: input.id,
     expectedVersion: input.expectedVersion,
     request,
   });
+  if (result.status === 'ok') {
+    revalidatePath('/exercise-library');
+    if (input.id) revalidatePath(`/exercise-library/${input.id}`);
+  }
+  return result;
 }

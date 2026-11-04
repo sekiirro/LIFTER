@@ -10,7 +10,7 @@ import { isDisposableStackC } from './disposable-stack';
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3437';
 const screenshotDir =
-  process.env.LIFTER_SCREENSHOT_DIR ?? join(tmpdir(), 'lifter-s28-f16-lib4');
+  process.env.LIFTER_SCREENSHOT_DIR ?? join(tmpdir(), 'lifter-s32-f16-lib15');
 const local = isDisposableStackC(process.env);
 let fixture: Awaited<
   ReturnType<(typeof import('../integration/harness'))['twoWorkspaceFixture']>
@@ -117,8 +117,8 @@ test.afterAll(async () => {
 for (const locale of ['ar', 'en'] as const) {
   for (const theme of ['light', 'dark'] as const) {
     for (const viewport of [
-      { name: '390', width: 390, height: 844 },
-      { name: '1440', width: 1440, height: 900 },
+      { name: '360', width: 360, height: 800 },
+      { name: '1024', width: 1024, height: 768 },
     ]) {
       test(`${locale} ${theme} ${viewport.name}: production library and manual Add`, async ({
         page,
@@ -327,6 +327,58 @@ for (const locale of ['ar', 'en'] as const) {
           path: join(
             screenshotDir,
             `${locale}-${theme}-${viewport.name}-removed.png`,
+          ),
+          fullPage: true,
+        });
+      });
+
+      test(`${locale} ${theme} ${viewport.name}: workspace Remove error stays in confirmation dialog`, async ({
+        page,
+      }) => {
+        await page.setViewportSize({
+          width: viewport.width,
+          height: viewport.height,
+        });
+        await page.emulateMedia({ reducedMotion: 'reduce' });
+        await authenticate(page, locale, theme);
+        const id = await createWorkspaceExercise();
+        const href = `/exercise-library/${id}?scope=workspace&workspace=${fixture.wsA.id}`;
+        const m = getMessages(locale);
+        await page.goto(href);
+        const remove = page.getByRole('button', {
+          name: m['catalog.editorRemove'],
+        });
+        await expect(remove).toBeVisible();
+        await remove.click();
+        const dialog = page.getByRole('dialog');
+        await expect(dialog).toBeVisible();
+
+        const concurrentRemoval = await fixture.po.client.rpc(
+          'catalog_remove_workspace_exercise',
+          {
+            p_workspace_id: fixture.wsA.id,
+            p_exercise_id: id,
+            p_expected_revision: 0,
+            p_operation_key: randomUUID(),
+          },
+        );
+        if (concurrentRemoval.error)
+          throw new Error('Synthetic concurrent removal setup failed.');
+
+        const confirm = dialog.getByRole('button', {
+          name: m['dialog.confirm'],
+        });
+        await confirm.click();
+        await expect(dialog).toBeVisible();
+        await expect(dialog.getByRole('alert')).toHaveText(
+          m['states.error.description'],
+        );
+        await expect(confirm).toBeEnabled();
+        await assertAxe(page);
+        await page.screenshot({
+          path: join(
+            screenshotDir,
+            `${locale}-${theme}-${viewport.name}-remove-error.png`,
           ),
           fullPage: true,
         });

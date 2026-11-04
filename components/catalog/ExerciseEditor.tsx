@@ -7,7 +7,6 @@ import { Button } from '../ui/Button';
 import { Field } from '../ui/Field';
 import {
   EQUIPMENT_CODES,
-  MAX_CATALOG_TEXT_LENGTH,
   MUSCLE_GROUP_CODES,
   type CatalogLocale,
   type ExerciseReps,
@@ -328,7 +327,6 @@ export function ExerciseEditor({
               inputProps={{
                 id: `${base}-name-ar`,
                 value: draft.names.ar,
-                maxLength: MAX_CATALOG_TEXT_LENGTH,
                 disabled: !canEdit,
                 onChange: (event) => setName('ar', event.currentTarget.value),
               }}
@@ -339,7 +337,6 @@ export function ExerciseEditor({
               inputProps={{
                 id: `${base}-name-en`,
                 value: draft.names.en,
-                maxLength: MAX_CATALOG_TEXT_LENGTH,
                 disabled: !canEdit,
                 onChange: (event) => setName('en', event.currentTarget.value),
               }}

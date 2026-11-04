@@ -21,6 +21,7 @@ export function ExerciseAuthoringForm({
   expectedVersion,
   exercise,
   instructions,
+  equipmentCodes,
 }: {
   locale: Locale;
   role: CatalogStaffRole;
@@ -30,6 +31,7 @@ export function ExerciseAuthoringForm({
   expectedVersion?: number;
   exercise?: NormalizedExercise;
   instructions?: Partial<Record<'ar' | 'en', string>>;
+  equipmentCodes?: string[];
 }) {
   const router = useRouter();
   const [status, setStatus] = useState<'ready' | 'saving' | 'error'>('ready');
@@ -60,6 +62,7 @@ export function ExerciseAuthoringForm({
         id,
         expectedVersion,
         instructions,
+        equipmentCodes,
       });
       if (result.status === 'ok') {
         const libraryHref = workspaceId

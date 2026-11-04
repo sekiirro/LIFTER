@@ -59,6 +59,12 @@ describe('workspace video variation UI (T023)', () => {
       expect(isAllowedCatalogVideoUrl(url)).toBe(false);
   });
 
+  it('rejects allowed-host URLs with a query or fragment immediately after the host', () => {
+    expect(isAllowedCatalogVideoUrl('https://youtube.com?x=1')).toBe(false);
+    expect(isAllowedCatalogVideoUrl('https://youtube.com#x')).toBe(false);
+    expect(isAllowedCatalogVideoUrl('https://youtube.com/?x=1')).toBe(true);
+  });
+
   it('requires an explicit workspace and valid content, and emits only selected mapping data', () => {
     expect(
       validateVideoVariationDraft({ ...base, workspaceId: '' }),

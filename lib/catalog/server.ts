@@ -312,7 +312,7 @@ export function createCatalogServer(deps: CatalogDependencies) {
       mutate(
         i,
         operationNames.removeWorkspaceExercise,
-        (a) => isPO(a) || scoped(a, i.workspaceId),
+        (a) => !!i.workspaceId?.trim() && (isPO(a) || scoped(a, i.workspaceId)),
         (x) => ({
           p_workspace_id: x.workspaceId,
           p_exercise_id: x.id,

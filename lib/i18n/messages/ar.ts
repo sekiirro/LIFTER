@@ -421,7 +421,24 @@ export const ar = {
   'catalog.loading': 'جارٍ تحميل المكتبة…',
   'catalog.emptyTitle': 'لا توجد عناصر بعد',
   'catalog.emptyDescription': 'ستظهر عناصر المكتبة هنا بعد إضافتها.',
-  // DRAFT (S27): these seven new authoring and navigation strings are outside the S26 batch.
+  // DRAFT (S27): catalog.addExercise
+  // DRAFT (S27): catalog.nextPage
+  // DRAFT (S27): catalog.paginationLabel
+  // DRAFT (S27): catalog.editorScope
+  // DRAFT (S27): catalog.editorGlobalScope
+  // DRAFT (S27): catalog.editorWorkspaceScope
+  // DRAFT (S27): catalog.editorWorkspace
+  // DRAFT (S27): catalog.detailTitle
+  // DRAFT (S27): catalog.detailVersion
+  // DRAFT (S27): catalog.detailWorkspace
+  // DRAFT (S27): catalog.detailVideo
+  // DRAFT (S27): catalog.detailOpenVideo
+  // DRAFT (S27): catalog.detailNoVideo
+  // DRAFT (S27): catalog.detailMergedTo
+  // DRAFT (S27): catalog.editAsNewVersion
+  // DRAFT (S27): catalog.editorErrorTextTooLong
+  // DRAFT (S27): catalog.foodErrorTooLong
+  // DRAFT (S27): catalog.editorSecondaryMuscles
   'catalog.addExercise': 'إضافة تمرين',
   'catalog.nextPage': 'الصفحة التالية',
   'catalog.paginationLabel': 'ترقيم صفحات مكتبة التمارين',

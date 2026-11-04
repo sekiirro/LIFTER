@@ -21,13 +21,15 @@ const ALLOWED_HOSTS = new Set([
 
 export function isAllowedCatalogVideoUrl(value: string): boolean {
   try {
-    const url = new URL(value.trim());
+    const normalized = value.trim();
+    const url = new URL(normalized);
     return (
       url.protocol === 'https:' &&
       !url.port &&
       !url.username &&
       !url.password &&
-      ALLOWED_HOSTS.has(url.hostname.toLowerCase())
+      ALLOWED_HOSTS.has(url.hostname.toLowerCase()) &&
+      !/^https:\/\/[^/?#]+[?#]/i.test(normalized)
     );
   } catch {
     return false;
