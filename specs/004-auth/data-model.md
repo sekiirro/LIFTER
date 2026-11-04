@@ -4,8 +4,8 @@ One forward migration, `supabase/migrations/20261028120000_auth_recovery_links.s
 
 ## Capability `generate_recovery_link`
 
-- `app_private.role_has_capability`: add the branch `cap = 'generate_recovery_link' → r in ('platform_owner','workspace_owner')`. Trainer stays denied (ND-F4-1). Sales is denied.
-- `lib/auth/capabilities.ts`: add to `CAPABILITIES`. The PO gets all capabilities. Add it to the `workspace_owner` list. `tests/integration/matrix-parity.test.ts` must keep both walls equal.
+- `app_private.role_has_capability`: approved future branch for `cap = 'generate_recovery_link'` includes `platform_owner`, `workspace_owner`, and all workspace `trainer` roles (S31-PO-2); Sales is denied. The existing implementation is not changed in this documentation lane; a new spec cycle, RLS, tests, and security review are required.
+- `lib/auth/capabilities.ts`: add to `CAPABILITIES`. The PO gets all capabilities. Add it to the `workspace_owner` list; when the approved Trainer scope is implemented in its own spec cycle, add it to the `trainer` list and the SQL wall in the same change. `tests/integration/matrix-parity.test.ts` must keep both walls equal.
 
 ## `public.recovery_link_issuances` (append-only)
 
@@ -31,7 +31,7 @@ One forward migration, `supabase/migrations/20261028120000_auth_recovery_links.s
 | Function | Kind | Behavior |
 |---|---|---|
 | `app_private.recovery_target_workspace(target uuid) → uuid` | stable, SECURITY DEFINER | F4: `select null::uuid`. P1 replaces it with the client-account lookup (ND-F4-5). |
-| `app_private.recovery_link_limits() → table(per_actor int, per_target int, win interval)` | immutable | Placeholders 20 / 3 / 1 hour (ND-F4-4). |
+| `app_private.recovery_link_limits() → table(per_actor int, per_target int, win interval)` | immutable | Existing 20 / 3 / 1-hour values are not compliant with S31-PO-3. Approved future values: 10 per issuer per rolling hour and 3 per client per rolling 24 hours across issuers. No code changed; future implementation and configuration verification remain open. |
 | `app_private.recovery_link_guard(target uuid) → uuid` | SECURITY DEFINER | Raises `42501 'not_permitted'` if `auth.uid()` is null, the workspace is null, `not has_workspace_access(ws,'generate_recovery_link')`, `target = auth.uid()`, or the target has a `staff_profiles` row. Raises `P0001 'rate_limited'` if the issuance counts in the window are ≥ the limits. Returns the workspace. |
 | `public.recovery_link_authorize(target uuid) → uuid` | SECURITY DEFINER, granted to authenticated only | `return app_private.recovery_link_guard(target)`. |
 | `public.recovery_link_record(target uuid) → uuid` | SECURITY DEFINER, granted to authenticated only | `pg_advisory_xact_lock` on the target and the actor (`hashtextextended`), then the guard, then the insert. Returns the issuance id. |

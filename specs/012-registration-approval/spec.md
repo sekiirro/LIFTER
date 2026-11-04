@@ -290,3 +290,11 @@ F12 (registration approval & payments)
 - F12-9: On uncertain payment outcome, retain the same request/idempotency key, show warning and permit safe retry without duplicate payment.
 
 The previous fixed second-offset-30 interpretation is superseded: 30 is the default remainder offset, never a normalization of custom issued terms. P2 still owns form assignment/intake; F12 now explicitly owns the standalone status page and its safe automatic/manual navigation. All PA-F12-1..9 policy entries are Decided; remaining technical refinements are Architect items in [plan.md](plan.md#architect-items).
+
+## Clarifications
+
+### Session 2026-11-03 - compliance reconciliation
+
+- **Decision register:** `docs/04-changes-and-questions.md` D-23 records and links to the merged F12 policy specification; this specification records F12-1..9, including flexible installments, correction-month reversals, self-status, navigation, Cairo due dates, and safe retries.
+- **Result:** Zero open ambiguities for the merged F12 scope reviewed here. The Trainer capability question explicitly belongs to P2 per FR-022 and D-23; it does not authorize a decision in F12.
+- **Evidence limit:** This is a static documentation reconciliation. No tests were executed in this lane; task execution checkboxes remain governed by their existing evidence and are not changed here.

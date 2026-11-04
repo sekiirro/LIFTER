@@ -172,6 +172,14 @@ The focused critique and architect response are recorded in [spec debate r2](res
 - **Branding upload**: A durably tracked asset transfer through private staging, authoritative validation, validated-object storage and revision-checked attachment; interrupted or unattached states are reconcilable.
 - **Current published reference**: The workspace-scoped reference to the latest published version; it does not grant public access by itself.
 
+## Clarifications
+
+### Session 2026-11-03 — core-scope compliance reconciliation
+
+- **Decision register:** `docs/04-changes-and-questions.md` D-24 records final decisions for ND-F14-1..7 and DG-F14-1..3. **S19-PO-2 (2026-10-31), verbatim:** “Approved: Defer upload and alt-text editor UI to F14b. Update the spec and track FR-009 as partially complete, not finished. Start F14b immediately after F14 merges, in parallel with F13/F15. Preserve all quality gates and explicit PO merge approval. Prioritize fast delivery without sacrificing completeness.”
+- **Result:** Zero open product ambiguities in the merged F14 core scope. FR-009 remains PARTIAL per S19; this review excludes the separate F14b UI tasks. T039-T041 and T043 remain open production/readiness evidence tasks; none is marked deferred because no cited PO decision explicitly defers those tasks. D-24 says hosted verification remains a production blocker.
+- **Evidence limit:** Static source/test inspection only; no tests, Storage stack, hosted verification, or CI were run in this lane.
+
 ## Success Criteria
 
 ### Measurable Outcomes

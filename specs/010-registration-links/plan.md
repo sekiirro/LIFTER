@@ -8,7 +8,7 @@
 
 ## Summary
 
-Add immutable tenant-bound hashed links and ordered installment snapshots, issue atomically from available/current F9 offers, show URL once, and support a narrow anonymous first-open/validate RPC. A staff screen selects approved terms and a public screen shows only workspace name/validity. F11 consumption is a documented atomic contract, not implemented here. Preserve all five F10 decisions and relevant F9 decisions as open.
+Add immutable tenant-bound hashed links and ordered installment snapshots, issue atomically from available/current F9 offers, show URL once, and support a narrow anonymous first-open/validate RPC. A staff screen selects approved terms and a public screen shows only workspace name/validity. F11 consumption is a documented atomic contract, not implemented here. F10 decisions are not all open: ND-F10-1 and ND-F10-2 are decided, ND-F10-3 is recorded but not implemented, and ND-F10-4 and ND-F10-5 remain open; relevant F9 decisions remain as carried below.
 
 ## Technical Context
 
@@ -30,7 +30,7 @@ Pre-research and post-design check against v1.1.0:
 | I isolation                  | Composite tenant FKs, forced RLS, verified actor + capability and independent DB guard, foreign negatives for every staff path; public only explicit workspace name projection.       |
 | II financial truth           | Immutable price/currency/duration/rate/schedule, exact minor units and DB total; no payment/commission earning calculations.                                                          |
 | III least privilege          | Existing D-09 capability matrix unchanged; Trainer schedule denied; rates only PO/WO; hashes absent from all staff reads.                                                             |
-| IV approved scope            | Explicit BRD/PRD + D-12/D-17 precedence; all NDs remain open; no fixed 50/50, revocation or invented installment bounds.                                                              |
+| IV approved scope            | Explicit BRD/PRD + D-12/D-17 precedence; ND-F10-1 and ND-F10-2 are decided, ND-F10-3 is recorded but not implemented, ND-F10-4 and ND-F10-5 remain open; carried ND-F9 decisions remain as recorded; no fixed 50/50, revocation or invented installment bounds.                                                     |
 | V versioning                 | Current-version snapshot at issuance, restrictive references, guards for all DML roles; later versions/availability changes do not alter links.                                       |
 | VI people governance         | No people/payroll actions.                                                                                                                                                            |
 | VII privacy                  | One-time raw token, hash only, no-referrer/no-store, no token path logs, safe transactional audit, existing audit RLS.                                                                |
@@ -55,7 +55,7 @@ Both tables force RLS; safe invoker views expose exact money text and omit hash/
 
 Public UI decision for this increment: valid workspace name and validity message; generic invalid otherwise. No feature flag or Continue area is needed because no action/form is rendered. This is the minimal option explicitly allowed by binding design, not resolution of ND-F10-4. No price or package internals. Add exact public route shape to middleware; preserve no-referrer after response recreation and do not log request paths. Dynamic/no-store prevents secret-bearing request cache artifacts. Host logging verification remains a production obligation under the never-log rule.
 
-Staff UI uses accessible-workspace selector and F9 available/current terms, exact-money schedule editor for PO/WO/Sales, Copy-only show-once dialog and scoped recent statuses. Provisional staff price visible to Sales/Trainer (ND-F10-5 still open); commission omitted. Existing landing-link pattern only pending final navigation decision.
+Staff UI uses accessible-workspace selector and F9 available/current terms, exact-money schedule editor for PO/WO/Sales, Copy-only show-once dialog and scoped recent statuses. Price visibility remains open under ND-F10-5; commission stays omitted for Sales/Trainer under S31-PO-4 SK-009-04. Existing landing-link pattern only pending final navigation decision.
 
 ## Phase 2 — Tasks and gates
 
@@ -65,7 +65,7 @@ The current documentation-only run: fetch → branch from origin/009-packages �
 
 ## NEEDS DECISION
 
-ND-F10-1 staff cancellation (not built); ND-F10-2 count/offset/first-zero bounds (only stated invariants); ND-F10-3 rate values (20/hour marked local-only technical placeholder, production blocker); ND-F10-4 public content beyond name (minimal messages now); ND-F10-5 staff price visibility (provisional yes, confirm). Carry ND-F9-1 currencies, ND-F9-2 duration bounds, ND-F9-3 actual catalog, ND-F9-4 commission visibility denied and ND-F9-5 final navigation. All remain OPEN; all existing [production readiness gates](../../docs/07-production-readiness.md) remain.
+ND-F10-1 no revocation (S31-PO-3); ND-F10-2 no business maximum (S31-PO-4); ND-F10-3 50 per authorized issuing account per rolling 24 hours, Trainer/WO/PO included (S31-PO-3), recorded but not implemented; ND-F10-4 public content beyond name and ND-F10-5 price visibility remain open. Carry ND-F9-1 currencies, ND-F9-2 duration bounds, ND-F9-3 actual catalog, ND-F9-4 commission visibility remains denied (S31-PO-4), and ND-F9-5 final navigation. Existing [production readiness gates](../../docs/07-production-readiness.md) remain.
 
 ## Project Structure
 

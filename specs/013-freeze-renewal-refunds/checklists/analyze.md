@@ -1,5 +1,9 @@
 # F13 plan analysis
 
+## Historical analysis (retained)
+
+The original analysis and S24 addendum below are preserved as history. The current-head refresh is appended after that record.
+
 **Pass**: spec ↔ plan ↔ tasks consistency review. No implementation or tests run. **Model/effort**: Luna High.
 
 ## Findings
@@ -25,3 +29,49 @@ No critical or high inconsistency found in the generated planning artifacts. No 
 ## S24 round 16 implementation addendum
 
 Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the immutable lineage-tail guard and makes each required `record_renewal` key reject absence as `invalid_input`. The quickstart and task history record the new current endpoint; round 12's 82-migration replay remains historical.
+
+## S30 analysis snapshot at reviewed revision `0449b100`
+
+- **Date:** 2026-11-03
+- **Analyzed revisions:** baseline `506e3bf4135b49319e0bdabab4d5166e2d608f5b`; S30 static review at `0449b10075254be9bd31ce6296cf0404abea63d8`, including the final Clarifications and T020 D-20 deferral.
+- **Scope:** current `spec.md`, `plan.md`, `tasks.md`, existing analysis history, code/tests, and D-20/B4 production readiness. Static review only; no tests, stack operations, hosted queries, or deployments.
+- **Entry inventory:** 36 FRs and 14 SCs; plan/tasks exist; existing requirements and analysis checklists exist; Clarifications at the reviewed head cite D-13, D-15, D-20, and S22-PO-5. T001-T018 are checked with historical evidence, T019 remains open, and T020 is explicitly deferred by D-20.
+
+### Findings
+
+| ID | Severity | Artifact | Finding | Disposition |
+|---|---|---|---|---|
+| F13-A01 | MEDIUM | `tasks.md:T019`; D-20; `docs/13-production-readiness.md` | RET-1..3 technical/legal feasibility across backups remains unresolved; B4 client/audit retention values remain open and block production with real client data. | Preserve T019 open and record the existing B4 production blockers; no retention threshold or legal interpretation added. |
+| F13-A02 | MEDIUM | `tasks.md:T020`; D-20 | The task requires a hosted non-production Supabase project, while D-20 limits hosting to one production project and requires development/testing to use local Docker. | Mark T020 `[DEFERRED: docs/04-changes-and-questions.md D-20]`; this is directly sourced and does not claim the hosted proof passed. |
+
+### Coverage and verdict
+
+- FR-to-task mapping: 36/36; SC-to-task mapping: 14/14. Existing T017 records cross-feature FR/SC reconciliation and T018 records runtime consumer boundaries.
+- Clarifications cite D-13, D-15, D-20, and S22-PO-5. Resolved ND-01/ND-08 remain closed; unresolved retention items are explicit.
+- **PASS WITH OPEN PRODUCTION BLOCKERS** — 0 CRITICAL, 0 HIGH, 2 MEDIUM; 50/50 FR/SC items mapped. Static evidence only; no tests executed.
+
+## S31 round 6 refresh
+
+- **Date:** 2026-11-04
+- **Analyzed commit:** `cb08f711716d7f0667dadb4fdce286c1a09cdc92` plus the S31 documentation updates to SC-009 traceability.
+- **Scope:** Spec/plan/tasks/traceability consistency only; no tests or code changed.
+- **Finding:** SC-009 has named evidence for over-balance validation, audit rollback, outbox rollback, deactivation rollback, authorization and hook behavior. No asserting test was found for an injected numeric overflow failure with zero partial lifecycle/financial/receipt effects. Retention and hosted-hook evidence are separate criteria and do not lower SC-009.
+- **Coverage:** FR mapping remains 36/36 and SC mapping 14/14. SC-009 stays PARTIAL for the specific numeric-overflow assertion gap; retention remains tracked under FR-029 and B4/ND-F5-1 (DP-01/DP-02), and hosted verification remains tracked under FR-019/FR-035, T020, and Go-Live gate F13-PB-03. SC-014 is not downgraded or held PARTIAL by the hosted gate; retention and hosted verification are separate criteria from SC-010/SC-014.
+- **Verdict:** 0 CRITICAL, 0 HIGH; 3 MEDIUM. Static source/test-name review only; no tests executed.
+- **Severity note (S33):** this file defines no separate rubric for a missing-verification evidence gap, so the S31 count is stated both ways. Reading 1 (gap excluded as an evidence limitation): 2 MEDIUM carried forward from the S30 snapshot (F13-A01 — RET-1..3/B4 retention production blockers; F13-A02 — T020 D-20 deferral), plus the SC-009 numeric-overflow evidence gap tracked separately as SC-009 PARTIAL. Reading 2 (gap included as a MEDIUM finding): 3 MEDIUM. The higher total is retained: **3 MEDIUM** (F13-A01, F13-A02, and the S31 SC-009 numeric-overflow evidence gap). No severity is lowered and no finding is reclassified downward.
+
+## S33 SK-52 fix round 4 refresh
+
+- **Date:** 2026-11-04T21:49:05+02:00 (after the S33 PR #52 round-4 edits).
+- **Analyzed commit:** `ab3111caeecbac0594eaf7d3cb42de5c1fba0ebe` (this round-4 fix commit's parent; the analyzed state is held in that revision, and this section lands in the round-4 fix commit). Baseline for the S30 snapshot remains `0449b10075254be9bd31ce6296cf0404abea63d8`; S31 round 6 remains `cb08f711716d7f0667dadb4fdce286c1a09cdc92`.
+- **Scope:** documentation-only consistency fixes from PR #52 round-4 review threads (`tasks.md` T020; `spec.md` Clarifications result line; `traceability.md` SC-014 and summaries; this file's S31 Coverage line). No tests, scans, stacks, deployments, cloud queries, or implementation actions performed.
+- **Findings:**
+
+| ID | Severity | Artifact | Finding | Disposition |
+|---|---|---|---|---|
+| F13-R4-01 | LOW | `tasks.md:T020`; `spec.md` Clarifications (2026-11-03 session); S30 F13-A02 disposition | T020 carried `[DEFERRED: docs/04-changes-and-questions.md D-20]`, but no PO deferral exists. D-20 limits development/testing to local Docker and provides no hosted non-production project; it does not defer the task. | T020 kept OPEN, annotated "blocked by D-20 (no cloud staging); Go-Live gate F13-PB-03 remains open". The S30 F13-A02 disposition text is superseded by fact and architect ruling; the S30 snapshot above is retained as the historical record at `0449b100`. No gate is lowered: F13-PB-03 remains an open Go-Live gate and no hosted proof is claimed. |
+| F13-R4-02 | LOW | `traceability.md` SC-014 and summaries | SC-014 covered Stack C Auth hook/worker behavior with recorded executed test evidence; its PARTIAL status rested only on the hosted non-production proof, which is the separate FR-035/T020 gate. | SC-014 upgraded to VERIFIED citing executed test file::name with quoted assertions (see `traceability.md` SC-014 row: `refund-auth-lockout-hook.test.ts::denies client sign-in and refresh immediately after committed deactivation, even while lockout worker is unavailable` asserts HTTP 403 sign-in/refresh with no access token; its before-hook branch asserts HTTP 400 after the Auth Admin ban; `keeps the service-role admin client behind a server-only worker boundary`, etc.). Summaries updated: success criteria 9 VERIFIED / 5 PARTIAL; total 41 VERIFIED / 9 PARTIAL. FR-035 stays PARTIAL (hosted proof blocked by D-20). |
+| F13-R4-03 | LOW | This file, S31 round 6 Coverage line | Retention was tracked under SC-010 and hosted verification under SC-014. SC-010 covers audit/delivered-productivity; SC-014 covers Stack C Auth hook/worker. | Coverage line corrected: retention under FR-029 and B4/ND-F5-1 (DP-01/DP-02); hosted verification under FR-019/FR-035, T020, and F13-PB-03. Coverage counts and SC-009 status unchanged. |
+
+- **Coverage:** FR mapping remains 36/36; SC mapping 14/14. SC-005, SC-009, SC-011, SC-012, SC-013 remain PARTIAL; FR-035 remains PARTIAL (hosted proof blocked by D-20). FR/SC verification counts in `traceability.md`: 32 VERIFIED / 4 PARTIAL FRs; 9 VERIFIED / 5 PARTIAL SCs; 41 VERIFIED / 9 PARTIAL total.
+- **Verdict:** 0 CRITICAL, 0 HIGH, 2 MEDIUM carried (F13-A01 retention production blockers; S31 SC-009 numeric-overflow evidence gap). F13-A02's disposition is superseded, not downgraded or hidden: T020 remains open and blocked; no finding is reclassified downward. Static review only; no tests executed.

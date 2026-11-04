@@ -56,7 +56,7 @@ Because LIFTER has no outgoing email yet, an authorized staff member opens a cli
 1. **Given** the PO, or a WO with an active membership in the client's workspace, **When** they generate a link, **Then** a link is shown once, and one audit event records the actor, the target client and the workspace (without the link or any secret).
 2. **Given** a WO, Trainer or Sales user without access to the client's workspace, **When** they try, **Then** it is denied with a generic message that does not confirm the client exists.
 3. **Given** a Sales user, **When** they try for a client in their own workspace, **Then** it is denied.
-4. **Given** a Trainer in the client's workspace, **When** they try, **Then** it is denied until ND-F4-1 decides which Trainers are authorized.
+4. **Given** a Trainer and a client in the same workspace, **When** the Trainer generates a recovery link, **Then** the approved scope permits it; this behavior remains unimplemented pending the new spec cycle, RLS, tests, and security review required by S31-PO-2.
 5. **Given** a generated link, **When** the client opens it and sets a valid new password, **Then** they are signed in and the old password no longer works.
 6. **Given** a link that was already used, has expired, or was superseded by a newer link for the same account and purpose, **When** it is opened, **Then** it is rejected with a message to ask staff for a new link.
 7. **Given** the generation rate limit is reached, **When** another link is requested, **Then** it is refused and no link is created.
@@ -96,11 +96,11 @@ Anonymous visitors can reach only the sign-in page, the recovery (set new passwo
 - **FR-003**: Users MUST be able to sign out of the current browser.
 - **FR-004**: The server MUST derive the actor (identity, staff role, active workspace memberships) only from a server-verified session on every protected request, and MUST pass it to the existing `authorize()` check. Identities without a staff role MUST hold no staff capabilities.
 - **FR-005**: Only sign-in, recovery (set new password), health and static assets MAY be public. Every other page and action MUST require a verified session. Post-sign-in redirects MUST be same-site only.
-- **FR-006**: A new capability for generating manual recovery links MUST be added to the permission matrix in both walls (app layer and database): PO yes, WO yes (within workspaces of active membership), Sales no, Trainer denied until ND-F4-1 is decided.
+- **FR-006**: A new capability for generating manual recovery links MUST be allowed to PO; allowed to WO with active membership in the client's workspace; denied to Sales; and allowed to all workspace Trainers for clients in that workspace (S31-PO-2). Approved Trainer behavior is recorded but not implemented; it requires a new spec cycle, RLS, tests, and security review.
 - **FR-007**: Generation MUST happen only on the server, MUST check the capability against the target client's workspace, and MUST deny with a generic message that does not confirm whether the client exists.
 - **FR-008**: The privileged credential used to create links MUST exist only on the server and MUST never be sent to, or readable from, the browser.
 - **FR-009**: Every successful generation MUST produce exactly one append-only audit event in the same unit of work, with the new action `recovery_link.generated`, the actor, the target account and workspace, and no link, token, password, email, phone or name. If the audit record cannot be written, no link is issued.
-- **FR-010**: Generation MUST be rate-limited per actor and per target. Over the limit, the request is refused and no link is created. Values: ND-F4-4.
+- **FR-010**: Generation MUST be limited to at most 10 per issuing staff account per rolling hour and 3 per client per rolling 24 hours across issuers (S31-PO-3). Approved values are recorded but current configuration/implementation has not been verified against them.
 - **FR-011**: The link MUST be shown once to the requesting staff member, MUST never be stored by LIFTER in readable form, and MUST never be written to logs, audit details, error reports or analytics.
 - **FR-012**: A recovery link MUST be single-use, MUST expire (value: ND-F4-3), and MUST be invalidated when a newer link is generated for the same account and purpose. Its secret MUST be stored only in hashed form (Constitution VII).
 - **FR-013**: Opening a valid recovery link MUST let the account holder set a new password (meeting the same password rules as sign-in) and then sign them in. Invalid, used or expired links MUST show a message asking the user to contact staff for a new link.
@@ -124,19 +124,39 @@ Anonymous visitors can reach only the sign-in page, the recovery (set new passwo
 - **SC-006**: A used, expired or superseded link succeeds 0 times.
 - **SC-007**: A client given a link can set a new password and reach their signed-in area in under 2 minutes.
 
-## NEEDS DECISION (owner sub-decisions; not invented here)
+## Decision register (owner sub-decisions)
 
-- **ND-F4-1 — Trainer permission.** Which Trainers may generate links: all Trainers of the workspace, only Trainers assigned to the client (assignment arrives in P4), or only Trainers granted a new per-person permission by the PO? Until decided, Trainers are denied (deny-by-default).
-- **ND-F4-2 — Delivery to the client.** How the staff member passes the link: copy to clipboard only, or also a share action (device share sheet, Telegram once P6 exists)? Until decided, the link is shown once with a copy action only.
+- **ND-F4-1 — Trainer permission. Decided (S31-PO-2):** all Trainers in the workspace may generate recovery links for any client in that workspace; this decision requires a new spec cycle, RLS, tests, and security review before implementation. The capability is not implemented by this documentation update.
+- **ND-F4-2 — Delivery to the client. Decided (S31-PO-2):** copy-only delivery.
 - **ND-F4-3 — Link expiry.** **Decided (PO, 2026-10-29):** recovery links expire after 60 minutes in all environments, are single-use, and issuing a replacement invalidates earlier unused links for the same account and purpose. The recovery-session TTL is 15 minutes in all environments and is independent: a link verified before expiry starts a fresh 15-minute session. Password recovery never changes client approval status.
-- **ND-F4-4 — Rate-limit values.** Maximum generations per actor and per target within a time window. Until decided, the limits are configuration values with conservative placeholders used only in local/dev; production requires a decision.
-- **ND-F4-5 — Client-target sequencing.** Client accounts and client profiles are created in P1. Options: (a) F4 ships the full mechanism with client targeting enabled when P1 adds client accounts (recommended); (b) F4 adds a minimal client-account record early; (c) move generation to P1. Until decided, F4 implements (a): the generation path exists and is tested, and the client-target lookup denies every target until client accounts exist.
-- **ND-F4-6 — Staff recovery.** BRD lines 40/104/130 give the PO manual reset links without limiting them to clients. Should the PO also generate recovery links for staff accounts in F4? Not built until decided.
+- **ND-F4-4 — Rate-limit values. Decided (S31-PO-3):** at most 10 links per issuing staff account per rolling hour and at most 3 per client per rolling 24 hours across issuers. Implementation/configuration verification remains pending; existing values are not evidence of conformance.
+- **ND-F4-5 — Client-target sequencing. Decided (S31-PO-2):** keep as built; F4 owns recovery and client lookup comes from P1. No code change is authorized by this decision record.
+- **ND-F4-6 — Staff recovery. Decided (S31-PO-2):** recovery links apply to clients only.
 - **ND-F4-7 — Self-service email reset timing.** BRD line 130 requires self-service email reset. With no external SMTP (owner decision), it is sequenced, not removed (D-07). When is SMTP introduced? Not built until decided.
+
+## Clarifications
+
+### Session 2026-11-04 — S31 PO decisions
+
+- **S31-PO-2 (SK-004-01):** “Confirm D-19 approved” — “D-19 becomes the scope authority; T030 closes; #52's D-19 item can be resolved.” D-19 is approved. This resolves its approval-status question.
+- **S31-PO-2 (SK-004-02):** all workspace Trainers may issue recovery links for any client in that workspace. A new spec cycle, RLS, tests, and security review are required before implementation.
+- **S31-PO-2 (SK-004-03):** copy-only delivery.
+- **S31-PO-2 (SK-004-05):** keep as built; F4 owns recovery; client lookup comes from P1.
+- **S31-PO-2 (SK-004-06):** clients only.
+- **S31-PO-3 (SK-004-04):** maximum 10 per issuing staff account per rolling hour and 3 per client per rolling 24 hours across issuers.
+- **Exact PO option text (S31-PO-2):** “D-19 becomes the scope authority; T030 closes; #52's D-19 item can be resolved.” “copy-only”; “keep as built”; “clients only.”
+- **Exact PO option text (S31-PO-3):** “Max 10 links per issuing staff account per rolling hour, 3 per client per rolling 24 hours across issuers.”
+- **Implementation status:** decisions are recorded; no code was changed. New Trainer permissions, approved limit values, and configured provider expiry still require implementation/configuration evidence before acceptance. No ambiguities remain about approved values; these implementation gaps are not product questions.
+
+### Session 2026-11-03 — compliance reconciliation
+
+- **Decision register:** `docs/04-changes-and-questions.md` D-19 is the approved scope authority per S31-PO-2. S31-PO-2/3 decisions are recorded above. ND-F4-7 remains open.
+- **Result:** approved product decisions are recorded without implementation changes. Implementation and configuration gaps remain tracked as tasks.
+- **Evidence limit:** Static source/test inspection only; no tests were executed in this lane.
 
 ## Assumptions
 
-- The owner decisions of 2026-10-27 extend BRD line 104 (PO manual reset links) to WOs and authorized Trainers. They will be recorded as a decision-register entry (D-19) in this feature's PR for PO approval.
+- D-19 is approved per S31-PO-2 and is the scope authority for recovery. S31-PO-2 directs T030 closure; see the decision register and task status.
 - Password rules (minimum length/strength) use the auth provider's configurable minimum. A stricter rule would be a later decision; none is stated in the sources.
 - Account lockout beyond the auth provider's built-in sign-in rate limiting is not required by the sources; no IP blocking is added.
 - Client sign-in uses the same flow once client accounts exist (P1). F4 tests use staff fixtures and an auth-only fixture for the client target.

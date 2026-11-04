@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-27
 
-**Status**: Draft artifacts; binding architect design transcribed. Implementation and Claude audit pending.
+**Status**: Draft artifacts; binding architect design transcribed. (Historical 2026-10-27 status superseded.) Implementation through T034 is complete: T001–T033 were ticked from local evidence and T034 was ticked after independent Claude audit on 2026-10-28; S31-PO-3/4 approved behavior is unimplemented. T035 remains a future unchecked task and production validation remains open.
 
 **Input**: User-supplied binding architect/reviewer design. Sources: [BRD/PRD](../../LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md) BRD-04.1/04.2, PRD-02 required/acceptance, PRD-07 line 196 and journeys A/E; [architecture](../../docs/02-architecture.md) Registration tokens and Subscriptions/Installments; [decisions](../../docs/04-changes-and-questions.md) D-08/D-09/D-11/D-12/D-17/D-19; [Constitution v1.1.0](../../.specify/memory/constitution.md). D-12/D-17 supersede the historical three-month 50/50 rule, including PRD line 198.
 
@@ -67,7 +67,7 @@ Staff review recent links within their workspaces, with status and approved term
 - **FR-003**: Every link MUST use a 32-byte cryptographically random base64url token, globally unique SHA-256 hash only in storage, immutable creator/time and fixed `expires_at = created_at + 24 hours`. Raw token/URL MUST be returned once, never stored, logged, cached or recovered from listing.
 - **FR-004**: Optional immutable schedule rows MUST be inserted in the link's transaction: contiguous sequence 1..n, positive bigint minor-unit amounts, nonnegative integer day offsets strictly increasing, exact total equal to captured price. NULL schedule means no rows and one full payment. No first-offset-zero requirement or invented business upper bound; no historical 50/50 rule.
 - **FR-005**: Links and schedules MUST reject DELETE/TRUNCATE for all roles and changes to immutable fields. Only NULL-to-value `opened_at` and `consumed_at` transitions are permitted under guards; repeats cannot replace/reset either timestamp. F10 exposes no consumption or direct mutation path.
-- **FR-006**: Issuance MUST enforce an atomic per-actor rolling limit using one SQL placeholder-values function; ND-F10-3 remains a production blocker. Use `stale_terms` only for authorized unavailable/superseded terms (translated refresh/reload guidance); use generic `not_permitted` / `invalid_input` / `unavailable` for other failures without token/provider/existence details. Failed writes roll back all effects.
+- **FR-006**: Issuance MUST enforce an atomic per-authorized-issuing-account rolling limit of 50 links per rolling 24 hours, including Trainer, WO, and PO accounts, with no exceptions, unlimited roles, or per-workspace resets (S31-PO-3). This approved behavior is recorded but not implemented; task T035 tracks the future implementation cycle. Use `stale_terms` only for authorized unavailable/superseded terms (translated refresh/reload guidance); use generic `not_permitted` / `invalid_input` / `unavailable` for other failures without token/provider/existence details. Failed writes roll back all effects.
 - **FR-007**: Anonymous/authenticated open MUST hash raw input in SQL, refuse consumed links, set first open only before expiry, and accept strictly before expiry OR strictly before first-open + 30 minutes when first-open was before expiry. Unknown/expired/consumed return the same invalid response; no IP blocking or table reads for anonymous callers.
 - **FR-008**: A shared pure time function with injected clock MUST implement `valid_until = max(expires_at, opened_at + 30 minutes)` only when `opened_at < expires_at`; consumed always invalid, strict deadline comparisons. Table-driven unit and SQL parity tests MUST cover boundaries.
 - **FR-009**: Public `/register/[token]` MUST be explicitly public in middleware, Arabic-first/English and Design-System accessible. Valid shows only workspace display name plus minimal validity message; invalid one generic message. No public financial/package data, branding implementation, form/account creation, marketing or F11 placeholder. Set no-referrer and never log token-bearing paths.
@@ -97,16 +97,32 @@ Strict equality at expiry/grace is invalid; opening early must not shorten expir
 - **SC-005**: AR/EN public invalid and staff journeys pass tested axe checks and keyboard/state review; public responses include no-referrer, and anonymous staff requests require login.
 - **SC-006**: Each required mutation produces a failing meaningful test, restored implementation passes, and Claude audits Codex's recorded final-phase evidence.
 
-## NEEDS DECISION — remain OPEN
+## NEEDS DECISION — residual open items
 
-- **ND-F10-1**: Staff revocation/cancellation. No source defines it; no revoke control, column or endpoint is added.
-- **ND-F10-2**: Maximum installment count, maximum offset and whether first offset must be zero. Enforce only stated rules plus storage limits.
-- **ND-F10-3**: Issuance rate-limit count/window. Explicit local/dev placeholders only, centralized in one SQL function; production blocker until PO approval.
+- **ND-F10-1 — Staff revocation/cancellation. Decided (S31-PO-3):** no revocation; no revoke control, column, or endpoint is added.
+- **ND-F10-2 — Business maximum. Decided (S31-PO-4):** no business maximum. Enforce only stated rules plus storage limits.
+- **ND-F10-3 — Issuance rate-limit count/window. Decided (S31-PO-3):** 50 per authorized issuing account per rolling 24 hours, including Trainer/WO/PO, with no exception or workspace reset. Recorded but not implemented.
 - **ND-F10-4**: Public content beyond workspace name before branding. Plan chooses validity messages only for this increment; no action/form stub. This does not settle future content/branding policy.
 - **ND-F10-5**: Sales/Trainer price visibility on staff screen. Interim binding default: yes; price is separate from commission. PO confirmation remains required.
 - Carry **ND-F9-1** allowed currencies (format only), **ND-F9-2** custom-duration bounds (existing technical limits), **ND-F9-3** actual catalog/terms (NEEDS SOURCE CONFIRMATION, no seeds), **ND-F9-4** Sales/Trainer commission visibility (denied), **ND-F9-5** final navigation (existing landing pattern only).
 
 Existing [production gates](../../docs/07-production-readiness.md), including B4 and recovery decisions, remain open. ND-F4 expiry/limits do not replace F10's fixed 24 hours or its own rate decision. Local work/PRs remain permitted; no deployment/cloud migration is authorized.
+
+## Clarifications
+
+### Session 2026-11-03 — compliance reconciliation
+
+- **Decision register:** `docs/04-changes-and-questions.md` D-17 and D-23; the F12 final PO decision record dated 2026-10-29; and the carried F9 decisions listed above.
+- **Result:** Historical S30 reconciliation preserved ND-F10-1..5 as open at that time. S31-PO-3/4 subsequently resolved ND-F10-1..3 and SK-009-04; residual open items are listed above. No new ambiguity beyond those recorded was identified for the merged F10 scope.
+- **Evidence limit:** Static artifact/code/test review only; no tests were executed in this lane.
+
+### Session 2026-11-04 — S31 PO decisions
+
+- **S31-PO-3 (SK-010-01):** “No revocation” — no revoke/cancel behavior is added.
+- **S31-PO-4 (SK-010-02):** “No business maximum” — enforce stated constraints and storage limits only.
+- **S31-PO-3 (SK-010-03):** “50/account/rolling 24h incl. Trainer/WO/PO” — no exceptions or per-workspace resets. FR-006 records the approved value; T035 tracks future implementation, concurrency tests, and verification. No implementation change is made here.
+- **S31-PO-4 (SK-009-04):** Sales/Trainer commission visibility remains denied. This is recorded here as a carried F9 decision; `specs/009` remains owned by the separate F9 lane and is not edited.
+- **Result:** ND-F10-1..3 are decided and recorded; ND-F10-4/5 and carried ND-F9-1..3/5 remain open. No open ambiguities remain about the approved decisions. No tests or implementation changes were made.
 
 ## Assumptions and Constitution Check
 
