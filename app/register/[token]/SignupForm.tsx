@@ -89,6 +89,7 @@ export function SignupForm({
   >([]);
   const [identityFocusRequest, setIdentityFocusRequest] = useState(0);
   const focusIdentityErrorAfterRenderRef = useRef(false);
+  const identityFieldEditRef = useRef(false);
   const formRef = useRef<HTMLFormElement>(null);
   const resultRef = useRef<HTMLParagraphElement>(null);
   const nameRef = useRef<HTMLInputElement>(null);
@@ -147,11 +148,18 @@ export function SignupForm({
   }
 
   function changeIdentityField(field: SignupIdentityField) {
-    if (touchedIdentityFields.includes(field)) validateTouchedField(field);
+    if (touchedIdentityFields.includes(field)) {
+      identityFieldEditRef.current = true;
+      validateTouchedField(field);
+    }
   }
 
   useEffect(() => {
     if (!submitted) return;
+    if (identityFieldEditRef.current) {
+      identityFieldEditRef.current = false;
+      return;
+    }
     const firstIdentityError = (
       ['name', 'dateOfBirth', 'username', 'telegramUsername'] as const
     ).find(hasIdentityError);
