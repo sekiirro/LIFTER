@@ -62,7 +62,7 @@ All S33-01..12 product choices, C1–C5 and Arabic LABELS are resolved. Only BLO
 | FR-024 promotional dates/link behavior | T056, T057, T067 | date-boundary and issued-link snapshot tests | NOT-IMPLEMENTED |
 | FR-025 collections/settlement reporting | T060, T068 | actual collection, commission and separate settlement fixtures | NOT-IMPLEMENTED |
 | FR-026 FX snapshot/failure behavior | T058, T059, T067, T068 | date/provider/rate/retry tests | NOT-IMPLEMENTED |
-| FR-027 no client data in outbound API request | T059, T062 | captured request allowlist test + security review | Planned, no evidence |
+| FR-027 no client data in outbound API request | T059, T062 | captured request allowlist test + security review | BLOCKED: S33-08 provider verification; T062 independent security review |
 
 SC-013..SC-018 map respectively to T052/T053, T054/T055, T056/T057, T058/T060, T058/T059, and T059/T060/T062. No task is ticked. Existing rows above retain their S31 evidence status; this cycle ran no tests/builds/stacks and claims no implementation evidence.
 
