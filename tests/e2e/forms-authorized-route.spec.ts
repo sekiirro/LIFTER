@@ -222,14 +222,28 @@ async function signIn(page: Page) {
   await expect(page).toHaveURL(/\/$/u);
 }
 
-async function advanceToGoal(page: Page, targetAssignmentId: string) {
+async function advanceToGoal(
+  page: Page,
+  targetAssignmentId: string,
+  locale: 'ar' | 'en',
+  useKeyboard = false,
+) {
   await page.goto(`/forms/${targetAssignmentId}`);
   await page.getByRole('button').nth(1).click();
   await page.getByRole('button').nth(1).click();
   await expect(page.getByRole('radio')).toHaveCount(2);
-  await page.getByRole('radio').first().focus();
-  await page.keyboard.press('Space');
-  await expect(page.getByRole('textbox').first()).toBeVisible();
+  const firstChoice = page.getByRole('radio').first();
+  if (useKeyboard) {
+    await firstChoice.focus();
+    await page.keyboard.press('Space');
+  } else {
+    await firstChoice.click({ noWaitAfter: true });
+  }
+  if (locale === 'en')
+    await expect(
+      page.getByRole('textbox', { name: 'Your goal' }),
+    ).toBeVisible();
+  else await expect(page.getByRole('textbox').first()).toBeVisible();
 }
 
 async function createFreshAssignment(
@@ -667,7 +681,7 @@ test('real route supports keyboard progression and presents the same safe not-fo
     },
   ]);
   const keyboardAssignmentId = await createFreshAssignment();
-  await advanceToGoal(page, keyboardAssignmentId);
+  await advanceToGoal(page, keyboardAssignmentId, 'en', true);
   const goal = page.getByRole('textbox', { name: 'Your goal' });
   await goal.focus();
   await goal.fill('Build strength');
@@ -855,7 +869,7 @@ test('real route autosave exposes each state, retries failures, and records save
     for (const width of [390, 1440] as const) {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
       const stateAssignmentId = await createFreshAssignment();
-      await advanceToGoal(page, stateAssignmentId);
+      await advanceToGoal(page, stateAssignmentId, locale);
       const field = page.getByRole('textbox').first();
       await expect(field).toBeVisible();
       const capture = async (state: string) => {
@@ -969,8 +983,9 @@ test('real route autosave exposes each state, retries failures, and records save
     },
   ]);
   const latencyAssignmentId = await createFreshAssignment();
-  await advanceToGoal(page, latencyAssignmentId);
-  const field = page.getByRole('textbox', { name: 'Your goal' });
+  await advanceToGoal(page, latencyAssignmentId, 'en');
+  const field = page.getByRole('textbox').first();
+  await expect(field).toBeVisible();
   const samples: number[] = [];
   for (let sample = 0; sample < 8; sample += 1) {
     const responsePromise = page.waitForResponse(
@@ -1016,7 +1031,7 @@ test('submitted answer edits wait for explicit correction and use the latest rev
       url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
     },
   ]);
-  await advanceToGoal(page, correctionAssignmentId);
+  await advanceToGoal(page, correctionAssignmentId, 'en');
   const correctionBodies: Array<Record<string, unknown>> = [];
   const draftRequests: string[] = [];
   page.on('request', (request) => {
