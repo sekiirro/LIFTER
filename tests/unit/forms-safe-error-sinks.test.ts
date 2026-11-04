@@ -28,6 +28,13 @@ const jobsMigration = readFileSync(
   join(root, 'supabase/migrations/20261027160000_jobs.sql'),
   'utf8',
 );
+const jobsAllowlistMigration = readFileSync(
+  join(
+    root,
+    'supabase/migrations/20261107032600_f15_allowlisted_job_error_codes.sql',
+  ),
+  'utf8',
+);
 const auditMigration = readFileSync(
   join(
     root,
@@ -128,6 +135,21 @@ it('T005 stores only validated error codes in jobs and projects only that code i
       auditMigration.replace(
         'new.last_error',
         "new.payload->>'private_answer'",
+      ),
+    ),
+  ).toBe(false);
+});
+
+it('T005 maps unapproved job diagnostics to handler_error before persistence', () => {
+  const storesOnlyAllowlistedErrors = (source: string) =>
+    source.includes("else 'handler_error'") &&
+    source.includes('last_error = safe_error_code');
+  expect(storesOnlyAllowlistedErrors(jobsAllowlistMigration)).toBe(true);
+  expect(
+    storesOnlyAllowlistedErrors(
+      jobsAllowlistMigration.replace(
+        'last_error = safe_error_code',
+        'last_error = error_code',
       ),
     ),
   ).toBe(false);

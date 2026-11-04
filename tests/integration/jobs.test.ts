@@ -234,7 +234,7 @@ describe('jobs outbox (T005)', () => {
         await service.rpc('jobs_fail', {
           id,
           lease: claimed.lease_token,
-          error_code: 'telegram_transport',
+          error_code: canary,
         }),
       ),
     ).toBe('dead');
@@ -246,7 +246,7 @@ describe('jobs outbox (T005)', () => {
     `;
     expect(job).toMatchObject({
       status: 'dead',
-      last_error: 'telegram_transport',
+      last_error: 'handler_error',
       payload: expect.objectContaining({
         alert_id: expect.any(String),
         recipient_id: expect.any(String),
@@ -256,7 +256,7 @@ describe('jobs outbox (T005)', () => {
       action: 'job.dead_lettered',
       details: {
         kind: 'forms.alert',
-        error: 'telegram_transport',
+        error: 'handler_error',
         attempts: 1,
       },
     });
