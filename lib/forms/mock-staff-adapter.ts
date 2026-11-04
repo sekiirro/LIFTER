@@ -232,6 +232,12 @@ export function createMockFormsStaffAdapter(): MockFormsStaffAdapter {
           `section-${index + 1}`,
         ]),
       );
+      const questionIds = new Map(
+        current.questions.map((question, index) => [
+          question.id,
+          `question-${index + 1}`,
+        ]),
+      );
       const copied: StaffFormDraft = {
         ...current,
         id: `mock-form-${nextId++}`,
@@ -243,8 +249,31 @@ export function createMockFormsStaffAdapter(): MockFormsStaffAdapter {
         })),
         questions: current.questions.map((question, index) => ({
           ...question,
-          id: `question-${index + 1}`,
+          id: questionIds.get(question.id) ?? `question-${index + 1}`,
           sectionId: sectionIds.get(question.sectionId) ?? question.sectionId,
+          ...(question.when
+            ? {
+                when: {
+                  ...question.when,
+                  conditions: question.when.conditions.map((condition) => ({
+                    ...condition,
+                    questionId:
+                      questionIds.get(condition.questionId) ??
+                      condition.questionId,
+                  })),
+                },
+              }
+            : {}),
+          ...(question.derivedOptions
+            ? {
+                derivedOptions: {
+                  ...question.derivedOptions,
+                  sourceQuestionId:
+                    questionIds.get(question.derivedOptions.sourceQuestionId) ??
+                    question.derivedOptions.sourceQuestionId,
+                },
+              }
+            : {}),
         })),
       };
       versionRoots.set(copied.id, versionRoots.get(formId) ?? formId);

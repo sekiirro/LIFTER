@@ -233,6 +233,46 @@ describe('FormPreview conditions', () => {
 });
 
 describe('immutable mock publication', () => {
+  it('remaps conditional and derived question references when copying a form', async () => {
+    const adapter = createMockFormsStaffAdapter();
+    const source = (await adapter.load()).forms[0]!;
+    const conditionalIndex = source.questions.findIndex(
+      (question) => question.when?.conditions.length,
+    );
+    const derivedIndex = source.questions.findIndex(
+      (question) => question.derivedOptions?.sourceQuestionId,
+    );
+    expect(conditionalIndex).toBeGreaterThanOrEqual(0);
+    expect(derivedIndex).toBeGreaterThanOrEqual(0);
+    const copied = await adapter.copy('trainer', source.id);
+    expect(copied.status).toBe('ok');
+    if (copied.status !== 'ok') return;
+    const sourceCondition =
+      source.questions[conditionalIndex]!.when!.conditions[0]!;
+    const copiedCondition =
+      copied.form.questions[conditionalIndex]!.when!.conditions[0]!;
+    const sourceConditionTarget = source.questions.findIndex(
+      (question) => question.id === sourceCondition.questionId,
+    );
+    expect(copiedCondition.questionId).toBe(
+      copied.form.questions[sourceConditionTarget]?.id,
+    );
+    const sourceDerivedTarget = source.questions.findIndex(
+      (question) =>
+        question.id ===
+        source.questions[derivedIndex]!.derivedOptions!.sourceQuestionId,
+    );
+    expect(
+      copied.form.questions[derivedIndex]!.derivedOptions!.sourceQuestionId,
+    ).toBe(copied.form.questions[sourceDerivedTarget]?.id);
+    expect(source.questions[conditionalIndex]?.when?.conditions[0]).toEqual(
+      sourceCondition,
+    );
+    expect(
+      source.questions[derivedIndex]?.derivedOptions?.sourceQuestionId,
+    ).toBe(source.questions[sourceDerivedTarget]?.id);
+  });
+
   it('keeps each published snapshot frozen and rejects edits to a published version', async () => {
     const adapter = createMockFormsStaffAdapter();
     const initial = await adapter.saveDraft('trainer', {
