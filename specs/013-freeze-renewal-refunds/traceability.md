@@ -38,7 +38,7 @@ Static source inspection and review of historical evidence recorded in `tasks.md
 | FR-032 | T017-T018 | F12/F14 function/audit/matrix reconciliation in `tests/integration/f13-cross-feature-contract.test.ts` | VERIFIED |
 | FR-033 | T002,T008,T010,T011,T017 | migration order, shared-function and cross-feature ownership checks in T017 | VERIFIED |
 | FR-034 | T001-T002,T017-T019 | planning restrictions and unresolved-slice treatment recorded in tasks, Analyze and production readiness docs | VERIFIED |
-| FR-035 | T003,T016,T020 | `tests/integration/refund-auth-lockout-hook.test.ts`; hosted non-production smoke test is deferred under D-20 | PARTIAL |
+| FR-035 | T003,T016,T020 | `tests/integration/refund-auth-lockout-hook.test.ts`; hosted non-production smoke test blocked by D-20 (no cloud staging); Go-Live gate F13-PB-03 remains open | PARTIAL |
 | FR-036 | T002,T005,T010,T017 | `tests/integration/matrix-parity.test.ts` bidirectional capability parity | VERIFIED |
 | SC-001 | T012-T013 | refund principal/commission cap and cumulative allocation tests in `refund-ledger.test.ts` and `refund-allocation.test.ts` | VERIFIED |
 | SC-002 | T012-T014 | `tests/integration/refund-ledger-integrity.test.ts` successor, cancellation and immutability probes | VERIFIED |
@@ -53,10 +53,10 @@ Static source inspection and review of historical evidence recorded in `tasks.md
 | SC-011 | T018 | No rendered UI is implemented in this feature; required later UI surface gate is documented, but no rendered verification artifact exists | PARTIAL |
 | SC-012 | T017 | F13 projection/input assertions are present; P4 consumer behavior is explicitly not claimed by F13 | PARTIAL |
 | SC-013 | T017-T018 | F13 owns interval facts only; P5 check-in consumer test is outside this feature | PARTIAL |
-| SC-014 | T003,T016,T020 | Stack C Auth hook/worker tests are recorded; hosted proof is deferred by D-20 | PARTIAL |
+| SC-014 | T003,T016,T020 | Stack C evidence executed on Stack C (recorded in `tasks.md` T003/T016; focused hook suite 5/5 green, full gates green): `tests/integration/refund-auth-lockout-hook.test.ts::denies client sign-in and refresh immediately after committed deactivation, even while lockout worker is unavailable` asserts `expect(deniedSignIn.status).toBe(403); expect(deniedRefresh.status).toBe(403);` and `expect(deniedSignIn.body.access_token).toBeUndefined();` with no token issued while the worker is failing; its before-hook branch asserts `expect(lockout.error).toBeNull();` (Auth Admin ban succeeds) and `expect(afterBanSignIn.status).toBe(400); expect(afterBanRefresh.status).toBe(400);`; `::keeps sign-in allowed when deactivation is rolled back`; `::does not change staff sign-in and restricts hook execution to supabase_auth_admin`; `::passes claims through unchanged for an active client and fails closed for malformed hook events`. Unit `tests/unit/refund-auth-lockout.test.ts::keeps the service-role admin client behind a server-only worker boundary`; `::rolls back both refund deactivation and outbox when the transaction fails`; `::uses one idempotent client lockout row across repeated refunds`; `::keeps the refund committed, schedules bounded retry, and raises a safe alert after persistent failure`. Hosted non-production verification is the FR-035/T020 gate (blocked by D-20, no cloud staging; Go-Live gate F13-PB-03 remains open), not an SC-014 criterion. SC-014 is not held PARTIAL by that separate gate. | VERIFIED |
 
 ## Summary
 
 - Functional requirements: 32 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
-- Success criteria: 8 VERIFIED, 6 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
-- Total: 40 VERIFIED / 10 PARTIAL. Static review only; no tests were run. T019 remains open; T020 is `[DEFERRED: docs/04-changes-and-questions.md D-20]`.
+- Success criteria: 9 VERIFIED, 5 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- Total: 41 VERIFIED / 9 PARTIAL. Static review only; no tests were run in this lane. T019 remains open; T020 remains open and is blocked by D-20 (no cloud staging); Go-Live gate F13-PB-03 remains open. No PO deferral exists for T020. SC-014 was upgraded to VERIFIED on 2026-11-04 (S33 round 4) citing the executed Stack C tests recorded in `tasks.md` T003/T016; hosted verification remains tracked under FR-035/T020/F13-PB-03.

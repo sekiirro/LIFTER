@@ -93,3 +93,22 @@
 - Requirement semantics are unchanged; no FR/SC re-mapping is required. ND-F4-3 is unchanged and explicit.
 - Constitution I/III/IV alignment is preserved: no capability, matrix, RLS, or recovery-link behavior changed.
 - **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 7 inherited MEDIUM, 1 LOW documentation-only correction in this round; 22/22 FR/SC items mapped.
+
+## S33 SK-52 fix round 4 refresh
+
+- **Date:** 2026-11-04T21:49:05+02:00 (after the S33 PR #52 round-4 edits).
+- **Analyzed commit:** `ab3111caeecbac0594eaf7d3cb42de5c1fba0ebe` (this round-4 fix commit's parent; the analyzed state is held in that revision, and this section lands in the round-4 fix commit). Round 2 landed as `ff2174de9e9594d76f8497b0108fd6e23cb813be`.
+- **Scope:** static consistency and evidence review; no tests, scans, stacks, deployments, cloud queries, or implementation actions performed. No `spec.md`, `plan.md` or `tasks.md` text changed in this round.
+
+### Findings
+
+| ID | Severity | Artifact | Finding | Disposition |
+|---|---|---|---|---|
+| F4-R4-01 | LOW | `traceability.md` FR-001/FR-002/FR-003/FR-007/FR-011 rows | Task references did not match task ownership: FR-001 and FR-002 omitted T014 (owns sign-in), FR-003 omitted T015 (owns sign-out), FR-007 cited work through T020 while the cited unit test is owned by T021, and FR-011 cited the `tests/e2e/auth.spec.ts::closing the recovery dialog clears the displayed link` assertion without T016 (owner of `tests/e2e/auth.spec.ts`, which contains the cited test). | Corrected as documentation-only traceability reconciliation: FR-001/FR-002 now cite `T014`, FR-003 cites `T015`, FR-007 cites `T017-T021`, FR-011 cites `T016,T019-T020,T024`. No asserting test, evidence value, or status changed; all five rows remain VERIFIED. Requirement semantics unchanged. |
+
+### Coverage and verdict
+
+- FR-to-task mapping remains 15/15; SC-to-task mapping remains 7/7 (22/22 total). No task checkbox or evidence status changed.
+- Requirement semantics are unchanged; no FR/SC re-mapping is required. ND-F4-7 and implementation/configuration gaps remain explicit.
+- Constitution I/III/IV alignment is preserved: no capability, matrix, RLS, or recovery-link behavior changed.
+- **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 7 inherited MEDIUM, 1 LOW documentation-only correction in this round; 22/22 FR/SC items mapped.

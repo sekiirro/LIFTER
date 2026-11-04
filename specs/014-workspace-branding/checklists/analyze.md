@@ -50,3 +50,22 @@
 - Requirement semantics are unchanged (no scope or behavior change); the only requirement↔task linkage change is FR-009↔T039 and FR-014↔T040, mirrored in traceability.
 - FR-009 remains PARTIAL (owner-facing editor deferred by S19-PO-2); FR-011, FR-012, SC-005 remain PARTIAL unchanged; T039/T040/T041/T043 remain open production-evidence tasks.
 - **PASS WITH MEDIUM EVIDENCE GAPS** — 0 CRITICAL, 0 HIGH, 3 MEDIUM, 2 LOW documentation-only corrections in this round; 29/29 FR/SC items mapped.
+
+## S33 SK-52 fix round 4 refresh
+
+- **Date:** 2026-11-04T21:49:05+02:00 (after the S33 PR #52 round-4 edits).
+- **Analyzed commit:** `ab3111caeecbac0594eaf7d3cb42de5c1fba0ebe` (this round-4 fix commit's parent; the analyzed state is held in that revision, and this section lands in the round-4 fix commit). Baseline for the S33 round-7 analysis remains `2eb3733b`.
+- **Scope:** static consistency and evidence review; no tests, scans, stacks, or implementation actions performed. No `spec.md`, `plan.md` or `tasks.md` text changed in this round.
+
+### Findings
+
+| ID | Severity | Artifact | Finding | Disposition |
+|---|---|---|---|---|
+| F14-R4-01 | LOW | `traceability.md` FR-014 row | The FR-014 Evidence cell cites T021 for audit-row permanence and independence (`tests/integration/branding-audit.test.ts::keeps audit rows detached from collectible targets and immutable` — RED before migration, GREEN on final fresh Stack B reset), but the Task(s) cell omitted T021. | Corrected as documentation-only traceability reconciliation: FR-014 Task(s) now cite `T005,T014,T021,T027,T040,T043`. No asserting test, evidence value, or status changed; FR-014 remains VERIFIED on the cited executed T021 evidence. T040 (production backup/restore + independent audit-retention verification) remains open and is not claimed as satisfied. |
+
+### Coverage and verdict
+
+- FR-to-task mapping remains 18/18; SC-to-task mapping remains 11/11 (29/29 total). No task checkbox or evidence status changed; traceability totals remain 20 VERIFIED / 9 PARTIAL.
+- Requirement semantics are unchanged (no scope or behavior change); the only requirement–task linkage change is FR-014↔T021, mirrored in traceability.
+- FR-009 remains PARTIAL (owner-facing editor deferred by S19-PO-2); FR-011, FR-012, SC-005 remain PARTIAL unchanged; T039/T040/T041/T043 remain open production-evidence tasks.
+- **PASS WITH MEDIUM EVIDENCE GAPS** — 0 CRITICAL, 0 HIGH, 3 MEDIUM, 1 LOW documentation-only correction in this round; 29/29 FR/SC items mapped.
