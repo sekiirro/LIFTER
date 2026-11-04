@@ -43,8 +43,17 @@
 
 ## Batch 4: S32 cross-branch migration-version guard (amendment, 2026-11-04)
 
-- [x] T016 [US2] [FR-015, SC-006] Add the opt-in `--all-remote-refs` cross-branch mode to `scripts/check-migration-timestamps.mjs` plus the `check:migration-versions:remote` npm script: enumerate `refs/remotes/origin` via `git for-each-ref` (excluding symbolic `refs/remotes/origin/HEAD`), list each ref's `supabase/migrations` via `git ls-tree` (no checkout), exit non-zero reporting version + both filenames + carrying refs when one 14-digit version maps to two different filenames; same filename on several refs passes; default in-tree mode and CI unchanged; unit tests with an injected ref-listing function, RED first then GREEN. (S32-R3, S32-PO-3 "prevent future duplicates".) Tests executed and passed on the implementation commit (see traceability.md).
+- [x] T019 [US6] [FR-020, SC-010] Add the opt-in `--all-remote-refs` cross-branch mode to `scripts/check-migration-timestamps.mjs` plus the `check:migration-versions:remote` npm script: enumerate `refs/remotes/origin` via `git for-each-ref` (excluding symbolic `refs/remotes/origin/HEAD`), list each ref's `supabase/migrations` via `git ls-tree` (no checkout), exit non-zero reporting version + both filenames + carrying refs when one 14-digit version maps to two different filenames; same filename on several refs passes; default in-tree mode and CI unchanged; unit tests with an injected ref-listing function, RED first then GREEN. (S32-R3, S32-PO-3 "prevent future duplicates".) Tests executed and passed on the implementation commit (see traceability.md).
 
 ## Dependencies
 
-B1 → B2 → B3. One writing agent at a time. T016 is independent of B1–B3 and lands after them as a CI-baseline tooling amendment.
+B1 → B2 → B3. One writing agent at a time. T019 is independent of B1–B3 and lands after them as a CI-baseline tooling amendment.
+B1 → B2 → B3. One writing agent at a time.
+
+## S33 CI optimization tasks
+
+- [x] T016 [FR-015, FR-016, FR-017] Restrict push CI to `main`; retain `pull_request`; add PR-number concurrency that cancels superseded PR runs and unique ref-plus-run-ID groups for main pushes.
+- [x] T017 [FR-018] Verify validate has no browser-dependent steps, then remove only the unused Playwright browser installation from validate.
+- [x] T018 [FR-019] Preserve separate required `storage` job and existing job names, pinned actions, and every other workflow step; update docs/08-agent-workflow.md and document workflow changes in the PR body.
+
+Tasks remain unchecked until the exact PR head has the required executed green CI evidence and traceability evidence is recorded.

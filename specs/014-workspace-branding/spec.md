@@ -243,3 +243,8 @@ Earlier ND-F14-1..6 wording is historical and superseded by the final decision r
 - **DG-F14-3 — Decided (PO, 2026-10-28)**: Show inline original-versus-adjusted brand color comparison with an accessibility explanation.
 
 **Plan gate:** The PO-approved focused Sol Medium critique was completed against `c575cfa35b8a22b2f1870692f91846558f332e5e`; all 8 findings were accepted and the architect response is recorded in [spec debate r2](research/spec-debate-r2-scope.md). Final PO decisions are recorded above; r1/r2 debate records remain historical, with retention superseded by PO 2026-10-29 F14-5.
+## Clarifications
+
+### Session 2026-11-04 — S33-PO-4
+
+PO source: S33-PO-4, “Fix stack drift, flaky tests, billing-related CI blockers, and PR/issue backlog organization.” S33 may converge the three installed branding function bodies to the existing post-20261102140000/post-20261102144000 definitions, add migration assertions for those expected bodies, and make existing GC integration tests bounded and fixture-aware. This preserves FR-009 cleanup and reference guarantees and adds no product behavior, data deletion, grant, or schema-object change. No open ambiguities remain within this convergence/test scope.

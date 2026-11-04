@@ -164,3 +164,6 @@ No constitution exception is requested. The necessary additional complexity is b
 
 - **Architect items**: AD-F14-1 migration/audit ordering remains an implementation sequencing constraint; hosted compatibility proof and pinned Stack-B header/operation proof are acceptance gates, not design alternatives. AD-F14-2's port list is decided and bounded as stated above.
 - **Genuine PO conflicts**: None identified after applying final F14-1..8. Numeric upload caps and banner aspect/height are intentionally evidence/design-derived gates specified by the PO, not unresolved choices to invent here.
+## S33-PO-4 test and DB hygiene
+
+A new forward migration may replace only branding_gc_claim, branding_gc_finalize, and branding_asset_attach with their already-approved current-main bodies, then assert required source markers. GC tests must drain using bounded deadlines and identify fixture objects across pages; no product behavior or grants change.
