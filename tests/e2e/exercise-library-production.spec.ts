@@ -274,15 +274,19 @@ for (const locale of ['ar', 'en'] as const) {
         const href = `/exercise-library/${id}?scope=workspace&workspace=${fixture.wsA.id}`;
         const m = getMessages(locale);
         await page.goto(href);
+        await expect(page.getByTestId('exercise-detail')).toBeVisible();
         const remove = page.getByRole('button', {
           name: m['catalog.editorRemove'],
         });
         await expect(remove).toBeVisible();
         await remove.focus();
         await expect(remove).toHaveCSS('outline-style', 'solid');
-        await remove.click();
+        await page.keyboard.press('Enter');
         const dialog = page.getByRole('dialog');
         await expect(dialog).toBeVisible();
+        await expect(
+          dialog.getByRole('button', { name: m['dialog.cancel'] }),
+        ).toBeFocused();
         await expect(
           dialog.getByRole('heading', { name: m['catalog.editorRemove'] }),
         ).toBeVisible();
@@ -295,17 +299,20 @@ for (const locale of ['ar', 'en'] as const) {
           fullPage: true,
         });
 
-        await dialog.getByRole('button', { name: m['dialog.cancel'] }).click();
+        await page.keyboard.press('Enter');
         await expect(
           page.getByText(m['catalog.editorLifecycleActive']),
         ).toBeVisible();
         await expect(remove).toBeVisible();
+        await expect(remove).toBeFocused();
         await expect(dialog).not.toBeVisible();
-        await remove.click();
+        await remove.focus();
+        await page.keyboard.press('Enter');
         await page
           .getByRole('dialog')
           .getByRole('button', { name: m['dialog.confirm'] })
-          .click();
+          .focus();
+        await page.keyboard.press('Enter');
         await expect(
           page
             .getByTestId('exercise-detail')

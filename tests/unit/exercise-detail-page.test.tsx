@@ -159,6 +159,27 @@ describe('production exercise detail route', () => {
     expect(html).toContain(en['catalog.editorRemove']);
   });
 
+  it.each(['platform_owner', 'workspace_owner'] as const)(
+    'exposes workspace Remove to %s for an explicitly selected workspace',
+    async (role) => {
+      m.actor.mockResolvedValue({
+        userId: role,
+        role,
+        activeWorkspaceIds: role === 'platform_owner' ? [] : [workspaceId],
+      });
+      const html = renderToStaticMarkup(
+        await Page({
+          params: Promise.resolve({ exerciseId: id }),
+          searchParams: Promise.resolve({
+            scope: 'workspace',
+            workspace: workspaceId,
+          }),
+        }),
+      );
+      expect(html).toContain(en['catalog.editorRemove']);
+    },
+  );
+
   it('does not show global Remove to workspace staff', async () => {
     m.actor.mockResolvedValue({
       userId: 'trainer',
