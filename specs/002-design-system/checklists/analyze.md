@@ -67,7 +67,7 @@
 - Open ambiguities in PR #28, Q16, and Q5 scope: 0; logical side follows existing inline-start implementation and document direction
 - Duplication findings: 0
 - CRITICAL: 0; HIGH: 0; MEDIUM: 3; LOW: 0
-- Verdict: **PASS WITH MEDIUM EVIDENCE GAPS**. The mandatory entry gate is satisfied: no open CRITICAL/HIGH findings. T046 remains open; no implementation is performed or authorized by this documentation analysis. T047-T049 remain unchecked pending the later implementation/review lane.
+- Verdict: **PASS WITH MEDIUM EVIDENCE GAPS**. The mandatory entry gate is satisfied: no open CRITICAL/HIGH findings. T046 remains open; no implementation is performed or authorized by this documentation analysis. T047-T051 remain unchecked pending the later implementation/review lane.
 
 ## History
 
