@@ -85,11 +85,15 @@ future validation must then include:
   currency check, legacy classification guard and offer/version immutability guard; each mutation
   MUST make the relevant negative test fail;
 - no-conversion scans across package, registration-link, subscription, installment, payment, refund
-  and commission surfaces, proving zero exchange-rate/converted-amount/cross-currency-total fields;
+  and commission surfaces as supplemental schema evidence; and
+- runtime integration assertions across those surfaces using the SK-009-09-approved currency
+  contract: preserve amount and currency snapshots and reject mixed-currency totals for
+  same-currency propagation, or verify the approved conversion source, timestamp, rounding and
+  immutable snapshot contract when a different downstream currency is approved;
 - PO-approved exact Arabic/English market/type copy fixtures, AR-RTL/EN-LTR × light/dark ×
   mobile/desktop Frontend Design Gate screenshots, required states and accessibility evidence; and
-- static and runtime evidence that existing package-version identifiers and stored terms remain
-  byte-for-byte unchanged after the forward migration.
+- static and runtime evidence that existing package-version identifiers and stored
+  price/currency/commission/duration terms remain unchanged after the forward migration.
 
 A format-valid currency outside the approved market set, a currency-derived market guess, an
 unapproved legacy default, an unreviewed bilingual string or an old publication path that bypasses

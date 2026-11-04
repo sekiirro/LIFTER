@@ -59,7 +59,7 @@ R4/R5/R9 remain visible for review.
 |---|---|---|
 | `public.packages` | Global immutable canonical code; no market/type/count quota | Keep global identity immutable. Do not add market/type here unless SK-009-06 explicitly selects this owner. |
 | `public.package_offers` | Workspace/package/duration offer; availability + current version; unique `(workspace_id, package_id, duration_days)` | Candidate owner for market/type, conditional on SK-009-06. No package-count cap is added. |
-| `public.package_versions` | Immutable AR/EN terms, `price_minor`, `currency`, commission and duration | Keep every existing version byte-for-byte. Currency remains version-owned. Add no historical backfill. |
+| `public.package_versions` | Immutable AR/EN terms, `price_minor`, `currency`, commission and duration | Keep every existing version's identifier and stored price/currency/commission/duration terms unchanged (SC-011). Currency remains version-owned. Add no historical backfill. |
 | `publish_package_version(...)` | PO-only; accepts any format-valid three-letter currency; no market/type input | Add approved market/type inputs at the selected owner and enforce the market/currency matrix in both validation walls. Preserve replay/concurrency semantics. |
 | `package_versions_safe` / app reads | Returns each version's own price and currency | Add approved market/type projections if they belong to an existing immutable/read surface; never calculate or join a converted amount. |
 | `/packages` | PO-only publish form and one price per offer row | Add approved market/type controls and own-currency display; labels come only from the PO-approved copy record. |

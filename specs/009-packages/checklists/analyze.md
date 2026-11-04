@@ -39,7 +39,7 @@ No CRITICAL or HIGH findings. No contradictory requirement pairs were found.
 
 ## Coverage and constitution
 
-- FR-to-task mapping: 21/21 FRs mapped (100%); SC mapping 12/12; 51/51 tasks map to at least one FR.
+- FR-to-task mapping: 21/21 FRs mapped (100%); SC mapping 12/12; 52/52 tasks map to at least one FR.
 - S31 open blockers are listed, not resolved: SK-009-05, SK-009-06, SK-009-07, SK-009-08, SK-009-09.
 - Constitution I (isolation), II (financial truth), III (PO governance), V (immutability),
   VII (audit/privacy), VIII (AR/EN UI) and IX (atomic publication) support the amended text.

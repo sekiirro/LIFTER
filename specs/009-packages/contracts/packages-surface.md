@@ -19,6 +19,8 @@ Reuse `Field`, `Button`, `Alert`, `States`, `ConfirmDialog`, existing tokens, lo
 
 All calls carry the current user's JWT via the server session client; never an admin/service-role client. Authenticated has EXECUTE; PUBLIC/anon/service_role do not. SECURITY DEFINER with empty search path and explicit signed actor/workspace checks is specified in the data model.
 
+**Baseline note**: the RPC table below is the shipped pre-S31 F9 contract. The S31 delta adds approved market/type inputs and the market/currency matrix; after T042 ships, the format-only `publish_package_version` path MUST fail closed and the S31 signature becomes the only accepted one. Final parameter placement and shape are selected with SK-009-06.
+
 | RPC                               | Named JSON input                                           | Successful value                                                            |
 | --------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
 | `create_package`                  | `{code: string}`                                           | canonical package UUID; existing UUID on exact code replay                  |
@@ -47,6 +49,9 @@ SK-009-06 owner model and enforce this matrix before mutation:
 |---|---|---|
 | `egypt` | `EGP` | `USD`, `SAR`, every other code |
 | `international` | `EGP`, `USD`, `SAR` | every other code |
+
+FR-007 initial-unavailable behavior is unchanged: a newly created offer still starts unavailable,
+publication never enables it, and only a separate confirmed PO availability action changes it.
 
 If SK-009-06 selects fixed offer/package ownership, market/type are supplied when the offer/owner
 is first created and later publications must match; if it selects version snapshots, every

@@ -4,7 +4,7 @@
 **Created**: 2026-10-27  
 **Last Updated**: 2026-11-04  
 **Status**: Clarified S31 amendment — approved market/type/currency rules recorded; open PO decisions block parts of implementation.
-**Input**: P1-F9, approved architect/reviewer design supplied for this run. Sources: [BRD](../../LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md) lines 30, 40–41, 53–54, 102, 196, 317; [decision register](../../docs/04-changes-and-questions.md) D-09/D-10, D-11, D-13, D-17; [Constitution v1.4.0](../../.specify/memory/constitution.md) I–III, V, VII–IX. Later decisions supersede historical BRD installment/refund wording. S31 sources: `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md`, S31-PO-4 and S31-PO-5 (S31-Q4).
+**Input**: P1-F9, approved architect/reviewer design supplied for this run. Sources: [BRD](../../LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md) lines 30, 40–41, 53–54, 102, 196, 317; [decision register](../../docs/04-changes-and-questions.md) D-09/D-10, D-11, D-13, D-17; [Constitution v1.4.0](../../.specify/memory/constitution.md) I–III, V, VII–IX. Later decisions supersede historical BRD installment/refund wording. S31 sources: S31-PO-4 and S31-PO-5 (S31-Q4), quoted verbatim in `## Clarifications` below and repeated in the PO decision register; those in-repository sections are the resolvable record, so no machine-local path is required.
 
 ## Clarifications
 
@@ -172,7 +172,7 @@ own-currency display and absence of conversion or cross-currency totals.
 - **FR-018**: A price MUST be stored, displayed, snapshotted and used only in its own currency. The platform MUST NOT derive or perform currency conversion, MUST NOT store an assumed exchange rate, and MUST NOT calculate a total across currencies (S31-PO-4 SK-009-01; Constitution II).
 - **FR-019**: The PO MUST be able to create unlimited distinct packages per workspace. No package-count cap, quota or single-package-per-workspace limit may be introduced. Each distinct package MUST retain an independent identity, current-version pointer and immutable version sequence (S31-PO-4 SK-009-01; S31-PO-5).
 - **FR-020**: Platform Owner exclusively MUST create, name, price and control packages, including market/type attributes and availability. Workspace Owners, Sales and Trainers MUST NOT create, name or price packages in any workspace, including their own workspace. FR-001, FR-007 and FR-012 remain unchanged and continue to enforce this rule (S31-PO-5).
-- **FR-021**: Introducing market, type and market-conditional currency rules MUST preserve every existing published package version byte-for-byte and MUST NOT update, delete, truncate or silently backfill package-version terms. A changed priced term MUST remain a new immutable version under FR-005 and FR-006 (Constitution II/V).
+- **FR-021**: Introducing market, type and market-conditional currency rules MUST preserve every existing published package version's identifier and its stored price_minor, currency, commission and duration terms unchanged, as defined by SC-011, and MUST NOT update, delete, truncate or silently backfill package-version terms. A changed priced term MUST remain a new immutable version under FR-005 and FR-006 (Constitution II/V).
 
 ### Key Entities
 

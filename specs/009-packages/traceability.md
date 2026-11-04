@@ -37,11 +37,11 @@ Status meanings:
 |---|---|---|---|---|
 | FR-015 market attribute | T036, T038, T039, T042, T044, T045 | `tests/unit/packages-market-type.test.ts`; `tests/integration/packages-markets-types.test.ts` | None; owner/legacy gated by SK-009-05/06 | BLOCKED |
 | FR-016 type attribute | T036, T038, T039, T042, T044, T045 | Same as FR-015 | None; owner/mutability and promotional behavior gated by SK-009-06/07 | BLOCKED |
-| FR-017 market-currency matrix | T037, T038, T042, T043 | `tests/unit/packages-market-type.test.ts`; `tests/integration/packages-markets-types.test.ts` | None; schema delta not written | NOT-IMPLEMENTED |
-| FR-018 no conversion/own currency | T037, T043, T044, T050 | `tests/unit/packages-money.test.ts` extension; `tests/e2e/packages.spec.ts` extension | None; no-conversion scan not run | NOT-IMPLEMENTED |
+| FR-017 market-currency matrix | T037, T038, T042, T043, T049a | `tests/unit/packages-market-type.test.ts`; `tests/integration/packages-markets-types.test.ts` | None; schema delta not written | NOT-IMPLEMENTED |
+| FR-018 no conversion/own currency | T037, T043, T044, T049a, T050 | `tests/unit/packages-money.test.ts` extension; `tests/e2e/packages.spec.ts` extension | None; no-conversion scan not run | NOT-IMPLEMENTED |
 | FR-019 unlimited independent packages | T036, T038, T042 | `tests/integration/packages-markets-types.test.ts` | None; no count cap exists in shipped schema, but S31 tests are not written | NOT-IMPLEMENTED |
 | FR-020 PO-only authorship/control | T040, T042, T043, T045, T047 | `tests/unit/packages-actions.test.ts` extension; `tests/integration/packages-reads.test.ts` extension | Shipped PO-only walls exist; S31 matrix/UI evidence is not written | NOT-IMPLEMENTED |
-| FR-021 preserve existing versions | T035, T042, T046, T050 | `tests/integration/packages-markets-types.test.ts`; forward-migration catalog check | None; forward migration not written | NOT-IMPLEMENTED |
+| FR-021 preserve existing versions | T035, T042, T046, T049a, T050 | `tests/integration/packages-markets-types.test.ts`; forward-migration catalog check | None; forward migration not written | NOT-IMPLEMENTED |
 
 ## SC mapping
 
@@ -52,5 +52,5 @@ T038/T039/T047; SC-011 → T035/T038/T050; SC-012 → T041/T045/T049. No S31 SC 
 ## Open PO blockers
 
 SK-009-05 (legacy classification), SK-009-06 (owner/mutability), SK-009-07 (promotional behavior),
-SK-009-08 (approved AR/EN copy) and SK-009-09 (downstream currency). See the run PO packet
-`C:/Users/NEW LAP/.lifter/runs/s31-ds-f9-spec/po-decisions.md`.
+SK-009-08 (approved AR/EN copy) and SK-009-09 (downstream currency). See the `## PO decision register`
+in [spec.md](spec.md).

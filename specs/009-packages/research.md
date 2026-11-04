@@ -82,7 +82,8 @@ This records the supplied architect decisions against repository evidence; it do
   package-version rows/terms are never edited. Existing offers/versions receive no inferred
   market/type classification before the PO approves a legacy policy.
 - **Rationale**: Constitution II/V requires immutable financial truth and forward-only migrations;
-  FR-021 requires byte-for-byte preservation. Stored currency cannot distinguish an International
+  FR-021 requires the identifier and stored price/currency/commission/duration terms to be preserved
+  (SC-011). Stored currency cannot distinguish an International
   EGP package from an Egypt EGP package, so currency-based inference would be false.
 - **Alternatives considered**: Editing the shipped migration violates migration immutability.
   Backfilling every existing row to Egypt/International from currency is invalid. A default market
