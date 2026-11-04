@@ -1,6 +1,6 @@
 # F3 Traceability - static source review
 
-Analyzed spec/plan/tasks head: `7fd9461c34b210106dd9ea688c56160e0667e11b` (branch base; this documentation amendment changed no source or test files). Code/test evidence baseline: `d04ef52` (branch base); reconciliation of the #47 compliance refresh used commit `ed88574ae09c722b1f6ded4fc0b66122bbeb4f13` for row wording and evidence path normalization. Code, migrations, workflow and tests were inspected statically; no tests or CI jobs were run. VERIFIED requires a concrete asserting test.
+Analyzed spec/plan/tasks head: `feb57374e6c429960f6738dafcdc34b939f6053e` (pre-fix branch head; this documentation amendment changed no source or test files). Code/test evidence baseline: `d04ef52` (branch base); reconciliation of the #47 compliance refresh used commit `ed88574ae09c722b1f6ded4fc0b66122bbeb4f13` for row wording and evidence path normalization. Code, migrations, workflow and tests were inspected statically; no tests or CI jobs were run. VERIFIED requires a concrete asserting test.
 
 | Requirement | Task(s) | Test(s) (file::test name) | Evidence | Status | Gap |
 |---|---|---|---|---|---|
@@ -28,5 +28,5 @@ Analyzed spec/plan/tasks head: `7fd9461c34b210106dd9ea688c56160e0667e11b` (branc
 ## Static verification notes
 
 - Test file paths and names above were checked against the `ed88574` source tree; the FR-001..FR-012 / SC-001..SC-004 rows preserve the original `d04ef52` evidence citations and were normalized to the `ed88574` row wording. No suite or workflow was run.
-- SK-003-01 is resolved by S30-PO-3 Q6 ("PO/WO/Trainer, deny Sales"). Q7/Q8 are recorded future-cycle decisions; remaining details are listed in plan NEEDS DECISION. Those behaviors are not implemented here. No row is marked DEFERRED.
+- SK-003-01 is resolved by S30-PO-3 Q6 ("PO/WO/Trainer, deny Sales"). Q7/Q8 scope is resolved for the approved scope by S30-R8; implementation and evidence gaps are tracked by T014-T016. Those behaviors are not implemented here. No row is marked DEFERRED.
 - FR-013/FR-014 and SC-005/SC-006 (20-row total): the four governance rows are unchanged from the #50 branch; the 16 baseline rows adopt the #47 compliance wording (commit `ed88574`) while retaining the `d04ef52` evidence references. Nothing dropped from either side.

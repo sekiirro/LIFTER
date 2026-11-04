@@ -37,12 +37,11 @@ A pure TypeScript `authorize()` mirrors the same matrix. A reusable integration 
 | Platform | Supabase per Architecture v3. Local stack in CI at $0. ✅ |
 | Workflow | Integration tests join the CI gate (Roadmap QG-2). ✅ |
 
-## NEEDS DECISION (deny-by-default until the PO decides)
+## NEEDS DECISION (closed)
 
 | # | Item | F3 handling |
 |---|---|---|
-| ND-F3-2 | Q7 roster scope | S30-PO-3 Q7 records `WO sees active members`. Clarify which workspace rows are in scope, the definition of active, and which member fields are visible. |
-| ND-F3-3 | Q8 last-PO guard details | S30-PO-3 Q8 records a database guard preventing removal/demotion of the final PO; clarify concurrent demotions and transactional edge cases. |
+| — | None | ND-F3-2 and ND-F3-3 are resolved in the Resolved Decisions section. |
 
 ## Resolved Decisions
 

@@ -143,7 +143,7 @@ The database prevents removal or demotion of the final Platform Owner. The PO-ap
 ## Clarifications
 
 - S30-PO-3 Q6 resolves the `coaching_work` role matrix. The PO answer is `PO/WO/Trainer, deny Sales (Recommended)`; the option text is `PO/WO/Trainer, deny Sales`.
-- S30-PO-3 Q7 records the future-cycle decision `WO sees active members`; Q8 records `DB guard on last PO (Recommended)`. Their scope and implementation acceptance belong to a separate forward-only Spec Kit cycle and are not requirements of this F3 baseline.
+- S30-PO-3 Q7 and Q8 are resolved for the approved scope by S30-R8 and recorded in FR-013, FR-014, SC-005, and SC-006. Their implementation acceptance is tracked by T014-T016 in this forward-only governance cycle and remains pending; this documentation cycle does not claim implementation completion.
 
 ## Success Criteria *(mandatory)*
 
@@ -159,7 +159,7 @@ The database prevents removal or demotion of the final Platform Owner. The PO-ap
 - Docker is not available on the reviewer's machine, so integration tests are verified in Linux CI. Unit tests run locally.
 - S30-PO-3 Q6 resolves the `coaching_work` matrix: "PO/WO/Trainer, deny Sales (Recommended)"; Sales remains denied.
 - S30-PO-3 Q7, as clarified by S30-R8, permits Workspace Owners to see active membership rows in their own workspace for roster administration; profile/contact fields are out of scope.
-- S30-PO-3 Q7 records the future-cycle decision `WO sees active members`; its scope details remain unresolved here. Until the separate cycle is implemented, this F3 baseline permits only PO and self to read membership rows.
+- S30-PO-3 Q7 and Q8 governance behaviors are specified in this amendment but are not implemented by the F3 baseline; T014-T016 track implementation, executed mutation tests, and architect security review.
 
 ### Governance amendment requirements and success criteria (S30-PO-3)
 
