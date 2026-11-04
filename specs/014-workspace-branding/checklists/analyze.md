@@ -107,3 +107,26 @@ The initial entry check was recorded as FAIL in the r20 report because the prior
 ## Round 6 revalidation (2026-11-04)
 
 The task checkbox update records S32-PO-1 approval of the r18 visual review and the already-passing assertion evidence; no spec, plan, or requirement wording changed. No open ambiguity remains for the focus correction or T052 record. The separate S32 PO-decision items in CodeRabbit threads 4463105165 and 4463105170 remain explicitly unresolved and are not changed here. Findings: 0 CRITICAL, 0 HIGH. Verdict: **PASS** for Spec Kit entry and revalidation; T052 and T053 evidence is cited in `traceability.md`.
+
+### Round 8 — S32 Hero r20 final gate revalidation (2026-11-04)
+
+**Scope reviewed:** task completion evidence and final verification for the S32-PO-2 Q2/Q3 and S32-PO-8 Q7 implementation. No requirement wording changed in this round.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Numbered FRs, measurable SCs, and Given/When/Then scenarios | PASS | `spec.md` FR-008/FR-028, SC-023/SC-024 and scenarios 6–8. |
+| Clarifications and explicit ambiguity status | PASS | `spec.md` cites the three PO decisions; behavior/rule scope is explicit; exact EN/AR strings remain explicitly pending PO copy approval. |
+| Plan and FR-tagged task IDs | PASS | `plan.md`; `tasks.md` T057–T060. T057/T060 are checked with r20 evidence; T058/T059 remain open where gated work is incomplete. |
+| Analyze after the latest spec/plan/tasks edit; open CRITICAL/HIGH findings | PASS | Round 8 timestamp follows the task status update; 0 open CRITICAL/HIGH findings. |
+
+#### Findings
+
+| ID | Severity | Finding | Status |
+|---|---|---|---|
+| R20-R8-A1 | MEDIUM | Stack B has 21 existing username values outside the approved rule; a check constraint would reject them. | PO decision required; constraint blocked. |
+| R20-R8-A2 | MEDIUM | Exact username-unavailable and format-error EN/AR copy is not approved. | Copy approval required; no draft is rendered. |
+| R20-R8-A3 | MEDIUM | Stack B migration history requires an unrelated missing version and then 22 earlier migrations with `--include-all`. | Integration blocked; do not repair or apply. |
+| R20-R8-A4 | LOW | Existing DOB keyboard-order E2E assertion fails identically on pre-r20 `d5efa39` and r20; r20 does not change the name→DOB DOM order or DOB behavior. | Pre-existing, outside the approved username change; threshold/test retained. |
+| R20-R8-A5 | LOW | Protected untracked `AGENTS.md` and `app/(dev)/showcase/rest/` remain in the worktree. | Excluded from staging. |
+
+**Verdict:** PASS for Spec Kit entry and revalidation. No open CRITICAL/HIGH findings. T057 and T060 are verified; T058 and T059 are intentionally open pending their recorded data/copy gates. The exact PO-approved T052 wording remains unchanged.
