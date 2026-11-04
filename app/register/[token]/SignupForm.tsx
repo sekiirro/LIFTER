@@ -80,6 +80,8 @@ export function SignupForm({
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [submitted, setSubmitted] = useState(false);
+  const [usernameServerErrorDismissed, setUsernameServerErrorDismissed] =
+    useState(false);
   const [touchedIdentityFields, setTouchedIdentityFields] = useState<
     SignupIdentityField[]
   >([]);
@@ -106,6 +108,8 @@ export function SignupForm({
     name: allMessages['clientSignup.name'],
     dateOfBirth: allMessages['clientSignup.dateOfBirth'],
     username: allMessages['clientSignup.username'],
+    usernameUnavailable: allMessages['clientSignup.usernameUnavailable'],
+    usernameFormatError: allMessages['clientSignup.usernameFormatError'],
     telegramUsername: allMessages['clientSignup.telegramUsername'],
     optional: allMessages['clientSignup.optional'],
     email: allMessages['clientSignup.email'],
@@ -173,14 +177,24 @@ export function SignupForm({
     };
     if (result.status === 'invalid_input' && result.invalidFields?.length) {
       const firstInvalid = (
-        ['name', 'email', 'phone', 'password', 'username'] as const
+        [
+          'name',
+          'dateOfBirth',
+          'username',
+          'telegramUsername',
+          'email',
+          'phone',
+          'password',
+        ] as const
       ).find((field) => result.invalidFields?.includes(field));
       const fieldRef = {
         name: nameRef,
+        dateOfBirth: dateOfBirthRef,
+        username: usernameRef,
+        telegramUsername: telegramUsernameRef,
         email: emailRef,
         phone: phoneRef,
         password: passwordRef,
-        username: usernameRef,
       } as const;
       if (firstInvalid) fieldRef[firstInvalid].current?.focus();
       return;
@@ -229,6 +243,7 @@ export function SignupForm({
         }
         submittingRef.current = true;
         setSubmitted(true);
+        setUsernameServerErrorDismissed(false);
         const secret = event.currentTarget.elements.namedItem('request_secret');
         if (secret instanceof HTMLInputElement)
           secret.value = newRequestSecret();
@@ -295,7 +310,10 @@ export function SignupForm({
         <span
           className={`${heroStyles.fieldControl} ${glass.liquidGlassEdge}`}
           data-error={
-            identityInvalidFields.includes('dateOfBirth') ? 'true' : undefined
+            identityInvalidFields.includes('dateOfBirth') ||
+            result.invalidFields?.includes('dateOfBirth')
+              ? 'true'
+              : undefined
           }
         >
           <input
@@ -304,7 +322,8 @@ export function SignupForm({
             aria-label={messages.dateOfBirth}
             aria-describedby={
               (submitted || touchedIdentityFields.includes('dateOfBirth')) &&
-              identityInvalidFields.includes('dateOfBirth')
+              (identityInvalidFields.includes('dateOfBirth') ||
+                result.invalidFields?.includes('dateOfBirth'))
                 ? 'signup-date-of-birth-error'
                 : undefined
             }
@@ -320,12 +339,14 @@ export function SignupForm({
             disabled={pending}
             aria-invalid={
               (submitted || touchedIdentityFields.includes('dateOfBirth')) &&
-              identityInvalidFields.includes('dateOfBirth')
+              (identityInvalidFields.includes('dateOfBirth') ||
+                result.invalidFields?.includes('dateOfBirth'))
             }
           />
         </span>
         {(submitted || touchedIdentityFields.includes('dateOfBirth')) &&
-          identityInvalidFields.includes('dateOfBirth') && (
+          (identityInvalidFields.includes('dateOfBirth') ||
+            result.invalidFields?.includes('dateOfBirth')) && (
             <span
               id="signup-date-of-birth-error"
               className={`${styles.fieldError} ${heroStyles.fieldError}`}
@@ -340,7 +361,8 @@ export function SignupForm({
           className={`${heroStyles.fieldControl} ${glass.liquidGlassEdge}`}
           data-error={
             identityInvalidFields.includes('username') ||
-            result.invalidFields?.includes('username')
+            (!usernameServerErrorDismissed &&
+              result.invalidFields?.includes('username'))
               ? 'true'
               : undefined
           }
@@ -352,7 +374,8 @@ export function SignupForm({
             aria-describedby={
               (submitted || touchedIdentityFields.includes('username')) &&
               (identityInvalidFields.includes('username') ||
-                result.invalidFields?.includes('username'))
+                (!usernameServerErrorDismissed &&
+                  result.invalidFields?.includes('username')))
                 ? 'signup-username-error'
                 : undefined
             }
@@ -361,6 +384,15 @@ export function SignupForm({
             value={username}
             onChange={(event) => {
               setUsername(event.currentTarget.value);
+              if (result.invalidFields?.includes('username')) {
+                setUsernameServerErrorDismissed(true);
+                setTouchedIdentityFields((current) =>
+                  current.includes('username')
+                    ? current
+                    : [...current, 'username'],
+                );
+                validateTouchedField('username');
+              }
               changeIdentityField('username');
             }}
             onBlur={() => blurIdentityField('username')}
@@ -369,18 +401,25 @@ export function SignupForm({
             aria-invalid={
               (submitted || touchedIdentityFields.includes('username')) &&
               (identityInvalidFields.includes('username') ||
-                result.invalidFields?.includes('username'))
+                (!usernameServerErrorDismissed &&
+                  result.invalidFields?.includes('username')))
             }
           />
         </span>
         {(submitted || touchedIdentityFields.includes('username')) &&
           (identityInvalidFields.includes('username') ||
-            result.invalidFields?.includes('username')) && (
+            (!usernameServerErrorDismissed &&
+              result.invalidFields?.includes('username'))) && (
             <span
               id="signup-username-error"
               className={`${styles.fieldError} ${heroStyles.fieldError}`}
             >
-              {messages.fieldError}
+              {!usernameServerErrorDismissed &&
+              result.invalidFields?.includes('username')
+                ? messages.usernameUnavailable
+                : identityInvalidFields.includes('username')
+                  ? messages.usernameFormatError
+                  : messages.fieldError}
             </span>
           )}
       </label>
@@ -391,7 +430,8 @@ export function SignupForm({
         <span
           className={`${heroStyles.fieldControl} ${glass.liquidGlassEdge}`}
           data-error={
-            identityInvalidFields.includes('telegramUsername')
+            identityInvalidFields.includes('telegramUsername') ||
+            result.invalidFields?.includes('telegramUsername')
               ? 'true'
               : undefined
           }
@@ -403,7 +443,8 @@ export function SignupForm({
             aria-describedby={
               (submitted ||
                 touchedIdentityFields.includes('telegramUsername')) &&
-              identityInvalidFields.includes('telegramUsername')
+              (identityInvalidFields.includes('telegramUsername') ||
+                result.invalidFields?.includes('telegramUsername'))
                 ? 'signup-telegram-error'
                 : undefined
             }
@@ -419,12 +460,14 @@ export function SignupForm({
             aria-invalid={
               (submitted ||
                 touchedIdentityFields.includes('telegramUsername')) &&
-              identityInvalidFields.includes('telegramUsername')
+              (identityInvalidFields.includes('telegramUsername') ||
+                result.invalidFields?.includes('telegramUsername'))
             }
           />
         </span>
         {(submitted || touchedIdentityFields.includes('telegramUsername')) &&
-          identityInvalidFields.includes('telegramUsername') && (
+          (identityInvalidFields.includes('telegramUsername') ||
+            result.invalidFields?.includes('telegramUsername')) && (
             <span
               id="signup-telegram-error"
               className={`${styles.fieldError} ${heroStyles.fieldError}`}
@@ -577,24 +620,36 @@ export function SignupForm({
       <Button type="submit" disabled={pending}>
         {pending ? messages.pending : messages.submit}
       </Button>
-      {submitted && (
-        <p
-          ref={resultRef}
-          tabIndex={-1}
-          role={
-            pending
-              ? 'status'
-              : result.status === 'invalid_input'
-                ? 'alert'
-                : 'status'
-          }
-          className={`${styles.message} ${heroStyles.message}`}
-          data-result-status={result.status}
-          aria-live="polite"
-        >
-          {pending ? messages.pending : result.message}
-        </p>
-      )}
+      {submitted &&
+        !(
+          result.status === 'invalid_input' &&
+          usernameServerErrorDismissed &&
+          result.invalidFields?.length === 1 &&
+          result.invalidFields.includes('username')
+        ) && (
+          <p
+            ref={resultRef}
+            tabIndex={-1}
+            role={
+              pending
+                ? 'status'
+                : result.status === 'invalid_input'
+                  ? 'alert'
+                  : 'status'
+            }
+            className={`${styles.message} ${heroStyles.message}`}
+            data-result-status={result.status}
+            aria-live="polite"
+          >
+            {pending
+              ? messages.pending
+              : result.status === 'invalid_input' &&
+                  result.invalidFields?.includes('username') &&
+                  !usernameServerErrorDismissed
+                ? messages.usernameUnavailable
+                : result.message}
+          </p>
+        )}
     </form>
   );
 }

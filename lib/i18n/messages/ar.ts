@@ -243,6 +243,8 @@ export const ar = {
   'showcase.print': 'نموذج الطباعة',
   'clientSignup.name': 'الاسم',
   'clientSignup.dateOfBirth': 'تاريخ الميلاد',
+  'clientSignup.usernameUnavailable': 'يرجى التحقق من هذا الحقل.',
+  'clientSignup.usernameFormatError': 'يرجى التحقق من هذا الحقل.',
   'clientSignup.username': 'اسم المستخدم',
   'clientSignup.telegramUsername': 'اسم مستخدم تيليجرام',
   'clientSignup.optional': 'اختياري',
