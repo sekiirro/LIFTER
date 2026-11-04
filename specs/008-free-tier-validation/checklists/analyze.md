@@ -28,7 +28,7 @@
 - **Date:** 2026-11-04
 - **Reviewed after:** S31-PO-4 input and T012 were added to `spec.md`, `plan.md`, and `tasks.md`; no code/tests/cloud actions.
 - **Decision:** ND-F8-1 is decided as an illustrative pilot input: 2 workspaces × 150 clients/workspace × 2 staff/workspace × 2 plans/client × 2 new plan versions/client/month. T012 requires schema/unit verification before table-level values are recorded.
-- **Remaining gates:** ND-F8-2 hosting/staging and ND-F8-3 authenticated-route test-account approval remain open. No implementation or measurement is authorized.
+- **Remaining gates:** ND-F8-2 deployment approval remains open for deployment-dependent measurements. ND-F8-3 authenticated-route test-account approval remains open only for measurements that use authenticated routes. Offline measurements remain authorized.
 - **Coverage:** FR-to-task 8/8, SC-to-task 4/4; 0 CRITICAL/HIGH, 2 MEDIUM (ND-F8-2/3). Static only.
 
 ## S32 SK-B round 7 refresh
@@ -49,3 +49,22 @@
 - ND-F8-1 remains decided by S31-PO-4. ND-F8-2 deployment approval and ND-F8-3 authenticated-route measurement remain explicit open decisions; no new ambiguity was found.
 - Constitution IV alignment is preserved: preparation-only scope and the no-deployment/no-cloud-write boundary are unchanged.
 - **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 2 inherited MEDIUM, 1 LOW resolved in this round; 12/12 FR/SC items mapped.
+
+## S33 SK-52 fix round 2 refresh
+
+- **Date:** 2026-11-04T19:51:07+02:00 (after the S33 PR #52 fix-round-2 edits).
+- **Analyzed commit:** this fix commit (S33 round 2 for PR #52; base `327bce2`). The reviewed patch changes `tasks.md` (T012 wording), this file (S31 remaining-gates line) and this refresh.
+- **Scope:** static consistency and evidence review; no tests, scans, stacks, deployments, cloud queries, or implementation actions performed.
+
+### Findings
+
+| ID | Severity | Artifact | Finding | Disposition |
+|---|---|---|---|---|
+| F8-R2-01 | LOW | `checklists/analyze.md` (S31 round 6 refresh, "Remaining gates"); `tasks.md:T012` | The S31 remaining-gates line stated neither measurement nor implementation was authorized, and T012 deferred all measurement until both independently open decisions were approved. Both contradicted the spec (User Story 1 — offline measurements now; FR-001..FR-008; SC-001) and the S31-PO-4 pilot input, under which offline projection remains authorized. | Corrected as documentation-only wording: the S31 line now scopes ND-F8-2 to deployment-dependent measurements and ND-F8-3 to measurements using authenticated routes and a dedicated test account; offline measurements remain authorized. T012 now requires schema/unit verification, recording the mapping and source in the projection volume artifact, and completing offline projection after verification; only deployment-dependent and authenticated-route measurements are deferred until the independently open decisions (ND-F8-2/ND-F8-3) are approved. FR-006 semantics are unchanged; the FR-006 reference is preserved; no checkbox changed. |
+
+### Coverage and verdict
+
+- FR-to-task mapping remains 8/8; SC-to-task mapping remains 4/4 (12/12 total). No task checkbox or evidence status changed.
+- ND-F8-1 remains decided by S31-PO-4; ND-F8-2 and ND-F8-3 remain explicitly open. No new ambiguity was introduced; offline scope is unchanged from the spec.
+- Constitution IV alignment is preserved: preparation-only scope, no deployment/no cloud-write boundary, and no invented approval are unchanged.
+- **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 2 inherited MEDIUM (ND-F8-2/ND-F8-3), 1 LOW documentation-only correction in this round; 12/12 FR/SC items mapped.

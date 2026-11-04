@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-27
 
-**Status**: Draft artifacts; binding architect design transcribed. Implementation and Claude audit pending.
+**Status**: Draft artifacts; binding architect design transcribed. (Historical 2026-10-27 status superseded.) Implementation through T034 is complete: T001–T033 were ticked from local evidence and T034 was ticked after independent Claude audit on 2026-10-28; S31-PO-3/4 approved behavior is unimplemented. T035 remains a future unchecked task and production validation remains open.
 
 **Input**: User-supplied binding architect/reviewer design. Sources: [BRD/PRD](../../LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md) BRD-04.1/04.2, PRD-02 required/acceptance, PRD-07 line 196 and journeys A/E; [architecture](../../docs/02-architecture.md) Registration tokens and Subscriptions/Installments; [decisions](../../docs/04-changes-and-questions.md) D-08/D-09/D-11/D-12/D-17/D-19; [Constitution v1.1.0](../../.specify/memory/constitution.md). D-12/D-17 supersede the historical three-month 50/50 rule, including PRD line 198.
 

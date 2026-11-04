@@ -8,7 +8,7 @@
 
 ## Summary
 
-Add immutable tenant-bound hashed links and ordered installment snapshots, issue atomically from available/current F9 offers, show URL once, and support a narrow anonymous first-open/validate RPC. A staff screen selects approved terms and a public screen shows only workspace name/validity. F11 consumption is a documented atomic contract, not implemented here. Preserve all five F10 decisions and relevant F9 decisions as open.
+Add immutable tenant-bound hashed links and ordered installment snapshots, issue atomically from available/current F9 offers, show URL once, and support a narrow anonymous first-open/validate RPC. A staff screen selects approved terms and a public screen shows only workspace name/validity. F11 consumption is a documented atomic contract, not implemented here. F10 decisions are not all open: ND-F10-1 and ND-F10-2 are decided, ND-F10-3 is recorded but not implemented, and ND-F10-4 and ND-F10-5 remain open; relevant F9 decisions remain as carried below.
 
 ## Technical Context
 
@@ -30,7 +30,7 @@ Pre-research and post-design check against v1.1.0:
 | I isolation                  | Composite tenant FKs, forced RLS, verified actor + capability and independent DB guard, foreign negatives for every staff path; public only explicit workspace name projection.       |
 | II financial truth           | Immutable price/currency/duration/rate/schedule, exact minor units and DB total; no payment/commission earning calculations.                                                          |
 | III least privilege          | Existing D-09 capability matrix unchanged; Trainer schedule denied; rates only PO/WO; hashes absent from all staff reads.                                                             |
-| IV approved scope            | Explicit BRD/PRD + D-12/D-17 precedence; all NDs remain open; no fixed 50/50, revocation or invented installment bounds.                                                              |
+| IV approved scope            | Explicit BRD/PRD + D-12/D-17 precedence; ND-F10-1 and ND-F10-2 are decided, ND-F10-3 is recorded but not implemented, ND-F10-4 and ND-F10-5 remain open; carried ND-F9 decisions remain as recorded; no fixed 50/50, revocation or invented installment bounds.                                                     |
 | V versioning                 | Current-version snapshot at issuance, restrictive references, guards for all DML roles; later versions/availability changes do not alter links.                                       |
 | VI people governance         | No people/payroll actions.                                                                                                                                                            |
 | VII privacy                  | One-time raw token, hash only, no-referrer/no-store, no token path logs, safe transactional audit, existing audit RLS.                                                                |

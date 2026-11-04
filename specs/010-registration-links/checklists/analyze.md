@@ -52,3 +52,24 @@
 - Requirement semantics are unchanged (S31-PO-3 remains the authority; no scope or behavior change); no FR/SC re-mapping is required. ND-F10-4/5 remain open; ND-F9-1..3/5 remain open; ND-F9-4 remains denied per S31-PO-4.
 - The S31 round 6 refresh section above remains the latest substantive dated analysis; this refresh documents the S33 reconciliation only.
 - **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 2 MEDIUM (remaining content/price decisions), 2 LOW documentation-only corrections in this round; 20/20 FR/SC items mapped.
+
+## S33 SK-52 fix round 2 refresh
+
+- **Date:** 2026-11-04T19:51:07+02:00 (after the S33 PR #52 fix-round-2 edits).
+- **Analyzed commit:** this fix commit (S33 round 2 for PR #52; base `327bce2`). The reviewed patch changes `spec.md` (Status line), `plan.md` (Summary line 11, Constitution Check IV row), `addendum-f12-flexible-installments.md` (F12 ownership statement) and this refresh only.
+- **Scope:** static consistency and internal-consistency review; no tests, scans, stacks, or implementation actions performed.
+
+### Findings
+
+| ID | Severity | Artifact | Finding | Disposition |
+|---|---|---|---|---|
+| F10-R2-01 | LOW | `spec.md:7` (Status) | The Status line still said implementation and the Claude audit were pending while `tasks.md` records T001–T034 complete (T034 ticked after independent Claude audit on 2026-10-28). | Corrected as historical reconciliation: the 2026-10-27 draft status is marked superseded; completed local evidence (T001–T033) and the independent Claude audit (T034, 2026-10-28) are distinguished from the remaining T035 future task and open production validation. No FR/SC text changed; no checkbox changed. |
+| F10-R2-02 | LOW | `addendum-f12-flexible-installments.md:33` | The F12 ownership statement described `20261101131000_flexible_registration_link_terms_forward.sql` as future work. The migration exists on disk; T049 and T052 are checked; T050, T051, T053 and T054 remain unchecked. | Corrected as documentation-only wording: the addendum now states the migration is existing and records the exact task state (T049/T052 checked; T050/T051/T053/T054 unchecked). Ownership scope and behavior constraints are preserved. |
+| F10-R2-03 | LOW | `plan.md:11` (Summary); `plan.md:33` (Constitution Check IV row) | The Summary said all five F10 decisions remain open and the Constitution Check IV row said all NDs remain open, while line 68 of the same file records ND-F10-1/2 decided, ND-F10-3 recorded but not implemented, and only ND-F10-4/5 open. | Corrected as historical reconciliation: both statements now identify ND-F10-1 and ND-F10-2 as decided, ND-F10-3 as recorded but not implemented, and ND-F10-4/5 (with carried ND-F9 decisions) as open. No requirement meaning changed; ND-F10-4/5 remain open and are not defaulted. |
+
+### Coverage and verdict
+
+- FR-to-task mapping remains 14/14; SC-to-task mapping remains 6/6 (20/20 total). No task status changed; T035 remains an unchecked future Spec Kit implementation task.
+- Requirement semantics are unchanged; no FR/SC re-mapping is required. ND-F10-4/5 remain open; ND-F9-1..3/5 remain open; ND-F9-4 remains denied per S31-PO-4.
+- The S31 round 6 refresh section above remains the latest substantive dated analysis; this refresh documents the S33 fix-round-2 reconciliation only.
+- **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 2 MEDIUM (remaining content/price decisions), 3 LOW documentation-only corrections in this round; 20/20 FR/SC items mapped.

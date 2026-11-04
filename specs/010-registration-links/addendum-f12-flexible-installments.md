@@ -30,7 +30,7 @@ F10 on `origin/main` at `30399301f0f046e78f951aba1cdb564678f6cea5` matches the F
 
 ## Implementation ownership and limits
 
-F12 U1F/T049–T054 owns future `20261101131000_flexible_registration_link_terms_forward.sql`, existing issuing action/service/validation, dialog/manager/CSS/messages and targeted RED→GREEN tests. New wrapper receives explicit upfront/count and full schedule, verifies correspondence, then delegates to existing atomic guarded issuance. It does not add a parallel schedule table or rewrite F10 migrations. Existing legacy RPC/null-schedule behavior remains valid.
+F12 U1F/T049–T054 tracks the existing `20261101131000_flexible_registration_link_terms_forward.sql`, the issuing action/service/validation, dialog/manager/CSS/messages and targeted RED→GREEN tests. T049 and T052 are checked; T050, T051, T053 and T054 remain unchecked. New wrapper receives explicit upfront/count and full schedule, verifies correspondence, then delegates to existing atomic guarded issuance. It does not add a parallel schedule table or rewrite F10 migrations. Existing legacy RPC/null-schedule behavior remains valid.
 
 Tests must compare fingerprints of already-issued link/schedule rows before/after the extension, cover custom first/second offsets, default residual/30 constructor, exact-total/count/upfront tampering, role denials, deferred rollback, F11 signup consumption and no public financial/token/commission leakage. Q-M19..Q-M24 and affected earlier checks are owned by the F12 verification plan.
 

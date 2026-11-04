@@ -74,3 +74,22 @@
 - Requirement semantics are unchanged (S31-PO-3 remains the authority; no scope or behavior change); no FR/SC re-mapping is required. Existing ND-F4-7 and implementation/configuration gaps remain explicit.
 - Constitution I/III/IV alignment is preserved: both authorization walls remain required, Trainer stays denied until its own approved Spec Kit cycle, and no Trainer behavior is implemented early.
 - **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 7 inherited MEDIUM, 2 LOW documentation-only corrections in this round; 22/22 FR/SC items mapped.
+
+## S33 SK-52 round 9 refresh
+
+- **Date:** 2026-11-04T19:51:07+02:00 (after the S33 PR #52 fix-round-2 edits).
+- **Analyzed commit:** this fix commit (S33 round 2 for PR #52; base `327bce2`). The reviewed patch changes `tasks.md` (T031 wording) and this refresh only.
+- **Scope:** static consistency and evidence review; no tests, scans, stacks, or implementation actions performed.
+
+### Findings
+
+| ID | Severity | Artifact | Finding | Disposition |
+|---|---|---|---|---|
+| F4-R9-01 | LOW | `tasks.md:T031` | T031 asked for recovery-link provider expiry evidence from one approved safe environment while ND-F4-3 (decided PO 2026-10-29) requires a 60-minute expiry in every environment. | Corrected as documentation-only task wording: T031 now requires per-environment provider/configuration evidence for every supported environment, or a documented configuration parity proof for any environment not checked directly; "No implementation change is implied" is preserved. FR-012/SC-005 semantics are unchanged (ND-F4-3 remains the authority); no checkbox changed. |
+
+### Coverage and verdict
+
+- FR-to-task mapping remains 15/15; SC-to-task mapping remains 7/7 (22/22 total). No task checkbox or evidence status changed.
+- Requirement semantics are unchanged; no FR/SC re-mapping is required. ND-F4-3 is unchanged and explicit.
+- Constitution I/III/IV alignment is preserved: no capability, matrix, RLS, or recovery-link behavior changed.
+- **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 7 inherited MEDIUM, 1 LOW documentation-only correction in this round; 22/22 FR/SC items mapped.
