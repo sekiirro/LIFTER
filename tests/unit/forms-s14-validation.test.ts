@@ -95,6 +95,33 @@ describe('S14 form definition types and privacy metadata', () => {
     ).toBeNull();
   });
 
+  it('requires minimum, middle, and maximum slider labels', () => {
+    const slider: FormQuestion = {
+      id: 'hunger',
+      sectionId: 'nutrition',
+      type: 'slider',
+      required: true,
+      validation: { min: 0, max: 10, step: 1 },
+      labels: { minimum: 'Low', middle: 'Medium', maximum: 'High' },
+      feedbackBands: [{ min: 0, max: 10, text: 'Hunger' }],
+    };
+
+    expect(validateFormDefinition([slider])).toEqual([]);
+    expect(
+      validateFormDefinition([
+        {
+          ...slider,
+          labels: { minimum: 'Low', maximum: 'High' } as FormQuestion['labels'],
+        },
+      ]),
+    ).toContainEqual(
+      expect.objectContaining({
+        code: 'invalid_slider_configuration',
+        questionId: 'hunger',
+      }),
+    );
+  });
+
   it('supports bounded slider and image choice schemas', () => {
     const questions: FormQuestion[] = [
       {

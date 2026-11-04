@@ -266,6 +266,22 @@ export const approvalRpcNames = [
   'installment_collect',
   'collection_correct',
 ] as const;
+
+async function inBatches<T>(
+  items: readonly T[],
+  run: (item: T) => Promise<void>,
+  batchSize = 6,
+) {
+  for (let start = 0; start < items.length; start += batchSize) {
+    const results = await Promise.allSettled(
+      items.slice(start, start + batchSize).map(run),
+    );
+    const failed = results.find(
+      (result): result is PromiseRejectedResult => result.status === 'rejected',
+    );
+    if (failed) throw failed.reason;
+  }
+}
 export function approvalDenialRequest(
   context: ClientContext,
   name: string,
@@ -317,16 +333,16 @@ export async function pendingHttpAccess(
   try {
     const tables =
       await db`select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relrowsecurity`;
-    for (const table of tables) {
+    await inBatches(tables, async (table) => {
       const result = await client.from(table.relname).select('*');
       assert.ok(
         result.error !== null || result.data?.length === 0,
         table.relname,
       );
-    }
+    });
     const functions =
       await db`select p.proname,p.proargnames,to_jsonb(array(select format_type(t,null) from unnest(p.proargtypes) t)) as types from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname='public' and p.prokind='f'`;
-    for (const fn of functions) {
+    await inBatches(functions, async (fn) => {
       if (fn.proname === 'client_self_status') {
         const result = await client.rpc('client_self_status');
         assert.equal(result.error, null, fn.proname);
@@ -334,7 +350,7 @@ export async function pendingHttpAccess(
           status: 'ok',
           approval_state: 'pending-approval',
         });
-        continue;
+        return;
       }
       if ((approvalRpcNames as readonly string[]).includes(fn.proname)) {
         const [target] =
@@ -348,7 +364,7 @@ export async function pendingHttpAccess(
         });
         assert.equal(denied.error, null, fn.proname);
         assert.deepEqual(denied.data, { status: 'not_permitted' }, fn.proname);
-        continue;
+        return;
       }
       if (
         [
@@ -367,7 +383,7 @@ export async function pendingHttpAccess(
         const result = await client.rpc(fn.proname, args);
         assert.equal(result.error, null, fn.proname);
         assert.deepEqual(result.data, { status: 'not_permitted' }, fn.proname);
-        continue;
+        return;
       }
       const args: Record<string, unknown> = {};
       fn.types.forEach((type: string, i: number) => {
@@ -414,7 +430,7 @@ export async function pendingHttpAccess(
               result.data?.status === 'invalid_input'),
         fn.proname,
       );
-    }
+    });
   } finally {
     await db.end();
   }
@@ -436,32 +452,42 @@ export async function pendingRlsAccess(
   const tables =
     await tx`select n.nspname,c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relrowsecurity`;
   await tx`select set_config('request.jwt.claims',${JSON.stringify(claims)},true)`;
-  for (const table of tables) {
-    // The selected constant exposes no protected field. Grant SELECT on a
-    // safe UUID column to prevent missing privileges from hiding bad RLS.
-    const [column] =
-      await tx`select attname from pg_attribute where attrelid=to_regclass(${table.nspname + '.' + table.relname}) and attnum>0 and atttypid='uuid'::regtype order by attnum limit 1`;
-    if (!column) throw new Error('RLS probe needs a safe UUID column');
-    const target = '"' + table.nspname + '"."' + table.relname + '"';
-    await tx.unsafe(
-      `grant select ("${column.attname}") on ${target} to authenticated`,
-    );
-    await tx.unsafe(
-      `grant update ("${column.attname}") on ${target} to authenticated`,
-    );
-    await tx`set local role authenticated`;
-    const selected = await tx.unsafe(
-      `select "${column.attname}" from ${target}`,
-    );
-    if (selected.length !== 0)
-      throw new PendingRlsAccessDenied(`${table.relname} SELECT`);
-    const changed = await tx.unsafe(
-      `update ${target} set "${column.attname}"="${column.attname}"`,
-    );
-    if (changed.count !== 0)
-      throw new PendingRlsAccessDenied(`${table.relname} UPDATE`);
-    await tx`reset role`;
-  }
+  await inBatches(tables, async (table) => {
+    const tableDb = sql();
+    try {
+      await tableDb.begin(async (tableTx) => {
+        await tableTx`select set_config('request.jwt.claims',${JSON.stringify(claims)},true)`;
+        // The selected constant exposes no protected field. Grant SELECT on a
+        // safe UUID column to prevent missing privileges from hiding bad RLS.
+        const [column] =
+          await tableTx`select attname from pg_attribute where attrelid=to_regclass(${table.nspname + '.' + table.relname}) and attnum>0 and atttypid='uuid'::regtype order by attnum limit 1`;
+        if (!column) throw new Error('RLS probe needs a safe UUID column');
+        const target = '"' + table.nspname + '"."' + table.relname + '"';
+        await tableTx.unsafe(
+          `grant select ("${column.attname}") on ${target} to authenticated`,
+        );
+        await tableTx.unsafe(
+          `grant update ("${column.attname}") on ${target} to authenticated`,
+        );
+        await tableTx`set local role authenticated`;
+        const selected = await tableTx.unsafe(
+          `select "${column.attname}" from ${target}`,
+        );
+        if (selected.length !== 0)
+          throw new PendingRlsAccessDenied(`${table.relname} SELECT`);
+        const changed = await tableTx.unsafe(
+          `update ${target} set "${column.attname}"="${column.attname}"`,
+        );
+        if (changed.count !== 0)
+          throw new PendingRlsAccessDenied(`${table.relname} UPDATE`);
+        throw rollback;
+      });
+    } catch (error) {
+      if (error !== rollback) throw error;
+    } finally {
+      await tableDb.end();
+    }
+  });
   await tx`set local role authenticated`;
   const [access] =
     await tx`select app_private.has_workspace_access(${context.wsA.id},null) as own,app_private.has_workspace_access(${context.wsB.id},null) as foreign`;

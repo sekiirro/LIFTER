@@ -68,7 +68,7 @@ export type FormQuestion = {
   unit?: LocalizedFormText;
   labels?: {
     minimum: string;
-    middle?: string;
+    middle: string;
     maximum: string;
   };
   feedbackBands?: readonly FormFeedbackBand[];

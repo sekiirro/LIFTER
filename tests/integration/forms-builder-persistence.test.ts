@@ -139,6 +139,52 @@ describe('T006/T009 persisted Builder writes', () => {
     ).rejects.toBe(rollback);
   });
 
+  it('requires the slider middle label in SQL', async () => {
+    await db.begin(async (tx) => {
+      const invalid = structuredClone(
+        definition(),
+      ) as unknown as MutableDefinition;
+      invalid.questions[0]!.type = 'slider';
+      invalid.questions[0]!.labels = {
+        minimum: 'Low',
+        maximum: 'High',
+      };
+      invalid.questions[0]!.validation = { min: 0, max: 10, step: 1 };
+      invalid.questions[0]!.feedbackBands = [
+        { min: 0, max: 10, text: 'Hunger' },
+      ];
+      const [row] = await tx`
+        select app_private.f15_valid_builder_definition(${tx.json(invalid)},false) as valid`;
+      expect(row?.valid).toBe(false);
+    });
+  });
+
+  it('kills the SQL missing-middle-label mutant', async () => {
+    await withCrashSafeFunctionMutant(
+      'app_private.f15_valid_builder_definition(jsonb,boolean)',
+      (body) =>
+        body.replace(
+          "jsonb_typeof(question->'labels'->'middle') is distinct from 'string'",
+          'false',
+        ),
+      async () =>
+        expectInvariantFailure(async () => {
+          const invalid = structuredClone(
+            definition(),
+          ) as unknown as MutableDefinition;
+          invalid.questions[0]!.type = 'slider';
+          invalid.questions[0]!.labels = { minimum: 'Low', maximum: 'High' };
+          invalid.questions[0]!.validation = { min: 0, max: 10, step: 1 };
+          invalid.questions[0]!.feedbackBands = [
+            { min: 0, max: 10, text: 'Hunger' },
+          ];
+          const [row] = await db`
+          select app_private.f15_valid_builder_definition(${db.json(invalid)},false) as valid`;
+          expect(row?.valid).toBe(false);
+        }),
+    );
+  });
+
   it('kills SQL validator parity mutants for choices and contains', async () => {
     const identity = 'app_private.f15_valid_builder_definition(jsonb,boolean)';
     await withCrashSafeFunctionMutant(

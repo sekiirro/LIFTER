@@ -1,10 +1,39 @@
 import { readFileSync } from 'node:fs';
 import { describe, expect, it } from 'vitest';
 import approvedF15Copy from '../fixtures/forms/approved-f15-copy.json';
+import approvedTermsCopy from '../fixtures/forms/approved-terms-copy.json';
 import { ar } from '../../lib/i18n/messages/ar';
 import { en } from '../../lib/i18n/messages/en';
 
 describe('S27 approved F15 copy', () => {
+  it('pins the exact S31-PO-1 Q1 Arabic Terms paragraph', () => {
+    const assertApproved = (value: string) => {
+      expect(value).toBe(approvedTermsCopy.ar);
+      expect(
+        readFileSync(
+          'specs/015-forms-intake/reports/S14-terms-draft.md',
+          'utf8',
+        ),
+      ).toContain(value);
+    };
+    assertApproved(approvedTermsCopy.ar);
+    expect(() => assertApproved(`${approvedTermsCopy.ar} `)).toThrow();
+    expect(approvedTermsCopy.ar).not.toContain('قبول الشروط اختياري');
+  });
+
+  it('rejects the superseded Arabic Terms sentence as a pinned-copy mutant', () => {
+    const supersededSentence =
+      'قبول الشروط اختياري لحد ما تختار مربع الموافقة بنفسك، وهو مطلوب لإكمال التسجيل. هنحفظ إصدار الشروط ووقت موافقتك.';
+    const source = readFileSync(
+      'specs/015-forms-intake/reports/S14-terms-draft.md',
+      'utf8',
+    );
+    expect(source).not.toContain(supersededSentence);
+    expect(() =>
+      expect(supersededSentence).toBe(approvedTermsCopy.ar),
+    ).toThrow();
+  });
+
   it('matches the approved Arabic and English strings exactly', () => {
     expect(approvedF15Copy).toHaveLength(227);
     expect(

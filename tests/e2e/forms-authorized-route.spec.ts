@@ -17,7 +17,7 @@ import { getMessages } from '../../lib/i18n';
 import { calculateAgeInCairo } from '../../lib/forms/validation';
 
 const db = sql();
-const screenshotDir = join(tmpdir(), 'lifter-s29-f15-h5');
+const screenshotDir = join(tmpdir(), 'lifter-s31-f15-h10');
 let assignmentId = '';
 let email = '';
 let password = '';
@@ -83,6 +83,74 @@ test.beforeAll(async () => {
         required: true,
         title: { en: 'Nutrition preferences', ar: 'تفضيلاتك الغذائية' },
         charLimit: 150,
+      },
+      {
+        id: 'N11',
+        sectionId: 'nutrition',
+        type: 'slider',
+        required: false,
+        title: {
+          en: 'How hungry do you feel, from 0 to 10?',
+          ar: 'بتقييم إحساسك بالجوع كام من 10؟',
+        },
+        validation: { min: 0, max: 10, step: 1 },
+        labels: {
+          minimum: 'مش بجوع تقريبًا',
+          middle: 'جوع متوسط',
+          maximum: 'جوع شديد جدًا',
+        },
+        feedbackBands: [
+          { min: 0, max: 2, text: 'إحساس قليل جدًا بالجوع' },
+          { min: 3, max: 4, text: 'جوع خفيف' },
+          { min: 5, max: 6, text: 'جوع متوسط' },
+          { min: 7, max: 8, text: 'جوع مرتفع' },
+          { min: 9, max: 10, text: 'جوع شديد جدًا' },
+        ],
+      },
+      {
+        id: 'N07.meal_count',
+        sectionId: 'nutrition',
+        type: 'mealCount',
+        required: false,
+        title: {
+          en: 'How many meals would you like to eat each day?',
+          ar: 'حابب تاكل كام وجبة في اليوم؟',
+        },
+        choices: ['2', '3', '4', '5'],
+        optionLabels: [
+          { en: 'Two meals', ar: 'وجبتين' },
+          { en: '3 meals', ar: '3 وجبات' },
+          { en: '4 meals', ar: '4 وجبات' },
+          { en: '5 meals', ar: '5 وجبات' },
+        ],
+      },
+      {
+        id: 'N07.training_timing',
+        sectionId: 'nutrition',
+        type: 'derivedChoice',
+        required: false,
+        title: {
+          en: '',
+          ar: 'تحب تمرينك يكون بعد الوجبة الكام؟',
+        },
+        derivedOptions: {
+          sourceQuestionId: 'N07.meal_count',
+          fixedChoices: ['before-first', 'no-fixed-time'],
+        },
+        optionLabels: [
+          { en: 'Meal', ar: 'وجبة' },
+          { en: 'Meal', ar: 'وجبة' },
+          { en: 'Before the first meal', ar: 'قبل أول وجبة' },
+          { en: "I don't have a fixed time", ar: 'معنديش ميعاد ثابت' },
+        ],
+      },
+      {
+        id: 'health-context',
+        sectionId: 'nutrition',
+        type: 'displayOnly',
+        required: false,
+        title: { en: 'About your health data', ar: 'عن بياناتك الصحية' },
+        displayText: { en: 'About your health data', ar: 'عن بياناتك الصحية' },
       },
     ],
   };
@@ -233,6 +301,121 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
           path: join(screenshotDir, `${locale}-${theme}-${width}-goal.png`),
           fullPage: true,
         });
+      }
+    }
+  }
+});
+
+test('renders recorded new client controls across AR/EN, theme, and viewport matrix', async ({
+  page,
+}) => {
+  test.setTimeout(180_000);
+  await signIn(page);
+  for (const locale of ['ar', 'en'] as const) {
+    for (const theme of ['light', 'dark'] as const) {
+      for (const width of [390, 1440] as const) {
+        await page.setViewportSize({
+          width,
+          height: width === 390 ? 844 : 1000,
+        });
+        await page.context().addCookies([
+          {
+            name: 'lifter_locale',
+            value: locale,
+            url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+          },
+          {
+            name: 'lifter_theme',
+            value: theme,
+            url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+          },
+        ]);
+        const routeResponse = await page.goto(`/forms/${assignmentId}`);
+        try {
+          await expect(
+            page.getByRole('heading', {
+              level: 1,
+              name: locale === 'en' ? 'Client intake' : 'بيانات العميل',
+            }),
+          ).toBeVisible({ timeout: 30_000 });
+        } catch (error) {
+          throw new Error(
+            `Authorized route was not ready (${routeResponse?.status()}): ${(await page.locator('body').innerText()).slice(0, 500)}`,
+            { cause: error },
+          );
+        }
+        await expect(page.locator('output')).toHaveText('U3 synthetic test');
+        const nextName = locale === 'en' ? 'Next question' : 'السؤال التالي';
+        const nextButtons = page.getByRole('button', { name: nextName });
+        if (!(await nextButtons.count()))
+          throw new Error(
+            `Authorized form did not expose its localized next control (${routeResponse?.status()}): ${(await page.locator('body').innerText()).slice(0, 500)}`,
+          );
+        await nextButtons.first().click();
+        await nextButtons.first().click();
+        await page
+          .getByRole('textbox', {
+            name: locale === 'en' ? 'Your goal' : 'هدفك',
+          })
+          .fill('Recorded fixture');
+        await page.getByRole('button', { name: nextName }).click();
+        await page
+          .getByRole('textbox', {
+            name: locale === 'en' ? 'Training experience' : 'خبرتك التدريبية',
+          })
+          .fill('Recorded fixture');
+        await page.getByRole('button', { name: nextName }).click();
+        await page
+          .getByRole('textbox', {
+            name:
+              locale === 'en' ? 'Nutrition preferences' : 'تفضيلاتك الغذائية',
+          })
+          .fill('Recorded fixture');
+        await page.getByRole('button', { name: nextName }).click();
+
+        const capture = async (name: string, title: string) => {
+          await expect(
+            page.getByRole('heading', { level: 2, name: title }),
+          ).toBeVisible();
+          const violations = await new AxeBuilder({ page })
+            .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
+            .analyze();
+          expect(violations.violations).toEqual([]);
+          await page.screenshot({
+            path: join(
+              screenshotDir,
+              `${locale}-${theme}-${width}-${name}.png`,
+            ),
+            fullPage: true,
+          });
+        };
+
+        await capture(
+          'slider',
+          locale === 'en'
+            ? 'How hungry do you feel, from 0 to 10?'
+            : 'بتقييم إحساسك بالجوع كام من 10؟',
+        );
+        await page.getByRole('button', { name: nextName }).click();
+        await capture(
+          'mealCount',
+          locale === 'en'
+            ? 'How many meals would you like to eat each day?'
+            : 'حابب تاكل كام وجبة في اليوم؟',
+        );
+        await page.getByRole('radio').first().check();
+        await page.getByRole('button', { name: nextName }).click();
+        if (locale === 'ar')
+          await capture('derivedChoice', 'تحب تمرينك يكون بعد الوجبة الكام؟');
+        await page
+          .getByRole('button', {
+            name: locale === 'en' ? 'Next question' : 'السؤال التالي',
+          })
+          .click();
+        await capture(
+          'displayOnly',
+          locale === 'en' ? 'About your health data' : 'عن بياناتك الصحية',
+        );
       }
     }
   }
