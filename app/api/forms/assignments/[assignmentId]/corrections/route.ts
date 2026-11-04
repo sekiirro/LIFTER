@@ -95,11 +95,26 @@ export async function GET(
     );
     if (contextError || !context || typeof context !== 'object')
       return response({ status: 'not_found' }, 404);
-    const workspaceId = (context as { workspace_id?: unknown }).workspace_id;
-    if (typeof workspaceId !== 'string')
+    const contextValue = context as {
+      workspace_id?: unknown;
+      version_snapshot?: unknown;
+    };
+    if (typeof contextValue.workspace_id !== 'string')
       return response({ status: 'not_found' }, 404);
+    const snapshot = contextValue.version_snapshot;
+    if (
+      typeof snapshot !== 'object' ||
+      snapshot === null ||
+      !Array.isArray((snapshot as { questions?: unknown }).questions)
+    )
+      return response({ status: 'not_found' }, 404);
+    const questionIds = new Set(
+      (snapshot as { questions: Array<{ id?: unknown }> }).questions.flatMap(
+        (question) => (typeof question?.id === 'string' ? [question.id] : []),
+      ),
+    );
     const { data, error } = await client.rpc('read_form_answer', {
-      p_workspace_id: workspaceId,
+      p_workspace_id: contextValue.workspace_id,
       p_assignment_id: assignmentId,
       p_view: 'history',
     });
@@ -111,14 +126,20 @@ export async function GET(
       typeof latest !== 'object' ||
       !Number.isSafeInteger((latest as { revision?: unknown }).revision) ||
       typeof (latest as { answers?: unknown }).answers !== 'object' ||
-      (latest as { answers?: unknown }).answers === null
+      (latest as { answers?: unknown }).answers === null ||
+      Array.isArray((latest as { answers?: unknown }).answers)
     )
       return response({ status: 'not_found' }, 404);
+    const answers = Object.fromEntries(
+      Object.entries(
+        (latest as { answers: Record<string, unknown> }).answers,
+      ).filter(([questionId]) => questionIds.has(questionId)),
+    );
     return response(
       {
         status: 'loaded',
         revision: (latest as { revision: number }).revision,
-        answers: (latest as { answers: unknown }).answers,
+        answers,
       },
       200,
     );

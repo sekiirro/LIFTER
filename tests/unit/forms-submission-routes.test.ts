@@ -10,6 +10,7 @@ import {
   GET as readDraft,
   POST as saveDraft,
 } from '../../app/api/forms/assignments/[assignmentId]/draft/route';
+import { GET as readCorrectionHistory } from '../../app/api/forms/assignments/[assignmentId]/corrections/route';
 import { POST as submit } from '../../app/api/forms/assignments/[assignmentId]/submit/route';
 import { POST as correct } from '../../app/api/forms/assignments/[assignmentId]/corrections/route';
 
@@ -145,7 +146,12 @@ describe('T013 submission and correction HTTP validation', () => {
   it('validates correction answers against the authorized current assignment snapshot', async () => {
     const currentSnapshot = {
       questions: [
-        { id: 'current', sectionId: 'basic', type: 'shortText', required: false },
+        {
+          id: 'current',
+          sectionId: 'basic',
+          type: 'shortText',
+          required: false,
+        },
       ],
     };
     client.rpc.mockImplementation(async (name: string) =>
@@ -172,6 +178,39 @@ describe('T013 submission and correction HTTP validation', () => {
     expect(client.rpc).toHaveBeenCalledTimes(1);
     expect(client.rpc).toHaveBeenCalledWith('read_form_correction_context', {
       p_assignment_id: assignmentId,
+    });
+  });
+
+  it('filters correction-history keys to the current assignment snapshot', async () => {
+    client.rpc.mockImplementation(async (name: string) => {
+      if (name === 'read_form_assignment_context')
+        return {
+          data: { workspace_id: 'workspace', version_snapshot: snapshot },
+          error: null,
+        };
+      if (name === 'read_form_answer')
+        return {
+          data: [
+            {
+              revision: 3,
+              answers: { basic: 'kept', retired_question: 'must be filtered' },
+            },
+          ],
+          error: null,
+        };
+      return { data: null, error: null };
+    });
+    const response = await readCorrectionHistory(
+      new NextRequest(
+        `https://lifter.test/api/forms/assignments/${assignmentId}/corrections`,
+      ),
+      { params: Promise.resolve({ assignmentId }) },
+    );
+    expect(response.status).toBe(200);
+    expect(await response.json()).toEqual({
+      status: 'loaded',
+      revision: 3,
+      answers: { basic: 'kept' },
     });
   });
 
