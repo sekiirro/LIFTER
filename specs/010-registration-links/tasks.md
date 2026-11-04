@@ -202,4 +202,4 @@ Other technical interpretations/source conflicts are exhaustively recorded in re
 
 - [x] T900 [FR-012, FR-014] Include response status and rendered route diagnostics when the authenticated registration-links acceptance heading is missing. Preserve the existing route, role, offer, localization, and accessibility assertions; do not alter product behavior.
 
-- [ ] T901 [FR-009, FR-014] Keep public registration page unit tests independent of injected Supabase environment by mocking the optional public session client as unauthenticated; preserve the valid/invalid page assertions.
+- [x] T901 [FR-009, FR-014] Keep public registration page unit tests independent of injected Supabase environment by mocking the optional public session client as unauthenticated; preserve the valid/invalid page assertions.
