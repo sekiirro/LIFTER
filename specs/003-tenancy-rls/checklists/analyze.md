@@ -1,7 +1,7 @@
 # Spec Kit Analyze — F3 Workspace Tenancy, Permission Matrix & RLS (reconciled)
 
-- Date: 2026-11-04 (re-run after merge; reconcile with S30-PO-3 Q6-Q8, S30-R8, and #47 compliance reconciliation)
-- Analyzed source commit: `012f9ed84c79e8e0661807c552474b32dc14b623` (merged HEAD `speckit-003-governance`, merge of `11657c3` #50 and `ff6e0b9` #47); task FR tags are part of the compliance docs change.
+- Date: 2026-11-04 17:59 +02:00 (re-run after the S33 architect-directed restoration of the dropped plan sections; reconcile with S30-PO-3 Q6-Q8, S30-R8, and #47 compliance reconciliation)
+- Analyzed source commit: `0a4e95c10436e3557ce3ac90a748da07abeb04a7` (pre-fix branch head on `speckit-003-governance`; the working tree restores the `Project Structure` and `Complexity Tracking` sections dropped by merge `012f9ed`).
 - Static code/test evidence baseline: `d04ef52` (branch base; no code or test files changed in this amendment).
 - Scope: F3 baseline (`FR-001`..`FR-012`, `SC-001`..`SC-004`) plus the S30-PO-3 Q7/Q8 governance amendment reconciled by architect ruling S30-R8 (`FR-013`, `FR-014`, `SC-005`, `SC-006`).
 - Method: static cross-artifact, migration, workflow, and test-source review. No tests, builds, or CI were run.
@@ -11,7 +11,7 @@
 - Present: `spec.md` (FR-001..014, SC-001..006, four GWT story groups), `plan.md`, `tasks.md` (T001-T016), `research.md`, `data-model.md`, `contracts/db-contract.md`, `quickstart.md`, `checklists/requirements.md`, `traceability.md`, and this analysis.
 - `spec.md` has numbered FRs including `FR-013`/`FR-014`, measurable `SC-005`/`SC-006`, and Given/When/Then acceptance scenarios for both governance behaviors, including column boundary denial, concurrent last-PO demotions, and all six mixed operation-pair races.
 - Clarifications: S30-PO-3 Q6 resolves `coaching_work` as PO/WO/Trainer allowed and Sales denied; Q7 records the future-cycle decision `WO sees active members`; Q8 records `DB guard on last PO (Recommended)`. Q7/Q8 scope details and implementation acceptance are routed to the separate forward-only governance cycle, not implemented by this F3 baseline.
-- Plan/tasks: T001-T016; T001-T013 cover the F3 baseline with explicit FR tags, T014/T015/T016 cover FR-013/FR-014 and SC-005/SC-006. No task checkbox changed.
+- Plan/tasks: T001-T016; T001-T013 cover the F3 baseline with explicit FR tags, T014/T015/T016 cover FR-013/FR-014 and SC-005/SC-006. No task checkbox changed. The plan now restores both `Project Structure` and `Complexity Tracking` sections present in parents `11657c3` and `ff6e0b9`.
 - Entry check for a future implementation round: requirements and scenarios PASS; clarification PASS for this scope; plan/tasks PASS; Analyze is dated after spec/plan/tasks and has zero open CRITICAL/HIGH findings. Implementation still requires the listed mutation tests and architect security review.
 
 ## Findings
@@ -52,3 +52,4 @@
 - 2026-11-03, refreshed on `e8c03d4`: updated the roster scenario and SC-006 to describe the fixed membership fields and associated staff role rather than calling the associated role a membership column. No implementation or test evidence changed.
 - 2026-11-03, refreshed on `7fd9461`: FR-013 now separates membership columns from the associated staff role, and the resolved decision summary specifies that all protected owner-count mutations use the shared transaction lock. No implementation or test evidence changed.
 - 2026-11-04, reconciled with #47 compliance merge `ff6e0b9`: combined #47 task FR tags, traceability row updates (commit `ed88574`, PARTIAL FR-003/FR-004 evidence gaps), and #50 governance rows FR-013/FR-014/SC-005/SC-006 + all Given/When/Then scenarios; verdict adjusted to reflect the merged 20-row traceability table (6 VERIFIED / 10 PARTIAL / 4 NOT-FOUND / 0 DEFERRED).
+- 2026-11-04 17:59 +02:00, S33 SK-A9 fix round: refreshed the analysis against branch head `0a4e95c` after restoring the `Project Structure` and `Complexity Tracking` sections dropped at merge `012f9ed`. Both parents were compared; no requirement, task, decision, citation, or substantive section content was dropped. The finding set and 0 CRITICAL / 0 HIGH verdict are unchanged; no tests, builds, SQL, stacks, or code were run.

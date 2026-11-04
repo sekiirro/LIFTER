@@ -58,6 +58,32 @@ Resolved within this reconciliation (both sides):
 - **ND-F3-2 resolved for this approved scope by S30-PO-3 Q7 and S30-R8:** a current Workspace Owner sees only active membership fields for their own workspace (`user_id`, `workspace_id`, `granted_at`, `revoked_at`, plus the associated `staff_profiles.role`). `revoked_at IS NULL` defines active. Profile/contact fields are out of scope.
 - **ND-F3-3 resolved for this approved scope by S30-PO-3 Q8 and S30-R8:** preserve at least one Platform Owner under concurrent changes; protect role changes/demotions, staff-profile or membership deletion/revocation, and auth-user deletion cascades; serialize every protected mutation through the shared transaction lock described below; reuse the existing generic privileged-operation error convention. No new user-facing copy. Bootstrap remains operator-managed.
 
+## Project Structure
+
+```text
+specs/003-tenancy-rls/  spec.md plan.md research.md data-model.md quickstart.md contracts/db-contract.md tasks.md
+supabase/migrations/20261027120000_tenancy.sql
+supabase/seed.sql                        # stays empty of real data (no PII)
+lib/auth/capabilities.ts                 # Role, Capability, MATRIX, roleHasCapability()
+lib/auth/authorize.ts                    # authorize(actor, capability, workspaceId)
+tests/unit/authorize.test.ts
+tests/integration/harness.ts             # env loading, admin client, user/session factory, sql client, fixtures(two workspaces)
+tests/integration/rls-catalog.test.ts    # RLS enabled+forced, no anon grants
+tests/integration/isolation.test.ts      # cross-workspace reads, anon, revoked
+tests/integration/governance.test.ts     # PO-only writes, self-role change, membership mutation rules
+tests/integration/matrix-parity.test.ts  # TS vs SQL for every role × capability
+vitest.integration.config.ts
+.github/workflows/ci.yml                 # + integration job
+docs/BOOTSTRAP.md? → no: README section "Local database & isolation tests" + PO bootstrap SQL snippet
+```
+
+## Complexity Tracking
+
+| Deviation | Why | Simpler alternative rejected |
+|---|---|---|
+| The matrix exists in both TS and SQL | Two walls (Architecture v3). The database can't import TS. | A single source generating both needs a codegen step. The parity test gives the same guarantee. |
+
+
 ## S30-PO-3 governance amendment plan (documentation proposal)
 
 - **FR-013 / SC-006 — active-member roster**: expose the roster through a dedicated `SECURITY DEFINER` RPC with a fixed `RETURNS TABLE` projection of `user_id`, associated `staff_profiles.role`, `workspace_id`, `granted_at`, and `revoked_at`; use `SET search_path = ''`, fully qualified references, and an explicit current-Workspace-Owner/own-workspace/active-row check. Grant `authenticated` only RPC execution for the new roster path; do not add a base-table RLS policy or table/column grant that exposes other members' rows or profile/contact fields. Preserve existing F3 access semantics outside this new path. Do not rely on row-level RLS alone to limit columns. Never project profile/contact fields. This is a technical implementation shape for the already-approved scope, not a scope expansion. Require executed positive/negative mutation tests for active, revoked, same-workspace, foreign-workspace, attempted base-table reads of other members, and profile/contact-column denial, plus architect security review before implementation acceptance. The existing tables and active predicate are documented in `data-model.md` and `supabase/migrations/20261027120000_tenancy.sql`.
