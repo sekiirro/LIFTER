@@ -37,6 +37,7 @@
 .question {
   display: grid;
   gap: var(--space-3);
+  min-inline-size: 0;
   padding-block: var(--space-4);
   border-block: 1px solid var(--color-border);
 }
@@ -67,12 +68,14 @@
 .choices {
   display: grid;
   gap: var(--space-2);
+  min-inline-size: 0;
 }
 
 .choices label {
   display: flex;
   align-items: center;
   gap: var(--space-2);
+  min-inline-size: 0;
   min-block-size: var(--touch-min);
 }
 
@@ -86,6 +89,8 @@
 
 .choices img {
   display: block;
+  flex: 1 1 auto;
+  min-inline-size: 0;
   border-radius: var(--radius-card);
 }
 

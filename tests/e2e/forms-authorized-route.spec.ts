@@ -668,6 +668,13 @@ test('approved F15 controls render in both locales, themes, and widths', async (
         expect(assetResponses.map((response) => response.status())).toEqual(
           Array.from({ length: expectedCards.length }, () => 200),
         );
+        const renderedWidth = await page.evaluate(() => ({
+          clientWidth: document.documentElement.clientWidth,
+          scrollWidth: document.documentElement.scrollWidth,
+        }));
+        expect(renderedWidth.scrollWidth).toBeLessThanOrEqual(
+          renderedWidth.clientWidth,
+        );
         await capture(
           'N12',
           locale === 'en'
