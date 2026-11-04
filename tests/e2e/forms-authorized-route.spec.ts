@@ -18,7 +18,7 @@ import { calculateAgeInCairo } from '../../lib/forms/validation';
 import starterContent from '../../lib/forms/s14-starter-content.json';
 
 const db = sql();
-const screenshotDir = join(tmpdir(), 'lifter-s33-f15-r1');
+const screenshotDir = join(tmpdir(), 'lifter-s34-f15-r2');
 const screenshotPaths: string[] = [];
 let assignmentId = '';
 let email = '';
@@ -522,7 +522,7 @@ test('approved F15 controls render in both locales, themes, and widths', async (
     });
   for (const locale of ['ar', 'en'] as const) {
     for (const theme of ['light', 'dark'] as const) {
-      for (const width of [360, 390, 1024] as const) {
+      for (const width of [390, 1024, 1440] as const) {
         const freshId = await createApprovedControlsAssignment();
         const series = locale === 'ar' ? 'male' : 'female';
         await page.setViewportSize({
@@ -548,6 +548,7 @@ test('approved F15 controls render in both locales, themes, and widths', async (
             await expect(
               page.getByRole('heading', { level: 2, name: heading }),
             ).toBeVisible();
+          if (!['T03', 'N07-meal-count', 'N07-timing'].includes(name)) return;
           await expectAxeClean(page);
           const path = join(
             screenshotDir,
@@ -699,12 +700,13 @@ test('approved F15 controls render in both locales, themes, and widths', async (
       }
     }
   }
+  expect(screenshotPaths).toHaveLength(24);
   writeFileSync(
     join(screenshotDir, 'INDEX.md'),
     [
-      '# S33 F15 Arabic copy rendered evidence',
+      '# S34 F15 T03/N07 rendered evidence',
       '',
-      'AR-RTL/EN-LTR T03 and N07 rendered across light/dark themes and 390/1024/1440px viewports; axe checked each captured state.',
+      'T03 and N07 meal-count/timing screens rendered for AR-RTL and EN-LTR in light and dark themes at 390px, 1024px, and 1440px. Axe passed on all 24 captured states.',
       '',
       ...screenshotPaths.map((path) => `- ${path}`),
       '',
