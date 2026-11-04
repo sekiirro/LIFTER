@@ -22,6 +22,25 @@ const snapshot = {
 };
 
 describe('T012 server draft validation', () => {
+  it('ignores localized labels retained on persisted Builder snapshots', () => {
+    expect(
+      validateDraftAnswers(
+        {
+          questions: [
+            {
+              id: 'labeled',
+              sectionId: 'basic',
+              type: 'shortText',
+              required: false,
+              label: { en: 'Goal', ar: 'الهدف' },
+            },
+          ],
+        },
+        { labeled: 'Strength' },
+      ),
+    ).toEqual({ ok: true, answerValues: { labeled: 'Strength' } });
+  });
+
   it('allows partial draft sets and applies the snapshot text bounds', () => {
     expect(validateDraftAnswers(snapshot, { short: 'partial' })).toEqual({
       ok: true,

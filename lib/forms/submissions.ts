@@ -1,5 +1,9 @@
 import { evaluateProgression } from './progression';
-import { type FormAnswerSet, type FormQuestion } from './validation';
+import {
+  QUESTION_PRESENTATION_KEYS,
+  type FormAnswerSet,
+  type FormQuestion,
+} from './validation';
 
 export type FormSubmissionValidation =
   | { ok: true; answerValues: FormAnswerSet }
@@ -28,7 +32,7 @@ export function validateFormSubmission(
     isRecord(question)
       ? Object.fromEntries(
           Object.entries(question).filter(
-            ([key]) => key !== 'title' && key !== 'description',
+            ([key]) => !QUESTION_PRESENTATION_KEYS.has(key),
           ),
         )
       : question,
