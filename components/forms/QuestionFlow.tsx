@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { evaluateProgression } from '../../lib/forms/progression';
 import {
   answersForClientProgression,
+  answersForBudgetSelection,
   applicableClientAnswers,
   setClientAnswer,
 } from '../../lib/forms/client-answer-state';
@@ -193,9 +194,7 @@ export function QuestionFlow({
     ? (questions.find(({ id }) => id === progression.currentQuestion?.id) ??
       null)
     : null;
-  const index = current
-    ? progression.applicableQuestionIds.indexOf(current.id)
-    : -1;
+  const index = current ? progression.stepQuestionIds.indexOf(current.id) : -1;
   const applicableIds = new Set(progression.applicableQuestionIds);
   const visibleHistory = history.map((entry) => ({
     ...entry,
@@ -207,11 +206,14 @@ export function QuestionFlow({
   }));
 
   function updateAnswer(id: string, value: FormAnswer | undefined) {
-    const next = setClientAnswer(
+    let next = setClientAnswer(
       applicableClientAnswers(runtimeQuestions, answers),
       id,
       value,
     );
+    if (id === 'N08' && typeof value === 'string') {
+      next = answersForBudgetSelection(next, value);
+    }
     const currentAnswers = applicableClientAnswers(runtimeQuestions, next);
     setAnswers(currentAnswers);
     latestAnswers.current = currentAnswers;
@@ -226,7 +228,12 @@ export function QuestionFlow({
       answers: currentAnswers,
       currentQuestionId: id,
     });
-    setQuestionId(nextProgression.missingRequiredQuestionIds[0] ?? id);
+    const firstMissing = nextProgression.missingRequiredQuestionIds[0];
+    setQuestionId(
+      firstMissing === 'N08.foods'
+        ? 'N08'
+        : (firstMissing ?? (id === 'N08.foods' ? 'N08' : id)),
+    );
     setState('ready');
   }
 
@@ -521,7 +528,7 @@ export function QuestionFlow({
             {progressMessage(
               messages['forms.progress'],
               index + 1,
-              progression.applicableQuestionIds.length,
+              progression.stepQuestionIds.length,
               locale,
             )}
           </p>
@@ -559,6 +566,20 @@ export function QuestionFlow({
               disabled={locked}
               onChange={(value) => updateAnswer(current.id, value)}
             />
+            {current.id === 'N08' &&
+              progression.applicableQuestionIds.includes('N08.foods') &&
+              questions.find(({ id }) => id === 'N08.foods') && (
+                <QuestionControl
+                  question={questions.find(({ id }) => id === 'N08.foods')!}
+                  value={answers['N08.foods']}
+                  answers={answers}
+                  profileValue={undefined}
+                  locale={locale}
+                  messages={messages}
+                  disabled={locked}
+                  onChange={(value) => updateAnswer('N08.foods', value)}
+                />
+              )}
           </section>
           <div className={styles.actions}>
             <Button
@@ -781,7 +802,11 @@ function QuestionControl({
   }
   if (question.type === 'imageChoice') {
     const series = resolveN12ImageSeries(
-      typeof answers.sex === 'string' ? answers.sex : undefined,
+      typeof answers.B06 === 'string'
+        ? answers.B06
+        : typeof answers.sex === 'string'
+          ? answers.sex
+          : undefined,
     );
     const allowed = (question.assetReferences ?? [])
       .map((reference, index) => ({ reference, index }))
@@ -843,8 +868,16 @@ function QuestionControl({
         {choices.map((choice, index) => {
           const label =
             question.type === 'derivedChoice' && choice.startsWith('meal-')
-              ? `${messages['forms.staffMealNumber']} ${choice.slice(5)}`
-              : text(question.optionLabels?.[index]) || choice;
+              ? locale === 'en'
+                ? `After meal ${choice.slice(5)}`
+                : `${messages['forms.staffMealNumber']} ${choice.slice(5)}`
+              : text(
+                  question.optionLabels?.[
+                    question.type === 'derivedChoice'
+                      ? (question.choices?.indexOf(choice) ?? index)
+                      : index
+                  ],
+                ) || choice;
           return (
             <label key={choice}>
               <input
@@ -864,29 +897,39 @@ function QuestionControl({
   }
   if (question.type === 'multiChoice') {
     const selected = Array.isArray(value) ? value : [];
+    const budgetPrefix =
+      question.id === 'N08.foods' && typeof answers.N08 === 'string'
+        ? `${answers.N08}:`
+        : undefined;
     return (
       <div
         className={styles.choices}
         role="group"
         aria-label={question.title[locale]}
       >
-        {question.choices?.map((choice, index) => (
-          <label key={choice}>
-            <input
-              type="checkbox"
-              disabled={disabled}
-              checked={selected.includes(choice)}
-              onChange={(event) =>
-                onChange(
-                  event.currentTarget.checked
-                    ? [...selected, choice]
-                    : selected.filter((item) => item !== choice),
-                )
-              }
-            />
-            {text(question.optionLabels?.[index]) || choice}
-          </label>
-        ))}
+        {question.choices
+          ?.map((choice, index) => ({ choice, index }))
+          .filter(
+            ({ choice }) =>
+              budgetPrefix === undefined || choice.startsWith(budgetPrefix),
+          )
+          .map(({ choice, index }) => (
+            <label key={choice}>
+              <input
+                type="checkbox"
+                disabled={disabled}
+                checked={selected.includes(choice)}
+                onChange={(event) =>
+                  onChange(
+                    event.currentTarget.checked
+                      ? [...selected, choice]
+                      : selected.filter((item) => item !== choice),
+                  )
+                }
+              />
+              {text(question.optionLabels?.[index]) || choice}
+            </label>
+          ))}
       </div>
     );
   }

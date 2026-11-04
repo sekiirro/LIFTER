@@ -21,7 +21,7 @@ const spec = readFileSync(
 );
 
 describe('S14 PO decision fixture', () => {
-  it('marks only unapproved P2 and EN intake copy as pending PO review', () => {
+  it('keeps draft copy and only unapproved EN intake rows pending PO review', () => {
     expect(decisions.P1_sex.copy_status).toContain(
       'Approved verbatim by PO S30-PO-1 Q2 at 5084916',
     );
@@ -33,14 +33,35 @@ describe('S14 PO decision fixture', () => {
     );
     expect(decisions.P3_consent.terms_card).toContain('post-Nutrition');
     expect(decisions.P3_consent.marketing).toContain('separate optional');
-    expect(spec).toContain('Each is pending PO review before publication.');
     expect(spec).toContain(
-      'All EN translations in this table remain pending PO review.',
+      'All other EN rows and options in this table remain pending PO review.',
     );
-    expect(cases.pendingCopy).toEqual([
-      'P2_health_notice',
-      'EN_intake_translations',
+    expect(spec).toContain('| B01 | Full name (three parts) |');
+    expect(spec).toContain('| B06 | Gender |');
+    expect(spec).toContain('| T08 | Training split |');
+    expect(spec).toContain('| N08 | What’s your food budget? |');
+    expect(spec).toContain(
+      '| N07.training_timing | After which meal would you like to train? |',
+    );
+    expect(spec).toContain('| B02 | Age |');
+    expect(spec).toContain(
+      '| N01 | What is your goal for your nutrition plan? |',
+    );
+    expect(cases.pendingCopy).toEqual(['P2_health_notice']);
+    expect(cases.approvedENRows).toEqual([
+      'B01',
+      'B06',
+      'T03.2',
+      'T03.3',
+      'T03.4',
+      'T03.5',
+      'T03.6',
+      'T08',
+      'N07.training_timing',
+      'N08',
     ]);
+    expect(cases.pendingENRows).toContain('N08.low.foods');
+    expect(cases.pendingENRows).toContain('N11.feedback.0_2');
   });
 
   it('keeps historical S14 health-notice fixture separate from S17 product UI', () => {

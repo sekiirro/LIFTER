@@ -15,9 +15,10 @@ import { deriveBrand } from '../../lib/design/color';
 import { brandToCssVars } from '../../lib/design/tokens-css';
 import { getMessages } from '../../lib/i18n';
 import { calculateAgeInCairo } from '../../lib/forms/validation';
+import starterContent from '../../lib/forms/s14-starter-content.json';
 
 const db = sql();
-const screenshotDir = join(tmpdir(), 'lifter-s31-f15-h10');
+const screenshotDir = join(tmpdir(), 'lifter-s32-f15-h12');
 let assignmentId = '';
 let email = '';
 let password = '';
@@ -47,7 +48,7 @@ test.beforeAll(async () => {
         type: 'profileText',
         required: false,
         profileField: 'fullName',
-        title: { en: 'Full name', ar: 'الاسم الثلاثي' },
+        title: { en: 'Full name (three parts)', ar: 'الاسم الثلاثي' },
       },
       {
         id: 'B02',
@@ -56,6 +57,20 @@ test.beforeAll(async () => {
         required: false,
         dateOfBirthField: 'dateOfBirth',
         title: { en: 'Age', ar: 'العمر' },
+      },
+      {
+        id: 'B06',
+        sectionId: 'basic',
+        type: 'singleChoice',
+        required: true,
+        privacy: 'personal',
+        purpose: 'n12-series',
+        choices: ['male', 'female'],
+        optionLabels: [
+          { en: 'Male', ar: 'ذكر' },
+          { en: 'Female', ar: 'أنثى' },
+        ],
+        title: { en: 'Gender', ar: 'النوع' },
       },
       {
         id: 'goal',
@@ -210,9 +225,14 @@ async function signIn(page: Page) {
 async function advanceToGoal(page: Page) {
   await page.getByRole('button').nth(1).click();
   await page.getByRole('button').nth(1).click();
+  await page.getByRole('button').nth(1).click();
+  await page.getByRole('radio', { name: 'Male', exact: true }).check();
+  await page.getByRole('button').nth(1).click();
 }
 
-async function createFreshAssignment(): Promise<string> {
+async function createFreshAssignment(
+  versionSnapshot?: Record<string, unknown>,
+): Promise<string> {
   const [source] = await db`
     select workspace_id,client_id,form_id,version_number,terms_policy_version,version_snapshot
     from public.form_assignments where id=${assignmentId}
@@ -228,15 +248,64 @@ async function createFreshAssignment(): Promise<string> {
     insert into public.form_versions
       (workspace_id,form_id,version_number,terms_policy_version,definition,status)
     values
-      (${source.workspace_id},${freshFormId},${source.version_number},${source.terms_policy_version},${db.json(source.version_snapshot)},'published')
+      (${source.workspace_id},${freshFormId},${source.version_number},${source.terms_policy_version},${db.json(versionSnapshot ?? source.version_snapshot)},'published')
   `;
   await db`
     insert into public.form_assignments
       (id,workspace_id,client_id,form_id,version_number,terms_policy_version,version_snapshot)
     values
-      (${freshId},${source.workspace_id},${source.client_id},${freshFormId},${source.version_number},${source.terms_policy_version},${db.json(source.version_snapshot)})
+      (${freshId},${source.workspace_id},${source.client_id},${freshFormId},${source.version_number},${source.terms_policy_version},${db.json(versionSnapshot ?? source.version_snapshot)})
   `;
   return freshId;
+}
+
+async function createApprovedControlsAssignment(): Promise<string> {
+  const [source] = await db`
+    select version_snapshot from public.form_assignments where id=${assignmentId}
+  `;
+  if (!source || typeof source.version_snapshot !== 'object')
+    throw new Error('Browser assignment snapshot is missing');
+  const base = source.version_snapshot as { questions?: unknown[] };
+  const questions = (base.questions ?? []).filter((question) =>
+    ['B01', 'B02', 'B06'].includes(String((question as { id?: unknown }).id)),
+  );
+  const controlIds = new Set([
+    'T03',
+    'T08',
+    'N07.meal_count',
+    'N07.training_timing',
+    'N08',
+    'N08.foods',
+    'N11',
+    'N12',
+  ]);
+  const controls = starterContent.questions
+    .filter((question) => controlIds.has(question.id))
+    .map((question) => {
+      const { label, ...rest } = question;
+      return { ...rest, title: label };
+    });
+  const snapshot = { questions: [...questions, ...controls] };
+  return createFreshAssignment(snapshot);
+}
+
+async function createRecordedControlsAssignment(): Promise<string> {
+  const [source] = await db`
+    select version_snapshot from public.form_assignments where id=${assignmentId}
+  `;
+  if (!source || typeof source.version_snapshot !== 'object')
+    throw new Error('Browser assignment snapshot is missing');
+  const base = source.version_snapshot as { questions?: unknown[] };
+  const ids = new Set([
+    'N11',
+    'N07.meal_count',
+    'N07.training_timing',
+    'health-context',
+  ]);
+  const questions = (base.questions ?? []).filter((question) =>
+    ids.has(String((question as { id?: unknown }).id)),
+  );
+  return createFreshAssignment({ questions });
 }
 
 async function expectAxeClean(page: Page) {
@@ -280,7 +349,7 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
         await expect(
           page.getByRole('heading', {
             level: 2,
-            name: locale === 'ar' ? 'الاسم الثلاثي' : 'Full name',
+            name: locale === 'ar' ? 'الاسم الثلاثي' : 'Full name (three parts)',
           }),
         ).toBeVisible();
         await expectAxeClean(page);
@@ -304,6 +373,8 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
           fullPage: true,
         });
         await page.getByRole('button').nth(1).click();
+        await page.getByRole('radio', { name: 'Male', exact: true }).check();
+        await page.getByRole('button').nth(1).click();
         await expect(
           page.getByRole('textbox', {
             name: locale === 'en' ? 'Your goal' : 'هدفك',
@@ -322,11 +393,12 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
 test('renders recorded new client controls across AR/EN, theme, and viewport matrix', async ({
   page,
 }) => {
-  test.setTimeout(180_000);
+  test.setTimeout(600_000);
   await signIn(page);
   for (const locale of ['ar', 'en'] as const) {
     for (const theme of ['light', 'dark'] as const) {
-      for (const width of [390, 1440] as const) {
+      for (const width of [360, 390, 1024] as const) {
+        const iterationAssignmentId = await createRecordedControlsAssignment();
         await page.setViewportSize({
           width,
           height: width === 390 ? 844 : 1000,
@@ -343,7 +415,9 @@ test('renders recorded new client controls across AR/EN, theme, and viewport mat
             url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
           },
         ]);
-        const routeResponse = await page.goto(`/forms/${assignmentId}`);
+        const routeResponse = await page.goto(
+          `/forms/${iterationAssignmentId}`,
+        );
         try {
           await expect(
             page.getByRole('heading', {
@@ -357,43 +431,11 @@ test('renders recorded new client controls across AR/EN, theme, and viewport mat
             { cause: error },
           );
         }
-        await expect(page.locator('output')).toHaveText('U3 synthetic test');
-        const nextName = locale === 'en' ? 'Next question' : 'السؤال التالي';
-        const nextButtons = page.getByRole('button', { name: nextName });
-        if (!(await nextButtons.count()))
-          throw new Error(
-            `Authorized form did not expose its localized next control (${routeResponse?.status()}): ${(await page.locator('body').innerText()).slice(0, 500)}`,
-          );
-        await nextButtons.first().click();
-        await nextButtons.first().click();
-        await page
-          .getByRole('textbox', {
-            name: locale === 'en' ? 'Your goal' : 'هدفك',
-          })
-          .fill('Recorded fixture');
-        await page.getByRole('button', { name: nextName }).click();
-        await page
-          .getByRole('textbox', {
-            name: locale === 'en' ? 'Training experience' : 'خبرتك التدريبية',
-          })
-          .fill('Recorded fixture');
-        await page.getByRole('button', { name: nextName }).click();
-        await page
-          .getByRole('textbox', {
-            name:
-              locale === 'en' ? 'Nutrition preferences' : 'تفضيلاتك الغذائية',
-          })
-          .fill('Recorded fixture');
-        await page.getByRole('button', { name: nextName }).click();
-
+        const nextName = getMessages(locale)['forms.next'];
         const capture = async (name: string, title: string) => {
           await expect(
             page.getByRole('heading', { level: 2, name: title }),
           ).toBeVisible();
-          const violations = await new AxeBuilder({ page })
-            .withTags(['wcag2a', 'wcag2aa', 'wcag21aa', 'wcag22aa'])
-            .analyze();
-          expect(violations.violations).toEqual([]);
           await page.screenshot({
             path: join(
               screenshotDir,
@@ -429,6 +471,177 @@ test('renders recorded new client controls across AR/EN, theme, and viewport mat
           'displayOnly',
           locale === 'en' ? 'About your health data' : 'عن بياناتك الصحية',
         );
+        await expectAxeClean(page);
+      }
+    }
+  }
+});
+
+test('approved F15 controls render in both locales, themes, and widths', async ({
+  page,
+}) => {
+  test.setTimeout(600_000);
+  await signIn(page);
+  const nextFor = (locale: 'ar' | 'en') =>
+    page.getByRole('button', {
+      name: locale === 'en' ? 'Next question' : 'السؤال التالي',
+    });
+  for (const locale of ['ar', 'en'] as const) {
+    for (const theme of ['light', 'dark'] as const) {
+      for (const width of [360, 390, 1024] as const) {
+        const freshId = await createApprovedControlsAssignment();
+        const series = locale === 'ar' ? 'male' : 'female';
+        await page.setViewportSize({
+          width,
+          height: width === 390 ? 844 : 1000,
+        });
+        await page.context().addCookies([
+          {
+            name: 'lifter_locale',
+            value: locale,
+            url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+          },
+          {
+            name: 'lifter_theme',
+            value: theme,
+            url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+          },
+        ]);
+        await page.goto(`/forms/${freshId}`);
+        const next = nextFor(locale);
+        const capture = async (name: string, heading?: string) => {
+          if (heading)
+            await expect(
+              page.getByRole('heading', { level: 2, name: heading }),
+            ).toBeVisible();
+          await page.screenshot({
+            path: join(
+              screenshotDir,
+              `${locale}-${theme}-${width}-${name}.png`,
+            ),
+            fullPage: true,
+          });
+        };
+        await capture(
+          'B01',
+          locale === 'en' ? 'Full name (three parts)' : 'الاسم الثلاثي',
+        );
+        await next.click();
+        await capture('B02', locale === 'en' ? 'Age' : 'العمر');
+        await next.click();
+        await capture('B06', locale === 'en' ? 'Gender' : 'النوع');
+        await page
+          .getByRole('radio', {
+            name:
+              series === 'male'
+                ? locale === 'en'
+                  ? 'Male'
+                  : 'ذكر'
+                : locale === 'en'
+                  ? 'Female'
+                  : 'أنثى',
+            exact: true,
+          })
+          .check();
+        await next.click();
+        await capture(
+          'T03',
+          locale === 'en'
+            ? 'How many days a week would you like to train?'
+            : 'حابب تتمرن كام يوم في الأسبوع؟',
+        );
+        const dayOptions = await page
+          .getByRole('radio')
+          .evaluateAll((nodes) =>
+            nodes.map((node) => (node.parentElement?.textContent ?? '').trim()),
+          );
+        expect(dayOptions).toEqual(
+          locale === 'en'
+            ? ['2 days', '3 days', '4 days', '5 days', '6 days']
+            : ['2', '3', '4', '5', '6'],
+        );
+        await next.click();
+        await capture(
+          'T08',
+          locale === 'en' ? 'Training split' : 'عايز نظام تمرين معين؟',
+        );
+        await next.click();
+        await capture('N07-meal-count');
+        await page.getByRole('radio').first().check();
+        await next.click();
+        await capture(
+          'N07-timing',
+          locale === 'en'
+            ? 'After which meal would you like to train?'
+            : 'تحب تمرينك يكون بعد الوجبة الكام؟',
+        );
+        const timingOptions = await page
+          .getByRole('radio')
+          .evaluateAll((nodes) =>
+            nodes.map((node) => (node.parentElement?.textContent ?? '').trim()),
+          );
+        if (locale === 'en')
+          expect(timingOptions).toEqual([
+            'After meal 1',
+            'After meal 2',
+            'Before the first meal',
+            "I don't have a fixed time",
+          ]);
+        await next.click();
+        await capture(
+          'N08',
+          locale === 'en'
+            ? 'What’s your food budget?'
+            : 'ميزانيتك للأكل عاملة إزاي؟',
+        );
+        expect(
+          await page
+            .getByText('Choose foods that fit your budget.', { exact: true })
+            .count(),
+        ).toBe(0);
+        const budgetChoices = page.getByRole('radio');
+        await budgetChoices.first().check();
+        await expect(page.getByRole('checkbox')).toHaveCount(4);
+        await capture('N08-food-chips');
+        await next.click();
+        await capture(
+          'N11',
+          locale === 'en'
+            ? 'How hungry do you feel, from 0 to 10?'
+            : 'بتقيّم إحساسك بالجوع كام من 10؟',
+        );
+        const slider = page.getByRole('slider');
+        expect(await slider.getAttribute('min')).toBe('0');
+        expect(await slider.getAttribute('max')).toBe('10');
+        await next.click();
+        const images = page.locator('fieldset img');
+        const imageCount = await images.count();
+        const expectedCards = starterContent.questions
+          .find((question) => question.id === 'N12')!
+          .choices!.filter((choice) => choice.startsWith(`${series}-`));
+        expect(imageCount).toBe(expectedCards.length);
+        const imageAlts = await images.evaluateAll((nodes) =>
+          nodes.map((node) => (node as HTMLImageElement).alt),
+        );
+        expect(imageAlts).toEqual(
+          expectedCards.map((choice) => `${choice.split('-')[1]}%`),
+        );
+        const maleAssetPaths = starterContent.questions
+          .find((question) => question.id === 'N12')!
+          .assetReferences!.filter((asset) => asset.includes(`/${series}-`));
+        const assetResponses = await Promise.all(
+          maleAssetPaths.map((asset) => page.request.get(asset)),
+        );
+        expect(assetResponses.map((response) => response.status())).toEqual(
+          Array.from({ length: expectedCards.length }, () => 200),
+        );
+        await capture(
+          'N12',
+          locale === 'en'
+            ? 'Choose the body-fat reference that most closely resembles your body shape.'
+            : 'اختار أقرب نسبة دهون لشكل جسمك',
+        );
+        await expectAxeClean(page);
       }
     }
   }

@@ -33,7 +33,7 @@
       "type": "profileText",
       "required": false,
       "label": {
-        "en": "Full name",
+        "en": "Full name (three parts)",
         "ar": "الاسم الثلاثي"
       },
       "profileField": "fullName"
@@ -92,14 +92,25 @@
     {
       "id": "B06",
       "sectionId": "basic",
-      "type": "shortText",
-      "required": false,
-      "charLimit": 150,
+      "type": "singleChoice",
+      "required": true,
       "label": {
-        "en": "Sex",
+        "en": "Gender",
         "ar": "النوع"
       },
-      "privacy": "personal"
+      "privacy": "personal",
+      "choices": ["male", "female"],
+      "optionLabels": [
+        {
+          "en": "Male",
+          "ar": "ذكر"
+        },
+        {
+          "en": "Female",
+          "ar": "أنثى"
+        }
+      ],
+      "purpose": "n12-series"
     },
     {
       "id": "T01",
@@ -125,13 +136,35 @@
     {
       "id": "T03",
       "sectionId": "training",
-      "type": "shortText",
+      "type": "singleChoice",
       "required": false,
-      "charLimit": 150,
       "label": {
         "en": "How many days a week would you like to train?",
         "ar": "حابب تتمرن كام يوم في الأسبوع؟"
-      }
+      },
+      "choices": ["2", "3", "4", "5", "6"],
+      "optionLabels": [
+        {
+          "en": "2 days",
+          "ar": ""
+        },
+        {
+          "en": "3 days",
+          "ar": ""
+        },
+        {
+          "en": "4 days",
+          "ar": ""
+        },
+        {
+          "en": "5 days",
+          "ar": ""
+        },
+        {
+          "en": "6 days",
+          "ar": ""
+        }
+      ]
     },
     {
       "id": "T04",
@@ -181,7 +214,7 @@
       "type": "boolean",
       "required": false,
       "label": {
-        "en": "Would you like to follow a particular training split?",
+        "en": "Training split",
         "ar": "عايز نظام تمرين معين؟"
       }
     },
@@ -257,25 +290,209 @@
       }
     },
     {
-      "id": "N07",
+      "id": "N07.meal_count",
       "sectionId": "nutrition",
-      "type": "shortText",
+      "type": "mealCount",
       "required": false,
-      "charLimit": 150,
       "label": {
-        "en": "How many meals would you like to eat each day?",
+        "en": "",
         "ar": "حابب تاكل كام وجبة في اليوم؟"
+      },
+      "choices": ["2", "3", "4", "5"],
+      "optionLabels": [
+        {
+          "en": "",
+          "ar": "وجبتين"
+        },
+        {
+          "en": "",
+          "ar": "3 وجبات"
+        },
+        {
+          "en": "",
+          "ar": "4 وجبات"
+        },
+        {
+          "en": "",
+          "ar": "5 وجبات"
+        }
+      ]
+    },
+    {
+      "id": "N07.training_timing",
+      "sectionId": "nutrition",
+      "type": "derivedChoice",
+      "required": false,
+      "label": {
+        "en": "After which meal would you like to train?",
+        "ar": "تحب تمرينك يكون بعد الوجبة الكام؟"
+      },
+      "choices": [
+        "meal-1",
+        "meal-2",
+        "meal-3",
+        "meal-4",
+        "meal-5",
+        "before-first",
+        "no-fixed-time"
+      ],
+      "optionLabels": [
+        {
+          "en": "",
+          "ar": "وجبة"
+        },
+        {
+          "en": "",
+          "ar": "وجبة"
+        },
+        {
+          "en": "",
+          "ar": "وجبة"
+        },
+        {
+          "en": "",
+          "ar": "وجبة"
+        },
+        {
+          "en": "",
+          "ar": "وجبة"
+        },
+        {
+          "en": "Before the first meal",
+          "ar": "قبل أول وجبة"
+        },
+        {
+          "en": "I don't have a fixed time",
+          "ar": "معنديش ميعاد ثابت"
+        }
+      ],
+      "derivedOptions": {
+        "sourceQuestionId": "N07.meal_count",
+        "fixedChoices": ["before-first", "no-fixed-time"]
       }
     },
     {
       "id": "N08",
       "sectionId": "nutrition",
-      "type": "shortText",
+      "type": "singleChoice",
       "required": false,
-      "charLimit": 150,
       "label": {
-        "en": "What is your food budget like?",
+        "en": "What’s your food budget?",
         "ar": "ميزانيتك للأكل عاملة إزاي؟"
+      },
+      "choices": ["low", "medium", "high"],
+      "optionLabels": [
+        {
+          "en": "",
+          "ar": "ميزانية قليلة"
+        },
+        {
+          "en": "",
+          "ar": "ميزانية متوسطة"
+        },
+        {
+          "en": "",
+          "ar": "ميزانية عالية"
+        }
+      ]
+    },
+    {
+      "id": "N08.foods",
+      "sectionId": "nutrition",
+      "type": "multiChoice",
+      "required": false,
+      "label": {
+        "en": "What’s your food budget?",
+        "ar": "ميزانيتك للأكل عاملة إزاي؟"
+      },
+      "choices": [
+        "low:cottage-cheese",
+        "low:plant-protein",
+        "low:eggs",
+        "low:baladi-bread",
+        "medium:eggs",
+        "medium:chicken",
+        "medium:meat",
+        "medium:toast",
+        "medium:fish",
+        "high:salmon",
+        "high:smoked-turkey",
+        "high:steak",
+        "high:ribeye"
+      ],
+      "optionLabels": [
+        {
+          "en": "",
+          "ar": "جبنة قريش"
+        },
+        {
+          "en": "",
+          "ar": "بروتين نباتي"
+        },
+        {
+          "en": "",
+          "ar": "بيض"
+        },
+        {
+          "en": "",
+          "ar": "عيش بلدي"
+        },
+        {
+          "en": "",
+          "ar": "بيض"
+        },
+        {
+          "en": "",
+          "ar": "فراخ"
+        },
+        {
+          "en": "",
+          "ar": "لحمة"
+        },
+        {
+          "en": "",
+          "ar": "توست"
+        },
+        {
+          "en": "",
+          "ar": "سمك"
+        },
+        {
+          "en": "",
+          "ar": "سالمون"
+        },
+        {
+          "en": "",
+          "ar": "تركي مدخن"
+        },
+        {
+          "en": "",
+          "ar": "ستيك"
+        },
+        {
+          "en": "",
+          "ar": "ريب آي"
+        }
+      ],
+      "when": {
+        "mode": "any",
+        "conditions": [
+          {
+            "questionId": "N08",
+            "operator": "equals",
+            "value": "low"
+          },
+          {
+            "questionId": "N08",
+            "operator": "equals",
+            "value": "medium"
+          },
+          {
+            "questionId": "N08",
+            "operator": "equals",
+            "value": "high"
+          }
+        ]
       }
     },
     {
@@ -303,24 +520,215 @@
     {
       "id": "N11",
       "sectionId": "nutrition",
-      "type": "shortText",
+      "type": "slider",
       "required": false,
-      "charLimit": 150,
       "label": {
         "en": "How hungry do you feel, from 0 to 10?",
         "ar": "بتقيّم إحساسك بالجوع كام من 10؟"
-      }
+      },
+      "validation": {
+        "min": 0,
+        "max": 10,
+        "step": 1
+      },
+      "labels": {
+        "minimum": "مش بجوع تقريبًا",
+        "middle": "جوع متوسط",
+        "maximum": "جوع شديد جدًا"
+      },
+      "feedbackBands": [
+        {
+          "min": 0,
+          "max": 2,
+          "text": "إحساس قليل جدًا بالجوع"
+        },
+        {
+          "min": 3,
+          "max": 4,
+          "text": "جوع خفيف"
+        },
+        {
+          "min": 5,
+          "max": 6,
+          "text": "جوع متوسط"
+        },
+        {
+          "min": 7,
+          "max": 8,
+          "text": "جوع مرتفع"
+        },
+        {
+          "min": 9,
+          "max": 10,
+          "text": "جوع شديد جدًا"
+        }
+      ]
     },
     {
       "id": "N12",
       "sectionId": "nutrition",
-      "type": "shortText",
+      "type": "imageChoice",
       "required": false,
-      "charLimit": 150,
       "label": {
         "en": "Choose the body-fat reference that most closely resembles your body shape.",
         "ar": "اختار أقرب نسبة دهون لشكل جسمك"
-      }
+      },
+      "choices": [
+        "male-10",
+        "male-12",
+        "male-15",
+        "male-18",
+        "male-20",
+        "male-22",
+        "male-25",
+        "male-28",
+        "male-30",
+        "male-32",
+        "male-35",
+        "male-40",
+        "female-18",
+        "female-20",
+        "female-22",
+        "female-25",
+        "female-28",
+        "female-30",
+        "female-32",
+        "female-35",
+        "female-38",
+        "female-40",
+        "female-42",
+        "female-45",
+        "female-50"
+      ],
+      "optionLabels": [
+        {
+          "en": "10%",
+          "ar": "10%"
+        },
+        {
+          "en": "12%",
+          "ar": "12%"
+        },
+        {
+          "en": "15%",
+          "ar": "15%"
+        },
+        {
+          "en": "18%",
+          "ar": "18%"
+        },
+        {
+          "en": "20%",
+          "ar": "20%"
+        },
+        {
+          "en": "22%",
+          "ar": "22%"
+        },
+        {
+          "en": "25%",
+          "ar": "25%"
+        },
+        {
+          "en": "28%",
+          "ar": "28%"
+        },
+        {
+          "en": "30%",
+          "ar": "30%"
+        },
+        {
+          "en": "32%",
+          "ar": "32%"
+        },
+        {
+          "en": "35%",
+          "ar": "35%"
+        },
+        {
+          "en": "40%",
+          "ar": "40%"
+        },
+        {
+          "en": "18%",
+          "ar": "18%"
+        },
+        {
+          "en": "20%",
+          "ar": "20%"
+        },
+        {
+          "en": "22%",
+          "ar": "22%"
+        },
+        {
+          "en": "25%",
+          "ar": "25%"
+        },
+        {
+          "en": "28%",
+          "ar": "28%"
+        },
+        {
+          "en": "30%",
+          "ar": "30%"
+        },
+        {
+          "en": "32%",
+          "ar": "32%"
+        },
+        {
+          "en": "35%",
+          "ar": "35%"
+        },
+        {
+          "en": "38%",
+          "ar": "38%"
+        },
+        {
+          "en": "40%",
+          "ar": "40%"
+        },
+        {
+          "en": "42%",
+          "ar": "42%"
+        },
+        {
+          "en": "45%",
+          "ar": "45%"
+        },
+        {
+          "en": "50%",
+          "ar": "50%"
+        }
+      ],
+      "assetReferences": [
+        "/images/body-fat/male-10.webp",
+        "/images/body-fat/male-12.webp",
+        "/images/body-fat/male-15.webp",
+        "/images/body-fat/male-18.webp",
+        "/images/body-fat/male-20.webp",
+        "/images/body-fat/male-22.webp",
+        "/images/body-fat/male-25.webp",
+        "/images/body-fat/male-28.webp",
+        "/images/body-fat/male-30.webp",
+        "/images/body-fat/male-32.webp",
+        "/images/body-fat/male-35.webp",
+        "/images/body-fat/male-40.webp",
+        "/images/body-fat/female-18.webp",
+        "/images/body-fat/female-20.webp",
+        "/images/body-fat/female-22.webp",
+        "/images/body-fat/female-25.webp",
+        "/images/body-fat/female-28.webp",
+        "/images/body-fat/female-30.webp",
+        "/images/body-fat/female-32.webp",
+        "/images/body-fat/female-35.webp",
+        "/images/body-fat/female-38.webp",
+        "/images/body-fat/female-40.webp",
+        "/images/body-fat/female-42.webp",
+        "/images/body-fat/female-45.webp",
+        "/images/body-fat/female-50.webp"
+      ]
     }
   ],
   "deadlineDays": 3,

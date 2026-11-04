@@ -20,6 +20,8 @@ export type ProgressionResult = {
   answers: FormAnswerSet;
   errors: readonly FormValidationIssue[];
   applicableQuestionIds: readonly string[];
+  /** Navigable questions; N08.foods is rendered inline with its parent. */
+  stepQuestionIds: readonly string[];
   currentQuestion: ProgressionQuestion | null;
   previousQuestionId: string | null;
   nextQuestionId: string | null;
@@ -105,6 +107,7 @@ function failure(
     answers,
     errors,
     applicableQuestionIds: [],
+    stepQuestionIds: [],
     currentQuestion: null,
     previousQuestionId: null,
     nextQuestionId: null,
@@ -161,6 +164,8 @@ export function evaluateProgression(
 
   const activeInOrder = input.questions.filter(({ id }) => applicable.has(id));
   const activeIds = activeInOrder.map(({ id }) => id);
+  const stepQuestions = activeInOrder.filter(({ id }) => id !== 'N08.foods');
+  const stepIds = stepQuestions.map(({ id }) => id);
   const missingRequiredQuestionIds = activeInOrder
     .filter(
       (question) =>
@@ -171,26 +176,29 @@ export function evaluateProgression(
   const requestedIndex =
     input.currentQuestionId === undefined
       ? -1
-      : activeIds.indexOf(input.currentQuestionId);
+      : stepIds.indexOf(input.currentQuestionId);
   const firstMissingId = missingRequiredQuestionIds[0];
+  const firstMissingStepId =
+    firstMissingId === 'N08.foods' ? 'N08' : firstMissingId;
   const currentId =
     requestedIndex >= 0
       ? input.currentQuestionId!
-      : (firstMissingId ?? activeIds[0] ?? null);
-  const currentIndex = currentId === null ? -1 : activeIds.indexOf(currentId);
+      : (firstMissingStepId ?? stepIds[0] ?? null);
+  const currentIndex = currentId === null ? -1 : stepIds.indexOf(currentId);
   const currentQuestion =
-    currentIndex < 0 ? null : (activeInOrder[currentIndex] ?? null);
+    currentIndex < 0 ? null : (stepQuestions[currentIndex] ?? null);
 
   return {
     answers: input.answers,
     errors: [],
     applicableQuestionIds: activeIds,
+    stepQuestionIds: stepIds,
     currentQuestion,
     previousQuestionId:
-      currentIndex > 0 ? (activeIds[currentIndex - 1] ?? null) : null,
+      currentIndex > 0 ? (stepIds[currentIndex - 1] ?? null) : null,
     nextQuestionId:
-      currentIndex >= 0 && currentIndex < activeIds.length - 1
-        ? (activeIds[currentIndex + 1] ?? null)
+      currentIndex >= 0 && currentIndex < stepIds.length - 1
+        ? (stepIds[currentIndex + 1] ?? null)
         : null,
     missingRequiredQuestionIds,
     complete: missingRequiredQuestionIds.length === 0,

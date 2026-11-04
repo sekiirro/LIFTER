@@ -576,7 +576,7 @@ export function validateFormDefinition(input: unknown): FormValidationIssue[] {
       }
       if (
         question.purpose === 'n12-series' &&
-        (question.id !== 'sex' ||
+        ((question.id !== 'sex' && question.id !== 'B06') ||
           question.type !== 'singleChoice' ||
           question.required !== true ||
           question.privacy !== 'personal' ||

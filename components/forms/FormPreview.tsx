@@ -183,7 +183,11 @@ function PreviewQuestion({
   }
   if (question.type === 'imageChoice') {
     const series = resolveN12ImageSeries(
-      typeof answers.sex === 'string' ? answers.sex : undefined,
+      typeof answers.B06 === 'string'
+        ? answers.B06
+        : typeof answers.sex === 'string'
+          ? answers.sex
+          : undefined,
     );
     const references = question.assetReferences ?? [];
     const allowed = references

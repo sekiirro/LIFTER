@@ -24,7 +24,7 @@ describe('S14 draft-copy PO review package', () => {
     for (const item of [
       'Health notice Arabic',
       'Health notice English',
-      'EN intake translations',
+      'Remaining EN intake rows and options',
     ])
       expect(report).toContain(item);
     expect(report).toContain(
@@ -45,9 +45,12 @@ describe('S14 draft-copy PO review package', () => {
     expect(decisions.P3_consent.terms_copy_status).toContain(
       'Approved verbatim by PO S30-PO-1 Q2 at 5084916',
     );
-    expect(spec).toContain('Each is pending PO review before publication.');
     expect(spec).toContain(
-      'All EN translations in this table remain pending PO review.',
+      'All other EN rows and options in this table remain pending PO review.',
+    );
+    expect(report).toContain('PO-approved intake English is limited to B01');
+    expect(report).toContain(
+      'all remaining authored translations are pending PO review before publication.',
     );
   });
 

@@ -19,6 +19,21 @@ export function setClientAnswer(
   return next;
 }
 
+/** Keep only food chips that belong to the currently selected N08 budget. */
+export function answersForBudgetSelection(
+  answers: FormAnswerSet,
+  budget: string,
+): FormAnswerSet {
+  const selectedFoods = answers['N08.foods'];
+  if (!Array.isArray(selectedFoods)) return answers;
+  const prefix = `${budget}:`;
+  const stillValid = selectedFoods.filter((food) => food.startsWith(prefix));
+  const next = { ...answers };
+  if (stillValid.length > 0) next['N08.foods'] = stillValid;
+  else delete next['N08.foods'];
+  return next;
+}
+
 export function answersForClientProgression<T extends FormQuestion>(
   questions: readonly T[],
   answers: FormAnswerSet,

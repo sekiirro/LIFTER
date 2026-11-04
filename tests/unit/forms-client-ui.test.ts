@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import { QuestionFlow } from '../../components/forms/QuestionFlow';
 import { TextAnswerField } from '../../components/forms/TextAnswerField';
 import {
+  answersForBudgetSelection,
   applicableClientAnswers,
   setClientAnswer,
 } from '../../lib/forms/client-answer-state';
@@ -163,6 +164,138 @@ describe('QuestionFlow', () => {
     );
     expect(slider).toContain('type="range"');
     expect(slider).toContain('Score feedback');
+  });
+
+  it('renders the PO-approved N07 English timing question and dynamic option wording', () => {
+    const html = renderToStaticMarkup(
+      createElement(QuestionFlow, {
+        locale: 'en',
+        questions: [
+          {
+            id: 'N07.training_timing',
+            sectionId: 'nutrition',
+            type: 'derivedChoice',
+            required: false,
+            title: {
+              en: 'After which meal would you like to train?',
+              ar: 'ØªØ­Ø¨ ØªÙ…Ø±ÙŠÙ†Ùƒ ÙŠÙƒÙˆÙ† Ø¨Ø¹Ø¯ Ø§Ù„ÙˆØ¬Ø¨Ø© Ø§Ù„ÙƒØ§Ù…ØŸ',
+            },
+            choices: [
+              'meal-1',
+              'meal-2',
+              'meal-3',
+              'meal-4',
+              'meal-5',
+              'before-first',
+              'no-fixed-time',
+            ],
+            optionLabels: [
+              { en: '', ar: 'ÙˆØ¬Ø¨Ø©' },
+              { en: '', ar: 'ÙˆØ¬Ø¨Ø©' },
+              { en: '', ar: 'ÙˆØ¬Ø¨Ø©' },
+              { en: '', ar: 'ÙˆØ¬Ø¨Ø©' },
+              { en: '', ar: 'ÙˆØ¬Ø¨Ø©' },
+              { en: 'Before the first meal', ar: 'Ù‚Ø¨Ù„ Ø£ÙˆÙ„ ÙˆØ¬Ø¨Ø©' },
+              {
+                en: "I don't have a fixed time",
+                ar: 'Ù…Ø¹Ù†Ø¯ÙŠØ´ Ù…ÙŠØ¹Ø§Ø¯ Ø«Ø§Ø¨Øª',
+              },
+            ],
+            derivedOptions: {
+              sourceQuestionId: 'N07.meal_count',
+              fixedChoices: ['before-first', 'no-fixed-time'],
+            },
+          },
+          {
+            id: 'N07.meal_count',
+            sectionId: 'nutrition',
+            type: 'mealCount',
+            required: false,
+            title: { en: '', ar: '' },
+            choices: ['2', '3', '4', '5'],
+          },
+        ],
+        adapter,
+        assignmentId: 'n07-approved-copy',
+        initialAnswers: { 'N07.meal_count': '3' },
+      }),
+    );
+    expect(html).toContain('After which meal would you like to train?');
+    expect(html).toContain('After meal 1');
+    expect(html).toContain('After meal 2');
+    expect(html).toContain('After meal 3');
+    expect(html).not.toContain('After meal 4');
+    expect(html).toContain('Before the first meal');
+    expect(html).toContain('I don&#x27;t have a fixed time');
+  });
+
+  it('renders budget chips within the N08 question and prunes values when budget changes', () => {
+    const budgetQuestions = [
+      {
+        id: 'N08',
+        sectionId: 'nutrition',
+        type: 'singleChoice' as const,
+        required: false,
+        title: { en: 'What’s your food budget?', ar: 'Ù…ÙŠØ²Ø§Ù†ÙŠØªÙƒ' },
+        choices: ['low', 'medium', 'high'],
+        optionLabels: [
+          { en: '', ar: 'Ù…ÙŠØ²Ø§Ù†ÙŠØ© Ù‚Ù„ÙŠÙ„Ø©' },
+          { en: '', ar: 'Ù…ÙŠØ²Ø§Ù†ÙŠØ© Ù…ØªÙˆØ³Ø·Ø©' },
+          { en: '', ar: 'Ù…ÙŠØ²Ø§Ù†ÙŠØ© Ø¹Ø§Ù„ÙŠØ©' },
+        ],
+      },
+      {
+        id: 'N08.foods',
+        sectionId: 'nutrition',
+        type: 'multiChoice' as const,
+        required: false,
+        title: { en: "What's your food budget?", ar: 'Ù…ÙŠØ²Ø§Ù†ÙŠØªÙƒ' },
+        choices: ['low:egg', 'medium:chicken', 'high:salmon'],
+        optionLabels: [
+          { en: '', ar: 'Ø¨ÙŠØ¶' },
+          { en: '', ar: 'ÙØ±Ø§Ø®' },
+          { en: '', ar: 'Ø³Ø§Ù„Ù…ÙˆÙ†' },
+        ],
+        when: {
+          mode: 'any' as const,
+          conditions: [
+            { questionId: 'N08', operator: 'equals' as const, value: 'low' },
+            {
+              questionId: 'N08',
+              operator: 'equals' as const,
+              value: 'medium',
+            },
+            { questionId: 'N08', operator: 'equals' as const, value: 'high' },
+          ],
+        },
+      },
+      {
+        id: 'N09',
+        sectionId: 'nutrition',
+        type: 'shortText' as const,
+        required: false,
+        title: { en: 'Next question', ar: 'Ù…Ø§ Ø¨Ø¹Ø¯Ù‡' },
+      },
+    ];
+    const html = renderToStaticMarkup(
+      createElement(QuestionFlow, {
+        locale: 'ar',
+        questions: budgetQuestions,
+        adapter,
+        assignmentId: 'n08-budget',
+        initialAnswers: { N08: 'medium', 'N08.foods': ['medium:chicken'] },
+      }),
+    );
+    expect(html).toContain('ÙØ±Ø§Ø®');
+    expect(html).not.toContain('Ø¨ÙŠØ¶');
+    expect(html).not.toContain('Ø³Ø§Ù„Ù…ÙˆÙ†');
+    expect(html).not.toContain('Next question');
+    expect(
+      answersForBudgetSelection(
+        { N08: 'low', 'N08.foods': ['medium:chicken'] },
+        'low',
+      ),
+    ).not.toHaveProperty('N08.foods');
   });
 
   it('keeps submitted history readable and removes correction after relationship end', () => {

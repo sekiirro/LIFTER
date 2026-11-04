@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import {
   deriveMealTimingOptions,
+  evaluateProgression,
   reconcileDerivedChoice,
 } from '../../lib/forms/progression';
 
@@ -28,5 +29,55 @@ describe('S14 derived N7 meal timing options', () => {
     const allowed = deriveMealTimingOptions(2);
     expect(reconcileDerivedChoice('meal-2', allowed)).toBe('meal-2');
     expect(reconcileDerivedChoice('meal-4', allowed)).toBeUndefined();
+  });
+
+  it('keeps budget food chips in the N08 question step', () => {
+    const questions = [
+      {
+        id: 'N08',
+        sectionId: 'nutrition',
+        type: 'singleChoice' as const,
+        required: false,
+        choices: ['low', 'medium', 'high'],
+      },
+      {
+        id: 'N08.foods',
+        sectionId: 'nutrition',
+        type: 'multiChoice' as const,
+        required: false,
+        choices: ['low:egg', 'medium:chicken', 'high:salmon'],
+        when: {
+          mode: 'any' as const,
+          conditions: [
+            { questionId: 'N08', operator: 'equals' as const, value: 'low' },
+            {
+              questionId: 'N08',
+              operator: 'equals' as const,
+              value: 'medium',
+            },
+            { questionId: 'N08', operator: 'equals' as const, value: 'high' },
+          ],
+        },
+      },
+      {
+        id: 'N09',
+        sectionId: 'nutrition',
+        type: 'shortText' as const,
+        required: false,
+      },
+    ];
+    const progression = evaluateProgression({
+      questions,
+      answers: { N08: 'medium', 'N08.foods': ['medium:chicken'] },
+      currentQuestionId: 'N08',
+    });
+
+    expect(progression.errors).toEqual([]);
+    expect(progression.applicableQuestionIds).toEqual([
+      'N08',
+      'N08.foods',
+      'N09',
+    ]);
+    expect(progression.nextQuestionId).toBe('N09');
   });
 });
