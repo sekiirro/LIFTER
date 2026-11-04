@@ -28,11 +28,11 @@ A fresh clone can be installed and then typechecked, linted, unit-tested and bui
 
 ### User Story 2 - Automated CI gates (Priority: P1)
 
-Every push and pull request runs the same gates automatically and reports pass/fail.
+Pushes to main and pull requests run the same gates automatically and report pass/fail.
 
 **Why this priority**: The Constitution requires independent, repeatable quality gates before commit/merge.
 
-**Independent Test**: Push a branch. CI runs typecheck, lint, unit tests and the edge build, and reports status.
+**Independent Test**: Push to main. CI runs typecheck, lint, unit tests and the edge build, and reports status.
 
 **Acceptance Scenarios**:
 
@@ -88,7 +88,7 @@ The Product Owner wants main pushes and pull requests to receive the required CI
 1. **Given** a push to a branch other than `main`, **When** GitHub evaluates workflow triggers, **Then** the push trigger does not run CI.
 2. **Given** a push to `main`, **When** GitHub evaluates workflow triggers, **Then** one push-triggered CI run starts.
 3. **Given** a pull request head commit, **When** GitHub evaluates workflow triggers, **Then** CI runs for the pull request head.
-4. **Given** an earlier CI run for a pull request is still active, **When** a newer head supersedes it, **Then** the earlier pull request run is canceled; a main push run is never canceled by this policy.
+4. **Given** an earlier CI run for a pull request is still active, **When** a newer head supersedes it, **Then** the earlier pull request run is canceled; main push runs are never canceled or replaced by concurrency.
 5. **Given** the validate job has no browser-dependent steps, **When** validate runs, **Then** it does not install the unused Playwright browser.
 6. **Given** CI runs, **When** Storage checks execute, **Then** they remain a distinct `storage` job with an independent result.
 
@@ -104,7 +104,7 @@ The Product Owner wants main pushes and pull requests to receive the required CI
 - **FR-006**: The app MUST expose a public health endpoint returning only `status` and `version`.
 - **FR-007**: The edge build MUST produce the worker artifact for the approved edge host without deploying it.
 - **FR-008**: A size-report command MUST compute the worker bundle size (uncompressed, plus gzip shown for information), compare the uncompressed size to a configurable limit (default = official Workers limit of 64 MiB uncompressed; Cloudflare has no compressed limit, verified 2026-10-27), print headroom, and exit non-zero when over.
-- **FR-009**: CI MUST run typecheck, lint, format check, unit tests, edge build and size report on every push and PR. CI MUST use no secrets and MUST NOT deploy.
+- **FR-009**: CI MUST run typecheck, lint, format check, unit tests, edge build and size report on pushes to main and pull requests. CI MUST use no secrets and MUST NOT deploy.
 - **FR-010**: Local database tooling configuration MUST be committed (no schema, no migrations, no credentials).
 - **FR-011**: No secrets or real env values may be committed. A placeholder-only example env file MUST exist.
 - **FR-012**: A README section MUST document prerequisites, commands and the gate list.
@@ -112,7 +112,7 @@ The Product Owner wants main pushes and pull requests to receive the required CI
 - **FR-014**: The edge build and size report MUST run in Linux CI. The edge adapter's Windows support is limited, so these two checks are not required on Windows.
 - **FR-015**: CI push events MUST run only for the `main` branch; pushes to other branches MUST NOT start a push-triggered CI run.
 - **FR-016**: CI MUST run for pull request heads through the `pull_request` event.
-- **FR-017**: CI MUST cancel superseded pull request runs using a concurrency group scoped by pull request number; this cancellation policy MUST NOT cancel runs triggered by pushes to `main`.
+- **FR-017**: CI MUST cancel superseded pull request runs using a concurrency group scoped by pull request number; main push runs MUST use unique concurrency groups so queued runs are never replaced.
 - **FR-018**: The `validate` job MUST NOT install Playwright browser binaries when none of its steps use a browser.
 - **FR-019**: The Storage checks MUST remain a distinct required CI job named `storage`, with an independently reported result.
 
@@ -126,7 +126,7 @@ The Product Owner wants main pushes and pull requests to receive the required CI
 - **SC-004**: The size report states the used percentage of the 64 MiB uncompressed Worker limit on every build.
 - **SC-005**: 0 deployments and 0 paid-service calls occur as part of this feature.
 - **SC-006**: A push to `main` starts one push-triggered CI run; a push to a non-main branch starts none; pull requests receive CI through `pull_request`.
-- **SC-007**: When a newer head supersedes an active pull request run, the older pull request run is canceled, while main push runs remain uncanceled by concurrency policy.
+- **SC-007**: When a newer head supersedes an active pull request run, the older pull request run is canceled, while main push runs remain uncanceled and are never replaced by concurrency grouping.
 - **SC-008**: The `validate` job contains no Playwright browser installation step if no validate step uses a browser.
 - **SC-009**: Every CI run reports distinct `validate`, `integration`, and `storage` jobs, with Storage required independently.
 
@@ -135,7 +135,7 @@ The Product Owner wants main pushes and pull requests to receive the required CI
 ### Session 2026-11-04
 
 - **S33-PO-4 (binding)**: The Product Owner directed: “S33-Q6: Approve Option 2. Implement all proposed CI optimizations, but keep the Storage job separate for now.” The same decision directs GitHub-hosted runners, postpones local self-hosted runner work and PR #45, and preserves exact-head CodeRabbit approval, zero unresolved threads, three executed green CI runs, and explicit PO approval per merge. No automatic merges.
-- The approved CI scope for this specification is: push events only on `main`; `pull_request` CI per pull request head; PR-only concurrency that cancels superseded runs and never cancels main; remove the unused Playwright browser installation from `validate` only when no validate step uses a browser; retain `validate`, `integration`, and separate required `storage` jobs and all other steps/checks.
+- The approved CI scope for this specification is: push events only on `main`; `pull_request` CI per pull request head; PR-only concurrency that cancels superseded runs while unique main-push groups prevent queued runs from being replaced; remove the unused Playwright browser installation from `validate` only when no validate step uses a browser; retain `validate`, `integration`, and separate required `storage` jobs and all other steps/checks.
 - **No open ambiguities** remain for this CI optimization scope.
 
 ## Assumptions

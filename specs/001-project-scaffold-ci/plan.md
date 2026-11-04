@@ -88,7 +88,7 @@ vitest.config.ts  playwright.config.ts
 
 - Keep the workflow on GitHub-hosted `ubuntu-latest` runners.
 - Set the push branch filter to `main`; retain the `pull_request` trigger.
-- Add top-level concurrency grouping by PR number for pull requests and by ref otherwise. Set cancellation true only for `pull_request` events so main push runs are not canceled.
+- Add top-level concurrency grouping by PR number for pull requests. Give each push run a unique group containing its ref and run ID; set cancellation true only for `pull_request` events. This prevents GitHub from replacing a pending main run in a shared concurrency group.
 - Inspect every `validate` step for browser use. If none uses a browser, remove only the Playwright browser install from `validate`.
 - Preserve job names `validate`, `integration`, and `storage`; leave Storage separate and required. Preserve every other step and existing action pin.
 - Update docs/08-agent-workflow.md in the same PR and include all workflow changes in the PR description.

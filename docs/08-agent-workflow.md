@@ -74,7 +74,7 @@ PR before any merge into `main`. This process does not replace or bypass that ga
 
 ## Main merge gate
 
-CI runs on pushes to `main` and through `pull_request` for PR heads; feature-branch pushes do not create duplicate push runs. Superseded pull request runs are canceled by PR-scoped concurrency, while main push runs are never canceled by that policy. For each merge candidate, require three executed green CI runs on the exact final PR head; rerun the PR workflow on that same head as needed. The separate `validate`, `integration`, and `storage` jobs and the secret scan remain part of the gate.
+CI runs on pushes to `main` and through `pull_request` for PR heads; feature-branch pushes do not create duplicate push runs. Superseded pull request runs are canceled by PR-scoped concurrency, while main pushes use unique ref-plus-run-ID groups and are neither canceled nor replaced by that policy. For each merge candidate, require three executed green CI runs on the exact final PR head; rerun the PR workflow on that same head as needed. The separate `validate`, `integration`, and `storage` jobs and the secret scan remain part of the gate.
 
 Before asking the PO to approve a merge to `main`, require items 1-5 on the exact PR head:
 

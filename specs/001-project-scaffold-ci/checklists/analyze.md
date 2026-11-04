@@ -1,22 +1,23 @@
 # S33 CI Optimization Analyze Checklist
 
-**Analyzed:** 2026-11-04 18:56 UTC  
+**Analyzed:** 2026-11-04 19:14 UTC
 **Feature:** 001-project-scaffold-ci  
-**Reviewed inputs:** spec.md, plan.md, tasks.md (all updated 2026-11-04 before this analysis)
+**Reviewed inputs:** spec.md, plan.md, tasks.md (updated 2026-11-04 before this analysis)
 
 ## Readiness
 
-- [x] New requirements have measurable acceptance criteria and Given/When/Then scenarios.
-- [x] Scope traces to the binding PO decision S33-PO-4 and preserves the separate Storage job.
-- [x] Clarifications cite the PO source and explicitly state that no open ambiguities remain.
-- [x] Plan describes the exact workflow and documentation scope.
-- [x] Tasks T016–T018 identify the implementation work and reference FR IDs.
-- [x] Browser-install removal is conditional on verifying that no validate step uses a browser.
-- [x] Concurrency semantics explicitly prevent cancellation of main push runs.
-- [x] Existing job names, action pins, checks, and other steps are preserved by the plan.
-- [x] No constitution, DESIGN.md, or PO-decision record changes are needed.
-- [x] The branch-protection gap is reported separately for PO-only settings; it does not require a workflow implementation decision and no protection setting will be changed.
-- [x] No unresolved ambiguity or scope decision remains for these approved CI optimizations.
+- [x] Requirements have measurable success criteria and Given/When/Then scenarios.
+- [x] Clarifications cite binding S33-PO-4 and explicitly state no open ambiguities.
+- [x] Push CI is limited to main; PR checks use pull_request.
+- [x] PR runs share a PR-number concurrency group and can cancel superseded PR runs.
+- [x] Main pushes have unique ref-plus-run-ID groups; this prevents GitHub from replacing pending main runs even though cancellation is disabled for pushes.
+- [x] Plan and tasks cover workflow and docs scope and reference FR IDs.
+- [x] Browser-install removal is conditional on confirming no validate step uses a browser.
+- [x] Existing job names, action pins, checks, and other steps are preserved.
+- [x] Storage remains separate and independently required.
+- [x] Branch-protection gaps remain a separately reported PO-only decision; no settings are changed.
+- [x] No constitution, DESIGN.md, or PO-decision records are changed.
+- [x] No open ambiguity remains for these approved CI optimizations.
 
 ## Findings
 
@@ -24,6 +25,8 @@
 |---|---|---|
 | CRITICAL | None | — |
 | HIGH | None | — |
-| MEDIUM | Main branch currently has no protection/ruleset, as verified read-only under S33-PO-5 resume 3. | PO decision recorded separately in the run report; protection changes remain PO-only and are outside this implementation. |
+| MEDIUM | GitHub can replace an older pending run in a shared concurrency group even when cancel-in-progress is false. | Resolved by assigning each push a ref-plus-run-ID group while retaining shared PR-number groups. |
+| MEDIUM | Legacy FR-009 and User Story 2 described CI on every branch push. | Resolved: push CI is main-only. |
 
 **Analyze result: PASS — 0 CRITICAL, 0 HIGH findings.**
+| MEDIUM | Main has no branch protection/ruleset. | Reported as a PO-only settings decision; no change is made here. |
