@@ -1,3 +1,5 @@
+import { readFileSync } from 'node:fs';
+import { resolve } from 'node:path';
 import { expect, it } from 'vitest';
 import {
   isValidSignupUsername,
@@ -36,4 +38,25 @@ it('T080 rejects malformed usernames through the signup field boundary', () => {
   for (const username of [' Client.123', 'Client.123 ', 'Client\u200B123']) {
     expect(signupFields({ ...fields, username })).toBeNull();
   }
+});
+
+it('T080 pins the SQL RPC normalization and allow-list against a synthetic mutation', () => {
+  const migration = readFileSync(
+    resolve(
+      process.cwd(),
+      'supabase/migrations/20261108010000_f15_signup_username_character_policy.sql',
+    ),
+    'utf8',
+  );
+  const hasUsernamePolicy = (sql: string) =>
+    sql.includes(
+      "normalized_username:=lower(normalize(fields->>'username',NFKC));",
+    ) && sql.includes("if normalized_username !~ '^[a-z0-9_.]{3,30}$' then");
+  expect(hasUsernamePolicy(migration)).toBe(true);
+  const permissiveMutation = migration.replace(
+    "if normalized_username !~ '^[a-z0-9_.]{3,30}$' then",
+    "if normalized_username !~ '^.*$' then",
+  );
+  expect(permissiveMutation).not.toBe(migration);
+  expect(hasUsernamePolicy(permissiveMutation)).toBe(false);
 });
