@@ -196,6 +196,25 @@ describe('production exercise authoring actions', () => {
     );
   });
 
+  it('uses the edited equipment selection when it differs from stored equipment codes', async () => {
+    await saveExerciseAction({
+      draft: { ...draft, equipment: 'dumbbell' },
+      scope: 'global',
+      workspaceId: null,
+      operationKey: '11111111-1111-4111-8111-111111111111',
+      id: '55555555-5555-4555-8555-555555555555',
+      expectedVersion: 2,
+      equipmentCodes: ['barbell', 'cable'],
+    } as Parameters<typeof saveExerciseAction>[0]);
+    expect(mocks.versionExercise).toHaveBeenCalledWith(
+      expect.objectContaining({
+        request: expect.objectContaining({
+          equipment_codes: ['dumbbell'],
+        }),
+      }),
+    );
+  });
+
   it('returns invalid for malformed save and remove payloads without throwing or calling an RPC', async () => {
     for (const payload of [
       null,

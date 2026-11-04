@@ -165,11 +165,12 @@ function requestFor(
     ...(exercise.secondaryMuscles?.length
       ? { secondary_muscle_codes: exercise.secondaryMuscles }
       : {}),
-    equipment_codes: equipmentCodes?.length
-      ? equipmentCodes.filter((code) =>
-          EQUIPMENT_CODES.includes(code as (typeof EQUIPMENT_CODES)[number]),
-        )
-      : [exercise.equipment],
+    equipment_codes:
+      equipmentCodes?.length && equipmentCodes[0] === exercise.equipment
+        ? equipmentCodes.filter((code) =>
+            EQUIPMENT_CODES.includes(code as (typeof EQUIPMENT_CODES)[number]),
+          )
+        : [exercise.equipment],
     ...(instructions?.ar === undefined
       ? {}
       : { instructions_ar: instructions.ar }),
