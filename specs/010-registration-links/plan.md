@@ -97,3 +97,7 @@ Extend existing harness/DS; no new service or project layout. Keep pure validati
 ## Complexity Tracking
 
 No constitutional violation. Specific binding definer RPCs are a controlled exception to the architecture's generic invoker preference, using existing hardened pattern. Deferred parent audit is necessary for final installment count; column grants plus gated reader are necessary with a shared authenticated SQL role. Transaction provenance guard prevents schedule extension after issuance. R10-1 binds package_version_id and requires available/current under offer lock after authorization; stale_terms is translated with reload and tested for no writes/events. Strict source decisions and workflow ownership remain intact.
+
+## S33-PO-4 test hygiene
+
+The S33 registration-links acceptance adjustment captures response status and rendered route content in heading-failure diagnostics. No product behavior or UI changes are in scope.

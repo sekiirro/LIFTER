@@ -113,3 +113,9 @@ Existing [production gates](../../docs/07-production-readiness.md), including B4
 I/III: two walls, unchanged capabilities, scoped safe reads and composite FKs. II/V: immutable exact-money snapshots; no payment recording or earned-commission calculation. IV: only issued/open contract; F11, branding, revocation, sales and financial workflows excluded. VI: no people decisions. VII: hashes/secrets confined, safe audit/no logs. VIII: AR/EN Design System and states. IX: locked transactions, set-once markers and pure tested clock. Single forward migration is future work only.
 
 Workflow: user explicitly authorizes transcription of Claude's binding plan by Codex. Codex also runs the final verification phase, with independent Claude audit/approval still mandatory under the Constitution. This run is artifact writing, not implementation or self-approval. Technical ambiguities and source precedence are recorded in [research.md](research.md); no unresolved policy is silently approved.
+
+## Clarifications
+
+### Session 2026-11-04 — S33-PO-4
+
+PO source: S33-PO-4, “Fix stack drift, flaky tests, billing-related CI blockers, and PR/issue backlog organization.” S33 changes only registration-links Playwright failure diagnostics. It does not change route behavior, copy, authorization, or UI. No open ambiguities remain within this test-only scope.
