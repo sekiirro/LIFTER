@@ -9,6 +9,7 @@
 **Evidence refresh:** 2026-11-04 22:14 Africa/Cairo, after passing the T071–T077 targeted unit and Stack D integration checks and recording their commit/test evidence in traceability.md.
 **Final evidence refresh:** 2026-11-04 22:45 Africa/Cairo, after the A-owned T078/T079 Stack D/unit checks and traceability/task closure.
 **S34 round-2 entry refresh:** 2026-11-05, after adding T080–T095 to `plan.md` and `tasks.md` and before implementation.
+**S34 T080 clarification refresh:** 2026-11-05, after specifying NFKC/lowercase followed by the S32-PO-7 character-set check; before implementation.
 **Status:** Entry review for S33-PO-3 Arabic T03/N07 copy and in-scope CodeRabbit fixes.
 
 ## Entry check
@@ -49,14 +50,14 @@
 ## S34 round-2 entry check
 
 - [x] `spec.md` retains numbered FRs, measurable SCs, and Given/When/Then scenarios for all touched behavior. T080–T095 map only to existing FR-002/003/004/006/007/008/013/017/019/020/024/025/026/036/037/038/039; no requirement text or PO decision was changed.
-- [x] Clarifications remain the binding PO records cited by F15, including S28 PO records and the S30/S31/S32/S33 F15 decisions. **No open ambiguities remain for T080–T095.** The four product questions retained from S33 remain excluded and are reported as PO decisions; this statement is limited to the implementation tasks below.
+- [x] Clarifications remain the binding PO records cited by F15, including S28 PO records and the S30/S31/S32/S33 F15 decisions. **No open ambiguities remain for T080–T095:** T080 follows the specified NFKC/lowercase normalization then applies S32-PO-7's 3–30 character English letter/digit/underscore/period set; leading/trailing whitespace and Unicode format characters remain invalid rather than trimmed. The four product questions retained from S33 remain excluded and are reported as PO decisions; this statement is limited to the implementation tasks below.
 - [x] `plan.md` now covers the S34 remediation scope, forward-only database rule, RED-first tests, mutation evidence, screenshot matrix, and decision boundary.
 - [x] `tasks.md` assigns T080–T095 and FR IDs to every S34 remediation unit. Checkboxes remain open until the cited current-head tests pass.
 - [x] This Analyze follows the 2026-11-05 plan/task updates.
 
 ### S34 scope analysis
 
-- T080–T083 repair existing signup, validation, correction, and alert contracts; any SQL change is forward-only and Stack D is the only permitted database stack.
+- T080–T083 repair existing signup, validation, correction, and alert contracts; T080 applies the existing NFKC/lowercase rule before its S32-PO-7 character-set check and rejects whitespace/Unicode format characters. Any SQL change is forward-only and Stack D is the only permitted database stack.
 - T084–T089 repair documentation, test isolation, test baselines, persisted draft title mapping, submitted-draft status handling, and a synthetic fixture source reference. They add no new product rule or copy.
 - T090–T094 repair existing B-owned correction, signup error, history-label, Bidi rendering, and copy-reference behavior. They add no new styling, component, copy, permission, or workflow decision.
 - T095 corrects rendered evidence for existing copy. It captures the actual required viewports and records exactly those files; no interface layout or visual treatment is changed.
