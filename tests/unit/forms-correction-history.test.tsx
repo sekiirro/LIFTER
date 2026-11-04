@@ -8,7 +8,9 @@ import { getMessages } from '../../lib/i18n';
 const questions: LabeledQuestion[] = [
   {
     id: 'consent',
+    sectionId: 'consent',
     type: 'boolean',
+    required: false,
     title: { en: 'Consent', ar: 'Consent' },
   },
 ];
