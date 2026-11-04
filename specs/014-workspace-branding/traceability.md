@@ -89,7 +89,7 @@ T053 assertions passed on the current implementation head `685c7c3`: four focuse
 | Gates | `npm run test`, `lint`, `typecheck`, `format:check`, `build`, `build:edge`, `build:cron`, `check:secrets`, `size`, `git diff --check` on the final head | Executed after this documentation commit; results recorded in the run report `C:/Users/NEW LAP/.lifter/runs/s30-mm-hero-glisse-1b/report.md` |
 
 ## S31 task status
-- T052 remains unchecked pending PO visual review of FR-026 / SC-018.
+- T052 visual approval is recorded below per S32-PO-1; no claim is made that the PO personally inspected screenshots.
 - T053 remains checked from the prior verified signup evidence; this round adds focus-first-invalid behavior and will append final-head evidence after verification.
 
 ### S31 r17 execution evidence (final test/code head 53c544e)
@@ -99,7 +99,13 @@ T053 assertions passed on the current implementation head `685c7c3`: four focuse
 - Merge: accepted Glisse `1b3b030` incorporated by merge `79adf87`. Six documentation conflicts were reconciled; no implementation conflict. Six S30-R1 signup blobs remain identical to 015@5084916 (full blob IDs in the S31 run report).
 - Production 48-row Glisse contrast matrix passed 48/48. The current-head dev matrix did not reach its expected `data-photo-stats-ready` state on two attempts; dev==prod is unverified and T052 remains unchecked pending PO visual review.
 - Stack B StartedAt remained `2026-11-02T10:34:12.810498118Z`; auth/app migration counts remained 82/64; integration created 23 auth test users (36438?36461).
-- T052 intentionally remains unchecked pending PO visual review.
+- T052 completed on S32 evidence below; its r19 code change has no rendered-output impact.
+
+#### S32-PO-1 visual approval record
+
+| Task | Requirement | Review artifact | Evidence | Source | Status |
+|---|---|---|---|---|---|
+| T052 | FR-026 / SC-018 | r18 visual review set | PO approved the T052 visual review (S32-PO-1) of the r18 set %TEMP%/lifter-s31-hero-r18 at dc57f15 | S32-PO-1 | RECORDED |
 
 ### S31 r18 final-head execution evidence (code/test commit `1fd528d`)
 
@@ -107,3 +113,9 @@ T053 assertions passed on the current implementation head `685c7c3`: four focuse
 - Stack B transaction evidence carried forward from this code unchanged: `tests/integration/client-signup-transaction.test.ts` 1/1; auth migrations 82 before/after, app migrations 64 before/after; StartedAt unchanged. r18 final integration and counter evidence are in `C:/Users/NEW LAP/.lifter/runs/s31-luna-hero-r18/report.md`.
 - Dev/prod contrast evidence on r18 implementation: `tests/e2e/registration-hero-glisse.spec.ts` 48/48 assertion passes in Webpack dev and 48/48 in production, same row names and outcomes. The runner emitted its existing U8 global-teardown warning after all assertions; desktop screenshot boundary metrics have small sampling differences, while all thresholds pass. Evidence directories: `%TEMP%/lifter-s31-hero-r18/dev-contrast-r18-final` and `prod-contrast-r18-final`.
 - T053 stays checked because every signup-profile and focus asserting test executed and passed. T052 stays unchecked pending PO visual approval. No new requirement text was introduced.
+
+### S32 r19 execution evidence (code commit `542d7af6726f92286304a21b0acc8a54fe2ac0d6`)
+
+- T052 / FR-026, FR-027, FR-029: `tests/e2e/registration-hero-glisse.spec.ts` passed 54/54 in Webpack dev and 54/54 in production, including 48/48 contrast cases in each; case names and outcomes matched. Evidence JSON: `C:/Users/NEW LAP/.lifter/runs/s32-luna-hero-r19/dev-contrast` and `prod-contrast`. Existing r18 screenshots remain the reviewed set because r19 made no rendered-output change.
+- T053 / FR-028: `tests/unit/client-signup-focus.test.tsx::does not refocus an identity field after the user leaves the form` passed on `542d7af` (3/3 test file); focused signup Playwright assertions passed in the 89-test focused run. RED/GREEN evidence is in the S32 r19 run report.
+- PO approval record remains exactly as recorded under S32-PO-1 above. This is approval of the T052 visual review; it does not assert personal screenshot inspection.

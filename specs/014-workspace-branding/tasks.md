@@ -239,7 +239,7 @@ Start F14b immediately after F14 merges, in parallel with F13/F15. F14b complete
 
 ## Hero production registration tasks (S29-PO-3 Q7)
 
-- [ ] **T052 [FR-026, FR-027, FR-029]** Reconcile the production Hero with approved prototype `97debaf`, selected Light/Dark/Follow Device theme, print theme, Emerald tokens and approved Glisse treatment. Keep implementation/screenshots open until current-head assertions and review evidence are recorded.
+- [x] **T052 [FR-026, FR-027, FR-029]** Reconcile the production Hero with approved prototype `97debaf`, selected Light/Dark/Follow Device theme, print theme, Emerald tokens and approved Glisse treatment. Keep implementation/screenshots open until current-head assertions and review evidence are recorded. Evidence: PO approval S32-PO-1 of the r18 visual review (without claiming PO screenshot inspection); current code head 542d7af passed the 54-case Webpack-dev and production Glisse suites, including all 48 contrast rows in each environment. No rendered output changed in r19.
 - [x] **T053 [FR-028]*** Restore the S28-PO-4 registration fields and DOB-derived age with regression tests; preserve the approved design. F15 owns Intake prefill; coordinate the dependency and do not duplicate it.
 - [ ] **T054 [FR-030]** Preserve the floating preferences pill and offset the 390px no-banner card with an existing spacing token; assert no heading overlap.
 - [ ] **T055 [FR-026, FR-027, FR-029, FR-030]** Run and record the approved browser screenshot, theme, locale, viewport, accessibility, contrast, performance, CI, CodeRabbit and review evidence for the actual implementation head.
