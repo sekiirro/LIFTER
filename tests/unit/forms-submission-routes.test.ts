@@ -183,7 +183,7 @@ describe('T013 submission and correction HTTP validation', () => {
 
   it('filters correction-history keys to the current assignment snapshot', async () => {
     client.rpc.mockImplementation(async (name: string) => {
-      if (name === 'read_form_assignment_context')
+      if (name === 'read_form_correction_context')
         return {
           data: { workspace_id: 'workspace', version_snapshot: snapshot },
           error: null,
@@ -211,6 +211,9 @@ describe('T013 submission and correction HTTP validation', () => {
       status: 'loaded',
       revision: 3,
       answers: { basic: 'kept' },
+    });
+    expect(client.rpc).toHaveBeenCalledWith('read_form_correction_context', {
+      p_assignment_id: assignmentId,
     });
   });
 
