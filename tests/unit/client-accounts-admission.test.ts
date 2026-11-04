@@ -124,7 +124,7 @@ it('independent app wall denies before an accepting RPC; allowed requests need f
     phone: '+201234567890',
     password: 'Synthetic9!',
     dateOfBirth: '1990-04-12',
-    username: 'synthetic-user',
+    username: 'synthetic_user',
     telegramUsername: '',
   };
   const base = {
