@@ -570,6 +570,7 @@ export const ar = {
   'forms.staffBoolean.yes': 'نعم',
   'forms.staffBoolean.no': 'لا',
   'forms.staffMealNumber': 'الوجبة',
+  'forms.afterMealNumber': 'وجبة {number}',
   'forms.staffBeforeFirstMeal': 'قبل أول وجبة',
   'forms.staffNoFixedMealTime': 'معنديش ميعاد ثابت',
   'forms.staffPrivacy.none': 'غير مصنف',

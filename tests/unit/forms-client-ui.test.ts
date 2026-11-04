@@ -227,6 +227,45 @@ describe('QuestionFlow', () => {
     expect(html).not.toContain('After meal 4');
     expect(html).toContain('Before the first meal');
     expect(html).toContain('I don&#x27;t have a fixed time');
+
+    const arabicHtml = renderToStaticMarkup(
+      createElement(QuestionFlow, {
+        locale: 'ar',
+        questions: [
+          {
+            id: 'N07.training_timing',
+            sectionId: 'nutrition',
+            type: 'derivedChoice',
+            required: false,
+            title: { en: '', ar: 'ØªØ­Ø¨ ØªÙ…Ø±ÙŠÙ†Ùƒ' },
+            choices: ['meal-1', 'meal-2', 'before-first', 'no-fixed-time'],
+            optionLabels: [
+              { en: '', ar: 'ÙˆØ¬Ø¨Ø©' },
+              { en: '', ar: 'ÙˆØ¬Ø¨Ø©' },
+              { en: '', ar: 'Ù‚Ø¨Ù„ Ø£ÙˆÙ„ ÙˆØ¬Ø¨Ø©' },
+              { en: '', ar: 'Ù…Ø¹Ù†Ø¯ÙŠØ´ Ù…ÙŠØ¹Ø§Ø¯ Ø«Ø§Ø¨Øª' },
+            ],
+            derivedOptions: {
+              sourceQuestionId: 'N07.meal_count',
+              fixedChoices: ['before-first', 'no-fixed-time'],
+            },
+          },
+          {
+            id: 'N07.meal_count',
+            sectionId: 'nutrition',
+            type: 'mealCount',
+            required: false,
+            title: { en: '', ar: '' },
+            choices: ['2', '3', '4', '5'],
+          },
+        ],
+        adapter,
+        assignmentId: 'n07-approved-copy-ar',
+        initialAnswers: { 'N07.meal_count': '3' },
+      }),
+    );
+    expect(arabicHtml).toContain('وجبة 1');
+    expect(arabicHtml).toContain('وجبة 3');
   });
 
   it('renders budget chips within the N08 question and prunes values when budget changes', () => {

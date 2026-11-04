@@ -868,9 +868,10 @@ function QuestionControl({
         {choices.map((choice, index) => {
           const label =
             question.type === 'derivedChoice' && choice.startsWith('meal-')
-              ? locale === 'en'
-                ? `After meal ${choice.slice(5)}`
-                : `${messages['forms.staffMealNumber']} ${choice.slice(5)}`
+              ? messages['forms.afterMealNumber'].replace(
+                  '{number}',
+                  choice.slice(5),
+                )
               : text(
                   question.optionLabels?.[
                     question.type === 'derivedChoice'

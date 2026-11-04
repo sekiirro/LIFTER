@@ -589,6 +589,7 @@ export const en: Record<keyof typeof ar, string> = {
   'forms.staffBoolean.yes': 'Yes',
   'forms.staffBoolean.no': 'No',
   'forms.staffMealNumber': 'Meal',
+  'forms.afterMealNumber': 'After meal {number}',
   'forms.staffBeforeFirstMeal': 'Before the first meal',
   'forms.staffNoFixedMealTime': 'No fixed meal time',
   'forms.staffPrivacy.none': 'Not classified',
