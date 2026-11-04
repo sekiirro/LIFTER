@@ -117,3 +117,7 @@ tests/e2e/packages.spec.ts
 ## Complexity Tracking
 
 No Constitution violation or exemption. Safe view plus narrow commission RPC is required by shared SQL-role grants; a full-table grant leaks rates. Same-offer composite FK prevents a pointer bug the workspace pair alone permits. Replay identity, initial unavailability and duration representation are explicit technical interpretations, not policy resolutions.
+
+## S33-PO-4 test hygiene
+
+The S33 package acceptance adjustment verifies that the synthetic workspace begins without offers and reports route status/rendered content when an expected empty state is absent. No product behavior or UI changes are in scope.
