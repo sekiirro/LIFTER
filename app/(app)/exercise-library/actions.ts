@@ -45,13 +45,12 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 }
 
 function validSavePayload(value: unknown): value is SaveExerciseInput {
-  if (
-    !isRecord(value) ||
-    !isRecord(value.draft) ||
-    !isRecord(value.draft.names)
-  )
-    return false;
-  const draft = value.draft;
+  if (!isRecord(value)) return false;
+  const rawDraft = value.draft;
+  if (!isRecord(rawDraft)) return false;
+  const names = rawDraft.names;
+  if (!isRecord(names)) return false;
+  const draft = rawDraft;
   const stringDraftFields = [
     'primaryMuscle',
     'equipment',
@@ -68,8 +67,8 @@ function validSavePayload(value: unknown): value is SaveExerciseInput {
     (value.scope === 'global' || value.scope === 'workspace') &&
     (value.workspaceId === null || typeof value.workspaceId === 'string') &&
     typeof value.operationKey === 'string' &&
-    typeof draft.names.ar === 'string' &&
-    typeof draft.names.en === 'string' &&
+    typeof names.ar === 'string' &&
+    typeof names.en === 'string' &&
     stringDraftFields.every((field) => typeof draft[field] === 'string') &&
     Array.isArray(draft.secondaryMuscles) &&
     draft.secondaryMuscles.every((code) => typeof code === 'string') &&
