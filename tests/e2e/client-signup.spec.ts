@@ -342,7 +342,7 @@ test.describe.serial('T038 invitation signup UI', () => {
       .fill('1990-04-12');
     await page
       .getByLabel(messages['clientSignup.username'], { exact: true })
-      .fill(`heba-${randomUUID().slice(0, 8)}`);
+      .fill(`heba${randomUUID().replaceAll('-', '').slice(0, 24)}`);
     await page
       .getByLabel(messages['clientSignup.email'], { exact: true })
       .fill(`signup-${randomUUID()}@example.test`);

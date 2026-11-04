@@ -11,14 +11,14 @@ const origin =
   process.env.APP_ORIGIN ??
   'http://localhost:3000';
 const screenshotDirectory =
-  process.env.HERO_R20_USERNAME_SCREENSHOT_DIR ??
-  join(tmpdir(), 'lifter-s32-hero-r20');
+  process.env.HERO_R21_USERNAME_SCREENSHOT_DIR ??
+  join(tmpdir(), 'lifter-s33-hero-r21');
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
 let token: string;
 
-test.describe.serial('r20 username error-state design evidence', () => {
+test.describe.serial('r21 username error-state design evidence', () => {
   test.beforeAll(async () => {
     test.skip(!local, 'Requires the selected local Supabase stack.');
     const { registrationFixture, secret, issue, checked } =
@@ -70,7 +70,12 @@ test.describe.serial('r20 username error-state design evidence', () => {
             'signup-username-error',
           );
           await expect(page.locator('#signup-username-error')).toHaveText(
-            messages['clientSignup.fieldError'],
+            locale === 'en'
+              ? 'Use 3–30 characters: English letters, numbers, periods, or underscores.'
+              : messages['clientSignup.fieldError'],
+          );
+          await expect(page.locator('form [role="alert"]')).toHaveText(
+            messages['clientSignup.invalidInput'],
           );
           await expectHeroAxeClean(page);
           const filename = `${locale}-${theme}-${width}.png`;
@@ -83,9 +88,9 @@ test.describe.serial('r20 username error-state design evidence', () => {
       }
     }
     const index = [
-      '# S32 Hero r20 — Username error-state captures',
+      '# S33 Hero r21 — Username error-state captures',
       '',
-      'Real registration page; locally rejected two-character username (`ab`). This capture uses the existing localized generic field-error copy; the proposed username-specific strings remain pending PO approval.',
+      'Real registration page; locally rejects the synthetic invalid-format username `ab`. EN uses S32-PO-9 Q10 approved format copy; AR retains the existing generic field error pending PO approval. Server-error clearing and submit-only availability are separately covered by the unit regression.',
       '',
       '| Locale / direction | Theme | Width | Capture |',
       '|---|---|---:|---|',
