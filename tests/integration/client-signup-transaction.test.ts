@@ -48,7 +48,7 @@ function extendedFields(fixture: Awaited<ReturnType<typeof signupFixture>>) {
     ...fixture.fields,
     name: 'Client Example Synthetic',
     date_of_birth: '1990-04-12',
-    username: `Ｆit.Client-${fixture.link.replaceAll('-', '').slice(0, 8)}`,
+    username: `Ｆit.Client.${fixture.link.replaceAll('-', '').slice(0, 8)}`,
     telegram_username: '@FitClient_1',
   };
 }
@@ -169,6 +169,34 @@ it('keeps the SQL and TypeScript reserved-role username lists in parity', async 
   const [row] =
     await db`select app_private.signup_reserved_usernames() as names`;
   expect(row?.names).toEqual([...RESERVED_SIGNUP_ROLE_NAMES]);
+});
+
+it('rejects usernames outside the approved normalized set before admission redemption', async () => {
+  for (const username of [' Client.123', 'Client.123 ', 'Client\u200B123', 'abc-def']) {
+    const fixture = await signupFixture(context);
+    expect(await signup(db, fixture, { ...extendedFields(fixture), username })).toEqual({ status: 'invalid' });
+    expect(
+      await db`select redeemed_at from app_private.signup_admission_tickets where id=${fixture.ticket} and redeemed_at is not null`,
+    ).toHaveLength(0);
+  }
+});
+
+it('mutation: skipping the normalized username character check permits a format-control bypass', async () => {
+  const fixture = await signupFixture(context);
+  const outcome = await runSignupMutation(
+    fixture,
+    async (definition) =>
+      definition.replace(
+        /if normalized_username !~ '\^\[a-z0-9_\.\]\{3,30\}\$' then return '\{\"status\":\"invalid\"\}'::jsonb; end if;/u,
+        '-- format-control policy mutation',
+      ),
+    async (tx) =>
+      signup(tx, fixture, {
+        ...extendedFields(fixture),
+        username: 'platform\u200B',
+      }),
+  );
+  expect(outcome).toEqual({ status: 'complete' });
 });
 
 it('enforces name, past DOB, and optional Telegram syntax at the transaction boundary', async () => {
