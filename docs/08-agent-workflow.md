@@ -44,7 +44,7 @@ Route according to task complexity, security risk, model capability, and quota (
   > Keep production AI data access disabled until its separate security and privacy design is reviewed and approved.
   >
   > Record this distinction in the constitution. No implementation changes yet.
-- **Secrets and sensitive tasks:** Free models receive no secrets or sensitive tasks (S13 PO Kilo guardrail); third-party/free models receive no secrets or `.env` values (S22-PO-9; S29-PO-3 Q3). Do not infer a separate sensitive-code category.
+- **Secrets and sensitive tasks:** Free models receive no secrets or sensitive tasks (S13 PO Kilo guardrail); third-party/free models receive no secrets or `.env` values (S22-PO-9; S29-PO-3 Q3). This is the same restriction expressed by the security-sensitive routing rule above (Luna High or Sol Medium with per-invocation PO approval); do not infer a separate sensitive-code category beyond it.
 - **High-risk work:** Security, Auth, RLS, SECURITY DEFINER, migrations, admission, Storage policies, and financial logic require independent architect review and executed mutation tests. Never expand sensitive permissions without PO approval (S29-PO-3 Q3).
 - **Hero assignment:** MiniMax's assignment to remaining Hero Glisse work supersedes S28-PO-5's Big Pickle assignment for that remaining work only (S29-PO-1).
 
