@@ -49,3 +49,12 @@ No PO-deferred requirement was identified; therefore no row is marked DEFERRED. 
 | zdo_7 client URL validation parity | FR-003 | T023 | tests/unit/catalog-video-variation.test.tsx::rejects allowed-host URLs with a query or fragment immediately after the host | Fix commit 1a84ed8; focused suite 89/89; no SQL changed. |
 | zdpAE copy approval metadata | FR-018 | T044 | tests/unit/catalog-approved-copy.test.ts::marks all 18 S27 post-batch library/detail keys as DRAFT in both message catalogs | Fix commit 1a84ed8; focused suite 89/89; localized copy values unchanged. |
 | Launcher environment contract | FR-018 | T044 | tests/unit/f16-playwright-launcher.test.ts::maps Supabase CLI env aliases and APP_ORIGIN before starting Playwright | Fix commit 1a84ed8; focused suite 89/89. |
+
+## S33 lib16 review remediation evidence
+
+| Review finding | FR | Task | Test / analysis | Evidence |
+|---|---|---|---|---|
+| zk76- exercise edit must honor changed draft equipment while retaining matching stored multi-code selection | FR-001 | T045 | `tests/unit/exercise-library-actions.test.ts::uses the edited equipment selection when it differs from stored equipment codes`; existing `...::preserves every equipment code when creating a new version from a multi-equipment exercise` | Commit `6da1574`; RED showed stored `barbell,cable` replacing draft `dumbbell`; focused unit/component suites GREEN 29/29. |
+| zk77L FoodEditor native UTF-16 `maxLength` conflicts with code-point validation | FR-018 | T046 | `tests/unit/catalog-food-editor.test.tsx::lets code-point validation govern emoji names without a UTF-16 input limit` | Commit `5e51afa`; RED observed `maxLength=120`; 120 supplementary-plane emoji accepted by code-point validation; focused unit/component suites GREEN 29/29. |
+| zk77R workspace exercise Restore clause conflicts with S31/API contract | FR-002, FR-011 | T047 | `checklists/analyze.md::S33 lib16 remediation re-analysis` | Documentation aligned to S31-PO-1 Q3 and `contracts/catalog-api.md`; no behavior or UI Restore added. Documentation commit/hash will be recorded after commit. |
+| zk77b PO editor handoff contradicted current control assertions and Remove placement | FR-002, FR-011, FR-018 | T047 | `tests/e2e/catalog-ui.spec.ts` assertions around lines 205–214; `tests/unit/exercise-detail-remove.test.tsx`; `tests/e2e/exercise-library-production.spec.ts` | Handoff row and Remove location corrected. No local e2e run per S33 lane constraints; hosted CI evidence required on final head. |

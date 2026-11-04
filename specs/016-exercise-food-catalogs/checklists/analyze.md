@@ -113,3 +113,39 @@ Verdict: FAIL. Findings then: A1 HIGH (`.specify/feature.json` missing), A2 HIGH
 | Implementation verification | PASS | Focused unit 37/37, Stack C integration 10/10, Playwright/axe 16/16; final full gates required on final head. |
 
 **Verdict:** PASS. No product decision or design gap was introduced by verification/test evidence updates.
+
+## S33 lib16 remediation re-analysis
+
+**Date:** 2026-11-04 (after the S33 changes to `spec.md` and `tasks.md`).
+**Scope:** Existing open PR #43 review fixes T045–T047. No new product behavior, UI surface, migration, or permissions are introduced. Authority: S30-PO-9 / S31-PO-1 Q3 recorded in `spec.md`, and `contracts/catalog-api.md`.
+**Clarifications:** The only exercise/catalog Restore capability retained by this spec is global PO Restore through the backend/API. Workspace exercise Restore is not authorized. Exercise UI has no Restore or Merge control; Remove remains on Exercise Detail. No open ambiguities remain for this remediation.
+
+| Entry check | Result | Evidence |
+|---|---|---|
+| Numbered FRs, measurable SCs, Given/When/Then for touched scope | PASS | Existing FR-001 (exercise equipment) and FR-018 (bilingual editor/accessibility) plus User Story 4 scenarios in `spec.md`; no new FR or SC introduced. |
+| Clarifications and explicit no-open-ambiguities statement | PASS | `spec.md` Clarifications—S31 (S31-PO-1 Q3); this S33 analysis states the Restore boundary and no open ambiguities. |
+| Plan covers scope; tasks have IDs tagged to FRs | PASS | `plan.md` Application and UI; `tasks.md` T045 [FR-001], T046 [FR-018], T047 [FR-002, FR-011, FR-018]. |
+| Analyze follows last spec/plan/tasks change; 0 open CRITICAL/HIGH | PASS | This re-analysis follows the S33 `spec.md`/`tasks.md` edits. 0 CRITICAL, 0 HIGH. |
+
+### Scope findings
+
+| ID | Severity | Location | Finding / disposition |
+|---|---|---|---|
+| S33-F16-A1 | MEDIUM | `spec.md` User Story 4 and FR-011 | The former workspace-staff Restore clause conflicted with S31 and `contracts/catalog-api.md`. Corrected to retain global PO backend/API Restore only; no behavior added. |
+| S33-F16-A2 | LOW | `ui-handoff.md` PO edit row and Exercise Detail inventory | Handoff now matches current PO editor absence assertions (`catalog-ui.spec.ts`) and places Remove at Exercise Detail per T044. |
+
+Existing MEDIUM follow-ups remain unchanged: SC-003 lacks timed interaction evidence and SC-005 hosted Worker/API performance measurements remain a pre-production gate. They do not block these in-scope CodeRabbit fixes.
+
+**Verdict:** PASS. No new open CRITICAL/HIGH findings, product decisions, or design gaps. Existing approved behavior only. Static Spec Kit analysis; focused unit/component execution is recorded separately in `traceability.md`.
+
+### S33 task evidence revalidation
+
+**Date:** 2026-11-04 (after T045/T046 evidence and checkbox updates in `tasks.md`). The S33 scope, authority, requirements, and findings above are unchanged.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Plan/task coverage and FR tags | PASS | `plan.md` plus checked T045 [FR-001] and T046 [FR-018]; documentation task T047 [FR-002, FR-011, FR-018] remains open pending its documentation commit/evidence record. |
+| 0 open CRITICAL/HIGH | PASS | Static S33 scope recheck; 0 CRITICAL and 0 HIGH. |
+| Implementation evidence | PASS | RED/GREEN for both code fixes; commits `6da1574` and `5e51afa`; focused unit/component tests 29/29. |
+
+**Verdict:** PASS. Analyze remains newer than the last `spec.md`, `plan.md`, and `tasks.md` edits. T047 does not introduce behavior and stays pending documentation verification.

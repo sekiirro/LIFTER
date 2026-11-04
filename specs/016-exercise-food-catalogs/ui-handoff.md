@@ -11,8 +11,9 @@ The browser matrix covers Arabic RTL and English LTR, light and dark, 390×844 a
 | Surface | Fixture route / state | Evidence |
 |---|---|---|
 | List and search | `/showcase/catalog?kind=food&view=list` | Search by keyboard, no-results heading, accessible name, `dir`/`lang`, axe |
-| Exercise edit, PO | `/showcase/catalog?view=editor&role=po&scope=global` | Governance section and remove control visible; axe |
+| Exercise edit, PO | `/showcase/catalog?view=editor&role=po&scope=global` | No governance, Remove, Restore, or Merge controls; axe |
 | Exercise edit, trainer | `/showcase/catalog?view=editor&role=trainer&scope=workspace&coachingWork=true` | Workspace save available; global governance absent; axe |
+| Exercise Detail | `/exercise-library/{exerciseId}` with explicit global or workspace scope | Remove is offered on Exercise Detail after confirmation to authorized roles; no Restore or Merge control. See T044 and `tests/unit/exercise-detail-remove.test.tsx` / `tests/e2e/exercise-library-production.spec.ts`. |
 | Food add/edit component | `/showcase/catalog-foods` | Bilingual identity fields, keyboard alternative add; axe |
 | Exact duplicate | `/showcase/catalog-foods?state=exact` | Existing item selection by keyboard; status announcement; axe |
 | Near duplicate confirmation | `/showcase/catalog-foods?state=near` | Disabled until checkbox confirmation, keyboard Space, axe |
@@ -22,7 +23,7 @@ Mutation checks used temporary assertion edits. Each mutant failed on the named 
 
 | Mutation | Expected failure observed |
 |---|---|
-| Invert PO governance visibility to expect zero controls | Received 1 governance region; role-gating assertion failed |
+| Add an unexpected governance or lifecycle control to the PO Exercise Edit surface | `tests/e2e/catalog-ui.spec.ts` assertions around lines 205–214 fail when governance, Remove, Restore, or Merge controls appear |
 | Replace search accessible name with a missing name | Searchbox locator was not found; accessible-name assertion failed |
 | Change list direction expectation from locale direction to LTR | Arabic fixture received `rtl`; direction assertion failed |
 
