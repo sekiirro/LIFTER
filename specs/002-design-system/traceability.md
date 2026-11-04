@@ -32,7 +32,7 @@ Evidence commits: original Design System implementation `be29751`, `e2df0cd`, `b
 | FR-024 | T037, T038, T039 | `tests/e2e/print.spec.ts::Arabic print sample hides screen controls and exports its PDF`; `specs/002-design-system/print-spike.md` | VERIFIED |
 | FR-025 | T041 | Constitution v1.1.0, D-18, and Architecture v3 UI-row diffs in commit `b57d404`; no test applicable to document content | PARTIAL |
 | FR-026 | T040 | `specs/002-design-system/plan.md` decision table is present; no executable asserting test is applicable or recorded | PARTIAL |
-| FR-027 | T043, T044, T045, T047, T050, T051 | Existing PR #28 evidence plus Q16/Q5 implementation and screenshot tasks, all unchecked | PARTIAL |
+| FR-027 | T043, T044, T045, T047, T050, T051 | Existing PR #28 evidence in checked T043-T045, plus unchecked Q16/Q5 follow-up tasks T047, T050, and T051 (implementation and screenshot) | PARTIAL |
 | FR-028 | T043, T048, T049 | Existing unit tests cover fallback selection and the browser test covers over-budget focus identity; T048-T049 remain unchecked for all fallback conditions | PARTIAL |
 | FR-029 | T045 | `tests/unit/glass-popover-menu.test.tsx::opens on ArrowUp at the last item and on ArrowDown at the first`; `::moves focus with arrows and wraps at either end`; `::supports Home and End and closes without trapping Tab`; `::returns focus to the trigger on Escape`; `::activates the focused item with Space`; `tests/e2e/glass.spec.ts::popover ArrowDown navigation works after enhancement` | VERIFIED |
 | SC-001 | T007 | `tests/unit/tokens-contrast.test.ts` contrast assertions for both modes and sample colors | VERIFIED |
