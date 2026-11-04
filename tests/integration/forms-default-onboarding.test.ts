@@ -335,7 +335,7 @@ describe('T006/T009 persisted onboarding default', () => {
           select app_private.ensure_default_onboarding_form(${fixture.workspaceId},${fixture.actor}) as form_id
         `;
         const result = await tx`
-          select app_private.retire_workspace_form(${fixture.workspaceId},${current[0]!.form_id},${fixture.actor}) as result
+          select app_private.retire_workspace_form(${fixture.workspaceId},${current[0]!.form_id},${randomUUID()},${fixture.actor}) as result
         `;
         expect(result[0]?.result).toEqual({ status: 'default_selected' });
         const status = await tx`select status from public.form_versions
@@ -354,8 +354,13 @@ describe('T006/T009 persisted onboarding default', () => {
           select app_private.set_default_onboarding_form(${fixture.workspaceId},${replacement},${fixture.actor}) as changed`;
         expect(selected[0]?.changed).toBe(true);
         const retireAfterSelection = await tx`
-          select app_private.retire_workspace_form(${fixture.workspaceId},${current[0]!.form_id},${fixture.actor}) as result`;
-        expect(retireAfterSelection[0]?.result).toEqual({ status: 'ok' });
+          select app_private.retire_workspace_form(${fixture.workspaceId},${current[0]!.form_id},${randomUUID()},${fixture.actor}) as result`;
+        expect(retireAfterSelection[0]?.result).toEqual({
+          status: 'ok',
+          formId: current[0]!.form_id,
+          revision: 1,
+          formStatus: 'retired',
+        });
         throw rollback;
       }),
     ).rejects.toBe(rollback);
