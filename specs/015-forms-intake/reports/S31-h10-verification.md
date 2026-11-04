@@ -141,3 +141,7 @@ Signup blob changes vs `5084916` and `3365f51`: none. The Q1 Terms paragraph is 
 ## PO-DECISION-NEEDED
 
 None. S31-PO-1 Q1/Q2 supply both product decisions. S31-R2 explicitly directs skipping the two cells without recorded source strings; the route evidence failure is technical and does not imply a new product decision.
+
+## S32 h11 addendum — 2026-11-04 — migration version rename
+
+S32-PO-3 authorized renaming the F15 slider-validator migration to resolve the cross-branch version collision while preserving F16 #43. The F15 SQL file was moved with `git mv` from version `20261107030000` to `20261107031000`; the SQL blob is verified byte-identical. The filename-pinned consumer `tests/integration/function-drift-guard.ts` was updated. The historical statements at lines 38 and 136 above are retained as the record of what was asserted at S31 h10; the uniqueness claim at line 38 is stale in light of the later-discovered F16 collision and is superseded by this addendum. Full all-origin uniqueness scans were run before the rename and will be rerun before commit, before push, and after push. Stack D read-only verification found the prior history row, 164 total rows, and the existing deployed validator body already containing both slider middle-label guards; no SQL replay is required.
