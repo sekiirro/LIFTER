@@ -34,6 +34,13 @@ These corrections are within the previously approved F15 scope. They do not add 
 - [x] T068 [FR-024/025] Keep all four F15 SQL regression suites on the checked local-stack connection and make the pending-client RLS catalog probe inspect caller-seeded rows in its transaction.
 - [x] T069 [FR-017/018/024] Execute the alert membership-revocation evaluator query while the lock is held and verify owner fallback on the subsequent pass.
 - [x] T070 [FR-026/036/037] Repair damaged separators in existing F15 review evidence without changing recorded findings or decisions.
+- [ ] T071 [FR-008/013/020] Read correction assignment context through a caller-authorized client-or-staff path and preserve generic denial behavior; verify staff corrections on Stack D.
+- [ ] T072 [FR-002/003/031] Scope initial occurrences per client and exclude deactivated clients from new intake audiences; verify multi-client and lifecycle cases on Stack D.
+- [ ] T073 [FR-026/036/037] Serialize default-form retirement with default selection using the approved workspace lock; verify the concurrent selection/retirement race on Stack D.
+- [ ] T074 [FR-008/013] Strip presentation-only `label` fields before client progression validates questions and retains applicable answers.
+- [ ] T075 [FR-026/036/037] Reject empty and repeated media optimizer format names with a clear argument error; preserve supported format handling.
+- [ ] T076 [FR-026/036/037] Correct stale Terms approval status and restore damaged separators in existing verification reports without changing findings or decisions.
+- [ ] T077 [FR-024/025] Document the exact fresh-checkout command that creates the ignored Stack D migrations junction.
 
 ## Phase 0: Stack and shared-contract prerequisites
 
