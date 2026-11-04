@@ -73,7 +73,7 @@ function parseArgs(argv) {
     else if (key === '--provenance') result.provenancePath = value;
     else if (key === '--max-width') result.maxWidth = Number(value);
     else if (key === '--formats')
-      result.formats = value.split(',').filter(Boolean);
+      result.formats = value.split(',').map((format) => format.trim());
     else throw new Error(`Unknown option: ${key}`);
     index += 1;
   }
@@ -89,9 +89,13 @@ function parseArgs(argv) {
   }
   if (
     result.formats &&
-    result.formats.some((format) => !FORMAT_SETTINGS[format])
+    (result.formats.length === 0 ||
+      result.formats.some((format) => !FORMAT_SETTINGS[format]) ||
+      new Set(result.formats).size !== result.formats.length)
   ) {
-    throw new Error('--formats accepts only webp and avif');
+    throw new Error(
+      '--formats accepts a non-empty, unique list of webp and avif',
+    );
   }
   return result;
 }

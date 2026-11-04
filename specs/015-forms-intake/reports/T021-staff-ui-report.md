@@ -111,7 +111,7 @@ Screenshots saved under C:\Users\NEW LAP\AppData\Local\Temp:
 ## Verification record
 
 - Full unit suite: npm test — 71 files, 1,451 passed, 0 failed, 0 skipped.
-- Browser suite: npm run e2e -- tests/e2e/forms-staff.spec.ts — 20/20 passed; 24 rendered view variants (builder, intake, alerts ? AR-RTL/EN-LTR × light/dark × 390/1440) each ran axe with 0 violations.
+- Browser suite: npm run e2e -- tests/e2e/forms-staff.spec.ts — 20/20 passed; 24 rendered view variants (builder, intake, alerts × AR-RTL/EN-LTR × light/dark × 390/1440) each ran axe with 0 violations.
 - npm run typecheck, npm run lint, Prettier check, and git diff --check passed.
 - npm run build:edge passed. OpenNext reported its existing Windows compatibility advisory and Next.js reported the middleware deprecation notice; build completed.
 - npm run size passed: web worker 6,942.65 KiB uncompressed / 1,436.82 KiB gzip (65,536 KiB limit); cron worker 2.85 KiB / 1.25 KiB gzip (65,536 KiB limit).

@@ -53,9 +53,9 @@
 
 ## S14 Copy Approval Package
 
-The following copy must remain unchecked until the PO reviews and approves it. Source paths are listed in [the draft-copy review package](../reports/S14-terms-draft.md#awaiting-po-approval).
+Copy approval status follows the PO records; historical source paths remain in [the copy review package](../reports/S14-terms-draft.md).
 
-- [ ] T&C Arabic and English.
-- [ ] Health notice Arabic and English; display it before health questions without an acknowledgment checkbox or consent record.
-- [ ] Sex question and labels in Arabic and English.
-- [ ] Authored EN intake and option translations.
+- [x] T&C Arabic and English, approved verbatim by S30-PO-1 Q2.
+- [x] Standalone health notice superseded by S17; use only the separately approved contextual label where useful.
+- [x] B06 sex question and labels in Arabic and English, approved verbatim by S30-PO-1 Q2.
+- [ ] Remaining authored English intake and option translations not covered by S31-R2/S32-PO-8; approved rows must remain unchanged.

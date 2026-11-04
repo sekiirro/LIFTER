@@ -61,6 +61,25 @@ function generate(args: string[]) {
 }
 
 describe('body-fat derivative generator', () => {
+  it('rejects empty and repeated format names', async () => {
+    const item = await fixture();
+    for (const formats of [',', 'webp,webp']) {
+      const result = generate([
+        '--source-root',
+        item.sourceRoot,
+        '--output-root',
+        join(item.outputRoot, formats === ',' ? 'empty' : 'repeated'),
+        '--provenance',
+        item.provenancePath,
+        '--formats',
+        formats,
+      ]);
+
+      expect(result.status).not.toBe(0);
+      expect(result.stderr).toContain('--formats');
+    }
+  });
+
   it('emits the same bytes on repeated runs and reports output size against the budget', async () => {
     const item = await fixture();
     const common = [

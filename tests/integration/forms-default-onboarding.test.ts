@@ -8,6 +8,26 @@ afterAll(() => db.end());
 
 const rollback = new Error('T009 synthetic fixture rollback');
 
+it('serializes default retirement with workspace default selection', async () => {
+  const [retirement] = await db`
+    select pg_get_functiondef('app_private.retire_workspace_form(uuid,uuid,uuid,uuid)'::regprocedure) as definition
+  `;
+  const [selection] = await db`
+    select pg_get_functiondef('app_private.set_default_onboarding_form(uuid,uuid,uuid)'::regprocedure) as definition
+  `;
+  const retirementBody = retirement!.definition as string;
+  const selectionBody = selection!.definition as string;
+  const retirementDefaultLock = retirementBody.indexOf(
+    'f15-default-onboarding:',
+  );
+  const retirementSelectedDefaultCheck = retirementBody.indexOf(
+    'from public.workspace_default_onboarding_forms',
+  );
+  expect(retirementDefaultLock).toBeGreaterThan(-1);
+  expect(retirementDefaultLock).toBeLessThan(retirementSelectedDefaultCheck);
+  expect(selectionBody).toContain('f15-default-onboarding:');
+});
+
 async function workspace(tx: postgres.TransactionSql) {
   const actor = randomUUID();
   const workspaceId = randomUUID();
