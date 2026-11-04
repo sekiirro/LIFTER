@@ -86,6 +86,15 @@ describe('S14 PO decision fixture', () => {
     ]);
   });
 
+  it('keeps PO source metadata portable and free of machine-local paths', () => {
+    expect(decisions.S33_PO_3.source).toBe(
+      's28-po-decisions-verbatim brief, 2026-11-04',
+    );
+    expect(decisions.S33_PO_3.source).not.toMatch(
+      /(?:[A-Za-z]:[\\/]|\\\\[^\\]+\\[^\\]+)/u,
+    );
+  });
+
   it('treats prior S14 questions as optional editable starter material', () => {
     expect(spec).toContain(
       'Previously supplied S14 questions are editable starter content, not a fixed catalog.',
