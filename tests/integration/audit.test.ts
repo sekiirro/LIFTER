@@ -311,6 +311,18 @@ describe('immutability (T003)', () => {
 
 describe('visibility (T004)', () => {
   it('PO sees A, B and platform events; WO sees only active own-workspace events', async () => {
+    const workspaceCId = randomUUID();
+    checked(
+      await f.po.client.from('workspaces').insert({
+        id: workspaceCId,
+        name: 'C visibility probe',
+        slug: `f5-c-${randomUUID()}`,
+        created_by: f.po.userId,
+      }),
+    );
+    const workspaceCEvent = (await events(workspaceCId))[0];
+    if (!workspaceCEvent) throw new Error('Workspace C audit event missing');
+
     checked(
       await f.po.client
         .from('staff_profiles')
@@ -325,15 +337,23 @@ describe('visibility (T004)', () => {
       ...(await events(f.wsA.id)),
       ...(await events(f.wsB.id)),
       platform,
+      workspaceCEvent,
     ];
     const ids = expected.map((row) => row.id);
+    const fixtureIds = await db<{ id: string }[]>`
+      select id from public.audit_events
+      where workspace_id in (${f.wsA.id}, ${f.wsB.id})
+    `;
+    const denialIds = [
+      ...new Set([...ids, ...fixtureIds.map((row) => row.id)]),
+    ];
     const poRows = checked(
       await f.po.client.from('audit_events').select('*').in('id', ids),
     );
     if (!poRows) throw new Error('PO audit query returned no data');
-    expect(poRows).toHaveLength(3);
+    expect(poRows).toHaveLength(4);
     expect(poRows.map((row) => row.workspace_id)).toEqual(
-      expect.arrayContaining([f.wsA.id, f.wsB.id, null]),
+      expect.arrayContaining([f.wsA.id, f.wsB.id, workspaceCId, null]),
     );
     expect(
       checked(
@@ -363,7 +383,7 @@ describe('visibility (T004)', () => {
       const result = await client
         .from('audit_events')
         .select('id')
-        .in('id', ids)
+        .in('id', denialIds)
         .limit(1);
       expect(
         result.error,
@@ -392,9 +412,17 @@ describe('visibility (T004)', () => {
         .select()
         .single(),
     );
+    const postRevocationIds = await db<{ id: string }[]>`
+      select id from public.audit_events where workspace_id = ${f.wsA.id}
+    `;
     expect(
       checked(
-        await f.woA.client.from('audit_events').select('*').in('id', ids),
+        await f.woA.client
+          .from('audit_events')
+          .select('*')
+          .in('id', [
+            ...new Set([...ids, ...postRevocationIds.map((row) => row.id)]),
+          ]),
       ),
     ).toEqual([]);
   });
