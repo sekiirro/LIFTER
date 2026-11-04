@@ -174,6 +174,11 @@ it('T013 commits one complete original, revision, audit, and frozen D-03 SLA', a
         status: 'submitted',
         revision: 3,
       });
+      expect(
+        await tx`select public.save_form_draft(
+          ${context.wsA.id},${assignmentId},2,${randomUUID()},${tx.json(answers)}
+        ) as result`,
+      ).toEqual([{ result: { status: 'already_submitted' } }]);
       const result = submitted?.result as {
         submitted_at: string;
         start_date: string;
