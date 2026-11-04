@@ -68,7 +68,7 @@
 ## Phase 6: Review (Claude)
 
 - [x] T011 Re-run the gates. Run `free-tier:db` against the local stack and `free-tier:probe` against a local `next start`. Fill the offline rows of `docs/06-free-tier-report.md`. PR, CI, CodeRabbit (FR-001..FR-008, SC-001..SC-004).
-- [ ] T012 Verify each S31-PO-4 pilot unit against the current schema, record the mapping and source in the projection volume artifact, then measure only after the independently open deployment/authenticated-route decisions are approved. FR-006; SC-003.
+- [ ] T012 Verify each S31-PO-4 pilot unit against the current schema, record the mapping and source in the projection volume artifact, then measure only after the independently open deployment/authenticated-route decisions are approved. FR-006.
 
 ## Dependencies
 

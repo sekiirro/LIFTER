@@ -30,3 +30,22 @@
 - **Decision:** ND-F8-1 is decided as an illustrative pilot input: 2 workspaces × 150 clients/workspace × 2 staff/workspace × 2 plans/client × 2 new plan versions/client/month. T012 requires schema/unit verification before table-level values are recorded.
 - **Remaining gates:** ND-F8-2 hosting/staging and ND-F8-3 authenticated-route test-account approval remain open. No implementation or measurement is authorized.
 - **Coverage:** FR-to-task 8/8, SC-to-task 4/4; 0 CRITICAL/HIGH, 2 MEDIUM (ND-F8-2/3). Static only.
+
+## S32 SK-B round 7 refresh
+
+- **Date:** 2026-11-04T12:53:27+02:00 (after the S32-SK-B7 task-tag edit).
+- **Analyzed commit:** `4a831dc3b9f9ea401c3c6265856cdc320277acbb` (S32-SK-B7 base); the reviewed patch changes `tasks.md` and this refresh only.
+- **Scope:** static consistency and evidence review; no tests, stacks, deployments, cloud queries, or secret scans performed.
+
+### Findings
+
+| ID | Severity | Artifact | Finding | Disposition |
+|---|---|---|---|---|
+| F8-B7-01 | LOW | `tasks.md:T012`; `traceability.md` SC-003 | T012 carried an `SC-003` scope tag even though it verifies pilot-unit mappings and defers measurement; SC-003 is the no-secrets criterion mapped to T005-T006 and T008. | Removed only the unsupported `SC-003` tag from T012. FR-006, the task text, checkbox, and evidence ownership remain unchanged. |
+
+### Coverage and verdict
+
+- FR-to-task mapping remains 8/8; SC-to-task mapping remains 4/4 (12/12 total). No task checkbox or evidence status changed.
+- ND-F8-1 remains decided by S31-PO-4. ND-F8-2 deployment approval and ND-F8-3 authenticated-route measurement remain explicit open decisions; no new ambiguity was found.
+- Constitution IV alignment is preserved: preparation-only scope and the no-deployment/no-cloud-write boundary are unchanged.
+- **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 2 inherited MEDIUM, 1 LOW resolved in this round; 12/12 FR/SC items mapped.

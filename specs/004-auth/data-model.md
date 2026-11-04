@@ -5,7 +5,7 @@ One forward migration, `supabase/migrations/20261028120000_auth_recovery_links.s
 ## Capability `generate_recovery_link`
 
 - `app_private.role_has_capability`: approved future branch for `cap = 'generate_recovery_link'` includes `platform_owner`, `workspace_owner`, and all workspace `trainer` roles (S31-PO-2); Sales is denied. The existing implementation is not changed in this documentation lane; a new spec cycle, RLS, tests, and security review are required.
-- `lib/auth/capabilities.ts`: add to `CAPABILITIES`. The PO gets all capabilities. Add it to the `workspace_owner` list. `tests/integration/matrix-parity.test.ts` must keep both walls equal.
+- `lib/auth/capabilities.ts`: add to `CAPABILITIES`. The PO gets all capabilities. Add it to the `workspace_owner` list; when the approved Trainer scope is implemented in its own spec cycle, add it to the `trainer` list and the SQL wall in the same change. `tests/integration/matrix-parity.test.ts` must keep both walls equal.
 
 ## `public.recovery_link_issuances` (append-only)
 
