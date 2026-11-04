@@ -102,13 +102,9 @@ This records the supplied architect decisions against repository evidence; it do
   outside the approved set. A global reference currency or conversion table would invent rates and
   violate the PO decision. Mixed-currency installments would break exact same-currency totals.
 
-## R14 — Conditional implementation gates
+## R14 — Historical conditional implementation gates (superseded by S33-PO-6 / S34-PO-1)
 
-- **Decision**: Do not implement the S31 delta until SK-009-05 (legacy classification),
-  SK-009-06 (market/type owner and mutability), SK-009-07 (promotional behavior), SK-009-08
-  (approved AR/EN copy) and SK-009-09 (downstream currency relationship) are answered. Test design,
-  current-code evidence, no-conversion invariants and PO-only role matrices may be prepared without
-  choosing those product outcomes.
+- **Historical decision**: At the time, S31 implementation awaited SK-009-05..09. S33-PO-6 and S34-PO-1 now settle product behavior; only unapproved UI copy remains BLOCKED-COPY.
 - **Rationale**: The absolute PO-decision rule forbids inventing data classification, mutability,
   lifecycle behavior, copy or downstream financial semantics.
 - **Alternatives considered**: Choosing a technical default would silently resolve product policy.
@@ -118,18 +114,25 @@ This records the supplied architect decisions against repository evidence; it do
 
 - **Closed**: ND-F9-1 (market-conditional currencies/no conversion), ND-F9-4 (Sales/Trainer
   commission denied), the PO/WO authorship conflict and package-count cap.
-- **Open implementation blockers**: SK-009-08 and unanswered S33 MCQs; legacy audit and product scope are answered by S32-PO-4. Earlier S31 MCQs remain historical context, not current blockers. MCQs, implications,
-  recommendations and blocked work in the run PO packet.
+- **Current implementation status**: all S33-01..12 product MCQs are resolved. SK-009-08 is resolved for the exact four Arabic category labels; English/other copy remains BLOCKED-COPY. ND-F9-2/3/5 remain as previously recorded.
 - **Retained**: ND-F9-2, ND-F9-3 and ND-F9-5 remain as previously recorded.
 
-See [spec.md](spec.md#po-decision-register-and-needs-decision) and the S33 MCQs. S32-PO-4 closes the business scope for SK-009-05/06/07/09; detailed MCQs and SK-009-08 remain open.
+See the current [spec.md](spec.md#po-decision-register). The prior S33 MCQs are settled in S33-PO-6; C1–C5 and LABELS supersede conflicting earlier rules as recorded there.
 
 ## R15 ? S32-PO-4 package lifecycle and reporting
 
 S32-PO-4 closes the previous product blockers for audit-safe legacy migration, editable defaults, full PO package management, promotional date/expiry support, and historical FX-based EGP reporting. S31-PO-5 and SK-009-04 remain unchanged. The decision explicitly requires original-currency preservation, immutable historical rates, safe API-failure handling, and distinct reported revenue versus actual settlement.
 
-The approved scope does not identify which existing rows are defaults, a mapping, delete semantics for referenced identities, transaction-date timezone, non-business-day fallback, provider verification criteria, failure state, EGP identity-rate handling, expiry boundaries/link effects, exact market/type storage, or report basis. These are enumerated in `spec.md` S33-01..S33-12 and remain PO blockers. No technical option is promoted to a requirement.
+S33-PO-6 and S34-PO-1 identify the existing package rows as mock data, settle transaction date, previous business-day fallback, provider verification, rate-pending behavior, EGP identity, expiry boundaries/link effects, immutable category snapshot, and dashboard basis. The governing requirements are in the current Clarifications and FR-022..FR-033; no unresolved product MCQ is inferred.
 
 ## R16 ? External FX API and constitutional data constraint
 
-Constitution platform constraints restrict AI model routing and require synthetic data in development/testing under S31-PO-8. FX rate retrieval is a runtime third-party data API, not an AI call; the inspected constitution contains no blanket prohibition on such an API. FR-027 therefore requires server-side data minimization: send currency pair/date only (subject to provider contract), never client/workspace/transaction payload. Provider verification and availability criteria remain S33-08 decisions. No client data or secrets are included in development fixtures or outbound calls.
+Constitution platform constraints restrict AI model routing and require synthetic data in development/testing under S31-PO-8. FX retrieval is a runtime data API, not an AI call. FR-027 requires server-side minimization. Frankfurter is allowed only after documented verification checks (S33-PO-6); development fixtures remain synthetic.
+
+## S34-PO-1 / S33-PO-6 decision research
+
+The PO records settle category cardinality, permissions, dashboard semantics, mock-data disposition and Arabic labels. Each workspace has four immutable market/type pairs; both markets operate concurrently. Only PO configures workspace-specific names, prices and package-specific commission. Commercial edits append immutable versions and preserve client/assignment snapshots.
+
+C5 requires independent target-stack verification. The synthetic-only assertion does not replace a dependency audit: enumerate FKs, registration links, subscriptions, payments, audit rows and all other package references. Any non-synthetic row, required financial/audit dependency or unknown dependency state refuses/escalates with zero writes. A clean preflight is required before mock removal and empty-category initialization. This artifact-only run performs no deletion.
+
+The dashboard shows actual monthly collections and package-specific commission with installment detail; settlement events stay separate. FX follows settled S33-PO-6 date/provider/fallback/retry/audience rules. No additional display math or UI copy is inferred. Copy outside the four exact approved Arabic category labels remains BLOCKED-COPY.

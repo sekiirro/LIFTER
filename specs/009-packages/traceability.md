@@ -35,13 +35,13 @@ Status meanings:
 
 | FR | Task(s) | Planned test source | Evidence | Status |
 |---|---|---|---|---|
-| FR-015 market attribute | T036, T038, T039, T042, T044, T045 | `tests/unit/packages-market-type.test.ts`; `tests/integration/packages-markets-types.test.ts` | None; owner/legacy gated by SK-009-05/06 | BLOCKED |
-| FR-016 type attribute | T036, T038, T039, T042, T044, T045 | Same as FR-015 | None; owner/mutability and promotional behavior gated by SK-009-06/07 | BLOCKED |
+| FR-015 market attribute | T036, T038, T039, T042, T044, T045, T066 | `tests/unit/packages-market-type.test.ts`; `tests/integration/packages-markets-types.test.ts` | Product decisions resolved; no implementation evidence | NOT-IMPLEMENTED |
+| FR-016 type attribute | T036, T038, T039, T042, T044, T045, T066 | Same as FR-015 | Product decisions resolved; no implementation evidence | NOT-IMPLEMENTED |
 | FR-017 market-currency matrix | T037, T038, T042, T043, T049a | `tests/unit/packages-market-type.test.ts`; `tests/integration/packages-markets-types.test.ts` | None; schema delta not written | NOT-IMPLEMENTED |
 | FR-018 no conversion/own currency | T037, T043, T044, T049a, T050 | `tests/unit/packages-money.test.ts` extension; `tests/e2e/packages.spec.ts` extension | None; no-conversion scan not run | NOT-IMPLEMENTED |
-| FR-019 unlimited independent packages | T036, T038, T042 | `tests/integration/packages-markets-types.test.ts` | None; no count cap exists in shipped schema, but S31 tests are not written | NOT-IMPLEMENTED |
+| FR-019 four immutable categories | T036, T038, T042, T066 | `tests/integration/packages-markets-types.test.ts` | C3 settled; implementation tests not written | NOT-IMPLEMENTED |
 | FR-020 PO-only authorship/control | T040, T042, T043, T045, T047 | `tests/unit/packages-actions.test.ts` extension; `tests/integration/packages-reads.test.ts` extension | Shipped PO-only walls exist; S31 matrix/UI evidence is not written | NOT-IMPLEMENTED |
-| FR-021 preserve existing versions | T035, T042, T046, T049a, T050 | `tests/integration/packages-markets-types.test.ts`; forward-migration catalog check | None; forward migration not written | NOT-IMPLEMENTED |
+| FR-021 preserve commercial/client snapshots | T035, T042, T046, T049a, T050, T066 | `tests/integration/packages-markets-types.test.ts`; forward-migration catalog check | C1/C2 settled; implementation tests not written | NOT-IMPLEMENTED |
 
 ## SC mapping
 
@@ -49,21 +49,31 @@ SC-001..SC-006 are covered by the shipped baseline test sources above. SC-007..S
 tasks: SC-007 → T036/T038; SC-008 → T037/T038; SC-009 → T037/T041/T050; SC-010 →
 T038/T039/T047; SC-011 → T035/T038/T050; SC-012 → T041/T045/T049. No S31 SC is claimed passing.
 
-## Open PO blockers
+## Historical PO blocker statuses (superseded by S33-PO-6 / S34-PO-1)
 
-SK-009-05 (legacy classification), SK-009-06 (owner/mutability), SK-009-07 (promotional behavior),
-SK-009-08 (approved AR/EN copy) and SK-009-09 (downstream currency). See the `## PO decision register`
-in [spec.md](spec.md).
+All S33-01..12 product choices, C1–C5 and Arabic LABELS are resolved. Only BLOCKED-COPY remains for English and other UI copy without PO approval.
 
 ## S32-PO-4 FRs (new; no implementation evidence)
 
 | FR | Task(s) | Planned evidence | Status |
 |---|---|---|---|
-| FR-022 legacy audit/no inference/editable defaults | T052, T053, T063 | audit inventory reconciliation + migration tests | BLOCKED: S33-01 |
-| FR-023 PO package CRUD/version preservation | T053?T055, T063 | management/RPC role tests, immutable version + downstream snapshot tests | BLOCKED: S33-02, S33-07, S33-11 |
-| FR-024 promotional dates/expiry/deactivation | T056, T057, T061 | pure date-boundary tests, scheduler/idempotency/link lifecycle tests | BLOCKED: S33-03, S33-05, S33-06, SK-009-08 |
-| FR-025 original currency/EGP reporting/settlement distinction | T058, T060 | report fixtures and immutable settlement/snapshot assertions | BLOCKED: S33-03, S33-10, S33-12, SK-009-08 |
-| FR-026 API fetch, immutable rate snapshot and safe failures | T058, T059, T062 | provider contract/failure/retry/security tests | BLOCKED: S33-03, S33-04, S33-08, S33-09, S33-10 |
+| FR-022 mock inventory/no inference | T052, T053, T064, T071 | synthetic-only inventory + dependency manifest | NOT-IMPLEMENTED |
+| FR-023 future real-package retirement | T054, T055, T066 | history-preserving retirement tests | NOT-IMPLEMENTED |
+| FR-024 promotional dates/link behavior | T056, T057, T067 | date-boundary and issued-link snapshot tests | NOT-IMPLEMENTED |
+| FR-025 collections/settlement reporting | T060, T068 | actual collection, commission and separate settlement fixtures | NOT-IMPLEMENTED |
+| FR-026 FX snapshot/failure behavior | T058, T059, T067, T068 | date/provider/rate/retry tests | NOT-IMPLEMENTED |
 | FR-027 no client data in outbound API request | T059, T062 | captured request allowlist test + security review | Planned, no evidence |
 
 SC-013..SC-018 map respectively to T052/T053, T054/T055, T056/T057, T058/T060, T058/T059, and T059/T060/T062. No task is ticked. Existing rows above retain their S31 evidence status; this cycle ran no tests/builds/stacks and claims no implementation evidence.
+
+## S34 current traceability (requirements only; no implementation evidence)
+
+| FR / SC | Tasks | Planned evidence | Status |
+|---|---|---|---|
+| FR-028 C5 safe removal/empty initialization; SC-019 | T064, T065, T070, T071 | complete dependency manifest, fail-closed tests with zero writes, safe deletion/init/rollback, independent security review | NOT-IMPLEMENTED |
+| FR-029 PO-only versioned terms; FR-015/016/019/021; SC-020 | T066, T071 | four category pairs, immutable market/type, role tests, commercial versions and historical snapshots | NOT-IMPLEMENTED |
+| FR-030 promotions and link expiry; SC-021 | T067, T071 | Cairo date/boundary and new/issued link tests | NOT-IMPLEMENTED |
+| FR-031 reporting/FX roles; SC-022 | T068, T071 | actual monthly collections, commissions, separate settlement, installment details, FX and role tests | NOT-IMPLEMENTED |
+| FR-032/033 installment UI copy/labels; SC-023 | T069, T071 | exact Arabic strings; Frontend Design Gate after copy approval | BLOCKED-COPY / NOT-IMPLEMENTED |
+
+No S34 task is ticked. This cycle ran no tests, SQL, migration, stack, build, UI render or security review. Existing mock packages must not be deleted until the C5 preflight and independent security gates pass on the target stack.

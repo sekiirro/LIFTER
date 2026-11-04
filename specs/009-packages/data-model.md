@@ -4,8 +4,7 @@ The shipped baseline is `supabase/migrations/20261029120000_packages.sql` (PR #9
 `b565d4c`, implementation tip `b359985`). Never edit that committed migration or any later shipped
 migration. The S31 delta is a **new** forward migration,
 `supabase/migrations/20261106125000_f9_package_markets_types_currency.sql` (provisional filename
-until implementation), with the final legacy
-legacy migration/business scope is approved by S32-PO-4; physical owner/version model and operational details remain gated by SK-009-08 and S33 MCQs.
+until implementation). S33-PO-6 and S34-PO-1 settle the logical owner/version and operational rules. Only UI copy beyond the four exact approved Arabic labels remains BLOCKED-COPY.
 
 The shipped baseline extended `app_private.audit_row_change()` from its latest complete body in
 `20261028120000_auth_recovery_links.sql`, preserving workspace, staff, membership, jobs and recovery
@@ -77,62 +76,29 @@ Package identity is resolved through the immutable offer relation; no redundant 
 
 ### Invariants fixed by the PO
 
-- Proposed machine encoding is `market = egypt | international` and
-  `package_type = year_round | promotional`. This is a technical design proposal for
-  implementation, not PO-approved copy, and it may change without a PO decision. Arabic/English
-  display labels are separate and are not shipped until SK-009-08 supplies approved copy.
+- The exact Arabic labels are approved: «مصر», «دولي», «وقت العـروض», «طول السنـة», mapped to Egypt, International, Year-Round and Promotional. English labels remain BLOCKED-COPY.
 - Egypt → `EGP` only. International → `EGP | USD | SAR`. Every other currency is invalid even if it
   satisfies the former three-letter format check.
-- A version keeps its own exact minor-unit amount/currency. No exchange-rate field, converted
-  amount, mixed-currency total or market/currency inference is introduced.
-- Distinct canonical package codes remain independent within a workspace. No package-count cap,
-  quota or one-package-per-workspace key is introduced.
+- A package version keeps its exact minor-unit amount/currency. Only transaction-date EGP reporting conversion is permitted; no package-price conversion or mixed-currency total is introduced.
+- Each workspace has exactly four immutable category identities. Both markets may operate simultaneously.
 - PO is the only actor who may create/name/price/control packages. WO/Sales/Trainer denial and
   Sales/Trainer commission denial are unchanged.
 - Existing `package_versions` rows are immutable. The forward migration cannot update, delete,
   truncate or rewrite their identifiers or financial/duration terms.
 
-### Owner and mutability are conditional on SK-009-06
+### Owner and mutability (settled)
 
-The approved attribute values do not decide where they live or whether they may change. The forward
-migration MUST follow the PO answer rather than one of these design candidates:
+Market/type are immutable and the S33-11 recommended immutable version snapshot holds them. C1 supersedes S32-PO-4 SK-009-06 market/type mutability and S33-07 for these attributes only. Commercial terms remain PO-controlled and versioned; prior client/assignment snapshots are preserved. This logical contract does not select physical columns beyond the approved snapshot invariant.
 
-| Candidate | Physical delta | Required history/mutability behavior | Blocked by |
-|---|---|---|---|
-| A — workspace offer, fixed (recommended) | Add `market` and `package_type` to `package_offers`; extend the offer identity-update guard to freeze both | New offer requires both values; later publication must match them; a changed market/type requires a distinct package | SK-009-06 |
-| B — workspace offer, mutable | Add the same columns; allow only an explicitly audited PO mutation | Decide whether each package version snapshots the old or new value; otherwise historical reads can change meaning | SK-009-06 + SK-009-07 |
-| C — platform canonical package | Add the columns to `packages` | One global value applies to every workspace; version history remains immutable | SK-009-06 |
-| D — immutable version snapshot | Add the columns to `package_versions` | Every new version records values; current offer/version projections need a defined current-value rule | SK-009-06 + SK-009-07 |
+The implementation must preserve the approved immutable snapshot invariant in the data model, RPC, read contract and tests.
 
-Do not combine candidates or silently fall back from one to another. The data model, RPC, read
-contract, UI and migration tests must all use the same PO-approved candidate.
+### Existing mock packages (C5)
 
-### Existing-row classification is conditional on SK-009-05
-
-The shipped schema has no market/type values. Therefore the new columns cannot honestly become
-mandatory for existing offers without an approved representation. The forward migration must encode
-exactly one PO-approved SK-009-05 option before it is committed:
-
-- **Explicit mapping**: apply a PO-supplied row mapping in the migration's approved staging order,
-  then enforce the selected owner's non-null/check constraints. This may classify offer metadata but
-  MUST NOT rewrite any `package_versions` term.
-- **Approved legacy/unclassified representation**: retain an explicit approved legacy state and
-  publish new rows under the two new domains. The state and its display copy require PO approval;
-  it is not invented by the schema author.
-- **Verified-empty catalog**: if deployed-state evidence proves there are no rows to classify, add
-  mandatory constraints immediately with no data update.
-- **Currency inference is prohibited**: EGP does not prove Egypt because International permits EGP;
-  USD/SAR do not prove a historical market rule.
-
-No default `Egypt`, `International`, `Year-round` or `Promotional` is applied to existing rows in
-this plan.
+S34-PO-1 declares all existing package rows mock data and supersedes S32-PO-4 SK-009-05/S33-01 mapping for these rows. Before removal, verify synthetic-only status and enumerate every target-stack dependency: FK edges, registration links, subscriptions, payments, audit rows, and all other package references. Any non-synthetic row, required financial/audit dependency, or unknown state requires refusal/escalation with zero writes. After a clean preflight, delete obsolete mock packages and initialize exactly four empty categories per workspace with no names, prices or commissions. Future real packages follow S33-PO-6 soft-retirement; historical records are preserved.
 
 ### Conditional publication contract
 
-If SK-009-06 selects candidate A/B/C, market/type are supplied once when the selected owner record
-(canonical package or workspace offer) is created, and later publications must match the fixed
-owner value (or follow the approved mutable transition). If it selects D, every publication
-supplies and snapshots market/type. In either case the new publication path MUST:
+Market/type are assigned once to each immutable category and included in the S33-11 immutable snapshot; later publication cannot mutate them. Commercial edits use new versions and preserve client/assignment snapshots. The publication path MUST:
 
 1. re-derive the signed actor and require PO + `set_package_pricing` before target lookup;
 2. validate market/type and the market/currency matrix before advisory/row locks or inserts;
@@ -167,13 +133,10 @@ format-valid but market-prohibited currency after the forward migration.
 
 ### Conditional downstream contract
 
-Current shipped F10 registration links copy the package version's price/currency; current F12
-subscriptions, installments, payments, refunds and commission snapshots preserve that currency and
-enforce same-currency totals. The final S31 requirement for those surfaces is SK-009-09. Under the
-recommended same-currency option, no new conversion field or rate source is added and existing
-snapshots remain unchanged. Under any option that permits a different or mixed downstream currency,
-a new PO-approved source of truth and migration plan is required; this specification does not
-provide one.
+Current shipped F10/F12 records preserve package-version price/currency snapshots and same-currency
+totals. This remains unchanged for transactions and actual settlements. The separate S33-PO-6
+transaction-date EGP conversion is for collections/commission reporting only; it does not rewrite
+downstream snapshots or create package-price conversion or mixed-currency totals.
 
 ## Database API and transaction rules
 
@@ -233,22 +196,31 @@ Offer insertion and current-pointer-only updates produce no offer event. Replays
 
 Canonical package → fixed workspace offer → append-only version sequence. New offer: absent → unavailable/version 1/current pointer, atomically. Subsequent publish changes only pointer, never availability. Availability true/false changes independently, preserving versions. All relations remain restrictive and workspace-composite where tenant-owned. F10 tokens and F12 subscriptions must reference `(workspace_id, package_version_id)` and snapshot price/currency/rate/duration at purchase; later publications cannot update them. Those tables and commission accrual/installment arithmetic (D-13/D-17) are out of scope.
 
-## S32-PO-4 data-model delta ? design only, PO-gated
+## S32-PO-4 data-model delta (historical draft; superseded by S33-PO-6 / S34-PO-1 where noted)
 
 ### Legacy catalog and versioned package management
 
-Add a mandatory audit inventory before any forward migration: stable package/offer/version IDs, current/default status as explicitly identified by the PO, reference counts across links/subscriptions/transactions, classification source, and migration disposition. Do not infer any value from price/currency, label, usage frequency or workspace. Default-package identity and mapping format are BLOCKED by S33-01. Preserve package editability after migration.
+Before any mock removal, inventory stable package/offer/version IDs and enumerate all target-stack references: FKs, registration links, subscriptions, payments, audit rows and all other package dependencies. Verify synthetic-only status. Any non-synthetic record, required financial/audit dependency or unknown state refuses/escalates with zero writes. A clean preflight permits safe deletion and initialization of four empty categories. No default commercial values are created.
 
-Management writes are PO-only. Changes to any published term append a version and preserve all former versions and downstream snapshots. Physical placement of market/type, rename identity semantics and the versioned payload remain BLOCKED by S33-07/S33-11. Deletion must retain historical records; referenced-package behavior is BLOCKED by S33-02. No hard delete of financial records or referenced identity is allowed by the binding preservation requirement.
+Management writes are PO-only for workspace-specific names, prices and package-specific commissions; WOs cannot configure these values. Commercial edits append versions and preserve prior client/assignment snapshots. Market/type are immutable and included in the S33-11 snapshot. S33-02 soft-retirement applies to future real packages; C5 governs existing mock-package removal.
 
-### FX snapshot entity (conceptual; implementation blocked on MCQs)
+### FX snapshot entity (conceptual; product behavior settled)
 
-Proposed immutable snapshot fields: `transaction_id`, `transaction_currency`, `transaction_amount_minor`, `reporting_currency` (EGP), `rate_numerator`/`rate_denominator` or exact decimal representation, `transaction_date_basis`, `transaction_date`, `provider_rate_date`, `provider_id`, `retrieved_at`, `snapshot_created_at`, and a provenance/hash or response reference that contains no client data. Snapshot association is one record per transaction and selected transaction-date basis; exact key, precision/rounding, provider response retention and retry semantics require S33-03/04/08/09/10/12 decisions. Existing source transaction currency/amount is authoritative and immutable.
+Any future snapshot preserves original transaction amount/currency and actual settlement. The transaction timestamp maps to an Africa/Cairo calendar date; use the previous published business-day rate when no same-day published rate exists. Frankfurter may be used only after documented verification checks. EGP→EGP uses exactly 1. Rate-pending retries are idempotent and excluded from converted totals until fetched. Do not invent additional FX policy beyond the settled record.
 
-Store reported EGP revenue/commission separately from actual settlement amount/currency and settlement event/status. Never overwrite actual settlement with the reported converted value. Display both with clear distinction; copy and report-source semantics await S33-12 and SK-009-08.
+Store reporting values separately from actual settlement amount/currency and settlement events. Never overwrite settlement with a reported converted value. Dashboard display follows C4: actual monthly collections and package-specific commissions with installment detail; settlement/accounting events remain separate. Copy beyond the approved Arabic category labels remains BLOCKED-COPY.
 
 ### Fetch/expiry jobs, audit and idempotency
 
-Use the existing cron-worker pattern for provider fetches and automatic promotional expiration; do not add a new scheduling platform. FX fetch is server-only, validates provider identity/date/currency/rate, uses idempotency key `(transaction_id, transaction_date_basis, transaction_date, reporting_currency)`, and records attempt state without inventing a rate. Job frequency, failure state, retry/backoff, same-day identity and end-boundary behavior are PO-gated by S33-03..10. Audit successful PO management edits/retirement and FX snapshot provenance without client data or provider secrets; audit event allowlists and financial retention need security review.
+Use existing scheduling patterns for future provider fetches and promotion availability; no new scheduling platform is specified. Provider fetch is server-only, validates rate source/date/currency, uses an idempotent retry, and records pending state without inventing a rate. Promotion boundaries and issued-link effects follow FR-030. Audit required management and FX changes without client data or provider secrets; independent security review remains required.
 
 The constitutional external-model rule applies to development AI handling. S31-PO-8 requires synthetic data for development/testing; the FX provider is a runtime data API, not an AI model. Outbound runtime calls still send no client data (FR-027).
+
+## S34-PO-1 settled data invariants
+
+- Workspace category cardinality is exactly four: Egypt × Year-Round, Egypt × Promotional, International × Year-Round, International × Promotional. Both markets can operate at once. Market/type are immutable; S33-11 requires market/type in the immutable version snapshot.
+- PO controls workspace-specific names, prices and package-specific commissions. WOs cannot configure them. Commercial-term changes append a version and preserve prior client/assignment snapshots.
+- Dashboard read semantics are actual monthly collections and package-specific commissions with installment due/paid/remaining detail. Accounting/settlement events remain separate records. Converted commission is PO/WO-only.
+- FX uses the transaction timestamp's Africa/Cairo calendar date and the previous published business-day rate; Frankfurter is used only after documented verification; EGP→EGP is exactly 1; a pending rate retries idempotently and is omitted from converted totals until fetched. No other conversion is allowed.
+- C5 deletion requires a target-stack dependency manifest including FKs, registration links, subscriptions, payments, audit rows and every other reference. Unsafe or unknown state refuses and escalates with zero writes. Safe cleanup initializes four empty categories without commercial defaults.
+- Requirements define Installments data only. Copy beyond the exact approved Arabic category labels remains BLOCKED-COPY.

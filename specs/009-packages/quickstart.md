@@ -68,11 +68,9 @@ Only in isolated disposable local stack/worktree, with rollback or scratch uncom
 7. Remove app authorize alone with accepting mocked RPC: unit denial MUST fail. Remove DB pricing guard independently: non-PO integration negatives MUST fail. One wall does not prove the other.
 8. Remove price text projection or round through Number: >2^53 transport/formatting test MUST fail. Accept preset 2/4 months or custom 0 days: boundary tests MUST fail.
 
-## 5. S31 future validation gate
+## 5. Historical S31 validation gate (superseded by S34 future gates below)
 
-S31 work is superseded by the S32 task delta where applicable. Do not implement the S32 delta until SK-009-08 and applicable S33 MCQs are answered and the
-the selected version/storage model, legacy mapping, copy, provider, reporting and date-boundary decisions are recorded in the spec and plan. The
-future validation must then include:
+The following list preserves historical S31 verification ideas. Current product rules are in the S34 gates below; no S33-01..12 decisions remain open. Use BLOCKED-COPY only for unapproved UI strings.
 
 - RED-first unit fixtures for the complete Egypt/International × EGP/USD/SAR matrix, invalid enum
   values, no inferred market, exact own-currency formatting and no cross-currency total;
@@ -101,10 +99,19 @@ the matrix is a blocking failure.
 
 ## 6. Evidence and handoff
 
-Claude independently records commands/counts/mutation results in review/PR evidence and checks FR/SC coverage in tasks.md Analyze. Preserve retained NDs, SK-009-08, unanswered S33 MCQs and documented replay/initial state/duration representation interpretations. No push/deployment authorized by this runbook. When synthetic data is no longer needed, stop only the disposable stack with `npx supabase@2.122.0 stop --no-backup`.
+Claude independently records commands/counts/mutation results in review/PR evidence and checks FR/SC coverage in tasks.md Analyze. Preserve retained NDs and BLOCKED-COPY; all S33-01..12 decisions are resolved. No push/deployment is authorized by this runbook. When synthetic data is no longer needed, stop only the disposable stack with `npx supabase@2.122.0 stop --no-backup`.
 
-## 7. S32-PO-4 implementation gate (future; no tests run in this artifact cycle)
+## 7. S32-PO-4 implementation gate (historical; superseded by S34 future gates)
 
-Do not implement tasks tagged BLOCKED until the relevant numbered S33 MCQ is answered by the PO and reflected in a fresh Clarifications entry. Required future RED-first coverage includes: complete legacy audit reconciliation/no inferred classification/editable defaults; immutable version append on every package-term edit and unchanged downstream snapshots; referenced-delete preservation; promotional date boundaries/expiry/manual deactivation/issued-link behavior; FX rate-date selection, immutable per-transaction snapshot and idempotent retries; safe timeout/invalid/missing-rate behavior; reported EGP versus actual settlement; no client data in captured provider requests; and role matrices proving Sales/Trainer never receive original or converted commissions.
+S33-PO-6 and S34-PO-1 settle product decisions in scope. Future work remains RED-first and must keep BLOCKED-COPY explicit. Required coverage includes C5 dependency preflight/refusal, immutable categories and commercial versions, client/assignment snapshot preservation, promotion boundaries and issued-link behavior, FX pending/retry, separate collections and settlement records, no client data in provider requests, and commission role matrices.
 
 Future migration task must verify uniqueness of the package version across **ALL origin references** (S32-R1) before consolidation or mapping; never rely on one current workspace/version pointer as a uniqueness proof. Use only synthetic records in development/testing (S31-PO-8). No production audit, migration or third-party request is authorized by this artifact-only cycle.
+
+## S34 future validation gates (not run in this spec-only cycle)
+
+- RED-first category tests: exactly four pairs per workspace, immutable market/type, simultaneous markets, PO-only configuration, WO denial, append-only commercial versions and unchanged prior client/assignment snapshots.
+- Promotion tests: Africa/Cairo start-inclusive/end-exclusive boundaries; expiry blocks new links only; issued links retain their snapshots.
+- Dashboard tests: actual monthly collections, package-specific commissions, installment due/paid/remaining details, separate settlement/accounting rows, PO/WO converted commission access, Sales/Trainer denial, previous published business-day FX, documented Frankfurter checks, EGP→EGP=1 and idempotent pending-rate exclusion until fetched.
+- C5 tests run on target stack with synthetic fixtures only. Preflight enumerates FK edges, registration links, subscriptions, payments, audit rows and all other package refs. Non-synthetic, required financial/audit and unknown dependencies each refuse with zero writes. Only clean preflight may delete mocks and initialize four empty categories with no prices/commissions; verify rollback and repeat safety.
+- Forward migrations only; preserve S32-R1 all-origin-reference uniqueness and never edit a pushed migration. Require independent security review of deletion authorization, scope, dependency completeness, refusal behavior, atomicity and audit preservation.
+- Frontend Design Gate applies to dashboard/Installments UI. Use only approved Arabic category labels until remaining copy is approved; render required locale/theme/viewport matrix only after copy approval. This cycle claims no UI screenshots.

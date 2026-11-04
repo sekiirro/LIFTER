@@ -81,7 +81,7 @@ created on rejection.
 - Sales/Trainer remain unable to retrieve commission through direct, wildcard, joined, embedded,
   audit, safe-view or alternate supported paths.
 - Distinct package codes coexist in one workspace with independent current-version pointers and
-  version sequences. There is no package-count cap, quota or single-package workspace slot.
+  version sequences. S34-PO-1 supersedes this historical S31 count rule: each workspace has exactly four immutable market/type categories.
 
 ### Read contract
 
@@ -110,9 +110,9 @@ owner model and SK-009-08 copy are approved. It MUST:
 - pass the Frontend Design Gate for AR-RTL/EN-LTR × light/dark × mobile/desktop with keyboard and
   accessibility evidence.
 
-`Promotional` behavior is undecided (SK-009-07). No date window, visibility rule, availability
-default or scheduled lifecycle may be assumed or implemented until the PO answers it; the attribute
-value alone carries no behavior in this contract.
+`Promotional` behavior is settled by S33-PO-6: Africa/Cairo start-inclusive/end-exclusive approved
+periods; expiry prevents new links while issued links retain snapshots. This supersedes the earlier
+S31 undecided wording. English and other unapproved UI copy remains BLOCKED-COPY.
 
 ### Downstream F10/F12 boundary
 
@@ -167,10 +167,18 @@ No new dependencies or environment variables. Existing server-only modules and t
 
 Token issuance binds `(workspace_id, package_version_id)` selected server-authoritatively from an available offer/current version. Purchase snapshots copy version id, canonical identity, price_minor, currency, commission_rate_bp and duration. Subscriptions also snapshot installment schedule, whose total equals approved price (D-17). Commission is earned only on confirmed collections at snapshot rate (D-13). Under the recommended SK-009-09 option, each downstream monetary record keeps the package version's own currency and no conversion occurs. F9 implements none of these downstream records or financial calculations; it supplies immutable terms and restrictive composite identities. Disabling an offer does not mutate existing versions or historical references.
 
-## S32-PO-4 package management and FX contract delta (PO-gated)
+## S34-PO-1 logical contract delta (future implementation)
 
-The PO-only management surface must expose create/edit/delete/rename/price/market/type changes per workspace. Every change affecting a published term creates a new immutable version; historical package versions, registration-link/subscription snapshots and financial records are never rewritten. S31-PO-5 authoring limits and SK-009-04 commission denial remain in force. Exact RPC payload and market/type placement are blocked on S33-11; deletion is blocked on S33-02. No user-facing market/type copy is added while SK-009-08 remains open.
+- Each workspace exposes exactly four immutable market/type category pairs. Both markets may be active simultaneously. Promotional availability obeys its approved Africa/Cairo start-inclusive/end-exclusive period; expiry affects new-link creation only, and issued-link snapshots remain unchanged.
+- PO-only configuration covers workspace-specific package names, prices and package-specific commissions. WO attempts are denied. Commercial edits append versions; existing client/assignment snapshots remain stable. Market/type cannot be changed.
+- Dashboard semantics are actual monthly collections and package-specific commission with installment detail (due dates, paid and remaining amounts). Settlement/accounting rows remain separate. Converted commission is PO/WO-only; Sales/Trainer remain denied.
+- C5 deletion must execute a read-only target-stack preflight first, enumerating FK edges, registration links, subscriptions, payments, audit rows and every other package reference. Non-synthetic data, required financial/audit dependencies or unknown state returns refusal/escalation with zero writes. Only a clean preflight allows mock deletion and initialization of four empty categories with no names/prices/commissions.
+- Only exact Arabic labels «مصر», «دولي», «وقت العـروض», «طول السنـة» are approved. English labels and all other dashboard/Installments UI copy are BLOCKED-COPY.
 
-Promotional records may carry optional start/end dates and support automatic expiry or manual deactivation. Window timezone, boundary, precedence and already-issued link effects are blocked on S33-03/05/06. Scheduled actions must be idempotent and audited, and must not rewrite issued snapshots.
+## S32-PO-4 package management and FX contract delta (historical; superseded by S33-PO-6 / S34-PO-1 where noted)
 
-Historical FX reporting is additive and does not change source transaction/settlement currency. Server-side provider retrieval creates an immutable, idempotent transaction-date rate snapshot. Reported revenue/commission in EGP is distinct from actual settlement; prior snapshots are never recalculated. Sales/Trainer continue to receive no commission values, including converted values. Request payload excludes client and workspace data. Provider, date basis, weekend fallback, EGP identity-rate, failure state, report source and projection are blocked on S33-03/04/08/09/10/12.
+The PO-only management surface controls workspace-specific names, prices and package-specific commissions; WOs cannot configure terms. Commercial edits append immutable versions and preserve prior client/assignment snapshots. Market/type are immutable under C1 and included in S33-11's immutable snapshot. C5 governs existing mock deletion; S33-02 soft-retirement applies to future real packages. Only non-approved UI copy remains BLOCKED-COPY.
+
+Promotional categories use approved Africa/Cairo start-inclusive/end-exclusive periods. Expiry stops new links only; issued links retain snapshots (S33-PO-6 S33-05/06).
+
+Historical FX reporting preserves source transaction/settlement currency and separate settlement records. It uses Africa/Cairo transaction dates, previous published business-day rates, verified Frankfurter data, exact EGP identity rate, and idempotent rate-pending retries excluded from totals until fetched. Converted commission remains PO/WO-only; Sales/Trainer are denied (S33-PO-6). Provider requests exclude client/workspace data.

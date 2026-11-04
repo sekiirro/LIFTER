@@ -5,11 +5,11 @@
 
 ## Summary
 
-F9 gives PO a canonical package catalog and workspace-specific duration offers with immutable numbered terms. The shipped implementation is PR #9 merge `b565d4c` (implementation tip `b359985`): three tables, hardened mutation RPCs, a safe staff projection, a narrow PO/WO commission reader, audit extensions, shared pure validation/money formatting, JWT-backed actions and a PO-only `/packages` page.
+F9 gives PO a canonical package catalog, four immutable market/type category identities per workspace, and workspace-specific duration offers with immutable numbered commercial terms. The shipped implementation is PR #9 merge `b565d4c` (implementation tip `b359985`): three tables, hardened mutation RPCs, a safe staff projection, a narrow PO/WO commission reader, audit extensions, shared pure validation/money formatting, JWT-backed actions and a PO-only `/packages` page.
 
 The S31 amendment adds an explicit workspace-package market (`Egypt | International`), type
 (`Year-round | Promotional`), a market-conditional currency set (Egypt = EGP only; International =
-EGP/USD/SAR), a no-conversion/no-cross-currency-total rule, and unlimited distinct packages per
+EGP/USD/SAR), no package-price conversion/cross-currency totals, and four fixed category identities per workspace
 workspace. Platform Owner remains the only package creator/pricer; WO/Sales/Trainer remain denied,
 and Sales/Trainer commission remains denied. The implementation delta is additive: a new forward
 migration plus versioned application/read/UI contracts. The shipped F9 migration and every existing
@@ -24,9 +24,9 @@ explicit PO gates below.
 - **Storage**: Existing Supabase Postgres 17, CLI 2.122.0. The S31 delta adds one new forward migration, provisionally `supabase/migrations/20261106125000_f9_package_markets_types_currency.sql`; it never edits shipped `20261029120000_packages.sql`. User JWT for app calls.
 - **Testing**: Existing Vitest 5.0.5 unit/local integration, postgres harness, Playwright 1.64.1 and axe 4.14.0, RLS-catalog/matrix parity and mutation checks. New work is RED-first unit/integration/e2e and permission/RLS mutation coverage.
 - **Target Platform / Project Type**: Existing Next web app on Cloudflare Workers/OpenNext; local builds/dry runs only. No new service or public API server.
-- **Performance Goals**: Preserve indexed offer serialization and current-version replay. No package-count cap and no invented latency/capacity SLA; pilot volumes remain ND-F8-1.
-- **Constraints**: Exact bigint money transport; market-conditional currency; own-currency display only; no exchange rate/conversion/cross-currency total; no console; deny by default; immutable versions for all DML roles; no browser Supabase/admin imports; no unreviewed bilingual copy; $0 hosting direction unchanged.
-- **Scale/Scope**: Existing three package tables, safe view, three mutation RPCs, one commission reader and one PO screen. S31 adds two attributes (four values), one currency matrix, unlimited independent packages and the associated read/UI/verification surface. Only synthetic local fixtures.
+- **Performance Goals**: Preserve indexed offer serialization and current-version replay. Exactly four category identities; no invented latency/capacity SLA; pilot volumes remain ND-F8-1.
+- **Constraints**: Exact bigint money transport; market-conditional currency; package prices remain in own currency; reporting-only S33-PO-6 FX conversion; no cross-currency totals; no console; deny by default; immutable versions for all DML roles; no browser Supabase/admin imports; no unreviewed copy; $0 hosting direction unchanged.
+- **Scale/Scope**: Existing package schema and PO screen. S34 specifies four immutable category pairs per workspace, reporting/installment requirements, and safe removal of synthetic mocks. Only synthetic local fixtures.
 
 ## Constitution Check
 
@@ -47,9 +47,7 @@ Gate before research, rechecked after design against Constitution v1.4.0 and the
 | Workflow              | PASS for artifact scope: S31 decisions transcribed through Specify → Clarify → Plan → Tasks → Analyze; future delegated implementation and independent architect review are separate. Implementation is blocked by the listed PO gates. |
 
 **Post-design re-check**: no constitutional exception. Document validation does not approve
-implementation or production. S31 closes ND-F9-1 and ND-F9-4 and resolves the authorship conflict;
-SK-009-08 and unanswered S33 MCQs remain explicit implementation blockers. S32-PO-4 closes the business scope for SK-009-05/06/07/09; field placement and detailed operational semantics remain gated. Technical interpretations in research
-R4/R5/R9 remain visible for review.
+implementation or production. S33-PO-6 and S34-PO-1 settle the product choices in scope; English and other UI copy beyond approved Arabic labels remains BLOCKED-COPY. Technical implementation and production gates remain mandatory.
 
 ## S31 shipped-baseline delta (2026-11-04)
 
@@ -57,13 +55,13 @@ R4/R5/R9 remain visible for review.
 
 | Surface | Shipped behavior | S31 delta |
 |---|---|---|
-| `public.packages` | Global immutable canonical code; no market/type/count quota | Keep identity historically recoverable; package rename/edit semantics follow FR-023 and S33-11. |
-| `public.package_offers` | Workspace/package/duration offer; availability + current version; unique `(workspace_id, package_id, duration_days)` | Possible versioned projection; exact representation gated by S33-11. No package-count cap is added. |
+| `public.packages` | Global immutable canonical code | Keep identity historically recoverable; commercial edits follow FR-021/FR-029 and S33-11. |
+| `public.package_offers` | Workspace/category/duration offer; availability + current version | Exactly four immutable category pairs per workspace; market/type snapshots follow S33-11. |
 | `public.package_versions` | Immutable AR/EN terms, `price_minor`, `currency`, commission and duration | Keep every existing version's identifier and stored price/currency/commission/duration terms unchanged (SC-011). Currency remains version-owned. Add no historical backfill. |
 | `publish_package_version(...)` | PO-only; accepts any format-valid three-letter currency; no market/type input | Add approved market/type inputs at the selected owner and enforce the market/currency matrix in both validation walls. Preserve replay/concurrency semantics. |
 | `package_versions_safe` / app reads | Returns each version's own price and currency | Add approved market/type projections if they belong to an existing immutable/read surface; never calculate or join a converted amount. |
 | `/packages` | PO-only publish form and one price per offer row | Add approved market/type controls and own-currency display; labels come only from the PO-approved copy record. |
-| F10/F12 | Registration links copy package price/currency; subscriptions/installments/payments/refunds preserve that currency and exact totals | Final S31 propagation wording is blocked by SK-009-09. No conversion option may be assumed. |
+| F10/F12 | Registration links copy package price/currency; subscriptions/installments/payments/refunds preserve snapshots | S33-PO-6 governs reporting-only FX and settlement remains separate; no package price conversion. |
 
 ### Forward-only design boundary
 
@@ -71,24 +69,27 @@ R4/R5/R9 remain visible for review.
    `supabase/migrations/20261106125000_f9_package_markets_types_currency.sql`; never edit
    `20261029120000_packages.sql` or any later shipped migration. Add schema/constraints/RPC
    replacements in that new file.
-2. **No historical rewrite.** Existing `package_versions` rows and their identifiers/terms are not
-   updated, deleted, truncated or assigned an inferred market/type. The migration design must encode
-   the PO-approved SK-009-05 treatment before non-null/check constraints are activated.
+2. **C5 mock disposition.** Verify synthetic-only status and enumerate all target-stack dependencies
+   (FKs, registration links, subscriptions, payments, audit rows and all other refs). Any
+   non-synthetic row, required financial/audit dependency or unknown state refuses/escalates with
+   zero writes. After a clean preflight, obsolete mocks may be deleted and four empty categories
+   initialized. Preserve required client, financial and audit history; assign no inferred values.
 3. **PO-only mutation wall.** Market/type/currency publication remains behind the existing PO
    `set_package_pricing` capability in the app and signed-identity DB checks. WO/Sales/Trainer cannot
    create, name, price or control packages in any workspace.
 4. **Market/currency invariant.** Egypt accepts only EGP; International accepts EGP/USD/SAR. Every
    other currency is invalid even when it matches the former three-letter format check. Currency is
    never inferred from market or market inferred from currency.
-5. **No conversion.** Store and display the exact minor-unit amount with its own code. No rate
-   table, converted field, mixed-currency arithmetic or cross-currency total is added.
-6. **Independent packages.** Distinct canonical package codes remain independent inside a
-   workspace. No count cap/quota or one-package-per-workspace constraint is introduced.
-7. **Bilingual/UI gate.** Exact Arabic/English market/type strings come only from the PO-approved
-   SK-009-08 record. The future UI must pass the Frontend Design Gate (AR-RTL/EN-LTR × light/dark ×
+5. **Reporting conversion exception.** Package prices remain in own currency; transaction-date FX
+   to EGP is limited to approved collection/commission reporting. No package-price conversion or
+   cross-currency total is added.
+6. **Fixed categories.** Exactly four immutable market/type pairs exist per workspace; both markets
+   may operate simultaneously. This supersedes the S31 unlimited-package interpretation.
+7. **Arabic/UI gate.** Use exactly «مصر» / «دولي» / «وقت العـروض» / «طول السنـة» for market/type.
+   English and other unapproved UI copy remains BLOCKED-COPY. The future UI must pass the Frontend Design Gate (AR-RTL/EN-LTR × light/dark ×
    mobile/desktop, required states and accessibility).
 
-### PO gates before implementation
+### Historical S32 PO gate table (superseded where covered by S33-PO-6 / S34-PO-1)
 
 | Open item | Blocks | Independent work that may proceed after approval |
 |---|---|---|
@@ -98,8 +99,17 @@ R4/R5/R9 remain visible for review.
 | SK-009-08 bilingual copy | i18n keys, UI and exact-copy fixtures | Layout/accessibility scenarios can use PO-approved placeholders only in test design. |
 | SK-009-09 downstream currency | F10/F12 contract/test changes | Current same-currency evidence can be documented; no new propagation rule is asserted. |
 
-**Implementation readiness**: S32 package lifecycle/FX scope is specified; affected implementation remains BLOCKED by SK-009-08 and applicable numbered S33 MCQs. This
-plan does not make those product decisions.
+**Implementation readiness**: S33-PO-6 and S34-PO-1 settle the product choices in scope. Only UI copy beyond approved Arabic labels remains BLOCKED-COPY. Future implementation must pass the C5 preflight, RED-first tests, fresh Analyze, design and security reviews.
+
+## S34-PO-1 / S33-PO-6 plan delta (specification only)
+
+- Each workspace has exactly four immutable market × type category identities: Egypt × Year-Round, Egypt × Promotional, International × Year-Round, International × Promotional. Both markets may operate concurrently.
+- Only the PO configures workspace-specific names, prices, and package-specific commissions. Commercial edits append immutable versions; client/assignment snapshots remain unchanged. Market/type cannot be changed; WOs cannot configure terms.
+- Promotional categories are available only within approved Africa/Cairo start-inclusive/end-exclusive periods. Expiry stops new links; already-issued links retain snapshots.
+- C5 preflight on the target stack verifies synthetic-only status and enumerates FKs, registration links, subscriptions, payments, audit rows, and every other package dependency. Any non-synthetic row, required financial/audit dependency, or unknown dependency refuses and escalates with no writes. A clean preflight permits deletion of obsolete mock packages and initialization of four empty categories with no commercial values; PO configures real packages manually.
+- Dashboard reporting means actual monthly collections and package-specific commission with installment detail; settlement/accounting events stay separate. FX follows settled S33-PO-6 semantics; commission is PO/WO-only.
+- Installments requires due date, paid amount and remaining amount. Only the four approved Arabic category labels are available; all other UI copy is BLOCKED-COPY.
+- Future tasks are RED-first, preserve S32-R1 all-origin-reference uniqueness, create forward migrations only, never edit pushed migrations, and include Frontend Design Gate plus independent security review of mock deletion.
 
 ## Design
 
@@ -134,16 +144,12 @@ Foundation establishes schema/grants/guards. US1 tests canonical identity, publi
 - **ND-F9-1 / allowed currencies**: closed by S31-PO-4 SK-009-01 and S31-PO-5 — Egypt = EGP only;
   International = EGP/USD/SAR; no assumed conversion.
 - **ND-F9-4 / Sales-Trainer commission**: closed by S31-PO-4 SK-009-04 — both denied.
-- **Authorship and package count**: closed by S31-PO-5 — PO only; unlimited distinct packages means
-  no package-count cap/quota.
+- **Authorship and category count**: S31-PO-5 establishes PO-only control; S34-PO-1 supersedes the unlimited package model with four fixed category identities per workspace.
 
-### Open implementation blockers
+### Historical implementation blockers (superseded where covered by S33-PO-6 / S34-PO-1)
 
-- **SK-009-05**: classification of existing package rows.
-- **SK-009-06**: market/type owning entity and mutability.
-- **SK-009-07**: behavior of `Promotional` beyond classification.
-- **SK-009-08**: exact approved Arabic/English market/type copy.
-- **SK-009-09**: currency propagation through F10/F12 financial surfaces.
+- **SK-009-05 / SK-009-06 / SK-009-07 / SK-009-09**: resolved by S33-PO-6 and S34-PO-1 for this scope.
+- **SK-009-08**: Arabic category labels resolved by LABELS; English labels and other UI copy remain BLOCKED-COPY.
 
 ### Retained open items
 
@@ -151,7 +157,7 @@ Foundation establishes schema/grants/guards. US1 tests canonical identity, publi
 - **ND-F9-3**: actual tier/duration catalog, names/prices/rates — NEEDS SOURCE CONFIRMATION; entered by PO.
 - **ND-F9-5**: final PO navigation/F2 ND-5; landing link only meanwhile.
 
-The S31 open items block the affected implementation and are not resolved in this plan. Existing
+The retained ND-F9 items and BLOCKED-COPY scope remain explicit; S33-PO-6/S34-PO-1 decisions are settled. Existing
 [production readiness](../../docs/07-production-readiness.md) gates remain open. Fixtures do not
 settle policy.
 
@@ -210,13 +216,13 @@ No Constitution violation or exemption. Safe view plus narrow commission RPC is 
 
 ## S32-PO-4 design delta (conditional on Clarifications MCQs)
 
-The S32-PO-4 scope supersedes prior S31 blocker text for legacy audit/migration (SK-009-05), full per-workspace PO management (SK-009-06), promotional date/expiry support (SK-009-07), and historical FX reporting (SK-009-09). Existing S31 market/type owner alternatives are not selected until S33-11; implementation tasks that depend on physical field placement stay BLOCKED.
+S33-PO-6 and S34-PO-1 settle the product details below. C1 and S33-11 fix immutable market/type; no S33 product MCQ remains open. Unapproved interface copy remains BLOCKED-COPY.
 
-- **Legacy audit/migration:** inventory all existing packages, identify PO-designated defaults, preserve row identity and references, and apply only explicit PO-approved classifications. No currency inference or silent defaults. Preserve editability of defaults.
-- **Versioned management:** PO-only CRUD and rename/price/market/type changes; published terms are immutable, edits append versions, and no downstream snapshot is rewritten. Delete implementation remains conditional on S33-02; never hard-delete referenced historical financial data.
-- **Promotional lifecycle:** optional window fields and a scheduled expiry/deactivation worker. Window basis, timezone/boundary, link interaction and manual/automatic precedence stay BLOCKED on S33-03/05/06.
-- **Historical FX:** add immutable transaction-date FX snapshot records with source, base/quote, rate, effective date and fetch/audit metadata; server-side fetch through existing cron-worker pattern; unique transaction/date/currency key and idempotent retries. Never recompute snapshots. Exact table key and rate-date/failure semantics stay BLOCKED on S33-03/04/08/09/10/12.
+- **Legacy mock disposition:** C5 supersedes S32 row mapping for existing mock packages; target-stack dependency preflight and fail-closed behavior are required before safe deletion and empty-category initialization.
+- **Versioned management:** PO-only commercial name/price/commission edits append versions; market/type are immutable; previous client/assignment snapshots are preserved. S33-02 retirement applies to future real packages.
+- **Promotional lifecycle:** Africa/Cairo start-inclusive/end-exclusive periods; expiry stops new links only and issued links retain snapshots.
+- **Historical FX:** immutable transaction-date snapshots; previous published business-day rate; verified Frankfurter; exact EGP identity rate; rate-pending/idempotent retry excluded until fetched. Never recompute snapshots.
 - **Security:** outbound provider request is server-only, least-data, no client/workspace/transaction payload; add security review of egress, response validation, secret handling, retention and provider provenance. Constitution S31-PO-8 constrains development AI data only and does not prohibit the runtime FX API; no real client data is used in development fixtures.
-- **Reporting:** show reported EGP values and actual settlement separately. Preserve original transaction currency and existing commission restrictions (PO/WO visibility only; Sales/Trainer denied). Report source/basis and labels remain BLOCKED where MCQs/SK-009-08 require PO decisions.
+- **Reporting:** actual monthly collections and package-specific commission with installment details; preserve original transaction/settlement currency and separate settlement records. PO/WO commission access only. Copy beyond approved Arabic category labels remains BLOCKED-COPY.
 
 No migration file, SQL, application implementation, test, build or stack operation is part of this artifact-only cycle.

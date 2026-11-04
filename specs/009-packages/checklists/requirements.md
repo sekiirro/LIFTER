@@ -14,9 +14,9 @@
 
 ## Requirement Completeness
 
-- [x] No clarification is silently resolved; S32-PO-4 is quoted and only unresolved matters are explicit PO MCQs; SK-009-08 remains open.
-- [x] FR-001..FR-027 are testable with boundaries and deny-by-default outcomes; S32 additions carry explicit PO gates.
-- [x] SC-001..SC-018 are measurable observable outcomes.
+- [x] Historical S32 clarification is superseded explicitly; S33-PO-6 and S34-PO-1 are cited verbatim and no open ambiguity is claimed for their settled scope.
+- [x] FR-001..FR-033 are testable with boundaries and deny-by-default outcomes; C5 unsafe/unknown dependency states refuse/escalate.
+- [x] SC-001..SC-023 are measurable observable outcomes.
 - [x] All stories have acceptance scenarios, priority/rationale and independent fixture tests.
 - [x] Validation, replay, concurrency, foreign-workspace, commission and privileged-DML edge cases identified.
 - [x] Scope excludes F10/F12 implementation, seeds and unapproved financial policy.
@@ -32,6 +32,13 @@
 
 ## Notes
 
-Following 004-auth, owner sub-decisions are NEEDS DECISION rather than blocking clarification markers. S31 closes ND-F9-1 (market-conditional currencies/no conversion) and ND-F9-4 (Sales/Trainer commission denied), and resolves the authorship conflict and package-count question. ND-F9-2/3/5, SK-009-08 and S33-01..12 remain open where identified; S32-PO-4 closes the prior business blockers for SK-009-05/06/07/09 without answering the enumerated operational MCQs. No unlisted ambiguity is treated as resolved.
+S33-PO-6 and S34-PO-1 resolve S33-01..12, C1–C5 and Arabic LABELS. No open product ambiguities remain from those items. English market/type labels and other UI copy beyond the four exact Arabic category labels are BLOCKED-COPY. ND-F9-2/3/5 remain. Future implementation tasks remain unchecked; this artifact cycle ran no tests, migrations, SQL, stacks, builds or UI renders.
 
-S32-PO-4 Clarifications add twelve explicit PO MCQs. Four baseline technical interpretations are explicit: exact-payload replay under fixed signature, safe view plus PO/WO rate RPC for shared authenticated role, initially unavailable offers, and fixed preset/custom representation per day key. None resolves the policy NDs. Validation result: PASS for artifact quality/coverage. Implementation tasks remain unchecked because no application code/tests run here.
+## S34 coverage
+
+- [x] FR-028..FR-033 and SC-019..SC-023 are numbered and linked to Given/When/Then scenarios.
+- [x] C5 requires synthetic-only verification and enumeration of FKs, registration links, subscriptions, payments, audit rows and all other dependencies before mock deletion.
+- [x] C5 unsafe/unknown dependencies refuse and escalate; safe removal initializes four empty categories without commercial values.
+- [x] Dashboard, package-specific commission, installments and separate accounting/settlement records are specified.
+- [x] Copy beyond the four approved Arabic labels is BLOCKED-COPY.
+- [x] Future tasks include RED-first tests, Frontend Design Gate, and independent security review of the deletion path.
