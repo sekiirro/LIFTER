@@ -32,6 +32,95 @@ Mutation failure codes: `42501/not_permitted` for authorization, missing/foreign
 
 **Replay semantics**: Full exact terms equal to the offer's CURRENT version are a replay: return current id without insert, pointer change or event. Any other payload, including older non-current terms, appends N+1 and becomes current with one publication event. v1 -> v2 -> v1 terms therefore creates current v3 with v1 terms. Concurrent distinct calls serialize; which distinct payload gets the next number follows lock acquisition, not client request time. Retries after successful publication deduplicate while their payload equals current.
 
+## S31 market/type/currency contract delta
+
+**Status**: the approved values/rules below are binding; physical owner/mutability, legacy-row
+representation, promotional behavior, display copy and downstream propagation remain gated by
+SK-009-05..SK-009-09. No client or RPC may infer an unapproved value.
+
+### S31 publication input and result
+
+The S31 publication surface MUST carry the approved market/type values according to the
+SK-009-06 owner model and enforce this matrix before mutation:
+
+| Market | Permitted currency | Prohibited currency |
+|---|---|---|
+| `egypt` | `EGP` | `USD`, `SAR`, every other code |
+| `international` | `EGP`, `USD`, `SAR` | every other code |
+
+If SK-009-06 selects fixed offer/package ownership, market/type are supplied when the offer/owner
+is first created and later publications must match; if it selects version snapshots, every
+publication supplies them. The exact input names below are therefore a contract family, not an
+invented final signature:
+
+```text
+{ workspace_id, package_id, market, package_type,
+  duration_months, duration_days, name_ar, name_en,
+  price_minor, currency, commission_rate_bp }
+```
+
+For a fixed owner, the application may use a separate owner-assignment operation instead of
+repeating the values on every publication, but the combined sequence MUST have one unambiguous
+server-authoritative path and the old path MUST fail closed. The final named JSON/RPC contract is
+selected with SK-009-06 and frozen in the forward migration.
+
+Success returns the published version UUID as today. A prohibited market/currency pair, unknown
+market/type, conflicting fixed owner value or invalid legacy treatment returns the existing generic
+`invalid_input`/`denied` result with no existence disclosure. No version, pointer, offer or event is
+created on rejection.
+
+### Role and count contract
+
+- PO alone may create/name/price/control a package, including market/type and availability.
+- WO/Sales/Trainer are denied create/name/price/control in every workspace, including their own.
+- Sales/Trainer remain unable to retrieve commission through direct, wildcard, joined, embedded,
+  audit, safe-view or alternate supported paths.
+- Distinct package codes coexist in one workspace with independent current-version pointers and
+  version sequences. There is no package-count cap, quota or single-package workspace slot.
+
+### Read contract
+
+Authorized package reads expose the approved market/type machine values from the PO-selected owner.
+A version exposes its own exact `price_minor` and `currency`; market never changes the amount's
+currency. Reads MUST NOT return:
+
+- a converted or derived amount;
+- an exchange rate or reference-currency field;
+- a total/sum across currencies; or
+- an unapproved legacy classification presented as Egypt/International or Year-round/Promotional.
+
+If SK-009-05 selects an approved legacy state, its safe projection and exact AR/EN display copy are
+part of the PO-approved contract. Until then, no legacy state is invented.
+
+### `/packages` UI contract
+
+The PO screen adds market and type to the create/publish/review journey only after the selected
+owner model and SK-009-08 copy are approved. It MUST:
+
+- show the current package's market/type and exact own-currency amount;
+- reject prohibited currency before submission and show a generic field error;
+- never display a combined cross-currency total or converted amount;
+- preserve PO-only server authorization and required loading/empty/error/save states;
+- use only PO-approved Arabic/English labels (no machine translation of authored package names);
+- pass the Frontend Design Gate for AR-RTL/EN-LTR × light/dark × mobile/desktop with keyboard and
+  accessibility evidence.
+
+`Promotional` behavior is undecided (SK-009-07). No date window, visibility rule, availability
+default or scheduled lifecycle may be assumed or implemented until the PO answers it; the attribute
+value alone carries no behavior in this contract.
+
+### Downstream F10/F12 boundary
+
+The shipped registration-link RPC copies the package version's price and currency; F12 copies that
+currency through subscription/installment/payment/refund snapshots and requires same-currency
+totals. The final S31 rule is SK-009-09:
+
+- if same-currency propagation is approved, F10/F12 require no conversion field and continue to
+  snapshot the package version's own currency;
+- if a different downstream currency is approved, a new PO-approved conversion source, timestamp,
+  rounding and immutable snapshot contract is required before implementation; and
+- mixed-currency installments/totals are not implied by S31 and remain outside this contract.
+
 ## Server actions and results
 
 `app/(app)/packages/actions.ts` exports the following actions; `lib/packages/service.ts` owns testable server-only orchestration. Inputs may come from FormData but must be parsed once with shared pure validation, never trusted casts.
@@ -63,7 +152,7 @@ No staff UI is added here. These read contracts are tested now and are reusable 
 
 ## Pure package library
 
-- `lib/packages/validation.ts`: slug regex, names 1..120 Unicode code points and nonblank, preset/day parity, custom positive whole days, positive decimal integer price within bigint, currency ASCII uppercase format, explicit integer basis points 0..10000. Reject coercive booleans/empty strings/NaN/infinities, fractional or unsafe integer inputs. Use bigint for price; JS Number is safe only for bounded days/rate. Numeric technical limits match SQL.
+- `lib/packages/validation.ts`: slug regex, names 1..120 Unicode code points and nonblank, preset/day parity, custom positive whole days, positive decimal integer price within bigint, market/type domain validation, market-conditional currency validation (Egypt=EGP; International=EGP/USD/SAR), and explicit integer basis points 0..10000. Reject coercive booleans/empty strings/NaN/infinities, fractional or unsafe integer inputs. Use bigint for price; JS Number is safe only for bounded days/rate. Numeric technical limits match SQL. The generic three-letter currency format check is not sufficient for S31 publication.
 - `lib/packages/money.ts`: exact `formatMinorUnits(priceMinor: string|bigint,currency:string,locale:'ar'|'en')`; localized grouping/bidi and currency minor-unit exponent from runtime currency metadata, never `Number(priceMinor)` with rounding. Unknown format-valid currency gets exact `minor units + code` fallback. Tests use synthetic currency examples, not approved catalog defaults.
 - `lib/packages/results.ts`: typed result unions and controlled RPC error mapping; no dependency on UI or logging.
 
@@ -71,4 +160,4 @@ No new dependencies or environment variables. Existing server-only modules and t
 
 ## Downstream F10/F12 boundary
 
-Token issuance binds `(workspace_id, package_version_id)` selected server-authoritatively from an available offer/current version. Purchase snapshots copy version id, canonical identity, price_minor, currency, commission_rate_bp and duration. Subscriptions also snapshot installment schedule, whose total equals approved price (D-17). Commission is earned only on confirmed collections at snapshot rate (D-13). F9 implements none of these downstream records or financial calculations; it supplies immutable terms and restrictive composite identities. Disabling an offer does not mutate existing versions or historical references.
+Token issuance binds `(workspace_id, package_version_id)` selected server-authoritatively from an available offer/current version. Purchase snapshots copy version id, canonical identity, price_minor, currency, commission_rate_bp and duration. Subscriptions also snapshot installment schedule, whose total equals approved price (D-17). Commission is earned only on confirmed collections at snapshot rate (D-13). Under the recommended SK-009-09 option, each downstream monetary record keeps the package version's own currency and no conversion occurs. F9 implements none of these downstream records or financial calculations; it supplies immutable terms and restrictive composite identities. Disabling an offer does not mutate existing versions or historical references.

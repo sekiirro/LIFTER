@@ -68,6 +68,33 @@ Only in isolated disposable local stack/worktree, with rollback or scratch uncom
 7. Remove app authorize alone with accepting mocked RPC: unit denial MUST fail. Remove DB pricing guard independently: non-PO integration negatives MUST fail. One wall does not prove the other.
 8. Remove price text projection or round through Number: >2^53 transport/formatting test MUST fail. Accept preset 2/4 months or custom 0 days: boundary tests MUST fail.
 
-## 5. Evidence and handoff
+## 5. S31 future validation gate
 
-Claude independently records commands/counts/mutation results in review/PR evidence and checks FR/SC coverage in tasks.md Analyze. Preserve five NDs and documented replay/initial state/duration representation interpretations. No push/deployment authorized by this runbook. When synthetic data is no longer needed, stop only the disposable stack with `npx supabase@2.122.0 stop --no-backup`.
+Do not run the S31 implementation until SK-009-05..SK-009-09 are explicitly answered and the
+selected owner/mutability/legacy/copy/downstream contracts are recorded in the spec and plan. The
+future validation must then include:
+
+- RED-first unit fixtures for the complete Egypt/International × EGP/USD/SAR matrix, invalid enum
+  values, no inferred market, exact own-currency formatting and no cross-currency total;
+- RED-first integration fixtures for every role × own/foreign workspace, multiple independent
+  packages, the PO-approved legacy treatment, current-only replay, concurrent publications,
+  unchanged existing version rows and all-role version immutability;
+- a forward-migration catalog check proving the shipped F9 migration is untouched, the new
+  constraints/functions/grants/triggers exist and no direct market/type write bypass exists;
+- permission/RLS mutations that independently remove the PO app wall, DB pricing wall, market
+  currency check, legacy classification guard and offer/version immutability guard; each mutation
+  MUST make the relevant negative test fail;
+- no-conversion scans across package, registration-link, subscription, installment, payment, refund
+  and commission surfaces, proving zero exchange-rate/converted-amount/cross-currency-total fields;
+- PO-approved exact Arabic/English market/type copy fixtures, AR-RTL/EN-LTR × light/dark ×
+  mobile/desktop Frontend Design Gate screenshots, required states and accessibility evidence; and
+- static and runtime evidence that existing package-version identifiers and stored terms remain
+  byte-for-byte unchanged after the forward migration.
+
+A format-valid currency outside the approved market set, a currency-derived market guess, an
+unapproved legacy default, an unreviewed bilingual string or an old publication path that bypasses
+the matrix is a blocking failure.
+
+## 6. Evidence and handoff
+
+Claude independently records commands/counts/mutation results in review/PR evidence and checks FR/SC coverage in tasks.md Analyze. Preserve the retained NDs, all explicit SK-009-05..SK-009-09 PO gates and documented replay/initial state/duration representation interpretations. No push/deployment authorized by this runbook. When synthetic data is no longer needed, stop only the disposable stack with `npx supabase@2.122.0 stop --no-backup`.

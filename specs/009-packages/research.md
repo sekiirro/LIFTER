@@ -1,6 +1,6 @@
 # Research: Packages & Package Versions (P1-F9)
 
-This records the supplied architect decisions against repository evidence; it does not reopen business policy or introduce dependencies. Sources: [spec.md](spec.md), Constitution v1.1.0, architecture, D-09/D-10/D-11/D-13/D-17, and BRD 30/40–41/53–54/102/196/317. No external technology recommendation or web research is needed for this artifact-only task.
+This records the supplied architect decisions against repository evidence; it does not reopen business policy or introduce dependencies. Sources: [spec.md](spec.md), Constitution v1.4.0, architecture, D-09/D-10/D-11/D-13/D-17, BRD 30/40–41/53–54/102/196/317, and S31-PO-4/S31-PO-5. No external technology recommendation or web research is needed for this artifact-only task.
 
 ## R1 — Identity separate from workspace sellable terms
 
@@ -25,7 +25,7 @@ This records the supplied architect decisions against repository evidence; it do
 - **Decision**: Same canonical code create returns existing id; same availability state is a no-op. Under the offer lock compare every term with the CURRENT version only. Equality returns current id without insert, pointer change or event. Every other payload appends N+1 and moves current with one publication event.
 - **Rationale**: Historical equality breaks reverts: v1 -> v2 -> v1 terms must create current v3 with v1 terms. Successful publication retries still deduplicate against current.
 - **Alternatives**: Searching all historical versions silently prevents reverts; always append duplicates immediate retries. Price/rate-only equality collapses legitimate label changes.
-- **Ambiguity handled**: Identical-to-current publication is replay; older non-current payload is a new publication even if intended as a delayed retry. The fixed signature has no request key. This binding R1 correction does not resolve ND-F9-1..5.
+- **Ambiguity handled**: Identical-to-current publication is replay; older non-current payload is a new publication even if intended as a delayed retry. The fixed signature has no request key. This binding R1 correction did not resolve the NDs open at the time; S31 later closes ND-F9-1 and ND-F9-4.
 
 ## R5 — Safe staff reads and privileged commission projection
 
@@ -65,6 +65,60 @@ This records the supplied architect decisions against repository evidence; it do
 - **Rationale**: Constitution quality gates, [production readiness](../../docs/07-production-readiness.md) and D-20 keep development local. F9 policy items do not block local work; production readiness remains separate.
 - **Alternatives**: API success-only tests miss cross-tenant/column leaks; UI hiding tests miss base grants; disabling tests for missing local env gives false confidence.
 
-## NEEDS DECISION
+## R11 — S31 package dimensions and PO-only authorship
 
-ND-F9-1 allowed currencies; ND-F9-2 custom-duration bounds; ND-F9-3 catalog (NEEDS SOURCE CONFIRMATION); ND-F9-4 Sales/Trainer commission visibility (denied); ND-F9-5 PO navigation (landing only). See [spec.md](spec.md#needs-decision-mark-do-not-resolve). None resolved here.
+- **Decision**: Add the approved attribute domains `market = Egypt | International` and
+  `type = Year-round | Promotional`; keep package creation/naming/pricing/control PO-only; interpret
+  "unlimited distinct packages" as no package-count cap/quota; keep Sales/Trainer commission denied.
+- **Rationale**: S31-PO-4 SK-009-01 and S31-PO-5 / S31-Q4 are explicit. S31-Q4 supersedes only the
+  Workspace-Owner authorship part of SK-009-01, so the market/type/currency/no-conversion rules stand.
+- **Alternatives considered**: WO package authorship is rejected by the superseding decision. A
+  workspace package-count cap contradicts "unlimited". Granting Sales/Trainer rates contradicts
+  SK-009-04.
+
+## R12 — Forward-only schema extension with no historical inference
+
+- **Decision**: The S31 delta is a new forward migration. The shipped F9 migration and existing
+  package-version rows/terms are never edited. Existing offers/versions receive no inferred
+  market/type classification before the PO approves a legacy policy.
+- **Rationale**: Constitution II/V requires immutable financial truth and forward-only migrations;
+  FR-021 requires byte-for-byte preservation. Stored currency cannot distinguish an International
+  EGP package from an Egypt EGP package, so currency-based inference would be false.
+- **Alternatives considered**: Editing the shipped migration violates migration immutability.
+  Backfilling every existing row to Egypt/International from currency is invalid. A default market
+  or nullable legacy state still needs PO approval because it changes the visible attribute domain.
+
+## R13 — Market-conditional currency without conversion
+
+- **Decision**: Egypt accepts EGP only; International accepts EGP/USD/SAR. Every amount remains in
+  its own currency; there is no exchange rate, converted field, mixed-currency arithmetic or
+  cross-currency total. Currency is validated in the application and DB publication walls before
+  mutation.
+- **Rationale**: S31-PO-4 SK-009-01 and S31-PO-5 explicitly approve the matrix and no assumed
+  conversion. Constitution II requires exact minor units and currency. The shipped F10/F12 models
+  already copy one package currency into registration/subscription/installment records.
+- **Alternatives considered**: Retaining format-only three-letter validation would allow currencies
+  outside the approved set. A global reference currency or conversion table would invent rates and
+  violate the PO decision. Mixed-currency installments would break exact same-currency totals.
+
+## R14 — Conditional implementation gates
+
+- **Decision**: Do not implement the S31 delta until SK-009-05 (legacy classification),
+  SK-009-06 (market/type owner and mutability), SK-009-07 (promotional behavior), SK-009-08
+  (approved AR/EN copy) and SK-009-09 (downstream currency relationship) are answered. Test design,
+  current-code evidence, no-conversion invariants and PO-only role matrices may be prepared without
+  choosing those product outcomes.
+- **Rationale**: The absolute PO-decision rule forbids inventing data classification, mutability,
+  lifecycle behavior, copy or downstream financial semantics.
+- **Alternatives considered**: Choosing a technical default would silently resolve product policy.
+  Treating open items as non-blocking would contradict the binding instructions.
+
+## PO decision status
+
+- **Closed**: ND-F9-1 (market-conditional currencies/no conversion), ND-F9-4 (Sales/Trainer
+  commission denied), the PO/WO authorship conflict and package-count cap.
+- **Open implementation blockers**: SK-009-05..SK-009-09, with MCQs, implications,
+  recommendations and blocked work in the run PO packet.
+- **Retained**: ND-F9-2, ND-F9-3 and ND-F9-5 remain as previously recorded.
+
+See [spec.md](spec.md#po-decision-register-and-needs-decision). No open S31 item is resolved here.
