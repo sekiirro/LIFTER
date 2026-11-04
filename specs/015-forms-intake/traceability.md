@@ -50,3 +50,12 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 | FR-024 / FR-025 — document fresh-checkout Stack D junction creation | T077 | `docs/11-second-local-stack.md` includes an existence guard and exact `New-Item -ItemType Junction` command targeting the root migrations directory. | `c9b00eb` |
 | FR-026 / FR-036 / FR-037 — reconcile Arabic T03/N07 pending-copy inventory with S33-PO-3 | T078 | `specs/015-forms-intake/reports/S14-terms-draft.md` now lists exact Arabic approvals and keeps unrelated English intake copy pending. | `fb18c1a` |
 | FR-025 — map unapproved job diagnostics before persistence and dead-letter audit | T079 | RED on Stack D before migration: T005 stored `forms-private-canary-provider-token` verbatim in `jobs.last_error`. GREEN on A: `tests/integration/jobs.test.ts::T005 persists only the allow-listed F15 transport code in a dead job and audit` passed 11/11; `tests/unit/forms-safe-error-sinks.test.ts::T005 maps unapproved job diagnostics to handler_error before persistence` passed 12/12, and its raw `error_code` sink mutant was rejected. | `cf5ca5f` |
+
+## S34 F15 split-fix traceability
+
+| Requirement | Task | Test/evidence | Commit |
+| --- | --- | --- | --- |
+| FR-026 / FR-036 / FR-037 — portable synthetic PO source metadata | T089 | RED: `tests/unit/forms-s14-decision-fixture.test.ts::keeps PO source metadata portable and free of machine-local paths` failed on developer-local source; GREEN: focused file 6/6. A synthetic absolute-path mutation failed the same regression and was restored. | `36aea03` |
+| FR-008 / FR-013 — localized boolean correction-history labels | T092 | RED: `tests/unit/forms-correction-history.test.tsx::localizes boolean values and preserves existing string values` rendered literal `true`; GREEN: focused test 1/1, including false and unchanged string answer. | `d1c61de` |
+| FR-004 / FR-006 / FR-026 / FR-036 / FR-037 — Bidi derived meal template in FormPreview | T093 | `tests/unit/forms-builder-s14.test.tsx::formats derived meal numbers with the approved template and Bidi isolation`; full focused file 8/8 for AR/EN and Western digits. | `72f4016` |
+| FR-004 / FR-006 / FR-007 — remap copied conditional and derived references | T094 | RED: `tests/unit/forms-builder-s14.test.tsx::remaps conditional and derived question references when copying a form` retained the source ID; GREEN: focused file 7/7, with source references unchanged. | `7e356c4` |
