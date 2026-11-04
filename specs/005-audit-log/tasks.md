@@ -21,3 +21,4 @@
 ## Phase 4: Review (Claude)
 
 - [ ] T007 [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007] Local Docker run of the full integration suite. Negative check: a temporary migration that drops the UPDATE guard trigger must make the T003 tests fail; then remove it.
+- [ ] T009 [FR-005, FR-007] Harden audit visibility integration probes: scope authorized staff reads to fixture event IDs, use a narrow bounded denial probe, assert SQLSTATE 42501 only for anon/no-grant, and fail explicitly on 57014. Keep all existing visibility and denial assertions.

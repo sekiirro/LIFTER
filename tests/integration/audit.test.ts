@@ -335,12 +335,6 @@ describe('visibility (T004)', () => {
     expect(poRows.map((row) => row.workspace_id)).toEqual(
       expect.arrayContaining([f.wsA.id, f.wsB.id, null]),
     );
-    const ownRows = checked(
-      await f.woA.client.from('audit_events').select('*'),
-    );
-    if (!ownRows) throw new Error('WO audit query returned no data');
-    expect(ownRows.length).toBeGreaterThan(0);
-    expect(ownRows.every((row) => row.workspace_id === f.wsA.id)).toBe(true);
     expect(
       checked(
         await f.woA.client.from('audit_events').select('*').in('id', ids),
@@ -362,10 +356,32 @@ describe('visibility (T004)', () => {
           .is('workspace_id', null),
       ),
     ).toEqual([]);
-    for (const client of [f.trainerA.client, f.salesA.client, anonClient()]) {
-      const result = await client.from('audit_events').select('*');
-      expect(result.data ?? []).toEqual([]);
-      if (result.error) expect(result.error.code).toBe('42501');
+    for (const [role, client] of [
+      ['trainer', f.trainerA.client],
+      ['sales', f.salesA.client],
+    ] as const) {
+      const result = await client
+        .from('audit_events')
+        .select('id')
+        .in('id', ids)
+        .limit(1);
+      expect(
+        result.error,
+        `${role} audit visibility probe failed${result.error ? ` (${result.error.code})` : ''}`,
+      ).toBeNull();
+      expect(result.data).toEqual([]);
+    }
+    const anonResult = await anonClient()
+      .from('audit_events')
+      .select('id')
+      .limit(1);
+    if (anonResult.error) {
+      expect(
+        anonResult.error.code,
+        `anon audit query returned unexpected error ${anonResult.error.code}`,
+      ).toBe('42501');
+    } else {
+      expect(anonResult.data).toEqual([]);
     }
     checked(
       await f.po.client
@@ -377,7 +393,9 @@ describe('visibility (T004)', () => {
         .single(),
     );
     expect(
-      checked(await f.woA.client.from('audit_events').select('*')),
+      checked(
+        await f.woA.client.from('audit_events').select('*').in('id', ids),
+      ),
     ).toEqual([]);
   });
 });

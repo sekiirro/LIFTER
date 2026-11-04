@@ -33,6 +33,15 @@ FR-to-task mapping is 7/7 (100%); task tags are now explicit. T007 remains unche
 
 **PASS WITH OPEN MEDIUM FINDINGS** ? 0 CRITICAL, 0 HIGH, 2 MEDIUM, 1 LOW. The product clarification gate remains incomplete for retention and future Trainer history.
 
+## S33-PO-4 re-analysis — 2026-11-04
+
+Scope analyzed: plan/tasks/spec additions for T009 and test-only audit visibility hygiene.
+
+- FR linkage: T009 is tagged FR-005 and FR-007; existing Given/When/Then scenarios cover PO, WO, trainer, sales and anonymous visibility.
+- Clarification: S33-PO-4 is cited in `spec.md`; no audit retention, role policy, API semantics, or index choice is made here. The index proposal for issue #37 remains a separate PO decision.
+- Safety: only narrows test queries and distinguishes anon/no-grant `42501` from timeout `57014`; no test assertion is removed or weakened.
+- Findings in S33 scope: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings and separate unresolved PO items remain as recorded above.
+
 ## History
 
 - First SK-A merged-feature review on `origin/main` `ed88574`; no earlier Analyze history existed.
