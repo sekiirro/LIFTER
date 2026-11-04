@@ -1,6 +1,6 @@
 ﻿# Design System traceability
 
-Static verification only; no test suite was run for this reconciliation. Test names below were inspected in the checked-out source. `VERIFIED` means a concrete test exists and asserts the requirement; `PARTIAL` means no direct asserting test/evidence was found in this static pass.
+Targeted verification executed on current local head `6233642ced5fddc9e695eb28cf528f5f5ab56c89`: `npm exec vitest -- run tests/unit/messages.test.ts -t "has identical nonempty catalogs"`; result: 1 passed, 1 skipped (exit 0). Other test names below were inspected in the checked-out source. `VERIFIED` means a concrete test exists and asserts the requirement; `PARTIAL` means no direct asserting test/evidence was found in this pass.
 
 Evidence commits: original Design System implementation `be29751`, `e2df0cd`, `b57d404`, `d9b9fd7`; merged PR #28 head/approved SHA `12bcad944c9366f17afc00a36bd14586c5f2e77a`.
 
@@ -39,7 +39,7 @@ Evidence commits: original Design System implementation `be29751`, `e2df0cd`, `b
 | SC-002 | T031 | `tests/e2e/a11y.spec.ts` AR/EN × dark/light axe matrix | VERIFIED |
 | SC-003 | T032, T034, T036, T045 | `tests/e2e/components.spec.ts` keyboard cases; `tests/e2e/shell.spec.ts` desktop/mobile keyboard cases | VERIFIED |
 | SC-004 | T019 | `tests/e2e/theme-locale.spec.ts::cookies are already reflected in response HTML`; device color tests | VERIFIED |
-| SC-005 | T010 | `tests/unit/messages.test.ts::has identical nonempty catalogs` | VERIFIED |
+| SC-005 | T010 | `tests/unit/messages.test.ts::has identical nonempty catalogs`; run at `6233642ced5fddc9e695eb28cf528f5f5ab56c89` (1 passed) | VERIFIED |
 | SC-006 | T038-T039 | `tests/e2e/print.spec.ts::Arabic print sample hides screen controls and exports its PDF`; print-spike report | VERIFIED |
 | SC-007 | — | Build-size gate evidence is not mapped to a tagged task or re-verified in this static pass; T042 remains untagged and is not attributed to SC-007 | PARTIAL |
 | SC-008 | T046 | PR #28 body reports 15 paired samples and passing median deltas; local report outputs r1-r8 are referenced but not present in this checkout; measurement not rerun | PARTIAL |
@@ -49,5 +49,5 @@ Evidence commits: original Design System implementation `be29751`, `e2df0cd`, `b
 
 ## Static verification note
 
-No tests were executed. Task T046 remains unchecked because its performance run output is absent from this checkout; the PR description's summary was inspected but does not replace the requested evidence artifact.
+The targeted SC-005 catalog parity test above was executed; no broader test suite was run. Task T046 remains unchecked because its performance run output is absent from this checkout; the PR description's summary was inspected but does not replace the requested evidence artifact.
 
