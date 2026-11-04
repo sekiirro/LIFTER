@@ -1,7 +1,7 @@
 # Spec Kit Analyze - F9 Packages: markets, types and currency (S31)
 
 - Date: 2026-11-04 (fresh pass after the S31 spec/plan/tasks amendment)
-- Analyzed source: branch `speckit-009-markets` at `d04ef52` plus this docs change; `origin/main`
+- Analyzed source: branch `speckit-009-markets` at `4bdfb64a8a229d29c1b7609b431e0f42ae891eb5` (merge base `d04ef52`; PR commits `4613533c`, `aef2a534`, `07b55a4`, `4bdfb64`), with this header-only metadata commit applied afterwards; `origin/main`
   advanced to `ff6e0b9` but touches only `specs/003`, `specs/005`, `specs/006` and `specs/007`, so no
   merge into this branch was required.
 - Method: static cross-artifact, shipped-schema/RPC, contract and task-source review. No tests,
