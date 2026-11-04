@@ -1,6 +1,6 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
-import { mkdirSync } from 'node:fs';
+import { mkdirSync, writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomUUID } from 'node:crypto';
@@ -18,7 +18,8 @@ import { calculateAgeInCairo } from '../../lib/forms/validation';
 import starterContent from '../../lib/forms/s14-starter-content.json';
 
 const db = sql();
-const screenshotDir = join(tmpdir(), 'lifter-s32-f15-h12');
+const screenshotDir = join(tmpdir(), 'lifter-s33-f15-r1');
+const screenshotPaths: string[] = [];
 let assignmentId = '';
 let email = '';
 let password = '';
@@ -430,7 +431,7 @@ test('renders recorded new client controls across AR/EN, theme, and viewport mat
   await signIn(page);
   for (const locale of ['ar', 'en'] as const) {
     for (const theme of ['light', 'dark'] as const) {
-      for (const width of [360, 390, 1024] as const) {
+      for (const width of [390, 1024, 1440] as const) {
         const iterationAssignmentId = await createRecordedControlsAssignment();
         await page.setViewportSize({
           width,
@@ -547,13 +548,13 @@ test('approved F15 controls render in both locales, themes, and widths', async (
             await expect(
               page.getByRole('heading', { level: 2, name: heading }),
             ).toBeVisible();
-          await page.screenshot({
-            path: join(
-              screenshotDir,
-              `${locale}-${theme}-${width}-${name}.png`,
-            ),
-            fullPage: true,
-          });
+          await expectAxeClean(page);
+          const path = join(
+            screenshotDir,
+            `${locale}-${theme}-${width}-${name}.png`,
+          );
+          await page.screenshot({ path, fullPage: true });
+          screenshotPaths.push(path);
         };
         await capture(
           'B01',
@@ -593,6 +594,12 @@ test('approved F15 controls render in both locales, themes, and widths', async (
             ? ['2 days', '3 days', '4 days', '5 days', '6 days']
             : ['2', '3', '4', '5', '6'],
         );
+        if (locale === 'ar') {
+          const isolatedDigits = await page
+            .locator('bdi[dir="ltr"]')
+            .allTextContents();
+          expect(isolatedDigits).toEqual(expect.arrayContaining(['2', '6']));
+        }
         await next.click();
         await capture(
           'T08',
@@ -619,6 +626,13 @@ test('approved F15 controls render in both locales, themes, and widths', async (
             'After meal 2',
             'Before the first meal',
             "I don't have a fixed time",
+          ]);
+        else
+          expect(timingOptions).toEqual([
+            'الوجبة رقم 1',
+            'الوجبة رقم 2',
+            'قبل أول وجبة',
+            'معنديش ميعاد ثابت',
           ]);
         await next.click();
         await capture(
@@ -685,6 +699,18 @@ test('approved F15 controls render in both locales, themes, and widths', async (
       }
     }
   }
+  writeFileSync(
+    join(screenshotDir, 'INDEX.md'),
+    [
+      '# S33 F15 Arabic copy rendered evidence',
+      '',
+      'AR-RTL/EN-LTR T03 and N07 rendered across light/dark themes and 390/1024/1440px viewports; axe checked each captured state.',
+      '',
+      ...screenshotPaths.map((path) => `- ${path}`),
+      '',
+    ].join('\n'),
+    'utf8',
+  );
 });
 
 test('real route supports keyboard progression and presents the same safe not-found for unknown IDs', async ({
