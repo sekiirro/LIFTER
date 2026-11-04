@@ -49,7 +49,7 @@ These corrections are within the previously approved F15 scope. They do not add 
 - [ ] T083 [FR-017/019/024/025] Retry only approved transient Telegram preparation failures using the existing allow-listed job error contract; prove safe dead-letter output with synthetic fault data and a raw-error mutation.
 - [ ] T084 [FR-024/025/026] Replace obsolete quickstart integration commands and refresh stale T012 task evidence with current file/test references; do not change scope or decision records.
 - [ ] T085 [FR-002/003/026/036/037] Restore default-onboarding regression coverage and establish the R3 draft mutation baseline before mutation-specific assertions; tests must prove existing behavior without weakening assertions.
-- [ ] T086 [FR-004/006/007] Preserve valid Arabic-only builder drafts by using the Arabic title as the persisted fallback only when the English title trims empty; retain a nonblank English title unchanged and test both cases.
+- [ ] T086 [FR-004/006/007] PO decision required before changing the persisted display-name fallback for a draft with an empty English title; no fallback behavior is authorized yet.
 - [ ] T087 [FR-008/013] Return the existing non-retryable submitted/business status when a draft save races with or follows submission; do not retry a permanent state conflict as a transient outage.
 - [ ] T088 [FR-039] Run Terms policy fixture inserts and dependent assertions in the same rollback-scoped transaction so append-only test rows cannot contaminate later current-policy lookups.
 - [ ] T089 [FR-026/036/037] Replace the synthetic PO fixture's developer-local source path with a stable decision identifier; add a mutation check that rejects absolute machine-local paths.
