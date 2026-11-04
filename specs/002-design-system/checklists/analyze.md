@@ -1,7 +1,7 @@
 # Specification Analysis Report: Design System Foundation
 
-**Date:** 2026-11-04
-**Analysed commit:** 1befa5ff3511fa6eab5db9bbc4148b61b7abba5c (S31-PO-7 Q5 breakpoint, acceptance scenarios, plan/tasks, and traceability updates; static analysis only)
+**Date:** 2026-11-04 15:51 UTC
+**Analysed commit:** a09a403039911b0e7336a08f9be9b52f3b403e30 (S31 round-6 reconciliation of F2 test and criterion maps; static analysis only)
 **Scope:** Existing Design System artifacts, PR #28 Glass delta, S30-PO-8 Q16 desktop sidebar correction, and S31-PO-7 Q5 breakpoint/content-clearance decision.
 **Method:** Static inspection; no tests or runtime commands were executed. The `speckit-analyze` prerequisite check passed with `SPECIFY_FEATURE_DIRECTORY=specs/002-design-system`; no extension hooks are configured.
 
@@ -62,9 +62,9 @@
 
 - Requirements: 29 FRs + 11 SCs = 40
 - Tasks: 51
-- Requirement/task coverage: 40/40 (100%)
-- Unmapped tasks: 0
-- Open ambiguities in PR #28, Q16, and Q5 scope: 0; logical side follows existing inline-start implementation and document direction
+- Requirement/task coverage: 39/40 (97.5%)
+- Unmapped tasks: 2 (T003, T042)
+- No open ambiguities in the audited PR #28, Q16, and Q5 scope (0); logical side follows existing inline-start implementation and document direction
 - Duplication findings: 0
 - CRITICAL: 0; HIGH: 0; MEDIUM: 3; LOW: 0
 - Verdict: **PASS WITH MEDIUM EVIDENCE GAPS**. The mandatory entry gate is satisfied: no open CRITICAL/HIGH findings. T046 remains open; no implementation is performed or authorized by this documentation analysis. T047-T051 remain unchecked pending the later implementation/review lane.
@@ -75,5 +75,6 @@
 
 - 2026-11-04: Refreshed after task/traceability alignment commit 70b9e2fc55149b86cbddd9a8a6e540f941815c15; 0 CRITICAL/HIGH findings; FR-021 and SC-007/008/009/010 remain PARTIAL where evidence is missing. Static inspection only.
 - 2026-11-04: S31 round-6 mapping refresh: T034 is added to SC-003 in both mappings; untagged T042 is removed from SC-007 mappings. Task header now covers SC-001..SC-011. Static only; 0 CRITICAL/HIGH findings.
+- 2026-11-04: Refreshed against a09a403039911b0e7336a08f9be9b52f3b403e30 and corrected metrics: SC-007 is the sole uncovered requirement (39/40); T003 and T042 are the two unmapped tasks. Static only; 0 CRITICAL/HIGH findings.
 
 - 2026-11-03: Initial S30 reconciliation of PR #28 scope at `e69688a`; refreshed source quotations and citations against `a9b37cc` with no new findings.
