@@ -38,6 +38,7 @@ test.beforeAll(async () => {
   const formId = randomUUID();
   assignmentId = randomUUID();
   const policy = `t022-e2e-${randomUUID()}`;
+  // S31-R2 fixture sources: Arabic from mandatory-intake-copy-ar.md; EN = recorded draft pending PO review, copied from spec.md's EN translation table.
   const definition = {
     questions: [
       {
