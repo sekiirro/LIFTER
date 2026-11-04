@@ -29,6 +29,8 @@ export function CorrectionHistory({
 
   function answerLabel(questionId: string, value: unknown) {
     const question = questionById.get(questionId);
+    if (typeof value === 'boolean')
+      return value ? messages['forms.yes'] : messages['forms.no'];
     if (typeof value === 'string' && question) {
       if (question.type === 'derivedChoice' && value.startsWith('meal-')) {
         return (
