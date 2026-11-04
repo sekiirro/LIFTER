@@ -77,3 +77,25 @@ Verdict: FAIL. Findings then: A1 HIGH (`.specify/feature.json` missing), A2 HIGH
 | Exercise Detail Remove cannot safely call an existing backend operation in either scope without expanding backend scope. The global transition requires a revision omitted from the detail projection; the workspace lifecycle RPC is not implemented. | MEDIUM | `contracts/catalog-api.md`; `lib/catalog/server.ts`; `supabase/migrations/20261106113000_catalog_exercise_lifecycle_merge.sql`; `supabase/migrations/20261106125000_catalog_exercise_detail.sql`; S30-PO-9 prohibits backend RPC/migration changes for this task. | PO-DECISION-NEEDED recorded in lib12 report. T041 remains unchecked until the full role matrix and mutation are verified. No backend guess encoded. |
 
 **Verdict:** PASS WITH MEDIUM blocker. 0 open CRITICAL, 0 open HIGH. Spec Kit entry criteria remain met; implementation is limited to independently supported UI behavior pending PO direction on workspace backend scope.
+
+## S31-PO-1 Q3 amendment analysis
+
+**Date:** 2026-11-04 (after S31 spec, plan, task, contract and traceability edits)
+**Authority:** PO decision S31-PO-1 Q3, quoted verbatim in `spec.md` and the lib13 brief; S30-PO-9 remains binding.
+**Scope:** Global PO Remove projection and workspace Remove for PO explicit workspace or WO/Trainer current own-workspace `coaching_work`; workspace lifecycle revision projection, CAS/idempotency/audit, preservation; Detail-only UI with confirmation and no Restore/Merge controls.
+**Clarification:** `spec.md` records the answer and option text verbatim. No open ambiguities remain for authorized behavior. Workspace Restore is explicitly out of scope.
+
+| Check | Result | Evidence |
+|---|---|---|
+| Numbered FRs, measurable SCs, Given/When/Then | PASS | `spec.md` FR-002/FR-011 and User Story 4 scenario specify role matrix, confirmation, CAS, audit, search exclusion and preservation. |
+| Clarification source and no-open-ambiguities statement | PASS | `spec.md` Clarifications — S31 cites S31-PO-1 Q3 verbatim and states no open ambiguities. |
+| Plan and FR-tagged task IDs | PASS | `plan.md` S31 amendment; `tasks.md` T042–T044 tagged with FR-011 and related FRs; T041 end-to-end pending. |
+| Analysis date newer than spec/plan/tasks | PASS | This 2026-11-04 amendment follows all those edits. |
+| Open CRITICAL/HIGH findings | PASS | 0 CRITICAL, 0 HIGH. |
+
+| Finding | Severity | Disposition |
+|---|---|---|
+| Workspace detail must preserve tenant identity if two workspaces contain the same UUID-shaped identity. | MEDIUM | T042/T043 require composite workspace key, explicit scope, same-ID tenant test and tenant-key mutation. |
+| Mutation behavior must follow established operation-key and audit conventions. | MEDIUM | Contract specifies CAS, replay, one audit event and error parity; integration tests and four executed mutants are required by T043. |
+
+**Verdict:** PASS WITH MEDIUM implementation risks. Spec Kit entry gate satisfied for T042–T044; no implementation began before this amendment analysis. Static analysis only; execution evidence belongs in traceability after tests pass.
