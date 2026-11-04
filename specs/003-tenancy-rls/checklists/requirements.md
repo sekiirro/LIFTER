@@ -30,4 +30,4 @@
 ## Notes
 
 - RLS and composite keys are mandated by the Constitution (I), so they are requirements, not implementation choices.
-- Open items (Sales coaching rights; WO visibility of co-members) are deny-by-default and listed as NEEDS DECISION. Neither blocks F3.
+- Open items (WO visibility of co-members) are deny-by-default and listed as NEEDS DECISION. Neither blocks F3.

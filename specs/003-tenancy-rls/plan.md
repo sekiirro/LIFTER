@@ -37,36 +37,26 @@ A pure TypeScript `authorize()` mirrors the same matrix. A reusable integration 
 | Platform | Supabase per Architecture v3. Local stack in CI at $0. ✅ |
 | Workflow | Integration tests join the CI gate (Roadmap QG-2). ✅ |
 
-## Resolved decisions
+## NEEDS DECISION (deny-by-default until the PO decides)
+
+| # | Item | F3 handling |
+|---|---|---|
+| ND-F3-2 | Q7 roster scope | S30-PO-3 Q7 records `WO sees active members`. Clarify which workspace rows are in scope, the definition of active, and which member fields are visible. |
+| ND-F3-3 | Q8 last-PO guard details | S30-PO-3 Q8 records a database guard preventing removal/demotion of the final PO; clarify concurrent demotions and transactional edge cases. |
+
+## Resolved Decisions
+
+| Decision | Source | Outcome |
+|---|---|---|
+| Sales coaching rights | S30-PO-3 Q6 | `coaching_work` is allowed for PO/WO/Trainer and denied for Sales. |
+| Active roster visibility | S30-PO-3 Q7 | A WO sees active members. |
+| Final Platform Owner guard | S30-PO-3 Q8 | The database refuses to remove or demote the final Platform Owner; transfer works by adding a new PO first. |
+
+Resolved within this reconciliation (both sides):
 
 - **ND-F3-1 resolved by S30-PO-3 Q6:** “PO/WO/Trainer, deny Sales (Recommended)”. Sales remains denied `coaching_work`.
 - **ND-F3-2 resolved for this approved scope by S30-PO-3 Q7 and S30-R8:** a current Workspace Owner sees only active membership fields for their own workspace (`user_id`, `workspace_id`, `granted_at`, `revoked_at`, plus the associated `staff_profiles.role`). `revoked_at IS NULL` defines active. Profile/contact fields are out of scope.
 - **ND-F3-3 resolved for this approved scope by S30-PO-3 Q8 and S30-R8:** preserve at least one Platform Owner under concurrent changes; protect role changes/demotions, staff-profile or membership deletion/revocation, and auth-user deletion cascades; serialize every protected mutation through the shared transaction lock described below; reuse the existing generic privileged-operation error convention. No new user-facing copy. Bootstrap remains operator-managed.
-## Project Structure
-
-```text
-specs/003-tenancy-rls/  spec.md plan.md research.md data-model.md quickstart.md contracts/db-contract.md tasks.md
-supabase/migrations/20261027120000_tenancy.sql
-supabase/seed.sql                        # stays empty of real data (no PII)
-lib/auth/capabilities.ts                 # Role, Capability, MATRIX, roleHasCapability()
-lib/auth/authorize.ts                    # authorize(actor, capability, workspaceId)
-tests/unit/authorize.test.ts
-tests/integration/harness.ts             # env loading, admin client, user/session factory, sql client, fixtures(two workspaces)
-tests/integration/rls-catalog.test.ts    # RLS enabled+forced, no anon grants
-tests/integration/isolation.test.ts      # cross-workspace reads, anon, revoked
-tests/integration/governance.test.ts     # PO-only writes, self-role change, membership mutation rules
-tests/integration/matrix-parity.test.ts  # TS vs SQL for every role × capability
-vitest.integration.config.ts
-.github/workflows/ci.yml                 # + integration job
-docs/BOOTSTRAP.md? → no: README section "Local database & isolation tests" + PO bootstrap SQL snippet
-```
-
-## Complexity Tracking
-
-| Deviation | Why | Simpler alternative rejected |
-|---|---|---|
-| The matrix exists in both TS and SQL | Two walls (Architecture v3). The database can't import TS. | A single source generating both needs a codegen step. The parity test gives the same guarantee. |
-
 
 ## S30-PO-3 governance amendment plan (documentation proposal)
 

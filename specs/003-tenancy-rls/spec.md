@@ -45,7 +45,7 @@ Only the PO can create or change workspaces, grant or revoke memberships, and as
 
 ### User Story 3 - Shared permission matrix with deny-by-default (Priority: P1)
 
-An app-layer `authorize(actor, capability, workspace)` and the database capability check implement the same approved matrix (D-09, D-10). Anything not granted is denied, including unlisted Sales rights and Sales coaching work, which S30-PO-3 Q6 resolves as PO/WO/Trainer allowed and Sales denied.
+An app-layer `authorize(actor, capability, workspace)` and the database capability check implement the same approved matrix (D-09, D-10). Anything not granted is denied, including unlisted Sales rights and Sales coaching work; S30-PO-3 Q6 resolves the `coaching_work` role matrix: PO/WO/Trainer allowed, Sales denied.
 
 **Why this priority**: The two-wall model in Architecture v3. The walls must not drift apart.
 
@@ -89,7 +89,7 @@ A reusable test harness provisions isolated fixtures (two workspaces, users per 
 - **FR-003**: Row-level security MUST be enabled and forced on every table in this feature, with deny-by-default policies keyed to the signed identity.
 - **FR-004**: A single database access helper MUST decide workspace access: PO → every workspace; otherwise an active membership plus a role that has the requested capability. It MUST be safe against search-path manipulation and MUST NOT be callable to widen another user's access.
 - **FR-005**: Governance writes (workspaces, memberships, roles) MUST be allowed only for the PO, at the database level.
-- **FR-006**: The capability matrix MUST be exactly the approved D-09/D-10 table in Architecture v3, plus a `coaching_work` capability for PO, WO and Trainer. Sales is denied `coaching_work`, as resolved by S30-PO-3 Q6: "PO/WO/Trainer, deny Sales (Recommended)".
+- **FR-006**: The capability matrix MUST be exactly the approved D-09/D-10 table in Architecture v3, plus a `coaching_work` capability for PO, WO and Trainer. Sales is denied `coaching_work`. S30-PO-3 Q6 records the approved role matrix: PO/WO/Trainer allowed; Sales denied.
 - **FR-007**: An app-layer `authorize(actor, capability, workspaceId)` MUST implement the same matrix, deny by default, and be a pure function with no I/O.
 - **FR-008**: An automated parity test MUST prove that the app and database matrices agree for every role × capability.
 - **FR-009**: An isolation test harness MUST create fixtures through the documented local database tooling only, and MUST include foreign-workspace negative tests for every table and helper in this feature.
@@ -140,6 +140,11 @@ The database prevents removal or demotion of the final Platform Owner. The PO-ap
 - **Workspace membership**: id, workspace_id, user identity, granted_at, granted_by, revoked_at, revoked_by.
 - **Capability**: a named permission from the approved matrix.
 
+## Clarifications
+
+- S30-PO-3 Q6 resolves the `coaching_work` role matrix. The PO answer is `PO/WO/Trainer, deny Sales (Recommended)`; the option text is `PO/WO/Trainer, deny Sales`.
+- S30-PO-3 Q7 records the future-cycle decision `WO sees active members`; Q8 records `DB guard on last PO (Recommended)`. Their scope and implementation acceptance belong to a separate forward-only Spec Kit cycle and are not requirements of this F3 baseline.
+
 ## Success Criteria *(mandatory)*
 
 - **SC-001**: 100% of tenancy tables have RLS enabled and forced, verified by a catalog query in the test suite.
@@ -154,11 +159,12 @@ The database prevents removal or demotion of the final Platform Owner. The PO-ap
 - Docker is not available on the reviewer's machine, so integration tests are verified in Linux CI. Unit tests run locally.
 - S30-PO-3 Q6 resolves the `coaching_work` matrix: "PO/WO/Trainer, deny Sales (Recommended)"; Sales remains denied.
 - S30-PO-3 Q7, as clarified by S30-R8, permits Workspace Owners to see active membership rows in their own workspace for roster administration; profile/contact fields are out of scope.
+- S30-PO-3 Q7 records the future-cycle decision `WO sees active members`; its scope details remain unresolved here. Until the separate cycle is implemented, this F3 baseline permits only PO and self to read membership rows.
 
 ### Governance amendment requirements and success criteria (S30-PO-3)
 
-- **FR-013**: For a requesting user who currently holds the Workspace Owner role in workspace W, the database MUST permit visibility of active membership rows in W only, limited to the existing membership-row columns `user_id`, `workspace_id`, `granted_at`, and `revoked_at`, plus the associated `staff_profiles.role`; “active” MUST mean `revoked_at IS NULL` in the existing model. Profile/contact fields (including names, email, and phone) are out of scope. This records S30-PO-3 Q7 (“WO sees active members”; “Supports roster administration. Needs RLS change, tests and security review.”) as clarified by S30-R8.
-- **FR-014**: The database MUST preserve at least one Platform Owner under concurrent mutations. It MUST serialize Platform-Owner role changes and refuse any operation that would leave zero Platform Owners, including role change/demotion, staff-profile or membership deletion/revocation, and auth-user deletion cascades. It MUST permit transfer after another Platform Owner is added first, as approved by S30-PO-3 Q8: “The database refuses to remove or demote the final Platform Owner. Simple and prevents lockout. Transfer works by adding a new PO first.” Refused privileged operations MUST use the existing generic `not_permitted` / SQLSTATE `42501` convention, with no new user-facing copy (S30-R8).
+- **FR-013**: For a requesting user who currently holds the Workspace Owner role in workspace W, the database MUST permit visibility of active membership rows in W only, limited to the existing membership-row columns `user_id`, `workspace_id`, `granted_at`, and `revoked_at`, plus the associated `staff_profiles.role`; “active” MUST mean `revoked_at IS NULL` in the existing model. Profile/contact fields (including names, email, and phone) are out of scope. This records S30-PO-3 Q7 ("WO sees active members"; "Supports roster administration. Needs RLS change, tests and security review.") as clarified by S30-R8.
+- **FR-014**: The database MUST preserve at least one Platform Owner under concurrent mutations. It MUST serialize Platform-Owner role changes and refuse any operation that would leave zero Platform Owners, including role change/demotion, staff-profile or membership deletion/revocation, and auth-user deletion cascades. It MUST permit transfer after another Platform Owner is added first, as approved by S30-PO-3 Q8: "The database refuses to remove or demote the final Platform Owner. Simple and prevents lockout. Transfer works by adding a new PO first." Refused privileged operations MUST use the existing generic `not_permitted` / SQLSTATE `42501` convention, with no new user-facing copy (S30-R8).
 
 - **SC-005**: Executed database mutation tests reject 100% of role changes/demotions, staff-profile or membership deletions/revocations, and auth-user deletion cascades that would leave zero Platform Owners; two concurrent demotions when exactly two Platform Owners exist and each of the six pairwise races among demotion, membership revocation/deletion, staff-profile deletion, and auth-user deletion leave at least one Platform Owner; and add-new-PO-first transfer succeeds without leaving zero Platform Owners.
 - **SC-006**: Executed database mutation tests permit a current Workspace Owner to read 100% of active membership rows and only the specified membership fields and associated staff role in their own workspace, and return zero rows for revoked memberships or other workspaces; profile/contact fields remain inaccessible through this roster scope.
