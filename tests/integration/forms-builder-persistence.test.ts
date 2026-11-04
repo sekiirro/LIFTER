@@ -128,6 +128,14 @@ it('rejects N12 and derived definitions with absent required selector metadata',
       fixedChoices: ['before-first', 'no-fixed-time'],
     },
   };
+  const mealCount = {
+    id: 'N07.meal_count',
+    sectionId: 'section-2',
+    type: 'mealCount',
+    required: false,
+    label: { en: 'Meal count', ar: 'عدد الوجبات' },
+    choices: ['2', '3', '4', '5'],
+  };
   const cases = [
     { ...base, questions: [{ ...selector, privacy: undefined }] },
     { ...base, questions: [{ ...selector, choices: undefined }] },
@@ -135,6 +143,7 @@ it('rejects N12 and derived definitions with absent required selector metadata',
     {
       ...base,
       questions: [
+        mealCount,
         {
           ...derived,
           derivedOptions: { fixedChoices: ['before-first', 'no-fixed-time'] },
