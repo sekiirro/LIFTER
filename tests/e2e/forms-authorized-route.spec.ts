@@ -222,12 +222,14 @@ async function signIn(page: Page) {
   await expect(page).toHaveURL(/\/$/u);
 }
 
-async function advanceToGoal(page: Page) {
+async function advanceToGoal(page: Page, targetAssignmentId: string) {
+  await page.goto(`/forms/${targetAssignmentId}`);
   await page.getByRole('button').nth(1).click();
   await page.getByRole('button').nth(1).click();
-  await page.getByRole('button').nth(1).click();
-  await page.getByRole('radio', { name: 'Male', exact: true }).check();
-  await page.getByRole('button').nth(1).click();
+  await expect(page.getByRole('radio')).toHaveCount(2);
+  await page.getByRole('radio').first().focus();
+  await page.keyboard.press('Space');
+  await expect(page.getByRole('textbox').first()).toBeVisible();
 }
 
 async function createFreshAssignment(
@@ -664,15 +666,17 @@ test('real route supports keyboard progression and presents the same safe not-fo
       url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
     },
   ]);
-  await page.goto(`/forms/${assignmentId}`);
-  await advanceToGoal(page);
+  const keyboardAssignmentId = await createFreshAssignment();
+  await advanceToGoal(page, keyboardAssignmentId);
   const goal = page.getByRole('textbox', { name: 'Your goal' });
   await goal.focus();
   await goal.fill('Build strength');
   const blurSave = page.waitForResponse(
     (response) =>
       response.request().method() === 'POST' &&
-      response.url().includes(`/api/forms/assignments/${assignmentId}/draft`),
+      response
+        .url()
+        .includes(`/api/forms/assignments/${keyboardAssignmentId}/draft`),
   );
   const next = page.getByRole('button', { name: 'Next question' });
   await next.focus();
@@ -682,7 +686,7 @@ test('real route supports keyboard progression and presents the same safe not-fo
   expect(saveResponse.status()).toBe(200);
   await page.keyboard.press('Enter');
   await expect(
-    page.getByRole('region', { name: 'Training experience' }),
+    page.getByRole('region', { name: 'Nutrition preferences' }),
   ).toBeVisible();
 
   await page.goto('/forms/13eba9f4-1551-48ae-bfd2-8c21076533b8');
@@ -850,8 +854,8 @@ test('real route autosave exposes each state, retries failures, and records save
     ]);
     for (const width of [390, 1440] as const) {
       await page.setViewportSize({ width, height: width === 390 ? 844 : 1000 });
-      await page.goto(`/forms/${assignmentId}`);
-      await advanceToGoal(page);
+      const stateAssignmentId = await createFreshAssignment();
+      await advanceToGoal(page, stateAssignmentId);
       const field = page.getByRole('textbox').first();
       await expect(field).toBeVisible();
       const capture = async (state: string) => {
@@ -964,8 +968,8 @@ test('real route autosave exposes each state, retries failures, and records save
       url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
     },
   ]);
-  await page.goto(`/forms/${assignmentId}`);
-  await advanceToGoal(page);
+  const latencyAssignmentId = await createFreshAssignment();
+  await advanceToGoal(page, latencyAssignmentId);
   const field = page.getByRole('textbox', { name: 'Your goal' });
   const samples: number[] = [];
   for (let sample = 0; sample < 8; sample += 1) {
@@ -1012,8 +1016,7 @@ test('submitted answer edits wait for explicit correction and use the latest rev
       url: process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
     },
   ]);
-  await page.goto(`/forms/${correctionAssignmentId}`);
-  await advanceToGoal(page);
+  await advanceToGoal(page, correctionAssignmentId);
   const correctionBodies: Array<Record<string, unknown>> = [];
   const draftRequests: string[] = [];
   page.on('request', (request) => {
