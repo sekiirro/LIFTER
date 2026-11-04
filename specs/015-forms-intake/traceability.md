@@ -55,4 +55,4 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 
 | Requirement | Task | Test/evidence | Commit |
 | --- | --- | --- | --- |
-| FR-008 / FR-013 / FR-020 — current assignment authorization and snapshot filtering for correction history | T090 | RED: focused `tests/unit/forms-submission-routes.test.ts` initially failed because the authorized correction-history GET route was absent on A. GREEN: `tests/unit/forms-submission-routes.test.ts::filters correction-history keys to the current assignment snapshot`; focused file 9/9. | `da31455`, `508fedf` |
+| FR-008 / FR-013 / FR-020 — current assignment authorization and snapshot filtering for correction history | T090 | RED: focused `tests/unit/forms-submission-routes.test.ts` initially failed because the authorized correction-history GET route was absent on A. GREEN: `tests/unit/forms-submission-routes.test.ts::filters correction-history keys to the current assignment snapshot`; focused file 9/9. T090 scope was narrowed so correction-write revision validation remains owned by T082. | `da31455`, `508fedf`, `cf79fa7` |
