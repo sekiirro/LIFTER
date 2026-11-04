@@ -108,6 +108,24 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
         },
       ] as const;
       for (const mutant of boundMutants) {
+        let boundBaselinePassed = false;
+        await expect(
+          tx.savepoint(async (sp) => {
+            await sp`reset role`;
+            await sp`set local role authenticated`;
+            const [baseline] = await sp`
+              select public.save_form_draft(
+                ${context.wsA.id},${assignmentId},0,${randomUUID()},${sp.json(mutant.values)}
+              ) as result
+            `;
+            expect(baseline?.result).toMatchObject({ status: mutant.expected });
+            boundBaselinePassed = true;
+            throw boundRollback;
+          }),
+        ).rejects.toBe(boundRollback);
+        expect(boundBaselinePassed, `${mutant.name} unmutated baseline`).toBe(
+          true,
+        );
         let mutationKilled = false;
         await expect(
           tx.savepoint(async (sp) => {
@@ -149,6 +167,35 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
       expect(await save(0, selectionKey, { q1: 'first draft' })).toEqual([
         { result: first },
       ]);
+      let alteredIntentBaselinePassed = false;
+      await expect(
+        tx.savepoint(async (sp) => {
+          const [initial] = await sp`
+            select public.save_form_draft(
+              ${context.wsA.id},${assignmentId},0,${selectionKey},${sp.json({ q1: 'original intent' })}
+            ) as result
+          `;
+          expect(initial?.result).toMatchObject({
+            status: 'saved',
+            revision: 1,
+          });
+          const [replay] = await sp`
+            select public.save_form_draft(
+              ${context.wsA.id},${assignmentId},0,${selectionKey},${sp.json({ q1: 'altered intent' })}
+            ) as result
+          `;
+          expect(replay?.result).toMatchObject({
+            status: 'conflict',
+            revision: 1,
+          });
+          alteredIntentBaselinePassed = true;
+          throw boundRollback;
+        }),
+      ).rejects.toBe(boundRollback);
+      expect(
+        alteredIntentBaselinePassed,
+        'unmutated altered-intent replay baseline',
+      ).toBe(true);
       let intentMutationKilled = false;
       await expect(
         tx.savepoint(async (sp) => {
