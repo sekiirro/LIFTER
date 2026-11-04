@@ -18,7 +18,8 @@ it('authorizes client and read-capable staff correction context without exposing
   await expect(
     db.begin(async (tx) => {
       const approved = await graph(tx, context);
-      const [client] = await tx`select auth_user_id from public.clients where id=${approved.client}`;
+      const [client] =
+        await tx`select auth_user_id from public.clients where id=${approved.client}`;
       await tx`insert into app_private.terms_policy_versions(version,policy_kind,status)
         values(${terms},'terms','published')`;
       await tx`insert into public.forms(id,workspace_id,name)

@@ -17,8 +17,12 @@ it('serializes default retirement with workspace default selection', async () =>
   `;
   const retirementBody = retirement!.definition as string;
   const selectionBody = selection!.definition as string;
-  const retirementDefaultLock = retirementBody.indexOf('f15-default-onboarding:');
-  const retirementSelectedDefaultCheck = retirementBody.indexOf('from public.workspace_default_onboarding_forms');
+  const retirementDefaultLock = retirementBody.indexOf(
+    'f15-default-onboarding:',
+  );
+  const retirementSelectedDefaultCheck = retirementBody.indexOf(
+    'from public.workspace_default_onboarding_forms',
+  );
   expect(retirementDefaultLock).toBeGreaterThan(-1);
   expect(retirementDefaultLock).toBeLessThan(retirementSelectedDefaultCheck);
   expect(selectionBody).toContain('f15-default-onboarding:');

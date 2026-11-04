@@ -67,7 +67,10 @@ async function setFutureActivation(
     ${randomUUID()}`;
 }
 
-async function setCurrentActivation(workspaceId: string, subscriptionId: string) {
+async function setCurrentActivation(
+  workspaceId: string,
+  subscriptionId: string,
+) {
   await db`insert into public.subscription_activations(
     workspace_id,subscription_id,activated_at,delivery_event_id
   ) values(

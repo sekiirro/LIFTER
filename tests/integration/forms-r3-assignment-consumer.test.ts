@@ -83,7 +83,9 @@ it('T008 reconciles real F12 approval and F15 selection facts in either order, o
         where a.workspace_id=${context.wsA.id} and a.client_id=${selectionFirst.id} and a.form_id=${first.formId}`;
       expect(initialAssignment).toHaveLength(1);
       expect(initialAssignment[0]?.policy_id).toBeTruthy();
-      expect(initialAssignment[0]?.occurrence_key).toBe(`initial:${selectionFirst.id}`);
+      expect(initialAssignment[0]?.occurrence_key).toBe(
+        `initial:${selectionFirst.id}`,
+      );
       expect(initialAssignment[0]?.configured_by).toBe(context.po.userId);
       expect(initialAssignment[0]?.client_deadline_at).toEqual(
         initialAssignment[0]?.schedule_deadline,
@@ -94,7 +96,11 @@ it('T008 reconciles real F12 approval and F15 selection facts in either order, o
         expectedDeadline[0]?.deadline,
       );
 
-      const second = await createSelectionFixture(tx, context.wsA.id, first.policy);
+      const second = await createSelectionFixture(
+        tx,
+        context.wsA.id,
+        first.policy,
+      );
       expect(
         (
           await sqlCall(
@@ -135,8 +141,13 @@ it('T008 reconciles real F12 approval and F15 selection facts in either order, o
         where a.workspace_id=${context.wsA.id} and a.form_id=${first.formId}
         order by a.client_id`;
       expect(perClientOccurrences).toHaveLength(2);
-      expect(perClientOccurrences.map((row) => row.occurrence_key).sort()).toEqual(
-        [`initial:${selectionFirst.id}`, `initial:${sharedPolicyTarget.id}`].sort(),
+      expect(
+        perClientOccurrences.map((row) => row.occurrence_key).sort(),
+      ).toEqual(
+        [
+          `initial:${selectionFirst.id}`,
+          `initial:${sharedPolicyTarget.id}`,
+        ].sort(),
       );
       expect(perClientOccurrences).toEqual(
         expect.arrayContaining([
