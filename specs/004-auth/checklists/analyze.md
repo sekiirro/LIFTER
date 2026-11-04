@@ -112,3 +112,22 @@
 - Requirement semantics are unchanged; no FR/SC re-mapping is required. ND-F4-7 and implementation/configuration gaps remain explicit.
 - Constitution I/III/IV alignment is preserved: no capability, matrix, RLS, or recovery-link behavior changed.
 - **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 7 inherited MEDIUM, 1 LOW documentation-only correction in this round; 22/22 FR/SC items mapped.
+
+## S33 SK-52 fix round 5 refresh
+
+- **Date:** 2026-11-04T22:56:44+02:00 (after the S33 PR #52 round-5 edits).
+- **Analyzed commit:** `70d465e1b2c76f952e8222b212acafc36520eabf` (parent of this round-5 fix commit; the analyzed state is held in that revision, and this section lands in the round-5 fix commit). Round 4 landed as `70d465e1b2c76f952e8222b212acafc36520eabf`.
+- **Scope:** static consistency and evidence review; no tests, scans, stacks, deployments, cloud queries, or implementation actions performed. This round changes `specs/004-auth/plan.md` (Constitution IV Scope row) and this refresh only. No `spec.md` or `tasks.md` text changed.
+
+### Findings
+
+| ID | Severity | Artifact | Finding | Disposition |
+|---|---|---|---|---|
+| F4-R5-01 | LOW | `specs/004-auth/plan.md:39` (Constitution IV Scope row) | The line said the WO/Trainer extension was "owner decision 2026-10-27, to be registered as D-19 (PO approval in this PR)", contradicting the recorded approved state of D-19. | Corrected as documentation-only wording: the row now records D-19 as approved and the recovery scope authority — "clients only; all workspace Trainers may issue a link for any client in the workspace; copy-only delivery; keep as built/F4 owns recovery/client lookup from P1" (verbatim from `docs/04-changes-and-questions.md` D-19, approved S31-PO-2/SK-004-01; `specs/004-auth/spec.md` decision register). No capability, matrix, RLS, or tasks text changed; requirement meaning unchanged; no FR/SC re-mapping. |
+
+### Coverage and verdict
+
+- FR-to-task mapping remains 15/15; SC-to-task mapping remains 7/7 (22/22 total). No task checkbox or evidence status changed.
+- Requirement semantics are unchanged (S31-PO-2/3 remain the authority; no scope or behavior change); no FR/SC re-mapping is required. ND-F4-7 and implementation/configuration gaps remain explicit.
+- Constitution I/III/IV alignment is preserved: the plan now matches the recorded D-19 approval; no capability, matrix, RLS, or recovery-link behavior changed.
+- **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 7 inherited MEDIUM, 1 LOW documentation-only correction in this round; 22/22 FR/SC items mapped.
