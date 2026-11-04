@@ -1,9 +1,9 @@
-import { testOrigin } from './test-origin.mjs';
+import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
 import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { modes } from '../../lib/design/tokens';
 
-const url = testOrigin;
+const url = getTestCookieOrigin(testOrigin);
 function rgb(hex: string) {
   return `rgb(${[1, 3, 5].map((start) => parseInt(hex.slice(start, start + 2), 16)).join(', ')})`;
 }
