@@ -10,6 +10,7 @@ import {
   type DuplicateCandidate,
   type FoodEditorDraft,
 } from '../../../lib/catalog/food-editor';
+import { MAX_FOOD_ALTERNATIVES } from '../../../lib/catalog/schemas';
 
 export type FoodDuplicateReviewResult =
   | { status: 'none'; candidates: [] }
@@ -18,9 +19,76 @@ export type FoodDuplicateReviewResult =
 export type CatalogFoodSaveResult =
   CatalogResult | { status: 'unsupported_alternatives' };
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null && !Array.isArray(value);
+}
+
+function hasExactKeys(
+  value: Record<string, unknown>,
+  keys: readonly string[],
+): boolean {
+  return (
+    Object.keys(value).length === keys.length &&
+    keys.every((key) => Object.hasOwn(value, key))
+  );
+}
+
+const FOOD_DRAFT_STRING_FIELDS = [
+  'nameAr',
+  'nameEn',
+  'basis',
+  'productIdentity',
+  'preparationIdentity',
+  'weighingState',
+  'kcal',
+  'protein',
+  'carbs',
+  'fat',
+  'fiber',
+] as const;
+const UUID_V4 =
+  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
+
+function isFoodDraft(value: unknown): value is FoodEditorDraft {
+  if (
+    !isRecord(value) ||
+    !hasExactKeys(value, [
+      ...FOOD_DRAFT_STRING_FIELDS,
+      'servings',
+      'alternatives',
+    ]) ||
+    !FOOD_DRAFT_STRING_FIELDS.every(
+      (field) => typeof value[field] === 'string',
+    ) ||
+    !Array.isArray(value.servings) ||
+    !Array.isArray(value.alternatives) ||
+    value.alternatives.length > MAX_FOOD_ALTERNATIVES
+  )
+    return false;
+
+  const servingsValid = value.servings.every(
+    (serving) =>
+      isRecord(serving) &&
+      hasExactKeys(serving, ['labelAr', 'labelEn', 'basisQuantity']) &&
+      typeof serving.labelAr === 'string' &&
+      typeof serving.labelEn === 'string' &&
+      typeof serving.basisQuantity === 'string',
+  );
+  const alternativesValid = value.alternatives.every(
+    (alternative) =>
+      isRecord(alternative) &&
+      hasExactKeys(alternative, ['foodId', 'portionQuantity', 'portionUnit']) &&
+      typeof alternative.foodId === 'string' &&
+      typeof alternative.portionQuantity === 'string' &&
+      typeof alternative.portionUnit === 'string',
+  );
+  return servingsValid && alternativesValid;
+}
+
 export async function reviewFoodDuplicatesAction(
-  draft: FoodEditorDraft,
+  draft: unknown,
 ): Promise<FoodDuplicateReviewResult> {
+  if (!isFoodDraft(draft)) return { status: 'invalid', candidates: [] };
   const food = buildFoodEditorInput(draft);
   if (!food) return { status: 'invalid', candidates: [] };
   const names = (['ar', 'en'] as const).flatMap((language) => {
@@ -80,11 +148,19 @@ export async function reviewFoodDuplicatesAction(
 }
 
 export async function saveCatalogFoodAction(
-  draft: FoodEditorDraft,
-  workspaceId: string | null,
-  confirmNearMatch: boolean,
-  operationKey: string,
+  draft: unknown,
+  workspaceId: unknown,
+  confirmNearMatch: unknown,
+  operationKey: unknown,
 ): Promise<CatalogFoodSaveResult> {
+  if (
+    !isFoodDraft(draft) ||
+    (workspaceId !== null && typeof workspaceId !== 'string') ||
+    typeof confirmNearMatch !== 'boolean' ||
+    typeof operationKey !== 'string' ||
+    !UUID_V4.test(operationKey)
+  )
+    return { status: 'invalid' };
   const food = buildFoodEditorInput(draft);
   if (!food) return { status: 'invalid' };
   if (food.alternatives?.length) return { status: 'unsupported_alternatives' };

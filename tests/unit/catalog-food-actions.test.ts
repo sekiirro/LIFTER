@@ -59,6 +59,126 @@ describe('catalog food server actions', () => {
     expect(createFoodMock).not.toHaveBeenCalled();
   });
 
+  it.each([
+    ['missing draft field', { ...draft, kcal: undefined }],
+    ['wrong draft field type', { ...draft, kcal: 130 }],
+    ['extra draft field', { ...draft, admin: true }],
+    [
+      'missing serving field',
+      { ...draft, servings: [{ labelAr: '', basisQuantity: '100' }] },
+    ],
+    [
+      'wrong serving field type',
+      {
+        ...draft,
+        servings: [{ labelAr: '', labelEn: 'serving', basisQuantity: 100 }],
+      },
+    ],
+    [
+      'extra serving field',
+      {
+        ...draft,
+        servings: [
+          {
+            labelAr: '',
+            labelEn: 'serving',
+            basisQuantity: '100',
+            foodId: 'other',
+          },
+        ],
+      },
+    ],
+    ['missing alternatives array', { ...draft, alternatives: undefined }],
+    [
+      'wrong alternatives field type',
+      {
+        ...draft,
+        alternatives: [
+          { foodId: 'food-2', portionQuantity: 50, portionUnit: 'g' },
+        ],
+      },
+    ],
+    [
+      'extra alternative field',
+      {
+        ...draft,
+        alternatives: [
+          {
+            foodId: 'food-2',
+            portionQuantity: '50',
+            portionUnit: 'g',
+            version: 1,
+          },
+        ],
+      },
+    ],
+    [
+      'too many alternatives',
+      {
+        ...draft,
+        alternatives: Array.from({ length: 4 }, () => ({
+          foodId: 'food-2',
+          portionQuantity: '50',
+          portionUnit: 'g',
+        })),
+      },
+    ],
+    ['oversize name', { ...draft, nameEn: 'x'.repeat(121) }],
+    ['oversize identity', { ...draft, productIdentity: 'x'.repeat(121) }],
+    [
+      'oversize alternative unit',
+      {
+        ...draft,
+        alternatives: [
+          {
+            foodId: 'food-2',
+            portionQuantity: '50',
+            portionUnit: 'x'.repeat(41),
+          },
+        ],
+      },
+    ],
+  ])(
+    'rejects %s before database calls in both actions',
+    async (_label, invalidDraft) => {
+      expect(
+        await reviewFoodDuplicatesAction(invalidDraft as FoodEditorDraft),
+      ).toEqual({
+        status: 'invalid',
+        candidates: [],
+      });
+      expect(
+        await saveCatalogFoodAction(
+          invalidDraft as FoodEditorDraft,
+          'workspace-1',
+          false,
+          operationKey,
+        ),
+      ).toEqual({ status: 'invalid' });
+      expect(candidatesMock).not.toHaveBeenCalled();
+      expect(createFoodMock).not.toHaveBeenCalled();
+    },
+  );
+
+  it.each([
+    ['wrong workspace type', 7, false, operationKey],
+    ['wrong confirmation type', 'workspace-1', 'yes', operationKey],
+    ['malformed operation key', 'workspace-1', false, 'not-a-uuid'],
+  ])(
+    'rejects %s before database calls',
+    async (_label, workspaceId, confirmNearMatch, key) => {
+      expect(
+        await saveCatalogFoodAction(
+          draft,
+          workspaceId as string | null,
+          confirmNearMatch as boolean,
+          key as string,
+        ),
+      ).toEqual({ status: 'invalid' });
+      expect(createFoodMock).not.toHaveBeenCalled();
+    },
+  );
+
   it('passes explicit near-match confirmation and only supported food fields through the wall', async () => {
     const result = await saveCatalogFoodAction(
       draft,
