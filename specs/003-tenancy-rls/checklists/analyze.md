@@ -1,7 +1,7 @@
 # Spec Kit Analyze — F3 Workspace Tenancy, Permission Matrix & RLS (reconciled)
 
-- Date: 2026-11-03 (refreshed after S30-PO-3 Q6-Q8, S30-R8, and #47 compliance reconciliation)
-- Analyzed source commit: `ed88574ae09c722b1f6ded4fc0b66122bbeb4f13` (`origin/main` at #47 branch creation); task FR tags are part of the compliance docs change.
+- Date: 2026-11-04 (re-run after merge; reconcile with S30-PO-3 Q6-Q8, S30-R8, and #47 compliance reconciliation)
+- Analyzed source commit: `012f9ed84c79e8e0661807c552474b32dc14b623` (merged HEAD `speckit-003-governance`, merge of `11657c3` #50 and `ff6e0b9` #47); task FR tags are part of the compliance docs change.
 - Static code/test evidence baseline: `d04ef52` (branch base; no code or test files changed in this amendment).
 - Scope: F3 baseline (`FR-001`..`FR-012`, `SC-001`..`SC-004`) plus the S30-PO-3 Q7/Q8 governance amendment reconciled by architect ruling S30-R8 (`FR-013`, `FR-014`, `SC-005`, `SC-006`).
 - Method: static cross-artifact, migration, workflow, and test-source review. No tests, builds, or CI were run.
