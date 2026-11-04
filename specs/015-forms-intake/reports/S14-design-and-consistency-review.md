@@ -82,9 +82,9 @@ All checks below are marked **PASS (scope boundary)** because this amendment cha
 | Rendered screenshot matrix | PASS (scope boundary): intentionally not rendered in a docs-only unit; T039/T024 require AR/EN × light/dark × 390/1440px and tablet if layout changes. |
 | Tests, axe and `npm run size` | PASS (scope boundary): no UI implementation/tests run; T030/T039/T024 own future test/evidence gates. |
 
-## DESIGN.md ?11 defaults recorded by the architect
+## DESIGN.md §11 defaults recorded by the architect
 
-The architect resolved the design defaults for this implementation plan: Terms Card uses a premium card with existing card/checkbox components; N11 motion uses 150-250ms with `prefers-reduced-motion`; reserved usernames cover platform/system/role words and workspace identifiers. T&C wording remains DRAFT until PO approval. Apply the existing frontend design system; implementation still runs the full Frontend Design Gate.
+The architect resolved the design defaults for this implementation plan: Terms Card uses a premium card with existing card/checkbox components; N11 motion uses 150-250ms with `prefers-reduced-motion`; reserved usernames cover platform/system/role words and workspace identifiers. PO S30-PO-1 Q2 approved the T&C wording verbatim; S31-PO-1 Q1 later approved one Arabic consent-sentence replacement. Apply the existing frontend design system; implementation still runs the full Frontend Design Gate.
 
 ## Spec ↔ plan ↔ tasks consistency results
 
