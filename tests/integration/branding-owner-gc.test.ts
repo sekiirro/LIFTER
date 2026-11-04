@@ -133,7 +133,10 @@ async function claimFixtureObject(
         throw new Error('GC backlog cleanup did not finalize its claim');
     }
     if (target) return target;
-    if (claims.length === 0) break;
+    if (claims.length === 0)
+      throw new Error(
+        `branding_gc_claim returned no claims while looking for the fixture object (page ${pages}); it may be ineligible or leased: ${objectName}`,
+      );
   }
   throw new Error(
     `GC fixture object was not claimed before the ${deadlineMs}ms deadline (${pages} pages): ${objectName}`,
