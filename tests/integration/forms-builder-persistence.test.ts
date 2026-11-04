@@ -1,10 +1,11 @@
 import { randomUUID } from 'node:crypto';
-import postgres from 'postgres';
+import type postgres from 'postgres';
 import { afterAll, describe, expect, it } from 'vitest';
+import { sql } from './harness';
 import { clientContext, pending } from './client-accounts-fixture';
 import { withCrashSafeFunctionMutant } from './function-drift-guard';
 
-const db = postgres(process.env.DB_URL ?? '', { max: 1, connect_timeout: 10 });
+const db = sql();
 afterAll(() => db.end());
 
 const rollback = new Error('T006 synthetic fixture rollback');
@@ -81,6 +82,27 @@ function definition(label = 'Editable prompt') {
     copyStatus: 'draft',
   };
 }
+
+it('accepts the approved B06 identifier for the N12 series selector', async () => {
+  const value = definition();
+  value.questions.unshift({
+    id: 'B06',
+    sectionId: 'section-1',
+    type: 'singleChoice',
+    required: true,
+    privacy: 'personal',
+    purpose: 'n12-series',
+    label: { en: 'Gender', ar: 'النوع' },
+    choices: ['male', 'female'],
+    optionLabels: [
+      { en: 'Male', ar: 'ذكر' },
+      { en: 'Female', ar: 'أنثى' },
+    ],
+  } as never);
+  const [result] = await db`
+    select app_private.f15_valid_builder_definition(${db.json(value)},false) as valid`;
+  expect(result!.valid).toBe(true);
+});
 
 describe('T006/T009 persisted Builder writes', () => {
   it('creates a new form and version on the first Save with revision zero', async () => {
