@@ -36,3 +36,16 @@ Status is scoped to implementation and executed evidence through `493a345`; prio
 | SC-005 | T034 | `tests/integration/catalog-food-duplicates.test.ts::uses the composite near-duplicate GIN path at benchmark volume` | `benchmark-s25.md` records local database metrics and index plans; Worker CPU and hosted API p95 are explicitly open in `release-gate-s25.md` | PARTIAL |
 
 No PO-deferred requirement was identified; therefore no row is marked DEFERRED. “Verified” here means an asserting test is present in the analysed tree and evidence is documented; this review did not execute that test.
+
+## S32 lib15 remediation evidence
+
+| Finding | FR | Task | Test | Evidence |
+|---|---|---|---|---|
+| zdo-5 multi-equipment version preservation | FR-001, FR-002 | T039 | tests/unit/exercise-library-actions.test.ts::preserves every equipment code when creating a new version from a multi-equipment exercise; tests/unit/exercise-detail-page.test.tsx::passes all existing equipment codes into the new version editor | Fix commit 1a84ed8; focused suite 89/89. |
+| zdo_A server-action shape validation; zdo_J success-only revalidation | FR-001, FR-002, FR-011 | T039, T044 | tests/unit/exercise-library-actions.test.ts::returns invalid for malformed save and remove payloads without throwing or calling an RPC; ::revalidates library and edited detail paths only after successful exercise mutations | Fix commit 1a84ed8; focused suite 89/89. |
+| zdo_P in-dialog Remove failure; zdo_U pending live-region class | FR-002, FR-011, FR-018 | T044 | tests/unit/exercise-detail-remove.test.tsx::keeps the dialog open and shows the removal failure inside it so the user can retry; ::maps the pending live region to a visually-hidden CSS-module class | Fix commit 1a84ed8; focused suite 89/89. PO-7 copy uses states.error.description. |
+| zdo_b code-point name limit | FR-001 | T039 | tests/unit/catalog-exercise-editor.test.tsx::does not impose a UTF-16 maxLength on supplementary-plane name characters | Fix commit 1a84ed8; focused suite 89/89. |
+| zdo_x explicit workspace removal scope | FR-011 | T044 | tests/unit/catalog-server.test.ts::requires an explicit non-empty workspace for PO workspace exercise removal | Fix commit 1a84ed8; focused suite 89/89. |
+| zdo_7 client URL validation parity | FR-003 | T023 | tests/unit/catalog-video-variation.test.tsx::rejects allowed-host URLs with a query or fragment immediately after the host | Fix commit 1a84ed8; focused suite 89/89; no SQL changed. |
+| zdpAE copy approval metadata | FR-018 | T044 | tests/unit/catalog-approved-copy.test.ts::marks all 18 S27 post-batch library/detail keys as DRAFT in both message catalogs | Fix commit 1a84ed8; focused suite 89/89; localized copy values unchanged. |
+| Launcher environment contract | FR-018 | T044 | tests/unit/f16-playwright-launcher.test.ts::maps Supabase CLI env aliases and APP_ORIGIN before starting Playwright | Fix commit 1a84ed8; focused suite 89/89. |
