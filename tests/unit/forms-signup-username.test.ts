@@ -1,11 +1,22 @@
 import { expect, it } from 'vitest';
-import { isValidSignupUsername, normalizeSignupUsername } from '../../lib/forms/signup-policy';
+import {
+  isValidSignupUsername,
+  normalizeSignupUsername,
+} from '../../lib/forms/signup-policy';
 import { signupFields } from '../../lib/client-accounts/validation';
 
 it('T080 applies S32-PO-7 to the NFKC-lowercase username without trimming', () => {
   expect(isValidSignupUsername('Ａbc_12.')).toBe(true);
   expect(normalizeSignupUsername('Ａbc_12.')).toBe('abc_12.');
-  for (const value of [' abcd', 'abcd ', 'abc\u200Bdef', 'ab', 'a'.repeat(31), 'abc-def', 'عربي']) {
+  for (const value of [
+    ' abcd',
+    'abcd ',
+    'abc\u200Bdef',
+    'ab',
+    'a'.repeat(31),
+    'abc-def',
+    'عربي',
+  ]) {
     expect(isValidSignupUsername(value)).toBe(false);
   }
   expect(isValidSignupUsername('a'.repeat(30))).toBe(true);

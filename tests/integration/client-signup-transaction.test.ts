@@ -172,9 +172,16 @@ it('keeps the SQL and TypeScript reserved-role username lists in parity', async 
 });
 
 it('rejects usernames outside the approved normalized set before admission redemption', async () => {
-  for (const username of [' Client.123', 'Client.123 ', 'Client\u200B123', 'abc-def']) {
+  for (const username of [
+    ' Client.123',
+    'Client.123 ',
+    'Client\u200B123',
+    'abc-def',
+  ]) {
     const fixture = await signupFixture(context);
-    expect(await signup(db, fixture, { ...extendedFields(fixture), username })).toEqual({ status: 'invalid' });
+    expect(
+      await signup(db, fixture, { ...extendedFields(fixture), username }),
+    ).toEqual({ status: 'invalid' });
     expect(
       await db`select redeemed_at from app_private.signup_admission_tickets where id=${fixture.ticket} and redeemed_at is not null`,
     ).toHaveLength(0);

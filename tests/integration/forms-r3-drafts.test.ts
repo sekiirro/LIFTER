@@ -83,7 +83,10 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
           throw boundRollback;
         }),
       ).rejects.toBe(boundRollback);
-      expect(baselinePassed, 'unmutated draft save must pass before mutants').toBe(true);
+      expect(
+        baselinePassed,
+        'unmutated draft save must pass before mutants',
+      ).toBe(true);
       const boundMutants = [
         {
           name: 'total payload',
