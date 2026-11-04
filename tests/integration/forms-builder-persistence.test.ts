@@ -104,6 +104,48 @@ it('accepts the approved B06 identifier for the N12 series selector', async () =
   expect(result!.valid).toBe(true);
 });
 
+it('rejects N12 and derived definitions with absent required selector metadata', async () => {
+  const base = definition();
+  const selector = {
+    id: 'B06',
+    sectionId: 'section-1',
+    type: 'singleChoice',
+    required: true,
+    privacy: 'personal',
+    purpose: 'n12-series',
+    label: { en: 'Gender', ar: 'النوع' },
+    choices: ['male', 'female'],
+  };
+  const derived = {
+    id: 'N07.training_timing',
+    sectionId: 'section-2',
+    type: 'derivedChoice',
+    required: false,
+    label: { en: 'Training timing', ar: 'وقت التمرين' },
+    choices: ['meal-1', 'before-first', 'no-fixed-time'],
+    derivedOptions: {
+      sourceQuestionId: 'N07.meal_count',
+      fixedChoices: ['before-first', 'no-fixed-time'],
+    },
+  };
+  const cases = [
+    { ...base, questions: [{ ...selector, privacy: undefined }] },
+    { ...base, questions: [{ ...selector, choices: undefined }] },
+    { ...base, questions: [{ ...derived, derivedOptions: undefined }] },
+    {
+      ...base,
+      questions: [
+        { ...derived, derivedOptions: { fixedChoices: ['before-first', 'no-fixed-time'] } },
+      ],
+    },
+  ];
+  for (const invalid of cases) {
+    const [result] = await db`
+      select app_private.f15_valid_builder_definition(${db.json(invalid)},false) as valid`;
+    expect(result!.valid).toBe(false);
+  }
+});
+
 describe('T006/T009 persisted Builder writes', () => {
   it('creates a new form and version on the first Save with revision zero', async () => {
     await expect(
