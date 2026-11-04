@@ -10,7 +10,7 @@
 - Do not touch `LIFTER_Claude_Files/`, `DESIGN.md`, `docs/`, `.specify/` or `specs/` except checking tasks off in this file. Preserve pre-existing unstaged deletions and untracked `.agents/`/`docs/SESSION_HANDOFF.md`. Never stash/reset/restore/stage those paths.
 - Codex sandbox: Vitest `--configLoader native --pool threads`. Reviewer independently runs Docker/integration/e2e, all gates and mutation checks. No deployment, cloud migration, push, YBS access or paid service.
 - Tests are required by FR-014; write story tests before implementations, observe meaningful failure, then make them pass. Do not replace cross-role behavior assertions with mocks in integration tests.
-- All SQL columns, constraints, grants, policies, functions and exact detail allow-lists in data-model.md are normative. Unknown policy stays with ND-F9-2/3/5 or SK-009-05..SK-009-09; do not resolve it in fixtures. Technical replay/initial-state/representation interpretations must remain explicit for reviewer.
+- All SQL columns, constraints, grants, policies, functions and exact detail allow-lists in data-model.md are normative. Unknown policy stays with ND-F9-2/3/5, SK-009-08 or the numbered S33 MCQs; do not resolve it in fixtures. Technical replay/initial-state/representation interpretations must remain explicit for reviewer.
 
 ## Phase 1: Setup
 
@@ -80,13 +80,11 @@ Goal: PO completes create → publish → enable in AR/EN. Independent test uses
 - [ ] T031 Independently rerun all gates plus edge build/secret scan per `specs/009-packages/quickstart.md`; review `lib/packages/` and package route for generic failures, signed user client, exact money and two-wall checks. This is reviewer work, not coder self-approval (FR-004, FR-010, FR-012..FR-014).
 - [ ] T032 Run full disposable Docker integration and every mutation check in `specs/009-packages/quickstart.md` §4; demonstrate dropping guards, granting rate column, weakening reader/authorization/locks/FKs/audit and numeric rounding causes expected tests to fail, then restore/recreate local state and rerun green. Verify legacy audit and catalog/parity regressions (FR-001..FR-011, FR-014).
 - [ ] T033 Run full e2e plus authenticated local mode of `tests/e2e/packages.spec.ts`; manually validate PO AR/EN, themes, keyboard, required states and cancellation, and every non-PO/anonymous route outcome. Record axe/test results and no protected data in payloads (FR-007..FR-010, FR-012..FR-014).
-- [ ] T034 Reconcile every FR/SC against implementation and test evidence in `specs/009-packages/tasks.md`; record reviewer acceptance and four technical interpretations in review/PR evidence. Keep ND-F9-2/3/5 and SK-009-05..SK-009-09 unresolved unless closed by a cited PO record, defer production gates, never modify protected docs/spec policy or push/deploy as part of these tasks (FR-001..FR-014).
+- [ ] T034 Reconcile every FR/SC against implementation and test evidence in `specs/009-packages/tasks.md`; record reviewer acceptance and four technical interpretations in review/PR evidence. Keep ND-F9-2/3/5, SK-009-08 and unanswered S33 MCQs unresolved unless closed by a cited PO record, defer production gates, never modify protected docs/spec policy or push/deploy as part of these tasks (FR-001..FR-014).
 
 ## Phase 9: S31 RED-first specification and PO-gate tests
 
-**Gate**: T036–T046 remain blocked until SK-009-05..SK-009-09 are answered and the approved
-owner/mutability/legacy/copy/downstream contracts are reconciled into `spec.md`, `plan.md`,
-`data-model.md` and `contracts/packages-surface.md`. T035 (read-only inventory) may run first only to
+**Historical S31 gate (superseded where S32-PO-4 applies)**: T036-T046 are superseded by T052-T063 for package lifecycle and FX-reporting scope. Remaining work is gated by SK-009-08 and applicable numbered S33 MCQs. Do not infer an answer from a test.
 inform the SK-009-05 decision. Do not infer an answer from a test.
 
 - [ ] T035 [P] Produce a read-only inventory of deployed/package-offer/package-version row counts and identifiers for the PO-approved legacy-classification request; attach the inventory to the PO record without classifying market/type from currency and without reading secrets or customer data (FR-015, FR-016, FR-019, FR-021).
@@ -110,9 +108,9 @@ inform the SK-009-05 decision. Do not infer an answer from a test.
 - [ ] T047 [P] Extend `tests/integration/rls-catalog.test.ts` and `tests/integration/matrix-parity.test.ts` for the new constraints/functions/grants/triggers/views, active-workspace market/type reads, PO-only mutation parity, Sales/Trainer commission denial and absence of a direct-write bypass (FR-014..FR-020).
 - [ ] T048 [P] Add permission/RLS/financial mutation checks in `specs/009-packages/quickstart.md` §5: independently remove the app PO wall, DB PO wall, market/currency check, legacy-classification guard, RLS scope and version immutability guard; each MUST make its focused negative test fail, then restore and rerun green (FR-014, FR-017..FR-021).
 - [ ] T049 [P] Run the S31 Frontend Design Gate for AR-RTL/EN-LTR × light/dark × mobile/desktop, including create/publish/review, invalid currency, loading/empty/error/save states, keyboard/focus and axe; attach real rendered screenshots and use only PO-approved bilingual copy (FR-012, FR-013, FR-017..FR-020).
-- [ ] T049a [US5] Update `tests/integration/packages-fixture.ts` and `tests/integration/packages-publish.test.ts` so new publications use an approved S31 currency (EGP for Egypt; USD or SAR for International), and update the audit assertion to match. Keep `XTS` only where a test reads pre-existing legacy rows (FR-017, FR-021).
+- [ ] T049a [US5] Update `tests/integration/packages-fixture.ts` and `tests/integration/packages-publish.test.ts` so new publications use an approved S31 currency (EGP for Egypt; USD or SAR for International), provide the S32-approved market/type inputs through the PO-approved owner/version assignment (S33-11), and update audit assertions to match. Keep `XTS` only where a test reads pre-existing legacy rows (FR-015..FR-017, FR-021). **BLOCKED:** physical assignment/payload awaits S33-11.
 - [ ] T050 Run the full unit/integration/e2e/typecheck/lint/format/build/secret gates from `specs/009-packages/quickstart.md`; scan all package/F10/F12 surfaces for exchange-rate, converted-amount and cross-currency-total fields; prove pre-existing package-version identifiers and stored terms are unchanged and record evidence (FR-009, FR-014, FR-017..FR-021).
-- [ ] T051 Independently review the exact implementation diff, mutations, design evidence and FR/SC traceability; record accepted SHA and keep SK-009-05..SK-009-09, ND-F9-2/3/5 and production gates open unless closed by a cited PO record (FR-001..FR-021).
+- [ ] T051 Independently review the exact implementation diff, mutations, design evidence and FR/SC traceability; record accepted SHA and keep SK-009-08, unanswered S33 MCQs, ND-F9-2/3/5 and production gates open unless closed by a cited PO record (FR-001..FR-021).
 
 ## Dependencies & execution order
 
@@ -124,7 +122,7 @@ inform the SK-009-05 decision. Do not infer an answer from a test.
 
 ## Implementation strategy
 
-One bounded Codex implementation pass in a worktree, then independent Claude review; no new delegation is prescribed. MVP service increment = foundation + US1 (canonical identity and immutable publication); finish US2/US3 for usable governed terms and safe staff reads, then US4 for complete management. The S31 delta (US5/US6, T035–T051) is blocked by SK-009-05..SK-009-09 and must not start before those answers are reconciled. No MVP omits required final gates or approved Full Launch scope. Each story's fixture checks can run without a completed management UI. Counts: 52 tasks (34 baseline + 18 S31); all S31 implementation tasks are PO-gated as listed.
+One bounded Codex implementation pass in a worktree, then independent Claude review; no new delegation is prescribed. MVP service increment = foundation + US1 (canonical identity and immutable publication); finish US2/US3 for usable governed terms and safe staff reads, then US4 for complete management. The S31 delta (US5/US6, T035–T051) is blocked by SK-009-05..SK-009-09 and must not start before those answers are reconciled. No MVP omits required final gates or approved Full Launch scope. Each story's fixture checks can run without a completed management UI. Counts: 64 tasks (34 baseline + 18 S31 + 12 S32); all S31 implementation tasks are PO-gated as listed.
 
 ## Analyze
 
@@ -159,8 +157,25 @@ execution or independent Claude approval is claimed.
 
 SC coverage: SC-001 → T010/T014/T018/T020/T027/T028/T033; SC-002 → T010/T032; SC-003 → T010/T014/T032; SC-004 → T010/T014/T032; SC-005 → T022/T023/T033; SC-006 → T005/T007/T010/T018; SC-007 → T036/T038; SC-008 → T037/T038; SC-009 → T037/T041/T050; SC-010 → T038/T039/T047; SC-011 → T035/T038/T050; SC-012 → T041/T045/T049. Historical F10/F12 references are a contract-only boundary, verified as immutable/restrictive schema in T010/T027 and reviewed in T034; the SK-009-09 downstream delta is a separate, PO-gated task (T046).
 
-**Result**: PASS for artifact consistency. 21/21 FRs have implementation/verification coverage and explicit tests (100%); 12/12 SCs mapped; 52/52 tasks map to at least one FR; 0 unmapped tasks; 0 CRITICAL/HIGH findings; 0 unresolved contradictory requirements or duplicate requirement definitions. Constitution check and story priorities match plan. No placeholders or invented policy values. Required tests are future tasks, not claimed passing runs. Five PO blockers remain open (SK-009-05..SK-009-09) and are listed as blockers, not resolved.
+**Historical S31 result**: The preceding analysis covered FR-001..FR-021 and 52 tasks. It is superseded by the fresh S33 analysis in `checklists/analyze.md`; it does not assess S32-PO-4 additions.
 
 **Ambiguities recorded and handled**: fixed signature lacks request key → exact current-only payload replay; older-term revert creates N+1, moves current and emits one event; shared authenticated SQL role → safe invoker view/column grants plus explicit PO/WO commission RPC; initial availability unspecified → false until explicit PO toggle; same-day custom/preset conflict → fixed representation and invalid_input; market/type owner, legacy classification, promotional behavior, approved copy and downstream currency are not resolved and remain NEEDS PO. Reviewer must assess these explicit interpretations without silently changing binding rules.
 
 **Next action**: implement only after artifact handoff and PO answers, then independent reviewer Phase 8. No application code was produced by this analysis.
+
+## S32-PO-4 Spec Kit tasks (all unchecked; artifact-only cycle)
+
+- [ ] T052 [FR-022, SC-013] RED first: write migration/audit integration tests proving complete legacy inventory, zero inferred market/type, editable PO-designated defaults, no loss, and count reconciliation. **BLOCKED:** S33-01 mapping/default definition.
+- [ ] T053 [FR-022, FR-023, SC-013, SC-014] Audit existing package origin references; prove version identity is unique across **ALL origin refs** (S32-R1); prepare explicit PO mapping and forward-only migration plan. **BLOCKED:** S33-01, S33-11. Do not create SQL until separately authorized.
+- [ ] T054 [FR-023, SC-014] RED first: package CRUD/rename/price/market/type role and version tests; assert edits append versions, preserve prior terms and all downstream financial snapshots, and only PO can mutate. **BLOCKED:** S33-02, S33-07, S33-11.
+- [ ] T055 [FR-023, SC-014] Implement PO management UI/actions and safe retirement/delete semantics; preserve financial history and default-package editability. **BLOCKED:** S33-01, S33-02, S33-07, S33-11.
+- [ ] T056 [FR-024, SC-015] RED first: promotional optional-date, timezone/boundary, auto-expiry, manual deactivation and issued-link lifecycle tests. **BLOCKED:** S33-03, S33-05, S33-06.
+- [ ] T057 [FR-024, SC-015] Add idempotent scheduled expiry using existing cron-worker pattern, audit transitions and PO controls. **BLOCKED:** S33-05, S33-06.
+- [ ] T058 [FR-025, FR-026, SC-016, SC-017] RED first: transaction-date FX snapshot, exact rate representation, immutable historical rate, idempotent retry, weekend fallback and EGP identity tests. **BLOCKED:** S33-03, S33-04, S33-10, S33-12.
+- [ ] T059 [FR-026, FR-027, SC-017, SC-018] Implement server-only FX provider adapter, validated response, safe failure/retry states and request-data minimization. **BLOCKED:** S33-08, S33-09; security review required before acceptance.
+- [ ] T060 [FR-025, SC-016, SC-018] RED first: reports distinguish original transaction, reported EGP revenue/commission and actual settlement; role tests retain PO/WO-only commission access and deny Sales/Trainer. **BLOCKED:** S33-10, S33-12; SK-009-08 for labels.
+- [ ] T061 [FR-025..FR-027, SC-016..SC-018] Frontend Design Gate for PO package management and financial reporting: AR/EN only after PO-approved SK-009-08 copy, RTL/LTR, theme, responsive, accessibility, loading/empty/error/save/FX-pending states; attach rendered screenshots. **BLOCKED:** SK-009-08, S33-09, S33-12.
+- [ ] T062 [FR-026, FR-027, SC-017, SC-018] Independent security review of FX egress/provider contract, response validation, secret isolation, SSRF/network policy, data minimization, audit retention and failure behavior. **BLOCKED:** S33-08, S33-09.
+- [ ] T063 [FR-022..FR-027, SC-013..SC-018] Re-run Spec Kit Analyze and full approved implementation gates after PO answers; verify all-origin-reference version uniqueness, immutable history and all role/security matrices. **BLOCKED:** all applicable MCQs and SK-009-08.
+
+No task is complete or ticked by this documentation-only cycle. RED-first describes future test-first order; no tests were created or run here.

@@ -118,8 +118,18 @@ This records the supplied architect decisions against repository evidence; it do
 
 - **Closed**: ND-F9-1 (market-conditional currencies/no conversion), ND-F9-4 (Sales/Trainer
   commission denied), the PO/WO authorship conflict and package-count cap.
-- **Open implementation blockers**: SK-009-05..SK-009-09, with MCQs, implications,
+- **Open implementation blockers**: SK-009-08 and unanswered S33 MCQs; legacy audit and product scope are answered by S32-PO-4. Earlier S31 MCQs remain historical context, not current blockers. MCQs, implications,
   recommendations and blocked work in the run PO packet.
 - **Retained**: ND-F9-2, ND-F9-3 and ND-F9-5 remain as previously recorded.
 
-See [spec.md](spec.md#po-decision-register-and-needs-decision). No open S31 item is resolved here.
+See [spec.md](spec.md#po-decision-register-and-needs-decision) and the S33 MCQs. S32-PO-4 closes the business scope for SK-009-05/06/07/09; detailed MCQs and SK-009-08 remain open.
+
+## R15 ? S32-PO-4 package lifecycle and reporting
+
+S32-PO-4 closes the previous product blockers for audit-safe legacy migration, editable defaults, full PO package management, promotional date/expiry support, and historical FX-based EGP reporting. S31-PO-5 and SK-009-04 remain unchanged. The decision explicitly requires original-currency preservation, immutable historical rates, safe API-failure handling, and distinct reported revenue versus actual settlement.
+
+The approved scope does not identify which existing rows are defaults, a mapping, delete semantics for referenced identities, transaction-date timezone, non-business-day fallback, provider verification criteria, failure state, EGP identity-rate handling, expiry boundaries/link effects, exact market/type storage, or report basis. These are enumerated in `spec.md` S33-01..S33-12 and remain PO blockers. No technical option is promoted to a requirement.
+
+## R16 ? External FX API and constitutional data constraint
+
+Constitution platform constraints restrict AI model routing and require synthetic data in development/testing under S31-PO-8. FX rate retrieval is a runtime third-party data API, not an AI call; the inspected constitution contains no blanket prohibition on such an API. FR-027 therefore requires server-side data minimization: send currency pair/date only (subject to provider contract), never client/workspace/transaction payload. Provider verification and availability criteria remain S33-08 decisions. No client data or secrets are included in development fixtures or outbound calls.

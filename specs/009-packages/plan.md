@@ -48,7 +48,7 @@ Gate before research, rechecked after design against Constitution v1.4.0 and the
 
 **Post-design re-check**: no constitutional exception. Document validation does not approve
 implementation or production. S31 closes ND-F9-1 and ND-F9-4 and resolves the authorship conflict;
-SK-009-05..SK-009-09 remain explicit implementation blockers. Technical interpretations in research
+SK-009-08 and unanswered S33 MCQs remain explicit implementation blockers. S32-PO-4 closes the business scope for SK-009-05/06/07/09; field placement and detailed operational semantics remain gated. Technical interpretations in research
 R4/R5/R9 remain visible for review.
 
 ## S31 shipped-baseline delta (2026-11-04)
@@ -57,8 +57,8 @@ R4/R5/R9 remain visible for review.
 
 | Surface | Shipped behavior | S31 delta |
 |---|---|---|
-| `public.packages` | Global immutable canonical code; no market/type/count quota | Keep global identity immutable. Do not add market/type here unless SK-009-06 explicitly selects this owner. |
-| `public.package_offers` | Workspace/package/duration offer; availability + current version; unique `(workspace_id, package_id, duration_days)` | Candidate owner for market/type, conditional on SK-009-06. No package-count cap is added. |
+| `public.packages` | Global immutable canonical code; no market/type/count quota | Keep identity historically recoverable; package rename/edit semantics follow FR-023 and S33-11. |
+| `public.package_offers` | Workspace/package/duration offer; availability + current version; unique `(workspace_id, package_id, duration_days)` | Possible versioned projection; exact representation gated by S33-11. No package-count cap is added. |
 | `public.package_versions` | Immutable AR/EN terms, `price_minor`, `currency`, commission and duration | Keep every existing version's identifier and stored price/currency/commission/duration terms unchanged (SC-011). Currency remains version-owned. Add no historical backfill. |
 | `publish_package_version(...)` | PO-only; accepts any format-valid three-letter currency; no market/type input | Add approved market/type inputs at the selected owner and enforce the market/currency matrix in both validation walls. Preserve replay/concurrency semantics. |
 | `package_versions_safe` / app reads | Returns each version's own price and currency | Add approved market/type projections if they belong to an existing immutable/read surface; never calculate or join a converted amount. |
@@ -98,7 +98,7 @@ R4/R5/R9 remain visible for review.
 | SK-009-08 bilingual copy | i18n keys, UI and exact-copy fixtures | Layout/accessibility scenarios can use PO-approved placeholders only in test design. |
 | SK-009-09 downstream currency | F10/F12 contract/test changes | Current same-currency evidence can be documented; no new propagation rule is asserted. |
 
-**Implementation readiness**: BLOCKED until SK-009-05..SK-009-09 are explicitly answered. This
+**Implementation readiness**: S32 package lifecycle/FX scope is specified; affected implementation remains BLOCKED by SK-009-08 and applicable numbered S33 MCQs. This
 plan does not make those product decisions.
 
 ## Design
@@ -207,3 +207,16 @@ tests/e2e/packages.spec.ts
 ## Complexity Tracking
 
 No Constitution violation or exemption. Safe view plus narrow commission RPC is required by shared SQL-role grants; a full-table grant leaks rates. Same-offer composite FK prevents a pointer bug the workspace pair alone permits. Replay identity, initial unavailability and duration representation are explicit technical interpretations, not policy resolutions.
+
+## S32-PO-4 design delta (conditional on Clarifications MCQs)
+
+The S32-PO-4 scope supersedes prior S31 blocker text for legacy audit/migration (SK-009-05), full per-workspace PO management (SK-009-06), promotional date/expiry support (SK-009-07), and historical FX reporting (SK-009-09). Existing S31 market/type owner alternatives are not selected until S33-11; implementation tasks that depend on physical field placement stay BLOCKED.
+
+- **Legacy audit/migration:** inventory all existing packages, identify PO-designated defaults, preserve row identity and references, and apply only explicit PO-approved classifications. No currency inference or silent defaults. Preserve editability of defaults.
+- **Versioned management:** PO-only CRUD and rename/price/market/type changes; published terms are immutable, edits append versions, and no downstream snapshot is rewritten. Delete implementation remains conditional on S33-02; never hard-delete referenced historical financial data.
+- **Promotional lifecycle:** optional window fields and a scheduled expiry/deactivation worker. Window basis, timezone/boundary, link interaction and manual/automatic precedence stay BLOCKED on S33-03/05/06.
+- **Historical FX:** add immutable transaction-date FX snapshot records with source, base/quote, rate, effective date and fetch/audit metadata; server-side fetch through existing cron-worker pattern; unique transaction/date/currency key and idempotent retries. Never recompute snapshots. Exact table key and rate-date/failure semantics stay BLOCKED on S33-03/04/08/09/10/12.
+- **Security:** outbound provider request is server-only, least-data, no client/workspace/transaction payload; add security review of egress, response validation, secret handling, retention and provider provenance. Constitution S31-PO-8 constrains development AI data only and does not prohibit the runtime FX API; no real client data is used in development fixtures.
+- **Reporting:** show reported EGP values and actual settlement separately. Preserve original transaction currency and existing commission restrictions (PO/WO visibility only; Sales/Trainer denied). Report source/basis and labels remain BLOCKED where MCQs/SK-009-08 require PO decisions.
+
+No migration file, SQL, application implementation, test, build or stack operation is part of this artifact-only cycle.

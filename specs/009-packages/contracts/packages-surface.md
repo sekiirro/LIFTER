@@ -166,3 +166,11 @@ No new dependencies or environment variables. Existing server-only modules and t
 ## Downstream F10/F12 boundary
 
 Token issuance binds `(workspace_id, package_version_id)` selected server-authoritatively from an available offer/current version. Purchase snapshots copy version id, canonical identity, price_minor, currency, commission_rate_bp and duration. Subscriptions also snapshot installment schedule, whose total equals approved price (D-17). Commission is earned only on confirmed collections at snapshot rate (D-13). Under the recommended SK-009-09 option, each downstream monetary record keeps the package version's own currency and no conversion occurs. F9 implements none of these downstream records or financial calculations; it supplies immutable terms and restrictive composite identities. Disabling an offer does not mutate existing versions or historical references.
+
+## S32-PO-4 package management and FX contract delta (PO-gated)
+
+The PO-only management surface must expose create/edit/delete/rename/price/market/type changes per workspace. Every change affecting a published term creates a new immutable version; historical package versions, registration-link/subscription snapshots and financial records are never rewritten. S31-PO-5 authoring limits and SK-009-04 commission denial remain in force. Exact RPC payload and market/type placement are blocked on S33-11; deletion is blocked on S33-02. No user-facing market/type copy is added while SK-009-08 remains open.
+
+Promotional records may carry optional start/end dates and support automatic expiry or manual deactivation. Window timezone, boundary, precedence and already-issued link effects are blocked on S33-03/05/06. Scheduled actions must be idempotent and audited, and must not rewrite issued snapshots.
+
+Historical FX reporting is additive and does not change source transaction/settlement currency. Server-side provider retrieval creates an immutable, idempotent transaction-date rate snapshot. Reported revenue/commission in EGP is distinct from actual settlement; prior snapshots are never recalculated. Sales/Trainer continue to receive no commission values, including converted values. Request payload excludes client and workspace data. Provider, date basis, weekend fallback, EGP identity-rate, failure state, report source and projection are blocked on S33-03/04/08/09/10/12.

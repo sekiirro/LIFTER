@@ -14,9 +14,9 @@
 
 ## Requirement Completeness
 
-- [x] No clarification is silently resolved; five S31 PO blockers (SK-009-05..SK-009-09) are explicitly listed and marked NEEDS PO.
-- [x] FR-001..FR-021 are testable with boundaries and deny-by-default outcomes; S31 FRs carry their PO gates.
-- [x] SC-001..SC-012 are measurable observable outcomes.
+- [x] No clarification is silently resolved; S32-PO-4 is quoted and only unresolved matters are explicit PO MCQs; SK-009-08 remains open.
+- [x] FR-001..FR-027 are testable with boundaries and deny-by-default outcomes; S32 additions carry explicit PO gates.
+- [x] SC-001..SC-018 are measurable observable outcomes.
 - [x] All stories have acceptance scenarios, priority/rationale and independent fixture tests.
 - [x] Validation, replay, concurrency, foreign-workspace, commission and privileged-DML edge cases identified.
 - [x] Scope excludes F10/F12 implementation, seeds and unapproved financial policy.
@@ -32,6 +32,6 @@
 
 ## Notes
 
-Following 004-auth, owner sub-decisions are NEEDS DECISION rather than blocking clarification markers. S31 closes ND-F9-1 (market-conditional currencies/no conversion) and ND-F9-4 (Sales/Trainer commission denied), and resolves the authorship conflict and package-count question. ND-F9-2/3/5 and SK-009-05..SK-009-09 remain unresolved; SK-009-05..09 block the S31 implementation. No unlisted ambiguity is treated as resolved.
+Following 004-auth, owner sub-decisions are NEEDS DECISION rather than blocking clarification markers. S31 closes ND-F9-1 (market-conditional currencies/no conversion) and ND-F9-4 (Sales/Trainer commission denied), and resolves the authorship conflict and package-count question. ND-F9-2/3/5, SK-009-08 and S33-01..12 remain open where identified; S32-PO-4 closes the prior business blockers for SK-009-05/06/07/09 without answering the enumerated operational MCQs. No unlisted ambiguity is treated as resolved.
 
-Four technical interpretations are explicit: exact-payload replay under fixed signature, safe view plus PO/WO rate RPC for shared authenticated role, initially unavailable offers, and fixed preset/custom representation per day key. None resolves the policy NDs. Validation result: PASS for artifact quality/coverage. Implementation tasks remain unchecked because no application code/tests run here.
+S32-PO-4 Clarifications add twelve explicit PO MCQs. Four baseline technical interpretations are explicit: exact-payload replay under fixed signature, safe view plus PO/WO rate RPC for shared authenticated role, initially unavailable offers, and fixed preset/custom representation per day key. None resolves the policy NDs. Validation result: PASS for artifact quality/coverage. Implementation tasks remain unchecked because no application code/tests run here.

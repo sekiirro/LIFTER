@@ -5,7 +5,7 @@ The shipped baseline is `supabase/migrations/20261029120000_packages.sql` (PR #9
 migration. The S31 delta is a **new** forward migration,
 `supabase/migrations/20261106125000_f9_package_markets_types_currency.sql` (provisional filename
 until implementation), with the final legacy
-policy and owner/mutability decisions still gated by SK-009-05..SK-009-09.
+legacy migration/business scope is approved by S32-PO-4; physical owner/version model and operational details remain gated by SK-009-08 and S33 MCQs.
 
 The shipped baseline extended `app_private.audit_row_change()` from its latest complete body in
 `20261028120000_auth_recovery_links.sql`, preserving workspace, staff, membership, jobs and recovery
@@ -232,3 +232,23 @@ Offer insertion and current-pointer-only updates produce no offer event. Replays
 ## Historical contract and transitions
 
 Canonical package → fixed workspace offer → append-only version sequence. New offer: absent → unavailable/version 1/current pointer, atomically. Subsequent publish changes only pointer, never availability. Availability true/false changes independently, preserving versions. All relations remain restrictive and workspace-composite where tenant-owned. F10 tokens and F12 subscriptions must reference `(workspace_id, package_version_id)` and snapshot price/currency/rate/duration at purchase; later publications cannot update them. Those tables and commission accrual/installment arithmetic (D-13/D-17) are out of scope.
+
+## S32-PO-4 data-model delta ? design only, PO-gated
+
+### Legacy catalog and versioned package management
+
+Add a mandatory audit inventory before any forward migration: stable package/offer/version IDs, current/default status as explicitly identified by the PO, reference counts across links/subscriptions/transactions, classification source, and migration disposition. Do not infer any value from price/currency, label, usage frequency or workspace. Default-package identity and mapping format are BLOCKED by S33-01. Preserve package editability after migration.
+
+Management writes are PO-only. Changes to any published term append a version and preserve all former versions and downstream snapshots. Physical placement of market/type, rename identity semantics and the versioned payload remain BLOCKED by S33-07/S33-11. Deletion must retain historical records; referenced-package behavior is BLOCKED by S33-02. No hard delete of financial records or referenced identity is allowed by the binding preservation requirement.
+
+### FX snapshot entity (conceptual; implementation blocked on MCQs)
+
+Proposed immutable snapshot fields: `transaction_id`, `transaction_currency`, `transaction_amount_minor`, `reporting_currency` (EGP), `rate_numerator`/`rate_denominator` or exact decimal representation, `transaction_date_basis`, `transaction_date`, `provider_rate_date`, `provider_id`, `retrieved_at`, `snapshot_created_at`, and a provenance/hash or response reference that contains no client data. Snapshot association is one record per transaction and selected transaction-date basis; exact key, precision/rounding, provider response retention and retry semantics require S33-03/04/08/09/10/12 decisions. Existing source transaction currency/amount is authoritative and immutable.
+
+Store reported EGP revenue/commission separately from actual settlement amount/currency and settlement event/status. Never overwrite actual settlement with the reported converted value. Display both with clear distinction; copy and report-source semantics await S33-12 and SK-009-08.
+
+### Fetch/expiry jobs, audit and idempotency
+
+Use the existing cron-worker pattern for provider fetches and automatic promotional expiration; do not add a new scheduling platform. FX fetch is server-only, validates provider identity/date/currency/rate, uses idempotency key `(transaction_id, transaction_date_basis, transaction_date, reporting_currency)`, and records attempt state without inventing a rate. Job frequency, failure state, retry/backoff, same-day identity and end-boundary behavior are PO-gated by S33-03..10. Audit successful PO management edits/retirement and FX snapshot provenance without client data or provider secrets; audit event allowlists and financial retention need security review.
+
+The constitutional external-model rule applies to development AI handling. S31-PO-8 requires synthetic data for development/testing; the FX provider is a runtime data API, not an AI model. Outbound runtime calls still send no client data (FR-027).

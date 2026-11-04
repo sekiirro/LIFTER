@@ -70,8 +70,8 @@ Only in isolated disposable local stack/worktree, with rollback or scratch uncom
 
 ## 5. S31 future validation gate
 
-Do not run the S31 implementation until SK-009-05..SK-009-09 are explicitly answered and the
-selected owner/mutability/legacy/copy/downstream contracts are recorded in the spec and plan. The
+S31 work is superseded by the S32 task delta where applicable. Do not implement the S32 delta until SK-009-08 and applicable S33 MCQs are answered and the
+the selected version/storage model, legacy mapping, copy, provider, reporting and date-boundary decisions are recorded in the spec and plan. The
 future validation must then include:
 
 - RED-first unit fixtures for the complete Egypt/International × EGP/USD/SAR matrix, invalid enum
@@ -101,4 +101,10 @@ the matrix is a blocking failure.
 
 ## 6. Evidence and handoff
 
-Claude independently records commands/counts/mutation results in review/PR evidence and checks FR/SC coverage in tasks.md Analyze. Preserve the retained NDs, all explicit SK-009-05..SK-009-09 PO gates and documented replay/initial state/duration representation interpretations. No push/deployment authorized by this runbook. When synthetic data is no longer needed, stop only the disposable stack with `npx supabase@2.122.0 stop --no-backup`.
+Claude independently records commands/counts/mutation results in review/PR evidence and checks FR/SC coverage in tasks.md Analyze. Preserve retained NDs, SK-009-08, unanswered S33 MCQs and documented replay/initial state/duration representation interpretations. No push/deployment authorized by this runbook. When synthetic data is no longer needed, stop only the disposable stack with `npx supabase@2.122.0 stop --no-backup`.
+
+## 7. S32-PO-4 implementation gate (future; no tests run in this artifact cycle)
+
+Do not implement tasks tagged BLOCKED until the relevant numbered S33 MCQ is answered by the PO and reflected in a fresh Clarifications entry. Required future RED-first coverage includes: complete legacy audit reconciliation/no inferred classification/editable defaults; immutable version append on every package-term edit and unchanged downstream snapshots; referenced-delete preservation; promotional date boundaries/expiry/manual deactivation/issued-link behavior; FX rate-date selection, immutable per-transaction snapshot and idempotent retries; safe timeout/invalid/missing-rate behavior; reported EGP versus actual settlement; no client data in captured provider requests; and role matrices proving Sales/Trainer never receive original or converted commissions.
+
+Future migration task must verify uniqueness of the package version across **ALL origin references** (S32-R1) before consolidation or mapping; never rely on one current workspace/version pointer as a uniqueness proof. Use only synthetic records in development/testing (S31-PO-8). No production audit, migration or third-party request is authorized by this artifact-only cycle.

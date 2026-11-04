@@ -54,3 +54,16 @@ T038/T039/T047; SC-011 → T035/T038/T050; SC-012 → T041/T045/T049. No S31 SC 
 SK-009-05 (legacy classification), SK-009-06 (owner/mutability), SK-009-07 (promotional behavior),
 SK-009-08 (approved AR/EN copy) and SK-009-09 (downstream currency). See the `## PO decision register`
 in [spec.md](spec.md).
+
+## S32-PO-4 FRs (new; no implementation evidence)
+
+| FR | Task(s) | Planned evidence | Status |
+|---|---|---|---|
+| FR-022 legacy audit/no inference/editable defaults | T052, T053, T063 | audit inventory reconciliation + migration tests | BLOCKED: S33-01 |
+| FR-023 PO package CRUD/version preservation | T053?T055, T063 | management/RPC role tests, immutable version + downstream snapshot tests | BLOCKED: S33-02, S33-07, S33-11 |
+| FR-024 promotional dates/expiry/deactivation | T056, T057, T061 | pure date-boundary tests, scheduler/idempotency/link lifecycle tests | BLOCKED: S33-03, S33-05, S33-06, SK-009-08 |
+| FR-025 original currency/EGP reporting/settlement distinction | T058, T060 | report fixtures and immutable settlement/snapshot assertions | BLOCKED: S33-03, S33-10, S33-12, SK-009-08 |
+| FR-026 API fetch, immutable rate snapshot and safe failures | T058, T059, T062 | provider contract/failure/retry/security tests | BLOCKED: S33-03, S33-04, S33-08, S33-09, S33-10 |
+| FR-027 no client data in outbound API request | T059, T062 | captured request allowlist test + security review | Planned, no evidence |
+
+SC-013..SC-018 map respectively to T052/T053, T054/T055, T056/T057, T058/T060, T058/T059, and T059/T060/T062. No task is ticked. Existing rows above retain their S31 evidence status; this cycle ran no tests/builds/stacks and claims no implementation evidence.
