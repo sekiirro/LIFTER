@@ -3,6 +3,7 @@ import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { randomInt, randomUUID } from 'node:crypto';
+import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { expectHeroAxeClean } from './registration-hero-evidence';
 
@@ -14,6 +15,12 @@ const s31ScreenshotDirectory =
   process.env.HERO_R17_SCREENSHOT_DIR ??
   join(tmpdir(), 'lifter-s31-hero-r18', 'signup-states');
 const screenshotDirectory = s31ScreenshotDirectory;
+type SignupTestMessages = ReturnType<typeof getMessages> & {
+  'clientSignup.dateOfBirth': string;
+  'clientSignup.username': string;
+  'clientSignup.telegramUsername': string;
+  'clientSignup.optional': string;
+};
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
