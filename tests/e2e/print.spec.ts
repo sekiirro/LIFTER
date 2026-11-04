@@ -1,4 +1,4 @@
-import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
+import { getTestCookieOrigin } from './test-origin.mjs';
 import { copyFile, mkdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';

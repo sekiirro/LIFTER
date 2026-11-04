@@ -1,8 +1,4 @@
-import {
-  getTestCookieOrigin,
-  buildLoginRedirectUrl,
-  testOrigin,
-} from './test-origin.mjs';
+import { getTestCookieOrigin, buildLoginRedirectUrl } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE } from '../../lib/design/preferences';

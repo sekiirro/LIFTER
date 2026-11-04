@@ -1,4 +1,4 @@
-import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
+import { getTestCookieOrigin } from './test-origin.mjs';
 import { expect, test, type Locator } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { copyFile, mkdir } from 'node:fs/promises';
