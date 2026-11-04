@@ -47,6 +47,24 @@ function optionText(
   return copy ? localizedFormCopy(copy, locale) : value;
 }
 
+export function PreviewDerivedMealLabel({
+  locale,
+  option,
+}: {
+  locale: Locale;
+  option: string;
+}) {
+  const template = getMessages(locale)['forms.afterMealNumber'];
+  const [before, after = ''] = template.split('{number}');
+  return (
+    <>
+      {before}
+      <Bidi dir="ltr">{option.slice(5)}</Bidi>
+      {after}
+    </>
+  );
+}
+
 export function matchesPreviewCondition(
   condition: ApplicabilityCondition,
   answers: FormAnswerSet,
@@ -273,13 +291,17 @@ function PreviewQuestion({
             question.type === 'multiChoice' ? 'checkbox' : 'radio';
           const checked = selectedValues.includes(option);
           const translated =
-            question.type === 'derivedChoice' && option.startsWith('meal-')
-              ? `${messages['forms.staffMealNumber']} ${option.slice(5)}`
-              : question.type === 'boolean'
-                ? option === 'yes'
-                  ? messages['forms.staffBoolean.yes']
-                  : messages['forms.staffBoolean.no']
-                : optionText(question, option, locale);
+            question.type === 'derivedChoice' && option.startsWith('meal-') ? (
+              <PreviewDerivedMealLabel locale={locale} option={option} />
+            ) : question.type === 'boolean' ? (
+              option === 'yes' ? (
+                messages['forms.staffBoolean.yes']
+              ) : (
+                messages['forms.staffBoolean.no']
+              )
+            ) : (
+              optionText(question, option, locale)
+            );
           if (question.type === 'multiChoice') {
             return (
               <Button

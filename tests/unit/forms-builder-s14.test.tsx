@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest';
 import { FormBuilder } from '../../components/forms/FormBuilder';
 import {
   FormPreview,
+  PreviewDerivedMealLabel,
   matchesPreviewCondition,
   localizedFormCopy,
   previewInputValue,
@@ -211,6 +212,19 @@ describe('S14 staff form Builder', () => {
 });
 
 describe('FormPreview conditions', () => {
+  it('formats derived meal numbers with the approved template and Bidi isolation', () => {
+    for (const locale of ['ar', 'en'] as const) {
+      const html = renderToStaticMarkup(
+        createElement(PreviewDerivedMealLabel, {
+          locale,
+          option: 'meal-2',
+        }),
+      );
+      expect(html).toContain('<bdi dir="ltr">2</bdi>');
+      expect(html).not.toContain('٢');
+    }
+  });
+
   it('keeps numeric answer values visible in controlled preview inputs', () => {
     expect(previewInputValue(72.5)).toBe('72.5');
     expect(previewInputValue(['72.5'])).toBe('');
