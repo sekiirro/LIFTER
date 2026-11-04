@@ -1,14 +1,15 @@
-import { defineConfig, devices } from '@playwright/test';
+﻿import { defineConfig, devices } from '@playwright/test';
 import { randomUUID } from 'node:crypto';
 import { writeFileSync } from 'node:fs';
 import { tmpdir } from 'node:os';
 import { join } from 'node:path';
+import { testOrigin } from './tests/e2e/test-origin.mjs';
 
 const isFirstEvaluation = !process.env.U8_SERVER_LOG_RUN_ID;
 const serverLogRunId =
   process.env.U8_SERVER_LOG_RUN_ID ??
   (process.env.U8_SERVER_LOG_RUN_ID = randomUUID());
-const baseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const baseURL = testOrigin;
 const serverLogManifestPath = join(
   tmpdir(),
   `lftr-u8-${serverLogRunId}.manifest.json`,

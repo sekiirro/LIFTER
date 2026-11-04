@@ -1,3 +1,4 @@
+import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { copyFile, mkdir, writeFile } from 'node:fs/promises';
@@ -6,7 +7,7 @@ import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 import type { RegistrationFixture } from '../integration/registration-links-fixture';
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const origin = process.env.PLAYWRIGHT_BASE_URL ?? testOrigin;
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
@@ -128,8 +129,16 @@ for (const locale of ['ar', 'en'] as const) {
         test.skip(!local, 'Requires the selected disposable local database.');
         await page.setViewportSize(viewport);
         await context.addCookies([
-          { name: LOCALE_COOKIE, value: locale, url: origin },
-          { name: THEME_COOKIE, value: theme, url: origin },
+          {
+            name: LOCALE_COOKIE,
+            value: locale,
+            url: getTestCookieOrigin(origin),
+          },
+          {
+            name: THEME_COOKIE,
+            value: theme,
+            url: getTestCookieOrigin(origin),
+          },
         ]);
         await page.addInitScript(() => {
           const browserWindow = window as Window & {
@@ -252,8 +261,8 @@ test('invalid registration remains generic, neutral, and form-free', async ({
 }, testInfo) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await context.addCookies([
-    { name: LOCALE_COOKIE, value: 'en', url: origin },
-    { name: THEME_COOKIE, value: 'light', url: origin },
+    { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
+    { name: THEME_COOKIE, value: 'light', url: getTestCookieOrigin(origin) },
   ]);
   await page.goto('/register/not-a-token');
   await expect(page.locator('main h1')).toHaveText(

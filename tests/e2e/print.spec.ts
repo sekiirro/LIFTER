@@ -1,3 +1,4 @@
+import { getTestCookieOrigin } from './test-origin.mjs';
 import { copyFile, mkdir, stat } from 'node:fs/promises';
 import path from 'node:path';
 import { expect, test } from '@playwright/test';
@@ -8,8 +9,8 @@ test('Arabic print sample hides screen controls and exports its PDF', async ({
   context,
 }, testInfo) => {
   await context.addCookies([
-    { name: LOCALE_COOKIE, value: 'ar', url: 'http://localhost:3000' },
-    { name: THEME_COOKIE, value: 'dark', url: 'http://localhost:3000' },
+    { name: LOCALE_COOKIE, value: 'ar', url: getTestCookieOrigin() },
+    { name: THEME_COOKIE, value: 'dark', url: getTestCookieOrigin() },
   ]);
   const response = await page.goto('/print-sample');
   expect(response?.status()).toBe(200);

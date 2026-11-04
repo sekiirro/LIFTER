@@ -1,3 +1,4 @@
+import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
@@ -5,7 +6,7 @@ import { tmpdir } from 'node:os';
 import { join } from 'node:path';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const origin = process.env.PLAYWRIGHT_BASE_URL ?? testOrigin;
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
@@ -64,8 +65,16 @@ for (const locale of ['ar', 'en'] as const) {
         await page.setViewportSize(viewport);
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await context.addCookies([
-          { name: LOCALE_COOKIE, value: locale, url: origin },
-          { name: THEME_COOKIE, value: theme, url: origin },
+          {
+            name: LOCALE_COOKIE,
+            value: locale,
+            url: getTestCookieOrigin(origin),
+          },
+          {
+            name: THEME_COOKIE,
+            value: theme,
+            url: getTestCookieOrigin(origin),
+          },
         ]);
         await page.addInitScript(() => {
           (window as Window & { __f14Shifts?: number }).__f14Shifts = 0;

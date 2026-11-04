@@ -11,7 +11,7 @@ import {
 import { localSupabaseContainer } from '../integration/local-docker';
 
 describe('isolated local Supabase stack contract', () => {
-  it('requires local selection and supports explicit A-D profiles in CI', () => {
+  it('requires local selection and supports explicit A-D and CI profiles', () => {
     const ciEnv = { CI: 'true' } as Parameters<typeof selectStack>[0];
     const ciWithA = { ...ciEnv, LIFTER_SUPABASE_STACK: 'a' };
 
@@ -22,6 +22,7 @@ describe('isolated local Supabase stack contract', () => {
     expect(selectStack({ LIFTER_SUPABASE_STACK: 'b' })).toBe('b');
     expect(selectStack({ LIFTER_SUPABASE_STACK: 'c' })).toBe('c');
     expect(selectStack({ LIFTER_SUPABASE_STACK: 'd' })).toBe('d');
+    expect(selectStack({ LIFTER_SUPABASE_STACK: 'ci' })).toBe('ci');
     expect(() => selectStack({ LIFTER_SUPABASE_STACK: '' })).toThrow(
       /Set LIFTER_SUPABASE_STACK/,
     );
@@ -66,6 +67,46 @@ describe('isolated local Supabase stack contract', () => {
 
       expect(loadSelectedStackEnv(env, root)).toBe('b');
       expect(selectStack(env)).toBe('b');
+    } finally {
+      rmSync(root, { recursive: true, force: true });
+    }
+  });
+
+  it('isolates the CI profile from stacks A-D while validating its ports', () => {
+    const root = mkdtempSync(join(tmpdir(), 'lifter-stack-ci-'));
+    try {
+      const supabase = join(root, 'supabase');
+      mkdirSync(supabase, { recursive: true });
+      const config = getStackConfig('a')
+        .configText.replace(
+          'project_id = "lifter"',
+          'project_id = "lifter-stack-ci"',
+        )
+        .replace('54320', '55420')
+        .replace('54321', '55421')
+        .replace('54322', '55422')
+        .replace('54323', '55423')
+        .replace('54324', '55424')
+        .replace('54325', '55425')
+        .replace('54326', '55426')
+        .replace('54327', '55427')
+        .replace('54329', '55429')
+        .replace('8083', '55428');
+      writeFileSync(join(supabase, 'config.toml'), config);
+
+      const ci = getStackConfig('ci', root);
+      expect(ci.projectId).toBe('lifter-stack-ci');
+      expect(ci.ports).toEqual([
+        55421, 55422, 55420, 55423, 55424, 55425, 55426, 55427, 55428, 55429,
+      ]);
+      expect(
+        assertLocalStackTarget({
+          stack: 'ci',
+          root,
+          apiUrl: 'http://127.0.0.1:55421',
+          dbUrl: 'postgres://postgres:postgres@127.0.0.1:55422/postgres',
+        }).projectId,
+      ).toBe('lifter-stack-ci');
     } finally {
       rmSync(root, { recursive: true, force: true });
     }
@@ -155,12 +196,37 @@ describe('isolated local Supabase stack contract', () => {
 
   it('names local Docker containers from the selected stack project', () => {
     const previous = process.env.LIFTER_SUPABASE_STACK;
+    const root = mkdtempSync(join(tmpdir(), 'lifter-stack-container-'));
     try {
+      const supabase = join(root, 'supabase');
+      mkdirSync(supabase, { recursive: true });
+      const config = getStackConfig('a')
+        .configText.replace(
+          'project_id = "lifter"',
+          'project_id = "lifter-stack-ci"',
+        )
+        .replace('54320', '55420')
+        .replace('54321', '55421')
+        .replace('54322', '55422')
+        .replace('54323', '55423')
+        .replace('54324', '55424')
+        .replace('54325', '55425')
+        .replace('54326', '55426')
+        .replace('54327', '55427')
+        .replace('54329', '55429')
+        .replace('8083', '55428');
+      writeFileSync(join(supabase, 'config.toml'), config);
+
       process.env.LIFTER_SUPABASE_STACK = 'b';
       expect(localSupabaseContainer('db')).toBe('supabase_db_lifter-stack-b');
       process.env.LIFTER_SUPABASE_STACK = 'a';
       expect(localSupabaseContainer('auth')).toBe('supabase_auth_lifter');
+      process.env.LIFTER_SUPABASE_STACK = 'ci';
+      expect(localSupabaseContainer('db', root)).toBe(
+        'supabase_db_lifter-stack-ci',
+      );
     } finally {
+      rmSync(root, { recursive: true, force: true });
       if (previous === undefined) delete process.env.LIFTER_SUPABASE_STACK;
       else process.env.LIFTER_SUPABASE_STACK = previous;
     }

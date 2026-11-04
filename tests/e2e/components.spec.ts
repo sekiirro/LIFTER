@@ -1,3 +1,4 @@
+import { getTestCookieOrigin } from './test-origin.mjs';
 import { expect, test, type Locator } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { copyFile, mkdir } from 'node:fs/promises';
@@ -26,8 +27,8 @@ for (const locale of ['ar', 'en'] as const) {
       const m = getMessages(locale);
       test.beforeEach(async ({ context, page }) => {
         await context.addCookies([
-          { name: LOCALE_COOKIE, value: locale, url: 'http://localhost:3000' },
-          { name: THEME_COOKIE, value: theme, url: 'http://localhost:3000' },
+          { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin() },
+          { name: THEME_COOKIE, value: theme, url: getTestCookieOrigin() },
         ]);
         await page.goto('/showcase');
       });

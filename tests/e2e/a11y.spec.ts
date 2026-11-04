@@ -1,6 +1,9 @@
+import { getTestCookieOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
+
+const cookieOrigin = getTestCookieOrigin();
 
 for (const locale of ['ar', 'en'] as const) {
   for (const theme of ['dark', 'light'] as const) {
@@ -9,8 +12,8 @@ for (const locale of ['ar', 'en'] as const) {
       context,
     }) => {
       await context.addCookies([
-        { name: LOCALE_COOKIE, value: locale, url: 'http://localhost:3000' },
-        { name: THEME_COOKIE, value: theme, url: 'http://localhost:3000' },
+        { name: LOCALE_COOKIE, value: locale, url: cookieOrigin },
+        { name: THEME_COOKIE, value: theme, url: cookieOrigin },
       ]);
       await page.goto('/showcase');
       await expect(page.locator('html')).toHaveAttribute('lang', locale);

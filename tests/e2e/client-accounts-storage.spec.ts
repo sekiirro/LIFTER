@@ -1,3 +1,4 @@
+import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
 import { randomUUID } from 'node:crypto';
 import { createClient } from '@supabase/supabase-js';
 import { expect, test } from '@playwright/test';
@@ -8,7 +9,7 @@ const apiUrl = process.env.API_URL || process.env.SUPABASE_URL || '';
 const anonKey = process.env.ANON_KEY || process.env.SUPABASE_ANON_KEY || '';
 const serviceRoleKey =
   process.env.SERVICE_ROLE_KEY || process.env.SUPABASE_SERVICE_ROLE_KEY || '';
-const origin = 'http://localhost:3000';
+const origin = testOrigin;
 const local =
   new URL(apiUrl || 'http://invalid').hostname === '127.0.0.1' &&
   Boolean(anonKey && serviceRoleKey);
@@ -97,7 +98,7 @@ test('a real pending-client JWT cannot read or write Storage', async ({
     expect(seed.error === null).toBe(true);
 
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
     ]);
     await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': '203.0.113.30' });
     await page.goto(`/register/${link.token}`);

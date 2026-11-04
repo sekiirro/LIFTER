@@ -9,7 +9,9 @@ permissions:
 
 jobs:
   validate:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && fromJSON('["self-hosted","linux","x64","lifter-wsl"]') || 'ubuntu-latest' }}
+    env:
+      LIFTER_CI_ISOLATED: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -40,16 +42,22 @@ jobs:
       - run: npm run check:secrets
       - run: npm run build:cron
       - run: npm run size
-      - run: npx playwright install --with-deps chromium
+      - run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
 
   integration:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && fromJSON('["self-hosted","linux","x64","lifter-wsl"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     env:
-      LIFTER_SUPABASE_STACK: a
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      LIFTER_CI_ISOLATED: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) }}
+      LIFTER_SUPABASE_STACK: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && 'ci' || 'a' }}
+      DOCKERHUB_USERNAME: ${{ (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && secrets.DOCKERHUB_USERNAME || '' }}
+      DOCKERHUB_TOKEN: ${{ (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && secrets.DOCKERHUB_TOKEN || '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -58,14 +66,31 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
+      - uses: supabase/setup-cli@v1
+        with:
+          version: 2.122.0
+      - name: Resolve the Linux Supabase CLI binary
+        if: env.LIFTER_CI_ISOLATED == 'true'
+        shell: bash
+        run: |
+          cli="$(find "$RUNNER_TEMP" -maxdepth 3 -type f -name supabase -executable -print -quit)"
+          if [ -z "$cli" ]; then
+            echo 'Linux Supabase CLI binary was not found in RUNNER_TEMP' >&2
+            exit 1
+          fi
+          "$cli" --version
+          echo "LIFTER_SUPABASE_CLI=$cli" >> "$GITHUB_ENV"
       - run: npm ci
+      - name: Isolate self-hosted Supabase identity and ports
+        if: env.LIFTER_CI_ISOLATED == 'true'
+        run: node scripts/ci-supabase-config.mjs supabase/config.toml rewrite
+      - name: Assert self-hosted app port is free
+        if: env.LIFTER_CI_ISOLATED == 'true'
+        run: node scripts/ci-app-port.mjs assert-free
       - name: Assert runtime Unicode pin
         run: |
           node -p process.versions.unicode
           npx vitest run tests/unit/password-policy-unicode-ranges.test.ts
-      - uses: supabase/setup-cli@v1
-        with:
-          version: 2.122.0
       - name: Login to Docker Hub
         if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
         # docker/login-action v4.6.0
@@ -73,37 +98,71 @@ jobs:
         with:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
-      - run: supabase start -x studio,inbucket,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+      - name: Clear prior self-hosted Supabase state and wait for ports
+        if: env.LIFTER_CI_ISOLATED == 'true'
+        run: |
+          "$LIFTER_SUPABASE_CLI" stop --project-id lifter-stack-ci --no-backup
+          node scripts/ci-supabase-config.mjs supabase/config.toml assert-clean
+          node scripts/ci-supabase-config.mjs supabase/config.toml wait
+      - run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            "$LIFTER_SUPABASE_CLI" start -x studio,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+          else
+            supabase start -x studio,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+          fi
       - name: Export local stack environment
-        run: supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
+        run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            "$LIFTER_SUPABASE_CLI" status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
+          else
+            supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
+          fi
       - name: Export app server environment
         run: |
+          APP_PORT="$(node scripts/ci-app-port.mjs select "$LIFTER_CI_ISOLATED")"
+          APP_ORIGIN="http://localhost:$APP_PORT"
           echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
           echo "SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
           echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
-          echo "APP_ORIGIN=http://localhost:3000" >> "$GITHUB_ENV"
+          echo "PORT=$APP_PORT" >> "$GITHUB_ENV"
+          echo "APP_ORIGIN=$APP_ORIGIN" >> "$GITHUB_ENV"
+          echo "PLAYWRIGHT_BASE_URL=$APP_ORIGIN" >> "$GITHUB_ENV"
       - name: Provision local Vault signup keys
         run: node tests/integration/client-accounts-provision.mjs
       - name: Assert shared password policy DB parity
         run: npm run test:integration -- tests/integration/password-policy-parity.test.ts
       - run: npm run test:integration
-      - run: npx playwright install --with-deps chromium
+      - run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
       - name: Run full Playwright suite against the local stack
         run: npm run e2e -- --workers=1
         env:
           LOCAL_SUPABASE_STORAGE_TEST: 'true'
           LOCAL_SUPABASE_PROVIDER_FAULT_TEST: 'true'
-      - run: supabase stop --no-backup
+      - run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            "$LIFTER_SUPABASE_CLI" stop --project-id lifter-stack-ci --no-backup
+            node scripts/ci-supabase-config.mjs supabase/config.toml assert-clean
+            node scripts/ci-supabase-config.mjs supabase/config.toml wait
+            docker image prune --force
+          else
+            supabase stop --no-backup
+          fi
         if: always()
 
   storage:
-    runs-on: ubuntu-latest
+    runs-on: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && fromJSON('["self-hosted","linux","x64","lifter-wsl"]') || 'ubuntu-latest' }}
     permissions:
       contents: read
     env:
-      LIFTER_SUPABASE_STACK: a
-      DOCKERHUB_USERNAME: ${{ secrets.DOCKERHUB_USERNAME }}
-      DOCKERHUB_TOKEN: ${{ secrets.DOCKERHUB_TOKEN }}
+      LIFTER_CI_ISOLATED: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) }}
+      LIFTER_SUPABASE_STACK: ${{ vars.LIFTER_CI_RUNNER == 'self-hosted' && (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && 'ci' || 'a' }}
+      DOCKERHUB_USERNAME: ${{ (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && secrets.DOCKERHUB_USERNAME || '' }}
+      DOCKERHUB_TOKEN: ${{ (github.event_name != 'push' || github.actor == github.repository_owner) && (github.event_name != 'pull_request' || contains(fromJSON('["OWNER"]'), github.event.pull_request.author_association)) && secrets.DOCKERHUB_TOKEN || '' }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -112,10 +171,27 @@ jobs:
         with:
           node-version-file: .nvmrc
           cache: npm
-      - run: npm ci
       - uses: supabase/setup-cli@v1
         with:
           version: 2.122.0
+      - name: Resolve the Linux Supabase CLI binary
+        if: env.LIFTER_CI_ISOLATED == 'true'
+        shell: bash
+        run: |
+          cli="$(find "$RUNNER_TEMP" -maxdepth 3 -type f -name supabase -executable -print -quit)"
+          if [ -z "$cli" ]; then
+            echo 'Linux Supabase CLI binary was not found in RUNNER_TEMP' >&2
+            exit 1
+          fi
+          "$cli" --version
+          echo "LIFTER_SUPABASE_CLI=$cli" >> "$GITHUB_ENV"
+      - run: npm ci
+      - name: Isolate self-hosted Supabase identity and ports
+        if: env.LIFTER_CI_ISOLATED == 'true'
+        run: node scripts/ci-supabase-config.mjs supabase/config.toml rewrite
+      - name: Assert self-hosted app port is free
+        if: env.LIFTER_CI_ISOLATED == 'true'
+        run: node scripts/ci-app-port.mjs assert-free
       - name: Login to Docker Hub
         if: env.DOCKERHUB_USERNAME != '' && env.DOCKERHUB_TOKEN != ''
         # docker/login-action v4.6.0
@@ -123,20 +199,45 @@ jobs:
         with:
           username: ${{ env.DOCKERHUB_USERNAME }}
           password: ${{ env.DOCKERHUB_TOKEN }}
-      - run: supabase start -x studio,inbucket,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+      - name: Clear prior self-hosted Supabase state and wait for ports
+        if: env.LIFTER_CI_ISOLATED == 'true'
+        run: |
+          "$LIFTER_SUPABASE_CLI" stop --project-id lifter-stack-ci --no-backup
+          node scripts/ci-supabase-config.mjs supabase/config.toml assert-clean
+          node scripts/ci-supabase-config.mjs supabase/config.toml wait
+      - run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            "$LIFTER_SUPABASE_CLI" start -x studio,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+          else
+            supabase start -x studio,edge-runtime,logflare,vector,supavisor,realtime,postgres-meta
+          fi
       - name: Export local stack environment
-        run: supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
+        run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            "$LIFTER_SUPABASE_CLI" status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
+          else
+            supabase status -o env | sed -E 's/="(.*)"$/=\1/' >> "$GITHUB_ENV"
+          fi
       - name: Export app server environment
         run: |
+          APP_PORT="$(node scripts/ci-app-port.mjs select "$LIFTER_CI_ISOLATED")"
+          APP_ORIGIN="http://localhost:$APP_PORT"
           echo "SUPABASE_URL=$API_URL" >> "$GITHUB_ENV"
           echo "SUPABASE_ANON_KEY=$ANON_KEY" >> "$GITHUB_ENV"
           echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> "$GITHUB_ENV"
-          echo "APP_ORIGIN=http://localhost:3000" >> "$GITHUB_ENV"
+          echo "PORT=$APP_PORT" >> "$GITHUB_ENV"
+          echo "APP_ORIGIN=$APP_ORIGIN" >> "$GITHUB_ENV"
+          echo "PLAYWRIGHT_BASE_URL=$APP_ORIGIN" >> "$GITHUB_ENV"
       - name: Wait for Storage readiness
         run: node scripts/wait-storage-ready.mjs
       - name: Provision local Vault signup keys
         run: node tests/integration/client-accounts-provision.mjs
-      - run: npx playwright install --with-deps chromium
+      - run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            npx playwright install chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
       - name: Run all F14 Storage integrations with zero skips
         run: |
           npm run test:integration -- \
@@ -157,5 +258,13 @@ jobs:
           node scripts/assert-storage-suite-zero-skips.mjs playwright "$RUNNER_TEMP/branding-storage-playwright.json"
         env:
           LOCAL_SUPABASE_STORAGE_TEST: 'true'
-      - run: supabase stop --no-backup
+      - run: |
+          if [ "$LIFTER_CI_ISOLATED" = 'true' ]; then
+            "$LIFTER_SUPABASE_CLI" stop --project-id lifter-stack-ci --no-backup
+            node scripts/ci-supabase-config.mjs supabase/config.toml assert-clean
+            node scripts/ci-supabase-config.mjs supabase/config.toml wait
+            docker image prune --force
+          else
+            supabase stop --no-backup
+          fi
         if: always()

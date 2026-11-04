@@ -1,3 +1,4 @@
+import { getTestCookieOrigin, buildLoginRedirectUrl } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE } from '../../lib/design/preferences';
@@ -9,7 +10,7 @@ for (const locale of ['ar', 'en'] as const) {
     context,
   }) => {
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: locale, url: 'http://localhost:3000' },
+      { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin() },
     ]);
     const m = getMessages(locale);
     for (const path of [
@@ -48,9 +49,7 @@ test('anonymous pages redirect with a same-site return path', async ({
 }) => {
   for (const path of ['/', '/some/unknown/path']) {
     await page.goto(path);
-    await expect(page).toHaveURL(
-      `http://localhost:3000/login?next=${encodeURIComponent(path)}`,
-    );
+    await expect(page).toHaveURL(buildLoginRedirectUrl(path));
   }
   await page.goto('/login?next=//evil.example');
   await expect(page.locator('input[name="next"]')).toHaveValue('/');

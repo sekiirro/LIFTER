@@ -1,3 +1,4 @@
+import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
 import { expect, test, type BrowserContext } from '@playwright/test';
 import AxeBuilder from '@axe-core/playwright';
 import { createServerClient } from '@supabase/ssr';
@@ -9,7 +10,7 @@ import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE } from '../../lib/design/preferences';
 import { createPendingClient } from './registration-approval-fixture';
 
-const origin = 'http://localhost:3000';
+const origin = testOrigin;
 
 async function signIn(
   context: BrowserContext,
@@ -50,7 +51,7 @@ async function signIn(
     cookies.map((cookie) => ({
       name: cookie.name,
       value: cookie.value,
-      url: origin,
+      url: getTestCookieOrigin(origin),
       expires:
         typeof cookie.options?.maxAge === 'number'
           ? now + Math.floor(cookie.options.maxAge)
@@ -85,7 +86,7 @@ test('platform owner approves, observes the pre-activation collection guard, and
   const messages = getMessages('en');
   await signIn(browserContext, fixture.context.actors.po.client);
   await browserContext.addCookies([
-    { name: LOCALE_COOKIE, value: 'en', url: origin },
+    { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
   ]);
 
   const reviewUrl = `/registration-approvals/${fixture.target.id}?workspace=${encodeURIComponent(fixture.context.wsA.id)}`;
@@ -128,7 +129,7 @@ test('platform owner approves, observes the pre-activation collection guard, and
   try {
     await signIn(approvedClientContext, fixture.client);
     await approvedClientContext.addCookies([
-      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
     ]);
     const approvedClientPage = await approvedClientContext.newPage();
     await approvedClientPage.goto('/account/status');
@@ -244,7 +245,7 @@ test('client status updates after PO rejection and reconsideration without signi
   try {
     await signIn(clientContext, fixture.client);
     await clientContext.addCookies([
-      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
     ]);
     const clientPage = await clientContext.newPage();
     await clientPage.goto('/account/status');
@@ -256,7 +257,7 @@ test('client status updates after PO rejection and reconsideration without signi
 
     await signIn(staffContext, fixture.context.actors.po.client);
     await staffContext.addCookies([
-      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
     ]);
     const staffPage = await staffContext.newPage();
     const reviewUrl = `/registration-approvals/${fixture.target.id}?workspace=${encodeURIComponent(fixture.context.wsA.id)}`;
