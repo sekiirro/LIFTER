@@ -131,8 +131,10 @@ describe('S32-PO-5/PO-8 intake starter controls', () => {
     expect(
       validateFormDefinition(
         starter.questions.map(
-          ({ label: _label, ...formQuestion }: Record<string, unknown>) =>
-            formQuestion,
+          ({ label, ...formQuestion }: Record<string, unknown>) => {
+            void label;
+            return formQuestion;
+          },
         ),
       ),
     ).toEqual([]);
