@@ -1,7 +1,7 @@
 # Tasks: Design System Foundation (P0-F2)
 
 **Input**: [plan.md](plan.md), [spec.md](spec.md), [research.md](research.md), [data-model.md](data-model.md), [contracts/ui-contract.md](contracts/ui-contract.md), [quickstart.md](quickstart.md)
-**Tests**: Requested by the spec (SC-001..SC-005). Pure logic → Vitest (node). UI → Playwright + axe on the showcase.
+**Tests**: Requested by the spec (SC-001..SC-011). Pure logic → Vitest (node). UI → Playwright + axe on the showcase; performance and responsive-shell outcomes use their named browser/CI evidence tasks.
 **Rules for coders**: Use logical CSS properties only; tokens only (no raw colors in components); no new dependencies beyond the 3 listed; don't touch `LIFTER_Claude_Files/`, `DESIGN.md`, `docs/`, `.specify/` or `specs/` (except checking tasks off).
 
 ## Phase 1: Setup

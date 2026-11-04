@@ -37,11 +37,11 @@ Evidence commits: original Design System implementation `be29751`, `e2df0cd`, `b
 | FR-029 | T045 | `tests/unit/glass-popover-menu.test.tsx::opens on ArrowUp at the last item and on ArrowDown at the first`; `::moves focus with arrows and wraps at either end`; `::supports Home and End and closes without trapping Tab`; `::returns focus to the trigger on Escape`; `::activates the focused item with Space`; `tests/e2e/glass.spec.ts::popover ArrowDown navigation works after enhancement` | VERIFIED |
 | SC-001 | T007 | `tests/unit/tokens-contrast.test.ts` contrast assertions for both modes and sample colors | VERIFIED |
 | SC-002 | T031 | `tests/e2e/a11y.spec.ts` AR/EN × dark/light axe matrix | VERIFIED |
-| SC-003 | T032, T036, T045 | `tests/e2e/components.spec.ts` keyboard cases; `tests/e2e/shell.spec.ts` desktop/mobile keyboard cases | VERIFIED |
+| SC-003 | T032, T034, T036, T045 | `tests/e2e/components.spec.ts` keyboard cases; `tests/e2e/shell.spec.ts` desktop/mobile keyboard cases | VERIFIED |
 | SC-004 | T019 | `tests/e2e/theme-locale.spec.ts::cookies are already reflected in response HTML`; device color tests | VERIFIED |
 | SC-005 | T010 | `tests/unit/messages.test.ts::has identical nonempty catalogs` | VERIFIED |
 | SC-006 | T038-T039 | `tests/e2e/print.spec.ts::Arabic print sample hides screen controls and exports its PDF`; print-spike report | VERIFIED |
-| SC-007 | T042 | CI build-size check was referenced by T042; a concrete assertion test or executed CI run was not re-verified in this static pass | PARTIAL |
+| SC-007 | — | Build-size gate evidence is not mapped to a tagged task or re-verified in this static pass; T042 remains untagged and is not attributed to SC-007 | PARTIAL |
 | SC-008 | T046 | PR #28 body reports 15 paired samples and passing median deltas; local report outputs r1-r8 are referenced but not present in this checkout; measurement not rerun | PARTIAL |
 | SC-010 | T047-T048, T050-T051 | Static inspection only; PR #28 source uses a 75rem breakpoint, so the approved 64rem breakpoint and 1024/1440 screenshot assertions remain unimplemented and unchecked | PARTIAL |
 | SC-009 | T043, T048-T049 | Existing unit tests cover fallback selection and browser focus identity for over-budget fallback only; T048-T049 remain unchecked for all fallback conditions | PARTIAL |

@@ -48,11 +48,11 @@
 | FR-029 | Yes | T045 | Popover keyboard behavior |
 | SC-001 | Yes | T007 | Contrast matrix |
 | SC-002 | Yes | T031 | Four-mode axe matrix |
-| SC-003 | Yes | T032, T036, T045 | Keyboard use |
+| SC-003 | Yes | T032, T034, T036, T045 | Keyboard use |
 | SC-004 | Yes | T019 | First-paint theme/direction |
 | SC-005 | Yes | T010 | Catalog key parity |
 | SC-006 | Yes | T038, T039 | Print spike report |
-| SC-007 | Yes | T042 | Build-size gate; execution not re-verified; T003 is not an SC-007 task |
+| SC-007 | No | — | Build-size gate remains PARTIAL; T042 is untagged and is not mapped to SC-007 |
 | SC-008 | Yes | T046 | PO threshold; source report absent |
 | SC-009 | Yes | T043, T048-T049 | Existing focus evidence covers over-budget only; follow-up tasks remain unchecked |
 | SC-010 | Yes | T047, T048, T050, T051 | Q16/Q5 sidebar properties and required 1024/1440 screenshots; tasks remain unchecked pending later implementation/review |
@@ -74,5 +74,6 @@
 - 2026-11-04: S31-PO-7 Q5 sets the sidebar breakpoint at 1024px and requires 1024/1440 screenshots plus content clearance at 1024–1199px. FR-028 no longer maps to performance task T046. Added unchecked tasks T050-T051 and recorded the current source deviation as MEDIUM; 0 CRITICAL/HIGH. Static inspection only.
 
 - 2026-11-04: Refreshed after task/traceability alignment commit 70b9e2fc55149b86cbddd9a8a6e540f941815c15; 0 CRITICAL/HIGH findings; FR-021 and SC-007/008/009/010 remain PARTIAL where evidence is missing. Static inspection only.
+- 2026-11-04: S31 round-6 mapping refresh: T034 is added to SC-003 in both mappings; untagged T042 is removed from SC-007 mappings. Task header now covers SC-001..SC-011. Static only; 0 CRITICAL/HIGH findings.
 
 - 2026-11-03: Initial S30 reconciliation of PR #28 scope at `e69688a`; refreshed source quotations and citations against `a9b37cc` with no new findings.
