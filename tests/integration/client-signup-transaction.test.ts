@@ -23,7 +23,7 @@ it('stores DOB, normalized username and optional Telegram in the atomic signup',
     ...fixture.fields,
     name: 'Heba Sami Nabil',
     date_of_birth: '1990-04-12',
-    username: 'Ｆit.Client',
+    username: 'Fit.Client',
     telegram_username: '',
   };
 
@@ -47,7 +47,7 @@ it('stores DOB, normalized username and optional Telegram in the atomic signup',
     telegram_username: '@Heba_Test1',
   };
   expect(await signup(db, second, duplicateFields)).toEqual({
-    status: 'duplicate',
+    status: 'username_unavailable',
   });
 
   const otherWorkspace = await clientContext();
@@ -68,7 +68,7 @@ it('stores DOB, normalized username and optional Telegram in the atomic signup',
     ...optionalTelegram.fields,
     name: 'Heba Sami Nabil',
     date_of_birth: '1990-04-12',
-    username: 'telegram-optional',
+    username: 'telegram_optional',
     telegram_username: '',
   };
   expect(await signup(db, optionalTelegram, optionalFields)).toEqual({
@@ -79,4 +79,26 @@ it('stores DOB, normalized username and optional Telegram in the atomic signup',
     password: optionalTelegram.fields.password,
   });
   expect(signedIn.error).toBeNull();
+});
+
+it('returns one generic username-unavailable result for reserved names and rejects invalid formats', async () => {
+  const reserved = await signupFixture(context);
+  const reservedFields = {
+    ...reserved.fields,
+    name: 'Heba Sami Nabil',
+    date_of_birth: '1990-04-12',
+    username: 'PLATFORM',
+  };
+  const invalidFields = {
+    ...reserved.fields,
+    name: 'Heba Sami Nabil',
+    date_of_birth: '1990-04-12',
+    username: 'ab',
+  };
+
+  const reservedResult = await signup(db, reserved, reservedFields);
+  const formatResult = await signup(db, reserved, invalidFields);
+
+  expect(reservedResult).toEqual({ status: 'username_unavailable' });
+  expect(formatResult).toEqual({ status: 'invalid' });
 });

@@ -173,13 +173,14 @@ export function SignupForm({
     };
     if (result.status === 'invalid_input' && result.invalidFields?.length) {
       const firstInvalid = (
-        ['name', 'email', 'phone', 'password'] as const
+        ['name', 'email', 'phone', 'password', 'username'] as const
       ).find((field) => result.invalidFields?.includes(field));
       const fieldRef = {
         name: nameRef,
         email: emailRef,
         phone: phoneRef,
         password: passwordRef,
+        username: usernameRef,
       } as const;
       if (firstInvalid) fieldRef[firstInvalid].current?.focus();
       return;
@@ -338,7 +339,10 @@ export function SignupForm({
         <span
           className={`${heroStyles.fieldControl} ${glass.liquidGlassEdge}`}
           data-error={
-            identityInvalidFields.includes('username') ? 'true' : undefined
+            identityInvalidFields.includes('username') ||
+            result.invalidFields?.includes('username')
+              ? 'true'
+              : undefined
           }
         >
           <input
@@ -347,7 +351,8 @@ export function SignupForm({
             aria-label={messages.username}
             aria-describedby={
               (submitted || touchedIdentityFields.includes('username')) &&
-              identityInvalidFields.includes('username')
+              (identityInvalidFields.includes('username') ||
+                result.invalidFields?.includes('username'))
                 ? 'signup-username-error'
                 : undefined
             }
@@ -363,12 +368,14 @@ export function SignupForm({
             disabled={pending}
             aria-invalid={
               (submitted || touchedIdentityFields.includes('username')) &&
-              identityInvalidFields.includes('username')
+              (identityInvalidFields.includes('username') ||
+                result.invalidFields?.includes('username'))
             }
           />
         </span>
         {(submitted || touchedIdentityFields.includes('username')) &&
-          identityInvalidFields.includes('username') && (
+          (identityInvalidFields.includes('username') ||
+            result.invalidFields?.includes('username')) && (
             <span
               id="signup-username-error"
               className={`${styles.fieldError} ${heroStyles.fieldError}`}

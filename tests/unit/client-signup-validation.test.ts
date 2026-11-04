@@ -46,17 +46,30 @@ describe('approved signup profile contract', () => {
     expect(calculateSignupAge('2000-06-17', justAfterCairoMidnight)).toBe(25);
   });
 
-  it('rejects reserved and workspace-identifying usernames', () => {
+  it('passes syntactically valid names to server reserved-name feedback', () => {
     expect(
-      validateSignupIdentity({ ...valid, username: 'workspace-owner' }, { now })
+      validateSignupIdentity({ ...valid, username: 'workspace_owner' }, { now })
         .invalidFields,
-    ).toContain('username');
+    ).not.toContain('username');
+  });
+
+  it('accepts only 3–30 ASCII letters, digits, underscores, and periods', () => {
+    for (const username of ['Ab_', 'a'.repeat(29) + '.', 'A_b.9']) {
+      expect(
+        validateSignupIdentity({ ...valid, username }, { now }).invalidFields,
+      ).not.toContain('username');
+    }
+
+    for (const username of ['ab', 'a'.repeat(31), 'abc-def', 'café', 'Ａbc']) {
+      expect(
+        validateSignupIdentity({ ...valid, username }, { now }).invalidFields,
+      ).toContain('username');
+    }
+
     expect(
-      validateSignupIdentity(valid, {
-        now,
-        workspaceIdentifiers: ['Heba.Sami'],
-      }).invalidFields,
-    ).toContain('username');
+      validateSignupIdentity({ ...valid, username: 'MiX.ed_9' }, { now }).value
+        ?.username,
+    ).toBe('mix.ed_9');
   });
 
   it('keeps Telegram optional and validates its format when supplied', () => {

@@ -23,6 +23,11 @@ export function normalizeSignupUsername(value: string): string {
   return value.normalize('NFKC').toLowerCase();
 }
 
+/** The accepted username alphabet is deliberately limited to ASCII. */
+export function isValidSignupUsername(value: unknown): value is string {
+  return typeof value === 'string' && /^[A-Za-z0-9_.]{3,30}$/u.test(value);
+}
+
 function compactIdentifier(value: string): string {
   return normalizeSignupUsername(value).replace(/[\s_.-]+/gu, '');
 }

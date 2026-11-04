@@ -71,7 +71,7 @@ export async function registered(
         .slice(-11),
     password: 'Synthetic9!' + randomUUID().replaceAll('-', ''),
     date_of_birth: '1990-04-12',
-    username: `u3-${randomUUID()}`,
+    username: `u3_${randomUUID().replaceAll('-', '').slice(0, 27)}`,
     telegram_username: '',
   };
   const signed = checked(

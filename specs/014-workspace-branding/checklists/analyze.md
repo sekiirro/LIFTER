@@ -56,6 +56,48 @@ T052 implementation and assertions are complete on code head `1ba2374`: unit 32/
 
 ## History
 
+### Round 7 — S32 Hero r20 (2026-11-04)
+
+**Scope reviewed:** S32-PO-2 Q2 banner/card precedence; S32-PO-2 Q3 taken/reserved username status, field mapping and focus; S32-PO-8 Q7 username format across client, service, RPC and database. Sources are recorded in `spec.md` Clarifications and the S32 plan subsection.
+
+#### Entry gate revalidation
+
+| Check | Status | Evidence |
+|---|---|---|
+| Numbered requirements, measurable success criteria and Given/When/Then scenarios | PASS | `spec.md` FR-008, FR-028, SC-023/024 and Hero scenarios 6–8. |
+| Clarifications and explicit ambiguity status | PASS | `spec.md` `## Clarifications` cites all three PO sources and explicitly says no behavior or validation ambiguity remains; exact EN/AR strings remain pending PO copy approval. |
+| Plan and task IDs tagged with FRs | PASS | `plan.md` S32 signup/banner section; `tasks.md` T057–T060 tagged FR-028 / FR-008. |
+| Fresh Analyze after spec/plan/tasks changes; 0 open CRITICAL/HIGH | PASS | This Round 7 is dated 2026-11-04 and follows the r20 artifact edits; findings below contain 0 CRITICAL and 0 HIGH. |
+
+The initial entry check was recorded as FAIL in the r20 report because the prior documents did not cover this scope. After updating artifacts and this Analyze, the entry gate is revalidated PASS. No implementation started before this revalidation.
+
+#### Findings
+
+| ID | Category | Severity | Location | Finding | Recommendation |
+|---|---|---|---|---|---|
+| R20-A1 | Copy approval | MEDIUM | `spec.md` FR-028; `lib/i18n/messages/en.ts`, `lib/i18n/messages/ar.ts` | The required username-specific unavailable message and format-error message need exact EN/AR wording; PO has not approved the example. | Draft strings in the run report only. Do not add localization keys or render the new copy until approved; continue validation and server work that does not depend on wording. |
+| R20-A2 | Existing data prerequisite | MEDIUM | `public.clients.username_normalized`; migration T058 | A check constraint can reject existing usernames outside the new format. | Before migration work, run the required Stack B count-only query. A nonzero count blocks the constraint and requires a PO decision. |
+| R20-A3 | Signup transaction mapping | MEDIUM | `lib/client-accounts/service.ts`; `public.client_signup` | The app currently forwards `duplicate` without field attribution; the RPC collapses reserved names to `invalid` and unique username collisions to `duplicate`. | Preserve generic failure and audit behavior while introducing one username-only internal status for both taken/reserved; map it to public `invalid_input` with only `username`. Add regression and Stack B integration tests. |
+| R20-A4 | Username normalization | LOW | `lib/forms/signup-policy.ts`; `app/register/[token]/schema.ts`; `lib/client-accounts/validation.ts`; migration `20261104001000_f15_signup_profile.sql` | Current NFKC normalization can accept non-ASCII compatibility characters, and current validation only checks non-empty/reserved. The existing pushed migration has a broader NFKC/lower check and is immutable. | Validate the authored input against the PO's ASCII rule in new code and a new forward migration; leave `20261104001000` untouched. Keep database storage lowercase normalization consistent with case-insensitive matching. |
+| R20-A5 | Protected artifacts | LOW | `AGENTS.md`; `app/(dev)/showcase/rest/` | User-owned untracked paths are present. | Exclude both from staging and commit. |
+
+#### Decision and coverage review
+
+- No change to the glass card/artwork rendering is needed for S32-PO-2 Q2; the requirement clarifies interpretation only.
+- The unavailable status must not identify which source (reserved or already claimed) caused it. The server result should be one username-specific outcome; public result carries `invalid_input` and `username` only.
+- The format rule applies to the raw username characters before NFKC can broaden the accepted alphabet. Normalize accepted values to lowercase using the existing storage convention.
+- Proposed `T057`–`T060` cover all touched FRs. The migration path is gated on a zero Stack B violating-row count and unique version scans across all origin refs before commit and push.
+- Exact localized strings remain the only unresolved PO copy decision. It does not invalidate the technical acceptance scenarios, but blocks rendering that new copy.
+- This analysis is static; no tests or database queries were run as part of Analyze.
+
+#### Metrics and verdict
+
+- Touched requirements: FR-008 and FR-028; touched success criteria: SC-023/SC-024 plus existing SC-020.
+- New task mapping: T057–T060.
+- Findings: 0 CRITICAL, 0 HIGH, 3 MEDIUM, 2 LOW.
+- Open behavior/validation ambiguities: 0. Localized copy approval remains open and is recorded separately.
+- Verdict: **PASS** for Spec Kit entry to the approved technical work. T058 constraint work remains conditional on Stack B count = 0; T059 rendered-message work remains conditional on PO copy approval.
+
 - Round 1 at `da56320af3cc8bba73a2e4f09258b7339a8a9504`: architect accepted findings A1-A6 for the Hero scope on the registration implementation lane.
 - Round 2 at `e0a012f98e2d7c4a76b89037b7517a525ba1934b`: accepted static traceability/decision citations for the F14 Hero scope.
 - Round 3 at `75aa62a6495bd9b2675b6e2f993eb283fdb8611b`: accepted FR-026..030 / SC-018..022 and T052..T056 committed to `spec.md`, `plan.md`, `tasks.md`, `hero-implementation-plan.md`.

@@ -86,7 +86,7 @@ DB and Storage work runs locally only on stack B: project `lifter-stack-b`, port
 ### User interfaces
 
 - All UI changes follow [DESIGN.md](../../DESIGN.md) and the [Frontend Design Gate](../../docs/09-frontend-design-gate.md), now merged to main. Existing tokens and `deriveBrand`/`BrandScope` remain authoritative. Keep semantic success/warning/error tokens unchanged.
-- Registration uses DG-F14-1 Premium Centered Card. Hero Banner is image-only with required bilingual alt text and locale fallback; uploader confirms identity content only; no pricing, contact, CTA, links or text fields. Controls never overlap imagery. Final aspect/height values follow a Frontend Design Gate prototype.
+- Registration uses DG-F14-1 Premium Centered Card. Hero Banner is image-only with required bilingual alt text and locale fallback; uploader confirms identity content only; no pricing, contact, CTA, links or text fields baked into artwork. The separate glass card may overlap the image per S32-PO-2 Q2. Final aspect/height values follow a Frontend Design Gate prototype.
 - Editor is DG-F14-2 desktop split editor/live preview and mobile tabs, previewing Registration, Staff Dashboard and Client Portal placeholder. DG-F14-3 inline original/adjusted color explanation.
 - Contrast is checked for each surface's real backgrounds and states. `deriveBrand` covers neutral surfaces only; banner text remains off image or uses guaranteed-contrast scrim from existing tokens. Resolve workspace/version per request, discard late switch responses, use neutral defaults with no scope. Client Portal is brand data/token contract only, conditional on P4.
 - Frontend Design Gate evidence is a later UI implementation gate: AR-RTL/EN-LTR × light/dark × 390/1440px, tablet if layout changes, interaction/state/accessibility coverage, screenshots reviewed against DESIGN.md. No UI is implemented or rendered in this planning change.
@@ -94,6 +94,15 @@ DB and Storage work runs locally only on stack B: project `lifter-stack-b`, port
 ## Hero scope mapping (S20-S29 PO decisions; S29-PO-3 Q7)
 
 The Production Registration Hero is governed by FR-026-FR-030 and SC-018-SC-022 in `spec.md`; `hero-implementation-plan.md` is the implementation detail plan and must remain subordinate to those requirements and quoted PO sources. Signup field restoration is an F14 requirement under FR-028. F15 owns Intake prefill and is a dependency; F14 must not duplicate the Intake behavior. Glisse requirements are limited to the approved Hero treatment, existing theme/brand/accessibility decisions and remaining authorized Glisse work. S30-PO-2 (option 1a) and S30-PO-6 (90% `--color-card` tint) settle the dense dark-form field surface and the form/CTA tint for T052: the change stays inside the Hero module, reuses existing tokens, and leaves the shared glass recipes, token files and `DESIGN.md` untouched.
+
+### S32 signup and banner clarifications — FR-008 / FR-028
+
+- S32-PO-2 Q2 (`PRRT_kwDOVYgYQ86zbaS5`) makes the glass card a separate presentation layer that may overlap banner artwork. FR-008 restricts text baked into the image; it does not forbid the card layer over the artwork. No rendered change is planned for this clarification.
+- S32-PO-2 Q3 (`PRRT_kwDOVYgYQ86zbaS7`) requires identical username-specific unavailable status for taken and reserved names, mapped to `invalid_input` on Username and focused there. The database/RPC result must not disclose which condition occurred. Exact EN/AR strings are not selected; they are blocked on PO copy approval and must not be introduced into localization or rendered output before approval.
+- S32-PO-8 Q7 (`PRRT_kwDOVYgYQ86zeI67`) requires a 3–30 character ASCII username containing only `[A-Za-z0-9_.]`, case-insensitively. Enforce in the client schema, `validateSignupFields`, `client_signup`, and a database check constraint. Before adding the constraint, run a Stack B aggregate count only for violating rows; do not inspect row contents. A nonzero result blocks the constraint and requires PO decision on existing data.
+- Tests first: unit RED for field validation/status mapping/focus, then GREEN; Stack B integration tests cover both username-specific unavailable cases and invalid formats. Use synthetic test accounts only.
+- Add one forward-only migration, after a version uniqueness scan across every origin ref. Do not edit the pushed `20261104001000` migration. Re-scan before commit and push.
+- Frontend verification for the username error state covers AR/EN, light/dark, and 360/390/1024px with screenshots under the run temp directory. Existing approved typography, tokens, spacing and error-state component behavior remain authoritative; no visual layout change is in scope.
 
 ## Project Structure
 

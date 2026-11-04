@@ -244,6 +244,10 @@ Start F14b immediately after F14 merges, in parallel with F13/F15. F14b complete
 - [ ] **T054 [FR-030]** Preserve the floating preferences pill and offset the 390px no-banner card with an existing spacing token; assert no heading overlap.
 - [ ] **T055 [FR-026, FR-027, FR-029, FR-030]** Run and record the approved browser screenshot, theme, locale, viewport, accessibility, contrast, performance, CI, CodeRabbit and review evidence for the actual implementation head.
 - [ ] **T056 [FR-026, FR-027, FR-028, FR-029, FR-030]** Reconcile this requirement set after Hero implementation and close only tasks with executed passing assertions on that exact head.
+- [ ] **T057 [FR-028]** Add RED/GREEN unit coverage and enforce the S32 username format in the client schema and `validateSignupFields`; test 3/30-character boundaries, ASCII character set, and case-insensitive handling without changing unapproved copy.
+- [ ] **T058 [FR-028]** After a Stack B violating-row count of zero, add one unique forward migration that makes `client_signup` return the same username-specific unavailable status for taken/reserved names and enforces the 3–30 `[A-Za-z0-9_.]` rule in RPC and a database check constraint. Add Stack B DB integration tests using synthetic accounts; preserve migration `20261104001000`.
+- [ ] **T059 [FR-028]** Add RED/GREEN application mapping from unavailable status to Username `invalid_input`, Username field error semantics and submit-time focus; add Username to the focus order. Exact localized strings remain blocked on PO copy approval.
+- [ ] **T060 [FR-008, FR-028]** Capture and review the username error state under the Frontend Design Gate at AR/EN, light/dark and 360/390/1024px; record screenshots, accessibility and findings in the r20 run artifacts.
 
 ## Verification stop conditions
 

@@ -2,7 +2,7 @@ import { validatePassword } from '../auth/password-policy';
 import { exactKeys } from '../registration-links/validation';
 import {
   isPastCalendarDate,
-  isReservedSignupUsername,
+  isValidSignupUsername,
   isValidTelegramUsername,
   normalizeSignupUsername,
   validateSignupName,
@@ -61,8 +61,7 @@ export function signupFields(value: unknown): SignupFields | null {
     typeof value.password !== 'string' ||
     !validatePassword(value.password).valid ||
     !isPastCalendarDate(dateOfBirth, new Date()) ||
-    !username.trim() ||
-    isReservedSignupUsername(username) ||
+    !isValidSignupUsername(username) ||
     !isValidTelegramUsername(telegramUsername)
   )
     return null;
@@ -105,14 +104,7 @@ export function validateSignupFields(value: unknown): {
     invalidFields.push('password');
   if (!isPastCalendarDate(value.dateOfBirth, new Date()))
     invalidFields.push('dateOfBirth');
-  if (
-    typeof value.username !== 'string' ||
-    !value.username.trim() ||
-    isReservedSignupUsername(
-      typeof value.username === 'string' ? value.username : '',
-    )
-  )
-    invalidFields.push('username');
+  if (!isValidSignupUsername(value.username)) invalidFields.push('username');
   if (!isValidTelegramUsername(value.telegramUsername))
     invalidFields.push('telegramUsername');
   return {

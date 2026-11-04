@@ -1,7 +1,7 @@
 import {
   calculateSignupAge as calculateAge,
   isPastCalendarDate,
-  isReservedSignupUsername,
+  isValidSignupUsername,
   isValidTelegramUsername,
   normalizeSignupUsername,
   validateSignupName,
@@ -28,10 +28,7 @@ export function calculateSignupAge(dateOfBirth: string, now = new Date()) {
 
 export function validateSignupIdentity(
   input: unknown,
-  options: {
-    now?: Date;
-    workspaceIdentifiers?: readonly string[];
-  } = {},
+  options: { now?: Date } = {},
 ): SignupIdentityResult {
   if (!input || typeof input !== 'object' || Array.isArray(input))
     return {
@@ -67,15 +64,7 @@ export function validateSignupIdentity(
 
   if (!validateSignupName(name)) invalidFields.push('name');
   if (!isPastCalendarDate(dateOfBirth, now)) invalidFields.push('dateOfBirth');
-  if (
-    typeof rawUsername !== 'string' ||
-    !rawUsername.trim() ||
-    isReservedSignupUsername(
-      typeof rawUsername === 'string' ? rawUsername : '',
-      options.workspaceIdentifiers,
-    )
-  )
-    invalidFields.push('username');
+  if (!isValidSignupUsername(rawUsername)) invalidFields.push('username');
   if (!isValidTelegramUsername(telegramUsername))
     invalidFields.push('telegramUsername');
 
