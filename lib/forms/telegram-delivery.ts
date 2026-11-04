@@ -83,7 +83,17 @@ export async function runTelegramJobs(input: {
       p_recipient_id: recipientId,
     });
     const context = prepared.data as Record<string, unknown> | null;
-    if (prepared.error || !context || context.status === 'unavailable') {
+    if (prepared.error || !context) {
+      await input.client.rpc('jobs_fail', {
+        id: job.id,
+        lease: job.lease_token,
+        error_code: 'temporary_error',
+        permanent: false,
+      });
+      failed++;
+      continue;
+    }
+    if (context.status === 'unavailable') {
       await input.client.rpc('jobs_fail', {
         id: job.id,
         lease: job.lease_token,
