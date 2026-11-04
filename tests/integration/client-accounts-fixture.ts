@@ -448,35 +448,63 @@ export async function pendingRlsAccess(
   tx: TransactionSql,
   context: ClientContext,
   claims: object,
+  seededClientId?: string,
 ) {
+  if (
+    seededClientId &&
+    !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(seededClientId)
+  )
+    throw new Error('RLS probe requires the caller-seeded client UUID');
   const tables =
     await tx`select n.nspname,c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relrowsecurity`;
   await tx`select set_config('request.jwt.claims',${JSON.stringify(claims)},true)`;
-  await inBatches(tables, async (table) => {
-    const tableDb = sql();
+  for (const table of tables) {
     try {
-      await tableDb.begin(async (tableTx) => {
+      await tx.savepoint(async (tableTx) => {
         await tableTx`select set_config('request.jwt.claims',${JSON.stringify(claims)},true)`;
         // The selected constant exposes no protected field. Grant SELECT on a
         // safe UUID column to prevent missing privileges from hiding bad RLS.
         const [column] =
           await tableTx`select attname from pg_attribute where attrelid=to_regclass(${table.nspname + '.' + table.relname}) and attnum>0 and atttypid='uuid'::regtype order by attnum limit 1`;
         if (!column) throw new Error('RLS probe needs a safe UUID column');
-        const target = '"' + table.nspname + '"."' + table.relname + '"';
+        const quote = (identifier: string) =>
+          `"${identifier.replaceAll('"', '""')}"`;
+        const target = `${quote(table.nspname)}.${quote(table.relname)}`;
+        const uuidColumn = quote(column.attname);
+        const seedFilter =
+          table.relname === 'clients' && seededClientId
+            ? ` where ${uuidColumn}='${seededClientId}'::uuid`
+            : '';
+        const before = await tableTx.unsafe(
+          `select ${uuidColumn} from ${target}${seedFilter} limit 1`,
+        );
+        if (table.relname === 'clients' && seededClientId && before.length !== 1)
+          throw new Error(
+            'RLS probe cannot see the caller-seeded pending client',
+          );
+        if (before.length === 0) throw rollback;
+        const targetId = String(before[0]![column.attname]);
+        if (
+          !/^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/iu.test(
+            targetId,
+          )
+        )
+          throw new Error('RLS probe selected an invalid UUID target');
+        const rowFilter = ` where ${uuidColumn}='${targetId}'::uuid`;
         await tableTx.unsafe(
-          `grant select ("${column.attname}") on ${target} to authenticated`,
+          `grant select (${uuidColumn}) on ${target} to authenticated`,
         );
         await tableTx.unsafe(
-          `grant update ("${column.attname}") on ${target} to authenticated`,
+          `grant update (${uuidColumn}) on ${target} to authenticated`,
         );
         await tableTx`set local role authenticated`;
         const selected = await tableTx.unsafe(
-          `select "${column.attname}" from ${target}`,
+          `select ${uuidColumn} from ${target}${rowFilter}`,
         );
         if (selected.length !== 0)
           throw new PendingRlsAccessDenied(`${table.relname} SELECT`);
         const changed = await tableTx.unsafe(
-          `update ${target} set "${column.attname}"="${column.attname}"`,
+          `update ${target} set ${uuidColumn}=${uuidColumn}${rowFilter}`,
         );
         if (changed.count !== 0)
           throw new PendingRlsAccessDenied(`${table.relname} UPDATE`);
@@ -484,10 +512,8 @@ export async function pendingRlsAccess(
       });
     } catch (error) {
       if (error !== rollback) throw error;
-    } finally {
-      await tableDb.end();
     }
-  });
+  }
   await tx`set local role authenticated`;
   const [access] =
     await tx`select app_private.has_workspace_access(${context.wsA.id},null) as own,app_private.has_workspace_access(${context.wsB.id},null) as foreign`;

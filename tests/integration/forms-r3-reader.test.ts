@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto';
-import postgres from 'postgres';
 import { afterAll, describe, expect, it } from 'vitest';
-import { createStaff } from './harness';
+import { createStaff, sql } from './harness';
 import {
   clientContext,
   registered,
@@ -9,7 +8,7 @@ import {
   sqlCall,
 } from './registration-approval-operations-fixture';
 
-const db = postgres(process.env.DB_URL ?? '', { max: 1, connect_timeout: 10 });
+const db = sql();
 afterAll(() => db.end());
 
 function hasAuditBeforeAnswer(body: string) {
