@@ -176,11 +176,12 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
 
   it('searches exercises created through the session wall by stored taxonomy payload keys', async () => {
     const action = server(workspaces.po);
+    const exerciseName = `Filter payload ${randomUUID()}`;
     const created = await action.createExercise({
       operationKey: fixtureKey(),
       request: {
         name_ar: `Ø§Ø®ØªØ¨Ø§Ø± ${randomUUID()}`,
-        name_en: `Filter payload ${randomUUID()}`,
+        name_en: exerciseName,
         primary_muscle_code: 'chest',
         secondary_muscle_codes: [],
         equipment_codes: ['barbell'],
@@ -192,12 +193,12 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
     const exerciseId = (created.data as { exercise_id: string }).exercise_id;
     const muscle = await action.search({
       kind: 'exercise',
-      query: '',
+      query: exerciseName,
       filters: { primary_muscle_code: 'chest' },
     });
     const equipment = await action.search({
       kind: 'exercise',
-      query: '',
+      query: exerciseName,
       filters: { equipment_codes: ['barbell'] },
     });
     expect(muscle.status).toBe('ok');

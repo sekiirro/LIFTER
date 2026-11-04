@@ -143,3 +143,8 @@ Workout/nutrition templates and planners (F17/F18), plan versions and exports, c
 ## Constitution Check
 
 I isolation (workspace rows + composite FKs; global rows readable only by coaching staff; no origin disclosure) - II n/a (no money) - III PO governs global exercises and merges - IV traces to PRD-04/05; open items marked - V immutable versions; snapshots consumed by F17/F18 - VII no PII in catalog audit - VIII bilingual Design System + gate - IX idempotent, optimistic-concurrency RPCs.
+## Clarifications
+
+### Session 2026-11-04 — S33-PO-4
+
+PO source: S33-PO-4, “Fix stack drift, flaky tests, billing-related CI blockers, and PR/issue backlog organization.” The S33 F16 change only makes the existing taxonomy/search integration lookup page through synthetic catalog rows with a fixed bound, or narrows it to a unique filter while preserving the same expected result. It does not change search semantics, visibility, limits, or catalog data. No open ambiguities remain within this test-only S33 scope.
