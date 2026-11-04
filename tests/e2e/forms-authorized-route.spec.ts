@@ -373,7 +373,12 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
           fullPage: true,
         });
         await page.getByRole('button').nth(1).click();
-        await page.getByRole('radio', { name: 'Male', exact: true }).check();
+        await page
+          .getByRole('radio', {
+            name: locale === 'en' ? 'Male' : 'Ø°ÙƒØ±',
+            exact: true,
+          })
+          .check();
         await page.getByRole('button').nth(1).click();
         await expect(
           page.getByRole('textbox', {
