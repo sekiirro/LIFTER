@@ -201,8 +201,20 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
       query: exerciseName,
       filters: { equipment_codes: ['barbell'] },
     });
+    const muscleMismatch = await action.search({
+      kind: 'exercise',
+      query: exerciseName,
+      filters: { primary_muscle_code: 'back' },
+    });
+    const equipmentMismatch = await action.search({
+      kind: 'exercise',
+      query: exerciseName,
+      filters: { equipment_codes: ['dumbbell'] },
+    });
     expect(muscle.status).toBe('ok');
     expect(equipment.status).toBe('ok');
+    expect(muscleMismatch.status).toBe('ok');
+    expect(equipmentMismatch.status).toBe('ok');
     if (muscle.status === 'ok' && equipment.status === 'ok') {
       expect(
         (muscle.data as Array<{ result_id: string }>).some(
@@ -215,6 +227,18 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
         ),
       ).toBe(true);
     }
+    if (muscleMismatch.status === 'ok')
+      expect(
+        (muscleMismatch.data as Array<{ result_id: string }>).some(
+          (row) => row.result_id === exerciseId,
+        ),
+      ).toBe(false);
+    if (equipmentMismatch.status === 'ok')
+      expect(
+        (equipmentMismatch.data as Array<{ result_id: string }>).some(
+          (row) => row.result_id === exerciseId,
+        ),
+      ).toBe(false);
 
     const workspaceAction = server(workspaces.trainerA);
     const workspaceCreated = await workspaceAction.writeWorkspaceExercise({
