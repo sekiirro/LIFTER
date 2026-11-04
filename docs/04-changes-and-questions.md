@@ -108,7 +108,7 @@ No S20 decision above remains open. The PO-supplied D16-4 dataset is a future in
 
 ## S31 PO decisions — recorded 2026-11-04
 
-These outcomes are transcribed from `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md`; feature specifications record the full scope and implementation status. This register does not authorize code changes.
+These outcomes cite the PO decision IDs and their committed repository records: [F4 clarifications](../specs/004-auth/spec.md#clarifications), [F8 clarifications](../specs/008-free-tier-validation/spec.md#clarifications), [F10 clarifications](../specs/010-registration-links/spec.md#clarifications), [desktop navigation decision](../specs/002-design-system/spec.md#clarifications), and [AI/data-governance records](../.specify/memory/constitution.md). This register does not authorize code changes.
 
 | ID | Decision | Source / effect |
 |---|---|---|
