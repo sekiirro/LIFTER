@@ -259,11 +259,11 @@ The S14 starter material lists 26 parent IDs; IDs remain stable for questions re
 | B03.details | Basic 3 child | Long text | Applicable only when B03=Yes. |
 | B04 | Basic 4 | Number + unit | kg. |
 | B05 | Basic 5 | Short text | Occupation only; must not solicit daily activity. |
-| B06 | Basic 6 | Single-choice cards | Sex selector; draft copy pending PO approval; required to select the N12 reference series. Stored as personal data with the intake profile. |
+| B06 | Basic 6 | Single-choice cards | Sex selector; EN question “Gender” and options “Male” / “Female” are approved by S32-PO-5; preserve the Arabic labels from the P1 decision fixture. Required to select the N12 reference series. Stored as personal data with the intake profile. |
 | T01 | Training 1 | Short text | D-S14-4 supersedes the canonical brief's older card proposal: no options/cards and no conditional “other” child. |
 | T02 | Training 2 | Yes/No radio cards | Yes reveals T02.details long text. |
 | T02.details | Training 2 child | Long text | Applicable only when T02=Yes. |
-| T03 | Training 3 | Single choice | Integer options 1 through 7 days. |
+| T03 | Training 3 | Single choice | S32-PO-8 Q5 changes the integer values to 2, 3, 4, 5, and 6 days in both locales. The canonical Arabic fixture may record only the range change; its exact Arabic option labels remain pending PO copy approval and must not ship until approved. |
 | T04 | Training 4 | Two selectable cards | The two approved fixture options; exactly one selected. |
 | T05 | Training 5 | Yes/No | Yes reveals T05.sport short text. |
 | T05.sport | Training 5 child | Short text | Applicable only when T05=Yes. |
@@ -283,7 +283,7 @@ The S14 starter material lists 26 parent IDs; IDs remain stable for questions re
 | N05.supplement_suggestion | Nutrition 5 No child | Yes/No | Applicable only when N05=No. |
 | N06 | Nutrition 6 | Long textarea | Usual eating day. |
 | N07 | Nutrition 7 | Single-choice cards | Options are «وجبتين» / «3 وجبات» / «4 وجبات» / «5 وجبات», the PO-approved maximum-five meal choices. This is an explicit deviation from unchanged canonical copy; no 6+ option is supported. |
-| N07.training_timing | Nutrition 7 derived child | Derived single choice | After meal count is known, generate meal-number choices 1..N, where N is selected meal count (2 to 5). Also include «قبل أول وجبة» and «معنديش ميعاد ثابت». If meal count changes, replace stale choices and clear invalid prior selection; version/snapshot history remains immutable. |
+| N07.training_timing | Nutrition 7 derived child | Derived single choice | After meal count is known, generate meal-number choices 1..N, where N is selected meal count (2 to 5). Also include «قبل أول وجبة» and «معنديش ميعاد ثابت». If meal count changes, replace stale choices and clear invalid prior selection; version/snapshot history remains immutable. S32-PO-8 Q6 approves EN question “After which meal would you like to train?” and options “Before the first meal”, “After meal 1” through “After meal N”, and “I don't have a fixed time”. |
 | N08 | Nutrition 8 | Three single-select budget cards | Selected budget derives the editable multi-select list N08.foods from the matching fixture list. |
 | N08.foods | Nutrition 8 derived child | Editable multi-select chips | Only options for selected budget; values and ordering are versioned Builder data and are not hardcoded in client UI. |
 | N09 | Nutrition 9 | Two separate short-text answers | N09.liked and N09.disliked. |
@@ -295,9 +295,9 @@ The S14 starter material lists 26 parent IDs; IDs remain stable for questions re
 
 ### EN translation — PO review
 
-These English translations are for EN-mode only and do not replace or alter the Arabic fixture. Unless explicitly listed in the S32-PO-5 approval note, each remains pending PO review before publication. S32-PO-5 approves the B01, B06, T03 range, T08, N07 timing behavior, N08, N11 range, and N12 control type only. Existing unapproved option and label translations remain pending.
+These English translations are for EN-mode only and do not replace or alter the Arabic fixture. Unless explicitly listed in S32-PO-5 or S32-PO-8, each remains pending PO review before publication. Existing unapproved option and label translations remain pending.
 
-S32-PO-5 approves only these F15 items: B01 “Full name (three parts)”; B06 “Gender” with options “Male” and “Female”; T03 training frequency of 2–6 days/week; T08 “Training split”; N07 dynamic timing derived from selected meal count; N08 “What’s your food budget?”; N11 a 0–10 slider; and N12 body-fat image cards. The exact N07 English timing question and option strings were not supplied and remain pending PO review. All other EN rows and options in this table remain pending PO review. The canonical Arabic fixture remains unchanged.
+S32-PO-5 approves these F15 items: B01 “Full name (three parts)”; B06 “Gender” with options “Male” and “Female”; T03 training frequency; T08 “Training split”; N07 dynamic timing behavior; N08 “What’s your food budget?”; N11 a 0–10 slider; and N12 body-fat image cards. S32-PO-8 Q5 approves T03 values 2, 3, 4, 5, and 6 in both locales; only the exact Arabic option labels remain pending copy approval. S32-PO-8 Q6 approves the exact English N07 timing question and dynamic option strings specified in the N07 rows below. All other EN rows and options in this table remain pending PO review.
 
 | Stable ID | EN-mode translation |
 | --- | --- |
@@ -341,9 +341,9 @@ S32-PO-5 approves only these F15 items: B01 “Full name (three parts)”; B06 �
 | N05.supplement_suggestion | Would you like us to suggest dietary supplements? |
 | N06 | Tell us what a typical day of eating looks like for you. |
 | N07 | How many meals would you like to eat each day? (maximum: 5; PO-approved departure from canonical source) |
-| N07.training_timing | Nutrition 7 derived child | Derived single choice | After meal count is known, generate meal-number choices 1..N, where N is selected meal count (2 to 5). Also include «قبل أول وجبة» and «معنديش ميعاد ثابت». If meal count changes, replace stale choices and clear invalid prior selection; version/snapshot history remains immutable. |
+| N07.training_timing | After which meal would you like to train? |
 | N08 | What’s your food budget? |
-| N08.foods | Choose foods that fit your budget. |
+| N08.foods | *(Food chips are shown within the N08 budget question; there is no separate question prompt.)* |
 | N09 | Which foods do you like most and dislike most? |
 | N09.liked | Foods you like |
 | N09.disliked | Foods you dislike |
@@ -357,30 +357,38 @@ S32-PO-5 approves only these F15 items: B01 “Full name (three parts)”; B06 �
 | N12 | Choose the body-fat reference that most closely resembles your body shape. |
 | N12.disclaimer | This percentage is an estimate and is not a substitute for measuring body-fat percentage. |
 
-The five N01 titles/descriptions, T04/N03/N07/N08/N10 choices, N11 endpoint labels and N12 card labels must also be translated into EN-mode as separate authored option records. B06 draft labels: «النوع» / «ذكر» / «أنثى», and EN "Sex" / "Male" / "Female"; pending PO approval. Those translations require PO review and must never be inferred at runtime. Do not add missing goal options or body-fat percentages.
+The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 endpoint labels and N12 card descriptions must also be translated into EN-mode as separate authored option records. B06 AR labels «النوع» / «ذكر» / «أنثى» remain as recorded; EN question “Gender” and options “Male” / “Female” are approved by S32-PO-5. T03 Arabic option labels remain pending S32-PO-8 Q5 copy approval and must not ship. Other unapproved translations require PO review and must never be inferred at runtime. Do not add missing goal options or body-fat percentages.
 
 #### EN option translations — PO review
 
 | Source option locator | EN-mode option |
 | --- | --- |
+| B06.male | Male |
+| B06.female | Female |
+| T03.2 | 2 days |
+| T03.3 | 3 days |
+| T03.4 | 4 days |
+| T03.5 | 5 days |
+| T03.6 | 6 days |
 | N03.1 | Sitting for most of the day |
 | N03.2 | Light movement and walking |
 | N03.3 | Moderate movement and walking |
 | N03.4 | A lot of movement or physically demanding work |
 | T04.less_than_90 | Less than an hour and a half |
 | T04.at_least_90 | An hour and a half or more |
-| N07.2 | Two meals |
-| N07.3 | 3 meals |
-| N07.4 | 4 meals |
-| N07.5 | 5 meals |
+| N07.2 | Two meals *(pending PO review)* |
+| N07.3 | 3 meals *(pending PO review)* |
+| N07.4 | 4 meals *(pending PO review)* |
+| N07.5 | 5 meals *(pending PO review)* |
 | N07.before_first | Before the first meal |
+| N07.after_meal_n | After meal {n}, for each n from 1 through the selected meal count |
 | N07.no_fixed_time | I don't have a fixed time |
 | N08.low | Low budget |
 | N08.medium | Medium budget |
 | N08.high | High budget |
-| N08.low.foods | Cottage cheese / plant protein / eggs / baladi bread |
-| N08.medium.foods | Eggs / chicken / meat / toast / fish |
-| N08.high.foods | Salmon / smoked turkey / steak / ribeye |
+| N08.low.foods | Cottage cheese / plant protein / eggs / baladi bread *(pending PO review)* |
+| N08.medium.foods | Eggs / chicken / meat / toast / fish *(pending PO review)* |
+| N08.high.foods | Salmon / smoked turkey / steak / ribeye *(pending PO review)* |
 | N10.before | Before cooking |
 | N10.after | After cooking |
 | N10.no_preference | No preference |
@@ -388,15 +396,21 @@ The five N01 titles/descriptions, T04/N03/N07/N08/N10 choices, N11 endpoint labe
 | N11.label.5 | Moderate hunger |
 | N11.label.10 | Very strong hunger |
 
-The T04, N08 budget and food-chip, and N12 percentage-specific option records are authored from their exact fixture values; do not paraphrase or manufacture missing card choices. Every EN translation and option remains pending PO review except the exact items identified in the S32-PO-5 approval note above.
+The T04, N08 budget and food-chip, and N12 percentage-specific option records are authored from their exact fixture values; do not paraphrase or manufacture missing card choices. Every EN translation and option remains pending PO review except the exact items identified in S32-PO-5/S32-PO-8 above. Budget food chips are children of the N08 question, not a separate prompt.
 
-## Clarifications — S32 (2026-11-04)
+## Clarifications — S32 (2026-11-04, refreshed 2026-11-04)
 
 - **Source:** S32-PO-3, verbatim in the S32 h11 lane brief. The colliding F15 migration is authorized to move by `git mv` to a unique valid version. Preserve F16 #43 and repair history only on Stack D if its read-only verification shows repair is needed. No SQL replay is authorized.
-- **Source:** S32-PO-5, verbatim in the S32 h11 lane brief. The approved F15 review scope is B01, B06, T03, T08, N07, N08, N11 and N12 as summarized above. Exact copy is approved only where PO supplied it. No other EN entry or canonical Arabic string is approved by this decision.
-- **Open ambiguity (blocked):** T03’s approved 2–6 days/week range conflicts with the canonical Arabic fixture’s 1–7 day options (`fixtures/mandatory-intake-copy-ar.md`, Training question 3). Preserve the Arabic fixture; do not change the shipped range until the PO resolves whether Arabic or the new range is authoritative.
-- **Open ambiguity (blocked):** N07’s dynamic timing behavior is approved, but S32-PO-5 provides no exact English question/options. Keep English timing copy pending PO review. Options and implications are recorded in the S32 h11 verification report.
-- **No open ambiguities remain for Part A’s migration rename and Stack D history reconciliation, or for the exact PO-supplied EN copy changes.** The two blocked Part B matters above are explicitly excluded from implementation pending PO decision.
+- **Source:** S32-PO-5, verbatim in the S32 h11 lane brief. It approves the listed F15 controls and exact English copy only where given; all other EN strings remain pending.
+- **Source:** S32-PO-8 Q5, verbatim in the S32 h12 lane brief: “2–6 in both (Recommended)” and exact Arabic labels follow fixture number style and come to the PO for approval before shipping. Record the Arabic source range as 2–6 only; do not invent approved copy. Candidate labels are a separate proposal, not fixture text.
+- **Source:** S32-PO-8 Q6, verbatim in the S32 h12 lane brief: approve question “After which meal would you like to train?” and options “Before the first meal”, “After meal 1” … “After meal N” (N = chosen meal count), “I don't have a fixed time”.
+- **No open ambiguities remain for the work authorized in this round.** The exact Arabic T03 option labels are a future PO copy-approval gate, not an implementation guess; they are excluded from shipping until approved. All unrelated EN rows remain pending PO review.
+
+### S32-PO-8 acceptance scenarios
+
+- **Given** the Training frequency question, **when** either locale renders its choices, **then** the answer values are exactly 2, 3, 4, 5, and 6 days in that order; the Arabic visible labels remain blocked until their exact copy is approved.
+- **Given** a selected Nutrition meal count N from 2 through 5, **when** the derived training-timing question renders, **then** it offers “Before the first meal”, “After meal 1” through “After meal N”, and “I don't have a fixed time”, in that order; changing N removes stale choices and clears an invalid selection.
+- **Given** a selected N08 budget, **when** its question renders, **then** only that budget's food chips appear within the same question and no separate food-choice prompt is rendered.
 
 ### Signup extension, approval gate, consent and flow
 

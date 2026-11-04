@@ -11,8 +11,11 @@
 ## S32 approved work
 
 - [ ] T055 [FR-004/006/007/026/036/037] **F15 migration collision rename and Stack D history reconciliation.** Rename only the colliding F15 slider-validator migration to a valid version unique across every fetched `origin/*` ref; preserve the F16 migration on #43. Update the filename-pinned drift guard and add a dated addendum to the historical S31-h10 verification report. Prove the SQL blob is byte-identical. Read Stack D history and the deployed function body first; repair only the two specified history rows if required, without applying or reverting SQL, then verify object body, migration-row count, `StartedAt`, and local/remote migration-list equality. Rerun readiness and timestamp scans before commit and push. Never use Stacks A/B/C. **No task checkbox until verification passes on the final head.**
-- [ ] T056 [FR-026/036/037/038] **Apply exact S32-PO-5 EN entries.** Update only the approved EN rows and options in `spec.md` and corresponding approved-copy artifacts/messages as authorized. Preserve all other EN rows as pending PO review and do not change canonical Arabic. B06 has exact “Gender”, “Male”, “Female”; B01, T08 and N08 use the exact approved text. N07 timing copy is blocked until PO supplies exact English strings. T03’s range is blocked because the canonical Arabic fixture remains 1–7. The task is agent-owned by S32-PO-5; no direct implementation by the orchestration/review role.
-- [ ] T057 [FR-026/036/037] **Verify intake order, conditional logic, options, assets and rendered UI.** Verify B01/B06/T03/T08/N07/N08/N11/N12 against the canonical Arabic fixture, decision fixture and implementation with file:line evidence. Add RED/GREEN tests only for unambiguous PO-approved differences, without editing Arabic or shipping unapproved N07 English strings. Check body-fat asset existence, loading, AR/EN alt text and ordering; run AR-RTL/EN-LTR × light/dark at 360/390/1024 for touched questions, with axe zero and screenshots indexed under the S32 temp directory. Agent-owned implementation; orchestration/review role records evidence and escalations.
+- [ ] T056 [FR-026/036/037/038] **Apply exact S32-PO-5 EN entries.** Update only the approved rows/options, preserving all unrelated EN entries as pending PO review. This work is superseded/extended by h12 tasks T058–T060; exact evidence and acceptance are tracked there.
+- [ ] T057 [FR-026/036/037] **Verify intake order, conditions, choices, assets and rendered UI.** This verification is superseded/extended by h12 task T060; do not mark complete independently of that evidence.
+- [ ] T058 [FR-026/036/037] **Record S32-PO-8 and refresh Spec Kit.** Update the approved scope and Clarifications, record only the T03 Arabic range change in the canonical fixture, add measurable Given/When/Then coverage, update the plan and task map, and produce a fresh Analyze with 0 Critical/High before implementation.
+- [ ] T059 [FR-026/036/037] **Implement PO-approved intake copy and rules.** RED/GREEN tests and changes for B01, B06 (including Male/Female), T03 English values 2–6, T08, approved dynamic N07 English timing question/options, N08 integrated budget chips/no extra prompt, N11 0–10, and N12 image cards. Do not publish proposed T03 Arabic labels pending PO copy approval; do not alter any other Arabic string or add unapproved EN copy. Keep other EN rows pending.
+- [ ] T060 [FR-026/036/037] **Verify question order, conditional logic, values, images and rendered accessibility.** Verify all PO-5/PO-8 items against the canonical Arabic fixture, decision fixture and implementation with file:line evidence. Assert N07 count-dependent timing and N08 same-question budget chips. Check every N12 asset exists/loads, AR+EN alt text and order. Run AR-RTL/EN-LTR × light/dark × 360/390/1024 at touched questions, axe zero and screenshots indexed under the h12 temp directory; root-cause and repair the recorded-controls matrix timeout without weakening assertions.
 
 ## Phase 0: Stack and shared-contract prerequisites
 
@@ -137,7 +140,7 @@ Measured synthetic realistic payloads use that answer-value JSON UTF-8 rule: EN 
 | FR-023 | T005, T012, T019, T020, T032, T043, T048 |
 | FR-024 | T002, T004, T008, T012–T018, T024 |
 | FR-025 | T005, T016                        |
-| FR-026 | T030-T033, T036, T039, T042-T043, T055-T057 |
+| FR-026 | T030-T033, T036, T039, T042-T043, T055-T060 |
 | FR-027 | T021                              |
 | FR-028 | T022                              |
 | FR-029 | T020–T022, T024                   |
@@ -147,8 +150,8 @@ Measured synthetic realistic payloads use that answer-value JSON UTF-8 rule: EN 
 | FR-033 | T018, T019, T025                  |
 | FR-034 | T027                              |
 | FR-035 | T016, T028                        |
-| FR-036 | T006, T009, T030-T036, T040-T041, T047-T048, T055-T057 |
-| FR-037 | T030-T036, T040-T041, T047, T055-T057 |
+| FR-036 | T006, T009, T030-T036, T040-T041, T047-T048, T055-T060 |
+| FR-037 | T030-T036, T040-T041, T047, T055-T060 |
 | FR-038 | T037-T039, T045, T056 |
 | FR-039 | T033, T037-T039, T042-T046 |
 

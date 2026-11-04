@@ -1,29 +1,31 @@
-# F15 Spec Kit Analyze — S32 h11
+# F15 Spec Kit Analyze — S32 h12
 
-**Date:** 2026-11-04 (after the S32 changes to `spec.md`, `plan.md`, and `tasks.md`)
-**Status:** Entry review for S32-PO-3 migration rename and S32-PO-5 F15 intake review.
+**Date:** 2026-11-04 (refreshed after the B06 row clarification and the S32-PO-8 updates to `spec.md`, `plan.md`, and `tasks.md`)
+**Status:** Entry review for PO-8 F15 intake implementation and verification.
 
 ## Entry check
 
-- [x] `spec.md` has numbered FRs, measurable SCs, and Given/When/Then acceptance scenarios for the affected form validation, builder, signup and intake behavior. Existing scope maps to FR-004/006/007/026/036/037/038 and their acceptance scenarios.
-- [x] Clarifications cite S32-PO-3 and S32-PO-5. No open ambiguities remain for Part A or exact PO-supplied EN copy; T03 canonical-range conflict and N07 unspecified English strings are explicitly marked blocked and excluded from implementation.
-- [x] `plan.md` describes the migration rename/history reconciliation and the approved intake review with the Arabic-fixture and copy boundaries.
-- [x] `tasks.md` has T055 [FR-004/006/007/026/036/037], T056 [FR-026/036/037/038], and T057 [FR-026/036/037]. Tasks remain unchecked pending implementation and test evidence.
-- [x] This Analyze is dated after all three changed artifacts (2026-11-04).
+- [x] `spec.md` has numbered FRs, measurable SCs, and Given/When/Then scenarios for PO-5/PO-8 scope. Requirements trace to FR-026/036/037 and existing SC coverage.
+- [x] Clarifications cite S32-PO-5 and S32-PO-8. **No open ambiguities remain for the work authorized in this round.** T03 Arabic option labels are explicitly deferred for PO copy approval and excluded from shipping; all unrelated EN rows stay pending PO review.
+- [x] `plan.md` covers approved copy, option values, dynamic N07 timing, N08 same-question chips, image and conditional verification, and the Playwright matrix.
+- [x] `tasks.md` adds T058–T060, each tagged with FR-026/036/037; tasks remain unchecked until current-head test evidence is available.
+- [x] This Analyze follows the updated specification, plan and tasks, dated 2026-11-04.
 
 ## Scope analysis
 
-- T055 is a metadata rename of the F15 `CREATE OR REPLACE FUNCTION` migration plus a filename reference, historical addendum, Stack D history proof/repair, and checks. It preserves the SQL bytes and explicitly excludes SQL replay and all other stacks.
-- T056 is limited to exact PO-supplied English entries. Other EN copy remains pending. T03’s 2–6 versus canonical Arabic 1–7 conflict is a blocker. N07 behavior may be verified, but exact English question/options are blocked until PO supplies them.
-- T057 verifies question order, conditions, option sets, N12 asset catalog/order/alt text and rendered UI. It does not authorize changing Arabic, inventing EN copy, or adding design tokens/components.
-- No CRITICAL or HIGH findings remain in the approved executable Part A scope. Two explicit product-copy/range blockers remain isolated from that scope and are recorded as PO decisions.
+- T058 records S32-PO-8 and the limited Arabic T03 range change in the canonical fixture. The exact Arabic labels are proposed separately and remain unshipped pending PO approval.
+- T059 implements only exact PO-approved copy and values: B01, B06, English T03 values 2–6, T08, exact N07 English timing copy, N08 integrated budget chips/no separate prompt, N11 0–10, and N12 image cards. Other EN strings remain pending.
+- T060 verifies order, conditions, options, image assets/alt text/order, responsive RTL/LTR light/dark rendering, axe, and repairs the recorded-controls test harness timeout without weakening its assertions.
+- B06 keeps the stable identifier and personal-data role while using the PO-approved Gender/Male/Female English copy and existing Arabic choice labels; the N12 selector mapping must support B06.
+- Existing test failures caused by stale blanket-pending assertions are test maintenance for the already-approved per-row approval inventory; the updated tests must continue proving that all nonapproved rows remain pending.
+- No new token, component, design pattern, dependency, Arabic string, or unapproved English string is authorized.
 
 ## Findings
 
 - **CRITICAL:** 0
 - **HIGH:** 0
-- **MEDIUM / blocked:** T03 range reconciliation; exact N07 English timing copy. No implementation may assume a resolution.
+- **MEDIUM / deferred:** Exact Arabic T03 visible option labels require PO copy approval before shipping those labels. The approved 2–6 values remain specified; no other implementation is blocked.
 
 ## Result
 
-**PASS for T055 and exact-copy portions of T056.** T03 range changes and N07 English strings remain blocked. T056/T057 implementation is agent-owned by S32-PO-5; orchestration/review only.
+**PASS for T058–T060 within the boundaries above.** Re-run Analyze after any further change to `spec.md`, `plan.md`, or `tasks.md` before implementation.

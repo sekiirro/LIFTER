@@ -69,8 +69,8 @@ Superseded by S17: this historical draft is not a required standalone UI or a pe
 
 ## Remaining copy awaiting PO approval
 
-EN intake translations remain **DRAFT — pending PO approval**. Health-notice entries below are historical S14 draft provenance; standalone notice translation is superseded and is not a ship blocker. This inventory records the approved Terms and sex copy and the remaining intake translation review.
+PO-approved intake English is limited to B01 “Full name (three parts)”, B06 “Gender” / “Male” / “Female”, T08 “Training split”, N08 “What’s your food budget?”, N07 timing question/options from S32-PO-8 Q6, and T03 option values 2–6 from S32-PO-8 Q5. The N07 meal-count question/options, N08 budget and food-chip option labels, N11 labels/feedback, N12 question/card descriptions, and every other EN intake row remain **DRAFT — pending PO approval**. T03 Arabic visible labels remain pending separate PO copy approval. Health-notice entries below are historical S14 draft provenance; standalone notice translation is superseded and is not a ship blocker. This inventory records the approved Terms and sex copy and the remaining intake translation review.
 
 - **Health notice Arabic** — historical S14 draft in `specs/015-forms-intake/fixtures/s14-po-decisions.json` (`P2_health_notice.ar`); standalone UI superseded by S17, contextual-only where useful.
 - **Health notice English** — historical S14 draft in `specs/015-forms-intake/fixtures/s14-po-decisions.json` (`P2_health_notice.en`); standalone UI superseded by S17, contextual-only where useful.
-- **EN intake translations** — `specs/015-forms-intake/spec.md` (EN translation and EN option translations tables). These authored translations are pending PO review before publication.
+- **Remaining EN intake rows and options** — `specs/015-forms-intake/spec.md` (EN translation and EN option translations tables). Items listed as approved in the S32-PO-5/S32-PO-8 register are the only exceptions; all remaining authored translations are pending PO review before publication.

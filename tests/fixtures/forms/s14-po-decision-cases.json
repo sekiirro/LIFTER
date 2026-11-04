@@ -1,5 +1,26 @@
 {
-  "pendingCopy": ["P2_health_notice", "EN_intake_translations"],
+  "pendingCopy": ["P2_health_notice"],
+  "approvedENRows": [
+    "B01",
+    "B06",
+    "T03.2",
+    "T03.3",
+    "T03.4",
+    "T03.5",
+    "T03.6",
+    "T08",
+    "N07.training_timing",
+    "N08"
+  ],
+  "pendingENRows": [
+    "B02",
+    "N01",
+    "N07",
+    "N07.2",
+    "N08.low.foods",
+    "N11.feedback.0_2",
+    "N12"
+  ],
   "parentIds": [
     "B01",
     "B02",
