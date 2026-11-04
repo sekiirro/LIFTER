@@ -77,6 +77,21 @@ Each build reports the edge-worker size against the official Workers size limit 
 - Windows and Linux developers produce the same results (line endings, path handling).
 - The local database tooling config is present, but no schema/migrations exist yet. Starting it is optional for this feature's gates.
 
+### User Story 5 - Focused CI event coverage (Priority: P1)
+
+The Product Owner wants main pushes and pull requests to receive the required CI checks without duplicate push checks on feature branches or wasted work on superseded pull request heads. The Storage checks remain a distinct required job.
+
+**Independent Test**: Inspect workflow event filters, concurrency behavior, and job definitions; observe one PR-head run and confirm the Storage job reports independently.
+
+**Acceptance Scenarios**:
+
+1. **Given** a push to a branch other than `main`, **When** GitHub evaluates workflow triggers, **Then** the push trigger does not run CI.
+2. **Given** a push to `main`, **When** GitHub evaluates workflow triggers, **Then** one push-triggered CI run starts.
+3. **Given** a pull request head commit, **When** GitHub evaluates workflow triggers, **Then** CI runs for the pull request head.
+4. **Given** an earlier CI run for a pull request is still active, **When** a newer head supersedes it, **Then** the earlier pull request run is canceled; a main push run is never canceled by this policy.
+5. **Given** the validate job has no browser-dependent steps, **When** validate runs, **Then** it does not install the unused Playwright browser.
+6. **Given** CI runs, **When** Storage checks execute, **Then** they remain a distinct `storage` job with an independent result.
+
 ## Requirements *(mandatory)*
 
 ### Functional Requirements
@@ -95,6 +110,11 @@ Each build reports the edge-worker size against the official Workers size limit 
 - **FR-012**: A README section MUST document prerequisites, commands and the gate list.
 - **FR-013**: Runtime and package-manager versions MUST be pinned for reproducibility (Node 24, `npm@11.17.0`, verified installed).
 - **FR-014**: The edge build and size report MUST run in Linux CI. The edge adapter's Windows support is limited, so these two checks are not required on Windows.
+- **FR-015**: CI push events MUST run only for the `main` branch; pushes to other branches MUST NOT start a push-triggered CI run.
+- **FR-016**: CI MUST run for pull request heads through the `pull_request` event.
+- **FR-017**: CI MUST cancel superseded pull request runs using a concurrency group scoped by pull request number; this cancellation policy MUST NOT cancel runs triggered by pushes to `main`.
+- **FR-018**: The `validate` job MUST NOT install Playwright browser binaries when none of its steps use a browser.
+- **FR-019**: The Storage checks MUST remain a distinct required CI job named `storage`, with an independently reported result.
 
 ## Success Criteria *(mandatory)*
 
@@ -105,6 +125,18 @@ Each build reports the edge-worker size against the official Workers size limit 
 - **SC-003**: The health endpoint responds successfully in 100% of smoke runs and exposes exactly 2 fields.
 - **SC-004**: The size report states the used percentage of the 64 MiB uncompressed Worker limit on every build.
 - **SC-005**: 0 deployments and 0 paid-service calls occur as part of this feature.
+- **SC-006**: A push to `main` starts one push-triggered CI run; a push to a non-main branch starts none; pull requests receive CI through `pull_request`.
+- **SC-007**: When a newer head supersedes an active pull request run, the older pull request run is canceled, while main push runs remain uncanceled by concurrency policy.
+- **SC-008**: The `validate` job contains no Playwright browser installation step if no validate step uses a browser.
+- **SC-009**: Every CI run reports distinct `validate`, `integration`, and `storage` jobs, with Storage required independently.
+
+## Clarifications
+
+### Session 2026-11-04
+
+- **S33-PO-4 (binding)**: The Product Owner directed: “S33-Q6: Approve Option 2. Implement all proposed CI optimizations, but keep the Storage job separate for now.” The same decision directs GitHub-hosted runners, postpones local self-hosted runner work and PR #45, and preserves exact-head CodeRabbit approval, zero unresolved threads, three executed green CI runs, and explicit PO approval per merge. No automatic merges.
+- The approved CI scope for this specification is: push events only on `main`; `pull_request` CI per pull request head; PR-only concurrency that cancels superseded runs and never cancels main; remove the unused Playwright browser installation from `validate` only when no validate step uses a browser; retain `validate`, `integration`, and separate required `storage` jobs and all other steps/checks.
+- **No open ambiguities** remain for this CI optimization scope.
 
 ## Assumptions
 
