@@ -65,5 +65,5 @@ Workspace ── Form ── FormVersion
 - The exact migration/function remains DB-blocked until F12/F14 merge and verified Stack D. No SQL is part of this plan. No human role or service-role caller has a direct delete or trigger path.
 - No role may correct after Closure, Refund or Deactivation (Q1), even before purge.
 - The S14 inventory and copy are supplied. The exact N01 option/title translations and N12 asset-to-percentage mapping require explicit source/PO confirmation where this spec does not list them; do not synthesize missing values. Reserved-name categories are defined in the signup contract.
-- Terms copy remains DRAFT pending PO approval. Architect defaults specify existing premium card/checkbox components for the Terms Card and 150-250ms N11 motion with `prefers-reduced-motion`.
+- Terms and Conditions Arabic and English drafts were approved verbatim by S30-PO-1 Q2. Architect defaults specify existing premium card/checkbox components for the Terms Card and 150-250ms N11 motion with `prefers-reduced-motion`.
 - Retention legal/technical feasibility for every hosted recoverable copy is a pre-production gate.
