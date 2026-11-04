@@ -146,23 +146,23 @@
       "optionLabels": [
         {
           "en": "2 days",
-          "ar": ""
+          "ar": "2"
         },
         {
           "en": "3 days",
-          "ar": ""
+          "ar": "3"
         },
         {
           "en": "4 days",
-          "ar": ""
+          "ar": "4"
         },
         {
           "en": "5 days",
-          "ar": ""
+          "ar": "5"
         },
         {
           "en": "6 days",
-          "ar": ""
+          "ar": "6"
         }
       ]
     },
@@ -339,23 +339,23 @@
       "optionLabels": [
         {
           "en": "",
-          "ar": "وجبة"
+          "ar": "الوجبة رقم {number}"
         },
         {
           "en": "",
-          "ar": "وجبة"
+          "ar": "الوجبة رقم {number}"
         },
         {
           "en": "",
-          "ar": "وجبة"
+          "ar": "الوجبة رقم {number}"
         },
         {
           "en": "",
-          "ar": "وجبة"
+          "ar": "الوجبة رقم {number}"
         },
         {
           "en": "",
-          "ar": "وجبة"
+          "ar": "الوجبة رقم {number}"
         },
         {
           "en": "Before the first meal",

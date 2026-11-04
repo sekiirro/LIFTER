@@ -3,6 +3,7 @@ import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { createMockFormsStaffAdapter } from '../../lib/forms/mock-staff-adapter';
 import { validateFormDefinition } from '../../lib/forms/validation';
+import { getMessages } from '../../lib/i18n';
 
 const root = process.cwd();
 const starter = JSON.parse(
@@ -51,14 +52,14 @@ describe('S32-PO-5/PO-8 intake starter controls', () => {
     expect(question('N08').label.en).toBe('What’s your food budget?');
   });
 
-  it('uses T03 English values 2–6 and keeps Arabic labels pending and unpublishable', async () => {
+  it('uses the PO-approved exact T03 labels in both locales', async () => {
     expect(question('T03').choices).toEqual(['2', '3', '4', '5', '6']);
     expect(
       question('T03').optionLabels.map((item: { en: string }) => item.en),
     ).toEqual(['2 days', '3 days', '4 days', '5 days', '6 days']);
     expect(
       question('T03').optionLabels.map((item: { ar: string }) => item.ar),
-    ).toEqual(['', '', '', '', '']);
+    ).toEqual(['2', '3', '4', '5', '6']);
     const result = await createMockFormsStaffAdapter().publish(
       'po',
       'your-first-step',
@@ -82,6 +83,9 @@ describe('S32-PO-5/PO-8 intake starter controls', () => {
     expect(question('N07.training_timing').optionLabels[5].en).toBe(
       'Before the first meal',
     );
+    expect(question('N07.training_timing').optionLabels[0].ar).toBe(
+      'الوجبة رقم {number}',
+    );
     expect(question('N07.training_timing').optionLabels[6].en).toBe(
       "I don't have a fixed time",
     );
@@ -92,6 +96,12 @@ describe('S32-PO-5/PO-8 intake starter controls', () => {
         expect.objectContaining({ questionId: 'N08', value: 'medium' }),
         expect.objectContaining({ questionId: 'N08', value: 'high' }),
       ]),
+    );
+  });
+
+  it('uses the exact Arabic meal-number template from S33-PO-3', () => {
+    expect(getMessages('ar')['forms.afterMealNumber']).toBe(
+      'الوجبة رقم {number}',
     );
   });
 

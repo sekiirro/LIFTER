@@ -755,7 +755,13 @@ function QuestionControl({
               checked={value === choice}
               onChange={() => onChange(choice)}
             />
-            {text(question.optionLabels?.[index]) || choice}
+            {question.id === 'T03' && locale === 'ar' ? (
+              <Bidi dir="ltr">
+                {text(question.optionLabels?.[index]) || choice}
+              </Bidi>
+            ) : (
+              text(question.optionLabels?.[index]) || choice
+            )}
           </label>
         ))}
       </div>
@@ -868,10 +874,16 @@ function QuestionControl({
         {choices.map((choice, index) => {
           const label =
             question.type === 'derivedChoice' && choice.startsWith('meal-')
-              ? messages['forms.afterMealNumber'].replace(
-                  '{number}',
-                  choice.slice(5),
-                )
+              ? messages['forms.afterMealNumber']
+                  .split('{number}')
+                  .map((part, partIndex) => (
+                    <span key={`${choice}-${partIndex}`}>
+                      {part}
+                      {partIndex === 0 && (
+                        <Bidi dir="ltr">{choice.slice(5)}</Bidi>
+                      )}
+                    </span>
+                  ))
               : text(
                   question.optionLabels?.[
                     question.type === 'derivedChoice'
