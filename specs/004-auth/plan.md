@@ -16,7 +16,7 @@ F4 adds:
   - an authorize → generate → record ordering, so every link shown has exactly one audit row
 - **The `/auth/recovery` page**: it consumes a link only on POST, then sets a new password.
 
-Client targeting follows P1 client-account lookup (S31-PO-2 ND-F4-5). Approved Trainer and limit behavior is documented but not implemented; T032/T033 track future work.
+Client targeting follows P1 client-account lookup (S31-PO-2 ND-F4-5). Approved Trainer and limit behavior is documented but not implemented; T032/T033 track future work. The local placeholder `recovery_link_limits()` enforces 20 per actor and 3 per target per one-hour window, which does not match the approved S31-PO-3 limits (10 per issuing staff account per rolling hour; 3 per client per rolling 24 hours across issuers).
 
 ## Technical Context
 
@@ -35,7 +35,7 @@ Client targeting follows P1 client-account lookup (S31-PO-2 ND-F4-5). Approved T
 | Principle | Status |
 |---|---|
 | I Isolation | The actor is derived server-side from a verified session. Generation is checked by the DB guard (`has_workspace_access` on the target's workspace) and app-layer `authorize()`. Denials are generic, so client existence isn't revealed. Foreign-workspace negative tests. ✅ |
-| III Least privilege | The new capability is limited to PO and WO, Trainer is deny-by-default until ND-F4-1, and Sales is denied. Matrix parity is tested. ✅ |
+| III Least privilege | The new capability is limited to PO and WO, Trainer is deny-by-default until T032 completes its separate implementation cycle, RLS, tests, and security review, and Sales is denied. Matrix parity is tested. ✅ |
 | IV Scope | PO manual reset links: BRD lines 40/104/130. WO/Trainer extension: owner decision 2026-10-27, to be registered as D-19 (PO approval in this PR). Self-service email reset is sequenced, not removed (ND-F4-7, D-07). No 2FA or device-management screen (PRD-12). ✅ |
 | VII Privacy | Recovery tokens are hashed by the provider, single-use and expire after 60 minutes in every environment; recovery sessions last 15 minutes. LIFTER stores no secret. The link is shown once and never logged. The audit holds ids only. The service-role key is server-only, enforced by the build and a CI scan. Provider configuration verification remains T031. |
 | VIII UI | `/login` and `/auth/recovery` are built on Design System components, AR (RTL) default plus EN, with axe e2e. ✅ |
@@ -60,7 +60,7 @@ Generation sequence (server action `generateRecoveryLink(targetUserId)`):
 
 ## Decision status
 
-S31-PO-2/3 decisions are recorded in [spec.md](spec.md#decision-register-owner-sub-decisions). ND-F4-7 remains open; approved Trainer scope and limits await the future implementation cycle, and T031 verifies provider expiry configuration.
+S31-PO-2/3 decisions are recorded in [spec.md](spec.md#decision-register-owner-sub-decisions). ND-F4-7 remains open; approved Trainer scope and limits await the future implementation cycle, and T031 verifies provider expiry configuration. The local rate-limit placeholder (20/actor, 3/target, 1 hour) does not match the approved S31-PO-3 limits; implementation/verification remains with T032/T033. No configuration verification has been executed in this lane.
 
 ## Project Structure
 

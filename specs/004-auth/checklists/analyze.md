@@ -54,3 +54,23 @@
 - The S31-PO-2 clarification remains recorded in `spec.md`; there are no ambiguities about the approved role scope. Existing ND-F4-7 and implementation/configuration gaps remain explicit.
 - Constitution I/III/IV alignment is preserved: role scope remains explicit, both authorization walls remain required, and the new Trainer behavior is not implemented early.
 - **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 7 inherited MEDIUM, 1 LOW resolved in this round; 22/22 FR/SC items mapped.
+
+## S33 SK-52 round 8 refresh
+
+- **Date:** 2026-11-04T18:13:06+02:00 (after the S33 PR #52 fix-round edits).
+- **Analyzed commit:** this fix commit (S33 round for PR #52; base `2eb3733`). The reviewed patch changes `README.md`, `specs/004-auth/plan.md` and this refresh only.
+- **Scope:** static consistency and evidence review; no tests, scans, stacks, or implementation actions performed.
+
+### Findings
+
+| ID | Severity | Artifact | Finding | Disposition |
+|---|---|---|---|---|
+| F4-R8-01 | LOW | `README.md`; `specs/004-auth/plan.md:19,63` | The README/plan wording stated configuration values were unverified without recording that a placeholder enforcement exists and mismatches the approved S31-PO-3 limits. | Corrected as documentation-only wording: `app_private.recovery_link_limits()` (`20261028120000_auth_recovery_links.sql`) enforces 20 per actor and 3 per target per one-hour window, which does not match the approved S31-PO-3 limits (10 per issuing staff account per rolling hour; 3 per client per rolling 24 hours across issuers). No claim that approved values are enforced; no configuration verification has been executed in this lane; implementation/verification remains with T032/T033. |
+| F4-R8-02 | LOW | `specs/004-auth/plan.md:38` | Constitution Check III still said Trainer is deny-by-default "until ND-F4-1" even though ND-F4-1 is decided (spec.md:129, S31-PO-2). | Corrected as documentation-only wording: Trainer is deny-by-default until T032 completes its separate implementation cycle, RLS, tests, and security review. Matrix parity is tested as before; no capability, RLS or matrix behavior changed. |
+
+### Coverage and verdict
+
+- FR-to-task mapping remains 15/15; SC-to-task mapping remains 7/7 (22/22 total). No task checkbox or evidence status changed.
+- Requirement semantics are unchanged (S31-PO-3 remains the authority; no scope or behavior change); no FR/SC re-mapping is required. Existing ND-F4-7 and implementation/configuration gaps remain explicit.
+- Constitution I/III/IV alignment is preserved: both authorization walls remain required, Trainer stays denied until its own approved Spec Kit cycle, and no Trainer behavior is implemented early.
+- **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 7 inherited MEDIUM, 2 LOW documentation-only corrections in this round; 22/22 FR/SC items mapped.

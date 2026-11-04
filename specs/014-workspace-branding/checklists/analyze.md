@@ -30,3 +30,23 @@
 ## Verdict
 
 **PASS WITH MEDIUM EVIDENCE GAPS** — 0 CRITICAL, 0 HIGH, 3 MEDIUM; 29/29 FR/SC items mapped. Static review only.
+
+## S33 SK-52 round 7 refresh
+
+- **Date:** 2026-11-04T18:13:06+02:00 (after the S33 PR #52 fix-round edits).
+- **Analyzed commit:** this fix commit (S33 round for PR #52; base `2eb3733`). The reviewed patch changes `specs/014-workspace-branding/tasks.md` (T039/T040 FR tags), `specs/014-workspace-branding/traceability.md` (FR-009/FR-014 rows) and this refresh only.
+- **Scope:** static consistency and evidence review; no tests, scans, stacks, or implementation actions performed.
+
+### Findings
+
+| ID | Severity | Artifact | Finding | Disposition |
+|---|---|---|---|---|
+| F14-R7-01 | LOW | `tasks.md:117-118`; `traceability.md` FR-009/FR-014 rows | T039 carries the FR-009 worst-case CPU/memory benchmark requirement but tagged only FR-017/SC-010; T040 carries the FR-014 audit-retention requirement but omitted FR-014; the FR-009/FR-014 traceability rows did not list T039/T040. | Corrected as documentation-only tag reconciliation: T039 now tags FR-009, FR-017; SC-010; T040 now tags FR-014, FR-017, FR-018; SC-010. Traceability FR-009 row tasks become `T009,T013,T014,T021,T022,T039,T043` (status stays PARTIAL); FR-014 row tasks become `T005,T014,T027,T040,T043` (see F14-R7-02). |
+| F14-R7-02 | LOW | `traceability.md` FR-014 row | Adding the open T040 tag must not upgrade FR-014 on a tag change alone. | Status kept VERIFIED solely on executed evidence already cited: T021 (`tests/integration/branding-audit.test.ts::keeps audit rows detached from collectible targets and immutable`) — RED before migration, GREEN on final fresh Stack B reset and integration; audit schema has no version/asset FK, proving audit rows permanent and independent of version/asset retention. T040 (production backup/restore + independent audit-retention verification) remains open and is not claimed as satisfied; FR-014 does not rely on the T040 tag. If the architect prefers strict open-T040 alignment, demote FR-014 to PARTIAL and set the summary to 19 VERIFIED / 10 PARTIAL. |
+
+### Coverage and verdict
+
+- FR-to-task mapping remains 18/18; SC-to-task mapping remains 11/11 (29/29 total). No task checkbox or evidence status changed; traceability totals remain 20 VERIFIED / 9 PARTIAL.
+- Requirement semantics are unchanged (no scope or behavior change); the only requirement↔task linkage change is FR-009↔T039 and FR-014↔T040, mirrored in traceability.
+- FR-009 remains PARTIAL (owner-facing editor deferred by S19-PO-2); FR-011, FR-012, SC-005 remain PARTIAL unchanged; T039/T040/T041/T043 remain open production-evidence tasks.
+- **PASS WITH MEDIUM EVIDENCE GAPS** — 0 CRITICAL, 0 HIGH, 3 MEDIUM, 2 LOW documentation-only corrections in this round; 29/29 FR/SC items mapped.

@@ -504,8 +504,10 @@ the account holder sets a new password.
 ND-F4-3 requires 60-minute recovery-link expiry in every environment and an
 independent 15-minute recovery session. S31-PO-3 sets recovery generation
 limits at 10 per issuing staff account per rolling hour and 3 per client per
-rolling 24 hours across issuers. Existing configuration values have not been
-verified against these approved decisions. P1 supplies client lookup;
+rolling 24 hours across issuers. A placeholder enforcement exists in
+`app_private.recovery_link_limits()`
+(`20261028120000_auth_recovery_links.sql`): 20 per actor and 3 per target per
+one-hour window. It does not match the approved limits above. P1 supplies client lookup;
 S31-PO-2 approves clients-only scope, all workspace Trainers, and copy-only
 delivery. Approved Trainer and limit behavior remains unimplemented and needs
 its specified future implementation and verification gates.
