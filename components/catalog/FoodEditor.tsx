@@ -10,7 +10,6 @@ import { dirFor } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 import { interpolateNumbers } from '../../lib/i18n/format';
 import {
-  MAX_CATALOG_TEXT_LENGTH,
   buildFoodEditorInput,
   clearResolvedMacroErrors,
   foodWarnings,
@@ -345,7 +344,6 @@ export function FoodEditor({
               inputProps={{
                 id: `${base}-name-ar`,
                 value: draft.nameAr,
-                maxLength: MAX_CATALOG_TEXT_LENGTH,
                 disabled: !editing,
                 dir: 'rtl',
                 onChange: (e) => update('nameAr', e.currentTarget.value),
@@ -357,7 +355,6 @@ export function FoodEditor({
               inputProps={{
                 id: `${base}-name-en`,
                 value: draft.nameEn,
-                maxLength: MAX_CATALOG_TEXT_LENGTH,
                 disabled: !editing,
                 dir: 'ltr',
                 onChange: (e) => update('nameEn', e.currentTarget.value),
@@ -415,7 +412,6 @@ export function FoodEditor({
                 inputProps={{
                   id: `${base}-${key}`,
                   value,
-                  maxLength: MAX_CATALOG_TEXT_LENGTH,
                   disabled: !editing,
                   onChange: (e) => update(key, e.currentTarget.value),
                 }}
@@ -511,7 +507,6 @@ export function FoodEditor({
                 inputProps={{
                   id: `${base}-serving-ar-${index}`,
                   value: serving.labelAr,
-                  maxLength: MAX_CATALOG_TEXT_LENGTH,
                   disabled: !editing,
                   onChange: (e) =>
                     setServing(index, 'labelAr', e.currentTarget.value),
@@ -523,7 +518,6 @@ export function FoodEditor({
                 inputProps={{
                   id: `${base}-serving-en-${index}`,
                   value: serving.labelEn,
-                  maxLength: MAX_CATALOG_TEXT_LENGTH,
                   disabled: !editing,
                   onChange: (e) =>
                     setServing(index, 'labelEn', e.currentTarget.value),
@@ -647,7 +641,6 @@ export function FoodEditor({
                 inputProps={{
                   id: `${base}-portion-unit-${index}`,
                   value: item.portionUnit,
-                  maxLength: 40,
                   disabled: !editing,
                   onChange: (e) =>
                     setAlternative(index, 'portionUnit', e.currentTarget.value),

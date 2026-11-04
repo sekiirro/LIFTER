@@ -285,6 +285,21 @@ describe('food editor (T029)', () => {
     ).toContain(ar['catalog.foodEditorTitle']);
   });
 
+  it('lets code-point validation govern emoji names without a UTF-16 input limit', () => {
+    const emojiName = '😀'.repeat(120);
+    expect(
+      validateFoodEditorDraft({ ...base, nameEn: emojiName }),
+    ).not.toHaveProperty('name');
+
+    const markup = renderToStaticMarkup(
+      createElement(FoodEditor, {
+        locale: 'en',
+        initialDraft: { ...base, nameEn: emojiName },
+      }),
+    );
+    expect(markup).not.toMatch(/<input[^>]*id="[^"]*-name-en"[^>]*maxlength=/i);
+  });
+
   it('renders pending, error, and success feedback without losing the submit control', () => {
     const saving = renderToStaticMarkup(
       createElement(FoodEditor, {
