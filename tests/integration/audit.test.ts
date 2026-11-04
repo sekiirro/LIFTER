@@ -344,8 +344,22 @@ describe('visibility (T004)', () => {
       select id from public.audit_events
       where workspace_id in (${f.wsA.id}, ${f.wsB.id})
     `;
+    const assignmentIds = await db<{ id: string }[]>`
+      select id from public.audit_events
+      where action = 'staff_role.assigned'
+        and target_table = 'staff_profiles'
+        and workspace_id is null
+        and target_id in (
+          ${f.po.userId}, ${f.woA.userId}, ${f.trainerA.userId},
+          ${f.salesA.userId}, ${f.trainerB.userId}
+        )
+    `;
     const denialIds = [
-      ...new Set([...ids, ...fixtureIds.map((row) => row.id)]),
+      ...new Set([
+        ...ids,
+        ...fixtureIds.map((row) => row.id),
+        ...assignmentIds.map((row) => row.id),
+      ]),
     ];
     const poRows = checked(
       await f.po.client.from('audit_events').select('*').in('id', ids),
