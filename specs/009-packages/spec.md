@@ -1,9 +1,30 @@
 # Feature Specification: Packages & Package Versions (P1-F9)
 
 **Feature Branch**: `009-packages`
-**Created**: 2026-10-27
-**Status**: Draft — binding architect design transcribed; implementation and independent review pending.
-**Input**: P1-F9, approved architect/reviewer design supplied for this run. Sources: [BRD](../../LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md) lines 30, 40–41, 53–54, 102, 196, 317; [decision register](../../docs/04-changes-and-questions.md) D-09/D-10, D-11, D-13, D-17; [Constitution v1.1.0](../../.specify/memory/constitution.md) I–III, V, VII–IX. Later decisions supersede historical BRD installment/refund wording.
+**Created**: 2026-10-27  
+**Last Updated**: 2026-11-04  
+**Status**: Clarified S31 amendment — approved market/type/currency rules recorded; open PO decisions block parts of implementation.
+**Input**: P1-F9, approved architect/reviewer design supplied for this run. Sources: [BRD](../../LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md) lines 30, 40–41, 53–54, 102, 196, 317; [decision register](../../docs/04-changes-and-questions.md) D-09/D-10, D-11, D-13, D-17; [Constitution v1.4.0](../../.specify/memory/constitution.md) I–III, V, VII–IX. Later decisions supersede historical BRD installment/refund wording. S31 sources: `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md`, S31-PO-4 and S31-PO-5 (S31-Q4).
+
+## Clarifications
+
+### Session 2026-11-04
+
+The following PO decisions are recorded verbatim. The S31-PO-5 decision supersedes only the
+authorship part of S31-PO-4 SK-009-01; its market/type/currency and no-conversion rules stand.
+
+- S31-PO-4 SK-009-01: "Workspace Owners can create unlimited distinct packages by market (Egypt/international) and type (year-round/promotional). Egypt packages: EGP only. International packages: EGP, USD, SAR. No assumed currency conversion."
+- S31-PO-5 (S31-Q4, supersedes the authorship part of the above): "S31-Q4: Approve Option B. Platform Owner exclusively creates, names, prices, and controls multiple independent packages per workspace, including year-round and promotional offers. Egypt packages use EGP only; international packages allow EGP/USD/SAR. Workspace Owners cannot create or price packages. Update PO register/specs, delegate implementation, and preserve all review and merge gates." (Option B text: "Keep F9's PO-only authorship; add the market (Egypt/international) and type (year-round/promotional) fields and the currency rule (Egypt = EGP; international = EGP/USD/SAR). Smaller change.")
+- S31-PO-4 SK-009-04: "Keep both denied (Recommended)" — option text: "Least privilege; current behaviour." (Sales and Trainer commission visibility stays denied.)
+
+Resolved interpretations from those records: Platform Owner (PO) exclusively creates, names,
+prices and controls packages; Workspace Owners (WO), Sales and Trainers cannot create or price;
+"unlimited distinct packages" means there is no package-count cap or quota; allowed currencies are
+market-conditional (Egypt = EGP only; International = EGP/USD/SAR); no currency conversion is
+assumed; and Sales/Trainer commission visibility remains denied. Market/type are package attributes
+and are readable by the PO and by any role already permitted to read the owning package record under
+FR-008; this grants no new audience. Any other open point is listed under the PO decision register
+below; no unlisted ambiguity is treated as resolved.
 
 ## User Scenarios & Testing _(mandatory)_
 
@@ -71,10 +92,55 @@ The PO opens `/packages` from the signed-in landing, selects a workspace, create
 3. **Given** AR or EN, **When** using the form and confirmation dialog, **Then** direction, labels, errors, money formatting and keyboard focus work in that language; authored package labels remain exactly authored.
 4. **Given** an anonymous visitor, **When** `/packages` is requested, **Then** sign-in is required. A signed-in non-PO receives server-side 404/denial and no package-management data; hiding a link alone is insufficient.
 
+### User Story 5 - Manage independent market and offer-type packages (Priority: P1)
+
+The PO can manage multiple independent packages in one workspace, each explicitly classified as
+Egypt or International and Year-round or Promotional. Packages do not compete for a single
+workspace slot or a package-count quota.
+
+**Why this priority**: The S31 decision adds the commercial dimensions required for distinct
+packages while preserving PO-only governance and immutable terms.
+
+**Independent Test**: With two existing packages in one workspace, have the PO create and publish
+another distinct package under the approved market/type rules; verify all three remain independent
+and no count limit is encountered.
+
+**Acceptance Scenarios**:
+
+1. **Given** a workspace already containing distinct packages, **When** the PO creates another package with a distinct canonical code and approved market/type attributes, **Then** it becomes another independent package identity in that workspace without replacing or merging an existing package.
+2. **Given** any number of existing packages in a workspace, **When** the PO creates one more distinct package, **Then** no package-count quota, cap or workspace package slot rejects it.
+3. **Given** a WO, Sales or Trainer, **When** they attempt to create, name or price a package in their own workspace, **Then** the request is denied before any package, offer, version or audit row is created.
+
+### User Story 6 - Publish and display prices in an approved currency (Priority: P1)
+
+The PO publishes a price only in a currency permitted by the package's market. Every authorized
+reader sees the stored amount with its own currency; no amount is converted or combined with an
+amount in another currency.
+
+**Why this priority**: The approved currency matrix and no-conversion rule are financial-truth
+requirements and must be enforced at publication; downstream propagation is covered only when
+SK-009-09 is answered.
+
+**Independent Test**: Exercise the full Egypt/International currency matrix and publish/read two
+packages in different currencies in one workspace; verify accepted/rejected publications, exact
+own-currency display and absence of conversion or cross-currency totals.
+
+**Acceptance Scenarios**:
+
+1. **Given** an Egypt package, **When** the PO publishes EGP terms, **Then** publication succeeds and the version stores and displays that amount only in EGP.
+2. **Given** an Egypt package, **When** the PO attempts to publish USD or SAR terms, **Then** publication is rejected and no version, pointer change or publication event is created.
+3. **Given** an International package, **When** the PO publishes EGP, USD or SAR terms, **Then** each permitted publication succeeds in its own currency and no derived or converted amount is stored or shown.
+4. **Given** one workspace has packages shown in different currencies, **When** an authorized user reviews them, **Then** each amount appears with its own currency and the interface exposes no cross-currency total.
+5. **Given** an existing published package version, **When** the S31 rules are introduced, **Then** its identity and stored financial terms remain unchanged; later terms are published as a new immutable version.
+
 ### Edge Cases
 
 - Empty, whitespace-only or over-120-character labels; malformed slug; missing commission (zero is explicit and valid), negative price/rate, excessive rate, fractional days and unsafe numeric conversion are rejected.
-- Currency must have three uppercase ASCII letters. Format validation does not approve a currency list or assume two minor-unit decimals for every currency.
+- Currency must have three uppercase ASCII letters and, after the S31 rule, must also be permitted by market: Egypt accepts only EGP; International accepts EGP, USD or SAR. Other format-valid currencies are rejected for both markets.
+- An International package priced in EGP remains an International package; stored currency MUST NOT be used to infer or rewrite market.
+- Packages in one workspace may carry different currencies. They remain separate monetary values; no converted amount, exchange rate or cross-currency total is derived.
+- Existing rows have no approved market/type classification. No legacy default, currency-based inference or silent backfill is permitted before SK-009-05 is resolved.
+- The entity that owns market/type, whether either value is mutable, and what `Promotional` changes remain NEEDS PO under SK-009-06 and SK-009-07; implementation MUST NOT guess them.
 - Custom 90 days and preset 3 months share the same offer key. Its duration representation is fixed at first creation; a conflicting representation is rejected rather than silently editing the offer.
 - A lost response followed by a retry identical to current returns the current version id. Any other payload, including older non-current terms, appends N+1 and moves current with one publication event.
 - A simultaneous first publish and availability change serialize safely. Publishing never silently re-enables an existing offer.
@@ -100,12 +166,21 @@ The PO opens `/packages` from the signed-in landing, selects a workspace, create
 - **FR-012**: `/packages` MUST be PO-only server-side, redirect anonymous users to login, and initially link only from the PO signed-in landing pending ND-F9-5. It MUST expose workspace selection, offer review, canonical-code creation, publication and confirmed availability controls (BRD 102).
 - **FR-013**: UI MUST use the Design System, Arabic-first RTL and English LTR, existing dark/light themes, responsive keyboard-accessible controls and loading/empty/error states. Prices MUST format exactly from minor units with currency; authored labels MUST never be machine-translated (Constitution VIII).
 - **FR-014**: Required verification MUST include role × own/foreign workspace matrices for every RPC/read path, anonymous/non-staff/revoked denial, commission hiding, all-role immutability guards, concurrent publication, duration boundaries, exact audit events without PII, composite-relation rejection, validation/money units, AR/EN route and axe checks, and RLS-catalog/matrix parity (Constitution I; quality gates).
+- **FR-015**: Every package MUST have exactly one market attribute with value `Egypt` or `International`, authored and controlled by the PO on the entity selected by SK-009-06, and readable under the existing FR-008 package-read scope. The attribute value MUST NOT be inferred from a stored currency. **[NEEDS PO: SK-009-05 and SK-009-06 — legacy-row classification, owning entity and mutability are not decided.]**
+- **FR-016**: Every package MUST have exactly one type attribute with value `Year-round` or `Promotional`, authored and controlled by the PO on the entity selected by SK-009-06, and readable under the existing FR-008 package-read scope. The type value itself MUST NOT imply unapproved date, visibility or availability behavior. **[NEEDS PO: SK-009-06 and SK-009-07 — owning entity, mutability and promotional behavior are not decided.]**
+- **FR-017**: A published package version's currency MUST be EGP when its package market is Egypt. When its package market is International, its currency MUST be EGP, USD or SAR. The database and application validation walls MUST reject every other market/currency combination before any version, pointer or event is created (S31-PO-4 SK-009-01; S31-PO-5).
+- **FR-018**: A price MUST be stored, displayed, snapshotted and used only in its own currency. The platform MUST NOT derive or perform currency conversion, MUST NOT store an assumed exchange rate, and MUST NOT calculate a total across currencies (S31-PO-4 SK-009-01; Constitution II).
+- **FR-019**: The PO MUST be able to create unlimited distinct packages per workspace. No package-count cap, quota or single-package-per-workspace limit may be introduced. Each distinct package MUST retain an independent identity, current-version pointer and immutable version sequence (S31-PO-4 SK-009-01; S31-PO-5).
+- **FR-020**: Platform Owner exclusively MUST create, name, price and control packages, including market/type attributes and availability. Workspace Owners, Sales and Trainers MUST NOT create, name or price packages in any workspace, including their own workspace. FR-001, FR-007 and FR-012 remain unchanged and continue to enforce this rule (S31-PO-5).
+- **FR-021**: Introducing market, type and market-conditional currency rules MUST preserve every existing published package version byte-for-byte and MUST NOT update, delete, truncate or silently backfill package-version terms. A changed priced term MUST remain a new immutable version under FR-005 and FR-006 (Constitution II/V).
 
 ### Key Entities
 
-- **Package**: platform-level canonical code and immutable creation attribution.
-- **Package offer**: a workspace's sellable package/duration identity, availability and current published version.
-- **Package version**: immutable numbered terms: authored bilingual names, price/currency, commission, duration snapshot and publication attribution.
+- **Package**: platform-level canonical code and immutable creation attribution. Multiple canonical packages may coexist in one workspace; there is no package-count quota.
+- **Package offer**: a workspace's sellable package/duration identity, availability and current published version. The final owner and mutability of the S31 market/type attributes are **[NEEDS PO: SK-009-06]**.
+- **Package version**: immutable numbered terms: authored bilingual names, price in its own currency, commission, duration snapshot and publication attribution. Market/type are not added to historical version terms unless the PO explicitly approves that snapshot model under SK-009-06.
+- **Market**: approved attribute value `Egypt` or `International`; it controls the permitted currency set but is never inferred from a stored currency.
+- **Package type**: approved attribute value `Year-round` or `Promotional`; every behavior beyond the attribute value itself is **[NEEDS PO: SK-009-07]**, so no date, visibility or availability behavior is assumed.
 - **Audit event**: append-only record of one actual creation, publication or availability change.
 
 ## Success Criteria _(mandatory)_
@@ -116,24 +191,48 @@ The PO opens `/packages` from the signed-in landing, selects a workspace, create
 - **SC-004**: Each successful actual change yields exactly one matching audit event and every rejected or identical-to-current replayed request yields zero new change events; reverting to older terms yields one publication event; zero PII fields occur in package audit details.
 - **SC-005**: PO can complete create → publish → enable in both AR and EN; all required states are exercised, keyboard operation succeeds and automated accessibility checks find zero violations in tested markup.
 - **SC-006**: All preset/custom boundary cases, required values and supported-currency minor-unit formatting fixtures pass without precision loss or invented catalog data.
+- **SC-007**: 100% of newly created workspace packages carry exactly one approved market value and one approved type value; 100% of same-workspace distinct package fixtures coexist independently; 0 package-count cap/quota failures occur.
+- **SC-008**: Across the complete Egypt/International × EGP/USD/SAR matrix, 100% of permitted combinations publish successfully and 100% of prohibited combinations fail before any version, pointer or event mutation; the Egypt+EGP and International+EGP/USD/SAR cases are each covered.
+- **SC-009**: 100% of displayed and stored package amounts retain their own currency and exact minor-unit value; 0 converted/derived amounts, assumed exchange rates or cross-currency totals are produced on package surfaces. Downstream registration/subscription/installment/commission/payment/refund behavior is covered only after SK-009-09 is answered.
+- **SC-010**: Across the full role × own/foreign workspace matrix, 100% of valid PO create/name/price/control attempts succeed and 100% of WO/Sales/Trainer create/name/price attempts are denied; Sales/Trainer commission remains absent from every supported read path.
+- **SC-011**: After the forward schema change, 100% of pre-existing package-version identifiers and stored price/currency/commission/duration terms remain unchanged, and 0 historical version rows are updated, deleted, truncated or inferred into a market/type classification.
+- **SC-012**: 100% of market/type display strings come byte-for-byte from a PO-approved Arabic/English record; 0 unreviewed or machine-translated market/type copy ships in UI, errors or fixtures.
 
-## NEEDS DECISION (mark; do not resolve)
+## PO decision register and NEEDS DECISION
 
-- **ND-F9-1 — Allowed currencies**: single platform currency versus workspace configuration/another approved set. Enforce format only; no default currency or allow-list is invented.
+### Closed by S31
+
+- **ND-F9-1 — Allowed currencies: CLOSED** by S31-PO-4 SK-009-01 and S31-PO-5: Egypt packages use EGP only; International packages allow EGP/USD/SAR; no assumed conversion. A generic three-letter format check is no longer sufficient.
+- **ND-F9-4 — Sales/Trainer commission visibility: CLOSED** by S31-PO-4 SK-009-04: both remain denied. WO visibility remains as approved in BRD 41.
+- **Package authorship conflict: CLOSED** by S31-PO-5 / S31-Q4: PO only. WO cannot create or price packages. FR-001, FR-007 and FR-012 are unchanged.
+- **Package count: CLOSED** by S31-PO-4 SK-009-01 and S31-PO-5: "unlimited distinct packages" means no package-count cap or quota.
+
+### Open — implementation blockers
+
+- **ND-F9-6 / SK-009-05 — Existing-row classification**: no approved mapping or legacy state for existing offers/versions; no currency-based inference or default is permitted.
+- **ND-F9-7 / SK-009-06 — Market/type ownership and mutability**: workspace offer, canonical package or version snapshot, and whether values may change are undecided.
+- **ND-F9-8 / SK-009-07 — Promotional behavior**: classification/display, date window, visibility and availability semantics are undecided.
+- **ND-F9-9 / SK-009-08 — Arabic/English labels**: exact approved market/type copy is unavailable.
+- **ND-F9-10 / SK-009-09 — Downstream currency relationship**: same-currency propagation through registration/installments/subscriptions/commission/refunds is not yet explicitly approved for S31.
+### Existing open items retained
+
 - **ND-F9-2 — Custom-duration bounds**: only ≥1 day is enforced as business policy; storage integer limits remain technical constraints.
 - **ND-F9-3 — Actual catalog**: tiers, allowed duration combinations, names, prices and commission rates (BRD 317) are **NEEDS SOURCE CONFIRMATION**. PO enters data; no YBS defaults or seed catalog.
-- **ND-F9-4 — Sales/Trainer commission visibility**: denied meanwhile. WO visibility comes from BRD 41.
 - **ND-F9-5 — PO navigation placement**: carries F2 ND-5; link only from signed-in landing for now.
 
-These data/policy decisions do not block local development. Existing [production readiness](../../docs/07-production-readiness.md) gates remain open; this feature authorizes no deployment or cloud migration.
+The S31 open items are explicit blockers for the affected migration, UI and downstream-contract work;
+they are not resolved by this specification. Existing [production readiness](../../docs/07-production-readiness.md) gates remain open; this feature authorizes no deployment or cloud migration.
 
 ## Assumptions
 
 - Existing auth, tenancy, audit and Design System from `origin/main` are reused. This run writes artifacts only; Claude's independent implementation review remains required.
+- The shipped F9 implementation is PR #9 merge `b565d4c` (implementation tip `b359985`). The S31 delta is a new forward migration and never edits `20261029120000_packages.sql` or existing package-version terms.
+- The approved market/type enum values and market-conditional currency set are fixed. Their exact owning entity, mutability, legacy-row representation and promotional behavior remain NEEDS PO; implementation MUST NOT choose defaults.
+- Currency remains an immutable published-term concern in the shipped model. The final propagation contract through F10/F12 is conditional on SK-009-09; no conversion is approved under any option.
 - Fixed publish signature has no request key. Exact full-term equality with the offer's CURRENT version is the database replay identity. Replay returns current without insert, pointer change or event. All other payloads, including older non-current terms, append N+1 and move current with one publication event. No new idempotency-key parameter/table is invented.
 - Initial unavailability and fixed duration representation are conservative implementation interpretations, not catalog policy. No automatic offer enablement is implied by publication.
 - Staff may read unavailable offers/history within their workspaces; future sellable selection filters `available` and uses `current_version_id`. F10/F12 implement token issuance, purchase snapshots and subscriptions, not F9.
-- Price entry is in explicitly labeled minor units. Currency-aware display follows currency minor-unit metadata; unknown format-valid codes fall back to an exact minor-unit display with the code instead of guessing an exponent.
+- Price entry is in explicitly labeled minor units. Under the S31 rule only EGP, USD and SAR may enter a package version; currency-aware display follows their minor-unit metadata without guessing an exponent.
 - No registration links, subscriptions, installment schedules, earned-commission calculations, ledger/payment/refund flows, clients, exports or catalog seeding are implemented here. D-13/D-17 are preserved as downstream contracts, not broadened into F9 work.
 
 ## Constitution Check

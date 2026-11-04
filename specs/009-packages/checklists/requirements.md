@@ -14,9 +14,9 @@
 
 ## Requirement Completeness
 
-- [x] No blocking clarification remains; five required NEEDS DECISION items stay explicitly open.
-- [x] FR-001..FR-014 are testable with boundaries and deny-by-default outcomes.
-- [x] SC-001..SC-006 are measurable observable outcomes.
+- [x] No clarification is silently resolved; five S31 PO blockers (SK-009-05..SK-009-09) are explicitly listed and marked NEEDS PO.
+- [x] FR-001..FR-021 are testable with boundaries and deny-by-default outcomes; S31 FRs carry their PO gates.
+- [x] SC-001..SC-012 are measurable observable outcomes.
 - [x] All stories have acceptance scenarios, priority/rationale and independent fixture tests.
 - [x] Validation, replay, concurrency, foreign-workspace, commission and privileged-DML edge cases identified.
 - [x] Scope excludes F10/F12 implementation, seeds and unapproved financial policy.
@@ -28,10 +28,10 @@
 - [x] Own/foreign matrices cover every RPC/read, including narrow commission projection.
 - [x] All-role immutability, exact audit, money precision and composite FK rejection have negative checks.
 - [x] AR-first/EN, states, Design System, server route denial and axe are specified.
-- [x] Constitution v1.1.0 checked; no exception, deployment or production closure claimed.
+- [x] Constitution v1.4.0 checked; no exception, deployment or production closure claimed.
 
 ## Notes
 
-Following 004-auth, owner sub-decisions are NEEDS DECISION rather than blocking clarification markers. ND-F9-1..5 intentionally remain unresolved per binding instructions; ND-F9-3 remains NEEDS SOURCE CONFIRMATION. They do not block local development.
+Following 004-auth, owner sub-decisions are NEEDS DECISION rather than blocking clarification markers. S31 closes ND-F9-1 (market-conditional currencies/no conversion) and ND-F9-4 (Sales/Trainer commission denied), and resolves the authorship conflict and package-count question. ND-F9-2/3/5 and SK-009-05..SK-009-09 remain unresolved; SK-009-05..09 block the S31 implementation. No unlisted ambiguity is treated as resolved.
 
 Four technical interpretations are explicit: exact-payload replay under fixed signature, safe view plus PO/WO rate RPC for shared authenticated role, initially unavailable offers, and fixed preset/custom representation per day key. None resolves the policy NDs. Validation result: PASS for artifact quality/coverage. Implementation tasks remain unchecked because no application code/tests run here.
