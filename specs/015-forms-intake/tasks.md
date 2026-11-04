@@ -41,8 +41,8 @@ These corrections are within the previously approved F15 scope. They do not add 
 - [x] T075 [FR-026/036/037] Reject empty and repeated media optimizer format names with a clear argument error; preserve supported format handling.
 - [x] T076 [FR-026/036/037] Correct stale Terms approval status and restore damaged separators in existing verification reports without changing findings or decisions.
 - [x] T077 [FR-024/025] Document the exact fresh-checkout command that creates the ignored Stack D migrations junction.
-- [x] T078 [FR-026/036/037] Update the F15 copy inventory for S33-PO-3: remove Arabic T03/N07 from pending approval and retain unrelated pending copy as-is. Evidence: `specs/015-forms-intake/traceability.md` and commit `29ccf35`.
-- [x] T079 [FR-025] Make the T005 dead-job audit test seed a provider-diagnostic canary through the job failure input, verify only allow-listed error codes can persist, and prove the leak mutant is detected. Evidence: `specs/015-forms-intake/traceability.md` and commit `c2d9dc6`.
+- [x] T078 [FR-026/036/037] Update the F15 copy inventory for S33-PO-3: remove Arabic T03/N07 from pending approval and retain unrelated pending copy as-is. Evidence: `specs/015-forms-intake/traceability.md` and commit `fb18c1a`.
+- [x] T079 [FR-025] Make the T005 dead-job audit test seed a provider-diagnostic canary through the job failure input, verify only allow-listed error codes can persist, and prove the leak mutant is detected. Evidence: `specs/015-forms-intake/traceability.md` and commit `cf5ca5f`.
 
 ## Phase 0: Stack and shared-contract prerequisites
 
