@@ -50,3 +50,9 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 | FR-024 / FR-025 — document fresh-checkout Stack D junction creation | T077 | `docs/11-second-local-stack.md` includes an existence guard and exact `New-Item -ItemType Junction` command targeting the root migrations directory. | `c9b00eb` |
 | FR-026 / FR-036 / FR-037 — reconcile Arabic T03/N07 pending-copy inventory with S33-PO-3 | T078 | `specs/015-forms-intake/reports/S14-terms-draft.md` now lists exact Arabic approvals and keeps unrelated English intake copy pending. | `fb18c1a` |
 | FR-025 — map unapproved job diagnostics before persistence and dead-letter audit | T079 | RED on Stack D before migration: T005 stored `forms-private-canary-provider-token` verbatim in `jobs.last_error`. GREEN on A: `tests/integration/jobs.test.ts::T005 persists only the allow-listed F15 transport code in a dead job and audit` passed 11/11; `tests/unit/forms-safe-error-sinks.test.ts::T005 maps unapproved job diagnostics to handler_error before persistence` passed 12/12, and its raw `error_code` sink mutant was rejected. | `cf5ca5f` |
+
+## S34 F15 split-fix traceability
+
+| Requirement | Task | Test/evidence | Commit |
+| --- | --- | --- | --- |
+| FR-008 / FR-013 / FR-020 — current assignment authorization and snapshot filtering for correction history | T090 | RED: focused `tests/unit/forms-submission-routes.test.ts` initially failed because the authorized correction-history GET route was absent on A. GREEN: `tests/unit/forms-submission-routes.test.ts::filters correction-history keys to the current assignment snapshot`; focused file 9/9. | `da31455` |

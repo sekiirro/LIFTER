@@ -53,7 +53,7 @@ These corrections are within the previously approved F15 scope. They do not add 
 - [ ] T087 [FR-008/013] Return the existing non-retryable submitted/business status when a draft save races with or follows submission; do not retry a permanent state conflict as a transient outage.
 - [ ] T088 [FR-039] Run Terms policy fixture inserts and dependent assertions in the same rollback-scoped transaction so append-only test rows cannot contaminate later current-policy lookups.
 - [ ] T089 [FR-026/036/037] Replace the synthetic PO fixture's developer-local source path with a stable decision identifier; add a mutation check that rejects absolute machine-local paths.
-- [ ] T090 [FR-008/013/020] Preserve current assignment authorization and revision context through the correction route; test stale, foreign, and valid synthetic contexts with generic denial behavior.
+- [x] T090 [FR-008/013/020] Preserve current assignment authorization and revision context through the correction route; test stale, foreign, and valid synthetic contexts with generic denial behavior.
 - [ ] T091 [FR-038/039] Render server-side signup field errors beside their fields, clear the error on the approved edit path, and move focus accessibly without adding unapproved copy; cover with unit and browser tests.
 - [ ] T092 [FR-008/013] Localize boolean answer labels in correction history through existing AR/EN message keys; retain current string and numeric rendering.
 - [ ] T093 [FR-004/006/026/036/037] Render dynamic derived meal labels in FormPreview through the existing Bidi/template path for AR-RTL and EN-LTR; add exact interpolation and direction tests without changing copy or styling.
