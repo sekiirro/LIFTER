@@ -165,14 +165,8 @@ it('narrow 30-day purge removes only old attempts and preserves audit and ticket
     expect(
       await tx`select id,redeemed_at from app_private.signup_admission_tickets order by id`,
     ).toEqual(tickets);
-    for (const audit of audits) {
-      const [survivor] = await tx`
-        select id,details from public.audit_events where id=${audit.id}`;
-      expect(
-        survivor,
-        `preexisting audit row ${audit.id} survives unchanged`,
-      ).toEqual(audit);
-    }
+    // The complete ordered snapshot comparison below verifies every existing
+    // audit row and payload in one query, avoiding one round trip per row.
     expect(
       await tx`select id,details from public.audit_events where action <> 'client.signup_cleanup' order by id`,
       'purge emits no audit rows except client.signup_cleanup',
@@ -304,12 +298,15 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
           boolean: 'false',
           bytea: "decode('00','hex')",
           'timestamp with time zone': 'now()',
+          'uuid[]': "'{}'::uuid[]",
         };
         if (!values[typeName])
           throw new Error('Uncovered public RPC argument type');
         args.push(values[typeName]!);
       }
-      if (['record_refund', 'record_renewal'].includes(fn.proname)) {
+      if (
+        ['record_refund', 'record_renewal', 'close_client'].includes(fn.proname)
+      ) {
         await tx.savepoint(async (inner) => {
           await inner`set local role authenticated`;
           const [row] = await inner.unsafe(
@@ -336,6 +333,15 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
                       value !== null &&
                       'status' in value &&
                       (value.status === 'invalid' ||
+                        (fn.proname === 'read_client_form_draft' &&
+                          value.status === 'not_found') ||
+                        ([
+                          'select_intake_form',
+                          'submit_form_assignment',
+                          'configure_intake_assignment_policy',
+                          'materialize_intake_assignment_occurrence',
+                        ].includes(fn.proname) &&
+                          value.status === 'not_found') ||
                         (['subscription_freeze_operation'].includes(
                           fn.proname,
                         ) &&
@@ -354,6 +360,7 @@ it('pending synthetic JWT cannot gain client access through ANY catalog public R
     expect(unauthorizedPaymentRpcResults).toEqual({
       record_refund: { status: 'not_permitted' },
       record_renewal: { status: 'not_permitted' },
+      close_client: { status: 'not_permitted' },
     });
   });
 });

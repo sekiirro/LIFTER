@@ -18,6 +18,7 @@ const signupPrivate = [
   'purge_schedule_deactivate',
   'signup_auth_schema_compatible',
   'signup_bcrypt_cost',
+  'signup_reserved_usernames',
   'signup_password_acceptable',
   'signup_link_key_matches',
   'signup_identity_normalization',
@@ -64,6 +65,14 @@ const registrationPrivate = [
   'f13_validate_freeze',
   'f13_validate_renewal',
   'f13_validate_refund_ledger',
+  'f15_alert_occurrence_authorize_insert',
+  'f15_alert_recipient_authorized',
+  'f15_alert_schedule_audit',
+  'write_f15_in_app_alert',
+  'f15_alert_inbox_after_occurrence',
+  'f15_telegram_membership_revoke',
+  'consume_f15_telegram_link_token',
+  'consume_f15_telegram_start',
 ];
 const brandingPrivate = [
   'branding_actor_id',
@@ -243,6 +252,53 @@ describe('tenancy security catalog (T007)', () => {
         'has_workspace_access',
         'is_platform_owner',
         'jobs_updated_at',
+        'materialize_intake_assignment_occurrence_core',
+        'evaluate_forms_alerts_core',
+        'copy_workspace_form',
+        'ensure_default_onboarding_form',
+        'f15_onboarding_provisioning_marker_immutable',
+        'f15_alert_schedule_activate',
+        'f15_alert_schedule_deactivate',
+        'f15_alert_schedule_immutable',
+        'f15_alert_schedule_run',
+        'f15_client_alert_schedule_insert',
+        'f15_forms_purge_run',
+        'f15_forms_purge_run_batch',
+        'f15_forms_purge_schedule_activate',
+        'f15_forms_purge_schedule_deactivate',
+        'purge_ended_form_answers_at',
+        'record_f15_retention_fact',
+        'f15_builder_cached_result',
+        'f15_builder_store_result',
+        'f15_current_terms_policy',
+        'f15_answer_is_present',
+        'f15_approval_reconcile_trigger',
+        'f15_is_assigned_answer',
+        'f15_is_assigned_client',
+        'f15_question_applies',
+        'f15_selection_reconcile_trigger',
+        'f15_submission_complete',
+        'f15_valid_builder_definition',
+        'guard_f15_assignment_fact',
+        'guard_f15_form_assignment',
+        'guard_f15_form_version',
+        'guard_form_answer_revision_immutable',
+        'guard_form_correction_immutable',
+        'guard_form_draft_after_submission',
+        'guard_form_erasure_control',
+        'guard_form_legal_hold',
+        'guard_form_retention_window',
+        'publish_workspace_form',
+        'purge_ended_form_answers',
+        'reconcile_f15_form_assignment',
+        'resolve_default_onboarding_configuration',
+        'retire_workspace_form',
+        'retire_workspace_form',
+        'save_workspace_form_draft',
+        'set_default_onboarding_form',
+        'prevent_consent_receipt_mutation',
+        'stamp_form_purge_deadline',
+        'signup_auth_identity_column',
         'lock_catalog_food_request',
         'normalize_ar_en_v1',
         'normalize_catalog_food_identity_v1',
@@ -255,6 +311,7 @@ describe('tenancy security catalog (T007)', () => {
         'recovery_link_limits',
         'recovery_target_workspace',
         'role_has_capability',
+        'register_f15_trainer_alert_schedule',
         'reject_catalog_provenance_change',
         'reject_catalog_version_mutation',
         'release_catalog_food_keys',
@@ -267,24 +324,41 @@ describe('tenancy security catalog (T007)', () => {
       ].sort(),
     );
     for (const row of rows) {
-      const expectedDefiner = ![
-        'audit_events_immutable',
-        'branding_actor_id',
-        'forbid_delete',
-        'jobs_updated_at',
-        'normalize_ar_en_v1',
-        'normalize_catalog_food_identity_v1',
-        'operation_key_fields_immutable',
-        'purge_f11_retained_data',
-        'validate_food_request',
-        'reject_catalog_provenance_change',
-        'reject_catalog_version_mutation',
-        'recovery_link_limits',
-        'registration_link_limits',
-        'purge_schedule_activate',
-        'purge_schedule_deactivate',
-      ].includes(row.proname);
-      expect(row.prosecdef, row.proname).toBe(expectedDefiner);
+      expect(row.prosecdef, row.proname).toBe(
+        ![
+          'audit_events_immutable',
+          'f15_answer_is_present',
+          'f15_question_applies',
+          'f15_submission_complete',
+          'f15_valid_builder_definition',
+          'guard_form_answer_revision_immutable',
+          'guard_form_correction_immutable',
+          'f15_onboarding_provisioning_marker_immutable',
+          'f15_alert_schedule_activate',
+          'f15_alert_schedule_deactivate',
+          'f15_alert_schedule_immutable',
+          'f15_alert_schedule_run',
+          'f15_forms_purge_run',
+          'f15_forms_purge_run_batch',
+          'f15_forms_purge_schedule_activate',
+          'f15_forms_purge_schedule_deactivate',
+          'register_f15_trainer_alert_schedule',
+          'branding_actor_id',
+          'forbid_delete',
+          'jobs_updated_at',
+          'recovery_link_limits',
+          'registration_link_limits',
+          'purge_schedule_activate',
+          'purge_schedule_deactivate',
+          'normalize_ar_en_v1',
+          'normalize_catalog_food_identity_v1',
+          'operation_key_fields_immutable',
+          'purge_f11_retained_data',
+          'validate_food_request',
+          'reject_catalog_provenance_change',
+          'reject_catalog_version_mutation',
+        ].includes(row.proname),
+      );
       expect(row.proconfig).toContain('search_path=""');
       expect(row.owner).toBe(
         brandingFunctionOwners[row.proname] ??
@@ -319,7 +393,53 @@ describe('tenancy security catalog (T007)', () => {
               'catalog_write_audit',
               'claim_catalog_operation',
               'client_has_access',
+              'copy_workspace_form',
               'enqueue_job',
+              'ensure_default_onboarding_form',
+              'f15_builder_cached_result',
+              'f15_builder_store_result',
+              'f15_forms_purge_run',
+              'f15_forms_purge_run_batch',
+              'f15_forms_purge_schedule_activate',
+              'f15_forms_purge_schedule_deactivate',
+              'purge_ended_form_answers_at',
+              'record_f15_retention_fact',
+              'f15_onboarding_provisioning_marker_immutable',
+              'guard_form_answer_revision_immutable',
+              'guard_form_correction_immutable',
+              'guard_form_draft_after_submission',
+              'guard_form_erasure_control',
+              'guard_form_legal_hold',
+              'guard_form_retention_window',
+              'prevent_consent_receipt_mutation',
+              'signup_reserved_usernames',
+              'f15_current_terms_policy',
+              'f15_alert_schedule_activate',
+              'f15_alert_schedule_deactivate',
+              'f15_alert_schedule_immutable',
+              'f15_alert_schedule_run',
+              'f15_client_alert_schedule_insert',
+              'register_f15_trainer_alert_schedule',
+              'evaluate_forms_alerts_core',
+              'materialize_intake_assignment_occurrence_core',
+              'f15_answer_is_present',
+              'f15_approval_reconcile_trigger',
+              'f15_selection_reconcile_trigger',
+              'f15_question_applies',
+              'f15_submission_complete',
+              'f15_valid_builder_definition',
+              'guard_f15_assignment_fact',
+              'reconcile_f15_form_assignment',
+              'guard_f15_form_assignment',
+              'guard_f15_form_version',
+              'purge_ended_form_answers',
+              'publish_workspace_form',
+              'resolve_default_onboarding_configuration',
+              'retire_workspace_form',
+              'save_workspace_form_draft',
+              'set_default_onboarding_form',
+              'signup_auth_identity_column',
+              'stamp_form_purge_deadline',
               'f13_audit_client_deactivation',
               'forbid_delete',
               'guard_package_offer_update',
@@ -347,6 +467,30 @@ describe('tenancy security catalog (T007)', () => {
             ].includes(row.proname)),
       );
     }
+  });
+
+  it('keeps the first-provision marker forced-RLS, API-private, and immutable', async () => {
+    const [marker] = await db`
+      select c.relrowsecurity,c.relforcerowsecurity
+      from pg_catalog.pg_class c
+      where c.oid='app_private.workspace_onboarding_provisioning'::regclass`;
+    expect(marker).toEqual({ relrowsecurity: true, relforcerowsecurity: true });
+    for (const role of ['anon', 'authenticated', 'service_role']) {
+      for (const privilege of ['SELECT', 'INSERT', 'UPDATE', 'DELETE']) {
+        const [grant] = await db`
+          select has_table_privilege(${role},'app_private.workspace_onboarding_provisioning',${privilege}) as allowed`;
+        expect(grant?.allowed).toBe(false);
+      }
+    }
+    const triggers = await db`
+      select tgname,tgenabled from pg_catalog.pg_trigger
+      where tgrelid='app_private.workspace_onboarding_provisioning'::regclass and not tgisinternal`;
+    expect(triggers).toEqual([
+      {
+        tgname: 'f15_onboarding_provisioning_marker_immutable',
+        tgenabled: 'O',
+      },
+    ]);
   });
 });
 
@@ -975,7 +1119,13 @@ describe('registration security catalog', () => {
   it('hardens complete F10 function inventory and pgcrypto schema/vector', async () => {
     const signatures = [
       ...registrationPrivate
-        .filter((name) => !name.startsWith('f13_'))
+        .filter(
+          (name) =>
+            !name.startsWith('f13_') &&
+            !name.startsWith('f15_') &&
+            !name.startsWith('write_f15_') &&
+            !name.startsWith('consume_f15_'),
+        )
         .map(
           (n) =>
             'app_private.' +
@@ -1003,6 +1153,26 @@ describe('registration security catalog', () => {
       'app_private.f13_validate_freeze(uuid,uuid)',
       'app_private.f13_validate_renewal(uuid,uuid)',
       'app_private.f13_validate_refund_ledger(uuid,uuid)',
+      'app_private.f15_alert_occurrence_authorize_insert()',
+      'app_private.f15_alert_recipient_authorized(uuid,uuid,text)',
+      'app_private.f15_alert_schedule_audit()',
+      'app_private.f15_alert_schedule_immutable()',
+      'app_private.f15_alert_schedule_run()',
+      'app_private.f15_alert_schedule_activate()',
+      'app_private.f15_alert_schedule_deactivate()',
+      'app_private.f15_client_alert_schedule_insert()',
+      'app_private.write_f15_in_app_alert(uuid)',
+      'app_private.f15_alert_inbox_after_occurrence()',
+      'app_private.consume_f15_telegram_start(bigint,text,text)',
+      'app_private.register_f15_trainer_alert_schedule(uuid,uuid,uuid,timestamptz)',
+      'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)',
+      'public.read_form_alert_inbox(integer,timestamptz)',
+      'public.mark_form_alert_read(uuid)',
+      'public.prepare_f15_telegram_delivery(uuid,uuid)',
+      'public.claim_f15_telegram_delivery(uuid)',
+      'public.claim_f15_form_alert_jobs(integer,integer)',
+      'public.consume_f15_telegram_start(bigint,text,text)',
+      'public.finish_f15_telegram_delivery(uuid,text)',
       'public.record_renewal(jsonb)',
     ];
     for (const name of signatures) {
@@ -1017,10 +1187,21 @@ describe('registration security catalog', () => {
       for (const role of ['anon', 'authenticated', 'service_role']) {
         const [g] =
           await db`select has_function_privilege(${role},${name},'EXECUTE') as allowed`;
-        expect(g!.allowed).toBe(
+        expect(g!.allowed, `${role} ${name}`).toBe(
           name.startsWith('public.') &&
-            (role === 'authenticated' ||
-              (role === 'anon' && name.includes('registration_link_open'))),
+            ((role === 'authenticated' &&
+              !name.includes('prepare_f15_telegram_delivery') &&
+              !name.includes('claim_f15_telegram_delivery') &&
+              !name.includes('claim_f15_form_alert_jobs') &&
+              !name.includes('consume_f15_telegram_start') &&
+              !name.includes('finish_f15_telegram_delivery')) ||
+              (role === 'anon' && name.includes('registration_link_open')) ||
+              (role === 'service_role' &&
+                (name.includes('prepare_f15_telegram_delivery') ||
+                  name.includes('claim_f15_telegram_delivery') ||
+                  name.includes('claim_f15_form_alert_jobs') ||
+                  name.includes('consume_f15_telegram_start') ||
+                  name.includes('finish_f15_telegram_delivery')))),
         );
       }
     }

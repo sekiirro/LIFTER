@@ -24,7 +24,7 @@ const signupKeys = [
   'clientSignup.signOutRequired',
 ];
 
-it('T035 has matching Arabic and English signup message keys and no Telegram copy', () => {
+it('T035 has matching Arabic and English signup message keys and scoped Telegram copy', () => {
   const en = getMessages('en') as Record<string, string>;
   const ar = getMessages('ar') as Record<string, string>;
   expect(Object.keys(en).sort()).toEqual(Object.keys(ar).sort());
@@ -32,24 +32,33 @@ it('T035 has matching Arabic and English signup message keys and no Telegram cop
     expect(en[key], `${key} in English`).toBeTruthy();
     expect(ar[key], `${key} in Arabic`).toBeTruthy();
   }
-  expect(Object.keys(en).some((key) => /telegram/i.test(key))).toBe(false);
-  expect(Object.values(en).some((value) => /telegram/i.test(value))).toBe(
-    false,
-  );
-  expect(Object.values(ar).some((value) => /telegram/i.test(value))).toBe(
-    false,
-  );
+  // S14 canonical copy (2026-10-30, line 213) makes Telegram optional.
+  const telegramCopyAllowlist = ['clientSignup.telegramUsername'] as const;
+  for (const messages of [en, ar]) {
+    const telegramEntries = Object.entries(messages)
+      .filter(([key, value]) =>
+        /telegram|تيليجرام|تليجرام|تلغرام|تيلجرام/i.test(`${key} ${value}`),
+      )
+      .map(([key]) => key)
+      .sort();
+    expect(telegramEntries).toEqual([...telegramCopyAllowlist]);
+  }
 });
 
-it('T035 preserves D-08 and unavailable wording and keeps completion generic', () => {
+it('T035 keeps duplicate wording field-neutral and completion generic', () => {
   const en = getMessages('en') as Record<string, string>;
   const ar = getMessages('ar') as Record<string, string>;
+  // PO Q2 B: every identity collision uses one neutral response.
   expect(en['clientSignup.duplicate']).toBe(
-    'This email is already registered. Contact support.',
+    'We could not complete this registration with these details. Contact your coach or support.',
   );
   expect(ar['clientSignup.duplicate']).toBe(
-    'هذا البريد الإلكتروني مسجّل بالفعل. يُرجى التواصل مع الدعم.',
+    '\u062a\u0639\u0630\u0651\u0631 \u0625\u0643\u0645\u0627\u0644 \u0627\u0644\u062a\u0633\u062c\u064a\u0644 \u0628\u0647\u0630\u0647 \u0627\u0644\u0628\u064a\u0627\u0646\u0627\u062a. \u064a\u064f\u0631\u062c\u0649 \u0627\u0644\u062a\u0648\u0627\u0635\u0644 \u0645\u0639 \u0645\u062f\u0631\u0651\u0628\u0643 \u0623\u0648 \u0627\u0644\u062f\u0639\u0645.',
   );
+  expect(ar['clientSignup.duplicate']).not.toMatch(
+    /\u0627\u0644\u0628\u0631\u064a\u062f|\u0627\u0644\u0647\u0627\u062a\u0641|\u0627\u0644\u0645\u0633\u062a\u062e\u062f\u0645/,
+  );
+  expect(en['clientSignup.duplicate']).not.toMatch(/email|phone|username/i);
   expect(en['clientSignup.unavailable']).toBe('Please try again later.');
   expect(ar['clientSignup.unavailable']).toBe('يرجى المحاولة مرة أخرى لاحقًا.');
   expect(en['clientSignup.complete']).toBeTruthy();
@@ -93,13 +102,16 @@ it('T035 collapses every registration-link state to valid or invalid, never unav
   );
 });
 
-it('T035 keeps the signup field contract to name, email, phone and password', () => {
+it('T045 keeps the extended signup field contract strict', () => {
   expect(
     signupFields({
-      name: 'Example Person',
+      name: 'Example Middle Person',
       email: 'example@example.test',
       phone: '+201012345678',
       password: 'Complex!2345',
+      dateOfBirth: '1990-04-12',
+      username: 'example-user',
+      telegramUsername: '',
       telegram: 'unused',
     }),
   ).toBeNull();
