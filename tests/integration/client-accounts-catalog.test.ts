@@ -187,10 +187,12 @@ it('pending synthetic JWT denies has_workspace_access and every catalog RLS tabl
   const context = await clientContext();
   await probe(async (tx) => {
     const c = await pending(tx, context);
-    await pendingRlsAccess(tx, context, {
-      sub: c.auth_user_id,
-      role: 'authenticated',
-    });
+    await pendingRlsAccess(
+      tx,
+      context,
+      { sub: c.auth_user_id, role: 'authenticated' },
+      c.id,
+    );
   });
 });
 it('pending client signs in later with real JWT and gets no PostgREST table or RPC access', async () => {

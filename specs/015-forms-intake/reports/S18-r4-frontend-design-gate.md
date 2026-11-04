@@ -1,4 +1,4 @@
-# F15 S18 r4 ? Frontend design gate
+# F15 S18 r4 — Frontend design gate
 
 ## Authority and review
 
@@ -8,17 +8,17 @@ The default form screen uses the existing staff Builder, field, button, card, an
 
 ## Verification checklist
 
-- Tokens only ? PASS. Reused existing form controls and CSS tokens; no hard-coded color, spacing, radius, or font values were introduced.
-- Typography ? PASS. Arabic uses the existing Arabic face and RTL direction; English uses the existing English face. The approved title and mixed-direction fields rendered correctly.
-- Layout ? PASS. Existing Builder hierarchy and question layout retained; RTL and LTR reviewed at mobile, tablet, and desktop widths.
-- Contrast ? PASS. Light/dark and sample brand health-question states passed axe; screenshots were visually reviewed. Semantic success colors remain on existing tokens.
-- Accessibility ? PASS. Native buttons and labeled fields, selected state exposure, keyboard focus, reduced-motion state, and axe checks passed in Playwright.
-- States ? PASS for changed behavior. Default draft, editable controls, selected onboarding state, role-denied controls, and health-question context were covered by unit/e2e checks. No new loading, success, error, or animation pattern was introduced.
-- Copy ? PASS with one DRAFT item. Approved title and health label are in i18n; new selection-action labels remain explicitly marked DRAFT in English and Arabic. No standalone consent or acknowledgment copy was added.
-- Rendered matrix ? PASS. Playwright saved AR/EN ? light/dark ? 390/768/1440 captures for onboarding Builder and health context. Terms and Welcome states were also captured. Axe was clean on every matrix capture.
-- Tests and size ? PASS. Full unit suite: 1,743/1,743. Focused Playwright: 1 passed; axe clean. Worker size gate passed.
+- Tokens only — PASS. Reused existing form controls and CSS tokens; no hard-coded color, spacing, radius, or font values were introduced.
+- Typography — PASS. Arabic uses the existing Arabic face and RTL direction; English uses the existing English face. The approved title and mixed-direction fields rendered correctly.
+- Layout — PASS. Existing Builder hierarchy and question layout retained; RTL and LTR reviewed at mobile, tablet, and desktop widths.
+- Contrast — PASS. Light/dark and sample brand health-question states passed axe; screenshots were visually reviewed. Semantic success colors remain on existing tokens.
+- Accessibility — PASS. Native buttons and labeled fields, selected state exposure, keyboard focus, reduced-motion state, and axe checks passed in Playwright.
+- States — PASS for changed behavior. Default draft, editable controls, selected onboarding state, role-denied controls, and health-question context were covered by unit/e2e checks. No new loading, success, error, or animation pattern was introduced.
+- Copy — PASS with one DRAFT item. Approved title and health label are in i18n; new selection-action labels remain explicitly marked DRAFT in English and Arabic. No standalone consent or acknowledgment copy was added.
+- Rendered matrix — PASS. Playwright saved AR/EN × light/dark × 390/768/1440 captures for onboarding Builder and health context. Terms and Welcome states were also captured. Axe was clean on every matrix capture.
+- Tests and size — PASS. Full unit suite: 1,743/1,743. Focused Playwright: 1 passed; axe clean. Worker size gate passed.
 
-Screenshots are under C:\Users\NEW LAP\AppData\Local\Temp\lifter-f15-s18-ui\. Matrix filename patterns: onboarding-builder-{ar,en}-{light,dark}-{mobile,tablet,desktop}.png and health-context-{ar,en}-{light,dark}-{mobile,tablet,desktop}.png. Terms, Welcome, keyboard-focus and reduced-motion captures use s14-*, welcome-*, keyboard-focus and reduced-motion names. Reviewed Arabic/English light/dark mobile/desktop samples against DESIGN ?12; no findings remained.
+Screenshots are under C:\Users\NEW LAP\AppData\Local\Temp\lifter-f15-s18-ui\. Matrix filename patterns: onboarding-builder-{ar,en}-{light,dark}-{mobile,tablet,desktop}.png and health-context-{ar,en}-{light,dark}-{mobile,tablet,desktop}.png. Terms, Welcome, keyboard-focus and reduced-motion captures use s14-*, welcome-*, keyboard-focus and reduced-motion names. Reviewed Arabic/English light/dark mobile/desktop samples against DESIGN §12; no findings remained.
 
 ## Skill selection
 

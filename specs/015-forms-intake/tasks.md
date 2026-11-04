@@ -17,6 +17,24 @@
 - [x] T059 [FR-026/036/037] **Implement PO-approved intake copy and rules.** RED/GREEN tests and changes for B01, B06 (including Male/Female), T03 English values 2–6, T08, approved dynamic N07 English timing question/options, N08 integrated budget chips/no extra prompt, N11 0–10, and N12 image cards. Do not publish proposed T03 Arabic labels pending PO copy approval; do not alter any other Arabic string or add unapproved EN copy. Keep other EN rows pending. Focused tests: `tests/unit/forms-s32-approved-intake.test.ts`; commit `6aebb8d`.
 - [x] T060 [FR-026/036/037] **Verify question order, conditional logic, values, images and rendered accessibility.** Verify all PO-5/PO-8 items against the canonical Arabic fixture, decision fixture and implementation with file:line evidence. Assert N07 count-dependent timing and N08 same-question budget chips. Check every N12 asset exists/loads, AR+EN alt text and order. Run AR-RTL/EN-LTR × light/dark × 360/390/1024 at touched questions, axe zero and screenshots indexed under the h12 temp directory; root-cause and repair the recorded-controls matrix timeout without weakening assertions. Focused evidence: `tests/e2e/forms-authorized-route.spec.ts` tests `approved F15 controls render in both locales, themes, and widths` and `renders recorded new client controls across AR/EN, theme, and viewport matrix`; 47 focused unit tests passed; screenshots indexed in the h12 temp directory; commit `6aebb8d`.
 
+## S33-PO-3 Arabic intake copy
+
+- [ ] T061 [FR-026/036/037] Record S33-PO-3 verbatim, update the Arabic T03/N07 specification and plan, and refresh Analyze with no open ambiguities before code changes.
+- [ ] T062 [FR-026/036/037] Add RED-first exact Arabic-copy unit assertions; implement Western-digit T03 labels `2`, `3`, `4`, `5`, `6` and N07 `الوجبة رقم {number}` dynamically; update canonical and test fixtures plus the F15 PO-decision register. Preserve English T03/N07 strings.
+- [ ] T063 [FR-026/036/037] Render the Arabic T03/N07 flow RTL in light/dark at 390px and 1024px; assert Western digits are not mirrored/reordered, run axe, capture screenshots and index them.
+
+## S33 CodeRabbit review remediation
+
+These corrections are within the previously approved F15 scope. They do not add requirements or alter product copy/behavior outside the cited PO/spec contracts.
+
+- [ ] T064 [FR-008/013] Remove all presentation-only snapshot fields, including `label`, before server draft/submission/correction validation; retain regression coverage.
+- [ ] T065 [FR-004/006/008] Align SQL N12-series selector validation with the approved B06 identifier in a forward-only migration; verify against Stack D.
+- [ ] T066 [FR-017/020/024] Return the established invalid-link result for an already-owned active Telegram chat; verify update idempotency and token consumption on Stack D.
+- [ ] T067 [FR-017/019/024/025] Recover stale Telegram `sending` rows after the worker lease and move exhausted deliveries to `dead`; verify timeout, retry and exhaustion behavior on Stack D.
+- [ ] T068 [FR-024/025] Keep all four F15 SQL regression suites on the checked local-stack connection and make the pending-client RLS catalog probe inspect caller-seeded rows in its transaction.
+- [ ] T069 [FR-017/018/024] Execute the alert membership-revocation evaluator query while the lock is held and verify owner fallback on the subsequent pass.
+- [ ] T070 [FR-026/036/037] Repair damaged separators in existing F15 review evidence without changing recorded findings or decisions.
+
 ## Phase 0: Stack and shared-contract prerequisites
 
 - [x] T001 [FR-020/022/024] Verify F12/F14 full migration/function/capability heads and Stack D isolation from Stacks A/B/C. Record project identity, ports, isolation proof and lock owner. Recheck the latest fully merged migration history, including later fixes, before timestamp allocation. F15 migrations start at `20261104000000` but must still sort after the latest F12/F14 migrations. **Evidence:** S26 Stack D identity/isolation/migration-history record in `quickstart.md`; local D migration list matches through `20261104031800`; latest capability/audit function sources recorded; Stack D wrapper and D-only container/network identity checked. **DB: Stack D only.**

@@ -83,6 +83,7 @@ describe('T013 submission validation', () => {
     const localizedSnapshot = {
       questions: snapshot.questions.map((question) => ({
         ...question,
+        label: { en: 'Question', ar: 'سؤال' },
         title: { en: 'Question', ar: 'سؤال' },
         description: { en: 'Help text', ar: 'مساعدة' },
       })),

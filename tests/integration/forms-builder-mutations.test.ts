@@ -1,8 +1,9 @@
 import { randomUUID } from 'node:crypto';
-import postgres from 'postgres';
+import type postgres from 'postgres';
 import { afterAll, describe, expect, it } from 'vitest';
+import { sql } from './harness';
 
-const db = postgres(process.env.DB_URL ?? '', { max: 1, connect_timeout: 10 });
+const db = sql();
 afterAll(() => db.end());
 const rollback = new Error('T006 mutation probe rollback');
 

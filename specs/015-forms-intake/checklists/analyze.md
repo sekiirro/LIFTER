@@ -1,31 +1,30 @@
-# F15 Spec Kit Analyze — S32 h12
+# F15 Spec Kit Analyze — S33 h13
 
-**Date:** 2026-11-04 (refreshed after the B06 row clarification and the S32-PO-8 updates to `spec.md`, `plan.md`, and `tasks.md`)
-**Status:** Entry review for PO-8 F15 intake implementation and verification.
+**Date:** 2026-11-04 (after S33-PO-3 and CodeRabbit remediation task updates to `spec.md`, `plan.md`, and `tasks.md`)
+**Status:** Entry review for S33-PO-3 Arabic T03/N07 copy and in-scope CodeRabbit fixes.
 
 ## Entry check
 
-- [x] `spec.md` has numbered FRs, measurable SCs, and Given/When/Then scenarios for PO-5/PO-8 scope. Requirements trace to FR-026/036/037 and existing SC coverage.
-- [x] Clarifications cite S32-PO-5 and S32-PO-8. **No open ambiguities remain for the work authorized in this round.** T03 Arabic option labels are explicitly deferred for PO copy approval and excluded from shipping; all unrelated EN rows stay pending PO review.
-- [x] `plan.md` covers approved copy, option values, dynamic N07 timing, N08 same-question chips, image and conditional verification, and the Playwright matrix.
-- [x] `tasks.md` adds T058–T060, each tagged with FR-026/036/037; tasks remain unchecked until current-head test evidence is available.
+- [x] `spec.md` has numbered FRs, measurable SCs, and Given/When/Then scenarios for this F15 intake scope. The touched requirements trace to FR-026/036/037 and existing SC coverage.
+- [x] Clarifications cite S32-PO-5, S32-PO-8, and S33-PO-3. **No open ambiguities remain for T061–T063.** Arabic T03 is Western digits exactly `2`, `3`, `4`, `5`, `6`; Arabic N07 uses `الوجبة رقم {number}` dynamically. English T03/N07 stays unchanged; unrelated EN rows remain pending PO review.
+- [x] `plan.md` covers the exact Arabic strings, N07 substitution, Bidi digit-order verification, axe, screenshots, and viewport/theme matrix.
+- [x] `tasks.md` adds T061–T063 tagged with FR-026/036/037 and T064–T070 tagged with their existing F15 FRs; checkboxes stay open until tests pass on the final head.
 - [x] This Analyze follows the updated specification, plan and tasks, dated 2026-11-04.
 
 ## Scope analysis
 
-- T058 records S32-PO-8 and the limited Arabic T03 range change in the canonical fixture. The exact Arabic labels are proposed separately and remain unshipped pending PO approval.
-- T059 implements only exact PO-approved copy and values: B01, B06, English T03 values 2–6, T08, exact N07 English timing copy, N08 integrated budget chips/no separate prompt, N11 0–10, and N12 image cards. Other EN strings remain pending.
-- T060 verifies order, conditions, options, image assets/alt text/order, responsive RTL/LTR light/dark rendering, axe, and repairs the recorded-controls test harness timeout without weakening its assertions.
-- B06 keeps the stable identifier and personal-data role while using the PO-approved Gender/Male/Female English copy and existing Arabic choice labels; the N12 selector mapping must support B06.
-- Existing test failures caused by stale blanket-pending assertions are test maintenance for the already-approved per-row approval inventory; the updated tests must continue proving that all nonapproved rows remain pending.
-- No new token, component, design pattern, dependency, Arabic string, or unapproved English string is authorized.
+- T061 records the approved Arabic strings from S33-PO-3 and removes the superseded pending-copy statement.
+- T062 changes Arabic copy and fixtures only. English T03/N07 strings, layout, tokens, and shared UI behavior remain unchanged.
+- T063 checks actual rendered Arabic labels and dynamic interpolation at 390px and 1024px in light and dark modes. Bidi behavior is checked using the existing component; no new visual behavior or dependency is introduced.
+- T064–T070 fix code/test defects within the already approved F15 scope. Each stays a separate traceable unit; no new behavior, copy, authorization, or data-retention policy is introduced. Database-dependent acceptance remains subject to Stack D tests.
+- No new color, token, component, interaction, typography rule, or design pattern is needed. The existing UI and design system remain authoritative.
 
 ## Findings
 
 - **CRITICAL:** 0
 - **HIGH:** 0
-- **MEDIUM / deferred:** Exact Arabic T03 visible option labels require PO copy approval before shipping those labels. The approved 2–6 values remain specified; no other implementation is blocked.
+- **MEDIUM / deferred:** None for the approved T061–T070 scope. Correction-note sizing and post-relationship-end client-late notification policy are not specified; these remain PO decisions in the run report and are excluded from implementation.
 
 ## Result
 
-**PASS for T058–T060 within the boundaries above.** Re-run Analyze after any further change to `spec.md`, `plan.md`, or `tasks.md` before implementation.
+**PASS for T061–T070 within the boundaries above.** Re-run Analyze after any further change to `spec.md`, `plan.md`, or `tasks.md` before implementation.

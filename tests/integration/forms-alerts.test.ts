@@ -428,11 +428,16 @@ it('waits for a concurrent membership revocation and excludes the recipient at e
       select app_private.evaluate_forms_alerts_core(
         '2026-04-11T00:00:00Z'::timestamptz,${f.wsA.id}::uuid,250
       ) as result
-    `;
+    `.execute();
     await new Promise((resolve) => setTimeout(resolve, 75));
     await hold;
     const [result] = await evaluation;
-    expect(result!.result).toEqual({ status: 'ok', enqueued: 2 });
+    expect(result!.result).toEqual({ status: 'ok', enqueued: 0 });
+    const [fallback] = await db`
+      select app_private.evaluate_forms_alerts_core(
+        '2026-04-11T00:00:00Z'::timestamptz,${f.wsA.id}::uuid,250
+      ) as result`;
+    expect(fallback!.result).toEqual({ status: 'ok', enqueued: 2 });
     const recipients = await db`select stage,recipient_user_id
       from app_private.form_alert_occurrences
       where workspace_id=${f.wsA.id} and schedule_id=(

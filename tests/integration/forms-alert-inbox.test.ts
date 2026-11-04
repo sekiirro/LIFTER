@@ -180,6 +180,61 @@ it('writes one IDs-only in-app delivery per queued occurrence and audits recipie
   ).rejects.toBe(rollback);
 });
 
+it('recovers a stale Telegram delivery claim and dead-letters it when its job is exhausted', async () => {
+  await expect(
+    db.begin(async (tx) => {
+      const { f, occurrenceId } = await fixture(tx);
+      await tx`insert into app_private.f15_telegram_links(user_id,chat_id)
+        values(${f.trainerA.userId},'2026110412346')`;
+      const [prepared] = await tx`
+        select public.prepare_f15_telegram_delivery(
+          ${occurrenceId},${f.trainerA.userId}
+        ) as result`;
+      const ready = prepared!.result as Record<string, unknown>;
+      expect(ready.status).toBe('ready');
+      const deliveryId = ready.delivery_id as string;
+      const [chat] = await tx`
+        select public.claim_f15_telegram_delivery(${deliveryId}) as chat`;
+      expect(chat!.chat).toBe('2026110412346');
+      const [activeRetry] = await tx`
+        select public.prepare_f15_telegram_delivery(
+          ${occurrenceId},${f.trainerA.userId}
+        ) as result`;
+      expect((activeRetry!.result as Record<string, unknown>).status).toBe(
+        'already_processing',
+      );
+
+      await tx`update app_private.form_alert_deliveries
+        set claimed_at=clock_timestamp()-interval '31 seconds'
+        where id=${deliveryId}`;
+      const [staleRetry] = await tx`
+        select public.prepare_f15_telegram_delivery(
+          ${occurrenceId},${f.trainerA.userId}
+        ) as result`;
+      expect(staleRetry!.result).toMatchObject({
+        status: 'ready',
+        delivery_id: deliveryId,
+      });
+      const [reclaimed] = await tx`
+        select public.claim_f15_telegram_delivery(${deliveryId}) as chat`;
+      expect(reclaimed!.chat).toBe('2026110412346');
+
+      const [job] = await tx`
+        select id from public.jobs
+        where kind='forms.alert' and payload->>'alert_id'=${occurrenceId}
+        order by created_at desc limit 1`;
+      expect(job).toBeDefined();
+      await tx`update public.jobs set status='running',attempts=max_attempts,
+        lease_expires_at=clock_timestamp()-interval '1 second' where id=${job!.id}`;
+      await tx`select public.claim_f15_form_alert_jobs(1,300)`;
+      const [dead] = await tx`select status,claimed_at
+        from app_private.form_alert_deliveries where id=${deliveryId}`;
+      expect(dead).toEqual({ status: 'dead', claimed_at: null });
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
+
 it('requires a current staff link for Telegram and claims a channel delivery once', async () => {
   await expect(
     db.begin(async (tx) => {

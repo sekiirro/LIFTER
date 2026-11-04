@@ -1,4 +1,4 @@
-import { validateAnswerSet } from './validation';
+import { QUESTION_PRESENTATION_KEYS, validateAnswerSet } from './validation';
 import type { FormAnswerSet, FormQuestion } from './validation';
 
 export type DraftValidationResult =
@@ -23,12 +23,12 @@ export function validateDraftAnswers(
   }
   // Assignment snapshots retain localized render copy. The shared answer
   // validator intentionally accepts only the canonical question schema, so
-  // remove those two presentation-only fields just as the client flow does.
+  // remove presentation-only fields just as the client flow does.
   const validationQuestions = snapshot.questions.map((question) => {
     if (!isRecord(question)) return question;
     return Object.fromEntries(
       Object.entries(question).filter(
-        ([key]) => key !== 'title' && key !== 'description',
+        ([key]) => !QUESTION_PRESENTATION_KEYS.has(key),
       ),
     );
   });

@@ -130,6 +130,11 @@ const QUESTION_KEYS = new Set([
   'dateOfBirthField',
   'derivedOptions',
 ]);
+export const QUESTION_PRESENTATION_KEYS = new Set([
+  'label',
+  'title',
+  'description',
+]);
 const VALIDATION_KEYS = new Set([
   'minLength',
   'maxLength',

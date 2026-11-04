@@ -6,6 +6,34 @@ const db = sql();
 afterAll(() => db.end());
 const rollback = new Error('rollback Telegram link fixture');
 
+it('rejects an active chat owned by another staff user without retrying the update', async () => {
+  await expect(
+    db.begin(async (tx) => {
+      const f = await clientContext();
+      const token = randomUUID()
+        .replaceAll('-', '')
+        .padEnd(64, 'e')
+        .slice(0, 64);
+      await tx`insert into app_private.f15_telegram_links(user_id,chat_id)
+        values(${f.trainerA.userId},'2026110412345')`;
+      await tx`insert into app_private.f15_telegram_link_tokens(
+        token_hash,user_id,expires_at
+      ) values(
+        extensions.digest(${token},'sha256'),${f.trainerB.userId},
+        clock_timestamp()+interval '10 minutes'
+      )`;
+      const [result] = await tx`
+        select app_private.consume_f15_telegram_start(20001,${token},'2026110412345') as accepted`;
+      expect(result!.accepted).toBe(false);
+      const remaining =
+        await tx`select 1 from app_private.f15_telegram_link_tokens
+        where token_hash=extensions.digest(${token},'sha256')`;
+      expect(remaining).toHaveLength(0);
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
+
 it('consumes a short-lived hashed token once and revokes a link on membership loss', async () => {
   await expect(
     db.begin(async (tx) => {
