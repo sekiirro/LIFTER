@@ -94,20 +94,39 @@ export async function withCrashSafeFunctionMutant(
     await db.end();
     throw new Error(`Mutation did not change ${identity}`);
   }
+  let probeError: unknown;
+  let restoreError: unknown;
+  let closeError: unknown;
   try {
     await db.unsafe(mutant);
     await body();
-  } finally {
-    try {
-      await db.unsafe(original.definition);
-      const [restored] = await db<{ md5: string }[]>`
-        select md5(pg_catalog.pg_get_functiondef(${identity}::regprocedure)) as md5`;
-      if (restored?.md5 !== original.md5)
-        throw new Error(`Mutation restore MD5 mismatch for ${identity}`);
-    } finally {
-      await db.end();
-    }
+  } catch (error) {
+    probeError = error;
   }
+  try {
+    await db.unsafe(original.definition);
+    const [restored] = await db<{ md5: string }[]>`
+      select md5(pg_catalog.pg_get_functiondef(${identity}::regprocedure)) as md5`;
+    if (restored?.md5 !== original.md5)
+      throw new Error(`Mutation restore MD5 mismatch for ${identity}`);
+  } catch (error) {
+    restoreError = error;
+  }
+  try {
+    await db.end();
+  } catch (error) {
+    closeError = error;
+  }
+  const errors: unknown[] = [];
+  if (probeError !== undefined) errors.push(probeError);
+  if (restoreError !== undefined) errors.push(restoreError);
+  if (closeError !== undefined) errors.push(closeError);
+  if (errors.length === 1) throw errors[0];
+  if (errors.length > 1)
+    throw new AggregateError(
+      errors,
+      `Mutation probe cleanup failed for ${identity}`,
+    );
 }
 
 function hash(value: string) {
