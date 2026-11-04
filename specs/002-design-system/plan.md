@@ -13,6 +13,7 @@ This feature adds the first UI layer on top of F1:
 - **Fonts.** Self-hosted Geist and IBM Plex Sans Arabic.
 - **Components.** Accessible base components built with CSS Modules and logical properties.
 - **App shell.** A responsive shell with role navigation for Trainer and Client only.
+- **Responsive navigation correction (S31-PO-7 Q5).** Use the vertical inline-start Liquid Glass sidebar at 1024px and above; retain the labeled bottom bar below 1024px. At 1024–1199px, adjust content layout so it clears the rail. The implementation lane must capture screenshots at 1024px and 1440px and assert no rail/content overlap across 1024–1199px.
 - **Dev-only pages.** A showcase and an Arabic print sample, available only when an environment flag is set.
 - **Tests.** Playwright with axe covers 4 combinations (AR/EN × dark/light).
 
@@ -56,7 +57,7 @@ No implementation change is made in this documentation lane. S30-PO-8 Q16 correc
 |---|---|---|
 | ND-1 | Secondary/interactive token values | Derived algorithmically and verified by contrast tests. Recorded as **F2-proposed** in `research.md` for PO review. |
 | ND-2 | Final icon library | About 14 hand-drawn outline SVG icons behind an `Icon` API, replaceable later |
-| ND-3 | Breakpoint numbers | One provisional nav switch at `48rem` (768 px), kept in one constant/CSS location |
+| ND-3 | Breakpoint numbers | Resolved by S31-PO-7 Q5: sidebar at `64rem` (1024px) and wider, bottom bar below `64rem`; T050 implements the approved breakpoint and 1024–1199px content clearance. The prior 48rem value is superseded. |
 | ND-4 | Minimum touch-target size | Provisional 44 × 44 CSS px for nav items and buttons (above the WCAG 2.2 AA minimum of 24 px) |
 | ND-5 | PO / WO / Sales mobile tabs | Not defined. `getNavigation()` returns `needs-decision`, and the showcase shows that state. |
 | ND-6 | Arabic-Indic vs Western digits | No conversion: numbers are shown as stored. No number-formatting helper in F2. |

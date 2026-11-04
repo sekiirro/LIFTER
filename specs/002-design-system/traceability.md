@@ -26,14 +26,14 @@ Evidence commits: original Design System implementation `be29751`, `e2df0cd`, `b
 | FR-018 | T027, T030, T031, T032 | `tests/e2e/components.spec.ts::Retry increments the demonstration counter` and `::a11y` showcase matrix | VERIFIED |
 | FR-019 | T028, T029, T030, T031, T032 | `tests/e2e/components.spec.ts::toast uses the pre-existing polite region without moving focus, and dismisses`; `::auto-dismisses after five active seconds and pauses for hover and focus` | VERIFIED |
 | FR-020 | T006, T011, T023, T027, T032 | `tests/e2e/components.spec.ts::reduces button transitions and disables skeleton shimmer` | VERIFIED |
-| FR-021 | T034, T036, T047, T048 | Existing responsive-shell evidence; T047-T048 are unchecked for Q16 sidebar requirements | PARTIAL |
+| FR-021 | T034, T036, T047, T048, T050, T051 | Existing responsive-shell evidence; Q16/Q5 breakpoint and content-clearance tasks remain unchecked pending implementation/browser verification | PARTIAL |
 | FR-022 | T033, T034, T036 | `tests/unit/navigation.test.ts::defines the exact trainer order, labels, and icons`; `::defines the exact client order, labels, and icons`; shell role cases | VERIFIED |
 | FR-023 | T001, T002, T014, T018, T021, T030, T035, T040 | `tests/unit/showcase-gate.test.ts::enables only the exact flag`; `tests/e2e/theme-locale.spec.ts::uses device colors without a theme cookie and serves the enabled showcase` | VERIFIED |
 | FR-024 | T037, T038, T039 | `tests/e2e/print.spec.ts::Arabic print sample hides screen controls and exports its PDF`; `specs/002-design-system/print-spike.md` | VERIFIED |
 | FR-025 | T041 | Constitution v1.1.0, D-18, and Architecture v3 UI-row diffs in commit `b57d404`; no test applicable to document content | PARTIAL |
 | FR-026 | T040 | `specs/002-design-system/plan.md` decision table is present; no executable asserting test is applicable or recorded | PARTIAL |
-| FR-027 | T043, T044, T045, T047 | Existing PR #28 test evidence plus Q16 follow-up task T047, which remains unchecked | PARTIAL |
-| FR-028 | T043, T046, T048, T049 | Existing unit tests cover fallback selection and the browser test covers over-budget focus identity; T048-T049 remain unchecked for Q16 and all fallback conditions | PARTIAL |
+| FR-027 | T043, T044, T045, T047, T050, T051 | Existing PR #28 evidence plus Q16/Q5 implementation and screenshot tasks, all unchecked | PARTIAL |
+| FR-028 | T043, T048, T049 | Existing unit tests cover fallback selection and the browser test covers over-budget focus identity; T048-T049 remain unchecked for all fallback conditions | PARTIAL |
 | FR-029 | T045 | `tests/unit/glass-popover-menu.test.tsx::opens on ArrowUp at the last item and on ArrowDown at the first`; `::moves focus with arrows and wraps at either end`; `::supports Home and End and closes without trapping Tab`; `::returns focus to the trigger on Escape`; `::activates the focused item with Space`; `tests/e2e/glass.spec.ts::popover ArrowDown navigation works after enhancement` | VERIFIED |
 | SC-001 | T007 | `tests/unit/tokens-contrast.test.ts` contrast assertions for both modes and sample colors | VERIFIED |
 | SC-002 | T031 | `tests/e2e/a11y.spec.ts` AR/EN × dark/light axe matrix | VERIFIED |
@@ -43,8 +43,9 @@ Evidence commits: original Design System implementation `be29751`, `e2df0cd`, `b
 | SC-006 | T038-T039 | `tests/e2e/print.spec.ts::Arabic print sample hides screen controls and exports its PDF`; print-spike report | VERIFIED |
 | SC-007 | T042 | CI build-size check was referenced by T042; a concrete assertion test or executed CI run was not re-verified in this static pass | PARTIAL |
 | SC-008 | T046 | PR #28 body reports 15 paired samples and passing median deltas; local report outputs r1-r8 are referenced but not present in this checkout; measurement not rerun | PARTIAL |
-| SC-010 | T047-T048 | Static inspection: components/shell/NavRail.tsx:16-45, components/shell/NavRail.module.css:1-20, components/shell/AppShell.module.css:13-20, components/ui/AccessibleTooltip.tsx:79-90,173-184; existing hover/focus test references were not executed in this lane | PARTIAL |
-| SC-009 | T043, T048-T049 | Existing unit tests cover fallback selection and browser focus identity for over-budget fallback only; T048-T049 remain unchecked for Q16/all fallback conditions | PARTIAL |
+| SC-010 | T047-T048, T050-T051 | Static inspection only; PR #28 source uses a 75rem breakpoint, so the approved 64rem breakpoint and 1024/1440 screenshot assertions remain unimplemented and unchecked | PARTIAL |
+| SC-009 | T043, T048-T049 | Existing unit tests cover fallback selection and browser focus identity for over-budget fallback only; T048-T049 remain unchecked for all fallback conditions | PARTIAL |
+| SC-011 | T050-T051 | 1024–1199px content/sidebar non-overlap is specified; implementation and browser assertions remain unchecked | PARTIAL |
 
 ## Static verification note
 
