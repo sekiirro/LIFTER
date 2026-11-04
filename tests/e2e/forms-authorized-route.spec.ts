@@ -284,9 +284,7 @@ async function createCorrectionAssignment(): Promise<string> {
   const questions = (
     source.version_snapshot as { questions?: Array<{ id?: unknown }> }
   ).questions?.filter(({ id }) =>
-    ['B01', 'B02', 'B06', 'goal', 'training', 'nutrition'].includes(
-      String(id),
-    ),
+    ['B01', 'B02', 'B06', 'goal', 'training', 'nutrition'].includes(String(id)),
   );
   if (questions?.length !== 6)
     throw new Error('Required correction fixture questions are missing');
