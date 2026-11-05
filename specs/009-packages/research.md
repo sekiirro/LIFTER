@@ -104,7 +104,7 @@ This records the supplied architect decisions against repository evidence; it do
 
 ## R14 — Historical conditional implementation gates (superseded by S33-PO-6 / S34-PO-1)
 
-- **Historical decision**: At the time, S31 implementation awaited SK-009-05..09. S33-PO-6 and S34-PO-1 now settle product behavior; only unapproved UI copy remains BLOCKED-COPY.
+- **Historical decision**: At the time, S31 implementation awaited SK-009-05..09. S33-PO-6 and S34-PO-1 settle product behavior; S34-PO-2 approves the four English market/type labels. PD-S34-NEW-01 still blocks category persistence identity, and all other dashboard/Installments/empty/error/help copy remains BLOCKED-COPY.
 - **Rationale**: The absolute PO-decision rule forbids inventing data classification, mutability,
   lifecycle behavior, copy or downstream financial semantics.
 - **Alternatives considered**: Choosing a technical default would silently resolve product policy.
@@ -114,7 +114,7 @@ This records the supplied architect decisions against repository evidence; it do
 
 - **Closed**: ND-F9-1 (market-conditional currencies/no conversion), ND-F9-4 (Sales/Trainer
   commission denied), the PO/WO authorship conflict and package-count cap.
-- **Current implementation status**: all S33-01..12 product MCQs are resolved. SK-009-08 is resolved for the exact four Arabic category labels; English/other copy remains BLOCKED-COPY. ND-F9-2/3/5 remain as previously recorded.
+- **Current implementation status**: all S33-01..12 product MCQs are resolved. SK-009-08 is resolved for the exact four Arabic labels, and S34-PO-2 approves their English mappings; all other UI copy remains BLOCKED-COPY. PD-S34-NEW-01 keeps category persistence identity pending. ND-F9-2/3/5 remain as previously recorded.
 - **Retained**: ND-F9-2, ND-F9-3 and ND-F9-5 remain as previously recorded.
 
 See the current [spec.md](spec.md#po-decision-register). The prior S33 MCQs are settled in S33-PO-6; C1–C5 and LABELS supersede conflicting earlier rules as recorded there.
@@ -131,8 +131,8 @@ Constitution platform constraints restrict AI model routing and require syntheti
 
 ## S34-PO-1 / S33-PO-6 decision research
 
-The PO records settle category cardinality, permissions, dashboard semantics, mock-data disposition and Arabic labels. Each workspace has four immutable market/type pairs; both markets operate concurrently. Only PO configures workspace-specific names, prices and package-specific commission. Commercial edits append immutable versions and preserve client/assignment snapshots.
+The PO records settle logical category cardinality, permissions, dashboard semantics, mock-data disposition and the four English/Arabic label pairs. PD-S34-NEW-01 does not select a physical category identity; dependent schema and contract work remains blocked. Each workspace has four immutable market/type pairs; both markets operate concurrently. Only PO configures workspace-specific names, prices and package-specific commission. Commercial edits append immutable versions and preserve client/assignment snapshots.
 
-C5 requires independent target-stack verification. The synthetic-only assertion does not replace a dependency audit: enumerate FKs, registration links, subscriptions, payments, audit rows and all other package references. Any non-synthetic row, required financial/audit dependency or unknown dependency state refuses/escalates with zero writes. A clean preflight is required before mock removal and empty-category initialization. This artifact-only run performs no deletion.
+C5 requires a read-only target-stack preflight that verifies synthetic-only status and enumerates FKs, registration links, subscriptions, payments, audit rows and all other package references. Any non-synthetic row, required financial/audit dependency or unknown dependency state refuses/escalates before writes. A complete clean preflight precedes safe deletion; required client/financial/audit history is preserved and partial completion is rejected. Empty-category initialization has no commercial values and remains dependent on PD-S34-NEW-01. This artifact-only run performs no deletion.
 
-The dashboard shows actual monthly collections and package-specific commission with installment detail; settlement events stay separate. FX follows settled S33-PO-6 date/provider/fallback/retry/audience rules. No additional display math or UI copy is inferred. Copy outside the four exact approved Arabic category labels remains BLOCKED-COPY.
+The dashboard shows actual monthly collections and package-specific commission with installment detail; settlement events stay separate. FX follows settled S33-PO-6 date/provider/fallback/retry/audience rules. No additional display math or UI copy is inferred. The four English/Arabic market/type label pairs are approved; all other dashboard/Installments/empty/error/help copy remains BLOCKED-COPY.

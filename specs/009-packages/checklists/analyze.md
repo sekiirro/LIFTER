@@ -1,47 +1,48 @@
-# Spec Kit Analyze — F9 Packages S34 (S33-PO-6 + S34-PO-1)
+# Spec Kit Analyze — F9 Packages S34 (S33-PO-6 + S34-PO-1 + S34-PO-2)
 
-- Date: 2026-11-05 01:50 Africa/Cairo (2026-11-04 23:50 UTC; fresh after the final edits to spec, plan, tasks, model, contracts, research, quickstart, requirements checklist and traceability)
-- Scope: `specs/009-packages/**` documentation delta only; verified initial branch/head in run report.
-- Method: static cross-artifact analysis of FRs, SCs, Given/When/Then scenarios, PO clarifications, plan, model, contracts, task dependencies and traceability. No tests, SQL, migrations, application code, stack, build, CI or UI render was run or added.
-- Constitution checked: `.specify/memory/constitution.md`; design authority and applicable design skills recorded in the run report.
+- Date: 2026-11-05 03:02 Africa/Cairo (2026-11-05 01:02 UTC; after the final round-5 edits to spec, plan, tasks, model, contracts, research, quickstart, requirements checklist and traceability)
+- Scope: `specs/009-packages/**` specification/documentation delta only; entry branch/head is recorded in the round-5 run report.
+- Method: static cross-artifact analysis of numbered FRs, measurable SCs, Given/When/Then scenarios, verbatim PO clarifications, supersession notes, plan, model, contracts, task dependencies and traceability. No tests, SQL, migrations, application code, stack, build, CI or UI render was run or added.
+- Constitution checked in the accepted round-4 review; current artifact scope does not change it. Design authority and prior complete design-skills review are referenced in the run report. No rendered UI was changed in this specification-only round.
 
 ## Entry check
 
 | Gate | Result | Evidence |
 |---|---|---|
-| Numbered FRs, measurable SCs and Given/When/Then scenarios | PASS | `spec.md` FR-001..FR-033, SC-001..SC-023 and acceptance scenarios covering S34 scope |
-| Clarifications and explicit no-open-ambiguities statement | PASS | `spec.md` Clarifications quotes S33-PO-6 and S34-PO-1, resolves C1–C5/LABELS and S33-01..12; only copy gate remains |
-| Plan and FR-tagged tasks | PASS | `plan.md`; `tasks.md` T064–T071 tagged to FR/SC, all unchecked and future implementation only |
-| Analyze dated after final spec/plan/tasks edits; no open CRITICAL/HIGH | PASS | This S34 analysis; static conflict/coverage findings below |
+| Numbered FRs, measurable SCs and Given/When/Then scenarios | PASS | `spec.md` FR-001..FR-033, SC-001..SC-023 and acceptance scenarios cover settled behavior; physical identity-dependent implementation remains explicitly blocked. |
+| Clarifications and explicit ambiguity status | PASS | `spec.md` quotes S33-PO-6 and S34-PO-1, records S34-PO-2 verbatim and maps the exact four label pairs. It explicitly says settled decisions have no ambiguity and separately records PD-S34-NEW-01 as pending without selecting A or B. |
+| Plan and FR-tagged tasks | PASS | `plan.md`; `tasks.md` T064–T071 tagged to FR/SC. T042/T055 category initialization/T066 and dependent physical-key work are marked BLOCKED by PD-S34-NEW-01. |
+| Analyze after spec/plan/tasks edits; no open CRITICAL/HIGH | PASS | This analysis is dated after the last such edit. Cross-artifact findings below include 0 CRITICAL and 0 HIGH. |
 
 ## Findings
 
-**No open CRITICAL or HIGH findings. No open product ambiguity remains from S33-PO-6 or S34-PO-1.** The unresolved items below are explicitly gated and are not guessed into requirements.
+**No open CRITICAL or HIGH findings.** The following product/dependency items are explicitly blocked; none is encoded as a guessed requirement.
 
 | ID | Category | Severity | Location | Assessment |
 |---|---|---|---|---|
-| A1 | Copy approval | BLOCKED-COPY | `spec.md` FR-013, FR-032, FR-033; `tasks.md` T069 | English market/type labels and any UI copy beyond the four exact Arabic labels require separate PO approval. Data/behavior requirements remain specified without inventing copy. |
-| A2 | PO decisions outside this round | BLOCKED | `spec.md` PO-decision register; `traceability.md` | Existing ND-F9-2/3/5 remain open and are outside this settled decision set; dependent work remains gated. |
-| A3 | Implementation security gate | REQUIRED FUTURE REVIEW | `tasks.md` T070 | Independent review of target-stack synthetic-only verification and safe mock deletion is required before implementation acceptance. |
-| A4 | Runtime FX security gate | REQUIRED FUTURE REVIEW | `tasks.md` T059/T062 | Verified provider checks, minimized egress and security review remain required for future implementation. |
+| A1 | Unapproved interface copy | BLOCKED-COPY | `spec.md` FR-013, FR-032/033; `tasks.md` T061/T069 | S34-PO-2 approves only Egypt, International, Promotional and Year-Round in the stated English/Arabic pairs. Dashboard, Installments, empty, error, help and other copy beyond those pairs remains blocked. |
+| A2 | Category persistence identity | PO DECISION PENDING | `spec.md` Clarifications PD-S34-NEW-01; `data-model.md`; `contracts/packages-surface.md`; `tasks.md` T042/T055/T066 | The four logical category slots are settled, while whether a package row is the category or a separate category entity is not selected. Physical uniqueness key and final RPC signature/parameter flow remain blocked. T064's read-only C5 inventory is independent. |
+| A3 | C5 implementation security gate | REQUIRED FUTURE REVIEW | `tasks.md` T070 | T070 reviews the implemented, narrowly scoped deletion path after implementation and before acceptance. It does not gate implementation. The path must retain general immutability/RLS/audit/restrictive-reference protections and preserve required history. |
+| A4 | FX provider security gate | REQUIRED FUTURE REVIEW | `tasks.md` T059/T062 | Provider verification, minimized egress and independent security review remain future work. |
+| A5 | Existing retained decisions | BLOCKED | `spec.md` PO-decision register; `traceability.md` | ND-F9-2/3/5 remain as recorded. They are outside the settled scope of S34-PO-2. |
 
 ## Coverage and consistency
 
-- C1 fixes market/type identity; S33-11 stores it in immutable snapshots. C2 reserves workspace-specific commercial names, prices and commissions to the PO; WO cannot configure them. Commercial edits append versions and preserve prior client/assignment snapshots.
-- C3 defines exactly four category slots per workspace (Egypt/International × Year-Round/Promotional), permits both markets concurrently, and limits promotions to approved periods. Approved Arabic labels and mappings are exact; no English labels are introduced.
-- C5 supersedes S32-PO-4 SK-009-05 and S33-01/S33-02 for existing mock packages. T064/T065 require target-stack synthetic-only verification and complete dependency enumeration (including FKs, registration links, subscriptions, payments, audit rows and all other references), refusal/escalation with zero writes for unsafe/unknown states, safe deletion after clean preflight, and four empty categories without commercial values. Future real-package soft-retirement remains.
-- C4 and S33-12 agree: dashboard reports actual monthly collections and package-specific commissions with installment detail; accounting/settlement records remain separate. T068 and T069 cover installments, role access and future design/accessibility verification.
-- S33-03..12 are represented across requirements and tasks: Africa/Cairo calendar dates; prior published business-day rates; half-open Cairo promotion dates; new-link-only expiry with issued-link snapshots; versioned commercial terms; verified Frankfurter; rate-pending/idempotent retry excluded until fetched; EGP identity rate; commission visibility PO/WO only; immutable category snapshots; separate settlement records.
-- S32-R1 all-origin-reference uniqueness and the rule never to edit a pushed migration are explicit in T065. No migration is created in this artifact cycle.
-- FR-027 is explicitly blocked by S33-08 provider verification and T062 independent review. FR-028..FR-033 and SC-019..SC-023 are linked to Given/When/Then acceptance scenarios, T064–T071, and `traceability.md`. No future task is marked complete; no implementation/test evidence is claimed.
-- Historical S31/S32 text is labeled as historical where superseded. C1 replaces market/type mutability in SK-009-06 and S33-07; C5 replaces prior mapping/soft-retire treatment for existing mocks only.
+- S33-PO-6 recommendations and binding clarifications are recorded; C1–C5 and LABELS from S34-PO-1 are resolved. S34-PO-2 approves the four exact English labels and their Arabic mappings without unblocking other copy.
+- S34-PO-1 supersession is explicit: C1 supersedes the earlier market/type mutability wording in SK-009-06 and the market/type part of S33-07 while commercial terms remain versioned; C5 supersedes SK-009-05 and S33-01/S33-02 for existing mock packages only, while future real-package soft-retirement remains.
+- Four logical category pairs per workspace, simultaneous market operation, promotion windows, PO-only workspace names/prices/package commissions, immutable market/type, append-only commercial versions and historical client/assignment snapshots are covered by FRs, SCs, scenarios, plan/model/contracts/tasks and traceability.
+- C4 reporting uses actual monthly collections and package-specific commissions with installment details; settlement/accounting records remain separate. SC-016 and SC-022 reconcile collections to collection source rows and commissions to applicable commission calculations/source rows, without assuming commission equals gross collection. UI copy beyond approved label pairs remains BLOCKED-COPY.
+- C5 requires read-only verification of synthetic-only status and complete target-stack dependency enumeration (FKs, registration links, subscriptions, payments, audit rows and all other package references). Non-synthetic, required financial/audit or unknown state refuses/escalates before writes. The narrow deletion path protects required history and cannot weaken general guards; four empty categories contain no commercial values and their persistence-specific initialization remains blocked by PD-S34-NEW-01. T064 → T065 → T070 order is clear; T070 is post-implementation/pre-acceptance.
+- S32-R1 all-origin-reference uniqueness and “never edit a pushed migration” are explicit. No migration is created in this artifact cycle.
+- SC-013..SC-018 task mappings are corrected in `traceability.md`: SC-016 → T060/T068; SC-017 → T058/T059/T068; SC-018 → T059/T062. SC-003 uses the same preserved term fields as FR-021/SC-011.
+- No future task is marked complete; no implementation or test evidence is claimed.
 
 ## Frontend Design Gate review
 
-- The complete design-skills catalog, authority files and applicable advisory skills were reviewed; per-skill APPLIES/NOT APPLICABLE reasons are in the run report.
-- No rendered UI is changed in this spec-only cycle. UI design verification remains assigned to T069 and is not claimed as passed.
-- Future UI requirements retain the Design System, RTL/LTR, theme, viewport, accessibility, state and copy checks. Copy approval remains BLOCKED-COPY.
+- This round changes specification and approved-copy status only; no rendered UI, component, design token or visual behavior changed. The prior round's complete design-skills catalog/authority review is recorded in the round-4 report.
+- Future dashboard/Installments UI remains subject to T061/T069 and the Frontend Design Gate. Four label pairs are approved; all other dashboard/Installments/empty/error/help copy remains BLOCKED-COPY.
+- Visual matrix, contrast, accessibility, state, screenshot and runtime test evidence were not generated in this spec-only round; those checks remain future T069 work.
 
 ## Verdict
 
-**PASS — 0 CRITICAL, 0 HIGH.** S33-PO-6 and S34-PO-1 are resolved in the artifacts. No open ambiguities are claimed for those decisions. Copy approval, independent security reviews, ND-F9-2/3/5 and implementation evidence remain explicit gates. This Analyze validates documentation consistency only; it does not authorize implementation or claim tests passed.
+**PASS — 0 CRITICAL, 0 HIGH.** The settled S33-PO-6/S34-PO-1 decisions and the four S34-PO-2 English labels are consistent across the artifacts. PD-S34-NEW-01 remains pending, and its dependent physical identity/RPC work is explicitly blocked. Other interface copy, retained ND-F9 items, future security reviews and implementation evidence remain explicit gates. This Analyze covers specification consistency only; it does not authorize implementation or claim tests passed.

@@ -19,7 +19,7 @@ Reuse `Field`, `Button`, `Alert`, `States`, `ConfirmDialog`, existing tokens, lo
 
 All calls carry the current user's JWT via the server session client; never an admin/service-role client. Authenticated has EXECUTE; PUBLIC/anon/service_role do not. SECURITY DEFINER with empty search path and explicit signed actor/workspace checks is specified in the data model.
 
-**Baseline note**: the RPC table below is the shipped pre-S31 F9 contract. The S31 delta adds approved market/type inputs and the market/currency matrix; after T042 ships, the format-only `publish_package_version` path MUST fail closed and the S31 signature becomes the only accepted one. Final parameter placement and shape are selected with SK-009-06.
+**Baseline note**: the RPC table below describes the shipped pre-S31 F9 contract. The S31 delta adds market/type and currency validation. The old format-only `publish_package_version` path MUST fail closed when the approved delta ships. This table is not the final S31 contract: exact parameter placement/signature and category-to-package persistence identity remain BLOCKED by PD-S34-NEW-01. No final RPC shape is selected here.
 
 | RPC                               | Named JSON input                                           | Successful value                                                            |
 | --------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
@@ -36,14 +36,11 @@ Mutation failure codes: `42501/not_permitted` for authorization, missing/foreign
 
 ## S31 market/type/currency contract delta
 
-**Status**: the approved values/rules below are binding; physical owner/mutability, legacy-row
-representation, promotional behavior, display copy and downstream propagation remain gated by
-SK-009-05..SK-009-09. No client or RPC may infer an unapproved value.
+**Status**: S33-PO-6, S34-PO-1 and S34-PO-2 settle the recorded logical rules and four English/Arabic market/type label pairs. PD-S34-NEW-01 keeps physical category persistence identity and dependent publication/RPC details blocked. All other dashboard/Installments/empty/error/help copy remains BLOCKED-COPY. No client or RPC may infer an unapproved value.
 
 ### S31 publication input and result
 
-The S31 publication surface MUST carry the approved market/type values according to the
-SK-009-06 owner model and enforce this matrix before mutation:
+The future S31 publication surface MUST enforce the approved market/type values and this currency matrix before mutation. The values identify one of the four fixed logical categories; physical placement and the final parameter flow remain blocked by PD-S34-NEW-01:
 
 | Market | Permitted currency | Prohibited currency |
 |---|---|---|
@@ -53,10 +50,7 @@ SK-009-06 owner model and enforce this matrix before mutation:
 FR-007 initial-unavailable behavior is unchanged: a newly created offer still starts unavailable,
 publication never enables it, and only a separate confirmed PO availability action changes it.
 
-If SK-009-06 selects fixed offer/package ownership, market/type are supplied when the offer/owner
-is first created and later publications must match; if it selects version snapshots, every
-publication supplies them. The exact input names below are therefore a contract family, not an
-invented final signature:
+The logical invariant is settled: market/type are immutable category attributes and market/type are included in S33-11 immutable snapshots. The following shape is illustrative only; it is not an approved request signature or parameter-placement decision:
 
 ```text
 { workspace_id, package_id, market, package_type,
@@ -64,15 +58,9 @@ invented final signature:
   price_minor, currency, commission_rate_bp }
 ```
 
-For a fixed owner, the application may use a separate owner-assignment operation instead of
-repeating the values on every publication, but the combined sequence MUST have one unambiguous
-server-authoritative path and the old path MUST fail closed. The final named JSON/RPC contract is
-selected with SK-009-06 and frozen in the forward migration.
+The final named JSON/RPC contract and whether the values are supplied on category initialization or publication are BLOCKED by PD-S34-NEW-01. Once the decision is recorded, the contract must provide one unambiguous server-authoritative path, and the old format-only path MUST fail closed.
 
-Success returns the published version UUID as today. A prohibited market/currency pair, unknown
-market/type, conflicting fixed owner value or invalid legacy treatment returns the existing generic
-`invalid_input`/`denied` result with no existence disclosure. No version, pointer, offer or event is
-created on rejection.
+Success returns the published version UUID under the final approved contract. A prohibited market/currency pair, unknown market/type, invalid request or rejected category identity returns the existing generic `invalid_input`/`denied` result with no existence disclosure. No version, pointer, offer or event is created on rejection.
 
 ### Role and count contract
 
@@ -80,12 +68,11 @@ created on rejection.
 - WO/Sales/Trainer are denied create/name/price/control in every workspace, including their own.
 - Sales/Trainer remain unable to retrieve commission through direct, wildcard, joined, embedded,
   audit, safe-view or alternate supported paths.
-- Distinct package codes coexist in one workspace with independent current-version pointers and
-  version sequences. S34-PO-1 supersedes this historical S31 count rule: each workspace has exactly four immutable market/type categories.
+- The historical S31 open-ended count rule is superseded by C3: each workspace has exactly four logical market/type category slots. Whether the category is a package row or separate entity, and its unique key/relation, remain BLOCKED by PD-S34-NEW-01.
 
 ### Read contract
 
-Authorized package reads expose the approved market/type machine values from the PO-selected owner.
+Authorized package reads expose the approved market/type machine values from the category identity selected after PD-S34-NEW-01.
 A version exposes its own exact `price_minor` and `currency`; market never changes the amount's
 currency. Reads MUST NOT return:
 
@@ -94,13 +81,11 @@ currency. Reads MUST NOT return:
 - a total/sum across currencies; or
 - an unapproved legacy classification presented as Egypt/International or Year-round/Promotional.
 
-If SK-009-05 selects an approved legacy state, its safe projection and exact AR/EN display copy are
-part of the PO-approved contract. Until then, no legacy state is invented.
+S34-PO-1 C5 resolves the existing package rows as mocks; no row-by-row classification or default is applied. Before removal, the target-stack preflight verifies synthetic-only status and every dependency under FR-028.
 
 ### `/packages` UI contract
 
-The PO screen adds market and type to the create/publish/review journey only after the selected
-owner model and SK-009-08 copy are approved. It MUST:
+The PO screen adds market and type to the create/publish/review journey after the category persistence identity is resolved under PD-S34-NEW-01. The four Arabic/English label pairs are approved by LABELS and S34-PO-2. It MUST:
 
 - show the current package's market/type and exact own-currency amount;
 - reject prohibited currency before submission and show a generic field error;
@@ -112,19 +97,11 @@ owner model and SK-009-08 copy are approved. It MUST:
 
 `Promotional` behavior is settled by S33-PO-6: Africa/Cairo start-inclusive/end-exclusive approved
 periods; expiry prevents new links while issued links retain snapshots. This supersedes the earlier
-S31 undecided wording. English and other unapproved UI copy remains BLOCKED-COPY.
+S31 undecided wording. The four English/Arabic market/type label pairs are approved by LABELS and S34-PO-2; other dashboard/Installments/empty/error/help UI copy remains BLOCKED-COPY.
 
 ### Downstream F10/F12 boundary
 
-The shipped registration-link RPC copies the package version's price and currency; F12 copies that
-currency through subscription/installment/payment/refund snapshots and requires same-currency
-totals. The final S31 rule is SK-009-09:
-
-- if same-currency propagation is approved, F10/F12 require no conversion field and continue to
-  snapshot the package version's own currency;
-- if a different downstream currency is approved, a new PO-approved conversion source, timestamp,
-  rounding and immutable snapshot contract is required before implementation; and
-- mixed-currency installments/totals are not implied by S31 and remain outside this contract.
+The existing F10/F12 boundaries remain outside this F9 implementation scope. S33-PO-6/C4 settle reporting conversion and separate settlement/accounting-record semantics; do not alter downstream financial schema here. Any later downstream currency change requires its applicable PO decision and feature contract.
 
 ## Server actions and results
 
@@ -172,12 +149,12 @@ Token issuance binds `(workspace_id, package_version_id)` selected server-author
 - Each workspace exposes exactly four immutable market/type category pairs. Both markets may be active simultaneously. Promotional availability obeys its approved Africa/Cairo start-inclusive/end-exclusive period; expiry affects new-link creation only, and issued-link snapshots remain unchanged.
 - PO-only configuration covers workspace-specific package names, prices and package-specific commissions. WO attempts are denied. Commercial edits append versions; existing client/assignment snapshots remain stable. Market/type cannot be changed.
 - Dashboard semantics are actual monthly collections and package-specific commission with installment detail (due dates, paid and remaining amounts). Settlement/accounting rows remain separate. Converted commission is PO/WO-only; Sales/Trainer remain denied.
-- C5 deletion must execute a read-only target-stack preflight first, enumerating FK edges, registration links, subscriptions, payments, audit rows and every other package reference. Non-synthetic data, required financial/audit dependencies or unknown state returns refusal/escalation with zero writes. Only a clean preflight allows mock deletion and initialization of four empty categories with no names/prices/commissions.
-- Only exact Arabic labels «مصر», «دولي», «وقت العـروض», «طول السنـة» are approved. English labels and all other dashboard/Installments UI copy are BLOCKED-COPY.
+- C5 deletion must execute a read-only target-stack preflight first, enumerating FK edges, registration links, subscriptions, payments, audit rows and every other package reference. Non-synthetic data, required financial/audit dependencies or unknown state returns refusal/escalation with zero writes. Only a complete clean preflight allows safe mock deletion; preserve required client/financial/audit history and reject partial completion. The cleanup path is explicit and limited to verified synthetic targets; it cannot weaken general immutability, audit, RLS or restrictive-reference protections or cascade into protected dependencies. Initialization of four empty categories with no names/prices/commissions remains blocked by PD-S34-NEW-01 pending the category persistence identity decision.
+- The approved pairs are Egypt/«مصر», International/«دولي», Promotional/«وقت العـروض», and Year-Round/«طول السنـة». Arabic strings include exact tatweel. All other dashboard/Installments/empty/error/help UI copy remains BLOCKED-COPY.
 
 ## S32-PO-4 package management and FX contract delta (historical; superseded by S33-PO-6 / S34-PO-1 where noted)
 
-The PO-only management surface controls workspace-specific names, prices and package-specific commissions; WOs cannot configure terms. Commercial edits append immutable versions and preserve prior client/assignment snapshots. Market/type are immutable under C1 and included in S33-11's immutable snapshot. C5 governs existing mock deletion; S33-02 soft-retirement applies to future real packages. Only non-approved UI copy remains BLOCKED-COPY.
+The PO-only management surface controls workspace-specific names, prices and package-specific commissions; WOs cannot configure terms. Commercial edits append immutable versions and preserve prior client/assignment snapshots. Market/type are immutable under C1 and included in S33-11's immutable snapshot. C5 governs existing mock deletion; S33-02 soft-retirement applies to future real packages. Four English/Arabic market/type label pairs are approved; only other UI copy remains BLOCKED-COPY. PD-S34-NEW-01 still blocks physical category identity and dependent contract/schema work.
 
 Promotional categories use approved Africa/Cairo start-inclusive/end-exclusive periods. Expiry stops new links only; issued links retain snapshots (S33-PO-6 S33-05/06).
 

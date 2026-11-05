@@ -4,7 +4,7 @@ The shipped baseline is `supabase/migrations/20261029120000_packages.sql` (PR #9
 `b565d4c`, implementation tip `b359985`). Never edit that committed migration or any later shipped
 migration. The S31 delta is a **new** forward migration,
 `supabase/migrations/20261106125000_f9_package_markets_types_currency.sql` (provisional filename
-until implementation). S33-PO-6 and S34-PO-1 settle the logical owner/version and operational rules. Only UI copy beyond the four exact approved Arabic labels remains BLOCKED-COPY.
+until implementation). S33-PO-6, S34-PO-1 and S34-PO-2 settle the logical owner/version, operational rules and four English/Arabic market/type label pairs. Other dashboard/Installments/empty/error/help UI copy remains BLOCKED-COPY. Physical category persistence identity remains BLOCKED by PD-S34-NEW-01.
 
 The shipped baseline extended `app_private.audit_row_change()` from its latest complete body in
 `20261028120000_auth_recovery_links.sql`, preserving workspace, staff, membership, jobs and recovery
@@ -76,7 +76,7 @@ Package identity is resolved through the immutable offer relation; no redundant 
 
 ### Invariants fixed by the PO
 
-- The exact Arabic labels are approved: «مصر», «دولي», «وقت العـروض», «طول السنـة», mapped to Egypt, International, Year-Round and Promotional. English labels remain BLOCKED-COPY.
+- The exact approved label pairs are Egypt/«مصر», International/«دولي», Promotional/«وقت العـروض», and Year-Round/«طول السنـة». Copy Arabic strings exactly including tatweel. Other dashboard/Installments/empty/error/help UI copy remains BLOCKED-COPY.
 - Egypt → `EGP` only. International → `EGP | USD | SAR`. Every other currency is invalid even if it
   satisfies the former three-letter format check.
 - A package version keeps its exact minor-unit amount/currency. Only transaction-date EGP reporting conversion is permitted; no package-price conversion or mixed-currency total is introduced.
@@ -88,13 +88,13 @@ Package identity is resolved through the immutable offer relation; no redundant 
 
 ### Owner and mutability (settled)
 
-Market/type are immutable and the S33-11 recommended immutable version snapshot holds them. C1 supersedes S32-PO-4 SK-009-06 market/type mutability and S33-07 for these attributes only. Commercial terms remain PO-controlled and versioned; prior client/assignment snapshots are preserved. This logical contract does not select physical columns beyond the approved snapshot invariant.
+Market/type are immutable and the S33-11 immutable version snapshot holds them. C1 supersedes S32-PO-4 SK-009-06 market/type mutability and S33-07 for these attributes only. Commercial terms remain PO-controlled and versioned; prior client/assignment snapshots are preserved. The PO has not selected whether a category is represented by its package row or a separate category entity (PD-S34-NEW-01). Therefore this logical contract does not select a physical owner, uniqueness key, column placement or final RPC shape; dependent schema/contract work remains blocked.
 
 The implementation must preserve the approved immutable snapshot invariant in the data model, RPC, read contract and tests.
 
 ### Existing mock packages (C5)
 
-S34-PO-1 declares all existing package rows mock data and supersedes S32-PO-4 SK-009-05/S33-01 mapping for these rows. Before removal, verify synthetic-only status and enumerate every target-stack dependency: FK edges, registration links, subscriptions, payments, audit rows, and all other package references. Any non-synthetic row, required financial/audit dependency, or unknown state requires refusal/escalation with zero writes. After a clean preflight, delete obsolete mock packages and initialize exactly four empty categories per workspace with no names, prices or commissions. Future real packages follow S33-PO-6 soft-retirement; historical records are preserved.
+S34-PO-1 declares all existing package rows mock data and supersedes S32-PO-4 SK-009-05/S33-01 mapping for these rows. Before removal, a read-only target-stack preflight verifies synthetic-only status and enumerates every dependency: FK edges, registration links, subscriptions, payments, audit rows, and all other package references. Any non-synthetic row, required financial/audit dependency, or unknown state requires refusal/escalation before writes. After a complete clean preflight, safely delete obsolete mock packages while preserving required client, financial and audit history; partial completion is not accepted. The C5 path is explicit and limited to verified synthetic targets; it must not disable or weaken general immutability, audit, RLS or restrictive-reference protections, or cascade into protected dependencies. Initialization of exactly four empty categories with no names, prices or commissions remains blocked pending the category identity decision PD-S34-NEW-01. Future real packages follow S33-PO-6 soft-retirement; historical records are preserved.
 
 ### Conditional publication contract
 
@@ -119,12 +119,8 @@ format-valid but market-prohibited currency after the forward migration.
 - Market/type are not sensitive financial columns and may be exposed to the same authorized
   package readers defined by FR-008; this grants no new audience. Commission remains absent from
   Sales/Trainer paths.
-- If market/type belong to `package_offers`, extend the offer projection and safe allow-list. If
-  they belong to `package_versions`, extend the safe view with exact immutable values. If they
-  belong to `packages`, extend the canonical package projection. No projection may expose an
-  unapproved legacy label.
-- No direct UPDATE grant is added. If candidate B is selected, a separate PO-only RPC performs the
-  audited mutation; otherwise the existing offer identity guard freezes the fields.
+- Read projections must expose the approved market/type values under the authorized scope after the category persistence identity is decided. The selected identity and S33-11 immutable snapshot determine the required projection; this data model does not choose physical column placement. No projection may expose an unapproved legacy label.
+- No direct UPDATE grant is added. Any mutation or initialization path is PO-authorized and audited; its exact RPC and category relation remain blocked by PD-S34-NEW-01. Existing immutable-history protections remain in force.
 - Audit details may include only the machine market/type values and the actual business transition;
   no free text, labels, PII or currency-conversion data enters audit records. Event count and
   allow-lists are specified with the selected candidate before implementation.
@@ -208,7 +204,7 @@ Management writes are PO-only for workspace-specific names, prices and package-s
 
 Any future snapshot preserves original transaction amount/currency and actual settlement. The transaction timestamp maps to an Africa/Cairo calendar date; use the previous published business-day rate when no same-day published rate exists. Frankfurter may be used only after documented verification checks. EGP→EGP uses exactly 1. Rate-pending retries are idempotent and excluded from converted totals until fetched. Do not invent additional FX policy beyond the settled record.
 
-Store reporting values separately from actual settlement amount/currency and settlement events. Never overwrite settlement with a reported converted value. Dashboard display follows C4: actual monthly collections and package-specific commissions with installment detail; settlement/accounting events remain separate. Copy beyond the approved Arabic category labels remains BLOCKED-COPY.
+Store reporting values separately from actual settlement amount/currency and settlement events. Never overwrite settlement with a reported converted value. Dashboard display follows C4: actual monthly collections and package-specific commissions with installment detail; settlement/accounting events remain separate. Copy beyond the four approved English/Arabic market/type label pairs remains BLOCKED-COPY.
 
 ### Fetch/expiry jobs, audit and idempotency
 
@@ -223,4 +219,4 @@ The constitutional external-model rule applies to development AI handling. S31-P
 - Dashboard read semantics are actual monthly collections and package-specific commissions with installment due/paid/remaining detail. Accounting/settlement events remain separate records. Converted commission is PO/WO-only.
 - FX uses the transaction timestamp's Africa/Cairo calendar date and the previous published business-day rate; Frankfurter is used only after documented verification; EGP→EGP is exactly 1; a pending rate retries idempotently and is omitted from converted totals until fetched. No other conversion is allowed.
 - C5 deletion requires a target-stack dependency manifest including FKs, registration links, subscriptions, payments, audit rows and every other reference. Unsafe or unknown state refuses and escalates with zero writes. Safe cleanup initializes four empty categories without commercial defaults.
-- Requirements define Installments data only. Copy beyond the exact approved Arabic category labels remains BLOCKED-COPY.
+- Requirements define Installments data only. Four English/Arabic market/type label pairs are approved by LABELS/S34-PO-2; all other dashboard/Installments/empty/error/help copy remains BLOCKED-COPY.

@@ -49,9 +49,9 @@ SC-001..SC-006 are covered by the shipped baseline test sources above. SC-007..S
 tasks: SC-007 → T036/T038; SC-008 → T037/T038; SC-009 → T037/T041/T050; SC-010 →
 T038/T039/T047; SC-011 → T035/T038/T050; SC-012 → T041/T045/T049. No S31 SC is claimed passing.
 
-## Historical PO blocker statuses (superseded by S33-PO-6 / S34-PO-1)
+## Historical PO blocker statuses (superseded by S33-PO-6 / S34-PO-1 / S34-PO-2)
 
-All S33-01..12 product choices, C1–C5 and Arabic LABELS are resolved. Only BLOCKED-COPY remains for English and other UI copy without PO approval.
+All S33-01..12 product choices, C1–C5, Arabic LABELS and the four mapped English labels in S34-PO-2 are resolved. PD-S34-NEW-01 remains pending for category persistence identity; T042, T055 category initialization and T066, plus any dependent physical key/RPC/schema work, remain blocked. BLOCKED-COPY applies only to dashboard/Installments/empty/error/help copy beyond the approved four English/Arabic label pairs.
 
 ## S32-PO-4 FRs (new; no implementation evidence)
 
@@ -64,16 +64,16 @@ All S33-01..12 product choices, C1–C5 and Arabic LABELS are resolved. Only BLO
 | FR-026 FX snapshot/failure behavior | T058, T059, T067, T068 | date/provider/rate/retry tests | NOT-IMPLEMENTED |
 | FR-027 no client data in outbound API request | T059, T062 | captured request allowlist test + security review | BLOCKED: S33-08 provider verification; T062 independent security review |
 
-SC-013..SC-018 map respectively to T052/T053, T054/T055, T056/T057, T058/T060, T058/T059, and T059/T060/T062. No task is ticked. Existing rows above retain their S31 evidence status; this cycle ran no tests/builds/stacks and claims no implementation evidence.
+SC-013..SC-018 map respectively to T052/T053, T054/T055, T056/T057, T060/T068, T058/T059/T068, and T059/T062. No task is ticked. Existing rows above retain their S31 evidence status; this cycle ran no tests/builds/stacks and claims no implementation evidence.
 
 ## S34 current traceability (requirements only; no implementation evidence)
 
 | FR / SC | Tasks | Planned evidence | Status |
 |---|---|---|---|
-| FR-028 C5 safe removal/empty initialization; SC-019 | T064, T065, T070, T071 | complete dependency manifest, fail-closed tests with zero writes, safe deletion/init/rollback, independent security review | NOT-IMPLEMENTED |
-| FR-029 PO-only versioned terms; FR-015/016/019/021; SC-020 | T066, T071 | four category pairs, immutable market/type, role tests, commercial versions and historical snapshots | NOT-IMPLEMENTED |
+| FR-028 C5 safe removal/empty initialization; SC-019 | T064, T065, T070, T071 | complete dependency manifest, fail-closed tests with zero writes, safe deletion/init/rollback, independent security review | PARTIAL: deletion/preflight specified; four-category initialization BLOCKED: PD-S34-NEW-01 |
+| FR-029 PO-only versioned terms; FR-015/016/019/021; SC-020 | T066, T071 | four category pairs, immutable market/type, role tests, commercial versions and historical snapshots | BLOCKED: PD-S34-NEW-01 for category identity/uniqueness assertions |
 | FR-030 promotions and link expiry; SC-021 | T067, T071 | Cairo date/boundary and new/issued link tests | NOT-IMPLEMENTED |
 | FR-031 reporting/FX roles; SC-022 | T068, T071 | actual monthly collections, commissions, separate settlement, installment details, FX and role tests | NOT-IMPLEMENTED |
-| FR-032/033 installment UI copy/labels; SC-023 | T069, T071 | exact Arabic strings; Frontend Design Gate after copy approval | BLOCKED-COPY / NOT-IMPLEMENTED |
+| FR-032/033 installment UI copy/labels; SC-023 | T069, T071 | four exact English/Arabic label pairs; Frontend Design Gate; other interface copy | label pairs approved by LABELS/S34-PO-2; remaining dashboard/Installments/empty/error/help copy BLOCKED-COPY |
 
-No S34 task is ticked. This cycle ran no tests, SQL, migration, stack, build, UI render or security review. Existing mock packages must not be deleted until the C5 preflight and independent security gates pass on the target stack.
+No S34 task is ticked. This cycle ran no tests, SQL, migration, stack, build, UI render or security review. Existing mock packages must not be deleted until the C5 preflight and independent post-implementation security gate pass on the target stack. Category initialization remains BLOCKED by PD-S34-NEW-01.

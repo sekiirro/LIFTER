@@ -32,7 +32,7 @@
 
 ## Notes
 
-S33-PO-6 and S34-PO-1 resolve S33-01..12, C1–C5 and Arabic LABELS. No open product ambiguities remain from those items. English market/type labels and other UI copy beyond the four exact Arabic category labels are BLOCKED-COPY. ND-F9-2/3/5 remain. Future implementation tasks remain unchecked; this artifact cycle ran no tests, migrations, SQL, stacks, builds or UI renders.
+S33-PO-6 and S34-PO-1 resolve S33-01..12, C1–C5 and Arabic LABELS; S34-PO-2 approves the exact four mapped English labels. PD-S34-NEW-01 remains pending for physical category persistence identity. Only dashboard/Installments/empty/error/help copy beyond the four approved English/Arabic label pairs remains BLOCKED-COPY. ND-F9-2/3/5 remain. Future implementation tasks remain unchecked; this artifact cycle ran no tests, migrations, SQL, stacks, builds or UI renders.
 
 ## S34 coverage
 
@@ -40,5 +40,5 @@ S33-PO-6 and S34-PO-1 resolve S33-01..12, C1–C5 and Arabic LABELS. No open pro
 - [x] C5 requires synthetic-only verification and enumeration of FKs, registration links, subscriptions, payments, audit rows and all other dependencies before mock deletion.
 - [x] C5 unsafe/unknown dependencies refuse and escalate; safe removal initializes four empty categories without commercial values.
 - [x] Dashboard, package-specific commission, installments and separate accounting/settlement records are specified.
-- [x] Copy beyond the four approved Arabic labels is BLOCKED-COPY.
+- [x] The four approved English/Arabic market/type label pairs are available; dashboard/Installments/empty/error/help copy beyond them is BLOCKED-COPY.
 - [x] Future tasks include RED-first tests, Frontend Design Gate, and independent security review of the deletion path.

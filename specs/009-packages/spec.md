@@ -3,7 +3,7 @@
 **Feature Branch**: `009-packages`
 **Created**: 2026-10-27  
 **Last Updated**: 2026-11-05
-**Status**: S33-PO-6 and S34-PO-1 decisions are recorded. No S33-01..12 product ambiguities remain; English UI copy beyond the approved Arabic labels remains BLOCKED-COPY.
+**Status**: S33-PO-6, S34-PO-1 and S34-PO-2 decisions are recorded. No ambiguity remains in those settled decisions. PD-S34-NEW-01 (category persistence identity) remains pending; requirements depending on that identity are blocked. UI copy beyond the four approved Arabic/English market/type label pairs remains BLOCKED-COPY.
 **Input**: P1-F9, approved architect/reviewer design supplied for this run. Sources: [BRD](../../LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md) lines 30, 40–41, 53–54, 102, 196, 317; [decision register](../../docs/04-changes-and-questions.md) D-09/D-10, D-11, D-13, D-17; [Constitution v1.4.0](../../.specify/memory/constitution.md) I–III, V, VII–IX. Later decisions supersede historical BRD installment/refund wording. S31 sources: S31-PO-4 and S31-PO-5 (S31-Q4). S32 source: S32-PO-4, quoted verbatim in `## Clarifications` below and in the PO decision register.
 
 ## Clarifications
@@ -44,7 +44,7 @@ S33-PO-6 F9 decision states verbatim:
 >
 > "**Never invent product decisions. Escalate unresolved rules as MCQs.**"
 
-Architect mapping: «مصر» = Egypt; «دولي» = International; «طول السنـة» = Year-Round; «وقت العـروض» = Promotional. Copy these strings exactly, including tatweel (ـ). English market/type labels remain BLOCKED-COPY pending separate PO approval; do not invent translations.
+Architect mapping: «مصر» = Egypt; «دولي» = International; «طول السنـة» = Year-Round; «وقت العـروض» = Promotional. Copy these strings exactly, including tatweel (ـ). English market/type labels were pending PO approval at the time of S34-PO-1 and are approved as specified in the S34-PO-2 session below; do not invent labels beyond those four.
 
 S33-PO-6 selected the recommended option for every S33-01..12, with its written clarifications governing: S33-01 row-by-row PO mapping of defaults/classifications; S33-02 soft-retire future real packages from new sales while retaining history; S33-03 transaction timestamp as Africa/Cairo calendar date; S33-04 previous published business-day rate; S33-05 Africa/Cairo start-inclusive/end-exclusive; S33-06 expiry stops new links only, issued links retain snapshots; S33-07 append commercial-term versions while prior assignments retain snapshots; S33-08 Frankfurter after documented verification; S33-09 rate-pending, idempotent retry, exclude from converted totals until fetched; S33-10 EGP→EGP rate exactly 1 and converted commission visible to PO/WO only; S33-11 immutable version snapshot holds market/type; S33-12 settlement events remain separate accounting records, display governed by C4.
 
@@ -52,11 +52,32 @@ Architect supersession notes (not PO words), S34-PO-1, state verbatim:
 
 > "C1=A supersedes S32-PO-4 SK-009-06 \"change ... market ... and type\" and S33-07 append-on-change for market/type (commercial terms stay versioned per S33-PO-6). C2=A confirms S31-PO-5 and fixes the meaning of S33-PO-6 \"Independent workspace pricing, naming and package-specific commission rates\" = per-workspace values set only by the PO. C3=C defines S33-PO-6 \"one active pair at a time\" as: four slots, both markets may operate at the same time, promotional slots only during approved periods. C4=B: dashboard = actual monthly collections + package-specific commission + installment details; separate accounting/settlement records kept (S33-12 settlement model retained internally). C5=D supersedes S32-PO-4 SK-009-05 \"audit ... safely migrate\" and S33-01/S33-02 mapping/soft-retire FOR EXISTING (mock) packages only: verify synthetic-only + dependencies, then delete and initialise four empty categories; no fabricated prices/commissions; S33-02 soft-retire semantics for future real packages are unchanged unless the PO says otherwise."
 
-LABELS=D answers SK-009-08 for Arabic only; English market/type labels remain pending PO approval. The labels contain tatweel (ـ) exactly as written: «وقت العـروض», «طول السنـة».
+LABELS=D answered SK-009-08 for Arabic only at the time; S34-PO-2 below supersedes the pending status for the four English labels. The Arabic labels contain tatweel (ـ) exactly as written: «وقت العـروض», «طول السنـة».
 
-Decision summary: C1 supersedes S32-PO-4 SK-009-06 market/type mutability and S33-07 only for market/type; commercial terms remain versioned. C2 confirms S31-PO-5: only PO controls workspace-specific naming/pricing/commission; WO cannot. C3 defines the four category slots, both markets simultaneously operable, and promotions only during approved periods. C4 governs dashboard display and preserves S33-12 separate accounting/settlement records. C5 supersedes SK-009-05 and S33-01/S33-02 for existing mock packages only; S33-02 soft-retire still applies to future real packages. C5 requires synthetic-only and dependency preflight; refuse/escalate for non-synthetic or required financial/audit dependencies. LABELS resolves SK-009-08 only for the exact four Arabic labels; English copy remains blocked.
+### Session 2026-11-05 — S34-PO-2 (binding)
 
-All C1–C5, LABELS, and S33-01..12 are resolved. No open product ambiguities remain from these decision items. New PO-DECISION-NEEDED items: none. Copy beyond the approved Arabic category labels is BLOCKED-COPY, not a behavioral ambiguity.
+Source read verbatim: `C:/Users/NEW LAP/.lifter/briefs/s34-po-decisions-verbatim.md`, S34-PO-2.
+
+> "LIFTER S34 — PO approves English labels: Egypt, International, Promotional, Year-Round."
+
+Approved English market/type labels and exact Arabic mappings:
+
+| English | Exact approved Arabic | Meaning |
+|---|---|---|
+| Egypt | «مصر» | Egypt market |
+| International | «دولي» | International market |
+| Promotional | «وقت العـروض» | Promotional type |
+| Year-Round | «طول السنـة» | Year-Round type |
+
+Copy the Arabic strings exactly, including tatweel (ـ). S34-PO-2 resolves BLOCKED-COPY only for these four English labels. All other dashboard, Installments, empty, error, and help UI copy remains BLOCKED-COPY. No English copy is inferred beyond these exact labels.
+
+### Pending product decision — PD-S34-NEW-01 (not resolved by S34-PO-2)
+
+The fixed four logical category slots are settled, but persistence identity is not. Option A is package-row-is-category; option B is a separate category entity. This document does not select either option. The physical uniqueness key, final publication/RPC contract and any work depending on that key remain BLOCKED pending PD-S34-NEW-01, including T042, T055 category initialization and T066. Requirements that do not depend on that identity remain specified.
+
+Decision summary: C1 supersedes S32-PO-4 SK-009-06 market/type mutability and S33-07 only for market/type; commercial terms remain versioned. C2 confirms S31-PO-5: only PO controls workspace-specific naming/pricing/commission; WO cannot. C3 defines the four category slots, both markets simultaneously operable, and promotions only during approved periods. C4 governs dashboard display and preserves S33-12 separate accounting/settlement records. C5 supersedes SK-009-05 and S33-01/S33-02 for existing mock packages only; S33-02 soft-retire still applies to future real packages. C5 requires synthetic-only and dependency preflight; refuse/escalate for non-synthetic or required financial/audit dependencies. LABELS resolves SK-009-08 for the exact four Arabic labels; S34-PO-2 approves only the four mapped English labels. All other UI copy remains blocked.
+
+All C1–C5, LABELS, S33-01..12, and the four English labels in S34-PO-2 are resolved. No ambiguity remains in those decisions. PD-S34-NEW-01 remains pending; no category persistence identity is selected. Copy beyond the four approved Arabic/English label pairs is BLOCKED-COPY, not a behavioral ambiguity.
 
 ### Session 2026-11-04
 
@@ -229,7 +250,7 @@ prices stay in own currency while collection reporting uses only the approved im
 - **FR-010**: Every mutation MUST verify the server-derived actor and existing pricing capability and independently enforce database authorization under the user's signed identity. Denials, malformed targets and failures MUST return generic results with no existence disclosure or console logging (Constitution I/III/VII).
 - **FR-011**: Creation, publication and actual availability changes MUST each produce exactly one atomic append-only audit event containing only the specified business fields and actor/target/scope attribution. No PII or authored labels enter audit details; failed/no-op actions produce no new change event (Constitution VII).
 - **FR-012**: `/packages` MUST be PO-only server-side, redirect anonymous users to login, and initially link only from the PO signed-in landing pending ND-F9-5. It MUST expose workspace selection, offer review, canonical-code creation, publication and confirmed availability controls (BRD 102).
-- **FR-013**: UI MUST use the Design System, Arabic-first RTL and English LTR, existing dark/light themes, responsive keyboard-accessible controls and loading/empty/error states. Prices MUST format exactly from minor units with currency; authored labels MUST never be machine-translated. In this scope, copy beyond the exact Arabic category labels in FR-033 is BLOCKED-COPY until PO approval (Constitution VIII; LABELS).
+- **FR-013**: UI MUST use the Design System, Arabic-first RTL and English LTR, existing dark/light themes, responsive keyboard-accessible controls and loading/empty/error states. Prices MUST format exactly from minor units with currency; authored labels MUST never be machine-translated. In this scope, use the four English/Arabic market/type label pairs approved by LABELS and S34-PO-2; dashboard/Installments/empty/error/help copy beyond those labels remains BLOCKED-COPY (Constitution VIII; LABELS).
 - **FR-014**: Required verification MUST include role × own/foreign workspace matrices for every RPC/read path, anonymous/non-staff/revoked denial, commission hiding, all-role immutability guards, concurrent publication, duration boundaries, exact audit events without PII, composite-relation rejection, validation/money units, AR/EN route and axe checks, and RLS-catalog/matrix parity (Constitution I; quality gates).
 - **FR-015**: Each initialized category MUST have exactly one immutable market value `Egypt` or `International`, readable under existing FR-008 scope. Each workspace has one category per market/type pair; C5 removal and initialization are governed by FR-028. Market is never inferred from price/currency. (C1, C3, C5; S33-11)
 - **FR-016**: Each initialized category MUST have exactly one immutable type value `Year-round` or `Promotional`, readable under existing FR-008 scope. Promotional availability follows FR-030. Type is included in the immutable market/type snapshot required by S33-11. (C1, C3)
@@ -244,12 +265,12 @@ prices stay in own currency while collection reporting uses only the approved im
 - **FR-025**: Dashboard monthly collection reporting MUST use actual collections and show package-specific commission and installment detail; settlement events remain separate accounting records. (C4; S33-12)
 - **FR-026**: FX reporting MUST use Africa/Cairo transaction date, previous published business-day rate, verified Frankfurter data, exact EGP→EGP rate 1, and idempotent rate-pending retries excluded from converted totals until fetched. Preserve original transaction currency and settlement. (S33-PO-6 S33-03/04/08/09/10)
 - **FR-027**: Provider requests MUST exclude client identity/contact, transaction, workspace and other client data. (S32-PO-4; synthetic-only development policy)
-- **FR-028**: Before removing existing mock packages, the future implementation MUST verify synthetic-only status and enumerate every target-stack dependency, including foreign keys, registration links, subscriptions, payments, audit rows, and all other package references. It MUST refuse and escalate if any non-synthetic data or required financial/audit dependency exists. Only after a clean preflight may it delete obsolete mock packages and initialize exactly four empty categories per workspace with no names, prices, commissions, or fabricated commercial values. The PO configures real packages manually. (C5)
+- **FR-028**: Before removing existing mock packages, the future implementation MUST verify synthetic-only status and enumerate every target-stack dependency, including foreign keys, registration links, subscriptions, payments, audit rows, and all other package references. Unknown dependency state, any non-synthetic data, or any required financial/audit dependency MUST refuse and escalate before writes. After a complete clean preflight, it may safely delete only obsolete mock packages and initialize exactly four empty categories per workspace with no names, prices, commissions, or fabricated commercial values. Required client, financial and audit history MUST be preserved; partial deletion/initialization MUST NOT be accepted. The C5 cleanup path MUST be explicit and limited to the verified mock target set; it MUST NOT disable or weaken general immutability, audit, RLS or restrictive-reference protections, nor cascade into protected dependencies. The PO configures real packages manually. The exact persistence identity for the four categories remains blocked by PD-S34-NEW-01. (C5)
 - **FR-029**: Only the PO may control workspace-specific package names, prices, and package-specific commissions. A WO MUST NOT create, rename, price, or set commissions. Each commercial edit MUST create a new immutable version; prior client/assignment snapshots remain unchanged. (C1, C2; S33-PO-6)
 - **FR-030**: Promotional categories/packages MUST be sellable only during approved periods, evaluated in Africa/Cairo with start-inclusive/end-exclusive boundaries. Expiry MUST stop new registration links only; issued links retain their snapshots. (S33-PO-6 S33-05/06)
 - **FR-031**: The dashboard MUST show actual monthly collections and package-specific commissions with installment-level detail. Settlement/accounting events remain separate records. Converted commission is visible to PO/WO only; Sales/Trainer remain denied. FX uses Africa/Cairo transaction date, previous published business-day rate when needed, Frankfurter only after documented verification, exact 1 for EGP→EGP, and idempotent rate-pending retries excluded from converted totals until fetched. (C4; S33-PO-6 S33-03/04/08/09/10/12)
-- **FR-032**: Installment clients MUST be identified as installment clients, and the dashboard MUST provide an Installments section with due dates, paid amounts, and remaining amounts. This specifies data/behavior only; all UI copy beyond the four approved Arabic category labels is BLOCKED-COPY. (C4)
-- **FR-033**: Market/type labels MUST use exactly «مصر», «دولي», «وقت العـروض», «طول السنـة» with the mapping in Clarifications. No English market/type UI label or translation may appear until separately approved. (LABELS)
+- **FR-032**: Installment clients MUST be identified as installment clients, and the dashboard MUST provide an Installments section with due dates, paid amounts, and remaining amounts. This specifies data/behavior only; UI copy beyond the four approved English/Arabic market/type label pairs is BLOCKED-COPY. (C4)
+- **FR-033**: Market/type labels MUST use exactly the approved pairs Egypt/«مصر», International/«دولي», Promotional/«وقت العـروض», and Year-Round/«طول السنـة», with Arabic strings copied exactly including tatweel. No additional English market/type labels or translations may be introduced beyond these four approved labels. All other UI copy remains BLOCKED-COPY. (LABELS; S34-PO-2)
 
 #### S34 acceptance scenarios
 
@@ -258,13 +279,13 @@ prices stay in own currency while collection reporting uses only the approved im
 3. **Given** a PO changes a workspace-specific name, price or commission, **When** the change is published, **Then** the new commercial version is immutable and prior client/assignment snapshots remain unchanged; a WO attempt is denied.
 4. **Given** a month with synthetic collection, commission and installment fixtures, **When** PO/WO views the dashboard, **Then** actual monthly collections, package-specific commission, due/paid/remaining details and separate settlement records are visible; Sales/Trainer cannot retrieve commission.
 5. **Given** an FX rate is pending, **When** converted totals are rendered, **Then** the pending transaction is excluded until an idempotent retry obtains a verified rate; EGP→EGP uses exactly 1.
-6. **Given** a C5 preflight finds non-synthetic data, a required financial/audit dependency, or unknown dependency state, **When** removal is requested, **Then** it refuses/escalates with zero writes. **Given** a clean synthetic-only inventory, **When** removal completes, **Then** obsolete mocks are deleted and exactly four empty categories are initialized without commercial values.
-7. **Given** any market/type UI surface, **When** labels render, **Then** they use only the exact approved Arabic labels; English labels and other unapproved UI copy remain BLOCKED-COPY.
+6. **Given** a C5 preflight finds non-synthetic data, a required financial/audit dependency, or unknown dependency state, **When** removal is requested, **Then** it refuses/escalates with zero writes. **Given** a complete clean synthetic-only inventory, **When** removal completes, **Then** only obsolete mocks are safely deleted, required history is preserved, and exactly four empty categories are initialized without commercial values; partial completion is not accepted.
+7. **Given** any market/type UI surface, **When** labels render, **Then** they use only the approved pairs Egypt/«مصر», International/«دولي», Promotional/«وقت العـروض», Year-Round/«طول السنـة»; all other UI copy remains BLOCKED-COPY.
 
 ### Key Entities
 
-- **Package category**: one of four immutable market × type identities per workspace. Commercial values are workspace-specific; initialization supplies no real commercial values.
-- **Package offer**: a workspace sellable package/duration identity, availability and current published version under one fixed category.
+- **Package category**: one of four immutable logical market × type identities per workspace. Whether a category is represented by a package row or a separate category entity remains pending PD-S34-NEW-01. Commercial values are workspace-specific; initialization supplies no real commercial values.
+- **Package offer**: the logical workspace sellable package/duration identity, availability and current published version associated with one fixed category. Its persisted category relation remains pending PD-S34-NEW-01.
 - **Package version**: immutable numbered commercial terms; edits append a version and preserve client/assignment snapshots. Market/type remain immutable category attributes (C1; S33-11).
 - **Market**: approved attribute value `Egypt` or `International`; it controls the permitted currency set but is never inferred from a stored currency.
 - **Package type**: approved value `Year-round` or `Promotional`; Promotional availability follows the Africa/Cairo half-open period and issued-link rules in FR-030.
@@ -274,7 +295,7 @@ prices stay in own currency while collection reporting uses only the approved im
 
 - **SC-001**: 100% of role/workspace fixture cases match the read and mutation rules; zero foreign-workspace or unauthorized commission values are returned.
 - **SC-002**: Across simultaneous first and later distinct publications, zero duplicate offers/version numbers occur and successful versions are consecutively numbered; identical-to-current replays add zero versions/events; reverting to older terms appends N+1 and advances current.
-- **SC-003**: Every attempted update/delete/truncate of published history is refused in the all-role guard tests; old terms remain byte-for-byte unchanged after a new publication or availability change.
+- **SC-003**: Every attempted update/delete/truncate of published history is refused in the all-role guard tests; prior versions keep their identifier and stored price, currency, commission and duration terms unchanged after a new publication or availability change.
 - **SC-004**: Each successful actual change yields exactly one matching audit event and every rejected or identical-to-current replayed request yields zero new change events; reverting to older terms yields one publication event; zero PII fields occur in package audit details.
 - **SC-005**: PO can complete create → publish → enable in both AR and EN; all required states are exercised, keyboard operation succeeds and automated accessibility checks find zero violations in tested markup.
 - **SC-006**: All preset/custom boundary cases, required values and supported-currency minor-unit formatting fixtures pass without precision loss or invented catalog data.
@@ -283,20 +304,20 @@ prices stay in own currency while collection reporting uses only the approved im
 - **SC-009**: 100% of package prices retain their authored currency; 0 converted package prices, assumed rates or cross-currency totals are produced. Reporting-only transaction FX follows FR-031 and preserves actual settlement.
 - **SC-010**: Across the full role × own/foreign workspace matrix, 100% of valid PO create/name/price/control attempts succeed and 100% of WO/Sales/Trainer create/name/price attempts are denied; Sales/Trainer commission remains absent from every supported read path.
 - **SC-011**: For commercial-term edits, 100% of prior versions and client/assignment snapshots remain unchanged. Existing mock-package disposition follows the C5 preflight in FR-028 and never deletes required financial/audit history.
-- **SC-012**: 100% of category labels match the approved Arabic strings byte-for-byte. English market/type and other UI copy remain blocked until separately approved.
+- **SC-012**: 100% of category labels match the four approved Arabic/English pairs exactly, including Arabic tatweel; all other UI copy remains blocked.
 
 - **SC-013**: C5 target-stack preflight accounts for 100% of package rows and package references; any non-synthetic or unsafe dependency fixture refuses with zero writes.
 - **SC-014**: 100% of PO commercial edits append a version and leave prior versions, client records, and assignment snapshots unchanged; WO mutation attempts are denied.
 - **SC-015**: Promotional boundary tests pass at the approved Africa/Cairo inclusive-start/exclusive-end instants; expiry prevents new links and changes zero issued-link snapshots.
-- **SC-016**: For every synthetic monthly fixture, dashboard collection and package-specific commission totals equal their actual collection source rows, show installment detail, and preserve separate settlement rows.
+- **SC-016**: For every synthetic monthly fixture, dashboard collection totals reconcile to actual collection source rows and package-specific commission totals reconcile to the applicable commission calculation or commission source rows; commission is not assumed equal to gross collections. Installment due/paid/remaining detail matches its source, and settlement records remain separately queryable.
 - **SC-017**: FX fixtures use the approved transaction date and previous published business-day rate; EGP→EGP is 1; pending rates are excluded until idempotent retry succeeds.
 - **SC-018**: Captured provider requests contain no client identity/contact, transaction, workspace, or other client data; Frankfurter use is gated on recorded verification checks.
 
-- **SC-019**: In target-stack preflight tests, 100% of non-synthetic, required financial/audit, and unknown dependency cases refuse with zero writes; a clean synthetic-only case deletes obsolete mock packages and creates exactly four empty categories with zero fabricated names/prices/commissions.
+- **SC-019**: In target-stack preflight tests, 100% of non-synthetic, required financial/audit, and unknown dependency cases refuse with zero writes; a complete clean synthetic-only case safely deletes obsolete mock packages while preserving required history. It initializes exactly four empty categories with zero fabricated names/prices/commissions only after the category persistence identity is resolved under PD-S34-NEW-01.
 - **SC-020**: Every workspace has exactly four market/type pairs; 100% of market/type mutation attempts fail; PO commercial edits append versions; WO attempts are denied; 100% of prior client/assignment snapshots remain unchanged.
 - **SC-021**: Promotion tests cover exact Africa/Cairo start-inclusive/end-exclusive boundaries; expiry blocks all new links after the approved end and changes zero already-issued link snapshots.
-- **SC-022**: Dashboard fixtures match actual monthly collection and package-specific commission source rows, show installment details, preserve separate settlement rows, exclude pending FX from converted totals, use 1 for EGP→EGP, and deny commission to all Sales/Trainer fixtures.
-- **SC-023**: 100% of category label output matches the four approved Arabic strings exactly; zero unapproved English market/type labels or unapproved installment/report UI copy is shipped.
+- **SC-022**: Dashboard fixtures reconcile monthly collections to actual collection source rows and package-specific commissions to applicable commission calculations or commission source rows, show installment details, preserve separate settlement rows, exclude pending FX from converted totals, use 1 for EGP→EGP, and deny commission to all Sales/Trainer fixtures.
+- **SC-023**: 100% of category label output matches the four approved English/Arabic pairs exactly, including Arabic tatweel; zero unapproved market/type labels or unapproved installment/report UI copy is shipped.
 
 ## PO decision register
 
@@ -305,12 +326,13 @@ prices stay in own currency while collection reporting uses only the approved im
 - S31-PO-4 / S31-PO-5: currency matrix, no assumed conversion, PO-only authorship, and Sales/Trainer commission denial remain binding.
 - S32-PO-4: lifecycle, promotion, original-currency and historical FX scope remains binding except where superseded below.
 - S33-PO-6 S33-01..12: recommended options are settled, with written clarifications governing.
-- S34-PO-1 C1–C5 and LABELS: resolved above. C1 supersedes S32-PO-4 SK-009-06 market/type mutability and S33-07 for market/type only. C2 confirms PO-only control. C3 defines four slots and simultaneous markets. C4 governs dashboard display and preserves settlement records. C5 supersedes SK-009-05 and S33-01/S33-02 for existing mock packages only; S33-02 soft-retirement remains for future real packages. LABELS resolves Arabic copy only.
+- S34-PO-1 C1–C5 and LABELS: resolved above. C1 supersedes S32-PO-4 SK-009-06 market/type mutability and S33-07 for market/type only. C2 confirms PO-only control. C3 defines four logical slots and simultaneous markets. C4 governs dashboard display and preserves settlement records. C5 supersedes SK-009-05 and S33-01/S33-02 for existing mock packages only; S33-02 soft-retirement remains for future real packages. LABELS resolves the Arabic strings; S34-PO-2 approves their English mappings. PD-S34-NEW-01 still blocks physical persistence identity.
 - No open product ambiguities remain from S33-01..12, C1–C5, or LABELS.
 
 ### Remaining blockers
 
-- **BLOCKED-COPY**: English market/type labels; any dashboard, Installments, empty/error/help, or other UI copy beyond the four approved Arabic category labels. Requirements may define data and behavior without inventing that copy.
+- **BLOCKED-COPY**: dashboard, Installments, empty/error/help and other UI copy beyond the four approved English/Arabic market/type label pairs. Requirements may define data and behavior without inventing that copy.
+- **PD-S34-NEW-01 (existing)**: Choose **A**, package row is the category, or **B**, a separate category entity. A determines a uniqueness key on package-row identity; B requires a separate category-to-package relation and its uniqueness/publication rules. No option is recommended or selected in this run; defer dependent physical work until PO records the choice. Blocked: physical uniqueness key, final publication/RPC contract, T042, T055 category initialization, T066 and any dependent schema work. T064 preflight can proceed independently.
 - ND-F9-2 custom-duration bounds, ND-F9-3 real catalog values and ND-F9-5 PO navigation placement remain as previously recorded; this pass adds no new PO-DECISION-NEEDED items.
 - Existing production-readiness gates remain open; no deployment or cloud migration is authorized.
 
