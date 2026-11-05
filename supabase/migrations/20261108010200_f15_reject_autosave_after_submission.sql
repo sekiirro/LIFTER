@@ -1,6 +1,6 @@
 ﻿-- F15 T087: return a bounded business status for autosave after submission.
 
-create function public.save_form_draft(
+create or replace function public.save_form_draft(
   p_workspace_id uuid,
   p_assignment_id uuid,
   p_expected_revision integer,
@@ -14,6 +14,11 @@ declare
   request_hash bytea;
   prior app_private.form_draft_intents%rowtype;
   response jsonb;
+  snapshot jsonb;
+  question jsonb;
+  entry record;
+  answer_chars integer;
+  max_chars integer;
 begin
   if auth.uid() is null or p_workspace_id is null or p_assignment_id is null
     or p_expected_revision is null or p_expected_revision < 0 or p_intent_key is null
@@ -37,6 +42,25 @@ begin
   if octet_length(p_answer_values::text) > 262144 then
     return jsonb_build_object('status','payload_too_large');
   end if;
+  select a.version_snapshot into snapshot
+  from public.form_assignments a
+  where a.workspace_id=p_workspace_id and a.id=p_assignment_id;
+  for entry in select key,value from jsonb_each(p_answer_values) loop
+    select q.value into question
+    from jsonb_array_elements(coalesce(snapshot->'questions','[]'::jsonb)) q(value)
+    where q.value->>'id'=entry.key;
+    if found and jsonb_typeof(entry.value)='string' then
+      answer_chars := char_length(entry.value #>> '{}');
+      max_chars := case question->>'type'
+        when 'shortText' then least(150,coalesce((question->>'charLimit')::integer,150))
+        when 'longText' then least(1000,coalesce((question->>'charLimit')::integer,1000))
+        else null
+      end;
+      if max_chars is not null and answer_chars > max_chars then
+        return jsonb_build_object('status','answer_too_long');
+      end if;
+    end if;
+  end loop;
   if exists (
     select 1 from jsonb_each(p_answer_values) e
     where jsonb_typeof(e.value)='string'

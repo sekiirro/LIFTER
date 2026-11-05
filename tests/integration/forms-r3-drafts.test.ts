@@ -41,7 +41,8 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
       const definition = {
         questions: Array.from({ length: 60 }, (_, index) => ({
           id: index === 0 ? 'q1' : `q${index + 1}`,
-          type: 'short_text',
+          type: index === 0 ? 'shortText' : 'short_text',
+          ...(index === 0 ? { charLimit: 20 } : {}),
         })),
       };
       await tx`
@@ -105,6 +106,12 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
             /answer_bytes > 4096 or \(max_chars is not null and answer_chars > max_chars\)/,
           expected: 'answer_too_long',
           values: { q1: 'x'.repeat(4097) },
+        },
+        {
+          name: 'per-question character count',
+          pattern: /max_chars is not null and answer_chars > max_chars/,
+          expected: 'answer_too_long',
+          values: { q1: 'x'.repeat(21) },
         },
       ] as const;
       for (const mutant of boundMutants) {
