@@ -46,6 +46,31 @@ async function closeClient(
 describe.runIf(process.env.LIFTER_SUPABASE_STACK === 'd')(
   'T018 synthetic lifecycle proof (Stack D only; no cron activation)',
   () => {
+    it('uses a dedicated purge scheduler lock without changing alert evaluation locks', async () => {
+      await probe(async (tx) => {
+        const [activate] = await tx`
+          select pg_get_functiondef('app_private.f15_forms_purge_schedule_activate()'::regprocedure) as body`;
+        const [deactivate] = await tx`
+          select pg_get_functiondef('app_private.f15_forms_purge_schedule_deactivate()'::regprocedure) as body`;
+        const [evaluator] = await tx`
+          select pg_get_functiondef('app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)'::regprocedure) as body`;
+        const [alertScheduler] = await tx`
+          select pg_get_functiondef('app_private.f15_alert_schedule_activate()'::regprocedure) as body`;
+        expect(activate!.body).toContain(
+          'pg_catalog.pg_advisory_xact_lock(11011,319)',
+        );
+        expect(deactivate!.body).toContain(
+          'pg_catalog.pg_advisory_xact_lock(11011,319)',
+        );
+        expect(evaluator!.body).toContain(
+          'pg_catalog.pg_advisory_xact_lock(11011,318)',
+        );
+        expect(alertScheduler!.body).toContain(
+          'pg_catalog.pg_advisory_xact_lock(11011,317)',
+        );
+      });
+    });
+
     it('starts retention at the authoritative refund/deactivation timestamp, not approval or assignment', async () => {
       const f = await clientContext();
       await probe(async (tx) => {
@@ -162,6 +187,17 @@ describe.runIf(process.env.LIFTER_SUPABASE_STACK === 'd')(
           request_key: key,
         });
         expect(result.status).toBe('ok');
+        const [clientUser] = await tx`
+          select auth_user_id from public.clients
+          where workspace_id=${f.wsA.id} and id=${ids.client}`;
+        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: clientUser!.auth_user_id, role: 'authenticated' })},true)`;
+        await tx`set local role authenticated`;
+        const [endedContext] = await tx`
+          select public.read_form_assignment_context(${assignmentId}) as value`;
+        expect(endedContext!.value).toMatchObject({
+          relationship_active: false,
+        });
+        await tx`reset role`;
         const [fact] = await tx`
           select c.deactivation_reason,c.deactivated_at,o.recorded_at,o.id as operation_id,
             d.auth_user_id as lockout_user, l.auth_user_id as auth_lockout_user,
