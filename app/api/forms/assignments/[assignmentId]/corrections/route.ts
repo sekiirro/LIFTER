@@ -1,5 +1,8 @@
 import { NextResponse, type NextRequest } from 'next/server';
-import { validateCorrectionRequest } from '../../../../../../lib/forms/corrections';
+import {
+  isCorrectionNoteWithinBounds,
+  validateCorrectionRequest,
+} from '../../../../../../lib/forms/corrections';
 import {
   formsPrivateNoStoreHeaders,
   requestUsesHttps,
@@ -36,6 +39,17 @@ export async function POST(
     body = await request.json();
   } catch {
     return response({ status: 'invalid' }, 400);
+  }
+  if (
+    typeof body === 'object' &&
+    body !== null &&
+    !Array.isArray(body) &&
+    typeof (body as { correction_note?: unknown }).correction_note === 'string' &&
+    !isCorrectionNoteWithinBounds(
+      (body as { correction_note: string }).correction_note,
+    )
+  ) {
+    return response({ status: 'answer_too_long' }, 400);
   }
 
   try {

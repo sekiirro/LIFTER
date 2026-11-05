@@ -28,6 +28,32 @@ describe('T014 correction request validation', () => {
     });
   });
 
+  it('accepts the correction note code-point bound and rejects overflow before write', () => {
+    const base = {
+      expected_revision: 1,
+      intent_key: 'fced6ad3-4d4d-4eb1-a9d2-7770cd7ee08c',
+      answer_values: { q1: 'updated' },
+    };
+    expect(
+      validateCorrectionRequest(snapshot, {
+        ...base,
+        correction_note: '😀'.repeat(1_000),
+      }).ok,
+    ).toBe(true);
+    expect(
+      validateCorrectionRequest(snapshot, {
+        ...base,
+        correction_note: 'x'.repeat(1_001),
+      }),
+    ).toEqual({ ok: false, code: 'answer_too_long' });
+    expect(
+      validateCorrectionRequest(snapshot, {
+        ...base,
+        correction_note: '😀'.repeat(1_025),
+      }),
+    ).toEqual({ ok: false, code: 'answer_too_long' });
+  });
+
   it.each([
     {
       expected_revision: 0,

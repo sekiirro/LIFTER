@@ -18,6 +18,13 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value);
 }
 
+export function isCorrectionNoteWithinBounds(value: string): boolean {
+  return (
+    Array.from(value).length <= 1_000 &&
+    new TextEncoder().encode(value).byteLength <= 4_096
+  );
+}
+
 /** Validate correction metadata and answer values before the database write. */
 export function validateCorrectionRequest(
   snapshot: unknown,
@@ -42,6 +49,10 @@ export function validateCorrectionRequest(
   ) {
     return { ok: false, code: 'invalid' };
   }
+  const correctionNote = value.correction_note;
+  if (!isCorrectionNoteWithinBounds(correctionNote)) {
+    return { ok: false, code: 'answer_too_long' };
+  }
   const answers = validateDraftAnswers(snapshot, value.answer_values);
   if (!answers.ok) return answers;
   return {
@@ -49,6 +60,6 @@ export function validateCorrectionRequest(
     expectedRevision: value.expected_revision as number,
     intentKey: value.intent_key,
     answerValues: answers.answerValues,
-    correctionNote: value.correction_note,
+    correctionNote,
   };
 }
