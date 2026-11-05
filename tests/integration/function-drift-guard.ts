@@ -60,7 +60,7 @@ export const guardedFunctions = [
   {
     identity:
       'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)',
-    migration: '20261107004000_f15_alert_candidate_filter.sql',
+    migration: '20261108020100_f15_cancel_alerts_after_lifecycle_end.sql',
     name: 'app_private.evaluate_forms_alerts_core',
   },
   {
