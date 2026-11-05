@@ -44,3 +44,11 @@
 ## Dependencies
 
 B1 → B2 → B3. One writing agent at a time.
+
+## S33 CI optimization tasks
+
+- [x] T016 [FR-015, FR-016, FR-017] Restrict push CI to `main`; retain `pull_request`; add PR-number concurrency that cancels superseded PR runs and unique ref-plus-run-ID groups for main pushes.
+- [x] T017 [FR-018] Verify validate has no browser-dependent steps, then remove only the unused Playwright browser installation from validate.
+- [x] T018 [FR-019] Preserve separate required `storage` job and existing job names, pinned actions, and every other workflow step; update docs/08-agent-workflow.md and document workflow changes in the PR body.
+
+Tasks remain unchecked until the exact PR head has the required executed green CI evidence and traceability evidence is recorded.
