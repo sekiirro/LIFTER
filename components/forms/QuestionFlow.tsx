@@ -810,7 +810,9 @@ function QuestionControl({
         {question.labels && (
           <div className={styles.sliderLabels}>
             <span>{resolveFormLabel(question.labels.minimum, locale)}</span>
-            {question.labels.middle && <span>{resolveFormLabel(question.labels.middle, locale)}</span>}
+            {question.labels.middle && (
+              <span>{resolveFormLabel(question.labels.middle, locale)}</span>
+            )}
             <span>{resolveFormLabel(question.labels.maximum, locale)}</span>
           </div>
         )}

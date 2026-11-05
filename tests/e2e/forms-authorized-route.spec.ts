@@ -391,7 +391,10 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
         ).toBeVisible();
         await expectAxeClean(page);
         await page.screenshot({
-          path: join(supportScreenshotDir, `${locale}-${theme}-${width}-b01.png`),
+          path: join(
+            supportScreenshotDir,
+            `${locale}-${theme}-${width}-b01.png`,
+          ),
           fullPage: true,
         });
         await page.getByRole('button').nth(1).click();
@@ -406,7 +409,10 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
         ).toBeVisible();
         await expectAxeClean(page);
         await page.screenshot({
-          path: join(supportScreenshotDir, `${locale}-${theme}-${width}-b02.png`),
+          path: join(
+            supportScreenshotDir,
+            `${locale}-${theme}-${width}-b02.png`,
+          ),
           fullPage: true,
         });
         await page.getByRole('button').nth(1).click();
@@ -419,7 +425,10 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
         ).toBeVisible();
         await expectAxeClean(page);
         await page.screenshot({
-          path: join(supportScreenshotDir, `${locale}-${theme}-${width}-goal.png`),
+          path: join(
+            supportScreenshotDir,
+            `${locale}-${theme}-${width}-goal.png`,
+          ),
           fullPage: true,
         });
       }
@@ -707,9 +716,7 @@ test('approved F15 controls render in both locales, themes, and widths', async (
           n11Labels.minimum,
           n11Labels.middle,
           n11Labels.maximum,
-        ].map((label) =>
-          typeof label === 'string' ? label : label[locale],
-        );
+        ].map((label) => (typeof label === 'string' ? label : label[locale]));
         for (const label of renderedN11Labels)
           await expect(page.getByText(label, { exact: true })).toBeVisible();
         if (locale === 'en')
@@ -989,7 +996,10 @@ test('real route autosave exposes each state, retries failures, and records save
           .analyze();
         expect(violations.violations).toEqual([]);
         await page.screenshot({
-          path: join(supportScreenshotDir, `${locale}-${theme}-${width}-${state}.png`),
+          path: join(
+            supportScreenshotDir,
+            `${locale}-${theme}-${width}-${state}.png`,
+          ),
           fullPage: true,
         });
       };

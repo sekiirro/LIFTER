@@ -5,7 +5,9 @@ import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { getMessages } from '../../lib/i18n';
 
-const origin = new URL(process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000').origin;
+const origin = new URL(
+  process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+).origin;
 
 const evidenceDir = join(tmpdir(), 'lifter-f15-s18-ui');
 const viewports = [

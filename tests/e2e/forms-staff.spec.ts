@@ -144,9 +144,7 @@ for (const variant of matrix) {
     await page
       .getByRole('button', { name: messages['forms.staffCreateForm'] })
       .click();
-    await page
-      .getByLabel(messages['forms.staffEnglishName'])
-      .fill(formTitle);
+    await page.getByLabel(messages['forms.staffEnglishName']).fill(formTitle);
     await page
       .getByLabel(messages['forms.staffArabicName'])
       .fill('Synthetic Arabic title');

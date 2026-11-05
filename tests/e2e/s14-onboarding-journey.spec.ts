@@ -1,7 +1,9 @@
 import { expect, test } from '@playwright/test';
 import { getMessages } from '../../lib/i18n';
 
-const origin = new URL(process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000').origin;
+const origin = new URL(
+  process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+).origin;
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
 test('unsubmitted Terms keep intake incomplete and remain available after reload', async ({

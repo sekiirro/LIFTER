@@ -44,7 +44,8 @@ export async function POST(
     typeof body === 'object' &&
     body !== null &&
     !Array.isArray(body) &&
-    typeof (body as { correction_note?: unknown }).correction_note === 'string' &&
+    typeof (body as { correction_note?: unknown }).correction_note ===
+      'string' &&
     !isCorrectionNoteWithinBounds(
       (body as { correction_note: string }).correction_note,
     )

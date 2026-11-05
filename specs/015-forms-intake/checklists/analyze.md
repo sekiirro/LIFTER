@@ -182,3 +182,6 @@ Result: PASS for the approved N11 label translation scope.
 ## S34 review remediation refresh — 2026-11-05
 
 After resolving review findings, the PO citations in spec.md and plan.md use stable decision IDs instead of machine-local paths. T012 restores direct-RPC snapshot membership for draft answer keys in a forward migration; the 220-entry payload mutant now uses the 60 IDs present in its immutable snapshot, and the byte-boundary mutant uses an in-snapshot question without a character limit. **CRITICAL: 0. HIGH: 0. No open ambiguities for these review fixes.**
+
+
+**S34 copy and evidence consistency refresh — 2026-11-05:** Updated stale S14 tests that described the S34-PO-6-approved English rows as pending; the approved-copy fixture remains the source of exact values. Refreshed the screenshot contract test for the r3 matrix (60 captures). The signup focus test now matches the existing identity-edit guard ordering. **CRITICAL: 0. HIGH: 0. No open ambiguities for these fixes.**

@@ -560,14 +560,14 @@ export function FormBuilder({
                 dir="ltr"
                 disabled={!editable}
                 aria-invalid={titleInvalid || undefined}
-                aria-describedby={titleInvalid ? 'forms-builder-title-error' : undefined}
-                onChange={(event) =>
-                  {
-                    const en = event.currentTarget.value;
-                    if (en.trim().length > 0) setTitleInvalid(false);
-                    onChange({ ...form, title: { ...form.title, en } });
-                  }
+                aria-describedby={
+                  titleInvalid ? 'forms-builder-title-error' : undefined
                 }
+                onChange={(event) => {
+                  const en = event.currentTarget.value;
+                  if (en.trim().length > 0) setTitleInvalid(false);
+                  onChange({ ...form, title: { ...form.title, en } });
+                }}
               />
               {titleInvalid && (
                 <span id="forms-builder-title-error" role="alert">
@@ -627,7 +627,7 @@ export function FormBuilder({
               {messages['forms.staffAddSection']}
             </Button>
             {form.status === 'draft' && (
-                <Button onClick={saveDraft} loading={busy} disabled={!canManage}>
+              <Button onClick={saveDraft} loading={busy} disabled={!canManage}>
                 {messages['forms.staffSaveDraft']}
               </Button>
             )}

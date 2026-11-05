@@ -110,8 +110,7 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
         },
         {
           name: 'single answer bytes',
-          pattern:
-            /octet_length\(e\.value #>> '\{\}'\) > 4096/,
+          pattern: /octet_length\(e\.value #>> '\{\}'\) > 4096/,
           expected: 'answer_too_long',
           values: { q2: 'é'.repeat(2049) },
         },
@@ -133,7 +132,10 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
                 ${context.wsA.id},${assignmentId},${currentRevision},${randomUUID()},${sp.json(mutant.values)}
               ) as result
             `;
-            expect(baseline?.result, `${mutant.name} bound baseline`).toMatchObject({ status: mutant.expected });
+            expect(
+              baseline?.result,
+              `${mutant.name} bound baseline`,
+            ).toMatchObject({ status: mutant.expected });
             boundBaselinePassed = true;
             throw boundRollback;
           }),
@@ -202,7 +204,10 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
               ${context.wsA.id},${assignmentId},0,${selectionKey},${sp.json({ q1: 'first draft' })}
             ) as result
           `;
-          expect(initial?.result, 'altered-intent baseline first write').toMatchObject({
+          expect(
+            initial?.result,
+            'altered-intent baseline first write',
+          ).toMatchObject({
             status: 'saved',
             revision: 1,
           });
@@ -290,7 +295,10 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
             where action='form.draft_saved' and target_id=${assignmentId}
           `;
           try {
-            expect(result?.result, 'audit omission mutant allows save').toMatchObject({ status: 'saved' });
+            expect(
+              result?.result,
+              'audit omission mutant allows save',
+            ).toMatchObject({ status: 'saved' });
             expect(count?.count).toBe(auditCountBeforeStableFlow + 2);
           } catch {
             auditMutationKilled = true;

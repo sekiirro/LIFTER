@@ -155,6 +155,6 @@ it('does not run the signup focus effect after a touched identity field edit', (
     /identityFieldEditRef\.current = true;\s*validateTouchedField\(field\)/,
   );
   expect(form).toMatch(
-    /useEffect\(\(\) => \{\s*if \(!submitted\) return;\s*if \(identityFieldEditRef\.current\) \{\s*identityFieldEditRef\.current = false;\s*return;/,
+    /useEffect\(\(\) => \{\s*if \(identityFieldEditRef\.current\) \{\s*identityFieldEditRef\.current = false;\s*return;\s*\}\s*if \(!submitted\) return;/,
   );
 });

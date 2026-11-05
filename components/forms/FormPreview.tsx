@@ -192,7 +192,9 @@ function PreviewQuestion({
         {question.labels && (
           <div className={styles.formHeader}>
             <span>{resolveFormLabel(question.labels.minimum, locale)}</span>
-            {question.labels.middle && <span>{resolveFormLabel(question.labels.middle, locale)}</span>}
+            {question.labels.middle && (
+              <span>{resolveFormLabel(question.labels.middle, locale)}</span>
+            )}
             <span>{resolveFormLabel(question.labels.maximum, locale)}</span>
           </div>
         )}

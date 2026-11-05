@@ -211,9 +211,7 @@ function isSliderLabels(
     Object.keys(value).every((key) =>
       ['minimum', 'middle', 'maximum'].includes(key),
     ) &&
-    ['minimum', 'middle', 'maximum'].every(
-      (key) => isLabel(value[key]),
-    )
+    ['minimum', 'middle', 'maximum'].every((key) => isLabel(value[key]))
   );
 }
 

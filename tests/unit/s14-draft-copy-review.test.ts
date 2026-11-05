@@ -46,7 +46,7 @@ describe('S14 draft-copy PO review package', () => {
       'Approved verbatim by PO S30-PO-1 Q2 at 5084916',
     );
     expect(spec).toContain(
-      'All other EN rows and options in this table remain pending PO review.',
+      'All 68 pending English intake rows are approved, with each row ID, exact English value and `S34-PO-6` citation recorded in `fixtures/s34-approved-intake-en.json`.',
     );
     expect(report).toContain('PO-approved intake English is limited to B01');
     expect(report).toContain(

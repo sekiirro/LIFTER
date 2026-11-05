@@ -106,9 +106,7 @@ describe('S32-PO-5/PO-8 intake starter controls', () => {
       label: { en: 'What training split would you like to follow?' },
       when: {
         mode: 'all',
-        conditions: [
-          { questionId: 'T08', operator: 'equals', value: true },
-        ],
+        conditions: [{ questionId: 'T08', operator: 'equals', value: true }],
       },
     });
     expect(question('N07.meal_count')).toMatchObject({
