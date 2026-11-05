@@ -336,7 +336,7 @@ export async function pendingHttpAccess(
               .select('*')
               .in(
                 'id',
-                bRows.map((row: any) => row.id as string),
+                (bRows as unknown as { id: string }[]).map((row) => row.id),
               )
               .limit(5),
           );
@@ -349,7 +349,7 @@ export async function pendingHttpAccess(
               .select('*')
               .in(
                 'id',
-                pRows.map((row: any) => row.id as string),
+                (pRows as unknown as { id: string }[]).map((row) => row.id),
               )
               .limit(5),
           );
