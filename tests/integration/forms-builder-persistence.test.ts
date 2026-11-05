@@ -159,6 +159,27 @@ it('rejects N12 and derived definitions with absent required selector metadata',
 });
 
 describe('T006/T009 persisted Builder writes', () => {
+  it('rejects whitespace English form names before creating a draft', async () => {
+    await expect(
+      db.begin(async (tx) => {
+        const fixture = await workspace(tx);
+        const formId = randomUUID();
+        const policy = `blank-title-${fixture.workspaceId}`;
+        await tx`insert into app_private.terms_policy_versions(version,policy_kind,status)
+          values(${policy},'terms','published')`;
+        const result = await tx`
+          select app_private.save_workspace_form_draft(
+            ${fixture.workspaceId},${formId},0,${tx.json(definition())},${randomUUID()},${fixture.actor},'   '
+          ) as result`;
+        expect(result[0]?.result).toEqual({ status: 'invalid' });
+        expect(
+          await tx`select id from public.forms where workspace_id=${fixture.workspaceId} and id=${formId}`,
+        ).toHaveLength(0);
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
+  });
+
   it('creates a new form and version on the first Save with revision zero', async () => {
     await expect(
       db.begin(async (tx) => {
