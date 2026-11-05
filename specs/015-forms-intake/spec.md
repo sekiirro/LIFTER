@@ -313,7 +313,7 @@ Source: `S34-PO-4 through S34-PO-6 in the PO decision register`, S34-PO-6 and PD
 
 ## Clarifications — S33-PO-3
 
-PO record: `S32-PO-8 Q6 in the PO decision register`, S33-PO-3, 2026-11-04. Verbatim:
+PO record: S33-PO-3 in the PO decision register, 2026-11-04. Verbatim:
 
 > "T03: Digits only: `2`, `3`, `4`, `5`, `6`."
 >

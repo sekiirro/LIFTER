@@ -185,3 +185,11 @@ After resolving review findings, the PO citations in spec.md and plan.md use sta
 
 
 **S34 copy and evidence consistency refresh — 2026-11-05:** Updated stale S14 tests that described the S34-PO-6-approved English rows as pending; the approved-copy fixture remains the source of exact values. Refreshed the screenshot contract test for the r3 matrix (60 captures). The signup focus test now matches the existing identity-edit guard ordering. **CRITICAL: 0. HIGH: 0. No open ambiguities for these fixes.**
+
+
+**S34 verification refresh — 2026-11-05:** T086, T091, T095–T098, T100, T102–T107 have current-head passing evidence recorded in traceability.md; task checkboxes are now marked complete only for those verified scopes. T099/T101 are not registered in this plan. **CRITICAL: 0. HIGH: 0.**
+
+
+## S34 final specification and evidence refresh — 2026-11-05 06:08 Africa/Cairo
+
+This refresh follows the stable PO-source citation correction in spec.md, the current-head task completion marks in tasks.md, and the task-to-test evidence rows in traceability.md. No requirement or product behavior changed in this refresh. **CRITICAL: 0. HIGH: 0. No open ambiguities remain for the authorized S34 work.** The English-locale rendering of the existing Arabic N11 feedback-band copy is separately recorded as PO-DECISION-NEEDED in the run report; implementation is unchanged pending that decision.
