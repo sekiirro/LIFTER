@@ -61,7 +61,7 @@ These corrections are within the previously approved F15 scope. They do not add 
 - [ ] T095 [FR-026/036/037] Capture the real T03/N07 AR-RTL/EN-LTR × light/dark matrix at 390px, 1024px, and 1440px and make `INDEX.md` list exactly the captures present; review against DESIGN.md with axe evidence.
 - [ ] T096 [FR-026/036/037] Apply S34-PO-1/6 exact English intake approvals, including N07.meal_count, the T08 system prompt, N11.label.0, all remaining approved pending English rows, and N07 no-fixed-time; update spec/fixtures/approved-copy fixtures and assert exact changed English strings.
 - [x] T097 [FR-008/013] Enforce S34-PO-2 correction_note bounds of 1,000 Unicode code points and 4 KiB UTF-8 in the route before RPC and in a new forward migration; prove boundary and over-bound cases.
-- [ ] T098 [FR-012/017/018/024] Under S34-PO-3, stop/cancel client-late evaluation and remove its related alert rows at Closure/Refund/Deactivation, including ended-relationship purge scope; add RED-first lifecycle tests and a new forward migration.
+- [x] T098 [FR-012/017/018/024] Under S34-PO-3, stop/cancel client-late evaluation and remove its related alert rows at Closure/Refund/Deactivation, including ended-relationship purge scope; add RED-first lifecycle tests and a new forward migration.
 - [ ] T100 [FR-007/008] Apply the one-time S34-PO-6=A edit only to `20261108010200_f15_reject_autosave_after_submission.sql`: use CREATE OR REPLACE FUNCTION and add the per-question max_chars check; prove clean Stack D replay after reset.
 - [ ] T102 [FR-024/025] Restack F15 PR branches over the current `origin/main` with no-ff merge commits, preserve migration history, and prove the stacked B tree matches the PR base merge-tree result.
 
