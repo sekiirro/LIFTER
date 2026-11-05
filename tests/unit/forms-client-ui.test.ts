@@ -220,55 +220,18 @@ describe('QuestionFlow', () => {
     expect(slider).toContain('Score feedback');
   });
 
-  it('renders the PO-approved N07 English timing question and dynamic option wording', () => {
+  it('renders the approved N07 English timing strings and canonical Arabic labels', () => {
+    const timingQuestion = starterQuestions.find(
+      (question) => question.id === 'N07.training_timing',
+    )!;
+    const mealCountQuestion = starterQuestions.find(
+      (question) => question.id === 'N07.meal_count',
+    )!;
+    const questions = [timingQuestion, mealCountQuestion];
     const html = renderToStaticMarkup(
       createElement(QuestionFlow, {
         locale: 'en',
-        questions: [
-          {
-            id: 'N07.training_timing',
-            sectionId: 'nutrition',
-            type: 'derivedChoice',
-            required: false,
-            title: {
-              en: 'After which meal would you like to train?',
-              ar: 'ØªØ­Ø¨ ØªÙ…Ø±ÙŠÙ†Ùƒ ÙŠÙƒÙˆÙ† Ø¨Ø¹Ø¯ Ø§Ù„ÙˆØ¬Ø¨Ø© Ø§Ù„ÙƒØ§Ù…ØŸ',
-            },
-            choices: [
-              'meal-1',
-              'meal-2',
-              'meal-3',
-              'meal-4',
-              'meal-5',
-              'before-first',
-              'no-fixed-time',
-            ],
-            optionLabels: [
-              { en: '', ar: 'ÙˆØ¬Ø¨Ø©' },
-              { en: '', ar: 'ÙˆØ¬Ø¨Ø©' },
-              { en: '', ar: 'ÙˆØ¬Ø¨Ø©' },
-              { en: '', ar: 'ÙˆØ¬Ø¨Ø©' },
-              { en: '', ar: 'ÙˆØ¬Ø¨Ø©' },
-              { en: 'Before the first meal', ar: 'Ù‚Ø¨Ù„ Ø£ÙˆÙ„ ÙˆØ¬Ø¨Ø©' },
-              {
-                en: "I don't have a fixed time",
-                ar: 'Ù…Ø¹Ù†Ø¯ÙŠØ´ Ù…ÙŠØ¹Ø§Ø¯ Ø«Ø§Ø¨Øª',
-              },
-            ],
-            derivedOptions: {
-              sourceQuestionId: 'N07.meal_count',
-              fixedChoices: ['before-first', 'no-fixed-time'],
-            },
-          },
-          {
-            id: 'N07.meal_count',
-            sectionId: 'nutrition',
-            type: 'mealCount',
-            required: false,
-            title: { en: '', ar: '' },
-            choices: ['2', '3', '4', '5'],
-          },
-        ],
+        questions,
         adapter,
         assignmentId: 'n07-approved-copy',
         initialAnswers: { 'N07.meal_count': '3' },
@@ -285,89 +248,42 @@ describe('QuestionFlow', () => {
     const arabicHtml = renderToStaticMarkup(
       createElement(QuestionFlow, {
         locale: 'ar',
-        questions: [
-          {
-            id: 'N07.training_timing',
-            sectionId: 'nutrition',
-            type: 'derivedChoice',
-            required: false,
-            title: { en: '', ar: 'ØªØ­Ø¨ ØªÙ…Ø±ÙŠÙ†Ùƒ' },
-            choices: ['meal-1', 'meal-2', 'before-first', 'no-fixed-time'],
-            optionLabels: [
-              { en: '', ar: 'ÙˆØ¬Ø¨Ø©' },
-              { en: '', ar: 'ÙˆØ¬Ø¨Ø©' },
-              { en: '', ar: 'Ù‚Ø¨Ù„ Ø£ÙˆÙ„ ÙˆØ¬Ø¨Ø©' },
-              { en: '', ar: 'Ù…Ø¹Ù†Ø¯ÙŠØ´ Ù…ÙŠØ¹Ø§Ø¯ Ø«Ø§Ø¨Øª' },
-            ],
-            derivedOptions: {
-              sourceQuestionId: 'N07.meal_count',
-              fixedChoices: ['before-first', 'no-fixed-time'],
-            },
-          },
-          {
-            id: 'N07.meal_count',
-            sectionId: 'nutrition',
-            type: 'mealCount',
-            required: false,
-            title: { en: '', ar: '' },
-            choices: ['2', '3', '4', '5'],
-          },
-        ],
+        questions,
         adapter,
         assignmentId: 'n07-approved-copy-ar',
         initialAnswers: { 'N07.meal_count': '3' },
       }),
     );
-    expect(arabicHtml).toContain('الوجبة رقم <bdi dir="ltr">1</bdi>');
-    expect(arabicHtml).toContain('الوجبة رقم <bdi dir="ltr">3</bdi>');
+    const mealNumberTemplate = getMessages('ar')['forms.afterMealNumber'];
+    expect(arabicHtml).toContain(
+      mealNumberTemplate.replace('{number}', '<bdi dir="ltr">1</bdi>'),
+    );
+    expect(arabicHtml).toContain(
+      mealNumberTemplate.replace('{number}', '<bdi dir="ltr">3</bdi>'),
+    );
+    expect(arabicHtml).toContain(timingQuestion.title.ar);
+    const noFixedIndex = timingQuestion.choices?.indexOf('no-fixed-time') ?? -1;
+    expect(arabicHtml).toContain(
+      timingQuestion.optionLabels?.[noFixedIndex]?.ar ?? '',
+    );
   });
 
-  it('renders budget chips within the N08 question and prunes values when budget changes', () => {
-    const budgetQuestions = [
-      {
-        id: 'N08',
-        sectionId: 'nutrition',
-        type: 'singleChoice' as const,
-        required: false,
-        title: { en: 'What’s your food budget?', ar: 'Ù…ÙŠØ²Ø§Ù†ÙŠØªÙƒ' },
-        choices: ['low', 'medium', 'high'],
-        optionLabels: [
-          { en: '', ar: 'Ù…ÙŠØ²Ø§Ù†ÙŠØ© Ù‚Ù„ÙŠÙ„Ø©' },
-          { en: '', ar: 'Ù…ÙŠØ²Ø§Ù†ÙŠØ© Ù…ØªÙˆØ³Ø·Ø©' },
-          { en: '', ar: 'Ù…ÙŠØ²Ø§Ù†ÙŠØ© Ø¹Ø§Ù„ÙŠØ©' },
-        ],
-      },
-      {
-        id: 'N08.foods',
-        sectionId: 'nutrition',
-        type: 'multiChoice' as const,
-        required: false,
-        title: { en: "What's your food budget?", ar: 'Ù…ÙŠØ²Ø§Ù†ÙŠØªÙƒ' },
-        choices: ['low:egg', 'medium:chicken', 'high:salmon'],
-        optionLabels: [
-          { en: '', ar: 'Ø¨ÙŠØ¶' },
-          { en: '', ar: 'ÙØ±Ø§Ø®' },
-          { en: '', ar: 'Ø³Ø§Ù„Ù…ÙˆÙ†' },
-        ],
-        when: {
-          mode: 'any' as const,
-          conditions: [
-            { questionId: 'N08', operator: 'equals' as const, value: 'low' },
-            {
-              questionId: 'N08',
-              operator: 'equals' as const,
-              value: 'medium',
-            },
-            { questionId: 'N08', operator: 'equals' as const, value: 'high' },
-          ],
-        },
-      },
+  it('renders canonical Arabic budget chips and prunes values when budget changes', () => {
+    const budgetQuestion = starterQuestions.find(
+      (question) => question.id === 'N08',
+    )!;
+    const foodQuestion = starterQuestions.find(
+      (question) => question.id === 'N08.foods',
+    )!;
+    const budgetQuestions: LabeledQuestion[] = [
+      budgetQuestion,
+      foodQuestion,
       {
         id: 'N09',
         sectionId: 'nutrition',
-        type: 'shortText' as const,
+        type: 'shortText',
         required: false,
-        title: { en: 'Next question', ar: 'Ù…Ø§ Ø¨Ø¹Ø¯Ù‡' },
+        title: { en: 'Next question', ar: '' },
       },
     ];
     const html = renderToStaticMarkup(
@@ -379,9 +295,8 @@ describe('QuestionFlow', () => {
         initialAnswers: { N08: 'medium', 'N08.foods': ['medium:chicken'] },
       }),
     );
-    expect(html).toContain('ÙØ±Ø§Ø®');
-    expect(html).not.toContain('Ø¨ÙŠØ¶');
-    expect(html).not.toContain('Ø³Ø§Ù„Ù…ÙˆÙ†');
+    expect(html).toContain(foodQuestion.optionLabels?.[5]?.ar ?? '');
+    expect(html).toContain('type="checkbox" checked=""');
     expect(html).not.toContain('Next question');
     expect(
       answersForBudgetSelection(

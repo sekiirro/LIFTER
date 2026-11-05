@@ -2,8 +2,10 @@ import { existsSync, readFileSync } from 'node:fs';
 import { resolve } from 'node:path';
 import { describe, expect, it } from 'vitest';
 import { createMockFormsStaffAdapter } from '../../lib/forms/mock-staff-adapter';
+import { resolveFormLabel } from '../../lib/forms/types';
 import { validateFormDefinition } from '../../lib/forms/validation';
 import { getMessages } from '../../lib/i18n';
+import approvedF15Copy from '../fixtures/forms/approved-f15-copy.json';
 
 const root = process.cwd();
 const starter = JSON.parse(
@@ -99,6 +101,40 @@ describe('S32-PO-5/PO-8 intake starter controls', () => {
     );
   });
 
+  it('pins the S34-approved changed English intake rows and all 68 approvals', () => {
+    expect(question('T08.system')).toMatchObject({
+      label: { en: 'What training split would you like to follow?' },
+      when: {
+        mode: 'all',
+        conditions: [
+          { questionId: 'T08', operator: 'equals', value: true },
+        ],
+      },
+    });
+    expect(question('N07.meal_count')).toMatchObject({
+      label: { en: 'How many meals would you like to eat per day?' },
+      optionLabels: [
+        { en: '2 meals' },
+        { en: '3 meals' },
+        { en: '4 meals' },
+        { en: '5 meals' },
+      ],
+    });
+    expect(question('N07.training_timing').optionLabels[6].en).toBe(
+      "I don't have a fixed time",
+    );
+    expect(
+      approvedF15Copy.find((row) => row.key === 'intake.N11.label.0'),
+    ).toMatchObject({ en: 'I barely feel hungry', approvedBy: 'S34-PO-6' });
+    const intakeApprovals = approvedF15Copy.filter(
+      (row) => row.approvedBy === 'S34-PO-6',
+    );
+    expect(intakeApprovals).toHaveLength(68);
+    expect(
+      approvedF15Copy.filter((row) => row.approvedBy === 'S34-PO-4'),
+    ).toHaveLength(5);
+  });
+
   it('uses the exact Arabic meal-number template from S33-PO-3', () => {
     expect(getMessages('ar')['forms.afterMealNumber']).toBe(
       'الوجبة رقم {number}',
@@ -148,5 +184,14 @@ describe('S32-PO-5/PO-8 intake starter controls', () => {
         ),
       ),
     ).toEqual([]);
+  });
+
+  it('renders the approved N11 minimum label in English and preserves Arabic', () => {
+    expect(resolveFormLabel(question('N11').labels.minimum, 'en')).toBe(
+      'I barely feel hungry',
+    );
+    expect(resolveFormLabel(question('N11').labels.minimum, 'ar')).toBe(
+      'مش بجوع تقريبًا',
+    );
   });
 });
