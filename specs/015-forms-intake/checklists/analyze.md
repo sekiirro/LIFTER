@@ -165,3 +165,15 @@ Result: PASS for T107 entry.
 ## S34 decision citation refresh ? 2026-11-05 04:59 Africa/Cairo
 
 This review corrects the plan's shorthand to the binding mapping S34-01=B (S34-PO-4). The exact meal-count prompt and choices remain those in the PO register. No open ambiguities remain for the approved S34 copy scope. CRITICAL findings: 0. HIGH findings: 0.
+
+## S34 PO-6 N11 translation entry refresh — 2026-11-05 05:28 Africa/Cairo
+
+This refresh follows the spec's acceptance scenario update for all three N11 slider labels. S34-PO-6 approves the exact English values and preserves Arabic; the approved-copy and intake fixtures already record the source rows. The plan and T096 task cover the copy updates and client-rendered assertions. No open ambiguities remain for these approved rows.
+
+- [x] Numbered FRs, measurable SCs, and Given/When/Then scenarios cover the N11 minimum, middle, and maximum English values and unchanged Arabic values.
+- [x] Clarifications cite the binding S34-PO-6 and intake fixture; there are no open ambiguities in this scope.
+- [x] Plan/tasks cover T096 and the bilingual label shape.
+- [x] Analyze is dated after the latest spec change.
+- Critical findings: 0. High findings: 0.
+
+Result: PASS for the approved N11 label translation scope.

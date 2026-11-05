@@ -126,6 +126,17 @@ describe('S32-PO-5/PO-8 intake starter controls', () => {
     expect(
       approvedF15Copy.find((row) => row.key === 'intake.N11.label.0'),
     ).toMatchObject({ en: 'I barely feel hungry', approvedBy: 'S34-PO-6' });
+    expect(question('N11').labels).toMatchObject({
+      minimum: { en: 'I barely feel hungry' },
+      middle: { en: 'Moderate hunger' },
+      maximum: { en: 'Very strong hunger' },
+    });
+    expect(
+      approvedF15Copy.find((row) => row.key === 'intake.N11.label.5'),
+    ).toMatchObject({ en: 'Moderate hunger', approvedBy: 'S34-PO-6' });
+    expect(
+      approvedF15Copy.find((row) => row.key === 'intake.N11.label.10'),
+    ).toMatchObject({ en: 'Very strong hunger', approvedBy: 'S34-PO-6' });
     const intakeApprovals = approvedF15Copy.filter(
       (row) => row.approvedBy === 'S34-PO-6',
     );

@@ -578,8 +578,14 @@
           "en": "I barely feel hungry",
           "ar": "مش بجوع تقريبًا"
         },
-        "middle": "جوع متوسط",
-        "maximum": "جوع شديد جدًا"
+        "middle": {
+          "en": "Moderate hunger",
+          "ar": "جوع متوسط"
+        },
+        "maximum": {
+          "en": "Very strong hunger",
+          "ar": "جوع شديد جدًا"
+        }
       },
       "feedbackBands": [
         {
