@@ -331,7 +331,9 @@ test.describe('required local authenticated registration acceptance', () => {
             exact: true,
           }),
         ).toBeVisible();
-        await page.goto(`/registration-links?workspace=${f.wsA.id}`);
+        const registrationResponse = await page.goto(
+          `/registration-links?workspace=${f.wsA.id}`,
+        );
         await expect(page.locator('html')).toHaveAttribute(
           'dir',
           locale === 'ar' ? 'rtl' : 'ltr',
@@ -341,6 +343,14 @@ test.describe('required local authenticated registration acceptance', () => {
             name: m['registration.title'],
             exact: true,
           }),
+          `registration route status=${registrationResponse?.status()} url=${page.url()} body=${(
+            await page
+              .locator('body')
+              .innerText()
+              .catch(() => '')
+          )
+            .replace(/\s+/g, ' ')
+            .slice(0, 300)}`,
         ).toBeVisible();
         await expect(
           page.getByText('1200 XTS', { exact: false }),

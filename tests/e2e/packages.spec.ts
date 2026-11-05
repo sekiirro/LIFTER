@@ -108,7 +108,18 @@ test.describe('local-stack authenticated package acceptance (required for review
         { name: LOCALE_COOKIE, value: locale, url: origin },
       ]);
       const m = getMessages(locale);
-      await page.goto(`/packages?workspace=${fixture.wsA.id}`);
+      const fixtureOffers = await fixture.po.client
+        .from('package_offers')
+        .select('id')
+        .eq('workspace_id', fixture.wsA.id);
+      expect(fixtureOffers.error).toBeNull();
+      expect(
+        fixtureOffers.data,
+        'packages empty-state fixture must begin without offers',
+      ).toEqual([]);
+      const packageResponse = await page.goto(
+        `/packages?workspace=${fixture.wsA.id}`,
+      );
       await expect(page.locator('html')).toHaveAttribute(
         'dir',
         locale === 'ar' ? 'rtl' : 'ltr',
@@ -118,6 +129,14 @@ test.describe('local-stack authenticated package acceptance (required for review
       ).toBeVisible();
       await expect(
         page.getByText(m['packages.empty'], { exact: true }),
+        `package empty state missing for ${locale}; status=${packageResponse?.status()} workspace=${fixture.wsA.id} main=${(
+          await page
+            .locator('main')
+            .innerText()
+            .catch(() => '')
+        )
+          .replace(/\s+/g, ' ')
+          .slice(0, 300)}`,
       ).toBeVisible();
       const code = `test-pkg-${randomUUID()}`;
       await page.locator('input[name="code"]').fill(code);

@@ -98,3 +98,6 @@ specs/016-exercise-food-catalogs/{spec.md, plan.md, debate.md, tasks.md (after a
 ## Branch reconciliation note
 
 The supporting design artifacts on this feature branch are reconciled to this canonical spec and plan: Remove/Restore lifecycle, product/preparation/weighing-state duplicate identity, shared operation ledger, explicit workspace read scope, role-wide transactional caps and PO-only provenance reads. Workspace exercise-variation Remove/Restore uses immutable mapping versions and dynamic video resolution.
+## S33-PO-4 test hygiene
+
+Taxonomy search integration coverage must use a unique narrow filter or explicitly paginate with a fixed maximum while preserving the expected search result and authorization checks.
