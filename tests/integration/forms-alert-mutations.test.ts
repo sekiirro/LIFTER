@@ -7,6 +7,7 @@ import {
   registered,
   sql,
 } from './registration-approval-operations-fixture';
+import { withCrashSafeFunctionMutant } from './function-drift-guard';
 
 const db = sql();
 afterAll(() => db.end());
@@ -17,41 +18,6 @@ const migrationPath = new URL(
   '../../supabase/migrations/20261104030800_f15_alert_schedules.sql',
   import.meta.url,
 );
-
-async function definition(identity: string) {
-  const [row] = await db`
-    select pg_catalog.pg_get_functiondef(${identity}::regprocedure) as body,
-      md5(pg_catalog.pg_get_functiondef(${identity}::regprocedure)) as md5
-  `;
-  return { body: row!.body as string, md5: row!.md5 as string };
-}
-
-async function withCommittedFunctionMutant(
-  identity: string,
-  mutate: (source: string) => string,
-  body: () => Promise<void>,
-) {
-  const connection = sql();
-  const original = await definition(identity);
-  const mutant = mutate(original.body);
-  if (!mutant || mutant === original.body)
-    throw new Error(`Mutation did not change ${identity}`);
-  try {
-    await connection.unsafe(mutant);
-    await body();
-  } finally {
-    try {
-      await connection.unsafe(original.body);
-      const [restored] = await connection`
-        select md5(pg_catalog.pg_get_functiondef(${identity}::regprocedure)) as md5
-      `;
-      if (restored?.md5 !== original.md5)
-        throw new Error(`Mutation restore hash mismatch for ${identity}`);
-    } finally {
-      await connection.end();
-    }
-  }
-}
 
 async function expectInvariantFailure(
   label: string,
@@ -150,7 +116,7 @@ async function setupClient() {
 it('kills combined clocks, reassignment deadline reset, and omitted-owner mutants', async () => {
   {
     const { f, client } = await setupClient();
-    await withCommittedFunctionMutant(
+    await withCrashSafeFunctionMutant(
       CORE,
       (source) =>
         source.replace(
@@ -183,7 +149,7 @@ it('kills combined clocks, reassignment deadline reset, and omitted-owner mutant
   }
   {
     const { f, client } = await setupClient();
-    await withCommittedFunctionMutant(
+    await withCrashSafeFunctionMutant(
       IMMUTABLE,
       (source) =>
         source.replace(
@@ -216,7 +182,7 @@ it('kills combined clocks, reassignment deadline reset, and omitted-owner mutant
   }
   {
     const { f, client } = await setupClient();
-    await withCommittedFunctionMutant(
+    await withCrashSafeFunctionMutant(
       CORE,
       (source) =>
         source.replaceAll(
@@ -243,7 +209,7 @@ it('kills combined clocks, reassignment deadline reset, and omitted-owner mutant
 it('kills revoked-recipient, duplicate-stage, and answer-text mutants', async () => {
   {
     const { f, client } = await setupClient();
-    await withCommittedFunctionMutant(
+    await withCrashSafeFunctionMutant(
       CORE,
       (source) => source.replaceAll('and wm.revoked_at is null', ''),
       async () =>
@@ -276,7 +242,7 @@ it('kills revoked-recipient, duplicate-stage, and answer-text mutants', async ()
   }
   {
     const { f, client } = await setupClient();
-    await withCommittedFunctionMutant(
+    await withCrashSafeFunctionMutant(
       CORE,
       (source) =>
         source
@@ -320,7 +286,7 @@ it('kills revoked-recipient, duplicate-stage, and answer-text mutants', async ()
   }
   {
     const { f, client } = await setupClient();
-    await withCommittedFunctionMutant(
+    await withCrashSafeFunctionMutant(
       CORE,
       (source) =>
         source.replace(
@@ -373,7 +339,7 @@ it('kills race, missing dedupe lock, and two-hour escalation mutants', async () 
       )`;
       return id;
     });
-    await withCommittedFunctionMutant(
+    await withCrashSafeFunctionMutant(
       CORE,
       (source) => source.replace('    for update of s skip locked\n', ''),
       async () =>
@@ -382,6 +348,7 @@ it('kills race, missing dedupe lock, and two-hour escalation mutants', async () 
           async () => {
             const writer = sql();
             const evaluator = sql();
+            await evaluator`set lock_timeout = '1s'`;
             await writer`begin`;
             try {
               await writer`update app_private.form_alert_schedules
@@ -414,7 +381,7 @@ it('kills race, missing dedupe lock, and two-hour escalation mutants', async () 
       );
       return id;
     });
-    await withCommittedFunctionMutant(
+    await withCrashSafeFunctionMutant(
       CORE,
       (source) =>
         source.replace(
@@ -451,7 +418,7 @@ it('kills race, missing dedupe lock, and two-hour escalation mutants', async () 
   }
   {
     const { f, client } = await setupClient();
-    await withCommittedFunctionMutant(
+    await withCrashSafeFunctionMutant(
       CORE,
       (source) =>
         source.replace(
@@ -499,7 +466,7 @@ it('kills migration activation, non-owner activation, missing scheduler lock, an
     );
   }
   {
-    await withCommittedFunctionMutant(
+    await withCrashSafeFunctionMutant(
       'app_private.f15_alert_schedule_activate()',
       (source) =>
         source.replace(
@@ -522,7 +489,7 @@ it('kills migration activation, non-owner activation, missing scheduler lock, an
     );
   }
   {
-    await withCommittedFunctionMutant(
+    await withCrashSafeFunctionMutant(
       'app_private.f15_alert_schedule_deactivate()',
       (source) =>
         source.replace(

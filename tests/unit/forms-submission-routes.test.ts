@@ -257,6 +257,20 @@ describe('T013 submission and correction HTTP validation', () => {
     expect(client.rpc).toHaveBeenCalledTimes(1);
   });
 
+  it('rejects an oversized correction note before any RPC', async () => {
+    const response = await correct(
+      request(`/api/forms/assignments/${assignmentId}/corrections`, {
+        expected_revision: 1,
+        intent_key: intentKey,
+        answer_values: validAnswers,
+        correction_note: 'x'.repeat(1_001),
+      }),
+      { params: Promise.resolve({ assignmentId }) },
+    );
+    await expectSafeInvalid(response, 'answer_too_long');
+    expect(client.rpc).not.toHaveBeenCalled();
+  });
+
   it('maps RPC failures to the safe unavailable shape for both routes', async () => {
     client.rpc.mockImplementation(async (name: string) =>
       name === 'read_form_assignment_context' ||

@@ -6,6 +6,7 @@ import {
   registered,
   sql,
 } from './registration-approval-operations-fixture';
+import { withCrashSafeFunctionMutant } from './function-drift-guard';
 
 const db = sql();
 afterAll(() => db.end());
@@ -450,4 +451,131 @@ it('waits for a concurrent membership revocation and excludes the recipient at e
     await revoker.end();
     await evaluator.end();
   }
+});
+
+it('cancels client-late alert rows immediately when a client relationship ends', async () => {
+  const f = await clientContext();
+  const client = await registered(f);
+  await expect(
+    db.begin(async (tx) => {
+      const assignment = await formAssignment(
+        tx,
+        f.wsA.id,
+        client.id,
+        '2026-04-10T00:00:00.000Z',
+        f.po.userId,
+      );
+      const evaluated = await core(tx, f.wsA.id, '2026-04-12T00:00:00.000Z');
+      expect(evaluated).toEqual({ status: 'ok', enqueued: 4 });
+      const [before] = await tx`
+        select count(*)::int as count from app_private.form_alert_inbox
+        where source_assignment_id=${assignment}
+      `;
+      expect(before?.count).toBeGreaterThan(0);
+      const occurrences = await tx`
+        select o.id from app_private.form_alert_occurrences o
+        join app_private.form_alert_schedules s
+          on s.workspace_id=o.workspace_id and s.id=o.schedule_id
+        where s.workspace_id=${f.wsA.id} and s.source_assignment_id=${assignment}
+      `;
+      const occurrenceIds = occurrences.map((row) => row.id as string);
+      const deliveries = await tx`
+        select id from app_private.form_alert_deliveries
+        where alert_occurrence_id=any(${occurrenceIds}::uuid[])
+      `;
+      const deliveryIds = deliveries.map((row) => row.id as string);
+      const jobs = await tx`
+        select id from public.jobs
+        where kind='forms.alert' and payload->>'alert_id'=any(${occurrenceIds}::text[])
+      `;
+      const jobIds = jobs.map((row) => row.id as string);
+
+      await tx`
+        insert into app_private.form_retention_windows(
+          workspace_id,client_id,source_event_id,source_kind,ended_at
+        ) values(${f.wsA.id},${client.id},${randomUUID()},'closure',clock_timestamp())
+      `;
+      const [lifecycle] = await tx`
+        select app_private.f15_client_alert_lifecycle_active(
+          ${f.wsA.id},${assignment}
+        ) as active
+      `;
+      expect(lifecycle?.active).toBe(false);
+
+      const [inboxAfter] = await tx`
+        select count(*)::int as count from app_private.form_alert_inbox
+        where source_assignment_id=${assignment}
+      `;
+      expect(inboxAfter?.count, 'relationship end removes existing inbox rows').toBe(0);
+      const [deliveriesAfter] = await tx`
+        select count(*)::int as count from app_private.form_alert_deliveries
+        where id=any(${deliveryIds}::uuid[])
+      `;
+      expect(deliveriesAfter?.count, 'relationship end removes deliveries').toBe(0);
+      const [occurrencesAfter] = await tx`
+        select count(*)::int as count from app_private.form_alert_occurrences
+        where id=any(${occurrenceIds}::uuid[])
+      `;
+      expect(occurrencesAfter?.count, 'relationship end removes occurrences').toBe(0);
+      const [jobsAfter] = await tx`
+        select count(*)::int as count from public.jobs where id=any(${jobIds}::uuid[])
+      `;
+      expect(jobsAfter?.count, 'relationship end removes jobs').toBe(0);
+      const [schedulesAfter] = await tx`
+        select count(*)::int as count from app_private.form_alert_schedules
+        where source_assignment_id=${assignment} and alert_kind='client_late'
+      `;
+      expect(schedulesAfter?.count, 'relationship end removes schedules').toBe(0);
+      expect(await core(tx, f.wsA.id, '2026-04-13T00:00:00.000Z')).toMatchObject({
+        status: 'ok',
+      });
+      const [inboxAfterReevaluation] = await tx`
+        select count(*)::int as count from app_private.form_alert_inbox
+        where source_assignment_id=${assignment}
+      `;
+      expect(inboxAfterReevaluation?.count, 'reevaluation does not recreate client-late alerts').toBe(0);
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
+
+it('keeps the evaluator lifecycle check when cancellation was unavailable', async () => {
+  await withCrashSafeFunctionMutant(
+    'app_private.cancel_f15_client_alerts(uuid,uuid)',
+    (definition) =>
+      definition.replace(
+        /as\s+(\$[a-z_]*\$)[\s\S]*?\1/i,
+        'as $function$ begin return; end; $function$',
+      ),
+    async () => {
+      const f = await clientContext();
+      const client = await registered(f);
+      await expect(
+        db.begin(async (tx) => {
+          const assignment = await formAssignment(
+            tx,
+            f.wsA.id,
+            client.id,
+            '2026-04-10T00:00:00.000Z',
+            f.po.userId,
+          );
+          await tx`
+            insert into app_private.form_retention_windows(
+              workspace_id,client_id,source_event_id,source_kind,ended_at
+            ) values(${f.wsA.id},${client.id},${randomUUID()},'refund',clock_timestamp())
+          `;
+          const [schedule] = await tx`
+            select id from app_private.form_alert_schedules
+            where source_assignment_id=${assignment} and alert_kind='client_late'
+          `;
+          expect(schedule?.id).toBeTruthy();
+          expect(await core(tx, f.wsA.id, '2026-04-12T00:00:00.000Z')).toEqual({
+            status: 'ok',
+            enqueued: 0,
+          });
+          throw rollback;
+        }),
+      ).rejects.toBe(rollback);
+    },
+  );
 });

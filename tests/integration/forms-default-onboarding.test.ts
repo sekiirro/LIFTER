@@ -358,7 +358,7 @@ describe('T006/T009 persisted onboarding default', () => {
         expect(retireAfterSelection[0]?.result).toEqual({
           status: 'ok',
           formId: current[0]!.form_id,
-          revision: 1,
+          revision: 2,
           formStatus: 'retired',
         });
         throw rollback;
