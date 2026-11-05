@@ -88,13 +88,21 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
         baselinePassed,
         'unmutated draft save must pass before mutants',
       ).toBe(true);
+      await tx`reset role`;
+      const [draftState] = await tx`
+        select coalesce(revision, 0)::int as revision
+        from public.form_answer_drafts
+        where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}
+      `;
+      const currentRevision = draftState?.revision ?? 0;
+      await tx`set local role authenticated`;
       const boundMutants = [
         {
           name: 'total payload',
-          pattern: /payload_bytes > 262144/,
+          pattern: /octet_length\(p_answer_values::text\) > 262144/,
           expected: 'payload_too_large',
           values: Object.fromEntries(
-            Array.from({ length: 60 }, (_, index) => [
+            Array.from({ length: 220 }, (_, index) => [
               `q${index + 1}`,
               Array.from({ length: 1200 }, () => 'x'),
             ]),
@@ -103,9 +111,9 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
         {
           name: 'single answer bytes',
           pattern:
-            /answer_bytes > 4096 or \(max_chars is not null and answer_chars > max_chars\)/,
+            /octet_length\(e\.value #>> '\{\}'\) > 4096/,
           expected: 'answer_too_long',
-          values: { q1: 'x'.repeat(4097) },
+          values: { q61: 'é'.repeat(2049) },
         },
         {
           name: 'per-question character count',
@@ -122,10 +130,10 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
             await sp`set local role authenticated`;
             const [baseline] = await sp`
               select public.save_form_draft(
-                ${context.wsA.id},${assignmentId},0,${randomUUID()},${sp.json(mutant.values)}
+                ${context.wsA.id},${assignmentId},${currentRevision},${randomUUID()},${sp.json(mutant.values)}
               ) as result
             `;
-            expect(baseline?.result).toMatchObject({ status: mutant.expected });
+            expect(baseline?.result, `${mutant.name} bound baseline`).toMatchObject({ status: mutant.expected });
             boundBaselinePassed = true;
             throw boundRollback;
           }),
@@ -144,7 +152,7 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
             await sp`set local role authenticated`;
             const [result] = await sp`
               select public.save_form_draft(
-                ${context.wsA.id},${assignmentId},0,${randomUUID()},${sp.json(mutant.values)}
+                ${context.wsA.id},${assignmentId},${currentRevision},${randomUUID()},${sp.json(mutant.values)}
               ) as result
             `;
             try {
@@ -157,6 +165,18 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
         ).rejects.toBe(boundRollback);
         expect(mutationKilled, `${mutant.name} bound mutant`).toBe(true);
       }
+
+      await tx`reset role`;
+      await tx`delete from app_private.form_draft_intents
+        where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}`;
+      await tx`delete from public.form_answer_drafts
+        where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}`;
+      const [auditBaseline] = await tx`
+        select count(*)::int as count from public.audit_events
+        where action='form.draft_saved' and target_id=${assignmentId}
+      `;
+      const auditCountBeforeStableFlow = auditBaseline?.count ?? 0;
+      await tx`set local role authenticated`;
 
       const save = (
         expectedRevision: number,
@@ -179,10 +199,10 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
         tx.savepoint(async (sp) => {
           const [initial] = await sp`
             select public.save_form_draft(
-              ${context.wsA.id},${assignmentId},0,${selectionKey},${sp.json({ q1: 'original intent' })}
+              ${context.wsA.id},${assignmentId},0,${selectionKey},${sp.json({ q1: 'first draft' })}
             ) as result
           `;
-          expect(initial?.result).toMatchObject({
+          expect(initial?.result, 'altered-intent baseline first write').toMatchObject({
             status: 'saved',
             revision: 1,
           });
@@ -244,7 +264,7 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
       expect(
         await tx`select count(*)::int as count from public.audit_events
           where action='form.draft_saved' and target_id=${assignmentId}`,
-      ).toEqual([{ count: 1 }]);
+      ).toEqual([{ count: auditCountBeforeStableFlow + 1 }]);
       await tx`set local role authenticated`;
 
       let auditMutationKilled = false;
@@ -252,7 +272,7 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
         tx.savepoint(async (sp) => {
           await sp`reset role`;
           const changed = originalDefinition.replace(
-            /  insert into public\.audit_events\(actor_user_id,action,target_table,target_id,workspace_id,details\)\s+values\(auth\.uid\(\),'form\.draft_saved','form_answer_drafts',p_assignment_id,p_workspace_id,\s+jsonb_build_object\('revision',next_revision\)\);/,
+            /insert into public\.audit_events\s*\([^;]*\)\s*values\s*\(\s*auth\.uid\(\)\s*,\s*'form\.draft_saved'[\s\S]*?\);/i,
             '  null;',
           );
           expect(changed).not.toBe(originalDefinition);
@@ -270,8 +290,8 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
             where action='form.draft_saved' and target_id=${assignmentId}
           `;
           try {
-            expect(result?.result).toMatchObject({ status: 'saved' });
-            expect(count?.count).toBe(2);
+            expect(result?.result, 'audit omission mutant allows save').toMatchObject({ status: 'saved' });
+            expect(count?.count).toBe(auditCountBeforeStableFlow + 2);
           } catch {
             auditMutationKilled = true;
           }
