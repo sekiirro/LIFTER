@@ -140,14 +140,58 @@ for (const variant of matrix) {
     ]);
     await page.goto('/showcase/forms/staff');
     const messages = getMessages(variant.locale);
+    const formTitle = 'Selected retirement fixture';
+    await page
+      .getByRole('button', { name: messages['forms.staffCreateForm'] })
+      .click();
+    await page
+      .getByLabel(messages['forms.staffEnglishName'])
+      .fill(formTitle);
+    await page
+      .getByLabel(messages['forms.staffArabicName'])
+      .fill('Synthetic Arabic title');
+    await page
+      .getByRole('button', { name: messages['forms.staffAddSection'] })
+      .click();
+    await page
+      .getByLabel(messages['forms.staffEnglishSection'])
+      .fill('Retirement section');
+    await page
+      .getByLabel(messages['forms.staffArabicSection'])
+      .fill('Synthetic section');
+    await page
+      .getByRole('button', { name: messages['forms.staffAddQuestion'] })
+      .click();
+    await page
+      .getByLabel(messages['forms.staffEnglishQuestion'])
+      .fill('Retirement question');
+    await page
+      .getByLabel(messages['forms.staffArabicQuestion'])
+      .fill('Synthetic question');
+    await page
+      .getByRole('button', { name: messages['forms.staffSaveDraft'] })
+      .click();
+    await expect(page.getByRole('status')).toContainText(
+      messages['forms.staffSaved'],
+    );
     await page
       .getByRole('button', { name: messages['forms.staffPreviewForm'] })
       .click();
     await page
       .getByRole('button', { name: messages['forms.staffPublish'] })
       .click();
+    await expect(page.getByRole('status')).toContainText(
+      messages['forms.staffPublished'],
+    );
     await page
       .getByRole('button', { name: messages['forms.staffReturnToEdit'] })
+      .click();
+    await page
+      .getByTestId('saved-form-list')
+      .getByRole('button', {
+        name: messages['forms.staffSetDefaultOnboarding'],
+      })
+      .last()
       .click();
     await expect(
       page.getByRole('button', { name: messages['forms.staffRetire'] }),
