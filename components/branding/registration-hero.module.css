@@ -141,8 +141,7 @@
   color: var(--color-text);
 }
 
-:global([data-theme='dark']) .stage,
-:global(html:not([data-theme='light'])) .stage {
+:global([data-theme='dark']) .stage {
   --hero-error-edge: var(--color-error-fg);
   --hero-error-fg: var(--hero-dark-error-fg);
   --hero-toned-substrate: color-mix(
@@ -150,6 +149,18 @@
     var(--hero-bottom-average, rgb(54 48 41)) 18%,
     #000
   );
+}
+
+@media (prefers-color-scheme: dark) {
+  :global(html:not([data-theme='light'])) .stage {
+    --hero-error-edge: var(--color-error-fg);
+    --hero-error-fg: var(--hero-dark-error-fg);
+    --hero-toned-substrate: color-mix(
+      in srgb,
+      var(--hero-bottom-average, rgb(54 48 41)) 18%,
+      #000
+    );
+  }
 }
 
 .artwork {

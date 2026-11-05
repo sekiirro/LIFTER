@@ -181,6 +181,16 @@ test('follow-device resolves the Glisse tint from the operating system', async (
   const light = await expectTranslucentGlass(page);
   expect(light.card.theme).toBe('system');
   expect(light.fill.channels[0]).toBeGreaterThan(200);
+  const lightError = await page
+    .locator('[data-registration-hero]')
+    .evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        foreground: style.getPropertyValue('--hero-error-fg').trim(),
+        lightToken: style.getPropertyValue('--color-error-fg').trim(),
+      };
+    });
+  expect(lightError.foreground).toBe(lightError.lightToken);
 
   await page.emulateMedia({ colorScheme: 'dark' });
   await page.reload();
@@ -188,6 +198,16 @@ test('follow-device resolves the Glisse tint from the operating system', async (
   expect(dark.card.theme).toBe('system');
   expect(dark.fill.channels[0]).toBeLessThan(80);
   expect(dark.card.background).not.toBe(light.card.background);
+  const darkError = await page
+    .locator('[data-registration-hero]')
+    .evaluate((element) => {
+      const style = getComputedStyle(element);
+      return {
+        foreground: style.getPropertyValue('--hero-error-fg').trim(),
+        darkToken: style.getPropertyValue('--hero-dark-error-fg').trim(),
+      };
+    });
+  expect(darkError.foreground).toBe(darkError.darkToken);
 });
 
 test('reduced transparency replaces the Glisse tint with the opaque token card', async ({

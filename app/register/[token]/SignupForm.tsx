@@ -414,12 +414,14 @@ export function SignupForm({
               id="signup-username-error"
               className={`${styles.fieldError} ${heroStyles.fieldError}`}
             >
-              {!usernameServerErrorDismissed &&
-              result.invalidFields?.includes('username')
-                ? messages.usernameUnavailable
-                : identityInvalidFields.includes('username')
-                  ? messages.usernameFormatError
-                  : messages.fieldError}
+              <Bidi>
+                {!usernameServerErrorDismissed &&
+                result.invalidFields?.includes('username')
+                  ? messages.usernameUnavailable
+                  : identityInvalidFields.includes('username')
+                    ? messages.usernameFormatError
+                    : messages.fieldError}
+              </Bidi>
             </span>
           )}
       </label>
@@ -621,6 +623,7 @@ export function SignupForm({
         {pending ? messages.pending : messages.submit}
       </Button>
       {submitted &&
+        (pending || submissionSequence > 0) &&
         !(
           result.status === 'invalid_input' &&
           usernameServerErrorDismissed &&

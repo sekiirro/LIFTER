@@ -221,81 +221,104 @@ describe('signup result focus', () => {
       form.requestSubmit();
     });
     expect(action).not.toHaveBeenCalled();
+    expect(host.querySelector('[role="alert"]')).toBeNull();
 
     await act(async () => {
       outsideButton.focus();
       setInputValue(name, 'Heba Sami Nabil');
-    });
-
-    expect(document.activeElement).toBe(outsideButton);
-    outsideButton.remove();
-  });
-
-  it('focuses Username when the server reports the unavailable status there', async () => {
-    dom = new JSDOM('<!doctype html><html><body></body></html>', {
-      url: 'http://localhost/',
-    });
-    const globals = {
-      window: dom.window,
-      document: dom.window.document,
-      HTMLElement: dom.window.HTMLElement,
-      HTMLInputElement: dom.window.HTMLInputElement,
-      FormData: dom.window.FormData,
-      Event: dom.window.Event,
-      Node: dom.window.Node,
-      IS_REACT_ACT_ENVIRONMENT: true,
-    };
-    previousGlobals = new Map(
-      Object.keys(globals).map((key) => [
-        key,
-        Object.getOwnPropertyDescriptor(globalThis, key),
-      ]),
-    );
-    for (const [key, value] of Object.entries(globals))
-      Object.defineProperty(globalThis, key, { configurable: true, value });
-    const { createRoot } = await import('react-dom/client');
-    const action = vi.fn(async () =>
-      signupResult('invalid_input', 'en', ['username']),
-    );
-    host = document.createElement('div');
-    document.body.append(host);
-    root = createRoot(host);
-
-    await act(async () => {
-      root?.render(
-        createElement(SignupForm, {
-          action,
-          locale: 'en',
-          phoneCountries,
-        }),
+      setInputValue(
+        host!.querySelector<HTMLInputElement>('[name="dateOfBirth"]')!,
+        '1990-10-30',
+      );
+      setInputValue(
+        host!.querySelector<HTMLInputElement>('[name="username"]')!,
+        'heba_r22_valid',
       );
     });
 
-    const form = host.querySelector('form')!;
-    const name = host.querySelector<HTMLInputElement>('[name="name"]')!;
-    const dateOfBirth = host.querySelector<HTMLInputElement>(
-      '[name="dateOfBirth"]',
-    )!;
-    const username = host.querySelector<HTMLInputElement>('[name="username"]')!;
-    await act(async () => {
-      setInputValue(name, 'Heba Sami Nabil');
-      setInputValue(dateOfBirth, '1990-10-30');
-      setInputValue(username, 'heba_r20_focus');
-    });
-
-    await act(async () => {
-      form.requestSubmit();
-      await new Promise((resolve) => setTimeout(resolve, 0));
-    });
-
-    expect(action).toHaveBeenCalledOnce();
-    expect(document.activeElement).toBe(username);
-    expect(username.getAttribute('aria-invalid')).toBe('true');
-    expect(username.getAttribute('aria-describedby')).toBe(
-      'signup-username-error',
-    );
-    expect(host.querySelector('#signup-username-error')).not.toBeNull();
+    expect(document.activeElement).toBe(outsideButton);
+    expect(host.querySelector('[role="alert"]')).toBeNull();
+    outsideButton.remove();
   });
+
+  it.each(['en', 'ar'] as const)(
+    'focuses Username when the server reports the unavailable status there (%s)',
+    async (locale) => {
+      dom = new JSDOM('<!doctype html><html><body></body></html>', {
+        url: 'http://localhost/',
+      });
+      const globals = {
+        window: dom.window,
+        document: dom.window.document,
+        HTMLElement: dom.window.HTMLElement,
+        HTMLInputElement: dom.window.HTMLInputElement,
+        FormData: dom.window.FormData,
+        Event: dom.window.Event,
+        Node: dom.window.Node,
+        IS_REACT_ACT_ENVIRONMENT: true,
+      };
+      previousGlobals = new Map(
+        Object.keys(globals).map((key) => [
+          key,
+          Object.getOwnPropertyDescriptor(globalThis, key),
+        ]),
+      );
+      for (const [key, value] of Object.entries(globals))
+        Object.defineProperty(globalThis, key, { configurable: true, value });
+      const { createRoot } = await import('react-dom/client');
+      const action = vi.fn(async () =>
+        signupResult('invalid_input', locale, ['username']),
+      );
+      host = document.createElement('div');
+      document.body.append(host);
+      root = createRoot(host);
+
+      await act(async () => {
+        root?.render(
+          createElement(SignupForm, {
+            action,
+            locale,
+            phoneCountries,
+          }),
+        );
+      });
+
+      const form = host.querySelector('form')!;
+      const name = host.querySelector<HTMLInputElement>('[name="name"]')!;
+      const dateOfBirth = host.querySelector<HTMLInputElement>(
+        '[name="dateOfBirth"]',
+      )!;
+      const username =
+        host.querySelector<HTMLInputElement>('[name="username"]')!;
+      await act(async () => {
+        setInputValue(name, 'Heba Sami Nabil');
+        setInputValue(dateOfBirth, '1990-10-30');
+        setInputValue(username, 'heba_r20_focus');
+      });
+
+      await act(async () => {
+        form.requestSubmit();
+        await new Promise((resolve) => setTimeout(resolve, 0));
+      });
+
+      expect(action).toHaveBeenCalledOnce();
+      expect(document.activeElement).toBe(username);
+      expect(username.getAttribute('aria-invalid')).toBe('true');
+      expect(username.getAttribute('aria-describedby')).toBe(
+        'signup-username-error',
+      );
+      const usernameError = host.querySelector('#signup-username-error');
+      expect(usernameError).not.toBeNull();
+      expect(usernameError?.textContent).toBe(
+        locale === 'en'
+          ? 'This username is unavailable. Choose another.'
+          : 'اسم المستخدم ده غير متاح. اختار اسم تاني.',
+      );
+      expect(usernameError?.querySelector('bdi')?.getAttribute('dir')).toBe(
+        'auto',
+      );
+    },
+  );
 
   it('clears a server username error on edit without checking availability', async () => {
     dom = new JSDOM('<!doctype html><html><body></body></html>', {
