@@ -11,6 +11,8 @@
 **S34 round-2 entry refresh:** 2026-11-05, after adding T080–T095 to `plan.md` and `tasks.md` and before implementation.
 **S34 T080 clarification refresh:** 2026-11-05, after specifying NFKC/lowercase followed by the S32-PO-7 character-set check; before implementation.
 **S34 T086 decision-boundary refresh:** 2026-11-05, after identifying the persisted Arabic-title fallback as a user-visible product choice and excluding it pending PO decision.
+**S34 T096 copy-surface refresh:** 2026-11-05 03:58 Africa/Cairo, after adding the approved English N11 minimum label rendering scenario and preserving its Arabic string.
+**S34 decision citation correction:** 2026-11-05 04:13 Africa/Cairo, after correcting the S34-PO-4 source mapping for S34-01=B and the no-destination-guard sequence.
 **Status:** Entry review for S33-PO-3 Arabic T03/N07 copy and in-scope CodeRabbit fixes.
 
 ## Entry check
@@ -71,10 +73,10 @@
 
 ## S34 round-3 entry review — 2026-11-05 03:03 Africa/Cairo
 
-This review follows the S34-PO-1..6 and PD-S34-NEW-01 clarifications added to `spec.md`, the S34 task registrations in `tasks.md`, and the plan extension. It was refreshed at 2026-11-05 03:03 Africa/Cairo after adding T102 and the no-ff restack constraints. No task is marked complete by this analysis.
+This review follows the S34-PO-4..6 and PD-S34-NEW-01 clarifications added to `spec.md`, the S34 task registrations in `tasks.md`, and the plan extension. It was refreshed at 2026-11-05 03:03 Africa/Cairo after adding T102 and the no-ff restack constraints. No task is marked complete by this analysis.
 
 - [x] `spec.md` retains numbered FRs and measurable SCs; SC-023..SC-026 and Given/When/Then cases cover correction-note bounds, relationship-ended client-late alerts, required English draft title, and exact approved EN copy.
-- [x] Clarifications cite `C:/Users/NEW LAP/.lifter/briefs/s34-po-decisions-verbatim.md`, `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md`, and the approved intake review source. **No open ambiguities remain for S34-PO-1/2/3/5/6 or PD-S34-NEW-01.** S34-PO-4 is merge sequencing only.
+- [x] Clarifications cite `C:/Users/NEW LAP/.lifter/briefs/s34-po-decisions-verbatim.md`, `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md`, and the approved intake review source. **No open ambiguities remain for S34-PO-2 through S34-PO-6 or PD-S34-NEW-01.** S34-PO-4 includes both the product decisions and the approved no-destination-guard merge sequence.
 - [x] `plan.md` covers T096–T102, the no-ff restack, sole allowed historical migration edit, forward-only migrations, Stack D, RED-first tests, and the no-copy-invention gate for T086.
 - [x] `tasks.md` assigns T086 and T096–T102 to existing FRs; all remain unchecked until evidence passes on the final stacked heads.
 - [x] This Analyze review is dated after the spec, plan, and task changes above.
@@ -87,3 +89,79 @@ This review follows the S34-PO-1..6 and PD-S34-NEW-01 clarifications added to `s
 - **CRITICAL findings: 0. HIGH findings: 0.** No new ambiguity or design gap blocks entry; task-level evidence remains pending.
 
 **Result: PASS for T086 and T096–T100 entry.** Re-run Analyze after any later change to the spec, plan, or tasks before accepting implementation.
+
+
+## S34 T103/T104 entry refresh ? 2026-11-05 04:50 Africa/Cairo
+
+This Analyze refresh follows the T103/T104 task additions and plan extension. The work stays within existing FR-013/Q1 relationship-end authorization and S34-PO-6 approved N11 English copy; it adds no new product behavior or copy. No open ambiguities remain for these tasks.
+
+- [x] `spec.md` retains numbered FRs, measurable SCs, and existing Given/When/Then scope for relationship-ended corrections and exact approved N11 text.
+- [x] Clarifications cite the binding Q1 and S34-PO-6 records. No open ambiguities remain for this scope.
+- [x] `plan.md` covers T103/T104, forward-only migration, Stack D, and regression evidence.
+- [x] `tasks.md` assigns T103 to FR-013/019 and T104 to FR-026/036/037. Tasks remain unchecked until final-head tests pass.
+- [x] This Analyze review is dated after the spec, plan, and task changes.
+
+### Findings
+
+- T103 carries existing relationship status through the authorized assignment context so Q1 correction behavior can be enforced in the client surface; no access grant is widened. T104 extends only the slider label value shape to legacy scalar or exactly localized EN/AR strings, preserving current Arabic content.
+- The existing Design System, tokens, typography, form error pattern, and bilingual message keys remain in force. No new visual treatment, token, component, or copy is introduced.
+- **CRITICAL findings: 0. HIGH findings: 0.**
+
+**Result: PASS for T103/T104 entry.**
+
+
+## S34 T105 entry refresh ? 2026-11-05 04:50 Africa/Cairo
+
+This Analyze refresh follows the T105 plan/task addition. It reuses the existing F15 scheduler lock contract and changes only the purge scheduler lock key. No open ambiguities remain for this scoped remediation.
+
+- [x] spec.md retains the approved owner-only, disabled-until-approved scheduler behavior.
+- [x] Clarifications include the S34 review finding; no product or activation decision is added.
+- [x] plan.md and tasks.md assign the forward-only lock change and Stack D separation test.
+- [x] This review is dated after the task and plan changes.
+
+### Findings
+
+- The only lock keys changed by T105 are purge scheduler activation/deactivation from (11011,318) to (11011,319). Alert evaluator (11011,318) and alert scheduler (11011,317) remain unchanged. Scheduler activation remains disabled.
+- CRITICAL findings: 0. HIGH findings: 0.
+
+Result: PASS for T105 entry.
+
+
+## S34 T106 entry refresh ? 2026-11-05 04:52 Africa/Cairo
+
+This Analyze refresh follows the T106 plan/task addition. The work changes only browser test setup; it adds no product behavior or copy. No open ambiguities remain for this scope.
+
+- [x] spec.md retains the existing F15 browser route and accessibility acceptance scope.
+- [x] Clarifications and acceptance scenarios are unchanged; no open ambiguity remains for this test setup.
+- [x] plan.md and tasks.md specify normalized origins for browser preference cookies and URL expectations.
+- [x] This review is dated after the plan/task changes.
+
+### Findings
+
+- T106 derives the origin from the configured Playwright base URL and applies it consistently across the reviewed signup, welcome, package, consent, and onboarding journeys.
+- No tokens, visual treatment, product copy, or user behavior changes.
+- CRITICAL findings: 0. HIGH findings: 0.
+
+Result: PASS for T106 entry.
+
+
+## S34 T107 entry refresh ? 2026-11-05 04:55 Africa/Cairo
+
+This Analyze refresh follows the T107 plan/task addition. It reuses existing generic bilingual error copy and preserves the approved preview wording for the demo route. No open ambiguities remain for this scope.
+
+- [x] spec.md retains the existing Forms staff authorization and error-state requirements.
+- [x] Clarifications and acceptance scenarios are unchanged; no product copy is invented.
+- [x] plan.md and tasks.md scope production/demo error routing and preserve the current preview copy.
+- [x] This review is dated after the plan/task changes.
+
+### Findings
+
+- T107 changes only which existing keys the production staff console selects. No message value, component layout, visual token, or permission is changed.
+- CRITICAL findings: 0. HIGH findings: 0.
+
+Result: PASS for T107 entry.
+
+
+## S34 decision citation refresh ? 2026-11-05 04:59 Africa/Cairo
+
+This review corrects the plan's shorthand to the binding mapping S34-01=B (S34-PO-4). The exact meal-count prompt and choices remain those in the PO register. No open ambiguities remain for the approved S34 copy scope. CRITICAL findings: 0. HIGH findings: 0.

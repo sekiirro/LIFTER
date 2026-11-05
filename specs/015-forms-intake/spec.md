@@ -113,6 +113,7 @@ As a client, I answer conditional questions in one Basic/Training/Nutrition inta
 7. **Given** a draft whose Arabic title is nonblank and English title is blank or whitespace, **When** it is saved, **Then** save is rejected and no persisted form is created or changed.
 8. **Given** the English intake is rendered, **When** the meal-count question and options are shown, **Then** its prompt is `How many meals would you like to eat per day?` and its choices are `2 meals`, `3 meals`, `4 meals`, and `5 meals`.
 9. **Given** the English training-time question is rendered, **When** its fixed-time choice is shown, **Then** the client-facing string is `I don't have a fixed time`.
+10. **Given** the N11 slider is rendered in English, **When** its minimum label is shown, **Then** it reads `I barely feel hungry`; Arabic rendering retains the approved Arabic label.
 
 ### User Story 3 — Maintain templates without rewriting history (Priority: P1)
 
@@ -304,7 +305,11 @@ The S14 starter material lists 26 parent IDs; IDs remain stable for questions re
 
 These English translations are for EN-mode only and do not replace or alter the Arabic fixture. The rows covered by S34-PO-6/PD-S34-NEW-01 are approved as recorded in the row inventory below; all unrelated English rows outside that approved inventory remain pending.
 
-S32-PO-5 approves B01, B06, T03, T08, N07, N08, N11 and N12 items listed in their approved rows; S32-PO-8 Q5 approves T03 values 2–6 in both locales; S32-PO-8 Q6 approves N07 timing English. S33-PO-3 approves Arabic T03/N07 strings. S34-PO-1 approves N07 meal count; S34-PO-6 and PD-S34-NEW-01 approve the 68 remaining pending English rows listed in the intake review source, with exact overrides for T08.system and N11.label.0. No Arabic content is changed by this approval.
+S32-PO-5 approves B01, B06, T03, T08, N07, N08, N11 and N12 items listed in their approved rows; S32-PO-8 Q5 approves T03 values 2–6 in both locales; S32-PO-8 Q6 approves N07 timing English. S33-PO-3 approves Arabic T03/N07 strings. S34-PO-4 approves N07 meal count; S34-PO-6 and PD-S34-NEW-01 approve the 68 remaining English rows in the cited intake review source, with exact overrides for T08.system and N11.label.0. No Arabic content is changed by this approval.
+
+## Clarifications ? S34-PO-6 English intake approval
+
+Source: `C:/Users/NEW LAP/.lifter/briefs/s34-po-decisions-verbatim.md`, S34-PO-6 and PD-S34-NEW-01. All 68 pending English intake rows are approved, with each row ID, exact English value and `S34-PO-6` citation recorded in `fixtures/s34-approved-intake-en.json`. The five N07 meal-count rows are separately approved by S34-PO-4. The exact overrides are `T08.system = What training split would you like to follow?` and `N11.label.0 = I barely feel hungry`. The N07 prompt and choices follow S34-PO-4 exactly. The client-rendered `N07.training_timing` key remains `I don't have a fixed time`; `forms.staffNoFixedMealTime` remains staff-only and unchanged. **No open copy ambiguities remain for the approved English rows.**
 
 ## Clarifications — S33-PO-3
 
@@ -376,7 +381,7 @@ Clarification: these exact strings apply to Arabic only. The T03 digits are West
 | N12 | Choose the body-fat reference that most closely resembles your body shape. |
 | N12.disclaimer | This percentage is an estimate and is not a substitute for measuring body-fat percentage. |
 
-The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 endpoint labels and N12 card descriptions must also be translated into EN-mode as separate authored option records. B06 AR labels «النوع» / «ذكر» / «أنثى» remain as recorded; EN question “Gender” and options “Male” / “Female” are approved by S32-PO-5. T03 Arabic option labels remain pending S32-PO-8 Q5 copy approval and must not ship. Other unapproved translations require PO review and must never be inferred at runtime. Do not add missing goal options or body-fat percentages.
+The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 endpoint labels and N12 card descriptions must also be translated into EN-mode as separate authored option records. B06 AR labels «النوع» / «ذكر» / «أنثى» remain as recorded; EN question “Gender” and options “Male” / “Female” are approved by S32-PO-5. T03 Arabic option labels remain pending S32-PO-8 Q5 copy approval and must not ship. Other rows outside the approved set still require PO review and must never be inferred at runtime. Do not add missing goal options or body-fat percentages.
 
 #### EN option translations — PO review
 
@@ -395,23 +400,23 @@ The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 en
 | N03.4 | A lot of movement or physically demanding work |
 | T04.less_than_90 | Less than an hour and a half |
 | T04.at_least_90 | An hour and a half or more |
-| N07.2 | Two meals *(pending PO review)* |
-| N07.3 | 3 meals *(pending PO review)* |
-| N07.4 | 4 meals *(pending PO review)* |
-| N07.5 | 5 meals *(pending PO review)* |
+| N07.2 | 2 meals |
+| N07.3 | 3 meals |
+| N07.4 | 4 meals |
+| N07.5 | 5 meals |
 | N07.before_first | Before the first meal |
 | N07.after_meal_n | After meal {n}, for each n from 1 through the selected meal count |
 | N07.no_fixed_time | I don't have a fixed time |
 | N08.low | Low budget |
 | N08.medium | Medium budget |
 | N08.high | High budget |
-| N08.low.foods | Cottage cheese / plant protein / eggs / baladi bread *(pending PO review)* |
-| N08.medium.foods | Eggs / chicken / meat / toast / fish *(pending PO review)* |
-| N08.high.foods | Salmon / smoked turkey / steak / ribeye *(pending PO review)* |
+| N08.low.foods | Cottage cheese / plant protein / eggs / baladi bread |
+| N08.medium.foods | Eggs / chicken / meat / toast / fish |
+| N08.high.foods | Salmon / smoked turkey / steak / ribeye |
 | N10.before | Before cooking |
 | N10.after | After cooking |
 | N10.no_preference | No preference |
-| N11.label.0 | I hardly ever feel hungry |
+| N11.label.0 | I barely feel hungry |
 | N11.label.5 | Moderate hunger |
 | N11.label.10 | Very strong hunger |
 
@@ -492,21 +497,21 @@ Unconditional invariants can be verified with synthetic fixtures now. Threshold/
 - **SC-023 (S34-PO-2):** Correction notes accept at most 1,000 Unicode code points and at most 4,096 UTF-8 bytes. A violation of either bound is rejected before the RPC and by the database function; exact-boundary values pass.
 - **SC-024 (S34-PO-3):** For closed, refunded, deactivated, or purged clients, client-late evaluation creates zero alert, occurrence, schedule, or delivery rows; existing client-late records are removed by lifecycle cleanup. Trainer-late behavior remains governed by the existing Q4 rule.
 - **SC-025 (S34-PO-5):** Zero draft saves with blank/whitespace English `forms.name` succeed, including drafts with nonblank Arabic title; valid English titles still save.
-- **SC-026 (S34-PO-1/6, PD-S34-NEW-01):** Every approved changed EN intake row equals its exact approved string in the canonical spec, runtime fixture, and approved-copy fixture; N07 no-fixed-time is exactly `I don't have a fixed time` at the client-rendered key.
+- **SC-026 (S34-PO-4/6, PD-S34-NEW-01):** Every approved changed EN intake row equals its exact approved string in the canonical spec, runtime fixture, and approved-copy fixture; N07 no-fixed-time is exactly `I don't have a fixed time` at the client-rendered key.
 
 ## Clarifications — S34 (2026-11-05)
 
-Binding PO sources: `C:/Users/NEW LAP/.lifter/briefs/s34-po-decisions-verbatim.md` (S34-PO-1 through S34-PO-6 and PD-S34-NEW-01) and `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md` (S32-PO-8 Q6). Intake-row source: `C:/Users/NEW LAP/.lifter/runs/s34-pimm-intake-pilot/intake-en-review.md`.
+Binding PO sources: `C:/Users/NEW LAP/.lifter/briefs/s34-po-decisions-verbatim.md` (S34-PO-4 through S34-PO-6 and PD-S34-NEW-01) and `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md` (S32-PO-8 Q6). Intake-row source: `C:/Users/NEW LAP/.lifter/runs/s34-pimm-intake-pilot/intake-en-review.md`.
 
-- **S34-PO-1=B:** N07.meal_count English question: `How many meals would you like to eat per day?`; choices: `2 meals`, `3 meals`, `4 meals`, `5 meals`. Arabic remains unchanged.
+- **S34-PO-4 (S34-01=B):** N07.meal_count English question: `How many meals would you like to eat per day?`; choices: `2 meals`, `3 meals`, `4 meals`, `5 meals`. Arabic remains unchanged.
 - **S34-PO-2=A:** `correction_note` has the existing text bound of 1,000 Unicode code points and 4 KiB UTF-8; reject before RPC and enforce in a new forward migration.
 - **S34-PO-3=A:** Stop/cancel client-late alerts immediately for closed, refunded, deactivated, or purged clients. Lifecycle cleanup also removes the ended-relationship alert rows described in thread z3sKL.
 - **S34-PO-5=B:** A form draft requires a nonblank English title in `forms.name`; Arabic-only drafts cannot be saved. Reuse an existing approved message key; no new copy is authorized here.
 - **S34-PO-6=A:** The only historical migration edit is the named S34-PO-6 migration change, in a new commit, followed by clean Stack D replay. T08.system is `What training split would you like to follow?`; N11.label.0 is `I barely feel hungry`.
-- **PD-S34-NEW-01=A:** Approve the 68 pending English intake rows listed in the intake review file, excluding the five N07 meal-count rows settled by S34-PO-1, subject to the exact T08.system and N11.label.0 overrides above.
+- **PD-S34-NEW-01=A:** Approve the 68 pending English intake rows listed in the intake review file, excluding the five N07 meal-count rows settled by S34-PO-4, subject to the exact T08.system and N11.label.0 overrides above.
 - **S32-PO-8 Q6 / S34 defect correction:** N07.no_fixed_time must be exactly `I don't have a fixed time`; inspect and align the client-rendered message key without changing staff-only semantics.
 
-**No open ambiguities remain for S34-PO-1/2/3/5/6 or PD-S34-NEW-01.** S34-PO-4 controls PR destination sequencing and is recorded in the round report; it does not change F15 product behavior.
+**No open ambiguities remain for S34-PO-2 through S34-PO-6 or PD-S34-NEW-01.** S34-PO-4 records the approved product decisions above and PR destination sequencing.
 
 ## Assumptions and readiness
 

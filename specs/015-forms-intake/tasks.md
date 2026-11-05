@@ -59,11 +59,16 @@ These corrections are within the previously approved F15 scope. They do not add 
 - [x] T093 [FR-004/006/026/036/037] Render dynamic derived meal labels in FormPreview through the existing Bidi/template path for AR-RTL and EN-LTR; add exact interpolation and direction tests without changing copy or styling.
 - [x] T094 [FR-004/006/007] Remap conditional and derived-option source question references when copying a form; prove valid copied references and unchanged source with synthetic fixtures.
 - [ ] T095 [FR-026/036/037] Capture the real T03/N07 AR-RTL/EN-LTR × light/dark matrix at 390px, 1024px, and 1440px and make `INDEX.md` list exactly the captures present; review against DESIGN.md with axe evidence.
-- [ ] T096 [FR-026/036/037] Apply S34-PO-1/6 exact English intake approvals, including N07.meal_count, the T08 system prompt, N11.label.0, all remaining approved pending English rows, and N07 no-fixed-time; update spec/fixtures/approved-copy fixtures and assert exact changed English strings.
+- [ ] T096 [FR-026/036/037] Apply S34-PO-4/6 exact English intake approvals, including N07.meal_count, the T08 system prompt, N11.label.0, all remaining approved pending English rows, and N07 no-fixed-time; update spec/fixtures/approved-copy fixtures and assert exact changed English strings.
 - [ ] T097 [FR-008/013] Enforce S34-PO-2 correction_note bounds of 1,000 Unicode code points and 4 KiB UTF-8 in the route before RPC and in a new forward migration; prove boundary and over-bound cases.
 - [ ] T098 [FR-012/017/018/024] Under S34-PO-3, stop/cancel client-late evaluation and remove its related alert rows at Closure/Refund/Deactivation, including ended-relationship purge scope; add RED-first lifecycle tests and a new forward migration.
 - [ ] T100 [FR-007/008] Apply the one-time S34-PO-6=A edit only to `20261108010200_f15_reject_autosave_after_submission.sql`: use CREATE OR REPLACE FUNCTION and add the per-question max_chars check; prove clean Stack D replay after reset.
 - [ ] T102 [FR-024/025] Restack F15 PR branches over the current `origin/main` with no-ff merge commits, preserve migration history, and prove the stacked B tree matches the PR base merge-tree result.
+- [ ] T103 [FR-013/019] Carry the authenticated client's active relationship state from the assignment-context RPC into the client form; after relationship end, retain submitted history and hide/disable correction entry per existing Q1 copy. Add route and Stack D coverage.
+- [ ] T104 [FR-026/036/037] Render approved localized English slider labels while preserving Arabic labels, and accept legacy scalar plus bilingual labels in the forward SQL validator migration; prove the committed SQL definition on Stack D.
+- [ ] T105 [FR-019] Give purge scheduler activation/deactivation a dedicated advisory lock in a new forward migration; prove separation from alert evaluator and alert scheduler locks on Stack D.
+- [ ] T106 [FR-024] Normalize Playwright locale/theme cookies and expected URLs to the configured browser origin across the reviewed F15 journeys.
+- [ ] T107 [FR-004/006] Route production staff-form loading and action failures through existing generic messages while keeping preview-only copy scoped to the demo surface.
 
 ## Phase 0: Stack and shared-contract prerequisites
 
