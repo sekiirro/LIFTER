@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useRef, useState, type FormEvent } from 'react';
 import { evaluateProgression } from '../../lib/forms/progression';
+import { resolveFormLabel } from '../../lib/forms/types';
 import {
   answersForClientProgression,
   answersForBudgetSelection,
@@ -808,9 +809,9 @@ function QuestionControl({
         </output>
         {question.labels && (
           <div className={styles.sliderLabels}>
-            <span>{question.labels.minimum}</span>
-            {question.labels.middle && <span>{question.labels.middle}</span>}
-            <span>{question.labels.maximum}</span>
+            <span>{resolveFormLabel(question.labels.minimum, locale)}</span>
+            {question.labels.middle && <span>{resolveFormLabel(question.labels.middle, locale)}</span>}
+            <span>{resolveFormLabel(question.labels.maximum, locale)}</span>
           </div>
         )}
         {feedback && <p role="status">{feedback}</p>}

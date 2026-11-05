@@ -1,10 +1,11 @@
 'use client';
 
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { Bidi } from '../ui/Bidi';
 import { formatUiNumber } from '../../lib/i18n/format-digits';
 import { Button } from '../ui/Button';
 import { TextAnswerField } from './TextAnswerField';
+import { resolveFormLabel } from '../../lib/forms/types';
 import { FormPreview } from './FormPreview';
 import type { Locale } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
@@ -325,6 +326,8 @@ export function FormBuilder({
     {},
   );
   const [showPreview, setShowPreview] = useState(false);
+  const [titleInvalid, setTitleInvalid] = useState(false);
+  const englishTitleRef = useRef<HTMLInputElement>(null);
   const [questionSelection, setQuestionSelection] = useState<{
     formId: string;
     questionId: string | null;
@@ -336,6 +339,17 @@ export function FormBuilder({
       ? (questionSelection.questionId ?? undefined)
       : form.questions[0]?.id
     : undefined;
+
+  function saveDraft() {
+    if (!form || form.title.en.trim().length === 0) {
+      setTitleInvalid(true);
+      englishTitleRef.current?.focus();
+      return;
+    }
+    setTitleInvalid(false);
+    onIssue('');
+    onSave();
+  }
 
   function toggleQuestion(questionId: string) {
     if (!form) return;
@@ -541,16 +555,25 @@ export function FormBuilder({
             <label className={styles.field}>
               <span>{messages['forms.staffEnglishName']}</span>
               <input
+                ref={englishTitleRef}
                 value={form.title.en}
                 dir="ltr"
                 disabled={!editable}
+                aria-invalid={titleInvalid || undefined}
+                aria-describedby={titleInvalid ? 'forms-builder-title-error' : undefined}
                 onChange={(event) =>
-                  onChange({
-                    ...form,
-                    title: { ...form.title, en: event.currentTarget.value },
-                  })
+                  {
+                    const en = event.currentTarget.value;
+                    if (en.trim().length > 0) setTitleInvalid(false);
+                    onChange({ ...form, title: { ...form.title, en } });
+                  }
                 }
               />
+              {titleInvalid && (
+                <span id="forms-builder-title-error" role="alert">
+                  {messages['forms.required']}
+                </span>
+              )}
             </label>
             <label className={styles.field}>
               <span>{messages['forms.staffArabicName']}</span>
@@ -604,7 +627,7 @@ export function FormBuilder({
               {messages['forms.staffAddSection']}
             </Button>
             {form.status === 'draft' && (
-              <Button onClick={onSave} loading={busy} disabled={!canManage}>
+                <Button onClick={saveDraft} loading={busy} disabled={!canManage}>
                 {messages['forms.staffSaveDraft']}
               </Button>
             )}
@@ -1614,16 +1637,22 @@ export function FormBuilder({
                                             <span>{messages[messageKey]}</span>
                                             <input
                                               value={
-                                                question.labels?.[key] ?? ''
+                                                question.labels?.[key]
+                                                  ? resolveFormLabel(
+                                                      question.labels[key],
+                                                      locale,
+                                                    )
+                                                  : ''
                                               }
                                               dir={
                                                 locale === 'ar' ? 'rtl' : 'ltr'
                                               }
                                               disabled={!editable}
                                               onChange={(event) =>
-                                                patchQuestion(
-                                                  index,
-                                                  (item) => ({
+                                                patchQuestion(index, (item) => {
+                                                  const current =
+                                                    item.labels?.[key];
+                                                  return {
                                                     ...item,
                                                     labels: {
                                                       minimum:
@@ -1636,11 +1665,21 @@ export function FormBuilder({
                                                         item.labels?.maximum ??
                                                         '',
                                                       [key]:
-                                                        event.currentTarget
-                                                          .value,
+                                                        current &&
+                                                        typeof current !==
+                                                          'string'
+                                                          ? {
+                                                              ...current,
+                                                              [locale]:
+                                                                event
+                                                                  .currentTarget
+                                                                  .value,
+                                                            }
+                                                          : event.currentTarget
+                                                              .value,
                                                     },
-                                                  }),
-                                                )
+                                                  };
+                                                })
                                               }
                                             />
                                           </label>

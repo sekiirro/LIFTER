@@ -158,6 +158,7 @@ export function createMockFormsStaffAdapter(): MockFormsStaffAdapter {
     },
     async saveDraft(role, form) {
       if (!canManageWorkspaceForms(role)) return result('forbidden');
+      if (form.title.en.trim().length === 0) return result('invalid');
       let deadlineDays: number;
       try {
         deadlineDays = resolveClientDeadlineDays({

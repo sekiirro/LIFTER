@@ -121,6 +121,7 @@ export function createPersistedFormsStaffAdapter(
       return { status: 'unavailable' };
     },
     async saveDraft(_role, form, requestId): Promise<FormsStaffResult> {
+      if (form.title.en.trim().length === 0) return { status: 'invalid' };
       const { data, error } = await client.rpc('save_workspace_form_draft', {
         p_workspace_id: workspaceId,
         p_form_id: form.id,

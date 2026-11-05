@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import Image from 'next/image';
 import { Bidi } from '../ui/Bidi';
+import { resolveFormLabel } from '../../lib/forms/types';
 import { formatUiNumber } from '../../lib/i18n/format-digits';
 import { Button } from '../ui/Button';
 import type { Locale } from '../../lib/design/preferences';
@@ -190,9 +191,9 @@ function PreviewQuestion({
         </output>
         {question.labels && (
           <div className={styles.formHeader}>
-            <span>{question.labels.minimum}</span>
-            {question.labels.middle && <span>{question.labels.middle}</span>}
-            <span>{question.labels.maximum}</span>
+            <span>{resolveFormLabel(question.labels.minimum, locale)}</span>
+            {question.labels.middle && <span>{resolveFormLabel(question.labels.middle, locale)}</span>}
+            <span>{resolveFormLabel(question.labels.maximum, locale)}</span>
           </div>
         )}
         {feedback && <p role="status">{feedback}</p>}
