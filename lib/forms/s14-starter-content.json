@@ -99,10 +99,7 @@
         "ar": "النوع"
       },
       "privacy": "personal",
-      "choices": [
-        "male",
-        "female"
-      ],
+      "choices": ["male", "female"],
       "optionLabels": [
         {
           "en": "Male",
@@ -145,13 +142,7 @@
         "en": "How many days a week would you like to train?",
         "ar": "حابب تتمرن كام يوم في الأسبوع؟"
       },
-      "choices": [
-        "2",
-        "3",
-        "4",
-        "5",
-        "6"
-      ],
+      "choices": ["2", "3", "4", "5", "6"],
       "optionLabels": [
         {
           "en": "2 days",
@@ -307,12 +298,7 @@
         "en": "How many meals would you like to eat per day?",
         "ar": "حابب تاكل كام وجبة في اليوم؟"
       },
-      "choices": [
-        "2",
-        "3",
-        "4",
-        "5"
-      ],
+      "choices": ["2", "3", "4", "5"],
       "optionLabels": [
         {
           "en": "2 meals",
@@ -382,10 +368,7 @@
       ],
       "derivedOptions": {
         "sourceQuestionId": "N07.meal_count",
-        "fixedChoices": [
-          "before-first",
-          "no-fixed-time"
-        ]
+        "fixedChoices": ["before-first", "no-fixed-time"]
       }
     },
     {
@@ -397,11 +380,7 @@
         "en": "What’s your food budget?",
         "ar": "ميزانيتك للأكل عاملة إزاي؟"
       },
-      "choices": [
-        "low",
-        "medium",
-        "high"
-      ],
+      "choices": ["low", "medium", "high"],
       "optionLabels": [
         {
           "en": "",

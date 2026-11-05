@@ -506,17 +506,26 @@ it('cancels client-late alert rows immediately when a client relationship ends',
         select count(*)::int as count from app_private.form_alert_inbox
         where source_assignment_id=${assignment}
       `;
-      expect(inboxAfter?.count, 'relationship end removes existing inbox rows').toBe(0);
+      expect(
+        inboxAfter?.count,
+        'relationship end removes existing inbox rows',
+      ).toBe(0);
       const [deliveriesAfter] = await tx`
         select count(*)::int as count from app_private.form_alert_deliveries
         where id=any(${deliveryIds}::uuid[])
       `;
-      expect(deliveriesAfter?.count, 'relationship end removes deliveries').toBe(0);
+      expect(
+        deliveriesAfter?.count,
+        'relationship end removes deliveries',
+      ).toBe(0);
       const [occurrencesAfter] = await tx`
         select count(*)::int as count from app_private.form_alert_occurrences
         where id=any(${occurrenceIds}::uuid[])
       `;
-      expect(occurrencesAfter?.count, 'relationship end removes occurrences').toBe(0);
+      expect(
+        occurrencesAfter?.count,
+        'relationship end removes occurrences',
+      ).toBe(0);
       const [jobsAfter] = await tx`
         select count(*)::int as count from public.jobs where id=any(${jobIds}::uuid[])
       `;
@@ -525,15 +534,22 @@ it('cancels client-late alert rows immediately when a client relationship ends',
         select count(*)::int as count from app_private.form_alert_schedules
         where source_assignment_id=${assignment} and alert_kind='client_late'
       `;
-      expect(schedulesAfter?.count, 'relationship end removes schedules').toBe(0);
-      expect(await core(tx, f.wsA.id, '2026-04-13T00:00:00.000Z')).toMatchObject({
+      expect(schedulesAfter?.count, 'relationship end removes schedules').toBe(
+        0,
+      );
+      expect(
+        await core(tx, f.wsA.id, '2026-04-13T00:00:00.000Z'),
+      ).toMatchObject({
         status: 'ok',
       });
       const [inboxAfterReevaluation] = await tx`
         select count(*)::int as count from app_private.form_alert_inbox
         where source_assignment_id=${assignment}
       `;
-      expect(inboxAfterReevaluation?.count, 'reevaluation does not recreate client-late alerts').toBe(0);
+      expect(
+        inboxAfterReevaluation?.count,
+        'reevaluation does not recreate client-late alerts',
+      ).toBe(0);
       throw rollback;
     }),
   ).rejects.toBe(rollback);
