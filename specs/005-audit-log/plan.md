@@ -58,3 +58,13 @@ None.
 ## S33-PO-4 test hygiene
 
 Keep visibility probes bounded and role-specific while retaining every PO/WO visibility and anon denial assertion. Do not change audit policy or schema in this scope.
+
+
+## S34-PO-1 — P37 close-out (workspace-scoped pagination)
+
+PO decision (verbatim): "**P37=C:** Workspace-scoped pagination first; index only if performance evidence justifies it."
+
+- Any future audit-log read API/RPC/UI MUST be workspace-scoped and paginated with stable order (occurred_at desc, id desc). Page size and API shape are specified with that future feature.
+- No new index on `public.audit_events` unless EXPLAIN evidence on representative synthetic volumes justifies it; record the measurement method.
+- The existing index `(workspace_id, occurred_at desc)` in `supabase/migrations/20261027150000_audit_log.sql` remains the only index.
+- Test hygiene (T010): bound unfiltered `audit_events` reads in test helpers.
