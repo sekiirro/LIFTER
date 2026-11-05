@@ -11,14 +11,14 @@ const origin =
   process.env.APP_ORIGIN ??
   'http://localhost:3000';
 const screenshotDirectory =
-  process.env.HERO_R21_USERNAME_SCREENSHOT_DIR ??
-  join(tmpdir(), 'lifter-s33-hero-r21');
+  process.env.HERO_R22_USERNAME_SCREENSHOT_DIR ??
+  join(tmpdir(), 'lifter-s34-hero-r22');
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
 let token: string;
 
-test.describe.serial('r21 username error-state design evidence', () => {
+test.describe.serial('r22 username error-state design evidence', () => {
   test.beforeAll(async () => {
     test.skip(!local, 'Requires the selected local Supabase stack.');
     const { registrationFixture, secret, issue, checked } =
@@ -41,8 +41,8 @@ test.describe.serial('r21 username error-state design evidence', () => {
     for (const locale of ['ar', 'en'] as const) {
       const messages = getMessages(locale);
       for (const theme of ['light', 'dark'] as const) {
-        for (const width of [360, 390, 1024] as const) {
-          const height = width === 1024 ? 1024 : 844;
+        for (const width of [390, 1440] as const) {
+          const height = width === 1440 ? 900 : 844;
           await page.setViewportSize({ width, height });
           await context.addCookies([
             { name: LOCALE_COOKIE, value: locale, url: origin },
@@ -72,11 +72,12 @@ test.describe.serial('r21 username error-state design evidence', () => {
           await expect(page.locator('#signup-username-error')).toHaveText(
             locale === 'en'
               ? 'Use 3–30 characters: English letters, numbers, periods, or underscores.'
-              : messages['clientSignup.fieldError'],
+              : 'استخدم من 3 لـ30 حرف: حروف إنجليزي أو أرقام أو نقطة أو شرطة سفلية.',
           );
-          await expect(page.locator('form [role="alert"]')).toHaveText(
-            messages['clientSignup.invalidInput'],
-          );
+          await expect(
+            page.locator('#signup-username-error bdi'),
+          ).toHaveAttribute('dir', 'auto');
+          await expect(page.locator('form [role="alert"]')).toHaveCount(0);
           await expectHeroAxeClean(page);
           const filename = `${locale}-${theme}-${width}.png`;
           await page.screenshot({
@@ -88,9 +89,9 @@ test.describe.serial('r21 username error-state design evidence', () => {
       }
     }
     const index = [
-      '# S33 Hero r21 — Username error-state captures',
+      '# S34 Hero r22 — Username error-state captures',
       '',
-      'Real registration page; locally rejects the synthetic invalid-format username `ab`. EN uses S32-PO-9 Q10 approved format copy; AR retains the existing generic field error pending PO approval. Server-error clearing and submit-only availability are separately covered by the unit regression.',
+      'Real registration page; locally rejects the synthetic invalid-format username `ab`. The EN/AR username format copy matches S32-PO-9 Q10 and S34-PO-1 H1=A byte-for-byte. Server-error clearing and submit-only availability are separately covered by the unit regression.',
       '',
       '| Locale / direction | Theme | Width | Capture |',
       '|---|---|---:|---|',
