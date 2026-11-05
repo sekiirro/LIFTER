@@ -30,10 +30,12 @@ export default async function RegistrationApprovalReviewPage({
   const { clientId } = await params;
   const workspace = (await searchParams).workspace;
   if (typeof workspace !== 'string') notFound();
-  const data = await loadWorkspaces(
-    actor.role === 'platform_owner' ? undefined : actor.activeWorkspaceIds,
-  );
-  if (!data || !data.some((item) => item.id === workspace)) notFound();
+  if (
+    (actor.role !== 'platform_owner' &&
+      !actor.activeWorkspaceIds.includes(workspace)) ||
+    !(await workspaceExists(workspace))
+  )
+    notFound();
   const store = await cookies();
   const m = getMessages(parseLocale(store.get(LOCALE_COOKIE)?.value));
   const result = await readRegistrationApprovalReview({
@@ -79,14 +81,17 @@ export default async function RegistrationApprovalReviewPage({
   );
 }
 
-async function loadWorkspaces(ids?: readonly string[]) {
+async function workspaceExists(id: string) {
   try {
     const client = await createSessionClient();
-    if (!client) return null;
-    const query = client.from('workspaces').select('id').order('id');
-    const result = ids ? await query.in('id', [...ids]) : await query;
-    return result.error ? null : result.data;
+    if (!client) return false;
+    const result = await client
+      .from('workspaces')
+      .select('id')
+      .eq('id', id)
+      .maybeSingle();
+    return !result.error && result.data?.id === id;
   } catch {
-    return null;
+    return false;
   }
 }

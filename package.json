@@ -39,7 +39,8 @@
     "next": "16.4.3",
     "react": "19.3.1",
     "react-dom": "19.3.1",
-    "server-only": "0.0.1"
+    "server-only": "0.0.1",
+    "glisse": "file:vendor/glisse"
   },
   "devDependencies": {
     "@axe-core/playwright": "4.14.0",
@@ -57,7 +58,9 @@
     "prettier": "3.9.10",
     "typescript": "6.0.3",
     "vitest": "5.0.5",
-    "wrangler": "4.153.0"
+    "wrangler": "4.153.0",
+    "@types/jsdom": "30.0.0",
+    "jsdom": "29.1.1"
   },
   "overrides": {
     "@opennextjs/cloudflare": {

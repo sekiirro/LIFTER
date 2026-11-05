@@ -7,6 +7,7 @@ export const printTokens = {
 } as const satisfies Record<string, Hex>;
 export type ModeTokens = {
   bg: Hex;
+  shellGradient: string;
   card: Hex;
   cardRaised: Hex;
   border: Hex;
@@ -24,6 +25,8 @@ export type ModeTokens = {
 export const modes = {
   light: {
     bg: '#F6F7F8',
+    shellGradient:
+      'radial-gradient(86% 42% at 50% 0%, color-mix(in srgb, #059669 3%, transparent), transparent 100%), linear-gradient(180deg, var(--color-card) 0%, var(--color-bg) 82%)',
     card: '#FFFFFF',
     cardRaised: '#FFFFFF',
     border: '#E5E7EB',
@@ -39,6 +42,8 @@ export const modes = {
   },
   dark: {
     bg: '#101113',
+    shellGradient:
+      'radial-gradient(86% 42% at 50% 0%, color-mix(in srgb, #059669 2%, transparent), transparent 100%), linear-gradient(180deg, var(--color-card) 0%, var(--color-bg) 82%)',
     card: '#1B1D20',
     cardRaised: '#24272B',
     border: '#303237',

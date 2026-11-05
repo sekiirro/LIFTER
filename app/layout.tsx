@@ -11,6 +11,7 @@ import {
 } from '../lib/design/preferences';
 import { tokensToCss } from '../lib/design/tokens-css';
 import './globals.css';
+import 'glisse/styles.css';
 
 const geist = localFont({
   src: '../node_modules/geist/dist/fonts/geist-sans/Geist-Variable.woff2',

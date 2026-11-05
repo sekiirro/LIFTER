@@ -58,3 +58,11 @@ No PO-deferred requirement was identified; therefore no row is marked DEFERRED. 
 | zk77L FoodEditor native UTF-16 `maxLength` conflicts with code-point validation | FR-018 | T046 | `tests/unit/catalog-food-editor.test.tsx::lets code-point validation govern emoji names without a UTF-16 input limit` | Commit `5e51afa`; RED observed `maxLength=120`; 120 supplementary-plane emoji accepted by code-point validation; focused unit/component suites GREEN 29/29. |
 | zk77R workspace exercise Restore clause conflicts with S31/API contract | FR-002, FR-011 | T047 | `checklists/analyze.md::S33 lib16 remediation re-analysis` | Documentation commit `106157c`; analysis PASS with 0 CRITICAL/HIGH; aligned to S31-PO-1 Q3 and `contracts/catalog-api.md`; no behavior or UI Restore added. |
 | zk77b PO editor handoff contradicted current control assertions and Remove placement | FR-002, FR-011, FR-018 | T047 | `tests/e2e/catalog-ui.spec.ts` assertions around lines 205–214; `tests/unit/exercise-detail-remove.test.tsx`; `tests/e2e/exercise-library-production.spec.ts` | Handoff row and Remove location corrected. No local e2e run per S33 lane constraints; hosted CI evidence required on final head. |
+
+## Main-side S33 traceability record — preserved verbatim
+
+# S33 traceability — S33-PO-4
+
+| FR | Task | Test | Evidence |
+|---|---|---|---|
+| FR-015, FR-016a | T900 | `tests/integration/catalog-server.test.ts::searches exercises created through the session wall by stored taxonomy payload keys` | Commit `dfa6fe6`; focused integration run on current head: 5 files / 41 tests passed. |

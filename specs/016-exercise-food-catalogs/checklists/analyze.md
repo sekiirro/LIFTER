@@ -161,3 +161,31 @@ Existing MEDIUM follow-ups remain unchanged: SC-003 lacks timed interaction evid
 | Open CRITICAL/HIGH findings | PASS | 0 CRITICAL, 0 HIGH. |
 
 **Verdict:** PASS. All S33 F16 tasks T045–T047 have completed evidence; Analyze is after the latest spec/plan/tasks change.
+
+## Main-side S33 analysis record — preserved verbatim
+
+# Analyze — F16 exercise and food catalogs
+
+- Date: 2026-11-04
+- Scope: S33-PO-4 taxonomy/search integration test pagination or unique synthetic filter (T900).
+- Spec: Existing catalog search and taxonomy requirements and authorization scenarios remain unchanged. S33 clarification disallows search semantic, visibility, limit, or data changes.
+- Plan: The test will locate its expected synthetic result independent of the global first page, using an exact filter or explicitly bounded pagination.
+- Tasks: T900 is tagged FR-015 and FR-016a. No test assertion is weakened and no catalog content is added.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+- Gate: PASS for the stated S33 test-only scope.
+
+## Post-verification S33 re-analysis — 2026-11-04
+
+T900 has been marked complete only after its focused integration test passed on the committed code head. Traceability records commit `dfa6fe6` and the executed test. S33 scope remains test-only; 0 open CRITICAL/HIGH findings.
+
+
+## S34 post-merge re-analysis — 2026-11-05
+
+- **Merge inputs:** PR head `ce280c98a4bcf896d5cd04682bc3a571465f2c82` plus `origin/main` `7e2d0149b0370e4389b462130508352bbd69daa2`; analysis performed after the merge operation and conflict reconciliation.
+- **Scope:** test-only reconciliation of the existing catalog taxonomy search coverage. No product behavior, schema, permissions, UI or copy requirement changed.
+- **Entry check:** PASS. `spec.md` has numbered FR-001–FR-021 (including FR-016a), measurable SCs and Given/When/Then scenarios; approved decisions and the explicit “No open ambiguities” statement are present. `plan.md` covers the S33 test-only scope. `tasks.md` carries T900 tagged FR-015/FR-016a.
+- **Traceability:** PASS. Existing F16 FR rows retained; main-side S33 T900 row retained with its exact test/evidence.
+- **Conflict test assertions:** preserved both matching taxonomy positives, both main-side mismatched-filter negatives, the branch-side workspace-name query, and the main-side empty-query workspace filter.
+- **Migration safety:** no migration was added or edited by the conflict resolution. The one migration brought by main is byte-identical to `origin/main`.
+- **Findings:** 0 open CRITICAL and 0 open HIGH. Existing MEDIUM evidence gaps A3 (timed SC-003 evidence) and A4 (hosted SC-005 measurements) remain unchanged and outside this test-only scope.
+- **Verification:** final-head gates and Stack C integration are run after the merge commit; see S34 report.

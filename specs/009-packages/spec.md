@@ -139,3 +139,9 @@ These data/policy decisions do not block local development. Existing [production
 ## Constitution Check
 
 I: active membership, two walls, composite tenant relations and negative tests. II/V: exact money and immutable version snapshots. III/IV: PO governance, deny-by-default commission, explicit unresolved catalog policy. VI: no automated people decisions. VII: append-only business-only audit and no logging. VIII: Design System AR/EN and required states. IX: atomic locks and database replay handling. Platform/workflow: one forward migration during implementation, local-only validation, no deployment, independent reviewer gates. No constitutional exception requested.
+
+## Clarifications
+
+### Session 2026-11-04 — S33-PO-4
+
+PO source: S33-PO-4, “Fix stack drift, flaky tests, billing-related CI blockers, and PR/issue backlog organization.” S33 changes only the package acceptance test's empty-state fixture precondition and failure diagnostics. It does not change package behavior, copy, authorization, or UI. No open ambiguities remain within this test-only scope.

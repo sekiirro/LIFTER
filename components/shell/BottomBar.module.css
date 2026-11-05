@@ -2,9 +2,7 @@
   align-items: stretch;
   gap: var(--space-1);
   padding: var(--space-2);
-  padding-block-end: calc(var(--space-2) + env(safe-area-inset-bottom, 0px));
-  border-block-start: 1px solid var(--color-border);
-  background: var(--color-card);
+  border-radius: 999px;
 }
 .link {
   flex: 1 1 0;
@@ -14,9 +12,9 @@
   gap: var(--space-1);
   min-inline-size: var(--touch-min);
   min-block-size: var(--touch-min);
-  border: 2px solid var(--color-card);
-  border-radius: var(--radius-button);
-  color: var(--color-text-muted);
+  border: 2px solid transparent;
+  border-radius: 999px;
+  color: var(--color-text);
   font-size: var(--text-xs);
   text-decoration: none;
   transition:
@@ -24,6 +22,6 @@
     border-color var(--motion-fast);
 }
 .link[aria-current='page'] {
-  color: var(--brand-text);
-  border-color: var(--brand-ring);
+  color: var(--color-text);
+  border-color: #059669;
 }
