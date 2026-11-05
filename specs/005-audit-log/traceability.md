@@ -20,3 +20,9 @@ Analyzed source commit: `ed88574ae09c722b1f6ded4fc0b66122bbeb4f13`. Tests were c
 
 - All named test files and titles above were checked in the analyzed source tree; test execution is not claimed.
 - Plan ND-F5-1/2 remain PO-owned questions. Neither is marked DEFERRED because no cited PO record explicitly resolves the future behavior.
+
+## S33 traceability — S33-PO-4
+
+| FR | Task | Test | Evidence |
+|---|---|---|---|
+| FR-005, FR-007 | T009 | `tests/integration/audit.test.ts::PO sees A, B and platform events; WO sees only active own-workspace events` | Commit `368ff0a`; focused integration run on current head: 5 files / 41 tests passed. |

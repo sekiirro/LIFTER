@@ -311,6 +311,18 @@ describe('immutability (T003)', () => {
 
 describe('visibility (T004)', () => {
   it('PO sees A, B and platform events; WO sees only active own-workspace events', async () => {
+    const workspaceCId = randomUUID();
+    checked(
+      await f.po.client.from('workspaces').insert({
+        id: workspaceCId,
+        name: 'C visibility probe',
+        slug: `f5-c-${randomUUID()}`,
+        created_by: f.po.userId,
+      }),
+    );
+    const workspaceCEvent = (await events(workspaceCId))[0];
+    if (!workspaceCEvent) throw new Error('Workspace C audit event missing');
+
     checked(
       await f.po.client
         .from('staff_profiles')
@@ -325,15 +337,37 @@ describe('visibility (T004)', () => {
       ...(await events(f.wsA.id)),
       ...(await events(f.wsB.id)),
       platform,
+      workspaceCEvent,
     ];
     const ids = expected.map((row) => row.id);
+    const fixtureIds = await db<{ id: string }[]>`
+      select id from public.audit_events
+      where workspace_id in (${f.wsA.id}, ${f.wsB.id})
+    `;
+    const assignmentIds = await db<{ id: string }[]>`
+      select id from public.audit_events
+      where action = 'staff_role.assigned'
+        and target_table = 'staff_profiles'
+        and workspace_id is null
+        and target_id in (
+          ${f.po.userId}, ${f.woA.userId}, ${f.trainerA.userId},
+          ${f.salesA.userId}, ${f.trainerB.userId}
+        )
+    `;
+    const denialIds = [
+      ...new Set([
+        ...ids,
+        ...fixtureIds.map((row) => row.id),
+        ...assignmentIds.map((row) => row.id),
+      ]),
+    ];
     const poRows = checked(
       await f.po.client.from('audit_events').select('*').in('id', ids),
     );
     if (!poRows) throw new Error('PO audit query returned no data');
-    expect(poRows).toHaveLength(3);
+    expect(poRows).toHaveLength(4);
     expect(poRows.map((row) => row.workspace_id)).toEqual(
-      expect.arrayContaining([f.wsA.id, f.wsB.id, null]),
+      expect.arrayContaining([f.wsA.id, f.wsB.id, workspaceCId, null]),
     );
     const ownRows = checked(
       await f.woA.client.from('audit_events').select('*').in('id', ids),
@@ -362,10 +396,32 @@ describe('visibility (T004)', () => {
           .is('workspace_id', null),
       ),
     ).toEqual([]);
-    for (const client of [f.trainerA.client, f.salesA.client, anonClient()]) {
-      const result = await client.from('audit_events').select('*');
-      expect(result.data ?? []).toEqual([]);
-      if (result.error) expect(result.error.code).toBe('42501');
+    for (const [role, client] of [
+      ['trainer', f.trainerA.client],
+      ['sales', f.salesA.client],
+    ] as const) {
+      const result = await client
+        .from('audit_events')
+        .select('id')
+        .in('id', denialIds)
+        .limit(1);
+      expect(
+        result.error,
+        `${role} audit visibility probe failed${result.error ? ` (${result.error.code})` : ''}`,
+      ).toBeNull();
+      expect(result.data).toEqual([]);
+    }
+    const anonResult = await anonClient()
+      .from('audit_events')
+      .select('id')
+      .limit(1);
+    if (anonResult.error) {
+      expect(
+        anonResult.error.code,
+        `anon audit query returned unexpected error ${anonResult.error.code}`,
+      ).toBe('42501');
+    } else {
+      expect(anonResult.data).toEqual([]);
     }
     checked(
       await f.po.client
@@ -376,9 +432,17 @@ describe('visibility (T004)', () => {
         .select()
         .single(),
     );
+    const postRevocationIds = await db<{ id: string }[]>`
+      select id from public.audit_events where workspace_id = ${f.wsA.id}
+    `;
     expect(
       checked(
-        await f.woA.client.from('audit_events').select('*').in('id', ids),
+        await f.woA.client
+          .from('audit_events')
+          .select('*')
+          .in('id', [
+            ...new Set([...ids, ...postRevocationIds.map((row) => row.id)]),
+          ]),
       ),
     ).toEqual([]);
   });
