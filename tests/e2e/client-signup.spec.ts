@@ -26,6 +26,14 @@ const local = Boolean(
 );
 let token: string;
 
+function dateInputOffsetFromToday(days: number) {
+  const date = new Date();
+  date.setDate(date.getDate() + days);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
+
 test.describe.serial('T038 invitation signup UI', () => {
   test.beforeAll(async () => {
     test.skip(!local, 'Requires the disposable local Supabase stack.');
@@ -183,16 +191,16 @@ test.describe.serial('T038 invitation signup UI', () => {
     await nameField.focus();
     await nameField.press('Tab');
     await expect(dateOfBirthField).toBeFocused();
-    await nameField.fill('Heba');
-    await dateOfBirthField.fill('2026-10-30');
+    await nameField.fill('Heba Sami Nabil');
+    await dateOfBirthField.fill(dateInputOffsetFromToday(2));
     await page
       .getByLabel(messages['clientSignup.username'], { exact: true })
-      .fill('system');
+      .fill('testclientr23');
     await page
       .getByRole('button', { name: messages['clientSignup.submit'] })
       .click();
     await expect(
-      page.getByLabel(messages['clientSignup.name'], { exact: true }),
+      page.getByLabel(messages['clientSignup.dateOfBirth'], { exact: true }),
     ).toHaveAttribute('aria-invalid', 'true');
     await expect(
       page.getByText(messages['clientSignup.fieldError']).first(),
@@ -218,7 +226,7 @@ test.describe.serial('T038 invitation signup UI', () => {
     await nameField.fill('Heba');
     await page
       .getByLabel(messages['clientSignup.dateOfBirth'], { exact: true })
-      .fill('2026-10-30');
+      .fill(dateInputOffsetFromToday(2));
     const usernameField = page.getByLabel(messages['clientSignup.username'], {
       exact: true,
     });

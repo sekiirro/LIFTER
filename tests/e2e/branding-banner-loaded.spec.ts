@@ -22,6 +22,13 @@ import {
 } from './registration-hero-evidence';
 
 const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+function dateInputYearsAgo(years: number) {
+  const date = new Date();
+  date.setFullYear(date.getFullYear() - years);
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  const day = String(date.getDate()).padStart(2, '0');
+  return `${date.getFullYear()}-${month}-${day}`;
+}
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
@@ -480,7 +487,9 @@ for (const { locale, theme, osTheme, viewport } of invalidThemeCases) {
     await page.goto(`/register/${encodeURIComponent(token)}`);
     const stage = page.locator('[data-registration-hero]');
     await expect(stage).toHaveAttribute('data-photo-tone', 'mid');
-    await page.locator('input[name="name"]').fill('Contrast Test');
+    await page.locator('input[name="name"]').fill('Contrast Test User');
+    await page.locator('input[name="dateOfBirth"]').fill(dateInputYearsAgo(25));
+    await page.locator('input[name="username"]').fill('contrasttest');
     await page.locator('input[name="email"]').fill('contrast@example.test');
     await page.locator('input[type="tel"]').fill('1001234567');
     await page.locator('input[name="password"]').fill('short');
@@ -513,7 +522,9 @@ test('dim/invalid/en/light/mobile-390: preference keeps invalid text readable', 
   await page.goto(`/register/${encodeURIComponent(token)}`);
   const stage = page.locator('[data-registration-hero]');
   await expect(stage).toHaveAttribute('data-photo-tone', 'dim');
-  await page.locator('input[name="name"]').fill('Contrast Test');
+  await page.locator('input[name="name"]').fill('Contrast Test User');
+  await page.locator('input[name="dateOfBirth"]').fill(dateInputYearsAgo(25));
+  await page.locator('input[name="username"]').fill('contrasttest');
   await page.locator('input[name="email"]').fill('contrast@example.test');
   await page.locator('input[type="tel"]').fill('1001234567');
   await page.locator('input[name="password"]').fill('short');
