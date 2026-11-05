@@ -18,7 +18,8 @@ import { calculateAgeInCairo } from '../../lib/forms/validation';
 import starterContent from '../../lib/forms/s14-starter-content.json';
 
 const db = sql();
-const screenshotDir = join(tmpdir(), 'lifter-s34-f15-r2');
+const screenshotDir = join(tmpdir(), 'lifter-s34-f15-r3');
+const supportScreenshotDir = join(tmpdir(), 'lifter-s34-f15-r3-support');
 const screenshotPaths: string[] = [];
 let assignmentId = '';
 let email = '';
@@ -28,6 +29,7 @@ test.describe.configure({ mode: 'serial' });
 
 test.beforeAll(async () => {
   mkdirSync(screenshotDir, { recursive: true });
+  mkdirSync(supportScreenshotDir, { recursive: true });
   const context = await clientContext();
   const client = await registered(context);
   email = client.email;
@@ -305,6 +307,7 @@ async function createApprovedControlsAssignment(): Promise<string> {
   const controlIds = new Set([
     'T03',
     'T08',
+    'T08.system',
     'N07.meal_count',
     'N07.training_timing',
     'N08',
@@ -388,7 +391,7 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
         ).toBeVisible();
         await expectAxeClean(page);
         await page.screenshot({
-          path: join(screenshotDir, `${locale}-${theme}-${width}-b01.png`),
+          path: join(supportScreenshotDir, `${locale}-${theme}-${width}-b01.png`),
           fullPage: true,
         });
         await page.getByRole('button').nth(1).click();
@@ -403,7 +406,7 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
         ).toBeVisible();
         await expectAxeClean(page);
         await page.screenshot({
-          path: join(screenshotDir, `${locale}-${theme}-${width}-b02.png`),
+          path: join(supportScreenshotDir, `${locale}-${theme}-${width}-b02.png`),
           fullPage: true,
         });
         await page.getByRole('button').nth(1).click();
@@ -416,7 +419,7 @@ test('real authorized assignment renders the complete AR/EN theme and viewport m
         ).toBeVisible();
         await expectAxeClean(page);
         await page.screenshot({
-          path: join(screenshotDir, `${locale}-${theme}-${width}-goal.png`),
+          path: join(supportScreenshotDir, `${locale}-${theme}-${width}-goal.png`),
           fullPage: true,
         });
       }
@@ -472,7 +475,7 @@ test('renders recorded new client controls across AR/EN, theme, and viewport mat
           ).toBeVisible();
           await page.screenshot({
             path: join(
-              screenshotDir,
+              supportScreenshotDir,
               `${locale}-${theme}-${width}-${name}.png`,
             ),
             fullPage: true,
@@ -544,11 +547,23 @@ test('approved F15 controls render in both locales, themes, and widths', async (
         await page.goto(`/forms/${freshId}`);
         const next = nextFor(locale);
         const capture = async (name: string, heading?: string) => {
-          if (heading)
-            await expect(
-              page.getByRole('heading', { level: 2, name: heading }),
-            ).toBeVisible();
-          if (!['T03', 'N07-meal-count', 'N07-timing'].includes(name)) return;
+          if (heading) {
+            const target =
+              name === 'T08-system'
+                ? page.getByRole('textbox', { name: heading })
+                : page.getByRole('heading', { level: 2, name: heading });
+            await expect(target).toBeVisible();
+          }
+          if (
+            ![
+              'T03',
+              'T08-system',
+              'N07-meal-count',
+              'N07-timing',
+              'N11',
+            ].includes(name)
+          )
+            return;
           await expectAxeClean(page);
           const path = join(
             screenshotDir,
@@ -606,8 +621,35 @@ test('approved F15 controls render in both locales, themes, and widths', async (
           'T08',
           locale === 'en' ? 'Training split' : 'عايز نظام تمرين معين؟',
         );
+        await page
+          .getByRole('radio', { name: getMessages(locale)['forms.yes'] })
+          .check();
+        const t08SystemLabel = starterContent.questions.find(
+          (question) => question.id === 'T08.system',
+        )!.label![locale];
+        if (locale === 'en')
+          expect(t08SystemLabel).toBe(
+            'What training split would you like to follow?',
+          );
         await next.click();
-        await capture('N07-meal-count');
+        await capture('T08-system', t08SystemLabel);
+        await next.click();
+        const mealCount = starterContent.questions.find(
+          (question) => question.id === 'N07.meal_count',
+        )!;
+        await capture('N07-meal-count', mealCount.label![locale]);
+        const mealOptions = await page
+          .getByRole('radio')
+          .evaluateAll((nodes) =>
+            nodes.map((node) => (node.parentElement?.textContent ?? '').trim()),
+          );
+        if (locale === 'en')
+          expect(mealOptions).toEqual([
+            '2 meals',
+            '3 meals',
+            '4 meals',
+            '5 meals',
+          ]);
         await page.getByRole('radio').first().check();
         await next.click();
         await capture(
@@ -658,6 +700,24 @@ test('approved F15 controls render in both locales, themes, and widths', async (
             ? 'How hungry do you feel, from 0 to 10?'
             : 'بتقيّم إحساسك بالجوع كام من 10؟',
         );
+        const n11Labels = starterContent.questions.find(
+          (question) => question.id === 'N11',
+        )!.labels!;
+        const renderedN11Labels = [
+          n11Labels.minimum,
+          n11Labels.middle,
+          n11Labels.maximum,
+        ].map((label) =>
+          typeof label === 'string' ? label : label[locale],
+        );
+        for (const label of renderedN11Labels)
+          await expect(page.getByText(label, { exact: true })).toBeVisible();
+        if (locale === 'en')
+          expect(renderedN11Labels).toEqual([
+            'I barely feel hungry',
+            'Moderate hunger',
+            'Very strong hunger',
+          ]);
         const slider = page.getByRole('slider');
         expect(await slider.getAttribute('min')).toBe('0');
         expect(await slider.getAttribute('max')).toBe('10');
@@ -700,13 +760,13 @@ test('approved F15 controls render in both locales, themes, and widths', async (
       }
     }
   }
-  expect(screenshotPaths).toHaveLength(24);
+  expect(screenshotPaths).toHaveLength(60);
   writeFileSync(
     join(screenshotDir, 'INDEX.md'),
     [
-      '# S34 F15 T03/N07 rendered evidence',
+      '# S34 F15 T03/N07 and approved-copy rendered evidence',
       '',
-      'T03 and N07 meal-count/timing screens rendered for AR-RTL and EN-LTR in light and dark themes at 390px, 1024px, and 1440px. Axe passed on all 24 captured states.',
+      'T03, T08.system, N07 meal-count/timing, and N11 screens rendered for AR-RTL and EN-LTR in light and dark themes at 390px, 1024px, and 1440px. Axe passed on all 60 captured states.',
       '',
       ...screenshotPaths.map((path) => `- ${path}`),
       '',
@@ -929,7 +989,7 @@ test('real route autosave exposes each state, retries failures, and records save
           .analyze();
         expect(violations.violations).toEqual([]);
         await page.screenshot({
-          path: join(screenshotDir, `${locale}-${theme}-${width}-${state}.png`),
+          path: join(supportScreenshotDir, `${locale}-${theme}-${width}-${state}.png`),
           fullPage: true,
         });
       };
