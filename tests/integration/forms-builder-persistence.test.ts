@@ -333,10 +333,15 @@ describe('T006/T009 persisted Builder writes', () => {
     await withCrashSafeFunctionMutant(
       'app_private.f15_valid_builder_definition(jsonb,boolean)',
       (body) =>
-        body.replace(
-          "btrim(coalesce(question->'labels'->'middle'->>'en',question->'labels'->'middle'->>'ar',question->'labels'->>'middle',''))=''",
-          'false',
-        ),
+        body
+          .replace(
+            "not app_private.f15_valid_slider_label(question->'labels'->'middle')",
+            'false',
+          )
+          .replace(
+            "btrim(coalesce(question->'labels'->'middle'->>'en',question->'labels'->'middle'->>'ar',question->'labels'->>'middle',''))=''",
+            'false',
+          ),
       async () =>
         expectInvariantFailure(async () => {
           const invalid = structuredClone(
