@@ -309,11 +309,11 @@ S32-PO-5 approves B01, B06, T03, T08, N07, N08, N11 and N12 items listed in thei
 
 ## Clarifications ? S34-PO-6 English intake approval
 
-Source: `C:/Users/NEW LAP/.lifter/briefs/s34-po-decisions-verbatim.md`, S34-PO-6 and PD-S34-NEW-01. All 68 pending English intake rows are approved, with each row ID, exact English value and `S34-PO-6` citation recorded in `fixtures/s34-approved-intake-en.json`. The five N07 meal-count rows are separately approved by S34-PO-4. The exact overrides are `T08.system = What training split would you like to follow?` and `N11.label.0 = I barely feel hungry`; N11.label.5 and N11.label.10 are also recorded among the 68 approved English rows. The N07 prompt and choices follow S34-PO-4 exactly. The client-rendered `N07.training_timing` key remains `I don't have a fixed time`; `forms.staffNoFixedMealTime` remains staff-only and unchanged. **No open copy ambiguities remain for the approved English rows.**
+Source: `S34-PO-4 through S34-PO-6 in the PO decision register`, S34-PO-6 and PD-S34-NEW-01. All 68 pending English intake rows are approved, with each row ID, exact English value and `S34-PO-6` citation recorded in `fixtures/s34-approved-intake-en.json`. The five N07 meal-count rows are separately approved by S34-PO-4. The exact overrides are `T08.system = What training split would you like to follow?` and `N11.label.0 = I barely feel hungry`; N11.label.5 and N11.label.10 are also recorded among the 68 approved English rows. The N07 prompt and choices follow S34-PO-4 exactly. The client-rendered `N07.training_timing` key remains `I don't have a fixed time`; `forms.staffNoFixedMealTime` remains staff-only and unchanged. **No open copy ambiguities remain for the approved English rows.**
 
 ## Clarifications — S33-PO-3
 
-PO record: `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md`, S33-PO-3, 2026-11-04. Verbatim:
+PO record: `S32-PO-8 Q6 in the PO decision register`, S33-PO-3, 2026-11-04. Verbatim:
 
 > "T03: Digits only: `2`, `3`, `4`, `5`, `6`."
 >
@@ -501,7 +501,7 @@ Unconditional invariants can be verified with synthetic fixtures now. Threshold/
 
 ## Clarifications — S34 (2026-11-05)
 
-Binding PO sources: `C:/Users/NEW LAP/.lifter/briefs/s34-po-decisions-verbatim.md` (S34-PO-4 through S34-PO-6 and PD-S34-NEW-01) and `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md` (S32-PO-8 Q6). Intake-row source: `C:/Users/NEW LAP/.lifter/runs/s34-pimm-intake-pilot/intake-en-review.md`.
+Binding PO sources: `S34-PO-4 through S34-PO-6 in the PO decision register` (S34-PO-4 through S34-PO-6 and PD-S34-NEW-01) and `S32-PO-8 Q6 in the PO decision register` (S32-PO-8 Q6). Intake-row source: `the approved intake review fixture`.
 
 - **S34-PO-4 (S34-01=B):** N07.meal_count English question: `How many meals would you like to eat per day?`; choices: `2 meals`, `3 meals`, `4 meals`, `5 meals`. Arabic remains unchanged.
 - **S34-PO-2=A:** `correction_note` has the existing text bound of 1,000 Unicode code points and 4 KiB UTF-8; reject before RPC and enforce in a new forward migration.

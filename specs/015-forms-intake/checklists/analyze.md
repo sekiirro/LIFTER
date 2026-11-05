@@ -76,7 +76,7 @@
 This review follows the S34-PO-4..6 and PD-S34-NEW-01 clarifications added to `spec.md`, the S34 task registrations in `tasks.md`, and the plan extension. It was refreshed at 2026-11-05 03:03 Africa/Cairo after adding T102 and the no-ff restack constraints. No task is marked complete by this analysis.
 
 - [x] `spec.md` retains numbered FRs and measurable SCs; SC-023..SC-026 and Given/When/Then cases cover correction-note bounds, relationship-ended client-late alerts, required English draft title, and exact approved EN copy.
-- [x] Clarifications cite `C:/Users/NEW LAP/.lifter/briefs/s34-po-decisions-verbatim.md`, `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md`, and the approved intake review source. **No open ambiguities remain for S34-PO-2 through S34-PO-6 or PD-S34-NEW-01.** S34-PO-4 includes both the product decisions and the approved no-destination-guard merge sequence.
+- [x] Clarifications cite `S34-PO-4 through S34-PO-6 in the PO decision register`, `S32-PO-8 Q6 in the PO decision register`, and the approved intake review source. **No open ambiguities remain for S34-PO-2 through S34-PO-6 or PD-S34-NEW-01.** S34-PO-4 includes both the product decisions and the approved no-destination-guard merge sequence.
 - [x] `plan.md` covers T096–T102, the no-ff restack, sole allowed historical migration edit, forward-only migrations, Stack D, RED-first tests, and the no-copy-invention gate for T086.
 - [x] `tasks.md` assigns T086 and T096–T102 to existing FRs; all remain unchecked until evidence passes on the final stacked heads.
 - [x] This Analyze review is dated after the spec, plan, and task changes above.
@@ -177,3 +177,8 @@ This refresh follows the spec's acceptance scenario update for all three N11 sli
 - Critical findings: 0. High findings: 0.
 
 Result: PASS for the approved N11 label translation scope.
+
+
+## S34 review remediation refresh — 2026-11-05
+
+After resolving review findings, the PO citations in spec.md and plan.md use stable decision IDs instead of machine-local paths. T012 restores direct-RPC snapshot membership for draft answer keys in a forward migration; the 220-entry payload mutant now uses the 60 IDs present in its immutable snapshot, and the byte-boundary mutant uses an in-snapshot question without a character limit. **CRITICAL: 0. HIGH: 0. No open ambiguities for these review fixes.**

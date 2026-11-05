@@ -1,4 +1,4 @@
-import { randomUUID } from 'node:crypto';
+﻿import { randomUUID } from 'node:crypto';
 import { afterAll, expect, it } from 'vitest';
 import { sql } from './harness';
 import {
@@ -113,7 +113,7 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
           pattern:
             /octet_length\(e\.value #>> '\{\}'\) > 4096/,
           expected: 'answer_too_long',
-          values: { q61: 'é'.repeat(2049) },
+          values: { q2: 'é'.repeat(2049) },
         },
         {
           name: 'per-question character count',
