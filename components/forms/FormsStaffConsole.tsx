@@ -64,6 +64,20 @@ export function FormsStaffConsole({
   const forms = snapshot?.forms ?? [];
   const activeForm = form ?? null;
   const canManage = canManageWorkspaceForms(role);
+  const fallbackError = messages['states.error.description'];
+
+  function actionError(status: string) {
+    if (!demo && ['forbidden', 'missing', 'unavailable'].includes(status))
+      return fallbackError;
+    return (
+      messages[`forms.staffResult.${status}` as keyof typeof messages] ??
+      fallbackError
+    );
+  }
+
+  function thrownActionError() {
+    return demo ? messages['forms.staffResult.missing'] : fallbackError;
+  }
 
   useEffect(() => {
     let active = true;
@@ -112,7 +126,7 @@ export function FormsStaffConsole({
     success: string,
   ) {
     if (result.status !== 'ok') {
-      setIssue(messages[`forms.staffResult.${result.status}`]);
+      setIssue(actionError(result.status));
       setStatusMessage('');
       return null;
     }
@@ -139,7 +153,7 @@ export function FormsStaffConsole({
       const result = await adapter.saveDraft(role, form);
       acceptResult(result, messages['forms.staffSaved']);
     } catch {
-      setIssue(messages['forms.staffResult.missing']);
+      setIssue(thrownActionError());
       setStatusMessage('');
     } finally {
       setBusy(false);
@@ -159,7 +173,7 @@ export function FormsStaffConsole({
       const published = await adapter.publish(role, saved.form.id);
       acceptResult(published, messages['forms.staffPublished']);
     } catch {
-      setIssue(messages['forms.staffResult.missing']);
+      setIssue(thrownActionError());
       setStatusMessage('');
     } finally {
       setBusy(false);
@@ -176,7 +190,7 @@ export function FormsStaffConsole({
         messages['forms.staffRetired'],
       );
     } catch {
-      setIssue(messages['forms.staffResult.missing']);
+      setIssue(thrownActionError());
       setStatusMessage('');
     } finally {
       setBusy(false);
@@ -191,7 +205,7 @@ export function FormsStaffConsole({
       const copied = acceptResult(result, messages['forms.staffCopied']);
       if (copied) setView('builder');
     } catch {
-      setIssue(messages['forms.staffResult.missing']);
+      setIssue(thrownActionError());
       setStatusMessage('');
     } finally {
       setBusy(false);
@@ -206,7 +220,7 @@ export function FormsStaffConsole({
       if (result.status !== 'ok') {
         const messageStatus =
           result.status === 'unavailable' ? 'missing' : result.status;
-        setIssue(messages[`forms.staffResult.${messageStatus}`]);
+        setIssue(actionError(messageStatus));
         setStatusMessage('');
       } else {
         const selectedForm = snapshot?.forms.find((item) => item.id === formId);
@@ -223,7 +237,7 @@ export function FormsStaffConsole({
         setStatusMessage(messages['forms.staffSaved']);
       }
     } catch {
-      setIssue(messages['forms.staffResult.missing']);
+      setIssue(thrownActionError());
       setStatusMessage('');
     } finally {
       setBusy(false);
@@ -247,7 +261,9 @@ export function FormsStaffConsole({
     return (
       <main className={styles.main} aria-busy="true">
         <h1>{messages['forms.staffTitle']}</h1>
-        <p role="status">{messages['forms.staffLoading']}</p>
+        <p role="status">
+          {demo ? messages['forms.staffLoading'] : messages['forms.loading']}
+        </p>
       </main>
     );
   }
@@ -338,7 +354,7 @@ export function FormsStaffConsole({
 
       {loadFailed ? (
         <p className={styles.error} role="alert">
-          {messages['forms.staffLoadFailed']}
+          {demo ? messages['forms.staffLoadFailed'] : fallbackError}
         </p>
       ) : (
         <>

@@ -1,7 +1,10 @@
 import { createElement } from 'react';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { describe, expect, it } from 'vitest';
+import { describe, expect, it, vi } from 'vitest';
+const mockRouter = vi.hoisted(() => ({ push: vi.fn() }));
+vi.mock('next/navigation', () => ({ useRouter: () => mockRouter }));
 import { FormBuilder } from '../../components/forms/FormBuilder';
+import { FormsStaffConsole } from '../../components/forms/FormsStaffConsole';
 import { StaffSlaAlerts } from '../../components/forms/StaffSlaAlerts';
 import { getMessages } from '../../lib/i18n';
 import { createMockFormsStaffAdapter } from '../../lib/forms/mock-staff-adapter';
@@ -92,6 +95,20 @@ describe('F15 staff preview policy', () => {
 });
 
 describe('staff builder and assignment views', () => {
+  it('uses generic production loading copy outside the preview surface', () => {
+    const messages = getMessages('en');
+    const html = renderToStaticMarkup(
+      createElement(FormsStaffConsole, {
+        locale: 'en',
+        adapter: createMockFormsStaffAdapter(),
+        brandSource: { resolvePublishedColor: async () => null },
+        demo: false,
+      }),
+    );
+    expect(html).toContain(messages['forms.loading']);
+    expect(html).not.toContain(messages['forms.staffLoading']);
+  });
+
   it('keeps the in-memory adapter behind the interface and guards role, bounds, and lifecycle', async () => {
     const adapter = createMockFormsStaffAdapter();
     const form = {
@@ -113,6 +130,16 @@ describe('staff builder and assignment views', () => {
       revision: 0,
     };
     expect((await adapter.saveDraft('sales', form)).status).toBe('forbidden');
+    for (const title of ['', ' \t\n']) {
+      expect(
+        (
+          await adapter.saveDraft('trainer', {
+            ...form,
+            title: { en: title, ar: 'عنوان عربي' },
+          })
+        ).status,
+      ).toBe('invalid');
+    }
     expect(
       (await adapter.saveDraft('trainer', { ...form, deadlineDays: 15 }))
         .status,
