@@ -2,6 +2,23 @@ import { expect, it, vi } from 'vitest';
 import { signupResult } from '../../lib/client-accounts/results';
 import { parseOpenResult } from '../../lib/registration-links/open';
 import { getMessages } from '../../lib/i18n';
+
+it('uses the approved EN and AR username validation copy byte-for-byte', () => {
+  const en = getMessages('en');
+  const ar = getMessages('ar');
+  expect(en['clientSignup.usernameUnavailable']).toBe(
+    'This username is unavailable. Choose another.',
+  );
+  expect(ar['clientSignup.usernameUnavailable']).toBe(
+    'اسم المستخدم ده غير متاح. اختار اسم تاني.',
+  );
+  expect(en['clientSignup.usernameFormatError']).toBe(
+    'Use 3–30 characters: English letters, numbers, periods, or underscores.',
+  );
+  expect(ar['clientSignup.usernameFormatError']).toBe(
+    'استخدم من 3 لـ30 حرف: حروف إنجليزي أو أرقام أو نقطة أو شرطة سفلية.',
+  );
+});
 import { signupFields } from '../../lib/client-accounts/validation';
 
 vi.mock('server-only', () => ({}));

@@ -181,3 +181,34 @@ This round follows the final r21 task-status and traceability edits. It records 
 - Findings count: 0 CRITICAL, 0 HIGH, 3 MEDIUM (Q9 remediation and constraint deferral; Q10 Arabic draft approval; Stack B migration-history mismatch).
 
 **Verdict:** PASS for current approved code/docs scope. T060 verified; T058 and T059 remain open pending their named PO decisions. No migration or Stack B repair is part of this work.
+
+## Round 12 — S34 r22 approved copy and existing-account deferral (2026-11-05)
+
+### Entry gate
+
+- PASS — `spec.md` has numbered FRs (FR-028), measurable SC-023, and Given/When/Then scenarios 7–9 for username validation and errors.
+- PASS — `spec.md` Clarifications cites S34-PO-1 H1=A/H2=A and explicitly states no open behavior ambiguity remains. The verbatim decisions are recorded in the F14 spec decision register.
+- PASS — `plan.md` and `tasks.md` cover H1/H2 with FR-tagged T058/T059. T058 remains open by decision; no constraint is added.
+- PASS — this Analyze round follows the spec/plan/tasks edits and records 0 CRITICAL / 0 HIGH.
+
+### Findings
+
+| ID | Severity | Finding | Disposition |
+|---|---|---|---|
+| R12-A1 | MEDIUM | Stack B has 21 invalid-character synthetic usernames and migration-history drift (64/113); signup E2E that requires unapplied `20261107032001` is environment-drift blocked. | Keep T058 open under H2=A; no data/schema/history changes. Provide a read-only convergence proposal. |
+| R12-A2 | MEDIUM | Existing review thread `zuDS8` reports a stale local invalid-input alert after identity errors clear. | RED-first fix in this authorized existing PR scope. |
+| R12-A3 | MEDIUM | Existing review thread `zuDTL` reports an extra FR-008 traceability cell. | Fix the table row to five cells; preserve existing status. |
+| R12-A4 | MEDIUM | Existing review thread `zuVlm` reports dark error token leakage to light-OS Follow Device. | RED-first fix and rendered theme checks; no new tokens. |
+
+**Coverage:** S34-PO-1 H1/A specifies exact bilingual strings; H2/A defers existing-account enforcement without changing new-signup validation. All touched FRs remain mapped to T058/T059. No product decision or design gap is introduced. **Findings count:** 0 CRITICAL, 0 HIGH, 4 MEDIUM. **Verdict:** PASS for the in-scope existing-PR work and the required H1/H2 spec clarification.
+## Round 13 — S34 r22 implementation revalidation (2026-11-05)
+
+This round follows the final copy, H2 deferral, and FR-008 traceability edits. It revalidates the in-scope CodeRabbit fixes before acceptance.
+
+- Entry gate: PASS. FR-028, SC-023 and scenarios 7–9 remain numbered/measurable and aligned with S34-PO-1 H1=A/H2=A. Clarifications explicitly state no open behavior ambiguity. Plan/tasks retain FR-tagged T058/T059. This analysis follows the latest scope text and plan edits.
+- Behavior/security: exact approved Arabic strings use Western digits and the same unavailable message remains shared by taken/reserved. H2 continues to defer existing-account validation and any DB constraint; no data/schema/history change. `zuDS8` affects only the initial local invalid result; no username availability check was added. `zuVlm` uses existing semantic tokens under explicit Dark or OS-dark Follow Device.
+- Evidence: targeted units pass 12/12; Playwright screenshot matrix and Follow Device check pass 2/2 on Stack B with axe 0 across 8 captures. RED failures were observed before both code fixes.
+- Docs: FR-008 traceability row now has five cells; no `MD056` table-column-count finding remains for that row. The full historical traceability file has pre-existing Markdown style/line-length findings unrelated to this edit; no broad reformat was performed.
+- Design: no new token, color, spacing, font, component, motion, effect or dependency. No design gap in the changed behavior.
+
+**Findings count:** 0 CRITICAL, 0 HIGH, 4 MEDIUM (Stack B drift/H2 remediation and the three open review threads until pushed/replied). **Verdict:** PASS for the in-scope existing-PR fixes. T058 remains open; T059/T060 close only after tests pass on the committed head with evidence.
