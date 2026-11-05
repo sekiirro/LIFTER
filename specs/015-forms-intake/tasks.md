@@ -49,7 +49,7 @@ These corrections are within the previously approved F15 scope. They do not add 
 - [ ] T083 [FR-017/019/024/025] Retry only approved transient Telegram preparation failures using the existing allow-listed job error contract; prove safe dead-letter output with synthetic fault data and a raw-error mutation.
 - [ ] T084 [FR-024/025/026] Replace obsolete quickstart integration commands and refresh stale T012 task evidence with current file/test references; do not change scope or decision records.
 - [ ] T085 [FR-002/003/026/036/037] Restore default-onboarding regression coverage and establish the R3 draft mutation baseline before mutation-specific assertions; tests must prove existing behavior without weakening assertions.
-- [ ] T086 [FR-004/006/007] PO decision required before changing the persisted display-name fallback for a draft with an empty English title; no fallback behavior is authorized yet.
+- [ ] T086 [FR-004/006/007] Under S34-PO-5=B, require a nonblank English draft title (`forms.name`) and reject Arabic-only drafts using an existing approved message key; if no existing key fits, stop and record PO-DECISION-NEEDED.
 - [ ] T087 [FR-008/013] Return the existing non-retryable submitted/business status when a draft save races with or follows submission; do not retry a permanent state conflict as a transient outage.
 - [ ] T088 [FR-039] Run Terms policy fixture inserts and dependent assertions in the same rollback-scoped transaction so append-only test rows cannot contaminate later current-policy lookups.
 - [ ] T089 [FR-026/036/037] Replace the synthetic PO fixture's developer-local source path with a stable decision identifier; add a mutation check that rejects absolute machine-local paths.
@@ -59,6 +59,10 @@ These corrections are within the previously approved F15 scope. They do not add 
 - [ ] T093 [FR-004/006/026/036/037] Render dynamic derived meal labels in FormPreview through the existing Bidi/template path for AR-RTL and EN-LTR; add exact interpolation and direction tests without changing copy or styling.
 - [ ] T094 [FR-004/006/007] Remap conditional and derived-option source question references when copying a form; prove valid copied references and unchanged source with synthetic fixtures.
 - [ ] T095 [FR-026/036/037] Capture the real T03/N07 AR-RTL/EN-LTR × light/dark matrix at 390px, 1024px, and 1440px and make `INDEX.md` list exactly the captures present; review against DESIGN.md with axe evidence.
+- [ ] T096 [FR-026/036/037] Apply S34-PO-1/6 exact English intake approvals, including N07.meal_count, the T08 system prompt, N11.label.0, all remaining approved pending English rows, and N07 no-fixed-time; update spec/fixtures/approved-copy fixtures and assert exact changed English strings.
+- [ ] T097 [FR-008/013] Enforce S34-PO-2 correction_note bounds of 1,000 Unicode code points and 4 KiB UTF-8 in the route before RPC and in a new forward migration; prove boundary and over-bound cases.
+- [ ] T098 [FR-012/017/018/024] Under S34-PO-3, stop/cancel client-late evaluation and remove its related alert rows at Closure/Refund/Deactivation, including ended-relationship purge scope; add RED-first lifecycle tests and a new forward migration.
+- [ ] T100 [FR-007/008] Apply the one-time S34-PO-6=A edit only to `20261108010200_f15_reject_autosave_after_submission.sql`: use CREATE OR REPLACE FUNCTION and add the per-question max_chars check; prove clean Stack D replay after reset.
 
 ## Phase 0: Stack and shared-contract prerequisites
 

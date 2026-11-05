@@ -68,3 +68,22 @@
 **S34 T090 scope and evidence refresh:** 2026-11-05 01:49 Africa/Cairo, after narrowing T090 in `plan.md` and `tasks.md` to the tested correction-history GET route. T082 remains the owner of correction-write revision validation. `tests/unit/forms-submission-routes.test.ts` passes 9/9; no product behavior or requirement changed. **CRITICAL findings: 0. HIGH findings: 0. No open ambiguities for this scope.**
 
 **Result: PASS for entry into T080–T095.** Re-run Analyze after any subsequent change to `spec.md`, `plan.md`, or `tasks.md` before acceptance.
+
+## S34 round-3 entry review — 2026-11-05 03:00 Africa/Cairo
+
+This review follows the S34-PO-1..6 and PD-S34-NEW-01 clarifications added to `spec.md`, the S34 task registrations in `tasks.md`, and the plan extension. It was refreshed at 2026-11-05 03:00 Africa/Cairo after the final Given/When/Then cases. No task is marked complete by this analysis.
+
+- [x] `spec.md` retains numbered FRs and measurable SCs; SC-023..SC-026 and Given/When/Then cases cover correction-note bounds, relationship-ended client-late alerts, required English draft title, and exact approved EN copy.
+- [x] Clarifications cite `C:/Users/NEW LAP/.lifter/briefs/s34-po-decisions-verbatim.md`, `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md`, and the approved intake review source. **No open ambiguities remain for S34-PO-1/2/3/5/6 or PD-S34-NEW-01.** S34-PO-4 is merge sequencing only.
+- [x] `plan.md` covers T096–T100, the sole allowed historical migration edit, forward-only migrations, Stack D, RED-first tests, and the no-copy-invention gate for T086.
+- [x] `tasks.md` assigns T086 and T096–T100 to their existing FRs; all remain unchecked until evidence passes on the final stacked heads.
+- [x] This Analyze review is dated after the spec, plan, and task changes above.
+
+### Scope and findings
+
+- T086 uses the S34-PO-5=B required-English-title decision. Existing approved key `forms.required` is present in `tests/fixtures/forms/approved-f15-copy.json` (`Required` / the existing Arabic value); reuse that key verbatim for inline title validation. No new copy or UI pattern is approved.
+- T096 changes only exact PO-approved intake strings and statuses; B06 stays S32-PO-5 as-is. T097 enforces both correction-note bounds before RPC and in a new migration. T098 cancels client-late alerts immediately after the approved lifecycle states and removes related rows within the existing purge lifecycle. T100 applies the one-time exact migration edit and verifies clean replay on Stack D.
+- The UI scope adds no component, layout, tokens, colors, fonts, motion, or dependency. Existing form error presentation, bilingual message system, and DESIGN.md govern. The Design System overrides advisory skill conflicts; any missing component or error-state pattern is a stop-and-report design gap.
+- **CRITICAL findings: 0. HIGH findings: 0.** No new ambiguity or design gap blocks entry; task-level evidence remains pending.
+
+**Result: PASS for T086 and T096–T100 entry.** Re-run Analyze after any later change to the spec, plan, or tasks before accepting implementation.
