@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 import { getMessages } from '../../lib/i18n';
+
+const origin = new URL(process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000').origin;
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
 test('Welcome preview remains directly renderable after reload', async ({
@@ -8,8 +10,8 @@ test('Welcome preview remains directly renderable after reload', async ({
 }) => {
   const messages = getMessages('en');
   await context.addCookies([
-    { name: LOCALE_COOKIE, value: 'en', domain: 'localhost', path: '/' },
-    { name: THEME_COOKIE, value: 'light', domain: 'localhost', path: '/' },
+    { name: LOCALE_COOKIE, value: 'en', url: origin },
+    { name: THEME_COOKIE, value: 'light', url: origin },
   ]);
   await page.goto('/showcase/forms/s14?welcome=1');
 
@@ -28,8 +30,8 @@ test('keyboard Terms preview keeps DRAFT acceptance disabled and marketing optio
 }) => {
   const messages = getMessages('en');
   await context.addCookies([
-    { name: LOCALE_COOKIE, value: 'en', domain: 'localhost', path: '/' },
-    { name: THEME_COOKIE, value: 'light', domain: 'localhost', path: '/' },
+    { name: LOCALE_COOKIE, value: 'en', url: origin },
+    { name: THEME_COOKIE, value: 'light', url: origin },
   ]);
   await page.goto('/showcase/forms/s14');
   await page.addStyleTag({

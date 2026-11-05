@@ -144,6 +144,7 @@ export function SignupForm({
     setTouchedIdentityFields((current) =>
       current.includes(field) ? current : [...current, field],
     );
+    identityFieldEditRef.current = true;
     validateTouchedField(field);
   }
 
@@ -155,11 +156,11 @@ export function SignupForm({
   }
 
   useEffect(() => {
-    if (!submitted) return;
     if (identityFieldEditRef.current) {
       identityFieldEditRef.current = false;
       return;
     }
+    if (!submitted) return;
     const firstIdentityError = (
       ['name', 'dateOfBirth', 'username', 'telegramUsername'] as const
     ).find(hasIdentityError);

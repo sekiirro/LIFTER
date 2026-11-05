@@ -114,6 +114,8 @@ test.describe.serial('T038 invitation signup UI', () => {
       exact: true,
     });
     await usernameField.fill('system');
+    await nameField.focus();
+    await nameField.blur();
     let focusedAfterErrorState = false;
     await page.exposeFunction(
       'captureSignupFocusState',

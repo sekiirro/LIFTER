@@ -5,6 +5,8 @@ import { join } from 'node:path';
 import { expect, test, type Page } from '@playwright/test';
 import { getMessages } from '../../lib/i18n';
 
+const origin = new URL(process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000').origin;
+
 const evidenceDir = join(tmpdir(), 'lifter-f15-s18-ui');
 const viewports = [
   { name: 'mobile', width: 390, height: 844 },
@@ -36,14 +38,12 @@ test('Terms, contextual health guidance and Welcome render accessibly across the
           {
             name: 'lifter_locale',
             value: locale,
-            domain: 'localhost',
-            path: '/',
+            url: origin,
           },
           {
             name: 'lifter_theme',
             value: theme,
-            domain: 'localhost',
-            path: '/',
+            url: origin,
           },
         ]);
         await page.setViewportSize(viewport);
@@ -144,8 +144,8 @@ test('Terms, contextual health guidance and Welcome render accessibly across the
 
   await context.clearCookies();
   await context.addCookies([
-    { name: 'lifter_locale', value: 'en', domain: 'localhost', path: '/' },
-    { name: 'lifter_theme', value: 'light', domain: 'localhost', path: '/' },
+    { name: 'lifter_locale', value: 'en', url: origin },
+    { name: 'lifter_theme', value: 'light', url: origin },
   ]);
   await page.setViewportSize({ width: 1440, height: 900 });
   await page.goto('/showcase/forms/s14');
@@ -189,10 +189,9 @@ test('Terms, contextual health guidance and Welcome render accessibly across the
         {
           name: 'lifter_locale',
           value: locale,
-          domain: 'localhost',
-          path: '/',
+          url: origin,
         },
-        { name: 'lifter_theme', value: theme, domain: 'localhost', path: '/' },
+        { name: 'lifter_theme', value: theme, url: origin },
       ]);
       await page.goto('/showcase/forms/s14?health=1&brand=sample');
       await page.addStyleTag({
