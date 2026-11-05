@@ -222,3 +222,24 @@ This round follows the T059/T060 checkbox and traceability evidence updates.
 - Stack B baseline and final StartedAt check remain read-only; migration drift keeps `20261107032001` dependent E2E classified as ENV-DRIFT. No assertions are changed.
 
 **Findings count:** 0 CRITICAL, 0 HIGH, 4 MEDIUM (Stack B migration drift, H2 remediation deferral, and the remaining open `zeI67` thread pending architect/reviewer agreement). **Verdict:** PASS for committed in-scope fixes. T058 remains open; no database constraint is introduced.
+## Round 15 — S34 r23 docs and signup-test review fixes (2026-11-05)
+
+This round follows the S34-PO-1 H1=A/H2=A clarification and planning/task additions for the authorized existing-PR review fixes T061/T062.
+
+### Entry revalidation
+
+- PASS — `spec.md` retains numbered FR-028, measurable SC-023, and Given/When/Then scenarios 7–9. The clarifications cite H1=A/H2=A and explicitly state no open behavior ambiguity.
+- PASS — `plan.md` and `tasks.md` now map the two fixes to FR-028 tasks T061/T062. H1=A is approved/shipped; H2=A defers existing-account validation and the database constraint, leaving T058 open.
+- PASS — no requirement or user behavior was added. These are consistency and regression-test maintenance changes within the existing PR scope.
+- PASS — no UI implementation changes are planned in this round. The separate `z3iuY` light error-border contrast finding remains a PO-gated design gap; the error border is unchanged.
+
+### Findings and disposition
+
+| ID | Severity | Finding | Disposition |
+|---|---|---|---|
+| R15-A1 | MEDIUM | Plan.md retained a database-constraint requirement and migration step that conflict with S34-PO-1 H2=A. | Corrected; no constraint or migration is planned in this round; T058 stays open. |
+| R15-A2 | MEDIUM | Spec.md retained the pre-H1 Arabic-copy-pending status. | Corrected to cite H1=A and the exact approved/shipped strings. |
+| R15-A3 | MEDIUM | Signup tests had stale fixed DOB values and/or omitted newly required identity values, so assertions did not isolate their intended fields. | T062 RED-first test fixture repair; preserve the intended invalid DOB/password assertions and use relative dates. |
+| R15-A4 | MEDIUM | `z3iuY` requests a light error-border contrast treatment not decided by the approved design system. | Leave the CSS unchanged, reply that a PO design decision is required, and keep the thread open. |
+
+**Findings count:** 0 CRITICAL, 0 HIGH, 4 MEDIUM. **Verdict:** PASS to continue the authorized docs and test fixes. No schema, database, user-facing copy, visual style, or new signup behavior changes are authorized by this round.

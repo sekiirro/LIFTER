@@ -101,10 +101,15 @@ S32-PO-9 Q9 requires an audit of existing usernames and a remediation proposal f
 
 - S32-PO-2 Q2 (`PRRT_kwDOVYgYQ86zbaS5`) makes the glass card a separate presentation layer that may overlap banner artwork. FR-008 restricts text baked into the image; it does not forbid the card layer over the artwork. No rendered change is planned for this clarification.
 - S32-PO-2 Q3 (`PRRT_kwDOVYgYQ86zbaS7`) requires identical username-specific unavailable status for taken and reserved names, mapped to `invalid_input` on Username and focused there. The database/RPC result must not disclose which condition occurred. Exact EN/AR strings are approved by S32-PO-9 Q10 and S34-PO-1 H1=A and are recorded in the F14 decision register and unit fixtures.
-- S32-PO-8 Q7 (`PRRT_kwDOVYgYQ86zeI67`) requires a 3–30 character ASCII username containing only `[A-Za-z0-9_.]`, case-insensitively. Enforce in the client schema, `validateSignupFields`, `client_signup`, and a database check constraint. Before adding the constraint, run a Stack B aggregate count only for violating rows; do not inspect row contents. A nonzero result blocks the constraint and requires PO decision on existing data.
+- S32-PO-8 Q7 (`PRRT_kwDOVYgYQ86zeI67`) requires new signups to use a 3–30 character ASCII username containing only `[A-Za-z0-9_.]`, case-insensitively. Enforce this approved new-signup rule in the client schema, `validateSignupFields`, and `client_signup`. S34-PO-1 H2=A defers database enforcement and validation against existing accounts pending safe remediation; do not add a database check constraint in this round. Keep T058 open. Before any separately approved constraint work, use a Stack B aggregate count only for violating rows; do not inspect row contents.
 - Tests first: unit RED for field validation/status mapping/focus, then GREEN; Stack B integration tests cover both username-specific unavailable cases and invalid formats. Use synthetic test accounts only.
-- Add one forward-only migration, after a version uniqueness scan across every origin ref. Do not edit the pushed `20261104001000` migration. Re-scan before commit and push.
+- No database-constraint migration is in this round under S34-PO-1 H2=A. T058 stays open pending safe remediation. Any future constraint migration requires a separate approved scope and version-uniqueness scan across origin refs; never edit pushed migrations `20261104001000` or `20261107032001`.
 - Frontend verification for the username error state covers AR/EN, light/dark, and 360/390/1024px with screenshots under the run temp directory. Existing approved typography, tokens, spacing and error-state component behavior remain authoritative; no visual layout change is in scope.
+
+### S34 r23 existing-PR review fixes
+
+- T061 aligns the historical signup clarification and plan text with S34-PO-1 H1=A/H2=A: the exact Arabic copy is approved and shipped; existing-account enforcement and its database constraint remain deferred with T058 open.
+- T062 maintains the already-approved FR-028 signup checks by using valid identity values except for the field each test intends to reject. Relative-date fixtures must retain their intended future/past condition. No production behavior, schema, or UI decision changes in this follow-up.
 
 ## Project Structure
 
