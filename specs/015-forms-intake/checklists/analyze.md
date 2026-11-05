@@ -96,3 +96,5 @@ This review follows the S34-PO-2..6 and PD-S34-NEW-01 clarifications added to `s
 
 
 **S34 T089 documentation portability refresh — 2026-11-05 06:39 Africa/Cairo:** Replaced developer-local S34 PO paths in the S34 plan/Analyze and current PO clarification citations with stable decision IDs and repository fixture references. `tests/unit/forms-s14-decision-fixture.test.ts` passes 6/6; it rejects a synthetic absolute path and checks the plan/Analyze PO citations. Corrected T086 analysis to reflect S34-PO-5=B and reuse the existing `forms.required` key. **CRITICAL: 0. HIGH: 0. No open ambiguities remain for authorized scope.**
+
+**S34 T089 acceptance evidence refresh — 2026-11-05 06:40 Africa/Cairo:** T089 is checked only after the focused regression passed on `0adb43a`; the traceability row maps FR-026/036/037 to that test and commit. The updated task completion record adds no requirement or ambiguity. **CRITICAL: 0. HIGH: 0.**
