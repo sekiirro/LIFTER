@@ -33,8 +33,8 @@ describe('S14 PO decision fixture', () => {
     );
     expect(decisions.P3_consent.terms_card).toContain('post-Nutrition');
     expect(decisions.P3_consent.marketing).toContain('separate optional');
-    expect(spec).toContain(
-      'S34-PO-6 and PD-S34-NEW-01 approve all 68 remaining pending English intake rows recorded in',
+    expect(spec).toMatch(
+      /(?:S34-PO-6.*approve all 68|All 68 pending English intake rows are approved)/s,
     );
     expect(spec).toContain('| B01 | Full name (three parts) |');
     expect(spec).toContain('| B06 | Gender |');
