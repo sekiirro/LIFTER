@@ -7,8 +7,24 @@ import {
   type FormQuestion,
 } from '../../lib/forms/validation';
 import { evaluateProgression } from '../../lib/forms/progression';
+import starter from '../../lib/forms/s14-starter-content.json';
 
 describe('S14 form definition types and privacy metadata', () => {
+  it('renders the S34-PO-4 approved English meal-count prompt and choices', () => {
+    const mealCount = starter.questions.find(
+      (question) => question.id === 'N07.meal_count',
+    );
+    expect(mealCount?.label.en).toBe(
+      'How many meals would you like to eat per day?',
+    );
+    expect(mealCount?.optionLabels?.map((option) => option.en)).toEqual([
+      '2 meals',
+      '3 meals',
+      '4 meals',
+      '5 meals',
+    ]);
+  });
+
   it('requires sex to be a personal-data single choice', () => {
     const sex: FormQuestion = {
       id: 'sex',
