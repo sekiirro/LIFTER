@@ -10,7 +10,7 @@ begin
     return label_text<>'' and octet_length(label_text)<=4096;
   end if;
   if jsonb_typeof(p_label) is distinct from 'object'
-    or jsonb_object_length(p_label)<>2
+    or (select count(*) from jsonb_object_keys(p_label))<>2
     or not (p_label ?& array['en','ar']) then return false; end if;
   foreach language_code in array array['en','ar'] loop
     if jsonb_typeof(p_label->language_code) is distinct from 'string' then return false; end if;

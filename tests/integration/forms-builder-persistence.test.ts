@@ -334,7 +334,7 @@ describe('T006/T009 persisted Builder writes', () => {
       'app_private.f15_valid_builder_definition(jsonb,boolean)',
       (body) =>
         body.replace(
-          "jsonb_typeof(question->'labels'->'middle') is distinct from 'string'",
+          "btrim(coalesce(question->'labels'->'middle'->>'en',question->'labels'->'middle'->>'ar',question->'labels'->>'middle',''))=''",
           'false',
         ),
       async () =>
