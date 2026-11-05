@@ -76,7 +76,7 @@ The PO reads all audit events. A WO reads only the events of workspaces they're 
 - **FR-005**: Read access: PO all; WO only for workspaces with an active membership; everyone else none. Deny by default.
 - **FR-006**: The feature MUST provide a reusable audit-attachment mechanism (a documented helper) for later tenant tables, plus a test pattern for it.
 - **FR-007**: Negative tests: foreign-workspace read, a direct insert, and update/delete/truncate per role.
-- **FR-008**: Any future audit-log read API, RPC or UI MUST be workspace-scoped and paginated with a stable order (occurred_at desc, id desc). Page size and API shape are specified with that future feature, not here. No new index on audit_events is permitted unless EXPLAIN evidence on representative synthetic volumes justifies it; the measurement method (query, data volume, plan) must be recorded with that decision. (PO S34-PO-1 / P37=C.)
+- **FR-008**: Any future audit-log read API, RPC or UI MUST be workspace-scoped and paginated with a stable order (occurred_at desc, id desc). Page size and API shape are specified with that future feature, not here. Workspace-scoping applies to non-Platform-Owner read paths; the Platform Owner retains the all-events read path defined by FR-005, including null-workspace platform events. No new index on audit_events is permitted unless EXPLAIN evidence on representative synthetic volumes justifies it; the measurement method (query, data volume, plan) must be recorded with that decision. (PO S34-PO-1 / P37=C.)
 
 ## Clarifications
 
@@ -88,13 +88,7 @@ PO source: S33-PO-4, “Fix stack drift, flaky tests, billing-related CI blocker
 
 PO source: S34-PO-1. PO decision (verbatim): "**P37=C:** Workspace-scoped pagination first; index only if performance evidence justifies it."
 
-Scope: any future audit-log read API/RPC/UI must be workspace-scoped and paginated with a stable order (occurred_at desc, id desc). Page size and API shape are specified with that future feature, not decided here. No new index unless EXPLAIN evidence on representative synthetic volumes justifies it; the measurement method must be recorded. No open ambiguities remain within this scope.
-
-### Session 2026-11-05 — S34-PO-1 (P37 close-out)
-
-PO source: S34-PO-1. PO decision (verbatim): "**P37=C:** Workspace-scoped pagination first; index only if performance evidence justifies it."
-
-Scope: any future audit-log read API/RPC/UI must be workspace-scoped and paginated with a stable order (occurred_at desc, id desc). Page size and API shape are specified with that future feature, not decided here. No new index unless EXPLAIN evidence on representative synthetic volumes justifies it; the measurement method must be recorded. No open ambiguities remain within this scope.
+Scope: any future audit-log read API/RPC/UI must be workspace-scoped and paginated with a stable order (occurred_at desc, id desc). Page size and API shape are specified with that future feature, not decided here. Workspace-scoping applies to non-Platform-Owner read paths; the Platform Owner retains the all-events read path defined by FR-005, including null-workspace platform events. No new index unless EXPLAIN evidence on representative synthetic volumes justifies it; the measurement method must be recorded. No open ambiguities remain within this scope.
 
 ## Success Criteria *(mandatory)*
 
