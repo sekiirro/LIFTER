@@ -74,7 +74,7 @@
 This review follows the S34-PO-2..6 and PD-S34-NEW-01 clarifications added to `spec.md`, the S34 task registrations in `tasks.md`, and the plan extension. It was refreshed at 2026-11-05 03:03 Africa/Cairo after adding T102 and the no-ff restack constraints. No task is marked complete by this analysis.
 
 - [x] `spec.md` retains numbered FRs and measurable SCs; SC-023..SC-026 and Given/When/Then cases cover correction-note bounds, relationship-ended client-late alerts, required English draft title, and exact approved EN copy.
-- [x] Clarifications cite `C:/Users/NEW LAP/.lifter/briefs/s34-po-decisions-verbatim.md`, `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md`, and the approved intake review source. **No open ambiguities remain for S34-PO-1/2/3/5/6 or PD-S34-NEW-01.** S34-PO-4 is merge sequencing only.
+- [x] Clarifications cite `C:/Users/NEW LAP/.lifter/briefs/s34-po-decisions-verbatim.md`, `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md`, and the approved intake review source. **No open ambiguities remain for S34-PO-2 through S34-PO-6 or PD-S34-NEW-01.** S34-PO-4 is merge sequencing only.
 - [x] `plan.md` covers T096–T102, the no-ff restack, sole allowed historical migration edit, forward-only migrations, Stack D, RED-first tests, and the no-copy-invention gate for T086.
 - [x] `tasks.md` assigns T086 and T096–T102 to existing FRs; all remain unchecked until evidence passes on the final stacked heads.
 - [x] This Analyze review is dated after the spec, plan, and task changes above.
@@ -91,3 +91,5 @@ This review follows the S34-PO-2..6 and PD-S34-NEW-01 clarifications added to `s
 **S34 T097 verification refresh:** 2026-11-05 04:16 Africa/Cairo; the correction bounds passed focused unit tests 15/15 and Stack D integration 2/2 on commit 1ed864e. No requirement text changed; Critical: 0; High: 0.
 
 **S34 T098 verification refresh:** 2026-11-05 04:21 Africa/Cairo; lifecycle tests passed 11/11 on commit 1b52aeb after clean Stack D replay; Critical: 0; High: 0.
+
+**S34 PO source-mapping refresh:** 2026-11-05 04:24 Africa/Cairo; S34-01=B is cited as S34-PO-4, which also records the no-destination-guard sequencing decision. Entry criteria remain PASS; Critical: 0; High: 0; no open ambiguity in approved S34 scope.
