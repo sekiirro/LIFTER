@@ -6,7 +6,7 @@ import { loadEnv } from './harness';
 export const guardedFunctions = [
   {
     identity: 'app_private.f15_valid_builder_definition(jsonb,boolean)',
-    migration: '20261107032000_f15_builder_n12_b06_selector.sql',
+    migration: '20261108010100_f15_builder_selector_null_safety.sql',
     name: 'app_private.f15_valid_builder_definition',
   },
   {
@@ -35,8 +35,13 @@ export const guardedFunctions = [
   {
     identity:
       'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)',
-    migration: '20261107004000_f15_alert_candidate_filter.sql',
+    migration: '20261108020100_f15_cancel_alerts_after_lifecycle_end.sql',
     name: 'app_private.evaluate_forms_alerts_core',
+  },
+  {
+    identity: 'app_private.cancel_f15_client_alerts(uuid,uuid)',
+    migration: '20261108020100_f15_cancel_alerts_after_lifecycle_end.sql',
+    name: 'app_private.cancel_f15_client_alerts',
   },
   {
     identity: 'app_private.f15_alert_schedule_immutable()',
