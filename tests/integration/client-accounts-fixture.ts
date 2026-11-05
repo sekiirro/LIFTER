@@ -318,14 +318,49 @@ export async function pendingHttpAccess(
     const tables =
       await db`select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relrowsecurity`;
     for (const table of tables) {
-      const result =
-        table.relname === 'audit_events'
-          ? await client
-              .from(table.relname)
+      if (table.relname === 'audit_events') {
+        const probes: Array<{ error: unknown; data?: unknown[] | null }> = [];
+        probes.push(
+          await client
+            .from('audit_events')
+            .select('*')
+            .eq('workspace_id', context.wsA.id)
+            .limit(5),
+        );
+        const bRows =
+          await db`select id from public.audit_events where workspace_id = ${context.wsB.id} limit 5`;
+        if (bRows.length > 0)
+          probes.push(
+            await client
+              .from('audit_events')
               .select('*')
-              .eq('workspace_id', context.wsA.id)
-              .limit(5)
-          : await client.from(table.relname).select('*');
+              .in(
+                'id',
+                bRows.map((row: any) => row.id as string),
+              )
+              .limit(5),
+          );
+        const pRows =
+          await db`select id from public.audit_events where workspace_id is null limit 5`;
+        if (pRows.length > 0)
+          probes.push(
+            await client
+              .from('audit_events')
+              .select('*')
+              .in(
+                'id',
+                pRows.map((row: any) => row.id as string),
+              )
+              .limit(5),
+          );
+        for (const result of probes)
+          assert.ok(
+            result.error !== null || result.data?.length === 0,
+            table.relname,
+          );
+        continue;
+      }
+      const result = await client.from(table.relname).select('*');
       assert.ok(
         result.error !== null || result.data?.length === 0,
         table.relname,
