@@ -243,3 +243,23 @@ This round follows the S34-PO-1 H1=A/H2=A clarification and planning/task additi
 | R15-A4 | MEDIUM | `z3iuY` requests a light error-border contrast treatment not decided by the approved design system. | Leave the CSS unchanged, reply that a PO design decision is required, and keep the thread open. |
 
 **Findings count:** 0 CRITICAL, 0 HIGH, 4 MEDIUM. **Verdict:** PASS to continue the authorized docs and test fixes. No schema, database, user-facing copy, visual style, or new signup behavior changes are authorized by this round.
+## Round 16 — S34 r23 task evidence and verification boundary (2026-11-05)
+
+This round follows the T061 completion evidence and T062 partial evidence recorded in `tasks.md` and the FR-028 row update in `traceability.md`.
+
+### Entry revalidation
+
+- PASS — numbered FR-028, measurable SC-023, and Hero acceptance scenarios 7–9 still cover the changed scope.
+- PASS — Clarifications cite S34-PO-1 H1=A/H2=A and state no open behavior ambiguity. `plan.md` defers the database constraint; T058 remains open.
+- PASS — FR-028 tasks T061/T062 are mapped in the plan and traceability. T061 is checked with current-head evidence. T062 remains unchecked because Stack B E2E verification is blocked by the explicit no-DB-mutation constraint.
+- PASS — no production UI, runtime behavior, schema, migration, or data changed. The requested z3iuY border treatment remains untouched pending PO design decision.
+
+### Findings and disposition
+
+| ID | Severity | Finding | Disposition |
+|---|---|---|---|
+| R16-A1 | MEDIUM | r23 corrected contradictory H1/H2 documentation. | T061 verified and checked. |
+| R16-A2 | MEDIUM | Signup E2E fixtures were corrected to isolate intended invalid fields and use relative dates. | Unit evidence passed 24/24. Stack B Playwright is not executed because the test harness `registrationFixture` / `packagesFixture` writes persistent synthetic rows and issues links; this conflicts with the explicit no-DB-mutation rule. Keep T062 open. |
+| R16-A3 | MEDIUM | Light error-border contrast treatment has no approved PO choice (`z3iuY`). | Reply that PO design decision is required; leave thread open and do not edit the border. |
+
+**Findings count:** 0 CRITICAL, 0 HIGH, 3 MEDIUM. **Verdict:** PASS for the documentation fix and unit-verified test changes. Stack B remained read-only; E2E verification stays open under T062.
