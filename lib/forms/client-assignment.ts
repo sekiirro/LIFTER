@@ -12,6 +12,7 @@ type LoadedAssignment = {
   initialAnswers: FormAnswerSet;
   initialRevision: number;
   initialState: 'ready' | 'submitted';
+  relationshipActive: boolean;
   history: readonly AnswerHistoryEntry[];
   profileValues: Readonly<Record<string, string>>;
 };
@@ -77,6 +78,8 @@ export async function loadClientAssignment(
     );
     if (contextError) return { status: 'unavailable' };
     if (!record(context)) return { status: 'not_found' };
+    if (typeof context.relationship_active !== 'boolean')
+      return { status: 'unavailable' };
     const snapshot = context.version_snapshot;
     const questions = record(snapshot)
       ? localizedQuestions(snapshot.questions)
@@ -144,6 +147,7 @@ export async function loadClientAssignment(
       initialAnswers,
       initialRevision: latest?.version ?? (draftData.revision as number),
       initialState: latest ? 'submitted' : 'ready',
+      relationshipActive: context.relationship_active,
       history: visibleHistory,
       profileValues: buildProfilePrefill(questions, signupProfile, new Date()),
     };

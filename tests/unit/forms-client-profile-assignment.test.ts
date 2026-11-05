@@ -23,6 +23,7 @@ beforeEach(() => {
       return {
         data: {
           workspace_id: 'workspace',
+          relationship_active: true,
           signup_profile: {
             full_name: 'Signup Full Name',
             date_of_birth: '2000-01-01',

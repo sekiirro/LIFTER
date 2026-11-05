@@ -12,6 +12,7 @@ import { loadClientAssignment } from '../../lib/forms/client-assignment';
 const assignmentId = '3f8e89d7-7c5b-42b0-976a-7ec70f0d71f8';
 const context = {
   workspace_id: 'workspace-id',
+  relationship_active: true,
   version_snapshot: {
     questions: [
       {
@@ -61,6 +62,7 @@ describe('T022 authorized client assignment adapter', () => {
       initialAnswers: { goal: 'strength' },
       initialRevision: 1,
       initialState: 'ready',
+      relationshipActive: true,
       history: [],
     });
     expect(mocks.createSessionClient).toHaveBeenCalledOnce();
@@ -74,6 +76,14 @@ describe('T022 authorized client assignment adapter', () => {
       p_workspace_id: 'workspace-id',
       p_assignment_id: assignmentId,
       p_view: 'history',
+    });
+  });
+
+  it('preserves the authoritative ended-relationship state for the client surface', async () => {
+    context.relationship_active = false;
+    expect(await loadClientAssignment(assignmentId)).toMatchObject({
+      status: 'loaded',
+      relationshipActive: false,
     });
   });
 

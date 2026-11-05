@@ -27,6 +27,7 @@ export function AuthorizedClientForm({
       initialRevision={assignment.initialRevision}
       initialState={assignment.initialState}
       history={assignment.history}
+      relationshipActive={assignment.relationshipActive}
     />
   );
 }
