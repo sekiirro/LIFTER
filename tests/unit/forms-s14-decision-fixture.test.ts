@@ -19,6 +19,14 @@ const spec = readFileSync(
   resolve(root, 'specs/015-forms-intake/spec.md'),
   'utf8',
 );
+const plan = readFileSync(
+  resolve(root, 'specs/015-forms-intake/plan.md'),
+  'utf8',
+);
+const analyze = readFileSync(
+  resolve(root, 'specs/015-forms-intake/checklists/analyze.md'),
+  'utf8',
+);
 
 describe('S14 PO decision fixture', () => {
   it('keeps draft copy and only unapproved EN intake rows pending PO review', () => {
@@ -84,6 +92,20 @@ describe('S14 PO decision fixture', () => {
       '4 وجبات',
       '5 وجبات',
     ]);
+  });
+
+  it('keeps plan PO citations portable and catches absolute-path regressions', () => {
+    const hasMachineLocalPath = (value: string) =>
+      /(?:[A-Za-z]:[\\/]|\\\\[^\\]+\\[^\\]+)/u.test(value);
+    const hasLifterBriefPath = (value: string) =>
+      /[A-Za-z]:[\\/]Users[\\/]NEW LAP[\\/]\.lifter[\\/]briefs[\\/]/u.test(
+        value,
+      );
+    expect(hasLifterBriefPath(plan)).toBe(false);
+    expect(hasLifterBriefPath(analyze)).toBe(false);
+    expect(hasMachineLocalPath('C:/Users/Example/.lifter/source.md')).toBe(
+      true,
+    );
   });
 
   it('treats prior S14 questions as optional editable starter material', () => {

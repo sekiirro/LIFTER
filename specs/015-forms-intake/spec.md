@@ -308,7 +308,7 @@ S32-PO-5 approves B01, B06, T03, T08, N07, N08, N11 and N12 items listed in thei
 
 ## Clarifications — S33-PO-3
 
-PO record: `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md`, S33-PO-3, 2026-11-04. Verbatim:
+PO record: S33-PO-3 in the PO decision register, 2026-11-04. Verbatim:
 
 > "T03: Digits only: `2`, `3`, `4`, `5`, `6`."
 >
@@ -496,7 +496,7 @@ Unconditional invariants can be verified with synthetic fixtures now. Threshold/
 
 ## Clarifications — S34 (2026-11-05)
 
-Binding PO sources: `C:/Users/NEW LAP/.lifter/briefs/s34-po-decisions-verbatim.md` (S34-PO-4 through S34-PO-6 and PD-S34-NEW-01) and `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md` (S32-PO-8 Q6). Intake-row source: `C:/Users/NEW LAP/.lifter/runs/s34-pimm-intake-pilot/intake-en-review.md`.
+Binding PO sources: S34-PO-4 through S34-PO-6 and PD-S34-NEW-01 in the PO decision register, plus S32-PO-8 Q6 in that register. Intake-row source is recorded in the repository approved-copy fixture.
 
 - **S34-PO-4 (S34-01=B):** N07.meal_count English question: `How many meals would you like to eat per day?`; choices: `2 meals`, `3 meals`, `4 meals`, `5 meals`. Arabic remains unchanged.
 - **S34-PO-2=A:** `correction_note` has the existing text bound of 1,000 Unicode code points and 4 KiB UTF-8; reject before RPC and enforce in a new forward migration.
