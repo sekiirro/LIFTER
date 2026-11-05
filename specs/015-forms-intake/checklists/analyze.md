@@ -61,11 +61,11 @@
 ### S34 scope analysis
 
 - T080–T083 repair existing signup, validation, correction, and alert contracts; T080 applies the existing NFKC/lowercase rule before its S32-PO-7 character-set check and rejects whitespace/Unicode format characters. Any SQL change is forward-only and Stack D is the only permitted database stack.
-- T084–T085 and T087–T089 repair documentation, test isolation, test baselines, submitted-draft status handling, and a synthetic fixture source reference. T086 remains blocked pending PO selection of persisted title fallback; this analysis does not infer a default.
+- T084–T085 and T087–T089 repair documentation, test isolation, test baselines, submitted-draft status handling, and portable S34 PO source citations. T086 was blocked at round-2 entry; S34-PO-5=B resolves the English-title requirement and existing approved `forms.required` key.
 - T090 covers correction-history GET authorization and current-snapshot filtering only; T082 separately covers correction-write revision validation. T091–T094 repair existing signup error, history-label, Bidi rendering, and copy-reference behavior. They add no new styling, component, copy, permission, or workflow decision.
 - T095 corrects rendered evidence for existing copy. It captures the actual required viewports and records exactly those files; no interface layout or visual treatment is changed.
 - No design-system gap is required. Existing tokens, typography, direction handling, components, and approved copy remain authoritative. No dependency, workflow, or CI change is in scope.
-- **CRITICAL findings: 0. HIGH findings: 0.** PO-only product decisions remain excluded; T086 is blocked while independent tasks remain eligible.
+- **CRITICAL findings: 0. HIGH findings: 0.** S34-PO-5 resolves T086; remaining PO-only product decisions remain excluded while independent tasks remain eligible.
 
 **S34 T090 scope and evidence refresh:** 2026-11-05 01:49 Africa/Cairo, after narrowing T090 in `plan.md` and `tasks.md` to the tested correction-history GET route. T082 remains the owner of correction-write revision validation. `tests/unit/forms-submission-routes.test.ts` passes 9/9; no product behavior or requirement changed. **CRITICAL findings: 0. HIGH findings: 0. No open ambiguities for this scope.**
 
@@ -77,8 +77,8 @@ This review follows the S34-PO-4..6 and PD-S34-NEW-01 clarifications added to `s
 
 - [x] `spec.md` retains numbered FRs and measurable SCs; SC-023..SC-026 and Given/When/Then cases cover correction-note bounds, relationship-ended client-late alerts, required English draft title, and exact approved EN copy.
 - [x] Clarifications cite `S34-PO-4 through S34-PO-6 in the PO decision register`, `S32-PO-8 Q6 in the PO decision register`, and the approved intake review source. **No open ambiguities remain for S34-PO-2 through S34-PO-6 or PD-S34-NEW-01.** S34-PO-4 includes both the product decisions and the approved no-destination-guard merge sequence.
-- [x] `plan.md` covers T096–T102, the no-ff restack, sole allowed historical migration edit, forward-only migrations, Stack D, RED-first tests, and the no-copy-invention gate for T086.
-- [x] `tasks.md` assigns T086 and T096–T102 to existing FRs; all remain unchecked until evidence passes on the final stacked heads.
+- [x] `plan.md` covers T096–T102, the no-ff restack, sole allowed historical migration edit, forward-only migrations, Stack D, RED-first tests, and the approved existing message key for T086.
+- [x] `tasks.md` assigns T086 and T096–T102 to existing FRs; completion is gated on test evidence for the current head.
 - [x] This Analyze review is dated after the spec, plan, and task changes above.
 
 ### Scope and findings
@@ -188,6 +188,8 @@ After resolving review findings, the PO citations in spec.md and plan.md use sta
 
 
 **S34 verification refresh — 2026-11-05:** T086, T091, T095–T098, T100, T102–T107 have current-head passing evidence recorded in traceability.md; task checkboxes are now marked complete only for those verified scopes. T099/T101 are not registered in this plan. **CRITICAL: 0. HIGH: 0.**
+
+**S34 T089 portability refresh — 2026-11-05 06:40 Africa/Cairo:** The plan and Analyze artifacts cite PO decisions by stable register IDs, and the regression checks those citations plus a synthetic absolute path. The focused fixture test passes 6/6 on commit `0adb43a`; T086 is resolved by S34-PO-5=B using `forms.required`. **CRITICAL: 0. HIGH: 0. No open ambiguities remain for authorized scope.**
 
 
 ## S34 final specification and evidence refresh — 2026-11-05 06:08 Africa/Cairo
