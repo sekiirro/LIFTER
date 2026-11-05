@@ -158,18 +158,16 @@ An implementer working against multiple fetched remote branches can detect, befo
 - The approved CI scope for this specification is: push events only on `main`; `pull_request` CI per pull request head; PR-only concurrency that cancels superseded runs while unique main-push groups prevent queued runs from being replaced; remove the unused Playwright browser installation from `validate` only when no validate step uses a browser; retain `validate`, `integration`, and separate required `storage` jobs and all other steps/checks.
 - **No open ambiguities** remain for this CI optimization scope.
 
-## Assumptions
-
-- Architecture v3 fixes the stack: Next.js App Router, OpenNext Cloudflare adapter, Supabase CLI for local DB, GitHub Actions. This spec doesn't redesign it.
-- The Worker size limit comes from the official Cloudflare limits page (checked 2026-10-27: 64 MiB uncompressed, no compressed limit) and stays overridable via `WORKER_SIZE_LIMIT_KIB`.
-- Design system, i18n/RTL, auth, tenancy, schema, jobs and backups are separate P0 features.
-- The GitHub remote exists. CodeRabbit reviews are enabled separately once configured.
-
-## Clarifications
-
 ### Session 2026-11-04 (S32 — placement of the cross-branch migration-version guard)
 
 - Q (architect ruling S32-R3, answering S32-PO-DECISION-1): which feature owns the cross-branch migration-version guard — a new numbered spec, `001-project-scaffold-ci`, `016-exercise-food-catalogs`, or a PO gate waiver? → A: `001-project-scaffold-ci`, as a CI-baseline tooling amendment. Reason (S32-R3, verbatim rationale): the migration-timestamp checker already runs as the CI step "Validate migration timestamps" (CI baseline, FR-009 family); a new numbered spec would consume a roadmap feature number. Spec placement for repo tooling is technical governance, not a product decision.
 - PO source: S32-PO-3 (verbatim): "Rename F15 #44's conflicting migration via git mv, preserve F16 #43, verify DB state, repair Stack D history if needed, rerun gates, and prevent future duplicates." Only "prevent future duplicates" is in scope in this amendment; the #44 rename, DB-state verification, Stack D history repair and gate reruns are separate lanes and are not changed here. S32-PO-2 Q4 classifies this lane as low-risk tooling + tests.
 - Scope of this amendment: FR-020, SC-010, User Story 6, task T019, the opt-in `--all-remote-refs` mode, its unit tests, and this Clarifications entry. The default in-tree mode and the CI step "Validate migration timestamps" are unchanged. No existing 001 requirement (FR-001..FR-019, SC-001..SC-009) is modified.
 - **No open ambiguities.** The guard is detection-and-fail only; it does not rename migrations, does not alter CI behaviour, and consumes only refs the caller already fetched.
+
+## Assumptions
+
+- Architecture v3 fixes the stack: Next.js App Router, OpenNext Cloudflare adapter, Supabase CLI for local DB, GitHub Actions. This spec doesn't redesign it.
+- The Worker size limit comes from the official Cloudflare limits page (checked 2026-10-27: 64 MiB uncompressed, no compressed limit) and stays overridable via `WORKER_SIZE_LIMIT_KIB`.
+- Design system, i18n/RTL, auth, tenancy, schema, jobs and backups are separate P0 features.
+- The GitHub remote exists. CodeRabbit reviews are enabled separately once configured.
