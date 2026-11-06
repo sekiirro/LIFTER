@@ -6,10 +6,11 @@ import { join } from 'node:path';
 import { getMessages } from '../../lib/i18n';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
-const origin =
+const origin = new URL(
   process.env.PLAYWRIGHT_BASE_URL ??
-  process.env.APP_ORIGIN ??
-  'http://localhost:3000';
+    process.env.APP_ORIGIN ??
+    'http://localhost:3000',
+).origin;
 const screenshotDirectory = join(tmpdir(), 'lifter-f15-signup');
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,

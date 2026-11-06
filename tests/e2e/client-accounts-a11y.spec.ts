@@ -7,7 +7,9 @@ import { validateSignupIdentity } from '../../app/register/[token]/schema';
 import { join } from 'node:path';
 import { tmpdir } from 'node:os';
 
-const origin = 'http://localhost:3000';
+const origin = new URL(
+  process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+).origin;
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
