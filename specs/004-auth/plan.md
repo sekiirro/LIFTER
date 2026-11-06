@@ -60,7 +60,7 @@ Generation sequence (server action `generateRecoveryLink(targetUserId)`):
 
 ## NEEDS DECISION
 
-ND-F4-1..7, as listed in [spec.md](spec.md#needs-decision-owner-sub-decisions-not-invented-here). The interim behavior is deny or minimal in every case. ND-F4-3 (expiry) and ND-F4-4 (limits) are now decided (spec Clarifications; S31-PO-3 SK-004-04); ND-F4-6 is decided as clients only (S31-PO-2 SK-004-06). The limits are not yet configured to the decided values: task T031 (FR-010).
+ND-F4-1..7, as listed in [spec.md](spec.md#needs-decision-owner-sub-decisions-not-invented-here). The interim behavior is deny or minimal in every case. ND-F4-3 (expiry) and ND-F4-4 (limits) are now decided (spec Clarifications; S31-PO-3 SK-004-04); ND-F4-6 is decided as clients only (S31-PO-2 SK-004-06). The limits are not yet configured to the decided values: task T031 (FR-010). S35-PO-1 decided ND-F4-5=A (option a) and ND-F4-7 (staff email reset, specified in the ND-F4-7 Design section above, not built); ND-F4-3 session-lifetime remains an open security blocker.
 
 ## Project Structure
 
@@ -81,6 +81,44 @@ tests/integration/auth-recovery.test.ts (+ rls-catalog, matrix-parity updates)
 tests/e2e/auth.spec.ts
 .env.example, README.md (Auth section), .github/workflows/ci.yml (secret scan step)
 ```
+
+## ND-F4-7 Design (staff self-service email reset; specified, NOT built)
+
+Status: specification only. No code, migration, env or hosted Supabase Auth or SMTP change. The Sol Medium critique is PENDING (not invoked; invocation approval is not given in the architect notes). Implementation gate (all must pass before tasks T043 to T046 start): the PO answers PDN-F4-7-01 to PDN-F4-7-11 that block them; BLOCKED-COPY strings approved (PDN-F4-7-06); Analyze re-run after those answers; security review scheduled.
+
+Flow (requirements in spec.md FR-016 to FR-028):
+
+1. The request form lives on `/login` (no new public route, so the FR-005 allow-list does not change). It is a second server action beside `signIn`.
+2. Server action `requestStaffReset(email)` (proposed name) runs in this order, and the outcome is the same generic confirmation on every path (FR-018):
+   a. Format check. A malformed address is rejected before any work (FR-017).
+   b. Normalize the address and derive the hashed key (PDN-F4-7-04).
+   c. Rate limit, per target and global, in one advisory-locked transaction (Constitution IX). The check applies to unknown and non-staff addresses too (FR-024).
+   d. Eligibility, server-only: a staff identity with an eligible role (PDN-F4-7-02). Non-eligible addresses stop here with no send.
+   e. Delivery permission and the 2-per-hour cap (FR-019, PDN-F4-7-01). If not permitted, stop with no send.
+   f. Audit `staff_password_reset.requested` written before the send (fail closed, FR-025).
+   g. `resetPasswordForEmail(email, { redirectTo })`, using the anon-key server client only. `redirectTo` is built from `APP_ORIGIN` and `/auth/recovery` (FR-023). Any provider error is discarded and never returned.
+3. The email link is the existing `/auth/recovery?token_hash&type=recovery` flow: GET shows Continue only, POST verifies, then the set-password form appears (FR-022). The session window stays 15 minutes (FR-026). The page adds `Referrer-Policy: no-referrer`.
+4. On a successful set-password through a self-service link, a completion audit `staff_password_reset.completed` is written with ids only (FR-025). Audit rows are written only by database code (F5 FR-002), so this needs a database function with the same guard style as `recovery_link_record`. That means one forward migration, designed at implementation after the critique.
+5. Hosted configuration (redirect allow-list, `token_hash` email template, sender, provider rate limit, CAPTCHA) is out of scope and is gated by FR-020 and PDN-F4-7-11. Local `supabase/config.toml` already sets `otp_expiry = 3600` (FR-021). Local email is captured by Inbucket for tests only.
+
+Open technical questions for the architect and the security review (not PO decisions):
+
+- AT-1: audit-before-send (FR-025, fail closed) means a provider failure after the audit row leaves a `requested` row for an email that was not sent. Options: keep the row and mark the failure in a later row, or record the request only as accepted by the provider and accept that the send and the audit are not in one transaction. Decide with the security review.
+- AT-2: the timing parity in FR-018 needs the same work on every path, including a non-sending path for unknown and non-staff addresses. The tolerance and the test method are decided here and reviewed by security.
+- AT-3: whether a self-service request supersedes an earlier unused self-service link for the same account (ND-F4-3 replacement rule) is verified against the local provider in SC-010. The manual-link state is not shared, since staff targets are denied for manual links (SK-004-06).
+
+Constitution check for ND-F4-7:
+
+| Principle | Status |
+|---|---|
+| I Isolation | Eligibility is decided on the server. The generic response reveals no workspace or membership. Foreign-workspace negatives are not applicable (staff reset is platform-scoped); the client-account negative (FR-016, S5) is tested. |
+| III Least privilege | Staff only; clients get no email; the eligible roles are a PO decision (PDN-F4-7-02). |
+| IV Scope | PO S35-PO-1 decision; BRD line 130 and PRD-02 (docs/01 row) are the sources; D-07 sequencing is closed by the PO decision. Nothing outside the PO words is added without a PDN. |
+| VII Privacy | Tokens stay with the provider (hashed); no LIFTER-side secret; no email or token in logs or audit; audit of sensitive actions (FR-025). |
+| VIII UI | `/login` extension on Design System components; AR/EN; copy BLOCKED until approved (FR-027). |
+| IX Reliability | Rate limit in one advisory-locked transaction; audit before send, fail closed. |
+| Platform | No hosted change; local stack only for tests. |
+| Workflow | Sol Medium critique PENDING; security review required; implementation waits for Analyze and PO approval. |
 
 ## Complexity Tracking
 

@@ -77,6 +77,28 @@ Anonymous visitors can reach only the sign-in page, the recovery (set new passwo
 1. **Given** an anonymous visitor, **When** they request any non-public page, **Then** they are sent to sign-in and then returned to a same-site page only.
 2. **Given** a sign-in "return to" value pointing at another site, **When** sign-in completes, **Then** the user lands on the default signed-in page instead.
 
+### User Story 5 - Staff reset their own password by email (Priority: P1)
+
+A staff member who has forgotten their password requests a reset email from the sign-in page, without being signed in. The email contains a single-use link that opens the set-new-password step. Clients keep the manual-link flow of User Story 3. Built-in Supabase email is used only for permitted test addresses (at most 2 emails per hour, PO S35-PO-1). General rollout waits for external SMTP (FR-020).
+
+**Why this priority**: PO S35-PO-1 ("Implement staff email password recovery now"). BRD line 130 requires self-service email reset. Before this, staff had no self-service recovery path (ND-F4-6 architect note).
+
+**Independent Test**: As a permitted test staff account on the local stack, request a reset, open the link delivered to the local mail capture, set a password, sign out, and sign in with the new password. Repeat the request for an unknown, client and non-permitted address and confirm the responses are identical and that no email is sent.
+
+**Acceptance Scenarios**:
+
+1. **Given** a staff member on the sign-in page who is not signed in, **When** they request a reset for their staff email, **Then** they see the same confirmation as for any other address, and, if the address is permitted for test delivery and within the limits in FR-019 and FR-024, one email arrives with a single-use link.
+2. **Given** an unknown address, a client address or a staff address not permitted for test delivery, **When** a reset is requested, **Then** the confirmation and its response status are the same as in scenario 1, no email is sent to that address, and no provider error text is shown.
+3. **Given** a valid link in the reset email, **When** it is opened, **Then** the page shows only a "Continue" step (opening the link does not consume it), and after Continue the set-new-password form is shown.
+4. **Given** the new password meets the password rules, **When** it is set, **Then** the user is signed in, the old password no longer works, and exactly one `staff_password_reset.completed` audit event exists (FR-025).
+5. **Given** a link that was already used, is more than 60 minutes old, or was superseded by a newer self-service reset for the same account, **When** it is opened, **Then** the invalid-link state is shown and no session is created.
+6. **Given** a request exceeds the application-level rate limit for the target or the global cap, **When** it is made, **Then** no email is sent, the response is still the generic confirmation, and whether the refused request is audited follows PDN-F4-7-05 (not yet decided).
+7. **Given** the built-in limit of 2 emails per hour is already used, **When** another permitted staff request is made, **Then** no email is sent, the response is the generic confirmation, and the attempt is not reported as a delivery failure.
+8. **Given** a client identity, **When** it requests a reset, **Then** no email is sent, the response is the generic confirmation, and the client uses the manual-link flow of User Story 3.
+9. **Given** the external SMTP gate in FR-020 is not recorded as passed, **When** general rollout to staff outside the permitted test list is considered, **Then** rollout is refused.
+
+---
+
 ### Edge Cases
 
 - A recovery link opened in a different browser than the staff member's still works for the client, and only for that client's account.
@@ -107,6 +129,22 @@ Anonymous visitors can reach only the sign-in page, the recovery (set new passwo
 - **FR-014**: All sign-in and recovery pages MUST be available in Arabic (RTL, default) and English (LTR), keyboard accessible, with labeled inputs, clear errors and loading states, built on the Design System.
 - **FR-015**: Negative tests MUST cover: foreign-workspace generation, Sales and Trainer denial, anonymous access to protected routes, forged actor inputs, link reuse, expired and superseded links, rate-limit refusal, absence of the privileged credential in browser bundles, and absence of links/tokens in logs and audit details.
 
+ND-F4-7 (staff self-service email reset; S35-PO-1). Specified, not built. Status of every ND-F4-7 requirement: UNVERIFIED until implemented and executed (see traceability.md).
+
+- **FR-016** (scope): Staff MUST be able to request a password-reset email from the sign-in page without being signed in. Only staff identities receive that email; the eligible staff roles are PDN-F4-7-02. Client accounts MUST NOT receive a self-service reset email in this feature. Clients keep the manual-link flow (FR-006, FR-007, SK-004-06, ND-F4-6).
+- **FR-017** (request flow): The request form MUST be on the sign-in page, MUST NOT require a session, and MUST use a labelled email input (`autocomplete="email"`). A malformed address is rejected before submission with a validation message. Every syntactically valid address receives the response in FR-018.
+- **FR-018** (no account enumeration): For every syntactically valid address (staff, client, unknown or non-permitted), the server MUST return the same confirmation text, layout and result status. It MUST NOT expose provider errors (including "Email address not authorized"), delivery status, rate-limit status or any account role. The response timing MUST NOT reveal whether an account exists. The timing mechanism and its tolerance are an architect decision recorded in plan.md, subject to the security review.
+- **FR-019** (delivery scope): Delivery MUST use Supabase Auth's built-in email only, and only to addresses permitted for test delivery. It MUST NOT send more than 2 emails per hour (PO S35-PO-1 "2/hour"). When the provider refuses the address or the cap is reached, no email is sent and the response remains as in FR-018. The permitted-address list and its maintainer are PDN-F4-7-01.
+- **FR-020** (rollout gate): General rollout of self-service reset (any staff address outside the permitted test list, or any real-staff production use) MUST be blocked until an external SMTP provider is configured and validated and the PO approves that configuration (PO S35-PO-1: "External SMTP required before general rollout."). Hosted Supabase Auth and SMTP configuration is out of scope for this specification and needs separate explicit PO approval. The gate is recorded as a pre-production item in docs/13. The provider rate limit is reset from its default after custom SMTP is configured (Supabase documents a 30 messages/hour default with custom SMTP) and is set by PO approval.
+- **FR-021** (link lifecycle): A self-service reset link MUST be single-use, MUST expire 60 minutes after issue (ND-F4-3 link expiry, decided 2026-10-29; `supabase/config.toml` `otp_expiry = 3600`), and MUST be superseded by a newer self-service reset for the same account (ND-F4-3 replacement rule). LIFTER MUST NOT store the token or link in readable form (FR-012; Constitution VII). Whether the provider enforces single use and supersession for email links is UNVERIFIED until SC-010 is executed on the local stack.
+- **FR-022** (link handling): Opening the reset URL MUST NOT consume the token on GET (the existing FR-013 "Continue" step is reused). The recovery page MUST send `Referrer-Policy: no-referrer`, so the token is not leaked to third-party resources. The token MUST NOT appear in logs, audit details, error reports or analytics (FR-011).
+- **FR-023** (redirect integrity): The `redirectTo` for reset emails MUST be built on the server from the fixed path `/auth/recovery` and `APP_ORIGIN` only. No request value (form, query, header or `next`) may change it. The Supabase redirect allow-list MUST list only that URL; that configuration is hosted and gated by FR-020. A tampered `redirectTo` or `next` MUST be ignored or refused.
+- **FR-024** (rate limiting): Self-service requests MUST be rate-limited at the application layer per target and globally, so one requester cannot exhaust the shared provider quota. The per-target key MUST be a normalized, hashed email that is not stored or logged in readable form. The limit MUST apply to unknown and non-staff addresses too, so the limit cannot reveal existence. Values and keying are PDN-F4-7-03 and PDN-F4-7-04. A refused request sends no email.
+- **FR-025** (audit): Each self-service reset request accepted for delivery to an eligible staff account, and each successful password set through a self-service link, MUST produce exactly one append-only audit event in the same unit of work. Actions are namespaced: `staff_password_reset.requested` and `staff_password_reset.completed` (names proposed by the architect, following the `recovery_link.generated` pattern of F4 FR-009 and F5 FR-001). The actor is null for an anonymous request. Details MUST contain ids only (F5 FR-004): no email, token, link or password. If the audit record cannot be written, no email is sent (fail closed, as in F4 FR-009). Auditing of refused and unknown-address attempts is PDN-F4-7-05.
+- **FR-026** (session after reset): After a successful set-password through a self-service link, the user is signed in (FR-013). The recovery session window is 15 minutes (`RECOVERY_SESSION_MAX_AGE_SECONDS = 900`, ND-F4-3). Session-lifetime enforcement stays the open ND-F4-3 blocker and is not addressed here (see Security Notes).
+- **FR-027** (copy, language and accessibility): Every new string (request form, confirmation, rate-limited and unavailable states, reset email subject and body, staff invalid-link wording) MUST exist in Arabic (RTL, default) and English (LTR), keyboard accessible, with labels and loading states (FR-014). The exact strings are BLOCKED-COPY until the PO approves them (PDN-F4-7-06). No copy is invented in this specification.
+- **FR-028** (negative tests): Before implementation is accepted, tests MUST cover: no email for client, unknown and non-permitted addresses; response parity (enumeration); the delivery cap and the rate limits; GET not consuming the link; reuse, expiry and supersession; `redirectTo` tampering; no audit row and no send when audit fails; no link, email, token or provider text in logs, UI or browser bundles (extends FR-015 and SC-005).
+
 ### Key Entities
 
 - **Session**: a signed, server-verifiable proof of a signed-in identity, held by the browser.
@@ -123,6 +161,29 @@ Anonymous visitors can reach only the sign-in page, the recovery (set new passwo
 - **SC-005**: 0 occurrences of links, tokens, passwords or the privileged credential in browser bundles, server logs or audit details produced by tests.
 - **SC-006**: A used, expired or superseded link succeeds 0 times.
 - **SC-007**: A client given a link can set a new password and reach their signed-in area in under 2 minutes.
+- **SC-008** (ND-F4-7): Every syntactically valid self-service reset request (fixture client, unknown, non-permitted staff and permitted staff) returns the same confirmation text and status code, verified by tests that compare the responses (FR-018).
+- **SC-009** (ND-F4-7): 0 emails in tests to non-permitted addresses, and 0 emails beyond 2 per hour (FR-019, FR-024).
+- **SC-010** (ND-F4-7): A self-service link succeeds 0 times after its first use, after 60 minutes, or after a newer self-service reset for the same account, executed on the local Supabase stack (FR-021).
+- **SC-011** (ND-F4-7): General rollout stays blocked in docs/13 until external SMTP is validated and approved by the PO. 0 hosted Auth or SMTP changes are made without separate PO approval (FR-020).
+- **SC-012** (ND-F4-7): 0 occurrences of emails, links, tokens, provider error text or passwords in logs, UI responses, audit details or browser bundles produced by tests (FR-022, FR-025, FR-028; extends SC-005).
+- **SC-013** (ND-F4-7): A permitted test staff account completes request, email, new password and signed-in area. The time target is PDN-F4-7-09.
+
+## ND-F4-7 Security Notes (threat model; proposal, not verified)
+
+Implementation of ND-F4-7 needs a security review and the Sol Medium critique before any code is accepted. Every threat below maps to a requirement and a test; no status is VERIFIED.
+
+| # | Threat | Requirement | Test (planned, see tasks T034 to T041) |
+|---|---|---|---|
+| S1 | Account enumeration by response text, provider error ("Email address not authorized" reveals team membership), status, timing or rate-limit message | FR-018, FR-019, FR-024 | Response-parity unit and e2e tests (SC-008); provider-error mapping unit test; timing check per plan (tolerance undecided) |
+| S2 | Token leakage through logs, the Referer header, analytics, email scanners that GET the link, or browser bundles | FR-011, FR-022, FR-028 | GET does not consume the token; `Referrer-Policy` on the recovery page; log-scrub unit test; `scripts/check-client-secrets.mjs` (SC-012) |
+| S3 | Rate abuse and quota exhaustion: the built-in limit (2 per hour) is per project, so one requester can starve every other test address | FR-019, FR-024 | Delivery-cap test; global application cap test (SC-009). Residual risk: the provider cap itself can be exhausted. CAPTCHA (Supabase documents it as the strongest bot control) is a hosted configuration and is out of scope, pending PO approval (see PDN-F4-7-11). |
+| S4 | Open redirect through `redirectTo` or `next` in the reset link | FR-023 | Tampered `redirectTo` and `next` unit tests; redirect allow-list is hosted and gated (FR-020) |
+| S5 | A client receives a staff reset or a staff reset is used for a client | FR-016 | Negative tests for client identities (no email; generic response) |
+| S6 | A reset succeeds without an audit row, or an audit row contains PII | FR-025 | Fail-closed test (no send when the audit insert fails); audit-detail scrub test (ids only) |
+| S7 | Link reuse, expiry or supersession not enforced by the provider | FR-021 | SC-010 executed on the local stack. UNVERIFIED until run. If the provider does not enforce supersession, the task fails and is escalated, not worked around. |
+| S8 | Session after reset: a reset creates a normal Supabase session, and its lifetime is not enforced | FR-026 | No new test. The open ND-F4-3 session-lifetime blocker (docs/13 ND-F4-3) applies unchanged. This section states the interaction and proposes nothing. |
+| S9 | Misconfigured hosted Auth (email template not using `token_hash`, redirect allow-list too wide, SMTP not set) | FR-020, FR-023 | Hosted configuration is out of scope and gated on separate PO approval; the rollout checklist in docs/13 (T046 to T047) |
+| S10 | Compromised email account gives account takeover | Existing: FR-021 (single use, 60 minutes); PO-approved scope | Accepted residual risk for PO review; not mitigated by this feature |
 
 ## Clarifications
 
@@ -134,29 +195,97 @@ Anonymous visitors can reach only the sign-in page, the recovery (set new passwo
 - **SK-004-06** (S31-PO-2, ledger line 178; ND-F4-6 PO manual recovery links for staff targets): "Clients only (Recommended)". Option text: "Current design; staff recover through normal sign-in recovery."
 - **SK-004-04** (S31-PO-3, ledger line 182; ND-F4-4 production recovery-link limits): "Maximum 10 password-recovery links per issuing staff account per rolling hour, and 3 per client per rolling 24 hours across all issuers."
 
-### Source-gap record (not a ledger decision)
+### S35-PO-1 decision register (PO words verbatim, 2026-11-06)
 
-- **ND-F4-3 session-lifetime enforcement** is recorded as deferred in `docs/13-production-readiness.md:34` ("PO decision: B; fix in a later feature."). That text is not in the PO decisions ledger lines 165-190 read for this change, so it is not treated as a ledger decision. Enforcement is out of scope for F4 and has no task. See PO-DECISION-NEEDED in this PR's report to confirm the source.
+Source: `C:/Users/NEW LAP/.lifter/runs/s35-haiku-ledger2/s35-po-1.verbatim.txt` (line 3 and line 9). Architect notes are in `C:/Users/NEW LAP/.lifter/runs/s35-haiku-ledger2/notes.txt` and are labelled "Architect note (not PO words)" wherever used.
+
+- **ND-F4-3 and ND-F4-5** (S35-PO-1, line 3): "ND-F4-3=A (defer, track security blocker), ND-F4-5=A."
+- **ND-F4-7** (S35-PO-1, line 9): "ND-F4-7: Implement staff email password recovery now via Supabase Auth; built-in email temporarily for permitted test addresses only (2/hour). External SMTP required before general rollout."
+
+Architect note (not PO words): ND-F4-3=A is the S35 decision 8 option (a) and confirms the deferral recorded in `docs/13-production-readiness.md:34`; the session-lifetime blocker stays Open, Pre-Production. ND-F4-5=A is option (a) of ND-F4-5 below. ND-F4-7 is new F4 behaviour: it needs a full Spec Kit cycle and a security review, and its implementation waits for the Sol Medium critique and PO approval.
+
+Record discrepancy RD-1 (architect to confirm; not a product decision): `docs/13-production-readiness.md:34` labels the session-lifetime deferral "PO decision: B"; S35-PO-1 records the same deferral as "A". The ND-F4-3 identifier is also used for link expiry (decided 2026-10-29, below). This spec records both without changing either label.
+
+### Source-gap record (historical, superseded by S35-PO-1 for the deferral)
+
+- **ND-F4-3 session-lifetime enforcement** was recorded as deferred in `docs/13-production-readiness.md:34` ("PO decision: B; fix in a later feature."). The S35-PO-1 record above now confirms the deferral (ND-F4-3=A). Enforcement remains out of scope for F4 and has no task.
 
 ### Open items
 
-ND-F4-5 and ND-F4-7 remain open (unanswered). Interim behaviour for those is unchanged. Open ND items are listed in the next section; this register does not state that there are no open ambiguities.
+ND-F4-5 and ND-F4-7 are decided by S35-PO-1 (see S35-PO-1 register above). Open ambiguities that remain: ND-F4-7 PO-DECISION-NEEDED items PDN-F4-7-01 to PDN-F4-7-11 and record discrepancy RD-1. ND-F4-7 BLOCKED-COPY strings are not approved. This register does not state that there are no open ambiguities.
+
+## ND-F4-7 PO-DECISION-NEEDED register (not decided; no default is encoded)
+
+Each item lists the question, the options, the implications, the architect's recommendation and what it blocks. Until the PO answers, the matching requirement or task stays open.
+
+- **PDN-F4-7-01 - Permitted test-address list (FR-019).** Who maintains the list, and where does it live?
+  - A. Supabase organisation Team tab only (provider-enforced, as the built-in SMTP already does). Implication: no second source of truth, but changes are hosted org changes that need PO approval.
+  - B. App-side allow-list in repository config. Implication: a second list that can drift from the provider's.
+  - C. PO-maintained list recorded in `docs/04-changes-and-questions.md`, enforced through the Team tab. Implication: same enforcement as A, with an audit trail in the register.
+  - Recommendation: C. Blocked: the delivery path (T044); general rollout is already blocked by FR-020.
+- **PDN-F4-7-02 - Eligible staff roles (FR-016).** Which staff roles may use self-service email reset?
+  - A. PO, WO, Trainer and Sales. Implication: matches ND-F4-6 ("staff recover through normal sign-in recovery") and Constitution III (one staff identity).
+  - B. PO and WO only. Implication: narrower; Trainers and Sales keep no self-service path.
+  - C. PO, WO and Trainer (Sales excluded). Implication: no source in the register supports excluding Sales.
+  - Recommendation: A. Blocked: the role rows of T034 and the eligibility check (T043). ND-F4-1 (Trainer manual links) does not define staff eligibility.
+- **PDN-F4-7-03 - Rate-limit values (FR-024).** Per-target and global limits per window.
+  - A. 3 requests per target per rolling hour and 2 per rolling hour globally (aligned with the provider's 2/hour cap). Implication: conservative; only the first two requests of an hour can send email during the test phase.
+  - B. 3 per target per rolling 24 hours and 10 per rolling hour globally. Implication: the provider's 2/hour cap remains the effective limit.
+  - C. PO sets the values. Implication: none until given.
+  - Recommendation: A for the test phase. CAPTCHA (threat S3) is a hosted configuration and is a separate PO decision (see PDN-F4-7-11). Blocked: T038 and the limit constants.
+- **PDN-F4-7-04 - Target key and storage (FR-024).** How is the per-target limit keyed?
+  - A. Normalized email, hashed, in an expiring rate-limit table with no plaintext. Implication: no existence oracle; no IP stored.
+  - B. Provider-side limit only. Implication: cannot enforce the per-target rule of FR-024.
+  - C. Per-IP limiting. Implication: revises the Assumption "no IP blocking is added" (spec Assumptions); requires a separate decision.
+  - Recommendation: A. Blocked: T038 and the migration in T044.
+- **PDN-F4-7-05 - Audit of refused and unknown-address requests (FR-025).**
+  - A. Audit only accepted eligible-staff requests and completions. Implication: consistent with FR-025; an unknown address has no identity to record.
+  - B. Also audit refused attempts as an event with no target. Implication: one record per probe; retention is open (B4 / ND-F5-1).
+  - C. Audit completions only. Implication: requests leave no trace.
+  - Recommendation: A. Blocked: the refused-request branch of T039 (scenario 6).
+- **PDN-F4-7-06 - Copy approval (FR-027; BLOCKED-COPY).** Every new string is BLOCKED-COPY until approved, including the email subject and body in Arabic and English. The existing invalid-link text ("This link is invalid or expired. Ask your coach or workspace for a new link.") is client-oriented.
+  - A. Reuse the existing invalid-link text. Implication: staff are told to ask a coach or workspace.
+  - B. Staff-specific wording that directs staff to request a new reset email from the sign-in page (exact string to be supplied by the PO). Implication: a new approved string is needed.
+  - C. Neutral wording without a coach or workspace reference. Implication: a new approved string is needed.
+  - Recommendation: B. Blocked: all UI and email tasks (T042, T043, T045). No string is approved in this specification.
+- **PDN-F4-7-07 - Other sessions after a successful reset.**
+  - A. Keep other sessions, as FR-001 allows multiple simultaneous sessions. Implication: the reset does not change other devices.
+  - B. Revoke all other sessions on a successful self-service reset. Implication: a new behaviour that needs its own test.
+  - Recommendation: A, to stay aligned with FR-001 and the manual-link flow. This does not address the open ND-F4-3 session-lifetime blocker. Blocked: T045 (completion behaviour).
+- **PDN-F4-7-08 - Reserved.** No question; the number is kept so that IDs stay stable.
+- **PDN-F4-7-09 - Time target for SC-013.**
+  - A. Under 2 minutes, as in SC-007. Implication: aligned with the client target.
+  - B. Under 5 minutes. Implication: looser target.
+  - C. No time target. Implication: SC-013 is not measurable.
+  - Recommendation: A. Blocked: SC-013 only.
+- **PDN-F4-7-10 - External SMTP provider (FR-020).** docs/02 line 18 says the provider is "chosen in P0"; no provider is chosen in the sources. Supabase's documented custom-SMTP options include Resend, AWS SES, Postmark, Twilio SendGrid, ZeptoMail and Brevo.
+  - A. PO chooses a provider from that list and approves the configuration. Implication: needed before any general rollout.
+  - B. Defer the choice. Implication: general rollout stays blocked.
+  - Recommendation: the PO chooses; the architect does not choose a provider. Blocked: general rollout only; no code task.
+- **PDN-F4-7-11 - Hosted Auth change approval (FR-020, FR-023).** Covers the redirect allow-list, the reset email template (must use `token_hash`), the provider rate limit, CAPTCHA and the sender.
+  - A. One reviewed change set with exact values, approved by the PO before any hosted change. Implication: one approval step.
+  - B. Approval per item. Implication: more steps, same outcome.
+  - C. Defer all to rollout. Implication: the SMTP gate cannot be prepared.
+  - Recommendation: A. Blocked: T047 only; hosted changes are out of scope for this cycle.
+
+Record discrepancy RD-1 (architect to confirm): see the "Record discrepancy" paragraph in the S35-PO-1 register.
 
 ## NEEDS DECISION (owner sub-decisions; not invented here)
 
 - **ND-F4-1 — Trainer permission.** Which Trainers may generate links: all Trainers of the workspace, only Trainers assigned to the client (assignment arrives in P4), or only Trainers granted a new per-person permission by the PO? **Decided (PO, S31-PO-2 SK-004-02):** "All workspace Trainers". Not implemented: Trainers stay denied until task T032 (FR-006) ships through a new Spec Kit cycle.
 - **ND-F4-2 — Delivery to the client.** How the staff member passes the link: copy to clipboard only, or also a share action (device share sheet, Telegram once P6 exists)? **Decided (PO, S31-PO-2 SK-004-03):** "Copy only (Recommended)". Already satisfied: the link is shown once with a copy action only (`components/auth/RecoveryLinkDialog.tsx:40`; no share action exists in `components/auth`, `app` or `lib/auth`).
-- **ND-F4-3 — Link expiry.** **Decided (PO, 2026-10-29):** recovery links expire after 60 minutes in all environments, are single-use, and issuing a replacement invalidates earlier unused links for the same account and purpose. The recovery-session TTL is 15 minutes in all environments and is independent: a link verified before expiry starts a fresh 15-minute session. Password recovery never changes client approval status. Session-lifetime enforcement is deferred per `docs/13-production-readiness.md:34` (not a ledger decision; see Clarifications).
+- **ND-F4-3 — Link expiry.** **Decided (PO, 2026-10-29):** recovery links expire after 60 minutes in all environments, are single-use, and issuing a replacement invalidates earlier unused links for the same account and purpose. The recovery-session TTL is 15 minutes in all environments and is independent: a link verified before expiry starts a fresh 15-minute session. Password recovery never changes client approval status. Session-lifetime enforcement is deferred per `docs/13-production-readiness.md:34`. S35-PO-1 "ND-F4-3=A (defer, track security blocker)" confirms the deferral; the session-lifetime blocker stays Open, Pre-Production (docs/13 ND-F4-3). Record discrepancy RD-1 (see Clarifications) concerns the "B" label only.
 - **ND-F4-4 — Rate-limit values.** Maximum generations per actor and per target within a time window. **Decided (PO, S31-PO-3 SK-004-04):** maximum 10 password-recovery links per issuing staff account per rolling hour, and 3 per client per rolling 24 hours across all issuers. The merged implementation still uses the earlier placeholders (20 per actor and 3 per target per hour); aligning the configuration and tests is task T031 (FR-010) and is not yet implemented.
 - **ND-F4-5 — Client-target sequencing.** Client accounts and client profiles are created in P1. Options: (a) F4 ships the full mechanism with client targeting enabled when P1 adds client accounts (recommended); (b) F4 adds a minimal client-account record early; (c) move generation to P1. Until decided, F4 implements (a): the generation path exists and is tested, and the client-target lookup denies every target until client accounts exist.
+  - **Decided (PO, S35-PO-1 line 3): "ND-F4-5=A."** Architect note (not PO words): A = option (a). F4 ships the full mechanism, and client targeting is enabled when P1 adds client accounts. Until P1, the lookup still denies every target as described above.
 - **ND-F4-6 — Staff recovery.** BRD lines 40/104/130 give the PO manual reset links without limiting them to clients. **Decided (PO, S31-PO-2 SK-004-06):** "Clients only (Recommended)"; staff recover through normal sign-in recovery. This matches the current design (staff targets are denied).
-  - Architect note (not PO words): staff self-service ("normal sign-in") recovery depends on ND-F4-7 (self-service email reset, not built until decided). Until then staff have no self-service recovery path, and staff targets for manual links remain denied per SK-004-06. ND-F4-7 stays open.
-- **ND-F4-7 — Self-service email reset timing.** BRD line 130 requires self-service email reset. With no external SMTP (owner decision), it is sequenced, not removed (D-07). When is SMTP introduced? Not built until decided.
+  - Architect note (not PO words): staff self-service ("normal sign-in") recovery depends on ND-F4-7 (self-service email reset). Staff targets for manual links remain denied per SK-004-06. ND-F4-7 is now decided by S35-PO-1 and specified in User Story 5 and FR-016 to FR-028; it is not built, and its rollout is blocked on external SMTP (FR-020).
+- **ND-F4-7 — Self-service email reset timing.** BRD line 130 requires self-service email reset. With no external SMTP (owner decision), it is sequenced, not removed (D-07). **Decided (PO, S35-PO-1 line 9):** "ND-F4-7: Implement staff email password recovery now via Supabase Auth; built-in email temporarily for permitted test addresses only (2/hour). External SMTP required before general rollout." Specified below (User Story 5, FR-016 to FR-028, SC-008 to SC-013, Security Notes, PO-DECISION-NEEDED register). Not built: implementation waits for the Sol Medium critique (not yet invoked) and PO approval of the open items. Rollout waits for external SMTP (FR-020).
 
 ## Assumptions
 
 - The owner decisions of 2026-10-27 extend BRD line 104 (PO manual reset links) to WOs and authorized Trainers. They are recorded as decision-register entry D-19, approved by the PO (S31-PO-2 SK-004-01); D-19 is the scope authority.
 - Password rules (minimum length/strength) use the auth provider's configurable minimum. A stricter rule would be a later decision; none is stated in the sources.
-- Account lockout beyond the auth provider's built-in sign-in rate limiting is not required by the sources; no IP blocking is added.
+- Account lockout beyond the auth provider's built-in sign-in rate limiting is not required by the sources; no IP blocking is added. This assumption stays in force for ND-F4-7 until PDN-F4-7-04 is decided (per-IP limiting would revise it).
 - Client sign-in uses the same flow once client accounts exist (P1). F4 tests use staff fixtures and an auth-only fixture for the client target.
 - Workspace-specific branding on the sign-in page is out of scope (branding is P1).
