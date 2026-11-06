@@ -78,3 +78,11 @@ Every item below is **PO-DECISION-NEEDED**. Recommendations are advisory only; n
 - **Implications:** (a) keeps each workspace override self-contained but requires both translations for every name edit; (b) reduces entry burden but means one displayed exercise name can combine canonical and workspace-versioned values.
 - **Recommendation:** (b), because it allows partial localization without changing the global record; this is not a decision.
 - **Blocked:** Override payload validation, AR/EN editor requirements, fallback/read precedence and bilingual acceptance tests.
+
+### PO-DECISION-NEEDED F16-MCQ-9 — Client video for workspace-private Trainer exercises
+
+- **Question:** When a valid published client plan references a Trainer-created workspace-private exercise, should the client-plan projection resolve that exercise's video for the plan's own workspace, or omit its video?
+- **Options:** (a) Resolve the current video through the same client/plan-authorized projection, scoped to the persisted plan/client workspace; (b) omit the workspace-private exercise video from the client view while preserving the otherwise-authorized plan.
+- **Implications:** (a) lets the assigned client see workspace-specific exercise media and requires a narrowly scoped path for workspace-private rows; (b) keeps client video projection limited to global identities but leaves the assigned plan without that exercise's media. Neither option grants direct catalog/table/search access or cross-workspace visibility.
+- **Recommendation:** (a), because the client already has authorized access to the published plan in that workspace; this is advisory and does not select an answer.
+- **Blocked:** Whether private exercise media is resolved or omitted for clients, the client projection's eligible identity scope, and corresponding positive/negative plan-view tests. A valid plan must not be denied solely because it references a workspace-private exercise.

@@ -41,5 +41,5 @@ Source refs and exact citations (as locally available): `specs/019-plan-core/spe
 
 ## Related gates
 
-- F16 decision register currently contains F16-MCQ-1 through F16-MCQ-8. All recommendations are nonbinding; downstream spec changes that depend on them must remain blocked until PO decisions are recorded.
+- F16 decision register currently contains F16-MCQ-1 through F16-MCQ-9. All recommendations are nonbinding; downstream spec changes that depend on them must remain blocked until PO decisions are recorded. F16-MCQ-9 specifically blocks whether client-plan video projections resolve workspace-private Trainer exercises or omit their video; it does not block an otherwise-authorized plan view.
 - Sol Medium independent critique is pending PO approval; not invoked. It remains an implementation blocker.
