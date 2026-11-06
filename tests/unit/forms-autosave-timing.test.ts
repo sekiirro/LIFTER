@@ -118,4 +118,31 @@ describe('client draft autosave timing', () => {
       expect.objectContaining({ method: 'GET', cache: 'no-store' }),
     );
   });
+
+  it('returns the saved draft revision when submit fails after autosave', async () => {
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ status: 'saved', revision: 8 }), {
+          status: 200,
+          headers: { 'content-type': 'application/json' },
+        }),
+      )
+      .mockResolvedValueOnce(
+        new Response(JSON.stringify({ status: 'error' }), {
+          status: 503,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+    vi.stubGlobal('fetch', fetchMock);
+    const adapter = createAuthorizedFormsClientAdapter();
+
+    await expect(
+      adapter.submit({
+        assignmentId: 'assignment',
+        expectedRevision: 7,
+        answers: { goal: 'build strength' },
+      }),
+    ).resolves.toEqual({ status: 'error', revision: 8 });
+  });
 });

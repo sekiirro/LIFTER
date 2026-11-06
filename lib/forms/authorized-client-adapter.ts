@@ -139,7 +139,10 @@ export function createAuthorizedFormsClientAdapter(): FormsClientAdapter {
       });
       if (result?.status === 'submitted')
         return { status: 'submitted', revision: revision(result) };
-      return { status: isConflict(result?.status) ? 'conflict' : 'error' };
+      return {
+        status: isConflict(result?.status) ? 'conflict' : 'error',
+        revision: savedRevision,
+      };
     },
     correct: async ({ assignmentId, expectedRevision, answers }) => {
       const result = await post(assignmentId, 'corrections', {
