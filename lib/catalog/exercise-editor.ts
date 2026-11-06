@@ -1,5 +1,6 @@
 import {
   EQUIPMENT_CODES,
+  MAX_CATALOG_TEXT_LENGTH,
   MUSCLE_GROUP_CODES,
   type CatalogLocale,
   type EquipmentCode,
@@ -77,7 +78,8 @@ export type ExerciseEditorErrorCode =
   | 'integer_range'
   | 'range_order'
   | 'invalid_choice'
-  | 'too_many_alternatives';
+  | 'too_many_alternatives'
+  | 'text_too_long';
 
 export type ExerciseEditorErrors = Partial<
   Record<ExerciseEditorField, ExerciseEditorErrorCode>
@@ -198,7 +200,11 @@ export function validateExerciseEditorDraft(
   const errors: ExerciseEditorErrors = {};
 
   if (!draft.names.ar.trim()) errors.nameAr = 'required';
+  else if (Array.from(draft.names.ar.trim()).length > MAX_CATALOG_TEXT_LENGTH)
+    errors.nameAr = 'text_too_long';
   if (!draft.names.en.trim()) errors.nameEn = 'required';
+  else if (Array.from(draft.names.en.trim()).length > MAX_CATALOG_TEXT_LENGTH)
+    errors.nameEn = 'text_too_long';
 
   const primaryMuscle = draft.primaryMuscle.trim();
   if (!primaryMuscle) errors.primaryMuscle = 'required';

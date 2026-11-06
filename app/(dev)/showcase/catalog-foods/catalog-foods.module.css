@@ -1,0 +1,7 @@
+.main {
+  display: grid;
+  gap: var(--space-5);
+  inline-size: 100%;
+  margin-inline: auto;
+  padding: var(--space-4);
+}
