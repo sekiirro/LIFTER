@@ -48,7 +48,7 @@ Items F16-MCQ-1 through -7 are answered or moot as recorded in `## S36-PO-2 F16 
 
 ### F16-MCQ-4 — Alternatives override semantics — ANSWERED (S36-PO-2)
 
-- **Status (S36-PO-2):** answered, option (c): a workspace alternatives override replaces the global list and may reference workspace-private exercises. Client-view presentation of such references is open as F16-MCQ-10.
+- **Status (S36-PO-2):** answered, option (c): a workspace alternatives override replaces the global list and may reference workspace-private exercises. Client-view presentation of such references is open as F16-MCQ-10 (re-framed as F16-MCQ-G in round 3).
 
 - **Question:** How does a workspace alternatives override relate to canonical global alternatives?
 - **Options:** (a) Replace the global list; (b) add to the global list; (c) replace the global list and permit references to workspace-private exercises.
