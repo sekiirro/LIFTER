@@ -95,6 +95,14 @@ This records the supplied architect decisions against repository evidence; it do
   its own currency; there is no exchange rate, converted field, mixed-currency arithmetic or
   cross-currency total. Currency is validated in the application and DB publication walls before
   mutation.
+- **Reporting-FX exception (as stated in the spec)**: the no-conversion rule above governs package
+  prices. FR-026: "FX reporting MUST use Africa/Cairo transaction date, previous published
+  business-day rate, verified Frankfurter data, exact EGP→EGP rate 1, and idempotent rate-pending
+  retries excluded from converted totals until fetched. Preserve original transaction currency and
+  settlement." FR-031: "FX uses Africa/Cairo transaction date, previous published business-day rate
+  when needed, Frankfurter only after documented verification, exact 1 for EGP→EGP, and idempotent
+  rate-pending retries excluded from converted totals until fetched." SC-009: "Reporting-only
+  transaction FX follows FR-031 and preserves actual settlement."
 - **Rationale**: S31-PO-4 SK-009-01 and S31-PO-5 explicitly approve the matrix and no assumed
   conversion. Constitution II requires exact minor units and currency. The shipped F10/F12 models
   already copy one package currency into registration/subscription/installment records.

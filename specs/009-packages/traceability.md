@@ -60,7 +60,7 @@ All S33-01..12 product choices, C1–C5, Arabic LABELS and the four mapped Engli
 | FR-022 mock inventory/no inference | T052, T053, T064, T071 | synthetic-only inventory + dependency manifest | NOT-IMPLEMENTED |
 | FR-023 future real-package retirement | T054, T055, T066 | history-preserving retirement tests | NOT-IMPLEMENTED |
 | FR-024 promotional dates/link behavior | T056, T057, T067 | date-boundary and issued-link snapshot tests | NOT-IMPLEMENTED |
-| FR-025 collections/settlement reporting | T060, T068 | actual collection, commission and separate settlement fixtures | NOT-IMPLEMENTED |
+| FR-025 collections/settlement reporting | T060, T068, T072, T073 | actual collection, commission and separate settlement fixtures | NOT-IMPLEMENTED |
 | FR-026 FX snapshot/failure behavior | T058, T059, T067, T068 | date/provider/rate/retry tests | NOT-IMPLEMENTED |
 | FR-027 no client data in outbound API request | T059, T062 | captured request allowlist test + security review | BLOCKED: S33-08 provider verification; T062 independent security review |
 
@@ -73,8 +73,8 @@ SC-013..SC-018 map respectively to T052/T053, T054/T055, T056/T057, T060/T068, T
 | FR-028 C5 safe removal/empty initialization; SC-019 | T064, T065, T070, T071 | complete dependency manifest, fail-closed tests with zero writes, safe deletion/init/rollback, independent security review | PARTIAL: deletion/preflight specified (teardown mechanism needs separate security review); initialization uses the S34-PO-6 package-row identity but its market literal is BLOCKED: PD-S34-NEW-02 |
 | FR-029 PO-only versioned terms; FR-015/016/019/021; SC-020 | T066, T071 | four category pairs, immutable market/type, role tests, commercial versions and historical snapshots | Identity/uniqueness per S34-PO-6 (unique (workspace_id, market, type) on the package row); BLOCKED: PD-S34-NEW-02 for market-literal assertions |
 | FR-030 promotions and link expiry; SC-021 | T067, T071 | Cairo date/boundary and new/issued link tests | NOT-IMPLEMENTED |
-| FR-031 reporting/FX roles; SC-022 | T068, T071 | actual monthly collections, commissions, separate settlement, installment details, FX and role tests | NOT-IMPLEMENTED |
-| FR-032/033 installment UI copy/labels; SC-023 | T069, T071 | four exact English/Arabic label pairs; Frontend Design Gate; other interface copy | label pairs approved by LABELS/S34-PO-2; remaining dashboard/Installments/empty/error/help copy BLOCKED-COPY |
+| FR-031 reporting/FX roles; SC-022 | T068, T072, T073, T074, T071 | actual monthly collections, commissions, separate settlement, installment details, FX and role tests | NOT-IMPLEMENTED |
+| FR-032/033 installment UI copy/labels; SC-023 | T069, T074, T071 | four exact English/Arabic label pairs; Frontend Design Gate; other interface copy | label pairs approved by LABELS/S34-PO-2; remaining dashboard/Installments/empty/error/help copy BLOCKED-COPY |
 
 No S34 task is ticked. This cycle ran no tests, SQL, migration, stack, build, UI render or security review. Existing mock packages must not be deleted until the C5 preflight and independent post-implementation security gate pass on the target stack. Category initialization uses the S34-PO-6 package-row identity; its market literal remains BLOCKED by PD-S34-NEW-02.
 ## S33 traceability — S33-PO-4

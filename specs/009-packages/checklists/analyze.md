@@ -1,6 +1,6 @@
 # Spec Kit Analyze - F9 Packages S35 (S33-PO-6 + S34-PO-1 + S34-PO-2 + S34-PO-6)
 
-- Date: 2026-11-06 (Africa/Cairo), after the final round-6 edits to spec, plan, tasks, data model, contracts, research, quickstart, requirements checklist and traceability.
+- Date: 2026-11-06 (Africa/Cairo), after the final round-7 edits to plan, tasks (T072-T074, T070 scope), data model (C5 `packages_no_delete`), research (R13 reporting-FX exception) and traceability.
 - Scope: `specs/009-packages/**` specification/documentation delta only. No tests, SQL, migrations, application code, stack, build, CI or UI render was run or added.
 - Method: static cross-artifact analysis of numbered FRs, measurable SCs, Given/When/Then scenarios, verbatim PO clarifications, supersession notes, plan, model, contracts, task dependencies and traceability.
 
@@ -57,3 +57,9 @@
 
 T900 has been marked complete only after its Playwright acceptance test passed on the committed code head. Traceability records commit `45d17ff` and the executed test. S33 scope remains test-only; 0 open CRITICAL/HIGH findings.
 
+
+## Round-7 re-analysis - 2026-11-06 (after round-7 edits)
+
+- Static cross-artifact pass over spec, plan, tasks, data model, research and traceability after the round-7 edits. No tests, SQL, builds or stacks were run.
+- Checked: C5 refusal now covers the existing `packages_no_delete` guard (data-model, T070 scope; no exception or mechanism introduced); plan `publish_package_version` row aligned with S34-PO-6; R13 carries the FR-026/FR-031 reporting-FX exception quoted from the spec; T072-T074 added for FR-025/FR-031/FR-032 behavior already in the spec and mapped in tasks and traceability, with UI copy still BLOCKED-COPY.
+- Result: 0 CRITICAL, 0 HIGH. Open gates unchanged: PD-S34-NEW-02, BLOCKED-COPY, C5 teardown security review (T070), FX provider review (T059/T062).
