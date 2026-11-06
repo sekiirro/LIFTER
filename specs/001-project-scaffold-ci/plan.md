@@ -97,3 +97,23 @@ vitest.config.ts  playwright.config.ts
 ## Complexity Tracking
 
 None.
+
+## S32 delta — cross-branch migration-version guard (2026-11-04)
+
+Per architect ruling **S32-R3** (answering S32-PO-DECISION-1), the cross-branch migration-version guard is owned by this feature as a CI-baseline tooling amendment: the migration-timestamp checker already runs as the CI step "Validate migration timestamps" (CI baseline, FR-009 family), and a new numbered spec would consume a roadmap feature number. Spec placement is technical governance, not a product decision.
+
+References: **FR-020**, **SC-010**, **US6**, **T019**. PO source **S32-PO-3** (verbatim, only "prevent future duplicates" in scope; the remainder is other lanes). Lane class **S32-PO-2 Q4** (low-risk tooling + tests).
+
+### Changes (this amendment)
+
+- `scripts/check-migration-timestamps.mjs`: new exported, unit-testable pieces - `findCrossRefVersionConflicts(refMigrations)` (pure), `checkRemoteRefs(listRefMigrations)` (injected ref-list), and (S32 round 2, CodeRabbit PR #54) the pure parsers `parseOriginRemoteRefs(refsOut)` (excludes only `refs/remotes/origin/HEAD`) and `parseMigrationTreeOutput(treeOut)` (parses `-z` NUL-delimited `git ls-tree` output) - plus an opt-in `--all-remote-refs` flag on `main`. The default in-tree mode is byte-for-byte behaviourally unchanged and performs no git or network access.
+- `package.json`: new script `check:migration-versions:remote` = `node scripts/check-migration-timestamps.mjs --all-remote-refs`; new alias `test:unit` = `vitest run` (used by the S32 gate commands). `.github/workflows/ci.yml` is **not** modified; CI keeps running the default in-tree check.
+- `tests/unit/migration-timestamps.test.ts`: RED→GREEN cross-ref cases with an injected ref-listing function (no real git in unit tests); existing in-tree tests unchanged. (S32 round 2 adds `remote-ref parsing helpers` cases for `parseOriginRemoteRefs` and `parseMigrationTreeOutput`, RED first then GREEN.)
+- `specs/001-project-scaffold-ci/checklists/analyze.md`: created fresh for this amendment, dated 2026-11-04, 0 open CRITICAL/HIGH.
+
+### Design decisions
+
+- Enumeration: `git for-each-ref --format=%(refname) refs/remotes/origin`, excluding only the symbolic `refs/remotes/origin/HEAD` (other refs whose last segment is `HEAD`, e.g. `refs/remotes/origin/feature/HEAD`, are retained). Listing: `git ls-tree -r -z --name-only <ref> -- supabase/migrations` (no checkout; `-z` gives NUL-delimited unquoted paths so non-ASCII filenames are not dropped). No network calls beyond what the caller already fetched. Ref-list and tree-list parsing live in the exported pure helpers `parseOriginRemoteRefs` / `parseMigrationTreeOutput` so unit tests cover them without touching a real repository.
+- Conflict rule: one 14-digit version mapped to two or more **different** filenames across refs ⇒ exit non-zero, reporting the version, both filenames and the carrying refs. Same filename on several refs ⇒ pass. Filenames that do not match the 14-digit pattern are ignored by the cross-ref check (they remain the in-tree validator's concern).
+- `main` prints one report block per conflict; a summary line and exit 0 otherwise. Exit code 1 when at least one conflict exists.
+- The cross-ref check is detection-and-fail only; it does not rename migrations, does not touch the working tree and does not alter CI behaviour. Running it against the real repo (after `git fetch`) is expected to flag `20261107030000` until the #44 rename lane lands; that output is recorded, not fixed, in this lane.
