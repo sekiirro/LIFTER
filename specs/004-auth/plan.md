@@ -60,7 +60,7 @@ Generation sequence (server action `generateRecoveryLink(targetUserId)`):
 
 ## NEEDS DECISION
 
-ND-F4-1..7, as listed in [spec.md](spec.md#needs-decision-owner-sub-decisions-not-invented-here). The interim behavior is deny or minimal in every case. ND-F4-3 (expiry) and ND-F4-4 (limits) are now decided (spec Clarifications; S31-PO-3 SK-004-04); ND-F4-6 is decided as clients only (S31-PO-2 SK-004-06). The limits are not yet configured to the decided values: task T031 (FR-010).
+ND-F4-1..7, as listed in [spec.md](spec.md#needs-decision-owner-sub-decisions-not-invented-here). The interim behavior is deny or minimal in every case. ND-F4-3 (expiry) and ND-F4-4 (limits) are now decided (spec Clarifications; S31-PO-3 SK-004-04); ND-F4-6 is decided as clients only (S31-PO-2 SK-004-06). The limits are not yet configured to the decided values: task T031 (FR-010). S35-PO-1 decided ND-F4-5=A (option a) and ND-F4-7 (staff email reset, specified in the ND-F4-7 Design section above, not built); ND-F4-3 session-lifetime remains an open security blocker.
 
 ## Project Structure
 
@@ -81,6 +81,83 @@ tests/integration/auth-recovery.test.ts (+ rls-catalog, matrix-parity updates)
 tests/e2e/auth.spec.ts
 .env.example, README.md (Auth section), .github/workflows/ci.yml (secret scan step)
 ```
+
+
+### Provider-boundary controls (FR-030; NF-1/NF-2; S36-PO-2 F4 line)
+
+Status: specified, NOT implemented. No code, migration, env, hosted Auth or SMTP change. Controls A to D are defined in spec.md FR-030; the intent state machine is FR-025 (a) to (h). Implementation gates: T033 (PO answers), T050a (controls B to D) and T050b (control A).
+
+Facts verified read-only in this repo on 2026-11-06:
+
+- `supabase/config.toml` sets `[auth.hook.custom_access_token]` (pg-functions) and `[auth.email] otp_expiry = 3600`. It sets no send-email hook and no switch that disables the recovery endpoint.
+- `public.staff_profiles` (`supabase/migrations/20261027120000_tenancy.sql`, line 4) and `public.audit_events` (`supabase/migrations/20261027150000_audit_log.sql`, line 2) exist. `app_private.audit_row_change()` and `app_private.forbid_delete()` exist.
+- Precedent for a trigger on `auth.users`: `signup_auth_claim_sync` (`supabase/migrations/20261031121000_client_accounts_model.sql`, line 183).
+- Precedent for an intent-style two-phase record with reconciliation: F14 `reconciliation_pending` (`lib/branding/upload-state.ts`), cited by FR-025.
+
+Control B (guard on `auth.users`), local design:
+
+- Table `app_private.staff_password_reset_intents`: `intent_id uuid primary key default gen_random_uuid()`, `auth_user_id uuid not null references auth.users(id) on delete restrict`, `session_id uuid not null`, `state text not null check (state in ('open','completed','aborted','reconciled'))`, `started_at timestamptz not null default now()`, `recovery_verified_at timestamptz not null`, `password_changed_at timestamptz`, `closed_at timestamptz`, and `check ((state = 'open') = (closed_at is null))`. A partial unique index on `(auth_user_id) where state = 'open'`. RLS enabled and forced; `revoke all` from public, anon, authenticated and service_role; no policies. Immutability and no-delete triggers follow the F4 pattern (`forbid_delete`).
+- Public RPCs, `security definer`, `set search_path = ''`, execute granted to `authenticated` only: `public.staff_password_reset_begin()` (uses `auth.uid()` and `auth.jwt()->>'session_id'`), `public.staff_password_reset_complete(intent_id uuid)` and `public.staff_password_reset_abort(intent_id uuid)`. Each accepts only an intent owned by the caller, and refuses any other intent with one generic error.
+- `begin` order, in one transaction: (1) caller is an eligible staff identity (PDN-F4-7-02; the role list is still open, so `begin` cannot be implemented before it); (2) the caller's JWT `amr` carries the recovery verification entry within 900 s (control D), and the verification time is stored as `recovery_verified_at`; (3) an `open` intent younger than 900 s for the user causes refusal; an older `open` intent is first closed as `reconciled` by the same function; (4) insert the `open` intent. An AFTER INSERT trigger on the intent table appends `staff_password_reset.completion_started` with `{intent_id}`, so the audit row and the intent commit together.
+- Guard trigger `app_private.staff_password_guard()`, `BEFORE UPDATE OF encrypted_password ON auth.users FOR EACH ROW WHEN (old.encrypted_password IS DISTINCT FROM new.encrypted_password)`. If `new.id` has a `public.staff_profiles` row (verify the user column name on main at T050a), it requires an `open` intent for `new.id` and `now() <= intent.recovery_verified_at + interval '900 seconds'`. It then sets `password_changed_at = now()` on that intent and deletes `auth.sessions` rows of `new.id` where `id <> intent.session_id` (control C). Otherwise it raises `not_permitted` (SQLSTATE 42501) with a generic message. Non-staff rows return `new` unchanged.
+- `app_private.staff_password_reset_reconcile()`: for each `open` intent with `started_at < now() - interval '900 seconds'`, set `state = 'reconciled'`, `closed_at = now()` and append `staff_password_reset.completion_reconciled` with `{intent_id, password_changed}`. The update is guarded by `state = 'open'`, so a second run changes nothing. It is executable by the job role only, not by `authenticated`, `anon` or `public`. Scheduling is decided at T050a under the F6 jobs convention.
+- Closing transitions for `complete` and `abort` are guarded the same way (`where state = 'open'` and the `password_changed_at` condition from FR-025 (c) and (d)). Each appends exactly one audit row from an AFTER UPDATE trigger on the intent table.
+
+Why the database order gives the PO guarantee: the intent row is committed in its own transaction before `updateUser` runs, and the guard refuses any staff password change without it. A password change therefore always has a durable intent, and the closing record or reconciliation follows. The database cannot roll back GoTrue's update, so this is not a shared transaction across GoTrue and LIFTER. The guarantee holds for the app path and for a direct `updateUser` alike, because the guard does not depend on the caller.
+
+Control A (public `/recover`): not designed to a mechanism yet. The candidates and their conflicts are PDN-F4-7-14 (option A: local ingress or proxy, feasibility unverified; option B: local send hook, conflicts with the built-in-sender wording; option C: risk acceptance by the PO). The database cannot stop a recovery email, because GoTrue generates the token and sends the mail itself, so control A cannot be enforced by a database trigger alone.
+
+Session scope (ARCH-S36-R4-1): the guard cannot see the request session, so it is account-scoped (spec.md FR-025 (b)).
+
+Local feasibility gates (T050a spike, before implementation of control B). Each gate is a RED-to-GREEN item on the local stack; none is assumed:
+
+- G1: the guard refuses a staff `updateUser` without an open intent and allows a client manual-link completion (T049a).
+- G2: GoTrue returns the guard's refusal to the caller and leaves the stored password unchanged.
+- G3: GoTrue refuses the access token of a session row that was deleted (control C). If not, PDN-F4-7-16 is raised.
+- G4: `auth.jwt()->'amr'` carries the `otp` entry for a verify-recovery session, read the same way as the merged test (`tests/integration/auth-recovery.test.ts`, lines 332 to 355), and a password sign-in session carries no such entry (T049b). If either fails, control D is not accepted and PDN-F4-7-16 is raised. There is no session-age fallback.
+- G5: deleting `auth.sessions` cascades to `auth.refresh_tokens` on the pinned local stack.
+
+If G1 or G2 fails, control B cannot be enforced and the conflict is raised again; no workaround is attempted.
+
+Local-only limits: all tests run on the local Supabase stack and local Inbucket. Test fixtures must set staff passwords when the user is created. A later admin password update for a staff identity is refused by control B, so a fixture that changes a staff password after creation must use the intent path.
+
+## ND-F4-7 Design (staff self-service email reset; specified, NOT built)
+
+Status: specification only. No code, migration, env, hosted Supabase Auth or SMTP change. Implementation gate (all must pass before tasks T043 to T046, T050a and T050b start): the PO answers PDN-F4-7-14 (public `/recover` mechanism) and PDN-F4-7-15 (migration-installed guard on `auth.users`), both CONFLICT items; PDN-F4-7-02 (eligible roles) is answered, since `begin` depends on it; PDN-F4-7-01, -03 and -04 are answered for the request side; exact copy for all other F4 states is approved (PDN-F4-7-06); feasibility gates G1 to G5 pass or are raised; the security review is scheduled; and Analyze is re-run after these answers. The independent critique is PENDING: Sonnet 5.5 is authorized for F4 by S36-PO-2, and the constitution's Sol Medium requirement conflicts with that authorization (reported to the PO; PO decision needed). This is an implementation blocker. PDN-F4-7-07 is decided by S35-PO-3 and is not a blocker. PDN-F4-7-12 and PDN-F4-7-13 are answered by S36-PO-2.PDN-F4-7-07 is already decided by S35-PO-3 and is not a blocker.
+
+Flow (requirements in spec.md FR-016 to FR-028):
+
+1. The request form lives on `/login` (no new public route, so the FR-005 allow-list does not change). It is a second server action beside `signIn`.
+2. Server action `requestStaffReset(email)` (proposed name) runs in this order, and the outcome is the same generic confirmation on every path (FR-018):
+   a. Format check. A malformed address is rejected before any work (FR-017).
+   b. Normalize the address and derive the hashed key (PDN-F4-7-04).
+   c. Rate limit, per target and global, in one advisory-locked transaction (Constitution IX). The check applies to unknown and non-staff addresses too (FR-024).
+   d. Eligibility, server-only: a staff identity with an eligible role (PDN-F4-7-02). Non-eligible addresses stop here with no send.
+   e. Delivery permission and the 2-per-hour cap (FR-019, PDN-F4-7-01). If not permitted, stop with no send.
+   f. Audit `staff_password_reset.requested` written before the send (fail closed, FR-025).
+   g. `resetPasswordForEmail(email, { redirectTo })`, using the anon-key server client only. `redirectTo` is built from `APP_ORIGIN` and `/auth/recovery` (FR-023). Any provider error is discarded and never returned.
+3. The email link is the existing `/auth/recovery?token_hash&type=recovery` flow, the shape `buildRecoveryUrl` already uses for manual links. GET and HEAD show Continue only and never verify (FR-022, safe against link scanners). POST (`verifyRecovery`) verifies, then the set-password form appears. The session window stays 15 minutes (FR-026). `Referrer-Policy: no-referrer` is set for `/auth/recovery` in `next.config.ts`, as for `/register/:token` (FR-022; T045).
+4. Completion (FR-025 (a) to (h); FR-030 controls B to D). The database holds the intent in `app_private.staff_password_reset_intents`. Order: (a) `public.staff_password_reset_begin()` writes the `open` intent and appends `completion_started` in one transaction; only then does the server call `auth.updateUser`; (b) the guard trigger on `auth.users` refuses any staff password change without that intent and, in the same transaction, sets `password_changed_at` and revokes the other sessions; (c) `public.staff_password_reset_complete()` appends `completed`; (d) `public.staff_password_reset_abort()` appends `completion_aborted` when the password is unchanged; (e) `app_private.staff_password_reset_reconcile()` appends `completion_reconciled` for open intents older than 900 s. The guarantee is the durable intent before the change, the guard, and reconciliation after it. It is not a shared transaction across GoTrue and LIFTER. Audit writes are database-side (F5 FR-002). The migration is T050a. The reconciliation scheduling is decided at T050a under the F6 jobs convention, not by the PO.
+5. Hosted configuration (redirect allow-list, `token_hash` email template, sender, provider rate limit, CAPTCHA) is out of scope and is gated by FR-020 and PDN-F4-7-11. Local `supabase/config.toml` already sets `otp_expiry = 3600` (FR-021). The local recovery email template that links to `/auth/recovery` with `token_hash` and `type=recovery` is T044a; the provider default (`ConfirmationURL`) is not used. Local email is captured by Inbucket for tests only.
+
+Open technical questions for the architect and the security review (not PO decisions):
+
+- AT-1: audit-before-send (FR-025, fail closed) means a provider failure after the audit row leaves a `requested` row for an email that was not sent. Options: keep the row and mark the failure in a later row, or record the request only as accepted by the provider and accept that the send and the audit are not in one transaction. Decide with the security review.
+- AT-2: the timing parity in FR-018 needs the same work on every path, including a non-sending path for unknown and non-staff addresses. The tolerance and the test method are decided here and reviewed by security.
+- AT-3: whether a self-service request supersedes an earlier unused self-service link for the same account (ND-F4-3 replacement rule) is verified against the local provider in SC-010. The manual-link state is not shared, since staff targets are denied for manual links (SK-004-06).
+
+Constitution check for ND-F4-7:
+
+| Principle | Status |
+|---|---|
+| I Isolation | Eligibility is decided on the server. The generic response reveals no workspace or membership. Foreign-workspace negatives are not applicable (staff reset is platform-scoped); the client-account negative (FR-016, S5) is tested. |
+| III Least privilege | Staff only; clients get no email; the eligible roles are a PO decision (PDN-F4-7-02). |
+| IV Scope | PO S35-PO-1 decision; BRD line 130 and PRD-02 (docs/01 row) are the sources; D-07 sequencing is closed by the PO decision. Nothing outside the PO words is added without a PDN. |
+| VII Privacy | Tokens stay with the provider (hashed); no LIFTER-side secret; no email or token in logs or audit; audit of sensitive actions (FR-025). |
+| VIII UI | `/login` extension on Design System components; AR/EN; copy BLOCKED until approved (FR-027). |
+| IX Reliability | Rate limit in one advisory-locked transaction; audit before send, fail closed; completion intent appended before any password change, closing row after, reconciliation for open intents; the `auth.users` guard refuses staff password changes without the intent (FR-025, FR-030 control B). |
+| Platform | No hosted change; local stack only for tests. |
+| Workflow | Sol Medium critique PENDING; security review required; implementation waits for Analyze and PO approval. |
 
 ## Complexity Tracking
 
