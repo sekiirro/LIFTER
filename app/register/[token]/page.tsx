@@ -9,10 +9,13 @@ import { phoneCountryOptions } from '../../../lib/client-accounts/phone';
 import { submitClientSignup } from './actions';
 import { SignupForm } from './SignupForm';
 import { BrandScope } from '../../../components/ui/BrandScope';
-import { Card } from '../../../components/ui/Card';
-import { RegistrationBrand } from '../../../components/branding/RegistrationBrand';
+import {
+  RegistrationBrand,
+  brandingAssetUrl,
+} from '../../../components/branding/RegistrationBrand';
+import { RegistrationHero } from '../../../components/branding/RegistrationHero';
+import heroStyles from '../../../components/branding/registration-hero.module.css';
 import { DEFAULT_BRAND } from '../../../lib/design/color';
-import signupStyles from './signup.module.css';
 export const dynamic = 'force-dynamic';
 export const revalidate = 0;
 export default async function RegisterPage({
@@ -37,20 +40,34 @@ export default async function RegisterPage({
   }
   const signupAction = submitClientSignup.bind(null, token);
   if (result.status === 'valid') {
+    const branding = result.branding;
+    const handle = result.render_handle;
+    const banner =
+      branding?.banner && handle
+        ? {
+            src: brandingAssetUrl(token, handle, 'banner'),
+            alt:
+              branding.bannerAlt[locale] ||
+              branding.bannerAlt[locale === 'ar' ? 'en' : 'ar'],
+          }
+        : undefined;
     return (
-      <main className={styles.main}>
-        <AuthPreferences />
-        <BrandScope color={result.branding?.color ?? DEFAULT_BRAND}>
-          <Card
-            as="article"
-            className={signupStyles.registrationCard}
-            data-registration-card="premium-centered"
-          >
+      <BrandScope
+        color={branding?.color ?? DEFAULT_BRAND}
+        className={heroStyles.brandScope}
+      >
+        <RegistrationHero
+          banner={banner}
+          locale={locale}
+          preferences={<AuthPreferences />}
+        >
+          <div className={heroStyles.formPlate}>
             <RegistrationBrand
-              brand={result.branding}
+              bannerMode="stage"
+              brand={branding}
               locale={locale}
               token={token}
-              renderHandle={result.render_handle}
+              renderHandle={handle}
               fallbackName={result.workspace_name}
             />
             <h1>{m['registration.publicValid']}</h1>
@@ -62,9 +79,9 @@ export default async function RegisterPage({
                 phoneCountries={phoneCountryOptions(locale)}
               />
             )}
-          </Card>
-        </BrandScope>
-      </main>
+          </div>
+        </RegistrationHero>
+      </BrandScope>
     );
   }
   return (

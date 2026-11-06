@@ -46,7 +46,15 @@ function record(value: unknown): Record<string, unknown> | null {
 }
 
 function hasSignupFieldShape(value: Record<string, unknown>): boolean {
-  const allowed = ['name', 'email', 'phone', 'password'];
+  const allowed = [
+    'name',
+    'dateOfBirth',
+    'username',
+    'telegramUsername',
+    'email',
+    'phone',
+    'password',
+  ];
   return (
     Object.keys(value).length === allowed.length &&
     allowed.every((key) => Object.hasOwn(value, key)) &&
@@ -149,16 +157,22 @@ export async function processClientSignup(
         email: fields.email,
         phone: fields.phone,
         password: fields.password,
+        date_of_birth: fields.dateOfBirth,
+        username: fields.username,
+        telegram_username: fields.telegramUsername,
       },
     });
     if (completed.error) return signupResult('unavailable', input.locale);
     const signup = record(completed.data);
     switch (signup?.status) {
       case 'invalid':
-      case 'duplicate':
       case 'complete':
       case 'unavailable':
         return signupResult(signup.status, input.locale);
+      case 'username_unavailable':
+        return signupResult('invalid_input', input.locale, ['username']);
+      case 'duplicate':
+        return signupResult('duplicate', input.locale);
       default:
         return signupResult('unavailable', input.locale);
     }

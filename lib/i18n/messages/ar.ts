@@ -242,6 +242,14 @@ export const ar = {
   'showcase.retryCount': 'عدد المحاولات',
   'showcase.print': 'نموذج الطباعة',
   'clientSignup.name': 'الاسم',
+  'clientSignup.dateOfBirth': 'تاريخ الميلاد',
+  'clientSignup.usernameUnavailable':
+    'اسم المستخدم ده غير متاح. اختار اسم تاني.',
+  'clientSignup.usernameFormatError':
+    'استخدم من 3 لـ30 حرف: حروف إنجليزي أو أرقام أو نقطة أو شرطة سفلية.',
+  'clientSignup.username': 'اسم المستخدم',
+  'clientSignup.telegramUsername': 'اسم مستخدم تيليجرام',
+  'clientSignup.optional': 'اختياري',
   'clientSignup.email': 'البريد الإلكتروني',
   'clientSignup.country': 'الدولة',
   'clientSignup.phone': 'رقم الهاتف',

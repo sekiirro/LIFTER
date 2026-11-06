@@ -249,6 +249,14 @@ export const en: Record<keyof typeof ar, string> = {
   'showcase.retryCount': 'Retry count',
   'showcase.print': 'Print sample',
   'clientSignup.name': 'Name',
+  'clientSignup.dateOfBirth': 'Date of birth',
+  'clientSignup.username': 'Username',
+  'clientSignup.usernameUnavailable':
+    'This username is unavailable. Choose another.',
+  'clientSignup.usernameFormatError':
+    'Use 3–30 characters: English letters, numbers, periods, or underscores.',
+  'clientSignup.telegramUsername': 'Telegram username',
+  'clientSignup.optional': 'Optional',
   'clientSignup.email': 'Email',
   'clientSignup.country': 'Country',
   'clientSignup.phone': 'Phone number',
