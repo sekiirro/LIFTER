@@ -439,6 +439,7 @@ describe('tenancy security catalog (T007)', () => {
               'f15_selection_reconcile_trigger',
               'f15_question_applies',
               'f15_submission_complete',
+              'f15_valid_slider_label',
               'f15_valid_builder_definition',
               'guard_f15_assignment_fact',
               'reconcile_f15_form_assignment',
