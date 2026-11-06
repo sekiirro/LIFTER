@@ -174,7 +174,7 @@ test.afterAll(async () => {
 - Source: production registration hero showcase (\`/showcase/f14-hero\`) with the shipped **textured** artwork (\`public/dev/f14-hero/desktop.webp\` at 1440 px, \`public/dev/f14-hero/mobile.webp\` at 390 px).
 - Matrix: {AR, EN} x {Light, Dark, Follow OS light, Follow OS dark} x {390, 1440}, plus \`prefers-reduced-transparency: reduce\` per explicit theme and print media for Light/Dark.
 - Accessibility: every capture was asserted axe-clean with \`expectHeroAxeClean\` (wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa tags).
-- Contrast note: this evidence set uses the shipped textured artwork. The separate worst-case bright/high-variance artwork matrix lives in \`contrast/\` and is documented in the run report; the dark-theme 1440 px worst-case bright row is a reported STOP item.
+- Contrast note: this evidence set uses the shipped textured artwork. The separate worst-case bright/high-variance artwork matrix lives in \`contrast/\`; consult the run report for its final dev/prod results.
 
 | File | Theme | Locale | Width | Media | prefers-reduced-transparency | axe violations |
 | --- | --- | --- | --- | --- | --- | --- |

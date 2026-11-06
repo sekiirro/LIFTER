@@ -1,5 +1,6 @@
 import { readFileSync } from 'node:fs';
 import { afterEach, describe, expect, it, vi } from 'vitest';
+import { modes } from '../../lib/design/tokens';
 import {
   PHONE_NUMBER_GROUP_DIRECTION,
   PHONE_NUMBER_GROUP_GAP,
@@ -435,6 +436,15 @@ describe('production registration hero card theme contract', () => {
 });
 
 describe('production registration hero dense dark form', () => {
+  const lightErrorEdgeRule = heroStylesSource.match(
+    /^\.stage\s*\{(?<body>[^}]*)\}/m,
+  );
+  const explicitDarkErrorEdgeRule = heroStylesSource.match(
+    /:global\(\[data-theme='dark'\]\) \.stage\s*\{(?<body>[^}]*)\}/,
+  );
+  const osDarkErrorEdgeRule = heroStylesSource.match(
+    /@media \(prefers-color-scheme: dark\)\s*\{\s*:global\(html:not\(\[data-theme='light'\]\)\) \.stage\s*\{(?<body>[^}]*)\}/,
+  );
   const darkFieldRule = heroStylesSource.match(
     /:global\(:where\(\[data-theme='dark'\]\)\) \.stage \.fieldControl,\s*:global\(:where\(\[data-theme='dark'\]\)\) \.stage \.countryPicker\s*\{(?<body>[^}]*)\}/,
   );
@@ -456,6 +466,30 @@ describe('production registration hero dense dark form', () => {
     return (selector.match(/\.[A-Za-z_][\w-]*/g) ?? []).length;
   }
 
+  function hexContrastRatio(first: string, second: string): number {
+    const luminance = (hex: string) => {
+      const channels = hex
+        .slice(1)
+        .match(/.{2}/g)
+        ?.map((channel) => parseInt(channel, 16) / 255);
+      if (!channels || channels.length !== 3) {
+        throw new Error(`Expected a hex color token, received ${hex}`);
+      }
+      const [red = 0, green = 0, blue = 0] = channels.map((channel) =>
+        channel <= 0.04045
+          ? channel / 12.92
+          : ((channel + 0.055) / 1.055) ** 2.4,
+      );
+      return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+    };
+    const firstLuminance = luminance(first);
+    const secondLuminance = luminance(second);
+    return (
+      (Math.max(firstLuminance, secondLuminance) + 0.05) /
+      (Math.min(firstLuminance, secondLuminance) + 0.05)
+    );
+  }
+
   it('resolves the dark field surface to the existing card token', () => {
     expect(darkFieldRule?.groups?.body).toMatch(
       /background:\s*var\(--color-card\)/,
@@ -467,6 +501,28 @@ describe('production registration hero dense dark form', () => {
     expect(baseFieldRule?.groups?.body).toMatch(
       /background:\s*var\(--color-card-raised\)/,
     );
+  });
+
+  it('uses the existing light error foreground token and preserves dark overrides', () => {
+    expect(modes.light.error.fg).toBe('#991B1B');
+    expect(lightErrorEdgeRule?.groups?.body).toMatch(
+      /--hero-error-edge:\s*var\(--color-error-fg\)/,
+    );
+    expect(explicitDarkErrorEdgeRule?.groups?.body).toMatch(
+      /--hero-error-edge:\s*var\(--color-error-fg\)/,
+    );
+    expect(osDarkErrorEdgeRule?.groups?.body).toMatch(
+      /--hero-error-edge:\s*var\(--color-error-fg\)/,
+    );
+  });
+
+  it('keeps the light error edge above 3:1 against the input surface token', () => {
+    expect(
+      hexContrastRatio(modes.light.error.fg, modes.light.cardRaised),
+    ).toBeCloseTo(8.3101, 4);
+    expect(
+      hexContrastRatio(modes.light.error.fg, modes.light.cardRaised),
+    ).toBeGreaterThanOrEqual(3);
   });
 
   it('pins the Hero form density above the restored signup stylesheet rule', () => {

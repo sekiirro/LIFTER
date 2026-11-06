@@ -11,14 +11,39 @@ const origin =
   process.env.APP_ORIGIN ??
   'http://localhost:3000';
 const screenshotDirectory =
+  process.env.HERO_S35_ERROR_SCREENSHOT_DIR ??
   process.env.HERO_R22_USERNAME_SCREENSHOT_DIR ??
-  join(tmpdir(), 'lifter-s34-hero-r22');
+  join(tmpdir(), 'lifter-s35-hero-r24');
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
 let token: string;
 
-test.describe.serial('r22 username error-state design evidence', () => {
+function relativeLuminance(color: string): number {
+  const channels = color
+    .match(/[\d.]+/g)
+    ?.slice(0, 3)
+    .map(Number);
+  if (!channels || channels.length !== 3) {
+    throw new Error(`Expected a computed RGB color, received ${color}`);
+  }
+  const [red = 0, green = 0, blue = 0] = channels.map((channel) => {
+    const srgb = channel / 255;
+    return srgb <= 0.04045 ? srgb / 12.92 : ((srgb + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * red + 0.7152 * green + 0.0722 * blue;
+}
+
+function contrastRatio(first: string, second: string): number {
+  const firstLuminance = relativeLuminance(first);
+  const secondLuminance = relativeLuminance(second);
+  return (
+    (Math.max(firstLuminance, secondLuminance) + 0.05) /
+    (Math.min(firstLuminance, secondLuminance) + 0.05)
+  );
+}
+
+test.describe.serial('S35 Hero error-border design evidence', () => {
   test.beforeAll(async () => {
     test.skip(!local, 'Requires the selected local Supabase stack.');
     const { registrationFixture, secret, issue, checked } =
@@ -37,7 +62,12 @@ test.describe.serial('r22 username error-state design evidence', () => {
     context,
   }) => {
     test.skip(!local, 'Requires the selected local Supabase stack.');
-    const captures: string[] = [];
+    const captures: {
+      filename: string;
+      borderColor: string;
+      inputBackground: string;
+      contrast: number;
+    }[] = [];
     for (const locale of ['ar', 'en'] as const) {
       const messages = getMessages(locale);
       for (const theme of ['light', 'dark'] as const) {
@@ -78,27 +108,48 @@ test.describe.serial('r22 username error-state design evidence', () => {
             page.locator('#signup-username-error bdi'),
           ).toHaveAttribute('dir', 'auto');
           await expect(page.locator('form [role="alert"]')).toHaveCount(0);
+          const colors = await username.evaluate((input) => {
+            const style = getComputedStyle(input);
+            return {
+              border: style.borderTopColor,
+              background: style.backgroundColor,
+            };
+          });
+          const contrast = contrastRatio(colors.border, colors.background);
+          expect(contrast).toBeGreaterThanOrEqual(3);
+          expect(colors.border).toBe(
+            theme === 'light' ? 'rgb(153, 27, 27)' : 'rgb(252, 165, 165)',
+          );
           await expectHeroAxeClean(page);
           const filename = `${locale}-${theme}-${width}.png`;
           await page.screenshot({
             path: join(screenshotDirectory, filename),
             fullPage: true,
           });
-          captures.push(filename);
+          captures.push({
+            filename,
+            borderColor: colors.border,
+            inputBackground: colors.background,
+            contrast,
+          });
         }
       }
     }
     const index = [
-      '# S34 Hero r22 — Username error-state captures',
+      '# S35 Hero r24 — Username error-border captures',
       '',
-      'Real registration page; locally rejects the synthetic invalid-format username `ab`. The EN/AR username format copy matches S32-PO-9 Q10 and S34-PO-1 H1=A byte-for-byte. Server-error clearing and submit-only availability are separately covered by the unit regression.',
+      'Real registration page; locally rejects the synthetic invalid-format username `ab`. The EN/AR username format copy matches S32-PO-9 Q10 and S34-PO-1 H1=A byte-for-byte. Border and input background colors are measured from the rendered control; contrast is calculated using WCAG relative luminance. Server-error clearing and submit-only availability are separately covered by the unit regression.',
       '',
-      '| Locale / direction | Theme | Width | Capture |',
-      '|---|---|---:|---|',
-      ...captures.map((filename) => {
-        const [locale, theme, width] = filename.replace('.png', '').split('-');
-        return `| ${locale === 'ar' ? 'AR / RTL' : 'EN / LTR'} | ${theme} | ${width}px | [${filename}](./${filename}) |`;
-      }),
+      '| Locale / direction | Theme | Width | Capture | Error border | Input background | Contrast |',
+      '|---|---|---:|---|---|---|---:|',
+      ...captures.map(
+        ({ filename, borderColor, inputBackground, contrast }) => {
+          const [locale, theme, width] = filename
+            .replace('.png', '')
+            .split('-');
+          return `| ${locale === 'ar' ? 'AR / RTL' : 'EN / LTR'} | ${theme} | ${width}px | [${filename}](./${filename}) | ${borderColor} | ${inputBackground} | ${contrast.toFixed(2)}:1 |`;
+        },
+      ),
       '',
       'Axe: 0 violations in each captured state.',
     ].join('\n');

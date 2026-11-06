@@ -11,11 +11,7 @@
     #000
   );
   --hero-bottom-average: rgb(54 48 41);
-  --hero-error-edge: color-mix(
-    in srgb,
-    var(--color-error-bg) 75%,
-    var(--color-error-border)
-  );
+  --hero-error-edge: var(--color-error-fg);
   --hero-error-fg: var(--color-error-fg);
 }
 

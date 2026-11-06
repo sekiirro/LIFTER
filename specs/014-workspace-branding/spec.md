@@ -94,6 +94,7 @@ As a registration visitor with a valid F10 token, I see the latest published ide
 7. **Given** a registration attempt with a username already taken or reserved, **When** server validation returns the result, **Then** both cases produce the same unavailable status on Username and focus moves to Username; the result does not disclose which condition occurred. Exact approved EN/AR copy is "This username is unavailable. Choose another." / «اسم المستخدم ده غير متاح. اختار اسم تاني.» Source: S34-PO-1 H1=A; the enumeration rule is S32-PO-2 Q3.
 8. **Given** a username input, **When** it is validated for a new signup by the client schema, `validateSignupFields`, or `client_signup`, **Then** it is accepted only when it has 3–30 ASCII English letters, digits, underscores or periods, case-insensitively; other values are invalid. No DB constraint or validation against existing accounts is added in this round (S34-PO-1 H2=A). Exact approved EN/AR format copy is "Use 3–30 characters: English letters, numbers, periods, or underscores." / «استخدم من 3 لـ30 حرف: حروف إنجليزي أو أرقام أو نقطة أو شرطة سفلية.» Source: S34-PO-1 H1=A; the allowed-character rule is S32-PO-8 Q7.
 9. **Given** a server-reported username error, **When** the user edits Username, **Then** the server error disappears immediately, normal live format feedback is shown, and availability is checked again only on submit. Source: S32-PO-9 Q11.
+10. **Given** a signup field displays a validation error in the light theme, **When** the error state is rendered, **Then** the Hero error border uses the existing light `error.fg` token approved by S35-PO-1 and the dark-theme border treatment remains unchanged. The border is measured against the rendered input background as part of the contrast evidence.
 
 ## Clarifications
 
@@ -288,6 +289,11 @@ Earlier ND-F14-1..6 wording is historical and superseded by the final decision r
 
 - **S34-PO-1 H1=A (verbatim):** “Approve exact Arabic copy: «اسم المستخدم ده غير متاح. اختار اسم تاني.» / «استخدم من 3 لـ30 حرف: حروف إنجليزي أو أرقام أو نقطة أو شرطة سفلية.»” The first string maps to the English unavailable message; the second maps to the English format message. Use these exact bytes, including Western digits `3` and `30`. Taken and reserved usernames share the unavailable message.
 - **S34-PO-1 H2=A (verbatim):** “Defer enforcement against existing accounts pending safe remediation.” No username DB constraint or validation against existing accounts is added in this round. New-signup format validation remains as approved in S32-PO-8 Q7. T058 stays open.
+
+### S35 PO decision — Hero error border
+
+- **S35-PO-1 (verbatim):** “Hero=A (#991B1B)”
+- **Architect note (not PO words):** S34-08 option A — the light-mode error border uses the existing light token `error.fg` (`#991B1B`) instead of `error.border` (`#FCA5A5`); no new color/token; dark mode unchanged.
 
 ### Session 2026-11-04 — S33-PO-4 (preserved from origin/main)
 

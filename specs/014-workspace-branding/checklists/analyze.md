@@ -277,3 +277,31 @@ This round follows the T061 completion evidence and T062 partial evidence record
 ## Post-verification S33 re-analysis — 2026-11-04
 
 T900 has been marked complete only after the GC integration tests passed on the committed code head and the stale-attached mutation produced the expected RED. Traceability records commit `c0e969b`, migration version, and test evidence. No data deletion or persistent grant change was introduced; 0 open CRITICAL/HIGH findings.
+
+## Round 17 — S35 r24 Hero error border and review-fix revalidation (2026-11-06)
+
+### Spec Kit entry gate
+
+- **PASS — requirements and scenarios:** `spec.md` contains numbered FR-029, measurable SC-021, and Hero Given/When/Then scenarios 1–10. Scenario 10 scopes the approved light error-border token to the light theme and preserves dark treatment.
+- **PASS — clarification and decision source:** `spec.md` Clarifications explicitly states no open behavior ambiguity for the Hero scope. S35-PO-1 is recorded verbatim as `Hero=A (#991B1B)`; its token mapping is separately labeled `Architect note (not PO words)`.
+- **PASS — plan and task coverage:** `plan.md` maps S35-PO-1 to the Hero implementation. `tasks.md` T063 is tagged `[FR-029]`; T062 remains `[FR-028]` and now reflects the explicit S35 authorization for synthetic Stack B fixture writes through the unmodified harness.
+- **PASS — fresh analysis:** This round follows the spec, plan and task changes. It records 0 open CRITICAL and 0 open HIGH findings.
+- **PASS — traceability:** `traceability.md` maps FR-029 to T063 and the error-edge assertion / rendered screenshot evidence. FR-028 has six cells including its Gap entry.
+
+### Findings and dispositions
+
+| ID | Severity | Finding | Disposition |
+|---|---|---|---|
+| R17-A1 | MEDIUM | The light Hero field error edge previously used the blended `error.bg` / `error.border` recipe, which is low contrast against the light input. | S35-PO-1 selects the existing `error.fg` token for light mode. T063 requires computed contrast evidence; do not add a color or token. |
+| R17-A2 | MEDIUM | T062 signup/Hero Playwright verification was deferred in r23 because its approved fixture setup writes persistent synthetic records. | S35 authorizes those writes on Stack B through the unmodified harness. The attempted suite stopped before fixtures because the selected local environment lacks `JWT_SECRET`; this is ENV-BLOCKED, not schema drift. Preserve Stack B and do not converge it. |
+| R17-A3 | LOW | F14 tasks contained two mojibake arrows; the FR-028 traceability row lacked its Gap cell; the screenshot test generated a stale STOP note contradicting its referenced matrix evidence. | Corrected in this round: `TS↔SQL` on both task lines, six-cell FR-028 row, and generated index now points readers to final dev/prod matrix evidence. |
+| R17-A4 | MEDIUM | T055 final-head release evidence, and T058's approved existing-account remediation work, remain separate open scope. | Keep both tasks open; neither blocks the scoped Hero CSS change, and neither is inferred complete. |
+
+### Design and implementation constraints
+
+- `DESIGN.md` §§2, 10–12 and `lib/design/tokens.ts` / `tokens-css.ts` remain authoritative. The authorized change uses the existing light `error.fg` token only; explicit and Follow Device dark selectors remain byte-for-byte equivalent in behavior.
+- No new color/token, shared semantic-token mutation, font, spacing, copy, component, dependency, motion, schema, migration or data change is needed.
+- Contrast acceptance for the requested evidence is border versus the rendered input background at ≥3:1. Capture the invalid Username state in AR/RTL and EN/LTR × light/dark × 390/1440px and run axe per capture.
+- Stack B suite writes are permitted only for the authorized synthetic fixtures. No reset, migration, `db push`, repair, or stack convergence.
+
+**Findings count:** 0 CRITICAL, 0 HIGH, 3 MEDIUM, 1 LOW. **Verdict:** PASS for T063 and the existing-PR documentation/test fixes. Implementation and verification remain pending; do not mark T063 or T062 checked until current-head tests pass.
