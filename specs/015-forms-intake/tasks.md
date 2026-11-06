@@ -346,7 +346,7 @@ S27 h2 executed all eight T018 mutants against Stack D at pre-merge head `f42d4b
 - [ ] T118 [FR-024/025] Clean up only rows created by the alert-mutation tests, including jobs, inbox, and audit rows.
 - [ ] T119 [FR-024/025] Synchronize alert-lock race tests on observed PostgreSQL lock state instead of elapsed sleeps.
 - [ ] T120 [FR-008/013] Make the correction-matrix cross-tenant mutant probe fail only when its named assertion is violated.
-- [ ] T121 [FR-024/025] Correct evidence links to point at tracked repository artifacts.
+- [x] T121 [FR-024/025] Correct evidence links to point at tracked repository artifacts; all 50 PNG targets resolve.
 - [ ] T122 [FR-024/025] Keep task identifiers unique and trace the restack task under T129.
 - [ ] T123 [FR-008/013] Apply a successfully saved revision to the staff console before attempting publish and preserve it on publish failure.
 - [ ] T124 [FR-008/013] Return the accepted draft revision when the client submission request fails after autosave.
