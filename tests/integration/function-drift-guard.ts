@@ -6,7 +6,7 @@ import { loadEnv } from './harness';
 export const guardedFunctions = [
   {
     identity: 'app_private.f15_valid_builder_definition(jsonb,boolean)',
-    migration: '20261108010100_f15_builder_selector_null_safety.sql',
+    migration: '20261108020200_f15_localized_slider_labels.sql',
     name: 'app_private.f15_valid_builder_definition',
   },
   {
