@@ -26,3 +26,10 @@ Analyzed source commit: `ed88574ae09c722b1f6ded4fc0b66122bbeb4f13`. Tests were c
 | FR | Task | Test | Evidence |
 |---|---|---|---|
 | FR-005, FR-007 | T009 | `tests/integration/audit.test.ts::PO sees A, B and platform events; WO sees only active own-workspace events` | Commit `368ff0a`; focused integration run on current head: 5 files / 41 tests passed. |
+
+
+## S34 traceability — P37 close-out (FR-008)
+
+| Requirement | Task(s) | Test(s) / Evidence | Status |
+|---|---|---|---|
+| FR-008 | T010, T011 (deferred) | `tests/integration/client-accounts-fixture.ts::pendingHttpAccess` (audit_events denial probes are client-side and filtered by wsB and `workspace_id is null`, each `.limit(5)`; no privileged ID sample); Stack C `client-accounts-catalog.test.ts`, `client-accounts-auth.test.ts`, `client-accounts-recovery.test.ts`: 3 files / 43 tests passed on the S35-R3 fix commit (this commit); deferred measurement task records method only | PARTIAL (rule recorded; future feature implements pagination) |
