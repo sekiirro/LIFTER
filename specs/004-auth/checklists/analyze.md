@@ -1,7 +1,7 @@
 # Spec Kit Analyze - F4 Authentication, S36 round 3
 
-- Date: 2026-11-06 18:22 UTC; after the latest spec.md, plan.md, tasks.md and traceability.md edits.
-- Worktree branch: speckit-004-staff-recovery; analyzed commit base: f07ee269d4cb6131cc2c24fafb95915fc34b0d7f; PR target base main.
+- Date: 2026-11-06 18:46 UTC; after the latest tasks.md review-driven edits.
+- Worktree branch: speckit-004-staff-recovery; analyzed commit base: 3b11b6d35f5f84785a6fb106fa75cb0beb75efb8 plus the current uncommitted spec-only follow-up; PR target base main.
 - Method: static cross-artifact review of specs/004-auth/spec.md, plan.md, tasks.md, traceability.md and Constitution VII, VIII, IX. Prerequisites passed for specs/004-auth. No implementation or tests were run.
 - Entry check: PASS. FR-001..FR-030 are numbered; SC-001..SC-015 measurable; US1..US5 have Given/When/Then acceptance scenarios including exact-copy, direct-API global/per-account limits, client manual-link preservation and session revocation. PO register/Clarifications explicitly record remaining ambiguities. Plan and tasks cover the scope; T033, T042b, T049 and T050 have FR tags.
 
@@ -18,6 +18,8 @@
 | CR-4 | FIXED | PDN-F4-7-07 now records the binding S35-PO-3 decision to revoke other sessions and enforce access-token controls; stale A/B options removed. |
 | CR-5 | FIXED | T049 specifies first five account requests pass, sixth and later are blocked when other limits do not intervene. |
 | CR-6 | FIXED | T050 assigns local boundary implementation after T033 and RED T049, preserving tests-first order. |
+| CR-7 | FIXED IN SPEC | T049 separately tests public `/recover` denial when selected, or public-route enforcement if enabled, and exercises the first-five/sixth-and-later cap through the controlled app route. |
+| CR-8 | FIXED IN SPEC | T048 matches the approved main-merge gate in docs/08 and the current brief: three executed green `pull_request` runs on the exact final head, including validate, integration, storage and secret scan; feature-branch push runs are not required. |
 | COPY-1 | MEDIUM | FR-029 contains only the two approved states; T042b checks catalog and application output byte-for-byte. Other F4 strings stay PO-DECISION-NEEDED and are listed under PDN-F4-7-06. |
 
 ## Coverage and verdict
