@@ -32,7 +32,7 @@
 
 ## Notes
 
-S33-PO-6 and S34-PO-1 resolve S33-01..12, C1–C5 and Arabic LABELS; S34-PO-2 approves the exact four mapped English labels. S34-PO-6 resolves PD-S34-NEW-01 (package row is the category); PD-S34-NEW-02 (canonical market literal) remains pending. Only dashboard/Installments/empty/error/help copy beyond the four approved English/Arabic label pairs remains BLOCKED-COPY. ND-F9-2/3/5 remain. Future implementation tasks remain unchecked; this artifact cycle ran no tests, migrations, SQL, stacks, builds or UI renders.
+S33-PO-6 and S34-PO-1 resolve S33-01..12, C1–C5 and Arabic LABELS; S34-PO-2 approves the exact four mapped English labels. S34-PO-6 resolves PD-S34-NEW-01 (package row is the category); S35-PO-1 F9=A resolves PD-S34-NEW-02 (canonical market literal: title-case `Egypt`/`International` as both the wire value and the stored value). Only dashboard/Installments/empty/error/help copy beyond the four approved English/Arabic label pairs remains BLOCKED-COPY. ND-F9-2/3/5 remain. Future implementation tasks remain unchecked; this artifact cycle ran no tests, migrations, SQL, stacks, builds or UI renders.
 
 ## S34 coverage
 

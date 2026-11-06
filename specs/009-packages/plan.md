@@ -16,7 +16,7 @@ migration plus versioned application/read/UI contracts. The shipped F9 migration
 package-version term remain immutable. S33-PO-6 and S34-PO-1 settle classification, conversion,
 promotional behavior, dashboard semantics and downstream currency interpretation. S34-PO-2 approves
 only Egypt, International, Promotional and Year-Round as English market/type labels. Category persistence
-identity is settled by S34-PO-6 (PD-S34-NEW-01=A, the package row is the category); the canonical market literal is blocked by PD-S34-NEW-02; all other dashboard/Installments/empty/error/help copy remains
+identity is settled by S34-PO-6 (PD-S34-NEW-01=A, the package row is the category); the canonical market literal is `Egypt`/`International` per S35-PO-1 F9=A; all other dashboard/Installments/empty/error/help copy remains
 BLOCKED-COPY.
 
 ## Technical Context
@@ -49,7 +49,7 @@ Gate before research, rechecked after design against Constitution v1.4.0 and the
 | Workflow              | PASS for artifact scope: S31 decisions transcribed through Specify → Clarify → Plan → Tasks → Analyze; future delegated implementation and independent architect review are separate. Implementation is blocked by the listed PO gates. |
 
 **Post-design re-check**: no constitutional exception. Document validation does not approve
-implementation or production. S33-PO-6, S34-PO-1 and S34-PO-2 settle the recorded product choices and four label pairs. S34-PO-6 settles category persistence identity (package row is the category). PD-S34-NEW-02 blocks only the canonical market literal and the dependent parts of T042/T043/T044/T055/T065/T066. Other dashboard/Installments/empty/error/help copy remains BLOCKED-COPY. Technical implementation and production gates remain mandatory.
+implementation or production. S33-PO-6, S34-PO-1 and S34-PO-2 settle the recorded product choices and four label pairs. S34-PO-6 settles category persistence identity (package row is the category). S35-PO-1 F9=A settles the canonical market literal (`Egypt`/`International` as the wire and stored value); its former dependent parts of T042/T043/T044/T055/T065/T066 are unblocked (text only). Other dashboard/Installments/empty/error/help copy remains BLOCKED-COPY. Technical implementation and production gates remain mandatory.
 
 ## S31 shipped-baseline delta (2026-11-04)
 
@@ -60,7 +60,7 @@ implementation or production. S33-PO-6, S34-PO-1 and S34-PO-2 settle the recorde
 | `public.packages` | Global immutable canonical code | Keep identity historically recoverable; commercial edits follow FR-021/FR-029 and S33-11. |
 | `public.package_offers` | Workspace/category/duration offer; availability + current version | Exactly four immutable category pairs per workspace; market/type snapshots follow S33-11. |
 | `public.package_versions` | Immutable AR/EN terms, `price_minor`, `currency`, commission and duration | Keep every existing version's identifier and stored price/currency/commission/duration terms unchanged (SC-011). Currency remains version-owned. Add no historical backfill. |
-| `publish_package_version(...)` | PO-only; accepts any format-valid three-letter currency; no market/type input | Per S34-PO-6, versions hold commercial terms and market/type live on the package row: publication takes `package_id`, accepts no market/type input and derives the market from that row. Enforce the market/currency matrix in both validation walls. Preserve replay/concurrency semantics. The market literal remains BLOCKED by PD-S34-NEW-02. |
+| `publish_package_version(...)` | PO-only; accepts any format-valid three-letter currency; no market/type input | Per S34-PO-6, versions hold commercial terms and market/type live on the package row: publication takes `package_id`, accepts no market/type input and derives the market from that row. Enforce the market/currency matrix in both validation walls. Preserve replay/concurrency semantics. The market literal is `Egypt`/`International` per S35-PO-1 F9=A. |
 | `package_versions_safe` / app reads | Returns each version's own price and currency | Add approved market/type projections if they belong to an existing immutable/read surface; never calculate or join a converted amount. |
 | `/packages` | PO-only publish form and one price per offer row | Add approved market/type controls and own-currency display; labels come only from the PO-approved copy record. |
 | F10/F12 | Registration links copy package price/currency; subscriptions/installments/payments/refunds preserve snapshots | S33-PO-6 governs reporting-only FX and settlement remains separate; no package price conversion. |
@@ -96,19 +96,19 @@ implementation or production. S33-PO-6, S34-PO-1 and S34-PO-2 settle the recorde
 | Historical gate | Current decision/status | Work that remains open or may proceed |
 |---|---|---|
 | SK-009-05 legacy classification | C5 supersedes mapping for existing mocks; no legacy classification/default is applied. | T064 verifies synthetic-only status and all dependencies before deletion; no writes on unsafe/unknown state. |
-| SK-009-06 owner/mutability | C1 fixes market/type immutability; category identity is the package row (S34-PO-6, PD-S34-NEW-01=A), unique on (workspace_id, market, type); the market literal remains BLOCKED by PD-S34-NEW-02. | Currency/no-conversion/role test design and evidence can proceed independently. |
+| SK-009-06 owner/mutability | C1 fixes market/type immutability; category identity is the package row (S34-PO-6, PD-S34-NEW-01=A), unique on (workspace_id, market, type); the market literal is `Egypt`/`International` per S35-PO-1 F9=A. | Currency/no-conversion/role test design and evidence can proceed independently. |
 | SK-009-07 promotional behavior | S33-PO-6 settles Africa/Cairo half-open periods, expiry blocks new links only, and issued links retain snapshots. | Implementation tests remain future RED-first work. |
 | SK-009-08 bilingual copy | LABELS and S34-PO-2 approve the four exact English/Arabic market/type label pairs. | Other dashboard/Installments/empty/error/help copy remains BLOCKED-COPY. |
 | SK-009-09 downstream currency | S33-PO-6/C4 settle reporting and separate settlement/accounting records; this F9 delta changes no F10/F12 schema. | Any later downstream currency change needs its applicable PO decision and feature contract. |
 
-**Implementation readiness**: S33-PO-6, S34-PO-1 and S34-PO-2 settle the recorded product choices and four English/Arabic label pairs. S34-PO-6 settles category persistence identity. PD-S34-NEW-02 (canonical market literal) remains pending; dependent work is blocked. Other dashboard/Installments/empty/error/help UI copy remains BLOCKED-COPY. Future implementation must pass the C5 preflight, RED-first tests, fresh Analyze, design and security reviews.
+**Implementation readiness**: S33-PO-6, S34-PO-1 and S34-PO-2 settle the recorded product choices and four English/Arabic label pairs. S34-PO-6 settles category persistence identity. S35-PO-1 F9=A settles the canonical market literal (`Egypt`/`International` as the wire and stored value); the formerly literal-blocked work is unblocked (text only; nothing is ticked by this cycle). Other dashboard/Installments/empty/error/help UI copy remains BLOCKED-COPY. Future implementation must pass the C5 preflight, RED-first tests, fresh Analyze, design and security reviews.
 
 ## S34-PO-1 / S33-PO-6 plan delta (specification only)
 
 - Each workspace has exactly four immutable market × type category identities: Egypt × Year-Round, Egypt × Promotional, International × Year-Round, International × Promotional. Both markets may operate concurrently.
 - Only the PO configures workspace-specific names, prices, and package-specific commissions. Commercial edits append immutable versions; client/assignment snapshots remain unchanged. Market/type cannot be changed; WOs cannot configure terms.
 - Promotional categories are available only within approved Africa/Cairo start-inclusive/end-exclusive periods. Expiry stops new links; already-issued links retain snapshots.
-- C5 starts with a read-only target-stack preflight verifying synthetic-only status and enumerating FKs, registration links, subscriptions, payments, audit rows and every other package dependency. Non-synthetic data, required financial/audit dependencies or unknown state refuse/escalate before writes. After a complete clean preflight, safely delete obsolete mock packages while preserving required client, financial and audit history; do not accept partial completion. Four-category initialization creates workspace-scoped package rows unique on (workspace_id, market, type) (S34-PO-6) and its market literal remains BLOCKED by PD-S34-NEW-02; the teardown mechanism for protected immutable rows is not specified and needs separate security design and review (no guard exception); initialize without names, prices or commissions, and PO configures real packages manually.
+- C5 starts with a read-only target-stack preflight verifying synthetic-only status and enumerating FKs, registration links, subscriptions, payments, audit rows and every other package dependency. Non-synthetic data, required financial/audit dependencies or unknown state refuse/escalate before writes. After a complete clean preflight, safely delete obsolete mock packages while preserving required client, financial and audit history; do not accept partial completion. Four-category initialization creates workspace-scoped package rows unique on (workspace_id, market, type) (S34-PO-6) and its market literal is `Egypt`/`International` per S35-PO-1 F9=A; the teardown mechanism for protected immutable rows is not specified and needs separate security design and review (no guard exception); initialize without names, prices or commissions, and PO configures real packages manually.
 - Dashboard reporting means actual monthly collections and package-specific commission with installment detail; settlement/accounting events stay separate. FX follows settled S33-PO-6 semantics; commission is PO/WO-only.
 - Installments requires due date, paid amount and remaining amount. The four English/Arabic market/type label pairs are approved by LABELS and S34-PO-2; all other dashboard/Installments/empty/error/help UI copy remains BLOCKED-COPY.
 - Future tasks are RED-first, preserve S32-R1 all-origin-reference uniqueness, create forward migrations only, never edit pushed migrations, and include Frontend Design Gate plus independent security review of mock deletion.
@@ -159,7 +159,7 @@ Foundation establishes schema/grants/guards. US1 tests canonical identity, publi
 - **ND-F9-3**: actual tier/duration catalog, names/prices/rates — NEEDS SOURCE CONFIRMATION; entered by PO.
 - **ND-F9-5**: final PO navigation/F2 ND-5; landing link only meanwhile.
 
-The retained ND-F9 items and BLOCKED-COPY scope remain explicit; S33-PO-6/S34-PO-1/S34-PO-2 decisions are settled. S34-PO-6 settles category persistence identity; PD-S34-NEW-02 (canonical market literal) remains pending. Existing
+The retained ND-F9 items and BLOCKED-COPY scope remain explicit; S33-PO-6/S34-PO-1/S34-PO-2 decisions are settled. S34-PO-6 settles category persistence identity; S35-PO-1 F9=A settles the canonical market literal (`Egypt`/`International`). Existing
 [production readiness](../../docs/07-production-readiness.md) gates remain open. Fixtures do not
 settle policy.
 
@@ -218,7 +218,7 @@ No Constitution violation or exemption. Safe view plus narrow commission RPC is 
 
 ## S32-PO-4 design delta (conditional on Clarifications MCQs)
 
-S33-PO-6, S34-PO-1 and S34-PO-2 settle the product details below, and S34-PO-6 settles category persistence identity (PD-S34-NEW-01=A); the canonical market literal is pending PD-S34-NEW-02. C1 and S33-11 fix immutable market/type; no S33 product MCQ remains open. The four English/Arabic label pairs are approved; other interface copy remains BLOCKED-COPY.
+S33-PO-6, S34-PO-1 and S34-PO-2 settle the product details below, and S34-PO-6 settles category persistence identity (PD-S34-NEW-01=A); the canonical market literal is settled by S35-PO-1 F9=A (`Egypt`/`International` as the wire and stored value). C1 and S33-11 fix immutable market/type; no S33 product MCQ remains open. The four English/Arabic label pairs are approved; other interface copy remains BLOCKED-COPY.
 
 - **Legacy mock disposition:** C5 supersedes S32 row mapping for existing mock packages; target-stack dependency preflight and fail-closed behavior are required before safe deletion and empty-category initialization.
 - **Versioned management:** PO-only commercial name/price/commission edits append versions; market/type are immutable; previous client/assignment snapshots are preserved. S33-02 retirement applies to future real packages.
