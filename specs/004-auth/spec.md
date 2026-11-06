@@ -124,19 +124,38 @@ Anonymous visitors can reach only the sign-in page, the recovery (set new passwo
 - **SC-006**: A used, expired or superseded link succeeds 0 times.
 - **SC-007**: A client given a link can set a new password and reach their signed-in area in under 2 minutes.
 
+## Clarifications
+
+### PO decision register (verbatim from `s28-po-decisions-verbatim.md`)
+
+- **SK-004-01** (S31-PO-2, ledger line 175; D-19 approval status vs T030): "Confirm D-19 approved". Option text: "D-19 becomes the scope authority; T030 closes; #52's D-19 item can be resolved."
+- **SK-004-02** (S31-PO-2, ledger line 176; ND-F4-1 which Trainers may generate client recovery links): "All workspace Trainers". Option text: "Any Trainer can issue links for any client in the workspace. Broadest; same work as above." ("same work" = "Needs a new spec cycle, RLS, tests and security review.")
+- **SK-004-03** (S31-PO-2, ledger line 177; ND-F4-2 link delivery beyond copy): "Copy only (Recommended)". Option text: "Current narrow flow; nothing is sent automatically."
+- **SK-004-06** (S31-PO-2, ledger line 178; ND-F4-6 PO manual recovery links for staff targets): "Clients only (Recommended)". Option text: "Current design; staff recover through normal sign-in recovery."
+- **SK-004-04** (S31-PO-3, ledger line 182; ND-F4-4 production recovery-link limits): "Maximum 10 password-recovery links per issuing staff account per rolling hour, and 3 per client per rolling 24 hours across all issuers."
+
+### Source-gap record (not a ledger decision)
+
+- **ND-F4-3 session-lifetime enforcement** is recorded as deferred in `docs/13-production-readiness.md:34` ("PO decision: B; fix in a later feature."). That text is not in the PO decisions ledger lines 165-190 read for this change, so it is not treated as a ledger decision. Enforcement is out of scope for F4 and has no task. See PO-DECISION-NEEDED in this PR's report to confirm the source.
+
+### Open items
+
+ND-F4-5 and ND-F4-7 remain open (unanswered). Interim behaviour for those is unchanged. Open ND items are listed in the next section; this register does not state that there are no open ambiguities.
+
 ## NEEDS DECISION (owner sub-decisions; not invented here)
 
-- **ND-F4-1 — Trainer permission.** Which Trainers may generate links: all Trainers of the workspace, only Trainers assigned to the client (assignment arrives in P4), or only Trainers granted a new per-person permission by the PO? Until decided, Trainers are denied (deny-by-default).
-- **ND-F4-2 — Delivery to the client.** How the staff member passes the link: copy to clipboard only, or also a share action (device share sheet, Telegram once P6 exists)? Until decided, the link is shown once with a copy action only.
-- **ND-F4-3 — Link expiry.** **Decided (PO, 2026-10-29):** recovery links expire after 60 minutes in all environments, are single-use, and issuing a replacement invalidates earlier unused links for the same account and purpose. The recovery-session TTL is 15 minutes in all environments and is independent: a link verified before expiry starts a fresh 15-minute session. Password recovery never changes client approval status.
-- **ND-F4-4 — Rate-limit values.** Maximum generations per actor and per target within a time window. Until decided, the limits are configuration values with conservative placeholders used only in local/dev; production requires a decision.
+- **ND-F4-1 — Trainer permission.** Which Trainers may generate links: all Trainers of the workspace, only Trainers assigned to the client (assignment arrives in P4), or only Trainers granted a new per-person permission by the PO? **Decided (PO, S31-PO-2 SK-004-02):** "All workspace Trainers". Not implemented: Trainers stay denied until task T032 (FR-006) ships through a new Spec Kit cycle.
+- **ND-F4-2 — Delivery to the client.** How the staff member passes the link: copy to clipboard only, or also a share action (device share sheet, Telegram once P6 exists)? **Decided (PO, S31-PO-2 SK-004-03):** "Copy only (Recommended)". Already satisfied: the link is shown once with a copy action only (`components/auth/RecoveryLinkDialog.tsx:40`; no share action exists in `components/auth`, `app` or `lib/auth`).
+- **ND-F4-3 — Link expiry.** **Decided (PO, 2026-10-29):** recovery links expire after 60 minutes in all environments, are single-use, and issuing a replacement invalidates earlier unused links for the same account and purpose. The recovery-session TTL is 15 minutes in all environments and is independent: a link verified before expiry starts a fresh 15-minute session. Password recovery never changes client approval status. Session-lifetime enforcement is deferred per `docs/13-production-readiness.md:34` (not a ledger decision; see Clarifications).
+- **ND-F4-4 — Rate-limit values.** Maximum generations per actor and per target within a time window. **Decided (PO, S31-PO-3 SK-004-04):** maximum 10 password-recovery links per issuing staff account per rolling hour, and 3 per client per rolling 24 hours across all issuers. The merged implementation still uses the earlier placeholders (20 per actor and 3 per target per hour); aligning the configuration and tests is task T031 (FR-010) and is not yet implemented.
 - **ND-F4-5 — Client-target sequencing.** Client accounts and client profiles are created in P1. Options: (a) F4 ships the full mechanism with client targeting enabled when P1 adds client accounts (recommended); (b) F4 adds a minimal client-account record early; (c) move generation to P1. Until decided, F4 implements (a): the generation path exists and is tested, and the client-target lookup denies every target until client accounts exist.
-- **ND-F4-6 — Staff recovery.** BRD lines 40/104/130 give the PO manual reset links without limiting them to clients. Should the PO also generate recovery links for staff accounts in F4? Not built until decided.
+- **ND-F4-6 — Staff recovery.** BRD lines 40/104/130 give the PO manual reset links without limiting them to clients. **Decided (PO, S31-PO-2 SK-004-06):** "Clients only (Recommended)"; staff recover through normal sign-in recovery. This matches the current design (staff targets are denied).
+  - Architect note (not PO words): staff self-service ("normal sign-in") recovery depends on ND-F4-7 (self-service email reset, not built until decided). Until then staff have no self-service recovery path, and staff targets for manual links remain denied per SK-004-06. ND-F4-7 stays open.
 - **ND-F4-7 — Self-service email reset timing.** BRD line 130 requires self-service email reset. With no external SMTP (owner decision), it is sequenced, not removed (D-07). When is SMTP introduced? Not built until decided.
 
 ## Assumptions
 
-- The owner decisions of 2026-10-27 extend BRD line 104 (PO manual reset links) to WOs and authorized Trainers. They will be recorded as a decision-register entry (D-19) in this feature's PR for PO approval.
+- The owner decisions of 2026-10-27 extend BRD line 104 (PO manual reset links) to WOs and authorized Trainers. They are recorded as decision-register entry D-19, approved by the PO (S31-PO-2 SK-004-01); D-19 is the scope authority.
 - Password rules (minimum length/strength) use the auth provider's configurable minimum. A stricter rule would be a later decision; none is stated in the sources.
 - Account lockout beyond the auth provider's built-in sign-in rate limiting is not required by the sources; no IP blocking is added.
 - Client sign-in uses the same flow once client accounts exist (P1). F4 tests use staff fixtures and an auth-only fixture for the client target.

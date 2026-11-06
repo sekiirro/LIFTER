@@ -5,6 +5,8 @@
 **Status**: Draft
 **Input**: User description: "P0-F2 Design System foundation: tokens for dark/light modes, emerald brand with accessible variants, semantic colors, workspace brand override with contrast guard, device-first theme with persisted manual choice, AR-first RTL + EN LTR, Geist + IBM Plex Sans Arabic, accessible base components and states, responsive app shell (desktop icon rail, mobile bottom bar) with Trainer/Client nav only, reduced motion, dev-only showcase, Arabic browser print spike. Constitution amendment lime → emerald."
 
+**Merged scope and Q16 clarification:** The PO-approved Glisse work merged on `main` as PR #28 at `12bcad944c9366f17afc00a36bd14586c5f2e77a`. This spec delta records the shipped floating surfaces, Glisse enhancement/fallback behavior, and accessible floating actions/popover menu evidenced by PR #28 and PO records S21-PO-1/2/6, S26-PO-4, S27-PO-1, and S28-PO-1/2. It also records the separate S30-PO-8 Q16 correction: wide desktop navigation is a vertical Liquid Glass sidebar, not a bottom dock. Liquid Glass is not extended to dense data, forms, or financial content.
+
 Governing documents: [DESIGN.md](../../DESIGN.md) (PO-approved design reference, 2026-10-27; supersedes earlier design assumptions), Constitution v1.0.0 → v1.1.0 (this feature), [Architecture v3](../../docs/02-architecture.md), [Roadmap P0](../../docs/03-roadmap.md), [Assessment](../../docs/00-assessment.md) (Arabic print spike in P0-F2).
 
 ## User Scenarios & Testing *(mandatory)*
@@ -67,7 +69,7 @@ Implementers have shared components: buttons, form fields, cards, confirmation d
 
 ### User Story 4 - Responsive app shell with role navigation (Priority: P2)
 
-On wide screens, a compact vertical icon rail shows each section's name on hover and on keyboard focus. On narrow screens, a bottom bar shows icons with visible labels plus "More". Trainer and Client navigation follow the approved order. The shell mirrors correctly in Arabic.
+At viewports 1024px and wider, a compact vertical Liquid Glass sidebar appears at inline-start; icons are visible by default and names appear in tooltips on pointer hover and keyboard focus. At widths below 1024px, a bottom bar shows icons with visible labels plus "More". Trainer and Client navigation follow the approved order. At 1024–1199px the content column clears the sidebar. The shell mirrors correctly in Arabic. (S31-PO-7 Q5)
 
 **Why this priority**: DESIGN.md §5 fixes navigation patterns; later role screens plug into it.
 
@@ -75,11 +77,13 @@ On wide screens, a compact vertical icon rail shows each section's name on hover
 
 **Acceptance Scenarios**:
 
-1. **Given** a wide viewport, **When** a rail item gets pointer hover or keyboard focus, **Then** its name is shown, and every item has an accessible name.
-2. **Given** a narrow viewport, **When** the Trainer shell renders, **Then** the bottom bar is Home, Clients, Workout, Nutrition, More, with visible labels and nothing that needs hover.
-3. **Given** a narrow viewport, **When** the Client shell renders, **Then** the bottom bar is Home, Workout, Nutrition, Progress, More.
-4. **Given** Arabic, **When** the shell renders, **Then** the rail sits on the right side, and the bar order and directional icons follow RTL.
-5. **Given** Platform Owner, Workspace Owner or Sales, **When** navigation is requested, **Then** no tab set is defined; the system reports it as an open decision instead of inventing one.
+1. **Given** a 1024px viewport, **When** the Trainer or Client shell renders, **Then** the vertical Liquid Glass sidebar is at inline-start, icons are the only default visible navigation content, the content does not overlap the sidebar, and each icon name appears in a tooltip on pointer hover and keyboard focus.
+2. **Given** a viewport from 1024px through 1199px, **When** either shell renders, **Then** the content column clears the sidebar without overlap.
+3. **Given** a 1440px viewport, **When** either shell renders, **Then** the vertical Liquid Glass sidebar is at inline-start and the icons-only and hover/focus tooltip behavior is present.
+4. **Given** a viewport below 1024px, **When** the Trainer shell renders, **Then** the bottom bar is Home, Clients, Workout, Nutrition, More, with visible labels and nothing that needs hover.
+5. **Given** a viewport below 1024px, **When** the Client shell renders, **Then** the bottom bar is Home, Workout, Nutrition, Progress, More.
+6. **Given** Arabic, **When** the shell renders, **Then** the sidebar sits at right inline-start, and the bar order and directional icons follow RTL.
+7. **Given** Platform Owner, Workspace Owner or Sales, **When** navigation is requested, **Then** no tab set is defined; the system reports it as an open decision instead of inventing one.
 
 ---
 
@@ -95,6 +99,32 @@ A sample bilingual page printed through the browser to PDF shows correctly shape
 
 1. **Given** the print sample, **When** printed to PDF, **Then** Arabic letters join correctly, direction is RTL, mixed Arabic/Latin/number runs read correctly, and screen-only chrome (navigation, theme controls) is hidden.
 2. **Given** the spike, **When** finished, **Then** a findings report states what worked, what failed and what remains for the booklet design (which is not built here).
+
+---
+
+### User Story 6 - Selective floating Liquid Glass surfaces (Priority: P2)
+
+Users see the approved Glisse Liquid Glass treatment on the floating mobile navigation capsule and floating action/menu surfaces shipped in PR #28. The desktop sidebar is specified by FR-021/FR-027. Dense data, forms and financial content remain mostly solid. Where device capability or display preferences do not support the enhancement, the surfaces remain usable with a static fallback.
+
+**Why this priority**: It records the already merged, PO-approved design-system extension without broadening its approved surface area (S21-PO-1/2/6; PR #28; S28-PO-1/2).
+
+**Independent Test**: Inspect the floating mobile capsule and action/menu surfaces in an eligible browser and in static-fallback conditions; operate the menu with keyboard input and confirm focus remains on the same control when enhancement starts or falls back.
+
+**Acceptance Scenarios**:
+
+1. **Given** the Trainer or Client shell, **When** it renders at a narrow viewport, **Then** the mobile bottom navigation is presented as the shipped floating capsule; when it renders at a wide viewport, **Then** a vertical Liquid Glass sidebar is presented at inline-start, with icons only by default and each icon name available in a tooltip on pointer hover and keyboard focus.
+2. **Given** a supported browser and preferences that permit refraction, **When** the deferred enhancement initializes, **Then** the floating surface reports the enhanced runtime while its focused navigation node remains the same node.
+3. **Given** unsupported backdrop filtering, reduced transparency, increased contrast, forced colors, reduced motion, constrained-device state, an explicit solid fallback, or an initialization over-budget condition, **When** a glass surface is rendered or initialization is attempted, **Then** it uses the static/solid fallback and remains operable.
+4. **Given** a floating action or popover menu, **When** the user opens and navigates the menu by keyboard, **Then** the menu trigger exposes its expanded state, focus follows the supported arrow/Home/End controls, Space activates the focused item, Escape restores trigger focus, and Tab closes the menu without trapping focus.
+5. **Given** dense data, forms, or financial content, **When** the approved glass surfaces are used in the feature, **Then** those content areas remain mostly solid.
+
+**Clarifications**
+
+- Decision record: S21-PO-1/2/6, S26-PO-4, S27-PO-1, S28-PO-1/2, S30-PO-8 Q16; implementation evidence: PR #28 body and merged commits, including final approved SHA `12bcad944c9366f17afc00a36bd14586c5f2e77a`; design reference: DESIGN.md §10 log, §12 review criteria, and the approved Liquid Glass addition under “Public Hero.”
+- Source quotations: S21-PO-1: “Keep dense data, forms, and financial content mostly solid.” S21-PO-2: “Floating + real refraction” on floating surfaces, with “solid fallback.” S21-PO-6: “before any PR, TBT must be within +50 ms of baseline”; it also approved “Floating action buttons” and “Menus & popovers,” while the “Desktop rail stays solid.” DESIGN.md §10 records the trainer/client mobile navigation order; DESIGN.md §12 requires contrast, focus, screen-reader, and reduced-motion review. The PR #28 body describes “Deferred Glisse refraction” on capable devices and static fallback for constrained, reduced-transparency, increased-contrast, and forced-colors cases. S26-PO-4 says “approve merges separately by exact SHA.” S27-PO-1 requires rerun CI and CodeRabbit and exact-SHA approval if the head changes. S28-PO-1 states “PR #28 Merge Approved from me”; S28-PO-2 pins approval to exact SHA `12bcad9` and requires post-merge checks and main CI.
+- Q16 (S30-PO-8, verbatim): "Q16: The intended and approved desktop navigation design is a VERTICAL LIQUID GLASS SIDEBAR, NOT a bottom dock. Requirements: Liquid Glass appearance. Positioned on the side of the screen. Icons only by default, maximizing available navigation items. Show each icon's name in a tooltip on mouse hover and keyboard focus. Preserve the approved glass visual style. Do not interpret my approval of PR #28 as approval of a bottom dock. Record this correction in the specs, identify any implementation deviations, and route necessary fixes through normal review gates. No merges without exact-SHA approval." The existing implementation positions the rail at inline-start (`components/shell/AppShell.module.css:13-20`); that layout rule determines its logical side and mirrors by document direction.
+- S31-PO-7 Q5 (verbatim): "From 1024px (Recommended)" — option text: "Laptops get the sidebar. The content column needs room beside the rail at 1024–1199px (small layout adjustment, screenshots at 1024 and 1440). Phones/tablets keep the bottom bar." Therefore, FR-021 fixes the sidebar breakpoint at 1024px; inline-start remains the side (`components/shell/AppShell.module.css:17`), left in LTR and right in RTL; the 1024–1199px content column must clear the rail.
+- Zero open ambiguities remain for the PR #28, Q16, and S31-PO-7 Q5 requirements recorded here; the logical side is established by the existing inline-start implementation. Existing plan NEEDS DECISION items remain unchanged and outside this delta.
 
 ---
 
@@ -146,7 +176,7 @@ A sample bilingual page printed through the browser to PDF shows correctly shape
 
 **App shell**
 
-- **FR-021**: Wide layout: compact vertical icon rail on the inline-start side, showing names on hover and keyboard focus. Narrow layout: bottom bar with icons and visible labels, plus "More". Breakpoints adapt to available width; the numeric breakpoint values are provisional and marked as an open item.
+- **FR-021**: At viewport widths of 1024px and above, the layout MUST show a vertical Liquid Glass sidebar at inline-start, with icons only by default and each icon name in a tooltip on pointer hover and keyboard focus. From 1024px through 1199px, the content column MUST clear the sidebar without overlap. Below 1024px, the layout MUST show the bottom bar with icons and visible labels, plus "More". This breakpoint and content-clearance behavior are approved by S31-PO-7 Q5.
 - **FR-022**: Navigation configuration MUST be data-driven per role. Only Trainer (Home, Clients, Workout, Nutrition, More) and Client (Home, Workout, Nutrition, Progress, More) are defined. Other roles MUST be left undefined with an explicit open-decision marker. The shell is presentational only: it is not a permission boundary and contains no authorization logic.
 
 **Showcase & spike**
@@ -157,7 +187,10 @@ A sample bilingual page printed through the browser to PDF shows correctly shape
 **Governance**
 
 - **FR-025**: Constitution Principle VIII and Architecture v3's UI row MUST be updated from "lime accent" to the approved emerald brand with workspace-customizable colors, with a decision-register entry and a version bump, pending PO approval at merge.
-- **FR-026**: Open items from DESIGN.md §11 touched by this feature (secondary token values beyond what is verified, final icon library, breakpoint numbers, minimum touch-target size, other roles' tabs, Arabic vs. Western digit shapes) MUST be listed as NEEDS DECISION in the plan, with no invented values presented as approved.
+- **FR-026**: Open items from DESIGN.md §11 touched by this feature (secondary token values beyond what is verified, final icon library, minimum touch-target size, other roles' tabs, Arabic vs. Western digit shapes) MUST be listed as NEEDS DECISION in the plan, with no invented values presented as approved. The navigation breakpoint is resolved by S31-PO-7 Q5.
+- **FR-027**: The design system MUST provide the floating mobile navigation capsule, the vertical Liquid Glass sidebar at 1024px and wider required by S30-PO-8 Q16 and S31-PO-7 Q5, floating action surfaces, and popover menu. Q16 supersedes the prior PR #28 desktop-dock wording and S21-PO-6's "Desktop rail stays solid" wording for sidebar viewports; dense data, forms, and financial content remain mostly solid. [S21-PO-1/2/6; PR #28; S28-PO-1/2]
+- **FR-028**: Glisse refraction MUST be deferred and MUST use a static/solid fallback when browser capability, user display preferences, constrained-device conditions, explicit fallback selection, or the shipped initialization budget prevents enhancement. The fallback MUST preserve keyboard operation and focused-node identity. [S21-PO-2/6; PR #28]
+- **FR-029**: The shipped floating popover menu MUST expose an accessible trigger and support the tested keyboard behavior: ArrowUp/ArrowDown initial focus and movement, Home/End, Space activation, Escape focus restoration, and Tab close without focus trapping. [S21-PO-1/2/6; PR #28]
 
 ### Key Entities
 
@@ -178,6 +211,10 @@ A sample bilingual page printed through the browser to PDF shows correctly shape
 - **SC-005**: AR and EN message catalogs have 100% matching keys.
 - **SC-006**: The print spike's report covers shaping, direction, mixed numbers, tables and hidden chrome, each marked pass or fail with evidence.
 - **SC-007**: The edge build stays within the free-tier size limit, with headroom reported.
+- **SC-008**: Across 15 interleaved paired TBT samples per arm, the median desktop and mobile TBT difference for the Glass change is no greater than +50 ms versus baseline. [S21-PO-6; PR #28 body]
+- **SC-009**: Automated capability/preference tests reject refraction for every listed unsupported or fallback condition, and a browser test confirms an over-budget initialization falls back without replacing the focused navigation node. [PR #28]
+- **SC-010**: At 1024px and 1440px, viewport captures and browser assertions show the vertical Liquid Glass sidebar at inline-start, icons only by default, and each icon name in a tooltip on pointer hover and keyboard focus; below 1024px the bottom bar is shown. [S30-PO-8 Q16; S31-PO-7 Q5]
+- **SC-011**: At every tested width from 1024px through 1199px, the content and fixed sidebar bounding boxes do not overlap. [S31-PO-7 Q5]
 
 ## Assumptions
 
