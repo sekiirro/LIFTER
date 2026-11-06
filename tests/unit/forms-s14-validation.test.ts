@@ -36,6 +36,12 @@ describe('S14 form definition types and privacy metadata', () => {
         'N08.foods': ['low:eggs'],
       }),
     ).toContainEqual({ code: 'invalid_choice', questionId: 'N08.foods' });
+    expect(() =>
+      validateAnswerSet(runtimeQuestions, {
+        N08: 'low',
+        'N08.foods': [null],
+      }),
+    ).not.toThrow();
   });
 
   it('renders the S34-PO-4 approved English meal-count prompt and choices', () => {
