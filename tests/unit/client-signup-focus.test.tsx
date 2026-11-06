@@ -439,8 +439,7 @@ describe('signup result focus', () => {
     const { createRoot } = await import('react-dom/client');
     let callCount = 0;
     let finishResubmission:
-      | ((result: ReturnType<typeof signupResult>) => void)
-      | undefined;
+      ((result: ReturnType<typeof signupResult>) => void) | undefined;
     const action = vi.fn(async () => {
       callCount += 1;
       if (callCount === 1)

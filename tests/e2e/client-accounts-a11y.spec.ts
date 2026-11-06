@@ -80,10 +80,9 @@ for (const locale of ['ar', 'en'] as const) {
     await page.goto(`/register/${validToken}`);
     await page.waitForLoadState('networkidle');
     const messages = getMessages(locale);
-    const dateOfBirth = page.getByLabel(
-      messages['clientSignup.dateOfBirth'],
-      { exact: true },
-    );
+    const dateOfBirth = page.getByLabel(messages['clientSignup.dateOfBirth'], {
+      exact: true,
+    });
     const username = page.getByLabel(messages['clientSignup.username'], {
       exact: true,
     });
