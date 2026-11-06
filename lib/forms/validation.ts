@@ -887,7 +887,9 @@ export function validateAnswerSet(
         : undefined;
     if (
       allowedPrefix === undefined ||
-      selectedFoods.some((food) => !food.startsWith(allowedPrefix))
+      selectedFoods.some(
+        (food) => typeof food !== 'string' || !food.startsWith(allowedPrefix),
+      )
     ) {
       issues.push({ code: 'invalid_choice', questionId: 'N08.foods' });
     }

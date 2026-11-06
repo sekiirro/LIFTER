@@ -36,6 +36,24 @@ describe('S14 form definition types and privacy metadata', () => {
         'N08.foods': ['low:eggs'],
       }),
     ).toContainEqual({ code: 'invalid_choice', questionId: 'N08.foods' });
+    expect(() =>
+      validateAnswerSet(runtimeQuestions, {
+        N08: 'low',
+        'N08.foods': [null],
+      }),
+    ).not.toThrow();
+  });
+
+  it('rejects a slider whose validation object is missing', () => {
+    const malformed = structuredClone(starter.questions);
+    const slider = malformed.find((question) => question.type === 'slider');
+    expect(slider).toBeDefined();
+    delete (slider as { validation?: unknown }).validation;
+
+    expect(validateFormDefinition(malformed as FormQuestion[])).toContainEqual({
+      code: 'invalid_slider_configuration',
+      questionId: slider!.id,
+    });
   });
 
   it('renders the S34-PO-4 approved English meal-count prompt and choices', () => {

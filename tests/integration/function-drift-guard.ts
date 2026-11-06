@@ -1,4 +1,4 @@
-﻿import { createHash } from 'node:crypto';
+import { createHash } from 'node:crypto';
 import { readFile } from 'node:fs/promises';
 import postgres from 'postgres';
 import { loadEnv } from './harness';
@@ -13,7 +13,7 @@ export const guardedFunctions = [
     identity: 'app_private.f15_valid_builder_definition(jsonb,boolean)',
     migration: [
       '20261108020200_f15_localized_slider_labels.sql',
-      '20261108010100_f15_builder_selector_null_safety.sql',
+      '20261108021001_f15_builder_slider_validation_guard.sql',
     ],
     name: 'app_private.f15_valid_builder_definition',
   },

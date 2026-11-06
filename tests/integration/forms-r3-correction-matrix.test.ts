@@ -167,6 +167,8 @@ it('T014 enforces correction and audited history access for Client, Trainer, WO,
         'or false',
       );
       expect(crossTenantMutant).not.toBe(readerDefinition!.definition);
+      const mutantRollback = new Error('rollback T014 cross-tenant mutant');
+      let crossTenantMutantKilled = false;
       await expect(
         tx.savepoint(async (sp) => {
           await sp.unsafe(crossTenantMutant);
@@ -174,10 +176,15 @@ it('T014 enforces correction and audited history access for Client, Trainer, WO,
           const [mutantRead] = await sp`
             select public.read_form_answer(${otherContext.wsA.id},${foreignWorkspace.assignmentId},'history') as result
           `;
-          expect(mutantRead?.result).toBeNull();
-          await sp`reset role`;
+          try {
+            expect(mutantRead?.result).toBeNull();
+          } catch {
+            crossTenantMutantKilled = true;
+          }
+          throw mutantRollback;
         }),
-      ).rejects.toThrow();
+      ).rejects.toBe(mutantRollback);
+      expect(crossTenantMutantKilled).toBe(true);
 
       await act(tx, context.po.userId);
       const inventedWorkspaceId = randomUUID();

@@ -7,6 +7,7 @@ import {
   sql,
 } from './registration-approval-operations-fixture';
 import { withCrashSafeFunctionMutant } from './function-drift-guard';
+import { cleanupAlertFixture } from './forms-alert-fixture-cleanup';
 
 const db = sql();
 afterAll(() => db.end());
@@ -413,24 +414,49 @@ it('waits for a concurrent membership revocation and excludes the recipient at e
   const revoker = sql();
   const evaluator = sql();
   let releaseRevocation!: () => void;
+  let releaseCommit!: () => void;
   const revocationLocked = new Promise<void>((resolve) => {
     releaseRevocation = resolve;
+  });
+  const evaluatorBlocked = new Promise<void>((resolve) => {
+    releaseCommit = resolve;
   });
   const hold = revoker.begin(async (tx) => {
     await tx`update public.workspace_memberships
       set revoked_at=clock_timestamp(),revoked_by=${f.po.userId}
       where workspace_id=${f.wsA.id} and user_id=${f.trainerA.userId} and revoked_at is null`;
     releaseRevocation();
-    await new Promise((resolve) => setTimeout(resolve, 250));
+    await evaluatorBlocked;
   });
+  let evaluationFinished = false;
   try {
     await revocationLocked;
+    const [session] = await evaluator`select pg_backend_pid() as pid`;
+    expect(session).toBeDefined();
+    const pid = session!.pid;
     const evaluation = evaluator`
       select app_private.evaluate_forms_alerts_core(
         '2026-04-11T00:00:00Z'::timestamptz,${f.wsA.id}::uuid,250
       ) as result
-    `.execute();
-    await new Promise((resolve) => setTimeout(resolve, 75));
+    `
+      .execute()
+      .finally(() => {
+        evaluationFinished = true;
+      });
+    await expect
+      .poll(
+        async () => {
+          const [activity] = await revoker`
+            select wait_event_type,wait_event
+            from pg_catalog.pg_stat_activity where pid=${pid}
+          `;
+          if (activity?.wait_event_type === 'Lock') return 'lock';
+          return evaluationFinished ? 'finished' : null;
+        },
+        { timeout: 5000 },
+      )
+      .toBe('lock');
+    releaseCommit();
     await hold;
     const [result] = await evaluation;
     expect(result!.result).toEqual({ status: 'ok', enqueued: 0 });
@@ -448,6 +474,9 @@ it('waits for a concurrent membership revocation and excludes the recipient at e
       [f.po.userId, f.woA.userId].sort(),
     );
   } finally {
+    releaseCommit();
+    await hold.catch(() => undefined);
+    await db.begin((tx) => cleanupAlertFixture(tx, f.wsA.id, assignment));
     await revoker.end();
     await evaluator.end();
   }

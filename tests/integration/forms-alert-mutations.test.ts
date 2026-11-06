@@ -8,6 +8,7 @@ import {
   sql,
 } from './registration-approval-operations-fixture';
 import { withCrashSafeFunctionMutant } from './function-drift-guard';
+import { cleanupAlertFixture } from './forms-alert-fixture-cleanup';
 
 const db = sql();
 afterAll(() => db.end());
@@ -339,36 +340,40 @@ it('kills race, missing dedupe lock, and two-hour escalation mutants', async () 
       )`;
       return id;
     });
-    await withCrashSafeFunctionMutant(
-      CORE,
-      (source) => source.replace('    for update of s skip locked\n', ''),
-      async () =>
-        expectInvariantFailure(
-          'detector must observe the locked on-time delivery first',
-          async () => {
-            const writer = sql();
-            const evaluator = sql();
-            await evaluator`set lock_timeout = '1s'`;
-            await writer`begin`;
-            try {
-              await writer`update app_private.form_alert_schedules
+    try {
+      await withCrashSafeFunctionMutant(
+        CORE,
+        (source) => source.replace('    for update of s skip locked\n', ''),
+        async () =>
+          expectInvariantFailure(
+            'detector must observe the locked on-time delivery first',
+            async () => {
+              const writer = sql();
+              const evaluator = sql();
+              await evaluator`set lock_timeout = '1s'`;
+              await writer`begin`;
+              try {
+                await writer`update app_private.form_alert_schedules
               set delivered_at='2026-05-13T09:59:59.000Z'::timestamptz
               where workspace_id=${f.wsA.id} and source_assignment_id=${assignment} and alert_kind='trainer_late'`;
-              const result = await evaluate(
-                evaluator,
-                f.wsA.id,
-                '2026-05-14T10:00:00.000Z',
-              );
-              expect(result).toEqual({ status: 'ok', enqueued: 0 });
-              await writer`commit`;
-            } finally {
-              await writer`rollback`.catch(() => undefined);
-              await writer.end();
-              await evaluator.end();
-            }
-          },
-        ),
-    );
+                const result = await evaluate(
+                  evaluator,
+                  f.wsA.id,
+                  '2026-05-14T10:00:00.000Z',
+                );
+                expect(result).toEqual({ status: 'ok', enqueued: 0 });
+                await writer`commit`;
+              } finally {
+                await writer`rollback`.catch(() => undefined);
+                await writer.end();
+                await evaluator.end();
+              }
+            },
+          ),
+      );
+    } finally {
+      await db.begin((tx) => cleanupAlertFixture(tx, f.wsA.id, assignment));
+    }
   }
   {
     const { f, client } = await setupClient();
@@ -381,40 +386,62 @@ it('kills race, missing dedupe lock, and two-hour escalation mutants', async () 
       );
       return id;
     });
-    await withCrashSafeFunctionMutant(
-      CORE,
-      (source) =>
-        source.replace(
-          '  perform pg_catalog.pg_advisory_xact_lock(11011,318);\n',
-          '',
-        ),
-      async () =>
-        expectInvariantFailure(
-          'concurrent evaluator must wait on the dedupe advisory lock',
-          async () => {
-            const lockConnection = sql();
-            const evaluator = sql();
-            await lockConnection`begin`;
-            await lockConnection`select pg_catalog.pg_advisory_xact_lock(11011,318)`;
-            let finished = false;
-            const pending = evaluate(
-              evaluator,
-              f.wsA.id,
-              '2026-05-16T10:00:00.000Z',
-            ).finally(() => {
-              finished = true;
-            });
-            await new Promise((resolve) => setTimeout(resolve, 100));
-            const blocked = finished === false;
-            await lockConnection`commit`;
-            await pending;
-            await lockConnection.end();
-            await evaluator.end();
-            expect(blocked).toBe(true);
-            void assignment;
-          },
-        ),
-    );
+    try {
+      await withCrashSafeFunctionMutant(
+        CORE,
+        (source) =>
+          source.replace(
+            '  perform pg_catalog.pg_advisory_xact_lock(11011,318);\n',
+            '',
+          ),
+        async () =>
+          expectInvariantFailure(
+            'concurrent evaluator must wait on the dedupe advisory lock',
+            async () => {
+              const lockConnection = sql();
+              const evaluator = sql();
+              await lockConnection`begin`;
+              await lockConnection`select pg_catalog.pg_advisory_xact_lock(11011,318)`;
+              let finished = false;
+              const [session] = await evaluator`select pg_backend_pid() as pid`;
+              expect(session).toBeDefined();
+              const pid = session!.pid;
+              const pending = evaluate(
+                evaluator,
+                f.wsA.id,
+                '2026-05-16T10:00:00.000Z',
+              ).finally(() => {
+                finished = true;
+              });
+              try {
+                await expect
+                  .poll(
+                    async () => {
+                      const [activity] = await lockConnection`
+                      select wait_event_type,wait_event
+                      from pg_catalog.pg_stat_activity where pid=${pid}
+                    `;
+                      if (activity?.wait_event_type === 'Lock')
+                        return activity.wait_event;
+                      return finished ? 'finished' : null;
+                    },
+                    { timeout: 5000 },
+                  )
+                  .toBe('advisory');
+                await lockConnection`commit`;
+                await pending;
+                void assignment;
+              } finally {
+                await lockConnection`rollback`.catch(() => undefined);
+                await lockConnection.end();
+                await evaluator.end();
+              }
+            },
+          ),
+      );
+    } finally {
+      await db.begin((tx) => cleanupAlertFixture(tx, f.wsA.id, assignment));
+    }
   }
   {
     const { f, client } = await setupClient();
