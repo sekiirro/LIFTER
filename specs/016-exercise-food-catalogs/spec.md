@@ -163,8 +163,6 @@ Edge cases for this story: sending to a workspace the PO has not explicitly supp
 
 D16-1a/b/c and D16-2 through D16-10 are approved and recorded in docs/04-changes-and-questions.md, S20-03 through S20-13. No D16 item remains open. The PO dataset is a future input; audit it and obtain import approval when supplied. Do not invent food values or exercise content.
 
-S35-PO-1 (F16 exercise distribution) is recorded under Clarifications, session 2026-11-06. Its open items MCQ-F16-1 to MCQ-F16-7 are PO-DECISION-NEEDED and are not approved defaults.
-
 ## Assumptions
 
 - `coaching_work` (PO, WO, Trainer) is the right capability for food addition and workspace exercises; PO-only `govern_global_catalog` covers global exercise and food Remove/Restore/Merge governance. Food editing additionally enforces creator-or-PO ownership on the locked identity.

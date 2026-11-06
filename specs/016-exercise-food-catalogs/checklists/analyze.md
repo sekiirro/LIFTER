@@ -2,7 +2,7 @@
 
 ## S35-PO-1 manual exercise distribution - Spec Kit update 2026-11-06
 
-- Date: 2026-11-06 (run after the last edit to spec.md, plan.md, tasks.md, data-model.md and contracts/catalog-api.md in this change).
+- Date: 2026-11-06, re-run after the final edit to spec.md, plan.md, tasks.md, data-model.md and contracts/catalog-api.md in this change (final re-check after the merge-conflict follow-up commit).
 - Scope: specification only (S35-PO-1 F16). No code, test, schema or migration changed.
 - Spec: User Story 6 with 9 Given/When/Then scenarios; FR-022 to FR-030; SC-006 to SC-010. Every FR is measurable through at least one SC or scenario.
 - Clarify: session 2026-11-06 quotes S35-PO-1 byte-exact and carries the supersession ledger. Open ambiguities are stated, not assumed away: MCQ-F16-1 to MCQ-F16-7.
@@ -30,7 +30,7 @@ Findings (0 open CRITICAL, 0 open HIGH):
 | A-1 | MEDIUM   | Seven PO-DECISION-NEEDED items (MCQ-F16-1 to MCQ-F16-7). T911, T917, T919, T920, T921 are tagged BLOCKED; T910 and T912 to T916 are not blocked by them except where the plan notes.                                                      | Tracked in report.md and spec Clarifications; no guess encoded.                                                              |
 | A-2 | MEDIUM   | T914 and T917 depend on PR #43 (workspace Remove RPC and lifecycle revision, #43 T042/T043).                                                                                                                                             | Documented in plan.md; no implementation before #43 is on main or the architect names the base.                              |
 | A-3 | LOW      | No earlier auto-copy requirement carrying an ID exists in specs/016 on origin/main or origin/016-catalog-ui; the supersession ledger is therefore generic.                                                                                | Gap recorded for the architect (non-blocking).                                                                               |
-| A-4 | LOW      | Merge-conflict risk with #43 on spec.md, plan.md, tasks.md.                                                                                                                                                                              | Insertions placed away from #43 hunks; the owner resolves any residual conflict after #43 merges.                            |
+| A-4 | LOW      | Merge-conflict risk with #43 on spec.md, plan.md, tasks.md.                                                                                                                                                                              | Insertions placed away from #43 hunks; `git merge-tree` of this branch with origin/016-catalog-ui reported no conflicts after the follow-up commit.                            |
 | A-5 | LOW      | The audit action name and the RPC name are provisional.                                                                                                                                                                                  | Marked provisional in contracts; resolved by MCQ-F16-3.                                                                      |
 
 Verdict: **PASS** for the specification update; implementation remains gated by A-1 and A-2.
