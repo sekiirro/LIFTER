@@ -279,6 +279,16 @@ describe('tenancy security catalog (T007)', () => {
         'f15_question_applies',
         'f15_selection_reconcile_trigger',
         'f15_submission_complete',
+        'cancel_f15_client_alerts',
+        'enforce_form_revision_snapshot_keys',
+        'enforce_n08_budget_answer_consistency',
+        'f15_cancel_client_alerts_after_relationship_end',
+        'f15_client_alert_lifecycle_active',
+        ...(existsSync(
+          'supabase/migrations/20261108020200_f15_localized_slider_labels.sql',
+        )
+          ? ['f15_valid_slider_label']
+          : []),
         'f15_valid_builder_definition',
         'guard_f15_assignment_fact',
         'guard_f15_form_assignment',
@@ -332,6 +342,7 @@ describe('tenancy security catalog (T007)', () => {
           'f15_question_applies',
           'f15_submission_complete',
           'f15_valid_builder_definition',
+          'f15_valid_slider_label',
           'guard_form_answer_revision_immutable',
           'guard_form_correction_immutable',
           'f15_onboarding_provisioning_marker_immutable',
@@ -1145,7 +1156,7 @@ describe('registration security catalog', () => {
       ...(existsSync(
         'supabase/migrations/20261108020200_f15_localized_slider_labels.sql',
       )
-        ? ['app_private.f15_valid_slider_label()']
+        ? ['app_private.f15_valid_slider_label(jsonb)']
         : []),
       'public.issue_registration_link(uuid,uuid,text,jsonb)',
       'public.registration_link_open(text)',
