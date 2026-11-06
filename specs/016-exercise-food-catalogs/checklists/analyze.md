@@ -1,13 +1,13 @@
-# Analyze — F16 exercise and food catalogs
+# Analyze — F16 one-global-catalog redesign
 
-- Date: 2026-11-04
-- Scope: S33-PO-4 taxonomy/search integration test pagination or unique synthetic filter (T900).
-- Spec: Existing catalog search and taxonomy requirements and authorization scenarios remain unchanged. S33 clarification disallows search semantic, visibility, limit, or data changes.
-- Plan: The test will locate its expected synthetic result independent of the global first page, using an exact filter or explicitly bounded pagination.
-- Tasks: T900 is tagged FR-015 and FR-016a. No test assertion is weakened and no catalog content is added.
-- Findings: 0 open CRITICAL, 0 open HIGH.
-- Gate: PASS for the stated S33 test-only scope.
-
-## Post-verification S33 re-analysis — 2026-11-04
-
-T900 has been marked complete only after its focused integration test passed on the committed code head. Traceability records commit `dfa6fe6` and the executed test. S33 scope remains test-only; 0 open CRITICAL/HIGH findings.
+- Date: 2026-11-06 18:07 UTC (after the S36 changes to spec, decision register, plan, data model, contracts, tasks and impact audit).
+- Scope: S35-PO-3 one shared global exercise catalog, workspace overrides, automatic workspace video mapping, client-workspace video resolution, tenant authorization, history preservation, F17/F18/F19 impact; spec-only.
+- Authority: exact S35-PO-3 F16 REDESIGN and S36-PO-1 Priorities quotations in `spec.md` Clarifications. Historical S35-PO-1/-2 and PR #64 supersession recorded without deleting prior history in `decision-register.md`.
+- Requirements review: affected exercise stories, numbered FRs, measurable SCs and Given/When/Then scenarios define one global identity, five allowed override fields, Trainer-private exercises, PO personal-workspace routing, workspace-over-global video fallback, automatic logical workspace mapping, client-workspace resolution at view time, update visibility without template republish, generic denial, tenancy, and preserved plans. Existing food requirements remain present.
+- Ambiguity review: open decision status is explicit. Seven compatibility MCQs and one new localization MCQ (F16-MCQ-1 through F16-MCQ-8) list options, implications, advisory recommendation and blocked work. No recommendation is encoded as a default or test expectation. No-open-ambiguities claim is not made.
+- Data/contract review: versioned `exercise_overrides` + append-only versions, composite workspace keys, resolver source, client/plan read path, generic authorization denial, override write/remove RPC conventions (CAS/idempotency/audit), RLS/tenancy and forward-only migration plan are DESIGN ONLY. No migration, SQL or app file was added.
+- Task review: T037–T042 remain unchecked and explicitly blocked by decision IDs; RED-first, mutation and negative tenancy test requirements are listed. Sol Medium critique remains pending PO approval and implementation blocker.
+- Impact review: `impact-s35-redesign.md` cites F17/F18/F19 source `file:line`, lists required updates and does not edit downstream branch specs. PR #43 and #64 live status remain unverified due GitHub network failure; no PR branch was changed.
+- Frontend Design Gate: approved Design System is authoritative; UI layout/field behavior is captured and no unapproved visual decisions/tokens were added. Rendering/screenshots and UI execution checks are not run because this is spec-only; recorded as deferred/failed in the S36 run report and blocked T040.
+- Findings: **0 open CRITICAL, 0 open HIGH**. Remaining blockers are the explicit PO decisions, pending Sol Medium approval, and unavailable live remote/hosted gates. These are not hidden or represented as requirements.
+- Gate: PASS for the documentation/specification scope. Implementation remains blocked until named decisions and review gates clear.
