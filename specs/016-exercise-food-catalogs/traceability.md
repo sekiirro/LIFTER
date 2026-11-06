@@ -66,3 +66,9 @@ No PO-deferred requirement was identified; therefore no row is marked DEFERRED. 
 | FR | Task | Test | Evidence |
 |---|---|---|---|
 | FR-015, FR-016a | T900 | `tests/integration/catalog-server.test.ts::searches exercises created through the session wall by stored taxonomy payload keys` | Commit `dfa6fe6`; focused integration run on current head: 5 files / 41 tests passed. |
+
+## S35 PR #43 explicit workspace denial remediation
+
+| Finding | FR | Task | Test | Evidence |
+|---|---|---|---|---|
+| PRRT_kwDOVYgYQ860WRSj — explicit unavailable Add Exercise workspace must use generic 404, preserving explicit workspace scope | FR-001, FR-002, FR-016 | T039 | `tests/unit/exercise-library-new-page.test.tsx::denies workspace_owner when an explicit workspace is unavailable`; `::denies trainer when an explicit workspace is unavailable`; `::uses the explicitly requested available authoring workspace`; `::keeps the existing default when the workspace parameter is absent`; `::keeps the existing default when the workspace parameter is empty` | Implementation commit `45f70a8b867714f3d3d3b6de88abd8cfd2c22cfa`; RED: 2 failing/6 passing before fix; GREEN focused suite: 9/9 on that commit. Final-head gates recorded in the S35 run report. |
