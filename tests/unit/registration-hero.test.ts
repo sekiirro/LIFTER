@@ -414,6 +414,9 @@ describe('production registration hero card theme contract', () => {
     );
     expect(printCard?.groups?.body).toMatch(/backdrop-filter:\s*none/);
     expect(printCard?.groups?.body).toMatch(/-webkit-backdrop-filter:\s*none/);
+    expect(heroStylesSource).toMatch(
+      /@media print[\s\S]*?\.noArtwork \.glassFrame\s*\{[^}]*transform:\s*none/,
+    );
   });
 
   it('keeps the opaque token card for every reduced-capability fallback', () => {

@@ -892,6 +892,10 @@
     transform: none;
   }
 
+  .noArtwork .glassFrame {
+    transform: none;
+  }
+
   .glassContent {
     max-block-size: none;
     overflow: visible;
