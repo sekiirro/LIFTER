@@ -160,3 +160,8 @@ tests/e2e/                         # rendered user journeys and Design Gate
 ## Complexity Tracking
 
 D-29 approves a material Constitution VII expansion; the MINOR version bump to 1.4.0 follows the Constitution's semantic-version rule. D1's accepted loss of who-viewed evidence for the erased answer is recorded as a security consequence. The exact migration still requires F12/F14 merge and verified Stack D. Any missing DESIGN.md decision stops only its rendered-UI unit and is escalated through the Frontend Design Gate.
+
+
+## S35 existing-PR remediation
+
+S35 fixes only verified CodeRabbit/hosted-CI defects within existing F15 requirements. T101 pins integration Vitest to the runner config loader because the native loader's Vite source-map formatter replaces the actionable setup/test error with `code.charCodeAt`. T102 validates derived N08 budget choices at server boundaries. T103 validates correction answer keys against the assignment snapshot in the RPC. T104 is blocked pending an authoritative client-to-Trainer source decision; no relation or default is inferred. T105 preserves the approved three-nonempty-name-component contract in SQL. T106-T111 repair tests and historical operator/evidence documentation. T112 guards the existing signup field blur validation while submission is pending, with no visual/copy change. T113 aligns the existing approved EN copy in the spec and provisioned starter. T114 keeps DOB tests exercising the future-date rule with a stable far-future fixture.
