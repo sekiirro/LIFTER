@@ -63,6 +63,9 @@ describe('T048 personal-data authorization and erasure', () => {
       sex: 'female',
       health: 'synthetic value',
     };
+    const snapshot = {
+      questions: Object.keys(answer).map((id) => ({ id, type: 'shortText' })),
+    };
 
     await db.begin(async (tx) => {
       await tx`
@@ -75,11 +78,11 @@ describe('T048 personal-data authorization and erasure', () => {
       `;
       await tx`
         insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
-        values(${workspaceId},${formId},1,${policy},${tx.json({ questions: [] })},'published')
+        values(${workspaceId},${formId},1,${policy},${tx.json(snapshot)},'published')
       `;
       await tx`
         insert into public.form_assignments(id,workspace_id,client_id,form_id,version_number,terms_policy_version,version_snapshot)
-        values(${assignmentId},${workspaceId},${clientTarget.clientId},${formId},1,${policy},${tx.json({ questions: [] })})
+        values(${assignmentId},${workspaceId},${clientTarget.clientId},${formId},1,${policy},${tx.json(snapshot)})
       `;
       await tx`
         insert into public.form_answer_revisions(workspace_id,assignment_id,revision,answer_values)
@@ -175,6 +178,12 @@ describe('T048 personal-data authorization and erasure', () => {
             otherClient.id,
           ],
         ] as const) {
+          const snapshot = {
+            questions: [
+              { id: 'sex', type: 'shortText' },
+              { id: 'marker', type: 'shortText' },
+            ],
+          };
           await tx`
             insert into app_private.terms_policy_versions(version,policy_kind,status)
             values(${policy},'terms','published')
@@ -183,11 +192,11 @@ describe('T048 personal-data authorization and erasure', () => {
             values(${formId},${context.wsA.id},'Synthetic privacy erasure form')`;
           await tx`
             insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
-            values(${context.wsA.id},${formId},1,${policy},${tx.json({ questions: [] })},'published')
+            values(${context.wsA.id},${formId},1,${policy},${tx.json(snapshot)},'published')
           `;
           await tx`
             insert into public.form_assignments(id,workspace_id,client_id,form_id,version_number,terms_policy_version,version_snapshot)
-            values(${assignmentId},${context.wsA.id},${clientId},${formId},1,${policy},${tx.json({ questions: [] })})
+            values(${assignmentId},${context.wsA.id},${clientId},${formId},1,${policy},${tx.json(snapshot)})
           `;
           await tx`
             insert into public.form_answer_revisions(workspace_id,assignment_id,revision,answer_values)
@@ -315,6 +324,10 @@ describe('T048 personal-data authorization and erasure', () => {
     const versionData = {
       n7: { minMeals: 2, maxMeals: 5 },
       n12: { seriesBySex: { male: 'standard-male', female: 'female' } },
+      questions: [
+        { id: 'sex', type: 'shortText' },
+        { id: 'private_note', type: 'shortText' },
+      ],
     };
     const rollback = new Error('synthetic retention fixture rollback');
 
