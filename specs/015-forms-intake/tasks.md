@@ -348,7 +348,7 @@ S27 h2 executed all eight T018 mutants against Stack D at pre-merge head `f42d4b
 - [ ] T115 [FR-038/039] Align the rendered signup username rule with the shared server validator and verify duplicate username collisions return the approved generic result.
 - [ ] T116 [FR-008] Reject malformed runtime form elements before accessing answer properties; cover primitives and null values.
 - [ ] T117 [FR-004/006] Make missing-slider validation NULL-safe in the forward SQL validator and add a direct missing-middle regression.
-- [ ] T118 [FR-024/025] Clean up only rows created by the alert-mutation tests, including jobs, inbox, and audit rows.
+- [ ] T118 [FR-024/025] Clean up only mutable rows created by the alert-mutation tests and preserve append-only audit events.
 - [ ] T119 [FR-024/025] Synchronize alert-lock race tests on observed PostgreSQL lock state instead of elapsed sleeps.
 - [ ] T120 [FR-008/013] Make the correction-matrix cross-tenant mutant probe fail only when its named assertion is violated.
 - [x] T121 [FR-024/025] Correct evidence links to point at tracked repository artifacts; all 50 PNG targets resolve.
@@ -357,4 +357,4 @@ S27 h2 executed all eight T018 mutants against Stack D at pre-merge head `f42d4b
 - [ ] T124 [FR-008/013] Return the accepted draft revision when the client submission request fails after autosave.
 - [ ] T125 [FR-024/025] Let local Playwright reuse an already healthy server without allowing CI to reuse an unrelated server.
 - [ ] T126 [FR-038/039] Set preference cookies on the configured Playwright base origin and cover a non-default hostname.
-- [ ] T127 [FR-026/036/037] Restore valid UTF-8 punctuation in the scoped F15 Analyze, plan, and traceability records without changing approved Arabic copy.
+- [x] T127 [FR-026/036/037] Restore valid UTF-8 punctuation in the scoped F15 Analyze, plan, and traceability records without changing approved Arabic copy.

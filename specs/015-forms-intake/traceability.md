@@ -119,3 +119,5 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 | FR-026/036/037 | T113 | `tests/integration/forms-builder-persistence.test.ts` exact localized N11 copy; Stack D F15 integration 9 files / 64 passed after migration 210 and updated drift guard contract. | `aede2cb`, `26a3438`, `4332f2f` |
 | FR-039 | T114 | `tests/unit/client-signup-validation.test.ts` future DOB cases passed in focused 27/27 run; `tests/e2e/client-signup.spec.ts` 4/4 on Stack D. | `9e0cb6f` |
 | FR-024/025 | T101 | Stack D `tests/integration/rls-catalog.test.ts` + `tests/integration/branding-function-privileges.test.ts` passed 42/42 after updating the branch-specific private-function and service-role inventories. | A `0109ff2`; B `6155640`; StartedAt unchanged `2026-11-06T03:43:08.260140976Z`. |
+
+| FR-026/036/037 | T127 | UTF-8 marker scan found zero mojibake markers in Analyze, plan, and traceability; format:check passed on the repaired artifacts. | ba00f905 |

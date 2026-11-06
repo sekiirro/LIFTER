@@ -233,4 +233,7 @@ S35 stacked-branch task reconciliation — 2026-11-06: merge A into B keeps the 
 
 ## S35 round-5 documentation entry refresh — 2026-11-06 08:56 Africa/Cairo
 
-This refresh follows T127's scoped UTF-8 punctuation repair in plan.md and 	raceability.md. The change normalizes corrupted punctuation only; approved Arabic copy and product requirements are unchanged. No open ambiguities were introduced. PD-S35-01/T104 and PD-S34-R3-01/N11 English feedback copy remain explicitly blocked. **CRITICAL: 0. HIGH: 0.** Entry PASS for the documentation-only repair; acceptance awaits encoding and formatting verification.
+This refresh follows T127's scoped UTF-8 punctuation repair in plan.md and traceability.md. The change normalizes corrupted punctuation only; approved Arabic copy and product requirements are unchanged. No open ambiguities were introduced. PD-S35-01/T104 and PD-S34-R3-01/N11 English feedback copy remain explicitly blocked. **CRITICAL: 0. HIGH: 0.** Entry PASS for the documentation-only repair; acceptance awaits encoding and formatting verification.
+
+
+**S35 T127 acceptance refresh — 2026-11-06 08:57 Africa/Cairo:** The scoped Analyze, plan, and traceability artifacts have zero mojibake markers under explicit UTF-8 decoding, and format:check passed on the repaired state. T127 is checked with evidence in traceability.md. The T118 task text now preserves the existing append-only audit-event rule; this clarifies test cleanup scope without changing product behavior. **CRITICAL: 0. HIGH: 0. No new ambiguities.**
