@@ -171,7 +171,7 @@ test.afterAll(async () => {
   const index = `# S29 Hero Glisse screenshot evidence
 
 - Generated: ${new Date().toISOString()}
-- Source: production registration hero showcase (\`/showcase/f14-hero\`) with the shipped **textured** artwork (\`public/dev/f14-hero/desktop.webp\` at 1440 px, \`public/dev/f14-hero/mobile.webp\` at 390 px).
+- Source: production registration hero showcase (\`/showcase/f14-hero\`) with the shipped **textured** artwork (\`public/dev/f14-hero/desktop.webp\`, cropped by responsive \`object-position\` at 390 px and 1440 px).
 - Matrix: {AR, EN} x {Light, Dark, Follow OS light, Follow OS dark} x {390, 1440}, plus \`prefers-reduced-transparency: reduce\` per explicit theme and print media for Light/Dark.
 - Accessibility: every capture was asserted axe-clean with \`expectHeroAxeClean\` (wcag2a, wcag2aa, wcag21a, wcag21aa, wcag22aa tags).
 - Contrast note: this evidence set uses the shipped textured artwork. The separate worst-case bright/high-variance artwork matrix lives in \`contrast/\`; consult the run report for its final dev/prod results.
