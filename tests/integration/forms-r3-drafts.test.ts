@@ -112,7 +112,7 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
           name: 'single answer bytes',
           pattern: /octet_length\(e\.value #>> '\{\}'\) > 4096/,
           expected: 'answer_too_long',
-          values: { q61: 'é'.repeat(2049) },
+          values: { q2: 'é'.repeat(2049) },
         },
         {
           name: 'per-question character count',
