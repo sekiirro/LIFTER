@@ -78,6 +78,23 @@ Every mutation accepts an action-bound UUIDv4 operation key, request data, and (
 | Workspace exercise or variation detail/history | Explicit `workspace_id` plus current `coaching_work` in that workspace | Returns only that workspace's rows and media; errors and counts do not reveal another workspace. |
 | Workspace video resolution | Explicit selected workspace and current `coaching_work` authorization on every call | Returns only that workspace's current authorized YouTube/Drive mapping; never returns or signals other workspace links. |
 
+## F16 redesign override and client-view contracts (design only)
+
+The canonical exercise identity stays global and shared. Each workspace's override is an isolated, versioned overlay whose writable field allowlist is name, description, instructions, video and alternatives. The UI shows global entries together with the selected workspace's override state. Trainer-created exercises remain separate workspace-private identities. PO actions made in a personal workspace affect only that workspace override; canonical edits are separately scoped and remain PO-DECISION-NEEDED F16-MCQ-5.
+
+Two mutation contracts are required after PO-MCQ resolution:
+
+| Operation | Contract | Observable result |
+| --- | --- | --- |
+| Override write/create/update | Explicit workspace + canonical exercise ID + allowlisted fields + expected current override version/revision + UUIDv4 operation key. WO/Trainer require current `coaching_work` in that workspace; PO workspace-scoped edit writes only that workspace. Follow existing authorize → deterministic lock → idempotency lookup/claim → recheck → CAS → append immutable version and one audit event transaction. | On success return the new override revision/version and changed-field codes. Stale expected version conflicts; exact replay returns the original result; key reused with different action/hash conflicts. Disallowed fields are rejected before any write. |
+| Override remove/clear | Explicit workspace + canonical exercise ID + expected current revision + action-bound UUIDv4 operation key; same role/scope, CAS, idempotency and audit conventions. | The externally visible video after removal is unresolved by F16-MCQ-6; do not encode a fallback/no-video behavior until PO decides. |
+
+Exact RPC names, SQL argument types and transport schema are implementation-time design and are deliberately not frozen here. Neither RPC may expose another workspace's row or distinguish a foreign ID from a missing/unauthorized ID. RLS and application authorization independently enforce the same workspace boundary.
+
+### Client/plan-workspace video read
+
+This is a separate read path from staff catalog search. It receives an authorized client-plan view context, derives the workspace from the trusted client/plan relationship, rechecks current tenant authorization, then resolves each canonical exercise's video using that client workspace. Precedence is workspace video override then global video; the response includes the source. A later workspace video update is returned on the next view without republishing the global template. Do not accept arbitrary caller-selected workspace IDs as authority. Return generic denial with no partial rows, media, counts or existence distinction if scope is missing or unauthorized. Client plan view does not grant direct catalog/table/search access. MCQ-3 historical non-video values and MCQ-6 removal outcome remain unresolved.
+
 Read calls are not audit events. Client plan reads consume F17/F18 immutable snapshots and do not call catalog reads. Every non-PO RPC/view/search/detail/history/error/export projection nulls or omits both `created_by` and `origin_workspace_id`; name the negative and positive tests `global_food_provenance_masking_non_po` and `global_food_provenance_po_governance_read` respectively. Workspace read authorization and foreign-workspace non-disclosure are checked independently for search, detail/history, variation, video resolution and planner/export joins.
 
 Exercise search filters use the stored payload keys `primary_muscle_code` (one code) and `equipment_codes` (an array of codes). The session server wall forwards those names and shapes unchanged to the RPC; equipment matches when any requested code is present.
