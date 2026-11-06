@@ -78,3 +78,11 @@ No PO-deferred requirement was identified; therefore no row is marked DEFERRED. 
 | Finding | FR | Task | Test | Evidence |
 |---|---|---|---|---|
 | PRRT_kwDOVYgYQ860XFbn — remove the PO “None” choice from explicit workspace scope so a visible choice cannot submit a request that returns 404 | FR-002, FR-011, FR-012 | T038 | `tests/unit/exercise-detail-page.test.tsx::shows the empty workspace choice only for platform-owner global detail`; `tests/e2e/exercise-library-production.spec.ts` AR/EN × light/dark × 360/1024 detail matrix with keyboard and axe | Commit `995f659ab83cbe217e0165e344770d4df2f1e24e`; focused route suites 27/27; Stack C Playwright 24/24, axe clean. Screenshots under `%TEMP%\lifter-s32-f16-lib15` (eight detail captures). |
+
+## S35 screenshot-matrix correction
+
+The S35 detail-selector E2E evidence in the preceding row uses the mandated 390px mobile and 1440px desktop widths. The matrix now captures both global detail and workspace detail; workspace detail asserts the empty option is absent before taking the screenshot.
+
+| Finding | FR | Task | Test | Evidence |
+|---|---|---|---|---|
+| Workspace Detail selector rendering and responsive matrix | FR-002, FR-011, FR-012 | T038 | `tests/e2e/exercise-library-production.spec.ts::${locale} ${theme} ${viewport.name}: production library and manual Add`; asserts workspace detail has no `option[value=""]` and captures `detail-workspace.png` | Test commit `9a9a929edf4fe60f79fa8e1e34d685c833e9b72c`; Stack C Playwright 24/24; eight screenshots: AR/EN × light/dark × 390/1440, with axe clean. |
