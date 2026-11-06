@@ -95,15 +95,15 @@ Food create/version requests may provide `p_alternatives: [{alternative_food_id,
 Use the established two-segment format, e.g. `catalog.food_created`, `catalog.food_versioned`, `catalog.food_merged`, `catalog.exercise_versioned`, `catalog.taxonomy_versioned`. A successful write emits one event in the same transaction. Global `workspace_id` is NULL; workspace-specific changes carry that workspace ID. The audit writer accepts only catalog action/table pairs and the `identity_id`, `version`, `related_id`, and `changed_fields` detail keys; changed-field values are codes from the writer's fixed allowlist. It rejects names, nutrition values, notes, URLs, origin data, raw operation keys, and free text.
 
 
-## Manual exercise distribution (S35-PO-1; FR-022 to FR-030)
+## Manual exercise distribution (S35-PO-1, S35-PO-2; FR-022 to FR-032)
 
-Provisional until MCQ-F16-1 and MCQ-F16-3 are answered; the per-pair shape below is the recommended MCQ-F16-3 option A, which keeps the FR-016 rule of exactly one audit event per successful RPC.
+Provisional until MCQ-F16-11 (audit event) and MCQ-F16-8 (alternative target form) are answered. The one-RPC-per-send shape follows S35-PO-2 decision 3 and the FR-016 rule of one audit event per RPC.
 
 ### Send authorization matrix
 
 | Operation | PO | WO | Trainer | Sales | Client | Unknown/unauthenticated |
 | --- | --- | --- | --- | --- | --- | --- |
-| Send global exercise to a workspace (`catalog.exercise.send`) | Allow for an explicitly supplied workspace, without membership | Deny | Deny | Deny | Deny | Deny |
+| Send global exercises to explicit workspaces (`catalog.exercise.send`) | Allow for an explicitly supplied target list (1 to 2 workspaces), without membership | Deny | Deny | Deny | Deny | Deny |
 
 The role-parity fixture (T001 pattern) and the app-wall matrix gain this row (T910). Denials are generic. Workspace staff continue to write only workspace copies they own under `catalog.workspace_exercise.write`; no role other than PO can write a global row.
 
@@ -111,16 +111,19 @@ The role-parity fixture (T001 pattern) and the app-wall matrix gain this row (T9
 
 | RPC | Action | Allowed role/scope | Result contract |
 | --- | --- | --- | --- |
-| `catalog_send_exercise_to_workspace(p_source_exercise_id, p_workspace_id, p_operation_key)` | Create an independent workspace copy of one global exercise in one workspace | PO only, explicit workspace | `outcome` is `created` (new copy id, version 1, source id and version) or `skipped_existing` (id of the active copy; zero writes and no audit event). Source current version content is copied at send time. Removed-only history yields `created`. Same key/same request replays the original result; same key/different request conflicts. One audit event per `created`. |
+| `catalog_send_exercises_to_workspaces(p_source_exercise_ids uuid[], p_workspace_ids uuid[], p_operation_key uuid)` | Create independent workspace copies for each (source, target) pair of one send | PO only; explicit target list of 1 to 2 workspaces; source list of 1 to 50 exercises | `outcomes`: one entry per pair with `outcome` `created` (copy id, version 1, source id and version), `skipped_existing` (id of the active copy; zero copy, version or key-reservation writes), `rejected_inactive_source` (source Removed or superseded), or `failed` (generic code; only this pair rolled back). Same key and same request replays the stored `outcomes` with no write and no event; same key with a different request conflicts. Exactly one send audit event per non-replay successful call. |
 
-- Mutation order is the FR-016 order: authorize action and workspace scope; lock source identity root and the `(workspace_id, source_exercise_id)` creation lock in deterministic order; operation-key lookup; recheck authorization after lock waits before any replay; re-read source lifecycle and the target workspace's copy state; write copy identity, version 1, source provenance, idempotency result and audit event in one transaction.
-- "Selected" and "all" sends are orchestrated by the server action calling the RPC once per (exercise, workspace) pair with a distinct operation key per pair; the aggregate response lists per-pair `created`, `skipped_existing` and `failed`. A failure in one pair never rolls back another. Batch limits: MCQ-F16-7.
-- Send never calls, writes or reads plan, snapshot, log or export tables (FR-028).
+- Limits (FR-032, S35-PO-2 decision 7): at most 50 distinct sources and 2 distinct targets (at most 100 pairs). Limits, empty lists and duplicate IDs are rejected before any write with `catalog_send_limit_exceeded` (provisional name) or a validation error; no copy, no ledger row and no audit event is written.
+- Mutation order is the FR-029 order: authorize action and target list; apply the limit check; lock source identity roots in UUID order, then the creation locks for `(workspace_id, source_exercise_id)` in deterministic order; look up the shared operation-key ledger; on a replay, recheck PO authorization after lock waits and return the stored result; otherwise re-read each pair's source lifecycle and copy state; process each pair in its own savepoint; store the per-pair result once in the ledger; write one send audit event; commit.
+- Skip and rejection outcomes are stored in the ledger result exactly like `created` outcomes, so a replay after a later Remove of the copy returns `skipped_existing` (FR-016 replay rule; CodeRabbit round-1 thread 1). A skip writes the ledger result and the send audit event and writes no copy, version or key-reservation row (SC-008).
+- Copy content (FR-024): (a) exercise data; (b) the target workspace's own media link or variation, never another workspace's mapping; (c) valid alternatives. Invalid relations are not carried; how they are reported is MCQ-F16-10. The target form of alternatives is MCQ-F16-8, and the media-link storage is MCQ-F16-16.
+- "All" delivery within the cap is MCQ-F16-12. This RPC accepts explicit lists only.
+- Send never calls, writes or reads plan, snapshot, log or export tables (FR-028). Send does not use workspace Restore (MCQ-F16-17).
 
 ### Audit action (provisional)
 
-Two-segment format per the Audit action contract; name pending MCQ-F16-3 (recommended `catalog.workspace_exercise_copied`). Allowlisted details: `identity_id` (copy), `version`, `related_id` (source global exercise id). The audit writer's action/table pair allowlist and detail keys are extended by the implementation task (T919); no names, content, URLs, origin data, raw operation key or free text.
+Two-segment name `catalog.exercise_sent` (provisional). `workspace_id`: MCQ-F16-11; recommended NULL, because a global-source event follows FR-013, and `audit_events` rows with NULL workspace are readable by the PO only (`supabase/migrations/20261027150000_audit_log.sql`, select policy). Details: `send_outcomes` (new allowlisted key, provisional), an array of `{source_exercise_id, workspace_id, outcome, copy_id, copy_version}`, containing UUIDs and outcome codes only. The current writer allows `identity_id`, `version`, `related_id` and `changed_fields` only (`supabase/migrations/20261106100000_catalog_operation_keys.sql` line 149); T919 extends it. No names, content, URLs, notes, origin data, raw operation key or free text.
 
 ### Read RPC impact
 
-None for global reads. Copies appear through the existing workspace exercise detail and search with an explicit `workspace_id` (FR-030). Direct selection of global rows by planners: MCQ-F16-6.
+None for global reads. Copies appear through the existing workspace exercise detail and search with an explicit `workspace_id` (FR-030). Planner selection of global identities (S35-PO-2 decision 6) is a register item, not a requirement, until MCQ-F16-13 and MCQ-F16-14 are answered (FR-031 reserved).
