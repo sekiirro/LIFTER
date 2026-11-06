@@ -45,7 +45,7 @@ Only the PO can create or change workspaces, grant or revoke memberships, and as
 
 ### User Story 3 - Shared permission matrix with deny-by-default (Priority: P1)
 
-An app-layer `authorize(actor, capability, workspace)` and the database capability check implement the same approved matrix (D-09, D-10). Anything not granted is denied, including unlisted Sales rights. S30-PO-3 Q6 resolves the `coaching_work` role matrix.
+An app-layer `authorize(actor, capability, workspace)` and the database capability check implement the same approved matrix (D-09, D-10). Anything not granted is denied, including unlisted Sales rights and Sales coaching work; S30-PO-3 Q6 resolves the `coaching_work` role matrix: PO/WO/Trainer allowed, Sales denied.
 
 **Why this priority**: The two-wall model in Architecture v3. The walls must not drift apart.
 
@@ -97,6 +97,55 @@ A reusable test harness provisions isolated fixtures (two workspaces, users per 
 - **FR-011**: Migrations MUST be forward-only and non-destructive.
 - **FR-012**: No PII may appear in migrations, seeds or test output beyond synthetic test emails.
 
+### Governance amendment — S30-PO-3 Q7 and Q8
+
+This amendment extends the existing F3 tenancy and governance scope. It records only the two approved governance behaviors. The implementation mechanisms in `plan.md` are technical design choices for those behaviors. The membership-revocation path of User Story 6 is extended by S36-PO-2; its removal mechanism is an open PO question (S36-Q1) and is not decided here.
+
+#### User Story 5 — Workspace Owner member roster (Priority: P1)
+
+A Workspace Owner can see active members for roster administration. The PO-approved source states: “Supports roster administration. Needs RLS change, tests and security review.”
+
+**Independent Test**: At the database boundary, verify the current Workspace Owner can access only active membership fields (`user_id`, `workspace_id`, `granted_at`, `revoked_at`, and associated `staff_profiles.role`) for their own workspace, and that mutation tests deny revoked or foreign-workspace rows and profile/contact columns.
+
+**Acceptance Scenarios**:
+
+1. **Given** a user who currently holds the Workspace Owner role in workspace A and active membership rows in A, **When** they request the roster, **Then** the database permits only the specified membership fields and associated staff role for active members of A; active means `revoked_at IS NULL` (S30-PO-3 Q7; S30-R8).
+2. **Given** a revoked membership row or a membership in another workspace, **When** the Workspace Owner requests the roster for A, **Then** the row is not visible. Profile/contact fields such as names, email, and phone are outside this roster scope (S30-R8).
+3. **Given** a Workspace Owner requests the roster, **When** they use the approved roster interface, **Then** the database exposes only the explicit membership projection and denies direct access to profile/contact columns and unrestricted base-table columns (S30-R8).
+
+#### User Story 6 — Protect the final Platform Owner (Priority: P1)
+
+The database prevents removal or demotion of the final Platform Owner. The PO-approved source states: “The database refuses to remove or demote the final Platform Owner. Simple and prevents lockout. Transfer works by adding a new PO first.”
+
+**Independent Test**: Exercise database mutations for final-PO demotion, membership revocation, staff-profile deletion, and add-first transfer with executed mutation tests after design review. Membership revocation is in scope per S36-PO-2.
+
+**Acceptance Scenarios**:
+
+1. **Given** exactly one valid Platform Owner, **When** a role change/demotion, membership revocation, or staff-profile deletion would leave zero Platform Owners, **Then** the database refuses the operation using the existing generic privileged-operation error convention (S30-R8; S34-PO-1 G2=A; S36-PO-2).
+2. **Given** a new Platform Owner has first been added, **When** the previous Platform Owner is demoted or that identity's membership is revoked, **Then** that identity loses Platform Owner access (S36-PO-2), and the database permits the operation while at least one Platform Owner remains (S30-PO-3 Q8). The revocation mechanism is an open PO question (S36-Q1). Staff-profile deletion is not a removal path: the retained `staff_profiles_no_delete` trigger rejects it, and it stays inside the shared serialization scope (scenario 1; FR-014).
+3. **Given** two transactions concurrently attempt to remove Platform Owner access from distinct Platform Owners, by demotion or membership revocation, when exactly two exist, **When** both mutations are serialized by the guard, **Then** at most one removal succeeds and at least one Platform Owner remains (S30-R8; S36-PO-2).
+4. **Given** a role demotion, a membership revocation, or a staff-profile deletion runs concurrently with another of these mutations against the same owner-count invariant, **When** both mutations are serialized by the guard, **Then** at least one valid Platform Owner remains (S30-R8; S34-PO-1 G2=A; S36-PO-2). Membership hard deletion is prohibited, and the currently restricted auth-user deletion cannot cascade; both are outside this guard.
+
+#### Clarifications
+
+- S30-PO-3 Q6 resolves the existing `coaching_work` matrix source: PO/WO/Trainer are allowed and Sales is denied. No code changes are part of this documentation cycle.
+- S30-PO-3 Q7 (source: `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md`) approves “WO sees active members” and “Supports roster administration. Needs RLS change, tests and security review.” S30-R8 clarifies the approved scope: the requesting user must currently hold the Workspace Owner role in that workspace; visibility is limited to that workspace and existing membership-row columns (`user_id`, `workspace_id`, `granted_at`, `revoked_at`) plus the associated `staff_profiles.role`. Active is `revoked_at IS NULL` in `supabase/migrations/20261027120000_tenancy.sql`. Profile/contact fields (including names, email, and phone) are explicitly out of scope.
+- S30-PO-3 Q8 (source: `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md`) approves: “The database refuses to remove or demote the final Platform Owner. Simple and prevents lockout. Transfer works by adding a new PO first.” S30-R8 clarifies that the invariant must hold under concurrency; serialize Platform-Owner role changes and protect every operation that could leave zero valid Platform Owners. S34-PO-1 G2=A narrowed that set to role change/demotion and staff-profile deletion; S36-PO-2 extends it to membership revocation (see Clarifications). Membership hard deletion is prohibited, and auth-user deletion currently uses `ON DELETE RESTRICT`; neither is an auth-user cascade path. Reuse the existing generic `not_permitted` / SQLSTATE `42501` privileged-operation convention evidenced in `supabase/migrations/20261028120000_auth_recovery_links.sql:144-151`; do not add user-facing copy.
+- S30-R8 is an architect clarification of the already-approved S30-PO-3 Q7/Q8 behavior, not a new product decision. No open ambiguity remains within the approved F3 roster scope. The S34 last-PO-count scope is amended by S36-PO-2; its membership-revocation removal mechanism is an open PO question (S36-Q1). S35-PO-1 G1=A resolves the trainer-departure model to deactivate + revoke (no deletion); PO-ESCALATION G1 is closed. Other requirements in the existing F3 specification are unchanged.
+
+#### User Story 7 — Departed trainer departure (deactivate + revoke; no deletion)
+
+A departed trainer's access is removed by deactivating the trainer and revoking all of their workspace memberships/access. The auth user and the `staff_profiles` row are NOT deleted, and audit attribution is preserved. No deletion, cascade, detach, anonymization, or reassignment of the auth user or `staff_profiles` row is authorized. The current schema has no dedicated deactivation capability; T020 tracks adding it (tagged FR-015).
+
+**Independent Test**: For a departed trainer fixture, prove that deactivation revokes all workspace memberships/access, the auth user and `staff_profiles` row remain, audit attribution (`granted_by`/`revoked_by` and any audit rows) is preserved, and 100% of protected client, plan, log, subscription, financial, and audit rows remain intact.
+
+**Acceptance Scenarios**:
+
+1. **Given** a departed trainer with active memberships, **When** the departure workflow runs, **Then** all of their workspace memberships are revoked (active to revoked, with `revoked_at`/`revoked_by` set) and staff access is removed, while the auth user and `staff_profiles` row remain.
+2. **Given** the departure workflow, **When** it completes, **Then** audit attribution is preserved: `granted_by`/`revoked_by` and any audit rows remain intact and are not reassigned or anonymized.
+3. **Given** the departure workflow, **When** it completes, **Then** 100% of protected client, plan, log, subscription, financial, and audit rows remain intact and zero protected rows are deleted or damaged.
+4. **Given** the current schema, **When** deletion of the auth user or `staff_profiles` row is attempted, **Then** it remains blocked by the existing `ON DELETE RESTRICT` foreign key and `staff_profiles_no_delete` trigger; no deletion path is introduced by this decision (G1=A).
+
 ### Key Entities
 
 - **Workspace**: id, name, slug (unique), created_at, created_by.
@@ -107,7 +156,12 @@ A reusable test harness provisions isolated fixtures (two workspaces, users per 
 ## Clarifications
 
 - S30-PO-3 Q6 resolves the `coaching_work` role matrix. The PO answer is `PO/WO/Trainer, deny Sales (Recommended)`; the option text is `PO/WO/Trainer, deny Sales`.
-- S30-PO-3 Q7 records the future-cycle decision `WO sees active members`; Q8 records `DB guard on last PO (Recommended)`. Their scope and implementation acceptance belong to a separate forward-only Spec Kit cycle and are not requirements of this F3 baseline.
+- S30-PO-3 Q7 and Q8 are resolved for the approved scope by S30-R8 and recorded in FR-013, FR-014, SC-005, and SC-006. Their implementation acceptance is tracked by T014-T016 in this forward-only governance cycle and remains pending; this documentation cycle does not claim implementation completion.
+- **S35-PO-1 G1=A (verbatim):** "G1=A (deactivate/revoke; preserve audit)" (source: C:/Users/NEW LAP/.lifter/runs/s35-haiku-ledger2/s35-po-1.verbatim.txt). Architect note (not PO words): option A of the #50 lane = keep departed-trainer deletion blocked (staff_profiles RESTRICT FK and no-delete guards stay), deactivate/revoke access instead, preserve audit attribution; options B/C/D not chosen. Resolution: departure = deactivate + revoke memberships/access; no deletion of the auth user or staff_profiles row; audit attribution preserved. FR-015/SC-007 and T017-T019 are no longer BLOCKED.
+- **G2=A:** Last-PO guard applies only to operations affecting valid PO count.
+- **S36-PO-2 (verbatim, Governance):** "Former PO demotion AND membership revocation must remove PO access." (source: `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-2.verbatim.txt`, Governance line). Architect mapping of S35R2-PO-1 (not PO words): option (c), both paths stated explicitly. Resolution: (1) demotion and membership revocation of a Platform Owner each remove that identity's PO access; (2) the final-PO guard covers membership revocation as well as role change/demotion; (3) staff-profile deletion stays excluded by the retained `staff_profiles_no_delete` trigger and remains a protected operation under S34-PO-1 G2=A; (4) membership hard deletion stays prohibited and auth-user deletion stays restricted. This supersedes only the membership-revocation exclusion in S34-PO-1 G2=A (FR-014, SC-005, Story 6 scenario 4). Open: the current data model derives PO access from the role (`app_private.is_platform_owner`) and uses memberships only for workspace access, so the mechanism by which membership revocation removes PO access is not defined. This is PO-DECISION-NEEDED S36-Q1 (see the S36 run report) and is not encoded here.
+
+S35-PO-1 source: `C:/Users/NEW LAP/.lifter/runs/s35-haiku-ledger2/s35-po-1.verbatim.txt` (architect notes: `C:/Users/NEW LAP/.lifter/runs/s35-haiku-ledger2/notes.txt`). G1 is resolved to deactivate/revoke (no deletion); G2's guard scope is settled. PO-ESCALATION G1 is closed by this decision. The current schema has no deactivation capability; T020 tracks adding it (tagged FR-015).
 
 ## Success Criteria *(mandatory)*
 
@@ -121,4 +175,21 @@ A reusable test harness provisions isolated fixtures (two workspaces, users per 
 - Login, sessions, password reset and client accounts are F4 and later. Tests mint sessions through the local auth stack's admin API.
 - Audit events for governance writes come with F5 (audit log). F3 records `granted_by`/`revoked_by` columns now, and F5 adds audit emission.
 - Docker is not available on the reviewer's machine, so integration tests are verified in Linux CI. Unit tests run locally.
-- S30-PO-3 Q7 records the future-cycle decision `WO sees active members`; its scope details remain unresolved here. Until the separate cycle is implemented, this F3 baseline permits only PO and self to read membership rows.
+- S30-PO-3 Q6 resolves the `coaching_work` matrix: "PO/WO/Trainer, deny Sales (Recommended)"; Sales remains denied.
+- S30-PO-3 Q7, as clarified by S30-R8, permits Workspace Owners to see active membership rows in their own workspace for roster administration; profile/contact fields are out of scope.
+- S30-PO-3 Q7 and Q8 governance behaviors are specified in this amendment but are not implemented by the F3 baseline; T014-T016 track implementation, executed mutation tests, and architect security review.
+- S35-PO-1 G1=A resolves the departed-trainer departure model: deactivate + revoke memberships/access; no deletion of the auth user or staff_profiles row; audit attribution preserved. The existing RESTRICT FK and no-delete guards remain. FR-015/SC-007 and T017-T019 are rewritten to this model and are no longer BLOCKED. No deactivation capability exists in the current schema; T020 tracks adding it (tagged FR-015).
+- S34-PO-1 G2 limits the final-Platform-Owner guard to operations affecting valid Platform Owner count. S36-PO-2 extends that guard to membership revocation; the revocation removal mechanism is open (S36-Q1).
+
+### Governance amendment requirements and success criteria (S30-PO-3)
+
+- **FR-013**: For a requesting user who currently holds the Workspace Owner role in workspace W, the database MUST permit visibility of active membership rows in W only, limited to the existing membership-row columns `user_id`, `workspace_id`, `granted_at`, and `revoked_at`, plus the associated `staff_profiles.role`; “active” MUST mean `revoked_at IS NULL` in the existing model. Profile/contact fields (including names, email, and phone) are out of scope. This records S30-PO-3 Q7 ("WO sees active members"; "Supports roster administration. Needs RLS change, tests and security review.") as clarified by S30-R8.
+- **FR-014**: The database MUST preserve at least one valid Platform Owner under concurrent mutations that affect valid Platform Owner count. It MUST serialize every such mutation and refuse any operation that would leave zero valid Platform Owners, including role change/demotion, membership revocation, and staff-profile deletion (S36-PO-2). A demotion or membership revocation of a Platform Owner MUST remove that identity's Platform Owner access (S36-PO-2); the mechanism by which membership revocation removes that access is an open PO question (S36-Q1) and is not specified here. Membership hard deletion is prohibited, and the currently restricted auth-user deletion is outside this guard because it uses `ON DELETE RESTRICT` rather than a cascade and cannot remove a valid Platform Owner. Any future mutation that can affect valid Platform Owner count must be re-analyzed under this FR before implementation. It MUST permit transfer after another Platform Owner is added first, as approved by S30-PO-3 Q8: "The database refuses to remove or demote the final Platform Owner. Simple and prevents lockout. Transfer works by adding a new PO first." Refused privileged operations MUST use the existing generic `not_permitted` / SQLSTATE `42501` convention, with no new user-facing copy (S30-R8; S34-PO-1 G2=A; S36-PO-2).
+
+### S35 departed-trainer departure requirement (G1=A; resolved)
+
+- **FR-015 — resolved by S35-PO-1 G1=A (deactivate/revoke; preserve audit)**: Departure of a trainer MUST be performed by deactivating the trainer's access — revoking all of their workspace memberships and removing staff access — without deleting the auth user or the `staff_profiles` row. Audit attribution (`granted_by`/`revoked_by` and any audit records) MUST be preserved; no reassignment or anonymization. No deletion, cascade, FK/trigger change, detach, anonymization, or reassignment of the auth user or `staff_profiles` row is authorized; the existing `ON DELETE RESTRICT` foreign key and `staff_profiles_no_delete` trigger remain. The current schema has no dedicated deactivation capability; T020 tracks adding it (tagged FR-015). (Architect note (not PO words): option A of the #50 lane.)
+
+- **SC-005**: Executed database mutation tests reject 100% of role changes/demotions, membership revocations, and staff-profile deletions that would leave zero valid Platform Owners; a demoted or membership-revoked Platform Owner loses Platform Owner access in every executed case (S36-PO-2); two concurrent removals when exactly two Platform Owners exist (demotion, membership revocation, or the demotion/staff-profile-deletion race) leave at least one valid Platform Owner; and add-new-PO-first transfer succeeds without leaving zero valid Platform Owners. Membership hard deletion is prohibited, and the currently restricted auth-user deletion is excluded (S34-PO-1 G2=A; S36-PO-2).
+- **SC-006**: Executed database mutation tests permit a current Workspace Owner to read 100% of active membership rows and only the specified membership fields and associated staff role in their own workspace, and return zero rows for revoked memberships or other workspaces; profile/contact fields remain inaccessible through this roster scope.
+- **SC-007 — resolved by S35-PO-1 G1=A**: Executed tests for the trainer-departure workflow MUST demonstrate that deactivation revokes all of the departed trainer's workspace memberships/access, that the auth user and `staff_profiles` row remain, that audit attribution (`granted_by`/`revoked_by` and any audit rows) is preserved, and that 100% of protected client, plan, log, subscription, financial, and audit rows remain intact with zero protected rows deleted or damaged. No disposable-record removal is in scope; no auth-user or `staff_profiles` deletion occurs.
