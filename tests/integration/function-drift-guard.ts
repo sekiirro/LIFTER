@@ -66,14 +66,13 @@ export const guardedFunctions = [
   },
   {
     identity: 'app_private.branding_asset_attach(uuid,bigint)',
-    migration:
-      '20261102132900_workspace_branding_gc_reference_serialization.sql',
+    migration: '20261107032002_branding_function_convergence.sql',
     name: 'app_private.branding_asset_attach',
     owner: 'branding_definer',
   },
   {
     identity: 'app_private.branding_gc_finalize(uuid)',
-    migration: '20261102134000_branding_upload_recovery.sql',
+    migration: '20261107032002_branding_function_convergence.sql',
     name: 'app_private.branding_gc_finalize',
     owner: 'branding_definer',
   },
@@ -145,13 +144,13 @@ async function migrationDefinition(
   const sql = await readFile(`supabase/migrations/${migration}`, 'utf8');
   const escapedName = name.replaceAll('.', '\\.');
   const expression = new RegExp(
-    `create\\s+(?:or\\s+replace\\s+)?function\\s+${escapedName}\\s*\\([\\s\\S]*?\\)\\s*[\\s\\S]*?\\bas\\s+\\$\\$[\\s\\S]*?\\$\\$\\s*;`,
+    `create\\s+(?:or\\s+replace\\s+)?function\\s+${escapedName}\\s*\\([\\s\\S]*?\\)\\s*[\\s\\S]*?\\bas\\s+(\\$[a-z_0-9]*\\$)([\\s\\S]*?)\\1\\s*;`,
     'gi',
   );
   const matches = [...sql.matchAll(expression)];
   const definition = matches.at(-1)?.[0];
   if (!definition) throw new Error(`missing migration function ${name}`);
-  const body = definition.match(/\bas\s+\$\$([\s\S]*?)\$\$/i)?.[1];
+  const body = matches.at(-1)?.[2];
   if (body === undefined) throw new Error(`missing migration body ${name}`);
   return {
     definition: definition.replace(
