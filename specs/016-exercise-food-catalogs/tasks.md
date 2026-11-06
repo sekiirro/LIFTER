@@ -1,5 +1,24 @@
 # F16 Implementation Tasks
 
+## S36 F16 redesign (spec-only planning)
+
+These are implementation planning tasks only; no implementation is authorized in this S36 spec round. Each task remains unchecked. Start implementation with RED tests before schema, RPC or UI changes. Mutation testing must remove/bypass each authorization, workspace-scope, allowlist, precedence, CAS, idempotency, audit and generic-denial guard and prove the corresponding test fails. Negative tenancy tests must cover foreign workspace IDs, revoked membership, unauthorized client-plan reads, absent/foreign exercise IDs, and non-disclosure of override/video existence and counts.
+
+| ID | Task | FRs | Status / PO dependency |
+| --- | --- | --- | --- |
+| T037 | **RED first:** add failing contract tests for shared canonical identity, workspace override projection, five-field write allowlist, personal-workspace PO routing, and private Trainer exercise isolation. Add mutation and negative tenancy cases before schema/RPC/UI work. | FR-003, FR-004, FR-014, FR-018 | BLOCKED: finalize test expectations only after F16-MCQ-1/-2/-4/-5/-6/-8 are decided; preserve unresolved behaviors as omitted assertions. |
+| T038 | Design and implement versioned override identity/content, composite tenant keys, RLS, scoped write/remove RPCs with expected-version CAS, action-bound idempotency and one append-only audit event. | FR-003, FR-014, FR-016, FR-018 | BLOCKED: F16-MCQ-1/-2/-4/-5/-6. No RPC signature, mapping default or removal outcome is authorized before decisions. |
+| T039 | **RED first:** client/plan-workspace resolver tests for trusted workspace derivation, override → global precedence/source, update visibility without republish, generic denial, and foreign-tenant non-disclosure; include auth/RLS mutation tests. Then implement the separate resolver/read path. | FR-012, FR-014, FR-020 | BLOCKED: F16-MCQ-7 for conflicting scopes. S35-PO-3 names client workspace; keep the client-path implementation blocked until PO reconciles the listed disagreement question. |
+| T040 | Implement workspace library “global + overrides” view and allowlisted override editor under the approved Design System; cover the Frontend Design Gate and AR/EN, light/dark, mobile/desktop matrix in implementation. | FR-018 | BLOCKED: F16-MCQ-1/-2/-4/-5/-6/-8 affect displayed mapping/alternative/edit states. Sol Medium critique is pending PO approval and blocks implementation review acceptance. |
+| T041 | Prepare forward-only migration and compatibility rehearsal for global video, workspace overrides and current variation history; no edits to pushed migrations. Scan all origin refs for unique migration version immediately before implementation commit and again before push. | FR-003, FR-014, FR-016, FR-020 | BLOCKED: F16-MCQ-1/-2/-3/-4/-6. This task is DESIGN ONLY in the current round; no migration file is created. |
+| T042 | Reconcile F17/F18/F19 consumer contracts and complete cross-feature design review after 016 decisions; review historical plan preservation and client-view auth. | FR-014, FR-020 | BLOCKED: F16-MCQ-3/-7 and downstream owners' review. Sol Medium critique pending PO approval. |
+
+### S36 implementation blockers
+
+- F16-MCQ-1 through F16-MCQ-8 are PO decisions; tasks above identify the specific dependencies. Do not select recommendations as defaults or test expectations.
+- Sol Medium independent critique is pending PO approval for that invocation. It was not invoked in this spec-only round; implementation remains blocked until approved review is completed.
+- Live remote state (including PR #43, origin/main movement and hosted CI) must be refreshed before any PR/merge operation.
+
 Planning only. Every task is a 45-60 minute unit. Begin with its negative or contract test, capture RED, make the smallest implementation change, capture GREEN, and run its listed mutation checks before marking complete. No task is authorized to run before the architect assigns the F16 database stack. UI fixture tasks may proceed without a stack when their dependency permits.
 
 **Owner tags**: `OWNER=Luna` owns migrations, RLS, definer functions, security, concurrency, caps and dedup SQL. `OWNER=MiniMax` owns non-sensitive UI, i18n, unit tests and Playwright using fixtures. Cross-owner handoffs name the receiving task explicitly.
@@ -64,5 +83,5 @@ T001-T003 establish contracts and pure tests. T004-T005 wait for the stack assig
 
 ## Open items for PO
 
-None. S20-03 through S20-13 and the canonical F16 spec/plan resolve the design decisions for this lane. The future D16-4 dataset is an input dependency with an already-defined audit and PO-approval process, not an unresolved decision.
+Historical food/catalog task decisions S20-03 through S20-13 remain as recorded for that scope. For the S36 redesign, F16-MCQ-1 through F16-MCQ-8 are open PO decisions in `decision-register.md`; see the S36 blocked tasks above. The future D16-4 dataset remains a separate input dependency with an already-defined audit and PO-approval process.
 - [x] T900 [FR-015, FR-016a] Make catalog taxonomy search integration coverage independent of the first global page by using a unique narrow synthetic filter or bounded pagination without weakening expected results.
