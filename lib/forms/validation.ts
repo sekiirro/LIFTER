@@ -864,6 +864,23 @@ export function validateAnswerSet(
     }
   }
 
+  const selectedBudget = answers.N08;
+  const selectedFoods = answers['N08.foods'];
+  if (Array.isArray(selectedFoods)) {
+    const allowedPrefix =
+      selectedBudget === 'low' ||
+      selectedBudget === 'medium' ||
+      selectedBudget === 'high'
+        ? `${selectedBudget}:`
+        : undefined;
+    if (
+      allowedPrefix === undefined ||
+      selectedFoods.some((food) => !food.startsWith(allowedPrefix))
+    ) {
+      issues.push({ code: 'invalid_choice', questionId: 'N08.foods' });
+    }
+  }
+
   if (
     measureAnswerPayloadBytes(answers) > APPROVED_FORM_BOUNDS.maxPayloadBytes
   ) {
