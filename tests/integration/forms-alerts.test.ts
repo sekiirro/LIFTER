@@ -7,6 +7,7 @@ import {
   sql,
 } from './registration-approval-operations-fixture';
 import { withCrashSafeFunctionMutant } from './function-drift-guard';
+import { cleanupAlertFixture } from './forms-alert-fixture-cleanup';
 
 const db = sql();
 afterAll(() => db.end());
@@ -430,7 +431,9 @@ it('waits for a concurrent membership revocation and excludes the recipient at e
   let evaluationFinished = false;
   try {
     await revocationLocked;
-    const [{ pid }] = await evaluator`select pg_backend_pid() as pid`;
+    const [session] = await evaluator`select pg_backend_pid() as pid`;
+    expect(session).toBeDefined();
+    const pid = session!.pid;
     const evaluation = evaluator`
       select app_private.evaluate_forms_alerts_core(
         '2026-04-11T00:00:00Z'::timestamptz,${f.wsA.id}::uuid,250
@@ -473,6 +476,7 @@ it('waits for a concurrent membership revocation and excludes the recipient at e
   } finally {
     releaseCommit();
     await hold.catch(() => undefined);
+    await db.begin((tx) => cleanupAlertFixture(tx, f.wsA.id, assignment));
     await revoker.end();
     await evaluator.end();
   }
