@@ -4,6 +4,7 @@ import { afterAll, describe, expect, it } from 'vitest';
 import { sql } from './harness';
 import { clientContext, pending } from './client-accounts-fixture';
 import { withCrashSafeFunctionMutant } from './function-drift-guard';
+import starter from '../../lib/forms/s14-starter-content.json';
 
 const db = sql();
 afterAll(() => db.end());
@@ -156,6 +157,17 @@ it('rejects N12 and derived definitions with absent required selector metadata',
       select app_private.f15_valid_builder_definition(${db.json(invalid)},false) as valid`;
     expect(result!.valid).toBe(false);
   }
+});
+
+it('rejects a slider definition without its validation object', async () => {
+  const invalid = structuredClone(starter) as unknown as MutableDefinition;
+  const slider = invalid.questions.find((question) => question['type'] === 'slider');
+  expect(slider).toBeDefined();
+  delete slider!['validation'];
+  const [row] = await db`
+    select app_private.f15_valid_builder_definition(${db.json(invalid)},false) as valid
+  `;
+  expect(row?.valid).toBe(false);
 });
 
 describe('T006/T009 persisted Builder writes', () => {

@@ -44,6 +44,18 @@ describe('S14 form definition types and privacy metadata', () => {
     ).not.toThrow();
   });
 
+  it('rejects a slider whose validation object is missing', () => {
+    const malformed = structuredClone(starter.questions);
+    const slider = malformed.find((question) => question.type === 'slider');
+    expect(slider).toBeDefined();
+    delete (slider as { validation?: unknown }).validation;
+
+    expect(validateFormDefinition(malformed as FormQuestion[])).toContainEqual({
+      code: 'invalid_slider_configuration',
+      questionId: slider!.id,
+    });
+  });
+
   it('renders the S34-PO-4 approved English meal-count prompt and choices', () => {
     const mealCount = starter.questions.find(
       (question) => question.id === 'N07.meal_count',
