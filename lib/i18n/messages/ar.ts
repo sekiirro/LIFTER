@@ -521,4 +521,9 @@ export const ar = {
   'catalog.showcaseCoachingWork': 'دعم التوجيه',
   'catalog.showcaseCoachingWorkOn': 'مفعل',
   'catalog.showcaseCoachingWorkOff': 'معطل',
+  'forms.intake.n11.feedback.0_2': 'إحساس قليل جدًا بالجوع',
+  'forms.intake.n11.feedback.3_4': 'جوع خفيف',
+  'forms.intake.n11.feedback.5_6': 'جوع متوسط',
+  'forms.intake.n11.feedback.7_8': 'جوع مرتفع',
+  'forms.intake.n11.feedback.9_10': 'جوع شديد جدًا',
 } as const;

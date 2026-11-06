@@ -2,7 +2,9 @@ import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 
-const origin = 'http://localhost:3000';
+const origin = new URL(
+  process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+).origin;
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );

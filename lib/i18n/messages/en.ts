@@ -261,7 +261,7 @@ export const en: Record<keyof typeof ar, string> = {
   'clientSignup.invalid':
     'This registration link is invalid or no longer available.',
   'clientSignup.duplicate':
-    'This email is already registered. Contact support.',
+    'We could not complete this registration with these details. Contact your coach or support.',
   'clientSignup.complete': 'Thank you. Your registration request is complete.',
   'clientSignup.unavailable': 'Please try again later.',
   'clientSignup.invalidInput': 'Check the highlighted fields and try again.',
@@ -539,4 +539,9 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.showcaseCoachingWork': 'Coaching work',
   'catalog.showcaseCoachingWorkOn': 'On',
   'catalog.showcaseCoachingWorkOff': 'Off',
+  'forms.intake.n11.feedback.0_2': 'Very little hunger',
+  'forms.intake.n11.feedback.3_4': 'Mild hunger',
+  'forms.intake.n11.feedback.5_6': 'Moderate hunger',
+  'forms.intake.n11.feedback.7_8': 'High hunger',
+  'forms.intake.n11.feedback.9_10': 'Very strong hunger',
 };

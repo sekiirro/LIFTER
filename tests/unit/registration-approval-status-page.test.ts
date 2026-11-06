@@ -191,4 +191,30 @@ describe('client registration status refresh', () => {
     expect(navigate).toHaveBeenCalledExactlyOnceWith('/');
     poller.stop();
   });
+
+  it('accepts only the approved assignment route and falls back for unlisted paths', async () => {
+    const navigate = vi.fn();
+    const assignmentDestination = '/forms/3f8e89d7-7c5b-42b0-976a-7ec70f0d71f8';
+    expect(
+      await performApprovedStatusRedirect({
+        preflight: async () => ({
+          status: 'ok',
+          destination: assignmentDestination,
+        }),
+        navigate,
+      }),
+    ).toBe('redirected');
+    expect(navigate).toHaveBeenCalledExactlyOnceWith(assignmentDestination);
+
+    expect(
+      await performApprovedStatusRedirect({
+        preflight: async () => ({
+          status: 'ok',
+          destination: 'https://attacker.test/forms/anything',
+        }),
+        navigate,
+      }),
+    ).toBe('fallback');
+    expect(navigate).toHaveBeenCalledOnce();
+  });
 });

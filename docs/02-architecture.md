@@ -52,8 +52,8 @@ Sales capabilities not listed stay deny-all.
 
 Hashed token bound to `(workspace, package_version)`: 24 h validity, `opened_at` grace of 30 min. Consumption happens in an RPC: `UPDATE … WHERE consumed_at IS NULL AND (expires_at > now() OR opened_at + 30 min > now()) RETURNING`, in the same transaction that creates the account. A failed validation rolls back. No IP blocking.
 
-**Duplicate email/phone (D-08 rev.):**
-- The form shows only "This email is already registered. Contact support." (same wording for phone).
+**Duplicate identity (D-08 rev.; PO s15 Q2 B):**
+- Email, phone, and username collisions produce one field-neutral duplicate response; wording remains DRAFT pending PO approval (see `specs/015-forms-intake/reports/S16-q2-duplicate-copy-draft.md`).
 - No verification code, no workspace disclosure, no transfer or merge.
 - The token is not consumed. Per-token attempt limit. Audited without cross-workspace detail.
 - *(Superseded: the verification-code disclosure flow / R8.)*

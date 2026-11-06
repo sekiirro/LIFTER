@@ -24,6 +24,13 @@ jobs:
           node-version-file: .nvmrc
           cache: npm
       - run: npm ci
+      - name: Install and verify media test codecs
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes ffmpeg
+          ffmpeg -hide_banner -encoders 2>&1 | grep -q '\blibwebp\b'
+          ffmpeg -hide_banner -encoders 2>&1 | grep -q '\blibaom-av1\b'
+          ffmpeg -hide_banner -muxers 2>&1 | grep -q '\bavif\b'
       - name: Validate migration timestamps
         run: npm run check:migration-timestamps
       - name: Assert runtime Unicode pin

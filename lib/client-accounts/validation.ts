@@ -1,5 +1,13 @@
 import { validatePassword } from '../auth/password-policy';
 import { exactKeys } from '../registration-links/validation';
+import {
+  isPastCalendarDate,
+  isReservedSignupUsername,
+  isValidSignupUsername,
+  isValidTelegramUsername,
+  normalizeSignupUsername,
+  validateSignupName,
+} from '../forms/signup-policy';
 
 export { validatePassword } from '../auth/password-policy';
 export type SignupFields = {
@@ -7,6 +15,9 @@ export type SignupFields = {
   email: string;
   phone: string;
   password: string;
+  dateOfBirth: string;
+  username: string;
+  telegramUsername: string;
 };
 /** Storage primitive only; U6 normalizes selected-country input server-side. */
 export function canonicalPhone(value: unknown): value is string {
@@ -26,19 +37,34 @@ export function normalizedEmail(value: unknown): string | null {
   return value.toLowerCase();
 }
 export function signupFields(value: unknown): SignupFields | null {
+  const keys = [
+    'name',
+    'email',
+    'phone',
+    'password',
+    'dateOfBirth',
+    'username',
+    'telegramUsername',
+  ];
   if (
-    !exactKeys(value, ['name', 'email', 'phone', 'password']) ||
+    !exactKeys(value, keys) ||
     !Object.values(value).every((v) => typeof v === 'string')
   )
     return null;
   const email = normalizedEmail(value.email);
+  const dateOfBirth = value.dateOfBirth as string;
+  const username = value.username as string;
+  const telegramUsername = value.telegramUsername as string;
   if (
-    typeof value.name !== 'string' ||
-    !value.name.trim() ||
+    !validateSignupName(value.name) ||
     !email ||
     !canonicalPhone(value.phone) ||
     typeof value.password !== 'string' ||
-    !validatePassword(value.password).valid
+    !validatePassword(value.password).valid ||
+    !isPastCalendarDate(dateOfBirth, new Date()) ||
+    !isValidSignupUsername(username) ||
+    isReservedSignupUsername(username) ||
+    !isValidTelegramUsername(telegramUsername)
   )
     return null;
   return {
@@ -46,6 +72,9 @@ export function signupFields(value: unknown): SignupFields | null {
     email,
     phone: value.phone,
     password: value.password,
+    dateOfBirth,
+    username: normalizeSignupUsername(username),
+    telegramUsername,
   };
 }
 export function validateSignupFields(value: unknown): {
@@ -53,13 +82,21 @@ export function validateSignupFields(value: unknown): {
   invalidFields: Array<keyof SignupFields>;
 } {
   const invalidFields: Array<keyof SignupFields> = [];
-  if (!exactKeys(value, ['name', 'email', 'phone', 'password']))
+  const keys = [
+    'name',
+    'email',
+    'phone',
+    'password',
+    'dateOfBirth',
+    'username',
+    'telegramUsername',
+  ];
+  if (!exactKeys(value, keys))
     return {
       fields: null,
-      invalidFields: ['name', 'email', 'phone', 'password'],
+      invalidFields: keys as Array<keyof SignupFields>,
     };
-  if (typeof value.name !== 'string' || !value.name.trim())
-    invalidFields.push('name');
+  if (!validateSignupName(value.name)) invalidFields.push('name');
   if (!normalizedEmail(value.email)) invalidFields.push('email');
   if (!canonicalPhone(value.phone)) invalidFields.push('phone');
   if (
@@ -67,6 +104,17 @@ export function validateSignupFields(value: unknown): {
     !validatePassword(value.password).valid
   )
     invalidFields.push('password');
+  if (!isPastCalendarDate(value.dateOfBirth, new Date()))
+    invalidFields.push('dateOfBirth');
+  if (
+    !isValidSignupUsername(value.username) ||
+    isReservedSignupUsername(
+      typeof value.username === 'string' ? value.username : '',
+    )
+  )
+    invalidFields.push('username');
+  if (!isValidTelegramUsername(value.telegramUsername))
+    invalidFields.push('telegramUsername');
   return {
     fields: invalidFields.length === 0 ? signupFields(value) : null,
     invalidFields,

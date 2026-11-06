@@ -1,0 +1,9 @@
+{
+  "classification": "personal data",
+  "allowedPurpose": "select the standard N12 reference series",
+  "forbiddenSeries": ["male-cinematic"],
+  "valueFieldsExcludedFrom": ["logs", "audit payloads"],
+  "retentionDays": 30,
+  "retentionStartsAt": ["Closure", "Refund", "Deactivation"],
+  "accessControl": "same as related sensitive intake profile"
+}

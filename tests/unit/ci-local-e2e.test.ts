@@ -36,3 +36,12 @@ it('runs the full Playwright suite after local-stack integration tests', () => {
     integration.indexOf('run: npx playwright install --with-deps chromium'),
   ).toBeLessThan(integration.indexOf('run: npm run e2e -- --workers=1'));
 });
+
+it('uses the Vite runner config loader for integration tests', () => {
+  const packageJson = JSON.parse(readFileSync('package.json', 'utf8')) as {
+    scripts: Record<string, string>;
+  };
+  expect(packageJson.scripts['test:integration']).toContain(
+    '--configLoader=runner',
+  );
+});
