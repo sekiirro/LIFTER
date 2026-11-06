@@ -413,6 +413,7 @@ it('waits for a concurrent membership revocation and excludes the recipient at e
 
   const revoker = sql();
   const evaluator = sql();
+  const observer = sql();
   let releaseRevocation!: () => void;
   let releaseCommit!: () => void;
   const revocationLocked = new Promise<void>((resolve) => {
@@ -446,7 +447,7 @@ it('waits for a concurrent membership revocation and excludes the recipient at e
     await expect
       .poll(
         async () => {
-          const [activity] = await revoker`
+          const [activity] = await observer`
             select wait_event_type,wait_event
             from pg_catalog.pg_stat_activity where pid=${pid}
           `;
@@ -479,6 +480,7 @@ it('waits for a concurrent membership revocation and excludes the recipient at e
     await db.begin((tx) => cleanupAlertFixture(tx, f.wsA.id, assignment));
     await revoker.end();
     await evaluator.end();
+    await observer.end();
   }
 });
 
