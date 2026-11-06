@@ -95,10 +95,13 @@ Spec-level fixes only. No row is VERIFIED.
 | Control A, public /recover | FR-030, SC-015, PDN-F4-7-13 | T049b, T049c, T050b | local route tests (planned) | BLOCKED | PDN-F4-7-14 CONFLICT with S35-PO-3 (options A ingress, B send hook, C risk acceptance); no mechanism selected |
 | Control B, auth.users guard | FR-030, FR-025 (b) | T049a, T049d, T050a | `tests/integration/auth-recovery.test.ts` "staff-reset-guard" (planned) | UNVERIFIED | Feasibility G1, G2; migration on auth.users needs PDN-F4-7-15 (CONFLICT check) |
 | Control C, session revocation | FR-030 control C | T049e, T050a | "staff-reset-sessions" (planned) | UNVERIFIED | G3 (GoTrue refuses deleted-session tokens), G5 (refresh-token cascade); PDN-F4-7-16 if G3 fails |
-| Control D, recovery-session age | FR-030 control D, ND-F4-3 (password path) | T049b, T050a | "staff-reset-direct" (planned) | UNVERIFIED | G4 (amr recovery method); general session lifetime remains the open ND-F4-3 blocker (docs/13) |
+| Control D, recovery-session age | FR-030 control D, ND-F4-3 (password path) | T049b, T050a | "staff-reset-direct" (planned) | UNVERIFIED | G4 (JWT amr otp recovery entry, merged test lines 332 to 355); general session lifetime remains the open ND-F4-3 blocker (docs/13) |
 | FR-025 (a) begin, eligibility | FR-025 (a), FR-016 | T049b, T050a, T033 | "staff-reset-direct" (planned) | UNVERIFIED | Eligible roles PDN-F4-7-02 still open |
 | FR-025 (c), (d), (e), (g) closing and reconciliation | FR-025 | T049d, T050a | "staff-reset-intent" (planned) | UNVERIFIED | Unique closing-event index to verify against public.audit_events on main |
 | Nitpick: public /recover five-request limit | FR-024, FR-030 | T049c | "staff-reset-public-route" (planned) | UNVERIFIED | Runs only on an enabled public route (PDN-F4-7-14) |
 | Nitpick: delivery permission, eligible staff outside list | FR-019, FR-024 | T038a, T049c | "staff-reset-permitted", "staff-reset-public-route" (planned) | UNVERIFIED | PDN-F4-7-01 list maintainer open |
 | T048 merge-base criterion (tasks.md:176) | SC gate, S36-R9 | T048 | none (process gate) | DOCUMENTED | Acceptance evidence is the run record on the final head |
+| FR-018 timing parity (tasks.md:158) | FR-018 | T035 | timing-parity check (planned) | UNVERIFIED | AT-2 method and tolerance are the architect's decision; not encoded |
+| FR-019 delivery cap (tasks.md:162) | FR-019 | T038b | "staff-reset-delivery-cap" (planned) | UNVERIFIED | Blocked by PDN-F4-7-01 for implementation |
+| Architect question ARCH-S36-R4-1 (guard session scope) | FR-025 (b), FR-030 control B | T049a, T050a | none | OPEN | Not a PO decision; open-intent window case blocked |
 
