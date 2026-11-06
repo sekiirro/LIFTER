@@ -77,6 +77,12 @@ The PO reads all audit events. A WO reads only the events of workspaces they're 
 - **FR-006**: The feature MUST provide a reusable audit-attachment mechanism (a documented helper) for later tenant tables, plus a test pattern for it.
 - **FR-007**: Negative tests: foreign-workspace read, a direct insert, and update/delete/truncate per role.
 
+## Clarifications
+
+### Session 2026-11-04 — S33-PO-4
+
+PO source: S33-PO-4, “Fix stack drift, flaky tests, billing-related CI blockers, and PR/issue backlog organization.” This feature's S33 work is limited to preserving FR-005/FR-007 visibility and rejection assertions while bounding integration probes. It does not change audit retention, authorization, query/API behavior, or add an index. No open ambiguities remain within this test-only S33 scope. The separate index/performance proposal for issue #37 remains a PO decision if pursued.
+
 ## Success Criteria *(mandatory)*
 
 - **SC-001**: 100% of governance writes in F3 produce exactly one audit event. 0 events for rejected writes.

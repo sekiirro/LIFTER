@@ -20,6 +20,9 @@ vi.mock('../../lib/registration-links/open', () => ({
 vi.mock('../../lib/supabase/server', () => ({
   createSessionClient: m.session,
 }));
+vi.mock('../../lib/supabase/public-session', () => ({
+  createPublicSessionClient: vi.fn().mockResolvedValue(null),
+}));
 vi.mock('next/headers', () => ({ cookies: m.cookies }));
 vi.mock('next/navigation', () => ({ notFound: m.notFound }));
 vi.mock('../../components/auth/AuthPreferences', () => ({

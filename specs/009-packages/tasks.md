@@ -201,3 +201,8 @@ SC coverage: SC-001 â†’ T010/T014/T018/T020/T027/T028/T033; SC-002 â†’
 - [ ] T071 [FR-022..FR-033, SC-013..SC-023] Fresh Analyze after implementation changes; reconcile each migration, dependency, test, design and security result. No task may be ticked until its tests pass on current head and traceability cites exact evidence.
 
 No task is complete or ticked by this documentation-only cycle. RED-first describes future test-first order; no tests were created or run here. T042, T055 category initialization and T066 remain blocked by PD-S34-NEW-01.
+
+## S33 test hygiene
+
+- [x] T900 [FR-013, FR-014] Make the authenticated package empty-state Playwright fixture explicit and include route/render diagnostics on failure. Preserve the existing empty-state, role, theme, and localization assertions; do not alter product behavior.
+

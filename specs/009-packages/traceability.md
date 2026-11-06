@@ -77,3 +77,9 @@ SC-013..SC-018 map respectively to T052/T053, T054/T055, T056/T057, T060/T068, T
 | FR-032/033 installment UI copy/labels; SC-023 | T069, T071 | four exact English/Arabic label pairs; Frontend Design Gate; other interface copy | label pairs approved by LABELS/S34-PO-2; remaining dashboard/Installments/empty/error/help copy BLOCKED-COPY |
 
 No S34 task is ticked. This cycle ran no tests, SQL, migration, stack, build, UI render or security review. Existing mock packages must not be deleted until the C5 preflight and independent post-implementation security gate pass on the target stack. Category initialization remains BLOCKED by PD-S34-NEW-01.
+## S33 traceability — S33-PO-4
+
+| FR | Task | Test | Evidence |
+|---|---|---|---|
+| FR-013, FR-014 | T900 | `tests/e2e/packages.spec.ts::local-stack authenticated package acceptance › ar: PO create, presets/custom, cancel/confirm, errors, themes and workspace switch` | Commit `45d17ff`; three #41 Playwright specs passed 27/27 on current head and fresh Stack C. |
+

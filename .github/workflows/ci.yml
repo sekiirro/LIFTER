@@ -2,7 +2,12 @@ name: CI
 
 on:
   push:
+    branches: [main]
   pull_request:
+
+concurrency:
+  group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || format('{0}-{1}', github.ref, github.run_id) }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 permissions:
   contents: read
@@ -40,7 +45,6 @@ jobs:
       - run: npm run check:secrets
       - run: npm run build:cron
       - run: npm run size
-      - run: npx playwright install --with-deps chromium
 
   integration:
     runs-on: ubuntu-latest

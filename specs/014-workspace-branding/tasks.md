@@ -243,3 +243,4 @@ Start F14b immediately after F14 merges, in parallel with F13/F15. F14b complete
 - Missing Storage readiness, failed/unproven T044 context/operation behavior, or any skipped Storage denial: required lane fails; stop at the hard gate and do not report green or substitute another access model.
 - Failed RLS/Storage direct API denial, token validity, audit atomicity, data cleanup, accessibility/contrast, or migration preservation check: block release and keep evidence.
 - No production launch until hosted Storage compatibility/verification and backup/restore gate in the F14 specification are satisfied.
+- [x] T900 [FR-009] Add a forward-only branding function convergence migration for the three intended post-20261102140000/post-20261102144000 function bodies, with a DO assertion for required markers; harden GC tests with deadline-bounded fixture-aware draining and informative failures. No data deletion or grant changes.
