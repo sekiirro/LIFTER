@@ -7,8 +7,7 @@ Observable contract only. Exact SQL argument types and transport schemas remain 
 | Operation | PO | WO | Trainer | Sales | Client | Unknown/unauthenticated |
 | --- | --- | --- | --- | --- | --- | --- |
 | Read global catalog/search/history | Allow directly, including without workspace membership | Allow with current `coaching_work` membership in at least one workspace | Same as WO | Deny | Deny; clients receive plan snapshots only | Deny |
-| Create global exercise; taxonomy governance | Allow | Deny | Deny | Deny | Deny | Deny |
-| Edit/version canonical global exercise | PO decision pending F16-MCQ-5 | Deny | Deny | Deny | Deny | Deny |
+| Create global exercise; edit/version; taxonomy governance | Allow | Deny | Deny | Deny | Deny | Deny |
 | Remove/restore/merge global exercise or food | Allow | Deny | Deny | Deny | Deny | Deny |
 | Create global food | Allow if PO identity is authenticated | Allow with current `coaching_work` in at least one workspace | Allow with current `coaching_work` in at least one workspace | Deny | Deny | Deny |
 | Edit/version global food | Allow | Allow only when current actor is the food creator; otherwise deny | Allow only when current actor is the food creator; otherwise deny | Deny | Deny | Deny |
@@ -18,13 +17,23 @@ Observable contract only. Exact SQL argument types and transport schemas remain 
 
 `coaching_work` is checked against current membership on every request. PO's global authority does not require a workspace membership, but a PO writing a workspace row supplies and authorizes that workspace. Denials are generic and do not reveal whether foreign-workspace IDs or global creator/origin metadata exist.
 
+### Planned operations (not implemented)
+
+The rows below describe the F16 redesign (S35-PO-3, S36-PO-2). They are not implemented in this tree and are kept out of the implemented matrix above, which `tests/unit/catalog-role-parity.test.ts` parses against the SQL fixture. Each row moves into the implemented matrix in the same commit that adds its SQL, fixture row and parity test.
+
+| Planned operation (not implemented) | PO | WO | Trainer | Sales | Client | Unknown/unauthenticated |
+| --- | --- | --- | --- | --- | --- | --- |
+| Edit/version canonical global exercise (global admin scope only; S36-PO-2, F16-MCQ-5 answered a) | Allow in an explicit global admin scope only; never from a personal-workspace context | Deny | Deny | Deny | Deny | Deny |
+| Workspace override create/update of name, description, instructions, video and alternatives (CAS; S36-PO-2) | Allow for an explicit workspace; a personal-workspace edit writes only that workspace's override | Allow in own current workspace | Allow in own current workspace | Deny | Deny | Deny |
+| Workspace override remove/clear (video removal restores global fallback; F16-MCQ-6 answered a) | Allow for an explicit workspace | Allow in own current workspace | Allow in own current workspace | Deny | Deny | Deny |
+| Client-plan exercise video projection (published plan only; workspace-private exercises pending F16-MCQ-9) | Not a staff operation; use the workspace video row | Not a staff operation; use the workspace video row | Not a staff operation; use the workspace video row | Deny | Allow only for own authenticated client and published plan | Deny |
+
 ### Executable app-wall matrix (T032)
 
 | App-wall operation | PO | WO | Trainer | Sales | Client | Unknown/unauthenticated | Mutation assertion |
 |---|---|---|---|---|---|---|---|
 | Global search | Allow without membership | Allow with current coaching membership | Same as WO | Deny | Deny | Deny | Removing the role guard makes the no-RPC denial assertion fail. |
-| Global exercise create/taxonomy/lifecycle/merge | Allow | Deny | Deny | Deny | Deny | Deny | Removing the PO guard makes the no-RPC role assertions fail. |
-| Canonical global exercise edit/version | Pending F16-MCQ-5 | Deny | Deny | Deny | Deny | Deny | Keep the PO edit behavior unasserted until its MCQ is decided; non-PO denials remain testable. |
+| Global exercise create/version/lifecycle/merge | Allow | Deny | Deny | Deny | Deny | Deny | Removing the PO guard makes the no-RPC role assertions fail. |
 | Workspace exercise/variation write | Allow for explicitly scoped authorized workspace | Own current workspace | Own current workspace | Deny | Deny | Deny | Removing the scope/membership guard makes foreign and revoked workspace assertions fail. |
 | Food create | Allow, with optional origin workspace | Current coaching membership | Current coaching membership | Deny | Deny | Deny | Removing the role/scope guard makes the no-RPC denial assertions fail. |
 | Food version | Allow | Current creator only | Current creator only | Deny | Deny | Deny | Making creator preflight always true causes the non-creator assertion to fail. |
@@ -53,7 +62,7 @@ Every mutation accepts an action-bound UUIDv4 operation key, request data, and (
 | RPC | Action | Allowed role/scope | Result contract |
 | --- | --- | --- | --- |
 | `catalog_create_exercise` | Create global identity + v1 | PO only | Stable ID and v1; bilingual name/taxonomy fields valid; one audit event. |
-| `catalog_version_exercise` | Append global exercise version | PO if F16-MCQ-5 permits; otherwise unavailable | New immutable version under same ID; expected-version CAS. Do not enable/deny PO canonical edits until the MCQ is decided. |
+| `catalog_version_exercise` | Append global exercise version | PO only | New immutable version under same ID; expected-version CAS. |
 | `catalog_transition_exercise` | Global exercise Remove/Restore | PO only | Append lifecycle revision/event without editing content versions; expected-revision CAS. |
 | `catalog_merge_exercise(p_source_id, p_target_id, p_expected_source_revision, p_operation_key)` | Merge global exercise identities | PO only | Active source; target resolves to active terminal; aliases flatten; no content or plan reference rewrites; one audit event. |
 | `catalog_resolve_exercise_selection` | Resolve a requested exercise identity for new selection | PO or current coaching staff | Returns the active terminal identity for merged aliases, otherwise the active identity or null. |
