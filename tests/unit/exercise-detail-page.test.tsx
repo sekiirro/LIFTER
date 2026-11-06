@@ -116,6 +116,34 @@ describe('production exercise detail route', () => {
     });
   });
 
+  it('shows the empty workspace choice only for platform-owner global detail', async () => {
+    const globalHtml = renderToStaticMarkup(
+      await Page({
+        params: Promise.resolve({ exerciseId: id }),
+        searchParams: Promise.resolve({}),
+      }),
+    );
+    expect(globalHtml).toContain(
+      `<option value="" selected="">${en['catalog.editorNone']}</option>`,
+    );
+
+    const workspaceHtml = renderToStaticMarkup(
+      await Page({
+        params: Promise.resolve({ exerciseId: id }),
+        searchParams: Promise.resolve({
+          scope: 'workspace',
+          workspace: workspaceId,
+        }),
+      }),
+    );
+    expect(workspaceHtml).toContain(
+      '<input type="hidden" name="scope" value="workspace"/>',
+    );
+    expect(workspaceHtml).not.toContain(
+      `<option value="">${en['catalog.editorNone']}</option>`,
+    );
+  });
+
   it('shows the current version, lifecycle, exact defaults, and authorized variation', async () => {
     const html = renderToStaticMarkup(
       await Page({

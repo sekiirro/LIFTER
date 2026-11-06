@@ -127,7 +127,7 @@ export default async function ExerciseDetailPage({
                 name="workspace"
                 defaultValue={workspaceId ?? ''}
               >
-                {actor.role === 'platform_owner' ? (
+                {actor.role === 'platform_owner' && scope === 'global' ? (
                   <option value="">{m['catalog.editorNone']}</option>
                 ) : null}
                 {workspaceOptions.map((workspace) => (
