@@ -1,24 +1,24 @@
-# Implementation Plan: F15 â€” Forms/Intake
+# Implementation Plan: F15 — Forms/Intake
 
 **Branch**: `015-forms-intake` | **Date**: 2026-10-29 | **Spec**: [spec.md](spec.md)
 
 **Plan status**: Base plan approved by PO 2026-10-29 (session 13); S14 amendment reflects binding decisions dated 2026-10-30. This documentation update is not a new implementation/merge approval.
 
-## S32 scope â€” migration collision and PO-approved F15 intake review
+## S32 scope — migration collision and PO-approved F15 intake review
 
 S32-PO-3 authorizes renaming only the conflicting F15 slider-validator migration to a unique valid version, preserving the F16 migration on #43, reconciling Stack D migration history without replaying SQL, and rerunning gates. Task T055 covers the rename, filename consumer, Stack D read/repair/readiness proof and timestamp uniqueness scan; it uses the existing slider validation contract (FR-004/006/007/026/036/037).
 
-S32-PO-5 approves B01, B06, T03, T08, N07, N08, N11 and N12 as listed in `spec.md`, including exact English labels where supplied. S32-PO-8 Q5 authorizes the 2â€“6 values in both locales. S32-PO-8 Q6 supplies exact N07 English timing strings and authorizes dynamic options. S33-PO-3 now approves Arabic T03 labels exactly `2`, `3`, `4`, `5`, `6` (Western digits) and Arabic N07 dynamic label `Ø§Ù„ÙˆØ¬Ø¨Ø© Ø±Ù‚Ù… {number}`; English T03/N07 copy remains unchanged. T061 records this PO clarification, updates the spec and analyzes the scope before implementation. T062 implements the approved Arabic-only copy with RED-first exact-string unit tests and updates the canonical/test fixtures and PO register. T063 verifies the rendered AR-RTL T03/N07 copy in light/dark at 390px and 1024px, with Bidi digit-order assertions, axe scans, screenshots, and evidence. T064â€“T070 track CodeRabbit corrections within existing F15 scope: server validation, SQL validator parity, Telegram link/delivery reliability, guarded RLS test harnesses, concurrency-test execution, and evidence encoding. All unrelated EN rows stay pending PO review.
+S32-PO-5 approves B01, B06, T03, T08, N07, N08, N11 and N12 as listed in `spec.md`, including exact English labels where supplied. S32-PO-8 Q5 authorizes the 2–6 values in both locales. S32-PO-8 Q6 supplies exact N07 English timing strings and authorizes dynamic options. S33-PO-3 now approves Arabic T03 labels exactly `2`, `3`, `4`, `5`, `6` (Western digits) and Arabic N07 dynamic label `الوجبة رقم {number}`; English T03/N07 copy remains unchanged. T061 records this PO clarification, updates the spec and analyzes the scope before implementation. T062 implements the approved Arabic-only copy with RED-first exact-string unit tests and updates the canonical/test fixtures and PO register. T063 verifies the rendered AR-RTL T03/N07 copy in light/dark at 390px and 1024px, with Bidi digit-order assertions, axe scans, screenshots, and evidence. T064–T070 track CodeRabbit corrections within existing F15 scope: server validation, SQL validator parity, Telegram link/delivery reliability, guarded RLS test harnesses, concurrency-test execution, and evidence encoding. All unrelated EN rows stay pending PO review.
 
 T078 reconciles the F15 copy inventory with the exact S33-PO-3 Arabic approvals while preserving all unrelated pending rows. T079 strengthens the existing FR-025 T005 safety test and database boundary so provider diagnostics cannot become persisted job or dead-letter audit text; it uses a synthetic canary and a mutation check.
 
 ## S34 review remediation
 
-The S34 tasks T080â€“T107 re-verify open CodeRabbit findings and apply only the explicit S34-PO-4..6 and PD-S34-NEW-01 decisions recorded in `S34-PO-4 through S34-PO-6 in the PO decision register`. Restack uses no-ff merge commits; no rebase or force push. Tasks with database behavior use Stack D only; changes to pushed migrations are prohibited except the single explicitly authorized S34-PO-6 edit to `20261108010200_f15_reject_autosave_after_submission.sql`. All new migration IDs must be checked across origin refs immediately before commit and push. Test changes are RED-first. Security findings require mutation evidence. No other product behavior, copy, permissions, defaults, or retention policy is authorized.
+The S34 tasks T080–T107 re-verify open CodeRabbit findings and apply only the explicit S34-PO-4..6 and PD-S34-NEW-01 decisions recorded in `S34-PO-4 through S34-PO-6 in the PO decision register`. Restack uses no-ff merge commits; no rebase or force push. Tasks with database behavior use Stack D only; changes to pushed migrations are prohibited except the single explicitly authorized S34-PO-6 edit to `20261108010200_f15_reject_autosave_after_submission.sql`. All new migration IDs must be checked across origin refs immediately before commit and push. Test changes are RED-first. Security findings require mutation evidence. No other product behavior, copy, permissions, defaults, or retention policy is authorized.
 
-T080 applies NFKC then lowercase and the approved S32-PO-7 username set. T081â€“T085 and T087â€“T095 retain their round-2 scope. S34-PO-5=B resolves T086: a saved draft requires nonblank English `forms.name`; Arabic-only drafts are rejected, using the existing approved `forms.required` message key. S34-01=B (S34-PO-4), S34-PO-6, and PD-S34-NEW-01 approve the exact English intake copy in T096. S34-PO-2 caps correction notes at the existing text bound (1,000 Unicode code points and 4 KiB UTF-8), checked before RPC and in a new forward migration. S34-PO-3 requires client-late alert evaluation to stop when the relationship closes, with related alert records handled by the lifecycle purge contract; implement by forward migration and tests. S34-PO-6 authorizes the only pushed-migration edit: change the named autosave migration to CREATE OR REPLACE FUNCTION and add per-question max_chars validation.
+T080 applies NFKC then lowercase and the approved S32-PO-7 username set. T081–T085 and T087–T095 retain their round-2 scope. S34-PO-5=B resolves T086: a saved draft requires nonblank English `forms.name`; Arabic-only drafts are rejected, using the existing approved `forms.required` message key. S34-01=B (S34-PO-4), S34-PO-6, and PD-S34-NEW-01 approve the exact English intake copy in T096. S34-PO-2 caps correction notes at the existing text bound (1,000 Unicode code points and 4 KiB UTF-8), checked before RPC and in a new forward migration. S34-PO-3 requires client-late alert evaluation to stop when the relationship closes, with related alert records handled by the lifecycle purge contract; implement by forward migration and tests. S34-PO-6 authorizes the only pushed-migration edit: change the named autosave migration to CREATE OR REPLACE FUNCTION and add per-question max_chars validation.
 
-T090 covers correction-history GET authorization and filtering to the current assignment snapshot; it does not cover correction-write revision validation. T082 owns correction RPC validation against stale or unauthorized revision context. T091â€“T094 cover signup field-error handling, localized boolean history labels, RTL/LTR rendering of derived FormPreview labels, and copied-form reference integrity. T095 captures the real T03/N07 matrix at 390px, 1024px, and 1440px in AR-RTL/EN-LTR and light/dark, then aligns the evidence index exactly with the captures. This is evidence-only; it adds no visual or product decision.
+T090 covers correction-history GET authorization and filtering to the current assignment snapshot; it does not cover correction-write revision validation. T082 owns correction RPC validation against stale or unauthorized revision context. T091–T094 cover signup field-error handling, localized boolean history labels, RTL/LTR rendering of derived FormPreview labels, and copied-form reference integrity. T095 captures the real T03/N07 matrix at 390px, 1024px, and 1440px in AR-RTL/EN-LTR and light/dark, then aligns the evidence index exactly with the captures. This is evidence-only; it adds no visual or product decision.
 
 **Input**: Feature specification from `specs/015-forms-intake/spec.md`. This is a plan, not implementation authorization; implementation starts only after PO plan approval.
 
@@ -39,7 +39,7 @@ The PO approved In-App + Telegram, no Email, preservation of escalation rules an
 **Testing**: Vitest unit/contract; isolated Supabase integration tests; Playwright/axe and rendered screenshots for UI. Tests are written first and observed RED before implementation.
 **Target Platform**: LIFTER web application and PostgreSQL-backed Supabase deployment
 **Project Type**: Next.js web application with SQL/RLS backend
-**Performance Goals**: No numeric product latency promises. Approved bounds: 20 questions per section, 60 per form, 400 conditions, 16 per-question conditions, 4,000 evaluation steps, 131,072 definition bytes, 4,096 UTF-8 bytes per textual answer, 50 choices, and 262,144 answer-value JSON UTF-8 bytes per draft/submission. Short/long text maxima are 150/1,000 Unicode code points; a per-question `charLimit` may lower but never exceed its type maximum. Payload bytes sum serialized answer values only, excluding keys, envelope fields and transport framing. The worst-case valid form of 60 long answers Ã— 1,000 four-byte code points measures 240,120 serialized bytes including the JSON string quotes and fits. New answer types and N7/N8 derived options remain subject to the same bounds; profile-bound and computed values are not client-editable answers. Measure and review autosave debounce/max-unsaved behavior before UI/publication ships.
+**Performance Goals**: No numeric product latency promises. Approved bounds: 20 questions per section, 60 per form, 400 conditions, 16 per-question conditions, 4,000 evaluation steps, 131,072 definition bytes, 4,096 UTF-8 bytes per textual answer, 50 choices, and 262,144 answer-value JSON UTF-8 bytes per draft/submission. Short/long text maxima are 150/1,000 Unicode code points; a per-question `charLimit` may lower but never exceed its type maximum. Payload bytes sum serialized answer values only, excluding keys, envelope fields and transport framing. The worst-case valid form of 60 long answers × 1,000 four-byte code points measures 240,120 serialized bytes including the JSON string quotes and fits. New answer types and N7/N8 derived options remain subject to the same bounds; profile-bound and computed values are not client-editable answers. Measure and review autosave debounce/max-unsaved behavior before UI/publication ships.
 **Constraints**: Sensitive health data; forced tenant RLS; two authorization walls; audited fail-closed reads; append-only versioning except the D-29 erasure exception; no browser persistence, cache, Realtime or service-role answer path; fixed Cairo D-03 calendar; no real-data alerting without complete P4 facts. D1 erasure is automatic and server-validated only; no human trigger or direct PO/WO/Trainer/Client/service-role delete. It deletes inapplicable answer values across versions and their answer-change/access-view audit rows only, never financial/authentication/authorization/security/unrelated audit; it is legal-hold defer+alert, idempotent, tenant-isolated and fail-closed. The control record stores counts only with no IDs; answer content is never logged; RET-3 purges all recoverable copies within 30 days.
 **Scale/Scope**: Six user stories, FR-001-FR-033; Q3 audiences include all active workspace clients, joining/onboarding clients, searched specific clients, custom recurrence, and renewal actual-start triggers.
 
@@ -64,8 +64,8 @@ The detailed ownership and DB classification is in [tasks.md](tasks.md). Body-fa
 ### Default onboarding template and signup plan
 
 - Your First Step is the ordinary editable default onboarding form in Forms. Previously supplied S14 questions may be initial editable starter content, not an invariant inventory; do not require all 26 parents or substantive section completeness. Workspace Owners may edit, replace, or select another onboarding form.
-- Replace T009's old â€œwait for PO-supplied inventoryâ€ gate: content and rules are now specified. T009 remains dependent on the approved Builder/version pipeline and immutable assignment snapshots. Configure N7 maximum five meals and meal-timing choices as dependent data, N8 budget food lists as editable versioned options, N11 slider with 150-250ms motion and reduced-motion bypass, and N12 image cards last. The P4 N7 maximum-five rule is an explicit PO-approved deviation; canonical Arabic source remains unchanged.
-- Forms use the normal Builder. Authors may add/remove/reorder sections and questions, revise bilingual copy/options/types/conditions/assets, and publish Draft â†’ Preview â†’ Publish. Published versions and assignment snapshots remain immutable; edits create a new version. Each form controls audience, trigger, delivery timing, recurrence and stop conditions under Q3=D.
+- Replace T009's old “wait for PO-supplied inventory” gate: content and rules are now specified. T009 remains dependent on the approved Builder/version pipeline and immutable assignment snapshots. Configure N7 maximum five meals and meal-timing choices as dependent data, N8 budget food lists as editable versioned options, N11 slider with 150-250ms motion and reduced-motion bypass, and N12 image cards last. The P4 N7 maximum-five rule is an explicit PO-approved deviation; canonical Arabic source remains unchanged.
+- Forms use the normal Builder. Authors may add/remove/reorder sections and questions, revise bilingual copy/options/types/conditions/assets, and publish Draft → Preview → Publish. Published versions and assignment snapshots remain immutable; edits create a new version. Each form controls audience, trigger, delivery timing, recurrence and stop conditions under Q3=D.
 - Signup is an F11 surface extension delivered by F15: preserve transactional Auth/link consumption, pending approval, no-session signup, and all existing F11 protections. Add DOB, three-part name, workspace-scoped unique normalized username, optional Telegram and sex as personal data. Signup creates the pending account without T&C consent; the unchecked required T&C consent with policy version/server timestamp is captured only at the post-Nutrition Terms Card; marketing remains separate and optional. The detailed cross-feature contract is `contracts/signup-extension.md`.
 - Terms consent remains at the post-Nutrition Terms Card with an unchecked required box and no signup-time consent; marketing consent is separate and optional. There is no standalone health notice or acknowledgment. Use minimal contextual health guidance only where genuinely useful. Do not change Terms Card consent rules. Terms AR/EN wording and B06 sex labels were approved verbatim by S30-PO-1 Q2; remaining authored English translations stay pending unless a later PO record approves them.
 - New F15 migration timestamps must be `20261104000000` or later, and strictly later than the complete F12/F14 migration sets actually merged at implementation time. This lower bound does not remove the requirement to re-inspect merged history. DB work uses Stack D only, after Stack D isolation and F12/F14 integration are verified; all other new S14 units are DB-free.
@@ -80,7 +80,7 @@ The detailed ownership and DB classification is in [tasks.md](tasks.md). Body-fa
 
 ### Locking and idempotency
 
-Use the existing F12 order whenever F12 rows are involved: **client â†’ subscription â†’ obligations/ledger**. P2 lock order is: **client â†’ subscription â†’ selected-form/assignment policy â†’ assignment/SLA obligation â†’ answer revision**, with authorization rechecked after every lock wait. Never acquire a P2 selection lock before a client/subscription lock. Keep audit append in the same transaction as the mutation. Stable operation keys bind canonical intent; independent unique constraints protect initial assignment, original submission and SLA against distinct-key races.
+Use the existing F12 order whenever F12 rows are involved: **client → subscription → obligations/ledger**. P2 lock order is: **client → subscription → selected-form/assignment policy → assignment/SLA obligation → answer revision**, with authorization rechecked after every lock wait. Never acquire a P2 selection lock before a client/subscription lock. Keep audit append in the same transaction as the mutation. Stable operation keys bind canonical intent; independent unique constraints protect initial assignment, original submission and SLA against distinct-key races.
 
 ## Migration and Shared-Function Ordering
 
@@ -94,7 +94,7 @@ Use the existing F12 order whenever F12 rows are involved: **client â†’ sub
   | --- | --- | --- |
   | `assign_intake_form` | PO, WO, Trainer | F15-3; `spec.md` FR-022 and SC-017. Sales and unknown capabilities deny. |
   | `author_forms` | PO, WO, Trainer | F15-1; `spec.md` FR-004/030, SC-017, and the approved workspace builder operation matrix. Trainers may publish and retire workspace forms. Workspace membership is a separate check; global template governance is PO-only. |
-  | `read_form_answers` | PO, WO, Trainer | `correction-matrix.md`, â€œApproved operations Ã— roles Ã— field classesâ€: current ordinary/sensitive answers and version history allow these staff roles in authorized workspace scope; Sales denies. PO scope requires an explicitly existing workspace. Clients read only their own assigned form through the client authorization path and are not granted this staff capability. PO final correction approval (2026-10-29) and Q1 relationship-end denial also apply. |
+  | `read_form_answers` | PO, WO, Trainer | `correction-matrix.md`, “Approved operations × roles × field classes”: current ordinary/sensitive answers and version history allow these staff roles in authorized workspace scope; Sales denies. PO scope requires an explicitly existing workspace. Clients read only their own assigned form through the client authorization path and are not granted this staff capability. PO final correction approval (2026-10-29) and Q1 relationship-end denial also apply. |
 
   These capability names and role sets are approved, but do not edit `role_has_capability` or `lib/auth/capabilities.ts` until F14 and F13 have merged and the full matrices can be reconciled.
 - Extend `app_private.has_workspace_access` only from its latest integrated definition. PO global authority must additionally join a real existing workspace for workspace-scoped F15 actions.
@@ -129,20 +129,20 @@ Merge readiness of F12 and F14 is not asserted by this plan; their latest integr
 
 ```text
 specs/015-forms-intake/
-â”œâ”€â”€ plan.md
-â”œâ”€â”€ research.md
-â”œâ”€â”€ data-model.md
-â”œâ”€â”€ contracts/
-â”‚   â”œâ”€â”€ authorization-and-audit.md
-â”‚   â”œâ”€â”€ forms-api.md
-â”‚   â”œâ”€â”€ retention-and-alerts.md
-â”‚   â””â”€â”€ signup-extension.md
-â”œâ”€â”€ fixtures/mandatory-intake-copy-ar.md
-â”œâ”€â”€ assets/body-fat/PROVENANCE.md
-â””â”€â”€ reports/S14-terms-draft.md
-â”œâ”€â”€ quickstart.md
-â”œâ”€â”€ tasks.md
-â””â”€â”€ checklists/analyze.md
+├── plan.md
+├── research.md
+├── data-model.md
+├── contracts/
+│   ├── authorization-and-audit.md
+│   ├── forms-api.md
+│   ├── retention-and-alerts.md
+│   └── signup-extension.md
+├── fixtures/mandatory-intake-copy-ar.md
+├── assets/body-fat/PROVENANCE.md
+└── reports/S14-terms-draft.md
+├── quickstart.md
+├── tasks.md
+└── checklists/analyze.md
 
 lib/forms/                         # domain services, validation, dates, repositories
 lib/auth/capabilities.ts           # shared TS capability parity
