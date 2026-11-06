@@ -208,4 +208,15 @@ This refresh follows the stable PO-source citation correction in spec.md, the cu
 **S35 T107 acceptance refresh - 2026-11-06 04:27 Africa/Cairo:** `tests/unit/forms-scheduler-cleanup-contract.test.ts` passed 1/1 on current A head `a1782ba` after T107's owned-ID cleanup. `tasks.md` and `traceability.md` now record the passing evidence. This checkbox update adds no requirement; **CRITICAL: 0. HIGH: 0. No open ambiguity.**
 
 **S35 T113 specification revalidation â€” 2026-11-06 04:30 Africa/Cairo:** The EN translation table and approval note now agree with the already-recorded S34/S33 decisions; no PO record or new copy was added. The forward migration updates the already-pushed 20261108020400 starter only when a draft still equals that original pristine payload, while future provisioning uses the same approved localized labels. **CRITICAL: 0. HIGH: 0. No open ambiguity for T113.**
-**S35 T111 scope refresh � 2026-11-06 04:31 Africa/Cairo:** T111 also covers the malformed T012 evidence row identified in #58. The path and commit fields are restored as real Markdown content; no requirement or evidence result changes. **CRITICAL: 0. HIGH: 0. No open ambiguity.**
+**S35 T111 scope refresh — 2026-11-06 04:31 Africa/Cairo:** T111 also covers the malformed T012 evidence row identified in #58. The path and commit fields are restored as real Markdown content; no requirement or evidence result changes. **CRITICAL: 0. HIGH: 0. No open ambiguity.**
+
+
+**S35 existing-PR entry revalidation — 2026-11-06:** T101–T114 remain within existing FR scope. Spec, plan, tasks and clarification records were checked before changes. T104 is blocked pending the PO's client-to-Trainer source decision; PD-S34-R3-01 remains open for N11 English feedback copy. No product default or translation was inferred. **CRITICAL: 0. HIGH: 0.**
+
+**S35 A remediation acceptance refresh — 2026-11-06:** T102, T103, T105, T106, T108, T109, T110 and T111 are checked only after their cited targeted/Stack D tests or docs checks passed. No requirement or PO decision changed. **CRITICAL: 0. HIGH: 0. No new ambiguity for completed tasks.**
+
+**S35 T113 specification revalidation — 2026-11-06:** The English label table and approval note match existing S34/S33 decisions. Migration 210 updates only pristine migration-204 payloads and supplies approved localized starter labels for future provisioning. No new copy or PO decision was added. **CRITICAL: 0. HIGH: 0.**
+
+**S35 T111 scope refresh — 2026-11-06:** The malformed T012 traceability row is restored to valid Markdown path and commit fields; no requirement or evidence result changed. **CRITICAL: 0. HIGH: 0.**
+
+**S35 B integration guard acceptance refresh — 2026-11-06:** Stack D replay passed 9 files / 64 tests after the drift guard was updated to restore ensure_default_onboarding_form from migration 20261108021000; the integration contract pins that source migration. This verifies the already-approved T113 behavior only. **CRITICAL: 0. HIGH: 0.**

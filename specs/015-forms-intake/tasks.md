@@ -332,16 +332,16 @@ S27 h2 executed all eight T018 mutants against Stack D at pre-merge head `f42d4b
 ## S35 existing-PR remediation
 
 - [x] T101 [FR-024/025] Pin `test:integration` to Vitest's runner config loader; add a command-contract regression proving the supported loader is used and reproduce an assertion failure without Vite's `code.charCodeAt` masking error.
-- [ ] T102 [FR-004/006/008] Reject N08 derived food choices that do not match the selected budget in TypeScript and SQL; add direct-boundary regressions.
-- [ ] T103 [FR-008/013] Validate `correct_form_answer` values against the assigned form snapshot before inserting immutable revisions; add Stack D direct-RPC regressions in a forward migration.
+- [x] T102 [FR-004/006/008] Reject N08 derived food choices that do not match the selected budget in TypeScript and SQL; add direct-boundary regressions.
+- [x] T103 [FR-008/013] Validate `correct_form_answer` values against the assigned form snapshot before inserting immutable revisions; add Stack D direct-RPC regressions in a forward migration.
 - [ ] T104 [FR-017/018/024] Bind client-late Trainer schedules to the authoritative client-Trainer source and transfer them on reassignment. BLOCKED until PO identifies the source relation; do not choose a source or fallback.
-- [ ] T105 [FR-038/039] Count only nonempty whitespace-separated signup name components consistently in SQL and TypeScript; cover leading/trailing tabs and newlines.
-- [ ] T106 [FR-038/039] Repair the invalid Unicode-mode regex in the signup integration mutation test and execute its focused regression.
+- [x] T105 [FR-038/039] Count only nonempty whitespace-separated signup name components consistently in SQL and TypeScript; cover leading/trailing tabs and newlines.
+- [x] T106 [FR-038/039] Repair the invalid Unicode-mode regex in the signup integration mutation test and execute its focused regression.
 - [x] T107 [FR-024/025] Limit scheduler activation test cleanup to workspace and auth-user IDs created by that run; verify an unrelated preexisting fixture survives. Unit contract passed 1/1 on current A head `a1782ba`; traceability recorded below.
-- [ ] T108 [FR-008/013] Use a defined short-text question for the single-answer byte-bound baseline and verify the 4 KiB rule is reached.
-- [ ] T109 [FR-024/025] Make Stack D quickstart commands derive paths from the checkout.
-- [ ] T110 [FR-024/025] Replace the S18 historical local screenshot path with the stable run-artifact reference when its original capture set can be identified; otherwise leave the finding open with an evidence-based reply.
-- [ ] T111 [FR-024/025] Mark the superseded S33 Analyze status as historical; repair the S30 quotation, S31 migration-reference text, and malformed T012 traceability row without changing their recorded findings.
+- [x] T108 [FR-008/013] Use a defined short-text question for the single-answer byte-bound baseline and verify the 4 KiB rule is reached.
+- [x] T109 [FR-024/025] Make Stack D quickstart commands derive paths from the checkout.
+- [x] T110 [FR-024/025] Replace the S18 historical local screenshot path with the stable run-artifact reference when its original capture set can be identified; otherwise leave the finding open with an evidence-based reply.
+- [x] T111 [FR-024/025] Mark the superseded S33 Analyze status as historical; repair the S30 quotation and S31 migration-reference evidence text without changing their recorded findings.
 - [ ] T112 [FR-038/039] Skip touched-field blur validation while signup submission disables the inputs; add pending-submit unit and browser coverage with no visual/copy/token changes.
 - [ ] T113 [FR-026/036/037] Reconcile the EN translation table with S34/S33 approvals and provision localized N11 middle/maximum labels; preserve exact approved strings and use a new migration for the already-pushed starter provisioner.
 - [ ] T114 [FR-039] Keep the E2E and unit date-of-birth cases in the future so they continue to exercise the DOB validator.
