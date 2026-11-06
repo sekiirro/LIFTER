@@ -117,8 +117,8 @@ test.afterAll(async () => {
 for (const locale of ['ar', 'en'] as const) {
   for (const theme of ['light', 'dark'] as const) {
     for (const viewport of [
-      { name: '360', width: 360, height: 800 },
-      { name: '1024', width: 1024, height: 768 },
+      { name: '390', width: 390, height: 844 },
+      { name: '1440', width: 1440, height: 900 },
     ]) {
       test(`${locale} ${theme} ${viewport.name}: production library and manual Add`, async ({
         page,
@@ -199,6 +199,31 @@ for (const locale of ['ar', 'en'] as const) {
           path: join(
             screenshotDir,
             `${locale}-${theme}-${viewport.name}-detail.png`,
+          ),
+          fullPage: true,
+        });
+
+        const workspaceExerciseId = await createWorkspaceExercise();
+        await page.goto(
+          `/exercise-library/${workspaceExerciseId}?scope=workspace&workspace=${fixture.wsA.id}`,
+        );
+        await expect(page.getByTestId('exercise-detail')).toBeVisible();
+        const workspaceDetailSelector = page.getByLabel(
+          m['catalog.editorWorkspace'],
+        );
+        await expect(
+          workspaceDetailSelector.locator('option[value=""]'),
+        ).toHaveCount(0);
+        await workspaceDetailSelector.focus();
+        await expect(workspaceDetailSelector).toHaveCSS(
+          'outline-style',
+          'solid',
+        );
+        await assertAxe(page);
+        await page.screenshot({
+          path: join(
+            screenshotDir,
+            `${locale}-${theme}-${viewport.name}-detail-workspace.png`,
           ),
           fullPage: true,
         });
