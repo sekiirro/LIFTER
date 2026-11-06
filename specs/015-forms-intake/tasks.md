@@ -342,6 +342,6 @@ S27 h2 executed all eight T018 mutants against Stack D at pre-merge head `f42d4b
 - [x] T109 [FR-024/025] Make Stack D quickstart commands derive paths from the checkout.
 - [x] T110 [FR-024/025] Replace the S18 historical local screenshot path with the stable run-artifact reference when its original capture set can be identified; otherwise leave the finding open with an evidence-based reply.
 - [x] T111 [FR-024/025] Mark the superseded S33 Analyze status as historical; repair the S30 quotation and S31 migration-reference evidence text without changing their recorded findings.
-- [ ] T112 [FR-038/039] Skip touched-field blur validation while signup submission disables the inputs; add pending-submit unit and browser coverage with no visual/copy/token changes.
-- [ ] T113 [FR-026/036/037] Reconcile the EN translation table with S34/S33 approvals and provision localized N11 middle/maximum labels; preserve exact approved strings and use a new migration for the already-pushed starter provisioner.
-- [ ] T114 [FR-039] Keep the E2E and unit date-of-birth cases in the future so they continue to exercise the DOB validator.
+- [x] T112 [FR-038/039] Skip touched-field blur validation while signup submission disables the inputs; add pending-submit unit and browser coverage with no visual/copy/token changes.
+- [x] T113 [FR-026/036/037] Reconcile the EN translation table with S34/S33 approvals and provision localized N11 middle/maximum labels; preserve exact approved strings and use a new migration for the already-pushed starter provisioner.
+- [x] T114 [FR-039] Keep the E2E and unit date-of-birth cases in the future so they continue to exercise the DOB validator.

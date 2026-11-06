@@ -111,3 +111,6 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 | FR-024/025 | T109 | `specs/015-forms-intake/quickstart.md` resolves repository and Stack D paths from current checkout; `format:check` passed. | `f779402` |
 | FR-024/025 | T110 | `specs/015-forms-intake/reports/evidence/s18-r4/index.md` lists the 50 verified S18 screenshots and hashes; copied capture hashes matched the review-provided source set. | `722c3a2` |
 | FR-024/025 | T111 | Analyze S33 status marked historical; S30 quotation/S31 source label repaired; T012 traceability row restored in B stack merge. `format:check` passed. | `f779402`, `759a1b5`, `c7b9de9` |
+| FR-038/039 | T112 | `tests/unit/client-signup-form.test.tsx` pending-state helper coverage (included in current B unit total) and `tests/e2e/client-signup.spec.ts` pending-submit blur test; signup Playwright 4/4. | `9497611` |
+| FR-026/036/037 | T113 | `tests/integration/forms-builder-persistence.test.ts` exact localized N11 copy; Stack D F15 integration 9 files / 64 passed after migration 210 and updated drift guard contract. | `aede2cb`, `26a3438`, `4332f2f` |
+| FR-039 | T114 | `tests/unit/client-signup-validation.test.ts` future DOB cases passed in focused 27/27 run; `tests/e2e/client-signup.spec.ts` 4/4 on Stack D. | `9e0cb6f` |

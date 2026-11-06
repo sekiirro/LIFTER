@@ -220,3 +220,5 @@ This refresh follows the stable PO-source citation correction in spec.md, the cu
 **S35 T111 scope refresh — 2026-11-06:** The malformed T012 traceability row is restored to valid Markdown path and commit fields; no requirement or evidence result changed. **CRITICAL: 0. HIGH: 0.**
 
 **S35 B integration guard acceptance refresh — 2026-11-06:** Stack D replay passed 9 files / 64 tests after the drift guard was updated to restore ensure_default_onboarding_form from migration 20261108021000; the integration contract pins that source migration. This verifies the already-approved T113 behavior only. **CRITICAL: 0. HIGH: 0.**
+
+**S35 B UI and data remediation acceptance refresh — 2026-11-06:** T112, T113 and T114 are checked after pending-submit unit/E2E, Stack D localized-starter integration, and DOB unit/E2E evidence passed. No new user-facing copy, styling, data policy or default was introduced; existing S34 approval controls N11 labels. **CRITICAL: 0. HIGH: 0.**
