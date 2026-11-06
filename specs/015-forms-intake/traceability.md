@@ -72,7 +72,7 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 
 | FR | Task | Test | Evidence |
 |---|---|---|---|
-| FR-024/025 | T101 | `tests/unit/ci-local-e2e.test.ts::uses the Vite runner config loader for integration tests`; Stack D `tests/integration/password-policy-parity.test.ts` (58 passed) | Commit `44573b1`; unit 2/2 and Stack D integration 1 file/58 tests passed on commit `44573b1`. Database StartedAt remained `2026-11-06T01:41:22.769866059Z`. |
+| FR-024/025 | T101 | `tests/unit/ci-local-e2e.test.ts::uses the Vite runner config loader for integration tests` passed 2/2; Stack D `tests/integration/password-policy-parity.test.ts` passed 58/58 using the exact npm integration command after Vitest 5.1.0 upgrade. | `44573b1` (runner-loader contract), `4a21a34` (Vitest 5.1.0); StartedAt unchanged at `2026-11-06T02:38:00.438257823Z`. |
 | FR-004/006/008 | T102 | `tests/integration/forms-r3-drafts.test.ts` direct-RPC N08 budget/foods regression; full Stack D integration 9 files / 64 passed; `tests/unit/forms-s14-validation.test.ts` 9/9. | `83e32c4` |
 | FR-008/013 | T103 | `tests/integration/forms-r3-corrections.test.ts` rejects correction keys outside the immutable assignment snapshot; full Stack D integration 9 files / 64 passed. | `e7bb25e` |
 | FR-038/039 | T105 | `tests/integration/client-signup-transaction.test.ts` whitespace name SQL regression, Stack D 11/11; includes leading/trailing tab/newline cases. | `a1782ba` |
