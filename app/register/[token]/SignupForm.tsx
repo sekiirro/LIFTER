@@ -124,6 +124,10 @@ export function SignupForm({
   const selectedCountry =
     phoneCountries.find((option) => option.code === country) ??
     phoneCountries.find((option) => option.code === 'EG');
+  const showUsernameServerError =
+    !pending &&
+    !usernameServerErrorDismissed &&
+    result.invalidFields?.includes('username') === true;
 
   function validateTouchedField(field: SignupIdentityField) {
     if (!formRef.current) return;
@@ -361,8 +365,7 @@ export function SignupForm({
           className={`${heroStyles.fieldControl} ${glass.liquidGlassEdge}`}
           data-error={
             identityInvalidFields.includes('username') ||
-            (!usernameServerErrorDismissed &&
-              result.invalidFields?.includes('username'))
+            showUsernameServerError
               ? 'true'
               : undefined
           }
@@ -374,8 +377,7 @@ export function SignupForm({
             aria-describedby={
               (submitted || touchedIdentityFields.includes('username')) &&
               (identityInvalidFields.includes('username') ||
-                (!usernameServerErrorDismissed &&
-                  result.invalidFields?.includes('username')))
+                showUsernameServerError)
                 ? 'signup-username-error'
                 : undefined
             }
@@ -401,22 +403,19 @@ export function SignupForm({
             aria-invalid={
               (submitted || touchedIdentityFields.includes('username')) &&
               (identityInvalidFields.includes('username') ||
-                (!usernameServerErrorDismissed &&
-                  result.invalidFields?.includes('username')))
+                showUsernameServerError)
             }
           />
         </span>
         {(submitted || touchedIdentityFields.includes('username')) &&
           (identityInvalidFields.includes('username') ||
-            (!usernameServerErrorDismissed &&
-              result.invalidFields?.includes('username'))) && (
+            showUsernameServerError) && (
             <span
               id="signup-username-error"
               className={`${styles.fieldError} ${heroStyles.fieldError}`}
             >
               <Bidi>
-                {!usernameServerErrorDismissed &&
-                result.invalidFields?.includes('username')
+                {showUsernameServerError
                   ? messages.usernameUnavailable
                   : identityInvalidFields.includes('username')
                     ? messages.usernameFormatError

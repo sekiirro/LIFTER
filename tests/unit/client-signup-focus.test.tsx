@@ -414,6 +414,89 @@ describe('signup result focus', () => {
     );
   });
 
+  it('hides the previous username server error while a resubmission is pending', async () => {
+    dom = new JSDOM('<!doctype html><html><body></body></html>', {
+      url: 'http://localhost/',
+    });
+    const globals = {
+      window: dom.window,
+      document: dom.window.document,
+      HTMLElement: dom.window.HTMLElement,
+      HTMLInputElement: dom.window.HTMLInputElement,
+      FormData: dom.window.FormData,
+      Event: dom.window.Event,
+      Node: dom.window.Node,
+      IS_REACT_ACT_ENVIRONMENT: true,
+    };
+    previousGlobals = new Map(
+      Object.keys(globals).map((key) => [
+        key,
+        Object.getOwnPropertyDescriptor(globalThis, key),
+      ]),
+    );
+    for (const [key, value] of Object.entries(globals))
+      Object.defineProperty(globalThis, key, { configurable: true, value });
+    const { createRoot } = await import('react-dom/client');
+    let callCount = 0;
+    let finishResubmission:
+      | ((result: ReturnType<typeof signupResult>) => void)
+      | undefined;
+    const action = vi.fn(async () => {
+      callCount += 1;
+      if (callCount === 1)
+        return signupResult('invalid_input', 'en', ['username']);
+      return await new Promise<ReturnType<typeof signupResult>>((resolve) => {
+        finishResubmission = resolve;
+      });
+    });
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+
+    await act(async () => {
+      root?.render(
+        createElement(SignupForm, {
+          action,
+          locale: 'en',
+          phoneCountries,
+        }),
+      );
+    });
+    const form = host.querySelector('form')!;
+    const name = host.querySelector<HTMLInputElement>('[name="name"]')!;
+    const dateOfBirth = host.querySelector<HTMLInputElement>(
+      '[name="dateOfBirth"]',
+    )!;
+    const username = host.querySelector<HTMLInputElement>('[name="username"]')!;
+    await act(async () => {
+      setInputValue(name, 'Heba Sami Nabil');
+      setInputValue(dateOfBirth, '1990-10-30');
+      setInputValue(username, 'valid_user');
+    });
+    await act(async () => {
+      form.requestSubmit();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(host.querySelector('#signup-username-error')?.textContent).toBe(
+      'This username is unavailable. Choose another.',
+    );
+
+    await act(async () => {
+      form.requestSubmit();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(action).toHaveBeenCalledTimes(2);
+    expect(host.querySelector('#signup-username-error')).toBeNull();
+    expect(host.querySelector('[role="alert"]')).toBeNull();
+
+    await act(async () => {
+      finishResubmission?.(signupResult('complete', 'en'));
+    });
+    expect(host.querySelector('#signup-username-error')).toBeNull();
+  });
+
   it.each(['dateOfBirth', 'telegramUsername'] as const)(
     'renders and focuses a server-reported %s error',
     async (field) => {
