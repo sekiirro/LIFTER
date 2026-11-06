@@ -71,7 +71,7 @@ Columns: `Requirement` (FR/SC from `spec.md`) → `Task(s)` (from `tasks.md`) �
 
 ## Blocked tasks (not implemented in this lane)
 
-- **T019** (U07, retention legal/technical): BLOCKED — 30-day retention across all recoverable copies including backups requires legal/technical feasibility review; minimal legally required financial/audit evidence reconciliation pending. Owner: `quickstart.md` + approved retention register. Gates: FR-019, FR-029, FR-034, FR-035; SC-009, SC-010. No answer proposed here.
+- **T019** (U07, retention legal/technical): BLOCKED — 30-day retention across all recoverable copies including backups requires legal/technical feasibility review; minimal legally required financial/audit evidence reconciliation pending. Owner: `quickstart.md` + approved retention register. Production deployment with real client data is blocked until T019 is resolved. Gates: FR-019, FR-029, FR-034, FR-035; SC-009, SC-010. No answer proposed here.
 - **T020** (U07 production readiness): BLOCKED — (a) **D-20 conflict (OPEN PO item, separate from F13-PB-03):** D-20 permits one cloud project for production and requires development/testing to use local Docker, so the required non-production hosted smoke test (password sign-in + refresh denied for a synthetic deactivated user) cannot run on a hosted project without a decision. (b) **F13-PB-03 (separate):** production Auth-hook enablement approval for the Custom Access Token hook. These two restrictions are recorded separately; no answer is proposed here. Gates: FR-019, FR-035; SC-009, SC-014.
 
 ## Counts by status
