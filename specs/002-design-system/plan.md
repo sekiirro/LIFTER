@@ -13,6 +13,7 @@ This feature adds the first UI layer on top of F1:
 - **Fonts.** Self-hosted Geist and IBM Plex Sans Arabic.
 - **Components.** Accessible base components built with CSS Modules and logical properties.
 - **App shell.** A responsive shell with role navigation for Trainer and Client only.
+- **Responsive navigation correction (S31-PO-7 Q5).** Use the vertical inline-start Liquid Glass sidebar at 1024px and above; retain the labeled bottom bar below 1024px. At 1024–1199px, adjust content layout so it clears the rail. The implementation lane must capture screenshots at 1024px and 1440px and assert no rail/content overlap across 1024–1199px.
 - **Dev-only pages.** A showcase and an Arabic print sample, available only when an environment flag is set.
 - **Tests.** Playwright with axe covers 4 combinations (AR/EN × dark/light).
 
@@ -44,13 +45,19 @@ Decisions are in [research.md](research.md). Open PO items are listed under **NE
 
 Post-design re-check: no new violations. The amendment is the only deviation, and it is tracked below.
 
+## Merged PR #28 Design System delta
+
+This documentation delta records only the merged Glisse Liquid Glass surfaces approved in S21-PO-1/2/6 and accepted for merge by S27-PO-1, S28-PO-1 and S28-PO-2. PR #28 shipped the floating mobile navigation capsule, floating action controls, accessible popover menu, deferred refraction on capable devices, and static fallbacks for unsupported/preferences/constrained/over-budget cases. Dense data, forms and financial content remain mostly solid (S21-PO-1; PR #28 body). The merged commit is `12bcad944c9366f17afc00a36bd14586c5f2e77a`.
+
+No implementation change is made in this documentation lane. S30-PO-8 Q16 corrects the desktop navigation requirement to a vertical Liquid Glass sidebar at inline-start, icons only by default, with name tooltips on pointer hover and keyboard focus; the existing AppShell inline-start rule establishes the logical side. The later implementation/review lane is tracked by T047-T051. Existing NEEDS DECISION rows remain in force. The exact measurable TBT gate comes from S21-PO-6: median delta no greater than +50 ms against baseline, using 15 interleaved paired samples per arm; PR #28 reports desktop −4 ms [−22,+6] and mobile −3 ms [−12,+6]. The raw report outputs are absent from this checkout, T046 remains open, and SC-008 is PARTIAL; these PR-reported medians are not locally verified evidence.
+
 ## NEEDS DECISION (PO open items, DESIGN.md §11; provisional values only, not presented as approved)
 
 | # | Item | F2 handling |
 |---|---|---|
 | ND-1 | Secondary/interactive token values | Derived algorithmically and verified by contrast tests. Recorded as **F2-proposed** in `research.md` for PO review. |
 | ND-2 | Final icon library | About 14 hand-drawn outline SVG icons behind an `Icon` API, replaceable later |
-| ND-3 | Breakpoint numbers | One provisional nav switch at `48rem` (768 px), kept in one constant/CSS location |
+| ND-3 | Breakpoint numbers | Resolved by S31-PO-7 Q5: sidebar at `64rem` (1024px) and wider, bottom bar below `64rem`; T050 implements the approved breakpoint and 1024–1199px content clearance. The prior 48rem value is superseded. |
 | ND-4 | Minimum touch-target size | Provisional 44 × 44 CSS px for nav items and buttons (above the WCAG 2.2 AA minimum of 24 px) |
 | ND-5 | PO / WO / Sales mobile tabs | Not defined. `getNavigation()` returns `needs-decision`, and the showcase shows that state. |
 | ND-6 | Arabic-Indic vs Western digits | No conversion: numbers are shown as stored. No number-formatting helper in F2. |
