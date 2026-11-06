@@ -86,5 +86,6 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 | FR-024/025 | T111 | Analyze S33 status marked historical; S30 quotation/S31 source label repaired; T012 traceability row restored in B stack merge. `format:check` passed. | `f779402`, `759a1b5`, `c7b9de9` |
 | FR-024/025 | T101 | Stack D `tests/integration/rls-catalog.test.ts` + `tests/integration/branding-function-privileges.test.ts` passed 42/42 after updating the branch-specific private-function and service-role inventories. | A `0109ff2`; B `6155640`; StartedAt unchanged `2026-11-06T03:43:08.260140976Z`. |
 
-| FR-024 / FR-025 — shared default-onboarding function source parity | T130 | Commit 828aa5; 	ests/unit/function-drift-guard.test.ts passed 1/1 on current A head; N11 focused suite also passed (18 tests across 2 files). | 828aa5 |
-| FR-040 / FR-026 / FR-036 / FR-037 — exact approved N11 English feedback bands and preserved Arabic feedback | T131 | Commit bd4834; 	ests/unit/forms-n11-feedback.test.ts passed on current A head, covering exact strings and scores 0, 2, 3, 4, 5, 6, 7, 8, 9 and 10 (18 tests across the focused run). | bd4834 |
+
+| FR-024 / FR-025 - shared default-onboarding function source parity | T133 | Commit f828aa5; tests/unit/function-drift-guard.test.ts passed 1/1 on current A head; N11 focused suite also passed (18 tests across 2 files). | f828aa5 |
+| FR-040 / FR-026 / FR-036 / FR-037 - exact approved N11 English feedback bands and preserved Arabic feedback | T134 | Commit bbd4834; tests/unit/forms-n11-feedback.test.ts passed on current A head, covering exact strings and scores 0, 2, 3, 4, 5, 6, 7, 8, 9 and 10 (18 tests across the focused run). | bbd4834 |
