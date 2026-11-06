@@ -21,6 +21,7 @@ const signupPrivate = [
   'signup_password_acceptable',
   'signup_link_key_matches',
   'signup_identity_normalization',
+  'signup_auth_identity_column',
   'signup_password_policy',
   'signup_field_contract',
   'signup_reserved_usernames',
@@ -209,7 +210,8 @@ describe('tenancy security catalog (T007)', () => {
     const rows = await db`
       select p.proname, p.prosecdef, p.proconfig, pg_catalog.pg_get_userbyid(p.proowner) as owner,
         has_function_privilege('anon', p.oid, 'EXECUTE') as anon_execute,
-        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated_execute
+        has_function_privilege('authenticated', p.oid, 'EXECUTE') as authenticated_execute,
+        has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role_execute
       from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid = p.pronamespace
       where n.nspname = 'app_private'`;
     expect(rows.map((row) => row.proname).sort()).toEqual(
@@ -294,6 +296,10 @@ describe('tenancy security catalog (T007)', () => {
             : 'postgres'),
       );
       expect(row.anon_execute).toBe(false);
+      if (row.proname === 'signup_auth_identity_column') {
+        // 20261107032001 revokes EXECUTE from PUBLIC, anon, authenticated, and service_role.
+        expect(row.service_role_execute, row.proname).toBe(false);
+      }
       expect(row.authenticated_execute, row.proname).toBe(
         [
           'branding_upload_begin',
