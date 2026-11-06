@@ -135,24 +135,27 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 
 ## Development Workflow & Quality Gates
 
-- Every feature follows Spec Kit: Specify → Clarify (only if blocking) → Plan → Tasks → Analyze,
-  before any code.
-- Claude is the architect/orchestrator and independent reviewer; Claude does not code or run Git,
-  tests, or Docker (read-only `gh` is allowed). Delegated agents (Codex, or OpenCode for the GLM tier) own implementation and Git operations.
-  Adaptive model routing uses the cheapest capable reliable model allowed for task risk and
-  sensitivity, as specified in [docs/08-agent-workflow.md](../../docs/08-agent-workflow.md).
-  GLM 5.3 Flash may take implementation, CI workflow, configuration and other low- to moderate-risk
-  work when complexity, risk, cost and logged performance support it; the architect independently
-  reviews every GLM change and an agent proves the relevant tests pass before it lands. Genuinely
-  high-risk security, Auth, RLS, SECURITY DEFINER, migrations, admission, Storage policies and
-  financial logic go to Luna High or Sol Medium, and no third-party-routed model ever receives
-  secrets or `.env` values. Escalation is GLM 5.3 Flash -> Luna High -> Sol
-  Medium. Sol High and any xhigh effort are prohibited. If every permitted tier is unavailable or at capacity, the architect stops the delegation and asks the PO for direction; it never retries without limit or substitutes a model outside the permitted tiers. The architect maintains `~/.lifter/model-performance-log.md` outside the repository, with one row per delegation: model, effort, task class, outcome, review notes, and cost.
-- Mandatory Spec Debate: the architect drafts the spec and architecture; an independent Sol Medium
-  critique follows; by default there is one response round, with more rounds only for significant
-  unresolved issues. The architect incorporates critique and presents unresolved product/design
-  decisions to the PO. Implementation starts only after PO approval and a completed plan/tasks.
-  AI agreement never replaces PO approval; the architect remains the final technical authority.
+- Every feature follows the mandatory workflow: Constitution → Specify → Clarify → Plan → Tasks → Analyze → Implement. Clarify is mandatory and records "zero open ambiguities" explicitly when none exist. Before implementation, the current Analyze must be dated after the latest spec, plan, or task change and have zero open CRITICAL or HIGH findings. (S29-PO-3 Q1)
+- Claude is the architect/orchestrator and independent reviewer. Claude may independently run read-only verification commands, including Git read commands, gh read queries, docker inspect, and SELECT-only database reads against synthetic/test data only. Claude performs no repository writes, migrations, test runs, or stack modifications; agents execute those actions. (S29-PO-3 Q4; S31-PO-7 Q6; S31-PO-8)
+- Adaptive model routing follows task complexity, security risk, model capability, and quota (S22-PO-9 rule 5). The available pool is four Luna Medium slots, one MiniMax at highest effort, and Big Pickle, Beam, and Flint through OpenCode; Kilo Code's two best available free models are the fallback when OpenCode free quotas are exhausted (S22-PO-9 rule 2; S25-PO-4 raised Luna capacity to three, and S25-PO-9 superseded that cap with a fourth slot).
+- The D-27 tier sequence GLM 5.3 Flash -> Luna -> Sol Medium governs ordinary task routing. S13 session 14 reserves Sol Medium for exceptionally difficult tasks or when GLM and Luna fail, and requires explicit PO approval before every Sol invocation. For the mandatory independent feature-critic role, the PO ruled (S30-PO-8 Q15, verbatim):
+  > Q15: Keep Sol Medium as the mandatory independent feature critic. Preserve the existing S13 rule requiring my explicit approval for each Sol invocation. Do not substitute Luna or other models, and do not skip critiques.
+  Q15 establishes this specific feature-critic use while preserving S13's per-invocation approval. Obtain approval before invoking Sol. Sol High and xhigh remain prohibited (D-27). If approval is absent, do not substitute another model or skip the critique; hold feature acceptance until the approved critique is complete. If no permitted tier is available for ordinary routing, stop and request PO direction; do not substitute a model (D-27). Keep one performance-log row per delegation with model, effort, task class, outcome, review notes, and cost (D-27).
+- S29-PO-1 assigns MiniMax to the remaining Hero Glisse work, superseding S28-PO-5's Big Pickle assignment for that remaining work only. Free models receive no secrets or sensitive tasks (S13 PO Kilo guardrail); third-party/free models receive no secrets or `.env` values (S22-PO-9; S29-PO-3 Q3). All development AI agents must use synthetic/test data only; no real client data may be shared during development or testing (S31-PO-7 Q6, clarified by S31-PO-8). Security-sensitive code work stays with approved paid models (Luna High or Sol Medium; Sol still requires per-invocation PO approval per S30-PO-8 Q15) (S31-PO-7 Q6). The production-AI distinction and safeguards are recorded verbatim below; this does not authorize implementation or production data access (S31-PO-8). High-risk work (security, Auth, RLS, SECURITY DEFINER, migrations, admission, Storage policies, and financial logic) requires independent architect review and executed mutation tests; sensitive permissions are never expanded without PO approval (S29-PO-3 Q3).
+  > S31-Q6 — PO clarification:
+  >
+  > Development AI agents (Luna, Sol, Claude, MiniMax, etc.) must use synthetic data only. No real client data may be shared during development or testing.
+  >
+  > This restriction does NOT prohibit the future production Ask LIFTER AI or Telegram Bot from processing real client data.
+  >
+  > Production AI may access only the minimum authorized data needed for each request, through authenticated, workspace-scoped backend services.
+  >
+  > Require verified identity, strict authorization, data minimization, appropriate privacy safeguards, and an explicitly approved production AI provider.
+  >
+  > Keep production AI data access disabled until its separate security and privacy design is reviewed and approved.
+  >
+  > Record this distinction in the constitution. No implementation changes yet.
+- Mandatory Spec Debate: the architect drafts the spec and architecture; the independent Sol Medium critique is mandatory for every feature under S30-PO-8 Q15. Each invocation requires explicit PO approval under S13 session 14 before Sol is invoked; do not substitute another model or skip the critique. If approval is absent, hold feature acceptance until the approved critique is complete. By default there is one response round, with more rounds only for significant unresolved issues. The architect incorporates critique and presents unresolved product/design decisions to the PO. Implementation starts only after PO approval and a completed plan/tasks. AI agreement never replaces PO approval; the architect remains the final technical authority.
 - Controlled Parallel Development: at most six concurrent delegated agents (the orchestrating architect is not counted). Each writer uses an isolated worktree and branch and edits disjoint files. Only one
   writer may hold a stack lock for Docker or Supabase operations that start, stop, restart, reset,
   provision, migrate, seed, or write shared DB state; other writers stay out of that stack while the
@@ -161,10 +164,12 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Main merge gate: before requesting PO approval, require a completed CodeRabbit review APPROVED on
   the exact PR head (`commit_id == headRefOid`), with no later CHANGES_REQUESTED or DISMISSED
   review; `reviewDecision` APPROVED; zero unresolved threads and all actionable findings resolved;
-  both GitHub Actions CI runs for the PR head completed successfully and required security checks
-  are green: the `push` run has `headSha == headRefOid` and the `pull_request` run checks the merge
-  result; and
-  independent architect review of the diff and evidence. Intermediate sub-branch merges into a
+  gate: three executed successful `pull_request` attempts (initial run or reruns) on the same exact head SHA; a failure caused by code voids that head until fixed; an infrastructure failure (e.g. Docker Hub `toomanyrequests`) may be rerun, is recorded and never counted; the attempts on the exact PR head completed successfully and required security checks
+  are green: record each run's ID and attempt; every required job concludes `success` and has a step
+  count greater than zero (zero steps means NOT EXECUTED); an attempt counts only if `validate`, `integration`, and `storage` each have job records with executed steps in that attempt (a partial rerun may retain earlier job outputs, which do not count). For the `pull_request` run, require this PR number, run `head_sha == headRefOid`, and `github.event.pull_request.head.sha == headRefOid`. Obtain `github.event.pull_request.head.sha` from the GitHub Actions run event payload or observable run logs, and obtain `GITHUB_SHA` from run metadata/logs or a workflow step that prints it; record the run URL and source for each value. Record `head_sha` as the PR-head SHA and `GITHUB_SHA` separately as the merge-result SHA; never use `head_sha` as the merge-result SHA, and verify the merge-result commit has the PR head and current `main` commit as parents. The required CI jobs are `validate`, `integration`, and `storage` from the main CI workflow; also require CodeRabbit review and the `check:secrets` security scan in `validate`. Update the list in the same PR as any workflow job rename or removal (S31-R6). For a main-branch push,
+  `head_sha` must equal the exact merge commit; this is a post-merge verification outside pre-approval items 1-6. Record both PR-head and merge-result SHAs in the PR
+  body or feature report (S30-R10). If `main` advances, re-evaluate on the new merge result; and
+  independent architect review of the diff and evidence. CI evidence counts only when `.github/workflows` at the exact PR head equals the base branch, or every workflow change is listed in the PR body and reviewed by CodeRabbit and the architect before evidence is accepted. Owner-only branch protection remains the PO admin step (S31-R4). Intermediate sub-branch merges into a
   parent feature branch require Claude review and green relevant CI on the exact head and do not
   bypass this main merge gate (see docs/08 and D-26). Ask the PO for explicit merge approval and
   record the approved head SHA with that approval. Merge only after that approval, immediately
@@ -173,19 +178,20 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   re-satisfy these checks on the new head and obtain new explicit PO approval. Use
   `gh pr merge <n> --merge --match-head-commit <po_approved_head>`. Never use `--admin`,
   `--auto`, or `--delete-branch`. This is process-only because branch protection returns 403.
-- Merge gates (from [docs/03-roadmap.md](../../docs/03-roadmap.md)): the `push`-event GitHub Actions
-  CI run with `headSha == headRefOid` is the independent, non-author rerun of typecheck, lint, unit
-  and applicable integration/e2e gates; the `pull_request`-event run checks the merge result with
-  current `main`. Both runs must complete successfully; agent-reported local gate results never
-  substitute. Claude (architect) does not run tests or git and verifies both runs on that head. Also require the isolation gate;
-  the money gate; AR and EN UI check; log-scrub check; acceptance criteria verified against
-  [docs/01-traceability.md](../../docs/01-traceability.md).
+- Supplementary merge gates (from [docs/03-roadmap.md](../../docs/03-roadmap.md)): apply the preceding
+  Main merge gate in full, including exact PR/head binding, run ID and attempt recording, per-job
+  `success` and positive step-count checks, current-main merge-result validation, and the CI rerun
+  required when `main` advances. Agent-reported local gate results never substitute. Claude
+  (architect) does not run tests or Git writes and verifies all three runs on that head.
+  Also require the isolation gate; the money gate; AR and EN UI check; log-scrub check; and acceptance
+  criteria verified against [docs/01-traceability.md](../../docs/01-traceability.md). High-risk changes also require executed mutation evidence (file:line kill, restore, diff exit 0) recorded in the feature's reports/verification file and referenced from `traceability.md` (S30-R10; S29-PO-3 Q3). Record the tested commit SHA and Node, Vitest/Playwright, and PostgreSQL image versions. Evidence carries to a later head only with diff proof that the mutated source, its tests, and defining migrations are unchanged; otherwise rerun the mutation evidence (S31-R5).
 - Only passing, reviewed work is committed.
 
 ## Governance
 
 - This Constitution overrides conflicting practices, plans and briefs. Where the architecture or
   roadmap conflicts with it, the Constitution wins until amended.
+- No AI agent may independently make product decisions, whether discovered during Specify, Clarify, Analyze, implementation, or reviews. Unresolved decisions MUST be presented to the PO as numbered multiple-choice questions with options, implications, and a recommendation. Work requiring that decision waits for explicit PO approval. (S29-PO-2, verbatim)
 - Amendments require Product Owner approval, a decision-register entry, and a semantic version
   bump:
   - MAJOR: a principle is removed or redefined.
@@ -194,7 +200,7 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Every spec, plan and review MUST include a constitution check. Deviations MUST be justified in
   the plan's complexity tracking and approved before implementation.
 
-**Version**: 1.4.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-10-31 (D18-1 nutrition template ownership and shared Plan Core lifecycle, PO S20 Message B sections 3 and 4; prior amendments D-22, D-26 and D-27)
+**Version**: 1.6.1 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-06 (merge-gate CI attempt wording, S35-PO-1/S36-R2; development-agent synthetic-data rule and production-AI distinction; S31-PO-7 Q6/S31-PO-8; CI provenance, mutation-evidence binding, and required-check list; S31-R4/R5/R6)
 
 ### Sync impact report and amendment note - 2026-10-29 (D-27)
 
@@ -203,3 +209,21 @@ Adaptive Model Routing and the six-agent concurrency limit were approved by the 
 ### Sync impact report and amendment note: 2026-10-31 (PO S20 Message B sections 3 and 4)
 
 The PO amended PRD-05/PRD-12 to allow workspace-owned nutrition templates managed by authorized staff alongside PO-managed global templates. The PO may Make it Global after private data and references are removed. Shared Plan Core now allows same-Plan-ID editing, private draft autosave, Save as Draft, one Ready & Publish action, independent first deliveries on different days, and exactly-once activation after both deliveries succeed. Specs 016 through 019, PRD/BRD, docs/03-roadmap.md, docs/04-changes-and-questions.md, docs/01-traceability.md, docs/10-feature-tracker.md and DESIGN.md record the matching contracts. D18-1 materially expands Principle IV/product scope; version bumped from 1.3.0 to 1.4.0.
+
+### Sync impact report and amendment note - 2026-11-03 (S29-PO-3 Q1-Q4)
+
+Version 1.4.0 to 1.5.0 (MINOR): materially expanded Development Workflow & Quality Gates and Governance. Clarify is mandatory for every feature; a current Analyze with zero open CRITICAL/HIGH findings is required before implementation. Added the verbatim S29-PO-2 Absolute PO Decision Rule and its numbered MCQ escalation process. Clarified Claude's read-only verification authority and prohibited repository writes, migrations, test runs, and stack modifications by Claude. Updated model allocation to current PO records while retaining the D-27 tier sequence, Sol effort prohibition, stop-and-ask rule, and performance log; S22-PO-9 and S25-PO-9 supersede earlier Luna capacity constraints; high-risk work requires independent architect review and executed mutation tests, and sensitive permissions are not expanded without PO approval. Existing principles I-IX, delivery constraints, merge gates, CI/CodeRabbit/security rules, and prior amendment history are preserved.
+
+Dependent document updated in the same PR, separate commit: `docs/08-agent-workflow.md` aligns agent governance with the mandatory Spec Kit workflow, PO-only product decisions, high-risk review/mutation-test requirements, model data restrictions, and Claude read-only boundary (authority: S29-PO-2 and S29-PO-3 Q1-Q4). No `.specify/templates/*`, `.claude/skills/*`, or command files changed.
+
+### Sync impact report and amendment note - 2026-11-04 (S31-PO-7 Q6/S31-PO-8; S31-R4/R5/R6)
+
+Version 1.5.0 to 1.6.0 (MINOR): record the PO's verbatim distinction between development agents (synthetic/test data only, no real client data) and future production Ask LIFTER AI/Telegram Bot access, which remains disabled until a separate security/privacy design is approved and must use minimum authorized data through authenticated, workspace-scoped services. No implementation changes are authorized. Add CI workflow provenance conditions (S31-R4), tested-SHA and tool-version mutation evidence with carry-forward diff proof or rerun (S31-R5), and the authoritative `validate`, `integration`, `storage`, CodeRabbit, and `check:secrets` list (S31-R6). Clarify that the exact main-branch merge-commit check is post-merge, outside pre-approval items 1-6. `docs/08-agent-workflow.md` and `docs/03-roadmap.md` are updated in this PR. No application code, tests, migrations, or CI workflow files changed.
+
+### Sync impact report and amendment note - 2026-11-04 (ARCHITECT RULING S32-R2; S32-PO-2 docs-only fix)
+
+PATCH (no version bump — clarification only): remove Claude from the security-sensitive implementer list and name the tier `Luna High or Sol Medium` (Sol requires per-invocation PO approval per S30-PO-8 Q15) in the sentence at `.specify/memory/constitution.md` line 144 and the mirror sentence in `docs/08-agent-workflow.md` (~line 34). No other sentence changed. Add the authoritative merge-gate reference (`validate`/`integration`/`storage` with executed steps > 0, plus `check:secrets` and CodeRabbit) to the checklist line in `docs/03-roadmap.md` (~line 41), preserving test-ownership wording. No version bump; file rules reserve MAJOR for principle removal/redefinition and MINOR for material expansion. `docs/08-agent-workflow.md` and `docs/03-roadmap.md` updated in the same PR.
+
+### Sync impact report and amendment note - 2026-11-06 (S35-PO-1; option A for PR #48 thread S34-48-CR-2)
+
+PATCH (version 1.6.0 to 1.6.1; clarification only, no principle change; S36-R3): per PO decision `#48=A (3 executed PR greens)` (S35-PO-1), align the main merge gate with the CI triggers as written in `.github/workflows/ci.yml`: count the main-side gate on three executed `pull_request` runs on the exact PR head (plus same-head rerun evidence), and remove the nonexistent feature-branch `push` run requirement (`head_sha == headRefOid`) and the inconsistent "both" wording. CI triggers are not changed. Mirrored in `docs/08-agent-workflow.md` (items 1-6 header de-duplicated; "Both ... runs" -> "Three executed ... runs"; PR-branch push check removed; "verifies both runs" -> "verifies all three runs"). `docs/03-roadmap.md` unchanged. No application code, tests, migrations, or CI workflow files changed. Follow-up (S36-R8): an attempt counts only if validate, integration and storage each have executed job records in that attempt (codifies existing practice). Follow-up (S36-R1/R2/R3): gate wording is now "three executed successful `pull_request` attempts (initial run or reruns) on the same exact head SHA; a failure caused by code voids that head until fixed; an infrastructure failure may be rerun, is recorded and never counted"; step 7 requires a fresh `pull_request` event when `main` moves; the restored duplicate "items 1-5" line is removed. (S34-48-CR-2, S35-PO-1, S36-R1, S36-R2, S36-R3)
