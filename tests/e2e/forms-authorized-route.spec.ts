@@ -733,10 +733,9 @@ test('approved F15 controls render in both locales, themes, and widths', async (
           (question) => question.id === 'N11',
         )!.feedbackBands![0]!.text;
         await expect(
-          page.getByText(
-            locale === 'en' ? 'Very little hunger' : n11Feedback,
-            { exact: true },
-          ),
+          page.getByText(locale === 'en' ? 'Very little hunger' : n11Feedback, {
+            exact: true,
+          }),
         ).toBeVisible();
         await next.click();
         const images = page.locator('fieldset img');
