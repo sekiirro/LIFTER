@@ -47,6 +47,13 @@ export async function runValidatedSignupAction(
   return runSignupActionSafely(action, previous, formData, locale);
 }
 
+export function shouldValidateSignupBlur(
+  submitting: boolean,
+  pending: boolean,
+): boolean {
+  return !submitting && !pending;
+}
+
 export function SignupForm({
   action,
   locale,
@@ -141,6 +148,7 @@ export function SignupForm({
   }
 
   function blurIdentityField(field: SignupIdentityField) {
+    if (!shouldValidateSignupBlur(submittingRef.current, pending)) return;
     setTouchedIdentityFields((current) =>
       current.includes(field) ? current : [...current, field],
     );
