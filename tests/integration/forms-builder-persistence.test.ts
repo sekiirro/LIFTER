@@ -161,7 +161,9 @@ it('rejects N12 and derived definitions with absent required selector metadata',
 
 it('rejects a slider definition without its validation object', async () => {
   const invalid = structuredClone(starter) as unknown as MutableDefinition;
-  const slider = invalid.questions.find((question) => question['type'] === 'slider');
+  const slider = invalid.questions.find(
+    (question) => question['type'] === 'slider',
+  );
   expect(slider).toBeDefined();
   delete slider!['validation'];
   const [row] = await db`
