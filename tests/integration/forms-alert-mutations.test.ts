@@ -397,6 +397,7 @@ it('kills race, missing dedupe lock, and two-hour escalation mutants', async () 
             await lockConnection`begin`;
             await lockConnection`select pg_catalog.pg_advisory_xact_lock(11011,318)`;
             let finished = false;
+            const [{ pid }] = await evaluator`select pg_backend_pid() as pid`;
             const pending = evaluate(
               evaluator,
               f.wsA.id,
@@ -404,14 +405,29 @@ it('kills race, missing dedupe lock, and two-hour escalation mutants', async () 
             ).finally(() => {
               finished = true;
             });
-            await new Promise((resolve) => setTimeout(resolve, 100));
-            const blocked = finished === false;
-            await lockConnection`commit`;
-            await pending;
-            await lockConnection.end();
-            await evaluator.end();
-            expect(blocked).toBe(true);
-            void assignment;
+            try {
+              await expect
+                .poll(
+                  async () => {
+                    const [activity] = await lockConnection`
+                      select wait_event_type,wait_event
+                      from pg_catalog.pg_stat_activity where pid=${pid}
+                    `;
+                    if (activity?.wait_event_type === 'Lock')
+                      return activity.wait_event;
+                    return finished ? 'finished' : null;
+                  },
+                  { timeout: 5000 },
+                )
+                .toBe('advisory');
+              await lockConnection`commit`;
+              await pending;
+              void assignment;
+            } finally {
+              await lockConnection`rollback`.catch(() => undefined);
+              await lockConnection.end();
+              await evaluator.end();
+            }
           },
         ),
     );
