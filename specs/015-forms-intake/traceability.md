@@ -102,3 +102,4 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 | FR | Task | Test | Evidence |
 |---|---|---|---|
 | FR-024/025 | T101 | `tests/unit/ci-local-e2e.test.ts::uses the Vite runner config loader for integration tests`; Stack D `tests/integration/password-policy-parity.test.ts` (58 passed) | Commit `44573b1`; unit 2/2 and Stack D integration 1 file/58 tests passed on commit `44573b1`. Database StartedAt remained `2026-11-06T01:41:22.769866059Z`. |
+| FR-024/025 | T111 | `specs/015-forms-intake/traceability.md` T012 row restored from literal escape/control characters to a valid heading, path, and commit IDs; recorded in A-to-B merge `759a1b5`. | `759a1b5` |
