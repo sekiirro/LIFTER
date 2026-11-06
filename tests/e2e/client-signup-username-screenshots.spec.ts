@@ -109,7 +109,12 @@ test.describe.serial('S35 Hero error-border design evidence', () => {
           ).toHaveAttribute('dir', 'auto');
           await expect(page.locator('form [role="alert"]')).toHaveCount(0);
           const colors = await username.evaluate((input) => {
-            const style = getComputedStyle(input);
+            const control = input.closest<HTMLElement>(
+              '[class*="fieldControl"]',
+            );
+            if (!control || control.dataset.error !== 'true')
+              throw new Error('Username error control surface unavailable');
+            const style = getComputedStyle(control);
             return {
               border: style.borderTopColor,
               background: style.backgroundColor,
