@@ -77,6 +77,9 @@ A global workout template keeps canonical exercise identity. When the template i
 1. **Given** a global template and a client in an authorized workspace, **When** the template is viewed for that client, **Then** each exercise video is resolved at view time from that client's workspace with global video fallback when no workspace video is configured.
 2. **Given** the workspace video has changed since a prior view, **When** the same template is viewed again for the authorized client, **Then** the updated video is resolved without changing or republishing the template.
 3. **Given** a client-view request without the required plan/client workspace authorization, **When** video resolution is attempted, **Then** it is denied with generic security behavior and no foreign workspace information is disclosed.
+4. **Given** a trainer renames an exercise in workspace A (override) and the plan is published, **When** the override is renamed again and the plan is viewed, **Then** the plan shows the name frozen at publication (FR-027); a later canonical rename leaves it unchanged; and a video swap is visible on the next view without republishing (FR-014, FR-027).
+5. **Given** a published plan references an exercise identity that was later removed or merged, **When** the plan is viewed for the client, **Then** the video is resolved from that identity's own override and canonical video, never from the merge survivor, and the plan reference is unchanged (FR-028).
+6. **Given** any caller that is not the F19/P4 client boundary, **When** it attempts to call video resolution directly, **Then** the call is denied, because F16 exposes no client-callable function (FR-029).
 
 ### Edge Cases
 
