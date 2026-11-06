@@ -73,3 +73,11 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 | FR | Task | Test | Evidence |
 |---|---|---|---|
 | FR-024/025 | T101 | `tests/unit/ci-local-e2e.test.ts::uses the Vite runner config loader for integration tests`; Stack D `tests/integration/password-policy-parity.test.ts` (58 passed) | Commit `44573b1`; unit 2/2 and Stack D integration 1 file/58 tests passed on commit `44573b1`. Database StartedAt remained `2026-11-06T01:41:22.769866059Z`. |
+| FR-004/006/008 | T102 | `tests/integration/forms-r3-drafts.test.ts` direct-RPC N08 budget/foods regression; full Stack D integration 9 files / 64 passed; `tests/unit/forms-s14-validation.test.ts` 9/9. | `83e32c4` |
+| FR-008/013 | T103 | `tests/integration/forms-r3-corrections.test.ts` rejects correction keys outside the immutable assignment snapshot; full Stack D integration 9 files / 64 passed. | `e7bb25e` |
+| FR-038/039 | T105 | `tests/integration/client-signup-transaction.test.ts` whitespace name SQL regression, Stack D 11/11; includes leading/trailing tab/newline cases. | `a1782ba` |
+| FR-038/039 | T106 | `tests/integration/client-signup-transaction.test.ts` repaired Unicode regex regression, Stack D 11/11. | `f21bae6` |
+| FR-008/013 | T108 | `tests/integration/forms-r3-drafts.test.ts` 4 KiB byte-bound baseline uses defined in-snapshot `q2`; full Stack D integration 9 files / 64 passed. | `27ac027` |
+| FR-024/025 | T109 | `specs/015-forms-intake/quickstart.md` resolves repository and Stack D paths from current checkout; `format:check` passed. | `f779402` |
+| FR-024/025 | T110 | `specs/015-forms-intake/reports/evidence/s18-r4/index.md` lists the 50 verified S18 screenshots and hashes; copied capture hashes matched the review-provided source set. | `722c3a2` |
+| FR-024/025 | T111 | Analyze S33 status marked historical; S30 quotation/S31 source label repaired; T012 traceability row restored in B stack merge. `format:check` passed. | `f779402`, `759a1b5`, `c7b9de9` |
