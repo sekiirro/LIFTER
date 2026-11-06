@@ -36,7 +36,7 @@ Client targeting stays closed until P1 creates client accounts (ND-F4-5).
 |---|---|
 | I Isolation | The actor is derived server-side from a verified session. Generation is checked by the DB guard (`has_workspace_access` on the target's workspace) and app-layer `authorize()`. Denials are generic, so client existence isn't revealed. Foreign-workspace negative tests. ✅ |
 | III Least privilege | The new capability is limited to PO and WO, Trainer is deny-by-default until ND-F4-1, and Sales is denied. Matrix parity is tested. ✅ |
-| IV Scope | PO manual reset links: BRD lines 40/104/130. WO/Trainer extension: owner decision 2026-10-27, to be registered as D-19 (PO approval in this PR). Self-service email reset is sequenced, not removed (ND-F4-7, D-07). No 2FA or device-management screen (PRD-12). ✅ |
+| IV Scope | PO manual reset links: BRD lines 40/104/130. WO/Trainer extension: owner decision 2026-10-27, registered as D-19 and approved by the PO (S31-PO-2 SK-004-01). Self-service email reset is sequenced, not removed (ND-F4-7, D-07). No 2FA or device-management screen (PRD-12). ✅ |
 | VII Privacy | Recovery tokens are hashed by the provider, single-use and expiring. LIFTER stores no secret. The link is shown once and never logged. The audit holds ids only. The service-role key is server-only, enforced by the build and a CI scan. ✅ — expiry value pending ND-F4-3 before production |
 | VIII UI | `/login` and `/auth/recovery` are built on Design System components, AR (RTL) default plus EN, with axe e2e. ✅ |
 | IX Reliability | Rate-limit and record use advisory-locked transactions, so concurrent requests can't exceed the limit. ✅ |
@@ -60,7 +60,7 @@ Generation sequence (server action `generateRecoveryLink(targetUserId)`):
 
 ## NEEDS DECISION
 
-ND-F4-1..7, as listed in [spec.md](spec.md#needs-decision-owner-sub-decisions-not-invented-here). The interim behavior is deny or minimal in every case. ND-F4-3 (expiry) and ND-F4-4 (limits) must be decided before production.
+ND-F4-1..7, as listed in [spec.md](spec.md#needs-decision-owner-sub-decisions-not-invented-here). The interim behavior is deny or minimal in every case. ND-F4-3 (expiry) and ND-F4-4 (limits) are now decided (spec Clarifications; S31-PO-3 SK-004-04); ND-F4-6 is decided as clients only (S31-PO-2 SK-004-06). The limits are not yet configured to the decided values: task T031 (FR-010).
 
 ## Project Structure
 

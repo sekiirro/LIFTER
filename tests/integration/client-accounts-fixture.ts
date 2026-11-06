@@ -321,6 +321,36 @@ export async function pendingHttpAccess(
     const tables =
       await db`select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relrowsecurity`;
     for (const table of tables) {
+      if (table.relname === 'audit_events') {
+        const probes: Array<{ error: unknown; data?: unknown[] | null }> = [];
+        probes.push(
+          await client
+            .from('audit_events')
+            .select('*')
+            .eq('workspace_id', context.wsA.id)
+            .limit(5),
+        );
+        probes.push(
+          await client
+            .from('audit_events')
+            .select('*')
+            .eq('workspace_id', context.wsB.id)
+            .limit(5),
+        );
+        probes.push(
+          await client
+            .from('audit_events')
+            .select('*')
+            .is('workspace_id', null)
+            .limit(5),
+        );
+        for (const result of probes)
+          assert.ok(
+            result.error !== null || result.data?.length === 0,
+            table.relname,
+          );
+        continue;
+      }
       const result = await client.from(table.relname).select('*');
       assert.ok(
         result.error !== null || result.data?.length === 0,

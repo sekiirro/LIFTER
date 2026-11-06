@@ -22,3 +22,9 @@
 
 - [ ] T007 [FR-001, FR-002, FR-003, FR-004, FR-005, FR-006, FR-007] Local Docker run of the full integration suite. Negative check: a temporary migration that drops the UPDATE guard trigger must make the T003 tests fail; then remove it.
 - [x] T009 [FR-005, FR-007] Harden audit visibility integration probes: scope authorized staff reads to fixture event IDs, use a narrow bounded denial probe, assert SQLSTATE 42501 only for anon/no-grant, and fail explicitly on 57014. Keep all existing visibility and denial assertions.
+
+
+## Phase 5: P37 close-out (S34-PO-1) — workspace-scoped pagination rule
+
+- [x] T010 [FR-008] Bound and workspace-scope the unfiltered `audit_events` read in `tests/integration/client-accounts-fixture.ts::pendingHttpAccess` (and any other test helper with an unfiltered `audit_events` read): filter by the fixture workspace and add a small `.limit()`, without removing or weakening any denial assertion.
+- [ ] T011 [FR-008] (DEFERRED) Future measurement: capture EXPLAIN evidence on representative synthetic volumes before adding any new index on `public.audit_events`; record the query, data volume and plan with that decision. No index to be added in this task.
