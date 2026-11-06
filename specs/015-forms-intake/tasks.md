@@ -332,7 +332,7 @@ S27 h2 executed all eight T018 mutants against Stack D at pre-merge head `f42d4b
 - [ ] T104 [FR-017/018/024] Bind client-late Trainer schedules to the authoritative client-Trainer source and transfer them on reassignment. BLOCKED until PO identifies the source relation; do not choose a source or fallback.
 - [ ] T105 [FR-038/039] Count only nonempty whitespace-separated signup name components consistently in SQL and TypeScript; cover leading/trailing tabs and newlines.
 - [ ] T106 [FR-038/039] Repair the invalid Unicode-mode regex in the signup integration mutation test and execute its focused regression.
-- [ ] T107 [FR-024/025] Limit scheduler activation test cleanup to workspace and auth-user IDs created by that run; verify an unrelated preexisting fixture survives.
+- [x] T107 [FR-024/025] Limit scheduler activation test cleanup to workspace and auth-user IDs created by that run; verify an unrelated preexisting fixture survives. Unit contract passed 1/1 on current A head `a1782ba`; traceability recorded below.
 - [ ] T108 [FR-008/013] Use a defined short-text question for the single-answer byte-bound baseline and verify the 4 KiB rule is reached.
 - [ ] T109 [FR-024/025] Make Stack D quickstart commands derive paths from the checkout.
 - [ ] T110 [FR-024/025] Replace the S18 historical local screenshot path with the stable run-artifact reference when its original capture set can be identified; otherwise leave the finding open with an evidence-based reply.

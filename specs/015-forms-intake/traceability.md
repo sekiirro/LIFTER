@@ -17,6 +17,12 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 | FR-026 / FR-036 / FR-037 — implement exact approved English controls and behavior | T059 | `tests/unit/forms-s32-approved-intake.test.ts`; focused seven-file unit run passed 47/47; remaining English rows and T03 Arabic labels are still pending. | `6aebb8d` |
 | FR-026 / FR-036 / FR-037 — verify control order, conditions, assets, rendered matrix, and accessibility | T060 | `tests/e2e/forms-authorized-route.spec.ts::approved F15 controls render in both locales, themes, and widths`; `tests/e2e/forms-authorized-route.spec.ts::renders recorded new client controls across AR/EN, theme, and viewport matrix`; focused unit run 47/47; screenshots under `%TEMP%/lifter-s32-f15-h12`. | `6aebb8d` |
 
+## S35 round-4 traceability
+
+| Requirement | Task | Test/evidence | Commit |
+| --- | --- | --- | --- |
+| FR-024 / FR-025 — scheduler cleanup owns only its run-created fixtures | T107 | `tests/unit/forms-scheduler-cleanup-contract.test.ts` — 1/1 passed on current A head after the bounded-ID cleanup was committed. | `c1ca621` |
+
 ### T060 final-head evidence refresh (2026-11-04)
 
 - Implementation head: `8183064`.
