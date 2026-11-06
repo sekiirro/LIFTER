@@ -57,11 +57,11 @@ All S33-01..12 product choices, C1–C5, Arabic LABELS and the four mapped Engli
 
 | FR | Task(s) | Planned evidence | Status |
 |---|---|---|---|
-| FR-022 mock inventory/no inference | T052, T053, T064, T071 | synthetic-only inventory + dependency manifest | NOT-IMPLEMENTED |
+| FR-022 mock inventory/no inference | T052, T053, T064, T064a, T071 | synthetic-only inventory + dependency manifest | NOT-IMPLEMENTED |
 | FR-023 future real-package retirement | T054, T055, T066 | history-preserving retirement tests | NOT-IMPLEMENTED |
 | FR-024 promotional dates/link behavior | T056, T057, T067 | date-boundary and issued-link snapshot tests | NOT-IMPLEMENTED |
 | FR-025 collections/settlement reporting | T060, T068, T072, T073 | actual collection, commission and separate settlement fixtures | NOT-IMPLEMENTED |
-| FR-026 FX snapshot/failure behavior | T058, T059, T067, T068 | date/provider/rate/retry tests | NOT-IMPLEMENTED |
+| FR-026 FX snapshot/failure behavior | T058, T059, T067, T068 | date/provider/rate/retry tests | NOT-IMPLEMENTED; reporting FX rounding rule is PO-DECISION-NEEDED (see spec.md "Remaining blockers") — no rounding mode may be encoded until the PO decides |
 | FR-027 no client data in outbound API request | T059, T062 | captured request allowlist test + security review | BLOCKED: S33-08 provider verification; T062 independent security review |
 
 SC-013..SC-018 map respectively to T052/T053, T054/T055, T056/T057, T060/T068, T058/T059/T068, and T059/T062. No task is ticked. Existing rows above retain their S31 evidence status; this cycle ran no tests/builds/stacks and claims no implementation evidence.
@@ -70,7 +70,7 @@ SC-013..SC-018 map respectively to T052/T053, T054/T055, T056/T057, T060/T068, T
 
 | FR / SC | Tasks | Planned evidence | Status |
 |---|---|---|---|
-| FR-028 C5 safe removal/empty initialization; SC-019 | T064, T065, T070, T071 | complete dependency manifest, fail-closed tests with zero writes, safe deletion/init/rollback, independent security review | PARTIAL: deletion/preflight specified (teardown mechanism needs separate security review); initialization uses the S34-PO-6 package-row identity; market literal settled per S35-PO-1 F9=A (`Egypt`/`International`) |
+| FR-028 C5 safe removal/empty initialization; SC-019 | T064, T064a, T065, T070, T071 | complete dependency manifest, fail-closed tests with zero writes, safe deletion/init/rollback, independent security review | PARTIAL: deletion/preflight specified (teardown mechanism needs separate security review); the read-only preflight implementation is assigned to T064a (RED tests in T064); initialization uses the S34-PO-6 package-row identity; market literal settled per S35-PO-1 F9=A (`Egypt`/`International`) |
 | FR-029 PO-only versioned terms; FR-015/016/019/021; SC-020 | T066, T071 | four category pairs, immutable market/type, role tests, commercial versions and historical snapshots | Identity/uniqueness per S34-PO-6 (unique (workspace_id, market, type) on the package row); market literal settled per S35-PO-1 F9=A (`Egypt`/`International`) |
 | FR-030 promotions and link expiry; SC-021 | T067, T071 | Cairo date/boundary and new/issued link tests | NOT-IMPLEMENTED |
 | FR-031 reporting/FX roles; SC-022 | T068, T072, T073, T074, T071 | actual monthly collections, commissions, separate settlement, installment details, FX and role tests | NOT-IMPLEMENTED |

@@ -205,7 +205,7 @@ Management writes are PO-only for workspace-specific names, prices and package-s
 
 ### FX snapshot entity (conceptual; product behavior settled)
 
-Any future snapshot preserves original transaction amount/currency and actual settlement. The transaction timestamp maps to an Africa/Cairo calendar date; use the previous published business-day rate when no same-day published rate exists. Frankfurter may be used only after documented verification checks. EGP→EGP uses exactly 1. Rate-pending retries are idempotent and excluded from converted totals until fetched. Do not invent additional FX policy beyond the settled record.
+Any future snapshot preserves original transaction amount/currency and actual settlement. The transaction timestamp maps to an Africa/Cairo calendar date; use the strictly unqualified previous published business-day rate (the rate published for the business day immediately preceding the transaction's Africa/Cairo calendar date). No same-day exception is recorded anywhere — S33-04 fixes the rule as "previous published business-day rate"; do not add one. Frankfurter may be used only after documented verification checks. EGP→EGP uses exactly 1. Rate-pending retries are idempotent and excluded from converted totals until fetched. Do not invent additional FX policy beyond the settled record.
 
 Store reporting values separately from actual settlement amount/currency and settlement events. Never overwrite settlement with a reported converted value. Dashboard display follows C4: actual monthly collections and package-specific commissions with installment detail; settlement/accounting events remain separate. Copy beyond the four approved English/Arabic market/type label pairs remains BLOCKED-COPY.
 

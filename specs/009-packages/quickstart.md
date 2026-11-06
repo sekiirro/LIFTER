@@ -87,7 +87,9 @@ The following list preserves historical S31 verification ideas. Current product 
 - runtime integration assertions across those surfaces using the SK-009-09-approved currency
   contract: preserve amount and currency snapshots and reject mixed-currency totals for
   same-currency propagation, or verify the approved conversion source, timestamp, rounding and
-  immutable snapshot contract when a different downstream currency is approved;
+  immutable snapshot contract when a different downstream currency is approved (no FX rounding
+  rule is approved yet — see "Remaining blockers" in spec.md; until the PO settles it, reporting
+  conversion MUST NOT be implemented);
 - PO-approved exact Arabic/English market/type copy fixtures, AR-RTL/EN-LTR × light/dark ×
   mobile/desktop Frontend Design Gate screenshots, required states and accessibility evidence; and
 - static and runtime evidence that existing package-version identifiers and stored

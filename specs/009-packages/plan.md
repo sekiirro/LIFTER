@@ -95,7 +95,7 @@ implementation or production. S33-PO-6, S34-PO-1 and S34-PO-2 settle the recorde
 
 | Historical gate | Current decision/status | Work that remains open or may proceed |
 |---|---|---|
-| SK-009-05 legacy classification | C5 supersedes mapping for existing mocks; no legacy classification/default is applied. | T064 verifies synthetic-only status and all dependencies before deletion; no writes on unsafe/unknown state. |
+| SK-009-05 legacy classification | C5 supersedes mapping for existing mocks; no legacy classification/default is applied. | T064/T064a verify synthetic-only status and all dependencies before deletion; no writes on unsafe/unknown state. |
 | SK-009-06 owner/mutability | C1 fixes market/type immutability; category identity is the package row (S34-PO-6, PD-S34-NEW-01=A), unique on (workspace_id, market, type); the market literal is `Egypt`/`International` per S35-PO-1 F9=A. | Currency/no-conversion/role test design and evidence can proceed independently. |
 | SK-009-07 promotional behavior | S33-PO-6 settles Africa/Cairo half-open periods, expiry blocks new links only, and issued links retain snapshots. | Implementation tests remain future RED-first work. |
 | SK-009-08 bilingual copy | LABELS and S34-PO-2 approve the four exact English/Arabic market/type label pairs. | Other dashboard/Installments/empty/error/help copy remains BLOCKED-COPY. |
