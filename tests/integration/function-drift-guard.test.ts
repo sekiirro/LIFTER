@@ -14,8 +14,15 @@ it('restores an abandoned committed function mutant from its migration and fails
     expect.arrayContaining([
       'app_private.f15_alert_schedule_activate()',
       'app_private.f15_alert_schedule_deactivate()',
+      'app_private.ensure_default_onboarding_form(uuid,uuid)',
     ]),
   );
+  expect(
+    guardedFunctions.find(
+      ({ identity }) =>
+        identity === 'app_private.ensure_default_onboarding_form(uuid,uuid)',
+    )?.migration,
+  ).toBe('20261108021000_f15_localized_n11_starter_labels.sql');
   for (const item of guardedFunctions) {
     const { identity } = item;
     const [original] = await db<{ definition: string; md5: string }[]>`
