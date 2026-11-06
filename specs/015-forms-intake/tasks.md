@@ -353,3 +353,8 @@ S27 h2 executed all eight T018 mutants against Stack D at pre-merge head `f42d4b
 - [ ] T125 [FR-024/025] Let local Playwright reuse an already healthy server without allowing CI to reuse an unrelated server.
 - [ ] T126 [FR-038/039] Set preference cookies on the configured Playwright base origin and cover a non-default hostname.
 - [ ] T127 [FR-026/036/037] Restore valid UTF-8 punctuation in the scoped F15 Analyze, plan, and traceability records without changing approved Arabic copy.
+
+- [x] T130 [FR-024/025] Use an available migration source fallback for the default onboarding function drift guard across A and B heads; add regression coverage and record the hosted CI failure/fix evidence.
+
+- [x] T131 [FR-040/026/036/037] Add the PO-approved N11 English feedback strings to the EN catalog and assert exact copy plus inclusive score-band boundaries; preserve approved Arabic starter feedback.
+- [ ] T132 [FR-017/018/035] Amend client-late alert requirements and analysis from S35-PO-3 / S36-R7; record the unresolved T104 source and late-event MCQs; alert implementation remains deferred to the next round.
