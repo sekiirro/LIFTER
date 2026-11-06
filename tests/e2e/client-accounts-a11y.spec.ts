@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
+import { getMessages } from '../../lib/i18n';
 
 const origin = 'http://localhost:3000';
 const local = Boolean(
@@ -52,7 +53,7 @@ for (const locale of ['ar', 'en'] as const) {
         await expect(
           page.getByLabel(locale === 'ar' ? 'الدولة' : 'Country'),
         ).toHaveValue('EG');
-        await expect(page.getByLabel(/telegram/i)).toHaveCount(0);
+        await expect(page.getByLabel(/telegram/i)).toHaveCount(1);
         const results = await new AxeBuilder({ page })
           .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
           .analyze();
@@ -78,6 +79,18 @@ for (const locale of ['ar', 'en'] as const) {
     ]);
     await page.goto(`/register/${validToken}`);
     await page.waitForLoadState('networkidle');
+    const messages = getMessages(locale);
+    const dateOfBirth = page.getByLabel(
+      messages['clientSignup.dateOfBirth'],
+      { exact: true },
+    );
+    const username = page.getByLabel(messages['clientSignup.username'], {
+      exact: true,
+    });
+    const telegram = page.getByLabel(
+      `${messages['clientSignup.telegramUsername']} (${messages['clientSignup.optional']})`,
+      { exact: true },
+    );
     const name = page.getByLabel(locale === 'ar' ? 'الاسم' : 'Name', {
       exact: true,
     });
@@ -98,6 +111,12 @@ for (const locale of ['ar', 'en'] as const) {
     );
     await name.focus();
     await expect(name).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(dateOfBirth).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(username).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(telegram).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(email).toBeFocused();
     await page.keyboard.press('Tab');
