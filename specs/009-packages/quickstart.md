@@ -68,6 +68,52 @@ Only in isolated disposable local stack/worktree, with rollback or scratch uncom
 7. Remove app authorize alone with accepting mocked RPC: unit denial MUST fail. Remove DB pricing guard independently: non-PO integration negatives MUST fail. One wall does not prove the other.
 8. Remove price text projection or round through Number: >2^53 transport/formatting test MUST fail. Accept preset 2/4 months or custom 0 days: boundary tests MUST fail.
 
-## 5. Evidence and handoff
+## 5. Historical S31 validation gate (superseded by S34 future gates below)
 
-Claude independently records commands/counts/mutation results in review/PR evidence and checks FR/SC coverage in tasks.md Analyze. Preserve five NDs and documented replay/initial state/duration representation interpretations. No push/deployment authorized by this runbook. When synthetic data is no longer needed, stop only the disposable stack with `npx supabase@2.122.0 stop --no-backup`.
+The following list preserves historical S31 verification ideas. Current product rules are in the S34 gates below; no S33-01..12 decisions remain open. S34-PO-6 settles category persistence identity (package row is the category); S35-PO-1 F9=A settles the canonical market literal (`Egypt`/`International` as wire and stored value). The four English/Arabic market/type label pairs are approved; other UI strings remain BLOCKED-COPY.
+
+- RED-first unit fixtures for the complete Egypt/International × EGP/USD/SAR matrix, invalid enum
+  values, no inferred market, exact own-currency formatting and no cross-currency total;
+- RED-first integration fixtures for every role × own/foreign workspace, multiple independent
+  packages, the PO-approved legacy treatment, current-only replay, concurrent publications,
+  unchanged existing version rows and all-role version immutability;
+- a forward-migration catalog check proving the shipped F9 migration is untouched, the new
+  constraints/functions/grants/triggers exist and no direct market/type write bypass exists;
+- permission/RLS mutations that independently remove the PO app wall, DB pricing wall, market
+  currency check, legacy classification guard and offer/version immutability guard; each mutation
+  MUST make the relevant negative test fail;
+- no-conversion scans across package, registration-link, subscription, installment, payment, refund
+  and commission surfaces as supplemental schema evidence; and
+- runtime integration assertions across those surfaces using the SK-009-09-approved currency
+  contract: preserve amount and currency snapshots and reject mixed-currency totals for
+  same-currency propagation, or verify the approved conversion source, timestamp, rounding and
+  immutable snapshot contract when a different downstream currency is approved (no FX rounding
+  rule is approved yet — see "Remaining blockers" in spec.md; until the PO settles it, reporting
+  conversion MUST NOT be implemented);
+- PO-approved exact Arabic/English market/type copy fixtures, AR-RTL/EN-LTR × light/dark ×
+  mobile/desktop Frontend Design Gate screenshots, required states and accessibility evidence; and
+- static and runtime evidence that existing package-version identifiers and stored
+  price/currency/commission/duration terms remain unchanged after the forward migration.
+
+A format-valid currency outside the approved market set, a currency-derived market guess, an
+unapproved legacy default, an unreviewed bilingual string or an old publication path that bypasses
+the matrix is a blocking failure.
+
+## 6. Evidence and handoff
+
+Claude independently records commands/counts/mutation results in review/PR evidence and checks FR/SC coverage in tasks.md Analyze. Preserve retained NDs and BLOCKED-COPY; all S33-01..12 decisions are resolved. No push/deployment is authorized by this runbook. When synthetic data is no longer needed, stop only the disposable stack with `npx supabase@2.122.0 stop --no-backup`.
+
+## 7. S32-PO-4 implementation gate (historical; superseded by S34 future gates)
+
+S33-PO-6, S34-PO-1 and S34-PO-2 settle product decisions and S34-PO-6 settles category persistence identity (package row is the category); S35-PO-1 F9=A settles the canonical market literal (`Egypt`/`International`). Future work remains RED-first and must keep BLOCKED-COPY explicit for dashboard/Installments/empty/error/help copy beyond the four approved label pairs. Required coverage includes C5 dependency preflight/refusal, immutable categories and commercial versions, client/assignment snapshot preservation, promotion boundaries and issued-link behavior, FX pending/retry, separate collections and settlement records, no client data in provider requests, and commission role matrices.
+
+Future migration task must verify uniqueness of the package version across **ALL origin references** (S32-R1) before consolidation or mapping; never rely on one current workspace/version pointer as a uniqueness proof. Use only synthetic records in development/testing (S31-PO-8). No production audit, migration or third-party request is authorized by this artifact-only cycle.
+
+## S34 future validation gates (not run in this spec-only cycle)
+
+- RED-first category tests: exactly four pairs per workspace, immutable market/type, simultaneous markets, PO-only configuration, WO denial, append-only commercial versions and unchanged prior client/assignment snapshots.
+- Promotion tests: Africa/Cairo start-inclusive/end-exclusive boundaries; expiry blocks new links only; issued links retain their snapshots.
+- Dashboard tests: actual monthly collections, package-specific commissions, installment due/paid/remaining details, separate settlement/accounting rows, PO/WO converted commission access, Sales/Trainer denial, previous published business-day FX, documented Frankfurter checks, EGP→EGP=1 and idempotent pending-rate exclusion until fetched.
+- C5 tests run on target stack with synthetic fixtures only. Preflight enumerates FK edges, registration links, subscriptions, payments, audit rows and all other package refs. Non-synthetic, required financial/audit and unknown dependencies each refuse with zero writes. Only complete clean preflight may precede safe deletion of obsolete mocks; preserve required client, financial and audit history and reject partial completion. Four empty categories have no names/prices/commissions; creates workspace-scoped package rows unique on (workspace_id, market, type) (S34-PO-6); its market literal is `Egypt`/`International` per S35-PO-1 F9=A, and a mock with attached offers/versions makes the preflight refuse until a separately security-reviewed teardown exists. Verify rollback and repeat safety.
+- Forward migrations only; preserve S32-R1 all-origin-reference uniqueness and never edit a pushed migration. Require independent security review of deletion authorization, scope, dependency completeness, refusal behavior, atomicity and audit preservation.
+- Frontend Design Gate applies to dashboard/Installments UI. Use the four approved English/Arabic market/type label pairs; other dashboard/Installments/empty/error/help copy remains BLOCKED-COPY until approved; render required locale/theme/viewport matrix only after copy approval. This cycle claims no UI screenshots.
