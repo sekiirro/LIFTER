@@ -16,6 +16,7 @@ import type {
   FormQuestion,
 } from '../../lib/forms/validation';
 import { getMessages } from '../../lib/i18n';
+import { getN11Feedback } from '../../lib/forms/n11-feedback';
 import { formatUiNumber } from '../../lib/i18n/format-digits';
 import {
   nextAutosaveRetryDelay,
@@ -784,9 +785,15 @@ function QuestionControl({
     const maximum = question.validation?.max ?? 10;
     const step = question.validation?.step ?? 1;
     const score = typeof value === 'number' ? value : minimum;
-    const feedback = question.feedbackBands?.find(
-      (band) => score >= band.min && score <= band.max,
-    )?.text;
+    const feedback =
+      question.id === 'N11'
+        ? (getN11Feedback(score, locale) ??
+          question.feedbackBands?.find(
+            (band) => score >= band.min && score <= band.max,
+          )?.text)
+        : question.feedbackBands?.find(
+            (band) => score >= band.min && score <= band.max,
+          )?.text;
     return (
       <div className={styles.inputField}>
         <label htmlFor={`answer-${question.id}`}>

@@ -702,6 +702,7 @@ test('approved F15 controls render in both locales, themes, and widths', async (
         await budgetChoices.first().check();
         await expect(page.getByRole('checkbox')).toHaveCount(4);
         await capture('N08-food-chips');
+        await page.getByRole('checkbox').first().check();
         await next.click();
         await capture(
           'N11',
@@ -728,6 +729,15 @@ test('approved F15 controls render in both locales, themes, and widths', async (
         const slider = page.getByRole('slider');
         expect(await slider.getAttribute('min')).toBe('0');
         expect(await slider.getAttribute('max')).toBe('10');
+        const n11Feedback = starterContent.questions.find(
+          (question) => question.id === 'N11',
+        )!.feedbackBands![0]!.text;
+        await expect(
+          page.getByText(
+            locale === 'en' ? 'Very little hunger' : n11Feedback,
+            { exact: true },
+          ),
+        ).toBeVisible();
         await next.click();
         const images = page.locator('fieldset img');
         const imageCount = await images.count();
