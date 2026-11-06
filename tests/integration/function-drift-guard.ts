@@ -11,7 +11,10 @@ export const guardedFunctions = [
   },
   {
     identity: 'app_private.f15_valid_builder_definition(jsonb,boolean)',
-    migration: '20261108020200_f15_localized_slider_labels.sql',
+    migration: [
+      '20261108020200_f15_localized_slider_labels.sql',
+      '20261108010100_f15_builder_selector_null_safety.sql',
+    ],
     name: 'app_private.f15_valid_builder_definition',
   },
   {
@@ -161,7 +164,18 @@ async function migrationDefinition(
   migration: (typeof guardedFunctions)[number]['migration'],
   name: string,
 ) {
-  const sql = await readFile(`supabase/migrations/${migration}`, 'utf8');
+  const migrations: readonly string[] =
+    typeof migration === 'string' ? [migration] : migration;
+  let sql: string | undefined;
+  for (const candidate of migrations) {
+    try {
+      sql = await readFile(`supabase/migrations/${candidate}`, 'utf8');
+      break;
+    } catch (error) {
+      if ((error as NodeJS.ErrnoException).code !== 'ENOENT') throw error;
+    }
+  }
+  if (!sql) throw new Error(`missing migration source for ${name}`);
   const escapedName = name.replaceAll('.', '\\.');
   const expression = new RegExp(
     `create\\s+(?:or\\s+replace\\s+)?function\\s+${escapedName}\\s*\\([\\s\\S]*?\\)\\s*[\\s\\S]*?\\bas\\s+(\\$[a-z_0-9]*\\$)([\\s\\S]*?)\\1\\s*;`,
