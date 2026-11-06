@@ -1,6 +1,6 @@
 # Spec Kit Analyze — F3 Workspace Tenancy, Permission Matrix & RLS (S36-PO-2 round)
 
-- Date: 2026-11-06 21:24 +02:00 (fresh analysis after the S36-PO-2 governance amendment: demotion AND membership revocation remove PO access; final-PO guard covers membership revocation)
+- Date: 2026-11-06 21:30 +02:00 (fresh analysis after the S36-PO-2 governance amendment: demotion AND membership revocation remove PO access; final-PO guard covers membership revocation; Story 6 scenario 2 states that staff-profile deletion is not a removal path)
 - Analyzed source baseline: working tree on top of `9d4a410bd849bfd4060456ffc757a1c002c6c572` (PR #50 head before S36 round 3), with the S36-PO-2 documentation amendment applied to `spec.md`, `plan.md`, `tasks.md`, `traceability.md` and this file. No source, migration, workflow, or test files changed.
 - Static code/test evidence baseline: `d04ef52` (branch base). The #47 compliance refresh remains the source for the 16 baseline traceability rows.
 - Scope: F3 baseline (`FR-001`..`FR-012`, `SC-001`..`SC-004`), the S30-PO-3 Q7/Q8 governance amendment (`FR-013`, `FR-014`, `SC-005`, `SC-006`) as amended by S36-PO-2, and the S35 resolved departed-trainer departure requirement (`FR-015`, `SC-007`).
@@ -58,6 +58,7 @@ The retained findings are A1 and A2 (MEDIUM) and the escalation A3. There are **
 
 ## History
 
+- 2026-11-06 21:30 +02:00, S36 round 3 follow-up (CodeRabbit thread `PRRT_kwDOVYgYQ860ZwyS`): Story 6 scenario 2 now states that staff-profile deletion is not a removal path (`staff_profiles_no_delete`, shared serialization). Re-analysis: verdict unchanged (0 open CRITICAL; 0 open HIGH among Analyze findings; A1/A2 MEDIUM; A3 escalated as S36-Q1).
 - 2026-11-06 21:24 +02:00, S36 round 3 (PR #50, CodeRabbit thread fixes): recorded S36-PO-2 verbatim (demotion AND membership revocation remove PO access; final-PO guard covers membership revocation; mapping option (c) per architect). Amended FR-014, SC-005, Story 6 scenarios 1-4, plan.md ND-F3-3 and governance plan, and tasks T015; added T021 (RED demotion) and T022 (RED revocation, BLOCKED by S36-Q1). Corrected FR-002 evidence in `traceability.md`. Escalated S36-Q1 (removal mechanism for membership revocation). No tests, builds, SQL, stacks, or code were run.
 - 2026-11-06 08:19 +02:00, S35 round-2 CodeRabbit fixes (review 5795944252): corrected the analyzed-baseline header to name the S35 amendment `21c022f` and its S34 parent `552361c`; replaced the T015 "BLOCKED pending G1" gate with the G1=A resolution (G2=A guard scope unchanged). Verdict unchanged: 0 open CRITICAL/HIGH with A1/A2 MEDIUM retained.
 - 2026-11-06, S35 G1 resolution: recorded S35-PO-1 G1=A verbatim (deactivate/revoke; preserve audit), resolved PO-ESCALATION G1, rewrote FR-015/SC-007 and T017-T019 to the deactivate+revoke model (no deletion), added T020 for the missing deactivation capability (tagged FR-015), updated traceability. Verdict: 0 open CRITICAL/HIGH with A1/A2 MEDIUM retained. No tests, builds, SQL, stacks, or code were run.
