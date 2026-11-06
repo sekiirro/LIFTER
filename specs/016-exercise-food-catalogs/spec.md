@@ -169,6 +169,10 @@ A global workout template keeps canonical exercise identity. When the template i
 - **SC-010** Workspace library UI acceptance tests show shared global entries and only that workspace's overrides together; the override editor presents only the five allowed override fields.
 - **SC-011** Historical plan acceptance tests preserve the canonical exercise identity and historical plan data. Frozen name/instruction and live-video behavior follows S36-PO-2 and FR-027; override-removal fallback follows S36-PO-2.
 - **SC-012** 100% of newly created workspaces create no automatic mapping row and resolve the global video fallback in tests (S36-PO-2). Mutation: a resolver or workspace-create trigger that materializes a mapping row MUST fail the test (covers "mapping on first view" as well).
+- **SC-013** In published-plan tests (FR-027), 100% of views after a later override or canonical name or instruction edit show the values frozen at publication, and 100% show the current video after a video change without republishing.
+- **SC-014** In grant and RPC tests (FR-029), 0 client-callable catalog video or effective-resolution functions exist, and 100% of direct calls from a non-projection role are denied with the generic shape.
+- **SC-015** Before each implementation commit and push (FR-032), 100% of F16 migration versions are strictly greater than the highest origin-ref version, as reported by `npm run check:migration-versions:remote`.
+- **SC-016** In alternatives tests (FR-025), 100% of stored override alternative targets are either global identities or private identities of the same workspace, and 0 foreign-workspace targets are accepted.
 
 ## Approved PO decisions
 
