@@ -256,3 +256,18 @@ Revalidated after the final spec/plan/task edits: F15 has numbered FR-017/018/03
 ## S36 spec analysis rerun after final amendments - 2026-11-06
 
 Re-read `spec.md`, `plan.md`, and `tasks.md` after the last S36 edits. Numbered FR-017/018/035/040, measurable SC-022/026/027, Given/When/Then coverage, separate N11 and ALERTS clarification sections with byte-exact source paragraphs, T136-T138 task links and plan coverage all pass. MCQ S36-01/T104 and S36-02 remain explicitly open and block only the Trainer relation and late-event implementation choices. No alert code/migration changed. For the independent T136/T137 work and authorized spec-only ALERTS record, CRITICAL: 0; HIGH: 0; no other ambiguities remain.
+
+
+## S36 B render and Playwright teardown analysis - 2026-11-06
+
+T139 implements already-approved FR-040 by sourcing N11 score feedback from the EN/AR message catalog in the existing `role=status` output. Unit boundary assertions cover every approved integer boundary; the route matrix asserts rendered copy without adding a visual treatment. T140 addresses the valid local server-reuse teardown finding under existing FR-024/025 test infrastructure: an empty no-capture summary is accepted as reuse, while started capture still requires nonempty logs and raw-file deletion. CI continues to disallow reuse. No security assertion or product behavior is weakened. **CRITICAL: 0. HIGH: 0. No open ambiguities for these fixes.**
+
+
+## S36 final A/B requirements and implementation analysis refresh - 2026-11-06
+
+Re-read the final scoped spec, plan and tasks. FR-040, SC-027 and Given/When/Then scenarios cover exact approved EN strings, unchanged Arabic copy, all inclusive score boundaries and rendered status output. The 60-state Playwright route matrix passed 7/7 with axe clean; N11 EN/AR screenshots across light/dark and 390/1024/1440 were reviewed. T140 retains CI no-reuse and permits the explicit local-reuse summary while still requiring raw log deletion. The ALERTS FR/SC/task record is spec-only; T138 and T104/T late-event MCQs remain open and no alert code/migration changed. **CRITICAL: 0. HIGH: 0. No open ambiguities for T136/T137/T139/T140. PO decisions remain explicitly open for T138.**
+
+
+## S36 final scope recheck after task evidence - 2026-11-06
+
+The final requirements, plan and task register were re-read after traceability and task status updates. The N11 and ALERTS source paragraphs remain byte-exact, all work in this round uses unique IDs T136-T140, and only the two documented PO MCQs remain open. T138 is specification-only and validated by exact source comparison plus format check; no alert code or migration changed. T139/T140 tests and evidence are recorded in traceability.md. **CRITICAL: 0. HIGH: 0. No other ambiguities for authorized work.**

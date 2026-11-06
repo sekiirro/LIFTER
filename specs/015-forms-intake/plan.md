@@ -180,3 +180,6 @@ S36 T136 repairs the F15 migration-source drift guard for both stacked heads. Pr
 ### S36 N11 and ALERTS
 
 T137 adds the exact S35-PO-3 N11 English feedback strings to the EN message catalog, preserves current Arabic feedback, and tests every inclusive boundary from 0 through 10. T138 records S35-PO-3 / S36-R7 alert timing in the FRs, SCs and tasks only: immediate late-intake notification to responsible Trainer+WO+PO, five-working-day plan deadline, WO day-five alert and PO day-seven escalation with recipient deduplication. The client-to-Trainer source and definition of late intake remain PO-decision MCQs; T104 stays blocked. This round changes no alert implementation or migration.
+
+
+S36 T139 connects the approved N11 EN/AR catalog to the existing slider status output and checks the rendered strings in the authorized-route matrix. T140 keeps the intended local Playwright server reuse while allowing global teardown to distinguish an uncaptured reused server from a started server whose log capture failed; captured logs still require deletion.

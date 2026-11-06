@@ -127,3 +127,8 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 
 | FR-024 / FR-025 - shared default-onboarding function source parity | T136 | Commit f828aa5; tests/unit/function-drift-guard.test.ts passed 1/1 on current A head; N11 focused suite also passed (18 tests across 2 files). | f828aa5 |
 | FR-040 / FR-026 / FR-036 / FR-037 - exact approved N11 English feedback bands and preserved Arabic feedback | T137 | Commit bbd4834; tests/unit/forms-n11-feedback.test.ts passed on current A head, covering exact strings and scores 0, 2, 3, 4, 5, 6, 7, 8, 9 and 10 (18 tests across the focused run). | bbd4834 |
+
+| FR-040 - default N11 hunger feedback is read from approved locale catalog and rendered in the slider status | T139 | `tests/unit/forms-n11-feedback.test.ts` exact EN catalog and score boundaries; `tests/e2e/forms-authorized-route.spec.ts` passed 7/7, with 60 screenshot/axe states and 12 N11 views reviewed at `C:/Users/NEW LAP/AppData/Local/Temp/lifter-s36-f15-r6/INDEX.md`. | 5796377, f664e056 |
+| FR-024 / FR-025 - local Playwright server reuse and cleanup verification | T140 | `tests/unit/server-log-capture-state.test.ts` distinguishes captured server logs from a reused-server no-capture summary; focused run passed 19 tests across 3 files; normal captured-server cleanup completed in the 7/7 authorized-route run. | 44364f2 |
+
+| FR-017 / FR-018 / FR-035 - PO-approved late-intake and Trainer-plan alert timing recorded as specification only | T138 | N11 and ALERTS paragraphs compare byte-exact against `C:/Users/NEW LAP/.lifter/runs/s35-ledger3/s35-po-3.verbatim.txt`; MCQs S36-01 and S36-02 remain open; F15 Spec Kit analysis has 0 CRITICAL/HIGH; `npm run format:check` passed. | c98a76c |
