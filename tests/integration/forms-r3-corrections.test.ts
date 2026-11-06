@@ -102,6 +102,17 @@ it('T014 appends a client self-correction without changing the original or loggi
       expect(revisionMutationKilled).toBe(true);
       await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: client.userId, role: 'authenticated' })},true)`;
       await tx`set local role authenticated`;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`
+            select public.correct_form_answer(
+              ${context.wsA.id},${assignmentId},1,${randomUUID()},
+              ${sp.json({ ...correctedAnswers, outside_snapshot: 'synthetic' })},
+              'synthetic correction note'
+            ) as result
+          `;
+        }),
+      ).rejects.toThrow('invalid_form_answer_snapshot');
       const [overlongNote] = await tx`
         select public.correct_form_answer(
           ${context.wsA.id},${assignmentId},1,${randomUUID()},${tx.json(correctedAnswers)},repeat('🙂',1001)
