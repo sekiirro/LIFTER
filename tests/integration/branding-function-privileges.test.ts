@@ -213,6 +213,7 @@ describe('F14 definer function privileges', () => {
       },
       { signature: 'public.branding_gc_claim(integer)' },
       { signature: 'public.branding_gc_finalize(uuid)' },
+      { signature: 'public.claim_f15_form_alert_jobs(integer, integer)' },
       { signature: 'public.claim_f15_telegram_delivery(uuid)' },
       { signature: 'public.claim_refund_auth_lockout_jobs(integer)' },
       {

@@ -1,3 +1,4 @@
+import { existsSync } from 'node:fs';
 import { afterAll, describe, expect, it } from 'vitest';
 import { sql } from './harness';
 import { functions as approvalFunctions } from './registration-approval-fixture';
@@ -1136,6 +1137,16 @@ describe('registration security catalog', () => {
                 ? '(uuid,uuid)'
                 : '()'),
         ),
+      'app_private.cancel_f15_client_alerts(uuid,uuid)',
+      'app_private.enforce_form_revision_snapshot_keys()',
+      'app_private.enforce_n08_budget_answer_consistency()',
+      'app_private.f15_cancel_client_alerts_after_relationship_end()',
+      'app_private.f15_client_alert_lifecycle_active(uuid,uuid)',
+      ...(existsSync(
+        'supabase/migrations/20261108020200_f15_localized_slider_labels.sql',
+      )
+        ? ['app_private.f15_valid_slider_label()']
+        : []),
       'public.issue_registration_link(uuid,uuid,text,jsonb)',
       'public.registration_link_open(text)',
       'public.get_registration_link_commissions(uuid)',
