@@ -80,6 +80,6 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 | FR-038/039 | T106 | `tests/integration/client-signup-transaction.test.ts` repaired Unicode regex regression, Stack D 11/11. | `f21bae6` |
 | FR-008/013 | T108 | `tests/integration/forms-r3-drafts.test.ts` 4 KiB byte-bound baseline uses defined in-snapshot `q2`; full Stack D integration 9 files / 64 passed. | `27ac027` |
 | FR-024/025 | T109 | `specs/015-forms-intake/quickstart.md` resolves repository and Stack D paths from current checkout; `format:check` passed. | `f779402` |
-| FR-024/025 | T110 | `specs/015-forms-intake/reports/evidence/s18-r4/index.md` lists the 50 verified S18 screenshots and hashes; copied capture hashes matched the review-provided source set. | `722c3a2` |
+| FR-024/025 | T110 | `specs/015-forms-intake/reports/evidence/s18-r4/INDEX.md` lists the 50 verified S18 screenshots and hashes; copied capture hashes matched the review-provided source set. | `722c3a2` |
 | FR-024/025 | T111 | Analyze S33 status marked historical; S30 quotation/S31 source label repaired; T012 traceability row restored in B stack merge. `format:check` passed. | `f779402`, `759a1b5`, `c7b9de9` |
 | FR-024/025 | T101 | Stack D `tests/integration/rls-catalog.test.ts` + `tests/integration/branding-function-privileges.test.ts` passed 42/42 after updating the branch-specific private-function and service-role inventories. | A `0109ff2`; B `6155640`; StartedAt unchanged `2026-11-06T03:43:08.260140976Z`. |
