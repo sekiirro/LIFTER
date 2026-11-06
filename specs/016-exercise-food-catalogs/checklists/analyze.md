@@ -1,13 +1,45 @@
-# Analyze — F16 one-global-catalog redesign
+# Analyze — F16 one-global-catalog redesign (S36 round 2)
 
-- Date: 2026-11-06 19:02 UTC (after the second review follow-up changes to spec, decision register, contracts, tasks and impact audit).
-- Scope: S35-PO-3 one shared global exercise catalog, workspace overrides, automatic workspace video mapping, client-workspace video resolution, tenant authorization, history preservation, F17/F18/F19 impact; spec-only.
-- Authority: exact S35-PO-3 F16 REDESIGN and S36-PO-1 Priorities quotations in `spec.md` Clarifications. Historical S35-PO-1/-2 and PR #64 supersession recorded without deleting prior history in `decision-register.md`.
-- Requirements review: affected exercise stories, numbered FRs, measurable SCs and Given/When/Then scenarios define one global identity, five allowed override fields, Trainer-private exercises, PO personal-workspace routing, workspace-over-global video fallback, automatic logical workspace mapping, client-workspace resolution at view time, update visibility without template republish, generic denial, tenancy, and preserved plans. Canonical global edit remains conditional on F16-MCQ-5; historical T018 evidence does not select an answer. Existing food requirements remain present.
-- Ambiguity review: open decision status is explicit. Seven compatibility MCQs and two new product questions (F16-MCQ-1 through F16-MCQ-9) list options, implications, advisory recommendation and blocked work. No recommendation is encoded as a default or test expectation. No-open-ambiguities claim is not made.
-- Data/contract review: versioned `exercise_overrides` + append-only versions, composite workspace keys, resolver source, client/plan read path, generic authorization denial, override write/remove RPC conventions (CAS/idempotency/audit), RLS/tenancy and forward-only migration plan are DESIGN ONLY. No migration, SQL or app file was added.
-- Task review: T037–T042 remain unchecked and explicitly blocked by decision IDs; RED-first, mutation and negative tenancy test requirements are listed. T039 now also blocks workspace-private exercise video assertions on F16-MCQ-9. Historical T018 is labeled as pre-redesign evidence and does not authorize canonical edits under this design. Sol Medium critique remains pending PO approval and implementation blocker.
-- Impact review: `impact-s35-redesign.md` cites F17/F18/F19 source `file:line`, pins each citation to its audit-time branch SHA, lists required updates and does not edit downstream branch specs. PR #43 and #64 live status were verified as OPEN at their recorded heads; no PR branch was changed.
-- Frontend Design Gate: approved Design System is authoritative; UI layout/field behavior is captured and no unapproved visual decisions/tokens were added. Rendering/screenshots and UI execution checks are not run because this is spec-only; recorded as deferred/failed in the S36 run report and blocked T040.
-- Findings: **0 open CRITICAL, 0 open HIGH**. Remaining blockers are the explicit PO decisions, pending Sol Medium approval, and hosted integration assertion failure recorded in the S36 run report. These are not hidden or represented as requirements.
-- Gate: PASS for the documentation/specification scope. Implementation remains blocked until named decisions and review gates clear.
+- Date: 2026-11-06 19:42 UTC (after the S36-PO-2 edits to spec, plan, data-model, contracts, tasks and decision register; last spec-artifact commit a7cef643).
+- Scope: S36-PO-2 F16 answers (F16-MCQ-1 to -7), no client transfers between workspaces (FR-022), CI role-matrix restore (S36-R10), planned-operation rule, F16-MCQ-8 / -9 / -10 open, implementation blockers. Spec-only; no app code, SQL, migrations or tests changed.
+- Authority: S36-PO-2 F16 paragraph quoted byte-for-byte in `spec.md` Clarifications and `decision-register.md`; architect mapping in `s36-architect-rulings-2.md` applied and labelled as architect words.
+
+## Entry check (Spec Kit gate, section 1)
+
+- spec.md has numbered FRs (FR-001 to FR-022), measurable SCs (SC-001 to SC-012) and Given/When/Then acceptance scenarios for every user story: PASS.
+- Clarifications: `## Clarifications` contains S33-PO-4, S35-PO-3, S36-PO-1 and S36-PO-2 sessions; open items are named, not assumed away: PASS.
+- plan.md covers the touched scope; tasks.md has T037–T042 with FR tags and status: PASS.
+- This file is dated after the last change to spec, plan, data-model, contracts and tasks: PASS.
+
+## Findings
+
+| ID | Category | Severity | Location | Summary | Status / recommendation |
+|---|---|---|---|---|---|
+| A1 | Coverage | MEDIUM | spec.md FR-002; tasks.md (none) | FR-002 canonical edit (answered F16-MCQ-5 a) had no task. | RESOLVED in a7cef643: T037 now tags FR-002 and carries the global-admin-only canonical edit RED tests. |
+| A2 | Ambiguity | MEDIUM | plan.md line 53; spec.md FR-002 | "Explicit global admin scope" had no capability name. | RESOLVED in a7cef643 by mapping to existing PO-only `catalog.exercise.govern`. Architect to confirm the mapping. |
+| A3 | Ambiguity | MEDIUM | decision-register.md F16-MCQ-3 | Architect labels MCQ-3 as option (c), but option (c) text contradicts the PO words. | Recorded: binding requirement is the PO words (names and instructions frozen at publish; video live). Label flagged for architect confirmation. No requirement depends on the label alone. |
+| A4 | Ambiguity | MEDIUM | decision-register.md F16-MCQ-10 (new) | S36-PO-2 answer to MCQ-4 (c) allows private alternative references; client-view presentation of them is unanswered. | OPEN PO-DECISION-NEEDED. Blocks the client-view alternative presentation in T039; no requirement encodes a default. |
+| A5 | Ambiguity | MEDIUM | spec.md FR-014; SC-009 scope | Private Trainer exercise video in client plan views. | OPEN PO-DECISION-NEEDED F16-MCQ-9 (not answered by S36-PO-2). Blocks the private-exercise assertions in T039. |
+| A6 | Ambiguity | MEDIUM | spec.md FR-003; T037, T038, T040 | Localization of name overrides. | OPEN PO-DECISION-NEEDED F16-MCQ-8 (not answered by S36-PO-2). Blocks name-field payload validation (T038) and AR/EN editor requirements (T040). |
+| A7 | Constitution alignment (process) | BLOCKER (see note) | constitution (`.specify/memory/constitution.md` lines 148–151, Mandatory Spec Debate); S36-PO-2 | S36-PO-2 authorizes Sonnet 5.5 independent critiques for F16. The constitution mandates an independent Sol Medium critique and prohibits substitution outside the permitted tiers. | Implementation blocker, PO-owned. Recorded in spec.md, plan/tasks S36 blockers and this checklist. Reported to PO. Note: the analyze rule classifies constitution conflicts as CRITICAL. No spec, plan or task element violates a principle; the blocker is a review-process conflict, so it is recorded as a blocker per the S36 brief, not as a spec-artifact CRITICAL. The architect should confirm this classification. |
+| A8 | Inconsistency | LOW | impact-s35-redesign.md | Audit document still describes F16-MCQ-1 to -9 as open at its audit-time SHA. | Historical audit, not updated; LOW. Architect may refresh it. |
+| A9 | Underspecification | LOW | spec.md FR-014 | FR-014 is a long multi-sentence requirement. | Readability only; no ambiguity introduced by S36-PO-2. Leave as is. |
+| A10 | Duplication | none | — | No new duplicate requirements found after the edits. | — |
+
+## Coverage
+
+- FR-002 → T037 (A1 resolved). FR-003 → T037, T038, T041. FR-014 → T037, T038, T039, T041, T042. FR-018 → T037, T038, T040. FR-020 → T039, T041, T042. FR-022 → T039. SC-001, SC-008, SC-011, SC-012 → traced through FRs above.
+- Planned contract rows (`contracts/catalog-api.md` "Planned operations (not implemented)") map to T037–T039; each moves into the implemented matrix only with its SQL, fixture row and parity test (S36-R10 rule in tasks.md).
+- Implemented role matrix in `contracts/catalog-api.md` equals origin/main's 8 rows; `npx vitest run tests/unit/catalog-role-parity.test.ts` checked locally (see report).
+
+## Counts
+
+- CRITICAL (spec artifacts): 0. HIGH: 0.
+- Blockers outside spec artifacts: 1 (A7, independent-critique conflict, PO-owned).
+- Open PO-DECISION-NEEDED: F16-MCQ-8, F16-MCQ-9, F16-MCQ-10 (new).
+- Answered or moot: F16-MCQ-1, -3, -4, -5, -6 (answered); -2, -7 (moot).
+
+## Gate
+
+- Spec and plan artifacts: PASS, 0 CRITICAL / 0 HIGH.
+- Implementation: BLOCKED by A7 (independent critique: Sonnet 5.5 authorized by S36-PO-2; constitution Sol Medium conflict reported to PO) and by the open MCQs for the affected tasks (T037 partial on MCQ-8; T038 name fields on MCQ-8; T039 private video and alternatives on MCQ-9/-10; T040 on MCQ-8).
