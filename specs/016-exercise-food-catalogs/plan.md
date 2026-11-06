@@ -101,3 +101,15 @@ The supporting design artifacts on this feature branch are reconciled to this ca
 ## S33-PO-4 test hygiene
 
 Taxonomy search integration coverage must use a unique narrow filter or explicitly paginate with a fixed maximum while preserving the expected search result and authorization checks.
+
+
+## S35-PO-1 manual exercise distribution
+
+PO source: S35-PO-1 (verbatim in spec.md Clarifications, session 2026-11-06). Supersedes any earlier auto-copy decision; no such rule exists in this plan. Requirements: FR-022 to FR-030; criteria SC-006 to SC-010; tasks T910 to T922.
+
+- **Design.** One SECURITY DEFINER RPC `catalog_send_exercise_to_workspace` (provisional) per (exercise, workspace) pair, PO only, written under the FR-016 order, the shared operation-key ledger and the existing audit writer. The server action loops pairs for "selected" and "all". Copies are `workspace_exercises` rows with immutable `source_exercise_id`/`source_exercise_version` (data-model.md). No trigger, cron or automatic path (FR-025).
+- **Migration (later, not now).** A single forward-only migration adds the two source columns, the active-copy guard, the RPC, grants (revoke public/anon/service_role, grant `authenticated`, empty search path) and the audit allowlist extension. Never edit a pushed migration. The version must be unique across all origin refs, scanned immediately before commit and before push. The migration range above is `20261106000000`-`20261106195959`; if it is exhausted, the architect allocates a range at implementation time.
+- **Dependency on PR #43.** Fresh resend depends on the workspace exercise Remove RPC and lifecycle revision (#43 T042/T043). Do not implement T914 or T917 before #43 is on main or the architect names the base branch. Sending must not depend on workspace Restore, which stays unauthorized (#43 S31-PO-1 Q3).
+- **Validation.** RED tests first (T910 to T916), then implementation (T917 to T919) with mutation checks removing: the PO guard, the active-copy skip, the fresh-resend path, the creation lock, and the audit allowlist entry. Stack C integration only on an architect-assigned stack.
+- **Blocked until PO answers.** Input shape and UI (MCQ-F16-1, MCQ-F16-7), audit name and batch granularity (MCQ-F16-3), carried content (MCQ-F16-2), source eligibility (MCQ-F16-4), planner read model (MCQ-F16-6). Delegation (MCQ-F16-5) does not block: deny-by-default applies.
+- **Risks.** Merge conflicts with #43 on spec/plan/tasks files (this update appends or inserts away from #43's hunks). Free-tier CPU for large "all" sends is bounded by per-pair calls and MCQ-F16-7.

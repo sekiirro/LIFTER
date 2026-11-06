@@ -64,6 +64,25 @@ Staff browse, search (Arabic and English, with Arabic normalization), filter and
 
 **Independent Test**: Playwright + axe on catalog list, search, add-food and add-exercise in AR/EN, light/dark, mobile/desktop; Arabic search finds entries regardless of alef/hamza/ta-marbuta/diacritic variants.
 
+### User Story 6 - PO manually sends global exercises as independent workspace copies (Priority: P1)
+
+Source: S35-PO-1 (verbatim in Clarifications, session 2026-11-06). The global library stays protected. The PO alone decides, per action, to send selected or all global exercises to workspaces; each send creates an independent, editable workspace copy. Nothing is distributed or synchronized automatically.
+
+**Independent Test**: As PO, send one global exercise to a workspace; verify an independent workspace exercise exists there with its own identity and version 1, the global rows are unchanged, editing the copy never changes the global row, and editing the global exercise never changes the copy. Send again: the active copy is skipped. Remove the copy and send again: a fresh copy without the old edits is created while the removed copy and all plan references stay untouched. As WO/Trainer/Sales/Client/unknown the send is denied by app authorization and by SQL.
+
+**Acceptance Scenarios**:
+1. **Given** a PO and an active global exercise E with no copy in workspace W, **When** the PO sends E to W, **Then** a new workspace-scoped exercise C (own identity, version 1) is created in W with E's current version content at send time, C records its source `(E, version)`, E and its versions are unchanged, and exactly one audit event is recorded without free-text content.
+2. **Given** a copy C of E in W, **When** a W staff member with `coaching_work` edits C, **Then** a new version of C is appended (FR-004), E is unchanged, and no other workspace's copy changes. **Given** the PO later edits E (new global version), **Then** C is unchanged and nothing is propagated.
+3. **Given** a non-PO actor (WO, Trainer, Sales, Client, unknown), **When** they attempt to send, **Then** the request is denied by app authorization and by RLS/RPC authorization, and no workspace row is written.
+4. **Given** the PO sends "selected" exercises or "all" exercises, **When** the send runs, **Then** each exercise is processed independently: created copies, skipped existing copies and failures are reported per exercise per workspace, and a skip or failure of one never rolls back or alters another's copy.
+5. **Given** an active copy of E already exists in W, **When** the PO sends E to W again, **Then** E is skipped for W: no new identity, no new version, no audit event, and the existing copy and its edits are untouched.
+6. **Given** the only copy of E in W was Removed, **When** the PO sends E to W, **Then** a fresh copy is created from E's current version at send time; none of the removed copy's edits, versions or lifecycle history carry over; the removed copy is not restored, not modified and not linked to the new copy; plan references to the removed copy keep pointing at it.
+7. **Given** no PO send occurs, **When** a global exercise is created, versioned, restored or merged, or a workspace or membership is created, **Then** no copy exists or is created anywhere (no automatic distribution, no update syncing).
+8. **Given** existing plan versions and snapshots that reference the global exercise or any copy by explicit `(identity, version)`, **When** any send, skip or resend happens, **Then** no plan reference, snapshot, log or stored export is created, rewritten, redirected or removed.
+9. **Given** the same send request (same operation key and request) is replayed or two sends of the same exercise to the same workspace race, **Then** exactly one copy exists; the replay returns the original result and the losing race reports a skip.
+
+Edge cases for this story: sending to a workspace the PO has not explicitly supplied or a non-existent workspace is rejected with the generic denial and writes nothing; a send never reveals workspace A's copies, counts or existence to workspace B (FR-030, SC-002); sources that are Removed or merged (superseded), copy-source matching rules, and batch limits are pending MCQ-F16-4 and MCQ-F16-7.
+
 ### Edge Cases
 
 - Same-language food with matching name and identity dimensions is an exact duplicate; the same normalized name in another language remains distinct. Test same-language blocking and cross-language distinction.
@@ -102,6 +121,15 @@ Staff browse, search (Arabic and English, with Arabic normalization), filter and
 - **FR-019** No YBS import and no seeded catalog content unless the PO supplies an approved starter list (BRD-06).
 - **FR-020** Snapshots MUST use explicit immutable exercise/food versions. Exercise plan snapshots preserve canonical exercise identity only; the selected authorized workspace video is resolved dynamically and is not snapshotted. Food snapshots preserve the exact referenced food version and validated per-100 values. (PO S20 Message B section 1; supersedes v3 FR-020)
 - **FR-021** Every role authorized by FR-006 (PO, Workspace Owner, or Trainer) is subject to at most 10 accepted new food identities per creator per rolling 24 hours, plus a platform-wide cap of 100 accepted new food identities per rolling 24 hours across all those roles; no more than 10,000 foods may be active. Exact idempotent replay consumes no additional quota. Remove/Merge decrease the active count; Restore must satisfy the active ceiling and does not consume an Add allowance. Enforce counters transactionally under concurrency-safe locks. Benchmark the catalog before production. (PO S20 Message B section 1; D16-10)
+- **FR-022** The global exercise library MUST stay protected: no actor other than the PO can create, edit, remove, restore or merge a global exercise (retains FR-001, FR-002, FR-011), and no distribution action creates, versions, removes, restores or merges any global row. Workspace staff edit only their own workspace copies. (S35-PO-1: "Global library stays protected.")
+- **FR-023** Only the PO MAY send global exercises to workspaces, and only by an explicit manual action that selects either chosen exercises or all exercises. Each send creates independent, editable workspace copies. WO, Trainer, Sales, Client and unknown actors are denied by app authorization and SQL (deny-by-default per FR-017; delegation is not decided, see MCQ-F16-5). Authorization action `catalog.exercise.send` (PO only, `govern_global_catalog` capability). Target workspace selection (one, several, all) is pending MCQ-F16-1. (S35-PO-1: "PO manually sends selected/all exercises as independent editable workspace copies.")
+- **FR-024** A workspace copy MUST be a new workspace-scoped exercise identity (FR-004 storage) whose version 1 holds the content of the source global exercise's current immutable version at send time, with the source `(exercise_id, version)` recorded immutably on the copy. After creation the copy is independent: copy edits append copy versions only and never alter the global rows or any other workspace; later global versions, Remove, Restore or merge never alter the copy. Whether workspace variations, video mappings or default alternatives are carried is pending MCQ-F16-2; none are carried until the PO decides. (S35-PO-1: "independent editable workspace copies".)
+- **FR-025** The system MUST NOT distribute or synchronize automatically: no trigger, cron, job, hook, workspace/membership-creation seed, or global-edit propagation may create, update or version a workspace copy. Copies come into existence only through the FR-023 action. No update from the global library is ever pushed to an existing copy. (S35-PO-1: "No automatic distribution or update syncing.")
+- **FR-026** When an active (not Removed) copy of a source exercise already exists in the target workspace, the send MUST skip it: no new identity, no new version, no audit event, no change to the copy or its edits; the outcome is reported as skipped. A skip is not an error and does not affect other exercises or workspaces in the same request. Eligibility of a Removed or merged source and the meaning of "exists" for any other inactive state are pending MCQ-F16-4. (S35-PO-1: "Skip existing copies".)
+- **FR-027** When every copy of a source exercise in the target workspace is Removed, the send MUST create a fresh copy per FR-024 from the source's current version at send time, with no content, version, lifecycle or provenance carried over from the removed copy. The removed copy and its versions and lifecycle markers stay unchanged (never Restored, never merged, never aliased to the new copy); workspace Restore remains unauthorized. (S35-PO-1: "resend deleted exercises as fresh copies without old edits".) Architect note (not PO words): "deleted" is read as the existing Remove lifecycle state (FR-011 has no hard delete).
+- **FR-028** Historical plan integrity MUST be preserved: sending, skipping or resending never creates, rewrites, redirects, republishes or removes any plan reference, `ExerciseSnapshotV1`, log or stored export. Existing references to a global exercise or to any removed or active copy continue to resolve to that explicit `(identity, version)`. (S35-PO-1: "Preserve historical plan integrity."; consistent with FR-011, FR-020.)
+- **FR-029** The send RPC MUST follow the FR-016 mutation order and conventions: authorize action and explicit workspace scope first; deterministic locks (source identity root and a deterministic creation lock for `(workspace_id, source_exercise_id)`, UUID order); action-bound UUIDv4 operation key with same-key/same-request replay returning the original result and same-key/different-request conflict; re-read source lifecycle and the target's copy state after locks; recheck membership/capability after lock waits; write exactly one audit event per created copy in the same transaction (global-source/workspace-target audit `workspace_id` = target workspace; allowlisted details only: identity ids, versions, related id, no names, content, URLs or free text). Audit event name and batch granularity are pending MCQ-F16-3. A forward-only migration is required at implementation time; none is created by this specification.
+- **FR-030** Tenant isolation MUST hold: a copy is visible, searchable and countable only in its own workspace (FR-004, SC-002); a send discloses nothing about other workspaces' copies, existence or counts to any actor but the PO; non-PO actors never see global creator or origin provenance (FR-013).
 
 ### Approved catalog defaults and import protocol
 
@@ -125,10 +153,17 @@ Staff browse, search (Arabic and English, with Arabic normalization), filter and
 - **SC-003** A trainer can add a valid food and find it in search in under 60 seconds of interaction; exact duplicates are blocked 100% in tests.
 - **SC-004** Arabic normalization test table passes for all listed variant classes.
 - **SC-005** At a defined 10k-food fixture (fixed active/removed ratio, AR/EN name-length distribution, query classes and request concurrency; page size <= 50): Worker CPU p95 <= 5 ms per request (headroom under the 10 ms free-tier hard limit, cold start measured separately); DB/API p95 <= 300 ms (engineering-owned target); EXPLAIN shows the intended indexes with no unbounded scan; exact/near-duplicate checks measured against a separate budget; database and index size recorded and reported against the architecture's 70% exit trigger.
+- **SC-006** Zero workspace copies exist after any non-send operation (global create/version/Remove/Restore/merge, workspace creation, membership change): automatic-distribution negative tests and a schema/source assertion that no trigger, cron or function other than the send RPC creates a copy (FR-025).
+- **SC-007** 100% of non-PO send attempts across WO, Trainer, Sales, Client and unknown are denied by both the app wall and SQL, with zero rows written (FR-022, FR-023).
+- **SC-008** For every (exercise, workspace) pair: an active copy yields a skip with zero writes and zero audit events; a Removed-only history yields exactly one fresh copy; concurrent and replayed sends yield exactly one copy (FR-026, FR-027, FR-029).
+- **SC-009** After any send/skip/resend, global rows and versions, existing copy versions, and frozen `ExerciseSnapshotV1` fixtures are byte-identical; a mutation test that rewrites a plan reference or edits a removed copy fails (FR-024, FR-028).
+- **SC-010** Each created copy produces exactly one allowlisted audit event with `workspace_id` = target workspace and no content values (FR-029).
 
 ## Approved PO decisions
 
 D16-1a/b/c and D16-2 through D16-10 are approved and recorded in docs/04-changes-and-questions.md, S20-03 through S20-13. No D16 item remains open. The PO dataset is a future input; audit it and obtain import approval when supplied. Do not invent food values or exercise content.
+
+S35-PO-1 (F16 exercise distribution) is recorded under Clarifications, session 2026-11-06. Its open items MCQ-F16-1 to MCQ-F16-7 are PO-DECISION-NEEDED and are not approved defaults.
 
 ## Assumptions
 
@@ -144,6 +179,38 @@ Workout/nutrition templates and planners (F17/F18), plan versions and exports, c
 
 I isolation (workspace rows + composite FKs; global rows readable only by coaching staff; no origin disclosure) - II n/a (no money) - III PO governs global exercises and merges - IV traces to PRD-04/05; open items marked - V immutable versions; snapshots consumed by F17/F18 - VII no PII in catalog audit - VIII bilingual Design System + gate - IX idempotent, optimistic-concurrency RPCs.
 ## Clarifications
+
+### Session 2026-11-06 — S35-PO-1 (F16 exercise distribution)
+
+PO source: S35-PO-1, recorded verbatim in `C:/Users/NEW LAP/.lifter/runs/s35-haiku-ledger2/s35-po-1.verbatim.txt`. F16 part, verbatim:
+
+> F16: Global library stays protected. PO manually sends selected/all exercises as independent editable workspace copies. No automatic distribution or update syncing. Skip existing copies; resend deleted exercises as fresh copies without old edits. Preserve historical plan integrity. Supersedes previous auto-copy decisions.
+
+Architect note (not PO words): this decision requires a Spec Kit update of specs/016 (Specify/Clarify/Plan/Tasks/Analyze) before implementation (architect notes `C:/Users/NEW LAP/.lifter/runs/s35-haiku-ledger2/notes.txt`). Architect note (not PO words): "deleted" is read as the existing Remove lifecycle state, because FR-011 allows no hard delete; a Removed copy does not count as existing.
+
+**Supersession ledger.** History is kept; nothing is deleted.
+
+| Item (ID and location) | Status |
+|---|---|
+| Earlier auto-copy / automatic distribution / update-sync decisions | **Superseded by S35-PO-1.** No FR, SC, task or contract row in specs/016 on `origin/main` (30da4f0f) or `origin/016-catalog-ui` (e3e322f6) carries such a requirement (term search recorded in the run report); if the verbatim ledger holds decisions with IDs, they are superseded by this session. Gap for the architect, non-blocking: supply those IDs so they can be cross-marked. |
+| data-model.md:18 and research.md:21 ("One shared identity for every workspace"), FR-012 (coaching staff read global exercises) | Retained, not superseded. A shared global identity is not distribution. Whether planners may still select global rows directly alongside copies is MCQ-F16-6. |
+| FR-003, FR-014, T020, T023 (workspace variations/video overlay on a global identity) | Retained. Interplay with copies is MCQ-F16-2. |
+| FR-019, T006 (no seeded catalog content) | Retained and reinforced by FR-025. |
+| FR-001, FR-002, FR-011, FR-020 (global library PO-governed, Remove non-destructive, snapshots by explicit version) | Retained; S35-PO-1 builds on them (FR-022, FR-028). |
+
+**Resolved by S35-PO-1** (see User Story 6, FR-022 to FR-030, SC-006 to SC-010): PO-only manual send of selected or all exercises; independent editable copies; global library protected; no automatic distribution or update syncing; skip existing copies; Removed copies are resent as fresh copies without old edits; historical plan integrity.
+
+**PO-DECISION-NEEDED (not settled by the PO words; not encoded as requirements):**
+
+- **MCQ-F16-1** Target workspace selection: one, several or all workspaces per send.
+- **MCQ-F16-2** Whether video variations, workspace mappings or default alternatives are carried onto a copy.
+- **MCQ-F16-3** Audit event name and batch granularity (one event per created copy vs one per batch).
+- **MCQ-F16-4** Meaning of "exists" for inactive states, and sending Removed or merged global sources.
+- **MCQ-F16-5** Whether WO or Trainer may also send (delegation).
+- **MCQ-F16-6** Whether planners may still select global exercises directly (FR-012) or only workspace copies.
+- **MCQ-F16-7** Batch size limit and where the send surface lives (UI placement and bilingual copy).
+
+Options, implications and recommendations: `C:/Users/NEW LAP/.lifter/runs/s35-sonnet-f16-dist/report.md`. Open ambiguities remain: the seven items above. The backend of FR-022, FR-026 to FR-028, FR-030 and SC-006 to SC-009 does not depend on them. Send-RPC input shape, audit naming and UI tasks are blocked as tagged in tasks.md.
 
 ### Session 2026-11-04 — S33-PO-4
 

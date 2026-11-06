@@ -66,3 +66,24 @@ T001-T003 establish contracts and pure tests. T004-T005 wait for the stack assig
 
 None. S20-03 through S20-13 and the canonical F16 spec/plan resolve the design decisions for this lane. The future D16-4 dataset is an input dependency with an already-defined audit and PO-approval process, not an unresolved decision.
 - [x] T900 [FR-015, FR-016a] Make catalog taxonomy search integration coverage independent of the first global page by using a unique narrow synthetic filter or bounded pagination without weakening expected results.
+
+
+## Phase 6 - S35-PO-1 manual exercise distribution (Spec Kit update 2026-11-06)
+
+PO source: S35-PO-1 (spec.md Clarifications, session 2026-11-06). IDs start at T910 to avoid collision with PR #43 (T041-T047) and T900. RED tests first; capture RED, implement the smallest change, capture GREEN, run the listed mutation. Implementation is not authorized until Analyze passes and the blocking MCQs below are answered; this change creates no migration.
+
+**Superseded tasks:** none. No existing task implements automatic distribution or update sync. **Impact-reviewed (unchanged):** T006, T020, T023 (see Clarifications ledger).
+
+- [ ] **T910 (45m) - Extend role-parity and app-wall matrices with the send operation.** `OWNER=Luna`. RED: PO allow, WO/Trainer/Sales/Client/unknown deny for `catalog.exercise.send`, TS and SQL expectation from one fixture. **Mutation:** flip one role. FR: FR-022, FR-023, FR-029.
+- [ ] **T911 (45m) - Define send input/output schemas.** `OWNER=MiniMax`. Zod/types for target workspaces, selected-or-all exercise scope and per-pair outcomes. BLOCKED by MCQ-F16-1, MCQ-F16-7. FR: FR-023, FR-026, FR-030.
+- [ ] **T912 (55m) - RED: copy creation and independence.** `OWNER=Luna`. Send creates copy v1 with source provenance; global rows unchanged; copy edit leaves global untouched; global version leaves copy untouched; no cross-workspace effect. Assigned stack required. **Mutation:** write a global row or propagate a version and prove tests fail. FR: FR-022, FR-024, FR-025, FR-030.
+- [ ] **T913 (55m) - RED: skip existing, replay and race.** `OWNER=Luna`. Active copy yields skipped with zero writes and no audit event; operation-key replay and conflict; concurrent sends of one pair yield one copy. **Mutation:** remove the skip check or creation lock. FR: FR-026, FR-029.
+- [ ] **T914 (50m) - RED: fresh resend after Remove.** `OWNER=Luna`. Removed-only history yields a new identity without old edits; removed copy, versions and markers untouched; no restore/alias link. Depends on #43 T043. **Mutation:** reuse the removed identity and prove failure. FR: FR-027, FR-028.
+- [ ] **T915 (50m) - RED: historical plan integrity.** `OWNER=Luna`. Send/skip/resend touches no plan reference, snapshot, log or export; frozen `ExerciseSnapshotV1` fixtures byte-identical (extend T031). **Mutation:** rewrite a reference and prove failure. FR: FR-028.
+- [ ] **T916 (45m) - RED: no automatic distribution.** `OWNER=Luna`. Creating/versioning/removing/restoring/merging a global exercise, creating a workspace or membership yields zero copies; source assertion that only the send RPC writes copy rows. **Mutation:** add a trigger and prove failure. FR: FR-025.
+- [ ] **T917 (70m) - Implement the send RPC and forward-only migration.** `OWNER=Luna`. GREEN for T912-T916; provenance columns, active-copy guard, grants, no dynamic SQL, definer pattern. Migration version unique across all origin refs (scan before commit and push). BLOCKED by MCQ-F16-3, MCQ-F16-4, MCQ-F16-6, MCQ-F16-2 and by #43 on main. **Mutation:** remove PO guard, skip path, fresh-resend path, lock. FR: FR-022 to FR-030.
+- [ ] **T918 (45m) - Server action and app wall for send.** `OWNER=Luna`. `authorize()` first, explicit workspace scope, per-pair calls with distinct UUIDv4 keys, aggregate per-pair result. **Mutation:** remove the PO guard or key forwarding. FR: FR-023, FR-029. Depends on T911, T917.
+- [ ] **T919 (45m) - Extend the audit writer allowlist for the send action.** `OWNER=Luna`. One event per created copy, `workspace_id` target, allowlisted details only; sensitive-field mutant rejected. BLOCKED by MCQ-F16-3. FR: FR-029.
+- [ ] **T920 (60m) - Build the PO send surface.** `OWNER=MiniMax`. Selected/all selection, target selection, per-pair result states; Design System, AR RTL and EN. BLOCKED by MCQ-F16-1, MCQ-F16-7 and PO-approved bilingual copy (new keys are DRAFT until approved). FR: FR-023, FR-018. Affects #43 surfaces (see analyze Impact).
+- [ ] **T921 (50m) - Playwright and axe for the send surface.** `OWNER=MiniMax`. Role-gated visibility (PO only), keyboard, AR/EN, light/dark. BLOCKED by T920. FR: FR-018, FR-023.
+- [ ] **T922 (30m) - Traceability and re-analysis after implementation.** Record FR to Task to Test to Evidence in `traceability.md` only for tasks executed and passed on the head; refresh Analyze. FR: FR-022 to FR-030.
