@@ -32,7 +32,7 @@ Base: `origin/main` `7e2d0149b0370e4389b462130508352bbd69daa2`. Task mapping is 
 | ND-F4-2 delivery | S31-PO-2 SK-004-03 "Copy only" | spec.md Clarifications, ND-F4-2 | Satisfied: `components/auth/RecoveryLinkDialog.tsx:40` copies only; no share action |
 | ND-F4-3 session-lifetime enforcement deferral | S35-PO-1 "ND-F4-3=A (defer, track security blocker)"; `docs/13-production-readiness.md:34` ("PO decision: B"; RD-1 reconciled by S35-R6: both mean the deferral) | spec.md Clarifications, ND-F4-3 | None; no task; blocker stays Open, Pre-Production |
 | ND-F4-5 client-target sequencing | S35-PO-1 "ND-F4-5=A." (architect: option a) | spec.md Clarifications, ND-F4-5 | Pending P1 client accounts; denial until then unchanged |
-| ND-F4-7 staff email reset | S35-PO-1 line 9 (verbatim in spec.md Clarifications) | spec.md User Story 5, FR-016 to FR-028, SC-008 to SC-013, Security Notes, PDN-F4-7-01 to 11 | Specified only; implementation Phase 9 (T033 to T048); UNVERIFIED |
+| ND-F4-7 staff email reset | S35-PO-1 line 9 (verbatim in spec.md Clarifications) | spec.md User Story 5, FR-016 to FR-030, SC-008 to SC-015, Security Notes, PDN-F4-7-01 to 13 | Specified only; implementation Phase 9 (T033 to T049); UNVERIFIED |
 
 ## ND-F4-7 rows (S35-PO-1) - all UNVERIFIED until implemented and executed
 
@@ -49,6 +49,8 @@ No ND-F4-7 row is VERIFIED or MAPPED. Each status describes the planned test onl
 | US5 scenario 7 (delivery cap) | T038, T044 | planned | none | UNVERIFIED | PDN-F4-7-01 |
 | US5 scenario 8 (client: no email) | T034, T041 | planned | none | UNVERIFIED | PDN-F4-7-02 for roles |
 | US5 scenario 9 (SMTP gate) | T046, T047 | documentation check | none | UNVERIFIED | Hosted change out of scope |
+| US5 scenario 10 (direct Auth API enforcement) | T049 | local Auth boundary integration test (planned) | none | UNVERIFIED | PDN-F4-7-13; boundary feasibility not demonstrated |
+| US5 scenario 11 (exact approved copy) | T042b | byte comparison of application output and locale catalogs (planned) | none | UNVERIFIED | FR-029 applies only to two states |
 | FR-016 | T034, T043 | planned | none | UNVERIFIED | PDN-F4-7-02 |
 | FR-017 | T041, T043 | planned | none | UNVERIFIED | - |
 | FR-018 | T035, T041, T043 | planned | none | UNVERIFIED | Timing tolerance AT-2 |
@@ -60,14 +62,18 @@ No ND-F4-7 row is VERIFIED or MAPPED. Each status describes the planned test onl
 | FR-024 | T038, T044 | planned | none | UNVERIFIED | PDN-F4-7-03, 04 |
 | FR-025 | T039, T044, T045 | planned | none | UNVERIFIED | AT-1; two-phase completion order and reconciliation (S35-R5 T1) |
 | FR-026 | T045 | planned | none | UNVERIFIED | ND-F4-3 session-lifetime blocker unchanged |
-| FR-027 | T042, T045 | planned | none | UNVERIFIED | BLOCKED-COPY (PDN-F4-7-06) |
+| FR-027 | T042, T045 | planned | none | UNVERIFIED | Partial copy approval only; PDN-F4-7-06 remains open for all other F4 strings |
 | FR-028 | T034 to T042, T048 | planned | none | UNVERIFIED | Security review pending |
+| FR-029 | T042b | localization and rendered-output byte comparison (planned) | none | UNVERIFIED | Four strings approved for only two states by S36-R6 |
+| FR-030 | T049 | direct /recover and updateUser negative tests (planned) | none | UNVERIFIED | PDN-F4-7-13; local boundary control not selected or proven |
 | SC-008 | T041 | planned | none | UNVERIFIED | - |
 | SC-009 | T038, T041 | planned | none | UNVERIFIED | - |
 | SC-010 | T040 | planned | none | UNVERIFIED | - |
 | SC-011 | T046, T047 | documentation check | none | UNVERIFIED | - |
 | SC-012 | T037, T039 | planned | none | UNVERIFIED | - |
 | SC-013 | T041 | planned | none | UNVERIFIED | PDN-F4-7-09 (no time target asserted) |
+| SC-014 | T042b | byte comparison (planned) | none | UNVERIFIED | - |
+| SC-015 | T049 | local boundary negative tests (planned) | none | UNVERIFIED | PDN-F4-7-13; no hosted Auth changes |
 
 ## S35-R5 rows (CodeRabbit round 2) - UNVERIFIED until implemented and executed
 
@@ -75,7 +81,7 @@ Spec-level fixes only. No row is VERIFIED.
 
 | Item | Severity | Requirement | Task(s) | Planned test(s) | Status |
 |---|---|---|---|---|---|
-| T1 password update vs completion audit | HIGH until fixed; fixed in spec | FR-025 (two-phase, intent-first) | T039, T044, T045 | `tests/integration/auth-recovery.test.ts` "staff-reset-audit" (planned) | UNVERIFIED |
+| T1 password update vs completion audit | App-path correction made; NF-2 remains HIGH | FR-025 (application-path two-phase, intent-first), FR-030 | T039, T044, T045, T049 | `tests/integration/auth-recovery.test.ts` "staff-reset-audit" plus direct Auth API tests (planned) | UNVERIFIED; PDN-F4-7-13 unanswered |
 | T2 default recovery email verifies on GET | HIGH until fixed; fixed in spec | FR-022 (app link, POST-only verify) | T037a, T044a | `tests/integration/auth-recovery.test.ts` "staff-reset-prefetch" (planned) | UNVERIFIED |
 | T3 built-in email scope end point | Minor (CodeRabbit); fixed in spec | FR-019 | T041, T044 | planned | UNVERIFIED; PO confirmation PDN-F4-7-11 |
 | T4 Referrer-Policy on the page | Fixed in spec | FR-022 | T037, T045 | `tests/unit/auth-logs.test.ts` (planned) | UNVERIFIED |

@@ -82,9 +82,18 @@ tests/e2e/auth.spec.ts
 .env.example, README.md (Auth section), .github/workflows/ci.yml (secret scan step)
 ```
 
+
+### Provider-boundary controls (NF-1/NF-2; candidates, no product choice made)
+
+The application checks and its transactional rate-limit/audit path do not protect direct calls to the public Auth API. Treat both Auth entry points as separate enforcement surfaces. The PO directive is local testing only and no hosted Auth changes; any candidate below is confined to local Auth until separately authorized.
+
+- For direct anon-key POST /recover: a local Supabase Auth Send Email hook is a candidate provider-boundary send gate. It replaces the built-in sender and can apply the permitted-address rule, per-account rolling-hour cap and request audit before delivery, failing closed on denial or audit error. It must preserve the app reset link shape/token protections and generic response parity. Supabase documents Send Email as an Auth hook; this hook does not establish a completion gate.
+- For direct recovery-token POST /user (updateUser): no documented Auth hook is specified for password updates. Candidate local control is an Auth API boundary proxy/GoTrue extension that makes the public /user password-update route unavailable to direct clients and permits the controlled server completion operation only after the intent audit, current recovery-token/session validation and 900-second enforcement. It must revoke other sessions after success and keep existing access-token enforcement. Do not treat app-only checks or the Send Email hook as protection for this route. Feasibility must be demonstrated against local Auth before implementation is accepted.
+- If a local boundary cannot enforce both routes, the spec has no effective control and NF-1/NF-2 stay HIGH; implementation/send and completion remain blocked pending PDN-F4-7-13. No hosted workaround is included here.
+
 ## ND-F4-7 Design (staff self-service email reset; specified, NOT built)
 
-Status: specification only. No code, migration, env or hosted Supabase Auth or SMTP change. The Sol Medium critique is PENDING (not invoked; invocation approval is not given in the architect notes). Implementation gate (all must pass before tasks T043 to T046 start): the PO answers PDN-F4-7-01 to PDN-F4-7-11 that block them; BLOCKED-COPY strings approved (PDN-F4-7-06); Analyze re-run after those answers; security review scheduled.
+Status: specification only. No code, migration, env or hosted Supabase Auth or SMTP change. The Sol Medium critique is PENDING (not invoked; invocation approval is not given in the architect notes). Implementation gate (all must pass before tasks T043 to T046 start): the PO answers applicable PDN-F4-7-01 to -13 items; exact copy for all other F4 states is approved (PDN-F4-7-06; FR-029 covers only two states); Analyze re-run after those answers; provider-boundary control is selected and specified; security review scheduled.
 
 Flow (requirements in spec.md FR-016 to FR-028):
 
