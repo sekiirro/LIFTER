@@ -51,6 +51,21 @@ describe('T037 signup identity validation', () => {
     expect(normalizeSignupUsername('Straße')).toBe('straße');
   });
 
+  it('rejects usernames with surrounding whitespace instead of trimming them', () => {
+    const result = validateSignupIdentity(
+      {
+        name: 'Heba Sami Nabil',
+        dateOfBirth: '2000-10-29',
+        username: '  heba  ',
+        telegramUsername: '',
+      },
+      { now: beforeCairoBirthday },
+    );
+
+    expect(result.invalidFields).toContain('username');
+    expect(result.value).toBeNull();
+  });
+
   it.each([
     'platform',
     'system',

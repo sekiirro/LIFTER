@@ -2,6 +2,7 @@ import {
   calculateSignupAge as calculateAge,
   isPastCalendarDate,
   isReservedSignupUsername,
+  isValidSignupUsername,
   isValidTelegramUsername,
   normalizeSignupUsername,
   validateSignupName,
@@ -68,8 +69,7 @@ export function validateSignupIdentity(
   if (!validateSignupName(name)) invalidFields.push('name');
   if (!isPastCalendarDate(dateOfBirth, now)) invalidFields.push('dateOfBirth');
   if (
-    typeof rawUsername !== 'string' ||
-    !rawUsername.trim() ||
+    !isValidSignupUsername(rawUsername) ||
     isReservedSignupUsername(
       typeof rawUsername === 'string' ? rawUsername : '',
       options.workspaceIdentifiers,
