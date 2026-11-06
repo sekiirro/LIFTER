@@ -64,7 +64,7 @@ Keep visibility probes bounded and role-specific while retaining every PO/WO vis
 
 PO decision (verbatim): "**P37=C:** Workspace-scoped pagination first; index only if performance evidence justifies it."
 
-- Any future audit-log read API/RPC/UI MUST be workspace-scoped and paginated with stable order (occurred_at desc, id desc). Page size and API shape are specified with that future feature.
+- Any future audit-log read API/RPC/UI: non-Platform-Owner reads MUST be workspace-scoped and paginated with stable order (occurred_at desc, id desc); the Platform Owner retains the all-events read path defined by FR-005/FR-008, including null-workspace platform events, paginated with the same stable order. Page size and API shape are specified with that future feature. (Authority: S34-PO-1 P37=C + architect ruling S34-R6 — bound remaining test-helper reads + spec 005 FR for a future paginated read API, no index.)
 - No new index on `public.audit_events` unless EXPLAIN evidence on representative synthetic volumes justifies it; record the measurement method.
 - The existing index `(workspace_id, occurred_at desc)` in `supabase/migrations/20261027150000_audit_log.sql` remains the only index.
 - Test hygiene (T010): bound unfiltered `audit_events` reads in test helpers.
