@@ -1,6 +1,6 @@
 # Spec Kit Analyze - F4 Authentication & Manual Recovery Links
 
-- Date: 2026-11-06, re-run after the S35-R2 edits (after the last change to spec/plan/tasks in this documentation change)
+- Date: 2026-11-06, re-run after the S35-R3 edits (after the last change to spec/plan/tasks in this documentation change)
 - Base: `origin/main` `7e2d0149b0370e4389b462130508352bbd69daa2`
 - Method: static cross-artifact review of `spec.md`, `plan.md`, `tasks.md`, `traceability.md`, `docs/04-changes-and-questions.md:25` and `docs/13-production-readiness.md:32-34`. No tests or CI jobs were run.
 
@@ -23,7 +23,7 @@
 
 ## Coverage and constitution
 
-FR-to-task mapping is 15/15 (100%). No task checkbox changed. Constitution III (least privilege) and VII (privacy) are unaffected: no behaviour, schema or test changed.
+FR-to-task mapping is 15/15 (100%). No task checkbox changed. S35-R3 re-check: docs/13 AI-03 now also requires T032's app-layer permission change and tests (matches T032's two-wall scope); spec.md ND-F4-6 keeps the SK-004-06 quote and option text byte-identical and adds a labelled architect note that staff self-service recovery depends on open ND-F4-7 (no new decision, no new requirement). Constitution III (least privilege) and VII (privacy) are unaffected: no behaviour, schema or test changed.
 
 ## Verdict
 
