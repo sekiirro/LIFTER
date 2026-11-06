@@ -147,3 +147,14 @@ it('maps a rejected signup action to retryable localized unavailable and resets 
   );
   expect(form).toMatch(/finally\s*\{\s*submittingRef\.current\s*=\s*false/);
 });
+
+it('does not run the signup focus effect after a touched identity field edit', () => {
+  const form = source('app/register/[token]/SignupForm.tsx');
+  expect(form).toContain('const identityFieldEditRef = useRef(false)');
+  expect(form).toMatch(
+    /identityFieldEditRef\.current = true;\s*validateTouchedField\(field\)/,
+  );
+  expect(form).toMatch(
+    /useEffect\(\(\) => \{\s*if \(identityFieldEditRef\.current\) \{\s*identityFieldEditRef\.current = false;\s*return;\s*\}\s*if \(!submitted\) return;/,
+  );
+});

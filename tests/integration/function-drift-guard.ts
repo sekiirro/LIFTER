@@ -5,6 +5,11 @@ import { loadEnv } from './harness';
 
 export const guardedFunctions = [
   {
+    identity: 'app_private.f15_valid_slider_label(jsonb)',
+    migration: '20261108020200_f15_localized_slider_labels.sql',
+    name: 'app_private.f15_valid_slider_label',
+  },
+  {
     identity: 'app_private.f15_valid_builder_definition(jsonb,boolean)',
     migration: [
       '20261108021002_f15_builder_slider_validation_guard_localized.sql',
@@ -12,6 +17,21 @@ export const guardedFunctions = [
       '20261108020200_f15_localized_slider_labels.sql',
     ],
     name: 'app_private.f15_valid_builder_definition',
+  },
+  {
+    identity: 'public.read_form_assignment_context(uuid)',
+    migration: '20261108020300_f15_context_relationship_state.sql',
+    name: 'public.read_form_assignment_context',
+  },
+  {
+    identity: 'app_private.f15_forms_purge_schedule_activate()',
+    migration: '20261108020500_f15_dedicated_purge_scheduler_lock.sql',
+    name: 'app_private.f15_forms_purge_schedule_activate',
+  },
+  {
+    identity: 'app_private.f15_forms_purge_schedule_deactivate()',
+    migration: '20261108020500_f15_dedicated_purge_scheduler_lock.sql',
+    name: 'app_private.f15_forms_purge_schedule_deactivate',
   },
   {
     identity: 'app_private.ensure_default_onboarding_form(uuid,uuid)',
@@ -46,11 +66,6 @@ export const guardedFunctions = [
       'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)',
     migration: '20261108020100_f15_cancel_alerts_after_lifecycle_end.sql',
     name: 'app_private.evaluate_forms_alerts_core',
-  },
-  {
-    identity: 'app_private.cancel_f15_client_alerts(uuid,uuid)',
-    migration: '20261108020100_f15_cancel_alerts_after_lifecycle_end.sql',
-    name: 'app_private.cancel_f15_client_alerts',
   },
   {
     identity: 'app_private.f15_alert_schedule_immutable()',

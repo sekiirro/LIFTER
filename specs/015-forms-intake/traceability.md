@@ -61,9 +61,38 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 
 | Requirement | Task | Test/evidence | Commit |
 | --- | --- | --- | --- |
+| FR-026 / FR-036 / FR-037 — portable synthetic PO source metadata | T089 | RED: `tests/unit/forms-s14-decision-fixture.test.ts::keeps PO source metadata portable and free of machine-local paths` failed on developer-local source; GREEN: focused file 6/6. A synthetic absolute-path mutation failed the same regression and was restored. | `36aea03` |
+| FR-008 / FR-013 — localized boolean correction-history labels | T092 | RED: `tests/unit/forms-correction-history.test.tsx::localizes boolean values and preserves existing string values` rendered literal `true`; GREEN: focused test 1/1, including false and unchanged string answer. | `d1c61de` |
+| FR-004 / FR-006 / FR-026 / FR-036 / FR-037 — Bidi derived meal template in FormPreview | T093 | `tests/unit/forms-builder-s14.test.tsx::formats derived meal numbers with the approved template and Bidi isolation`; full focused file 8/8 for AR/EN and Western digits. | `72f4016` |
+| FR-004 / FR-006 / FR-007 — remap copied conditional and derived references | T094 | RED: `tests/unit/forms-builder-s14.test.tsx::remaps conditional and derived question references when copying a form` retained the source ID; GREEN: focused file 7/7, with source references unchanged. | `7e356c4` |
+| FR-008 / FR-013 / FR-020 — correction-history GET authorization and current-snapshot filtering | T090 | RED: focused `tests/unit/forms-submission-routes.test.ts` initially failed because the authorized correction-history GET route was absent on A. GREEN: `tests/unit/forms-submission-routes.test.ts::filters correction-history keys to the current assignment snapshot`; focused file 9/9. T090 scope was narrowed so correction-write revision validation remains owned by T082. | `da31455`, `508fedf`, `cf79fa7` |
+## S34 direct-RPC draft key validation
+
+| Requirement | Task | Test/evidence | Commit |
+| --- | --- | --- | --- |
+| FR-008 — autosave accepts only keys in the immutable assignment snapshot | T012 | `tests/integration/forms-r3-drafts.test.ts` passed 1/1 on a clean Stack D replay; full F15 integration batch passed 9 files / 64 tests. The 220-answer payload case uses 60 in-snapshot keys; the 4,096-byte case uses in-snapshot q2 without a character limit. | `be7ac9a`, `d9655f9` |
+
+## S34 final-head task evidence
+
+| Requirement | Task | Test/evidence | Commit |
+| --- | --- | --- | --- |
+| FR-004 / FR-006 / FR-007 — require an English draft title | T086 | tests/integration/forms-builder-persistence.test.ts::rejects whitespace English form names before creating a draft; full F15 Stack D integration 9 files / 64 tests. | 2833e19 |
+| FR-038 / FR-039 — accessible signup field errors and focus behavior | T091 | tests/unit/client-accounts-form.test.ts::does not run the signup focus effect after a touched identity field edit; tests/e2e/client-welcome.spec.ts; full unit 194 files / 2,357 tests and Playwright 79/79. | 2833e19 |
+| FR-026 / FR-036 / FR-037 — rendered intake evidence | T095 | tests/e2e/forms-authorized-route.spec.ts; 60 screenshots, axe clean in all states; INDEX.md enumerates all 126 PNG files in the run directory; reviewed EN dark 1440 N11 capture. | 2833e19 |
+| FR-026 / FR-036 / FR-037 — exact S34 English copy | T096 | tests/unit/forms-s32-approved-intake.test.ts; tests/e2e/forms-authorized-route.spec.ts exact assertions for T08.system, N07, and N11. Full unit 2,357/2,357; Playwright 79/79. | 2833e19 |
+| FR-008 / FR-013 — correction_note bounds | T097 | tests/integration/forms-r3-corrections.test.ts 2/2; migration 20261108020000_f15_correction_note_bounds.sql applied on clean Stack D replay. | 1ed864e |
+| FR-012 / FR-017 / FR-018 / FR-024 — lifecycle-gated alerts and purge cleanup | T098 | tests/integration/forms-alerts.test.ts 7/7; tests/integration/forms-alert-mutations.test.ts 4/4; migration 20261108020100_f15_cancel_alerts_after_lifecycle_end.sql applied on clean Stack D replay. | 1b52aeb |
+| FR-007 / FR-008 — S34-PO-6 autosave migration repair | T100 | Authorized CREATE OR REPLACE FUNCTION and max_chars edit in 20261108010200; clean Stack D reset/replay applied migrations through 20261108020600; tests/integration/forms-r3-drafts.test.ts passed. | 1e8f2b0, be7ac9a |
+| FR-024 / FR-025 — no-ff restack and merge-tree equivalence | T129 | No-ff merge commit `a6253cdb` carries A into B; `git merge-tree --write-tree origin/main HEAD` returned `556ef6813afbcd4e21e9d94f49fad4141c3d6f7a`, equal to B HEAD's tree; `origin/main` is an ancestor. | `a6253cdb` |
+| FR-013 / FR-019 — relationship-ended correction access | T130 | tests/integration/forms-r3-corrections.test.ts; tests/e2e/forms-authorized-route.spec.ts; full Stack D integration 64/64 and Playwright 79/79. | 2833e19 |
+| FR-026 / FR-036 / FR-037 — localized slider labels and validator parity | T131 | tests/integration/forms-builder-persistence.test.ts 22/22; tests/unit/forms-s32-approved-intake.test.ts; clean Stack D replay applied 20261108020200_f15_localized_slider_labels.sql. | 62158e1 |
+| FR-019 — dedicated purge scheduler lock | T132 | tests/integration/forms-purge.test.ts::uses a dedicated purge scheduler lock without changing alert evaluation locks; file passed 3/3 on Stack D. | 205ecc3 |
+| FR-024 — configured-origin Playwright cookies and URLs | T133 | tests/e2e/forms-client.spec.ts, tests/e2e/client-welcome.spec.ts, tests/e2e/packages.spec.ts; complete F15 Playwright run 79/79. | 2833e19 |
+| FR-004 / FR-006 — production staff failures use generic messages | T134 | tests/e2e/forms-production-route.spec.ts; complete F15 Playwright run 79/79. | 2833e19 |
+| FR-026 / FR-036 / FR-037 — portable S34 PO source citations in plan and Analyze artifacts | T089 | `tests/unit/forms-s14-decision-fixture.test.ts::keeps plan PO citations portable and catches absolute-path regressions` passed 1/1 (focused file 7/7 with B's existing metadata test) on commit `0adb43a` and the merged B tree. | 0adb43a |
 | FR-008 / FR-013 / FR-020 — current assignment authorization and snapshot filtering for correction history | T090 | RED: focused `tests/unit/forms-submission-routes.test.ts` initially failed because the authorized correction-history GET route was absent on A. GREEN: `tests/unit/forms-submission-routes.test.ts::filters correction-history keys to the current assignment snapshot`; focused file 9/9. T090 scope was narrowed so correction-write revision validation remains owned by T082. | `da31455`, `508fedf`, `cf79fa7` |
 | FR-008 / FR-013 - correction_note Unicode code-point and UTF-8 byte bounds before RPC and in the database | T097 | A commit 1ed864e; tests/unit/forms-corrections.test.ts and tests/unit/forms-submission-routes.test.ts 15/15; clean Stack D migration replay; tests/integration/forms-r3-corrections.test.ts 2/2. | 1ed864e |
-| FR-012 / FR-017 / FR-018 / FR-024 ? lifecycle-gated client-late alerts and relationship-end cleanup | T098 | Commit 1b52aeb; Stack D clean replay; tests/integration/forms-alerts.test.ts 7/7 and tests/integration/forms-alert-mutations.test.ts 4/4, including crash-safe function MD5 restore. | 1b52aeb |
+| FR-012 / FR-017 / FR-018 / FR-024 - lifecycle-gated client-late alerts and relationship-end cleanup | T098 | Commit 1b52aeb; Stack D clean replay; tests/integration/forms-alerts.test.ts 7/7 and tests/integration/forms-alert-mutations.test.ts 4/4, including crash-safe function MD5 restore. | 1b52aeb |
 | FR-007 / FR-008 - draft intent idempotency and altered-payload conflict | T012 | CodeRabbit z3L1w follow-up on commit 34f30a4; tests/integration/forms-r3-drafts.test.ts 1/1 on Stack D; baseline now replays the already-saved selectionKey value before testing an altered payload. | 34f30a4 |
 | FR-026 / FR-036 / FR-037 - portable S34 PO source citations in plan and Analyze artifacts | T089 | `tests/unit/forms-s14-decision-fixture.test.ts::keeps plan PO citations portable and catches absolute-path regressions` passed 1/1 (focused file 6/6) on commit `0adb43a`. | 0adb43a |
 
@@ -72,6 +101,8 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 
 | FR | Task | Test | Evidence |
 |---|---|---|---|
+| FR-024/025 | T101 | `tests/unit/ci-local-e2e.test.ts::uses the Vite runner config loader for integration tests`; Stack D `tests/integration/password-policy-parity.test.ts` (58 passed) | Commit `44573b1`; unit 2/2 and Stack D integration 1 file/58 tests passed on commit `44573b1`. Database StartedAt remained `2026-11-06T01:41:22.769866059Z`. |
+| FR-024/025 | T111 | `specs/015-forms-intake/traceability.md` T012 row restored from literal escape/control characters to a valid heading, path, and commit IDs; recorded in A-to-B merge `759a1b5`. | `759a1b5` |
 | FR-024/025 | T101 | `tests/unit/ci-local-e2e.test.ts::uses the Vite runner config loader for integration tests` passed 2/2; Stack D `tests/integration/password-policy-parity.test.ts` passed 58/58 using the exact npm integration command after Vitest 5.1.0 upgrade. | `44573b1` (runner-loader contract), `4a21a34` (Vitest 5.1.0); StartedAt unchanged at `2026-11-06T02:38:00.438257823Z`. |
 | FR-024/025 | T101 | `tests/integration/function-drift-guard.test.ts` passed 1/1 after pinning final function bodies; clean Stack D F15 integration harness passed 9/9 files / 64/64 tests. | `2f6c529`, `213b106`; B integration head `aa21fe9`; StartedAt `2026-11-06T03:43:08.260140976Z` unchanged. |
 | FR-004/006/008 | T102 | `tests/integration/forms-r3-drafts.test.ts` direct-RPC N08 budget/foods regression; full Stack D integration 9 files / 64 passed; `tests/unit/forms-s14-validation.test.ts` 9/9. | `83e32c4` |
@@ -82,6 +113,11 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 | FR-024/025 | T109 | `specs/015-forms-intake/quickstart.md` resolves repository and Stack D paths from current checkout; `format:check` passed. | `f779402` |
 | FR-024/025 | T110 | `specs/015-forms-intake/reports/evidence/s18-r4/INDEX.md` lists the 50 verified S18 screenshots and hashes; copied capture hashes matched the review-provided source set. | `722c3a2` |
 | FR-024/025 | T121 | `specs/015-forms-intake/reports/evidence/s18-r4/INDEX.md`; all 50 screenshot targets resolve to files beside the index. | `9280643d` |
-| FR-024/025 | T122 | `specs/015-forms-intake/tasks.md`; repository task ID scan shows T102 is unique and the open restack task has ID T129. | `cd12a8e7` |
+| FR-024/025 | T122 | `specs/015-forms-intake/tasks.md`; repository task ID scan shows T102 is unique and the restack task is tracked under T129. | `cd12a8e7` |
 | FR-024/025 | T111 | Analyze S33 status marked historical; S30 quotation/S31 source label repaired; T012 traceability row restored in B stack merge. `format:check` passed. | `f779402`, `759a1b5`, `c7b9de9` |
+| FR-038/039 | T112 | `tests/unit/client-signup-form.test.tsx` pending-state helper coverage (included in current B unit total) and `tests/e2e/client-signup.spec.ts` pending-submit blur test; signup Playwright 4/4. | `9497611` |
+| FR-026/036/037 | T113 | `tests/integration/forms-builder-persistence.test.ts` exact localized N11 copy; Stack D F15 integration 9 files / 64 passed after migration 210 and updated drift guard contract. | `aede2cb`, `26a3438`, `4332f2f` |
+| FR-039 | T114 | `tests/unit/client-signup-validation.test.ts` future DOB cases passed in focused 27/27 run; `tests/e2e/client-signup.spec.ts` 4/4 on Stack D. | `9e0cb6f` |
 | FR-024/025 | T101 | Stack D `tests/integration/rls-catalog.test.ts` + `tests/integration/branding-function-privileges.test.ts` passed 42/42 after updating the branch-specific private-function and service-role inventories. | A `0109ff2`; B `6155640`; StartedAt unchanged `2026-11-06T03:43:08.260140976Z`. |
+
+| FR-026/036/037 | T127 | UTF-8 marker scan found zero mojibake markers in Analyze, plan, and traceability; format:check passed on the repaired artifacts. | ba00f905 |

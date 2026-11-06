@@ -1,0 +1,288 @@
+import AxeBuilder from '@axe-core/playwright';
+import { expect, test } from '@playwright/test';
+import { mkdir } from 'node:fs/promises';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import { getMessages } from '../../lib/i18n';
+import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
+
+const origin = new URL(
+  process.env.PLAYWRIGHT_BASE_URL ??
+    process.env.APP_ORIGIN ??
+    'http://localhost:3000',
+).origin;
+const screenshotDirectory = join(tmpdir(), 'lifter-f15-signup');
+const local = Boolean(
+  process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
+);
+let token: string;
+
+test.describe.serial('T038 invitation signup UI', () => {
+  test.beforeAll(async () => {
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
+    const { registrationFixture, secret, issue, checked } =
+      await import('../integration/registration-links-fixture');
+    const fixture = await registrationFixture();
+    const issued = secret();
+    checked(
+      await issue(fixture, fixture.po.client, { token_hash: issued.hash }),
+    );
+    token = issued.token;
+    await mkdir(screenshotDirectory, { recursive: true });
+  });
+
+  test('renders and passes axe across RTL/LTR, themes, mobile and desktop', async ({
+    page,
+    context,
+  }) => {
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
+    for (const locale of ['ar', 'en'] as const) {
+      const messages = getMessages(locale);
+      for (const theme of ['light', 'dark'] as const) {
+        for (const viewport of [
+          { name: 'mobile', width: 390, height: 844 },
+          { name: 'desktop', width: 1440, height: 900 },
+        ] as const) {
+          await page.setViewportSize({
+            width: viewport.width,
+            height: viewport.height,
+          });
+          await context.addCookies([
+            { name: LOCALE_COOKIE, value: locale, url: origin },
+            { name: THEME_COOKIE, value: theme, url: origin },
+          ]);
+          await page.goto(`/register/${token}`);
+          await expect(page.locator('html')).toHaveAttribute(
+            'dir',
+            locale === 'ar' ? 'rtl' : 'ltr',
+          );
+          for (const field of [
+            'name',
+            'dateOfBirth',
+            'username',
+            'telegramUsername',
+            'email',
+            'password',
+          ])
+            await expect(page.locator(`form [name="${field}"]`)).toBeVisible();
+          await expect(page.locator('form input[type="checkbox"]')).toHaveCount(
+            0,
+          );
+          await expect(page.locator('form [name="sex"]')).toHaveCount(0);
+          await expect(page.locator('form [name="health"]')).toHaveCount(0);
+          await expect(
+            page.getByText(messages['forms.termsCardTitle'], { exact: true }),
+          ).toHaveCount(0);
+          const serious = (
+            await new AxeBuilder({ page }).analyze()
+          ).violations.filter(
+            (violation) =>
+              violation.impact === 'serious' || violation.impact === 'critical',
+          );
+          expect(serious).toEqual([]);
+          await page.screenshot({
+            path: join(
+              screenshotDirectory,
+              `${locale}-${theme}-${viewport.name}.png`,
+            ),
+            fullPage: true,
+          });
+        }
+      }
+    }
+  });
+
+  test('blocks invalid identity locally and leaves signup invitation-only', async ({
+    page,
+    context,
+  }) => {
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
+    const messages = getMessages('en');
+    await context.addCookies([
+      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: THEME_COOKIE, value: 'light', url: origin },
+    ]);
+    await page.goto(`/register/${token}`);
+    const nameField = page.getByLabel(messages['clientSignup.name'], {
+      exact: true,
+    });
+    const dateOfBirthField = page.getByLabel(
+      messages['clientSignup.dateOfBirth'],
+      { exact: true },
+    );
+    await dateOfBirthField.fill('2099-01-01');
+    const usernameField = page.getByLabel(messages['clientSignup.username'], {
+      exact: true,
+    });
+    await usernameField.fill('system');
+    await nameField.focus();
+    await nameField.blur();
+    let focusedAfterErrorState = false;
+    await page.exposeFunction(
+      'captureSignupFocusState',
+      (hasRenderedErrorState: boolean) => {
+        focusedAfterErrorState = hasRenderedErrorState;
+      },
+    );
+    await nameField.evaluate((element) => {
+      const win = window as unknown as Window & {
+        captureSignupFocusState: (hasRenderedErrorState: boolean) => void;
+      };
+      element.addEventListener(
+        'focus',
+        () => {
+          const describedBy = element.getAttribute('aria-describedby');
+          win.captureSignupFocusState(
+            element.getAttribute('aria-invalid') === 'true' &&
+              Boolean(describedBy && document.getElementById(describedBy)),
+          );
+        },
+        { once: true },
+      );
+    });
+    await usernameField.focus();
+    await usernameField.press('Enter');
+    await expect(nameField).toBeFocused();
+    await expect.poll(() => focusedAfterErrorState).toBe(true);
+    await expect(
+      page.getByLabel(messages['clientSignup.name'], { exact: true }),
+    ).toHaveAttribute('aria-invalid', 'true');
+    await expect(
+      page.getByText(messages['clientSignup.fieldError']).first(),
+    ).toBeVisible();
+    await expect(nameField).toHaveAttribute(
+      'aria-describedby',
+      'signup-name-error',
+    );
+    await dateOfBirthField.focus();
+    await dateOfBirthField.fill('2000-01-01');
+    await expect(dateOfBirthField).toBeFocused();
+    await usernameField.focus();
+    await usernameField.press('Enter');
+    await expect(nameField).toBeFocused();
+    await nameField.fill('Heba Sami Nabil');
+    await expect(nameField).not.toHaveAttribute('aria-invalid');
+    await expect(nameField).not.toHaveAttribute('aria-describedby');
+    await usernameField.fill('valid_user_23');
+    await expect(usernameField).toBeFocused();
+    expect(page.url()).toContain('/register/');
+  });
+
+  test('does not show blur errors while signup submission is pending', async ({
+    page,
+    context,
+  }) => {
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
+    const messages = getMessages('en');
+    await context.addCookies([
+      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: THEME_COOKIE, value: 'light', url: origin },
+    ]);
+    await page.goto(`/register/${token}`);
+    await page
+      .getByLabel(messages['clientSignup.name'], { exact: true })
+      .fill('Heba Sami Nabil');
+    await page
+      .getByLabel(messages['clientSignup.dateOfBirth'], { exact: true })
+      .fill('2000-10-29');
+    await page
+      .getByLabel(messages['clientSignup.username'], { exact: true })
+      .fill('valid_user_23');
+    await page
+      .getByLabel(messages['clientSignup.email'], { exact: true })
+      .fill('pending@example.test');
+    await page
+      .getByLabel(messages['clientSignup.phone'], { exact: true })
+      .fill('1012345678');
+    await page
+      .getByLabel(messages['clientSignup.password'], { exact: true })
+      .fill('Complex!2345');
+
+    let signalPost!: () => void;
+    let releasePost!: () => void;
+    const postSeen = new Promise<void>((resolve) => {
+      signalPost = resolve;
+    });
+    const postGate = new Promise<void>((resolve) => {
+      releasePost = resolve;
+    });
+    await page.route('**/register/**', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.continue();
+        return;
+      }
+      signalPost();
+      await postGate;
+      await route.continue();
+    });
+
+    const nameField = page.getByLabel(messages['clientSignup.name'], {
+      exact: true,
+    });
+    try {
+      await page
+        .getByRole('button', { name: messages['clientSignup.submit'] })
+        .click();
+      await postSeen;
+      await expect(nameField).toBeDisabled();
+      await nameField.evaluate((element) =>
+        element.dispatchEvent(new FocusEvent('blur')),
+      );
+      await expect(nameField).not.toHaveAttribute('aria-invalid', 'true');
+      await expect(
+        page.getByText(messages['clientSignup.fieldError']),
+      ).toHaveCount(0);
+    } finally {
+      releasePost();
+    }
+  });
+
+  test('rejects unexpected signup fields generically without a browser session', async ({
+    page,
+    context,
+  }) => {
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
+    const messages = getMessages('en');
+    await context.addCookies([
+      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: THEME_COOKIE, value: 'light', url: origin },
+    ]);
+    await page.goto(`/register/${token}`);
+    await page
+      .getByLabel(messages['clientSignup.name'], { exact: true })
+      .fill('Heba Sami Nabil');
+    await page
+      .getByLabel(messages['clientSignup.dateOfBirth'], { exact: true })
+      .fill('2000-10-29');
+    await page
+      .getByLabel(messages['clientSignup.username'], { exact: true })
+      .fill('heba');
+    await page
+      .getByLabel(messages['clientSignup.email'], { exact: true })
+      .fill('heba@example.test');
+    await page
+      .getByLabel(messages['clientSignup.phone'], { exact: true })
+      .fill('1012345678');
+    await page
+      .getByLabel(messages['clientSignup.password'], { exact: true })
+      .fill('Complex!2345');
+    await page.locator('form').evaluate((form) => {
+      const unexpected = document.createElement('input');
+      unexpected.name = 'unexpected';
+      unexpected.value = 'untrusted';
+      form.append(unexpected);
+    });
+    await page
+      .getByRole('button', { name: messages['clientSignup.submit'] })
+      .click();
+    await expect(page.locator('form [role="alert"]')).toHaveText(
+      messages['clientSignup.invalidInput'],
+    );
+    expect(
+      (await context.cookies(origin)).some((cookie) =>
+        cookie.name.startsWith('sb-'),
+      ),
+    ).toBe(false);
+    await expect(page.locator('form input[type="checkbox"]')).toHaveCount(0);
+  });
+});

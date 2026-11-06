@@ -49,21 +49,26 @@ These corrections are within the previously approved F15 scope. They do not add 
 - [ ] T083 [FR-017/019/024/025] Retry only approved transient Telegram preparation failures using the existing allow-listed job error contract; prove safe dead-letter output with synthetic fault data and a raw-error mutation.
 - [ ] T084 [FR-024/025/026] Replace obsolete quickstart integration commands and refresh stale T012 task evidence with current file/test references; do not change scope or decision records.
 - [ ] T085 [FR-002/003/026/036/037] Restore default-onboarding regression coverage and establish the R3 draft mutation baseline before mutation-specific assertions; tests must prove existing behavior without weakening assertions.
-- [ ] T086 [FR-004/006/007] Under S34-PO-5=B, require a nonblank English draft title (`forms.name`) and reject Arabic-only drafts using an existing approved message key; if no existing key fits, stop and record PO-DECISION-NEEDED.
+- [x] T086 [FR-004/006/007] Under S34-PO-5=B, require a nonblank English draft title (`forms.name`) and reject Arabic-only drafts using an existing approved message key; if no existing key fits, stop and record PO-DECISION-NEEDED.
 - [ ] T087 [FR-008/013] Return the existing non-retryable submitted/business status when a draft save races with or follows submission; do not retry a permanent state conflict as a transient outage.
 - [ ] T088 [FR-039] Run Terms policy fixture inserts and dependent assertions in the same rollback-scoped transaction so append-only test rows cannot contaminate later current-policy lookups.
 - [x] T089 [FR-026/036/037] Remove developer-local S34 PO source paths from the plan and Analyze artifacts; add a regression check for those path citations. Evidence: commit `0adb43a`; `tests/unit/forms-s14-decision-fixture.test.ts::keeps plan PO citations portable and catches absolute-path regressions` passed.
 - [x] T090 [FR-008/013/020] Authorize correction-history GET through the staff-capable correction-context reader and filter returned answers to the current assignment snapshot; test valid and missing synthetic contexts with generic denial behavior.
-- [ ] T091 [FR-038/039] Render server-side signup field errors beside their fields, clear the error on the approved edit path, and move focus accessibly without adding unapproved copy; cover with unit and browser tests.
-- [ ] T092 [FR-008/013] Localize boolean answer labels in correction history through existing AR/EN message keys; retain current string and numeric rendering.
-- [ ] T093 [FR-004/006/026/036/037] Render dynamic derived meal labels in FormPreview through the existing Bidi/template path for AR-RTL and EN-LTR; add exact interpolation and direction tests without changing copy or styling.
-- [ ] T094 [FR-004/006/007] Remap conditional and derived-option source question references when copying a form; prove valid copied references and unchanged source with synthetic fixtures.
-- [ ] T095 [FR-026/036/037] Capture the real T03/N07 AR-RTL/EN-LTR × light/dark matrix at 390px, 1024px, and 1440px and make `INDEX.md` list exactly the captures present; review against DESIGN.md with axe evidence.
-- [ ] T096 [FR-026/036/037] Apply S34-PO-4/6 exact English intake approvals, including N07.meal_count, the T08 system prompt, N11.label.0, all remaining approved pending English rows, and N07 no-fixed-time; update spec/fixtures/approved-copy fixtures and assert exact changed English strings.
+- [x] T091 [FR-038/039] Render server-side signup field errors beside their fields, clear the error on the approved edit path, and move focus accessibly without adding unapproved copy; cover with unit and browser tests.
+- [x] T092 [FR-008/013] Localize boolean answer labels in correction history through existing AR/EN message keys; retain current string and numeric rendering.
+- [x] T093 [FR-004/006/026/036/037] Render dynamic derived meal labels in FormPreview through the existing Bidi/template path for AR-RTL and EN-LTR; add exact interpolation and direction tests without changing copy or styling.
+- [x] T094 [FR-004/006/007] Remap conditional and derived-option source question references when copying a form; prove valid copied references and unchanged source with synthetic fixtures.
+- [x] T095 [FR-026/036/037] Capture the real T03/N07 AR-RTL/EN-LTR × light/dark matrix at 390px, 1024px, and 1440px and make `INDEX.md` list exactly the captures present; review against DESIGN.md with axe evidence.
+- [x] T096 [FR-026/036/037] Apply S34-PO-4/6 exact English intake approvals, including N07.meal_count, the T08 system prompt, N11.label.0, all remaining approved pending English rows, and N07 no-fixed-time; update spec/fixtures/approved-copy fixtures and assert exact changed English strings.
 - [x] T097 [FR-008/013] Enforce S34-PO-2 correction_note bounds of 1,000 Unicode code points and 4 KiB UTF-8 in the route before RPC and in a new forward migration; prove boundary and over-bound cases.
 - [x] T098 [FR-012/017/018/024] Under S34-PO-3, stop/cancel client-late evaluation and remove its related alert rows at Closure/Refund/Deactivation, including ended-relationship purge scope; add RED-first lifecycle tests and a new forward migration.
-- [ ] T100 [FR-007/008] Apply the one-time S34-PO-6=A edit only to `20261108010200_f15_reject_autosave_after_submission.sql`: use CREATE OR REPLACE FUNCTION and add the per-question max_chars check; prove clean Stack D replay after reset.
-- [ ] T129 [FR-024/025] Restack F15 PR branches over the current `origin/main` with no-ff merge commits, preserve migration history, and prove the stacked B tree matches the PR base merge-tree result.
+- [x] T100 [FR-007/008] Apply the one-time S34-PO-6=A edit only to `20261108010200_f15_reject_autosave_after_submission.sql`: use CREATE OR REPLACE FUNCTION and add the per-question max_chars check; prove clean Stack D replay after reset.
+- [x] T129 [FR-024/025] Restack F15 PR branches over the current `origin/main` with no-ff merge commits, preserve migration history, and prove the stacked B tree matches the PR base merge-tree result; `a6253cdb` contains A, and `merge-tree --write-tree origin/main HEAD` equals B's tree `556ef681`.
+- [x] T130 [FR-013/019] Carry the authenticated client's active relationship state from the assignment-context RPC into the client form; after relationship end, retain submitted history and hide/disable correction entry per existing Q1 copy. Add route and Stack D coverage.
+- [x] T131 [FR-026/036/037] Render approved localized English slider labels while preserving Arabic labels, and accept legacy scalar plus bilingual labels in the forward SQL validator migration; prove the committed SQL definition on Stack D.
+- [x] T132 [FR-019] Give purge scheduler activation/deactivation a dedicated advisory lock in a new forward migration; prove separation from alert evaluator and alert scheduler locks on Stack D.
+- [x] T133 [FR-024] Normalize Playwright locale/theme cookies and expected URLs to the configured browser origin across the reviewed F15 journeys.
+- [x] T134 [FR-004/006] Route production staff-form loading and action failures through existing generic messages while keeping preview-only copy scoped to the demo surface.
 
 ## Phase 0: Stack and shared-contract prerequisites
 
@@ -337,13 +342,13 @@ S27 h2 executed all eight T018 mutants against Stack D at pre-merge head `f42d4b
 - [x] T109 [FR-024/025] Make Stack D quickstart commands derive paths from the checkout.
 - [x] T110 [FR-024/025] Replace the S18 historical local screenshot path with the stable run-artifact reference when its original capture set can be identified; otherwise leave the finding open with an evidence-based reply.
 - [x] T111 [FR-024/025] Mark the superseded S33 Analyze status as historical; repair the S30 quotation and S31 migration-reference evidence text without changing their recorded findings.
-- [ ] T112 [FR-038/039] Skip touched-field blur validation while signup submission disables the inputs; add pending-submit unit and browser coverage with no visual/copy/token changes.
-- [ ] T113 [FR-026/036/037] Reconcile the EN translation table with S34/S33 approvals and provision localized N11 middle/maximum labels; preserve exact approved strings and use a new migration for the already-pushed starter provisioner.
-- [ ] T114 [FR-039] Keep the E2E and unit date-of-birth cases in the future so they continue to exercise the DOB validator.
+- [x] T112 [FR-038/039] Skip touched-field blur validation while signup submission disables the inputs; add pending-submit unit and browser coverage with no visual/copy/token changes.
+- [x] T113 [FR-026/036/037] Reconcile the EN translation table with S34/S33 approvals and provision localized N11 middle/maximum labels; preserve exact approved strings and use a new migration for the already-pushed starter provisioner.
+- [x] T114 [FR-039] Keep the E2E and unit date-of-birth cases in the future so they continue to exercise the DOB validator.
 - [ ] T115 [FR-038/039] Align the rendered signup username rule with the shared server validator and verify duplicate username collisions return the approved generic result.
 - [ ] T116 [FR-008] Reject malformed runtime form elements before accessing answer properties; cover primitives and null values.
 - [ ] T117 [FR-004/006] Make missing-slider validation NULL-safe in the forward SQL validator and add a direct missing-middle regression.
-- [ ] T118 [FR-024/025] Clean up only rows created by the alert-mutation tests, including jobs, inbox, and audit rows.
+- [ ] T118 [FR-024/025] Clean up only mutable rows created by the alert-mutation tests and preserve append-only audit events.
 - [ ] T119 [FR-024/025] Synchronize alert-lock race tests on observed PostgreSQL lock state instead of elapsed sleeps.
 - [ ] T120 [FR-008/013] Make the correction-matrix cross-tenant mutant probe fail only when its named assertion is violated.
 - [x] T121 [FR-024/025] Correct evidence links to point at tracked repository artifacts; all 50 PNG targets resolve.
@@ -352,4 +357,4 @@ S27 h2 executed all eight T018 mutants against Stack D at pre-merge head `f42d4b
 - [ ] T124 [FR-008/013] Return the accepted draft revision when the client submission request fails after autosave.
 - [ ] T125 [FR-024/025] Let local Playwright reuse an already healthy server without allowing CI to reuse an unrelated server.
 - [ ] T126 [FR-038/039] Set preference cookies on the configured Playwright base origin and cover a non-default hostname.
-- [ ] T127 [FR-026/036/037] Restore valid UTF-8 punctuation in the scoped F15 Analyze, plan, and traceability records without changing approved Arabic copy.
+- [x] T127 [FR-026/036/037] Restore valid UTF-8 punctuation in the scoped F15 Analyze, plan, and traceability records without changing approved Arabic copy.

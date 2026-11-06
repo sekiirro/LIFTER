@@ -84,6 +84,35 @@ function definition(label = 'Editable prompt') {
   };
 }
 
+it('accepts bilingual slider labels while preserving legacy scalar labels', async () => {
+  const value = definition();
+  value.questions.push({
+    id: 'N11',
+    sectionId: 'section-3',
+    type: 'slider',
+    required: true,
+    label: { en: 'How hungry do you feel?', ar: 'سؤال' },
+    validation: { min: 0, max: 10, step: 1 },
+    labels: {
+      minimum: { en: 'I barely feel hungry', ar: 'مش بجوع تقريبًا' },
+      middle: 'Moderate hunger',
+      maximum: 'Very hungry',
+    },
+    feedbackBands: [{ min: 0, max: 10, text: 'Synthetic feedback' }],
+  } as never);
+  const [accepted] = await db`
+    select app_private.f15_valid_builder_definition(${db.json(value)},false) as valid`;
+  expect(accepted!.valid).toBe(true);
+
+  const invalid = structuredClone(value);
+  const labels = (invalid.questions.at(-1)! as Record<string, unknown>)
+    .labels as Record<string, unknown>;
+  labels.minimum = { en: 'I barely feel hungry', extra: 'unexpected' };
+  const [rejected] = await db`
+    select app_private.f15_valid_builder_definition(${db.json(invalid)},false) as valid`;
+  expect(rejected!.valid).toBe(false);
+});
+
 it('accepts the approved B06 identifier for the N12 series selector', async () => {
   const value = definition();
   value.questions.unshift({
@@ -103,6 +132,58 @@ it('accepts the approved B06 identifier for the N12 series selector', async () =
   const [result] = await db`
     select app_private.f15_valid_builder_definition(${db.json(value)},false) as valid`;
   expect(result!.valid).toBe(true);
+});
+
+it('provisions the exact approved starter copy for a new workspace', async () => {
+  await expect(
+    db.begin(async (tx) => {
+      const fixture = await workspace(tx);
+      const [row] = await tx`
+        select definition from public.form_versions
+        where workspace_id=${fixture.workspaceId} and form_id=${fixture.formId}
+          and version_number=1`;
+      const questions = (
+        row!.definition as {
+          questions: Array<{
+            id: string;
+            label?: { en?: string };
+            optionLabels?: Array<{ en: string }>;
+            labels?: {
+              minimum?: { en?: string };
+              middle?: { en?: string };
+              maximum?: { en?: string };
+            };
+          }>;
+        }
+      ).questions;
+      expect(
+        questions.find((question) => question.id === 'N07.meal_count'),
+      ).toMatchObject({
+        label: { en: 'How many meals would you like to eat per day?' },
+        optionLabels: [
+          { en: '2 meals' },
+          { en: '3 meals' },
+          { en: '4 meals' },
+          { en: '5 meals' },
+        ],
+      });
+      expect(
+        questions.find((question) => question.id === 'T08.system'),
+      ).toMatchObject({
+        label: { en: 'What training split would you like to follow?' },
+      });
+      expect(questions.find((question) => question.id === 'N11')).toMatchObject(
+        {
+          labels: {
+            minimum: { en: 'I barely feel hungry' },
+            middle: { en: 'Moderate hunger' },
+            maximum: { en: 'Very strong hunger' },
+          },
+        },
+      );
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
 });
 
 it('rejects N12 and derived definitions with absent required selector metadata', async () => {
@@ -274,10 +355,15 @@ describe('T006/T009 persisted Builder writes', () => {
     await withCrashSafeFunctionMutant(
       'app_private.f15_valid_builder_definition(jsonb,boolean)',
       (body) =>
-        body.replace(
-          "jsonb_typeof(question->'labels'->'middle') is distinct from 'string'",
-          'false',
-        ),
+        body
+          .replace(
+            "not app_private.f15_valid_slider_label(question->'labels'->'middle')",
+            'false',
+          )
+          .replace(
+            "btrim(coalesce(question->'labels'->'middle'->>'en',question->'labels'->'middle'->>'ar',question->'labels'->>'middle',''))=''",
+            'false',
+          ),
       async () =>
         expectInvariantFailure(async () => {
           const invalid = structuredClone(

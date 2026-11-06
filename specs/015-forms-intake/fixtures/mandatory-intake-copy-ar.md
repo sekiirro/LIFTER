@@ -41,7 +41,7 @@ SECTION 02 — التمرين (8 Questions)
 3. حابب تتمرن كام يوم في الأسبوع؟
 
 * Type: Single-choice Cards.
-* Options: 2–6 days.
+* Options: Western digits only — 2, 3, 4, 5, 6.
 
 4. تقدر تخصص وقت قد إيه للتمرينة؟
 

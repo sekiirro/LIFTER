@@ -21,8 +21,21 @@ export async function submitClientSignup(
     const requestHeaders = await headers();
     locale = parseLocale((await cookies()).get(LOCALE_COOKIE)?.value);
     const submitted: Record<string, unknown> = {};
+    const signupFieldNames = new Set([
+      'name',
+      'dateOfBirth',
+      'username',
+      'telegramUsername',
+      'email',
+      'phone',
+      'password',
+    ]);
     for (const [key, entry] of formData.entries()) {
       if (key === 'request_secret' || key.startsWith('$ACTION_')) continue;
+      if (!signupFieldNames.has(key)) {
+        submitted.__invalid_signup_shape = true;
+        continue;
+      }
       if (Object.hasOwn(submitted, key)) {
         const prior = submitted[key];
         submitted[key] = Array.isArray(prior)
