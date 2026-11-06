@@ -72,3 +72,9 @@ No PO-deferred requirement was identified; therefore no row is marked DEFERRED. 
 | Finding | FR | Task | Test | Evidence |
 |---|---|---|---|---|
 | PRRT_kwDOVYgYQ860WRSj — explicit unavailable Add Exercise workspace must use generic 404, preserving explicit workspace scope | FR-001, FR-002, FR-016 | T039 | `tests/unit/exercise-library-new-page.test.tsx::denies workspace_owner when an explicit workspace is unavailable`; `::denies trainer when an explicit workspace is unavailable`; `::uses the explicitly requested available authoring workspace`; `::keeps the existing default when the workspace parameter is absent`; `::keeps the existing default when the workspace parameter is empty` | Implementation commit `45f70a8b867714f3d3d3b6de88abd8cfd2c22cfa`; RED: 2 failing/6 passing before fix; GREEN focused suite: 9/9 on that commit. Final-head gates recorded in the S35 run report. |
+
+## S35 PR #43 Exercise Detail selector finding
+
+| Finding | FR | Task | Test | Evidence |
+|---|---|---|---|---|
+| PRRT_kwDOVYgYQ860XFbn — remove the PO “None” choice from explicit workspace scope so a visible choice cannot submit a request that returns 404 | FR-002, FR-011, FR-012 | T038 | `tests/unit/exercise-detail-page.test.tsx::shows the empty workspace choice only for platform-owner global detail`; `tests/e2e/exercise-library-production.spec.ts` AR/EN × light/dark × 360/1024 detail matrix with keyboard and axe | Commit `995f659ab83cbe217e0165e344770d4df2f1e24e`; focused route suites 27/27; Stack C Playwright 24/24, axe clean. Screenshots under `%TEMP%\lifter-s32-f16-lib15` (eight detail captures). |
