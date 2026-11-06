@@ -63,7 +63,7 @@ These corrections are within the previously approved F15 scope. They do not add 
 - [x] T097 [FR-008/013] Enforce S34-PO-2 correction_note bounds of 1,000 Unicode code points and 4 KiB UTF-8 in the route before RPC and in a new forward migration; prove boundary and over-bound cases.
 - [x] T098 [FR-012/017/018/024] Under S34-PO-3, stop/cancel client-late evaluation and remove its related alert rows at Closure/Refund/Deactivation, including ended-relationship purge scope; add RED-first lifecycle tests and a new forward migration.
 - [ ] T100 [FR-007/008] Apply the one-time S34-PO-6=A edit only to `20261108010200_f15_reject_autosave_after_submission.sql`: use CREATE OR REPLACE FUNCTION and add the per-question max_chars check; prove clean Stack D replay after reset.
-- [ ] T102 [FR-024/025] Restack F15 PR branches over the current `origin/main` with no-ff merge commits, preserve migration history, and prove the stacked B tree matches the PR base merge-tree result.
+- [ ] T129 [FR-024/025] Restack F15 PR branches over the current `origin/main` with no-ff merge commits, preserve migration history, and prove the stacked B tree matches the PR base merge-tree result.
 
 ## Phase 0: Stack and shared-contract prerequisites
 
@@ -340,3 +340,16 @@ S27 h2 executed all eight T018 mutants against Stack D at pre-merge head `f42d4b
 - [ ] T112 [FR-038/039] Skip touched-field blur validation while signup submission disables the inputs; add pending-submit unit and browser coverage with no visual/copy/token changes.
 - [ ] T113 [FR-026/036/037] Reconcile the EN translation table with S34/S33 approvals and provision localized N11 middle/maximum labels; preserve exact approved strings and use a new migration for the already-pushed starter provisioner.
 - [ ] T114 [FR-039] Keep the E2E and unit date-of-birth cases in the future so they continue to exercise the DOB validator.
+- [ ] T115 [FR-038/039] Align the rendered signup username rule with the shared server validator and verify duplicate username collisions return the approved generic result.
+- [ ] T116 [FR-008] Reject malformed runtime form elements before accessing answer properties; cover primitives and null values.
+- [ ] T117 [FR-004/006] Make missing-slider validation NULL-safe in the forward SQL validator and add a direct missing-middle regression.
+- [ ] T118 [FR-024/025] Clean up only rows created by the alert-mutation tests, including jobs, inbox, and audit rows.
+- [ ] T119 [FR-024/025] Synchronize alert-lock race tests on observed PostgreSQL lock state instead of elapsed sleeps.
+- [ ] T120 [FR-008/013] Make the correction-matrix cross-tenant mutant probe fail only when its named assertion is violated.
+- [ ] T121 [FR-024/025] Correct evidence links to point at tracked repository artifacts.
+- [ ] T122 [FR-024/025] Keep task identifiers unique and trace the restack task under T129.
+- [ ] T123 [FR-008/013] Apply a successfully saved revision to the staff console before attempting publish and preserve it on publish failure.
+- [ ] T124 [FR-008/013] Return the accepted draft revision when the client submission request fails after autosave.
+- [ ] T125 [FR-024/025] Let local Playwright reuse an already healthy server without allowing CI to reuse an unrelated server.
+- [ ] T126 [FR-038/039] Set preference cookies on the configured Playwright base origin and cover a non-default hostname.
+- [ ] T127 [FR-026/036/037] Restore valid UTF-8 punctuation in the scoped F15 Analyze, plan, and traceability records without changing approved Arabic copy.
