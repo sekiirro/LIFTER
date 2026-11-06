@@ -162,7 +162,7 @@ test.describe.serial('T038 invitation signup UI', () => {
     await nameField.fill('Heba Sami Nabil');
     await expect(nameField).not.toHaveAttribute('aria-invalid');
     await expect(nameField).not.toHaveAttribute('aria-describedby');
-    await usernameField.fill('valid-user-23');
+    await usernameField.fill('valid_user_23');
     await expect(usernameField).toBeFocused();
     expect(page.url()).toContain('/register/');
   });
@@ -186,7 +186,7 @@ test.describe.serial('T038 invitation signup UI', () => {
       .fill('2000-10-29');
     await page
       .getByLabel(messages['clientSignup.username'], { exact: true })
-      .fill('valid-user-23');
+      .fill('valid_user_23');
     await page
       .getByLabel(messages['clientSignup.email'], { exact: true })
       .fill('pending@example.test');

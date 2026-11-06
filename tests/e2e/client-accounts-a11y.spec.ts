@@ -103,7 +103,7 @@ for (const locale of ['ar', 'en'] as const) {
           .fill('1990-04-12');
         await page
           .getByLabel(m['clientSignup.username'], { exact: true })
-          .fill(`member-${issued.token.slice(0, 8)}`);
+          .fill(`member_${randomUUID().replaceAll('-', '').slice(0, 8)}`);
         await page
           .getByLabel(m['clientSignup.email'], { exact: true })
           .fill(fixture.po.email);
@@ -229,7 +229,9 @@ for (const locale of ['ar', 'en'] as const) {
 
     await name.fill('Keyboard Example Person');
     await dateOfBirth.fill('1990-04-12');
-    await username.fill(`keyboard-${randomUUID().slice(0, 8)}`);
+    await username.fill(
+      `keyboard_${randomUUID().replaceAll('-', '').slice(0, 8)}`,
+    );
     await email.fill('invalid');
     await phone.fill('01012');
     let release!: () => void;
