@@ -65,27 +65,63 @@ describe('production Add Exercise route', () => {
   );
 
   it.each(['workspace_owner', 'trainer'] as const)(
-    'forces %s to its authorized workspace scope',
+    'denies %s when an explicit workspace is unavailable',
     async (role) => {
       m.actor.mockResolvedValue({
         userId: 'staff',
         role,
         activeWorkspaceIds: [workspaces[0]!.id],
       });
-      const html = renderToStaticMarkup(
-        await Page({
+      await expect(
+        Page({
           searchParams: Promise.resolve({
-            scope: 'global',
+            scope: 'workspace',
             workspace: workspaces[1]!.id,
           }),
         }),
-      );
-      expect(html).toContain('data-role="' + role + '"');
-      expect(html).toContain('data-scope="workspace"');
-      expect(html).toContain('data-workspace="' + workspaces[0]!.id + '"');
-      expect(html).not.toContain('Global library');
+      ).rejects.toThrow('404');
     },
   );
+
+  it('uses the explicitly requested available authoring workspace', async () => {
+    m.actor.mockResolvedValue({
+      userId: 'staff',
+      role: 'trainer',
+      activeWorkspaceIds: workspaces.map((workspace) => workspace.id),
+    });
+    const html = renderToStaticMarkup(
+      await Page({
+        searchParams: Promise.resolve({
+          workspace: workspaces[1]!.id,
+        }),
+      }),
+    );
+    expect(html).toContain('data-workspace="' + workspaces[1]!.id + '"');
+  });
+
+  it('keeps the existing default when the workspace parameter is absent', async () => {
+    m.actor.mockResolvedValue({
+      userId: 'staff',
+      role: 'trainer',
+      activeWorkspaceIds: [workspaces[0]!.id, workspaces[1]!.id],
+    });
+    const html = renderToStaticMarkup(
+      await Page({ searchParams: Promise.resolve({}) }),
+    );
+    expect(html).toContain('data-workspace="' + workspaces[0]!.id + '"');
+  });
+
+  it('keeps the existing default when the workspace parameter is empty', async () => {
+    m.actor.mockResolvedValue({
+      userId: 'staff',
+      role: 'trainer',
+      activeWorkspaceIds: [workspaces[0]!.id],
+    });
+    const html = renderToStaticMarkup(
+      await Page({ searchParams: Promise.resolve({ workspace: '' }) }),
+    );
+    expect(html).toContain('data-workspace="' + workspaces[0]!.id + '"');
+  });
 
   it('allows the PO to choose global or a listed workspace scope', async () => {
     const global = renderToStaticMarkup(

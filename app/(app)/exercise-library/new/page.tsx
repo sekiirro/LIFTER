@@ -48,9 +48,18 @@ export default async function NewExercisePage({ searchParams }: Props) {
         : result.data.filter((workspace) =>
             actor.activeWorkspaceIds.includes(workspace.id),
           );
+    const hasRequestedWorkspace =
+      params.workspace !== undefined &&
+      !(typeof params.workspace === 'string' && params.workspace === '');
+    if (
+      hasRequestedWorkspace &&
+      (typeof params.workspace !== 'string' ||
+        !workspaces.some((item) => item.id === params.workspace))
+    )
+      notFound();
     const requested =
       typeof params.workspace === 'string' ? params.workspace : '';
-    workspaceId = workspaces.some((item) => item.id === requested)
+    workspaceId = requested
       ? requested
       : actor.role === 'platform_owner'
         ? (workspaces[0]?.id ?? null)
