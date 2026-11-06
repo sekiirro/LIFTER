@@ -219,6 +219,8 @@ it('enforces name, past DOB, and optional Telegram syntax at the transaction bou
       date_of_birth: '1990-04-12',
       telegram_username: '',
     },
+    { name: '\tClient Example\n' },
+    { name: 'Client Example\t\n' },
     { date_of_birth: cairoToday },
     { date_of_birth: `${Number(cairoToday.slice(0, 4)) + 1}-01-01` },
     { telegram_username: 'not a valid handle' },
