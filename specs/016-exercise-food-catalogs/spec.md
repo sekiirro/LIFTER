@@ -148,3 +148,19 @@ I isolation (workspace rows + composite FKs; global rows readable only by coachi
 ### Session 2026-11-04 — S33-PO-4
 
 PO source: S33-PO-4, “Fix stack drift, flaky tests, billing-related CI blockers, and PR/issue backlog organization.” The S33 F16 change only makes the existing taxonomy/search integration lookup page through synthetic catalog rows with a fixed bound, or narrows it to a unique filter while preserving the same expected result. It does not change search semantics, visibility, limits, or catalog data. No open ambiguities remain within this test-only S33 scope.
+
+### Session 2026-11-06 — S35-PO-3 F16 REDESIGN (binding)
+
+PO source: `C:/Users/NEW LAP/.lifter/runs/s35-ledger3/s35-po-3.verbatim.txt`, F16 REDESIGN paragraph, quoted byte-for-byte as UTF-8:
+
+> **F16 REDESIGN (supersedes #64/manual distribution):** ONE shared global exercise catalog, automatically visible in every workspace via independent editable workspace-specific overrides, NOT duplicated libraries. Each workspace has its own video; fallback to global video. WO/Trainers may edit their workspace name, description, instructions, video and alternatives only. New exercises created by Trainers remain workspace-private. PO's personal workspace edits also affect ONLY its override, never the canonical global original. New workspaces automatically get their own video mapping. Global workout templates must work across all workspaces; resolve exercise videos by CLIENT workspace at viewing time, including after video updates. Preserve historical plans, tenant isolation and authorization. Audit impacts on #43, #64 and F17–F19; supersede conflicting specs/decisions without deleting history.
+
+### Session 2026-11-06 — S36-PO-1 Priorities (binding)
+
+PO source: `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-1.verbatim.txt`, Priorities line, quoted byte-for-byte as UTF-8:
+
+> **Priorities:** Implement the approved F16 ONE-global-library redesign through full Spec Kit, independent review and safe delegation; supersede #64/manual distribution. Resolve #43 compatibility and merge only under existing conditional authorization and live gates. Continue F4 #65 security fixes, approved alerts/escalation rules, N11 English copy, and pending PR remediation. Surface only genuinely unresolved PO decisions.
+
+The seven F16 compatibility MCQs plus the additional localization question in `decision-register.md` remain PO-DECISION-NEEDED. The binding paragraphs above do not authorize selecting an answer to any of those MCQs. No open ambiguities are claimed resolved for their affected behavior.
+
+**Ambiguity status:** Open. Eight numbered PO decisions remain unresolved in `decision-register.md`; requirements, defaults and tests must not select their answers. The global-catalog, field allowlist, private exercise, PO personal-workspace routing, global fallback, client-view and historical-preservation behaviors stated above are direct S35-PO-3 decisions, not interpretations of the remaining MCQs.
