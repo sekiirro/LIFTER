@@ -327,32 +327,20 @@ export async function pendingHttpAccess(
             .eq('workspace_id', context.wsA.id)
             .limit(5),
         );
-        const bRows =
-          await db`select id from public.audit_events where workspace_id = ${context.wsB.id} limit 5`;
-        if (bRows.length > 0)
-          probes.push(
-            await client
-              .from('audit_events')
-              .select('*')
-              .in(
-                'id',
-                (bRows as unknown as { id: string }[]).map((row) => row.id),
-              )
-              .limit(5),
-          );
-        const pRows =
-          await db`select id from public.audit_events where workspace_id is null limit 5`;
-        if (pRows.length > 0)
-          probes.push(
-            await client
-              .from('audit_events')
-              .select('*')
-              .in(
-                'id',
-                (pRows as unknown as { id: string }[]).map((row) => row.id),
-              )
-              .limit(5),
-          );
+        probes.push(
+          await client
+            .from('audit_events')
+            .select('*')
+            .eq('workspace_id', context.wsB.id)
+            .limit(5),
+        );
+        probes.push(
+          await client
+            .from('audit_events')
+            .select('*')
+            .is('workspace_id', null)
+            .limit(5),
+        );
         for (const result of probes)
           assert.ok(
             result.error !== null || result.data?.length === 0,
