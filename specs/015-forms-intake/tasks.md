@@ -326,7 +326,7 @@ S27 h2 executed all eight T018 mutants against Stack D at pre-merge head `f42d4b
 
 ## S35 existing-PR remediation
 
-- [ ] T101 [FR-024/025] Pin `test:integration` to Vitest's runner config loader; add a command-contract regression proving the supported loader is used and reproduce an assertion failure without Vite's `code.charCodeAt` masking error.
+- [x] T101 [FR-024/025] Pin `test:integration` to Vitest's runner config loader; add a command-contract regression proving the supported loader is used and reproduce an assertion failure without Vite's `code.charCodeAt` masking error.
 - [ ] T102 [FR-004/006/008] Reject N08 derived food choices that do not match the selected budget in TypeScript and SQL; add direct-boundary regressions.
 - [ ] T103 [FR-008/013] Validate `correct_form_answer` values against the assigned form snapshot before inserting immutable revisions; add Stack D direct-RPC regressions in a forward migration.
 - [ ] T104 [FR-017/018/024] Bind client-late Trainer schedules to the authoritative client-Trainer source and transfer them on reassignment. BLOCKED until PO identifies the source relation; do not choose a source or fallback.

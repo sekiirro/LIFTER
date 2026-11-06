@@ -60,3 +60,10 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 | FR-012 / FR-017 / FR-018 / FR-024 ? lifecycle-gated client-late alerts and relationship-end cleanup | T098 | Commit 1b52aeb; Stack D clean replay; tests/integration/forms-alerts.test.ts 7/7 and tests/integration/forms-alert-mutations.test.ts 4/4, including crash-safe function MD5 restore. | 1b52aeb |
 | FR-007 / FR-008 - draft intent idempotency and altered-payload conflict | T012 | CodeRabbit z3L1w follow-up on commit 34f30a4; tests/integration/forms-r3-drafts.test.ts 1/1 on Stack D; baseline now replays the already-saved selectionKey value before testing an altered payload. | 34f30a4 |
 | FR-026 / FR-036 / FR-037 - portable S34 PO source citations in plan and Analyze artifacts | T089 | `tests/unit/forms-s14-decision-fixture.test.ts::keeps plan PO citations portable and catches absolute-path regressions` passed 1/1 (focused file 6/6) on commit `0adb43a`. | 0adb43a |
+
+
+## S35 remediation evidence
+
+| FR | Task | Test | Evidence |
+|---|---|---|---|
+| FR-024/025 | T101 | `tests/unit/ci-local-e2e.test.ts::uses the Vite runner config loader for integration tests`; Stack D `tests/integration/password-policy-parity.test.ts` (58 passed) | Commit `44573b1`; unit 2/2 and Stack D integration 1 file/58 tests passed on commit `44573b1`. Database StartedAt remained `2026-11-06T01:41:22.769866059Z`. |
