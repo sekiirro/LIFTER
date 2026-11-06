@@ -52,7 +52,7 @@ Every item below is **PO-DECISION-NEEDED**. Recommendations are advisory only; n
 - **Question:** Can the PO still edit the canonical global original through an explicitly global-scope action, while edits made in the PO's personal workspace affect only that workspace override?
 - **Options:** (a) Yes; global-scope canonical edits remain available, while personal-workspace edits write only that workspace override; (b) no; canonical content is frozen after creation.
 - **Implications:** (a) retains the existing PO-only global governance path and requires scope-explicit routing; (b) removes canonical edit capability and changes existing version/governance behavior.
-- **Recommendation:** (a), consistent with the existing approved PO-only canonical governance requirements; this is not a decision.
+- **Recommendation:** Ask the PO to explicitly confirm whether the existing global edit path survives this redesign; do not infer continued authority from the historical task or earlier requirements. This is not a selected option.
 - **Blocked:** Whether the global canonical edit path remains available, scope selection/routing, and tests proving personal-workspace edits cannot mutate canonical content.
 
 ### PO-DECISION-NEEDED F16-MCQ-6 — Video after removing a workspace override

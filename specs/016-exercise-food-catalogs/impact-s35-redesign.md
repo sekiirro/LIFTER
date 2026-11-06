@@ -1,6 +1,6 @@
 # F16 S35 redesign impact audit
 
-Audit date: 2026-11-06. Scope is documentation impact only. A final `git fetch origin` succeeded; `origin/main` remains `8b44c59c00e1b7a9fb62aa00dd2bc3ccea58b97a`. F17/F18/F19 file citations below were read from current local remote-tracking refs. Live PR metadata was checked with `gh pr view`.
+Audit date: 2026-11-06. Scope is documentation impact only. A final `git fetch origin` succeeded; `origin/main` remains `8b44c59c00e1b7a9fb62aa00dd2bc3ccea58b97a`. Downstream citations are pinned to these audit-time commits: `origin/017-workout-planner` `fd84fbaa334b9bfb77038fe17cd4996e6533f90f`; `origin/018-nutrition-planner` `066636358f7256e10426efae2290112f15a62e14`; `origin/019-plan-core` `d188b3e6c4238118fe8dd6492c10889c39516cd1`. Live PR metadata was checked with `gh pr view`.
 
 ## PR #43 — 016-catalog-ui
 
