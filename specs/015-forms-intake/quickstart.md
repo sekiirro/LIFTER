@@ -37,16 +37,19 @@ No migration timestamp was allocated for T001/T002/T005. Future migrations remai
 
 ## Stack D reset and local provisioning
 
-No repository script currently wraps Stack D reset. After every local reset of `supabase-stack-d`, run the existing local-only Vault/key provisioner immediately, before any integration test. It revokes Vault table/function privileges from API roles and provisions local test keys; these revokes belong in this provisioner, never in a migration. Set the explicit wrapper environment in each PowerShell command and use the Stack D workdir:
+No repository script currently wraps Stack D reset. After every local reset of `supabase-stack-d`, run the existing local-only Vault/key provisioner immediately, before any integration test. It revokes Vault table/function privileges from API roles and provisions local test keys; these revokes belong in this provisioner, never in a migration. Derive all checkout paths from the repository root and set the explicit Stack D wrapper environment:
 
 ```powershell
-$env:SUPABASE_SAFE_CLI='node "C:/Program Files/nodejs/node_modules/npm/bin/npx-cli.js"'
-$env:LIFTER_SUPABASE_STACK='d'
-node 'C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs' --workdir 'C:/Users/NEW LAP/Desktop/LFTR-p2/supabase-stack-d' --stack D db reset --yes
-
-$env:SUPABASE_SAFE_CLI='node "C:/Program Files/nodejs/node_modules/npm/bin/npx-cli.js"'
-$env:LIFTER_SUPABASE_STACK='d'
-node 'C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs' --workdir 'C:/Users/NEW LAP/Desktop/LFTR-p2/supabase-stack-d' --stack D exec -- node -e "process.chdir('C:/Users/NEW LAP/Desktop/LFTR-p2'); import('file:///C:/Users/NEW%20LAP/Desktop/LFTR-p2/tests/integration/client-accounts-provision.mjs').catch(error => { console.error(error); process.exitCode=1; });"
+$repoRoot = (Resolve-Path .).Path
+$stackWorkdir = Join-Path $repoRoot 'supabase-stack-d'
+$provisioner = Join-Path $repoRoot 'tests/integration/client-accounts-provision.mjs'
+$provisionerUri = [System.Uri]::new($provisioner).AbsoluteUri
+$nodeDir = Split-Path (Get-Command node).Source
+$env:SUPABASE_SAFE_CLI = "node `"$nodeDir/node_modules/npm/bin/npx-cli.js`""
+$env:LIFTER_SUPABASE_STACK = 'd'
+$safeWrapper = Join-Path $env:USERPROFILE '.lifter/tools/supabase-safe.mjs'
+node $safeWrapper --workdir $stackWorkdir --stack D db reset --yes
+node $safeWrapper --workdir $stackWorkdir --stack D exec -- node -e "process.chdir('$repoRoot'); import('$provisionerUri').catch(error => { console.error(error); process.exitCode=1; });"
 ```
 
 Then run the existing Vault grant assertion (`tests/integration/client-accounts-schema.test.ts`, test `Vault keys are inaccessible to API roles, including service_role`) through the same Stack D wrapper. Do not run the provisioner directly or inspect/print its environment files; it handles local credentials internally.

@@ -11,7 +11,7 @@
 **S34 round-2 entry refresh:** 2026-11-05, after adding T080–T095 to `plan.md` and `tasks.md` and before implementation.
 **S34 T080 clarification refresh:** 2026-11-05, after specifying NFKC/lowercase followed by the S32-PO-7 character-set check; before implementation.
 **S34 T086 decision-boundary refresh:** 2026-11-05, after identifying the persisted Arabic-title fallback as a user-visible product choice and excluding it pending PO decision.
-**Status:** Entry review for S33-PO-3 Arabic T03/N07 copy and in-scope CodeRabbit fixes.
+**Status:** Historical S33 entry review; current S35 entry revalidation is recorded below.
 
 ## Entry check
 
@@ -102,3 +102,6 @@ This review follows the S34-PO-2..6 and PD-S34-NEW-01 clarifications added to `s
 
 
 **S35 existing-PR entry revalidation — 2026-11-06:** Added T101-T114 for verified CI/CodeRabbit remediation within existing FR-004/006/008/013/017/018/024/025/026/036/037/038/039 scope. `spec.md` already contains the required numbered FRs, measurable SCs and Given/When/Then acceptance coverage. Existing PO clarifications explicitly govern approved copy, answer snapshots, name validation and client-late timing. **No open ambiguities remain for T101-T103, T105-T114. T104 remains explicitly blocked because the current F15 schema has no authoritative client-to-Trainer assignment relation.** No requirement or user-facing default was inferred. The existing design system covers the narrow T112 pending-submit interaction; no visual token, layout, copy, animation or dependency change is planned. **CRITICAL: 0. HIGH: 0.** Entry PASS for independent tasks; T104 excluded pending PO direction.
+
+
+**S35 T109/T111 documentation refresh - 2026-11-06:** The Stack D quickstart now derives repository, stack and provisioner paths from the current checkout. The earlier S33 Analyze status is explicitly historical; the S30 quotation and S31 migration source label are repaired without changing their recorded findings. These are documentation-only corrections inside the existing F15 verification scope. **CRITICAL: 0. HIGH: 0. No new ambiguity.**

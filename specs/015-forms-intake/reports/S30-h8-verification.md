@@ -148,7 +148,7 @@ No new PO decision arose. Existing escalations remain:
 
 ### RED/GREEN additions for `93d7be9`
 
-The c976d66 source-reversion probes now cover the remaining 93d behaviors with unit/browser assertions: `FormPreview` numeric answer display RED (`tests/unit/forms-builder-s14.test.tsx`: 1 failed / 5 passed while `FormPreview.tsx` came from c976d66), GREEN 6/6 after restoration; Telegram HTTP deadline + webhook ack RED (3 failed / 9 passed while `telegram-delivery.ts` and webhook route came from c976d66), GREEN 12/12 after restoration; submitted correction dirty state RED (Playwright assertion observed one —Unsaved changes.—), GREEN 1/1 after restoration. All source restores were protected by `finally`. The signup focus assertion was added, but the probe did not fail against c976d66, so this particular behavior lacks independent RED evidence and is called out rather than claimed as covered.
+The c976d66 source-reversion probes now cover the remaining 93d behaviors with unit/browser assertions: `FormPreview` numeric answer display RED (`tests/unit/forms-builder-s14.test.tsx`: 1 failed / 5 passed while `FormPreview.tsx` came from c976d66), GREEN 6/6 after restoration; Telegram HTTP deadline + webhook ack RED (3 failed / 9 passed while `telegram-delivery.ts` and webhook route came from c976d66), GREEN 12/12 after restoration; submitted correction dirty state RED (Playwright assertion observed one “Unsaved changes.”), GREEN 1/1 after restoration. All source restores were protected by `finally`. The signup focus assertion was added, but the probe did not fail against c976d66, so this particular behavior lacks independent RED evidence and is called out rather than claimed as covered.
 
 ### Final focused Playwright result
 

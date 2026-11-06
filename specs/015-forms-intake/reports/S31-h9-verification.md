@@ -1,4 +1,4 @@
-﻿# S31 h9 verification — working report
+# S31 h9 verification — working report
 
 ## Entry gate
 
@@ -62,7 +62,7 @@
 
 | Failure | Live function MD5 vs defining migration | Main comparison | Classification / evidence |
 |---|---|---|---|
-| branding-owner-gc stale attached upload | `app_private.branding_gc_finalize(uuid)` matches 070? `20261102134000_branding_upload_recovery.sql`: `0f1dcfbc3f0b5a98170a0f79dafb9802`; `public.branding_gc_finalize(uuid)` matches `20261102133000_branding_gc_service_role_isolation.sql`: `a8c69cc15fdfd8ede73c1c40012dfcbf` | Defining migrations are unchanged vs origin/main; this suite has branch-only test changes | Branch-only failure surface; Stack D drift ruled out by exact MD5. No non-F15 function changed. |
+| branding-owner-gc stale attached upload | `app_private.branding_gc_finalize(uuid)` matches `20261102134000_branding_upload_recovery.sql`: `0f1dcfbc3f0b5a98170a0f79dafb9802`; `public.branding_gc_finalize(uuid)` matches `20261102133000_branding_gc_service_role_isolation.sql`: `a8c69cc15fdfd8ede73c1c40012dfcbf` | Defining migrations are unchanged vs origin/main; this suite has branch-only test changes | Branch-only failure surface; Stack D drift ruled out by exact MD5. No non-F15 function changed. |
 | branding-upload-recovery ×2 | Same installed private/public GC function hashes above | Defining migrations shared with main; recovery test file is common in the branch comparison | Shared-with-main database implementation; no Stack D drift. Failures are h8's stale-status/stale-GC expectations; do not change outside F15. |
 | catalog-server taxonomy search | `public.catalog_search(text,text,jsonb,text,uuid)` matches `20261106121000_catalog_food_defaults_and_search.sql`: `927a0d0371d0d5b4563c785bc1d0794c` | Migration unchanged vs origin/main; catalog test unchanged vs origin/main | Shared with main; Stack D drift ruled out. |
 | client-accounts-recovery timeouts | `public.recovery_link_authorize(uuid)` matches 20261028120000: `c0edfee5d0fd01527ad0a9e852ca843e`; `public.recovery_link_record(uuid)` matches same migration: `7e8f934b9162041544eb163d7af88a58` | Migration shared with main; recovery test differs on branch | Branch-only timeout reproduction surface; installed function drift ruled out. No recovery code changed. |
