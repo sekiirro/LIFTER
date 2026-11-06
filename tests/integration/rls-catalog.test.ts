@@ -23,6 +23,7 @@ const signupPrivate = [
   'signup_identity_normalization',
   'signup_password_policy',
   'signup_field_contract',
+  'signup_reserved_usernames',
   'signup_consumption_policy',
   'client_signup_limits',
   'signup_completion_policy',
