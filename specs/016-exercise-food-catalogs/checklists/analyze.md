@@ -1,6 +1,6 @@
 # Analyze — F16 one-global-catalog redesign (S36 round 3, critique response)
 
-- Date: 2026-11-06 21:20 UTC. Run after the last spec, plan and tasks change (commit `c870fcd1`). Round-3 changes after this record are limited to `critique-response.md` (not a spec, plan or task artifact).
+- Date: 2026-11-06 21:32 UTC. Re-run after the CodeRabbit fixes; run after the last spec, plan and tasks change (commit `285f8236`). Round-3 changes after this record are limited to `critique-response.md` (not a spec, plan or task artifact).
 - Method: speckit-analyze procedure (read-only on spec artifacts); this file is the dated record the entry check requires. Prerequisite check run with `SPECIFY_FEATURE_DIRECTORY` set to this feature (no `.specify/feature.json` in the worktree). No `.specify/extensions.yml` exists, so no hooks apply.
 - Scope: round-3 critique response (`critique-response.md`); the S36-PO-2 answers; the open PO items A to I and 9; the architecture corrections in `spec.md` FR-014 to FR-035, `data-model.md`, `contracts/`, `plan.md`, `tasks.md`.
 - Authority: S36-PO-2 F16 paragraph (quoted in `spec.md` Clarifications and `decision-register.md`); the critique at `C:/Users/NEW LAP/.lifter/runs/s36-sonnet-f16-critique/critique.md`.
@@ -22,7 +22,7 @@ Severity follows the speckit-analyze heuristic. "Open" means it still blocks imp
 
 | ID | Category | Severity | Location(s) | Summary | Status / recommendation |
 |---|---|---|---|---|---|
-| A7 | Constitution alignment (process) | CRITICAL | `.specify/memory/constitution.md` lines 148-151 (Mandatory Spec Debate; Sol Medium); `spec.md` Constitution Check; S36-PO-2 | S36-PO-2 authorizes a Sonnet 5.5 critique. The constitution mandates an independent Sol Medium critique and bans substitution outside the permitted tiers. By rule, constitution conflicts are CRITICAL. | **OPEN, PO-owned.** Exit condition: the PO ratifies the substitution or amends the constitution explicitly, or designates the Sol Medium critique. Architect may not resolve it. Blocks all F16 implementation. |
+| A7 | Constitution alignment (process) | CRITICAL | `.specify/memory/constitution.md` lines 148-151 (Mandatory Spec Debate; Sol Medium); `spec.md` Constitution Check; S36-PO-2 | S36-PO-2 authorizes a Sonnet 5.5 critique. The constitution mandates an independent Sol Medium critique and bans substitution outside the permitted tiers. By rule, constitution conflicts are CRITICAL. | **OPEN, PO-owned.** Exit condition: the constitution-mandated Sol Medium critique is completed, or a constitution-compliant amendment or approved deviation that satisfies the constitution's required process is recorded. Designation or PO ratification of the Sonnet substitution alone is not sufficient to close A7. Architect may not resolve it. Blocks all F16 implementation. |
 | A8 | Ambiguity (PO) | HIGH | `decision-register.md` F16-MCQ-A; `spec.md` FR-003, FR-014; `contracts/catalog-api.md` planned remove/clear row | How an overridden field is reset (per field or whole override). | **OPEN PO-DECISION-NEEDED.** Blocks T046 (null semantics), T047 (remove/clear), T040 (reset UI), T037 (reset assertions). |
 | A9 | Ambiguity (PO) | HIGH | `decision-register.md` F16-MCQ-B; `spec.md` FR-025; `data-model.md` alternatives row | Whether an empty alternatives list suppresses the canonical list. | **OPEN PO-DECISION-NEEDED.** Blocks T048 (validation), T047, T040 (empty state), T037. |
 | A10 | Ambiguity (PO, data) | HIGH | `decision-register.md` F16-MCQ-C; `data-model.md` legacy `note` row; `plan.md` migration step 1 | Treatment of existing variation `note` text (up to 2000 characters) that the allowlist does not contain. Wrong choice reclassifies internal text as client-visible, or hides data. | **OPEN PO-DECISION-NEEDED.** Blocks T062 (note backfill) and the data steps of T053. T063 (structural rules) is not blocked. |
@@ -42,7 +42,7 @@ Severity follows the speckit-analyze heuristic. "Open" means it still blocks imp
 | A24 | Resolved | — | `spec.md` FR-028, FR-029; `contracts/catalog-api.md`; T050, T051 | Client-read boundary and removed or merged plan video (critique F2 and F7). | **RESOLVED** in `d94bcdf0`, `958e885f`, `ca13be42`. Residual wrapper dependency is A18. |
 | A25 | Resolved | — | `spec.md` FR-023, FR-024; `data-model.md` | Canonical and private video fields did not exist (critique F3 and F5). | **RESOLVED** in `d94bcdf0`, `958e885f`. Canonical description shape is A12 and A14. |
 | A26 | Resolved | — | `spec.md` FR-025; `data-model.md`; T048 | Alternatives integrity (critique F4). | **RESOLVED** in `958e885f` (composite child rows). Empty-list and seeded or live semantics are A9 and A13. |
-| A27 | Resolved | — | `spec.md` FR-032; `plan.md`; `quickstart.md` | Migration range sorted before main's head (critique F8). | **RESOLVED** in `d94bcdf0`, `bfc6f729`, `7850e5e7`. Scan command exists: `npm run check:migration-versions:remote`. |
+| A27 | Resolved | — | `spec.md` FR-032; `plan.md`; `quickstart.md` | Migration range sorted before main's head (critique F8). | **RESOLVED** in `d94bcdf0`, `bfc6f729`, `7850e5e7`, `285f8236`. Two checks are required: an ordering check (highest origin version; every local F16 version strictly greater) and `npm run check:migration-versions:remote`, which is a filename-conflict check only. |
 | A28 | Resolved | — | `spec.md` FR-031; `contracts/catalog-api.md`; T054 | Legacy variation write path alive (critique F9). | **RESOLVED** in spec (`d94bcdf0`, `958e885f`). Implementation is A19. |
 | A29 | Resolved | — | `spec.md` FR-022 | FR-022 required what the existing rules forbid (critique F11). | **RESOLVED** in `d94bcdf0`. Re-registration is A17. |
 | A30 | Resolved | — | `spec.md` FR-033; `plan.md` | Authorization identifiers cited as existing (critique F13). | **RESOLVED** in `bfc6f729`, `d94bcdf0`. |
@@ -56,12 +56,16 @@ Severity follows the speckit-analyze heuristic. "Open" means it still blocks imp
 | A38 | Open, LOW | LOW | `decision-register.md` FYI-1 and FYI-3; `spec.md` FR-014, FR-028 | Spec-added absence default (`video: null`, source `none`) and the merged-source media rule. | **OPEN, architect awareness.** FYI-3 is for architect review; FYI-1 is for awareness. |
 | A39 | Open, MEDIUM | MEDIUM | `contracts/catalog-api.md` implemented matrix; `tests/unit/catalog-role-parity.test.ts` | Parity guard depends on the implemented matrix staying at its eight rows. Round 3 keeps it unchanged and passes locally (2 of 2). | **Monitor.** Re-run at the final head. |
 | A40 | Readability | LOW | `spec.md` FR-014, FR-035 | FR-014 and FR-035 are long multi-sentence requirements. | No ambiguity added; leave as is. |
+| A41 | Resolved | — | `spec.md` FR-026, FR-027; `impact-s35-redesign.md` (F17); T056 | Private exercises have no canonical identity, so the V2 snapshot could not represent them (CodeRabbit review on `a8b857f1`). | **RESOLVED** in `285f8236`: `source = workspace_private` branch and private picker source. |
+| A42 | Resolved | — | `spec.md` FR-032; `plan.md`; `quickstart.md`; T052 | The remote scan was described as an ordering check, but it checks filename conflicts only (CodeRabbit review on `a8b857f1`). | **RESOLVED** in `285f8236`: two separate checks, ordering and conflict. |
+| A43 | Resolved | — | `spec.md` FR-031; `plan.md` step 3; T062, T063 | Cutover could drop active legacy videos and let a legacy write land during the copy (CodeRabbit review on `a8b857f1`). | **RESOLVED** in `285f8236`: video carry-over in the cutover transaction under the same locks; note treatment still F16-MCQ-C. |
+| A44 | Resolved | — | `contracts/catalog-api.md` line 97 | The client contract appeared to exclude live description and alternatives categorically (CodeRabbit review on `a8b857f1`). | **RESOLVED** in `285f8236`: presentation governed by F16-MCQ-H and F16-MCQ-G. |
 
 ## Coverage
 
 - Requirements inventory: FR-001 to FR-035 (including FR-016a), 36 keys; SC-001 to SC-016, 16 keys.
 - Requirements with at least one task reference (S36 or historical): 36 of 36. Requirements with a dedicated S36 test task: all except FR-033 (A22, LOW).
-- Success criteria mapped to tasks: SC-001 to SC-016 (`tasks.md` coverage bullet). SC-005 (perf) maps to T065, a production gate. SC-010 maps to T040, which is blocked (A8, A12, A11).
+- Success criteria mapped to tasks: SC-001 to SC-016 (`tasks.md` coverage bullet). SC-005 (perf) maps to T034 (historical local benchmark) and T065 (exercise list and batch resolve); the Worker CPU and hosted metrics remain a production gate. SC-010 maps to T040, which is blocked (A8, A12, A11).
 - Planned contract rows: each moves into the implemented matrix only with its SQL, fixture row and parity test (S36-R10). The implemented matrix is unchanged in round 3. `npx vitest run tests/unit/catalog-role-parity.test.ts` passes 2 of 2 locally.
 
 ## Counts
@@ -69,7 +73,7 @@ Severity follows the speckit-analyze heuristic. "Open" means it still blocks imp
 - Requirements: 36 keys (FR), 16 success criteria (SC). Tasks: 68 (T001 to T067 plus T900; T037 to T067 are S36).
 - Ambiguity count (open): 10 (A8 to A17; A17 is cross-feature). Duplication count: 0 open (duplicate task rows removed in `175c9411`). Underspecification open: A22 (LOW) and A40 (LOW).
 - Severity (open): CRITICAL 1 (A7). HIGH 8 (A8, A9, A10, A11, A12, A13, A14, A15). MEDIUM 5 (A16, A18, A19, A20, A21) plus A39 (monitor). LOW 5 (A17, A22, A37, A38, A40).
-- Resolved in round 3: A23 to A36 (14 items).
+- Resolved in round 3: A23 to A36 and A41 to A44 (18 items).
 
 ## Gate
 
