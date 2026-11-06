@@ -109,7 +109,7 @@ test.describe.serial('T038 invitation signup UI', () => {
       messages['clientSignup.dateOfBirth'],
       { exact: true },
     );
-    await dateOfBirthField.fill('2026-10-30');
+    await dateOfBirthField.fill('2099-01-01');
     const usernameField = page.getByLabel(messages['clientSignup.username'], {
       exact: true,
     });
@@ -165,6 +165,75 @@ test.describe.serial('T038 invitation signup UI', () => {
     await usernameField.fill('valid-user-23');
     await expect(usernameField).toBeFocused();
     expect(page.url()).toContain('/register/');
+  });
+
+  test('does not show blur errors while signup submission is pending', async ({
+    page,
+    context,
+  }) => {
+    test.skip(!local, 'Requires the disposable local Supabase stack.');
+    const messages = getMessages('en');
+    await context.addCookies([
+      { name: LOCALE_COOKIE, value: 'en', url: origin },
+      { name: THEME_COOKIE, value: 'light', url: origin },
+    ]);
+    await page.goto(`/register/${token}`);
+    await page
+      .getByLabel(messages['clientSignup.name'], { exact: true })
+      .fill('Heba Sami Nabil');
+    await page
+      .getByLabel(messages['clientSignup.dateOfBirth'], { exact: true })
+      .fill('2000-10-29');
+    await page
+      .getByLabel(messages['clientSignup.username'], { exact: true })
+      .fill('valid-user-23');
+    await page
+      .getByLabel(messages['clientSignup.email'], { exact: true })
+      .fill('pending@example.test');
+    await page
+      .getByLabel(messages['clientSignup.phone'], { exact: true })
+      .fill('1012345678');
+    await page
+      .getByLabel(messages['clientSignup.password'], { exact: true })
+      .fill('Complex!2345');
+
+    let signalPost!: () => void;
+    let releasePost!: () => void;
+    const postSeen = new Promise<void>((resolve) => {
+      signalPost = resolve;
+    });
+    const postGate = new Promise<void>((resolve) => {
+      releasePost = resolve;
+    });
+    await page.route('**/register/**', async (route) => {
+      if (route.request().method() !== 'POST') {
+        await route.continue();
+        return;
+      }
+      signalPost();
+      await postGate;
+      await route.continue();
+    });
+
+    const nameField = page.getByLabel(messages['clientSignup.name'], {
+      exact: true,
+    });
+    try {
+      await page
+        .getByRole('button', { name: messages['clientSignup.submit'] })
+        .click();
+      await postSeen;
+      await expect(nameField).toBeDisabled();
+      await nameField.evaluate((element) =>
+        element.dispatchEvent(new FocusEvent('blur')),
+      );
+      await expect(nameField).not.toHaveAttribute('aria-invalid', 'true');
+      await expect(
+        page.getByText(messages['clientSignup.fieldError']),
+      ).toHaveCount(0);
+    } finally {
+      releasePost();
+    }
   });
 
   test('rejects unexpected signup fields generically without a browser session', async ({

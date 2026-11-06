@@ -23,7 +23,7 @@ describe('T037 signup identity validation', () => {
   });
 
   it('rejects impossible dates and today/future dates in the Cairo calendar', () => {
-    for (const dateOfBirth of ['2024-02-30', '2026-10-30', '2026-10-31', '']) {
+    for (const dateOfBirth of ['2024-02-30', '2026-10-30', '2099-01-01', '']) {
       expect(
         validateSignupIdentity(
           {

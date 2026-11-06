@@ -4,6 +4,7 @@ import { describe, expect, it, vi } from 'vitest';
 import {
   runValidatedSignupAction,
   SignupForm,
+  shouldValidateSignupBlur,
 } from '../../app/register/[token]/SignupForm';
 import {
   initialSignupResult,
@@ -27,6 +28,12 @@ function renderSignup(locale: 'ar' | 'en' = 'en') {
 }
 
 describe('T038 signup form', () => {
+  it('skips identity blur validation during pending submission', () => {
+    expect(shouldValidateSignupBlur(false, false)).toBe(true);
+    expect(shouldValidateSignupBlur(true, false)).toBe(false);
+    expect(shouldValidateSignupBlur(false, true)).toBe(false);
+  });
+
   it('renders identity fields and does not collect terms, health or sex at signup', () => {
     const html = renderSignup();
     for (const name of [
@@ -72,7 +79,7 @@ describe('T038 signup form', () => {
   it('stops invalid identity before calling the signup transaction', async () => {
     const formData = new FormData();
     formData.set('name', 'Heba');
-    formData.set('dateOfBirth', '2026-10-30');
+    formData.set('dateOfBirth', '2099-01-01');
     formData.set('username', 'system');
     const action = vi.fn(async () => signupResult('complete', 'en'));
 
