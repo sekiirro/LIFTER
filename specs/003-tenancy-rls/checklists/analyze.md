@@ -1,18 +1,19 @@
-# Spec Kit Analyze — F3 Workspace Tenancy, Permission Matrix & RLS (S35 G1 resolution)
+# Spec Kit Analyze — F3 Workspace Tenancy, Permission Matrix & RLS (S36-PO-2 round)
 
-- Date: 2026-11-06 08:19 +02:00 (fresh analysis after S35-PO-1 G1=A resolution and the S35 round-2 CodeRabbit documentation fixes: deactivate/revoke, no deletion)
-- Analyzed source baseline: `21c022f15ba0254271191167a7a87826c4787f60` (S35 documentation amendment `docs(spec 003): resolve S35-PO-1 G1=A (deactivate/revoke; preserve audit)`, parent `552361c41a231c8cbbf37b7cab7c828b03eb528d` = S34 baseline; no source, migration, workflow, or test files changed in this amendment or in the round-2 fixes).
-- Static code/test evidence baseline: `d04ef52` (branch base; no code, migration, workflow, or test files changed in this amendment). The #47 compliance refresh remains the source for the 16 baseline traceability rows.
-- Scope: F3 baseline (`FR-001`..`FR-012`, `SC-001`..`SC-004`), the S30-PO-3 Q7/Q8 governance amendment (`FR-013`, `FR-014`, `SC-005`, `SC-006`), and the S35 resolved departed-trainer departure requirement (`FR-015`, `SC-007`).
+- Date: 2026-11-06 21:24 +02:00 (fresh analysis after the S36-PO-2 governance amendment: demotion AND membership revocation remove PO access; final-PO guard covers membership revocation)
+- Analyzed source baseline: working tree on top of `9d4a410bd849bfd4060456ffc757a1c002c6c572` (PR #50 head before S36 round 3), with the S36-PO-2 documentation amendment applied to `spec.md`, `plan.md`, `tasks.md`, `traceability.md` and this file. No source, migration, workflow, or test files changed.
+- Static code/test evidence baseline: `d04ef52` (branch base). The #47 compliance refresh remains the source for the 16 baseline traceability rows.
+- Scope: F3 baseline (`FR-001`..`FR-012`, `SC-001`..`SC-004`), the S30-PO-3 Q7/Q8 governance amendment (`FR-013`, `FR-014`, `SC-005`, `SC-006`) as amended by S36-PO-2, and the S35 resolved departed-trainer departure requirement (`FR-015`, `SC-007`).
 - Method: static cross-artifact, migration, FK, trigger, workflow, and test-source review. No tests, builds, SQL execution, stacks, or CI jobs were run.
 
 ## Inventory and entry check
 
-- Present: `spec.md` (FR-001..FR-015, SC-001..SC-007, seven GWT story groups), `plan.md`, `tasks.md` (T001-T020), `research.md`, `data-model.md`, `contracts/db-contract.md`, `quickstart.md`, `checklists/requirements.md`, `traceability.md`, and this analysis.
-- `spec.md` has numbered FRs, measurable SCs, and Given/When/Then acceptance scenarios for every touched behavior. Story 7 now reflects the resolved G1=A model (deactivate + revoke; no deletion).
-- Clarifications: S30-PO-3 Q6/Q7/Q8 remain recorded. S35-PO-1 records G1=A (deactivate/revoke; preserve audit) verbatim and G2=A. No ambiguity is assumed: G1 is resolved by this decision; the only remaining open item is the absence of a deactivation capability in the current schema, tracked by T020 (tagged FR-015).
-- Plan/tasks: T001-T013 cover the F3 baseline; T014-T016 cover the roster and G2-scoped final-PO guard; T017-T020 cover the resolved trainer-departure model. Every new task is tagged with its FR/SC IDs and states its prerequisite. T017-T019 are no longer BLOCKED.
-- Initial entry result: PASS. Requirements/scenarios PASS, clarifications PASS, plan/tasks PASS, and this analysis is dated after the last spec/plan/tasks change with 0 open CRITICAL/HIGH findings.
+- Present: `spec.md` (FR-001..FR-015, SC-001..SC-007, seven GWT story groups), `plan.md`, `tasks.md` (T001-T022), `research.md`, `data-model.md`, `contracts/db-contract.md`, `quickstart.md`, `checklists/requirements.md`, `traceability.md`, and this analysis.
+- `spec.md` has numbered FRs, measurable SCs, and Given/When/Then acceptance scenarios for every touched behavior. Story 6 scenarios 1-4 now name demotion AND membership revocation (S36-PO-2).
+- Clarifications: S30-PO-3 Q6/Q7/Q8 remain recorded. S35-PO-1 records G1=A and G2=A. S36-PO-2 is recorded verbatim in the spec decision register (`spec.md`, Clarifications). It supersedes only the membership-revocation exclusion in S34-PO-1 G2=A.
+- Open PO question: **S36-Q1** (the removal mechanism for membership revocation; see the Findings escalation below). It is recorded as PO-DECISION-NEEDED in the S36 run report and is not encoded as a requirement, default or test expectation.
+- Plan/tasks: T001-T013 cover the F3 baseline; T014 covers the roster; T015 covers the S36-amended final-PO guard (demotion, membership revocation, staff-profile deletion); T016 covers architect review; T017-T020 cover the resolved trainer-departure model; T021 (RED, demotion path) and T022 (RED, membership-revocation path; BLOCKED by S36-Q1) cover the S36-PO-2 RED tests. Every new task is tagged with its FR/SC IDs and states its prerequisite.
+- Initial entry result: PASS for the requirements and scenarios, clarifications (the S36-Q1 open question is stated explicitly and is not assumed), and plan/tasks tagging. Open item: S36-Q1 blocks only T022 and the membership-revocation branch of T015. The demotion and staff-profile-deletion branches are not blocked. This analysis is dated after the last spec/plan/tasks change.
 
 ## Findings
 
@@ -20,41 +21,44 @@
 |---|---|---|---|---|---|
 | A1 | Evidence coverage | MEDIUM | `traceability.md` FR-003 | Signed-session isolation tests cover representative roles/tables, but do not establish deny-by-default policy predicates across every table and role. | Keep FR-003 PARTIAL until complete policy-predicate evidence exists. |
 | A2 | Evidence coverage | MEDIUM | `traceability.md` FR-004 | Catalog hardening and a representative authenticated identity check exist, but the tests do not establish every helper condition or every attempted identity-widening path. | Keep FR-004 PARTIAL pending broader assertions. |
+| A3 | Escalated product question (PO-DECISION-NEEDED S36-Q1); not classified as an Analyze defect in the spec text | Escalated (see note) | `spec.md` FR-014, Story 6 scenario 2; `data-model.md` (`app_private.is_platform_owner`, `has_workspace_access`) | S36-PO-2 requires that membership revocation removes Platform Owner access and that the final-PO guard covers it. The current data model derives PO access from the role (`staff_profiles.role` via `is_platform_owner`) and uses memberships only for workspace access, so no current mechanism makes a membership revocation remove PO access. The requirement is recorded as the PO stated it. The mechanism is not decided. | Escalated to the PO as S36-Q1 with options and a recommendation in the S36 run report. Blocks T022 and the membership-revocation branch of T015. Does not block the demotion or staff-profile-deletion branches. **Architect note:** if the architect classifies A3 as HIGH, this analysis's verdict becomes 0 CRITICAL / 1 HIGH and the S36 "0 CRITICAL/0 HIGH" gate is not met. This analysis does not down-grade it silently; the classification is the architect's call. |
 
-The only retained findings are A1 and A2. There are **0 open CRITICAL/HIGH findings**. PO-ESCALATION G1 is resolved by S35-PO-1 G1=A (no deletion); the absence of a deactivation capability is an implementation gap tracked by T020, not an Analyze ambiguity.
+The retained findings are A1 and A2 (MEDIUM) and the escalation A3. There are **0 open CRITICAL findings** and **0 open HIGH findings** among the Analyze findings above, with A3 escalated as stated.
 
 ## Coverage and constitution
 
-- FR-to-task coverage: FR-001..FR-012 map to T001-T013; FR-013 maps to T014/T016; FR-014 maps to T015/T016; FR-015 maps to T017-T020. All 15 FRs have task coverage.
-- SC-to-task coverage: SC-001..SC-004 map to T001-T013; SC-005 maps to T015/T016; SC-006 maps to T014/T016; SC-007 maps to T017-T020. All 7 SCs have task coverage.
+- FR-to-task coverage: FR-001..FR-012 map to T001-T013; FR-013 maps to T014/T016; FR-014 maps to T015/T016/T021/T022; FR-015 maps to T017-T020. All 15 FRs have task coverage.
+- SC-to-task coverage: SC-001..SC-004 map to T001-T013; SC-005 maps to T015/T016/T021/T022; SC-006 maps to T014/T016; SC-007 maps to T017-T020. All 7 SCs have task coverage.
 - No orphan task was found. The G1 lane is ordered T017 (RED-first characterization) -> T020 (deactivation capability) -> T018 (forward-only migration with S32-R1 all-origin-refs uniqueness) -> T019 (independent security/audit review).
-- G2 removes membership revocation/hard deletion and auth-user cascade from the final-PO matrix because those paths do not affect valid Platform Owner count. The remaining role-demotion and staff-profile-deletion paths share one serialization invariant.
-- Constitution v1.5.0: Principle I requires workspace isolation; Principle III requires least-authority governance; Principle VI preserves membership/history. G1 now preserves the auth user and `staff_profiles` row and all protected history. The analysis makes no implementation-conformity claim without code and executed tests.
+- S36-PO-2 lane: T021 (RED, demotion path) -> T015 (demotion branch) -> T016. T022 (RED, membership-revocation path) is BLOCKED by S36-Q1 -> T015 (revocation branch) -> T016.
+- Constitution v1.5.0: Principle I requires workspace isolation; Principle III requires least-authority governance; Principle VI preserves membership/history. The S36 amendment keeps membership hard deletion prohibited, keeps the staff-profile no-delete trigger and RESTRICT foreign keys, and adds no deletion path. The analysis makes no implementation-conformity claim without code and executed tests.
 
 ## Static FK and trigger findings
 
 - On the start HEAD and `origin/main`, the relevant migration set is identical for this evidence: 40 FKs directly reference `auth.users` or `public.staff_profiles` (19 and 21 respectively); no FK references `public.workspace_memberships`. Thirty-five use `ON DELETE RESTRICT`; five use PostgreSQL's default `NO ACTION`.
 - None of those referencing tables is trainer-only/disposable. They hold shared governance, client, plan, log, subscription, financial, audit, catalog-provenance, or idempotency records.
 - `public.staff_profiles.user_id` -> `auth.users(id)` is `ON DELETE RESTRICT`, so deleting the auth user is rejected while the `staff_profiles` row exists. `staff_profiles_no_delete`, `workspace_memberships_no_delete`, and `workspaces_no_delete` are separate controls that fire only on direct deletes of their own tables (including for privileged callers) and do not run on the auth-user parent-delete path. Under G1=A these guards intentionally remain; departure is performed by deactivation + revoke, not deletion.
+- The `workspace_memberships.workspace_id` → `workspaces(id)` relationship is asserted by no test (see `traceability.md` FR-002). This is an evidence gap, not a new finding.
 - Existing tests cover application DELETE denial, immutable/no-delete triggers, restrictive client FKs, and a client auth-deletion failure. No existing test covers a successful departed-trainer deletion, because that behavior is no longer in scope.
 
 ## Static traceability
 
-`traceability.md` covers 22 feature rows: 5 VERIFIED, 11 PARTIAL, 6 NOT-FOUND, 0 DEFERRED. The existing feature citations were checked statically; the S35 FR-015/SC-007 rows are NOT-FOUND and track the missing deactivation capability (T020) and executed tests. No test suite or CI job was run. PARTIAL rows identify gaps in composite/schema assertions, source confirmation, coverage breadth, CI workflow assertions, migration direction, and PII scans.
+`traceability.md` covers 22 feature rows: 5 VERIFIED, 11 PARTIAL, 6 NOT-FOUND, 0 DEFERRED. The FR-002 row now names the missing `workspace_memberships`→workspace assertion and cites only what `rls-catalog.test.ts:792-803` covers. The FR-014/SC-005 rows cite T021/T022 and the S36-PO-2 amendment. No test suite or CI job was run.
 
 ## Implementation gates (not Analyze defects)
 
 - T014 remains open until its roster migration and executed positive/negative tests pass; T016 records the subsequent architect security/evidence package.
-- T015 is not blocked by G1 (S35-PO-1 G1=A). Its role-demotion and staff-profile-deletion guard work (G2=A scope) is independent; departed-trainer deletion stays blocked by the retained no-delete trigger and RESTRICT FK. T016 follows T014/T015.
-- T017-T020 cover the resolved deactivate+revoke model and are no longer blocked. T020 specifically tracks the missing deactivation capability (tagged FR-015). No deletion mechanism is introduced.
-- These are implementation, evidence, security, and PO-approval gates. They are not open CRITICAL/HIGH Analyze findings.
+- T015 is not blocked by G1 (S35-PO-1 G1=A). Its demotion and staff-profile-deletion branches are implementable after T021 RED tests. Its membership-revocation branch is BLOCKED by S36-Q1 (T022). Departed-trainer deletion stays blocked by the retained no-delete trigger and RESTRICT FK. T016 follows T014/T015.
+- T017-T020 cover the resolved deactivate+revoke model and are not blocked. No deletion mechanism is introduced.
+- These are implementation, evidence, security, and PO-approval gates. A3 is a PO-approval gate (S36-Q1) recorded above.
 
 ## Verdict
 
-**PASS WITH OPEN BLOCKERS — 0 open CRITICAL/HIGH findings** (0 CRITICAL, 0 HIGH, 2 MEDIUM, 0 LOW). The two retained MEDIUM evidence gaps are A1 (FR-003 assertion breadth) and A2 (FR-004 helper/access-widening breadth); both are visible in traceability and are not claimed closed. The roster, G2-scoped final-PO, and resolved G1 deactivate+revoke artifacts are ready for their independent implementation lanes after their stated gates. PO-ESCALATION G1 is closed by S35-PO-1 G1=A. This static document review does not claim implementation completion.
+**PASS WITH OPEN ITEMS — 0 open CRITICAL findings; 0 open HIGH findings among the Analyze findings; 2 MEDIUM (A1, A2) retained; 1 escalated PO question (A3 / S36-Q1) blocking T022 and the membership-revocation branch of T015.** The S36-PO-2 demotion and staff-profile-deletion artifacts are ready for their independent lanes after T021 RED tests. This static document review does not claim implementation completion.
 
 ## History
 
+- 2026-11-06 21:24 +02:00, S36 round 3 (PR #50, CodeRabbit thread fixes): recorded S36-PO-2 verbatim (demotion AND membership revocation remove PO access; final-PO guard covers membership revocation; mapping option (c) per architect). Amended FR-014, SC-005, Story 6 scenarios 1-4, plan.md ND-F3-3 and governance plan, and tasks T015; added T021 (RED demotion) and T022 (RED revocation, BLOCKED by S36-Q1). Corrected FR-002 evidence in `traceability.md`. Escalated S36-Q1 (removal mechanism for membership revocation). No tests, builds, SQL, stacks, or code were run.
 - 2026-11-06 08:19 +02:00, S35 round-2 CodeRabbit fixes (review 5795944252): corrected the analyzed-baseline header to name the S35 amendment `21c022f` and its S34 parent `552361c`; replaced the T015 "BLOCKED pending G1" gate with the G1=A resolution (G2=A guard scope unchanged). Verdict unchanged: 0 open CRITICAL/HIGH with A1/A2 MEDIUM retained.
 - 2026-11-06, S35 G1 resolution: recorded S35-PO-1 G1=A verbatim (deactivate/revoke; preserve audit), resolved PO-ESCALATION G1, rewrote FR-015/SC-007 and T017-T019 to the deactivate+revoke model (no deletion), added T020 for the missing deactivation capability (tagged FR-015), updated traceability. Verdict: 0 open CRITICAL/HIGH with A1/A2 MEDIUM retained. No tests, builds, SQL, stacks, or code were run.
 - 2026-11-05 04:58 +02:00, S34 G1/G2 round: recorded G1=A (conditional) and G2=A verbatim; FR-015/SC-007 and T017-T019 BLOCKED. Verdict 0 open CRITICAL/HIGH.
