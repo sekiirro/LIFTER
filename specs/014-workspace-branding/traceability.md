@@ -148,3 +148,13 @@ T053 assertions passed on the current implementation head `685c7c3`: four focuse
 | FR | Task | Test | Evidence |
 |---|---|---|---|
 | FR-009 | T900 | `tests/integration/branding-upload-recovery.test.ts::keeps attached uploads in both GC candidate and finalize paths`; `tests/integration/branding-owner-gc.test.ts::T050 collects a stale attached upload after its asset references disappear` | Commit `c0e969b`; migration `20261107032002`; focused integration run on current head: 5 files / 41 tests passed; finalizer mutation RED failed at the expected `attached` vs `cleaned` assertion and MD5 teardown passed. |
+
+## S36 round 27 evidence
+
+| FR | Task | Test | Evidence |
+|---|---|---|---|
+| FR-028 | T059 | `tests/unit/client-signup-focus.test.tsx::hides the previous username server error while a resubmission is pending` | Commit `7e7b1f6b`; focused file passed 9/9. The server error is hidden while the action is pending and the existing unavailable message returns after a new unavailable result. |
+| FR-027, FR-029 | T052 | `tests/unit/registration-hero.test.ts::keeps the print reset for the Glisse blur` | Commit `1cfb336a`; focused file passed 35/35. Print reset now matches the desktop no-artwork selector specificity. |
+| FR-017 | T004 | `tests/unit/branding-storage-ci-contract.test.ts::requires a root-profile Storage job, readiness gate, and F14 zero-skip guard` | Commit `7a0a51eb`; focused file passed 9/9. Present skip and fail-fast guards are checked independently against the fixture import. |
+| FR-028 | T062 | `tests/e2e/client-accounts.spec.ts` signup retry, collision and lost-response cases; `tests/e2e/client-accounts-a11y.spec.ts` keyboard flow; `tests/e2e/registration-links.spec.ts` valid-form assertions | Commit `4b0a1e34` corrects invalid two-part synthetic names and updates selectors/assertions for the approved profile fields. Stack B E2E was not executed because Stack B remains ENV-BLOCKED; T062 remains unchecked pending executed passing coverage. |
+| FR-029 | T052 | `tests/e2e/registration-hero-glisse.spec.ts` translucency and contrast matrix | Commit `ad32eb21` pins the emulated browser above the constrained-device cutoff. The hosted run's hardware reports selected the documented opaque fallback (`alpha=1`) in cases requiring enhanced glass; fixed-head execution remains pending. |
