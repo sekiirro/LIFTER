@@ -344,7 +344,7 @@ Clarification: these exact strings apply to Arabic only. The T03 digits are West
 | T07.liked | Exercises you like |
 | T07.disliked | Exercises you dislike |
 | T08 | Training split |
-| T08.system | What training system would you like to follow? |
+| T08.system | What training split would you like to follow? |
 | N01 | What is your goal for your nutrition plan? |
 | N01.cut.title | Fat loss |
 | N01.cut | Fat loss at a moderate rate while preserving as much muscle mass as possible. |
@@ -364,7 +364,7 @@ Clarification: these exact strings apply to Arabic only. The T03 digits are West
 | N05.medications | List the medications and supplements you take. |
 | N05.supplement_suggestion | Would you like us to suggest dietary supplements? |
 | N06 | Tell us what a typical day of eating looks like for you. |
-| N07 | How many meals would you like to eat each day? (maximum: 5; PO-approved departure from canonical source) |
+| N07 | How many meals would you like to eat per day? (maximum: 5; PO-approved departure from canonical source) |
 | N07.training_timing | After which meal would you like to train? |
 | N08 | What’s your food budget? |
 | N08.foods | *(Food chips are shown within the N08 budget question; there is no separate question prompt.)* |
@@ -381,7 +381,7 @@ Clarification: these exact strings apply to Arabic only. The T03 digits are West
 | N12 | Choose the body-fat reference that most closely resembles your body shape. |
 | N12.disclaimer | This percentage is an estimate and is not a substitute for measuring body-fat percentage. |
 
-The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 endpoint labels and N12 card descriptions must also be translated into EN-mode as separate authored option records. B06 AR labels «النوع» / «ذكر» / «أنثى» remain as recorded; EN question “Gender” and options “Male” / “Female” are approved by S32-PO-5. T03 Arabic option labels remain pending S32-PO-8 Q5 copy approval and must not ship. Other rows outside the approved set still require PO review and must never be inferred at runtime. Do not add missing goal options or body-fat percentages.
+The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 endpoint labels and N12 card descriptions must also be translated into EN-mode as separate authored option records. B06 AR labels «النوع» / «ذكر» / «أنثى» remain as recorded; EN question “Gender” and options “Male” / “Female” are approved by S32-PO-5. S33-PO-3 approves the Arabic T03 option labels. Other rows outside the approved set still require PO review and must never be inferred at runtime. Do not add missing goal options or body-fat percentages.
 
 #### EN option translations — PO review
 

@@ -147,7 +147,11 @@ it('provisions the exact approved starter copy for a new workspace', async () =>
             id: string;
             label?: { en?: string };
             optionLabels?: Array<{ en: string }>;
-            labels?: { minimum?: { en?: string } };
+            labels?: {
+              minimum?: { en?: string };
+              middle?: { en?: string };
+              maximum?: { en?: string };
+            };
           }>;
         }
       ).questions;
@@ -169,7 +173,11 @@ it('provisions the exact approved starter copy for a new workspace', async () =>
       });
       expect(questions.find((question) => question.id === 'N11')).toMatchObject(
         {
-          labels: { minimum: { en: 'I barely feel hungry' } },
+          labels: {
+            minimum: { en: 'I barely feel hungry' },
+            middle: { en: 'Moderate hunger' },
+            maximum: { en: 'Very strong hunger' },
+          },
         },
       );
       throw rollback;
