@@ -357,7 +357,11 @@
  */
 .stage .fieldControl,
 .stage .countryPicker {
+  border: 1px solid var(--color-border-strong);
   background: var(--color-card-raised);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.12),
+    inset 0 -1px 2px rgba(0, 0, 0, 0.18);
 }
 
 :global(:where([data-theme='dark'])) .stage .fieldControl,
