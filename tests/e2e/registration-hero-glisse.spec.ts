@@ -127,6 +127,16 @@ async function setTheme(
   theme: 'light' | 'dark' | null,
   locale: 'ar' | 'en' = 'en',
 ) {
+  await context.addInitScript(() => {
+    Object.defineProperty(navigator, 'hardwareConcurrency', {
+      configurable: true,
+      get: () => 8,
+    });
+    Object.defineProperty(navigator, 'deviceMemory', {
+      configurable: true,
+      get: () => 8,
+    });
+  });
   await context.clearCookies();
   const cookies: { name: string; value: string; url: string }[] = [
     { name: LOCALE_COOKIE, value: locale, url: origin },
