@@ -69,4 +69,19 @@ describe('production staff Forms route boundary', () => {
       /\{demo\s*&&\s*\(\s*<p className=\{styles\.previewNotice\}/u,
     );
   });
+
+  it('accepts the saved draft before starting publish', () => {
+    const staffConsole = readFileSync(
+      resolve(root, 'components/forms/FormsStaffConsole.tsx'),
+      'utf8',
+    );
+    const publishAction = staffConsole.slice(
+      staffConsole.indexOf('async function publish()'),
+      staffConsole.indexOf('async function retire()'),
+    );
+
+    expect(publishAction.indexOf('acceptResult(saved,')).toBeLessThan(
+      publishAction.indexOf('adapter.publish('),
+    );
+  });
 });

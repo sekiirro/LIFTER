@@ -170,6 +170,7 @@ export function FormsStaffConsole({
         acceptResult(saved, '');
         return;
       }
+      acceptResult(saved, '');
       const published = await adapter.publish(role, saved.form.id);
       acceptResult(published, messages['forms.staffPublished']);
     } catch {
