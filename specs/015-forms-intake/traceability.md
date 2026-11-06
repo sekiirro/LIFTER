@@ -82,5 +82,6 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 | FR-024/025 | T109 | `specs/015-forms-intake/quickstart.md` resolves repository and Stack D paths from current checkout; `format:check` passed. | `f779402` |
 | FR-024/025 | T110 | `specs/015-forms-intake/reports/evidence/s18-r4/INDEX.md` lists the 50 verified S18 screenshots and hashes; copied capture hashes matched the review-provided source set. | `722c3a2` |
 | FR-024/025 | T121 | `specs/015-forms-intake/reports/evidence/s18-r4/INDEX.md`; all 50 screenshot targets resolve to files beside the index. | `9280643d` |
+| FR-024/025 | T122 | `specs/015-forms-intake/tasks.md`; repository task ID scan shows T102 is unique and the open restack task has ID T129. | `cd12a8e7` |
 | FR-024/025 | T111 | Analyze S33 status marked historical; S30 quotation/S31 source label repaired; T012 traceability row restored in B stack merge. `format:check` passed. | `f779402`, `759a1b5`, `c7b9de9` |
 | FR-024/025 | T101 | Stack D `tests/integration/rls-catalog.test.ts` + `tests/integration/branding-function-privileges.test.ts` passed 42/42 after updating the branch-specific private-function and service-role inventories. | A `0109ff2`; B `6155640`; StartedAt unchanged `2026-11-06T03:43:08.260140976Z`. |
