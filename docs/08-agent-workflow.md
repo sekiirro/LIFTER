@@ -74,12 +74,14 @@ PR before any merge into `main`. This process does not replace or bypass that ga
 
 ## Main merge gate
 
+CI runs on pushes to `main` and through `pull_request` for PR heads; feature-branch pushes do not create duplicate push runs. Superseded pull request runs are canceled by PR-scoped concurrency, while main pushes use unique ref-plus-run-ID groups and are neither canceled nor replaced by that policy. For each merge candidate, require three executed green CI runs on the exact final PR head; rerun the PR workflow on that same head as needed. The separate `validate`, `integration`, and `storage` jobs and the secret scan remain part of the gate.
+
 Before asking the PO to approve a merge to `main`, require items 1-5 on the exact PR head:
 
 1. A completed CodeRabbit review is APPROVED on the exact PR head (`commit_id == headRefOid`), with no later CHANGES_REQUESTED or DISMISSED review.
 2. PR `reviewDecision` is APPROVED.
 3. There are zero unresolved review threads and all actionable findings are resolved.
-4. Both GitHub Actions CI runs for the PR head are completed with success, and required security checks are green: the `push`-event run with `headSha == headRefOid` is the independent, non-author rerun of typecheck, lint, unit, and applicable integration/e2e gates; the `pull_request`-event run checks the merge result with current `main`. Agent-reported local results never substitute. Claude (architect) does not run tests or git and verifies both runs.
+4. Three GitHub Actions CI runs have executed and completed successfully on the exact final PR head, including the separate `validate`, `integration`, and `storage` jobs and the secret scan. The `pull_request` trigger provides the PR-head run; reruns on that unchanged head may supply the remaining green runs. Feature-branch push events do not create duplicate CI runs. Agent-reported local results never substitute. Claude (architect) does not run tests or git and verifies the exact head, execution, and conclusions.
 5. The architect has independently reviewed the actual diff and evidence.
 
 Then ask the PO for explicit merge approval and record the approved head SHA with that approval.

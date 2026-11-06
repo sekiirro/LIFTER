@@ -55,3 +55,6 @@ README.md (section: "Auditing new tables")
 ## Complexity Tracking
 
 None.
+## S33-PO-4 test hygiene
+
+Keep visibility probes bounded and role-specific while retaining every PO/WO visibility and anon denial assertion. Do not change audit policy or schema in this scope.

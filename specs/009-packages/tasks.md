@@ -122,3 +122,7 @@ SC coverage: SC-001 → T010/T014/T018/T020/T027/T028/T033; SC-002 → T010/T032
 **Ambiguities recorded and handled**: fixed signature lacks request key → exact current-only payload replay; older-term revert creates N+1, moves current and emits one event; shared authenticated SQL role → safe invoker view/column grants plus explicit PO/WO commission RPC; initial availability unspecified → false until explicit PO toggle; same-day custom/preset conflict → fixed representation and invalid_input. These are documented implementation interpretations, not resolution of ND-F9-1..5. Remaining policy ambiguity count: exactly five deliberately open data/policy decisions, none blocks local development. Reviewer must assess these explicit interpretations without silently changing binding rules.
 
 **Next action**: implement only after artifact handoff, then independent reviewer Phase 8. No application code was produced by this analysis.
+
+## S33 test hygiene
+
+- [x] T900 [FR-013, FR-014] Make the authenticated package empty-state Playwright fixture explicit and include route/render diagnostics on failure. Preserve the existing empty-state, role, theme, and localization assertions; do not alter product behavior.

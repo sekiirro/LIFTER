@@ -1,3 +1,4 @@
+import { createHash } from 'node:crypto';
 import { afterAll, beforeAll, expect, it } from 'vitest';
 import { brandingFixture, credential } from './branding-security-fixture';
 import { admin, loadEnv, sql } from './harness';
@@ -10,22 +11,36 @@ import { brandingValidatedObjectName } from '../../lib/branding/object-path';
 const db = sql();
 let fixture: Awaited<ReturnType<typeof brandingFixture>>;
 let mutationOriginal: string | undefined;
+let mutationOriginalMd5: string | undefined;
+let mutationSignature: string | undefined;
 async function applyGcFunctionDefinition(definition: string) {
   await db`grant create on schema app_private to branding_definer`;
-  await db`grant branding_definer to postgres`;
+  await db`grant branding_definer to postgres with set true`;
   try {
     await db.begin(async (tx) => {
       await tx`set local role branding_definer`;
       await tx.unsafe(definition);
     });
   } finally {
-    await db`revoke branding_definer from postgres`;
-    await db`revoke create on schema app_private from branding_definer`;
+    await db`revoke branding_definer from postgres granted by postgres`;
+    await db`revoke create on schema app_private from branding_definer granted by postgres`;
   }
 }
 afterAll(async () => {
   if (mutationOriginal) {
+    if (!mutationSignature || !mutationOriginalMd5)
+      throw new Error('T050 mutation restoration guard is incomplete');
     await applyGcFunctionDefinition(mutationOriginal);
+    const signature = mutationSignature;
+    const [restored] = await db<{ definition: string }[]>`
+      select pg_get_functiondef(${signature}::regprocedure) as definition
+    `;
+    const restoredMd5 = createHash('md5')
+      .update(restored?.definition ?? '')
+      .digest('hex');
+    expect(restoredMd5, 'branding GC mutation restoration MD5').toBe(
+      mutationOriginalMd5,
+    );
     console.log('T050 mutation restored');
   }
   await db.end();
@@ -41,11 +56,15 @@ beforeAll(async () => {
   } as const;
   if (!(mutation in signatures)) throw new Error('unknown_gc_mutation');
   const signature = signatures[mutation as keyof typeof signatures];
+  mutationSignature = signature;
   const [row] = await db<{ definition: string }[]>`
     select pg_get_functiondef(${signature}::regprocedure) as definition
   `;
   if (!row?.definition) throw new Error('missing_gc_mutation_target');
   mutationOriginal = row.definition;
+  mutationOriginalMd5 = createHash('md5')
+    .update(mutationOriginal)
+    .digest('hex');
   const replacements: Record<string, [RegExp, string]> = {
     publish: [
       /if exists\(select 1 from app_private\.branding_gc_claims g\s+where g\.workspace_id=d\.workspace_id(?:\s+and g\.lease_until\s*>\s*statement_timestamp\(\))?\)\s*then\s*raise exception using errcode='40001',message='branding_deletion_in_progress';\s*end if;/,
@@ -76,6 +95,52 @@ async function denied<T>(run: () => T | Promise<T>) {
     rejected = true;
   }
   expect(rejected).toBe(true);
+}
+
+type BrandingGcClaimRow = {
+  id: string;
+  workspace_id: string;
+  bucket_id: string;
+  object_name: string;
+  lease_until: string;
+};
+
+async function claimFixtureObject(
+  objectName: string,
+  deadlineMs = 60_000,
+): Promise<BrandingGcClaimRow> {
+  const deadline = Date.now() + deadlineMs;
+  let pages = 0;
+  while (Date.now() < deadline) {
+    pages += 1;
+    const claims = await db<BrandingGcClaimRow[]>`
+      select * from app_private.branding_gc_claim(50)
+    `;
+    const target = claims.find((row) => row.object_name === objectName);
+    for (const claim of claims) {
+      if (claim.object_name === objectName) continue;
+      const removed = await admin()
+        .storage.from(claim.bucket_id)
+        .remove([claim.object_name]);
+      if (removed.error)
+        throw new Error(
+          `GC backlog cleanup failed for an unreferenced claim (${removed.error.message})`,
+        );
+      const [finalized] = await db<{ cleaned: boolean }[]>`
+        select app_private.branding_gc_finalize(${claim.id}::uuid) as cleaned
+      `;
+      if (finalized?.cleaned !== true)
+        throw new Error('GC backlog cleanup did not finalize its claim');
+    }
+    if (target) return target;
+    if (claims.length === 0)
+      throw new Error(
+        `branding_gc_claim returned no claims while looking for the fixture object (page ${pages}); it may be ineligible or leased: ${objectName}`,
+      );
+  }
+  throw new Error(
+    `GC fixture object was not claimed before the ${deadlineMs}ms deadline (${pages} pages): ${objectName}`,
+  );
 }
 
 it('T049 stages, attaches, and publishes only within current manage_branding scope', async () => {
@@ -165,6 +230,11 @@ it('T049 stages, attaches, and publishes only within current manage_branding sco
     await db`select count(*)::int as count from app_private.branding_published_assets
     where workspace_id=${fixture.wsA.id} and version_id=${published.data}`;
   expect(publishedAssets[0]?.count).toBe(1);
+  const [oldAsset] = await db<{ object_name: string }[]>`
+    select object_name from app_private.branding_published_assets
+    where workspace_id=${fixture.wsA.id} and version_id=${published.data} and slot='logo'
+  `;
+  expect(oldAsset?.object_name).toBeTruthy();
   const opened = await f.anon.client.rpc('registration_link_open', {
     token: fixture.token,
   });
@@ -196,13 +266,27 @@ it('T049 stages, attaches, and publishes only within current manage_branding sco
   expect(oldRead.error).toBeNull();
   expect((oldRead.data as { status: string }).status).toBe('invalid');
   const workerEnv = loadEnv();
-  await runBrandingGc(
-    createBrandingGc({
-      SUPABASE_URL: workerEnv.apiUrl,
-      SUPABASE_SERVICE_ROLE_KEY: workerEnv.serviceRoleKey,
-    }),
-    50,
-  );
+  const worker = createBrandingGc({
+    SUPABASE_URL: workerEnv.apiUrl,
+    SUPABASE_SERVICE_ROLE_KEY: workerEnv.serviceRoleKey,
+  });
+  const gcDeadline = Date.now() + 60_000;
+  let gcBatches = 0;
+  let oldAssetRemains = true;
+  while (Date.now() < gcDeadline && oldAssetRemains) {
+    gcBatches += 1;
+    const processed = await runBrandingGc(worker, 50);
+    const [remaining] = await db<{ remains: boolean }[]>`
+      select exists(select 1 from app_private.branding_published_assets
+        where workspace_id=${fixture.wsA.id} and object_name=${oldAsset!.object_name}) as remains
+    `;
+    oldAssetRemains = remaining?.remains ?? true;
+    if (processed === 0 && oldAssetRemains) break;
+  }
+  expect(
+    oldAssetRemains,
+    `fixture branding asset was not collected within 60000ms (${gcBatches} batches): ${oldAsset!.object_name}`,
+  ).toBe(false);
   const [oldClaim] = await db<{ id: string }[]>`
     select target_id::text as id from public.audit_events
     where workspace_id=${fixture.wsA.id} and action='branding.gc_claimed'
@@ -342,9 +426,8 @@ it('T050 claims only unreferenced assets, blocks new references, and requires a 
       contentType: 'image/png',
     });
   expect(uploaded.error).toBeNull();
-  const claims = await db`select * from app_private.branding_gc_claim(50)`;
-  const row = claims.find((candidate) => candidate.object_name === objectName);
-  expect(row?.id).toBeTruthy();
+  const row = await claimFixtureObject(objectName);
+  expect(row.id).toBeTruthy();
   const claimId = row?.id as string;
   const workspaceId = row?.workspace_id as string;
   const claimedObject = row?.object_name as string;
@@ -373,11 +456,8 @@ it('T050 claims only unreferenced assets, blocks new references, and requires a 
     () => db`select app_private.branding_gc_finalize(${claimId}::uuid)`,
   );
   await db`update app_private.branding_gc_claims set lease_until=statement_timestamp()-interval '1 second' where id=${claimId}::uuid`;
-  const retried = await db`select * from app_private.branding_gc_claim(50)`;
-  const retryClaim = retried.find(
-    (candidate) => candidate.object_name === objectName,
-  );
-  expect(retryClaim?.id).toBe(claimId);
+  const retryClaim = await claimFixtureObject(objectName);
+  expect(retryClaim.id).toBe(claimId);
   expect(Date.parse(retryClaim!.lease_until as string)).toBeGreaterThan(
     Date.now(),
   );
@@ -444,11 +524,9 @@ it('T050 collects a stale attached upload after its asset references disappear',
       updated_at=statement_timestamp()-interval '31 minutes'
     where id=${uploadId}`;
 
-  const claims = await db`select * from app_private.branding_gc_claim(50)`;
-  const claim = claims.find(
-    (row) => row.object_name === `${fixture.wsB.id}/staging/${uploadId}`,
+  const claim = await claimFixtureObject(
+    `${fixture.wsB.id}/staging/${uploadId}`,
   );
-  expect(claim).toBeDefined();
   const finalized =
     await db`select app_private.branding_gc_finalize(${claim!.id}::uuid) as cleaned`;
   expect(finalized[0]?.cleaned).toBe(true);
@@ -491,15 +569,8 @@ it('T050 preserves a live same-content upload when an expired GC worker resumes'
       workspace_id,version_id,slot,bucket_id,object_name,content_type,byte_size)
     values(${workspaceId},${oldVersionId},'logo','branding-validated',${staleObject},'image/png',18)`;
 
-  const [claimed] = await db<
-    {
-      id: string;
-      workspace_id: string;
-      bucket_id: string;
-      object_name: string;
-    }[]
-  >`select * from app_private.branding_gc_claim(1)`;
-  expect(claimed?.object_name).toBe(staleObject);
+  const claimed = await claimFixtureObject(staleObject);
+  expect(claimed.object_name).toBe(staleObject);
   const claim = {
     id: claimed!.id,
     workspace_id: claimed!.workspace_id,
@@ -534,14 +605,7 @@ it('T050 preserves a live same-content upload when an expired GC worker resumes'
   await started;
   await db`update app_private.branding_gc_claims
     set lease_until=statement_timestamp()-interval '1 second' where id=${claim.id}::uuid`;
-  const [reclaimed] = await db<
-    {
-      id: string;
-      workspace_id: string;
-      bucket_id: string;
-      object_name: string;
-    }[]
-  >`select * from app_private.branding_gc_claim(1)`;
+  const reclaimed = await claimFixtureObject(staleObject);
   expect(reclaimed?.id).toBe(claim.id);
   const secondPass = await runBrandingGc({
     claim: async () => [reclaimed!],

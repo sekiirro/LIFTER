@@ -15,6 +15,8 @@ This feature creates the LIFTER repository baseline on the approved Architecture
 - GitHub Actions CI
 - a Worker-size report checked against the official 64 MiB uncompressed limit
 
+For the S33 CI optimization, the workflow will run push events only on `main`, retain pull request checks, cancel superseded pull request runs without canceling main pushes, and omit the unused Playwright browser installation from `validate` after confirming no validate step uses a browser. The `storage` job and its independent required result remain separate. The `integration` and `validate` jobs retain their current names and all other steps and pinned actions remain intact.
+
 Design decisions are in [research.md](research.md).
 
 ## Technical Context
@@ -81,6 +83,16 @@ vitest.config.ts  playwright.config.ts
 ```
 
 **Structure Decision**: A single app at the repo root. A monorepo isn't justified until a second deployable exists; the `telegram-webhook` and `cron` Workers arrive in later features and can live under `workers/` then.
+
+## S33 CI optimization plan
+
+- Keep the workflow on GitHub-hosted `ubuntu-latest` runners.
+- Set the push branch filter to `main`; retain the `pull_request` trigger.
+- Add top-level event-scoped concurrency grouping with PR number for pull requests. Give each push run a unique group containing its event name, ref, and run ID; set cancellation true only for `pull_request` events. This prevents GitHub from replacing a pending main run in a shared concurrency group.
+- Inspect every `validate` step for browser use. If none uses a browser, remove only the Playwright browser install from `validate`.
+- Preserve job names `validate`, `integration`, and `storage`; leave Storage separate and required. Preserve every other step and existing action pin.
+- Update docs/08-agent-workflow.md in the same PR and include all workflow changes in the PR description.
+- Validate with actionlint and the authorized diff secret scan with positive control; then use the required hosted CI/CodeRabbit review gates on the exact PR head. No merge is part of this plan.
 
 ## Complexity Tracking
 

@@ -284,8 +284,13 @@ Earlier ND-F14-1..6 wording is historical and superseded by the final decision r
 - **DG-F14-3 — Decided (PO, 2026-10-28)**: Show inline original-versus-adjusted brand color comparison with an accessibility explanation.
 
 **Plan gate:** The PO-approved focused Sol Medium critique was completed against `c575cfa35b8a22b2f1870692f91846558f332e5e`; all 8 findings were accepted and the architect response is recorded in [spec debate r2](research/spec-debate-r2-scope.md). Final PO decisions are recorded above; r1/r2 debate records remain historical, with retention superseded by PO 2026-10-29 F14-5.
-
 ### S34 PO decisions — H1/A and H2/A
 
 - **S34-PO-1 H1=A (verbatim):** “Approve exact Arabic copy: «اسم المستخدم ده غير متاح. اختار اسم تاني.» / «استخدم من 3 لـ30 حرف: حروف إنجليزي أو أرقام أو نقطة أو شرطة سفلية.»” The first string maps to the English unavailable message; the second maps to the English format message. Use these exact bytes, including Western digits `3` and `30`. Taken and reserved usernames share the unavailable message.
 - **S34-PO-1 H2=A (verbatim):** “Defer enforcement against existing accounts pending safe remediation.” No username DB constraint or validation against existing accounts is added in this round. New-signup format validation remains as approved in S32-PO-8 Q7. T058 stays open.
+
+### Session 2026-11-04 — S33-PO-4 (preserved from origin/main)
+
+### Session 2026-11-04 — S33-PO-4
+
+PO source: S33-PO-4, “Fix stack drift, flaky tests, billing-related CI blockers, and PR/issue backlog organization.” S33 may converge the three installed branding function bodies to the existing post-20261102140000/post-20261102144000 definitions, add migration assertions for those expected bodies, and make existing GC integration tests bounded and fixture-aware. This preserves FR-009 cleanup and reference guarantees and adds no product behavior, data deletion, grant, or schema-object change. No open ambiguities remain within this convergence/test scope.

@@ -141,3 +141,10 @@ T053 assertions passed on the current implementation head `685c7c3`: four focuse
 - **T059 / FR-028 — VERIFIED.** Exact copy tests and the EN/AR server-error render/focus test pass on commit `0dbc25a`; `tests/unit/client-signup-focus.test.tsx` and `tests/unit/client-accounts-messages.test.ts` passed 13/13. Username error text is wrapped in `<bdi dir="auto">`; Stack B live unavailable E2E is limited by unapplied `20261107032001` and is reported as ENV-DRIFT.
 - **T060 / FR-008, FR-028 — VERIFIED.** On commit `8f09b8b`, `tests/e2e/client-signup-username-screenshots.spec.ts::captures invalid Username across locale, theme and viewport` passed 1/1 on Stack B. The eight AR/RTL and EN/LTR × light/dark × 390/1440 screenshots are in `%TEMP%/lifter-s34-hero-r22`; axe recorded zero violations per capture. `INDEX.md` lists exactly the eight PNGs.
 - **T058 / FR-028 — OPEN.** S34-PO-1 H2=A explicitly defers existing-account enforcement. The read-only audit and migration-history proposal are recorded in the S34 r22 run report; no data, schema, migration or history row changed.
+
+﻿
+## S33 traceability — S33-PO-4
+
+| FR | Task | Test | Evidence |
+|---|---|---|---|
+| FR-009 | T900 | `tests/integration/branding-upload-recovery.test.ts::keeps attached uploads in both GC candidate and finalize paths`; `tests/integration/branding-owner-gc.test.ts::T050 collects a stale attached upload after its asset references disappear` | Commit `c0e969b`; migration `20261107032002`; focused integration run on current head: 5 files / 41 tests passed; finalizer mutation RED failed at the expected `attached` vs `cleaned` assertion and MD5 teardown passed. |

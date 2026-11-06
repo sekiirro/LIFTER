@@ -45,6 +45,22 @@ it('does not leave an attachment-failure status update before its rolled-back st
   );
 });
 
+it('keeps attached uploads in both GC candidate and finalize paths', async () => {
+  const [claim] = await db<{ body: string }[]>`
+    select pg_get_functiondef(
+      'app_private.branding_gc_claim(integer)'::regprocedure
+    ) as body
+  `;
+  const [finalize] = await db<{ body: string }[]>`
+    select pg_get_functiondef(
+      'app_private.branding_gc_finalize(uuid)'::regprocedure
+    ) as body
+  `;
+  expect(claim?.body).toMatch(/status in \([^)]*'attached'[^)]*\)/);
+  expect(finalize?.body).toMatch(/status in \([^)]*'attached'[^)]*\)/);
+  expect(finalize?.body).toMatch(/set status='cleaned'/);
+});
+
 it('collects stale staging and validated bytes through bounded GC leases', async () => {
   const uploadId = crypto.randomUUID();
   const stagingObject = `${fixture.wsA.id}/staging/${uploadId}`;
@@ -87,13 +103,21 @@ it('collects stale staging and validated bytes through bounded GC leases', async
     SUPABASE_SERVICE_ROLE_KEY: config.serviceRoleKey,
   };
   const batches: number[] = [];
-  for (let attempt = 0; attempt < 50; attempt++) {
+  const gcDeadline = Date.now() + 60_000;
+  let uploadStatus: string | undefined;
+  while (Date.now() < gcDeadline) {
     const processed = await runBrandingGc(createBrandingGc(env), 1);
     batches.push(processed);
-    if (processed === 0) break;
+    const [upload] = await db<{ status: string }[]>`
+      select status from app_private.branding_uploads where id=${uploadId}
+    `;
+    uploadStatus = upload?.status;
+    if (uploadStatus === 'cleaned' || processed === 0) break;
   }
-  expect(batches.at(-1)).toBe(0);
-  expect(batches.length).toBeLessThanOrEqual(50);
+  expect(
+    uploadStatus,
+    `fixture upload was not cleaned within 60000ms (${batches.length} one-row GC batches; last status=${uploadStatus ?? 'missing'})`,
+  ).toBe('cleaned');
   expect(batches.every((batch) => batch >= 0 && batch <= 1)).toBe(true);
 
   const [row] = await db<
@@ -153,10 +177,19 @@ it('keeps validated bytes referenced by a draft out of stale-upload cleanup', as
     SUPABASE_URL: config.apiUrl,
     SUPABASE_SERVICE_ROLE_KEY: config.serviceRoleKey,
   };
-  let processed: number;
-  do {
-    processed = await runBrandingGc(createBrandingGc(env), 50);
-  } while (processed === 50);
+  await runBrandingGc(createBrandingGc(env), 50);
+  const claimId = crypto.randomUUID();
+  await expect(
+    db.begin(async (tx) => {
+      await tx`insert into app_private.branding_gc_claims(
+        id,workspace_id,bucket_id,object_name,lease_until
+      ) values(
+        ${claimId},${fixture.wsA.id},'branding-validated',${validatedObject},
+        statement_timestamp()+interval '5 minutes'
+      )`;
+      await tx`select app_private.branding_gc_finalize(${claimId}::uuid)`;
+    }),
+  ).rejects.toThrow(/branding_asset_referenced/);
 
   const [row] = await db<
     { status: string; validated_object: string | null }[]

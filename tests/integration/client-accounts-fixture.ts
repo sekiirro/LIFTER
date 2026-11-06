@@ -155,7 +155,8 @@ export async function signup(
     return row!.result;
   } catch (error) {
     throw new Error(
-      'Signup SQL failed: ' + String((error as { code?: string }).code),
+      'Signup SQL failed: client_signup status=SQL_ERROR code=' +
+        String((error as { code?: string }).code),
     );
   }
 }
@@ -177,7 +178,9 @@ export async function createRecoveryClientTarget(
   try {
     const result = await signup(connection, fixture);
     if (result.status !== 'complete')
-      throw new Error('Committed recovery client fixture failed');
+      throw new Error(
+        `Committed recovery client fixture failed: client_signup status=${String(result.status ?? 'missing')}`,
+      );
     const [row] =
       await connection`select id,auth_user_id,workspace_id,approval_state from public.clients where registration_link_id=${fixture.link}`;
     if (
@@ -421,9 +424,16 @@ export async function pendingRlsAccess(
   context: ClientContext,
   claims: object,
 ) {
-  const tables =
-    await tx`select n.nspname,c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relrowsecurity`;
+  const tables = await tx`
+    select n.nspname,c.relname from pg_class c
+    join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='public' and c.relkind='r' and c.relrowsecurity
+      and c.relname='clients'
+  `;
+  if (tables.length !== 1)
+    throw new Error('F11 RLS probe expected the public.clients policy target');
   await tx`select set_config('request.jwt.claims',${JSON.stringify(claims)},true)`;
+  await tx`set local statement_timeout = '5s'`;
   for (const table of tables) {
     // The selected constant exposes no protected field. Grant SELECT on a
     // safe UUID column to prevent missing privileges from hiding bad RLS.

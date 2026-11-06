@@ -197,3 +197,9 @@ Other technical interpretations/source conflicts are exhaustively recorded in re
 **Claude acceptance:** ACCEPTED for PR 2026-10-28 — see Implementation notes. Open decisions ND-F10-1..5 and ND-F9-1..5 and production blockers remain open; no deployment.
 
 - Claude independent audit (T034), 2026-10-28: reviewed migration 20261030120000_registration_links.sql (issuance order authorize → actor advisory lock/rolling count → version lookup → offer FOR UPDATE/current R10-1 → validation → insert; explicit column grants on both base tables; security-invoker safe views; PO/WO-gated commission reader; generic single invalid open result; set-once opened_at enforced by trigger; anon EXECUTE limited to registration_link_open), lib/registration-links/{service,open,token}.ts (both app walls before parsing, origin checked before token generation, hash-only RPC, URL only after commit, generic failures, anon-key no-store open, generic token-provider failure) and middleware.ts (exact one-segment public route, no token in redirect next, no-referrer/no-store). Reviewed U1–U7 evidence and the mutation table including the M7b gap and its deterministic re-run. Accepted for PR. Open: ND-F10-1..5, ND-F9-1..5; production blockers ND-F10-3 rate limits and host route-log redaction for /register/<token>; not validated in production.
+
+## S33 test hygiene
+
+- [x] T900 [FR-012, FR-014] Include response status and rendered route diagnostics when the authenticated registration-links acceptance heading is missing. Preserve the existing route, role, offer, localization, and accessibility assertions; do not alter product behavior.
+
+- [x] T901 [FR-009, FR-014] Keep public registration page unit tests independent of injected Supabase environment by mocking the optional public session client as unauthenticated; preserve the valid/invalid page assertions.
