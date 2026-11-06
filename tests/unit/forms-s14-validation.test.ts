@@ -10,6 +10,34 @@ import { evaluateProgression } from '../../lib/forms/progression';
 import starter from '../../lib/forms/s14-starter-content.json';
 
 describe('S14 form definition types and privacy metadata', () => {
+  it('requires N08 food choices to match the selected budget', () => {
+    const runtimeQuestions = starter.questions.map(
+      (question) =>
+        Object.fromEntries(
+          Object.entries(question).filter(
+            ([key]) => !['label', 'title', 'description'].includes(key),
+          ),
+        ) as unknown as FormQuestion,
+    );
+    expect(
+      validateAnswerSet(runtimeQuestions, {
+        N08: 'low',
+        'N08.foods': ['high:salmon'],
+      }),
+    ).toContainEqual({ code: 'invalid_choice', questionId: 'N08.foods' });
+    expect(
+      validateAnswerSet(runtimeQuestions, {
+        N08: 'low',
+        'N08.foods': ['low:eggs'],
+      }),
+    ).toEqual([]);
+    expect(
+      validateAnswerSet(runtimeQuestions, {
+        'N08.foods': ['low:eggs'],
+      }),
+    ).toContainEqual({ code: 'invalid_choice', questionId: 'N08.foods' });
+  });
+
   it('renders the S34-PO-4 approved English meal-count prompt and choices', () => {
     const mealCount = starter.questions.find(
       (question) => question.id === 'N07.meal_count',

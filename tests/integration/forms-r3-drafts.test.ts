@@ -40,9 +40,29 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
       ).toBe('ok');
       const definition = {
         questions: Array.from({ length: 60 }, (_, index) => ({
-          id: index === 0 ? 'q1' : `q${index + 1}`,
-          type: index === 0 ? 'shortText' : 'short_text',
+          id:
+            index === 0
+              ? 'q1'
+              : index === 2
+                ? 'N08'
+                : index === 3
+                  ? 'N08.foods'
+                  : `q${index + 1}`,
+          type:
+            index === 0
+              ? 'shortText'
+              : index === 2
+                ? 'singleChoice'
+                : index === 3
+                  ? 'multiChoice'
+                  : 'short_text',
           ...(index === 0 ? { charLimit: 20 } : {}),
+          ...(index === 2 ? { choices: ['low', 'medium', 'high'] } : {}),
+          ...(index === 3
+            ? {
+                choices: ['low:eggs', 'medium:chicken', 'high:salmon'],
+              }
+            : {}),
         })),
       };
       await tx`
@@ -88,6 +108,17 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
         baselinePassed,
         'unmutated draft save must pass before mutants',
       ).toBe(true);
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`set local role authenticated`;
+          await sp`
+            select public.save_form_draft(
+              ${context.wsA.id},${assignmentId},0,${randomUUID()},
+              ${sp.json({ N08: 'low', 'N08.foods': ['high:salmon'] })}
+            ) as result
+          `;
+        }),
+      ).rejects.toThrow('invalid_form_answer_snapshot');
       await tx`reset role`;
       const [draftState] = await tx`
         select coalesce(revision, 0)::int as revision

@@ -26,10 +26,11 @@
 
 - [x] All functional requirements have clear acceptance criteria
 - [x] User scenarios cover primary flows
-- [x] Feature meets measurable outcomes defined in Success Criteria
+- [ ] Feature meets measurable outcomes defined in Success Criteria (SC-007, SC-008, SC-009, SC-010, and SC-011 remain PARTIAL)
 - [x] No implementation details leak into specification
 
 ## Notes
 
 - Font names and WCAG 2.2 AA are product/design decisions from DESIGN.md and accessibility standards, not implementation choices.
 - PO open items (DESIGN.md §11) are recorded as NEEDS DECISION (FR-026), not as clarification blockers: none prevents the bounded F2 scope.
+- S30 review: PR #28's merged Glisse scope is covered by US6 and FR-027..029; `## Clarifications` cites the applicable PO decisions and explicitly records zero open ambiguities for this bounded scope. See `../checklists/analyze.md` and `../traceability.md` for current coverage/evidence gaps.

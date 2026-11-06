@@ -18,7 +18,7 @@ The default form screen uses the existing staff Builder, field, button, card, an
 - Rendered matrix — PASS. Playwright saved AR/EN × light/dark × 390/768/1440 captures for onboarding Builder and health context. Terms and Welcome states were also captured. Axe was clean on every matrix capture.
 - Tests and size — PASS. Full unit suite: 1,743/1,743. Focused Playwright: 1 passed; axe clean. Worker size gate passed.
 
-Screenshots are under C:\Users\NEW LAP\AppData\Local\Temp\lifter-f15-s18-ui\. Matrix filename patterns: onboarding-builder-{ar,en}-{light,dark}-{mobile,tablet,desktop}.png and health-context-{ar,en}-{light,dark}-{mobile,tablet,desktop}.png. Terms, Welcome, keyboard-focus and reduced-motion captures use s14-*, welcome-*, keyboard-focus and reduced-motion names. Reviewed Arabic/English light/dark mobile/desktop samples against DESIGN §12; no findings remained.
+Screenshots are in `reports/evidence/s18-r4/`; the repository-local `INDEX.md` lists all 50 captures. Matrix filename patterns: onboarding-builder-{ar,en}-{light,dark}-{mobile,tablet,desktop}.png and health-context-{ar,en}-{light,dark}-{mobile,tablet,desktop}.png. Terms, Welcome, keyboard-focus and reduced-motion captures use s14-*, welcome-*, keyboard-focus and reduced-motion names. Reviewed Arabic/English light/dark mobile/desktop samples against DESIGN §12; no findings remained.
 
 ## Skill selection
 

@@ -21,7 +21,7 @@
     "build:edge": "opennextjs-cloudflare build",
     "build:cron": "wrangler deploy --dry-run --config workers/cron/wrangler.jsonc --outdir .wrangler/cron-dist",
     "size": "node scripts/size-report.mjs",
-    "test:integration": "vitest run --config vitest.integration.config.ts",
+    "test:integration": "vitest run --config vitest.integration.config.ts --configLoader=runner",
     "backup": "node scripts/backup/backup.mjs",
     "backup:restore-test": "node scripts/backup/restore-test.mjs",
     "backup:keygen": "node scripts/backup/keygen.mjs",

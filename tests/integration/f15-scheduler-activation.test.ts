@@ -25,6 +25,8 @@ let safeTargetConfirmed = false;
 let cleanupAllowed = false;
 let fixtureBaselineWorkspaceIds: string[] = [];
 let fixtureBaselineUserIds: string[] = [];
+let fixtureOwnedWorkspaceIds: string[] = [];
+let fixtureOwnedUserIds: string[] = [];
 let captureServer: Server | undefined;
 type Captured = {
   chat_id: string;
@@ -138,22 +140,26 @@ async function waitForSuccessfulRuns(
 
 async function cleanupFixtures(
   tag: string,
+  ownedWorkspaceIds: string[],
+  ownedUserIds: string[],
   baselineWorkspaceIds: string[],
   baselineUserIds: string[],
 ) {
-  const [workspaceRows] = await db`
-    select coalesce(array_agg(id),array[]::uuid[]) as ids from public.workspaces
+  const workspaceRows = await db`
+    select id from public.workspaces
+    where id=any(${ownedWorkspaceIds}::uuid[])
+      and slug like ${`f15-s26-${tag.toLowerCase()}-%`}
   `;
-  const knownWorkspaces = new Set(baselineWorkspaceIds);
-  const workspaceIds = (workspaceRows!.ids as string[]).filter(
-    (id) => !knownWorkspaces.has(id),
-  );
-  const [users] = await db`
-    select coalesce(array_agg(id),array[]::uuid[]) as ids
-    from auth.users
+  const taggedUsers = await db`
+    select id from auth.users
+    where id=any(${ownedUserIds}::uuid[])
+      and raw_user_meta_data->>'f15_scheduler_run'=${tag}
   `;
-  const knownUsers = new Set(baselineUserIds);
-  const userIds = (users!.ids as string[]).filter((id) => !knownUsers.has(id));
+  if (
+    workspaceRows.length !== ownedWorkspaceIds.length ||
+    taggedUsers.length !== ownedUserIds.length
+  )
+    throw new Error('Tagged synthetic scheduler cleanup ownership mismatch');
   await db.begin(async (tx) => {
     await tx`set local session_replication_role='replica'`;
     const cols = await tx`
@@ -169,22 +175,33 @@ async function cleanupFixtures(
       const table = String(col.table_name).replaceAll('"', '""');
       const column = String(col.column_name).replaceAll('"', '""');
       const isWorkspace = column === 'workspace_id';
-      const ids = isWorkspace ? workspaceIds : userIds;
+      const ids = isWorkspace ? ownedWorkspaceIds : ownedUserIds;
       if (!ids.length) continue;
       await tx.unsafe(
         `delete from "${schema}"."${table}" where "${column}" = any($1::uuid[])`,
         [ids],
       );
     }
-    if (workspaceIds.length)
-      await tx`delete from public.workspaces where id=any(${workspaceIds}::uuid[])`;
+    if (ownedWorkspaceIds.length)
+      await tx`delete from public.workspaces where id=any(${ownedWorkspaceIds}::uuid[])`;
     await tx`delete from app_private.terms_policy_versions where version like ${`f15-sched-${tag}-%`}`;
   });
   const client = admin();
-  for (const userId of userIds) {
+  for (const userId of ownedUserIds) {
     const removed = await client.auth.admin.deleteUser(userId);
     if (removed.error) throw new Error('Tagged synthetic auth cleanup failed');
   }
+  const [preserved] = await db`
+    select
+      (select count(*)::int from public.workspaces
+        where id=any(${baselineWorkspaceIds}::uuid[])) as workspaces,
+      (select count(*)::int from auth.users
+        where id=any(${baselineUserIds}::uuid[])) as users
+  `;
+  expect(preserved).toMatchObject({
+    workspaces: baselineWorkspaceIds.length,
+    users: baselineUserIds.length,
+  });
 }
 
 function assertLoopbackTarget() {
@@ -217,6 +234,8 @@ async function finalizeSchedulerE2E() {
     if (cleanupAllowed && schedulerIsOff) {
       await cleanupFixtures(
         runTag,
+        fixtureOwnedWorkspaceIds,
+        fixtureOwnedUserIds,
         fixtureBaselineWorkspaceIds,
         fixtureBaselineUserIds,
       );
@@ -284,6 +303,8 @@ describe.runIf(
             { userId: clientFixture.userId },
           ];
           const userIds = users.map((user) => user.userId);
+          fixtureOwnedWorkspaceIds = [f.wsA.id, f.wsB.id];
+          fixtureOwnedUserIds = userIds;
           const slugTag = runTag.toLowerCase();
           await db`update public.workspaces set
       name=${`S26 F15 Scheduler ${runTag} A`},slug=${`f15-s26-${slugTag}-a`}

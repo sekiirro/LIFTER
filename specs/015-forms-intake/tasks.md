@@ -327,3 +327,21 @@ S25-R4: in-app is always on; Telegram is staff-only after explicit one-time `/st
 T018 S27 RED: commit 9bc154d; Stack D test failed at `tests/integration/forms-purge.test.ts:69` because no refund retention window existed (expected one operation-keyed window at `clients.deactivated_at`, received `[]`). GREEN: commit `37582ad`; migrations `20261104032200_f15_closure_retention_facts.sql` and `20261104032300_f15_purge_owner_consumer.sql`; focused Stack D integration: 2/2. Mutation/assertion map: approval/assignment clock -> exact deactivation timestamp and 60-day-old assignment; skipped sensitive class -> per-table zero assertions for revisions, drafts, corrections, intents, submissions and SLAs; template/ledger/audit deletion -> post-purge preservation checks; replay -> second purge returns zero and preserves those invariants; closure ledger write -> before/after payment/refund/allocation/cancellation counts; forged reason update -> rejected update; missing lockout -> required joined lockout facts and `client_has_access=false`. Scheduler activation is owner-only and remains inactive; lifecycle tests call the purge body directly at the exact inclusive boundary.
 
 S27 h2 executed all eight T018 mutants against Stack D at pre-merge head `f42d4bc724f8f7e702cbe2507f984ece743e60d6`; all eight were detected and each mutation rolled back with its integration fixture transaction. Exact commands, failing assertions/database guards, and observed messages: [S27 T018 mutation evidence](reports/S27-T018-mutation-evidence.md). The temporary mutation hooks were removed and `forms-purge.test.ts` has no diff.
+
+
+## S35 existing-PR remediation
+
+- [x] T101 [FR-024/025] Pin `test:integration` to Vitest's runner config loader; add a command-contract regression proving the supported loader is used and reproduce an assertion failure without Vite's `code.charCodeAt` masking error.
+- [ ] T102 [FR-004/006/008] Reject N08 derived food choices that do not match the selected budget in TypeScript and SQL; add direct-boundary regressions.
+- [ ] T103 [FR-008/013] Validate `correct_form_answer` values against the assigned form snapshot before inserting immutable revisions; add Stack D direct-RPC regressions in a forward migration.
+- [ ] T104 [FR-017/018/024] Bind client-late Trainer schedules to the authoritative client-Trainer source and transfer them on reassignment. BLOCKED until PO identifies the source relation; do not choose a source or fallback.
+- [ ] T105 [FR-038/039] Count only nonempty whitespace-separated signup name components consistently in SQL and TypeScript; cover leading/trailing tabs and newlines.
+- [ ] T106 [FR-038/039] Repair the invalid Unicode-mode regex in the signup integration mutation test and execute its focused regression.
+- [x] T107 [FR-024/025] Limit scheduler activation test cleanup to workspace and auth-user IDs created by that run; verify an unrelated preexisting fixture survives. Unit contract passed 1/1 on current A head `a1782ba`; traceability recorded below.
+- [ ] T108 [FR-008/013] Use a defined short-text question for the single-answer byte-bound baseline and verify the 4 KiB rule is reached.
+- [ ] T109 [FR-024/025] Make Stack D quickstart commands derive paths from the checkout.
+- [ ] T110 [FR-024/025] Replace the S18 historical local screenshot path with the stable run-artifact reference when its original capture set can be identified; otherwise leave the finding open with an evidence-based reply.
+- [ ] T111 [FR-024/025] Mark the superseded S33 Analyze status as historical; repair the S30 quotation and S31 migration-reference evidence text without changing their recorded findings.
+- [ ] T112 [FR-038/039] Skip touched-field blur validation while signup submission disables the inputs; add pending-submit unit and browser coverage with no visual/copy/token changes.
+- [ ] T113 [FR-026/036/037] Reconcile the EN translation table with S34/S33 approvals and provision localized N11 middle/maximum labels; preserve exact approved strings and use a new migration for the already-pushed starter provisioner.
+- [ ] T114 [FR-039] Keep the E2E and unit date-of-birth cases in the future so they continue to exercise the DOB validator.
