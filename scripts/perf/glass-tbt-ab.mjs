@@ -381,6 +381,11 @@ async function sample(
     throw new Error(
       `${arm} authenticated route returned ${response?.status() ?? 'no response'}`,
     );
+  const finalUrl = new URL(page.url());
+  if (finalUrl.pathname !== routePath)
+    throw new Error(
+      `${arm} navigation redirected to ${finalUrl.pathname}; expected ${routePath}`,
+    );
   await page
     .getByRole('heading')
     .first()
@@ -432,7 +437,10 @@ async function sample(
   }
   await context.close();
   if (traceEvents)
-    await writeFile(path.join(reportRoot, `trace-${arm}.json`), traceEvents);
+    await writeFile(
+      path.join(reportRoot, `trace-${viewportName}-${arm}.json`),
+      traceEvents,
+    );
   return { arm, ordinal, warmup, ...values };
 }
 

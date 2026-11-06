@@ -145,7 +145,9 @@ Independent test: the integration matrix plus the link lifecycle.
 
 - [x] T028 Re-run all gates. Then `npm run build:edge` and `npm run check:secrets`.
 - [x] T029 Local Docker integration suite. Negative checks per [quickstart.md](quickstart.md) §6. e2e.
-- [ ] T030 Docs (Claude): register D-19 (owner decision, pending PO approval), traceability AT-AUTH-01. PR, CI, CodeRabbit.
+- [ ] T030 Docs (Claude) (FR: FR-006, FR-010, FR-012): D-19 is registered in `docs/04-changes-and-questions.md` and approved by the PO (S31-PO-2 SK-004-01); answered ND-F4-4/-6 recorded in spec Clarifications; traceability AT-AUTH-01 in `traceability.md`. Remaining before ticking: PR merged with CI and CodeRabbit gates passed (not satisfiable by the documentation change alone).
+- [ ] T031 (FR: FR-010) Not implemented; Spec Kit cycle required. Align `app_private.recovery_link_limits()` and its tests with the decided limits (S31-PO-3 SK-004-04): 10 links per issuing staff account per rolling hour, and 3 per client per rolling 24 hours across all issuers. Replaces the 20 / 3 / 1 hour placeholders (T003(e), data-model.md, research.md); needs counter-semantics, rolling-window and concurrency tests, and a new forward migration.
+- [ ] T032 (FR: FR-006) Not implemented; Spec Kit cycle required. Allow all Trainers of the client's workspace to generate client recovery links (S31-PO-2 SK-004-02, "All workspace Trainers"): permission-matrix change in both walls (app layer and database), RLS, executed mutation tests (allowed in own workspace, denied in other workspaces and for staff targets), a new forward migration and security review. Until then Trainers stay denied. SK-004-03 ("Copy only") needs no task: `components/auth/RecoveryLinkDialog.tsx:40` already copies only and no share action exists.
 
 ## Dependencies & order
 
