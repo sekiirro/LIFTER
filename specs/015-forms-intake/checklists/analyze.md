@@ -237,3 +237,22 @@ This refresh follows T127's scoped UTF-8 punctuation repair in plan.md and trace
 
 
 **S35 T127 acceptance refresh — 2026-11-06 08:57 Africa/Cairo:** The scoped Analyze, plan, and traceability artifacts have zero mojibake markers under explicit UTF-8 decoding, and format:check passed on the repaired state. T127 is checked with evidence in traceability.md. The T118 task text now preserves the existing append-only audit-event rule; this clarifies test cleanup scope without changing product behavior. **CRITICAL: 0. HIGH: 0. No new ambiguities.**
+
+## S36 T136 CI remediation analysis - 2026-11-06
+
+The existing drift guard hard-coded the localized starter-label migration present on B but absent on A; the current A hosted Storage run fails with `missing migration source for app_private.ensure_default_onboarding_form`. T136 adds an ordered source fallback to A's `20261107032500_f15_retirement_default_lock.sql` while retaining the localized source first for B. Scope is test-harness recovery only within FR-024/025; no product behavior, policy, SQL migration, or security assertion changes. A contract regression asserts the ordered sources. **CRITICAL: 0. HIGH: 0. No open ambiguities for this task.**
+
+
+## S36 N11 and ALERTS clarification analysis - 2026-11-06
+
+N11 EN copy is approved byte-exact by S35-PO-3; the existing Arabic band values remain approved and unchanged. T137 has numbered FR-040, measurable SC-027, Given/When/Then coverage, plan/task linkage, exact PO source and boundaries. ALERTS FR-017/018/035 and the related scenario/success criterion replace the obsolete +24h/+48h client-late stages with the approved immediate and day-five/day-seven schedule. Open ambiguities are explicitly recorded as MCQ S36-01/T104 (authoritative Trainer relation) and MCQ S36-02 (late-intake event); no implementation or product assumption is authorized until PO answers. Analysis scope is specification/copy-only for alerts. **CRITICAL: 0. HIGH: 0. No other ambiguities are assumed closed; the two MCQs remain open.**
+
+
+## S36 final Spec Kit analysis refresh - 2026-11-06
+
+Revalidated after the final spec/plan/task edits: F15 has numbered FR-017/018/035/040, measurable SC-022/027, Given/When/Then scenarios for immediate and staged alerts and every N11 score/band boundary, a clarification session citing the byte-exact S35-PO-3 N11 and ALERTS paragraphs, T136/T137/T138 task links, and an up-to-date plan. The T104 Trainer source and late-intake event remain explicit PO-decision MCQs, so no-open-ambiguities applies only to T136/T137 and the specification-only requirements recorded by S35-PO-3 / S36-R7. No alert code/migration was changed. **CRITICAL: 0. HIGH: 0. No other open ambiguities for this authorized scope.**
+
+
+## S36 spec analysis rerun after final amendments - 2026-11-06
+
+Re-read `spec.md`, `plan.md`, and `tasks.md` after the last S36 edits. Numbered FR-017/018/035/040, measurable SC-022/026/027, Given/When/Then coverage, separate N11 and ALERTS clarification sections with byte-exact source paragraphs, T136-T138 task links and plan coverage all pass. MCQ S36-01/T104 and S36-02 remain explicitly open and block only the Trainer relation and late-event implementation choices. No alert code/migration changed. For the independent T136/T137 work and authorized spec-only ALERTS record, CRITICAL: 0; HIGH: 0; no other ambiguities remain.

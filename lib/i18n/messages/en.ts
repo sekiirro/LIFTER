@@ -789,4 +789,9 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.showcaseCoachingWork': 'Coaching work',
   'catalog.showcaseCoachingWorkOn': 'On',
   'catalog.showcaseCoachingWorkOff': 'Off',
+  'forms.intake.n11.feedback.0_2': 'Very little hunger',
+  'forms.intake.n11.feedback.3_4': 'Mild hunger',
+  'forms.intake.n11.feedback.5_6': 'Moderate hunger',
+  'forms.intake.n11.feedback.7_8': 'High hunger',
+  'forms.intake.n11.feedback.9_10': 'Very strong hunger',
 };

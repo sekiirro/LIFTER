@@ -32,7 +32,10 @@ it('restores an abandoned committed function mutant from its migration and fails
       ({ identity }) =>
         identity === 'app_private.ensure_default_onboarding_form(uuid,uuid)',
     )?.migration,
-  ).toBe('20261108021000_f15_localized_n11_starter_labels.sql');
+  ).toEqual([
+    '20261108021000_f15_localized_n11_starter_labels.sql',
+    '20261107032500_f15_retirement_default_lock.sql',
+  ]);
   for (const item of guardedFunctions) {
     const { identity } = item;
     const [original] = await db<{ definition: string; md5: string }[]>`
