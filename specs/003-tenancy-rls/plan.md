@@ -47,6 +47,7 @@ A pure TypeScript `authorize()` mirrors the same matrix. A reusable integration 
 
 | ID | Feature | Status |
 |---|---|---|
+| S36-Q1 | 003 final-Platform-Owner guard | **OPEN.** Blocks T022 and T015's membership-revocation branch until the removal mechanism is decided. Other T015 branches are not blocked by S36-Q1. |
 | PO-ESCALATION G1 | 003 trainer departure | **RESOLVED by S35-PO-1 G1=A.** Departure = deactivate + revoke memberships/access; no deletion of the auth user or staff_profiles row; audit attribution preserved. The RESTRICT FK and no-delete guards remain. FR-015/SC-007 and T017-T019 rewritten to this model. No deactivation capability exists yet; T020 tracks adding it. |
 
 ## Resolved Decisions

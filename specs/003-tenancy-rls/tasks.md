@@ -41,7 +41,10 @@
 ## Dependencies
 
 T001 → T002 → T003/T004/T005 → T006 → T007–T010 → T011 → T012 → T013.
-T013 → T014, T021 (RED, demotion path), T022 (RED, membership-revocation path; BLOCKED by S36-Q1) → T015 → T016.
+T013 → T014 → T016.
+T013 → T021 (RED, demotion path) → T015 (demotion and staff-profile-deletion branches).
+T013 → T022 (RED, membership-revocation path; BLOCKED by S36-Q1) → T015 (membership-revocation branch).
+T014 and T015 must both be complete before T016.
 T013 → T017 → T020 → T018 → T019 (S35 G1 lane; resolved to deactivate+revoke; no deletion).
 
 
