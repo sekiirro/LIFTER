@@ -20,6 +20,16 @@ it('restores an abandoned committed function mutant from its migration and fails
   expect(
     guardedFunctions.find(
       ({ identity }) =>
+        identity === 'app_private.f15_valid_builder_definition(jsonb,boolean)',
+    )?.migration,
+  ).toEqual([
+    '20261108021002_f15_builder_slider_validation_guard_localized.sql',
+    '20261108021001_f15_builder_slider_validation_guard.sql',
+    '20261108020200_f15_localized_slider_labels.sql',
+  ]);
+  expect(
+    guardedFunctions.find(
+      ({ identity }) =>
         identity === 'app_private.ensure_default_onboarding_form(uuid,uuid)',
     )?.migration,
   ).toBe('20261108021000_f15_localized_n11_starter_labels.sql');
