@@ -72,7 +72,12 @@ describe('T004 single audited answer reader', () => {
     const formId = randomUUID();
     const assignmentId = randomUUID();
     const policy = `t004-${randomUUID()}`;
-    const definition = { questions: [{ id: 'q1', type: 'short_text' }] };
+    const definition = {
+      questions: [
+        { id: 'q1', type: 'short_text' },
+        { id: 'sex', type: 'short_text' },
+      ],
+    };
     const firstAnswers = { q1: 'first synthetic revision', sex: 'female' };
     const secondAnswers = { q1: 'second synthetic revision', sex: 'female' };
     const draftAnswers = { q1: 'synthetic draft', sex: 'female' };
