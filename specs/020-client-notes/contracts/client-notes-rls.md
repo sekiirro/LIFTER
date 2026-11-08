@@ -7,7 +7,7 @@ No SQL or migration is supplied by this document. The following acceptance contr
 - Every note has a non-null `workspace_id` and `client_id`; same-workspace composite integrity binds it to `public.clients`.
 - RLS is ENABLED and FORCED. Policies default to deny. No anonymous note privileges.
 - Read and create allow a Trainer (any client in the workspace, regardless of client assignment), a Workspace Owner, or a Platform Owner, each with current active membership in the workspace or PO scope. Sales and Client are denied.
-- Edit allows the original `author_user_id` only with current active membership in the note's workspace, or a Platform Owner in PO scope.
+- Edit allows the original `author_user_id` only with current authorization in the note's workspace (active membership and a role still authorized, for example Trainer or Workspace Owner), or a Platform Owner in PO scope.
 - Delete allows Platform Owner only, scoped by the existing PO workspace access rule.
 - Revoked memberships confer zero workspace access. Caller-supplied IDs cannot widen the scope.
 - The authorization checks must not rely on UI hiding or the service-role client as a substitute for the signed-identity RLS boundary.
@@ -18,7 +18,8 @@ No SQL or migration is supplied by this document. The following acceptance contr
 | --- | --- |
 | Trainer read and create for a client in the same workspace, not assigned to that Trainer | Allow |
 | Workspace Owner / PO read and create in authorized scope | Allow |
-| Note author edit with current active membership in workspace | Allow |
+| Note author edit with active membership and an authorized role (Trainer or Workspace Owner) in the workspace | Allow |
+| Note author whose current role is Sales, with active membership | Deny |
 | Note author edit after membership revoked, before restoration | Deny |
 | Note author edit after membership restored | Allow (CN-MCQ-05) |
 | Other authorized non-PO edit (including Trainer or WO who did not author) | Deny |

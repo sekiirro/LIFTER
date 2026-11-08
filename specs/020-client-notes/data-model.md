@@ -31,7 +31,7 @@ No version table, soft-delete marker, or history table is proposed. An edit chan
 
 1. Every note belongs to exactly one workspace and one client in that workspace.
 2. The authenticated actor determines author identity at creation; callers cannot forge workspace, client, or author scope.
-3. Read and create require a current authorized actor in the note's workspace: a Trainer (any client in the workspace), a Workspace Owner, or a Platform Owner under the existing PO scope. Edit requires the original author with current active membership, or a Platform Owner in PO scope.
+3. Read and create require a current authorized actor in the note's workspace: a Trainer (any client in the workspace), a Workspace Owner, or a Platform Owner under the existing PO scope. Edit requires the original author with current authorization (active membership and a role still authorized), or a Platform Owner in PO scope.
 4. Hard delete requires PO role plus workspace access under the existing PO model.
 5. Database RLS is enabled and forced, with no anonymous privileges and deny-by-default policies. Mutation grants/RPC design must follow established security patterns at implementation time and be independently checked by RLS tests.
 6. `author_user_id` and `created_at` are immutable after creation. An edit changes `body` and `edited_at` only; no content history is kept (CN-MCQ-03).

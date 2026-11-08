@@ -20,7 +20,7 @@ Add independent plain-text notes to Client Details with a workspace/client compo
 
 - Tenant entity proposal is in [data-model.md](data-model.md): a note row keyed to both `workspace_id` and `client_id`, with verified author, plain-text body, server creation timestamp and nullable `edited_at`.
 - Read/create require a Trainer, Workspace Owner or Platform Owner with current authorization for the workspace. Trainers are not limited to assigned clients (CN-MCQ-04, S37-PO-6, S37-PO-7). PO follows the existing all-workspace policy.
-- Author edit checks the original `author_user_id`, current active membership in the workspace and current scope. PO edit is also scoped through the existing PO access helper.
+- Author edit checks the original `author_user_id`, current authorization in the workspace (active membership and a role still authorized) and current scope. PO edit is also scoped through the existing PO access helper.
 - Delete checks PO role and workspace scope at the database boundary. Non-PO delete is refused even when actor authored the note.
 - RLS is deny-by-default. No anonymous grants. Define tests for allowed role × action pairs, Sales/Client/anonymous denial, revoked membership denial, and foreign-workspace denial.
 - Body is 1 to 5,000 Unicode code points; blank and whitespace-only bodies are rejected (CN-MCQ-02). Stored form (exact or trimmed) is pending CN-MCQ-14.

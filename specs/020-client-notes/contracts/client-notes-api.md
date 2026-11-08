@@ -8,7 +8,7 @@ This is a behavioral contract for later implementation, not an API endpoint nami
 | --- | --- | --- | --- |
 | List notes | Trainer, Workspace Owner, Platform Owner | Current active workspace membership and role capability. A Trainer's client assignment is not a restriction (CN-MCQ-04, S37-PO-7). PO uses current platform-wide workspace policy. | Notes only for the requested client/workspace, newest-created first with `id` tie-break (FR-008). |
 | Create note | Trainer, Workspace Owner, Platform Owner | Same current scope; author is derived from server-verified identity | One independent plain-text note: 1 to 5,000 Unicode code points, not blank or whitespace-only (FR-002); server creation timestamp; one metadata-only audit event (FR-010). |
-| Edit note | Original author with current active membership, or Platform Owner | Current workspace/client scope; current authorization required | Replace current body in place; last save wins (FR-009); set `edited_at`; keep author and creation timestamp; no version history; one metadata-only audit event (FR-010). |
+| Edit note | Original author with current authorization (active membership and a role still authorized), or Platform Owner | Current workspace/client scope; current authorization required | Replace current body in place; last save wins (FR-009); set `edited_at`; keep author and creation timestamp; no version history; one metadata-only audit event (FR-010). |
 | Hard-delete note | Platform Owner only | Existing Platform Owner workspace scope | Permanently remove row; one metadata-only audit event (FR-010). Audit retention is CN-MCQ-13; confirmation copy is CN-MCQ-08. |
 
 ## Display
