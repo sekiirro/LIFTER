@@ -1,6 +1,6 @@
 # Spec Kit Analyze — F4 Authentication, S38 round 6
 
-- Date: 2026-11-09 00:59 +02:00, after the last changes to spec.md, plan.md and tasks.md in this round.
+- Date: 2026-11-09 01:21 +02:00, after the last changes to spec.md, plan.md and tasks.md in this round.
 - Scope: specification and planning only. No application code, SQL, migration or test was changed or run.
 - Inputs: Sol Medium critique at `549c6466cea254e90dd180d20c7b1b976e35a267`; S38-PO-1, S38-PO-3, S38-PO-5; architect S38-R2, S38-R4 and S38-R7. Exact quoted extracts are in spec.md and the round report.
 - Method: cross-artifact review of spec.md, plan.md, tasks.md, research.md, traceability.md, contracts/auth-surface.md, data-model.md and this checklist against Spec Kit entry requirements and the critique findings.
@@ -14,7 +14,7 @@
 | Plan covers touched scope; tasks have IDs and FR tags | PASS | plan.md provider-boundary design, G1–G6 and sequencing; tasks.md T033, T041, T049a–T049e, T050a/T050b and new T051 include FR tags. |
 | Analyze is dated after spec/plan/tasks edits and has 0 open CRITICAL/HIGH | PASS | This dated review; finding dispositions below. |
 
-**Spec-only gate result: PASS. Implementation entry: NOT READY.** T033 still requires PO approval of `C:/Users/NEW LAP/.lifter/runs/s38-luna-f4-r6/copy-proposal.md` (COPY-F4-R6); local feasibility G1–G6 and RED/acceptance evidence remain unexecuted. These are explicit gates, not assumed approvals. No task is ticked.
+**Spec-only gate result: PASS. Implementation entry: NOT READY.** T033 still requires PO approval of [copy-proposal.md](../copy-proposal.md) (COPY-F4-R6); a copy is also preserved at `C:/Users/NEW LAP/.lifter/runs/s38-luna-f4-r6/copy-proposal.md`. Local feasibility G1–G6 and RED/acceptance evidence remain unexecuted. These are explicit gates, not assumed approvals. No task is ticked.
 
 ## Sol Medium critique disposition
 
@@ -30,6 +30,10 @@ S38-R4 recorded the critique result as NOT READY, CRITICAL 0 / HIGH 6 / MEDIUM 3
 | 6. No mutation evidence acceptance task | HIGH | Fixed: explicit T051 maps each security control to a disabling/bypass mutation and evidence/restoration requirements. | tasks.md T051; traceability.md |
 | 7. Gate order circular | MEDIUM | Fixed: RED tests precede local feasibility spikes; implementation entry and final acceptance are separate; spikes do not require their own GREEN result before they can run. | plan.md F4 execution order; tasks.md T033/T050a/T050b |
 | 8. PDN register mixes obsolete and product questions | MEDIUM | Fixed: -04/-06/-10/-11/-16 pruned or deferred; -17 closed; -01/-02/-03/-05/-09/-12 recorded answered; concrete copy table is PENDING-PO. | spec.md Open items/register; copy-proposal.md |
+| CodeRabbit 7. Client manual-link completion could be changed by blanket login redirect | MEDIUM | Fixed: staff self-service redirects to login; client manual-link preserves FR-013 signed-in outcome. | spec.md FR-026; contracts/auth-surface.md; tasks.md T045 |
+| CodeRabbit 8. Blanket intent immutability could reject valid state transitions | MEDIUM | Fixed: identity/origin fields remain immutable; only guarded open-to-closed transitions are allowed, with timestamps set once; no-delete remains unconditional. | plan.md; data-model.md |
+| CodeRabbit 9. Copy proposal was only in local run directory | MEDIUM | Fixed: committed proposal is linked from the spec, contract, plan/tasks and Analyze; run-dir evidence copy retained. Approval remains pending. | copy-proposal.md; spec.md FR-027 |
+| CodeRabbit 10. Refused requests must still be counted at the send hook | MEDIUM | Fixed: all valid requests reach the authoritative hook for policy accounting; acceptance asserts no email, generic mapped response, and shared counters. | contracts/auth-surface.md; tasks.md T038/T038a; FR-024 |
 | 9. Contracts/data model omit recovery | MEDIUM | Fixed: both artifacts now describe local staff recovery actions, session-bound intent, hook boundary, audit/limits, session outcomes and hosted deferral. | contracts/auth-surface.md; data-model.md |
 | 10. Analyze metrics and status stale | LOW | Fixed: unique finding IDs, current dispositions and metrics below; prior round critique is recorded as executed. | This checklist; traceability.md |
 
