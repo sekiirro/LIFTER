@@ -6,15 +6,20 @@ This is a behavioral contract for later implementation, not an API endpoint nami
 
 | Operation | Allowed actor | Required scope | Result |
 | --- | --- | --- | --- |
-| List notes | Authorized Trainer, Workspace Owner, Platform Owner | Existing client authorization and workspace scope; PO uses current platform-wide workspace policy | Notes only for the requested client/workspace. Ordering is CN-MCQ-01. |
-| Create note | Authorized Trainer, Workspace Owner, Platform Owner | Same current scope; author is derived from server-verified identity | One independent plain-text note with server timestamp and <= 5,000 chars. Empty/count boundary CN-MCQ-02. |
-| Edit note | Original author or Platform Owner | Current workspace/client scope; current authorization required | Replace current body in place; no version history. Extra edit metadata CN-MCQ-03. |
-| Hard-delete note | Platform Owner only | Existing Platform Owner workspace scope | Permanently remove row. Audit/confirmation behavior CN-MCQ-07/CN-MCQ-08. |
+| List notes | Trainer, Workspace Owner, Platform Owner | Current active workspace membership and role capability. A Trainer's client assignment is not a restriction (CN-MCQ-04, S37-PO-7). PO uses current platform-wide workspace policy. | Notes only for the requested client/workspace, newest-created first with `id` tie-break (FR-008). |
+| Create note | Trainer, Workspace Owner, Platform Owner | Same current scope; author is derived from server-verified identity | One independent plain-text note: 1 to 5,000 Unicode code points, not blank or whitespace-only (FR-002); server creation timestamp; one metadata-only audit event (FR-010). |
+| Edit note | Original author with current active membership, or Platform Owner | Current workspace/client scope; current authorization required | Replace current body in place; last save wins (FR-009); set `edited_at`; keep author and creation timestamp; no version history; one metadata-only audit event (FR-010). |
+| Hard-delete note | Platform Owner only | Existing Platform Owner workspace scope | Permanently remove row; one metadata-only audit event (FR-010). Audit retention is CN-MCQ-13; confirmation copy is CN-MCQ-08. |
+
+## Display
+
+- Timestamps are shown in the viewer's local time zone (FR-009, CN-MCQ-12). The format is part of CN-MCQ-08.
+- A note with an unavailable author shows the neutral “Unavailable author” label (FR-002, CN-MCQ-06). The Arabic string is part of CN-MCQ-08.
 
 ## Denials
 
 - Deny Sales, Client and anonymous actors for every operation.
-- Deny unauthorized or revoked membership actors and all foreign client/workspace scope.
+- Deny unauthorized or revoked membership actors and all foreign client/workspace scope. Revoked membership grants zero access.
 - Do not trust actor, client, workspace or role fields supplied by a caller.
 - Application checks and database RLS must independently enforce the matrix.
 - Failure response shape and UI copy are not specified here and must not disclose note/client/workspace existence; obtain PO approval or use an already-approved generic security pattern without extending it.
