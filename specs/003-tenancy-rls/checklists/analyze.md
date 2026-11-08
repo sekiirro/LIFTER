@@ -46,7 +46,7 @@ Open defect findings: **2** (A1 MEDIUM, A2 MEDIUM; both are evidence-coverage it
 
 ## Coverage and constitution
 
-- FR-to-task coverage: FR-001..FR-012 map to T001-T013; FR-013 maps to T014/T016; FR-014 maps to T015/T016/T021/T022/T024; FR-015 maps to T017-T020; FR-016 maps to T025 (a)(b)(c), T026 (a)(b) and (c) (the F11/F12 spec), and T027 (a)-(d). FR-016(d) (manual PO workspace creation) needs no new task: it is covered by the existing governance test T009 ("PO succeeds at: create workspace C"). All 16 FRs have coverage.
+- FR-to-task coverage: FR-001..FR-012 map to T001-T013; FR-013 maps to T014/T016; FR-014 maps to T015/T016/T021/T022/T024; FR-015 maps to T017-T020; FR-016 maps to T025 (a)(b)(c), T026 (a)(b)(c) (with separate F11/F12 acceptance evidence), and T027 (a)-(d). FR-016(d) follows S37-PO-3: manual creation through the normal user flow, with no auto-provisioning. T009 proves only a PO database write, not user-flow acceptance. F3 records an external dependency on the normal workspace-creation flow and its acceptance evidence, outside feature 003. All 16 FRs have task mappings; FR-016(d) acceptance remains dependent on that external evidence.
 - SC-to-task coverage: SC-001..SC-004 map to T001-T013; SC-005 maps to T015/T016/T021/T022/T024; SC-006 maps to T014/T016; SC-007 maps to T017-T020; SC-008 maps to T025-T027. All 8 SCs have coverage.
 - Last-PO guard tests: T021 (b) sole-PO demotion refusal and (d) concurrent demotions are not blocked. The membership-revocation cases (T022, T024) are characterization tests under S37-Q5 = A (no refusal case).
 - Constitution: Principle I (isolation) is unchanged. Principle III (least-authority governance): the last-PO guard and PO-only governance writes are kept. Principle VI (history): memberships are revoked, never deleted. Principle VII (privacy): synthetic data only. No table, workflow or state is added by this round.
@@ -96,3 +96,12 @@ Open defect findings: **2** (A1 MEDIUM, A2 MEDIUM; both are evidence-coverage it
 - 2026-11-03, refreshed on `e9888dc` / `e8c03d4` / `7fd9461`: roster RPC projection, final-PO guard, clarification wording.
 - 2026-11-03, base analysis on `d04ef52`: found open scope/active-state questions (A1/A2).
 - First SK-A merged-feature review on `origin/main` `ed88574`: initial verdict 0 CRITICAL, 2 HIGH, 1 MEDIUM, 0 LOW.
+
+
+## 2026-11-09 Analyze — PR #67 review follow-up
+
+- Date: 2026-11-09 (Africa/Cairo), after this round's task and traceability edits.
+- Entry check: PASS — spec.md contains numbered FRs, measurable SCs and Given/When/Then scenarios; S37-PO-3 is recorded in Clarifications and explicitly says no special auto-provisioning; no open ambiguity remains about that approved behavior. plan.md covers the touched scope; FR-tagged tasks exist; this analysis follows the edits.
+- FR-016(d): T009 is a database-level characterization only. The app scan found no normal workspace-creation route; this feature records an external dependency on the normal manual PO flow and its acceptance evidence. No new mechanism or task is invented.
+- F11/F12: T021(c) remains the F3 add-first demotion test. T026(c) now separates the F11/F12 acceptance evidence for completed ownership change and removal of old-account workspace access from its no-insert assertion. No tests or implementation are claimed.
+- Result: PASS — 0 CRITICAL, 0 HIGH. FR-016(d)'s normal-flow evidence remains an external dependency; this static Analyze does not claim it is satisfied.
