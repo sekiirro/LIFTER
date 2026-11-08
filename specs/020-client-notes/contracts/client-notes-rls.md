@@ -9,7 +9,7 @@ No SQL or migration is supplied by this document. The following acceptance contr
 - Read and create allow a Trainer (any client in the workspace, regardless of client assignment), a Workspace Owner, or a Platform Owner, each with current active membership in the workspace or PO scope. Sales and Client are denied.
 - Edit allows the original `author_user_id` only with current authorization in the note's workspace (active membership and a role still authorized, for example Trainer or Workspace Owner), or a Platform Owner in PO scope.
 - Delete allows Platform Owner only, scoped by the existing PO workspace access rule.
-- Revoked memberships confer zero workspace access. Caller-supplied IDs cannot widen the scope.
+- A non-PO actor with a revoked membership has zero workspace access. The Platform Owner follows the existing PO rule (the existing `app_private.has_workspace_access` grants Platform Owner access without a membership check). Caller-supplied IDs cannot widen the scope.
 - The authorization checks must not rely on UI hiding or the service-role client as a substitute for the signed-identity RLS boundary.
 
 ## Required future denial/allow tests

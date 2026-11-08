@@ -20,7 +20,7 @@ This is a behavioral contract for later implementation, not an API endpoint nami
 ## Denials
 
 - Deny Sales, Client and anonymous actors for every operation.
-- Deny unauthorized or revoked membership actors and all foreign client/workspace scope. Revoked membership grants zero access.
+- Deny unauthorized actors, non-PO actors with revoked membership, and all foreign client/workspace scope. A non-PO revoked membership grants zero access; the Platform Owner follows the existing PO rule.
 - Do not trust actor, client, workspace or role fields supplied by a caller.
 - Application checks and database RLS must independently enforce the matrix.
 - Failure response shape is not specified here. Where a denial message is shown, its copy is CN-MCQ-08 row 27 (“You don't have permission to do this.” / “ليست لديك صلاحية للقيام بذلك.”), a generic message that discloses no note, client or workspace existence.

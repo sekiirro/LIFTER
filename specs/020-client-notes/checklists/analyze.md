@@ -1,6 +1,6 @@
 # Spec Kit Analyze — F20 Client Notes
 
-**Analysis date**: 2026-11-08T23:11Z (round 5, re-run after (a) the architect rulings S38-R8 and S38-R9 and (b) the in-round fix of CodeRabbit review 5820103675 on `c428158d`; every spec, plan, tasks, data-model and research edit precedes this analysis; contracts checked, no change needed)
+**Analysis date**: 2026-11-08T23:21Z (round 5, re-run after (a) the architect rulings S38-R8 and S38-R9, (b) the in-round fix of CodeRabbit review 5820103675 on `c428158d` (exit protection), and (c) the in-round fix of CodeRabbit review 5820142764 on `e2b6a6e3` (revoked-membership scope); every spec, plan, tasks, contracts, data-model and research edit precedes this analysis)
 **Inputs**: spec.md, plan.md, tasks.md, data-model.md, research.md, contracts/client-notes-api.md, contracts/client-notes-rls.md
 **Scope**: Spec-only proposal. No code, SQL, migrations, or runtime work.
 
@@ -13,7 +13,7 @@
 - CN-MCQ IDs in the register: 15 defined (01–14 and 16; CN-MCQ-15 removed, ID not reused). Resolved by PO: 14 (01–14). Open: 1 (CN-MCQ-16).
 - Functional requirements: 10 (FR-001..FR-010). Success criteria: 6 (SC-001..SC-006). Tasks: 14 (T001..T014; T008..T014 are test tasks). Acceptance scenarios: Story 1 = 3, Story 2 = 5, Story 3 = 7.
 - Stale-reference grep over the feature folder for `CN-MCQ-15`, `OPEN`, `open ambiguit` and `blocked by`: the only live open item is CN-MCQ-16. CN-MCQ-15 appears only in removal notes and historical records.
-- Contracts (`client-notes-api.md`, `client-notes-rls.md`): no reference to CN-MCQ-15 or DESIGN.md §11, and no exit-protection copy. No change needed. Note: the API contract has no unsaved-change rule, which is a UI rule and does not belong in an API contract.
+- Contracts (`client-notes-api.md`, `client-notes-rls.md`): no reference to CN-MCQ-15 or DESIGN.md §11, and no exit-protection copy. Changed in round 5 only for the revoked-membership wording (non-PO scope, review 5820142764). The API contract has no unsaved-change rule, which is a UI rule and does not belong there.
 - Copy table (spec.md Clarifications, rows 1–29): unchanged from round 4 (29 rows; row 26 Arabic “صاحب الملاحظة غير متاح”; Western digits). It does not contain the exit-protection copy.
 
 ## Findings
@@ -33,6 +33,7 @@ The audit retention period (DP-02 / ND-F5-1 / B4, `docs/13-production-readiness.
 
 - **S38-R8** (CodeRabbit thread `PRRT_kwDOVYgYQ861E1-8`, tasks.md dependency order): the finding that asked to let T014 be ticked while its tests are red is **not adopted**. A test task is ticked only after its tests execute and pass on the implementation head (constitution §3). Red runs are recorded as evidence with the box unticked. The thread was replied to citing S38-R8 and resolved.
 - **S38-R9** (CN-MCQ-15, DESIGN.md §11 UI values): removed as a PO question (S38-PO-3). The Client Notes UI reuses existing Design System components and values (DESIGN.md §6 tabs pattern; existing textarea, button, dialog, toast and States components; existing tokens and breakpoints). It introduces no new breakpoint, touch-size, focus or token value. A value that exists neither in DESIGN.md nor in an existing component becomes a PO question only when implementation needs it, under the frontend design gate.
+- **CodeRabbit review 5820142764 on `e2b6a6e3`** (CHANGES_REQUESTED, 1 inline finding on spec.md:98, Minor · Functional Correctness): **valid**. SC-001 denied revoked-membership cases for every actor, but the existing helper grants Platform Owner access without a membership check. Fixed in round 5 for SC-001, Story 3 scenario 4, both contracts, plan.md and T006 (non-PO scope). No new access decision.
 - **CodeRabbit review 5820103675 on `c428158d`** (CHANGES_REQUESTED, 1 inline finding on spec.md:84, Minor · Functional Correctness): **valid**. FR-002 barred any copy outside the CN-MCQ-08 table, while DESIGN.md §5 (exit protection, Q54, PO-approved) requires Stay/Discard for unsaved changes. The spec did not encode the behaviour. Fixed in round 5: behaviour encoded in FR-007, Story 2 scenario 5, Story 3 scenario 7, SC-005, plan.md UI section and tasks.md T005/T013. The copy is not approved and is recorded as CN-MCQ-16 (PO decision; the reviewer's "obtain approval for bilingual copy" step is a PO action and remains open).
 
 ## Round-4 CodeRabbit history (kept for traceability)
@@ -68,7 +69,8 @@ Every FR and SC has at least one task. No task lacks a requirement mapping.
 - [ ] Clarifications: CN-MCQ-01..14 and CN-MCQ-08 copy (rows 1–29) recorded. **FAIL for "no open ambiguities": CN-MCQ-16 is open** (exit-protection copy and Save Draft). CN-MCQ-15 is removed by S38-R9.
 - [x] UI follows the authority hierarchy; no icon; horizontal tab placement; text-only copy bound to the approved table; no new UI value introduced; exit-protection behaviour from DESIGN.md §5 encoded.
 - [x] PO binding text quoted byte-exact in spec.md: S37-PO-6, S37-PO-7, S37-PO-14, S37-PO-16 (Client Notes line) and S38-PO-2 (item 2).
-- [x] Analyze dated after the last change to spec, plan, tasks, data-model, research and contracts (last artifact edit before 2026-11-08T23:10Z; this analysis 23:11Z).
+- [x] Analyze dated after the last change to spec, plan, tasks, data-model, research and contracts (last artifact edit before 2026-11-08T23:20Z; this analysis 23:21Z).
+- [x] Revoked-membership scope matches the existing PO rule (FR-004; spec.md Clarifications item 2; `app_private.has_workspace_access` in `supabase/migrations/20261027140000_access_capability_for_po.sql`): SC-001, Story 3 scenario 4, the RLS and API contracts, plan.md and T006 now say non-PO revoked membership (review 5820142764).
 
 ## Result
 
