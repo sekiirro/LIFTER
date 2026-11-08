@@ -11,7 +11,7 @@ import {
   type FoodEditorDraft,
 } from '../../../lib/catalog/food-editor';
 import { MAX_FOOD_ALTERNATIVES } from '../../../lib/catalog/schemas';
-import { isUuid } from '../../../lib/catalog/uuid';
+import { isUuidV4 } from '../../../lib/catalog/uuid';
 
 export type FoodDuplicateReviewResult =
   | { status: 'none'; candidates: [] }
@@ -153,9 +153,9 @@ export async function saveCatalogFoodAction(
 ): Promise<CatalogFoodSaveResult> {
   if (
     !isFoodDraft(draft) ||
-    (workspaceId !== null && !isUuid(workspaceId)) ||
+    (workspaceId !== null && !isUuidV4(workspaceId)) ||
     typeof confirmNearMatch !== 'boolean' ||
-    !isUuid(operationKey)
+    !isUuidV4(operationKey)
   )
     return { status: 'invalid' };
   const food = buildFoodEditorInput(draft);

@@ -17,7 +17,7 @@ import {
   type ExerciseEditorDraft,
 } from '../../../lib/catalog/exercise-editor';
 import { EQUIPMENT_CODES } from '../../../lib/catalog/schemas';
-import { isUuid } from '../../../lib/catalog/uuid';
+import { isUuidV4 } from '../../../lib/catalog/uuid';
 
 export type SaveExerciseInput = {
   draft: ExerciseEditorDraft;
@@ -72,9 +72,9 @@ function validSavePayload(value: unknown): value is SaveExerciseInput {
     draft.secondaryMuscles.every((code) => typeof code === 'string') &&
     Array.isArray(draft.alternativeExerciseIds) &&
     draft.alternativeExerciseIds.every((id) => typeof id === 'string') &&
-    isUuid(value.operationKey) &&
-    (value.id === undefined || isUuid(value.id)) &&
-    (value.workspaceId === null || isUuid(value.workspaceId)) &&
+    isUuidV4(value.operationKey) &&
+    (value.id === undefined || isUuidV4(value.id)) &&
+    (value.workspaceId === null || isUuidV4(value.workspaceId)) &&
     (value.expectedVersion === undefined ||
       (Number.isInteger(value.expectedVersion) &&
         Number(value.expectedVersion) >= 0)) &&
@@ -93,11 +93,11 @@ function validRemovePayload(value: unknown): value is RemoveExerciseInput {
   return (
     isRecord(value) &&
     (value.scope === 'global' || value.scope === 'workspace') &&
-    (value.workspaceId === null || isUuid(value.workspaceId)) &&
-    isUuid(value.exerciseId) &&
+    (value.workspaceId === null || isUuidV4(value.workspaceId)) &&
+    isUuidV4(value.exerciseId) &&
     Number.isInteger(value.expectedRevision) &&
     Number(value.expectedRevision) >= 0 &&
-    isUuid(value.operationKey)
+    isUuidV4(value.operationKey)
   );
 }
 
@@ -106,13 +106,6 @@ export async function removeExerciseAction(
 ): Promise<CatalogResult> {
   if (!validRemovePayload(input)) return { status: 'invalid' };
   const actor = await requireActor();
-  if (
-    !isUuid(input.exerciseId) ||
-    !isUuid(input.operationKey) ||
-    !Number.isInteger(input.expectedRevision) ||
-    input.expectedRevision < 0
-  )
-    return { status: 'invalid' };
   if (input.scope === 'global') {
     if (actor.role !== 'platform_owner') return { status: 'not_permitted' };
     const result = await transitionExercise({
@@ -130,7 +123,6 @@ export async function removeExerciseAction(
   if (
     input.scope !== 'workspace' ||
     !input.workspaceId ||
-    !isUuid(input.workspaceId) ||
     !(['platform_owner', 'workspace_owner', 'trainer'] as string[]).includes(
       actor.role ?? '',
     ) ||
