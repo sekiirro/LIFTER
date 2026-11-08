@@ -85,7 +85,9 @@ tests/e2e/auth.spec.ts
 
 ### Provider-boundary controls (FR-030; NF-1/NF-2; S36-PO-2 F4 line)
 
-Status: specified, NOT implemented. No code, migration, env, hosted Auth or SMTP change. Controls A to D are defined in spec.md FR-030; the intent state machine is FR-025 (a) to (h). Implementation gates: T033 (PO answers), T050a (controls B to D) and T050b (control A).
+Status: specified, NOT implemented. No code, migration, env, hosted Auth or SMTP change. Controls A to D are defined in spec.md FR-030; the intent state machine is FR-025 (a) to (h). Decisions (S37-PO-8, 2026-11-08): control A = PDN-F4-7-14 option B (local send-email hook); control B = PDN-F4-7-15 option A (local guard, hosted only at the FR-020 gate). Implementation gates: T033 (remaining PO answers), T050a (controls B to D) and T050b (control A, after G6).
+
+Experiment evidence (S37, Stack D, `research.md` R10): E1 and E2 CONFIRM the direct bypass of the app path (`/recover` mail with no app audit; direct password update with no audit row). E3 finds no deny rule for `/recover` in the generated CLI Kong configuration. E4 observes that GoTrue revoked the other session after a direct password update. The send hook (control A) and the guard (control B) were NOT run in the experiment, so both controls remain UNVERIFIED until their gates pass.
 
 Facts verified read-only in this repo on 2026-11-06:
 
@@ -94,7 +96,7 @@ Facts verified read-only in this repo on 2026-11-06:
 - Precedent for a trigger on `auth.users`: `signup_auth_claim_sync` (`supabase/migrations/20261031121000_client_accounts_model.sql`, line 183).
 - Precedent for an intent-style two-phase record with reconciliation: F14 `reconciliation_pending` (`lib/branding/upload-state.ts`), cited by FR-025.
 
-Control B (guard on `auth.users`), local design:
+Control B (guard on `auth.users`), decided as PDN-F4-7-15 = A: local-only in the test phase, hosted only at the FR-020 gate with its own approval, and the consequence that a staff password change outside the self-service flow is refused. Local design:
 
 - Table `app_private.staff_password_reset_intents`: `intent_id uuid primary key default gen_random_uuid()`, `auth_user_id uuid not null references auth.users(id) on delete restrict`, `session_id uuid not null`, `state text not null check (state in ('open','completed','aborted','reconciled'))`, `started_at timestamptz not null default now()`, `recovery_verified_at timestamptz not null`, `password_changed_at timestamptz`, `closed_at timestamptz`, and `check ((state = 'open') = (closed_at is null))`. A partial unique index on `(auth_user_id) where state = 'open'`. RLS enabled and forced; `revoke all` from public, anon, authenticated and service_role; no policies. Immutability and no-delete triggers follow the F4 pattern (`forbid_delete`).
 - Public RPCs, `security definer`, `set search_path = ''`, execute granted to `authenticated` only: `public.staff_password_reset_begin()` (uses `auth.uid()` and `auth.jwt()->>'session_id'`), `public.staff_password_reset_complete(intent_id uuid)` and `public.staff_password_reset_abort(intent_id uuid)`. Each accepts only an intent owned by the caller, and refuses any other intent with one generic error.
@@ -105,7 +107,19 @@ Control B (guard on `auth.users`), local design:
 
 Why the database order gives the PO guarantee: the intent row is committed in its own transaction before `updateUser` runs, and the guard refuses any staff password change without it. A password change therefore always has a durable intent, and the closing record or reconciliation follows. The database cannot roll back GoTrue's update, so this is not a shared transaction across GoTrue and LIFTER. The guarantee holds for the app path and for a direct `updateUser` alike, because the guard does not depend on the caller.
 
-Control A (public `/recover`): not designed to a mechanism yet. The candidates and their conflicts are PDN-F4-7-14 (option A: local ingress or proxy, feasibility unverified; option B: local send hook, conflicts with the built-in-sender wording; option C: risk acceptance by the PO). The database cannot stop a recovery email, because GoTrue generates the token and sends the mail itself, so control A cannot be enforced by a database trigger alone.
+Control A (public `/recover`), decided mechanism: PDN-F4-7-14 = B. The local `[auth.hook.send_email]` hook is the sender in the test phase, so every send passes through it, both on the app route and on a direct anon-key `/recover`. Design:
+
+- The hook is the single enforcement point for the test phase: it checks eligibility (PDN-F4-7-02), delivery permission for permitted test addresses (the list's location is PDN-F4-7-01, still open), the per-account and global limits (FR-024), the 2-per-hour delivery cap (FR-019) and the `staff_password_reset.requested` audit before it sends. The audit row is written by database code (F5 FR-002). Writing the rules once, in the hook, avoids a second copy that could drift from the app route (complexity rule, S37-PO-3/-4).
+- A refusal sends nothing and returns the same generic success response as FR-018. A hook error (including an audit write failure) also sends nothing and returns the same response, so no error reaches the caller.
+- The transport of the hook (a local HTTP endpoint or a Postgres-function URI) is recorded at T050b, with the evidence from G6. It is an implementation choice, not a PO decision.
+- Option A (local ingress) is not selected: E3 found no route-level deny in the generated Kong configuration, so it would need a new proxy topology that is neither present nor proven.
+- Test-phase scope: the hook exists only in the local stack configuration. Hosted containment is FR-020 and PDN-F4-7-17 (see "Hosted containment" below).
+
+Gate G6 (T050b spike, before the hook is relied on; each item is a RED-to-GREEN check on the local stack, none is assumed): (i) a direct anon-key `/auth/v1/recover` invokes `[auth.hook.send_email]`; (ii) a hook refusal sends no mail and the caller receives the generic response; (iii) a hook error does not reach the caller; (iv) the transport choice and its evidence are recorded. If any item fails, PDN-F4-7-14 is raised again; no workaround is attempted.
+
+The database cannot stop a recovery email on its own, because GoTrue generates the token and sends the mail itself. Control A therefore relies on the hook, and the guard on `auth.users` (control B) covers the password path separately.
+
+Hosted containment (FR-020, PDN-F4-7-17): the hook block is a committed `supabase/config.toml` setting. The PDN packet warns that such a setting reaches the hosted project on push. This plan keeps the hosted change behind the FR-020 gate in three ways. (1) The repository has no workflow that pushes config or migrations to a hosted project: `.github/workflows/ci.yml` runs only `supabase start` and `supabase stop`. (2) The merge of the hook block (T050b) waits for the PO's answer to PDN-F4-7-17, because a hosted-side sync linked to this repository cannot be checked from the repository. (3) No hosted config push, hosted migration or hosted hook enablement is made before the FR-020 gate and its own approval (T047). This round raises one new PO question, PDN-F4-7-17, and decides no other item.
 
 Session scope (ARCH-S36-R4-1): the guard cannot see the request session, so it is account-scoped (spec.md FR-025 (b)).
 
@@ -113,9 +127,12 @@ Local feasibility gates (T050a spike, before implementation of control B). Each 
 
 - G1: the guard refuses a staff `updateUser` without an open intent and allows a client manual-link completion (T049a).
 - G2: GoTrue returns the guard's refusal to the caller and leaves the stored password unchanged.
-- G3: GoTrue refuses the access token of a session row that was deleted (control C). If not, PDN-F4-7-16 is raised.
+- G3: GoTrue refuses the access token of a session row that was deleted (control C). If not, PDN-F4-7-16 is raised. S37 E4 showed GoTrue's own revocation of another session after a direct password update, which is a different case from a deleted row. T050a first checks whether that revocation covers the app-path password change (S37-PO-3/-4: audit existing safeguards before adding mechanisms), and adds the explicit deletion only for any gap the check leaves.
 - G4: `auth.jwt()->'amr'` carries the `otp` entry for a verify-recovery session, read the same way as the merged test (`tests/integration/auth-recovery.test.ts`, lines 332 to 355), and a password sign-in session carries no such entry (T049b). If either fails, control D is not accepted and PDN-F4-7-16 is raised. There is no session-age fallback.
 - G5: deleting `auth.sessions` cascades to `auth.refresh_tokens` on the pinned local stack.
+- G6: the send-hook spike for control A, defined in the Control A paragraph above.
+
+Migration versions (described only, not named here): T044 and T050a each add one forward migration. The version of each is chosen at implementation. It must be above the highest `supabase/migrations` version on every origin ref (scan on 2026-11-08: highest `20261108230000`, on `origin/014-hero-impl`) and unique across all origin refs at commit and push time.
 
 If G1 or G2 fails, control B cannot be enforced and the conflict is raised again; no workaround is attempted.
 
@@ -123,7 +140,7 @@ Local-only limits: all tests run on the local Supabase stack and local Inbucket.
 
 ## ND-F4-7 Design (staff self-service email reset; specified, NOT built)
 
-Status: specification only. No code, migration, env, hosted Supabase Auth or SMTP change. Implementation gate (all must pass before tasks T043 to T046, T050a and T050b start): the PO answers PDN-F4-7-14 (public `/recover` mechanism) and PDN-F4-7-15 (migration-installed guard on `auth.users`), both CONFLICT items; PDN-F4-7-02 (eligible roles) is answered, since `begin` depends on it; PDN-F4-7-01, -03 and -04 are answered for the request side; exact copy for all other F4 states is approved (PDN-F4-7-06); feasibility gates G1 to G5 pass or are raised; the security review is scheduled; and Analyze is re-run after these answers. The independent critique is PENDING: Sonnet 5.5 is authorized for F4 by S36-PO-2, and the constitution's Sol Medium requirement conflicts with that authorization (reported to the PO; PO decision needed). This is an implementation blocker. PDN-F4-7-07 is decided by S35-PO-3 and is not a blocker. PDN-F4-7-12 and PDN-F4-7-13 are answered by S36-PO-2.PDN-F4-7-07 is already decided by S35-PO-3 and is not a blocker.
+Status: specification only. No code, migration, env, hosted Supabase Auth or SMTP change. Implementation gate (all must pass before tasks T043 to T046, T050a and T050b start): PDN-F4-7-14 (public `/recover` mechanism, option B) and PDN-F4-7-15 (guard on `auth.users`, option A) are answered by S37-PO-8, and PDN-F4-7-17 must be answered before the T050b config block is merged; PDN-F4-7-02 (eligible roles) is answered, since `begin` depends on it; PDN-F4-7-01, -03 and -04 are answered for the request side; exact copy for all other F4 states is approved (PDN-F4-7-06); feasibility gates G1 to G5 pass or are raised; the security review is scheduled; and Analyze is re-run after these answers. The independent critique is PENDING: Sonnet 5.5 is authorized for F4 by S36-PO-2, and the constitution's Sol Medium requirement conflicts with that authorization (reported to the PO; PO decision needed). This is an implementation blocker. PDN-F4-7-07 is decided by S35-PO-3 and is not a blocker. PDN-F4-7-12 and PDN-F4-7-13 are answered by S36-PO-2.PDN-F4-7-07 is already decided by S35-PO-3 and is not a blocker.
 
 Flow (requirements in spec.md FR-016 to FR-028):
 
@@ -165,3 +182,5 @@ Constitution check for ND-F4-7:
 |---|---|---|
 | Deprecated `middleware.ts` instead of `proxy.ts` | OpenNext supports only edge middleware | `proxy.ts` is Node-only, which OpenNext calls experimental and unsupported |
 | Two RPCs (authorize, record) around `generateLink` | No orphaned audit, no unauthorized invalidation of a client's link | A single post-generation RPC lets unauthorized callers burn links and probe whether accounts exist |
+| Send-email hook for the test phase (PDN-F4-7-14 = B), one enforcement point for app and direct routes | Only the provider boundary sees a direct anon-key `/recover`; E3 found no route-level deny in the generated Kong configuration | Local ingress (option A): a new proxy topology that is absent and unproven |
+| Guard trigger on `auth.users` password changes (PDN-F4-7-15 = A), with the existing intent table | E2 confirmed a direct password update with no safeguard; only a row-level guard binds every caller | Application-only check (option B): the direct `updateUser` path stays open |
