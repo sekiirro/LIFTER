@@ -14,12 +14,12 @@ applies to every unit that changes rendered UI.
   performs no repository writes, migrations, test runs, or stack modifications; agents execute those
   actions. (S29-PO-3 Q4)
 - No AI agent may independently make product decisions, whether discovered during Specify, Clarify,
-  Analyze, implementation, or reviews. Clarify is mandatory for every feature and records
-  "zero open ambiguities" explicitly when none exist. Before implementation, the current Analyze must
+  Analyze, implementation, or reviews. Clarify is mandatory for every feature and must end with
+  zero open ambiguities before implementation, recorded explicitly, never assumed. Before implementation, the current Analyze must
   postdate the
   latest spec, plan, or tasks change and have zero open CRITICAL/HIGH findings. Unresolved product
   decisions are presented as numbered MCQs with options, implications, and a recommendation; wait for
-  explicit PO approval. (S29-PO-2; S29-PO-3 Q1-Q2)
+  explicit PO approval. (S29-PO-2; S29-PO-3 Q1-Q2, Q1 tightened by S37-PO-1 Q1)
 - **Delegated agents (Codex, or OpenCode for the GLM tier) own implementation and Git operations.** They own bounded implementation and checks. Codex may delegate eligible low-risk work through OpenCode; writers do not approve their own work.
 
 ## Adaptive Model Routing
