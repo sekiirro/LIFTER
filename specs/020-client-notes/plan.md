@@ -1,6 +1,6 @@
 # Implementation Plan: F20 Client Notes
 
-**Spec**: [spec.md](spec.md) | **Status**: Proposed; CN-MCQ-01..14 resolved by the PO (CN-MCQ-08 by S38-PO-2); CN-MCQ-15 OPEN (DESIGN.md §11 UI values); implementation is not authorized by this spec-only PR.
+**Spec**: [spec.md](spec.md) | **Status**: Proposed; CN-MCQ-01..14 resolved by the PO (CN-MCQ-08 by S38-PO-2); CN-MCQ-15 removed by S38-R9; **no open ambiguities**; implementation is not authorized by this spec-only PR.
 
 ## Summary
 
@@ -36,12 +36,12 @@ Add independent plain-text notes to Client Details with a workspace/client compo
 - Follow DESIGN.md §3–6, §11–12 and existing design tokens/components: Geist for English, IBM Plex Sans Arabic for Arabic; support EN LTR and AR RTL; existing client-profile mobile pattern is horizontally scrollable tabs.
 - Timestamps use the viewer's local time zone (CN-MCQ-12) in the CN-MCQ-08 row 29 format.
 - Strings: only the approved CN-MCQ-08 table in spec.md (rows 1–29) is used; no other copy is added. Mixed-direction text uses the existing `Bidi` component (README.md).
-- Do not invent colors, layout details, responsive breakpoints or token values. Breakpoints, minimum touch sizes, focus-detail and token values that DESIGN.md §11 leaves open are CN-MCQ-15 (OPEN) and stay blocked until PO resolution.
+- Do not invent colors, layout details, responsive breakpoints or token values. The Client Notes UI reuses existing Design System components and their existing values (S38-R9): the DESIGN.md §6 tabs pattern; the existing textarea, button, dialog, toast and States components; existing tokens and breakpoints. It introduces no new breakpoint, touch-size, focus or token value. A value that exists neither in DESIGN.md nor in an existing component becomes a PO question only when implementation needs it, under the frontend design gate.
 - No motion is required or proposed.
 
 ## Implementation phases (future, after MCQ decisions)
 
-1. Resolve CN-MCQ-15 (the only open ambiguity) and update spec/plan/contracts; rerun Analyze and confirm zero open ambiguities before any implementation task.
+1. Confirm zero open ambiguities by re-running Analyze before any implementation task (CN-MCQ-15 was removed by S38-R9; no open ambiguities remain).
 2. Confirm authorization integration against current client detail permissions; define app/database capability parity and write contract.
 3. Implement forward-only schema and RLS with a version chosen after required all-origin migration rescan.
 4. Implement server actions/reads with verified actor and current client/workspace scope, last-save-wins edits and metadata-only audit.
@@ -54,10 +54,10 @@ Add independent plain-text notes to Client Details with a workspace/client compo
 - **Cross-workspace exposure**: composite client/workspace integrity plus two authorization walls and direct RLS negative coverage.
 - **Role drift**: reuse the existing role matrix and assert app/database parity.
 - **Attribution**: original author and creation timestamp are kept; edits set `edited_at` only.
-- **Unapproved interaction/copy**: UI copy is only the approved CN-MCQ-08 table; design values stay blocked by CN-MCQ-15; no icon is used.
+- **Unapproved interaction/copy**: UI copy is only the approved CN-MCQ-08 table; design values come only from the reused Design System components (S38-R9); no icon is used.
 - **Audit/content duplication**: audit payload is metadata only (CN-MCQ-07); a generic row-snapshot audit must not store body text. Retention is inherited from `public.audit_events` (CN-MCQ-13); the existing period stays open as DP-02.
 
 ## PO decisions
 
 - Resolved: CN-MCQ-01..14 (spec.md Clarifications; S37-PO-6, S37-PO-7, S37-PO-14, S37-PO-16 and S38-PO-2).
-- Open: CN-MCQ-15 (DESIGN.md §11 UI values). It blocks the visual/layout and viewport/token assertions only; the implementation gate stays closed until it is resolved.
+- Open: none. CN-MCQ-15 (DESIGN.md §11 UI values) was removed by architect ruling S38-R9; the design-system reuse rule is recorded in spec.md FR-006 and FR-007.
