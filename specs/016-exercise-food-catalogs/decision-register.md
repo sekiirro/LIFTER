@@ -11,10 +11,13 @@ This register preserves prior records and points to later decisions. An entry ma
 | PR #64, commit `c4543a1`, “independent workspace copies” | Independent workspace catalog copies. | **Superseded**; do not edit its branch or delete its record. | S35-PO-3 F16 REDESIGN paragraph; one global catalog with per-workspace overrides. |
 | S35-PO-3 | One shared global exercise catalog with workspace-specific editable overrides and client-workspace video resolution. | **Current binding decision** for the stated scope. | Original source: `C:/Users/NEW LAP/.lifter/runs/s35-ledger3/s35-po-3.verbatim.txt`. |
 | S36-PO-2 (F16 paragraph) | Answers F16-MCQ-1, -3, -4, -5 and -6; F16-MCQ-2 and -7 become moot; no client transfers between workspaces. F16-MCQ-8 and -10 are re-framed in round 3 as -F and -G; -9 stays open; -A to -E, -H and -I are added in round 3 (see the round-3 section at the end). | **Current binding decision** for the answered items. | Verbatim paragraph in `## S36-PO-2 F16 answers` below; source `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-2.verbatim.txt`. |
+| S36-PO-3 (F16 bullet, round 4) | Architect mapping of the F16 bullet: answers F16-MCQ-A, -B, -C, -E, -F, -G, -H, -I (both parts), -9 and -D (see `## S36-PO-3 F16 answers (round 4)`); adds F16-MCQ-J (PO-DECISION-NEEDED). | **Current binding PO bullet**. The per-item answers are architect words applied to the bullet, not independent PO decisions. | Verbatim bullet in `## S36-PO-3 F16 answers (round 4)`; source `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-3.verbatim.txt`. |
 
 ## F16 MCQ status after S36-PO-2
 
 Items F16-MCQ-1 through -7 are answered or moot as recorded in `## S36-PO-2 F16 answers`. Their original question, options, implications and recommendation text is kept unchanged as history. Round 3 (critique response): F16-MCQ-8 is re-framed as **F16-MCQ-F**, and F16-MCQ-10 as **F16-MCQ-G**; F16-MCQ-9 stays open and is not marked answered; new items F16-MCQ-A, -B, -C, -D, -E, -H and -I are **PO-DECISION-NEEDED** (see `## Round 3 PO-DECISION-NEEDED items`). Recommendations are advisory only; none is a decision. Requirements, defaults, contracts and test expectations must not choose an unanswered option.
+
+Round 4 (S36-PO-3, architect mapping applied as instructed): F16-MCQ-A, -B, -C, -E, -F, -G, -H, -I (both parts), -9 and -D are answered as recorded in `## S36-PO-3 F16 answers (round 4)`. F16-MCQ-J is new and PO-DECISION-NEEDED. Each answered item keeps its original question, options, implications and recommendation text unchanged as history; only its heading and a status line were added.
 
 ### F16-MCQ-1 — New-workspace video mapping creation — ANSWERED (S36-PO-2)
 
@@ -96,7 +99,9 @@ Items F16-MCQ-1 through -7 are answered or moot as recorded in `## S36-PO-2 F16 
 - **Recommendation:** (b), because it allows partial localization without changing the global record; this is not a decision.
 - **Blocked:** Override payload validation, AR/EN editor requirements, fallback/read precedence and bilingual acceptance tests.
 
-### PO-DECISION-NEEDED F16-MCQ-9 — Client video for workspace-private Trainer exercises (open; kept open in round 3, not marked answered)
+### F16-MCQ-9 — Client video for workspace-private Trainer exercises — ANSWERED (S36-PO-3, round 4)
+
+- **Status (S36-PO-3, round 4):** answered, option (a): a workspace-private exercise video is visible to clients only through an authorized plan projection, scoped to the persisted plan/client workspace. No direct catalog, table or search access. The original text below is unchanged.
 
 - **Status (S36-PO-2):** not answered by S36-PO-2. S36-PO-2 says published plans’ videos update live and that workspace alternatives may include private exercises; neither statement chooses whether a private exercise’s video is resolved or omitted in the client view. Remains PO-DECISION-NEEDED.
 
@@ -142,11 +147,51 @@ Architect mapping (`C:/Users/NEW LAP/.lifter/runs/s36-po/s36-architect-rulings-2
 
 **Independent critique (blocker):** Sonnet 5.5 critiques are authorized for F16 by S36-PO-2. The constitution (Sol Medium mandate, S30-PO-8 Q15) conflicts with that substitution. The conflict is reported to the PO. Until the PO resolves it, implementation is blocked and feature acceptance records the conflict.
 
+## S36-PO-3 F16 answers (round 4)
+
+PO source: `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-3.verbatim.txt`, section 2 (Product Decisions), F16 bullet, quoted byte-for-byte as UTF-8 (the bullet line is unchanged):
+
+> - **F16:** One logical library per workspace inheriting Global exercises. Independent workspace edits to names, videos, instructions and notes, with per-field reset to Global. Empty alternatives allowed. Preserve existing notes; audit legacy data before migration. PO may edit any workspace override. English names required; Arabic optional. Published plans freeze alternatives/descriptions; videos remain live. Search global + workspace names; display effective workspace names. No additional storage quota; retain 70% monitoring. Workspace-private videos visible to clients only through authorized plans. Client Delete releases email/phone for fresh registration elsewhere while retaining required history; audit current implementation.
+
+Architect mapping: `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-architect-rulings-3.md`, the F16 lines only (the product mapping and the F16 OPEN line that yields F16-MCQ-J). The architect routing lines of that file are not F16 and are not applied here. The per-item answers below are architect words applied to the verbatim bullet, as instructed. They are not independent PO decisions.
+
+| MCQ | Status (S36-PO-3) | Recorded answer | Applied in |
+| --- | --- | --- | --- |
+| F16-MCQ-A | Answered, option (a) | Per-field reset. Each allowlisted field (name, description, instructions, video, alternatives, notes) returns to the canonical value independently; the override row stays for its other fields. | FR-003, FR-014; data-model `exercise_override_versions`; contracts "Override remove/clear" row; T046, T047, T040 |
+| F16-MCQ-B | Answered, option (a) | An empty alternatives list is allowed and means no alternatives (replace semantics). Alternatives override writes stay BLOCKED by F16-MCQ-J. | FR-025; data-model `exercise_override_alternatives`; T048, T047, T040 |
+| F16-MCQ-C | Answered in part: preserve existing notes, audit before migration | Existing notes are preserved; legacy rows stay readable and immutable; a legacy-data audit (T068) runs BEFORE any migration task. `notes` is an overridable field. Note copy residual: see below. | FR-003, FR-031; data-model legacy `note` row; plan migration step 1; T068, T062, T063 |
+| F16-MCQ-D | Answered in the PO words (cross-feature) | Client Delete releases email and phone for a fresh registration elsewhere while retaining required history. The current Delete implementation (F11/F12) is audited first (T069). F16 implements nothing. Mechanism residual: see below. | FR-022; edge case; T069 |
+| F16-MCQ-E | Answered, option (a) | The PO may edit any workspace override. Canonical edits stay in the explicit global admin scope (F16-MCQ-5). | FR-014, FR-030; contracts planned rows; T037, T040, T047, T055 |
+| F16-MCQ-F | Answered for the name field only | English name required; Arabic name optional. Description and instructions are a residual: see below. | FR-003, FR-026; T046, T049, T056 |
+| F16-MCQ-G | Answered: frozen at publication | Override alternatives are frozen with the published plan at publication (FR-027), not re-resolved live. Count bound residual: see below. | FR-025, FR-027; data-model `ExerciseSnapshotV2` row; T048, T050, T056, T058 |
+| F16-MCQ-H | Answered, option (a) | The description is frozen with the published plan at publication, like names and instructions; videos stay live. | FR-023, FR-027; T044, T056 |
+| F16-MCQ-I | Answered, (1)(b) and (2)(b) | Workspace search matches canonical and workspace names and shows the effective workspace name. No extra storage quota; database size is monitored against the 70% exit trigger. | FR-035; plan Search paragraph; T064 |
+| F16-MCQ-9 | Answered, option (a) | A workspace-private exercise video is visible to clients only through an authorized plan projection, scoped to the persisted plan/client workspace. No direct catalog, table or search access. | FR-014, FR-024, FR-029; contracts client-view paragraph; T045, T050, T058 |
+| F16-MCQ-J | PO-DECISION-NEEDED (new, not answered) | The editable-field list of the S36-PO-3 bullet and the S35-PO-3 paragraph differ. See the F16-MCQ-J entry below. | FR-003; data-model `exercise_overrides`; T037, T040, T046 to T050, T056 to T058, T064 |
+
+### Residuals and label notes (round 4)
+
+- **F16-MCQ-F-R (residual; PO-DECISION-NEEDED unless the architect confirms it is covered):** the architect mapping answers only the name language rule. The language rule for overridden description and instructions is not answered. Blocked: T044 (description shape), T049 and T056 for those fields, and the language controls of T040. The consequence "an absent Arabic name inherits the canonical Arabic name" is inferred from "optional" and is recorded for architect confirmation.
+- **F16-MCQ-G-R (residual, count bound and label):** the alternatives count bound is not answered. Blocked: T048 count bound. Label note: "frozen with the published plan" is recorded as the FR-027 publication snapshot. Option (a) "seeded at add-to-plan" is a different timing and is not stated. The architect confirms the label.
+- **F16-MCQ-C-R (residual, note copy):** "preserve existing notes" does not say whether audited note text is copied into the workspace `notes` override. Blocked: T062(b), until T068 reports the inventory and the architect decides.
+- **F16-MCQ-D-R (residual, mechanism):** the anonymize-or-tombstone mechanism of option (b) is not stated. T069 informs the F11/F12 decision. No F16 task implements it.
+
+### PO-DECISION-NEEDED F16-MCQ-J — editable-field list (new in round 4; NOT answered)
+
+- **Feature / where found:** 016 · `spec.md` FR-003 and Key Entities (`ExerciseOverride`); `data-model.md` `exercise_overrides` and `exercise_override_versions` rows; `contracts/catalog-api.md` planned override rows; the S36-PO-3 bullet above; the S35-PO-3 paragraph in `spec.md` Clarifications (2026-11-06).
+- **Question:** S36-PO-3 lists the independent editable fields as names, videos, instructions and notes. S35-PO-3 listed name, description, instructions, video and alternatives. Is the S36-PO-3 list additive to the S35-PO-3 list, or does it replace it?
+- **Options:** (a) Additive: the allowlist is name, description, instructions, video, alternatives and notes (six fields). (b) Replacing: the allowlist is name, instructions, video and notes (four fields); description and alternatives overrides are withdrawn and the S35-PO-3 wording for them is superseded.
+- **Implications:** (a) keeps every S35-PO-3 capability and adds notes; description and alternatives writes then need the freeze rules of F16-MCQ-G and -H. (b) removes the alternatives child rows (FR-025, SC-016) and the description override from the design and needs spec, data-model, contract and test rework. The S35-PO-3 record stays as history.
+- **Advisory recommendation (not a decision):** (a), additive, with notes added.
+- **Blocked:** description and alternatives override writes and their validation (T037, T047, T048), the description and alternatives columns and resolution (T046, T049, T056), the editor fields (T040), the client alternatives scope (T050, T058), the description and alternatives codes of the audit allowlist (T057), and description search columns (T064). Name, instructions, video and notes writes are not blocked by J.
+
 ## Round 3 PO-DECISION-NEEDED items
 
 Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonnet-f16-critique/critique.md` (F6, F11, F12, F21 and consolidated MCQs), plus items added by the round-3 review (F16-MCQ-I, FYI-1 to FYI-3). Each item lists the question, options (2 to 4) with implications, an advisory recommendation that is **not a decision**, and what is blocked. No option is selected in this record. Task IDs refer to `tasks.md`.
 
-### PO-DECISION-NEEDED F16-MCQ-A — How an overridden field is reset
+### F16-MCQ-A — How an overridden field is reset — ANSWERED (S36-PO-3, round 4)
+
+- **Status (S36-PO-3, round 4):** answered, option (a), per-field reset. Each allowlisted field returns to the canonical value independently and the override row stays. See `## S36-PO-3 F16 answers (round 4)`. The original text below is unchanged.
 
 - **Feature / where found:** 016 · `spec.md` FR-003 (line 101) and FR-014 (line 112); `data-model.md` line 23; `contracts/catalog-api.md` planned row "Workspace override remove/clear" (line 28); critique F6.
 - **Question:** How does a workspace return one overridden field (for example its video) to the canonical value while keeping its other overrides?
@@ -155,7 +200,9 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 - **Advisory recommendation (not a decision):** (a).
 - **Blocked:** T046 (null semantics), T047 (remove/clear contract), T040 (reset UI), T037 (reset assertions).
 
-### PO-DECISION-NEEDED F16-MCQ-B — Empty alternatives list
+### F16-MCQ-B — Empty alternatives list — ANSWERED (S36-PO-3, round 4)
+
+- **Status (S36-PO-3, round 4):** answered, option (a): an empty alternatives list is allowed and means no alternatives. Alternatives override writes remain BLOCKED by F16-MCQ-J.
 
 - **Feature / where found:** 016 · `spec.md` FR-025 (line 125); `data-model.md` line 24; `plan.md` line 36; critique F6.
 - **Question:** May a workspace save an empty alternatives list to suppress the canonical alternatives?
@@ -164,7 +211,9 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 - **Advisory recommendation (not a decision):** (a).
 - **Blocked:** T048 (validation), T047 (empty-list write), T040 (empty state), T037 (alternatives assertions).
 
-### PO-DECISION-NEEDED F16-MCQ-C — Legacy variation `note` text
+### F16-MCQ-C — Legacy variation `note` text — ANSWERED IN PART (S36-PO-3, round 4)
+
+- **Status (S36-PO-3, round 4):** answered: preserve existing notes and audit legacy data before any migration (option (d), inventory first). Legacy rows stay readable and immutable, and no note text is deleted or silently reclassified. Copying audited note text into the workspace `notes` override is residual F16-MCQ-C-R, not decided here. Blocked: T062(b).
 
 - **Feature / where found:** 016 · `data-model.md` line 26; `plan.md` line 71; `tasks.md` T062; main `supabase/migrations/20261106112000_catalog_variation_operations.sql` (note, at most 2000 characters, lines 49-52, 75).
 - **Question:** What happens to existing variation notes, which the five-field override allowlist does not contain?
@@ -173,7 +222,9 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 - **Advisory recommendation (not a decision):** (d) first; otherwise (a).
 - **Blocked:** T062 (note backfill); T047 (note payload); the data steps of T053.
 
-### PO-DECISION-NEEDED F16-MCQ-D — Re-registration of a departing client
+### F16-MCQ-D — Re-registration of a departing client — ANSWERED IN THE PO WORDS (S36-PO-3, round 4; cross-feature)
+
+- **Status (S36-PO-3, round 4):** answered in the PO words: client Delete releases email and phone for a fresh registration elsewhere while retaining required history. The closest option is (b); its anonymize-or-tombstone mechanism is residual F16-MCQ-D-R. F16 implements nothing: T069 audits the current Delete implementation (F11/F12) before any change.
 
 - **Feature / where found:** 016 · `spec.md` FR-022 (line 121) and edge case (line 93); main `supabase/migrations/20261031121000_client_accounts_model.sql` lines 68-69 (`email_normalized` and `phone_e164` are globally unique); D-08 in `docs/01-traceability.md` line 19; critique F11.
 - **Question:** The S36-PO-2 words say departing clients register new accounts in another workspace. Global e-mail and phone uniqueness (D-08) and preserved history prevent reuse of the same identifiers. How should re-registration work?
@@ -182,7 +233,9 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 - **Advisory recommendation (not a decision):** (a) for F16; escalate (b) as a separate F11/F12 decision if identical identifiers are wanted.
 - **Blocked:** Nothing in F16 (FR-022 is narrowed). Cross-feature F11/F12 only.
 
-### PO-DECISION-NEEDED F16-MCQ-E — PO write reach on overrides
+### F16-MCQ-E — PO write reach on overrides — ANSWERED (S36-PO-3, round 4)
+
+- **Status (S36-PO-3, round 4):** answered, option (a): the PO may edit any workspace override. Canonical global edits stay in the explicit global admin scope (F16-MCQ-5).
 
 - **Feature / where found:** 016 · `spec.md` FR-030 (line 130) and FR-014 (line 112); `contracts/catalog-api.md` planned rows (lines 27 and 29); main `supabase/migrations/20261027120000_tenancy.sql` lines 65-75 (`has_workspace_access` returns true for the platform owner in every workspace); critique F12.
 - **Question:** In which workspaces may the PO write workspace overrides and workspace-private exercises?
@@ -191,7 +244,9 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 - **Advisory recommendation (not a decision):** (a), to match precedent.
 - **Blocked:** T047 (PO authorization text), T055 (parity rows for PO), T037 (routing assertions), T040 (routing UI).
 
-### PO-DECISION-NEEDED F16-MCQ-F — Localization of workspace overrides (re-framed from F16-MCQ-8)
+### F16-MCQ-F — Localization of workspace overrides (re-framed from F16-MCQ-8) — ANSWERED FOR NAME; RESIDUAL FOR DESCRIPTION AND INSTRUCTIONS (S36-PO-3, round 4)
+
+- **Status (S36-PO-3, round 4):** for the name field: the English name is required and the Arabic name is optional. Label note: this matches no option exactly (closest is option (b) with the English name required). The inheritance of the canonical Arabic name is inferred from "optional" and is recorded for architect confirmation. Residual F16-MCQ-F-R: the language rule for description and instructions is NOT answered.
 
 - **Feature / where found:** 016 · `spec.md` FR-003 (line 101), FR-026 (line 126), FR-023 (line 123); `data-model.md` line 19 (canonical description shape); critique F21.
 - **Question:** For overridden name, description and instructions, must both AR and EN be given, or may one language be overridden while the other is inherited from canonical?
@@ -200,7 +255,9 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 - **Advisory recommendation (not a decision):** (b), with the per-language source recorded so the freeze is deterministic.
 - **Blocked:** T044 (description shape), T046 (name column), T049 (language selection), T056 (name-language freeze), T040 (editor), T037 (name assertions).
 
-### PO-DECISION-NEEDED F16-MCQ-G — Override alternatives: seeded into the plan, or live (re-framed from F16-MCQ-10)
+### F16-MCQ-G — Override alternatives: seeded into the plan, or live (re-framed from F16-MCQ-10) — ANSWERED: FROZEN AT PUBLICATION (S36-PO-3, round 4; label and count residual)
+
+- **Status (S36-PO-3, round 4):** answered: override alternatives are frozen with the published plan at publication (the FR-027 snapshot), not re-resolved live. Label note: option (a) is "seeded at add-to-plan", a different timing; the architect confirms the label. Residual F16-MCQ-G-R: the alternatives count bound is NOT answered. Alternatives override writes remain BLOCKED by F16-MCQ-J.
 
 - **Feature / where found:** 016 · `spec.md` FR-025 (line 125) and FR-027 (line 127); `contracts/catalog-api.md` client-view paragraph (line 119); `plan.md` line 36; critique F21.
 - **Question:** Are an exercise's workspace alternatives copied into a plan when the exercise is added (seeded and frozen), or re-resolved from the override at each client view (live)? If live, may workspace-private targets be shown?
@@ -209,7 +266,9 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 - **Advisory recommendation (not a decision):** (a).
 - **Blocked:** FR-027 (V2 alternatives freeze); T048 (count bound and seeded or live behaviour); T050 and T058 (client alternatives scope); T059 (F17 integration).
 
-### PO-DECISION-NEEDED F16-MCQ-H — Description: frozen or live in a published plan
+### F16-MCQ-H — Description: frozen or live in a published plan — ANSWERED (S36-PO-3, round 4)
+
+- **Status (S36-PO-3, round 4):** answered, option (a): the description is frozen with the published plan at publication, like names and instructions; videos stay live. Description override writes remain BLOCKED by F16-MCQ-J.
 
 - **Feature / where found:** 016 · `spec.md` FR-027 (line 127) and FR-023 (line 123); `plan.md` line 85; `data-model.md` line 46; critique F21.
 - **Question:** Is the description (canonical or workspace) frozen at publication with names and instructions, or live like video?
@@ -218,7 +277,9 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 - **Advisory recommendation (not a decision):** (a).
 - **Blocked:** T044 (description freeze), T056 (description field in V2), the FR-027 V2 shape.
 
-### PO-DECISION-NEEDED F16-MCQ-I — Workspace-name search and override storage budget (added in round-3 review)
+### F16-MCQ-I — Workspace-name search and override storage budget (added in round-3 review) — ANSWERED (S36-PO-3, round 4)
+
+- **Status (S36-PO-3, round 4):** answered: (1)(b), search matches canonical and workspace names and shows the effective workspace name; (2)(b), no separate storage budget (no extra quota), database size monitored against the 70% exit trigger.
 
 - **Feature / where found:** 016 · `spec.md` FR-035 (line 135) and FR-015; `plan.md` line 38; `data-model.md` line 54; critique F19. Not in the critique's MCQ list; added because F19 cannot be specified without it.
 - **Question (1):** Which names does a workspace library search match: canonical names only, workspace names only, or both (returning the effective name)? **Question (2):** Is a per-workspace override storage or write-rate budget required, and with which numbers?
@@ -228,7 +289,7 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 - **Advisory recommendation (not a decision):** (1)(b); (2)(b) until the PO sets numbers.
 - **Blocked:** T064 (search semantics and storage budget). The length bound in FR-035 is not blocked.
 
-### F16-MCQ-9 (kept open) — client video for workspace-private exercises
+### F16-MCQ-9 (round 3: kept open; answered in round 4 by S36-PO-3) — client video for workspace-private exercises
 
 - Original text is in the F16-MCQ-9 section above; it is **not** marked answered. The S36-PO-2 words ("videos update live") point toward option (a), so a one-line PO confirmation would close it. The advisory recommendation stays advisory.
 - **Blocked:** T045 (client visibility), T050 and T058 (private-video assertions), FR-024.
