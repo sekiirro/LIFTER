@@ -201,7 +201,7 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Every spec, plan and review MUST include a constitution check. Deviations MUST be justified in
   the plan's complexity tracking and approved before implementation.
 
-**Version**: 1.7.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-08 (controlled model-routing flexibility, S36-PO-4 item 3; merge-gate no-writes-to-main sentence, S36-R9; earlier: merge-gate CI attempt wording, S35-PO-1/S36-R2; development-agent synthetic-data rule and production-AI distinction; S31-PO-7 Q6/S31-PO-8; CI provenance, mutation-evidence binding, and required-check list; S31-R4/R5/R6)
+**Version**: 1.8.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-08 (model routing aligned to S36-PO-5 and zero open ambiguities before implementation, S37-PO-1 Q1; earlier: controlled model-routing flexibility, S36-PO-4 item 3; merge-gate no-writes-to-main sentence, S36-R9; earlier: merge-gate CI attempt wording, S35-PO-1/S36-R2; development-agent synthetic-data rule and production-AI distinction; S31-PO-7 Q6/S31-PO-8; CI provenance, mutation-evidence binding, and required-check list; S31-R4/R5/R6)
 
 ### Sync impact report and amendment note - 2026-10-29 (D-27)
 
@@ -244,3 +244,13 @@ Superseded with pointers (history retained, not deleted): the fixed model pool (
 Unchanged: the six-agent cap, worktree isolation, one stack-lock writer, all CI, CodeRabbit, exact-SHA, and PO merge approval gates, PO authority and the Absolute PO Decision Rule, the free-model secrets/sensitive-task guardrail (S13), the Sol High and xhigh prohibition (D-27), per-invocation PO approval wherever Sol Medium is used (S13 session 14), the performance log, and the production-AI safeguards (S31-PO-8). Also included (S36-R9, codifies existing practice, no new policy): no writes to `main` between the final live recheck and the merge; if `main` moved, re-verify all gates.
 
 Dependent documents updated in the same PR, separate commits: `docs/08-agent-workflow.md`, `docs/03-roadmap.md` (critic wording), and `docs/04-changes-and-questions.md` (decision-register row D-29). No application code, tests, migrations, or CI workflow files changed.
+
+### Sync impact report and amendment note - 2026-11-08 (S36-PO-5; S37-PO-1 Q1; PR #48 round 6)
+
+MINOR (version 1.7.0 to 1.8.0; governance rule change within the same open amendment PR, following its per-round bump practice). Authority: the final S36-PO-5 "Models / Constitution" block, S36-PO-4 items 3 and 4, and S37-PO-1 Q1 = A ("Tighten": require zero open ambiguities before implementation).
+
+Changed: (1) The model-routing text now states the PO's final words instead of an external routing record. Sol Medium is used exclusively for the mandatory independent Spec Kit spec/plan critique, not for implementation or routine reviews, with PO approval for each invocation. High-risk work: Luna is preferred; Haiku is allowed only with independent Luna or Claude review, and only after this amendment is merged; no other model without prior PO approval. Codex Luna is primary; `opencode-go/gpt-6-luna` is a fallback only on Codex quota exhaustion, returning to Codex Luna when quota is restored, with provider/model capability and security verified. At most six concurrent agents. This supersedes the 1.7.0 routing-record and PO-approved critic list wording; S30-PO-8 Q15 is no longer treated as superseded for the critic model, and any critic other than Sol Medium needs explicit PO authorization (S36-PO-2 gave it for Sonnet 5.5 on F16 and F4). (2) The free-model guardrail (S13) is unchanged. S36-PO-5 names Luna and Haiku only and approves no free model, so no free model receives sensitive or high-risk tasks (resolves the guardrail tension noted in round 5, R5-2). (3) Clarify must end with zero open ambiguities before implementation, recorded explicitly and never assumed, tightening S29-PO-3 Q1 (CodeRabbit thread BfzT).
+
+Unchanged: mandatory independent critique with per-invocation PO approval, independent architect review and executed mutation evidence for high-risk work, all security, CI, CodeRabbit and exact-SHA PO merge gates, PO authority, the Absolute PO Decision Rule, Sol High and xhigh prohibition, the performance log, and the production-AI safeguards.
+
+Dependent documents updated in the same PR, separate commit: `docs/08-agent-workflow.md`, `docs/03-roadmap.md`, and `docs/04-changes-and-questions.md` (D-29 revised, D-30 added). No application code, tests, migrations, or CI workflow files changed.
