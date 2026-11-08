@@ -1,0 +1,69 @@
+import { notFound } from 'next/navigation';
+import { FoodEditor } from '../../../../components/catalog/FoodEditor';
+import { BrandScope } from '../../../../components/ui/BrandScope';
+import { CatalogFoodsShowcaseClient } from './CatalogFoodsShowcaseClient';
+import { isShowcaseEnabled } from '../../../../lib/design/showcase';
+import { LOCALE_COOKIE, parseLocale } from '../../../../lib/design/preferences';
+import { cookies } from 'next/headers';
+import { getMessages } from '../../../../lib/i18n';
+import type { FoodEditorDraft } from '../../../../lib/catalog/food-editor';
+import styles from './catalog-foods.module.css';
+
+const fixture: FoodEditorDraft = {
+  nameAr: 'أرز أبيض مطبوخ',
+  nameEn: 'Cooked white rice',
+  basis: 'g',
+  productIdentity: 'white rice',
+  preparationIdentity: 'boiled',
+  weighingState: 'cooked',
+  kcal: '200',
+  protein: '2.7',
+  carbs: '28',
+  fat: '0.3',
+  fiber: '',
+  servings: [{ labelAr: 'كوب', labelEn: 'cup', basisQuantity: '158' }],
+  alternatives: [
+    { foodId: 'food-oats', portionQuantity: '100', portionUnit: 'g' },
+  ],
+};
+
+export default async function CatalogFoodsShowcase({
+  searchParams,
+}: {
+  searchParams: Promise<{ state?: string; brand?: string }>;
+}) {
+  if (!isShowcaseEnabled(process.env)) notFound();
+  const [preferences, search] = await Promise.all([cookies(), searchParams]);
+  const locale = parseLocale(preferences.get(LOCALE_COOKIE)?.value);
+  const m = getMessages(locale);
+  const state = search.state;
+  const content = (
+    <main className={styles.main} data-testid="catalog-foods-showcase">
+      <h1>{m['catalog.foodPreviewHeading']}</h1>
+      {state === 'exact' || state === 'near' || state === 'video' ? (
+        <CatalogFoodsShowcaseClient locale={locale} state={state} />
+      ) : (
+        <FoodEditor
+          locale={locale}
+          role="trainer"
+          workspaces={[
+            { id: 'fixture-kendo', label: m['catalog.showcaseKendoWorkspace'] },
+          ]}
+          initialDraft={fixture}
+          alternatives={[
+            { id: 'food-oats', names: { ar: 'شوفان', en: 'Oats' } },
+            { id: 'food-potato', names: { ar: 'بطاطس', en: 'Potato' } },
+            { id: 'food-bulgur', names: { ar: 'برغل', en: 'Bulgur' } },
+          ]}
+        />
+      )}
+    </main>
+  );
+  return search.brand === 'sample' ? (
+    <BrandScope color="#2563EB" data-testid="catalog-brand-scope">
+      {content}
+    </BrandScope>
+  ) : (
+    content
+  );
+}

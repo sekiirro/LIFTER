@@ -1,4 +1,5 @@
 import { normalizeArEnV1 } from './normalize';
+import { formatNumber } from '../i18n/format';
 import {
   EQUIPMENT_CODES,
   MUSCLE_GROUP_CODES,
@@ -128,6 +129,14 @@ export function hasActiveCatalogFilters(
   return Object.keys(compactCatalogFilters(filters)).length > 0;
 }
 
+export function hasSubmittedCatalogSearch(
+  search: Pick<NormalizedCatalogSearch, 'query' | 'filters'>,
+): boolean {
+  return (
+    search.query.trim().length > 0 || hasActiveCatalogFilters(search.filters)
+  );
+}
+
 export function buildCatalogSearch(
   kind: CatalogListKind,
   query = '',
@@ -252,6 +261,10 @@ export function catalogSearchKeyAction(key: string): CatalogShellAction | null {
   return null;
 }
 
-export function formatCatalogCount(template: string, count: number): string {
-  return template.split('{count}').join(String(count));
+export function formatCatalogCount(
+  template: string,
+  count: number,
+  locale: CatalogLocale,
+): string {
+  return template.split('{count}').join(formatNumber(count, locale));
 }
