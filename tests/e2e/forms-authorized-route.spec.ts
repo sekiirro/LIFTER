@@ -517,6 +517,16 @@ test('renders recorded new client controls across AR/EN, theme, and viewport mat
           'displayOnly',
           locale === 'en' ? 'About your health data' : 'عن بياناتك الصحية',
         );
+        await expect(
+          page
+            .getByRole('status')
+            .filter({ hasText: getMessages(locale)['forms.submitSuccess'] }),
+        ).toBeVisible({ timeout: 10_000 });
+        await expect(
+          page.getByRole('button', {
+            name: getMessages(locale)['forms.saveNow'],
+          }),
+        ).toHaveCount(0);
         await expectAxeClean(page);
       }
     }
