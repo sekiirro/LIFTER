@@ -19,19 +19,19 @@ describe('F14 Storage CI lane contract', () => {
     expect(workflow).toContain('Export local stack environment');
     expect(workflow).toContain('supabase status -o env | sed -E');
     expect(workflow).toContain('SUPABASE_URL=$API_URL');
-    for (const file of [
-      'tests/e2e/branding-banner-loaded.spec.ts',
-      'tests/e2e/branding-production-ui.spec.ts',
-    ]) {
+    for (const [file, guardPattern] of [
+      [
+        'tests/e2e/branding-banner-loaded.spec.ts',
+        /if \(!local\)\s*throw new Error\(/,
+      ],
+      ['tests/e2e/branding-production-ui.spec.ts', /test\.skip\(!local/],
+    ] as const) {
       const spec = readFileSync(file, 'utf8');
-      const guard = spec.indexOf('test.skip(!local');
-      const failFastGuard = spec.indexOf('if (!local)');
+      const guard = spec.search(guardPattern);
       const fixtureImport = spec.indexOf("await import('../integration/");
       expect(spec).toContain('process.env.API_URL');
-      expect([guard, failFastGuard].some((index) => index >= 0)).toBe(true);
-      for (const index of [guard, failFastGuard]) {
-        if (index >= 0) expect(index).toBeLessThan(fixtureImport);
-      }
+      expect(guard, file).toBeGreaterThanOrEqual(0);
+      expect(guard, file).toBeLessThan(fixtureImport);
     }
     expect(workflow).toContain(
       'tests/integration/branding-storage-context.test.ts',
