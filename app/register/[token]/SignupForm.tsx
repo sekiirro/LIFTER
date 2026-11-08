@@ -1,6 +1,12 @@
 'use client';
 
-import { useActionState, useEffect, useRef, useState } from 'react';
+import {
+  useActionState,
+  useEffect,
+  useRef,
+  useState,
+  useSyncExternalStore,
+} from 'react';
 import { Button } from '../../../components/ui/Button';
 import { Bidi } from '../../../components/ui/Bidi';
 import glass from '../../../components/branding/liquid-glass.module.css';
@@ -21,6 +27,10 @@ type SignupAction = (
   previous: SignupPublicResult,
   formData: FormData,
 ) => Promise<SignupPublicResult>;
+
+const subscribeToHydration = () => () => {};
+const getHydratedSnapshot = () => true;
+const getServerHydrationSnapshot = () => false;
 
 function newRequestSecret(): string {
   const bytes = new Uint8Array(32);
@@ -70,6 +80,11 @@ export function SignupForm({
       }
     },
     signupResult('invalid_input', locale),
+  );
+  const hydrated = useSyncExternalStore(
+    subscribeToHydration,
+    getHydratedSnapshot,
+    getServerHydrationSnapshot,
   );
   const [country, setCountry] = useState('EG');
   const [nationalNumber, setNationalNumber] = useState('');
@@ -217,6 +232,7 @@ export function SignupForm({
     <form
       ref={formRef}
       action={formAction}
+      data-hydrated={hydrated ? 'true' : 'false'}
       className={`${styles.form} ${heroStyles.form}`}
       onSubmit={(event) => {
         if (submittingRef.current) {

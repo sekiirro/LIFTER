@@ -241,6 +241,52 @@ describe('signup result focus', () => {
     outsideButton.remove();
   });
 
+  it('reports hydration only after the client form mounts', async () => {
+    const { renderToStaticMarkup } = await import('react-dom/server');
+    const action = vi.fn(async () => signupResult('unavailable', 'en'));
+    expect(
+      renderToStaticMarkup(
+        createElement(SignupForm, { action, locale: 'en', phoneCountries }),
+      ),
+    ).toContain('data-hydrated="false"');
+
+    dom = new JSDOM('<!doctype html><html><body></body></html>', {
+      url: 'http://localhost/',
+    });
+    const globals = {
+      window: dom.window,
+      document: dom.window.document,
+      HTMLElement: dom.window.HTMLElement,
+      HTMLInputElement: dom.window.HTMLInputElement,
+      FormData: dom.window.FormData,
+      Event: dom.window.Event,
+      Node: dom.window.Node,
+      IS_REACT_ACT_ENVIRONMENT: true,
+    };
+    previousGlobals = new Map(
+      Object.keys(globals).map((key) => [
+        key,
+        Object.getOwnPropertyDescriptor(globalThis, key),
+      ]),
+    );
+    for (const [key, value] of Object.entries(globals))
+      Object.defineProperty(globalThis, key, { configurable: true, value });
+    const { createRoot } = await import('react-dom/client');
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+
+    await act(async () => {
+      root?.render(
+        createElement(SignupForm, { action, locale: 'en', phoneCountries }),
+      );
+    });
+
+    expect(host.querySelector('form')?.getAttribute('data-hydrated')).toBe(
+      'true',
+    );
+  });
+
   it.each(['en', 'ar'] as const)(
     'focuses Username when the server reports the unavailable status there (%s)',
     async (locale) => {
