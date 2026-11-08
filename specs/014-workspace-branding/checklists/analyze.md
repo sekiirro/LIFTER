@@ -318,8 +318,24 @@ T900 has been marked complete only after the GC integration tests passed on the 
 
 ### Scope analysis
 
-S37-PO-8 item 1 authorizes renaming only `20261107032001_signup_username_unavailable.sql` to reserved version `20261108230000`. The shared `20261104001000_f15_signup_profile.sql` remains untouched under a one-time exception to migration ordering. Applied-history SELECT found the old version absent on Stack B and Stack D; both containers retained their recorded `StartedAt`. The only intervening migration on this branch is `20261107032002_branding_function_convergence.sql`, which changes branding functions only and has no dependency relationship with the signup migration.
+S37-PO-8 item 1 authorizes renaming only the signup username unavailable migration to reserved version `20261108230000`. The shared `20261104001000_f15_signup_profile.sql` remains untouched under a one-time exception to migration ordering. Applied-history SELECT found the old version absent on Stack B and Stack D; both containers retained their recorded `StartedAt`. The only intervening migration on this branch is `20261107032002_branding_function_convergence.sql`, which changes branding functions only and has no dependency relationship with the signup migration.
 
 The scoped rename introduces no product behavior or schema-content change, adds no migration, and changes no permissions or data. Preserve exact migration bytes and do not edit the shared migration. Update historical filename references only in a separate follow-up commit.
 
 **Findings count:** 0 CRITICAL, 0 HIGH. **Verdict:** PASS for T064 migration-order maintenance under S37-PO-8 item 1.
+
+## Round 19 — post-rename reference alignment (2026-11-08)
+
+### Spec Kit revalidation
+
+- **PASS — requirement coverage:** FR-028, SC-023 and signup acceptance scenarios in `spec.md` still cover the migration's unchanged behavior.
+- **PASS — clarification:** S37-PO-8 item 1 and the no-open-ambiguities statement for the rename scope remain recorded in `plan.md` and this analysis.
+- **PASS — plan/task alignment:** `plan.md` names the current migration file, and unchecked T064 in `tasks.md` describes the completed rename scope without retaining a stale source filename.
+- **PASS — analysis freshness:** This addendum follows the reference-alignment edits to plan/tasks and records 0 open CRITICAL/HIGH findings.
+- **PASS — traceability:** `traceability.md` now points T058's migration reference to the current filename; T064 remains unchecked pending final verification.
+
+### Review
+
+The rename commit changes only the migration path; this follow-up updates active test and Spec Kit references. Historical numeric mentions in prior analysis remain time-specific evidence. No SQL, test assertion, signup behavior, schema, data, or shared migration changes.
+
+**Findings count:** 0 CRITICAL, 0 HIGH. **Verdict:** PASS for reference alignment.

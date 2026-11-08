@@ -297,7 +297,7 @@ describe('tenancy security catalog (T007)', () => {
       );
       expect(row.anon_execute).toBe(false);
       if (row.proname === 'signup_auth_identity_column') {
-        // 20261107032001 revokes EXECUTE from PUBLIC, anon, authenticated, and service_role.
+        // 20261108230000 revokes EXECUTE from PUBLIC, anon, authenticated, and service_role.
         expect(row.service_role_execute, row.proname).toBe(false);
       }
       expect(row.authenticated_execute, row.proname).toBe(
