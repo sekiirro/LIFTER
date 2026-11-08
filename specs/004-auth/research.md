@@ -88,3 +88,15 @@
   - Control C: E4 is evidence for the required outcome on one tested session. Per S37-PO-3/-4, T050a first checks whether GoTrue's own revocation covers the app path before any explicit deletion is added.
   - Control D: E2 did not exercise the recovery verify path, so G4 stays open.
 - **Hygiene (operational, not a spec change)**: the two synthetic users `f4-bypass-1@example.test` and `f4-bypass-2@example.test` remain in `auth.users` on Stack D. Their deletion was refused by the foreign key `account_identifier_claims_auth_user_id_fkey` and by the `app_private.forbid_delete()` trigger; no trigger or constraint was disabled. Cleanup needs a supported path and is recorded as a blocker in the S37 report.
+
+
+## R11 ? F4 round 6 critique disposition and technical requirements
+
+S38-R4 dispositions the executed Sol Medium critique (result: CRITICAL 0 / HIGH 6 / MEDIUM 3 / LOW 1). Findings 1-7, 9 and 10 are addressed in the round-6 spec artifacts. Finding 4 is technically remediated by binding every recovery intent to the initiating user and session; it is not accepted as an exception. Finding 8 pruning removes PDN-F4-7-04, -06, -10, -11 and -16 as technical/obsolete/hosted-deferred, and closes -17 under S38-PO-3.
+
+- Hook failures are distinct: policy refusal, caught audit failure, unavailable transport and timeout. The last two cannot be assumed to receive a generic response from a hook that did not execute. G6 records direct-Auth responses per class, proves no send/no SMTP fallback, and resolves FR-018 technically before acceptance.
+- The hook must authenticate calls, validate payloads and action type, verify identity/destination, protect secrets, prevent duplicate side effects, persist the required audit before send and never log token-bearing payloads. Transport specifics are selected and evidenced at local G6; hosted configuration is deferred.
+- The hook is the only request-counter owner for app and direct routes. App requests do not pre-consume counters. Mixed and unknown-address traffic, concurrency, five-per-account and ten-global-per-hour semantics, plus the separate two-per-hour delivery cap, are tested without relying on GoTrue throttling. If Auth skips the hook for unknown identities and no technical accounting path covers them, implementation remains blocked.
+- Recovery intents bind the initiating session. The guard validates trusted context, and T049a proves another session cannot consume an open intent. If the pinned local stack cannot attest the binding, T050a remains blocked; no exception is accepted.
+- After success, end the recovery session and send the user to normal login. Revoke every other pre-existing account session per FR-025(b), FR-030 control C and PDN-F4-7-07. Closing-audit failure after known success still shows success-then-login and requires reconciliation.
+- Testing target: 2 minutes. Real-user UX target: 5 minutes from opening the recovery link to successful reset.

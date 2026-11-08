@@ -42,3 +42,15 @@ Every function has `set search_path = ''`, owner postgres, and execute revoked f
 
 `issued` →(verify within expiry, first use)→ `consumed` (session created) → password set.
 `issued` →(newer link for the same account)→ `superseded`. `issued` →(expiry)→ `expired`. Consumed, superseded and expired links all fail verification.
+
+
+## Staff self-service recovery (FR-016 to FR-030; future local-only implementation)
+
+This section specifies future F4 state; it creates no migration in this spec-only change.
+
+- The future app_private.staff_password_reset_intents relation holds an intent id, auth user id, initiating session id, state (open, completed, aborted, reconciled), start and recovery verification times, nullable password-changed time, and close time. One open intent is allowed per staff account; the intent is bound to the initiating user and recovery session, not only the account.
+- public.staff_password_reset_begin(), _complete(intent_id), and _abort(intent_id) are authenticated RPCs. Each verifies auth.uid() and the verified JWT session_id match the intent owner and initiating session. begin requires recovery authentication (amr evidence) no older than 900 seconds. Completion and abort are one-way transitions, with exactly one closing audit event or later reconciliation.
+- The auth.users password guard validates trusted request context against the intent initiating session id, allows at most one password change atomically, and refuses an account-level intent used by another session. If the pinned local Auth stack cannot expose trustworthy context to the guard, the migration is blocked pending a technical design; no account-scope exception is accepted.
+- After a known-successful password change, the recovery session ends and the user goes to normal login. All other pre-existing account sessions are revoked per FR-025(b), control C and PDN-F4-7-07. Closing-audit failure still produces success-then-login and mandatory reconciliation.
+- The local send hook is the authoritative counter/audit/delivery boundary for both app and direct /recover requests. It enforces five requests per account and ten globally per rolling hour, plus the local test delivery permission and two-email-per-hour cap. The app does not separately consume counters. Unknown-address request accounting and no-SMTP-fallback are proven by G6 before implementation.
+- The hook authenticates invocations, validates payload shape and action type, checks identity/destination, prevents duplicate side effects, protects runtime secrets and never logs token-bearing payloads. Hosted Auth, SMTP, Resend and the hosted sender remain deferred under FR-020/S38-PO-3.
