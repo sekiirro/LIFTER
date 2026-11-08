@@ -114,8 +114,8 @@ Implementation staffing and sequencing are tracked outside this canonical contra
 
 Round 3 (FR-032) withdraws the fixed range `20261106000000`-`20261106195959`. It sorted before `20261107032002` (branding convergence, on main), before PR #43's `20261107030000`, and before the in-flight F15 migrations, so it could not be applied without `--include-all`. The rule that replaces it:
 
-- Each F16 migration version is strictly greater than the highest version on any origin ref at implementation time. Highest on 2026-11-06 (scan of all 91 origin refs): `20261108021002` (PR #57 and #58 branches).
-- Run two separate checks immediately before each implementation commit and again before each push, and record both results in the report: (a) the ordering check, which records the highest version across all origin refs and verifies that every local F16 migration version is strictly greater; and (b) `npm run check:migration-versions:remote` (all remote refs), which is a filename-conflict check and does not establish ordering.
+- Each F16 migration version is strictly greater than the highest version of any other migration file on any origin ref at implementation time. Highest on 2026-11-06 (scan of all 91 origin refs): `20261108021002` (PR #57 and #58 branches).
+- Run two separate checks immediately before each implementation commit and again before each push, and record both results in the report: (a) the ordering check, which scans all origin refs and verifies that every local F16 migration version is strictly greater than the highest version of any other migration file (a local migration already on an origin ref is not its own bound); and (b) `npm run check:migration-versions:remote` (all remote refs), which is a filename-conflict check and does not establish ordering.
 - Author F16 migrations after PR #43's migrations (`20261106125000`, `20261107030000`), and on top of their function shapes if #43 merges first.
 - The Plan Core range sentence is withdrawn. No Plan Core migration exists on `origin/019-plan-core` (0 migrations beyond main, verified 2026-11-06).
 - No pushed migration is edited.
