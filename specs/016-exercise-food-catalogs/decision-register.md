@@ -11,13 +11,13 @@ This register preserves prior records and points to later decisions. An entry ma
 | PR #64, commit `c4543a1`, “independent workspace copies” | Independent workspace catalog copies. | **Superseded**; do not edit its branch or delete its record. | S35-PO-3 F16 REDESIGN paragraph; one global catalog with per-workspace overrides. |
 | S35-PO-3 | One shared global exercise catalog with workspace-specific editable overrides and client-workspace video resolution. | **Current binding decision** for the stated scope. | Original source: `C:/Users/NEW LAP/.lifter/runs/s35-ledger3/s35-po-3.verbatim.txt`. |
 | S36-PO-2 (F16 paragraph) | Answers F16-MCQ-1, -3, -4, -5 and -6; F16-MCQ-2 and -7 become moot; no client transfers between workspaces. F16-MCQ-8 and -10 are re-framed in round 3 as -F and -G; -9 stays open; -A to -E, -H and -I are added in round 3 (see the round-3 section at the end). | **Current binding decision** for the answered items. | Verbatim paragraph in `## S36-PO-2 F16 answers` below; source `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-2.verbatim.txt`. |
-| S36-PO-3 (F16 bullet, round 4) | Architect mapping of the F16 bullet: answers F16-MCQ-A, -B, -C, -E, -F, -G, -H, -I (both parts), -9 and -D (see `## S36-PO-3 F16 answers (round 4)`); adds F16-MCQ-J (PO-DECISION-NEEDED). | **Current binding PO bullet**. The per-item answers are architect words applied to the bullet, not independent PO decisions. | Verbatim bullet in `## S36-PO-3 F16 answers (round 4)`; source `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-3.verbatim.txt`. |
+| S36-PO-3 (F16 bullet, round 4) | Architect mapping of the F16 bullet: answers F16-MCQ-A, -B, -C, -E, -F, -G, -H, -I (both parts), -9 and -D (see `## S36-PO-3 F16 answers (round 4)`); adds F16-MCQ-J (answered by S36-PO-5). | **Current binding PO bullet**. The per-item answers are architect words applied to the bullet, not independent PO decisions. | Verbatim bullet in `## S36-PO-3 F16 answers (round 4)`; source `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-3.verbatim.txt`. |
 
 ## F16 MCQ status after S36-PO-2
 
 Items F16-MCQ-1 through -7 are answered or moot as recorded in `## S36-PO-2 F16 answers`. Their original question, options, implications and recommendation text is kept unchanged as history. Round 3 (critique response): F16-MCQ-8 is re-framed as **F16-MCQ-F**, and F16-MCQ-10 as **F16-MCQ-G**; F16-MCQ-9 stays open and is not marked answered; new items F16-MCQ-A, -B, -C, -D, -E, -H and -I are **PO-DECISION-NEEDED** (see `## Round 3 PO-DECISION-NEEDED items`). Recommendations are advisory only; none is a decision. Requirements, defaults, contracts and test expectations must not choose an unanswered option.
 
-Round 4 (S36-PO-3, architect mapping applied as instructed): F16-MCQ-A, -B, -C, -E, -F, -G, -H, -I (both parts), -9 and -D are answered as recorded in `## S36-PO-3 F16 answers (round 4)`. F16-MCQ-J is new and PO-DECISION-NEEDED. Each answered item keeps its original question, options, implications and recommendation text unchanged as history; only its heading and a status line were added.
+Round 4 (S36-PO-3) answers are recorded below. S37 (S36-PO-5) answers F16-MCQ-J/K/L. F16-MCQ-O and F16-MCQ-P remain PO-DECISION-NEEDED. Historical question text remains for traceability.
 
 ### F16-MCQ-1 — New-workspace video mapping creation — ANSWERED (S36-PO-2)
 
@@ -167,18 +167,20 @@ Architect mapping: `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-architect-rulings-3
 | F16-MCQ-H | Answered, option (a) | The description is frozen with the published plan at publication, like names and instructions; videos stay live. | FR-023, FR-027; T044, T056 |
 | F16-MCQ-I | Answered, (1)(b) and (2)(b) | Workspace search matches canonical and workspace names and shows the effective workspace name. No extra storage quota; database size is monitored against the 70% exit trigger. | FR-035; plan Search paragraph; T064 |
 | F16-MCQ-9 | Answered, option (a) | A workspace-private exercise video is visible to clients only through an authorized plan projection, scoped to the persisted plan/client workspace. No direct catalog, table or search access. | FR-014, FR-024, FR-029; contracts client-view paragraph; T045, T050, T058 |
-| F16-MCQ-J | PO-DECISION-NEEDED (new, not answered) | The editable-field list of the S36-PO-3 bullet and the S35-PO-3 paragraph differ. See the F16-MCQ-J entry below. | FR-003; data-model `exercise_overrides`; T037, T040, T046 to T050, T056 to T058, T064 |
-| F16-MCQ-K | PO-DECISION-NEEDED (round 5, not answered) | Legacy variation video on a host that FYI-2 would exclude from the URL host list: how it is preserved at cutover. See the F16-MCQ-K entry below. | FR-014, FR-031; plan migration step 3; T061, T062(a), T063 |
-| F16-MCQ-L | PO-DECISION-NEEDED (round 5, not answered) | V2 snapshot fields beyond names and instructions (primary and secondary muscles, equipment, defaults): freeze them or reconstruct them from the pinned version. See the F16-MCQ-L entry below. | FR-027; data-model `ExerciseSnapshotV2`; T056, T059 |
+| F16-MCQ-J | ANSWERED by S36-PO-5 | Exactly eight fields are editable locally, with Global PO-only. | FR-003; T037, T040, T046-T050, T056-T058, T064 |
+| F16-MCQ-K | ANSWERED by S36-PO-5 line 6 | The eight named fields, all locally editable. This is the question in CodeRabbit thread 861BYOr. | FR-003; T037, T040, T047 |
+| F16-MCQ-L | ANSWERED by S36-PO-5 line 7 | Keep existing Notes; remove Instructions, preserving unique data into Notes. This is the question in CodeRabbit thread tN4f. | FR-003, FR-031; T037, T047, T062 |
+| F16-MCQ-P | PO-DECISION-NEEDED (renumbered from the mistaken round-5 K label) | Legacy variation video on a host that FYI-2 excludes: how it is preserved at cutover. See F16-MCQ-P below. | FR-014, FR-031; plan migration step 3; T061, T062(a), T063 |
+| A55 | RESOLVED as a technical detail | Metadata outside the exact eight library fields remains available from the immutable version already referenced by the plan; this preserves historical values without adding fields to the redesigned Exercise Library. | FR-027; data-model `ExerciseSnapshotV2`; T056, T059 |
 
 ### Residuals and label notes (round 4)
 
 - **F16-MCQ-F-R (residual; PO-DECISION-NEEDED unless the architect confirms it is covered):** the architect mapping answers only the name language rule. The language rule for overridden description and instructions is not answered. Blocked: T044 (description shape), T049 and T056 for those fields, and the language controls of T040. The consequence "an absent Arabic name inherits the canonical Arabic name" is inferred from "optional" and is recorded for architect confirmation.
 - **F16-MCQ-G-R (residual, count bound, duplicate rule and label):** the alternatives count bound is not answered, and no S36-PO-3 answer states whether one target may appear more than once in the same override version (duplicate rule). Blocked: T048 count bound and duplicate rule. Label note: "frozen with the published plan" is recorded as the FR-027 publication snapshot. Option (a) "seeded at add-to-plan" is a different timing and is not stated. The architect confirms the label.
-- **F16-MCQ-C-R (residual, note copy):** "preserve existing notes" does not say whether audited note text is copied into the workspace `notes` override. Blocked: T062(b), until T068 reports the inventory and the architect decides.
+- **F16-MCQ-C-R (legacy note copy) — ANSWERED by S36-PO-5:** retain existing Notes; remove Instructions and preserve its unique data into Notes. T068 still precedes any migration and supplies audit evidence; no separate PO choice remains.
 - **F16-MCQ-D-R (residual, mechanism):** the anonymize-or-tombstone mechanism of option (b) is not stated. T069 informs the F11/F12 decision. No F16 task implements it.
 
-### PO-DECISION-NEEDED F16-MCQ-J — editable-field list (new in round 4; NOT answered)
+### F16-MCQ-J — editable-field list (ANSWERED by S36-PO-5)
 
 - **Feature / where found:** 016 · `spec.md` FR-003 and Key Entities (`ExerciseOverride`); `data-model.md` `exercise_overrides` and `exercise_override_versions` rows; `contracts/catalog-api.md` planned override rows; the S36-PO-3 bullet above; the S35-PO-3 paragraph in `spec.md` Clarifications (2026-11-06).
 - **Question:** S36-PO-3 lists the independent editable fields as names, videos, instructions and notes. S35-PO-3 listed name, description, instructions, video and alternatives. Is the S36-PO-3 list additive to the S35-PO-3 list, or does it replace it?
@@ -187,7 +189,7 @@ Architect mapping: `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-architect-rulings-3
 - **Advisory recommendation (not a decision):** (a), additive, with notes added.
 - **Blocked:** description and alternatives override writes and their validation (T037, T047, T048), the description and alternatives columns and resolution (T046, T049, T056), the editor fields (T040), the client alternatives scope (T050, T058), the description and alternatives codes of the audit allowlist (T057), and description search columns (T064). Name, instructions, video and notes writes are not blocked by J.
 
-### PO-DECISION-NEEDED F16-MCQ-K — legacy video on a host that FYI-2 would exclude (new in round 5; NOT answered)
+### PO-DECISION-NEEDED F16-MCQ-P — legacy video on a host that FYI-2 excludes (renumbered from erroneous round-5 K label)
 
 - **Feature / where found:** 016 · `plan.md` migration step 3; `spec.md` FR-031 (video carry-over), FR-014 (host list) and FYI-2; `tasks.md` T061, T062(a), T054 cutover and T063.
 - **Question:** FR-031 and T063 require every active legacy variation video to carry over into the workspace override with no video lost at cutover. FYI-2 may remove `docs.google.com` from the host list (FR-014). Legacy rows on that host would then conflict with the new URL rule. How are those rows preserved?
@@ -196,14 +198,9 @@ Architect mapping: `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-architect-rulings-3
 - **Advisory recommendation (not a decision):** none yet. Record the host-class counts from T068 first, then decide together with FYI-2.
 - **Blocked:** T062(a) rows on a host FYI-2 would exclude, the T054 cutover for those rows, T061 (host list alignment) and T063 rows for that host. Counts (T068) and every other row are not blocked.
 
-### PO-DECISION-NEEDED F16-MCQ-L — V2 snapshot fields beyond names and instructions (new in round 5; NOT answered)
+### A55 — V1 metadata outside the redesigned library (RESOLVED as a technical detail)
 
-- **Feature / where found:** 016 · `spec.md` FR-027; `data-model.md` `ExerciseSnapshotV2` row; `contracts/export-read-isolation.md` line 4; `impact-s35-redesign.md` (F17 historical-version scenario); CodeRabbit finding on `impact-s35-redesign.md` (round 5).
-- **Question:** `ExerciseSnapshotV1` also carries `primaryMuscle`, `secondaryMuscles`, `equipment` and optional `defaults`. FR-027 freezes only names and instructions (description and alternatives are frozen but gated by J). F17 historical rendering and muscle-based volume reporting need these values. Should V2 freeze them, or should they be reconstructed from the pinned version?
-- **Options:** (a) Add the four fields to the V2 frozen content. (b) Reconstruct them from the pinned, immutable canonical or workspace version that V2 already references; F17 and Plan Core read them from there. (c) Freeze some fields (for example equipment) and reconstruct the rest, with a per-field rule.
-- **Implications:** (a) makes each snapshot self-contained, duplicates catalog data and enlarges V2. (b) adds no duplicate data but relies on version immutability (FR-011) and needs F17 and Plan Core amendments (T059). (c) splits the rule and needs a per-field definition.
-- **Advisory recommendation (not a decision):** (b), because canonical and private versions are immutable and already pinned by V2; PO to confirm.
-- **Blocked:** the V2 fixture and field shape for those four fields (T056), the F17 and Plan Core amendments (T059), and the historical-scenario wording of the impact audit. Freezing names and instructions is not blocked by L.
+The eight-field list in S36-PO-5 excludes primary/secondary muscle and equipment as Exercise Library fields. Retain those historical values through the exact immutable version reference already carried by the plan snapshot. Optional Default Rest Time, Default RIR and Default Reps are among the eight fields and are copied into editable planner entries at exercise addition. No product behavior is undecided here; no extra V2 field is required for this F16 spec.
 
 ## Round 3 PO-DECISION-NEEDED items
 
@@ -233,7 +230,7 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 
 ### F16-MCQ-C — Legacy variation `note` text — ANSWERED IN PART (S36-PO-3, round 4)
 
-- **Status (S36-PO-3, round 4):** answered: preserve existing notes and audit legacy data before any migration (option (d), inventory first). Legacy rows stay readable and immutable, and no note text is deleted or silently reclassified. Copying audited note text into the workspace `notes` override is residual F16-MCQ-C-R, not decided here. Blocked: T062(b).
+- **Status (S36-PO-3, round 4):** answered: preserve existing notes and audit legacy data before any migration (option (d), inventory first). Legacy rows stay readable and immutable pending the audit. Existing Notes remain; unique Instructions content is preserved into Notes as S36-PO-5 directs. T068 precedes any migration.
 
 - **Feature / where found:** 016 · `data-model.md` line 26; `plan.md` line 71; `tasks.md` T062; main `supabase/migrations/20261106112000_catalog_variation_operations.sql` (note, at most 2000 characters, lines 49-52, 75).
 - **Question:** What happens to existing variation notes, which the five-field override allowlist does not contain?
@@ -266,7 +263,7 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 
 ### F16-MCQ-F — Localization of workspace overrides (re-framed from F16-MCQ-8) — ANSWERED FOR NAME; RESIDUAL FOR DESCRIPTION AND INSTRUCTIONS (S36-PO-3, round 4)
 
-- **Status (S36-PO-3, round 4):** for the name field: the English name is required and the Arabic name is optional. Label note: this matches no option exactly (closest is option (b) with the English name required). The inheritance of the canonical Arabic name is inferred from "optional" and is recorded for architect confirmation. Residual F16-MCQ-F-R: the language rule for description and instructions is NOT answered.
+- **Status (S36-PO-3, round 4):** for the name field: the English name is required and the Arabic name is optional. Label note: this matches no option exactly (closest is option (b) with the English name required). The inheritance of the canonical Arabic name is inferred from "optional" and is recorded for architect confirmation. Residual F16-MCQ-F-R: the language rule for Description is not specified; Instructions is removed as a field.
 
 - **Feature / where found:** 016 · `spec.md` FR-003 (line 101), FR-026 (line 126), FR-023 (line 123); `data-model.md` line 19 (canonical description shape); critique F21.
 - **Question:** For overridden name, description and instructions, must both AR and EN be given, or may one language be overridden while the other is inherited from canonical?
@@ -325,3 +322,15 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 ### FYI-3 — Merged-source media (architect confirmation)
 
 - FR-028 resolves the plan's own referenced identity for video, never the merge survivor. It derives from FR-010 and FR-011 (plan references and media availability stay unchanged). The critique offered a courtesy note to the PO if the architect wants this reviewed; the architect decides.
+
+
+## S37-PO-5 F16 answers (round 5)
+
+Source quotations: `C:/Users/NEW LAP/.lifter/runs/s37-luna-f16-r5/report.md` (verbatim S36-PO-5 block and earlier F16 source lines). S36-PO-5 is final and supersedes conflicting earlier S36 wording.
+
+| Item | Status | Binding meaning |
+|---|---|---|
+| Earlier F16-MCQ-J (workspace field set) | ANSWERED by S36-PO-5 lines 4-6 | Exactly eight fields are editable locally: Name, Description, Notes, Video, Alternatives, Default Rest Time, Default RIR, Default Reps. All authorized WO/Trainers may edit all eight. New global exercises appear automatically without overwriting local customizations.
+| F16-MCQ-K (CodeRabbit thread 861BYOr; answered by S36-PO-5 line 6) | ANSWERED by S36-PO-5 line 6 | All eight fields are workspace-editable. This answer does not decide the separate legacy `docs.google.com` host carry-over; that remains open as F16-MCQ-P / A54.
+| F16-MCQ-L (CodeRabbit thread tN4f; answered by S36-PO-5 line 7) | ANSWERED by S36-PO-5 line 7 | Keep existing Notes; remove Instructions and preserve unique data into Notes. V1 taxonomy metadata outside the eight-field library is retained through the exact immutable version reference already carried by the plan; A55 is resolved as a technical detail.
+| F16-MCQ-O — Video in published-plan frozen values | PO-DECISION-NEEDED | **Question:** Does the S36-PO-5 sentence “Published plans retain frozen values” include the Video field? **Options:** (A) No: videos stay live, following S36-PO-2; (B) Yes: video freezes with the other published-plan values. **Implications:** A allows a video edit to change an existing published plan view and requires live authorized workspace resolution; B preserves the publication-time video and needs it retained with the published plan. **Recommendation:** A, because it preserves the explicit S36-PO-2 video sentence, but this is not a decision. **Blocked:** No final client-video timing requirement or test expectation may be encoded until the PO answers.
