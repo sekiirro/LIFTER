@@ -1,6 +1,6 @@
 # Spec Kit Analyze — F20 Client Notes
 
-**Analysis date**: 2026-11-09 (round 4; run after the last spec, plan, tasks, data-model, contracts and research edit of round 4, which applied CN-MCQ-08 (S38-PO-2), the whitespace answer (S37-PO-16) and the round-3 critique findings)
+**Analysis date**: 2026-11-08T22:14Z (round 4, re-run after the CodeRabbit review of cdb89424 (review 5819883866): tasks.md dependency-order paragraph edited at 22:12Z; this analysis is after that edit and after every other round-4 edit of spec, plan, tasks, data-model, contracts and research, which applied CN-MCQ-08 (S38-PO-2), the whitespace answer (S37-PO-16) and the round-3 critique findings)
 **Inputs**: spec.md, plan.md, tasks.md, data-model.md, research.md, contracts/client-notes-api.md, contracts/client-notes-rls.md
 **Scope**: Spec-only proposal. No code, SQL, migrations, or runtime work.
 
@@ -18,6 +18,11 @@
 | HIGH | 0 | None. The round-3 HIGH findings are closed (see below). |
 | MEDIUM | 1 | CN-MCQ-15 (OPEN, PO decision): DESIGN.md §11 items 1, 2 and 4 (breakpoints, minimum touch sizes, focus detail, token values) are not decided. Blocks only the visual/layout assertions in T005 and the viewport and token assertions in T013. Behaviour, data, authorization and copy are not blocked, and no value is guessed. |
 | LOW | 0 | None. |
+
+## CodeRabbit review on cdb89424 (review 5819883866, CHANGES_REQUESTED, 1 inline finding)
+
+- tasks.md dependency paragraph, "No task starts until CN-MCQ-15 is resolved" (Minor, Functional Correctness, "unverified" part): **Valid, fixed.** The gate applies to implementation tasks only; documentation work (T001 and this artifact set) is not blocked. The paragraph now says so.
+- tasks.md ordering of T014 (Minor, same finding): **Valid in part, fixed by clarification.** T014's tests need T003 before they can pass, so "accepted before T003" was contradictory. The paragraph now separates AUTHORED (test-first, red recorded as evidence, box not ticked) from TICKED (only after the tests pass on the implementation head, so T014's tick follows T003). **Not adopted:** the suggestion to let the test-authoring milestone complete while tests are red, because constitution §3 allows a tick only after the tests have executed and passed.
 
 ## Round-3 critique disposition (`s37-sol-cn-critique` finalMessage: CRITICAL 0 / HIGH 2 / MEDIUM 5 / LOW 1)
 
