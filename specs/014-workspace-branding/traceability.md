@@ -98,7 +98,7 @@ T053 assertions passed on the current implementation head `685c7c3`: four focuse
 - RED/GREEN: focus regression failed on unchanged pre-fix SignupForm blob `702c20e089e87ed3c3f6c4296eccbaa72cb18be0` (expected focus true, received false); passed after `4da81fe`.
 - Merge: accepted Glisse `1b3b030` incorporated by merge `79adf87`. Six documentation conflicts were reconciled; no implementation conflict. Six S30-R1 signup blobs remain identical to 015@5084916 (full blob IDs in the S31 run report).
 - Production 48-row Glisse contrast matrix passed 48/48. The current-head dev matrix did not reach its expected `data-photo-stats-ready` state on two attempts; dev==prod was unverified at that point. Later r18/r19 evidence below records dev/prod 54/54, and S32-PO-1 approval of the r18 visual review is recorded above without claiming personal screenshot inspection.
-- Stack B StartedAt remained `2026-11-02T10:34:12.810498118Z`; auth/app migration counts remained 82/64; integration created 23 auth test users (36438?36461).
+- Stack B StartedAt remained `2026-11-02T10:34:12.810498118Z`; auth/app migration counts remained 82/64; integration created 23 auth test users (36438–36461).
 - T052 completed on S32 evidence below; its r19 code change has no rendered-output impact.
 
 #### S32-PO-1 visual approval record
