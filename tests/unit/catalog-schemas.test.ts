@@ -61,6 +61,33 @@ describe('catalog schemas', () => {
       ).toThrow(/name/i);
     });
 
+    it('rejects overlong names and invalid numeric defaults at the schema boundary', () => {
+      const nameAtLimit = '\u062A'.repeat(120);
+      const nameOverLimit = '\u062A'.repeat(121);
+      expect(Array.from(nameAtLimit)).toHaveLength(120);
+      expect(Array.from(nameOverLimit)).toHaveLength(121);
+      expect(() =>
+        normalizeExerciseInput({
+          ...validExercise,
+          names: { ar: nameAtLimit, en: 'Exercise' },
+        }),
+      ).not.toThrow();
+      expect(() =>
+        normalizeExerciseInput({
+          ...validExercise,
+          names: { ar: nameOverLimit, en: 'Exercise' },
+        }),
+      ).toThrow(/120|length/i);
+      for (const workingSets of [Number.NaN, -1]) {
+        expect(() =>
+          normalizeExerciseInput({
+            ...validExercise,
+            defaults: { workingSets },
+          }),
+        ).toThrow(/working sets/i);
+      }
+    });
+
     it('requires primary muscle and equipment', () => {
       expect(() =>
         normalizeExerciseInput({ names: { ar: 'a', en: 'b' } }),
@@ -169,6 +196,18 @@ describe('catalog schemas', () => {
       expect(() =>
         normalizeFoodInput({ ...validFood, weighingState: 'frozen' }),
       ).toThrow(/weighing state/i);
+    });
+
+    it('rejects overlong text fields', () => {
+      expect(() =>
+        normalizeFoodInput({
+          ...validFood,
+          names: { ar: '\u062A'.repeat(121), en: 'Rice' },
+        }),
+      ).toThrow(/120|length/i);
+      expect(() =>
+        normalizeFoodInput({ ...validFood, productIdentity: 'x'.repeat(121) }),
+      ).toThrow(/120|length/i);
     });
 
     it('requires non-negative nutrition values', () => {

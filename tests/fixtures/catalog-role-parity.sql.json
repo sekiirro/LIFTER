@@ -37,6 +37,24 @@
       "Unknown/unauthenticated": "Deny"
     },
     {
+      "operation": "Remove global exercise",
+      "PO": "Allow",
+      "WO": "Deny",
+      "Trainer": "Deny",
+      "Sales": "Deny",
+      "Client": "Deny",
+      "Unknown/unauthenticated": "Deny"
+    },
+    {
+      "operation": "Remove workspace exercise in explicit scope",
+      "PO": "Allow for explicitly scoped workspace",
+      "WO": "Own current workspace",
+      "Trainer": "Own current workspace",
+      "Sales": "Deny",
+      "Client": "Deny",
+      "Unknown/unauthenticated": "Deny"
+    },
+    {
       "operation": "Create global food",
       "PO": "Allow if PO identity is authenticated",
       "WO": "Allow with current `coaching_work` in at least one workspace",
