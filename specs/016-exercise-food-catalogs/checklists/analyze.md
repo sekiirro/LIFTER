@@ -1,6 +1,6 @@
 # Analyze — F16 post-critique disposition (S38 round 7)
 
-- Date: 2026-11-09 00:11 local (re-analysis after all round-7 edits to spec, plan, data-model, contracts, tasks, traceability, impact-s35-redesign and critique-response; this record is the last spec-artifact change of the round).
+- Date: 2026-11-09 00:33 local (re-analysis after all round-7 edits to spec, plan, data-model, contracts, tasks, traceability, impact-s35-redesign and critique-response, including the four valid CodeRabbit threads on head `60035326` fixed in `critique-response.md` §8; this record is the last spec-artifact change of the round).
 - Scope: Sol Medium critique on head `50f5c236d6bfca1c16349cc26f8c31de3b67b8c0` (approved by S37-PO-11; run `C:/Users/NEW LAP/.lifter/runs/s37-sol-f16-critique`; CRITICAL 0, HIGH 5, MEDIUM 4, LOW 1). Dispositions D1–D10 are in `critique-response.md` §6–§7. Spec-only: no code, SQL, migration, fixture or test changed.
 - Method: speckit-analyze procedure, read-only on the spec sources except this record. Head facts were verified live: `origin/main` = `29bd0ba5`; `supabase/migrations/20261108100000_catalog_exercise_detail.sql` on `origin/main` still requires `name_ar` and accepts `instructions_*`; PR #43 is MERGED (2026-11-08, head `0fcd905d`); PR #66 head unchanged until this round's push.
 - Authority: S37-PO-11 (critique approval); S37-PO-1 Q2 = A; S37-PO-10; S36-PO-5; S38-PO-3 (escalate only genuine blockers); F16-MCQ-A(a), -B(a), -C, -6(a), -G, -H, -O answers in `decision-register.md`.

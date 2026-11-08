@@ -144,3 +144,14 @@ One review was requested in this round (comment `6695924551`). CodeRabbit finish
 Deviations from the preparer's text, each recorded with reason: (a) D7 "resolver lives in `app_private`" was not adopted, because no recorded decision places the resolver's schema; (b) D7's separate staff row was not added, because contract row 30 already covers staff effective resolution; (c) D3's replacement of the last sentence of plan step 1 keeps "Do not edit any pushed migration" as a rule; (d) D1's empty-submission case is answered by F16-MCQ-A's wording ("cleared"), not by a new rule.
 
 Conditional PO item, not raised: the D3 conversion choice. It is raised only if T068 finds current content outside the approved bounds. No PO decision is required in this round.
+
+## 8. CodeRabbit full review on `60035326` (round 7)
+
+One review was requested in this round (comment `6727904464`, `@coderabbitai full review`, after the hourly allowance had refreshed; the previous notice reported 8 of 10 remaining). The review finished on the final head with 4 actionable comments; all 4 threads were open, not outdated, and are valid.
+
+| Thread | Path : line | Finding | Response | Commit | State |
+| --- | --- | --- | --- | --- | --- |
+| `PRRT_kwDOVYgYQ861E_D5` | `data-model.md : 79` | Canonical Global alternatives must not use the workspace-private target rule of T048 | **Valid.** Canonical alternatives target Global exercises only (no workspace scope under FR-030); T074 and the data-model Alternatives row updated | this round's fix commit (see git log) | Fixed; reply with evidence; resolve |
+| `PRRT_kwDOVYgYQ861E_D6` | `tasks.md : 12` | T040 assigns workspace UI only; the PO Global create/version form also needs English-only names | **Valid.** T040 now assigns the Global authoring form (`ExerciseAuthoringForm`, `exercise-library/new`, `[exerciseId]/edit`) with an English-only create assertion | same | Fixed; reply; resolve |
+| `PRRT_kwDOVYgYQ861E_D9` | `tasks.md : 25` | T053 rehearsal must depend on T074 and T075 | **Valid.** T053 predecessors now include T074 and T075 | same | Fixed; reply; resolve |
+| `PRRT_kwDOVYgYQ861E_D-` | `tasks.md : 40` | T068 must count legacy alternative violations (duplicates, more than three, missing or inactive targets) | **Valid.** T068 counts these read-only; the conditional conversion gate applies before cutover | same | Fixed; reply; resolve |
