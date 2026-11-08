@@ -31,10 +31,15 @@ No SQL or migration is supplied by this document. The following acceptance contr
 | Trainer in workspace A accesses workspace B note or client in B | Deny |
 | Forged workspace/client/author identity | Deny or ignore untrusted field; never widen |
 | Body blank after trimming, or over 5,000 Unicode code points after trimming | Deny; no row persisted (CN-MCQ-02, CN-MCQ-14) |
-| Body with leading or trailing whitespace and 1 to 5,000 code points after trimming | Allow; stored as the trimmed text (CN-MCQ-14) |
+| Body with leading or trailing whitespace and 1 to 5,000 code points after trimming | Allow; stored as the trimmed text (CN-MCQ-14; S37-PO-16) |
 | Body of 5,000 code points plus leading or trailing whitespace | Allow; stored as the 5,000 code points without that whitespace (CN-MCQ-14) |
+| Body with interior whitespace or line breaks | Allow; interior formatting stored unchanged (S37-PO-16) |
 | Any stored note body with leading or trailing whitespace | Not persisted; the database boundary keeps only trimmed text (CN-MCQ-14) |
-| Two valid saves to one note | Both succeed in order; final body is the last save; `created_at` and `author_user_id` unchanged; no version row (CN-MCQ-11) |
+| Overlapping valid saves by the author or PO to one note (serialized by the database) | Both succeed; the later committed body is final; `created_at` and `author_user_id` unchanged; no version row; one audit event per successful save (CN-MCQ-11) |
+| Direct UPDATE changing `id`, `workspace_id`, `client_id`, `author_user_id` or `created_at`, by author (including an author authorized in two workspaces), Trainer, Workspace Owner or PO | Refuse; row unchanged (FR-003) |
+| Author authorized in workspaces A and B edits a note in A, with the request naming B | Deny; no change (FR-005) |
+| Audit write fails during a create, edit or hard delete | Mutation rolled back; no row change; no successful audit event (FR-010) |
+| Rejected or denied write | No successful note-mutation event (`specs/005-audit-log` US1 scenario 2) |
 | Audit event for a successful create, edit or hard delete | Contains only actor, workspace, client ID, note ID, action and timestamp; contains no body text (CN-MCQ-07) |
 | Unknown operation/role/capability | Deny by default |
 

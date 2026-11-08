@@ -26,7 +26,7 @@ Tenant boundaries and role membership reuse the Constitution §I, `specs/003-ten
 
 ## Open research / decisions
 
-CN-MCQ-01..07 and CN-MCQ-09..12 in `spec.md` are resolved by S37-PO-6 and S37-PO-7; CN-MCQ-13 (audit retention) and CN-MCQ-14 (stored body form) are resolved by S37-PO-14 (all quoted byte-exact in spec.md). CN-MCQ-08 (copy) remains PENDING-PO. Earlier recommendations are superseded by the PO answers. There are no implementation claims in this research artifact.
+CN-MCQ-01..07 and CN-MCQ-09..12 in `spec.md` are resolved by S37-PO-6 and S37-PO-7; CN-MCQ-13 (audit retention) and CN-MCQ-14 (stored body form, whitespace scope per S37-PO-16) are resolved by S37-PO-14 and S37-PO-16; CN-MCQ-08 (copy) is resolved by S38-PO-2 (all quoted byte-exact in spec.md). CN-MCQ-15 (DESIGN.md §11 UI values) is OPEN. Earlier recommendations are superseded by the PO answers. There are no implementation claims in this research artifact.
 
 ## Audit fact to verify at implementation
 
