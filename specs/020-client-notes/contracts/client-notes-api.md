@@ -14,7 +14,7 @@ This is a behavioral contract for later implementation, not an API endpoint nami
 ## Display
 
 - Timestamps are shown in the viewer's local time zone (FR-009, CN-MCQ-12). The format is part of CN-MCQ-08.
-- A note with an unavailable author shows the neutral “Unavailable author” label (FR-002, CN-MCQ-06). The Arabic string is part of CN-MCQ-08.
+- A note with an unavailable author shows a neutral unavailable-author label (FR-002, CN-MCQ-06). Its exact AR and EN wording is part of CN-MCQ-08.
 
 ## Denials
 

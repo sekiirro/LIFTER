@@ -19,6 +19,12 @@
 | MEDIUM | 1 | CN-MCQ-08 (exact AR/EN copy, PENDING-PO): blocks only T005 and the T013 string assertions. |
 | LOW | 2 | (a) The migration scan evidence in plan.md (highest `20261108021002` across 91 fetched refs) predates this round. No migration is proposed; a fresh all-origin scan is required before any implementation migration (T003). (b) The approved CN-MCQ-14 text says "trim leading and trailing spaces"; the spec applies it to leading and trailing whitespace (FR-002), consistent with CN-MCQ-02. Non-blocking architect confirmation (spec.md Clarifications item 6). |
 
+## CodeRabbit full review on 315188bb (review 5819113045, CHANGES_REQUESTED, 2 findings)
+
+- FR-010 (Major, Data Integrity): the existing `public.audit_events` row has required structural fields (`target_table`, a generated `id`, and defaulted `details`/`occurred_at`). The "only" list did not say how note fields map onto them. Valid. Fixed: FR-010 now limits note-specific content to the six fields and maps them onto `actor_user_id`, `workspace_id`, `details` (client ID), `target_id` (note ID), `action`, `occurred_at`, while `target_table` and `id` are structural. T012 asserts the same mapping.
+- FR-002 (Minor, Functional Correctness): "Unavailable author" is not an approved English string. S37-PO-6 fixed only "Add New Note"; CN-MCQ-08 covers the exact AR and EN strings. Valid. Fixed: FR-002, the CN-MCQ-06 row, the API contract and T013 now state that the neutral unavailable-author label's exact AR and EN wording is PENDING-PO under CN-MCQ-08.
+- Thread PRRT_kwDOVYgYQ861CveV (round 2, outdated): fixed by CN-MCQ-14 (trim then count; 5,000 code points plus trailing whitespace accepted and stored as 5,000 code points).
+
 ## Round 3 changes checked
 
 - CN-MCQ-13 (S37-PO-14): Client Notes audit events inherit the existing `public.audit_events` retention unchanged. The existing policy source is cited (`supabase/migrations/20261027150000_audit_log.sql`, immutability triggers). The period itself remains an open pre-production decision (DP-02 / ND-F5-1 / B4); the spec states that Client Notes inherits and does not decide it. No retention setting is added (FR-010, T012).
