@@ -1,4 +1,4 @@
-# LIFTER - Agent Workflow (PO-approved 2026-10-28; adaptive routing amended 2026-10-29, D-27; model routing amended 2026-11-08, S36-PO-4)
+# LIFTER - Agent Workflow (PO-approved 2026-10-28; adaptive routing amended 2026-10-29, D-27; model routing amended 2026-11-08, S36-PO-4, S36-PO-5)
 
 These rules govern agent dispatch, design/spec work, parallel development, and merge preparation.
 The Constitution remains authoritative. The [Frontend Design Gate](09-frontend-design-gate.md)
@@ -26,12 +26,13 @@ applies to every unit that changes rendered UI.
 
 Route according to task complexity, security risk, model capability, and quota (S22-PO-9 rule 5).
 
-- **Routing record:** Model choice follows the PO-approved routing record that the architect keeps outside the repository (S36-PO-3 section 1; S36-PO-4 item 3); the record itself is not in the repository. Any change to routing needs PO approval before use. The earlier fixed model pool and D-27 tier sequence (S22-PO-9 rule 2; S25-PO-4; S25-PO-9; D-27) are superseded for model selection only by S36-PO-3 and S36-PO-4; their history remains in the constitution's sync reports and the decision register.
-- **Retained tier rules:** Sol High and xhigh remain prohibited (D-27), and where the record lists Sol Medium, S13 session 14's explicit PO approval before every Sol invocation still applies. For the mandatory independent feature-critic role, the PO ruled (S30-PO-8 Q15, verbatim; superseded for the critic model only by S36-PO-2 and S36-PO-4, see Mandatory Spec Debate; the per-invocation PO approval and the ban on skipping critiques are preserved):
+- **Routing rules:** Routing follows the PO rules in this section (S36-PO-5, which records S36-PO-4 items 3 and 4). The PO's delegation preferences (S36-PO-3 section 1) are preferences, not hard rules; the architect keeps them outside the repository. Any change to routing, including adding, removing, or reordering a model or fallback, needs PO approval before use. The earlier fixed model pool and D-27 tier sequence (S22-PO-9 rule 2; S25-PO-4; S25-PO-9; D-27) are superseded for model selection only by S36-PO-3, S36-PO-4 and S36-PO-5; their history remains in the constitution's sync reports and the decision register.
+- **Luna routes:** Codex Luna is primary. `opencode-go/gpt-6-luna` is a fallback only when Codex Luna quota is exhausted; return to Codex Luna when quota is restored. Verify provider/model capability and security before using the fallback. No gate is weakened by either route (S36-PO-4 item 4; S36-PO-5).
+- **Retained tier rules:** Sol High and xhigh remain prohibited (D-27). Sol Medium is used exclusively for the mandatory independent Spec Kit spec/plan critique, not for implementation or routine reviews, and each invocation requires the explicit PO approval of S13 session 14 (S36-PO-5). For the mandatory independent feature-critic role, the PO ruled (S30-PO-8 Q15, verbatim; it stays in force, and S36-PO-2 later authorized Sonnet 5.5 critiques for F16 and F4 by explicit PO authorization):
   > Q15: Keep Sol Medium as the mandatory independent feature critic. Preserve the existing S13 rule requiring my explicit approval for each Sol invocation. Do not substitute Luna or other models, and do not skip critiques.
-  Obtain PO approval before each critic invocation. Without approval, do not skip the critique; hold feature acceptance until the approved critique is complete. If no approved model is available for a task or for the critic role, stop and ask the PO; do not use a model outside the routing record (D-27; S36-PO-4).
+  Obtain PO approval before each critic invocation. Without approval, do not skip the critique; hold feature acceptance until the approved critique is complete. A critic other than Sol Medium requires explicit PO authorization naming it. If no approved model is available for a task or for the critic role, stop and ask the PO; do not use a model the PO has not approved for that role (D-27; S36-PO-5).
 - **Performance records:** Keep one performance-log row per delegation, including model, effort, task class, outcome, review notes, and cost (D-27).
-- **Development data and routing:** All development AI agents must use synthetic/test data only; no real client data may be shared during development or testing. High-risk work (listed below) goes only to models the PO has explicitly approved for high-risk work in the routing record; the earlier Luna High or Sol Medium list (S31-PO-7 Q6) is superseded for model eligibility only by S36-PO-3 and S36-PO-4. The PO clarification follows (S31-PO-8):
+- **Development data and routing:** All development AI agents must use synthetic/test data only; no real client data may be shared during development or testing. High-risk work (listed below) is routed as follows (S36-PO-5): Luna is preferred; Haiku is allowed only with independent Luna or Claude review, and only after the formal constitution amendment (PR #48) is merged. No other model receives high-risk work unless the PO approves it before use. The earlier Luna High or Sol Medium list (S31-PO-7 Q6) is superseded for model eligibility only by S36-PO-5. The PO clarification follows (S31-PO-8):
   > S31-Q6 — PO clarification:
   > Development AI agents (Luna, Sol, Claude, MiniMax, etc.) must use synthetic data only. No real client data may be shared during development or testing.
   >
@@ -44,14 +45,14 @@ Route according to task complexity, security risk, model capability, and quota (
   > Keep production AI data access disabled until its separate security and privacy design is reviewed and approved.
   >
   > Record this distinction in the constitution. No implementation changes yet.
-- **Secrets and sensitive tasks:** Free models receive no secrets or sensitive tasks (S13 PO Kilo guardrail); third-party/free models receive no secrets or `.env` values (S22-PO-9; S29-PO-3 Q3). See also the high-risk routing rule above (only models the PO has explicitly approved for high-risk work in the routing record).
+- **Secrets and sensitive tasks:** Free models receive no secrets or sensitive tasks (S13 PO Kilo guardrail); third-party/free models receive no secrets or `.env` values (S22-PO-9; S29-PO-3 Q3). This guardrail is unchanged: the high-risk routing rule above names Luna and Haiku only, so it approves no free model for sensitive or high-risk tasks.
 - **High-risk work:** Security, Auth, RLS, SECURITY DEFINER, migrations, admission, Storage policies, and financial logic require independent architect review and executed mutation tests. Never expand sensitive permissions without PO approval (S29-PO-3 Q3).
 - **Hero assignment:** MiniMax's assignment to remaining Hero Glisse work supersedes S28-PO-5's Big Pickle assignment for that remaining work only (S29-PO-1).
 
 ## Mandatory Spec Debate
 
 1. The architect drafts the feature spec and architecture.
-2. An independent critique by a model other than the spec's author, chosen from the PO-approved critic list in the routing record, challenges the spec and architecture for every feature (S30-PO-8 Q15, superseded for the critic model only by S36-PO-2 and S36-PO-4). Each invocation requires explicit PO approval; do not use a model outside the approved critic list or skip a critique. If approval is absent or no approved critic is available, stop and ask the PO and hold feature acceptance until the approved critique is complete.
+2. An independent critique by a model other than the spec's author challenges the spec and architecture for every feature (S30-PO-8 Q15; S36-PO-5). Sol Medium is used exclusively for this critique. Each invocation requires explicit PO approval; do not use a critic the PO has not approved or skip a critique. If approval is absent or no approved critic is available, stop and ask the PO and hold feature acceptance until the approved critique is complete.
 3. The architect responds once by default. Additional rounds are only for significant unresolved
    issues.
 4. The architect incorporates the critique and presents unresolved product/design decisions to the
