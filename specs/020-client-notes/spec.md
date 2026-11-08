@@ -56,7 +56,7 @@ The note author or Platform Owner edits a note. Only the Platform Owner permanen
 
 **Acceptance scenarios**
 
-1. **Given** a note and its author is eligible under CN-MCQ-05 and has current authorization in that workspace, **When** the author submits a valid edit, **Then** the current plain-text content is updated; any edit metadata follows CN-MCQ-03 and no version history is created (FR-003, FR-004).
+1. **Given** a note and its author is eligible under CN-MCQ-05, has current authorization in that workspace, and submits a non-stale edit under CN-MCQ-11, **When** the author submits a valid edit, **Then** the current plain-text content is updated; any edit metadata follows CN-MCQ-03 and no version history is created (FR-003, FR-004). A stale edit MUST produce the outcome selected in CN-MCQ-11.
 2. **Given** a Platform Owner and a note in a workspace within the PO's existing authorized scope, **When** the PO edits the note, **Then** the current content changes without creating a version history (FR-003, FR-004).
 3. **Given** any non-PO actor, including the note author, **When** they attempt a hard delete, **Then** the operation is denied. **Given** a Platform Owner with current scope, **When** they hard-delete, **Then** the note row is permanently removed (FR-003, FR-004).
 4. **Given** a revoked membership, Sales, Client, anonymous, or foreign-workspace actor, **When** a direct database or application request attempts a read or write, **Then** it is denied (FR-004, FR-005).
@@ -75,7 +75,7 @@ The note author or Platform Owner edits a note. Only the Platform Owner permanen
 
 - **SC-001**: 100% of authorized read/create/edit cases for Trainer, Workspace Owner, and Platform Owner fixtures follow FR-004; 100% of Sales, Client, anonymous, unauthorized, and foreign-workspace cases are denied through both application authorization and database RLS.
 - **SC-002**: 100% of create attempts at or below the confirmed character-count boundary can persist only plain text with the verified author and server timestamp; 100% of attempts over 5,000 characters are refused without a persisted row.
-- **SC-003**: 100% of valid edits (within 5,000 characters and, for authors, eligible under CN-MCQ-05) by the author or Platform Owner in scope succeed; 100% of edits by ineligible actors fail; 100% of non-PO delete attempts fail; a PO hard delete leaves no note row; no version-history row is produced.
+- **SC-003**: 100% of valid, non-stale edits (within 5,000 characters and, for authors, eligible under CN-MCQ-05) by the author or Platform Owner in scope succeed; stale concurrent edits produce the outcome selected in CN-MCQ-11; 100% of edits by ineligible actors fail; 100% of non-PO delete attempts fail; a PO hard delete leaves no note row; no version-history row is produced.
 - **SC-004**: The Client Details tab is documented in AR RTL and EN LTR using only approved Design System patterns; unresolved UI copy, ordering, icon, tab placement and breakpoint details are represented by MCQs, not guessed requirements.
 - **SC-005**: Later UI acceptance covers keyboard-only navigation, visible focus, screen-reader names/roles, contrast in light/dark and workspace brand variants, required states, reduced-motion behavior, and AR RTL / EN LTR on 390px mobile and 1440px desktop (plus tablet if layout changes); design gaps remain blocked by their MCQ and no spec-only artifact claims rendered verification.
 
