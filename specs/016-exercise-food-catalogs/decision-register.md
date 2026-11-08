@@ -168,11 +168,13 @@ Architect mapping: `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-architect-rulings-3
 | F16-MCQ-I | Answered, (1)(b) and (2)(b) | Workspace search matches canonical and workspace names and shows the effective workspace name. No extra storage quota; database size is monitored against the 70% exit trigger. | FR-035; plan Search paragraph; T064 |
 | F16-MCQ-9 | Answered, option (a) | A workspace-private exercise video is visible to clients only through an authorized plan projection, scoped to the persisted plan/client workspace. No direct catalog, table or search access. | FR-014, FR-024, FR-029; contracts client-view paragraph; T045, T050, T058 |
 | F16-MCQ-J | PO-DECISION-NEEDED (new, not answered) | The editable-field list of the S36-PO-3 bullet and the S35-PO-3 paragraph differ. See the F16-MCQ-J entry below. | FR-003; data-model `exercise_overrides`; T037, T040, T046 to T050, T056 to T058, T064 |
+| F16-MCQ-K | PO-DECISION-NEEDED (round 5, not answered) | Legacy variation video on a host that FYI-2 would exclude from the URL host list: how it is preserved at cutover. See the F16-MCQ-K entry below. | FR-014, FR-031; plan migration step 3; T061, T062(a), T063 |
+| F16-MCQ-L | PO-DECISION-NEEDED (round 5, not answered) | V2 snapshot fields beyond names and instructions (primary and secondary muscles, equipment, defaults): freeze them or reconstruct them from the pinned version. See the F16-MCQ-L entry below. | FR-027; data-model `ExerciseSnapshotV2`; T056, T059 |
 
 ### Residuals and label notes (round 4)
 
 - **F16-MCQ-F-R (residual; PO-DECISION-NEEDED unless the architect confirms it is covered):** the architect mapping answers only the name language rule. The language rule for overridden description and instructions is not answered. Blocked: T044 (description shape), T049 and T056 for those fields, and the language controls of T040. The consequence "an absent Arabic name inherits the canonical Arabic name" is inferred from "optional" and is recorded for architect confirmation.
-- **F16-MCQ-G-R (residual, count bound and label):** the alternatives count bound is not answered. Blocked: T048 count bound. Label note: "frozen with the published plan" is recorded as the FR-027 publication snapshot. Option (a) "seeded at add-to-plan" is a different timing and is not stated. The architect confirms the label.
+- **F16-MCQ-G-R (residual, count bound, duplicate rule and label):** the alternatives count bound is not answered, and no S36-PO-3 answer states whether one target may appear more than once in the same override version (duplicate rule). Blocked: T048 count bound and duplicate rule. Label note: "frozen with the published plan" is recorded as the FR-027 publication snapshot. Option (a) "seeded at add-to-plan" is a different timing and is not stated. The architect confirms the label.
 - **F16-MCQ-C-R (residual, note copy):** "preserve existing notes" does not say whether audited note text is copied into the workspace `notes` override. Blocked: T062(b), until T068 reports the inventory and the architect decides.
 - **F16-MCQ-D-R (residual, mechanism):** the anonymize-or-tombstone mechanism of option (b) is not stated. T069 informs the F11/F12 decision. No F16 task implements it.
 
@@ -184,6 +186,24 @@ Architect mapping: `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-architect-rulings-3
 - **Implications:** (a) keeps every S35-PO-3 capability and adds notes; description and alternatives writes then need the freeze rules of F16-MCQ-G and -H. (b) removes the alternatives child rows (FR-025, SC-016) and the description override from the design and needs spec, data-model, contract and test rework. The S35-PO-3 record stays as history.
 - **Advisory recommendation (not a decision):** (a), additive, with notes added.
 - **Blocked:** description and alternatives override writes and their validation (T037, T047, T048), the description and alternatives columns and resolution (T046, T049, T056), the editor fields (T040), the client alternatives scope (T050, T058), the description and alternatives codes of the audit allowlist (T057), and description search columns (T064). Name, instructions, video and notes writes are not blocked by J.
+
+### PO-DECISION-NEEDED F16-MCQ-K — legacy video on a host that FYI-2 would exclude (new in round 5; NOT answered)
+
+- **Feature / where found:** 016 · `plan.md` migration step 3; `spec.md` FR-031 (video carry-over), FR-014 (host list) and FYI-2; `tasks.md` T061, T062(a), T054 cutover and T063.
+- **Question:** FR-031 and T063 require every active legacy variation video to carry over into the workspace override with no video lost at cutover. FYI-2 may remove `docs.google.com` from the host list (FR-014). Legacy rows on that host would then conflict with the new URL rule. How are those rows preserved?
+- **Options:** (a) Keep `docs.google.com` in the host list and amend FR-014 and T061; no row needs special handling. (b) Remove the host and carry those videos over unchanged as legacy values, although the new write path would reject the same value. (c) Remove the host and clear those videos at cutover, recording each affected workspace for PO notice; this loses data and conflicts with T063 unless T063 is amended. (d) Remove the host and keep those legacy videos only as read-only history that the resolver never returns.
+- **Implications:** (a) keeps FR-031 and T063 unchanged and widens the host list. (b) keeps the data but leaves a value the new rule rejects reachable through the resolver. (c) is the only option that loses data. (d) keeps the data without resolving it, so a workspace video reverts to the global fallback.
+- **Advisory recommendation (not a decision):** none yet. Record the host-class counts from T068 first, then decide together with FYI-2.
+- **Blocked:** T062(a) rows on a host FYI-2 would exclude, the T054 cutover for those rows, T061 (host list alignment) and T063 rows for that host. Counts (T068) and every other row are not blocked.
+
+### PO-DECISION-NEEDED F16-MCQ-L — V2 snapshot fields beyond names and instructions (new in round 5; NOT answered)
+
+- **Feature / where found:** 016 · `spec.md` FR-027; `data-model.md` `ExerciseSnapshotV2` row; `contracts/export-read-isolation.md` line 4; `impact-s35-redesign.md` (F17 historical-version scenario); CodeRabbit finding on `impact-s35-redesign.md` (round 5).
+- **Question:** `ExerciseSnapshotV1` also carries `primaryMuscle`, `secondaryMuscles`, `equipment` and optional `defaults`. FR-027 freezes only names and instructions (description and alternatives are frozen but gated by J). F17 historical rendering and muscle-based volume reporting need these values. Should V2 freeze them, or should they be reconstructed from the pinned version?
+- **Options:** (a) Add the four fields to the V2 frozen content. (b) Reconstruct them from the pinned, immutable canonical or workspace version that V2 already references; F17 and Plan Core read them from there. (c) Freeze some fields (for example equipment) and reconstruct the rest, with a per-field rule.
+- **Implications:** (a) makes each snapshot self-contained, duplicates catalog data and enlarges V2. (b) adds no duplicate data but relies on version immutability (FR-011) and needs F17 and Plan Core amendments (T059). (c) splits the rule and needs a per-field definition.
+- **Advisory recommendation (not a decision):** (b), because canonical and private versions are immutable and already pinned by V2; PO to confirm.
+- **Blocked:** the V2 fixture and field shape for those four fields (T056), the F17 and Plan Core amendments (T059), and the historical-scenario wording of the impact audit. Freezing names and instructions is not blocked by L.
 
 ## Round 3 PO-DECISION-NEEDED items
 
