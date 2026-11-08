@@ -61,7 +61,7 @@ All S33-01..12 product choices, C1–C5, Arabic LABELS and the four mapped Engli
 | FR-023 future real-package retirement | T054, T055, T066 | history-preserving retirement tests | NOT-IMPLEMENTED |
 | FR-024 promotional dates/link behavior | T056, T057, T067 | date-boundary and issued-link snapshot tests | NOT-IMPLEMENTED |
 | FR-025 collections/settlement reporting | T060, T068, T072, T073 | actual collection, commission and separate settlement fixtures | NOT-IMPLEMENTED |
-| FR-026 FX snapshot/failure behavior | T058, T059, T067, T068 | date/provider/rate/retry tests | NOT-IMPLEMENTED; reporting FX rounding rule is PO-DECISION-NEEDED (see spec.md "Remaining blockers") — no rounding mode may be encoded until the PO decides |
+| FR-026 FX snapshot/failure behavior | T058, T059, T067, T068, T075 | date/provider/rate/retry and per-supported-currency coverage verification | NOT-IMPLEMENTED; the FX policy is resolved by S36-PO-2/S36-PO-3. Provider/security review and T075 coverage evidence remain required; unsupported currency coverage is a blocker, never an assumption |
 | FR-027 no client data in outbound API request | T059, T062 | captured request allowlist test + security review | BLOCKED: S33-08 provider verification; T062 independent security review |
 
 SC-013..SC-018 map respectively to T052/T053, T054/T055, T056/T057, T060/T068, T058/T059/T068, and T059/T062. No task is ticked. Existing rows above retain their S31 evidence status; this cycle ran no tests/builds/stacks and claims no implementation evidence.
@@ -73,7 +73,7 @@ SC-013..SC-018 map respectively to T052/T053, T054/T055, T056/T057, T060/T068, T
 | FR-028 C5 safe removal/empty initialization; SC-019 | T064, T064a, T064b, T065, T070, T071 | complete dependency manifest, fail-closed tests with zero writes, safe deletion/init/rollback, independent pre-implementation teardown design/security review (T064b) and post-implementation acceptance review (T070) | PARTIAL: deletion/preflight specified (teardown mechanism needs the T064b pre-implementation teardown design/security review gate before T065 implements any deletion); the read-only preflight implementation is assigned to T064a (RED tests in T064); initialization uses the S34-PO-6 package-row identity; market literal settled per S35-PO-1 F9=A (`Egypt`/`International`) |
 | FR-029 PO-only versioned terms; FR-015/016/019/021; SC-020 | T066, T071 | four category pairs, immutable market/type, role tests, commercial versions and historical snapshots | Identity/uniqueness per S34-PO-6 (unique (workspace_id, market, type) on the package row); market literal settled per S35-PO-1 F9=A (`Egypt`/`International`) |
 | FR-030 promotions and link expiry; SC-021 | T067, T071 | Cairo date/boundary and new/issued link tests | NOT-IMPLEMENTED |
-| FR-031 reporting/FX roles; SC-022 | T068, T072, T073, T074, T071 | actual monthly collections, commissions, separate settlement, installment details, FX and role tests | NOT-IMPLEMENTED |
+| FR-031 reporting/FX roles; SC-022 | T058, T060, T068, T072, T073, T074, T075, T071 | actual monthly collections, commissions, separate settlement, installment details, FX/coverage and role tests | NOT-IMPLEMENTED; the reporting FX policy is resolved by S36-PO-2/S36-PO-3; existing payment rules remain unchanged |
 | FR-032/033 installment UI copy/labels; SC-023 | T069, T074, T071 | four exact English/Arabic label pairs; Frontend Design Gate; other interface copy | label pairs approved by LABELS/S34-PO-2; remaining dashboard/Installments/empty/error/help copy BLOCKED-COPY |
 
 No S34 task is ticked. This cycle ran no tests, SQL, migration, stack, build, UI render or security review. Existing mock packages must not be deleted until the C5 preflight and independent post-implementation security gate pass on the target stack. Category initialization uses the S34-PO-6 package-row identity; its market literal is settled per S35-PO-1 F9=A (`Egypt`/`International`).
@@ -82,4 +82,3 @@ No S34 task is ticked. This cycle ran no tests, SQL, migration, stack, build, UI
 | FR | Task | Test | Evidence |
 |---|---|---|---|
 | FR-013, FR-014 | T900 | `tests/e2e/packages.spec.ts::local-stack authenticated package acceptance › ar: PO create, presets/custom, cancel/confirm, errors, themes and workspace switch` | Commit `45d17ff`; three #41 Playwright specs passed 27/27 on current head and fresh Stack C. |
-

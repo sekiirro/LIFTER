@@ -93,3 +93,9 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - Consistency: exact line conversion and aggregate-only half-up rounding are consistent across FR-026/FR-031, SC-017/SC-022, model, plan and tasks. Promotion open bounds are consistent across FR-024/FR-030, SC-015/SC-021 and tasks. R11's historical no-package-count-cap interpretation is explicitly superseded by FR-019. T073 names its now-resolved FX dependency. T075 records coverage per supported currency; unsupported currency coverage is a blocker, never an assumption.
 - Findings: no open CRITICAL or HIGH findings. No product decision is required for this approved scope. Existing BLOCKED-COPY and independent provider/security review gates remain unchanged.
 - Verdict: **PASS — 0 CRITICAL, 0 HIGH.** This is specification-only analysis; it does not claim implementation or test evidence.
+
+### Round-11 review reconciliation — 2026-11-08
+
+- CodeRabbit identified stale pre-S36 FX-rounding blocker text in `traceability.md` and `quickstart.md`. This finding was valid: FR-026/FR-031 and tasks had been unblocked while these two artifacts still said reporting conversion awaited PO approval.
+- Fixed both references: traceability now records the resolved policy, retained provider/security gates and T075 currency-coverage evidence; quickstart now follows FR-026/FR-031 and preserves existing payment rules.
+- Rechecked the six affected artifacts for consistent FX decision status and FR/SC/task mapping. Result remains **0 CRITICAL, 0 HIGH**; no product decision is needed.
