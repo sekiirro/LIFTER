@@ -99,3 +99,14 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - CodeRabbit identified stale pre-S36 FX-rounding blocker text in `traceability.md` and `quickstart.md`. This finding was valid: FR-026/FR-031 and tasks had been unblocked while these two artifacts still said reporting conversion awaited PO approval.
 - Fixed both references: traceability now records the resolved policy, retained provider/security gates and T075 currency-coverage evidence; quickstart now follows FR-026/FR-031 and preserves existing payment rules.
 - Rechecked the six affected artifacts for consistent FX decision status and FR/SC/task mapping. Result remains **0 CRITICAL, 0 HIGH**; no product decision is needed.
+
+
+## 2026-11-09 Analyze — CodeRabbit PR #53 findings
+
+- Date: 2026-11-09 (Africa/Cairo), after the 2026-11-08 spec, plan and task artifacts and this round's task/traceability edits.
+- Entry check: PASS — `spec.md` contains numbered FRs, measurable SCs and Given/When/Then scenarios for FR-023; its Clarifications and PO decision register explicitly state no open ambiguities for the settled scope; `plan.md` covers package lifecycle; T076 is an unchecked FR-023 task; this Analyze follows the changed artifacts.
+- Scope: docs-only repair of corrupted UTF-8 symbols in the feature folder and planned FR-023 test traceability. No behavior, schema, implementation or tests were added or changed.
+- FR-023 mapping: T076 plans a RED-first test for real-package retirement, new-sale exclusion, and unchanged client, assignment, issued-link and financial snapshots. `tasks.md` and `traceability.md` identify the same planned test file. T076 remains unchecked and NOT-IMPLEMENTED.
+- Encoding: the feature-folder scan for the three requested mojibake marker families returned no matches. The task document's affected Unicode symbols are restored; changed Markdown files are UTF-8 without BOM.
+- Result: PASS — 0 CRITICAL, 0 HIGH. This is static consistency analysis only; it does not authorize implementation or claim tests passed.
+- Final cross-artifact pass after the task range update: tasks.md now covers T052–T076; FR-023 T076 remains unchecked, and the planned test mapping remains identical in tasks.md and traceability.md. Result remains 0 CRITICAL, 0 HIGH.

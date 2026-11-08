@@ -58,7 +58,7 @@ All S33-01..12 product choices, C1–C5, Arabic LABELS and the four mapped Engli
 | FR | Task(s) | Planned evidence | Status |
 |---|---|---|---|
 | FR-022 mock inventory/no inference | T052, T053, T064, T064a, T071 | synthetic-only inventory + dependency manifest | NOT-IMPLEMENTED |
-| FR-023 future real-package retirement | T054, T055, T066 | history-preserving retirement tests | NOT-IMPLEMENTED |
+| FR-023 future real-package retirement | T076 | `tests/integration/packages-retirement.test.ts`: new-sale exclusion and preserved client/assignment/link/financial snapshots | NOT-IMPLEMENTED |
 | FR-024 promotional dates/link behavior | T056, T057, T067 | date-boundary and issued-link snapshot tests | NOT-IMPLEMENTED |
 | FR-025 collections/settlement reporting | T060, T068, T072, T073 | actual collection, commission and separate settlement fixtures | NOT-IMPLEMENTED |
 | FR-026 FX snapshot/failure behavior | T058, T059, T067, T068, T075 | date/provider/rate/retry and per-supported-currency coverage verification | NOT-IMPLEMENTED; the FX policy is resolved by S36-PO-2/S36-PO-3. Provider/security review and T075 coverage evidence remain required; unsupported currency coverage is a blocker, never an assumption |
