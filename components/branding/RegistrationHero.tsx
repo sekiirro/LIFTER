@@ -15,6 +15,7 @@ import { GlassSurface } from '../ui/glass/GlassSurface';
 import {
   enterHeroSamplingFallback,
   heroArtworkState,
+  coalesceToAnimationFrame,
   conservativeBackdropLuminance,
   darkestBackdropLuminance,
   photoToneFromLuminance,
@@ -306,10 +307,12 @@ export function RegistrationHero({
           },
         })
       : () => {};
-    window.addEventListener('resize', updateArtworkSamples);
+    const resize = coalesceToAnimationFrame(updateArtworkSamples);
+    window.addEventListener('resize', resize.schedule);
     return () => {
       unsubscribe();
-      window.removeEventListener('resize', updateArtworkSamples);
+      resize.cancel();
+      window.removeEventListener('resize', resize.schedule);
     };
   }, [enterSamplingFallback, updateArtworkSamples, banner?.src]);
 

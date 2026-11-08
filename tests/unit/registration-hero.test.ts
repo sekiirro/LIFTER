@@ -5,6 +5,7 @@ import {
   PHONE_NUMBER_GROUP_DIRECTION,
   PHONE_NUMBER_GROUP_GAP,
   applyHeroSamplingFallback,
+  coalesceToAnimationFrame,
   conservativeBackdropLuminance,
   darkestBackdropLuminance,
   enterHeroSamplingFallback,
@@ -350,6 +351,72 @@ describe('production registration hero geometry changes', () => {
     const stop = observeHeroTextRegion({} as Element, () => {});
     expect(stop).toBeNull();
     expect(heroComponentSource).toContain(
+      "window.addEventListener('resize', resize.schedule)",
+    );
+  });
+
+  it('coalesces a burst of window resize events into one sample per frame', () => {
+    const frames = new Map<number, () => void>();
+    let nextFrame = 0;
+    vi.stubGlobal('requestAnimationFrame', (callback: () => void) => {
+      nextFrame += 1;
+      frames.set(nextFrame, callback);
+      return nextFrame;
+    });
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+      frames.delete(id);
+    });
+    const runNextFrame = () => {
+      const [id, callback] = frames.entries().next().value!;
+      frames.delete(id);
+      callback();
+    };
+
+    let samples = 0;
+    const resize = coalesceToAnimationFrame(() => {
+      samples += 1;
+    });
+    resize.schedule();
+    resize.schedule();
+    resize.schedule();
+    expect(frames.size).toBe(1);
+    expect(samples).toBe(0);
+    runNextFrame();
+    expect(samples).toBe(1);
+
+    resize.schedule();
+    resize.schedule();
+    expect(frames.size).toBe(1);
+    runNextFrame();
+    expect(samples).toBe(2);
+  });
+
+  it('cancels a pending resize frame on cleanup and only once', () => {
+    const cancelled: number[] = [];
+    let samples = 0;
+    vi.stubGlobal('requestAnimationFrame', () => 7);
+    vi.stubGlobal('cancelAnimationFrame', (id: number) => {
+      cancelled.push(id);
+    });
+    const resize = coalesceToAnimationFrame(() => {
+      samples += 1;
+    });
+    resize.cancel();
+    expect(cancelled).toEqual([]);
+
+    resize.schedule();
+    resize.cancel();
+    resize.cancel();
+    expect(cancelled).toEqual([7]);
+    expect(samples).toBe(0);
+  });
+
+  it('removes the coalesced resize listener it registered', () => {
+    expect(heroComponentSource).toContain(
+      "window.removeEventListener('resize', resize.schedule)",
+    );
+    expect(heroComponentSource).toContain('resize.cancel();');
+    expect(heroComponentSource).not.toContain(
       "window.addEventListener('resize', updateArtworkSamples)",
     );
   });

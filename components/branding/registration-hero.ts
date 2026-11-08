@@ -212,3 +212,32 @@ export function observeHeroTextRegion(
     observer.disconnect();
   };
 }
+
+/**
+ * Coalesce repeated calls into one callback per animation frame.
+ *
+ * `schedule` queues at most one frame however often it is called, so a burst
+ * of window resize events runs the callback once per frame. `cancel` drops a
+ * pending frame and is called from the effect cleanup, so no sample runs
+ * after the listener is removed.
+ */
+export function coalesceToAnimationFrame(callback: () => void): {
+  schedule: () => void;
+  cancel: () => void;
+} {
+  let frame: number | null = null;
+  return {
+    schedule: () => {
+      if (frame !== null) return;
+      frame = requestAnimationFrame(() => {
+        frame = null;
+        callback();
+      });
+    },
+    cancel: () => {
+      if (frame === null) return;
+      cancelAnimationFrame(frame);
+      frame = null;
+    },
+  };
+}
