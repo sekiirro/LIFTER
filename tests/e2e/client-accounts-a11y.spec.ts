@@ -1,6 +1,7 @@
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
+import { getMessages } from '../../lib/i18n';
 
 const origin = 'http://localhost:3000';
 const local = Boolean(
@@ -52,7 +53,12 @@ for (const locale of ['ar', 'en'] as const) {
         await expect(
           page.getByLabel(locale === 'ar' ? 'الدولة' : 'Country'),
         ).toHaveValue('EG');
-        await expect(page.getByLabel(/telegram/i)).toHaveCount(0);
+        await expect(
+          page.getByLabel(
+            `${getMessages(locale)['clientSignup.telegramUsername']} (${getMessages(locale)['clientSignup.optional']})`,
+            { exact: true },
+          ),
+        ).toHaveCount(1);
         const results = await new AxeBuilder({ page })
           .withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa'])
           .analyze();
@@ -78,6 +84,17 @@ for (const locale of ['ar', 'en'] as const) {
     ]);
     await page.goto(`/register/${validToken}`);
     await page.waitForLoadState('networkidle');
+    const messages = getMessages(locale);
+    const dateOfBirth = page.getByLabel(messages['clientSignup.dateOfBirth'], {
+      exact: true,
+    });
+    const username = page.getByLabel(messages['clientSignup.username'], {
+      exact: true,
+    });
+    const telegram = page.getByLabel(
+      `${messages['clientSignup.telegramUsername']} (${messages['clientSignup.optional']})`,
+      { exact: true },
+    );
     const name = page.getByLabel(locale === 'ar' ? 'الاسم' : 'Name', {
       exact: true,
     });
@@ -99,6 +116,20 @@ for (const locale of ['ar', 'en'] as const) {
     await name.focus();
     await expect(name).toBeFocused();
     await page.keyboard.press('Tab');
+    await expect(dateOfBirth).toBeFocused();
+    // Chromium keeps Tab inside a date input across its month, day and year stops.
+    for (let step = 0; step < 6; step += 1) {
+      if (
+        await username.evaluate((element) => element === document.activeElement)
+      )
+        break;
+      await expect(dateOfBirth).toBeFocused();
+      await page.keyboard.press('Tab');
+    }
+    await expect(username).toBeFocused();
+    await page.keyboard.press('Tab');
+    await expect(telegram).toBeFocused();
+    await page.keyboard.press('Tab');
     await expect(email).toBeFocused();
     await page.keyboard.press('Tab');
     await expect(country).toBeFocused();
@@ -110,6 +141,9 @@ for (const locale of ['ar', 'en'] as const) {
 
     const submit = page.locator('form button[type="submit"]');
     await expect(submit).toBeFocused();
+    await name.fill('Heba Sami Nabil');
+    await dateOfBirth.fill('1990-04-12');
+    await username.fill('heba_keyboard_flow');
     let release!: () => void;
     let received!: () => void;
     const held = new Promise<void>((resolve) => (release = resolve));
@@ -129,7 +163,6 @@ for (const locale of ['ar', 'en'] as const) {
     );
     release();
     const invalidFields = [
-      [name, 'signup-name-error'],
       [email, 'signup-email-error'],
       [phone, 'signup-phone-error'],
       [password, 'signup-password-error'],
@@ -138,7 +171,11 @@ for (const locale of ['ar', 'en'] as const) {
       await expect(field).toHaveAttribute('aria-invalid', 'true');
       await expect(field).toHaveAttribute('aria-describedby', errorId);
     }
-    await expect(name).toBeFocused();
+    await expect(name).not.toHaveAttribute(
+      'aria-describedby',
+      'signup-name-error',
+    );
+    await expect(email).toBeFocused();
     await expect(page.locator('form p[role="alert"]')).toBeVisible();
     await page.unrouteAll();
   });
