@@ -305,3 +305,21 @@ T900 has been marked complete only after the GC integration tests passed on the 
 - Stack B suite writes are permitted only for the authorized synthetic fixtures. No reset, migration, `db push`, repair, or stack convergence.
 
 **Findings count:** 0 CRITICAL, 0 HIGH, 3 MEDIUM, 1 LOW. **Verdict:** PASS for T063 and the existing-PR documentation/test fixes. Implementation and verification remain pending; do not mark T063 or T062 checked until current-head tests pass.
+
+## Round 18 — S37-PO-8 signup migration ordering (2026-11-08)
+
+### Spec Kit entry gate
+
+- **PASS — requirements and measurable acceptance:** `specs/014-workspace-branding/spec.md` contains FR-028 and SC-023 plus Given/When/Then signup scenarios. This task changes only the migration filename, preserving SQL bytes and signup behavior.
+- **PASS — clarification and decision source:** `specs/014-workspace-branding/plan.md` records S37-PO-8 item 1 and the one-time exception for shared `20261104001000_f15_signup_profile.sql`. No open ambiguities remain for the authorized rename scope.
+- **PASS — plan and task coverage:** `plan.md` records the migration-order scope; `tasks.md` adds unchecked T064 tagged `[FR-028]`.
+- **PASS — fresh analysis:** This round follows the current spec/plan/task artifacts and records 0 open CRITICAL and 0 open HIGH findings.
+- **PASS — traceability boundary:** `traceability.md` retains the FR-028 mapping. T064 remains unchecked until required verification is completed; no test completion is claimed by this documentation gate.
+
+### Scope analysis
+
+S37-PO-8 item 1 authorizes renaming only `20261107032001_signup_username_unavailable.sql` to reserved version `20261108230000`. The shared `20261104001000_f15_signup_profile.sql` remains untouched under a one-time exception to migration ordering. Applied-history SELECT found the old version absent on Stack B and Stack D; both containers retained their recorded `StartedAt`. The only intervening migration on this branch is `20261107032002_branding_function_convergence.sql`, which changes branding functions only and has no dependency relationship with the signup migration.
+
+The scoped rename introduces no product behavior or schema-content change, adds no migration, and changes no permissions or data. Preserve exact migration bytes and do not edit the shared migration. Update historical filename references only in a separate follow-up commit.
+
+**Findings count:** 0 CRITICAL, 0 HIGH. **Verdict:** PASS for T064 migration-order maintenance under S37-PO-8 item 1.

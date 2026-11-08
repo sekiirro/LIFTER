@@ -112,6 +112,7 @@ S32-PO-9 Q9 requires an audit of existing usernames and a remediation proposal f
 
 - T061 aligns the historical signup clarification and plan text with S34-PO-1 H1=A/H2=A: the exact Arabic copy is approved and shipped; existing-account enforcement and its database constraint remain deferred with T058 open.
 - T062 maintains the already-approved FR-028 signup checks by using valid identity values except for the field each test intends to reject. Relative-date fixtures must retain their intended future/past condition. No production behavior, schema, or UI decision changes in this follow-up.
+- S37-PO-8 item 1 authorizes the one-time ordering exception for the shared `20261104001000_f15_signup_profile.sql` migration (identical blob `88d6dc78` on six origin refs, including F15). Rename only `20261107032001_signup_username_unavailable.sql` to reserved version `20261108230000`; leave the shared migration untouched. This is migration ordering maintenance for FR-028 and does not alter migration contents or signup behavior.
 
 ## Project Structure
 
