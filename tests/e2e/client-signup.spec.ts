@@ -337,6 +337,7 @@ test.describe.serial('T038 invitation signup UI', () => {
     test.skip(!local, 'Requires the disposable local Supabase stack.');
     const messages = getMessages('en') as SignupTestMessages;
     await page.setViewportSize({ width: 390, height: 844 });
+    await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': '203.0.113.17' });
     await context.addCookies([
       { name: LOCALE_COOKIE, value: 'en', url: origin },
       { name: THEME_COOKIE, value: 'light', url: origin },
