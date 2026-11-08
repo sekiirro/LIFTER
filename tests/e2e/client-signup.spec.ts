@@ -155,6 +155,10 @@ test.describe.serial('T038 invitation signup UI', () => {
               : `form [name="${field}"]`;
           await expect(page.locator(selector)).toBeVisible();
         }
+        await expect(page.locator('form[data-hydrated]')).toHaveAttribute(
+          'data-hydrated',
+          'true',
+        );
         const nameField = page.getByLabel(messages['clientSignup.name'], {
           exact: true,
         });
@@ -181,6 +185,10 @@ test.describe.serial('T038 invitation signup UI', () => {
       { name: THEME_COOKIE, value: 'light', url: origin },
     ]);
     await page.goto(`/register/${token}`);
+    await expect(page.locator('form[data-hydrated]')).toHaveAttribute(
+      'data-hydrated',
+      'true',
+    );
     const nameField = page.getByLabel(messages['clientSignup.name'], {
       exact: true,
     });
