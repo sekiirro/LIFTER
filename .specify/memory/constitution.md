@@ -174,7 +174,7 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   bypass this main merge gate (see docs/08 and D-26). Ask the PO for explicit merge approval and
   record the approved head SHA with that approval. Merge only after that approval, immediately
   re-checking these checks remain true, including `commit_id == headRefOid` and
-  `po_approved_head == headRefOid`. If the head changes after PO approval, the approval lapses;
+  `po_approved_head == headRefOid`. No writes to `main` may occur between the final live recheck and the merge; if `main` moved, re-verify all gates. If the head changes after PO approval, the approval lapses;
   re-satisfy these checks on the new head and obtain new explicit PO approval. Use
   `gh pr merge <n> --merge --match-head-commit <po_approved_head>`. Never use `--admin`,
   `--auto`, or `--delete-branch`. This is process-only because branch protection returns 403.

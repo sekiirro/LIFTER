@@ -106,7 +106,7 @@ Gate: three executed successful `pull_request` attempts (initial run or reruns) 
 
 Then ask the PO for explicit merge approval and record the approved head SHA with that approval.
 
-7. Merge only after that approval, immediately re-checking items 1-6 and `po_approved_head == headRefOid`. If the head changed after PO approval, the approval lapses; re-satisfy items 1-6 on the new head and obtain new explicit PO approval. If `main` moved after the green `pull_request` run, a rerun reuses the original merge-result SHA and cannot test the updated merge result; trigger a fresh `pull_request` event on the updated merge result (for example, reopen the PR) and collect the required evidence from that run before merging. Use `gh pr merge <n> --merge --match-head-commit <po_approved_head>`.
+7. Merge only after that approval, immediately re-checking items 1-6 and `po_approved_head == headRefOid`. No writes to `main` may occur between the final live recheck and the merge; if `main` moved, re-verify all gates. If the head changed after PO approval, the approval lapses; re-satisfy items 1-6 on the new head and obtain new explicit PO approval. If `main` moved after the green `pull_request` run, a rerun reuses the original merge-result SHA and cannot test the updated merge result; trigger a fresh `pull_request` event on the updated merge result (for example, reopen the PR) and collect the required evidence from that run before merging. Use `gh pr merge <n> --merge --match-head-commit <po_approved_head>`.
 
 Never use `--admin`, `--auto`, or `--delete-branch`. Branch protection returns 403 on the current private Free plan, so this gate is process-only.
 
