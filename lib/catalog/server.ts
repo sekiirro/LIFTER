@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { authorize, type Actor } from '../auth/authorize';
 import type { Role } from '../auth/capabilities';
 import { createSessionClient } from '../supabase/server';
+import { isUuid } from './uuid';
 
 type RpcError = { code?: string; message?: string };
 type RpcResult<T = unknown> = { data: T | null; error: RpcError | null };
@@ -69,8 +70,6 @@ export type CatalogDependencies = {
   actor: (client: SessionClient) => Promise<Actor | null>;
 };
 
-const UUID_V4 =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ROLE_BY_DB: Record<string, Role> = {
   platform_owner: 'platform_owner',
   workspace_owner: 'workspace_owner',
@@ -177,7 +176,7 @@ export function createCatalogServer(deps: CatalogDependencies) {
     (a.role !== null && a.role !== 'sales' && a.activeWorkspaceIds.length > 0);
   const scoped = (a: Actor, workspaceId?: string) =>
     !!workspaceId && !!a.role && authorize(a, 'coaching_work', workspaceId);
-  const keyValid = (key: string) => UUID_V4.test(key);
+  const keyValid = (key: string) => isUuid(key);
   async function mutate(
     input: CatalogMutation,
     name: string,
@@ -187,6 +186,11 @@ export function createCatalogServer(deps: CatalogDependencies) {
     const ready = await prepare(allowed);
     if (ready.result) return ready.result;
     if (!keyValid(input.operationKey)) return { status: 'invalid' };
+    if (input.workspaceId != null && !isUuid(input.workspaceId))
+      return { status: 'invalid' };
+    if (input.id != null && !isUuid(input.id)) return { status: 'invalid' };
+    if (input.targetId != null && !isUuid(input.targetId))
+      return { status: 'invalid' };
     return rpc(ready.client!, name, args(input));
   }
   return {

@@ -17,6 +17,7 @@ import {
   type ExerciseEditorDraft,
 } from '../../../lib/catalog/exercise-editor';
 import { EQUIPMENT_CODES } from '../../../lib/catalog/schemas';
+import { isUuid } from '../../../lib/catalog/uuid';
 
 export type SaveExerciseInput = {
   draft: ExerciseEditorDraft;
@@ -36,9 +37,6 @@ export type RemoveExerciseInput = {
   expectedRevision: number;
   operationKey: string;
 };
-
-const UUID_V4 =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return !!value && typeof value === 'object' && !Array.isArray(value);
@@ -74,8 +72,9 @@ function validSavePayload(value: unknown): value is SaveExerciseInput {
     draft.secondaryMuscles.every((code) => typeof code === 'string') &&
     Array.isArray(draft.alternativeExerciseIds) &&
     draft.alternativeExerciseIds.every((id) => typeof id === 'string') &&
-    UUID_V4.test(value.operationKey) &&
-    (value.id === undefined || typeof value.id === 'string') &&
+    isUuid(value.operationKey) &&
+    (value.id === undefined || isUuid(value.id)) &&
+    (value.workspaceId === null || isUuid(value.workspaceId)) &&
     (value.expectedVersion === undefined ||
       (Number.isInteger(value.expectedVersion) &&
         Number(value.expectedVersion) >= 0)) &&
@@ -94,10 +93,11 @@ function validRemovePayload(value: unknown): value is RemoveExerciseInput {
   return (
     isRecord(value) &&
     (value.scope === 'global' || value.scope === 'workspace') &&
-    (value.workspaceId === null || typeof value.workspaceId === 'string') &&
-    typeof value.exerciseId === 'string' &&
+    (value.workspaceId === null || isUuid(value.workspaceId)) &&
+    isUuid(value.exerciseId) &&
     Number.isInteger(value.expectedRevision) &&
-    typeof value.operationKey === 'string'
+    Number(value.expectedRevision) >= 0 &&
+    isUuid(value.operationKey)
   );
 }
 
@@ -107,8 +107,8 @@ export async function removeExerciseAction(
   if (!validRemovePayload(input)) return { status: 'invalid' };
   const actor = await requireActor();
   if (
-    !UUID_V4.test(input.exerciseId) ||
-    !UUID_V4.test(input.operationKey) ||
+    !isUuid(input.exerciseId) ||
+    !isUuid(input.operationKey) ||
     !Number.isInteger(input.expectedRevision) ||
     input.expectedRevision < 0
   )
@@ -130,7 +130,7 @@ export async function removeExerciseAction(
   if (
     input.scope !== 'workspace' ||
     !input.workspaceId ||
-    !UUID_V4.test(input.workspaceId) ||
+    !isUuid(input.workspaceId) ||
     !(['platform_owner', 'workspace_owner', 'trainer'] as string[]).includes(
       actor.role ?? '',
     ) ||

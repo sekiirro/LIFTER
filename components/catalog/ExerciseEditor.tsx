@@ -136,7 +136,7 @@ export function ExerciseEditor({
   const alternativeOptions = alternatives;
   const selectedAlternatives = draft.alternativeExerciseIds.map((id) => {
     const option = alternativeOptions.find((item) => item.id === id);
-    return option ? alternativeName(option, locale) : id;
+    return { id, name: option ? alternativeName(option, locale) : id };
   });
 
   function setValue<K extends keyof ExerciseEditorDraft>(
@@ -303,9 +303,9 @@ export function ExerciseEditor({
             <dd>
               {selectedAlternatives.length ? (
                 <ul className={styles.chips}>
-                  {selectedAlternatives.map((name) => (
-                    <li key={name}>
-                      <Bidi dir="auto">{name}</Bidi>
+                  {selectedAlternatives.map((alternative) => (
+                    <li key={alternative.id}>
+                      <Bidi dir="auto">{alternative.name}</Bidi>
                     </li>
                   ))}
                 </ul>

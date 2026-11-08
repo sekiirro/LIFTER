@@ -4,6 +4,9 @@ import {
   saveVideoVariationAction,
 } from '../../app/(dashboard)/catalog-variations/actions';
 
+const validWorkspaceId = '22222222-2222-4222-8222-222222222222';
+const validExerciseId = '55555555-5555-4555-8555-555555555555';
+
 const { writeVariation, search } = vi.hoisted(() => ({
   writeVariation: vi.fn(),
   search: vi.fn(),
@@ -24,8 +27,8 @@ describe('catalog variation actions', () => {
   it('binds every write to the explicitly selected workspace and exercise', async () => {
     await saveVideoVariationAction(
       {
-        workspaceId: 'workspace-selected',
-        exerciseId: 'exercise-global',
+        workspaceId: validWorkspaceId,
+        exerciseId: validExerciseId,
         videoUrl: 'https://youtu.be/abcdefghijk',
         note: 'Local mapping',
       },
@@ -34,8 +37,8 @@ describe('catalog variation actions', () => {
     );
     expect(writeVariation).toHaveBeenCalledWith({
       operationKey: '11111111-1111-4111-8111-111111111111',
-      workspaceId: 'workspace-selected',
-      id: 'exercise-global',
+      workspaceId: validWorkspaceId,
+      id: validExerciseId,
       expectedVersion: null,
       request: {
         video_url: 'https://youtu.be/abcdefghijk',
@@ -47,8 +50,8 @@ describe('catalog variation actions', () => {
   it('rejects an invalid host before the catalog wall call', async () => {
     const result = await saveVideoVariationAction(
       {
-        workspaceId: 'workspace-selected',
-        exerciseId: 'exercise-global',
+        workspaceId: validWorkspaceId,
+        exerciseId: validExerciseId,
         videoUrl: 'https://youtube.com.evil.example/watch',
         note: '',
       },
@@ -102,8 +105,8 @@ describe('catalog variation actions', () => {
   it('returns invalid for a non-string operation key', async () => {
     const result = await saveVideoVariationAction(
       {
-        workspaceId: 'workspace-selected',
-        exerciseId: 'exercise-global',
+        workspaceId: validWorkspaceId,
+        exerciseId: validExerciseId,
         videoUrl: 'https://youtu.be/abcdefghijk',
         note: 'Local mapping',
       },
@@ -117,8 +120,8 @@ describe('catalog variation actions', () => {
   it('returns invalid for a non-number expected version', async () => {
     const result = await saveVideoVariationAction(
       {
-        workspaceId: 'workspace-selected',
-        exerciseId: 'exercise-global',
+        workspaceId: validWorkspaceId,
+        exerciseId: validExerciseId,
         videoUrl: 'https://youtu.be/abcdefghijk',
         note: 'Local mapping',
       },
@@ -129,7 +132,39 @@ describe('catalog variation actions', () => {
     expect(writeVariation).not.toHaveBeenCalled();
   });
 
-  it.each([null, 42, {}])(
+  it('returns invalid for malformed workspace/exercise ids', async () => {
+    expect(
+      await saveVideoVariationAction(
+        {
+          workspaceId: 'not-a-uuid',
+          exerciseId: validExerciseId,
+          videoUrl: 'https://youtu.be/abcdefghijk',
+          note: '',
+        },
+        null,
+        '11111111-1111-4111-8111-111111111111',
+      ),
+    ).toEqual({ status: 'invalid' });
+    expect(
+      await saveVideoVariationAction(
+        {
+          workspaceId: validWorkspaceId,
+          exerciseId: 'not-a-uuid',
+          videoUrl: 'https://youtu.be/abcdefghijk',
+          note: '',
+        },
+        null,
+        '11111111-1111-4111-8111-111111111111',
+      ),
+    ).toEqual({ status: 'invalid' });
+    expect(
+      await loadWorkspaceVideoVariationsAction(validWorkspaceId, 'not-a-uuid'),
+    ).toEqual({ status: 'invalid' });
+    expect(writeVariation).not.toHaveBeenCalled();
+    expect(search).not.toHaveBeenCalled();
+  });
+
+  it.each([null, 42, {}, 'not-a-uuid'])(
     'returns invalid for malformed workspace load arguments (%s)',
     async (workspaceId) => {
       await expect(
@@ -144,27 +179,25 @@ describe('catalog variation actions', () => {
       status: 'ok',
       data: [
         {
-          result_id: 'exercise-global',
-          result_workspace_id: 'workspace-selected',
+          result_id: validExerciseId,
+          result_workspace_id: validWorkspaceId,
           result_version: 3,
           result_payload: { video_url: 'https://youtu.be/abcdefghijk' },
         },
         {
-          result_id: 'exercise-foreign',
-          result_workspace_id: 'workspace-foreign',
+          result_id: '44444444-4444-4444-8444-444444444444',
+          result_workspace_id: '44444444-4444-4444-8444-444444444444',
           result_version: 1,
           result_payload: { video_url: 'https://drive.google.com/foreign' },
         },
       ],
     });
-    expect(
-      await loadWorkspaceVideoVariationsAction('workspace-selected'),
-    ).toEqual({
+    expect(await loadWorkspaceVideoVariationsAction(validWorkspaceId)).toEqual({
       status: 'ok',
       data: [
         {
-          workspaceId: 'workspace-selected',
-          exerciseId: 'exercise-global',
+          workspaceId: validWorkspaceId,
+          exerciseId: validExerciseId,
           version: 3,
           videoUrl: 'https://youtu.be/abcdefghijk',
           note: '',
@@ -174,7 +207,7 @@ describe('catalog variation actions', () => {
     expect(search).toHaveBeenCalledWith({
       kind: 'variation',
       query: '',
-      workspaceId: 'workspace-selected',
+      workspaceId: validWorkspaceId,
       filters: { page_size: 50 },
       cursor: null,
     });
@@ -182,8 +215,8 @@ describe('catalog variation actions', () => {
 
   it('stops paging after collecting the page with the requested exercise', async () => {
     const rows = Array.from({ length: 50 }, (_, index) => ({
-      result_id: `exercise-${String(index).padStart(2, '0')}`,
-      result_workspace_id: 'workspace-selected',
+      result_id: `55555555-5555-4555-8555-5555555555${String(index).padStart(2, '0')}`,
+      result_workspace_id: validWorkspaceId,
       result_version: 1,
       result_payload: { note: 'mapping' },
     }));
@@ -192,8 +225,8 @@ describe('catalog variation actions', () => {
       .mockResolvedValueOnce({ status: 'ok', data: [] });
 
     const result = await loadWorkspaceVideoVariationsAction(
-      'workspace-selected',
-      'exercise-20',
+      validWorkspaceId,
+      '55555555-5555-4555-8555-555555555520',
     );
 
     expect(result.status).toBe('ok');

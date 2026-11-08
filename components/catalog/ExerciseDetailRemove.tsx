@@ -29,6 +29,12 @@ export function ExerciseDetailRemove({
   const [removed, setRemoved] = useState(false);
   const [failed, setFailed] = useState(false);
 
+  function resetDialog() {
+    setOpen(false);
+    setFailed(false);
+    setPending(false);
+  }
+
   async function confirmRemove() {
     setPending(true);
     setFailed(false);
@@ -72,7 +78,7 @@ export function ExerciseDetailRemove({
         tone="destructive"
         loading={pending}
         onConfirm={() => void confirmRemove()}
-        onCancel={() => setOpen(false)}
+        onCancel={resetDialog}
       >
         {failed ? (
           <Alert tone="error" title={m['states.error.description']} />
