@@ -86,3 +86,12 @@ The S35 detail-selector E2E evidence in the preceding row uses the mandated 390p
 | Finding | FR | Task | Test | Evidence |
 |---|---|---|---|---|
 | Workspace Detail selector rendering and responsive matrix | FR-002, FR-011, FR-012 | T038 | `tests/e2e/exercise-library-production.spec.ts::${locale} ${theme} ${viewport.name}: production library and manual Add`; asserts workspace detail has no `option[value=""]` and captures `detail-workspace.png` | Test commit `9a9a929edf4fe60f79fa8e1e34d685c833e9b72c`; Stack C Playwright 24/24; eight screenshots: AR/EN × light/dark × 390/1440, with axe clean. |
+
+
+## S37 PR #43 T901 migration rename traceability
+
+| Requirement | Task | Test | Evidence | Status |
+|---|---|---|---|---|
+| FR-011 | T901 | GitHub PR #43 validate, integration, and storage pull_request checks executed on final head; run IDs recorded in the S37 run report. | Rename commit 9c572fab72d97ba9bce48f52a5c466d9e414e6f7; blob identity proof: 20261108100000 = c6d3ff7c20cde9ee0f2436dd67592b3d70c97569, 20261108100100 = 1d45cd8cddde0bb182242949b872f8d96f6afdc4 (worktree hash-object equals HEAD tree blob); PO authority: S36-PO-4 item 6 and S37-PO-6 Option D; Stack C excluded and untouched. | DONE |
+
+Disclosure: the rename commit message trailers contain literal \n text rather than intended line breaks; history was not rewritten.
