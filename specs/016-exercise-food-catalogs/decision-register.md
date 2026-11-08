@@ -164,12 +164,13 @@ Architect mapping: `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-architect-rulings-3
 | F16-MCQ-E | Answered, option (a) | The PO may edit any workspace override. Canonical edits stay in the explicit global admin scope (F16-MCQ-5). | FR-014, FR-030; contracts planned rows; T037, T040, T047, T055 |
 | F16-MCQ-F | Answered for the name field only | English name required; Arabic name optional. Description and instructions are a residual: see below. | FR-003, FR-026; T046, T049, T056 |
 | F16-MCQ-G | Answered: frozen at publication | Override alternatives are frozen with the published plan at publication (FR-027), not re-resolved live. Count bound residual: see below. | FR-025, FR-027; data-model `ExerciseSnapshotV2` row; T048, T050, T056, T058 |
-| F16-MCQ-H | Answered, option (a) | The description is frozen with the published plan at publication, like names and instructions; videos stay live. | FR-023, FR-027; T044, T056 |
+| F16-MCQ-H | Answered for Description only; Video timing PENDING-PO under F16-MCQ-O | The Description is frozen at publication. The earlier video-live answer is not final because S36-PO-5 says published plans retain frozen values without specifying Video. | FR-023, FR-027; T044, T056 |
 | F16-MCQ-I | Answered, (1)(b) and (2)(b) | Workspace search matches canonical and workspace names and shows the effective workspace name. No extra storage quota; database size is monitored against the 70% exit trigger. | FR-035; plan Search paragraph; T064 |
 | F16-MCQ-9 | Answered, option (a) | A workspace-private exercise video is visible to clients only through an authorized plan projection, scoped to the persisted plan/client workspace. No direct catalog, table or search access. | FR-014, FR-024, FR-029; contracts client-view paragraph; T045, T050, T058 |
 | F16-MCQ-J | ANSWERED by S36-PO-5 | Exactly eight fields are editable locally, with Global PO-only. | FR-003; T037, T040, T046-T050, T056-T058, T064 |
 | F16-MCQ-K | ANSWERED by S36-PO-5 line 6 | The eight named fields, all locally editable. This is the question in CodeRabbit thread 861BYOr. | FR-003; T037, T040, T047 |
 | F16-MCQ-L | ANSWERED by S36-PO-5 line 7 | Keep existing Notes; remove Instructions, preserving unique data into Notes. This is the question in CodeRabbit thread tN4f. | FR-003, FR-031; T037, T047, T062 |
+| F16-MCQ-Q | PO-DECISION-NEEDED (scope of canonical name-language rule) | Does the English-required/Arabic-optional wording in S36-PO-3 F16 apply to canonical Global exercise creation, or only to workspace name customization? Preserve the earlier S20 Global rule pending answer. | FR-001; F16-MCQ-F |
 | F16-MCQ-P | PO-DECISION-NEEDED (renumbered from the mistaken round-5 K label) | Legacy variation video on a host that FYI-2 excludes: how it is preserved at cutover. See F16-MCQ-P below. | FR-014, FR-031; plan migration step 3; T061, T062(a), T063 |
 | A55 | RESOLVED as a technical detail | Metadata outside the exact eight library fields remains available from the immutable version already referenced by the plan; this preserves historical values without adding fields to the redesigned Exercise Library. | FR-027; data-model `ExerciseSnapshotV2`; T056, T059 |
 
@@ -188,6 +189,15 @@ Architect mapping: `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-architect-rulings-3
 - **Implications:** (a) keeps every S35-PO-3 capability and adds notes; description and alternatives writes then need the freeze rules of F16-MCQ-G and -H. (b) removes the alternatives child rows (FR-025, SC-016) and the description override from the design and needs spec, data-model, contract and test rework. The S35-PO-3 record stays as history.
 - **Advisory recommendation (not a decision):** (a), additive, with notes added.
 - **Blocked:** description and alternatives override writes and their validation (T037, T047, T048), the description and alternatives columns and resolution (T046, T049, T056), the editor fields (T040), the client alternatives scope (T050, T058), the description and alternatives codes of the audit allowlist (T057), and description search columns (T064). Name, instructions, video and notes writes are not blocked by J.
+
+### PO-DECISION-NEEDED F16-MCQ-Q - scope of canonical exercise name-language rule
+
+- **Feature / where found:** 016; spec.md FR-001 and FR-003; S20 Message B section 1; S36-PO-3 section 2 F16 line 21; architect mapping F16-MCQ-F in s36-architect-rulings-3.md.
+- **Question:** Does the S36-PO-3 wording that English names are required and Arabic is optional apply to canonical Global exercise creation, or only to workspace name customization addressed by F16-MCQ-F? S20 has an existing Global rule requiring Arabic and English names.
+- **Options:** (a) Apply the S36-PO-3 language rule only to workspace name customization; retain the S20 requirement for canonical Global exercises. (b) Apply English-required/Arabic-optional to canonical Global exercises too, superseding the earlier S20 rule for F16.
+- **Implications:** (a) keeps existing canonical validation and allows workspace names to be English-only. (b) permits canonical exercises without Arabic and changes Global create/edit validation and associated acceptance evidence.
+- **Advisory recommendation (not a decision):** (a), because the S36-PO-3 answer is mapped to workspace override names; the PO must confirm scope.
+- **Blocked:** Do not change canonical Global name validation or its acceptance expectation until the PO answers. Existing S20 wording remains recorded; A7 independently blocks implementation.
 
 ### PO-DECISION-NEEDED F16-MCQ-P — legacy video on a host that FYI-2 excludes (renumbered from erroneous round-5 K label)
 
@@ -283,9 +293,9 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 - **Advisory recommendation (not a decision):** (a).
 - **Blocked:** FR-027 (V2 alternatives freeze); T048 (count bound and seeded or live behaviour); T050 and T058 (client alternatives scope); T059 (F17 integration).
 
-### F16-MCQ-H — Description: frozen or live in a published plan — ANSWERED (S36-PO-3, round 4)
+### F16-MCQ-H - Description frozen; published Video timing pending F16-MCQ-O
 
-- **Status (S36-PO-3, round 4):** answered, option (a): the description is frozen with the published plan at publication, like names and instructions; videos stay live. Description override writes remain BLOCKED by F16-MCQ-J.
+- **Status (S36-PO-3, round 4):** Description is frozen with the published plan at publication. The earlier video-live interpretation is superseded by the final ambiguity in S36-PO-5 and remains PENDING-PO under F16-MCQ-O. Description override writes remain BLOCKED by F16-MCQ-J.
 
 - **Feature / where found:** 016 · `spec.md` FR-027 (line 127) and FR-023 (line 123); `plan.md` line 85; `data-model.md` line 46; critique F21.
 - **Question:** Is the description (canonical or workspace) frozen at publication with names and instructions, or live like video?
