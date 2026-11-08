@@ -33,6 +33,9 @@ Base: `origin/main` `7e2d0149b0370e4389b462130508352bbd69daa2`. Task mapping is 
 | ND-F4-3 session-lifetime enforcement deferral | S35-PO-1 "ND-F4-3=A (defer, track security blocker)"; `docs/13-production-readiness.md:34` ("PO decision: B"; RD-1 reconciled by S35-R6: both mean the deferral) | spec.md Clarifications, ND-F4-3 | None; no task; blocker stays Open, Pre-Production |
 | ND-F4-5 client-target sequencing | S35-PO-1 "ND-F4-5=A." (architect: option a) | spec.md Clarifications, ND-F4-5 | Pending P1 client accounts; denial until then unchanged |
 | ND-F4-7 staff email reset | S35-PO-1 line 9 (verbatim in spec.md Clarifications) | spec.md User Story 5, FR-016 to FR-030, SC-008 to SC-015, Security Notes, PDN-F4-7-01 to 13 | Specified only; implementation Phase 9 (T033 to T050); UNVERIFIED |
+| PDN-F4-7-14 public /recover mechanism = B (send hook, control A) | S37-PO-8 item 2 = B; the option text is the written waiver of the built-in-email wording for the test phase only (`C:/Users/NEW LAP/.lifter/runs/s37-po/s37-po-1.verbatim.txt`) | spec.md FR-019, FR-030 control A, PDN-F4-7-14 | Specified; T050b after gate G6; UNVERIFIED |
+| PDN-F4-7-15 auth.users guard = A (local-only in test phase) | S37-PO-8 item 3 = A (consequence: staff password changes outside self-service refused, no override) | spec.md FR-030 control B, PDN-F4-7-15 | Specified; T050a; UNVERIFIED |
+| PDN-F4-7-17 hosted containment of the committed config block | Raised 2026-11-08 (S37 round 5) | spec.md PDN register, FR-020 | OPEN (PO) |
 
 ## ND-F4-7 rows (S35-PO-1) - all UNVERIFIED until implemented and executed
 
@@ -49,7 +52,7 @@ No ND-F4-7 row is VERIFIED or MAPPED. Each status describes the planned test onl
 | US5 scenario 7 (delivery cap) | T038, T044 | planned | none | UNVERIFIED | PDN-F4-7-01 |
 | US5 scenario 8 (client: no email) | T034, T041 | planned | none | UNVERIFIED | PDN-F4-7-02 for roles |
 | US5 scenario 9 (SMTP gate) | T046, T047 | documentation check | none | UNVERIFIED | Hosted change out of scope |
-| US5 scenario 10 (direct Auth API enforcement) | T049a to T049e, T050a, T050b | local Auth boundary tests (planned) | none | UNVERIFIED | Control B, C, D specified (FR-030); control A (public /recover) BLOCKED by PDN-F4-7-14 (CONFLICT); guard feasibility G1 to G5 not verified |
+| US5 scenario 10 (direct Auth API enforcement) | T049a to T049e, T050a, T050b | local Auth boundary tests (planned) | E1 to E4 (bypass evidence, `research.md` R10) | UNVERIFIED (bypass evidenced) | Control A decided as PDN-F4-7-14 = B; control B decided as PDN-F4-7-15 = A; gates G1 to G6 not verified; control tests not run |
 | US5 scenario 11 (exact approved copy) | T042b | byte comparison of application output and locale catalogs (planned) | none | UNVERIFIED | FR-029 applies only to two states |
 | FR-016 | T034, T043 | planned | none | UNVERIFIED | PDN-F4-7-02 |
 | FR-017 | T041, T043 | planned | none | UNVERIFIED | - |
@@ -65,7 +68,7 @@ No ND-F4-7 row is VERIFIED or MAPPED. Each status describes the planned test onl
 | FR-027 | T042, T045 | planned | none | UNVERIFIED | Partial copy approval only; PDN-F4-7-06 remains open for all other F4 strings |
 | FR-028 | T034 to T042, T048 | planned | none | UNVERIFIED | Security review pending |
 | FR-029 | T042b | localization and rendered-output byte comparison (planned) | none | UNVERIFIED | Four strings approved for only two states by S36-R6 |
-| FR-030 | T049a to T049e, T050a, T050b | direct /recover and updateUser negative tests plus local boundary implementation (planned) | none | UNVERIFIED | Control A BLOCKED by PDN-F4-7-14 (CONFLICT); control B needs PDN-F4-7-15 (CONFLICT); controls C and D need gates G3 to G5 |
+| FR-030 | T049a to T049e, T050a, T050b | direct /recover and updateUser negative tests plus local boundary implementation (planned) | E1 to E4 (bypass evidence, `research.md` R10) | UNVERIFIED | Control A: PDN-F4-7-14 = B, send hook not run (gate G6). Control B: PDN-F4-7-15 = A, guard not run. Controls C and D need gates G3 to G5 |
 | SC-008 | T041 | planned | none | UNVERIFIED | - |
 | SC-009 | T038, T041 | planned | none | UNVERIFIED | - |
 | SC-010 | T040 | planned | none | UNVERIFIED | - |
@@ -73,7 +76,7 @@ No ND-F4-7 row is VERIFIED or MAPPED. Each status describes the planned test onl
 | SC-012 | T037, T039 | planned | none | UNVERIFIED | - |
 | SC-013 | T041 | planned | none | UNVERIFIED | PDN-F4-7-09 (no time target asserted) |
 | SC-014 | T042b | byte comparison (planned) | none | UNVERIFIED | - |
-| SC-015 | T049a to T049e, T050a, T050b | local boundary negative tests and implementation (planned) | none | UNVERIFIED | PDN-F4-7-14 and PDN-F4-7-15 (CONFLICT); PDN-F4-7-16 (conditional); no hosted Auth changes |
+| SC-015 | T049a to T049e, T050a, T050b | local boundary negative tests and implementation (planned) | E1 to E4 (bypass evidence, `research.md` R10) | UNVERIFIED | PDN-F4-7-14 = B and PDN-F4-7-15 = A (S37-PO-8, answered); PDN-F4-7-16 (conditional); PDN-F4-7-17 (hosted containment, open); no hosted Auth changes |
 
 ## S35-R5 rows (CodeRabbit round 2) - UNVERIFIED until implemented and executed
 
@@ -92,16 +95,30 @@ Spec-level fixes only. No row is VERIFIED.
 
 | Item | Requirement | Task(s) | Planned test(s) | Status | Gap |
 |---|---|---|---|---|---|
-| Control A, public /recover | FR-030, SC-015, PDN-F4-7-13 | T049b, T049c, T050b | local route tests (planned) | BLOCKED | PDN-F4-7-14 CONFLICT with S35-PO-3 (options A ingress, B send hook, C risk acceptance); no mechanism selected |
-| Control B, auth.users guard | FR-030, FR-025 (b) | T049a, T049d, T050a | `tests/integration/auth-recovery.test.ts` "staff-reset-guard" (planned) | UNVERIFIED | Feasibility G1, G2; migration on auth.users needs PDN-F4-7-15 (CONFLICT check) |
-| Control C, session revocation | FR-030 control C | T049e, T050a | "staff-reset-sessions" (planned) | UNVERIFIED | G3 (GoTrue refuses deleted-session tokens), G5 (refresh-token cascade); PDN-F4-7-16 if G3 fails |
-| Control D, recovery-session age | FR-030 control D, ND-F4-3 (password path) | T049b, T050a | "staff-reset-direct" (planned) | UNVERIFIED | G4 (JWT amr otp recovery entry, merged test lines 332 to 355); general session lifetime remains the open ND-F4-3 blocker (docs/13) |
+| Control A, public /recover | FR-030, SC-015, PDN-F4-7-13, PDN-F4-7-14 (= B, S37-PO-8) | T049b, T049c, T050b, gate G6 | local route tests (planned); E1 (`research.md` R10) | EVIDENCED (bypass, E1 CONFIRMED); CONTROL UNVERIFIED | Send hook not run; G6 open; app five-per-account bypass NOT CONFIRMED (E1); hosted containment PDN-F4-7-17 |
+| Control B, auth.users guard | FR-030, FR-025 (b), PDN-F4-7-15 (= A, S37-PO-8) | T049a, T049d, T050a | `tests/integration/auth-recovery.test.ts` "staff-reset-guard" (planned); E2 (`research.md` R10) | EVIDENCED (bypass, E2 CONFIRMED); CONTROL UNVERIFIED | Guard not run; G1, G2 open; E2 used a password sign-in session and its account is not stated to be staff |
+| Control C, session revocation | FR-030 control C | T049e, T050a | "staff-reset-sessions" (planned); E4 (`research.md` R10) | PARTLY EVIDENCED (E4: GoTrue revoked one session after a direct update); CONTROL UNVERIFIED | G3 (deleted-row tokens) and G5 open; T050a checks GoTrue's native revocation first; PDN-F4-7-16 if G3 fails |
+| Control D, recovery-session age | FR-030 control D, ND-F4-3 (password path) | T049b, T050a | "staff-reset-direct" (planned) | UNVERIFIED (E2 did not exercise it) | G4 (JWT amr otp recovery entry, merged test lines 332 to 355); general session lifetime remains the open ND-F4-3 blocker (docs/13) |
 | FR-025 (a) begin, eligibility | FR-025 (a), FR-016 | T049b, T050a, T033 | "staff-reset-direct" (planned) | UNVERIFIED | Eligible roles PDN-F4-7-02 still open |
 | FR-025 (c), (d), (e), (g) closing and reconciliation | FR-025 | T049d, T050a | "staff-reset-intent" (planned) | UNVERIFIED | Unique closing-event index to verify against public.audit_events on main |
-| Nitpick: public /recover five-request limit | FR-024, FR-030 | T049c | "staff-reset-public-route" (planned) | UNVERIFIED | Runs only on an enabled public route (PDN-F4-7-14) |
+| Nitpick: public /recover five-request limit | FR-024, FR-030 | T049c | "staff-reset-public-route" (planned) | UNVERIFIED | Enabled route is option B (PDN-F4-7-14 = B). E1: GoTrue's own limiter refused five of six calls, so E1 does not prove the app limit; T049c must test it |
 | Nitpick: delivery permission, eligible staff outside list | FR-019, FR-024 | T038a, T049c | "staff-reset-permitted", "staff-reset-public-route" (planned) | UNVERIFIED | PDN-F4-7-01 list maintainer open |
 | T048 merge-base criterion (tasks.md:176) | SC gate, S36-R9 | T048 | none (process gate) | DOCUMENTED | Acceptance evidence is the run record on the final head |
 | FR-018 timing parity (tasks.md:158) | FR-018 | T035 | timing-parity check (planned) | UNVERIFIED | AT-2 method and tolerance are the architect's decision; not encoded |
 | FR-019 delivery cap (tasks.md:162) | FR-019 | T038b | "staff-reset-delivery-cap" (planned) | UNVERIFIED | Blocked by PDN-F4-7-01 for implementation |
 | Architect question ARCH-S36-R4-1 (guard session scope) | FR-025 (b), FR-030 control B | T049a, T050a | none | OPEN | Not a PO decision; open-intent window case blocked |
+
+## S37 round 5 rows (direct Auth bypass evidence, Stack D; no control verified)
+
+Evidence only. Source: `C:/Users/NEW LAP/.lifter/runs/s37-luna-f4-bypass2/report.md`. Details and limits are in `research.md` R10.
+
+| Evidence | Control | Result | Status |
+|---|---|---|---|
+| E1 direct anon `/recover` | A (FR-030) | Mail sent with no app audit; GoTrue's limiter refused 5 of 6 | Bypass CONFIRMED; app five-per-account bypass NOT CONFIRMED |
+| E2 direct `updateUser` password | B (FR-030, FR-025 (b)) | 200, no audit row, no existing guard fired | Bypass CONFIRMED; recovery-OTP route NOT CONFIRMED (otp_expired) |
+| E3 CLI Kong config | A | No `/auth/v1/recover` deny rule or toggle | Deny rule NOT AVAILABLE as-is |
+| E4 other session after direct update | C | Other session 403 on `GET /auth/v1/user` | CONFIRMED for one session (GoTrue native); app path UNVERIFIED |
+| Control D (recovery session age) | D | Not exercised by E2 | UNVERIFIED (G4 open) |
+| Send hook (control A, PDN-F4-7-14 = B) | A | Not run by the experiment | UNVERIFIED (gate G6) |
+| Guard (control B, PDN-F4-7-15 = A) | B | Not run by the experiment | UNVERIFIED (gates G1, G2) |
 
