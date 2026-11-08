@@ -26,8 +26,12 @@ Tenant boundaries and role membership reuse the Constitution §I, `specs/003-ten
 
 ## Open research / decisions
 
-CN-MCQ-01..07 and CN-MCQ-09..12 in `spec.md` are resolved by S37-PO-6 and S37-PO-7 (quoted byte-exact in spec.md). CN-MCQ-08 (copy), CN-MCQ-13 (audit retention) and CN-MCQ-14 (stored body form) remain PENDING-PO. Earlier recommendations are superseded by the PO answers. There are no implementation claims in this research artifact.
+CN-MCQ-01..07 and CN-MCQ-09..12 in `spec.md` are resolved by S37-PO-6 and S37-PO-7; CN-MCQ-13 (audit retention) and CN-MCQ-14 (stored body form) are resolved by S37-PO-14 (all quoted byte-exact in spec.md). CN-MCQ-08 (copy) remains PENDING-PO. Earlier recommendations are superseded by the PO answers. There are no implementation claims in this research artifact.
 
 ## Audit fact to verify at implementation
 
 The F11 generic audit function `audit_row_change()` is cited by the approved branding plan (`specs/014-workspace-branding/tasks.md`). Client Notes audit MUST NOT use any generic row capture that would store `body` (FR-010). Verify the function's payload before any reuse.
+
+## Audit retention fact (CN-MCQ-13)
+
+The existing audit history is `public.audit_events` (`supabase/migrations/20261027150000_audit_log.sql`). Its immutability triggers block update, delete and truncate, including for the owner. No migration in `supabase/migrations/` defines a purge for it. The retention period is an open pre-production decision (DP-02 / ND-F5-1 / B4 in `docs/13-production-readiness.md` and `docs/07-production-readiness.md`). Client Notes audit events inherit that policy unchanged.

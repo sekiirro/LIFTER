@@ -30,7 +30,10 @@ No SQL or migration is supplied by this document. The following acceptance contr
 | Revoked membership / non-PO, all operations | Deny |
 | Trainer in workspace A accesses workspace B note or client in B | Deny |
 | Forged workspace/client/author identity | Deny or ignore untrusted field; never widen |
-| Body blank, whitespace-only, or over 5,000 Unicode code points | Deny; no row persisted |
+| Body blank after trimming, or over 5,000 Unicode code points after trimming | Deny; no row persisted (CN-MCQ-02, CN-MCQ-14) |
+| Body with leading or trailing whitespace and 1 to 5,000 code points after trimming | Allow; stored as the trimmed text (CN-MCQ-14) |
+| Body of 5,000 code points plus leading or trailing whitespace | Allow; stored as the 5,000 code points without that whitespace (CN-MCQ-14) |
+| Any stored note body with leading or trailing whitespace | Not persisted; the database boundary keeps only trimmed text (CN-MCQ-14) |
 | Two valid saves to one note | Both succeed in order; final body is the last save; `created_at` and `author_user_id` unchanged; no version row (CN-MCQ-11) |
 | Audit event for a successful create, edit or hard delete | Contains only actor, workspace, client ID, note ID, action and timestamp; contains no body text (CN-MCQ-07) |
 | Unknown operation/role/capability | Deny by default |

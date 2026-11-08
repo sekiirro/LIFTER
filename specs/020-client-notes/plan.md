@@ -1,6 +1,6 @@
 # Implementation Plan: F20 Client Notes
 
-**Spec**: [spec.md](spec.md) | **Status**: Proposed; CN-MCQ-01..07 and CN-MCQ-09..12 resolved by the PO; CN-MCQ-08, CN-MCQ-13, CN-MCQ-14 PENDING-PO; implementation is not authorized by this spec-only PR.
+**Spec**: [spec.md](spec.md) | **Status**: Proposed; CN-MCQ-01..07 and CN-MCQ-09..14 resolved by the PO; CN-MCQ-08 PENDING-PO; implementation is not authorized by this spec-only PR.
 
 ## Summary
 
@@ -23,9 +23,9 @@ Add independent plain-text notes to Client Details with a workspace/client compo
 - Author edit checks the original `author_user_id`, current authorization in the workspace (active membership and a role still authorized) and current scope. PO edit is also scoped through the existing PO access helper.
 - Delete checks PO role and workspace scope at the database boundary. Non-PO delete is refused even when actor authored the note.
 - RLS is deny-by-default. No anonymous grants. Define tests for allowed role × action pairs, Sales/Client/anonymous denial, revoked membership denial, and foreign-workspace denial.
-- Body is 1 to 5,000 Unicode code points; blank and whitespace-only bodies are rejected (CN-MCQ-02). Stored form (exact or trimmed) is pending CN-MCQ-14.
+- Body: leading and trailing whitespace is removed, the result must be 1 to 5,000 Unicode code points, and the trimmed text is stored. A body blank after trimming is rejected (CN-MCQ-02, CN-MCQ-14).
 - No version table/history. Edits are last save wins (CN-MCQ-11) and set `edited_at` (CN-MCQ-03).
-- Audit: one metadata-only event per successful create, edit or hard delete (actor, workspace, client/note IDs, action, timestamp). Audit never stores note text, and no generic row-snapshot capture may store body content (CN-MCQ-07). Retention is pending CN-MCQ-13.
+- Audit: one metadata-only event per successful create, edit or hard delete (actor, workspace, client/note IDs, action, timestamp). Audit never stores note text, and no generic row-snapshot capture may store body content (CN-MCQ-07). Retention is the existing `public.audit_events` policy, inherited unchanged (CN-MCQ-13).
 - Ordering: `created_at` descending with `id` tie-break; edits do not reorder (CN-MCQ-01).
 - Migration is described only: future additive/forward-only schema + indexes/constraints/policies or safe mutation functions, chosen after fresh all-origin-ref scan. No concrete version or SQL is authorized here.
 
@@ -55,9 +55,9 @@ Add independent plain-text notes to Client Details with a workspace/client compo
 - **Role drift**: reuse the existing role matrix and assert app/database parity.
 - **Attribution**: original author and creation timestamp are kept; edits set `edited_at` only.
 - **Unapproved interaction/copy**: keep UI copy bound to CN-MCQ-08 and DESIGN.md; no icon is used.
-- **Audit/content duplication**: audit payload is metadata only (CN-MCQ-07); a generic row-snapshot audit must not store body text. Retention is pending CN-MCQ-13.
+- **Audit/content duplication**: audit payload is metadata only (CN-MCQ-07); a generic row-snapshot audit must not store body text. Retention is inherited from `public.audit_events` (CN-MCQ-13); the existing period stays open as DP-02.
 
 ## PO decisions
 
-- Resolved: CN-MCQ-01..07 and CN-MCQ-09..12 (spec.md Clarifications, S37-PO-6 and S37-PO-7).
-- Open: CN-MCQ-08 (copy approval), CN-MCQ-13 (audit retention), CN-MCQ-14 (stored body form). Implementation tasks that depend on them remain blocked, as named in tasks.md.
+- Resolved: CN-MCQ-01..07 and CN-MCQ-09..14 (spec.md Clarifications, S37-PO-6, S37-PO-7 and S37-PO-14).
+- Open: CN-MCQ-08 (copy approval). Implementation tasks that depend on it remain blocked, as named in tasks.md.

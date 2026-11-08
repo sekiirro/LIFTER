@@ -1,7 +1,7 @@
 # Feature Specification: F20 — Client Notes
 
 **Feature Branch**: `speckit-020-client-notes`
-**Status**: Spec-only. CN-MCQ-01..07 and CN-MCQ-09..12 are resolved by the PO (S37-PO-6, S37-PO-7; see Clarifications). CN-MCQ-08, CN-MCQ-13 and CN-MCQ-14 remain PENDING-PO. No implementation is authorized by this document.
+**Status**: Spec-only. CN-MCQ-01..07 and CN-MCQ-09..14 are resolved by the PO (S37-PO-6, S37-PO-7, S37-PO-14; see Clarifications). CN-MCQ-08 (exact AR/EN copy) remains PENDING-PO. No implementation is authorized by this document.
 **Scope**: A workspace-scoped Client Notes capability reachable from Client Details. It is independent of Exercise Library and Workout Planner.
 
 ## Binding source quotations
@@ -22,7 +22,7 @@ PO source `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-4.verbatim.txt`, item 2 (
 
 The final S36-PO-5 Client Notes block supersedes conflicting earlier S36 wording. Architect mapping (not PO words): `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-architect-rulings-5.md`, Client Notes / CN-1..4 only.
 
-PO source `C:/Users/NEW LAP/.lifter/runs/s37-po/s37-po-1.verbatim.txt`, sections S37-PO-6 and S37-PO-7 (verbatim PO lines and the context note listing the approved options; the unrelated PR #30 approval line is omitted):
+PO source `C:/Users/NEW LAP/.lifter/runs/s37-po/s37-po-1.verbatim.txt`, sections S37-PO-6, S37-PO-7 and S37-PO-14 (verbatim PO lines and the context note listing the approved options; the unrelated PR #30 approval line is omitted):
 
 ```text
 S37-PO-6 (2026-11-08, PO message verbatim):
@@ -31,6 +31,9 @@ approves Client Notes Q01–12 as proposed, except Q04: all Trainers can view no
 
 S37-PO-7 (2026-11-08, PO message verbatim, confirms/replaces the architect Q04 create mapping):
 All Trainers can view and create Client Notes for any client within their workspace, regardless of assigned Trainer. Editing remains author-or-PO only; deletion PO only. Sales and Clients remain denied. Enforce workspace isolation.
+
+S37-PO-14 (2026-11-08, PO message verbatim): Approve
+(Approves as presented: CN-MCQ-13 = keep Client Notes audit events as long as the app's existing audit events, no new retention setting; CN-MCQ-14 = trim leading and trailing spaces, then count against the 5,000 limit and store the trimmed text.)
 ```
 
 ## User Scenarios & Testing
@@ -51,13 +54,14 @@ An authorized Trainer, Workspace Owner, or Platform Owner views independent note
 
 An authorized Trainer, Workspace Owner, or Platform Owner creates a separate plain-text note from Client Details using Add New Note.
 
-**Independent test**: Create synthetic notes under each permitted role, check exact saved content/author/server timestamp, reject blank, whitespace-only and over-limit payloads, and attempt direct unauthorized inserts.
+**Independent test**: Create synthetic notes under each permitted role, check exact saved content (trimmed)/author/server timestamp, reject blank-after-trim and over-limit payloads, and attempt direct unauthorized inserts.
 
 **Acceptance scenarios**
 
-1. **Given** a Trainer (for any client in their workspace), Workspace Owner, or Platform Owner in its authorized scope and a body of 1 to 5,000 Unicode code points that is not blank or whitespace-only, **When** they submit it through Add New Note, **Then** one independent note is created and attributed to the verified actor and a server-assigned creation timestamp (FR-001, FR-002, FR-004).
-2. **Given** a caller submits more than 5,000 Unicode code points or a blank or whitespace-only body, **When** the request reaches the application or database write boundary, **Then** creation is refused and no note is persisted (FR-002).
-3. **Given** a caller supplies a forged author, client, or workspace identity, **When** the write is attempted, **Then** those supplied identities cannot widen access or replace verified identity/scope (FR-004).
+1. **Given** a Trainer (for any client in their workspace), Workspace Owner, or Platform Owner in its authorized scope and a body that has 1 to 5,000 Unicode code points after its leading and trailing whitespace is removed, **When** they submit it through Add New Note, **Then** one independent note is created with the trimmed text as its body, attributed to the verified actor and a server-assigned creation timestamp (FR-001, FR-002, FR-004; CN-MCQ-14).
+2. **Given** a caller submits a body that has more than 5,000 Unicode code points after trimming, or a body that is blank after trimming, **When** the request reaches the application or database write boundary, **Then** creation is refused and no note is persisted (FR-002; CN-MCQ-02).
+3. **Given** a caller submits a body of 5,000 Unicode code points followed or preceded by whitespace, **When** the request is accepted, **Then** the stored body is the 5,000 code points without that whitespace (FR-002; CN-MCQ-14).
+4. **Given** a caller supplies a forged author, client, or workspace identity, **When** the write is attempted, **Then** those supplied identities cannot widen access or replace verified identity/scope (FR-004).
 
 ### Story 3 — Edit and permanently delete (P1)
 
@@ -75,22 +79,22 @@ The note author or Platform Owner edits a note. Only the Platform Owner permanen
 ## Functional Requirements
 
 - **FR-001**: The product MUST expose a separate Client Notes tab within Client Details, placed as a horizontal tab alongside the existing client profile tabs (DESIGN.md §6). Notes MUST be independent of Exercise Library and Workout Planner records.
-- **FR-002**: Each note MUST be an independent plain-text entry with a maximum length of 5,000 Unicode code points, an author, and a server-assigned creation timestamp. A body that is blank or consists only of whitespace MUST be rejected. No other normalization is defined here. Whether whitespace is removed before the 5,000-code-point count is CN-MCQ-14 (PENDING-PO); the trailing-whitespace case at the limit is not asserted until that decision is recorded. An authorized creation action MUST be labeled “Add New Note” in the PO-approved English wording. When a note's author is unavailable, the note MUST be kept and MUST show a neutral “Unavailable author” label (CN-MCQ-06); its Arabic string is pending CN-MCQ-08.
+- **FR-002**: Each note MUST be an independent plain-text entry with a maximum length of 5,000 Unicode code points, an author, and a server-assigned creation timestamp. Leading and trailing whitespace MUST be removed from the submitted body, then the result is counted in Unicode code points against the 5,000 limit and stored as the trimmed text (CN-MCQ-14). Whitespace means characters with the Unicode White_Space property. A body that is blank after trimming (in other words, whitespace-only) MUST be rejected and no row persisted (CN-MCQ-02). Interior whitespace is kept. No other normalization is defined here. An authorized creation action MUST be labeled “Add New Note” in the PO-approved English wording. When a note's author is unavailable, the note MUST be kept and MUST show a neutral “Unavailable author” label (CN-MCQ-06); its Arabic string is pending CN-MCQ-08.
 - **FR-003**: A note MUST have no version history. Only its author or a Platform Owner MAY edit it, and an author MAY edit only while holding current authorization in the note's workspace: an active membership and a role still authorized for Client Notes under FR-004 (CN-MCQ-05). A successful edit MUST replace the current body in place, set an “edited” timestamp, and keep the original author and creation timestamp (CN-MCQ-03). Only a Platform Owner MAY permanently hard-delete a note.
 - **FR-004**: Authorized Trainers, Workspace Owners, and Platform Owners MAY view and create notes within their authorized workspace scope. A Trainer MAY view and create notes for any client in their workspace, regardless of assigned Trainer (S37-PO-6, S37-PO-7; CN-MCQ-04). Platform Owner scope MUST follow the existing PO rule. Application authorization MUST use the existing verified-actor and role/membership model. A Client or Sales actor MUST be denied. UI visibility MUST NOT act as a security boundary.
 - **FR-005**: Notes MUST be workspace-scoped. Backend authorization and database RLS MUST enforce the same deny-by-default access policy for read, create, edit, and hard delete. Every note request MUST be bound to its client and workspace; a caller-supplied foreign workspace/client/author MUST NOT widen access. Cross-workspace and per-role denial coverage MUST be specified.
-- **FR-006**: The behavior answered by the PO (CN-MCQ-01..07 and CN-MCQ-09..12) is encoded in FR-001..FR-010 and the scenarios above. Behavior governed by CN-MCQ-08 (copy), CN-MCQ-13 (audit retention) and CN-MCQ-14 (stored body form) MUST remain undecided until PO resolution and MUST NOT be implemented as a guess.
+- **FR-006**: The behavior answered by the PO (CN-MCQ-01..07 and CN-MCQ-09..14) is encoded in FR-001..FR-010 and the scenarios above. Behavior governed by CN-MCQ-08 (copy) MUST remain undecided until PO resolution and MUST NOT be implemented as a guess.
 - **FR-007**: The tab MUST follow DESIGN.md and the existing Design System for EN LTR / AR RTL, typography, keyboard access, visible focus, accessible labels/roles, contrast, and loading/empty/error/success/disabled/pending/interaction states. The tab and its actions MUST be text-only with no icon (CN-MCQ-10). Mixed-direction user text MUST be displayed according to approved Bidi handling and MUST NOT be machine-translated. No new motion is required. Any detail DESIGN.md leaves open remains a PENDING-PO MCQ.
 - **FR-008**: The note list MUST show notes newest-created first, ordered by server creation timestamp with a deterministic tie-break. An edit MUST NOT change a note's position in the list (CN-MCQ-01).
 - **FR-009**: Concurrent edits to one note MUST resolve as last save wins (CN-MCQ-11): each save that satisfies FR-002 and FR-003 replaces the current body; no stale-write rejection, merge or conflict prompt is defined. Timestamps MUST be displayed in the viewer's local time zone (CN-MCQ-12); the display format is part of CN-MCQ-08.
-- **FR-010**: Each successful note create, edit, and hard delete MUST emit exactly one audit event containing only the actor, workspace, client ID, note ID, action, and timestamp. An audit event MUST NEVER contain note text, and no generic row-snapshot capture may store note body content in audit (CN-MCQ-07). Audit retention is PENDING-PO (CN-MCQ-13).
+- **FR-010**: Each successful note create, edit, and hard delete MUST emit exactly one audit event containing only the actor, workspace, client ID, note ID, action, and timestamp. An audit event MUST NEVER contain note text, and no generic row-snapshot capture may store note body content in audit (CN-MCQ-07). Client Notes audit events MUST follow the app's existing audit retention unchanged: no Client Notes retention setting, purge, or override is added (CN-MCQ-13). The existing policy is defined by the immutable `public.audit_events` table (`supabase/migrations/20261027150000_audit_log.sql`, update, delete and truncate blocked by triggers); its period is an open pre-production decision (DP-02 / ND-F5-1 / B4, `docs/13-production-readiness.md`), which Client Notes inherits and does not decide.
 
 ## Success Criteria
 
 - **SC-001**: 100% of authorized read/create/edit cases for Trainer (including Trainers not assigned to the client), Workspace Owner, and Platform Owner fixtures follow FR-004; 100% of Sales, Client, anonymous, unauthorized, revoked-membership, and foreign-workspace cases are denied through both application authorization and database RLS.
-- **SC-002**: 100% of create attempts by authorized actors (FR-004) with 1 to 5,000 Unicode code points and non-blank content persist only plain text with the verified author and server creation timestamp; 100% of attempts over 5,000 code points or blank/whitespace-only are refused without a persisted row; 100% of create attempts by unauthorized actors are denied (SC-001).
+- **SC-002**: 100% of create attempts by authorized actors (FR-004) whose body has 1 to 5,000 Unicode code points after leading and trailing whitespace is removed persist only that trimmed plain text with the verified author and server creation timestamp; 100% of attempts whose trimmed body exceeds 5,000 code points or is blank after trimming are refused without a persisted row; 100% of create attempts by unauthorized actors are denied (SC-001).
 - **SC-003**: 100% of valid edits by the author (with current active membership) or Platform Owner in scope succeed; 100% of edits by ineligible actors fail; concurrent saves resolve as last save wins; 100% of non-PO delete attempts fail; a PO hard delete leaves no note row; no version-history row is produced; each successful create, edit, and delete produces exactly one metadata-only audit event (FR-010).
-- **SC-004**: The Client Details tab is documented in AR RTL and EN LTR using only approved Design System patterns; placement, icon and ordering are decided; unresolved copy (CN-MCQ-08) and CN-MCQ-13/14 are represented by MCQs, not guessed requirements.
+- **SC-004**: The Client Details tab is documented in AR RTL and EN LTR using only approved Design System patterns; placement, icon and ordering are decided; unresolved copy (CN-MCQ-08) is represented by an MCQ, not a guessed requirement.
 - **SC-005**: Later UI acceptance covers keyboard-only navigation, visible focus, screen-reader names/roles, contrast in light/dark and workspace brand variants, required states, reduced-motion behavior, and AR RTL / EN LTR on 390px mobile and 1440px desktop (plus tablet if layout changes); design gaps remain blocked by their MCQ and no spec-only artifact claims rendered verification.
 - **SC-006**: 100% of list reads return notes newest-created first with a deterministic tie-break; no edit changes a note's list position; 100% of displayed timestamps use the viewer's local time zone.
 
@@ -101,8 +105,9 @@ The note author or Platform Owner edits a note. Only the Platform Owner permanen
 1. Final S36 PO wording is quoted byte-exact above from `s36-po-5.verbatim.txt`; S36-PO-4 item 2 is also quoted byte-exact above as earlier wording. S36-PO-5 is authoritative where wording differs.
 2. Tenant isolation and deny-by-default design are required by this feature brief and the existing Constitution §I / F3 model. The existing role set is `platform_owner | workspace_owner | trainer | sales`; current workspace membership is required for non-PO workspace access. Revoked membership grants no access per the existing PO-approved S36-Q2 decision.
 3. The existing client record is `public.clients(id, workspace_id, ...)`; no concrete migration version or SQL is part of this spec-only change.
-4. **Resolved and pending.** CN-MCQ-01..07 and CN-MCQ-09..12 are RESOLVED by S37-PO-6 (approves Q01–12 as proposed, with Q04 as stated and Q11 Last Save Wins) and S37-PO-7 (Q04 create scope). CN-MCQ-08 (copy), CN-MCQ-13 (audit retention) and CN-MCQ-14 (stored body form) are PENDING-PO and block only the details they name. No other ambiguity is assumed resolved.
+4. **Resolved and pending.** CN-MCQ-01..07 and CN-MCQ-09..12 are RESOLVED by S37-PO-6 (approves Q01–12 as proposed, with Q04 as stated and Q11 Last Save Wins) and S37-PO-7 (Q04 create scope). CN-MCQ-13 (audit retention) and CN-MCQ-14 (stored body form) are RESOLVED by S37-PO-14. CN-MCQ-08 (copy) is PENDING-PO and blocks only the strings it names. No other ambiguity is assumed resolved.
 5. Where an earlier recommendation and a PO answer differ, the PO answer controls. The S37 PO answer supersedes the earlier recommendation for CN-MCQ-04 (all Trainers in the workspace) and CN-MCQ-11 (last save wins).
+6. **Wording check (non-blocking).** The approved CN-MCQ-14 text reads "trim leading and trailing spaces". This spec applies it to leading and trailing whitespace, as defined in FR-002, because CN-MCQ-02 already rejects whitespace-only bodies. The architect is asked to confirm this reading; the PO is not asked to re-decide it unless the reading is rejected.
 
 ### CN-MCQ register
 
@@ -122,12 +127,12 @@ Each MCQ is a PO decision; options are mutually exclusive alternatives for the s
 | CN-MCQ-10 | What icon, if any, identifies the tab/action? | RESOLVED: no icon; text label (S37-PO-6 context). | FR-007, T013 |
 | CN-MCQ-11 | How should concurrent edits to one note resolve? | RESOLVED: last save wins (S37-PO-6, Q11 Last Save Wins approved). | FR-003, FR-009, SC-003, T010 |
 | CN-MCQ-12 | What timestamp display timezone/format should the tab use? | RESOLVED: viewer's local time zone (S37-PO-6 context). Display format is part of CN-MCQ-08. | FR-009, SC-006, T013 |
-| CN-MCQ-13 | How long are metadata-only audit events (CN-MCQ-07) retained? (NEW, PENDING-PO) | A: permanent retention, as for other permanent audit events in this product (for example the F14 branding publication audit); B: a fixed retention period set by the PO; C: audit events removed when their note is hard-deleted. Implications: accountability versus retention and privacy. Recommendation: A, subject to PO choice. | FR-010; blocks only the audit retention setting, not event writing. |
-| CN-MCQ-14 | Is the stored body the exact submitted text, or is it trimmed before storing? (NEW, PENDING-PO) | A: store exactly as submitted; validation counts that same value; B: remove leading and trailing whitespace before storing and counting. Implications: what is stored and displayed versus what is validated. Recommendation: A, because no transformation is approved. | FR-002; blocks the stored-value form of T003 and T004, and the trailing-whitespace case at the 5,000-code-point limit in T009 (not asserted until decided). |
+| CN-MCQ-13 | How long are metadata-only audit events (CN-MCQ-07) retained? | RESOLVED: they follow the app's existing audit retention unchanged; no new retention setting (S37-PO-14). The existing policy is defined by the immutable `public.audit_events` table (`supabase/migrations/20261027150000_audit_log.sql`, triggers at lines 29-41 block update, delete and truncate). Its period is an open pre-production decision (DP-02 / ND-F5-1 / B4, `docs/13-production-readiness.md`); Client Notes inherits that position and does not decide it. | FR-010, T012 |
+| CN-MCQ-14 | Is the stored body the exact submitted text, or is it trimmed before storing? | RESOLVED: leading and trailing whitespace is removed, the result is counted against 5,000 Unicode code points, and the trimmed text is stored; a body blank after trimming is rejected (S37-PO-14; CN-MCQ-02). | FR-002, SC-002, Story 2 scenarios 1-3, T003, T004, T009, T014 |
 
 ## Assumptions and exclusions
 
 - Existing role/membership authorization, RLS, client access boundaries, and the approved Design System are reused; no new role or capability is invented.
-- No audit retention, copy, or stored-body normalization beyond FR-002 is assumed (CN-MCQ-08, CN-MCQ-13, CN-MCQ-14). Post-deletion recovery, notification, and integrations are excluded.
+- No copy is assumed (CN-MCQ-08 pending). Audit retention is inherited unchanged (CN-MCQ-13). Stored-body normalization is limited to the leading and trailing whitespace trim in FR-002 (CN-MCQ-14). Post-deletion recovery, notification, and integrations are excluded.
 - Client portal viewing/editing of staff notes, bulk operations, search, pinning, attachments, rich text, version history, soft delete/restore, export, notification, and integrations are not part of this spec unless separately approved.
 - Hard deletion means the note record is physically removed; deleted content is not retained as a version-history record.
