@@ -81,3 +81,5 @@ T001-T003 establish contracts and pure tests. T004-T005 wait for the stack assig
 
 None. S20-03 through S20-13 and the canonical F16 spec/plan resolve the design decisions for this lane. The future D16-4 dataset is an input dependency with an already-defined audit and PO-approval process, not an unresolved decision.
 - [x] T900 [FR-015, FR-016a] Make catalog taxonomy search integration coverage independent of the first global page by using a unique narrow synthetic filter or bounded pagination without weakening expected results.
+
+- [ ] **T901 [FR-011] Safely rename the two #43 migration files after a read-only applied-history audit on Stacks B/C/D and an all-origin-refs version scan. Stop if either conflicting version is applied. Select unique valid versions above every origin ref maximum, preserve internal order, use `git mv`, and prove before/after content hashes match. Keep the rename in its own commit; no migration SQL or other files change. Authority: S36-PO-4 item 6 (= A), S36-PO-5 #43, architect S36-R5.**

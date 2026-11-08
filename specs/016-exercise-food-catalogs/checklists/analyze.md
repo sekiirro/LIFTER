@@ -189,3 +189,13 @@ T900 has been marked complete only after its focused integration test passed on 
 - **Migration safety:** no migration was added or edited by the conflict resolution. The one migration brought by main is byte-identical to `origin/main`.
 - **Findings:** 0 open CRITICAL and 0 open HIGH. Existing MEDIUM evidence gaps A3 (timed SC-003 evidence) and A4 (hosted SC-005 measurements) remain unchanged and outside this test-only scope.
 - **Verification:** final-head gates and Stack C integration are run after the merge commit; see S34 report.
+
+
+## S37 PR #43 migration rename entry analysis
+
+- **Date:** 2026-11-08, after the S37 plan/task additions.
+- **Scope:** sequence-only migration filename correction for existing open PR #43; no SQL, schema or product behavior change.
+- **Authority:** S36-PO-4 item 6 (= A), S36-PO-5 #43; architect S36-R5 and #43 mapping in `s36-architect-rulings-4.md`. Exact PO text and source paths are recorded in the S37 run report.
+- **Entry check:** PASS. `spec.md` has numbered FR-001?FR-021 (including FR-016a), measurable SC-001?SC-005 and Given/When/Then scenarios; approved decisions and explicit no-open-ambiguities statement. `plan.md` includes this scope. `tasks.md` includes T901 tagged FR-011. Analyze is dated after this plan/task update.
+- **Findings:** 0 open CRITICAL, 0 open HIGH. Existing MEDIUM follow-ups A3/A4 remain unchanged and outside this filename-only scope.
+- **Gate:** PASS for T901. Static Spec Kit check only; no implementation or test execution is claimed here.

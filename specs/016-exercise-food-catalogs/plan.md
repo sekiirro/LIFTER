@@ -103,3 +103,8 @@ The supporting design artifacts on this feature branch are reconciled to this ca
 ## S33-PO-4 test hygiene
 
 Taxonomy search integration coverage must use a unique narrow filter or explicitly paginate with a fixed maximum while preserving the expected search result and authorization checks.
+
+
+## S37-PO-4 migration rename safety (PR #43)
+
+Preserve the approved F16 behavior and migration contents while safely renaming the two conflicting migration files. Before any rename, audit applied histories on Stacks B, C and D (read-only; never Stack A), then scan migration versions across every origin ref. If a conflicting version is applied on any stack, stop for a PO history decision. Choose unique valid timestamps strictly above the maximum on every origin ref, preserving the migrations' internal order. Rename only with `git mv`; prove each file content is byte-identical. This is authorized by S36-PO-4 item 6 (= A), ?Safely rename conflicting migrations. Audit applied migration history, preserve data, and verify clean deployment order. No migration-rule waiver.?, and S36-PO-5 #43, ?#43: safely rename migrations after checking applied histories.? Architect rulings: S36-R5 and the #43 mapping in `s36-architect-rulings-4.md`.
