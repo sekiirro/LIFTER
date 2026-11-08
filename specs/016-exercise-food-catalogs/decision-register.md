@@ -17,7 +17,7 @@ This register preserves prior records and points to later decisions. An entry ma
 
 Items F16-MCQ-1 through -7 are answered or moot as recorded in `## S36-PO-2 F16 answers`. Their original question, options, implications and recommendation text is kept unchanged as history. Round 3 (critique response): F16-MCQ-8 is re-framed as **F16-MCQ-F**, and F16-MCQ-10 as **F16-MCQ-G**; F16-MCQ-9 stays open and is not marked answered; new items F16-MCQ-A, -B, -C, -D, -E, -H and -I are **PO-DECISION-NEEDED** (see `## Round 3 PO-DECISION-NEEDED items`). Recommendations are advisory only; none is a decision. Requirements, defaults, contracts and test expectations must not choose an unanswered option.
 
-Round 4 (S36-PO-3) answers are recorded below. S37 (S36-PO-5) answers F16-MCQ-J/K/L. F16-MCQ-O and F16-MCQ-P remain PO-DECISION-NEEDED. Historical question text remains for traceability.
+Round 4 (S36-PO-3) answers are recorded below. S37 (S36-PO-5) answers F16-MCQ-J/K/L. S37-PO-1 Q2 and S37-PO-10 close F16-MCQ-O, -P, -Q, -F-R and -G-R; F16-MCQ-D-R is specified in F11/F12 and outside F16 scope. Historical question text remains for traceability.
 
 ### F16-MCQ-1 — New-workspace video mapping creation — ANSWERED (S36-PO-2)
 
@@ -160,26 +160,29 @@ Architect mapping: `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-architect-rulings-3
 | F16-MCQ-A | Answered, option (a) | Per-field reset. Each allowlisted field (name, description, instructions, video, alternatives, notes) returns to the canonical value independently; the override row stays for its other fields. | FR-003, FR-014; data-model `exercise_override_versions`; contracts "Override remove/clear" row; T046, T047, T040 |
 | F16-MCQ-B | Answered, option (a) | An empty alternatives list is allowed and means no alternatives (replace semantics). Alternatives override writes stay BLOCKED by F16-MCQ-J. | FR-025; data-model `exercise_override_alternatives`; T048, T047, T040 |
 | F16-MCQ-C | Answered in part: preserve existing notes, audit before migration | Existing notes are preserved; legacy rows stay readable and immutable; a legacy-data audit (T068) runs BEFORE any migration task. `notes` is an overridable field. Note copy residual: see below. | FR-003, FR-031; data-model legacy `note` row; plan migration step 1; T068, T062, T063 |
-| F16-MCQ-D | Answered in the PO words (cross-feature) | Client Delete releases email and phone for a fresh registration elsewhere while retaining required history. The current Delete implementation (F11/F12) is audited first (T069). F16 implements nothing. Mechanism residual: see below. | FR-022; edge case; T069 |
+| F16-MCQ-D | Answered in the PO words (cross-feature) | Account deletion frees email/phone for fresh registration in another workspace with no data transfer (S37-PO-10). F11/F12 specifies and implements the behavior in a separate PR; F16 implements nothing. | FR-022; F11/F12 pointer |
 | F16-MCQ-E | Answered, option (a) | The PO may edit any workspace override. Canonical edits stay in the explicit global admin scope (F16-MCQ-5). | FR-014, FR-030; contracts planned rows; T037, T040, T047, T055 |
 | F16-MCQ-F | Answered for the name field only | English name required; Arabic name optional. Description and instructions are a residual: see below. | FR-003, FR-026; T046, T049, T056 |
 | F16-MCQ-G | Answered: frozen at publication | Override alternatives are frozen with the published plan at publication (FR-027), not re-resolved live. Count bound residual: see below. | FR-025, FR-027; data-model `ExerciseSnapshotV2` row; T048, T050, T056, T058 |
-| F16-MCQ-H | Answered for Description only; Video timing PENDING-PO under F16-MCQ-O | The Description is frozen at publication. The earlier video-live answer is not final because S36-PO-5 says published plans retain frozen values without specifying Video. | FR-023, FR-027; T044, T056 |
+| F16-MCQ-H | Answered for Description; Video clarified by S37-PO-1 Q2 | The Description is frozen at publication. Video stays live and follows the authorized library value. | FR-023, FR-027; T044, T056 |
 | F16-MCQ-I | Answered, (1)(b) and (2)(b) | Workspace search matches canonical and workspace names and shows the effective workspace name. No extra storage quota; database size is monitored against the 70% exit trigger. | FR-035; plan Search paragraph; T064 |
 | F16-MCQ-9 | Answered, option (a) | A workspace-private exercise video is visible to clients only through an authorized plan projection, scoped to the persisted plan/client workspace. No direct catalog, table or search access. | FR-014, FR-024, FR-029; contracts client-view paragraph; T045, T050, T058 |
 | F16-MCQ-J | ANSWERED by S36-PO-5 | Exactly eight fields are editable locally, with Global PO-only. | FR-003; T037, T040, T046-T050, T056-T058, T064 |
 | F16-MCQ-K | ANSWERED by S36-PO-5 line 6 | The eight named fields, all locally editable. This is the question in CodeRabbit thread 861BYOr. | FR-003; T037, T040, T047 |
 | F16-MCQ-L | ANSWERED by S36-PO-5 line 7 | Keep existing Notes; remove Instructions, preserving unique data into Notes. This is the question in CodeRabbit thread tN4f. | FR-003, FR-031; T037, T047, T062 |
-| F16-MCQ-Q | PO-DECISION-NEEDED (scope of canonical name-language rule) | Does the English-required/Arabic-optional wording in S36-PO-3 F16 apply to canonical Global exercise creation, or only to workspace name customization? Preserve the earlier S20 Global rule pending answer. | FR-001; F16-MCQ-F |
-| F16-MCQ-P | PO-DECISION-NEEDED (renumbered from the mistaken round-5 K label) | Legacy variation video on a host that FYI-2 excludes: how it is preserved at cutover. See F16-MCQ-P below. | FR-014, FR-031; plan migration step 3; T061, T062(a), T063 |
+| F16-MCQ-Q | ANSWERED by S37-PO-10 | English name required and Arabic optional for both canonical Global and Workspace names; this supersedes the S20 Arabic-required rule for F16. | FR-001; F16-MCQ-F |
+| F16-MCQ-P | ANSWERED by S37-PO-10 | `docs.google.com` is not an allowed host; delete dummy values at cutover, with no legacy support path. “No video lost” excludes these dummy links. | FR-014, FR-031; T061-T063 |
+| F16-MCQ-O | ANSWERED by S37-PO-1 Q2 = A | Video stays live in published plans and follows the current authorized library value; other published values remain frozen. | FR-014, FR-020, FR-027; SC-009 |
+| F16-MCQ-F-R | ANSWERED by S37-PO-10 | One optional Description value in any language; there is no AR/EN pair. | FR-003, FR-026; T044, T049, T056 |
+| F16-MCQ-G-R | ANSWERED by S37-PO-10 | At most three Alternatives per exercise; target identities must be unique. | FR-025; T048 |
 | A55 | RESOLVED as a technical detail | Metadata outside the exact eight library fields remains available from the immutable version already referenced by the plan; this preserves historical values without adding fields to the redesigned Exercise Library. | FR-027; data-model `ExerciseSnapshotV2`; T056, T059 |
 
 ### Residuals and label notes (round 4)
 
-- **F16-MCQ-F-R (residual; PO-DECISION-NEEDED unless the architect confirms it is covered):** the architect mapping answers only the name language rule. The language rule for overridden description and instructions is not answered. Blocked: T044 (description shape), T049 and T056 for those fields, and the language controls of T040. The consequence "an absent Arabic name inherits the canonical Arabic name" is inferred from "optional" and is recorded for architect confirmation.
-- **F16-MCQ-G-R (residual, count bound, duplicate rule and label):** the alternatives count bound is not answered, and no S36-PO-3 answer states whether one target may appear more than once in the same override version (duplicate rule). Blocked: T048 count bound and duplicate rule. Label note: "frozen with the published plan" is recorded as the FR-027 publication snapshot. Option (a) "seeded at add-to-plan" is a different timing and is not stated. The architect confirms the label.
+- **F16-MCQ-F-R — ANSWERED by S37-PO-10:** one optional Description value in any language; no paired Arabic/English fields. Instructions remains removed as a field.
+- **F16-MCQ-G-R — ANSWERED by S37-PO-10:** maximum three Alternatives per exercise; duplicate target identities are rejected. Alternatives remain frozen at publication per the earlier decision.
 - **F16-MCQ-C-R (legacy note copy) — ANSWERED by S36-PO-5:** retain existing Notes; remove Instructions and preserve its unique data into Notes. T068 still precedes any migration and supplies audit evidence; no separate PO choice remains.
-- **F16-MCQ-D-R (residual, mechanism):** the anonymize-or-tombstone mechanism of option (b) is not stated. T069 informs the F11/F12 decision. No F16 task implements it.
+- **F16-MCQ-D-R — OUT OF F16 SCOPE:** account deletion frees email/phone for fresh registration in another workspace with no data transfer (S37-PO-10). F11/F12 specifies this behavior in a separate PR by that lane; no F16 task or open item remains.
 
 ### F16-MCQ-J — editable-field list (ANSWERED by S36-PO-5)
 
@@ -190,23 +193,21 @@ Architect mapping: `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-architect-rulings-3
 - **Advisory recommendation (not a decision):** (a), additive, with notes added.
 - **Blocked:** description and alternatives override writes and their validation (T037, T047, T048), the description and alternatives columns and resolution (T046, T049, T056), the editor fields (T040), the client alternatives scope (T050, T058), the description and alternatives codes of the audit allowlist (T057), and description search columns (T064). Name, instructions, video and notes writes are not blocked by J.
 
-### PO-DECISION-NEEDED F16-MCQ-Q - scope of canonical exercise name-language rule
+### Historical F16-MCQ-Q question (ANSWERED by S37-PO-10)
 
 - **Feature / where found:** 016; spec.md FR-001 and FR-003; S20 Message B section 1; S36-PO-3 section 2 F16 line 21; architect mapping F16-MCQ-F in s36-architect-rulings-3.md.
 - **Question:** Does the S36-PO-3 wording that English names are required and Arabic is optional apply to canonical Global exercise creation, or only to workspace name customization addressed by F16-MCQ-F? S20 has an existing Global rule requiring Arabic and English names.
 - **Options:** (a) Apply the S36-PO-3 language rule only to workspace name customization; retain the S20 requirement for canonical Global exercises. (b) Apply English-required/Arabic-optional to canonical Global exercises too, superseding the earlier S20 rule for F16.
 - **Implications:** (a) keeps existing canonical validation and allows workspace names to be English-only. (b) permits canonical exercises without Arabic and changes Global create/edit validation and associated acceptance evidence.
-- **Advisory recommendation (not a decision):** (a), because the S36-PO-3 answer is mapped to workspace override names; the PO must confirm scope.
-- **Blocked:** Do not change canonical Global name validation or its acceptance expectation until the PO answers. Existing S20 wording remains recorded; A7 independently blocks implementation.
+- **Decision:** English name required and Arabic optional for Global and Workspace names. S37-PO-10 supersedes the S20 Arabic-required rule for F16. A7 independently blocks implementation.
 
-### PO-DECISION-NEEDED F16-MCQ-P — legacy video on a host that FYI-2 excludes (renumbered from erroneous round-5 K label)
+### Historical F16-MCQ-P question (ANSWERED by S37-PO-10)
 
 - **Feature / where found:** 016 · `plan.md` migration step 3; `spec.md` FR-031 (video carry-over), FR-014 (host list) and FYI-2; `tasks.md` T061, T062(a), T054 cutover and T063.
 - **Question:** FR-031 and T063 require every active legacy variation video to carry over into the workspace override with no video lost at cutover. FYI-2 may remove `docs.google.com` from the host list (FR-014). Legacy rows on that host would then conflict with the new URL rule. How are those rows preserved?
 - **Options:** (a) Keep `docs.google.com` in the host list and amend FR-014 and T061; no row needs special handling. (b) Remove the host and carry those videos over unchanged as legacy values, although the new write path would reject the same value. (c) Remove the host and clear those videos at cutover, recording each affected workspace for PO notice; this loses data and conflicts with T063 unless T063 is amended. (d) Remove the host and keep those legacy videos only as read-only history that the resolver never returns.
 - **Implications:** (a) keeps FR-031 and T063 unchanged and widens the host list. (b) keeps the data but leaves a value the new rule rejects reachable through the resolver. (c) is the only option that loses data. (d) keeps the data without resolving it, so a workspace video reverts to the global fallback.
-- **Advisory recommendation (not a decision):** none yet. Record the host-class counts from T068 first, then decide together with FYI-2.
-- **Blocked:** T062(a) rows on a host FYI-2 would exclude, the T054 cutover for those rows, T061 (host list alignment) and T063 rows for that host. Counts (T068) and every other row are not blocked.
+- **Decision:** `docs.google.com` is disallowed; delete dummy values at cutover and provide no legacy support path. “No video lost” excludes these dummy values. F16-MCQ-P is closed by S37-PO-10.
 
 ### A55 — V1 metadata outside the redesigned library (RESOLVED as a technical detail)
 
@@ -251,7 +252,7 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 
 ### F16-MCQ-D — Re-registration of a departing client — ANSWERED IN THE PO WORDS (S36-PO-3, round 4; cross-feature)
 
-- **Status (S36-PO-3, round 4):** answered in the PO words: client Delete releases email and phone for a fresh registration elsewhere while retaining required history. The closest option is (b); its anonymize-or-tombstone mechanism is residual F16-MCQ-D-R. F16 implements nothing: T069 audits the current Delete implementation (F11/F12) before any change.
+- **Status (S36-PO-3, clarified by S37-PO-10):** account deletion frees email/phone for fresh registration in another workspace with no data transfer. Detailed behavior belongs to F11/F12 in a separate PR; F16 implements nothing and has no open item for this behavior.
 
 - **Feature / where found:** 016 · `spec.md` FR-022 (line 121) and edge case (line 93); main `supabase/migrations/20261031121000_client_accounts_model.sql` lines 68-69 (`email_normalized` and `phone_e164` are globally unique); D-08 in `docs/01-traceability.md` line 19; critique F11.
 - **Question:** The S36-PO-2 words say departing clients register new accounts in another workspace. Global e-mail and phone uniqueness (D-08) and preserved history prevent reuse of the same identifiers. How should re-registration work?
@@ -273,7 +274,7 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 
 ### F16-MCQ-F — Localization of workspace overrides (re-framed from F16-MCQ-8) — ANSWERED FOR NAME; RESIDUAL FOR DESCRIPTION AND INSTRUCTIONS (S36-PO-3, round 4)
 
-- **Status (S36-PO-3, round 4):** for the name field: the English name is required and the Arabic name is optional. Label note: this matches no option exactly (closest is option (b) with the English name required). The inheritance of the canonical Arabic name is inferred from "optional" and is recorded for architect confirmation. Residual F16-MCQ-F-R: the language rule for Description is not specified; Instructions is removed as a field.
+- **Status (S36-PO-3, clarified by S37-PO-10):** English name required and Arabic optional for both Global and Workspace names. One optional Description value in any language; no paired AR/EN fields. Instructions is removed as a field.
 
 - **Feature / where found:** 016 · `spec.md` FR-003 (line 101), FR-026 (line 126), FR-023 (line 123); `data-model.md` line 19 (canonical description shape); critique F21.
 - **Question:** For overridden name, description and instructions, must both AR and EN be given, or may one language be overridden while the other is inherited from canonical?
@@ -284,7 +285,7 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 
 ### F16-MCQ-G — Override alternatives: seeded into the plan, or live (re-framed from F16-MCQ-10) — ANSWERED: FROZEN AT PUBLICATION (S36-PO-3, round 4; label and count residual)
 
-- **Status (S36-PO-3, round 4):** answered: override alternatives are frozen with the published plan at publication (the FR-027 snapshot), not re-resolved live. Label note: option (a) is "seeded at add-to-plan", a different timing; the architect confirms the label. Residual F16-MCQ-G-R: the alternatives count bound is NOT answered. Alternatives override writes remain BLOCKED by F16-MCQ-J.
+- **Status (S36-PO-3, clarified by S37-PO-10):** override alternatives are frozen with the published plan at publication. At most three unique target identities are allowed per exercise; alternatives override writes were unblocked by S36-PO-5.
 
 - **Feature / where found:** 016 · `spec.md` FR-025 (line 125) and FR-027 (line 127); `contracts/catalog-api.md` client-view paragraph (line 119); `plan.md` line 36; critique F21.
 - **Question:** Are an exercise's workspace alternatives copied into a plan when the exercise is added (seeded and frozen), or re-resolved from the override at each client view (live)? If live, may workspace-private targets be shown?
@@ -295,7 +296,7 @@ Source of the list: independent critique `C:/Users/NEW LAP/.lifter/runs/s36-sonn
 
 ### F16-MCQ-H - Description frozen; published Video timing pending F16-MCQ-O
 
-- **Status (S36-PO-3, round 4):** Description is frozen with the published plan at publication. The earlier video-live interpretation is superseded by the final ambiguity in S36-PO-5 and remains PENDING-PO under F16-MCQ-O. Description override writes remain BLOCKED by F16-MCQ-J.
+- **Status (S36-PO-3, round 4; Video clarified by S37-PO-1 Q2):** Description is frozen with the published plan at publication. Video stays live and follows the authorized library value. Description override writes were later unblocked by S36-PO-5.
 
 - **Feature / where found:** 016 · `spec.md` FR-027 (line 127) and FR-023 (line 123); `plan.md` line 85; `data-model.md` line 46; critique F21.
 - **Question:** Is the description (canonical or workspace) frozen at publication with names and instructions, or live like video?
@@ -341,6 +342,13 @@ Source quotations: `C:/Users/NEW LAP/.lifter/runs/s37-luna-f16-r5/report.md` (ve
 | Item | Status | Binding meaning |
 |---|---|---|
 | Earlier F16-MCQ-J (workspace field set) | ANSWERED by S36-PO-5 lines 4-6 | Exactly eight fields are editable locally: Name, Description, Notes, Video, Alternatives, Default Rest Time, Default RIR, Default Reps. All authorized WO/Trainers may edit all eight. New global exercises appear automatically without overwriting local customizations.
-| F16-MCQ-K (CodeRabbit thread 861BYOr; answered by S36-PO-5 line 6) | ANSWERED by S36-PO-5 line 6 | All eight fields are workspace-editable. This answer does not decide the separate legacy `docs.google.com` host carry-over; that remains open as F16-MCQ-P / A54.
+| F16-MCQ-K (CodeRabbit thread 861BYOr; answered by S36-PO-5 line 6) | ANSWERED by S36-PO-5 line 6 | All eight fields are workspace-editable. Legacy `docs.google.com` host handling is separately closed by F16-MCQ-P / S37-PO-10. | FR-003; T037, T040, T047 |
 | F16-MCQ-L (CodeRabbit thread tN4f; answered by S36-PO-5 line 7) | ANSWERED by S36-PO-5 line 7 | Keep existing Notes; remove Instructions and preserve unique data into Notes. V1 taxonomy metadata outside the eight-field library is retained through the exact immutable version reference already carried by the plan; A55 is resolved as a technical detail.
-| F16-MCQ-O — Video in published-plan frozen values | PO-DECISION-NEEDED | **Question:** Does the S36-PO-5 sentence “Published plans retain frozen values” include the Video field? **Options:** (A) No: videos stay live, following S36-PO-2; (B) Yes: video freezes with the other published-plan values. **Implications:** A allows a video edit to change an existing published plan view and requires live authorized workspace resolution; B preserves the publication-time video and needs it retained with the published plan. **Recommendation:** A, because it preserves the explicit S36-PO-2 video sentence, but this is not a decision. **Blocked:** No final client-video timing requirement or test expectation may be encoded until the PO answers.
+| F16-MCQ-O — Video in published-plan frozen values | ANSWERED by S37-PO-1 Q2 = A | Video stays live and follows the library (S36-PO-2); published non-video values remain frozen. |
+
+## S37-PO-1 Q2 and S37-PO-10 (round 6; byte-exact PO words)
+
+S37-PO-1 Q2: Q2 "F16: S36-PO-5 says 'Published plans retain frozen values' inside the Defaults sentence, while S36-PO-2 said exercise videos update live in published plans. Is Video frozen in published plans?" = "A: Video stays live (Recommended)" — option text: "Frozen values = name/description/notes/alternatives/defaults; video URL follows the library (S36-PO-2)."
+
+S37-PO-10: S37-PO-10 (2026-11-08, PO message verbatim, answering F16-MCQ-Q, -P, -F-R, -G-R, -D-R; F16-MCQ-O was answered by S37-PO-1 Q2 = A, video stays live):
+PO final: English name required, Arabic optional (Global/Workspace). One optional Description, any language. Max 3 unique Alternatives. Remove dummy docs.google.com links; no legacy support. Account deletion frees email/phone for fresh registration in another workspace, no data transfer. Record in F11/F12. Decisions closed; proceed through gates, no merge without approval.
