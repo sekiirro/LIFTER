@@ -10,7 +10,7 @@ Planned tests are named for the tests to be written. Nothing in this table is ve
 
 | FR | Task | Planned test (not yet written) | Evidence |
 |---|---|---|---|
-| FR-002, FR-003, FR-004, FR-014, FR-018, FR-030 | T037 | contract tests for shared identity, five-field allowlist, PO routing | none |
+| FR-002, FR-003, FR-004, FR-014, FR-018, FR-030 | T037 | contract tests for shared identity, the four-field allowlist (name, instructions, video, notes; description and alternatives only after F16-MCQ-J), PO routing | none |
 | FR-003, FR-014, FR-016 | T046, T047 | override identity, composite keys, CAS, idempotency, one audit event | none |
 | FR-025 | T048 | alternatives child rows: composite targets, exactly-one-target CHECK, active-at-write | none |
 | FR-023 | T043 | canonical video: current-version read, validator, allowlist key | none |
