@@ -199,3 +199,14 @@ T900 has been marked complete only after its focused integration test passed on 
 - **Entry check:** PASS. `spec.md` has numbered FR-001?FR-021 (including FR-016a), measurable SC-001?SC-005 and Given/When/Then scenarios; approved decisions and explicit no-open-ambiguities statement. `plan.md` includes this scope. `tasks.md` includes T901 tagged FR-011. Analyze is dated after this plan/task update.
 - **Findings:** 0 open CRITICAL, 0 open HIGH. Existing MEDIUM follow-ups A3/A4 remain unchanged and outside this filename-only scope.
 - **Gate:** PASS for T901. Static Spec Kit check only; no implementation or test execution is claimed here.
+
+
+## S37 PR #43 Option D clarification re-analysis
+
+- **Date:** 2026-11-08, after the Option D plan/task clarification.
+- **Scope:** Sequence-only migration filename correction on existing PR #43; no SQL, schema, or product behavior change.
+- **Authority:** S37-PO-6 verbatim at `C:/Users/NEW LAP/.lifter/runs/s37-po/s37-po-1.verbatim.txt`; S36-PO-4 item 6 verbatim at `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-4.verbatim.txt`.
+- **Clarification:** Stack C is excluded and untouched; no command, query, or harness call may target Stack C. Its history is repaired later only under a PO-approved procedure if ever needed. Prior applied-history audit found both versions absent on B and D; the fresh all-origin-ref scan governs version selection.
+- **Spec Kit entry check:** PASS. `spec.md`, `plan.md`, `tasks.md`, this dated analysis, and Spec Kit path check are recorded in the run report. Numbered FRs, measurable SCs, Given/When/Then scenarios, clarification source, and explicit no-open-ambiguities statement are present. T901 remains tagged FR-011.
+- **Findings:** 0 open CRITICAL, 0 open HIGH.
+- **Gate:** PASS for T901; no implementation or test execution claimed by this analysis.
