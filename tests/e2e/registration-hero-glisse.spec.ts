@@ -307,6 +307,26 @@ test('print keeps the card on the resolved theme token', async ({
   await expectHeroAxeClean(page);
 });
 
+test('print clears the desktop no-artwork glass frame transform', async ({
+  page,
+}) => {
+  const stylesheet = await readFile(
+    join(process.cwd(), 'components/branding/registration-hero.module.css'),
+    'utf8',
+  );
+  await page.setViewportSize({ width: 1440, height: 900 });
+  await page.setContent(
+    `<style>${stylesheet}</style><main class="stage noArtwork"><div class="glassFrame"><div class="glassCard"></div></div></main>`,
+  );
+  const frameTransform = () =>
+    page
+      .locator('.glassFrame')
+      .evaluate((frame) => getComputedStyle(frame).transform);
+  expect(await frameTransform()).not.toBe('none');
+  await page.emulateMedia({ media: 'print' });
+  expect(await frameTransform()).toBe('none');
+});
+
 const contrastEvidenceDirectory =
   process.env.HERO_GLISSE_CONTRAST_DIR ??
   join(tmpdir(), 'lifter-s29-hero-glisse', 'contrast');
