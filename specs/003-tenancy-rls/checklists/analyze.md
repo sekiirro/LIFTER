@@ -1,19 +1,19 @@
-# Spec Kit Analyze — F3 Workspace Tenancy, Permission Matrix & RLS (S37 round 2: replacement-PO model; PO gates S37-Q4, S37-Q5)
+# Spec Kit Analyze — F3 Workspace Tenancy, Permission Matrix & RLS (S38 round 3: S37-PO-16 resolves S37-Q4, S37-Q5, S37-Q6)
 
-- Date: 2026-11-08 19:00 +02:00 (re-analysis after the S37-PO-3 / S37-PO-4 edits in commit `7bc877b4`, the audit in `dfbcc9ac`, and the CodeRabbit round on `dfbcc9ac`, which added S37-Q6 and the T022/T024/T026/T027 conditions)
-- Analyzed baseline: `7bc877b4` on branch `speckit-003-q2c`, on top of `origin/main` `6d4c41148e789da31e19081041e7aa511c310e1c` (PR #50 merge). No source, migration, workflow, or test files changed.
+- Date: 2026-11-08 22:20 +02:00 (S38 round 3 re-analysis, run after the S37-PO-16 edits to spec.md, plan.md, tasks.md, research.md, traceability.md and data-model.md; this file is dated after those edits)
+- Analyzed baseline: `e3a9eb52354f11727c4ea0ce81ba4590b98db002` (PR #67 head before round 3) plus the uncommitted S38 round 3 documentation edits. No source, migration, workflow, or test files changed.
 - Scope: F3 baseline (`FR-001`..`FR-012`, `SC-001`..`SC-004`), the S30-PO-3 Q7/Q8 governance amendment (`FR-013`, `FR-014`, `SC-005`, `SC-006`), the S35 departed-trainer requirement (`FR-015`, `SC-007`), and the S36-Q2 = C / S37-PO-3 / S37-PO-4 revocation and ownership-change semantics (`FR-016`, `SC-008`).
-- Method: static cross-artifact, migration, FK, trigger, `lib/auth` and test-source review. No SQL executed, no stack started, no CI job run. Local gates: `prettier --check specs/003-tenancy-rls` passes; `npm run lint` passes; `npm run check:secrets` exits 1 locally with "No client build directories found" (no build output in the worktree; CI runs it at `.github/workflows/ci.yml:45` and is authoritative).
+- Method: static cross-artifact, migration, FK, trigger, `lib/auth` and test-source review. No SQL executed, no stack started, no CI job run. Local gates for this round (prettier, lint) are recorded in `report.md`.
 
 ## Inventory and entry check
 
 - Present: `spec.md` (FR-001..FR-016, SC-001..SC-008, Stories 1-7), `plan.md`, `tasks.md` (T001..T027; T023 RETIRED), `research.md` (with the S37 safeguard audit), `data-model.md`, `contracts/db-contract.md`, `quickstart.md`, `checklists/requirements.md`, `traceability.md`, and this analysis.
 - Entry check (Spec Kit gate section 1):
   - `spec.md` has numbered FRs, measurable SCs and Given/When/Then scenarios for every touched scope: PASS.
-  - Clarifications record S30-PO-3 Q6-Q8, S35-PO-1 G1/G2, S36-PO-2 verbatim, S36-Q1 and S36-Q2 (both marked superseded in part), S37-PO-3 and S37-PO-4 verbatim (byte-checked), S37-Q1 resolved, S37-Q2 removed, S37-Q3 resolved, and PENDING-PO MCQs S37-Q4 and S37-Q5. "No open ambiguity" is NOT claimed: S37-Q4 and S37-Q5 are open and named: PASS.
+  - Clarifications record S30-PO-3 Q6-Q8, S35-PO-1 G1/G2, S36-PO-2 verbatim, S36-Q1 and S36-Q2 (both marked superseded in part), S37-PO-3 and S37-PO-4 verbatim (byte-checked), S37-Q1 resolved, S37-Q2 removed, S37-Q3 resolved, and S37-PO-16 verbatim (byte-checked) resolving S37-Q4, S37-Q5 and S37-Q6. No open PO question remains. "No open ambiguity" is stated for spec 003 and checked: PASS.
   - `plan.md` covers the touched scope (blockers table, resolved decisions, FR-014 / FR-016 plan text): PASS.
   - `tasks.md` has a task ID for every touched item, tagged with FR/SC IDs: PASS.
-  - `checklists/analyze.md` is dated after the last spec/plan/tasks/data-model/traceability change (commit `7bc877b4`) and has 0 open CRITICAL and 0 open HIGH defect findings (see verdict): PASS.
+  - `checklists/analyze.md` is dated after the last spec/plan/tasks/data-model/traceability change (the S38 round 3 edits) and has 0 open CRITICAL and 0 open HIGH defect findings (see verdict): PASS.
 
 ## Findings (defects)
 
@@ -26,47 +26,48 @@
 | A5 | Undecided: stale-session mechanism (S37-Q1) | Resolved | `research.md` S37 audit; `spec.md` FR-016(c); `tasks.md` T027 | The audit shows the role and membership are re-read per request in the DB helpers (`tenancy.sql:38-77`) and in `getActor()` (`lib/auth/actor.ts:23-51`). No gap was found, so no mechanism is added. | CLOSED (resolved by existing per-request authorization). |
 | A6 | Undecided: other active memberships of a demoted identity (S37-Q2) | Removed (moot) | `spec.md` Clarifications; `tasks.md` T025 | The question depended on the atomic demotion that S37-PO-3 and S37-PO-4 remove. This also removes the previous round's open question on whether it should be classified HIGH. | CLOSED (removed). |
 | A7 | Undecided: Platform Owner workspace creation (S37-Q3) | Resolved | `spec.md` FR-016(d), Clarifications | S37-PO-3 says the PO creates the workspace manually through the normal flow. The audit found no automatic provisioning. | CLOSED (resolved by S37-PO-3). |
-| A8 | Test design error: T027(d) required a pure `authorize()` to deny a stale actor object (previous round); reopened by CodeRabbit thread `PRRT_kwDOVYgYQ861Cg_X` | MEDIUM, open | `tasks.md` T027 | The previous text required a pure `authorize()` to deny a stale actor object. A pure function cannot detect staleness, so that assertion could not be met. T027 now characterizes the per-request re-read in `getActor()` and `loadActorRows()` (`lib/auth/actor.ts:23-51`). | OPEN. The database clause is asserted by T027(a)-(c). The app-layer clause is escalated as S37-Q6 (gate G-4) and stays open until the PO answers. |
+| A8 | Test design error (reopened by CodeRabbit thread `PRRT_kwDOVYgYQ861Cg_X`): T027(d) required a pure `authorize()` to deny a stale actor object | Resolved, closed | `tasks.md` T027 | T027(d) is now a characterization of the freshness contract of S37-Q6 = A (per-request `getActor()`, no actor reuse). The in-request window is accepted by the PO (S37-PO-16). | CLOSED (resolved by S37-Q6 = A). |
 
-Open defect findings: **3** (A1 MEDIUM, A2 MEDIUM, A8 MEDIUM; A8 is escalated as G-4). Closed in this round: **5** (A3, A4, A5, A6, A7).
+Open defect findings: **2** (A1 MEDIUM, A2 MEDIUM; both are evidence-coverage items, unchanged). Closed in this round: **6** (A3, A4, A5, A6, A7, A8).
 
 ## Gates (PO decisions and implementation; not counted as defects)
 
 | ID | Item | Where | Status | Blocks |
 |---|---|---|---|---|
-| G-1 | S37-Q4: mechanism of the "safely delete the old account" step | `spec.md` S37-Q4; `tenancy.sql:5`; `audited_tables_no_delete.sql:17`; G1=A; FR-015 | PENDING-PO (MCQ with options and recommendation (a)) | Only the deletion step. The replacement-PO step and the last-PO guard are not blocked. |
-| G-2 | S37-Q5: whether a membership revocation removes Platform Owner access | `spec.md` S37-Q5; `tenancy.sql:67-68`; S36-PO-2 | PENDING-PO (MCQ with options and recommendation (a)) | The PO case of FR-016(a), T022, T024 (membership-revocation case) and the PO case of T025. |
+| G-1 | S37-Q4: old-account step | `spec.md` S37-Q4; `tenancy.sql:5`; `audited_tables_no_delete.sql:17`; G1=A; FR-015 | RESOLVED by S37-PO-16 (A): F11/F12 safe deletion after a replacement PO is authorized; no deletion mechanism in spec 003 | None in spec 003. The F11/F12 spec PR defines the release mechanism. |
+| G-2 | S37-Q5: membership revocation and Platform Owner access | `spec.md` S37-Q5; `tenancy.sql:67-68` | RESOLVED by S37-PO-16 (A): PO access stays role-based; membership revocation removes workspace access only | None. T022 and T024 are characterization tests; T025 PO case asserted under S37-Q5 = A. |
 | G-3 | Last-PO guard (FR-014) is not implemented on `origin/main` | `research.md` S37 audit, finding F-A1; `tenancy.sql:127-128` (a PO can change their own role, read-only reasoning) | Implementation gate; approved requirement; existing pending tasks T015, T021, T022, T024 | The implementation of the guard. This is the largest open risk in the round and is not an analysis defect. |
-| G-4 | S37-Q6: whether `authorize()` must reject a stale actor object (FR-016(c) app-layer clause; this is A8's resolution) | `spec.md` S37-Q6; FR-007; FR-016(c) | PENDING-PO (MCQ; option (a) records an in-request window and needs PO approval) | T027(d) only. The database clause T027(a)-(c) is not blocked. |
+| G-4 | S37-Q6: app-layer stale actor object (FR-016(c)) | `spec.md` S37-Q6; FR-007; FR-016(c) | RESOLVED by S37-PO-16 (A): per-request reload; in-flight requests may complete; the window is accepted | None. T027(d) is a characterization of the contract. |
 
 ## Coverage and constitution
 
-- FR-to-task coverage: FR-001..FR-012 map to T001-T013; FR-013 maps to T014/T016; FR-014 maps to T015/T016/T021/T022/T024; FR-015 maps to T017-T020; FR-016 maps to T025 (a)(b)(c), T026 (a)(b)(c) with (c) blocked by S37-Q4, and T027 (a)-(c), with T027(d) blocked by S37-Q6. FR-016(d) (manual PO workspace creation) needs no new task: it is covered by the existing governance test T009 ("PO succeeds at: create workspace C"). All 16 FRs have coverage.
+- FR-to-task coverage: FR-001..FR-012 map to T001-T013; FR-013 maps to T014/T016; FR-014 maps to T015/T016/T021/T022/T024; FR-015 maps to T017-T020; FR-016 maps to T025 (a)(b)(c), T026 (a)(b) and (c) (the F11/F12 spec), and T027 (a)-(d). FR-016(d) (manual PO workspace creation) needs no new task: it is covered by the existing governance test T009 ("PO succeeds at: create workspace C"). All 16 FRs have coverage.
 - SC-to-task coverage: SC-001..SC-004 map to T001-T013; SC-005 maps to T015/T016/T021/T022/T024; SC-006 maps to T014/T016; SC-007 maps to T017-T020; SC-008 maps to T025-T027. All 8 SCs have coverage.
-- Last-PO guard tests: T021 (b) sole-PO demotion refusal and (d) concurrent demotions are not blocked. The membership-revocation cases (T022 (b)(d), T024 (a)(b)) are BLOCKED by S37-Q5.
+- Last-PO guard tests: T021 (b) sole-PO demotion refusal and (d) concurrent demotions are not blocked. The membership-revocation cases (T022, T024) are characterization tests under S37-Q5 = A (no refusal case).
 - Constitution: Principle I (isolation) is unchanged. Principle III (least-authority governance): the last-PO guard and PO-only governance writes are kept. Principle VI (history): memberships are revoked, never deleted. Principle VII (privacy): synthetic data only. No table, workflow or state is added by this round.
 
 ## Static traceability
 
 - `traceability.md` has 24 rows (FR-001..FR-016 and SC-001..SC-008): 5 VERIFIED, 11 PARTIAL, 8 NOT-FOUND, 0 DEFERRED. **Count correction:** the previous round recorded 22 rows and 6 NOT-FOUND; the table contains 24 rows, of which FR-013, FR-014, SC-005, SC-006, FR-015, SC-007, FR-016 and SC-008 are NOT-FOUND (8).
-- Status changes in this round: none. Rows FR-014, SC-005, FR-016 and SC-008 keep NOT-FOUND, with updated task and gate text.
+- Status changes in this round (S38 round 3): none. Statuses are unchanged; evidence and gate text were updated. Rows FR-014, SC-005, FR-016 and SC-008 keep NOT-FOUND, with updated task and gate text.
 
 ## Implementation gates (not Analyze defects)
 
 - T014 open until its roster migration and tests pass. T016 follows T014 and T015.
-- T015: the demotion and staff-profile-deletion branches are implementable after T021 RED tests. The membership-revocation branch waits for S37-Q5 (G-2). The atomic role change is not implemented.
+- T015: the demotion and staff-profile-deletion branches are implementable after T021 RED tests. The membership-revocation branch is a characterization (S37-Q5 = A). The atomic role change is not implemented.
 - T017-T020 (G1=A lane): not blocked. No deletion mechanism is introduced.
-- T021: not blocked. T022 and T024: BLOCKED by S37-Q5; conditional on its answer. T023: RETIRED.
-- T025: non-PO zero access is not blocked; the PO case is BLOCKED by S37-Q5. T026: (a)(b) not blocked; (c) BLOCKED by S37-Q4. T027: (a)-(c) are database-boundary characterization tests, not blocked; (d) BLOCKED by S37-Q6.
-- Old-account deletion is BLOCKED by S37-Q4 (G-1).
+- T021: not blocked. T022 and T024: characterization tests under S37-Q5 = A. T023: RETIRED.
+- T025: non-PO zero access is not blocked; the PO case is asserted under S37-Q5 = A. T026: (a)(b) not blocked; (c) belongs to the F11/F12 spec. T027: (a)-(d) not blocked (d under S37-Q6 = A).
+- Old-account step: F11/F12 safe deletion (S37-Q4 = A); spec 003 adds no deletion mechanism.
 - Task checkboxes: 13 ticked (T001-T013), 13 open, 1 RETIRED (T023); total 27 IDs.
 
 ## Verdict
 
-**PASS WITH OPEN ITEMS: 0 open CRITICAL findings; 0 open HIGH defect findings; 3 MEDIUM defect findings open (A1, A2, A8); 5 findings closed (A3-A7); 3 PO gates (G-1 / S37-Q4, G-2 / S37-Q5, G-4 / S37-Q6, where G-4 is A8's resolution) and 1 implementation gate (G-3, last-PO guard, T015).** The architect decides whether G-1 or G-2 is HIGH: if either is classed HIGH, the verdict becomes 0 CRITICAL / 1 HIGH (or 2 HIGH). This analysis does not down-grade either item silently. This is a static document review; it makes no implementation-conformity claim.
+**PASS: 0 open CRITICAL findings; 0 open HIGH findings; 2 open MEDIUM evidence findings (A1, A2, unchanged); 6 findings closed (A3-A8). No PO decision is open: S37-Q4, S37-Q5 and S37-Q6 are resolved by S37-PO-16 (A). Open implementation item: G-3 (last-PO guard, T015), which is not an analysis defect. No open ambiguity remains in spec 003.** This is a static document review; it makes no implementation-conformity claim.
 
 ## History
 
+- 2026-11-08 22:20 +02:00, S38 round 3 (PR #67, PO answers S37-PO-16: S37-Q4=A, S37-Q5=A, S37-Q6=A, quoted byte-exact in spec.md Clarifications): S37-Q4 resolved (F11/F12 safe deletion; no deletion mechanism in spec 003); S37-Q5 resolved (membership revocation removes workspace access only; PO role remains; T022/T024 characterization); S37-Q6 resolved (per-request reload; in-flight window accepted; T027(d) unblocked). Removed the rejected options from spec.md, plan.md, tasks.md, research.md, traceability.md, data-model.md. A8 closed. Counts: 0 CRITICAL, 0 HIGH, 2 MEDIUM (A1, A2); 6 closed; 0 PO gates open; 1 implementation gate (G-3). No tests, builds, SQL, stacks, or CI jobs were run in this documentation round.
 - 2026-11-08 17:55 UTC (19:55 +02:00), CodeRabbit thread `PRRT_kwDOVYgYQ861Cr_-` on `97d94731` (auto reviews paused after that commit): option (a) of S37-Q6 now records the residual in-request window (revocation committed between `getActor()` and `authorize()`), states that it weakens the app-layer clause as written, and requires PO approval. Counts unchanged: 3 open MEDIUM defects; 5 closed; 3 PO gates; 1 implementation gate.
 - 2026-11-08 19:25 +02:00, CodeRabbit round on `78a62086` (review 5818775028, CHANGES_REQUESTED, 4 actionable comments: 3 threads plus 1 review-body item; the review reported 0 included reviews remaining this hour, so no further review was requested). Fixed in the commit after `78a62086`: S37-Q5 option (b) now also requires the app-layer `authorize()` change and the T005 update (thread `PRRT_kwDOVYgYQ861CkbQ`); S37-Q6 option (b) states that a freshness window permits a delay (thread `PRRT_kwDOVYgYQ861CkbS`); T022 option (a) asserts a non-null `revoked_at` (thread `PRRT_kwDOVYgYQ861CkbX`); T022 and T024 option (a) are characterization tests and option (b) is RED-first (review-body item). Counts unchanged: 3 open MEDIUM defects; 5 closed; 3 PO gates; 1 implementation gate.
 - 2026-11-08 19:00 +02:00, CodeRabbit round on `dfbcc9ac` (PR #67; review 5818750396, CHANGES_REQUESTED, 7 threads in 1 page, 5 unresolved before the fix): fixed T022 and T024 conditional on S37-Q5 (Cg_h); T026(c) old-account deletion step blocked by S37-Q4 (Cg_a); S37-Q5 option (b) names the PO self-re-grant rule via `workspace_memberships_insert_po` (Cg_d); reopened A8 and escalated it as S37-Q6 / G-4 (Cg_X). Invalid, left unresolved with evidence: research.md:32 line numbers (Cg_c); grep shows `current_staff_role` at 38, `has_workspace_access` at 65 and `staff_profiles_update_po` at 127. Counts: 3 open MEDIUM defects; 5 closed; 3 PO gates; 1 implementation gate.
