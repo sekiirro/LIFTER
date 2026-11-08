@@ -57,6 +57,18 @@ export function isValidTelegramUsername(value: unknown): value is string {
   return /^[A-Za-z][A-Za-z0-9_]{4,31}$/u.test(username);
 }
 
+function cairoCalendarDate(now: Date): string {
+  const parts = new Intl.DateTimeFormat('en', {
+    timeZone: 'Africa/Cairo',
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+  }).formatToParts(now);
+  const part = (type: Intl.DateTimeFormatPartTypes) =>
+    parts.find((candidate) => candidate.type === type)?.value ?? '';
+  return `${part('year')}-${part('month')}-${part('day')}`;
+}
+
 export function isPastCalendarDate(value: unknown, now: Date): value is string {
   if (
     typeof value !== 'string' ||
@@ -74,13 +86,7 @@ export function isPastCalendarDate(value: unknown, now: Date): value is string {
   )
     return false;
 
-  const today = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Africa/Cairo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  }).format(now);
-  return value < today;
+  return value < cairoCalendarDate(now);
 }
 
 export function calculateSignupAge(
@@ -89,13 +95,7 @@ export function calculateSignupAge(
 ): number | null {
   if (!isPastCalendarDate(dateOfBirth, now)) return null;
   const [birthYear, birthMonth, birthDay] = dateOfBirth.split('-').map(Number);
-  const [todayYear, todayMonth, todayDay] = new Intl.DateTimeFormat('en-CA', {
-    timeZone: 'Africa/Cairo',
-    year: 'numeric',
-    month: '2-digit',
-    day: '2-digit',
-  })
-    .format(now)
+  const [todayYear, todayMonth, todayDay] = cairoCalendarDate(now)
     .split('-')
     .map(Number);
   return (
