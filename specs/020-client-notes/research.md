@@ -26,4 +26,8 @@ Tenant boundaries and role membership reuse the Constitution §I, `specs/003-ten
 
 ## Open research / decisions
 
-CN-MCQ-01..12 in `spec.md` carry all identified unresolved behavior, UX, retention, and presentation details. These questions are not resolved by current schemas or the cited PO words. Recommendations are advisory only. There are no implementation claims in this research artifact.
+CN-MCQ-01..07 and CN-MCQ-09..12 in `spec.md` are resolved by S37-PO-6 and S37-PO-7 (quoted byte-exact in spec.md). CN-MCQ-08 (copy), CN-MCQ-13 (audit retention) and CN-MCQ-14 (stored body form) remain PENDING-PO. Earlier recommendations are superseded by the PO answers. There are no implementation claims in this research artifact.
+
+## Audit fact to verify at implementation
+
+The F11 generic audit function `audit_row_change()` is cited by the approved branding plan (`specs/014-workspace-branding/tasks.md`). Client Notes audit MUST NOT use any generic row capture that would store `body` (FR-010). Verify the function's payload before any reuse.
