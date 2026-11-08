@@ -52,8 +52,8 @@ No ND-F4-7 row is VERIFIED or MAPPED. Each status describes the planned test onl
 | US5 scenario 7 (delivery cap) | T038, T044 | planned | none | UNVERIFIED | PDN-F4-7-01 |
 | US5 scenario 8 (client: no email) | T034, T041 | planned | none | UNVERIFIED | PDN-F4-7-02 for roles |
 | US5 scenario 9 (SMTP gate) | T046, T047 | documentation check | none | UNVERIFIED | Hosted change out of scope |
-| US5 scenario 10 (direct Auth API enforcement) | T049a to T049e, T050a, T050b | local Auth boundary tests (planned) | E1 to E4 (bypass evidence, `research.md` R10) | UNVERIFIED (bypass evidenced) | Control A decided as PDN-F4-7-14 = B; control B decided as PDN-F4-7-15 = A; gates G1 to G6 not verified; control tests not run |
-| US5 scenario 11 (exact approved copy) | T042b | byte comparison of application output and locale catalogs (planned) | none | UNVERIFIED | FR-029 applies only to two states |
+| US5 scenario 10 (direct Auth API enforcement) | T049a to T049e, T050a, T050b | local Auth and Data API boundary tests (planned) | E1 to E4 (bypass evidence, `research.md` R10) | UNVERIFIED (bypass evidenced) | Control A decided as PDN-F4-7-14 = B; control B decided as PDN-F4-7-15 = A; gates G1 to G6 not verified; control tests not run |
+| US5 scenario 11 (exact approved copy) | T042b | byte comparison of application output and locale catalogs (planned) | none | UNVERIFIED | FR-029 applies to two staff states; client `auth.invalid_link` catalog copy is preserved |
 | FR-016 | T034, T043 | planned | none | UNVERIFIED | PDN-F4-7-02 |
 | FR-017 | T041, T043 | planned | none | UNVERIFIED | - |
 | FR-018 | T035, T041, T043 | planned | none | UNVERIFIED | Timing tolerance AT-2 |
@@ -97,7 +97,7 @@ Spec-level fixes only. No row is VERIFIED.
 |---|---|---|---|---|---|
 | Control A, public /recover | FR-030, SC-015, PDN-F4-7-13, PDN-F4-7-14 (= B, S37-PO-8) | T049b, T049c, T050b, gate G6 | local route tests (planned); E1 (`research.md` R10) | EVIDENCED (bypass, E1 CONFIRMED); CONTROL UNVERIFIED | Send hook not run; G6 open; app five-per-account bypass NOT CONFIRMED (E1); local config authorized by S38-PO-3 |
 | Control B, auth.users guard | FR-030, FR-025 (b), PDN-F4-7-15 (= A, S37-PO-8) | T049a, T049d, T050a | `tests/integration/auth-recovery.test.ts` "staff-reset-guard" (planned); E2 (`research.md` R10) | EVIDENCED (bypass, E2 CONFIRMED); CONTROL UNVERIFIED | Guard not run; G1, G2 open; E2 used a password sign-in session and its account is not stated to be staff |
-| Control C, session revocation | FR-025(b), FR-030 control C, PDN-F4-7-07 | T049e, T050a | staff-reset-sessions (planned); E4 (`research.md` R10) | PARTLY EVIDENCED; CONTROL UNVERIFIED | G3/G5 remain local feasibility checks; all other pre-existing account sessions must end; any gap blocks implementation for technical resolution |
+| Control C, session revocation | FR-025(b), FR-030 control C, PDN-F4-7-07 | T049e, T050a | staff-reset-sessions plus protected Data API pre-reset-token replay (planned); E4 (`research.md` R10) | PARTLY EVIDENCED; CONTROL UNVERIFIED | G3/G5 remain local feasibility checks; all other pre-existing account sessions must end; Auth and Data API must both refuse old tokens; any gap blocks implementation for technical resolution |
 | Control D, recovery-session age | FR-030 control D, ND-F4-3 (password path) | T049b, T050a | "staff-reset-direct" (planned) | UNVERIFIED (E2 did not exercise it) | G4 (JWT amr otp recovery entry, merged test lines 332 to 355); general session lifetime remains the open ND-F4-3 blocker (docs/13) |
 | FR-025 (a) begin, eligibility | FR-025 (a), FR-016 | T049b, T050a, T033 | "staff-reset-direct" (planned) | UNVERIFIED | Eligible roles answered A (S38-PO-5) |
 | FR-025 (c), (d), (e), (g) closing and reconciliation | FR-025 | T049d, T050a | "staff-reset-intent" (planned) | UNVERIFIED | Unique closing-event index to verify against public.audit_events on main |

@@ -5,7 +5,7 @@
 | Route | Access | Purpose |
 |---|---|---|
 | `/login` | public | Email + password form and staff reset request. `?next=` is accepted only if `safeReturnTo` keeps it. |
-| `/auth/recovery?token_hash&type=recovery` | public | GET/HEAD render "Continue" only. POST action verifies the link, then the set-password form appears. Staff self-service success ends the recovery session and redirects to normal login; client manual-link success keeps the existing FR-013 signed-in outcome. |
+| `/auth/recovery?token_hash&type=recovery[&flow=staff]` | public | GET/HEAD render "Continue" only. POST action verifies the link, then the set-password form appears. The optional display-only `flow=staff` marker is present on staff email links and absent on client manual links; it affects invalid-link copy only. Staff self-service success ends the recovery session and redirects to normal login; client manual-link success keeps the existing FR-013 signed-in outcome. |
 | `/` | session | Signed-in landing (placeholder until P1/P4 dashboards) with a sign-out control. |
 | `/api/health` | public | unchanged |
 | `(dev)` showcase routes | unchanged env gate (`LIFTER_SHOWCASE`) | public only when the gate is enabled; otherwise 404 as today |
@@ -45,4 +45,4 @@
 - Recovery intents are bound to both the staff user id and initiating recovery session id. `begin`, `complete` and `abort` require that same pair. A competing session cannot consume the intent. The local Auth trigger context must prove the session binding before implementation; an account-level open intent is insufficient.
 - Known-success completion ends the recovery session and redirects to `/login`, including closing-audit failure; reconciliation is mandatory. Other pre-existing account sessions are revoked as specified by FR-025(b), FR-030 control C and PDN-F4-7-07.
 - Local config only under S38-PO-3. Hosted Auth, SMTP, Resend and hosted send-path design are deferred until domain acquisition and the FR-020 approval gate.
-- Exact new AR/EN recovery copy is [copy-proposal.md](copy-proposal.md), COPY-F4-R6 PENDING-PO; the run-dir copy is preserved for evidence. Approved reuse strings are identified in both copies.
+- Exact new AR/EN recovery copy is [copy-proposal.md](../copy-proposal.md), COPY-F4-R6 PENDING-PO; the run-dir copy is preserved for evidence. Approved reuse strings are identified in both copies.

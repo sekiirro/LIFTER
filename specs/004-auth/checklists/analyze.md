@@ -1,6 +1,6 @@
 # Spec Kit Analyze — F4 Authentication, S38 round 6
 
-- Date: 2026-11-09 01:21 +02:00, after the last changes to spec.md, plan.md and tasks.md in this round.
+- Date: 2026-11-09 01:50 +02:00, after the last changes to spec.md, plan.md and tasks.md in this round.
 - Scope: specification and planning only. No application code, SQL, migration or test was changed or run.
 - Inputs: Sol Medium critique at `549c6466cea254e90dd180d20c7b1b976e35a267`; S38-PO-1, S38-PO-3, S38-PO-5; architect S38-R2, S38-R4 and S38-R7. Exact quoted extracts are in spec.md and the round report.
 - Method: cross-artifact review of spec.md, plan.md, tasks.md, research.md, traceability.md, contracts/auth-surface.md, data-model.md and this checklist against Spec Kit entry requirements and the critique findings.
@@ -34,6 +34,10 @@ S38-R4 recorded the critique result as NOT READY, CRITICAL 0 / HIGH 6 / MEDIUM 3
 | CodeRabbit 8. Blanket intent immutability could reject valid state transitions | MEDIUM | Fixed: identity/origin fields remain immutable; only guarded open-to-closed transitions are allowed, with timestamps set once; no-delete remains unconditional. | plan.md; data-model.md |
 | CodeRabbit 9. Copy proposal was only in local run directory | MEDIUM | Fixed: committed proposal is linked from the spec, contract, plan/tasks and Analyze; run-dir evidence copy retained. Approval remains pending. | copy-proposal.md; spec.md FR-027 |
 | CodeRabbit 10. Refused requests must still be counted at the send hook | MEDIUM | Fixed: all valid requests reach the authoritative hook for policy accounting; acceptance asserts no email, generic mapped response, and shared counters. | contracts/auth-surface.md; tasks.md T038/T038a; FR-024 |
+| CodeRabbit 11. Contract copy link resolves to the wrong directory | MINOR | Fixed: link now resolves to `../copy-proposal.md`. | contracts/auth-surface.md |
+| CodeRabbit 12. Preserve client invalid-link instruction while using staff copy | MEDIUM | Fixed: existing `auth.invalid_link` catalog copy remains for client manual links; staff uses the exact approved FR-029 string. A display-only `flow=staff` marker selects copy and never affects authorization. | copy-proposal.md; spec.md FR-027/029; tasks.md T037a/T044a |
+| CodeRabbit 13. Session revocation did not cover Data API JWT replay | HIGH | Fixed as an acceptance gate: T049e proves pre-reset access at a protected Data API resource and requires replay denial after reset; any success blocks T050a and control-C acceptance until a technical control is proven. | spec.md FR-030 control C; plan.md G3; tasks.md T049e; traceability.md |
+| CodeRabbit 14. PDN-13 gates were stale after PDN-14 was answered | MINOR | Fixed: current T033, feasibility and RED-test prerequisites are stated; release block remains until controls and FR-020 pass. | spec.md PDN-F4-7-13; tasks.md T033/T049/T050 |
 | 9. Contracts/data model omit recovery | MEDIUM | Fixed: both artifacts now describe local staff recovery actions, session-bound intent, hook boundary, audit/limits, session outcomes and hosted deferral. | contracts/auth-surface.md; data-model.md |
 | 10. Analyze metrics and status stale | LOW | Fixed: unique finding IDs, current dispositions and metrics below; prior round critique is recorded as executed. | This checklist; traceability.md |
 
