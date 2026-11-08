@@ -2,8 +2,8 @@
 
 **Feature Branch**: `009-packages`
 **Created**: 2026-10-27  
-**Last Updated**: 2026-11-06
-**Status**: S33-PO-6, S34-PO-1, S34-PO-2, S34-PO-6 (PD-S34-NEW-01=A, package row is the category) and S35-PO-1 (PD-S34-NEW-02=A, canonical market literal `Egypt`/`International` as wire and stored value) decisions are recorded. No ambiguity remains in those settled decisions. UI copy beyond the four approved Arabic/English market/type label pairs remains BLOCKED-COPY.
+**Last Updated**: 2026-11-08
+**Status**: S33-PO-6, S34-PO-1, S34-PO-2, S34-PO-6 (PD-S34-NEW-01=A, package row is the category), S35-PO-1 (PD-S34-NEW-02=A, canonical market literal `Egypt`/`International` as wire and stored value), S36-PO-2 and S36-PO-3 F9 decisions are recorded. The prior FX-rounding, FX business-day/publication and optional promotion-bound ambiguities are resolved; no open ambiguity remains in those scopes. UI copy beyond the four approved Arabic/English market/type label pairs remains BLOCKED-COPY.
 **Input**: P1-F9, approved architect/reviewer design supplied for this run. Sources (PO records are cited by decision ID and quoted verbatim in this document, not by machine-local path): [BRD](../../LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md) lines 30, 40–41, 53–54, 102, 196, 317; [decision register](../../docs/04-changes-and-questions.md) D-09/D-10, D-11, D-13, D-17; [Constitution v1.4.0](../../.specify/memory/constitution.md) I–III, V, VII–IX. Later decisions supersede historical BRD installment/refund wording. S31 sources: S31-PO-4 and S31-PO-5 (S31-Q4). S32 source: S32-PO-4, quoted verbatim in `## Clarifications` below and in the PO decision register.
 
 ## Clarifications
@@ -100,6 +100,25 @@ Decision summary: C1 supersedes S32-PO-4 SK-009-06 market/type mutability and S3
 
 All C1–C5, LABELS, S33-01..12, the four English labels in S34-PO-2, PD-S34-NEW-01 (S34-PO-6, option A) and PD-S34-NEW-02 (S35-PO-1, option A: title-case `Egypt`/`International` as the wire and stored value) are resolved. No ambiguity remains in those decisions. Copy beyond the four approved Arabic/English label pairs is BLOCKED-COPY, not a behavioral ambiguity.
 
+### Session 2026-11-08 — S36-PO-2 / S36-PO-3 F9 decisions (binding)
+
+S36-PO-2 states the Governance/FX sentence verbatim:
+
+> FX: retain precise line conversions, round aggregate half-up; preserve existing payment rules.
+
+S36-PO-3 section 2 states the F9 bullet verbatim:
+
+> - **F9:** Use ECB/TARGET calendar and latest prior valid Frankfurter rate; verify currency coverage. Missing promo start = creation; missing end = indefinite.
+
+These decisions close the previously recorded FX-rounding, FX calendar/publication and optional promotion-bound questions:
+
+- Reporting conversion is line-exact: each transaction line uses its immutable rate snapshot without per-line minor-unit rounding. Each reported EGP aggregate sums those exact line conversions and is rounded half-up exactly once to EGP minor units (100 minor units per EGP). Existing payment rules and original transaction/settlement values remain unchanged.
+- The transaction timestamp maps to its Africa/Cairo calendar date. ECB/TARGET defines business days; the selected rate is the latest prior valid Frankfurter publication strictly before that transaction date. If a preceding business day has no valid publication, selection continues to the latest earlier valid publication. If no valid prior publication exists, the existing idempotent pending/retry rule applies and the item remains excluded from converted totals until fetched.
+- Frankfurter coverage is verified for every supported currency (`EGP`, `USD`, `SAR`). A currency without verified coverage is recorded as a blocker; no rate, provider or fallback is assumed.
+- A Promotional category with no start is available from its creation instant; a category with no end is available indefinitely. Any supplied start/end bound remains Africa/Cairo start-inclusive/end-exclusive.
+
+No further product ambiguity remains in the resolved FX rounding, calendar/publication, currency-verification or optional promotion-bound scopes.
+
 ### Session 2026-11-04
 
 The following PO decisions are recorded verbatim. The S31-PO-5 decision supersedes only the
@@ -110,10 +129,12 @@ authorship part of S31-PO-4 SK-009-01; its market/type/currency and no-conversio
 - S31-PO-4 SK-009-04: "Keep both denied (Recommended)" — option text: "Least privilege; current behaviour." (Sales and Trainer commission visibility stays denied.)
 
 Resolved interpretations from those records: Platform Owner (PO) exclusively creates, names,
-prices and controls packages; Workspace Owners (WO), Sales and Trainers cannot create or price;
-"unlimited distinct packages" means there is no package-count cap or quota; allowed currencies are
-market-conditional (Egypt = EGP only; International = EGP/USD/SAR); no currency conversion is
-assumed; and Sales/Trainer commission visibility remains denied. Market/type are package attributes
+prices and controls packages; Workspace Owners (WO), Sales and Trainers cannot create or price.
+The S31 phrase "unlimited distinct packages" originally meant no package-count cap/quota, but that
+package-count interpretation is superseded by FR-019's exactly four fixed category slots per
+workspace. Allowed currencies are market-conditional (Egypt = EGP only; International =
+EGP/USD/SAR); no currency conversion is assumed; and Sales/Trainer commission visibility remains
+denied. Market/type are package attributes
 and are readable by the PO and by any role already permitted to read the owning package record under
 FR-008; this grants no new audience. Any other open point is listed under the PO decision register
 below; no unlisted ambiguity is treated as resolved.
@@ -252,10 +273,11 @@ prices stay in own currency while collection reporting uses only the approved im
 1. **Given** existing mock package records, **When** a future removal preflight runs, **Then** it verifies synthetic-only status, enumerates all dependencies, and refuses/escalates without writes if any non-synthetic data or required financial/audit dependency exists; only a clean preflight permits safe mock removal and empty four-category initialization (C5).
 2. **Given** a PO-managed category with published commercial versions or downstream client/assignment snapshots, **When** the PO edits its name, price or commission, **Then** a new immutable commercial version is appended and prior versions and snapshots remain unchanged; market/type cannot be edited (C1, C2).
 3. **Given** a future real package referenced by historical records, **When** the PO retires it, **Then** it is hidden from new sales while history and issued-link snapshots remain available (S33-PO-6 S33-02/06).
-4. **Given** a Promotional package, **When** an approved start/end period is set, **Then** it is available only within Africa/Cairo start-inclusive/end-exclusive boundaries and expiry prevents new links without changing already-issued snapshots (S33-PO-6 S33-05/06).
-5. **Given** a transaction in its original currency, **When** a report is produced, **Then** the original amount/currency and actual settlement remain available, while reported revenue/commission is separately shown in EGP using the immutable rate snapshot for the transaction date.
+4. **Given** a Promotional package, **When** its optional approved start/end bounds are evaluated, **Then** a missing start makes it available from creation, a missing end makes it indefinite, and every supplied bound uses Africa/Cairo start-inclusive/end-exclusive boundaries; expiry prevents new links without changing already-issued snapshots (S33-PO-6 S33-05/06; S36-PO-3 F9).
+5. **Given** a transaction in its original currency, **When** a report is produced, **Then** the original amount/currency and actual settlement remain available, each reporting line is converted exactly using its immutable rate snapshot without per-line minor-unit rounding, and each reported EGP aggregate sums the exact line conversions before one half-up rounding to EGP minor units.
 6. **Given** the FX provider is unavailable or returns unusable data, **When** a transaction or report needs a rate, **Then** no fabricated rate or rewritten history is produced and the unresolved failure policy is applied.
 7. **Given** an FX API request, **When** the server fetches a rate, **Then** the request contains no client identity, contact, transaction, workspace or other client data.
+8. **Given** a transaction whose Africa/Cairo date follows an ECB/TARGET weekend or holiday, **When** FX reporting selects a rate, **Then** it uses the latest prior valid Frankfurter publication strictly before that transaction date, including an earlier valid publication when the preceding business day has none; if no valid prior publication exists, the rate remains pending and the item is excluded from converted totals.
 
 ## Functional Requirements
 
@@ -282,14 +304,14 @@ prices stay in own currency while collection reporting uses only the approved im
 - **FR-021**: Commercial-term edits (workspace-specific name, price, commission and other approved commercial terms) MUST append an immutable version; prior versions and client/assignment snapshots MUST remain unchanged. Market/type are immutable category attributes and cannot be edited as commercial terms. (C1, C2; S33-PO-6)
 - **FR-022**: Before any mock-package removal, the target-stack inventory MUST verify synthetic-only status and enumerate all package dependencies; no market/type mapping/classification is performed for existing mocks. (C5; supersedes SK-009-05 and S33-01 for existing mocks)
 - **FR-023**: A future real package reference MUST retain its history when retired; retirement hides it from new sales, while prior client, assignment, link and financial snapshots remain unchanged. (S33-PO-6 S33-02/06)
-- **FR-024**: Promotional categories support approved start/end periods; Africa/Cairo start-inclusive/end-exclusive boundaries apply, expiry stops new links, and issued links keep their snapshots. (S32-PO-4; S33-PO-6 S33-05/06)
+- **FR-024**: Promotional categories support optional approved start/end bounds. A missing start means available from the category's creation instant; a missing end means indefinite. Where a bound exists, Africa/Cairo start-inclusive/end-exclusive boundaries apply; expiry stops new links, and issued links keep their snapshots. (S32-PO-4; S33-PO-6 S33-05/06; S36-PO-3 F9)
 - **FR-025**: Dashboard monthly collection reporting MUST use actual collections and show package-specific commission and installment detail; settlement events remain separate accounting records. (C4; S33-12)
-- **FR-026**: FX reporting MUST use Africa/Cairo transaction date, previous published business-day rate, verified Frankfurter data, exact EGP→EGP rate 1, and idempotent rate-pending retries excluded from converted totals until fetched. Preserve original transaction currency and settlement. (S33-PO-6 S33-03/04/08/09/10)
+- **FR-026**: FX reporting MUST map the transaction timestamp to its Africa/Cairo calendar date, use the ECB/TARGET business-day calendar, and select the latest prior valid Frankfurter publication strictly before that date; if the preceding business day has no valid publication, selection continues to the latest earlier valid publication, and if no valid prior publication exists the existing idempotent rate-pending/retry rule applies with the item excluded from converted totals until fetched. Each reporting line MUST be converted exactly from its immutable rate snapshot without per-line minor-unit rounding; each reported EGP aggregate MUST sum those exact line conversions and be rounded half-up exactly once to EGP minor units (100 minor units per EGP). Frankfurter coverage MUST be verified for every supported currency (`EGP`, `USD`, `SAR`); an uncovered currency is recorded as a blocker and no rate, provider or fallback may be assumed. EGP→EGP uses exactly 1. Original transaction currency, actual settlement and existing payment rules remain unchanged. (S33-PO-6 S33-03/04/08/09/10; S36-PO-2/S36-PO-3)
 - **FR-027**: Provider requests MUST exclude client identity/contact, transaction, workspace and other client data. (S32-PO-4; synthetic-only development policy)
 - **FR-028**: Before removing existing mock packages, the future implementation MUST verify synthetic-only status and enumerate every target-stack dependency, including foreign keys, registration links, subscriptions, payments, audit rows, and all other package references. Unknown dependency state, any non-synthetic data, or any required financial/audit dependency MUST refuse and escalate before writes. After a complete clean preflight, it may safely delete only obsolete mock packages and initialize exactly four empty categories per workspace with no names, prices, commissions, or fabricated commercial values. Required client, financial and audit history MUST be preserved; partial deletion/initialization MUST NOT be accepted. The C5 cleanup path MUST be explicit and limited to the verified mock target set; it MUST NOT disable or weaken general immutability, audit, RLS or restrictive-reference protections, nor cascade into protected dependencies. The PO configures real packages manually. Category identity follows S34-PO-6: each initialized category is one workspace-scoped package row unique on `(workspace_id, market, type)`; the canonical market literal used for initialization is `Egypt`/`International` per S35-PO-1 F9=A. The concrete mechanism that removes mock package rows without weakening FR-006 immutability, restrictive references, audit or RLS is not specified here; no guard exception is authorized, and the mechanism requires a separate security design and review (T064b, pre-implementation) before T065 implements any deletion; T070 is the post-implementation acceptance review of the implemented deletion path and is not a prerequisite to implementation. (C5)
 - **FR-029**: Only the PO may control workspace-specific package names, prices, and package-specific commissions. A WO MUST NOT create, rename, price, or set commissions. Each commercial edit MUST create a new immutable version; prior client/assignment snapshots remain unchanged. (C1, C2; S33-PO-6)
-- **FR-030**: Promotional categories/packages MUST be sellable only during approved periods, evaluated in Africa/Cairo with start-inclusive/end-exclusive boundaries. Expiry MUST stop new registration links only; issued links retain their snapshots. (S33-PO-6 S33-05/06)
-- **FR-031**: The dashboard MUST show actual monthly collections and package-specific commissions with installment-level detail. Settlement/accounting events remain separate records. Converted commission is visible to PO/WO only; Sales/Trainer remain denied. FX uses Africa/Cairo transaction date and the previous published business-day rate when conversion is needed (there is no approved same-day exception), Frankfurter only after documented verification, exact 1 for EGP→EGP, and idempotent rate-pending retries excluded from converted totals until fetched. (C4; S33-PO-6 S33-03/04/08/09/10/12)
+- **FR-030**: Promotional categories/packages MUST be sellable only during their approved availability interval, evaluated in Africa/Cairo. A missing start means the interval begins at the category's creation instant; a missing end means the interval is indefinite. Any supplied start/end bounds remain start-inclusive/end-exclusive. Expiry MUST stop new registration links only; issued links retain their snapshots. (S33-PO-6 S33-05/06; S36-PO-3 F9)
+- **FR-031**: The dashboard MUST show actual monthly collections and package-specific commissions with installment-level detail. Settlement/accounting events remain separate records. Converted commission is visible to PO/WO only; Sales/Trainer remain denied. FX reporting follows FR-026: Africa/Cairo transaction date, ECB/TARGET business-day selection of the latest prior valid Frankfurter publication, verified coverage for every supported currency, exact per-line conversion, one half-up rounding of each reported aggregate to EGP minor units, exact 1 for EGP→EGP, and idempotent rate-pending retries excluded from converted totals until fetched. Existing payment rules remain unchanged. (C4; S33-PO-6 S33-03/04/08/09/10/12; S36-PO-2/S36-PO-3)
 - **FR-032**: Installment clients MUST be identified as installment clients, and the dashboard MUST provide an Installments section with due dates, paid amounts, and remaining amounts. This specifies data/behavior only; UI copy beyond the four approved English/Arabic market/type label pairs is BLOCKED-COPY. (C4)
 - **FR-033**: Market/type labels MUST use exactly the approved pairs Egypt/«مصر», International/«دولي», Promotional/«وقت العـروض», and Year-Round/«طول السنـة», with Arabic strings copied exactly including tatweel. No additional English market/type labels or translations may be introduced beyond these four approved labels. All other UI copy remains BLOCKED-COPY. (LABELS; S34-PO-2)
 
@@ -329,15 +351,15 @@ prices stay in own currency while collection reporting uses only the approved im
 
 - **SC-013**: C5 target-stack preflight accounts for 100% of package rows and package references; any non-synthetic or unsafe dependency fixture refuses with zero writes.
 - **SC-014**: 100% of PO commercial edits append a version and leave prior versions, client records, and assignment snapshots unchanged; WO mutation attempts are denied.
-- **SC-015**: Promotional boundary tests pass at the approved Africa/Cairo inclusive-start/exclusive-end instants; expiry prevents new links and changes zero issued-link snapshots.
+- **SC-015**: Promotional tests pass for missing-start availability from creation, missing-end indefinite availability, and every supplied Africa/Cairo inclusive-start/exclusive-end instant; expiry prevents new links and changes zero issued-link snapshots.
 - **SC-016**: For every synthetic monthly fixture, dashboard collection totals reconcile to actual collection source rows and package-specific commission totals reconcile to the applicable commission calculation or commission source rows; commission is not assumed equal to gross collections. Installment due/paid/remaining detail matches its source, and settlement records remain separately queryable.
-- **SC-017**: FX fixtures use the approved transaction date and previous published business-day rate; EGP→EGP is 1; pending rates are excluded until idempotent retry succeeds.
+- **SC-017**: FX fixtures use the Africa/Cairo transaction date, ECB/TARGET business days and the latest prior valid Frankfurter publication, including weekend, holiday and missing-publication fallbacks; every line remains exact, each reported aggregate is rounded half-up once to EGP minor units, EGP→EGP is 1, and pending rates are excluded until idempotent retry succeeds.
 - **SC-018**: Captured provider requests contain no client identity/contact, transaction, workspace, or other client data; Frankfurter use is gated on recorded verification checks.
 
 - **SC-019**: In target-stack preflight tests, 100% of non-synthetic, required financial/audit, and unknown dependency cases refuse with zero writes; a complete clean synthetic-only case safely deletes obsolete mock packages while preserving required history. It initializes exactly four empty category package rows per workspace (one per `(workspace_id, market, type)`) with zero fabricated names/prices/commissions; the market literal used is `Egypt`/`International` per S35-PO-1 F9=A.
 - **SC-020**: Every workspace has exactly four market/type pairs; 100% of market/type mutation attempts fail; PO commercial edits append versions; WO attempts are denied; 100% of prior client/assignment snapshots remain unchanged.
-- **SC-021**: Promotion tests cover exact Africa/Cairo start-inclusive/end-exclusive boundaries; expiry blocks all new links after the approved end and changes zero already-issued link snapshots.
-- **SC-022**: Dashboard fixtures reconcile monthly collections to actual collection source rows and package-specific commissions to applicable commission calculations or commission source rows, show installment details, preserve separate settlement rows, exclude pending FX from converted totals, use 1 for EGP→EGP, and deny commission to all Sales/Trainer fixtures.
+- **SC-021**: Promotion tests cover missing-start availability from creation, missing-end indefinite availability and exact Africa/Cairo start-inclusive/end-exclusive boundaries for supplied bounds; expiry blocks all new links after an approved end and changes zero already-issued link snapshots.
+- **SC-022**: Dashboard fixtures reconcile monthly collections to actual collection source rows and package-specific commissions to applicable commission calculations or commission source rows, show installment details, preserve separate settlement rows, exclude pending FX from converted totals, use exact per-line conversion with one half-up aggregate rounding to EGP minor units, use 1 for EGP→EGP, and deny commission to all Sales/Trainer fixtures.
 - **SC-023**: 100% of category label output matches the four approved English/Arabic pairs exactly, including Arabic tatweel; zero unapproved market/type labels or unapproved installment/report UI copy is shipped.
 
 ## PO decision register
@@ -350,13 +372,22 @@ prices stay in own currency while collection reporting uses only the approved im
 - S34-PO-1 C1–C5 and LABELS: resolved above. C1 supersedes S32-PO-4 SK-009-06 market/type mutability and S33-07 for market/type only. C2 confirms PO-only control. C3 defines four logical slots and simultaneous markets. C4 governs dashboard display and preserves settlement records. C5 supersedes SK-009-05 and S33-01/S33-02 for existing mock packages only; S33-02 soft-retirement remains for future real packages. LABELS resolves the Arabic strings; S34-PO-2 approves their English mappings.
 - S34-PO-6 (verbatim: "S34-06=A, S34-05=B, PD-S34-NEW-01=A."; architect note: "PD-S34-NEW-01=A: the package row is the category; unique (workspace_id, market, type) on the canonical package identity; versions hold commercial terms."): PD-S34-NEW-01 is resolved as option A. Only that part applies to F9.
 - S35-PO-1 (verbatim, F9 portion: "F9=A (Egypt/International)"; architect note (not PO words): option A = title-case `Egypt` / `International` as both the wire value and the stored value): PD-S34-NEW-02 is resolved as option A. The canonical market machine literal is exactly `Egypt` / `International`; the wire value and the stored value are identical, with no mapping layer. Display labels and machine literal are the same tokens; type values are not part of the decision.
-- No open product ambiguities remain from S33-01..12, C1–C5, LABELS or PD-S34-NEW-02 (S35-PO-1 F9=A).
+- S36-PO-2 (Governance/FX sentence, verbatim):
+
+  > FX: retain precise line conversions, round aggregate half-up; preserve existing payment rules.
+
+- S36-PO-3 (section 2 F9 bullet, verbatim):
+
+  > - **F9:** Use ECB/TARGET calendar and latest prior valid Frankfurter rate; verify currency coverage. Missing promo start = creation; missing end = indefinite.
+
+  These decisions resolve the former FX-rounding blocker and the optional promotion-bound ambiguity. FR-026/FR-031 now require exact per-line conversion, one half-up rounding of each reported aggregate to EGP minor units, ECB/TARGET business-day selection of the latest prior valid Frankfurter publication, existing pending/retry behavior when none exists, verified coverage for every supported currency, and unchanged payment rules. FR-024/FR-030 now define missing start as availability from creation and missing end as indefinite.
+- No open product ambiguities remain from S33-01..12, C1–C5, LABELS, PD-S34-NEW-01, PD-S34-NEW-02 or the S36-PO-2/S36-PO-3 F9 scopes.
 
 ### Remaining blockers
 
 - **BLOCKED-COPY**: dashboard, Installments, empty/error/help and other UI copy beyond the four approved English/Arabic market/type label pairs. Requirements may define data and behavior without inventing that copy.
-- **PO-DECISION-NEEDED (FX rounding)**: the reporting FX rounding rule — the rounding mode, whether each conversion rounds individually or only the aggregate, and EGP sub-unit handling — is not approved by any recorded PO decision (S32-PO-4, S33-PO-6, S34-PO-1/2/6 and S35-PO-1 are silent). No implementation may pick or encode one (e.g. half-up vs banker's rounding; per-transaction vs aggregate rounding). This blocks FR-026/FR-031 reporting-conversion implementation and T058/T059/T060/T068/T072/T073 acceptance evidence. Recorded from CodeRabbit review thread `PRRT_kwDOVYgYQ860WfD2`; awaiting PO direction.
-- ND-F9-2 custom-duration bounds, ND-F9-3 real catalog values and ND-F9-5 PO navigation placement remain as previously recorded; the reporting FX rounding rule (above) is the single new PO-DECISION-NEEDED item added by this pass.
+- ND-F9-2 custom-duration bounds, ND-F9-3 real catalog values and ND-F9-5 PO navigation placement remain as previously recorded.
+- The prior FX-rounding, FX business-day/publication and optional promotion-bound PO-DECISION-NEEDED items are closed by S36-PO-2/S36-PO-3. FR-026/FR-031 and T058/T059/T060/T068/T072/T073 are not blocked by rounding; their remaining task dependencies and independent review gates still apply. Frankfurter coverage for every supported currency remains a required verification (T075), not an assumption; any uncovered currency must be recorded as a blocker when discovered.
 - Existing production-readiness gates remain open; no deployment or cloud migration is authorized.
 
 ## Assumptions
@@ -364,7 +395,8 @@ prices stay in own currency while collection reporting uses only the approved im
 - Existing auth, tenancy, audit and Design System from `origin/main` are reused. This run writes artifacts only; Claude's independent implementation review remains required.
 - The shipped F9 implementation is PR #9 merge `b565d4c` (implementation tip `b359985`). The S31 delta is a new forward migration and never edits `20261029120000_packages.sql` or existing package-version terms.
 - The approved market/type enum values and market-conditional currency set are fixed. S32-PO-4 approves PO editing and promotional date/expiry capabilities; market/type are immutable, commercial terms are versioned, and C5 removal follows FR-022/FR-028.
-- Currency remains an immutable published-term concern in the shipped model. S32-PO-4 approves separate EGP reporting conversion with immutable historical rates while preserving original transaction/settlement currencies. Dashboard display follows C4; settlement records remain separate.
+- Currency remains an immutable published-term concern in the shipped model. S32-PO-4 approves separate EGP reporting conversion with immutable historical rates while preserving original transaction/settlement currencies. S36-PO-2/S36-PO-3 settle exact line conversion, aggregate-only half-up rounding to EGP minor units, ECB/TARGET/latest-prior-publication selection and the pending fallback. Dashboard display follows C4; settlement records and existing payment rules remain unchanged.
+- Promotional availability uses open-ended defaults where a bound is absent: no start means available from creation and no end means indefinite. Supplied bounds remain Africa/Cairo start-inclusive/end-exclusive.
 - Fixed publish signature has no request key. Exact full-term equality with the offer's CURRENT version is the database replay identity. Replay returns current without insert, pointer change or event. All other payloads, including older non-current terms, append N+1 and move current with one publication event. No new idempotency-key parameter/table is invented.
 - Initial unavailability and fixed duration representation are conservative implementation interpretations, not catalog policy. No automatic offer enablement is implied by publication.
 - Staff may read unavailable offers/history within their workspaces; future sellable selection filters `available` and uses `current_version_id`. F10/F12 implement token issuance, purchase snapshots and subscriptions, not F9.
