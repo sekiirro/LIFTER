@@ -16,7 +16,7 @@ Planned tests are named for the tests to be written. Nothing in this table is ve
 | FR-023 | T043 | canonical video: current-version read, validator, allowlist key | none |
 | FR-024 | T045 | private exercise video in version content | none |
 | FR-026 | T049 | effective-resolution contract with per-field source | none |
-| FR-027 | T056 | `ExerciseSnapshotV2` fixtures; rename, publish, rename, re-read sequence; non-video values frozen and current authorized Video returned on subsequent view | none |
+| FR-027 | T056 | `ExerciseSnapshotV2` fixtures; copied default, trainer edit, changed library default before publication, then publish/read; planner-entry non-video values retained and current authorized Video returned on subsequent view | none |
 | FR-028 | T050 | plan-view resolution without an active identity; merged source uses its own media | none |
 | FR-029, FR-034 | T050, T051 | internal resolver: EXECUTE grants, composite match, whole-call generic denial, cache key | none |
 | FR-031 | T054, T055 | legacy write revoked from client roles; parity fixture move | none |

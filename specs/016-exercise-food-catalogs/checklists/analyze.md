@@ -1,17 +1,17 @@
 # Analyze - F16 closed PO decision reconciliation (S37 round 6)
 
-- Date: 2026-11-08 (re-analysis after round-6 updates to spec, plan, data-model, contracts, tasks, traceability and decision register). Reconciles S37-PO-1 Q2 and S37-PO-10. No Sol critique was run; A7 remains open.
+- Date: 2026-11-08 (re-analysis after round-6 PO reconciliation and CodeRabbit follow-up updates to spec, plan, data-model, tasks, traceability, decision register and this Analyze record). Reconciles S37-PO-1 Q2 and S37-PO-10. No Sol critique was run; A7 remains open.
 - Method: speckit-analyze procedure (read-only on spec artifacts); this file is the dated record the entry check requires. Prerequisite check run with `SPECIFY_FEATURE_DIRECTORY` set to this feature (no `.specify/feature.json` in the worktree). No `.specify/extensions.yml` exists, so no hooks apply.
-- Scope: exactly eight fields and defaults; Instructions-to-Notes preservation; S37 closure of F16-MCQ-O, -P, -Q, -F-R, -G-R; F16-MCQ-D-R cross-feature pointer to F11/F12; A7 retained open; no code, SQL, migration, test or fixture changes.
+- Scope: exactly eight fields and defaults; Instructions-to-Notes preservation; S37 closure of F16-MCQ-O, -P, -Q, -F-R, -G-R; F16-MCQ-D-R cross-feature pointer to F11/F12; CodeRabbit round-6 snapshot, migration-sequence and SC-inventory corrections; A7 retained open; no code, SQL, migration, test or fixture changes.
 - Authority: byte-exact S37-PO-1 Q2 and S37-PO-10 quotations in `spec.md` Clarifications and `decision-register.md`; user task instruction explicitly keeps A7 open and prohibits a Sol invocation in this round.
 
 ## Entry check (Spec Kit gate, section 1)
 
 | Box | Result | Evidence |
 | --- | --- | --- |
-| spec.md has numbered FRs, measurable SCs and Given/When/Then scenarios for the touched scope | PASS | FR-001 to FR-038 (incl. FR-016a); SC-001 to SC-020; US2 scenarios 7 to 9 cover defaults, global auto-appearance and Instructions-to-Notes preservation. |
+| spec.md has numbered FRs, measurable SCs and Given/When/Then scenarios for the touched scope | PASS | FR-001 to FR-038 (incl. FR-016a); SC-001 to SC-016; US2 scenarios 7 to 9 cover defaults, global auto-appearance and Instructions-to-Notes preservation. |
 | Clarifications recorded, or a PO-decision register entry citing the PO source | PASS | `spec.md` Clarifications and `decision-register.md` quote S37-PO-1 Q2 and S37-PO-10 byte-exactly. No unresolved F16 product ambiguities remain; A7 remains open as a process gate, and F16-MCQ-D-R is outside F16 scope with a pointer to F11/F12. |
-| plan.md covers the touched scope; | PASS | `plan.md` covers live published-plan Video, language/value rules, and dummy-link cutover; `tasks.md` T037-T072 carries FR tags and owners. |
+| plan.md covers the touched scope; | PASS | `plan.md` covers live published-plan Video, planner-entry snapshot values, language/value rules, and dummy-link cutover; `tasks.md` T037-T073 carries FR tags and owners. |
 | checklists/analyze.md dated after the last spec, plan and task change, with 0 open CRITICAL/HIGH | **FAIL** | Reanalysis is dated after round-6 spec/plan/task changes. A7 is the sole open CRITICAL/HIGH finding (CRITICAL), retained open per instruction; there are 0 open HIGH findings. |
 
 Result: **entry check FAILS**. No implementation task may start; the current round is spec-only. No task was checked or implemented.
@@ -73,21 +73,24 @@ Severity follows the speckit-analyze heuristic. "Open" means it still blocks imp
 | A55 | Resolved | — | `decision-register.md` A55; `spec.md` FR-027; `data-model.md` `ExerciseSnapshotV2` row; `tasks.md` T056/T059 | Historical fields outside the exact eight Exercise Library fields. | The exact immutable version reference preserves historical taxonomy metadata; optional defaults are among the eight fields and copy into editable planner entries at addition. No extra F16 product decision is needed. |
 | A57 | Resolved | - | `spec.md` FR-014, FR-020, FR-027; `plan.md`; `decision-register.md` F16-MCQ-O | Published-plan Video timing. | **RESOLVED by S37-PO-1 Q2 = A:** Video stays live and follows the current authorized library value; other published values remain frozen. |
 | A58 | Resolved | - | `spec.md` FR-001/FR-003; `decision-register.md` F16-MCQ-Q | Global name-language rule scope. | **RESOLVED by S37-PO-10:** English required and Arabic optional for Global and Workspace names; supersedes the S20 Arabic-required rule for F16. |
-| A56 | Resolved (CodeRabbit round 5) | — | `spec.md` FR-032, SC-015; `plan.md`; `quickstart.md`; `tasks.md` T052, T054, T062 | The ordering check compared a local migration with its own version once it was on an origin ref; T062(a) carry-over was not inside the T054 cutover. | **RESOLVED** in `e7f18b58`: ordering compares with any other migration file; T062(a) sits inside T054 and T062(b) stays separate. |
+| A56 | Resolved (CodeRabbit round 5 and 6) | — | `spec.md` FR-032, SC-015; `plan.md`; `quickstart.md`; `tasks.md` T052, T054, T062 | The ordering check compared a local migration with its own version once it was on an origin ref; carry-over sequencing was split across T054 and T062. | **RESOLVED** in `e7f18b58` and this re-analysis: ordering compares with any other migration file; T062(a) and T062(b) are both in T054's cutover. |
+| A59 | Resolved (CodeRabbit round 6) | HIGH | `data-model.md` Lifecycle and version references; `spec.md` FR-027/FR-037; `plan.md` Snapshot contract | Published-plan non-video values could be rebuilt from current library resolution and overwrite copied or trainer-edited planner-entry values. | **RESOLVED** in this re-analysis: `ExerciseSnapshotV2` freezes non-video values from the planner entry at publication; live Video remains resolved from the authorized library. |
+| A60 | Resolved (CodeRabbit round 6) | HIGH | `tasks.md` T054, T062(b), T063 and dependency order; `plan.md` migration step 3 | Notes/Instructions carry-over was sequenced after cutover rather than in the same migration before the new library reads overrides. | **RESOLVED** in this re-analysis: T062(a) and T062(b) are both included in T054's cutover; T063 verifies the combined carry-over. |
+| A61 | Resolved (CodeRabbit round 6) | LOW | This Analyze record; `spec.md` Success Criteria; `tasks.md` Coverage | Inventory and coverage claims counted 20 criteria although `spec.md` contains SC-001 through SC-016. | **RESOLVED** in this re-analysis: inventory is 16 criteria and every SC-001 through SC-016 has a task mapping. |
 
 ## Coverage
 
-- Requirements inventory: FR-001 to FR-038 (including FR-016a), 39 keys; SC-001 to SC-020, 20 keys.
+- Requirements inventory: FR-001 to FR-038 (including FR-016a), 39 keys; SC-001 to SC-016, 16 keys.
 - Requirements with at least one task reference (S36 or historical): 39 of 39. Requirements with a dedicated S36 test task: all except FR-033 (A22, LOW).
-- Success criteria mapped to tasks: SC-001 to SC-020 (`tasks.md` coverage bullet). SC-005 (perf) maps to T034 (historical local benchmark) and T065 (exercise list and batch resolve); the Worker CPU and hosted metrics remain a production gate. SC-009 maps to T050, T051 and T058 for live Video; SC-010 maps to T040. A45 and the Description language question are resolved.
+- Success criteria mapped to tasks: SC-001 to SC-016 (`tasks.md` coverage bullet; all 16 criteria have task references). SC-005 (perf) maps to T034 (historical local benchmark) and T065 (exercise list and batch resolve); the Worker CPU and hosted metrics remain a production gate. SC-009 maps to T050, T051 and T058 for live Video; SC-010 maps to T040. A45 and the Description language question are resolved.
 - Planned contract rows: each moves into the implemented matrix only with its SQL, fixture row and parity test (S36-R10). The implemented matrix is unchanged in round 4 (only planned rows changed). `npx vitest run tests/unit/catalog-role-parity.test.ts` passes 2 of 2 locally.
 
 ## Counts
 
-- Requirements: 39 keys (FR), 20 success criteria (SC). Tasks: 73 (T001 to T072 plus T900; T037 to T072 are S36/S37).
+- Requirements: 39 keys (FR), 16 success criteria (SC). Tasks: 74 (T001 to T073 plus T900; T037 to T073 are S36/S37).
 - Ambiguity count (open): no F16 product decisions; A18, A19, A20, A21, A39, A50 (MEDIUM); A22, A38, A40, A53 (LOW); plus A7 (CRITICAL). Duplication count: 0 open. Underspecification open: A22 and A40 (LOW).
 - Severity (open): CRITICAL 1 (A7). HIGH 0. MEDIUM 6 (A18, A19, A20, A21, A39, A50). LOW 4 (A22, A38, A40, A53).
-- Resolved in round 3: A23 to A36 and A41 to A44 (18 items). Answered in round 4 (S36-PO-3): A8, A9, A11, A14, A15, A16 (resolved); A10, A12, A13 and A17 residuals are now closed/cross-feature by S37-PO-10; A52 resolved. Round 5 S36-PO-5 resolves A45, A48 and A55, and audit resolves A51. Round 6 resolves A37, A46, A47, A54, A57 and A58; A49 is out of F16 scope.
+- Resolved in round 3: A23 to A36 and A41 to A44 (18 items). Answered in round 4 (S36-PO-3): A8, A9, A11, A14, A15, A16 (resolved); A10, A12, A13 and A17 residuals are now closed/cross-feature by S37-PO-10; A52 resolved. Round 5 S36-PO-5 resolves A45, A48 and A55, and audit resolves A51. Round 6 resolves A37, A46, A47, A54, A57 and A58; A49 is out of F16 scope. CodeRabbit round 6 findings A59 and A60 (HIGH) and A61 (LOW) are resolved in the spec-only follow-up; remaining open CRITICAL/HIGH is A7 only.
 
 ## Gate
 
