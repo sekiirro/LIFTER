@@ -271,3 +271,12 @@ Re-read the final scoped spec, plan and tasks. FR-040, SC-027 and Given/When/The
 ## S36 final scope recheck after task evidence - 2026-11-06
 
 The final requirements, plan and task register were re-read after traceability and task status updates. The N11 and ALERTS source paragraphs remain byte-exact, all work in this round uses unique IDs T136-T140, and only the two documented PO MCQs remain open. T138 is specification-only and validated by exact source comparison plus format check; no alert code or migration changed. T139/T140 tests and evidence are recorded in traceability.md. **CRITICAL: 0. HIGH: 0. No other ambiguities for authorized work.**
+
+
+## S36 full Playwright diagnosis - 2026-11-06
+
+The 14 local failures were traced to two test setup issues: `fillSignup` generated a hyphenated username that violates the shared normalized policy `^[a-z0-9_.]{3,30}$`, and the completed-controls route reached a successful submission state while its test still expected the draft-only save control. T141 changes only the synthetic test username format. T142 waits for the rendered successful submission state and confirms the save-only control is absent before the completed-state axe scan. The full B Playwright run passed 297 tests with 15 skips; the targeted route test also passed 1/1. No validation rule, axe rule, UI token, or product behavior changes. **CRITICAL: 0. HIGH: 0. No open ambiguities.**
+
+## S37 post-test analysis replay - 2026-11-08
+
+Re-read `spec.md`, `plan.md`, and `tasks.md` after the T141/T142 updates. These tasks only correct browser fixtures and wait for the already-rendered completion state; they add no product requirement, validation rule, or UI treatment. The full B Playwright/axe run passed 297/312 with 15 declared skips, including the 60-state new-controls and approved-controls matrices. T141/T142 have test evidence in `traceability.md`. The Spec Kit `speckit-analyze` executable is not installed or declared in `package.json`; this dated manual re-analysis records 0 open CRITICAL/HIGH findings. Only the recorded PO MCQs remain open. **CRITICAL: 0. HIGH: 0. No open ambiguities for T141/T142.**

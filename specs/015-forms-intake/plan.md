@@ -183,3 +183,6 @@ T137 adds the exact S35-PO-3 N11 English feedback strings to the EN message cata
 
 
 S36 T139 connects the approved N11 EN/AR catalog to the existing slider status output and checks the rendered strings in the authorized-route matrix. T140 keeps the intended local Playwright server reuse while allowing global teardown to distinguish an uncaptured reused server from a started server whose log capture failed; captured logs still require deletion.
+
+
+S36 T141 updates the signup E2E username fixture to use a unique value accepted by the existing server-side policy. T142 waits for the rendered successful submission state and confirms the save-only control is absent before the completed-state axe scan. Neither task changes product validation or UI tokens.

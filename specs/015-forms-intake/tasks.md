@@ -367,3 +367,6 @@ S27 h2 executed all eight T018 mutants against Stack D at pre-merge head `f42d4b
 
 - [x] T139 [FR-040] Render approved N11 feedback from the locale catalog in the existing status output; assert exact EN/AR output in the route matrix.
 - [x] T140 [FR-024/025] Preserve local healthy-server reuse and ensure teardown accepts its no-capture summary while retaining captured-log deletion checks.
+
+- [x] T141 [FR-038/039] Use unique synthetic signup usernames that satisfy the existing normalized username policy in browser tests.
+- [x] T142 [FR-024/025] Wait for the rendered successful submission state before running the completed-state new-controls axe scan.
