@@ -1,6 +1,6 @@
 # Implementation Plan: F20 Client Notes
 
-**Spec**: [spec.md](spec.md) | **Status**: Proposed; CN-MCQ-01..14 resolved by the PO (CN-MCQ-08 by S38-PO-2); CN-MCQ-15 removed by S38-R9; **no open ambiguities**; implementation is not authorized by this spec-only PR.
+**Spec**: [spec.md](spec.md) | **Status**: Proposed; CN-MCQ-01..14 resolved by the PO (CN-MCQ-08 by S38-PO-2); CN-MCQ-15 removed by S38-R9; **CN-MCQ-16 OPEN** (exit-protection copy); implementation is not authorized by this spec-only PR.
 
 ## Summary
 
@@ -37,11 +37,12 @@ Add independent plain-text notes to Client Details with a workspace/client compo
 - Timestamps use the viewer's local time zone (CN-MCQ-12) in the CN-MCQ-08 row 29 format.
 - Strings: only the approved CN-MCQ-08 table in spec.md (rows 1–29) is used; no other copy is added. Mixed-direction text uses the existing `Bidi` component (README.md).
 - Do not invent colors, layout details, responsive breakpoints or token values. The Client Notes UI reuses existing Design System components and their existing values (S38-R9): the DESIGN.md §6 tabs pattern; the existing textarea, button, dialog, toast and States components; existing tokens and breakpoints. It introduces no new breakpoint, touch-size, focus or token value. A value that exists neither in DESIGN.md nor in an existing component becomes a PO question only when implementation needs it, under the frontend design gate.
+- Exit protection (DESIGN.md §5, Q54; spec.md FR-007): an editor with unsaved create or edit text shows a Stay/Discard warning on exit and uses a browser close/reload warning where supported. The behaviour is specified; the exact copy and the Save Draft decision are CN-MCQ-16 (open) and are not guessed.
 - No motion is required or proposed.
 
 ## Implementation phases (future, after MCQ decisions)
 
-1. Confirm zero open ambiguities by re-running Analyze before any implementation task (CN-MCQ-15 was removed by S38-R9; no open ambiguities remain).
+1. Resolve CN-MCQ-16 (exit-protection copy and Save Draft decision), update spec/plan/tasks, and re-run Analyze to confirm zero open ambiguities before any implementation task.
 2. Confirm authorization integration against current client detail permissions; define app/database capability parity and write contract.
 3. Implement forward-only schema and RLS with a version chosen after required all-origin migration rescan.
 4. Implement server actions/reads with verified actor and current client/workspace scope, last-save-wins edits and metadata-only audit.
@@ -60,4 +61,5 @@ Add independent plain-text notes to Client Details with a workspace/client compo
 ## PO decisions
 
 - Resolved: CN-MCQ-01..14 (spec.md Clarifications; S37-PO-6, S37-PO-7, S37-PO-14, S37-PO-16 and S38-PO-2).
-- Open: none. CN-MCQ-15 (DESIGN.md §11 UI values) was removed by architect ruling S38-R9; the design-system reuse rule is recorded in spec.md FR-006 and FR-007.
+- Open: CN-MCQ-16 (exit-protection copy and Save Draft). It blocks only that copy and its string assertions; the implementation gate stays closed until it is resolved.
+- Removed: CN-MCQ-15 (DESIGN.md §11 UI values) by architect ruling S38-R9; the design-system reuse rule is recorded in spec.md FR-006 and FR-007.
