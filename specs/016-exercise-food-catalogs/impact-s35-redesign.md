@@ -51,7 +51,7 @@ Source refs and exact citations (as locally available): `specs/019-plan-core/spe
 ## Related gates
 
 - The F16 decision register (round 3) lists F16-MCQ-1, -3, -4, -5, -6 as answered; -2 and -7 as moot; and F16-MCQ-A, -B, -C, -D, -E, -F (re-framed from -8), -G (re-framed from -10), -H, -I and -9 as PO-DECISION-NEEDED. F16-MCQ-E and -9 touch the client and PO paths; F16-MCQ-9 specifically blocks whether client-plan projections resolve workspace-private Trainer exercises or omit their video. It does not block an otherwise-authorized plan view.
-- The independent critique was performed by Sonnet 5.5 under S36-PO-2 (`C:/Users/NEW LAP/.lifter/runs/s36-sonnet-f16-critique/critique.md`). The constitution's Mandatory Spec Debate (`.specify/memory/constitution.md` lines 148-151, Sol Medium) conflicts with that substitution. This conflict is PO-owned (analyze A7, CRITICAL, open) and remains an implementation blocker.
+- The independent critique was performed by Sonnet 5.5 under S36-PO-2 (`C:/Users/NEW LAP/.lifter/runs/s36-sonnet-f16-critique/critique.md`). The constitution's Mandatory Spec Debate (`.specify/memory/constitution.md` lines 148-151, Sol Medium) conflicts with that substitution. This conflict was PO-owned; S37-PO-11 approved the Sol Medium critique, which ran at head `50f5c236` and is dispositioned in S38 round 7 (analyze A7, resolved).
 
 ## Round-3 action list (planning; not executed in this round unless stated)
 

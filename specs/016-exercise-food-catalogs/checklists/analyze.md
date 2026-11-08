@@ -1,100 +1,88 @@
-# Analyze - F16 closed PO decision reconciliation (S37 round 6)
+# Analyze — F16 post-critique disposition (S38 round 7)
 
-- Date: 2026-11-08 (re-analysis after round-6 PO reconciliation and CodeRabbit follow-up updates to spec, plan, data-model, tasks, traceability, decision register and this Analyze record). Reconciles S37-PO-1 Q2 and S37-PO-10. No Sol critique was run; A7 remains open.
-- Method: speckit-analyze procedure (read-only on spec artifacts); this file is the dated record the entry check requires. Prerequisite check run with `SPECIFY_FEATURE_DIRECTORY` set to this feature (no `.specify/feature.json` in the worktree). No `.specify/extensions.yml` exists, so no hooks apply.
-- Scope: exactly eight fields and defaults; Instructions-to-Notes preservation; S37 closure of F16-MCQ-O, -P, -Q, -F-R, -G-R; F16-MCQ-D-R cross-feature pointer to F11/F12; CodeRabbit round-6 snapshot, migration-sequence and SC-inventory corrections; A7 retained open; no code, SQL, migration, test or fixture changes.
-- Authority: byte-exact S37-PO-1 Q2 and S37-PO-10 quotations in `spec.md` Clarifications and `decision-register.md`; user task instruction explicitly keeps A7 open and prohibits a Sol invocation in this round.
+- Date: 2026-11-09 00:11 local (re-analysis after all round-7 edits to spec, plan, data-model, contracts, tasks, traceability, impact-s35-redesign and critique-response; this record is the last spec-artifact change of the round).
+- Scope: Sol Medium critique on head `50f5c236d6bfca1c16349cc26f8c31de3b67b8c0` (approved by S37-PO-11; run `C:/Users/NEW LAP/.lifter/runs/s37-sol-f16-critique`; CRITICAL 0, HIGH 5, MEDIUM 4, LOW 1). Dispositions D1–D10 are in `critique-response.md` §6–§7. Spec-only: no code, SQL, migration, fixture or test changed.
+- Method: speckit-analyze procedure, read-only on the spec sources except this record. Head facts were verified live: `origin/main` = `29bd0ba5`; `supabase/migrations/20261108100000_catalog_exercise_detail.sql` on `origin/main` still requires `name_ar` and accepts `instructions_*`; PR #43 is MERGED (2026-11-08, head `0fcd905d`); PR #66 head unchanged until this round's push.
+- Authority: S37-PO-11 (critique approval); S37-PO-1 Q2 = A; S37-PO-10; S36-PO-5; S38-PO-3 (escalate only genuine blockers); F16-MCQ-A(a), -B(a), -C, -6(a), -G, -H, -O answers in `decision-register.md`.
 
 ## Entry check (Spec Kit gate, section 1)
 
 | Box | Result | Evidence |
 | --- | --- | --- |
-| spec.md has numbered FRs, measurable SCs and Given/When/Then scenarios for the touched scope | PASS | FR-001 to FR-038 (incl. FR-016a); SC-001 to SC-016; US2 scenarios 7 to 9 cover defaults, global auto-appearance and Instructions-to-Notes preservation. |
-| Clarifications recorded, or a PO-decision register entry citing the PO source | PASS | `spec.md` Clarifications and `decision-register.md` quote S37-PO-1 Q2 and S37-PO-10 byte-exactly. No unresolved F16 product ambiguities remain; A7 remains open as a process gate, and F16-MCQ-D-R is outside F16 scope with a pointer to F11/F12. |
-| plan.md covers the touched scope; | PASS | `plan.md` covers live published-plan Video, planner-entry snapshot values, language/value rules, and dummy-link cutover; `tasks.md` T037-T073 carries FR tags and owners. |
-| checklists/analyze.md dated after the last spec, plan and task change, with 0 open CRITICAL/HIGH | **FAIL** | Reanalysis is dated after round-6 spec/plan/task changes. A7 is the sole open CRITICAL/HIGH finding (CRITICAL), retained open per instruction; there are 0 open HIGH findings. |
+| spec.md has numbered FRs, measurable SCs and Given/When/Then scenarios for the touched scope | PASS | FR-001 to FR-038 (incl. FR-016a); SC-001 to SC-016; US1 to US6 acceptance scenarios. |
+| Clarifications recorded, or a PO-decision register entry citing the PO source | PASS | `spec.md` "S38 round 7 — Sol Medium critique disposition (S37-PO-11)" cites S37-PO-11 and S38-PO-3; `decision-register.md` answers cited per finding. |
+| plan.md covers the touched scope; tasks.md has task IDs tagged with FR IDs | PASS | `plan.md` §Technical Context, §Design (override, migration step 1, cache rule), §Validation 1b; `tasks.md` T037, T040, T048, T051, T052, T068, T074, T075. |
+| checklists/analyze.md dated after the last spec/plan/task change, with 0 open CRITICAL/HIGH | PASS | This record (2026-11-09); open CRITICAL 0; open HIGH 0. |
 
-Result: **entry check FAILS**. No implementation task may start; the current round is spec-only. No task was checked or implemented.
+Result: **PASS** for the spec artifacts. Implementation is not authorized by this spec-only round; the entry check does not authorize it.
 
-## Findings
+## Round-7 dispositions (Sol Medium critique)
 
-Severity follows the speckit-analyze heuristic. "Open" means it still blocks implementation. "Resolved" means the spec now states it, with the commit that does so.
+| ID | Sol severity | Status | Where |
+| --- | --- | --- | --- |
+| D1 | HIGH | FIXED. `null` = inherit for the seven non-Alternatives fields; clearing a field is a per-field reset (F16-MCQ-A(a), F16-MCQ-6(a)). No new PO question. | spec FR-026; data-model override row |
+| D2 | HIGH | FIXED (planned). Field-by-operation coverage table; T074 (Global) and T075 (workspace-private). | data-model §S38 round 7; tasks T037, T074, T075; traceability |
+| D3 | HIGH | FIXED. T068 covers canonical and private payloads and history (counts only). Conditional PO item recorded, not raised. | tasks T068; plan migration step 1 |
+| D4 | HIGH | FIXED. Ordering applies to newly authored migrations; published files immutable and exempt; remote conflict check kept. | spec FR-032, SC-015; tasks T052; plan migration range |
+| D5 | HIGH | FIXED. Video never cached; warmed-cache sequence tested. | spec FR-034; tasks T051; plan §1b |
+| D6 | MEDIUM | FIXED. Filtering only on library and new-selection reads; published reads frozen (F16-MCQ-G). | spec FR-025; data-model alternatives row; tasks T048 |
+| D7 | MEDIUM | FIXED. Resolver has no F16 login grant; F19 adds the single grant; staff effective resolution via existing staff RPCs; contract row split. | spec FR-026, FR-029; contracts row 31; plan §Technical Context; tasks T051 |
+| D8 | MEDIUM | FIXED. Taxonomy collected by the create/version write; detail editor stays at eight fields. | spec FR-001, FR-018; data-model metadata row; plan §Application and UI; tasks T037, T040 |
+| D9 | MEDIUM | FIXED. This record; coverage split (below); A7 resolved; A10 answered in part. | this file; critique-response §7 |
+| D10 | LOW | FIXED. Planned audit codes are the eight approved fields. | traceability FR-013 row |
 
-| ID | Category | Severity | Location(s) | Summary | Status / recommendation |
-|---|---|---|---|---|---|
-| A7 | Constitution alignment (process) | CRITICAL | `.specify/memory/constitution.md` lines 148-151 (Mandatory Spec Debate; Sol Medium); `spec.md` Constitution Check | The constitution mandates an independent Sol Medium critique. The user instruction for round 6 states the PO has not approved this F16 invocation and forbids running it. | **OPEN.** No critique was run. The F16 Sol Medium invocation remains unapproved for this round. Blocks all F16 implementation. |
-| A8 | Ambiguity (PO) | HIGH | `decision-register.md` F16-MCQ-A; `spec.md` FR-003, FR-014; `contracts/catalog-api.md` planned remove/clear row | How an overridden field is reset (per field or whole override). | **ANSWERED (S36-PO-3, round 4): option (a), per-field reset.** Recorded in `decision-register.md`. Unblocks T046 null semantics, T047 remove/clear, T040 reset UI and T037 reset assertions. |
-| A9 | Ambiguity (PO) | HIGH | `decision-register.md` F16-MCQ-B; `spec.md` FR-025; `data-model.md` alternatives row | Whether an empty alternatives list suppresses the canonical list. | **ANSWERED (S36-PO-3, round 4): option (a), an empty list is allowed.** Alternatives are within the approved eight fields; S37-PO-10 also closes the count and uniqueness constraints. |
-| A10 | Ambiguity (PO, data) | HIGH | `decision-register.md` F16-MCQ-C; `data-model.md` legacy `note` row; `plan.md` migration step 1 | Treatment of existing variation `note` text (up to 2000 characters) that the allowlist does not contain. Wrong choice reclassifies internal text as client-visible, or hides data. | **ANSWERED IN PART (S36-PO-3, round 4): preserve existing notes; the legacy-data audit (T068) precedes any migration.** The note copy is residual A48. T062(b) stays blocked; T053 waits for T068. |
-| A11 | Ambiguity (PO, tenancy) | HIGH | `decision-register.md` F16-MCQ-E; `spec.md` FR-030; `main` tenancy `has_workspace_access` (PO true in every workspace) | Which workspaces the PO may write overrides in. The schema has no personal-workspace concept. | **ANSWERED (S36-PO-3, round 4): option (a), the PO may edit any workspace override.** Unblocks the routing items T047, T055, T037 and T040. |
-| A12 | Ambiguity (PO) | HIGH | `decision-register.md` F16-MCQ-F; `spec.md` FR-003, FR-026; FR-023 | Localization of overridden name and Description. | **ANSWERED:** English name required and Arabic optional; S37-PO-10 makes Description one optional value in any language. Instructions is removed as a field. |
-| A13 | Ambiguity (PO) | HIGH | `decision-register.md` F16-MCQ-G; `spec.md` FR-025, FR-027; `contracts/catalog-api.md` client-view paragraph | Override alternatives timing and private-target presentation. | **ANSWERED (S36-PO-3, round 4): frozen with the published plan.** S37-PO-10 closes the count and unique-target constraints. |
-| A14 | Ambiguity (PO) | HIGH | `decision-register.md` F16-MCQ-H; `spec.md` FR-023, FR-027 | Description frozen or live in a published plan. | **ANSWERED:** Description is frozen with the published plan. Video stays live under S37-PO-1 Q2 = A. |
-| A15 | Ambiguity (PO) | HIGH | `decision-register.md` F16-MCQ-9 (kept open, not answered); `spec.md` FR-014, FR-024; `contracts/catalog-api.md` line 119 | Client view of a workspace-private Trainer exercise's video: resolve or omit. The S36-PO-2 wording ("videos update live") largely points to resolve; the register keeps it open as instructed. | **ANSWERED (S36-PO-3, round 4): option (a), visible to clients only through an authorized plan projection.** Unblocks T045 and the private-video assertions of T050 and T058 (T058 still waits for F19). |
-| A16 | Ambiguity (PO) | MEDIUM | `decision-register.md` F16-MCQ-I (added in review); `spec.md` FR-035; `plan.md` search line | Which names a workspace search matches (canonical, workspace, or effective), and any per-workspace override storage budget. | **ANSWERED (S36-PO-3, round 4): (1)(b) search of canonical and workspace names showing the effective name; (2)(b) no separate budget, 70% monitoring.** Name search is unblocked; description search columns wait for A45. |
-| A17 | Ambiguity (PO, cross-feature) | LOW | `decision-register.md` F16-MCQ-D; `spec.md` FR-022 (narrowed); D-08 | Re-registration of a departing client under the global e-mail and phone rule. | **ANSWERED in S36-PO-3 and clarified by S37-PO-10:** account deletion frees email/phone for fresh registration in another workspace, with no data transfer. F11/F12 specifies it in a separate PR; F16 implements nothing. |
-| A18 | Dependency | MEDIUM | `tasks.md` T058; `plan.md` client path; `origin/019-plan-core` (0 new migrations) | The client wrapper needs F19 persistence (a persisted plan/client relation). It does not exist on main or on `origin/019-plan-core`. | **OPEN, cross-feature.** T058 blocked; the internal resolver (T050, T051) is not blocked. |
-| A19 | Dependency | MEDIUM | `tasks.md` T054, T055; `plan.md` dependencies; PR #43 | Legacy retirement and parity move are atomic with PR #43's consumers. #43 merge is PO-conditioned on its exact-head gates. | **OPEN, PO-conditioned.** Sequencing recorded (FR-031, FR-032). No change to #43 is made here. |
-| A20 | Process | MEDIUM | `tasks.md` T066; `docs/04-changes-and-questions.md`; `docs/01-traceability.md` | S35/S36 decisions are not yet recorded in the docs (outside `specs/016-*`). | **OPEN, not executed in round 3.** Owner: MiniMax (docs) with architect review. |
-| A21 | Cross-feature | MEDIUM | `tasks.md` T059; `impact-s35-redesign.md` | F17 (FR-003 `variation` reference, FR-008), F19 (`CatalogSnapshotRef` V2) amendments. | **OPEN, cross-feature.** Blocked by the F16 decisions and F19 persistence. Recorded, not executed. |
-| A22 | Coverage | LOW | `tasks.md` (no dedicated test); FR-033 | Authorization labels are documentation only. The parity test (T055) indirectly protects the matrix, but no test asserts that no new capability exists. | **Open, LOW.** Add an assertion to T055 when the parity move lands. |
-| A23 | Resolved | — | `spec.md` FR-026, FR-027; `data-model.md`; `plan.md`; T049, T056 | Frozen-name mechanism (critique F1, previously CRITICAL). | **RESOLVED** in `d94bcdf0`, `958e885f`, `bfc6f729`, `ca13be42`. Residual description and alternatives freeze is A13 and A14. |
-| A24 | Resolved | — | `spec.md` FR-028, FR-029; `contracts/catalog-api.md`; T050, T051 | Client-read boundary and removed or merged plan video (critique F2 and F7). | **RESOLVED** in `d94bcdf0`, `958e885f`, `ca13be42`. Residual wrapper dependency is A18. |
-| A25 | Resolved | — | `spec.md` FR-023, FR-024; `data-model.md` | Canonical and private video fields did not exist (critique F3 and F5). | **RESOLVED** in `d94bcdf0`, `958e885f`. Canonical description shape is A12 and A14. |
-| A26 | Resolved | — | `spec.md` FR-025; `data-model.md`; T048 | Alternatives integrity (critique F4). | **RESOLVED** in `958e885f` (composite child rows). Empty-list and seeded or live semantics are A9 and A13. |
-| A27 | Resolved | — | `spec.md` FR-032; `plan.md`; `quickstart.md` | Migration range sorted before main's head (critique F8). | **RESOLVED** in `d94bcdf0`, `bfc6f729`, `7850e5e7`, `285f8236`. Two checks are required: an ordering check (highest origin version; every local F16 version strictly greater) and `npm run check:migration-versions:remote`, which is a filename-conflict check only. |
-| A28 | Resolved | — | `spec.md` FR-031; `contracts/catalog-api.md`; T054 | Legacy variation write path alive (critique F9). | **RESOLVED** in spec (`d94bcdf0`, `958e885f`). Implementation is A19. |
-| A29 | Resolved | — | `spec.md` FR-022 | FR-022 required what the existing rules forbid (critique F11). | **RESOLVED** in `d94bcdf0`. Re-registration is A17. |
-| A30 | Resolved | — | `spec.md` FR-033; `plan.md` | Authorization identifiers cited as existing (critique F13). | **RESOLVED** in `bfc6f729`, `d94bcdf0`. |
-| A31 | Resolved | — | `checklists/analyze.md` (this file) | Analyze recorded a CRITICAL as a blocker and reported 0 CRITICAL (critique F14). | **RESOLVED**: A7 is recorded as CRITICAL and open. |
-| A32 | Resolved | — | `tasks.md` | Umbrella tasks, missing owners and predecessors, missing task units (critique F15). | **RESOLVED** in `45810a2a`, `175c9411`. Units T043 to T067 carry owners, predecessors and blockers. |
-| A33 | Resolved | — | `plan.md` validation phases; `tasks.md`; SC-013 to SC-016 | Validation and mutation plan incomplete (critique F16); SC coverage missing for FR-023 to FR-035. | **RESOLVED** in `bfc6f729`, `c870fcd1`. |
-| A34 | Resolved | — | `spec.md` FR-003, FR-014 | Open MCQ status and garbled precedence sentence in normative text (critique F17.2, F17.3). | **RESOLVED** in `d94bcdf0`. |
-| A35 | Resolved | — | `impact-s35-redesign.md`; `research.md`; `debate.md`; `traceability.md` | Stale impact audit and superseded artifacts (critique F18, F17.8). #64 and #44 states corrected: #64 is CLOSED, #44 is a closed F15 PR. | **RESOLVED** in `7850e5e7`. |
-| A36 | Resolved | — | `decision-register.md`; `spec.md` Clarifications | MCQ-8 and MCQ-10 were not re-framed; MCQ-E to MCQ-I not registered (critique F21). | **RESOLVED** in `1115aa70`, `a819d6c4`. MCQ-9 kept open. |
-| A37 | Resolved | - | `decision-register.md` F16-MCQ-P; `spec.md` FR-014, FR-031; T061-T063 | Host-rule mismatch for `docs.google.com` and treatment of dummy values. | **RESOLVED by S37-PO-10:** host is disallowed; dummy values are deleted at cutover, with no legacy path; the no-video-loss condition excludes these dummy values. |
-| A38 | Open, LOW | LOW | `decision-register.md` FYI-1 and FYI-3; `spec.md` FR-014, FR-028 | Spec-added absence default (`video: null`, source `none`) and the merged-source media rule. | **OPEN, architect awareness.** FYI-3 is for architect review; FYI-1 is for awareness. |
-| A39 | Open, MEDIUM | MEDIUM | `contracts/catalog-api.md` implemented matrix; `tests/unit/catalog-role-parity.test.ts` | Parity guard depends on the implemented matrix staying at its eight rows. Round 3 keeps it unchanged and passes locally (2 of 2). | **Monitor.** Re-run at the final head. |
-| A40 | Readability | LOW | `spec.md` FR-014, FR-035 | FR-014 and FR-035 are long multi-sentence requirements. | No ambiguity added; leave as is. |
-| A41 | Resolved | — | `spec.md` FR-026, FR-027; `impact-s35-redesign.md` (F17); T056 | Private exercises have no canonical identity, so the V2 snapshot could not represent them (CodeRabbit review on `a8b857f1`). | **RESOLVED** in `285f8236`: `source = workspace_private` branch and private picker source. |
-| A42 | Resolved | — | `spec.md` FR-032; `plan.md`; `quickstart.md`; T052 | The remote scan was described as an ordering check, but it checks filename conflicts only (CodeRabbit review on `a8b857f1`). | **RESOLVED** in `285f8236`: two separate checks, ordering and conflict. |
-| A43 | Resolved | — | `spec.md` FR-031; `plan.md` step 3; T062, T063 | Cutover could drop active legacy videos and let a legacy write land during the copy (CodeRabbit review on `a8b857f1`). | **RESOLVED** in `285f8236`: video carry-over in the cutover transaction under the same locks; note treatment still F16-MCQ-C. |
-| A44 | Resolved | — | `contracts/catalog-api.md` line 97 | The client contract appeared to exclude live description and alternatives categorically (CodeRabbit review on `a8b857f1`). | **RESOLVED** in `285f8236`: presentation governed by F16-MCQ-H and F16-MCQ-G. |
-| A45 | Resolved | — | `decision-register.md` F16-MCQ-J/K; `spec.md` FR-003; `data-model.md`; `contracts/catalog-api.md` | Whether the S36-PO-3 and S35-PO-3 editable-field lists were additive or replacing. | **RESOLVED by S36-PO-5 lines 4-6:** exactly eight fields, all workspace-editable by authorized WO/Trainers; Global PO-only. No field-scope blocker remains. |
-| A46 | Resolved | - | `decision-register.md` F16-MCQ-F-R; `spec.md` FR-003, FR-026; `tasks.md` T044, T049, T056 | Description language format. | **RESOLVED by S37-PO-10:** one optional Description value in any language; no AR/EN pair. |
-| A47 | Resolved | - | `decision-register.md` F16-MCQ-G-R; `spec.md` FR-025; `tasks.md` T048; `data-model.md` alternatives row | Alternatives maximum and duplicate rule. | **RESOLVED by S37-PO-10:** at most three alternatives per exercise with unique targets. |
-| A48 | Resolved | — | `decision-register.md` F16-MCQ-L/C-R; `spec.md` FR-003, FR-031; `tasks.md` T062 | Treatment of existing Notes and unique Instructions data. | **RESOLVED by S36-PO-5 line 7:** keep existing Notes; remove Instructions and preserve its unique data into Notes. T068 still precedes any migration audit. |
-| A49 | Out of F16 scope | - | `decision-register.md` F16-MCQ-D-R; `spec.md` FR-022; `tasks.md` historical T069 | Account deletion and re-registration handling. | **OUT OF SCOPE:** S37-PO-10 directs F11/F12 to specify the behavior in a separate PR by that lane; no F16 open item remains. |
-| A50 | Dependency (process) | MEDIUM | `tasks.md` T068; `plan.md` migration steps; `spec.md` FR-031 | The legacy-data audit must be recorded before any migration task (S36-PO-3). Its source (architect-assigned stack or approved read-only inventory) is not yet assigned. | **OPEN.** Blocks T043, T045, T046, T048, T053, T054, T062 and T063. |
-| A51 | Resolved | — | `research.md` S37 round 5 audit; origin/main migrations and tracked-code search | Whether a client Delete action currently exists and how it releases email/phone while retaining history. | Read-only audit found the `delete_client` capability but no client Delete UI/action/RPC. S37-PO-10 closes the outcome and assigns detailed behavior to F11/F12. No F16 task remains. |
-| A52 | Resolved | — | `spec.md` FR-003 and Key Entities; `data-model.md` `exercise_overrides`; `plan.md` | `notes` is an overridable field (S36-PO-3). Both readings of the editable list (additive and replacing) include notes. | **RESOLVED** in `20d83713` and `e1c7b9df`. Notes writes are not blocked by F16-MCQ-J. |
-| A53 | Architect confirmation | LOW | `decision-register.md` S36-PO-3 label notes (F16-MCQ-F, -G) | The F and G answers are architect words. F matches none of its options exactly; G's publication timing differs from option (a). | **OPEN, architect confirmation.** No task is blocked by the label alone. |
-| A54 | Resolved | - | `decision-register.md` F16-MCQ-P; `spec.md` FR-014, FR-031; `plan.md`; `tasks.md` T061-T063 | Legacy dummy video host carry-over. | **RESOLVED by S37-PO-10:** delete dummy `docs.google.com` values; no legacy support; the no-video-loss condition excludes them. |
-| A55 | Resolved | — | `decision-register.md` A55; `spec.md` FR-027; `data-model.md` `ExerciseSnapshotV2` row; `tasks.md` T056/T059 | Historical fields outside the exact eight Exercise Library fields. | The exact immutable version reference preserves historical taxonomy metadata; optional defaults are among the eight fields and copy into editable planner entries at addition. No extra F16 product decision is needed. |
-| A57 | Resolved | - | `spec.md` FR-014, FR-020, FR-027; `plan.md`; `decision-register.md` F16-MCQ-O | Published-plan Video timing. | **RESOLVED by S37-PO-1 Q2 = A:** Video stays live and follows the current authorized library value; other published values remain frozen. |
-| A58 | Resolved | - | `spec.md` FR-001/FR-003; `decision-register.md` F16-MCQ-Q | Global name-language rule scope. | **RESOLVED by S37-PO-10:** English required and Arabic optional for Global and Workspace names; supersedes the S20 Arabic-required rule for F16. |
-| A56 | Resolved (CodeRabbit round 5 and 6) | — | `spec.md` FR-032, SC-015; `plan.md`; `quickstart.md`; `tasks.md` T052, T054, T062 | The ordering check compared a local migration with its own version once it was on an origin ref; carry-over sequencing was split across T054 and T062. | **RESOLVED** in `e7f18b58` and this re-analysis: ordering compares with any other migration file; T062(a) and T062(b) are both in T054's cutover. |
-| A59 | Resolved (CodeRabbit round 6) | HIGH | `data-model.md` Lifecycle and version references; `spec.md` FR-027/FR-037; `plan.md` Snapshot contract | Published-plan non-video values could be rebuilt from current library resolution and overwrite copied or trainer-edited planner-entry values. | **RESOLVED** in this re-analysis: `ExerciseSnapshotV2` freezes non-video values from the planner entry at publication; live Video remains resolved from the authorized library. |
-| A60 | Resolved (CodeRabbit round 6) | HIGH | `tasks.md` T054, T062(b), T063 and dependency order; `plan.md` migration step 3 | Notes/Instructions carry-over was sequenced after cutover rather than in the same migration before the new library reads overrides. | **RESOLVED** in this re-analysis: T062(a) and T062(b) are both included in T054's cutover; T063 verifies the combined carry-over. |
-| A61 | Resolved (CodeRabbit round 6) | LOW | This Analyze record; `spec.md` Success Criteria; `tasks.md` Coverage | Inventory and coverage claims counted 20 criteria although `spec.md` contains SC-001 through SC-016. | **RESOLVED** in this re-analysis: inventory is 16 criteria and every SC-001 through SC-016 has a task mapping. |
+## Findings register (open and recorded)
 
-## Coverage
+Severity follows the speckit-analyze heuristic. "Open" means it still blocks something; "Not an ambiguity" means a dependency or awareness item that does not change any requirement.
+
+| ID | Category | Severity | Status | Summary and evidence |
+| --- | --- | --- | --- | --- |
+| A7 | Constitution alignment (process) | CRITICAL (historical) | **RESOLVED (S38 round 7, S37-PO-11)** | The Sol Medium critique was approved (S37-PO-11), ran at `50f5c236` (run `C:/Users/NEW LAP/.lifter/runs/s37-sol-f16-critique`), and its ten findings are dispositioned (critique-response §7). It is not re-run. |
+| A8 | Ambiguity (PO) | HIGH | RESOLVED | F16-MCQ-A option (a), per-field reset (S36-PO-3). |
+| A9 | Ambiguity (PO) | HIGH | RESOLVED | F16-MCQ-B option (a), empty alternatives allowed (S36-PO-3). |
+| A10 | Ambiguity (PO, data) | HIGH | ANSWERED IN PART | F16-MCQ-C plus S36-PO-5 (A48): keep Notes; T068 precedes any migration. T062(b) is planned inside the T054 cutover and is not blocked on a decision. |
+| A11 | Ambiguity (PO, tenancy) | HIGH | RESOLVED | F16-MCQ-E option (a) (S36-PO-3). |
+| A12 | Ambiguity (PO) | HIGH | RESOLVED | English name required, Arabic optional (S37-PO-10; F16-MCQ-Q); Description one optional value (F16-MCQ-F-R). |
+| A13 | Ambiguity (PO) | HIGH | RESOLVED | F16-MCQ-G frozen at publication; S37-PO-1 Q2 option text: "Frozen values = name/description/notes/alternatives/defaults". |
+| A14 | Ambiguity (PO) | HIGH | RESOLVED | F16-MCQ-H (Description frozen); Video live (S37-PO-1 Q2 = A). |
+| A15 | Ambiguity (PO) | HIGH | RESOLVED | F16-MCQ-9 option (a) (S36-PO-3). |
+| A16 | Ambiguity (PO) | MEDIUM | RESOLVED | F16-MCQ-I (1)(b) and (2)(b) (S36-PO-3). |
+| A17 | Ambiguity (PO, cross-feature) | LOW | RESOLVED for F16 | Account deletion and re-registration are specified in F11/F12 (S37-PO-10); no F16 task. |
+| A18 | Dependency | MEDIUM | OPEN, not an ambiguity | F19 persistence for the client wrapper (T058). The internal resolver (T050, T051) is not blocked. |
+| A19 | Dependency | MEDIUM | RESOLVED (PR #43) | PR #43 is MERGED (2026-11-08, `0fcd905d`). The T054/T055 sequencing constraint stays as a planned task rule (FR-031, FR-032). |
+| A20 | Process | MEDIUM | OPEN, not an ambiguity | T066 docs record (`docs/04-changes-and-questions.md`, `docs/01-traceability.md`); outside `specs/016-*`; not executed. |
+| A21 | Cross-feature | MEDIUM | OPEN, not an ambiguity | T059 amendments for F17, F18 and F19 snapshot and resolver consumers; blocked by F19 persistence. |
+| A22 | Coverage | LOW | OPEN, not an ambiguity | No dedicated test asserts that FR-033 adds no capability. Add the assertion to T055 at implementation. |
+| A38 | Architect awareness | LOW | NOT AN AMBIGUITY | Absence (`video: null`, source `none`) and the merged-source media rule are stated in FR-026, FR-028 and contract row 31. Awareness only. |
+| A39 | Monitor | MEDIUM | OPEN, monitor | Parity guard depends on the implemented matrix (T055); re-run at the final implementation head. |
+| A40 | Readability | LOW | CLOSED | No ambiguity; no change. |
+| A50 | Dependency (process) | MEDIUM | OPEN, not an ambiguity | T068 needs an architect-assigned stack or an approved read-only inventory before any migration task. Blocks migration tasks, not the spec. |
+| A53 | Architect confirmation | LOW | RESOLVED | The F and G answer labels are superseded by verbatim PO words: S37-PO-10 (name and Description) and the S37-PO-1 Q2 option text (frozen alternatives). |
+| A23–A37, A41–A49, A51–A52, A54–A61 | Earlier rounds | — | RESOLVED | Closed in rounds 3–6; their text is in the git history of this file. |
+
+## Coverage (split as required by D9)
 
 - Requirements inventory: FR-001 to FR-038 (including FR-016a), 39 keys; SC-001 to SC-016, 16 keys.
-- Requirements with at least one task reference (S36 or historical): 39 of 39. Requirements with a dedicated S36 test task: all except FR-033 (A22, LOW).
-- Success criteria mapped to tasks: SC-001 to SC-016 (`tasks.md` coverage bullet; all 16 criteria have task references). SC-005 (perf) maps to T034 (historical local benchmark) and T065 (exercise list and batch resolve); the Worker CPU and hosted metrics remain a production gate. SC-009 maps to T050, T051 and T058 for live Video; SC-010 maps to T040. A45 and the Description language question are resolved.
-- Planned contract rows: each moves into the implemented matrix only with its SQL, fixture row and parity test (S36-R10). The implemented matrix is unchanged in round 4 (only planned rows changed). `npx vitest run tests/unit/catalog-role-parity.test.ts` passes 2 of 2 locally.
+- Tasks: T001 to T073, T900, and the new T074 and T075, 76 in total.
+- **Historical evidence (T001–T036, T900; closed rows):** these cover the S25/S26 food, catalog and security work. FR-005 to FR-011, FR-019 and FR-021 have no new redesign API test. Their evidence is historical (T024 to T028 and the S25 release gate), and the food scope has not changed since S25. This is recorded as accepted historical-evidence coverage, pending architect confirmation. These rows are not described as dedicated S36 tests.
+- **Planned redesign tests (T037–T075):** each row names its FR IDs. Coverage for FR-001 to FR-004, FR-014, FR-018, FR-022 to FR-038 is planned, not evidenced. Per-field positive and negative cells are in the `data-model.md` coverage table.
+- **Implementation coverage (T043–T075):** Global and private storage, validators and allowlists for the eight fields are allocated to T043, T044, T045, T046, T047, T048, T074 and T075. None is implemented; evidence is blank in `traceability.md`.
+- Success criteria: SC-001 → T037, T047; SC-002 → T037, T046, T051; SC-003 → T024, T030; SC-004 → T003; SC-005 → T034, T065; SC-006 → T037, T051, T058; SC-007 → T037, T047, T055; SC-008 → T037, T047; SC-009 → T050, T051, T058; SC-010 → T040; SC-011 → T050, T056; SC-012 → T046, T050; SC-013 → T037, T047, T074, T075; SC-014 → T051, T055; SC-015 → T052; SC-016 → T037, T062, T063, T074, T075.
 
 ## Counts
 
-- Requirements: 39 keys (FR), 16 success criteria (SC). Tasks: 74 (T001 to T073 plus T900; T037 to T073 are S36/S37).
-- Ambiguity count (open): no F16 product decisions; A18, A19, A20, A21, A39, A50 (MEDIUM); A22, A38, A40, A53 (LOW); plus A7 (CRITICAL). Duplication count: 0 open. Underspecification open: A22 and A40 (LOW).
-- Severity (open): CRITICAL 1 (A7). HIGH 0. MEDIUM 6 (A18, A19, A20, A21, A39, A50). LOW 4 (A22, A38, A40, A53).
-- Resolved in round 3: A23 to A36 and A41 to A44 (18 items). Answered in round 4 (S36-PO-3): A8, A9, A11, A14, A15, A16 (resolved); A10, A12, A13 and A17 residuals are now closed/cross-feature by S37-PO-10; A52 resolved. Round 5 S36-PO-5 resolves A45, A48 and A55, and audit resolves A51. Round 6 resolves A37, A46, A47, A54, A57 and A58; A49 is out of F16 scope. CodeRabbit round 6 findings A59 and A60 (HIGH) and A61 (LOW) are resolved in the spec-only follow-up; remaining open CRITICAL/HIGH is A7 only.
+- Requirements: 39 FR keys, 16 SC keys. Tasks: 76.
+- Ambiguities (product and spec): **0 open**. Answered in part: A10 (T068 is a task dependency, not a question).
+- Severity (open): **CRITICAL 0, HIGH 0**. MEDIUM 5 (A18, A20, A21, A39, A50). LOW 2 (A22, A38).
+- Round 7 closed: A7, A10 (answered in part), A19, A53 and D1–D10 (D3 conditional item not raised).
+- Duplicates: 0 open.
+
+## "No open ambiguities"
+
+**TRUE for this round.** Every product question in the spec, plan and tasks has a recorded PO answer in `decision-register.md` or the spec Clarifications, citing its PO source. No PO-DECISION-NEEDED item is open. The D3 conversion question is conditional and is not raised until the T068 audit finds current content outside the approved bounds. The MEDIUM and LOW items above are dependencies, monitoring or awareness items, not ambiguities, and none changes a requirement.
 
 ## Gate
 
-- Spec and plan artifacts: **NOT PASS**. Open CRITICAL: 1 (A7). Open HIGH: 0. All F16 product decisions are closed; A7 alone prevents the Spec Kit entry gate from passing.
-- Implementation: **BLOCKED** for every F16 implementation task by A7. Other medium dependencies remain as listed; no closed PO item blocks its former tasks.
-- Exit: A7 must be resolved under the constitution's required process; T068 remains a prerequisite for migration tasks. No F16 product ambiguity remains open.
-- MEDIUM and LOW items above do not block this spec-only round; they are listed for the architect.
+- Spec and plan artifacts: **PASS** (0 open CRITICAL, 0 open HIGH, no open ambiguity).
+- Implementation: **not authorized** by this spec-only round. Migration tasks remain blocked by T068 (A50).
+- Exit for implementation approval, if the architect requests it: T068 recorded; architect confirmation of FR-005 to FR-011, FR-019 and FR-021 historical coverage (above).
