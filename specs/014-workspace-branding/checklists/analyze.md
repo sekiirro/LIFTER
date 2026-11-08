@@ -354,3 +354,20 @@ The rename commit changes only the migration path; this follow-up updates active
 The change is docs-only. No SQL, test, code, schema, data, or shared-migration change is made. The rename remains a 100% rename with blob `f70ccc05`. The T064 tick cites executed greens on `51bce06d`, the head that carries the rename and reference alignment; the final docs-commit head is verified by post-push CI reruns recorded in the run report.
 
 **Findings count:** 0 CRITICAL, 0 HIGH. **Verdict:** PASS for T064 closure under S37-PO-8 item 1.
+
+## Round 21 — T065 resize coalescing (2026-11-08)
+
+### Spec Kit entry gate (S29-PO-2, S29-PO-3 Q6)
+
+- **PASS — requirements and acceptance:** `specs/014-workspace-branding/spec.md` FR-029 and SC-021 cover the Hero Glisse treatment, its readability, accessibility and performance; the Hero acceptance scenario for Liquid Glass is unchanged.
+- **PASS — clarification and decision source:** `spec.md` `## Clarifications` (S30-PO-2, S30-PO-6, S35-PO-1) records the Hero decisions; no open ambiguity exists for the scope. The change is a CodeRabbit nitpick (review `5819204371` on `bb090811`) on the existing open PR #30 and stays within the S29-PO-3 Q6 exception. It changes no visible behaviour, copy, token, layout or motion.
+- **PASS — plan coverage:** `plan.md` Hero scope mapping (line 94) places the Hero module and its tests inside the approved scope; the change stays in `components/branding/` and `tests/unit/`.
+- **PASS — task coverage:** `tasks.md` adds unchecked T065 `[FR-029]`. It stays unchecked until RED/GREEN evidence exists on the final head.
+- **PASS — analysis freshness:** this round follows the T065 task edit and records 0 open CRITICAL/HIGH findings.
+
+### Review
+
+- No product decision is needed. The reduced-motion CSS path and the no-ResizeObserver window path stay as they are; the sampled values are unchanged.
+- The traceability entry for T065 is recorded after GREEN (see `traceability.md`).
+
+**Findings count:** 0 CRITICAL, 0 HIGH. **Verdict:** PASS for T065 entry under S29-PO-3 Q6.
