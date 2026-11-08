@@ -1,6 +1,7 @@
 import { cookies } from 'next/headers';
 import { notFound } from 'next/navigation';
 import { ExerciseEditor } from '../../../../components/catalog/ExerciseEditor';
+import { BrandScope } from '../../../../components/ui/BrandScope';
 import { LanguageSwitcher } from '../../../../components/preferences/LanguageSwitcher';
 import { ThemeSwitcher } from '../../../../components/preferences/ThemeSwitcher';
 import {
@@ -30,6 +31,10 @@ import {
 import { getMessages } from '../../../../lib/i18n';
 import { CatalogPreview } from './CatalogPreview';
 import styles from './page.module.css';
+import {
+  buildCatalogShowcaseHref,
+  type CatalogShowcaseHrefParams,
+} from '../../../../lib/catalog/showcase-href';
 
 type PreviewState = 'ready' | 'loading' | 'empty' | 'noResults' | 'error';
 type ShowcaseView = 'list' | 'editor';
@@ -100,18 +105,11 @@ function statusFor(state: PreviewState): CatalogListStatus {
   return 'ready';
 }
 
-type ShowcaseQuery = {
-  kind: CatalogListKind;
-  state: PreviewState;
-  view: ShowcaseView;
-  role: ShowcaseRole;
-  reps: ShowcaseReps;
-  scope: ShowcaseScope;
-  coachingWork: boolean;
-};
+type ShowcaseQuery = CatalogShowcaseHrefParams & { sampleBrand: boolean };
 
 function hrefFor(query: ShowcaseQuery): string {
-  return `/showcase/catalog?kind=${query.kind}&state=${query.state}&view=${query.view}&role=${query.role}&reps=${query.reps}&scope=${query.scope}&coachingWork=${query.coachingWork}`;
+  const { sampleBrand, ...params } = query;
+  return buildCatalogShowcaseHref(params, sampleBrand);
 }
 
 export default async function CatalogShowcasePage({
@@ -125,6 +123,7 @@ export default async function CatalogShowcasePage({
     reps?: string | string[];
     scope?: string | string[];
     coachingWork?: string | string[];
+    brand?: string | string[];
   }>;
 }) {
   if (!isShowcaseEnabled(process.env)) notFound();
@@ -140,6 +139,7 @@ export default async function CatalogShowcasePage({
   const reps = parseReps(search.reps);
   const scope = parseScope(search.scope);
   const coachingWork = parseBoolean(search.coachingWork);
+  const sampleBrand = search.brand === 'sample';
   const query: ShowcaseQuery = {
     kind,
     state: previewState,
@@ -148,6 +148,7 @@ export default async function CatalogShowcasePage({
     reps,
     scope,
     coachingWork,
+    sampleBrand,
   };
   const allItems = kind === 'exercise' ? mockExerciseItems : mockFoodItems;
   const items = previewState === 'empty' ? [] : allItems;
@@ -180,6 +181,32 @@ export default async function CatalogShowcasePage({
     global: m['catalog.showcaseScopeGlobal'],
     workspace: m['catalog.showcaseScopeWorkspace'],
   };
+
+  const surface =
+    view === 'editor' ? (
+      <ExerciseEditor
+        key={`editor-${role}-${reps}-${scope}-${coachingWork}`}
+        locale={locale}
+        role={role}
+        scope={scope}
+        hasCoachingWork={scope === 'workspace' ? coachingWork : false}
+        exercise={
+          reps === 'range'
+            ? mockExerciseEditorRangeFixture
+            : mockExerciseEditorFixture
+        }
+        alternatives={mockExerciseAlternatives}
+      />
+    ) : (
+      <CatalogPreview
+        key={`${kind}-${previewState}`}
+        locale={locale}
+        kind={kind}
+        items={items}
+        status={statusFor(previewState)}
+        initialQuery={initialQuery}
+      />
+    );
 
   return (
     <main className={styles.page} data-testid="catalog-showcase">
@@ -364,30 +391,12 @@ export default async function CatalogShowcasePage({
         </div>
       </section>
 
-      {view === 'editor' ? (
-        <ExerciseEditor
-          key={`editor-${role}-${reps}-${scope}-${coachingWork}`}
-          locale={locale}
-          role={role}
-          scope={scope}
-          hasCoachingWork={scope === 'workspace' ? coachingWork : false}
-          exercise={
-            reps === 'range'
-              ? mockExerciseEditorRangeFixture
-              : mockExerciseEditorFixture
-          }
-          alternatives={mockExerciseAlternatives}
-          lifecycleState="active"
-        />
+      {sampleBrand ? (
+        <BrandScope color="#2563EB" data-testid="catalog-brand-scope">
+          {surface}
+        </BrandScope>
       ) : (
-        <CatalogPreview
-          key={`${kind}-${previewState}`}
-          locale={locale}
-          kind={kind}
-          items={items}
-          status={statusFor(previewState)}
-          initialQuery={initialQuery}
-        />
+        surface
       )}
 
       <footer className={styles.notice}>{m['catalog.showcaseNotice']}</footer>

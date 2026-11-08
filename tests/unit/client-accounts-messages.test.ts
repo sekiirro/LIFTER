@@ -2,12 +2,33 @@ import { expect, it, vi } from 'vitest';
 import { signupResult } from '../../lib/client-accounts/results';
 import { parseOpenResult } from '../../lib/registration-links/open';
 import { getMessages } from '../../lib/i18n';
+
+it('uses the approved EN and AR username validation copy byte-for-byte', () => {
+  const en = getMessages('en');
+  const ar = getMessages('ar');
+  expect(en['clientSignup.usernameUnavailable']).toBe(
+    'This username is unavailable. Choose another.',
+  );
+  expect(ar['clientSignup.usernameUnavailable']).toBe(
+    'اسم المستخدم ده غير متاح. اختار اسم تاني.',
+  );
+  expect(en['clientSignup.usernameFormatError']).toBe(
+    'Use 3–30 characters: English letters, numbers, periods, or underscores.',
+  );
+  expect(ar['clientSignup.usernameFormatError']).toBe(
+    'استخدم من 3 لـ30 حرف: حروف إنجليزي أو أرقام أو نقطة أو شرطة سفلية.',
+  );
+});
 import { signupFields } from '../../lib/client-accounts/validation';
 
 vi.mock('server-only', () => ({}));
 
 const signupKeys = [
   'clientSignup.name',
+  'clientSignup.dateOfBirth',
+  'clientSignup.username',
+  'clientSignup.telegramUsername',
+  'clientSignup.optional',
   'clientSignup.email',
   'clientSignup.country',
   'clientSignup.phone',
@@ -24,7 +45,7 @@ const signupKeys = [
   'clientSignup.signOutRequired',
 ];
 
-it('T035 has matching Arabic and English signup message keys and no Telegram copy', () => {
+it('T035 has matching Arabic and English signup profile message keys', () => {
   const en = getMessages('en') as Record<string, string>;
   const ar = getMessages('ar') as Record<string, string>;
   expect(Object.keys(en).sort()).toEqual(Object.keys(ar).sort());
@@ -32,13 +53,8 @@ it('T035 has matching Arabic and English signup message keys and no Telegram cop
     expect(en[key], `${key} in English`).toBeTruthy();
     expect(ar[key], `${key} in Arabic`).toBeTruthy();
   }
-  expect(Object.keys(en).some((key) => /telegram/i.test(key))).toBe(false);
-  expect(Object.values(en).some((value) => /telegram/i.test(value))).toBe(
-    false,
-  );
-  expect(Object.values(ar).some((value) => /telegram/i.test(value))).toBe(
-    false,
-  );
+  expect(en['clientSignup.telegramUsername']).toBe('Telegram username');
+  expect(ar['clientSignup.telegramUsername']).toBe('اسم مستخدم تيليجرام');
 });
 
 it('T035 preserves D-08 and unavailable wording and keeps completion generic', () => {
@@ -93,13 +109,16 @@ it('T035 collapses every registration-link state to valid or invalid, never unav
   );
 });
 
-it('T035 keeps the signup field contract to name, email, phone and password', () => {
+it('T035 keeps the approved signup profile fields and rejects unknown fields', () => {
   expect(
     signupFields({
-      name: 'Example Person',
+      name: 'Example Sami Person',
       email: 'example@example.test',
       phone: '+201012345678',
       password: 'Complex!2345',
+      dateOfBirth: '1990-04-12',
+      username: 'example.person',
+      telegramUsername: '',
       telegram: 'unused',
     }),
   ).toBeNull();

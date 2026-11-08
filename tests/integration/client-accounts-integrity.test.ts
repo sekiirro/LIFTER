@@ -97,6 +97,9 @@ it('clients: every required field is NOT NULL, generated id/time and pending-onl
       'email_normalized',
       'phone_e164',
       'name',
+      'date_of_birth',
+      'username_normalized',
+      'telegram_username',
       'approval_state',
       'created_at',
       'deactivated_at',
@@ -104,11 +107,49 @@ it('clients: every required field is NOT NULL, generated id/time and pending-onl
   );
   expect(
     columns
-      .filter((c) => c.attname !== 'deactivated_at')
+      .filter(
+        (c) =>
+          ![
+            'deactivated_at',
+            'date_of_birth',
+            'username_normalized',
+            'telegram_username',
+          ].includes(c.attname),
+      )
       .every((c) => c.attnotnull),
   ).toBe(true);
   expect(columns.find((c) => c.attname === 'deactivated_at')?.attnotnull).toBe(
     false,
+  );
+  for (const column of [
+    'date_of_birth',
+    'username_normalized',
+    'telegram_username',
+  ]) {
+    expect(columns.find((c) => c.attname === column)?.attnotnull, column).toBe(
+      false,
+    );
+  }
+  const profileConstraints = await db`
+    select conname from pg_constraint
+    where conrelid = 'public.clients'::regclass
+      and conname in ('clients_username_normalized_check', 'clients_telegram_username_check')
+  `;
+  expect(profileConstraints.map((row) => row.conname).sort()).toEqual([
+    'clients_telegram_username_check',
+    'clients_username_normalized_check',
+  ]);
+  const profileIndex = await db`
+    select indexname, indexdef from pg_indexes
+    where schemaname = 'public' and tablename = 'clients'
+      and indexname = 'clients_workspace_id_username_normalized_key'
+  `;
+  expect(profileIndex).toHaveLength(1);
+  expect(profileIndex[0]?.indexdef).toContain(
+    'UNIQUE INDEX clients_workspace_id_username_normalized_key',
+  );
+  expect(profileIndex[0]?.indexdef).toContain(
+    'WHERE (username_normalized IS NOT NULL)',
   );
 });
 for (const [table, fragments] of [
@@ -192,7 +233,15 @@ for (const [name, expected] of [
   [
     'signup_field_contract',
     {
-      required: ['name', 'email', 'phone', 'password'],
+      required: [
+        'name',
+        'email',
+        'phone',
+        'password',
+        'date_of_birth',
+        'username',
+      ],
+      optional: ['telegram_username'],
       telegram: false,
       phone_input_format: null,
     },

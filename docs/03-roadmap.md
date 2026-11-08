@@ -37,8 +37,8 @@ Critical path: P0 tenancy/auth → P1 token+subscription+ledger → P3 planners 
 
 ## Quality gates (every feature, enforced by Claude review)
 
-1. Spec Kit artifacts exist (spec → plan → tasks → analyze clean) before code.
-2. Typecheck + lint + unit tests green in CI (integration tests join the CI gate from P0-F3, when the Supabase schema exists). Claude re-runs them locally rather than trusting the coder's report.
+1. Constitution, Specify, Clarify, Plan, Tasks, and Analyze are complete before code. Clarify must end with zero open ambiguities before implementation, recorded explicitly and never assumed; Analyze is dated after the latest spec/plan/tasks change and has zero open CRITICAL/HIGH findings (S29-PO-2; S29-PO-3 Q1, tightened by S37-PO-1 Q1). Before implementation, complete the mandatory independent feature critique by a model other than the spec's author (S30-PO-8 Q15; S36-PO-5: Sol Medium is used exclusively for this critique); each invocation requires explicit PO approval, with no unapproved critic and no skipped critique. Follow docs/08 for explicit PO approval and unresolved-decision gates.
+2. Typecheck + lint + unit tests green in CI (integration tests join the CI gate from P0-F3, when the Supabase schema exists). Implementation agents execute tests; Claude verifies required CI evidence on the exact PR head against the Constitution/docs/08 merge gate (required checks: main workflow jobs `validate`, `integration`, `storage` with executed — steps > 0 — runs, plus CodeRabbit review and secret scan `check:secrets` in `validate`; update `docs/08` in the same PR for job rename/removal) and does not rerun tests locally.
 3. **Isolation gate:** every new tenant table has RLS + a composite FK, and every new endpoint/job/bot command has a foreign-workspace negative test.
 4. **Money gate:** ledger/payroll changes include immutability + idempotency tests. Amounts are integers only.
 5. Migrations are forward-only, reviewed and reversible-by-expand/contract. Destructive ones need PO approval.

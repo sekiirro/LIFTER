@@ -13,17 +13,48 @@
   line-height: var(--line-height-heading);
 }
 
-.banner {
-  /* PO s15 Q1 C: F14 banner 2:1, max-height 288px. */
+.bannerFrame {
+  position: relative;
   display: block;
+  overflow: hidden;
   inline-size: 100%;
   min-block-size: 8rem;
   max-block-size: 18rem;
   aspect-ratio: 2 / 1;
-  border-radius: var(--radius-sm);
-  background: var(--color-card-raised);
+  border-radius: var(--radius-sm) var(--radius-sm) 0 0;
+  background: transparent;
+}
+
+.bannerFrame::after {
+  position: absolute;
+  inset-inline: 0;
+  inset-block-end: 0;
+  block-size: 35%;
+  background: linear-gradient(
+    to bottom,
+    transparent 0%,
+    color-mix(in oklab, var(--color-card) 50%, transparent) 55%,
+    color-mix(in oklab, var(--color-card) 85%, transparent) 80%,
+    var(--color-card) 100%
+  );
+  content: '';
+  pointer-events: none;
+}
+
+.bannerImage {
+  position: absolute;
+  inset: 0;
+  display: block;
+  inline-size: 100%;
+  block-size: 100%;
   object-fit: cover;
   object-position: center;
+}
+
+@media (forced-colors: active), print {
+  .bannerFrame::after {
+    display: none;
+  }
 }
 
 .bannerFallback {

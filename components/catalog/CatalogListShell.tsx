@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useReducer, type FormEvent } from 'react';
+import Link from 'next/link';
 import { Bidi } from '../ui/Bidi';
 import { Button } from '../ui/Button';
 import { Card } from '../ui/Card';
@@ -14,6 +15,7 @@ import {
   catalogSearchKeyAction,
   formatCatalogCount,
   hasActiveCatalogFilters,
+  hasSubmittedCatalogSearch,
   initialCatalogShellState,
   reduceCatalogShellState,
   selectCatalogItems,
@@ -32,11 +34,15 @@ export type CatalogListShellProps = {
   locale: Locale;
   kind: CatalogListKind;
   items: readonly CatalogListItem[];
+  serverFiltered?: boolean;
   status?: CatalogListStatus;
   initialQuery?: string;
   initialFilters?: CatalogSearchFilters;
   onSearch?: (search: ReturnType<typeof buildCatalogSearch>) => void;
   onRetry?: () => void;
+  emptyActionHref?: string;
+  emptyActionLabel?: string;
+  itemHref?: (item: CatalogListItem) => string;
 };
 
 const noop = () => {};
@@ -45,11 +51,15 @@ export function CatalogListShell({
   locale,
   kind,
   items,
+  serverFiltered = false,
   status = 'ready',
   initialQuery = '',
   initialFilters = {},
   onSearch,
   onRetry,
+  emptyActionHref,
+  emptyActionLabel,
+  itemHref,
 }: CatalogListShellProps) {
   const m = getMessages(locale);
   const titleId = useId();
@@ -57,7 +67,10 @@ export function CatalogListShell({
   const [state, dispatch] = useReducer(reduceCatalogShellState, undefined, () =>
     initialCatalogShellState(kind, initialQuery, initialFilters),
   );
-  const visible = selectCatalogItems(items, state.search);
+  const visible = serverFiltered
+    ? items
+    : selectCatalogItems(items, state.search);
+  const hasSearch = hasSubmittedCatalogSearch(state.search);
   const filterKeys = CATALOG_FILTER_KEYS[kind];
   const canClear =
     state.query.length > 0 || hasActiveCatalogFilters(state.filters);
@@ -185,7 +198,11 @@ export function CatalogListShell({
 
       {status === 'ready' && (
         <p className={styles.count} role="status" data-testid="catalog-count">
-          {formatCatalogCount(m['catalog.resultsCount'], visible.length)}
+          {formatCatalogCount(
+            m['catalog.resultsCount'],
+            visible.length,
+            locale,
+          )}
         </p>
       )}
 
@@ -207,11 +224,17 @@ export function CatalogListShell({
           retryLabel={m['catalog.retry']}
           onRetry={onRetry ?? noop}
         />
-      ) : items.length === 0 ? (
+      ) : items.length === 0 && !hasSearch ? (
         <EmptyState
           title={m['catalog.emptyTitle']}
           description={m['catalog.emptyDescription']}
-        />
+        >
+          {emptyActionHref && emptyActionLabel ? (
+            <a className={styles.emptyAction} href={emptyActionHref}>
+              {emptyActionLabel}
+            </a>
+          ) : null}
+        </EmptyState>
       ) : visible.length === 0 ? (
         <NoResults
           title={m['catalog.noResultsTitle']}
@@ -228,7 +251,13 @@ export function CatalogListShell({
               <Card as="article" className={styles.item}>
                 <div className={styles.itemHeader}>
                   <h3 className={styles.itemTitle}>
-                    <Bidi dir="auto">{catalogItemName(item, locale)}</Bidi>
+                    {itemHref ? (
+                      <Link className={styles.itemLink} href={itemHref(item)}>
+                        <Bidi dir="auto">{catalogItemName(item, locale)}</Bidi>
+                      </Link>
+                    ) : (
+                      <Bidi dir="auto">{catalogItemName(item, locale)}</Bidi>
+                    )}
                   </h3>
                   <span className={styles.kind}>
                     {m[`catalog.${item.kind}Kind`]}
