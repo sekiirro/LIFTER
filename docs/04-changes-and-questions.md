@@ -48,7 +48,8 @@ Statuses: **APPROVED** · **SUPERSEDED** · **OPEN**. Later decisions supersede 
 | Constitution v1.0.0 VIII "lime accent" | D-18 |
 | Calendar-month default; B1, B2, B3, B5 | D-08, D-09/10, D-13/15, D-11 |
 | "Staff email can't also be client" (technical note) | D-16 (policy) |
-| D-27 fixed tier sequence and model pool (S22-PO-9 rule 2; S25-PO-4; S25-PO-9); S30-PO-8 Q15 (Sol Medium as sole critic); S31-PO-7 Q6 high-risk model list | D-29, for model selection and critic model only (S36-PO-2, S36-PO-3, S36-PO-4). Per-invocation PO approval, mandatory critique and all gates are preserved. History retained. |
+| D-27 fixed tier sequence and model pool (S22-PO-9 rule 2; S25-PO-4; S25-PO-9); D-28 restriction of high-risk work to Luna High or Sol Medium (D-28's other safeguards, including no secrets or `.env` values for third-party-routed models, remain); S30-PO-8 Q15 (Sol Medium as sole critic); S31-PO-7 Q6 high-risk model list | D-29, for model selection and critic model only (S36-PO-2, S36-PO-3, S36-PO-4). Per-invocation PO approval, mandatory critique and all gates are preserved. History retained. |
+| D-27 "exact-head push + pull_request CI" wording | S35-PO-1 (`#48=A`): three executed `pull_request` attempts on the exact head; feature-branch pushes create no CI runs. See the [main merge gate](08-agent-workflow.md#main-merge-gate). Other D-27 requirements unchanged. |
 
 ## Open (does not block the Constitution)
 
