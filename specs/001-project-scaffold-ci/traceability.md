@@ -40,3 +40,9 @@ Evidence run `41894845099`, attempt 1, on commit `447ceb0b69b8516abfa26c5b1289ef
 |---|---|---|---|---|
 | FR-022 / SC-012 (three matrix shards and successful aggregation) | T023 | `tests/unit/ci-local-e2e.test.ts::exposes the required integration aggregator for all shard results`; `tests/unit/ci-local-e2e.test.ts::allows main-push integration aggregation with no PR or head SHA` | Commit `5cebe3693780f3c5cf02d79b3caf0672246ea653`; both relevant CI unit files passed 11/11 on this head, including the red-first aggregator and main-push revisions cases. `npm run typecheck`, `npm run lint`, and `npm run format:check` passed. GitHub exact-head CI is tracked separately in the round report. | VERIFIED (local) |
 | FR-023 (required exact `integration` check in every full attempt) | T023 | `.github/workflows/ci.yml::integration` | Workflow exposes an always-run `integration` aggregator depending on `integration-shard`; all shard results must be success, revision tuples must agree, and the aggregator logs the common revisions. Run `42563370293` on predecessor `f2901baff2210492f34536aa00bab5e735de8b05` executed all six required jobs successfully; final-head hosted runs are pending and recorded in the round report. | IMPLEMENTED |
+
+## S40 review correction — aggregator revision scope (FR-022, FR-023)
+
+| FR | Task | Test file::name | Evidence |
+|---|---|---|---|
+| FR-022, FR-023 | T023 | `tests/unit/ci-local-e2e.test.ts::executes the integration aggregator script against push and PR revision cases` | Commit `2624c90535603e3b1a0d3413343fb09c6af6fdb7`; focused file passed 4/4, including push/PR success, shard failure, tuple mismatch, and invalid SHA. RED proof: removing the shard-result guard in a temporary workflow copy made the new test fail (`expected 0 to be 1`); the temporary copy was deleted. On this commit, `npm run typecheck`, `npm run lint`, and `npm run format:check` passed. |
