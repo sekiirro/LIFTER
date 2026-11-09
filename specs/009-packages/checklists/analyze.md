@@ -110,3 +110,16 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - Encoding: the feature-folder scan for the three requested mojibake marker families returned no matches. The task document's affected Unicode symbols are restored; changed Markdown files are UTF-8 without BOM.
 - Result: PASS — 0 CRITICAL, 0 HIGH. This is static consistency analysis only; it does not authorize implementation or claim tests passed.
 - Final cross-artifact pass after the task range update: tasks.md now covers T052–T076; FR-023 T076 remains unchecked, and the planned test mapping remains identical in tasks.md and traceability.md. Result remains 0 CRITICAL, 0 HIGH.
+
+## 2026-11-09 Analyze — S39-R8 / S39-R9 (PR #53 review 5821074584)
+
+- Date: 2026-11-09 (Africa/Cairo), after the 2026-11-09 edits to `spec.md:84` (S39-R8) and `tasks.md:10` (S39-R9). Those are the last changes to spec, plan and tasks in this round; `plan.md` is unchanged.
+- Entry check: PASS — `spec.md` FR-001..FR-033, SC-001..SC-023 and Given/When/Then scenarios are present; the Clarifications section records S39-R8 and S39-R9 verbatim as architect rulings (explicitly not PO decisions); `plan.md` covers the package lifecycle; FR-tagged tasks T042–T076 exist and T071 requires exact traceability evidence.
+- Scope: two wording changes only. (1) `spec.md:84`: versions snapshot the offer's fixed duration (no versioned duration change). (2) `tasks.md:10`: implementers may edit `traceability.md` and verification evidence files within task scope; all other `specs/` files stay off-limits. No requirement, FR, SC, task or PO decision changed.
+- Consistency checked:
+  - FR-002 (identity fixed), FR-005 (publication snapshots duration) and `spec.md:262` (duration representation fixed at first creation) agree with the reworded line 84. No other `spec.md` line calls duration a versioned term; SC-003 already speaks of "duration terms" remaining unchanged across versions.
+  - `plan.md:62`, `data-model.md:89`, `quickstart.md:95` describe `duration` as a stored snapshot on `package_versions`, which is consistent with the reword. Not edited, per S39-R8 ("spec.md:84" only).
+  - `tasks.md:10` now matches the Spec Kit gate §3 evidence rule (S29-PO-2) and T071. T048 remains the separate `quickstart.md` §5 exception. No other `specs/` file grants implementers write access.
+- Findings: 0 CRITICAL, 0 HIGH. The earlier findings CR-01 (line 84) and CR-02 (line 10) are closed by these two edits. No new finding.
+- Ambiguity status: **No open ambiguities** in the scope of this round (`spec.md:84`, `tasks.md:10`). Pre-existing gates are recorded unchanged and are not touched here: BLOCKED-COPY, ND-F9-2/3/5, C5 teardown review (T064b pre-implementation, T070 post-implementation), FX provider/security review (T059/T062).
+- Verdict: PASS — 0 CRITICAL, 0 HIGH. This is static consistency analysis only; it does not authorize implementation and claims no test evidence.

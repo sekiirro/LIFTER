@@ -81,7 +81,7 @@ Only the PD-S34-NEW-01 part of this message concerns F9; S34-06 and S34-05 conce
 
 - The **package row is the category**. There is no separate category entity.
 - The canonical package identity carries `workspace_id`, immutable market and immutable type, and is unique on `(workspace_id, market, type)`. Each workspace therefore has at most one package row per market/type pair, and exactly four after C5 initialization (FR-019, FR-028).
-- **Versions hold commercial terms** (names, price, currency, commission rate, duration terms). Commercial edits append immutable versions (FR-021, FR-029); they never change the package row's market/type.
+- **Versions hold commercial terms** (names, price, currency, commission rate). Versions snapshot the offer's fixed duration (no versioned duration change; FR-002, FR-005). Commercial edits append immutable versions (FR-021, FR-029); they never change the package row's market/type.
 - The market/currency matrix is evaluated against the market stored on the package row, never against a market supplied with a publication request.
 
 This supersedes the baseline "platform-owned package, no `workspace_id`" shape for the S34 model only; the baseline migration is never edited. A forward migration defines the physical change under T042.
@@ -118,6 +118,16 @@ These decisions close the previously recorded FX-rounding, FX calendar/publicati
 - A Promotional category with no start is available from its creation instant; a category with no end is available indefinitely. Any supplied start/end bound remains Africa/Cairo start-inclusive/end-exclusive.
 
 No further product ambiguity remains in the resolved FX rounding, calendar/publication, currency-verification or optional promotion-bound scopes.
+
+### Session 2026-11-09 — S39-R8 and S39-R9 (architect rulings, not PO decisions)
+
+Architect rulings on PR #53 review findings PD-F9-CR-01 and PD-F9-CR-02 are recorded verbatim below. They are architect words, not PO words; no PO approval is claimed for them.
+
+> S39-R8 (#53 PD-F9-CR-01, not a PO question): duration is offer identity, already decided in FR-002 ("workspace, package and duration identity MUST remain fixed"), FR-005 (publication snapshots its duration) and spec.md:262. spec.md:84 "duration terms" is an editorial inconsistency: reword to say versions snapshot the offer's fixed duration (no versioned duration change). No retirement/lifecycle question arises: a different duration is a different offer, and availability changes only through existing PO operations (FR-002); no automatic retirement is added (S38-PO-3).
+
+> S39-R9 (#53 PD-F9-CR-02, not a PO question): the Spec Kit gate section 3 (S29-PO-2) requires the implementer to record evidence in specs/<feature>/traceability.md. Amend tasks.md:10 so the implementer may edit traceability.md and verification evidence files within the task's scope; all other specs/ files stay off-limits to implementers.
+
+Applied: `spec.md:84` now states that versions snapshot the offer's fixed duration (no versioned duration change). `tasks.md:10` permits implementer edits to `traceability.md` and verification evidence files within task scope; all other `specs/` files remain off-limits. No other requirement changed.
 
 ### Session 2026-11-04
 
