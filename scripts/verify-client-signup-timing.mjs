@@ -83,7 +83,7 @@ export async function runTiming() {
     db = sql();
   const run = randomUUID(),
     categories = ['ordinary-duplicate', 'archived-collision-synthetic'];
-  const origin = 'http://localhost:3000';
+  const origin = process.env.APP_ORIGIN ?? 'http://localhost:3000';
   const usedTokens = new Set(),
     usedSecrets = new Set(),
     usedIps = new Set();

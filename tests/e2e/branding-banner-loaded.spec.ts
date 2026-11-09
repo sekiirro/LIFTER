@@ -1,3 +1,4 @@
+import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
 import { expect, test, type Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -21,7 +22,7 @@ import {
   heroEvidenceDirectory,
 } from './registration-hero-evidence';
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const origin = process.env.PLAYWRIGHT_BASE_URL ?? testOrigin;
 function dateInputYearsAgo(years: number) {
   const date = new Date();
   date.setFullYear(date.getFullYear() - years);
@@ -191,10 +192,14 @@ for (const {
     await page.setViewportSize(viewport);
     await page.emulateMedia({ colorScheme: osTheme, reducedMotion: 'reduce' });
     const cookies: { name: string; value: string; url: string }[] = [
-      { name: LOCALE_COOKIE, value: locale, url: origin },
+      { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin(origin) },
     ];
     if (theme !== 'follow-device')
-      cookies.push({ name: THEME_COOKIE, value: theme, url: origin });
+      cookies.push({
+        name: THEME_COOKIE,
+        value: theme,
+        url: getTestCookieOrigin(origin),
+      });
     await context.addCookies(cookies);
 
     if (artwork === 'sampling-fallback') {
@@ -263,8 +268,16 @@ for (const artwork of ['dim', 'bright'] as const) {
           await page.setViewportSize(viewport);
           await page.emulateMedia({ reducedMotion: 'reduce' });
           await context.addCookies([
-            { name: LOCALE_COOKIE, value: locale, url: origin },
-            { name: THEME_COOKIE, value: theme, url: origin },
+            {
+              name: LOCALE_COOKIE,
+              value: locale,
+              url: getTestCookieOrigin(origin),
+            },
+            {
+              name: THEME_COOKIE,
+              value: theme,
+              url: getTestCookieOrigin(origin),
+            },
           ]);
           await page.addInitScript(() => {
             (window as Window & { __f14Shifts?: number }).__f14Shifts = 0;
@@ -479,10 +492,14 @@ for (const { locale, theme, osTheme, viewport } of invalidThemeCases) {
       contrast: 'more',
     });
     const cookies: { name: string; value: string; url: string }[] = [
-      { name: LOCALE_COOKIE, value: locale, url: origin },
+      { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin(origin) },
     ];
     if (theme !== 'follow-device')
-      cookies.push({ name: THEME_COOKIE, value: theme, url: origin });
+      cookies.push({
+        name: THEME_COOKIE,
+        value: theme,
+        url: getTestCookieOrigin(origin),
+      });
     await context.addCookies(cookies);
     await page.goto(`/register/${encodeURIComponent(token)}`);
     const stage = page.locator('[data-registration-hero]');
@@ -516,8 +533,8 @@ test('dim/invalid/en/light/mobile-390: preference keeps invalid text readable', 
     contrast: 'more',
   });
   await context.addCookies([
-    { name: LOCALE_COOKIE, value: 'en', url: origin },
-    { name: THEME_COOKIE, value: 'light', url: origin },
+    { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
+    { name: THEME_COOKIE, value: 'light', url: getTestCookieOrigin(origin) },
   ]);
   await page.goto(`/register/${encodeURIComponent(token)}`);
   const stage = page.locator('[data-registration-hero]');
@@ -551,8 +568,16 @@ for (const locale of ['ar', 'en'] as const) {
         await page.setViewportSize(viewport);
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await context.addCookies([
-          { name: LOCALE_COOKIE, value: locale, url: origin },
-          { name: THEME_COOKIE, value: theme, url: origin },
+          {
+            name: LOCALE_COOKIE,
+            value: locale,
+            url: getTestCookieOrigin(origin),
+          },
+          {
+            name: THEME_COOKIE,
+            value: theme,
+            url: getTestCookieOrigin(origin),
+          },
         ]);
         await page.goto(`/register/${encodeURIComponent(token)}`);
         const stage = page.locator('[data-registration-hero]');
@@ -616,8 +641,16 @@ for (const locale of ['ar', 'en'] as const) {
           await page.setViewportSize(viewport);
           await page.emulateMedia({ reducedMotion: 'reduce' });
           await context.addCookies([
-            { name: LOCALE_COOKIE, value: locale, url: origin },
-            { name: THEME_COOKIE, value: theme, url: origin },
+            {
+              name: LOCALE_COOKIE,
+              value: locale,
+              url: getTestCookieOrigin(origin),
+            },
+            {
+              name: THEME_COOKIE,
+              value: theme,
+              url: getTestCookieOrigin(origin),
+            },
           ]);
           await page.goto(`/register/${encodeURIComponent(token)}`);
           const stage = page.locator('[data-registration-hero]');
@@ -664,8 +697,16 @@ for (const locale of ['ar', 'en'] as const) {
         await page.setViewportSize(viewport);
         await page.emulateMedia({ reducedMotion: 'reduce' });
         await context.addCookies([
-          { name: LOCALE_COOKIE, value: locale, url: origin },
-          { name: THEME_COOKIE, value: theme, url: origin },
+          {
+            name: LOCALE_COOKIE,
+            value: locale,
+            url: getTestCookieOrigin(origin),
+          },
+          {
+            name: THEME_COOKIE,
+            value: theme,
+            url: getTestCookieOrigin(origin),
+          },
         ]);
         // Simulate a tainted canvas: the artwork read fails after the image
         // has loaded, so the hero has to use its opaque fallback.
@@ -731,8 +772,16 @@ for (const viewport of [
     for (const locale of ['ar', 'en'] as const) {
       for (const theme of ['light', 'dark'] as const) {
         await context.addCookies([
-          { name: LOCALE_COOKIE, value: locale, url: origin },
-          { name: THEME_COOKIE, value: theme, url: origin },
+          {
+            name: LOCALE_COOKIE,
+            value: locale,
+            url: getTestCookieOrigin(origin),
+          },
+          {
+            name: THEME_COOKIE,
+            value: theme,
+            url: getTestCookieOrigin(origin),
+          },
         ]);
         await page.goto(`/register/${encodeURIComponent(token)}`);
         await expect(page.locator('[data-registration-banner]')).toBeVisible();

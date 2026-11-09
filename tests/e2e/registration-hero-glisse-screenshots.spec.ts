@@ -1,3 +1,4 @@
+import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -16,7 +17,7 @@ import {
  * the shipped textured artwork. Every capture is asserted axe-clean. Screenshots
  * and `INDEX.md` are written to the OS temp directory, never into the repo.
  */
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const origin = process.env.PLAYWRIGHT_BASE_URL ?? testOrigin;
 const heroPath = '/showcase/f14-hero';
 
 type ThemeName = 'Light' | 'Dark' | 'Follow OS light' | 'Follow OS dark';
@@ -109,10 +110,18 @@ const captured: (Scenario & { file: string; axeViolations: number })[] = [];
 async function applyPreferences(context: BrowserContext, scenario: Scenario) {
   await context.clearCookies();
   const cookies: { name: string; value: string; url: string }[] = [
-    { name: LOCALE_COOKIE, value: scenario.locale, url: origin },
+    {
+      name: LOCALE_COOKIE,
+      value: scenario.locale,
+      url: getTestCookieOrigin(origin),
+    },
   ];
   if (scenario.cookie) {
-    cookies.push({ name: THEME_COOKIE, value: scenario.cookie, url: origin });
+    cookies.push({
+      name: THEME_COOKIE,
+      value: scenario.cookie,
+      url: getTestCookieOrigin(origin),
+    });
   }
   await context.addCookies(cookies);
 }

@@ -1,3 +1,4 @@
+import { getTestCookieOrigin } from './test-origin.mjs';
 import { expect, test } from '@playwright/test';
 import { mkdir } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -64,8 +65,16 @@ test.describe.serial('T038 invitation signup UI', () => {
             height: viewport.height,
           });
           await context.addCookies([
-            { name: LOCALE_COOKIE, value: locale, url: origin },
-            { name: THEME_COOKIE, value: theme, url: origin },
+            {
+              name: LOCALE_COOKIE,
+              value: locale,
+              url: getTestCookieOrigin(origin),
+            },
+            {
+              name: THEME_COOKIE,
+              value: theme,
+              url: getTestCookieOrigin(origin),
+            },
           ]);
           await page.goto(`/register/${token}`);
           await page.addStyleTag({
@@ -131,8 +140,16 @@ test.describe.serial('T038 invitation signup UI', () => {
       for (const theme of ['light', 'dark'] as const) {
         await page.setViewportSize({ width: 390, height: 844 });
         await context.addCookies([
-          { name: LOCALE_COOKIE, value: locale, url: origin },
-          { name: THEME_COOKIE, value: theme, url: origin },
+          {
+            name: LOCALE_COOKIE,
+            value: locale,
+            url: getTestCookieOrigin(origin),
+          },
+          {
+            name: THEME_COOKIE,
+            value: theme,
+            url: getTestCookieOrigin(origin),
+          },
         ]);
         await page.goto(`/register/${token}`);
         await expect(page.locator('html')).toHaveAttribute(
@@ -181,8 +198,8 @@ test.describe.serial('T038 invitation signup UI', () => {
     test.skip(!local, 'Requires the disposable local Supabase stack.');
     const messages = getMessages('en') as SignupTestMessages;
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: 'en', url: origin },
-      { name: THEME_COOKIE, value: 'light', url: origin },
+      { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
+      { name: THEME_COOKIE, value: 'light', url: getTestCookieOrigin(origin) },
     ]);
     await page.goto(`/register/${token}`);
     await expect(page.locator('form[data-hydrated]')).toHaveAttribute(
@@ -224,8 +241,8 @@ test.describe.serial('T038 invitation signup UI', () => {
     const messages = getMessages('en') as SignupTestMessages;
     await page.setViewportSize({ width: 390, height: 844 });
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: 'en', url: origin },
-      { name: THEME_COOKIE, value: 'light', url: origin },
+      { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
+      { name: THEME_COOKIE, value: 'light', url: getTestCookieOrigin(origin) },
     ]);
     await page.goto(`/register/${token}`);
     const nameField = page.getByLabel(messages['clientSignup.name'], {
@@ -296,8 +313,8 @@ test.describe.serial('T038 invitation signup UI', () => {
     test.skip(!local, 'Requires the disposable local Supabase stack.');
     const messages = getMessages('en') as SignupTestMessages;
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: 'en', url: origin },
-      { name: THEME_COOKIE, value: 'light', url: origin },
+      { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
+      { name: THEME_COOKIE, value: 'light', url: getTestCookieOrigin(origin) },
     ]);
     await page.goto(`/register/${token}`);
     await page
@@ -347,8 +364,8 @@ test.describe.serial('T038 invitation signup UI', () => {
     await page.setViewportSize({ width: 390, height: 844 });
     await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': '203.0.113.17' });
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: 'en', url: origin },
-      { name: THEME_COOKIE, value: 'light', url: origin },
+      { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
+      { name: THEME_COOKIE, value: 'light', url: getTestCookieOrigin(origin) },
     ]);
     await page.goto(`/register/${token}`);
     await page

@@ -1,3 +1,4 @@
+import { getTestCookieOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { randomUUID } from 'node:crypto';
 import { expect, test, type Page } from '@playwright/test';
@@ -24,12 +25,12 @@ async function authenticate(
   actor = fixture.po,
 ) {
   await page.context().addCookies([
-    { name: LOCALE_COOKIE, value: locale, url: origin },
-    { name: THEME_COOKIE, value: theme, url: origin },
+    { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin(origin) },
+    { name: THEME_COOKIE, value: theme, url: getTestCookieOrigin(origin) },
     {
       name: 'sb-127-auth-token',
       value: `base64-${Buffer.from(JSON.stringify((await actor.client.auth.getSession()).data.session)).toString('base64url')}`,
-      url: origin,
+      url: getTestCookieOrigin(origin),
       httpOnly: true,
       sameSite: 'Lax',
     },

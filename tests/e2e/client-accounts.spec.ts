@@ -1,3 +1,4 @@
+import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
 import { expect, test, type Page } from '@playwright/test';
 import { localSupabaseContainer } from '../integration/local-docker';
 import { execFileSync } from 'node:child_process';
@@ -17,7 +18,7 @@ import { scanSensitiveLogLines } from './server-log-privacy';
 import { parsePhoneNumber } from 'libphonenumber-js';
 import { generateEgyptianMobile } from './egyptian-mobile';
 
-const origin = 'http://localhost:3000';
+const origin = testOrigin;
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
@@ -565,8 +566,8 @@ for (const locale of ['ar', 'en'] as const) {
     const serverLogStart = (await stat(serverLogRawPath)).size;
 
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: locale, url: origin },
-      { name: THEME_COOKIE, value: 'light', url: origin },
+      { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin(origin) },
+      { name: THEME_COOKIE, value: 'light', url: getTestCookieOrigin(origin) },
     ]);
     await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': ip });
     await page.addInitScript(() => {
@@ -733,7 +734,9 @@ test('valid signup link renders a minimal form with private route headers', asyn
   context,
 }) => {
   test.skip(!local, 'Requires the disposable local Supabase stack.');
-  await context.addCookies([{ name: LOCALE_COOKIE, value: 'en', url: origin }]);
+  await context.addCookies([
+    { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
+  ]);
   const response = await page.goto(`/register/${validToken}`);
   expect(response?.status()).toBe(200);
   expect(response?.headers()['referrer-policy']).toBe('no-referrer');
@@ -762,7 +765,9 @@ test('pending submission disables the form and ignores a second submit', async (
   context,
 }) => {
   test.skip(!local, 'Requires the disposable local Supabase stack.');
-  await context.addCookies([{ name: LOCALE_COOKIE, value: 'en', url: origin }]);
+  await context.addCookies([
+    { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
+  ]);
   await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': '203.0.113.14' });
   await page.goto(`/register/${pendingToken}`);
   await fillSignup(page, {
@@ -828,7 +833,7 @@ for (const locale of ['ar', 'en'] as const) {
     test.skip(!local, 'Requires the disposable local Supabase stack.');
     const m = getMessages(locale);
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: locale, url: origin },
+      { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin(origin) },
     ]);
     const response = await page.goto(`/register/${expiredToken}`);
     expect(response?.status()).toBe(200);
@@ -849,7 +854,7 @@ for (const locale of ['ar', 'en'] as const) {
     const token = await issueSignupToken();
     const m = getMessages(locale);
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: locale, url: origin },
+      { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin(origin) },
     ]);
     await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': '203.0.113.15' });
     await page.goto(`/register/${token}`);
@@ -904,7 +909,7 @@ for (const locale of ['ar', 'en'] as const) {
     const m = getMessages(locale);
     const email = `client-${randomUUID()}@example.test`;
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: locale, url: origin },
+      { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin(origin) },
     ]);
     await page.goto(`/register/${token}`);
     await fillSignup(
@@ -965,7 +970,9 @@ test('provider failure returns generic unavailable, then a retry can complete', 
     !local || process.env.LOCAL_SUPABASE_PROVIDER_FAULT_TEST !== 'true',
     'Run only against the disposable local stack with the provider fault opt-in.',
   );
-  await context.addCookies([{ name: LOCALE_COOKIE, value: 'en', url: origin }]);
+  await context.addCookies([
+    { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
+  ]);
   await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': '203.0.113.16' });
   await page.goto(`/register/${providerToken}`);
   await fillSignup(page, {
@@ -1023,7 +1030,9 @@ test('committed signup retry returns invalid and never creates a second identity
 }) => {
   test.skip(!local, 'Requires the disposable local Supabase stack.');
   const email = `client-${randomUUID()}@example.test`;
-  await context.addCookies([{ name: LOCALE_COOKIE, value: 'en', url: origin }]);
+  await context.addCookies([
+    { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
+  ]);
   await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': '203.0.113.11' });
   const getResponse = await page.goto(`/register/${validToken}`);
   expect(getResponse?.headers()['referrer-policy']).toBe('no-referrer');
@@ -1108,7 +1117,7 @@ for (const locale of ['ar', 'en'] as const) {
     const token = await issueSignupToken();
     const email = `client-${randomUUID()}@example.test`;
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: locale, url: origin },
+      { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin(origin) },
     ]);
     await page.setExtraHTTPHeaders({
       'CF-Connecting-IP': `203.0.113.${Math.floor(40 + Math.random() * 200)}`,
@@ -1154,7 +1163,9 @@ test('identity collision keeps the contract duplicate wording without field deta
   context,
 }) => {
   test.skip(!local, 'Requires the disposable local Supabase stack.');
-  await context.addCookies([{ name: LOCALE_COOKIE, value: 'en', url: origin }]);
+  await context.addCookies([
+    { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
+  ]);
   await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': '203.0.113.12' });
   await page.goto(`/register/${duplicateToken}`);
   await fillSignup(page, {
@@ -1188,7 +1199,7 @@ for (const locale of ['ar', 'en'] as const) {
       { email: string; phone: string }
     >;
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: locale, url: origin },
+      { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin(origin) },
     ]);
     await page.setExtraHTTPHeaders({
       'CF-Connecting-IP': `203.0.113.${Math.floor(40 + Math.random() * 200)}`,
@@ -1434,7 +1445,7 @@ for (const locale of ['ar', 'en'] as const) {
         return {
           name: cookie.name,
           value: cookie.value,
-          url: origin,
+          url: getTestCookieOrigin(origin),
           expires,
           ...(options?.httpOnly !== undefined
             ? { httpOnly: options.httpOnly }
@@ -1447,7 +1458,7 @@ for (const locale of ['ar', 'en'] as const) {
     const token = await issueSignupToken();
     const m = getMessages(locale);
     await context.addCookies([
-      { name: LOCALE_COOKIE, value: locale, url: origin },
+      { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin(origin) },
     ]);
     await page.goto(`/register/${token}`);
     await expect(page.getByRole('status')).toHaveText(
@@ -1467,7 +1478,9 @@ test('lost committed response leaves one identity and the link no longer opens a
   const state = secret();
   checked(await issue(fixture, fixture.po.client, { token_hash: state.hash }));
   const email = `client-${randomUUID()}@example.test`;
-  await context.addCookies([{ name: LOCALE_COOKIE, value: 'en', url: origin }]);
+  await context.addCookies([
+    { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
+  ]);
   await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': '203.0.113.13' });
   await page.goto(`/register/${state.token}`);
   await fillSignup(page, { name: 'Example Client Person', email });

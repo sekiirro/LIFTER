@@ -1,3 +1,4 @@
+import { getTestCookieOrigin } from './test-origin.mjs';
 import { expect, test } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -75,8 +76,16 @@ test.describe.serial('S35 Hero error-border design evidence', () => {
           const height = width === 1440 ? 900 : 844;
           await page.setViewportSize({ width, height });
           await context.addCookies([
-            { name: LOCALE_COOKIE, value: locale, url: origin },
-            { name: THEME_COOKIE, value: theme, url: origin },
+            {
+              name: LOCALE_COOKIE,
+              value: locale,
+              url: getTestCookieOrigin(origin),
+            },
+            {
+              name: THEME_COOKIE,
+              value: theme,
+              url: getTestCookieOrigin(origin),
+            },
           ]);
           await page.goto(`/register/${token}`);
           await page.addStyleTag({

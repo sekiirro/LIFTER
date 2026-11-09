@@ -1,3 +1,4 @@
+import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
 import { expect, test, type BrowserContext, type Page } from '@playwright/test';
 import { mkdir, readFile, writeFile } from 'node:fs/promises';
 import { tmpdir } from 'node:os';
@@ -13,7 +14,7 @@ import {
   measureHeroGlisseContrast,
 } from './registration-hero-evidence';
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const origin = process.env.PLAYWRIGHT_BASE_URL ?? testOrigin;
 const heroPath = '/showcase/f14-hero';
 
 type RenderedColor = {
@@ -139,9 +140,14 @@ async function setTheme(
   });
   await context.clearCookies();
   const cookies: { name: string; value: string; url: string }[] = [
-    { name: LOCALE_COOKIE, value: locale, url: origin },
+    { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin(origin) },
   ];
-  if (theme) cookies.push({ name: THEME_COOKIE, value: theme, url: origin });
+  if (theme)
+    cookies.push({
+      name: THEME_COOKIE,
+      value: theme,
+      url: getTestCookieOrigin(origin),
+    });
   await context.addCookies(cookies);
 }
 

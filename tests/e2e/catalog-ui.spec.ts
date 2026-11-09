@@ -1,3 +1,4 @@
+import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
 import AxeBuilder from '@axe-core/playwright';
 import { expect, test, type Locator, type Page } from '@playwright/test';
 import { mkdirSync } from 'node:fs';
@@ -8,7 +9,7 @@ import { en } from '../../lib/i18n/messages/en';
 
 const screenshotDir =
   process.env.LIFTER_SCREENSHOT_DIR ?? join(tmpdir(), 'lifter-s28-f16-lib4');
-const testBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const testBaseURL = process.env.PLAYWRIGHT_BASE_URL ?? testOrigin;
 mkdirSync(screenshotDir, { recursive: true });
 
 const visualMatrix = [
@@ -86,12 +87,12 @@ async function setPreferences(page: Page, row: (typeof matrix)[number]) {
     {
       name: 'lifter_locale',
       value: row.locale,
-      url: testBaseURL,
+      url: getTestCookieOrigin(testBaseURL),
     },
     {
       name: 'lifter_theme',
       value: row.theme,
-      url: testBaseURL,
+      url: getTestCookieOrigin(testBaseURL),
     },
   ]);
   await page.setViewportSize({ width: row.width, height: row.height });

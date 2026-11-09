@@ -1,3 +1,4 @@
+import { getTestCookieOrigin, testOrigin } from './test-origin.mjs';
 import { expect, test } from '@playwright/test';
 import { mkdir, writeFile } from 'node:fs/promises';
 import { join } from 'node:path';
@@ -18,7 +19,7 @@ import {
 import type { RegistrationFixture } from '../integration/registration-links-fixture';
 import { registrationIssueActorIndex } from './registration-issue-actor';
 
-const origin = process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000';
+const origin = process.env.PLAYWRIGHT_BASE_URL ?? testOrigin;
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,
 );
@@ -144,8 +145,16 @@ for (const locale of ['ar', 'en'] as const) {
       }) => {
         await page.setViewportSize(viewport);
         await context.addCookies([
-          { name: LOCALE_COOKIE, value: locale, url: origin },
-          { name: THEME_COOKIE, value: theme, url: origin },
+          {
+            name: LOCALE_COOKIE,
+            value: locale,
+            url: getTestCookieOrigin(origin),
+          },
+          {
+            name: THEME_COOKIE,
+            value: theme,
+            url: getTestCookieOrigin(origin),
+          },
         ]);
         await page.addInitScript(() => {
           const browserWindow = window as Window & {
@@ -295,10 +304,14 @@ for (const { locale, theme, osTheme } of printRegistrationCases) {
     const resolvedTheme = theme === 'follow-device' ? osTheme : theme;
     await page.emulateMedia({ colorScheme: osTheme, reducedMotion: 'reduce' });
     const cookies: { name: string; value: string; url: string }[] = [
-      { name: LOCALE_COOKIE, value: locale, url: origin },
+      { name: LOCALE_COOKIE, value: locale, url: getTestCookieOrigin(origin) },
     ];
     if (theme !== 'follow-device')
-      cookies.push({ name: THEME_COOKIE, value: theme, url: origin });
+      cookies.push({
+        name: THEME_COOKIE,
+        value: theme,
+        url: getTestCookieOrigin(origin),
+      });
     await context.addCookies(cookies);
     await page.goto(`/register/${token}`);
     await page.locator('input[name="name"]').fill('Print Contrast');
@@ -419,8 +432,8 @@ test('invalid registration remains generic, neutral, and form-free', async ({
 }) => {
   await page.setViewportSize({ width: 390, height: 844 });
   await context.addCookies([
-    { name: LOCALE_COOKIE, value: 'en', url: origin },
-    { name: THEME_COOKIE, value: 'light', url: origin },
+    { name: LOCALE_COOKIE, value: 'en', url: getTestCookieOrigin(origin) },
+    { name: THEME_COOKIE, value: 'light', url: getTestCookieOrigin(origin) },
   ]);
   await page.goto('/register/not-a-token');
   await expect(page.locator('main h1')).toHaveText(
