@@ -1,6 +1,6 @@
 # Spec Kit Analyze — F4 Authentication, S38 round 6
 
-- Date: 2026-11-09 01:50 +02:00, after the last changes to spec.md, plan.md and tasks.md in this round.
+- Date: 2026-11-09 02:16 +02:00, after the last changes to spec.md, plan.md and tasks.md in this round.
 - Scope: specification and planning only. No application code, SQL, migration or test was changed or run.
 - Inputs: Sol Medium critique at `549c6466cea254e90dd180d20c7b1b976e35a267`; S38-PO-1, S38-PO-3, S38-PO-5; architect S38-R2, S38-R4 and S38-R7. Exact quoted extracts are in spec.md and the round report.
 - Method: cross-artifact review of spec.md, plan.md, tasks.md, research.md, traceability.md, contracts/auth-surface.md, data-model.md and this checklist against Spec Kit entry requirements and the critique findings.
@@ -9,7 +9,7 @@
 
 | Check | Result | Evidence |
 |---|---|---|
-| Numbered FRs, measurable SCs, Given/When/Then scenarios cover the touched scope | PASS | spec.md FR-001–FR-030; SC-001–SC-015; US5 scenarios 1–13 cover request, hook failures, session binding, reset outcome and timing |
+| Numbered FRs, measurable SCs, Given/When/Then scenarios cover the touched scope | PASS | spec.md FR-001–FR-030; SC-001–SC-015; US5 scenarios 1–14 cover request, hook failures, idempotent intent retry, session binding, reset outcome and timing |
 | Clarifications cite PO sources and state remaining ambiguities | PASS | spec.md Clarifications and S38 register quote S38-PO-1/3/5. No behavior decision is implicit; copy proposal is explicitly PENDING-PO. S38-R7's question about other sessions is answered by existing FR-025(b), FR-030 control C and PDN-F4-7-07. |
 | Plan covers touched scope; tasks have IDs and FR tags | PASS | plan.md provider-boundary design, G1–G6 and sequencing; tasks.md T033, T041, T049a–T049e, T050a/T050b and new T051 include FR tags. |
 | Analyze is dated after spec/plan/tasks edits and has 0 open CRITICAL/HIGH | PASS | This dated review; finding dispositions below. |
@@ -38,6 +38,9 @@ S38-R4 recorded the critique result as NOT READY, CRITICAL 0 / HIGH 6 / MEDIUM 3
 | CodeRabbit 12. Preserve client invalid-link instruction while using staff copy | MEDIUM | Fixed: existing `auth.invalid_link` catalog copy remains for client manual links; staff uses the exact approved FR-029 string. A display-only `flow=staff` marker selects copy and never affects authorization. | copy-proposal.md; spec.md FR-027/029; tasks.md T037a/T044a |
 | CodeRabbit 13. Session revocation did not cover Data API JWT replay | HIGH | Fixed as an acceptance gate: T049e proves pre-reset access at a protected Data API resource and requires replay denial after reset; any success blocks T050a and control-C acceptance until a technical control is proven. | spec.md FR-030 control C; plan.md G3; tasks.md T049e; traceability.md |
 | CodeRabbit 14. PDN-13 gates were stale after PDN-14 was answered | MINOR | Fixed: current T033, feasibility and RED-test prerequisites are stated; release block remains until controls and FR-020 pass. | spec.md PDN-F4-7-13; tasks.md T033/T049/T050 |
+| CodeRabbit 15. Retry after ambiguous begin could be stranded | MINOR | Fixed: `begin` is idempotent for the same verified session and reuses its fresh intent without a duplicate audit; another session is refused. | spec.md FR-025(a), scenario 14; plan.md; data-model.md; tasks.md T049d |
+| CodeRabbit 16. E2E did not verify the new password works | MINOR | Fixed: T041 now verifies old-password failure and successful sign-in with the new password after normal-login handoff. | tasks.md T041 |
+| CodeRabbit 17. T050a omitted control-D acceptance | MINOR | Fixed: T050a requires the control-D subset of T049b separately from control-A/T050b acceptance. | tasks.md T049b/T050a; spec.md PDN-F4-7-13 |
 | 9. Contracts/data model omit recovery | MEDIUM | Fixed: both artifacts now describe local staff recovery actions, session-bound intent, hook boundary, audit/limits, session outcomes and hosted deferral. | contracts/auth-surface.md; data-model.md |
 | 10. Analyze metrics and status stale | LOW | Fixed: unique finding IDs, current dispositions and metrics below; prior round critique is recorded as executed. | This checklist; traceability.md |
 
@@ -54,7 +57,7 @@ Open CRITICAL: **0**. Open HIGH: **0**. Open MEDIUM: **4**. Open LOW: **0**. The
 
 ## Requirements and task metrics
 
-- FRs: 30. SCs: 15, numbered SC-001 through SC-015. Given/When/Then scenarios: US1–US5, with 13 F4 scenarios.
+- FRs: 30. SCs: 15, numbered SC-001 through SC-015. Given/When/Then scenarios: US1–US5, with 14 F4 scenarios.
 - Existing task count: 61; T051 added. Existing completed tasks remain unchanged. No task was ticked in this round.
 - F4 task coverage includes T033–T051; recovery control requirements trace to T049a–T049e, T050a/T050b and T051.
 - Spec-only readiness: PASS. Implementation readiness: FAIL until T033, G1–G6, the relevant RED tests, PO copy approval and implementation acceptance evidence pass.

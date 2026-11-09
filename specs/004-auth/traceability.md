@@ -54,6 +54,7 @@ No ND-F4-7 row is VERIFIED or MAPPED. Each status describes the planned test onl
 | US5 scenario 9 (SMTP gate) | T046, T047 | documentation check | none | UNVERIFIED | Hosted change out of scope |
 | US5 scenario 10 (direct Auth API enforcement) | T049a to T049e, T050a, T050b | local Auth and Data API boundary tests (planned) | E1 to E4 (bypass evidence, `research.md` R10) | UNVERIFIED (bypass evidenced) | Control A decided as PDN-F4-7-14 = B; control B decided as PDN-F4-7-15 = A; gates G1 to G6 not verified; control tests not run |
 | US5 scenario 11 (exact approved copy) | T042b | byte comparison of application output and locale catalogs (planned) | none | UNVERIFIED | FR-029 applies to two staff states; client `auth.invalid_link` catalog copy is preserved |
+| US5 scenario 14 (idempotent begin retry) | T049d | same-session begin retry test (planned) | none | UNVERIFIED | Existing fresh intent is reused only by the same verified recovery session; no duplicate audit |
 | FR-016 | T034, T043 | planned | none | UNVERIFIED | PDN-F4-7-02 |
 | FR-017 | T041, T043 | planned | none | UNVERIFIED | - |
 | FR-018 | T035, T041, T043 | planned | none | UNVERIFIED | Timing tolerance AT-2 |
