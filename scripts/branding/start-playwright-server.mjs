@@ -5,9 +5,18 @@ import { prepareLocalBrandingProxyCredential } from './local-playwright-credenti
 // The Stack-safe CLI exports API_URL/ANON_KEY/SERVICE_ROLE_KEY while Next's
 // server helpers intentionally consume the SUPABASE_* names. Keep the app
 // server environment complete in local runs as well as CI.
-process.env.SUPABASE_URL ??= process.env.API_URL;
-process.env.SUPABASE_ANON_KEY ??= process.env.ANON_KEY;
-process.env.SUPABASE_SERVICE_ROLE_KEY ??= process.env.SERVICE_ROLE_KEY;
+if (process.env.SUPABASE_URL === undefined && process.env.API_URL !== undefined)
+  process.env.SUPABASE_URL = process.env.API_URL;
+if (
+  process.env.SUPABASE_ANON_KEY === undefined &&
+  process.env.ANON_KEY !== undefined
+)
+  process.env.SUPABASE_ANON_KEY = process.env.ANON_KEY;
+if (
+  process.env.SUPABASE_SERVICE_ROLE_KEY === undefined &&
+  process.env.SERVICE_ROLE_KEY !== undefined
+)
+  process.env.SUPABASE_SERVICE_ROLE_KEY = process.env.SERVICE_ROLE_KEY;
 process.env.APP_ORIGIN ??= 'http://localhost:3000';
 process.env.LIFTER_E2E_ALLOW_HTTP ??= 'true';
 

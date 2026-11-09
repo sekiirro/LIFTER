@@ -186,3 +186,11 @@ The required clean Stack D replay exposed that the pushed evaluator referenced p
 ## S40 F15 round-13 authorization analysis refresh — 2026-11-09
 
 T140 retains FR-018's existing enqueue-time authorization rule for immediate client-late owners. The forward evaluator serializes workspace-owner membership revocations before selecting current recipients; its direct concurrency integration regression verifies a revoked owner is excluded while the platform owner receives the immediate alert. Existing D-03 Trainer-late behavior remains covered unchanged. This is authorization parity with the approved contract, not a new role or permission. **CRITICAL: 0. HIGH: 0. No open ambiguities.**
+
+## S41 round 16 existing-PR remediation analysis — 2026-11-09
+
+T141 is limited to valid CodeRabbit findings in existing approved FR scope and local verification reliability. The new SQL is forward-only and retains approved authorization, SECURITY DEFINER, search_path, owner, grant and RLS boundaries; the changed result guards follow the previously approved correction/onboarding contracts. Assignment timestamp behavior follows the existing audience-change contract. S41-PO-3 approves N08.low.foods byte-exact; N08.medium.foods, N08.high.foods and every other pending EN row remain pending. No Arabic or runtime copy is changed. The scheduler fixture change only restricts cleanup discovery to base tables while retaining run-owned and baseline-preservation assertions. No workflow or product-default decision is added. **No open ambiguities remain for T141. CRITICAL: 0. HIGH: 0.**
+
+## S41-PO-3 copy approval Analyze refresh — 2026-11-09
+
+The PO decision register records PO-MCQ-1 as “A: Approve as drafted.” The changed `spec.md` row and decision-case fixture both contain `Cottage cheese / plant protein / eggs / baladi bread`, and the targeted byte comparison confirms exact UTF-8 equality. The scope is limited to N08.low.foods; N08.medium.foods and N08.high.foods remain pending, and no runtime copy or other option is changed. Existing FR-026/036/037 and SC-026 cover exact approved EN row parity. **No open ambiguities remain for this approved row. CRITICAL: 0. HIGH: 0.**

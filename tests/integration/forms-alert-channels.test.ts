@@ -5,7 +5,7 @@ import {
   unlinkSync,
   writeFileSync,
 } from 'node:fs';
-import { join, relative } from 'node:path';
+import { basename, join, relative } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import type { Sql, TransactionSql } from 'postgres';
 import { afterAll, expect, it } from 'vitest';
@@ -238,11 +238,12 @@ it('keeps the F15 alert scheduler disabled after migration replay', async () => 
   const migrationFiles = walkFiles(
     join(repoRoot, 'supabase/migrations'),
   ).filter((path) =>
-    /^(?:2026110403|2026110823)\d{4}_f15_.*\.sql$/.test(
-      path.split(/[\\/]/).at(-1) ?? '',
-    ),
+    /^\d{14}_f15_.*\.sql$/.test(path.split(/[\\/]/).at(-1) ?? ''),
   );
   expect(migrationFiles.length).toBeGreaterThan(0);
+  expect(migrationFiles.map((path) => basename(path))).toContain(
+    '20261109151501_f15_prewrite_answer_bounds.sql',
+  );
   const migrations = migrationFiles.map((path) => readFileSync(path, 'utf8'));
   const assertNoActivation = (sources: string[]) => {
     for (const source of sources)

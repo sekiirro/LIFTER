@@ -41,6 +41,7 @@ No repository script currently wraps Stack D reset. After every local reset of `
 
 ```powershell
 $repoRoot = (Resolve-Path .).Path
+$repoRootForNode = $repoRoot -replace '\\', '/'
 $stackWorkdir = Join-Path $repoRoot 'supabase-stack-d'
 $provisioner = Join-Path $repoRoot 'tests/integration/client-accounts-provision.mjs'
 $provisionerUri = [System.Uri]::new($provisioner).AbsoluteUri
@@ -49,7 +50,7 @@ $env:SUPABASE_SAFE_CLI = "node `"$nodeDir/node_modules/npm/bin/npx-cli.js`""
 $env:LIFTER_SUPABASE_STACK = 'd'
 $safeWrapper = Join-Path $env:USERPROFILE '.lifter/tools/supabase-safe.mjs'
 node $safeWrapper --workdir $stackWorkdir --stack D db reset --yes
-node $safeWrapper --workdir $stackWorkdir --stack D exec -- node -e "process.chdir('$repoRoot'); import('$provisionerUri').catch(error => { console.error(error); process.exitCode=1; });"
+node $safeWrapper --workdir $stackWorkdir --stack D exec -- node -e "process.chdir('$repoRootForNode'); import('$provisionerUri').catch(error => { console.error(error); process.exitCode=1; });"
 ```
 
 Then run the existing Vault grant assertion (`tests/integration/client-accounts-schema.test.ts`, test `Vault keys are inaccessible to API roles, including service_role`) through the same Stack D wrapper. Do not run the provisioner directly or inspect/print its environment files; it handles local credentials internally.

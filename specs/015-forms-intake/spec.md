@@ -417,7 +417,7 @@ The five N01 titles/descriptions, T04/N03/N07 meal-count/N08/N10 choices, N11 en
 | N08.low | Low budget |
 | N08.medium | Medium budget |
 | N08.high | High budget |
-| N08.low.foods | Cottage cheese / plant protein / eggs / baladi bread *(pending PO review)* |
+| N08.low.foods | Cottage cheese / plant protein / eggs / baladi bread |
 | N08.medium.foods | Eggs / chicken / meat / toast / fish *(pending PO review)* |
 | N08.high.foods | Salmon / smoked turkey / steak / ribeye *(pending PO review)* |
 | N10.before | Before cooking |
@@ -726,3 +726,7 @@ PO option lines quoted verbatim from the authoritative S40 decision record:
 The parenthesized mappings in the PO record are architect wording, not PO words. The S40-PO-4 architect mapping revises the S40-PO-1 mapping for PDN-S40-03: retain 20261104005000_f15_auth_identity_collisions_and_reader_policies.sql and its minimal dependency-closed earlier #57 prefix at original versions below main; rename all other #57 migrations above main and all origin refs without changing SQL content; add one forward migration above the renamed set to reconcile the final definitions. Prefix exception filenames (each retained at its original version): `20261104002000_f15_terms_consent.sql`, `20261104003000_f15_s14_forms.sql`, `20261104004000_f15_s14_privacy.sql`, and `20261104005000_f15_auth_identity_collisions_and_reader_policies.sql`. The SQL reference proof is in round-11 prefix-closure evidence. No open ambiguities remain for this approved sequencing. A genuine difference in main versus approved F15 behavior remains excluded pending a PO decision.
 
 For public signup identity collisions, preserve D-08's approved exact duplicate message in English and Arabic. S16 Q2's field-neutral alternative remained DRAFT under PO Q4=A; stale test fixtures or assertions cannot promote it. This round corrects the F15 fixture and integration expectation to D-08 without changing runtime copy.
+
+## Clarifications — S41-PO-3 (2026-11-09)
+
+PO-MCQ-1, verbatim from the S41 PO decision record: “A: Approve as drafted”. The approved English value for `N08.low.foods` is exactly `Cottage cheese / plant protein / eggs / baladi bread`. This approval applies only to that row. `N08.medium.foods`, `N08.high.foods`, and all other pending English rows remain pending. No Arabic copy or runtime starter content is changed by this decision.

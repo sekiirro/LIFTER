@@ -14,4 +14,5 @@ it('limits scheduler cleanup to run-owned, run-tagged fixtures', () => {
   expect(source).not.toContain('knownUsers');
   expect(source).toContain('baselineWorkspaceIds.length');
   expect(source).toContain('baselineUserIds.length');
+  expect(source).toContain("table_type='BASE TABLE'");
 });

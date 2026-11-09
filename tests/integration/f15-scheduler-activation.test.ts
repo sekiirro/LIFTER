@@ -163,12 +163,15 @@ async function cleanupFixtures(
   await db.begin(async (tx) => {
     await tx`set local session_replication_role='replica'`;
     const cols = await tx`
-      select table_schema,table_name,column_name
-      from information_schema.columns
-      where table_schema in ('public','app_private') and data_type='uuid'
-        and (column_name='workspace_id'
-          or column_name ~* '(user|actor|created_by|granted_by|revoked_by|configured_by)')
-      order by table_schema,table_name,column_name
+      select c.table_schema,c.table_name,c.column_name
+      from information_schema.columns c
+      join information_schema.tables t
+        on t.table_schema=c.table_schema and t.table_name=c.table_name
+      where c.table_schema in ('public','app_private') and c.data_type='uuid'
+        and t.table_type='BASE TABLE'
+        and (c.column_name='workspace_id'
+          or c.column_name ~* '(user|actor|created_by|granted_by|revoked_by|configured_by)')
+      order by c.table_schema,c.table_name,c.column_name
     `;
     for (const col of cols) {
       const schema = String(col.table_schema).replaceAll('"', '""');

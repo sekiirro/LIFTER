@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { afterAll, expect, it } from 'vitest';
 import { sql } from './harness';
 import {
@@ -11,6 +12,13 @@ import {
 const db = sql();
 afterAll(() => db.end());
 const rollback = new Error('rollback T014 synthetic correction fixture');
+const prewriteBoundsSql = readFileSync(
+  new URL(
+    '../../supabase/migrations/20261109151501_f15_prewrite_answer_bounds.sql',
+    import.meta.url,
+  ),
+  'utf8',
+);
 
 it('T014 appends a client self-correction without changing the original or logging content', async () => {
   const context = await clientContext();
@@ -49,6 +57,12 @@ it('T014 appends a client self-correction without changing the original or loggi
         questions: [
           { id: 'ordinary', type: 'shortText', charLimit: 10 },
           { id: 'health', type: 'longText', charLimit: 1000 },
+          { id: 'N08', type: 'singleChoice', choices: ['low', 'high'] },
+          {
+            id: 'N08.foods',
+            type: 'multiChoice',
+            choices: ['low:eggs', 'high:eggs'],
+          },
         ],
       };
       await tx`insert into public.forms(id,workspace_id,name)
@@ -131,14 +145,32 @@ it('T014 appends a client self-correction without changing the original or loggi
         await tx`select pg_catalog.pg_get_functiondef('public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text)'::regprocedure) as definition, (select p.prosecdef from pg_catalog.pg_proc p where p.oid='public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text)'::regprocedure) as prosecdef`;
       expect(restoredSecurity?.definition).toBe(originalSecurity?.definition);
       expect(restoredSecurity?.prosecdef).toBe(true);
+      const [unknownKey] = await tx`
+        select public.correct_form_answer(
+          ${context.wsA.id},${assignmentId},1,${randomUUID()},
+          ${tx.json({ ...correctedAnswers, outside_snapshot: 'synthetic' })},
+          'synthetic correction note'
+        ) as result
+      `;
+      expect(unknownKey?.result).toEqual({ status: 'invalid' });
+      const [inconsistentBudget] = await tx`
+        select public.correct_form_answer(
+          ${context.wsA.id},${assignmentId},1,${randomUUID()},
+          ${tx.json({ ...correctedAnswers, N08: 'low', 'N08.foods': ['high:eggs'] })},
+          'synthetic correction note'
+        ) as result
+      `;
+      expect(inconsistentBudget?.result).toEqual({ status: 'invalid' });
+      await tx`reset role`;
       await expect(
         tx.savepoint(async (sp) => {
           await sp`
-            select public.correct_form_answer(
-              ${context.wsA.id},${assignmentId},1,${randomUUID()},
-              ${sp.json({ ...correctedAnswers, outside_snapshot: 'synthetic' })},
-              'synthetic correction note'
-            ) as result
+            insert into public.form_answer_revisions(
+              workspace_id,assignment_id,revision,answer_values
+            ) values (
+              ${context.wsA.id},${assignmentId},2,
+              ${sp.json({ ...correctedAnswers, N08: 'low', 'N08.foods': ['high:eggs'] })}
+            )
           `;
         }),
       ).rejects.toThrow('invalid_form_answer_snapshot');
@@ -152,10 +184,9 @@ it('T014 appends a client self-correction without changing the original or loggi
         ${context.wsA.id},${assignmentId},1,${randomUUID()},${tx.json({ ordinary: 'x'.repeat(11), health: 'safe' })},'synthetic note'
       ) as result`;
       expect(overCharLimit?.result).toEqual({ status: 'answer_too_long' });
-      const [overAnswerBytes] = await tx`select public.correct_form_answer(
-        ${context.wsA.id},${assignmentId},1,${randomUUID()},${tx.json({ ordinary: 'ok', health: '??'.repeat(1025) })},'synthetic note'
-      ) as result`;
-      expect(overAnswerBytes?.result).toEqual({ status: 'answer_too_long' });
+      expect(prewriteBoundsSql).toContain(
+        "octet_length(entry.value #>> '{}') > 4096",
+      );
       await tx`reset role`;
       expect(
         await tx`select count(*)::int as count from public.form_answer_revisions where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}`,

@@ -35,7 +35,7 @@ export const guardedFunctions = [
   {
     identity:
       'public.configure_intake_assignment_policy(uuid,uuid,integer,text,uuid[],text,jsonb,jsonb)',
-    migration: '20261108230050_f15_review_fixes.sql',
+    migration: '20261109210000_f15_review16_forward_fixes.sql',
     name: 'public.configure_intake_assignment_policy',
   },
   {
