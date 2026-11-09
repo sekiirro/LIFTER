@@ -52,3 +52,13 @@ Evidence run `41894845099`, attempt 1, on commit `447ceb0b69b8516abfa26c5b1289ef
 | FR | Task | Test file::name | Evidence | Status |
 |---|---|---|---|---|
 | FR-021, FR-023 | T020 | `tests/unit/ci-local-e2e.test.ts::dispatches CI against a PR merge ref and rejects a mismatched second parent` | Commit `f1aacd91d1385ae401a091b7bc0bcc716ab5cbc8`; the focused CI unit file passed 4/4, including assertions for token binding and authenticated headers in all three jobs. `npm run typecheck`, `npm run lint`, and `npm run format:check` passed. Exact-head GitHub dispatch verification remains pending and is not claimed. | IMPLEMENTED (local) |
+
+## S40 Playwright e2e sharding (FR-025, FR-026, SC-014, SC-015)
+
+Spec commit `75cacff3166fb13b13be8eb4cf248e0a03c2aaa7` (requirements, plan, T024, Analyze with 0 CRITICAL/HIGH). Implementation commit `b282b558ed58be9180ef46767c35338fcac6778a`.
+
+| Requirement | Task | Test file::name | Evidence | Status |
+|---|---|---|---|---|
+| FR-025 / SC-014 (non-empty file-level Playwright shard on every integration shard) | T024 | `tests/unit/ci-local-e2e.test.ts::runs a file-level Playwright shard on every integration shard` | Commit `b282b558`; focused CI unit file 6/6, full unit suite 167 files / 2259 tests passed, `npm run typecheck`, `npm run lint`, `npm run format:check` and actionlint 1.7.12 passed. The test rejects any `if: matrix.shard == 1` gating and requires `--shard=${{ matrix.shard }}/3 --workers=1 --reporter=json`, both env gates, ordered stack/export/Vault/Storage/Docker/inventory preconditions, the non-empty list guard, and the per-shard artifact upload. | VERIFIED (local) |
+| FR-026 / SC-014 (fail-closed union/skip/failure coverage proof in the no-checkout aggregator) | T024 | `tests/unit/ci-local-e2e.test.ts::fails the integration aggregator unless every shard reports full coverage`; `::executes the sharded coverage proof against tampered reports` | Commit `b282b558`; the extracted aggregator script passed against a synthetic artifact set built from the real 629-test inventory: `{"acceptable":true,"playwright":{"listed":629,"reported":629,"skipped":38,"passed":591},"vitest":{"files":92},"shards":3}`. Tampered fixtures fail closed for a missing test, a duplicate across shards, a new skipped title, an unexpected failure and a missing Vitest file. | VERIFIED (local) |
+| SC-015 (integration critical path shorter than baseline) | T024 | main push run 42628343018 on `405e23e4` vs the PR's executed runs | Baseline: first required job 13:46:01Z → aggregator end 14:03:43Z = 17m42s (shard 1 17m35s). PR before/after job and critical-path times are recorded in `C:/Users/NEW LAP/.lifter/runs/s40-ds-e2e-shard/report.md` once executed. | PENDING (exact-head GitHub) |

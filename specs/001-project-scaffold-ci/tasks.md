@@ -72,6 +72,6 @@ Tasks remain unchecked until the exact PR head has the required executed green C
 
 ## S40 Playwright e2e sharding tasks
 
-- [ ] T024 [FR-025, FR-026, SC-014, SC-015] Run the Playwright browser suite as a file-level `--shard=<k>/3` partition in every `integration-shard` execution with unchanged environment gates, `--workers=1`, no retries and the same preconditions; add the non-empty shard-list guard, Storage readiness and Docker CLI preconditions; upload per-shard Playwright/Vitest JSON inventories and reports; extend the no-checkout `integration` aggregator with the fail-closed union/skip/failure coverage proof; extend `tests/unit/ci-local-e2e.test.ts` red-first, update the workflow guide, and record traceability plus before/after wall times.
+- [x] T024 [FR-025, FR-026, SC-014, SC-015] Run the Playwright browser suite as a file-level `--shard=<k>/3` partition in every `integration-shard` execution with unchanged environment gates, `--workers=1`, no retries and the same preconditions; add the non-empty shard-list guard, Storage readiness and Docker CLI preconditions; upload per-shard Playwright/Vitest JSON inventories and reports; extend the no-checkout `integration` aggregator with the fail-closed union/skip/failure coverage proof; extend `tests/unit/ci-local-e2e.test.ts` red-first, update the workflow guide, and record traceability plus before/after wall times.
 
 Tasks remain unchecked until tests and exact-head GitHub gate evidence are recorded.
