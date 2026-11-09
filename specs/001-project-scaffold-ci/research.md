@@ -12,4 +12,4 @@
 | E2E | Playwright Chromium against `next start`; CI installs Chromium only | Matches the later RTL/AR screenshot gate | Cypress |
 | Version in health | `next.config.ts` imports `package.json` and injects `version` as `APP_VERSION` at build | Never exposes the env generically | Reading package.json at runtime (not available in Workers) |
 | Supabase | `supabase init` output committed (`config.toml`), with no migrations | Local DB tooling ready for P0-F3 | — |
-| CI | GitHub Actions on push and PR: `npm ci` → typecheck → lint → format:check → test → build:edge → size → e2e. No secrets, no deploy step. | FR-009 | — |
+| CI | GitHub Actions on push and PR: `npm ci` → typecheck → lint → format:check → test → build:edge → size → e2e. `validate` uses no secrets; later `integration`/`storage` jobs may use optional Docker Hub credentials only for authenticated image pulls. No deployment secrets or deploy step. | FR-009 | Merged workflow at `9b4d7a4c9db0dc0493dbd6419a6fead95290f1dd` |

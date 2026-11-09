@@ -34,7 +34,7 @@
   - Triggers: push + pull_request; runs on `ubuntu-latest`.
   - Node from `.nvmrc`, npm cache.
   - Steps: `npm ci` → typecheck → lint → format:check → test → build:edge → size → install Playwright Chromium → e2e.
-  - `permissions: contents: read`; no `secrets.*`; no deploy.
+  - `permissions: contents: read`; `validate` uses no secrets; later `integration`/`storage` jobs may use optional Docker Hub pull credentials only for authenticated image pulls; no deployment secrets or deploy.
 - [x] T013 [P] Commit only Supabase local config `supabase/config.toml` (+ its `.gitignore`) from `npx supabase init`; no migrations or seed data
 - [x] T014 Unit-test the size-report's pure comparison function in `tests/unit/size-report.test.ts` (under, equal and over the limit → exit code)
 - [x] T015 Run all Windows-capable quickstart steps; fix failures; run `npm run format`
@@ -75,3 +75,8 @@ Tasks remain unchecked until the exact PR head has the required executed green C
 - [x] T024 [FR-025, FR-026, SC-014, SC-015] Run the Playwright browser suite as a file-level `--shard=<k>/3` partition in every `integration-shard` execution with unchanged environment gates, `--workers=1`, no retries and the same preconditions; add the non-empty shard-list guard, Storage readiness and Docker CLI preconditions; upload per-shard Playwright/Vitest JSON inventories and reports; extend the no-checkout `integration` aggregator with the fail-closed union/skip/failure coverage proof; extend `tests/unit/ci-local-e2e.test.ts` red-first, update the workflow guide, and record traceability plus before/after wall times.
 
 Tasks remain unchecked until tests and exact-head GitHub gate evidence are recorded.
+
+
+## S41 documentation reconciliation
+
+- [ ] T025 [FR-009] Reconcile the CI credential boundary in the feature specification, plan, and research from merged workflow commit `9b4d7a4c9db0dc0493dbd6419a6fead95290f1dd`: `validate` uses no secrets; later `integration`/`storage` jobs may use optional Docker Hub credentials only for authenticated image pulls; no deployment secrets or deploy. Documentation only; no workflow change.

@@ -16,7 +16,7 @@
 - Every shard needs the audit's §2.1/§2.2/§2.4 preconditions because the hidden 5.6 min integration warm-up disappears: Vault provisioning with `SIGNUP_*` export, `scripts/wait-storage-ready.mjs`, and a Docker CLI/daemon check for the kong fault test. One Playwright invocation per shard keeps exactly one `webServer` and a per-shard U8 manifest; `U8_SERVER_LOG_RUN_ID` must never be preset.
 - Coverage proof is possible without checkout: shard jobs upload Playwright full/shard `--list` inventories, Vitest full file inventory, and the JSON run reports; the aggregator downloads artifacts and compares identities (`file::project::title path`) and Vitest file sets. Missing artifacts fail the download step, so the proof cannot silently pass.
 - Skip baseline is exact and reproducible: 24 `exercise-library-production` tests skip via `beforeAll` on Stack A (the whole file, all 24 listed identities), and 14 `shell` project-guard skips are static; the ceiling is 38 with a documented identity allowlist. Environment regressions surface as new skip identities or as failures.
-- Existing aggregator properties are preserved: `contents: read`, no checkout, no secrets, and the existing success/revision-tuple step is unchanged; only new steps are appended.
+- Existing aggregator properties are preserved: `contents: read`, no checkout, optional Docker Hub pull credentials only for authenticated image pulls, and the existing success/revision-tuple step is unchanged; no deployment secrets are used.
 - No new secrets, permissions, rulesets or concurrency/dispatch changes; `validate` and `storage` are untouched. No product behaviour changes. **CRITICAL**: none. **HIGH**: none.
 
 **Verdict**: PASS — 0 CRITICAL, 0 HIGH.
@@ -122,5 +122,14 @@ The main-side CI requirements retain FR-015 to FR-019 and SC-006 to SC-009, with
 
 - Date: 2026-11-09 19:56:44 UTC, after the spec scope correction.
 - Scope: static alignment of the Clarifications entry and Analyze scope: FR-015..FR-019 are CI optimization, FR-020 is the migration-version guard, and S33-PO-4 postpones self-hosted runner work.
-- Findings: 0 open CRITICAL, 0 open HIGH. No workflow or task status changed. The pre-existing FR-009 question about optional Docker Hub credentials in later jobs remains open and is escalated as S41-MCQ-001 in the run report; no interpretation is encoded.
+- Findings: 0 open CRITICAL, 0 open HIGH. No workflow or task status changed. At the time of this analysis the FR-009 credential wording remained unreconciled and was escalated as S41-MCQ-001 in the run report; S41-R7 resolves it factually in the later analysis below.
 - Verdict: PASS for the documentation correction.
+
+
+## S41-R7 FR-009 documentation re-analysis
+
+- Date: 2026-11-09 20:29 UTC, after final edits to spec, plan, tasks, and research.
+- Scope: static Spec Kit recheck of User Story 2 scenario 2, FR-009 and FR-026 credential language, S41-R7 clarification, plan/research descriptions, and FR-tagged task T025. Checked the merged workflow reference at `9b4d7a4c9db0dc0493dbd6419a6fead95290f1dd`; no CI or application behavior was changed. T025 remains unchecked because no tests were run.
+- Cross-references: FR-009 is numbered; FR-009 is linked by task T025; `9b4d7a4c9db0dc0493dbd6419a6fead95290f1dd` is the workflow evidence source. No copied PO decision text was changed.
+- Findings: 0 open CRITICAL, 0 open HIGH. S41-MCQ-001 is resolved by the architect ruling as a factual reconciliation; **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only reconciliation.

@@ -73,3 +73,8 @@
 ## Dependencies
 
 T001–T002 → T003, T005–T007. T008 after T001–T007. T004 is independent.
+
+
+## S41 documentation reconciliation
+
+- [ ] T013 [FR-006] Update the FR-006 traceability row and summary to state that projection coverage is limited to the at most 15 supplied relations in `scripts/free-tier/db-usage.mjs` and omits other tables/database overhead. Keep FR-006 PARTIAL; do not add or claim test evidence.

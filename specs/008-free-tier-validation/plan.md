@@ -52,3 +52,8 @@ README.md section (Codex)
 ## Complexity Tracking
 
 None.
+
+
+## S41-R7 FR-006 evidence reconciliation
+
+The traceability description records the existing limit: `scripts/free-tier/db-usage.mjs` supplies at most 15 relations, and omitted tables/database overhead mean full database projection coverage is not demonstrated. Keep FR-006 PARTIAL until that coverage exists. Documentation only; T013 tracks this record correction.

@@ -101,3 +101,11 @@
 - Scope: traceability status matches the evidence limits: the token-bearing register path is not asserted as redacted, and supplied-relation fixtures do not prove the full database projection. No test or implementation change was made.
 - Findings: 0 open CRITICAL, 0 open HIGH; 4 VERIFIED and 4 PARTIAL functional requirements.
 - Verdict: PASS for honest status reporting; these technical gaps remain open.
+
+
+## S41-R7 FR-006 documentation re-analysis
+
+- Date: 2026-11-09 20:29 UTC, after final edits to plan, tasks, and traceability.
+- Scope: static comparison of the PARTIAL status and its stated limit (at most 15 supplied relations; other tables and database overhead not covered) against the existing `scripts/free-tier/db-usage.mjs` and projection-test descriptions. Task T013 remains unchecked; no tests were run and no evidence was added.
+- Findings: 0 open CRITICAL, 0 open HIGH. No open ambiguity is introduced.
+- Verdict: PASS for this documentation-only correction.
