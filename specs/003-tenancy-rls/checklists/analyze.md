@@ -122,3 +122,11 @@ Open defect findings: **2** (A1 MEDIUM, A2 MEDIUM; both are evidence-coverage it
 - Entry check: PASS - spec.md requirements, measurable SCs and Given/When/Then scenarios remain; S37-PO-3 clarification and explicit no-open-ambiguity statement remain; plan scope and FR-tagged tasks remain present.
 - Dependency review: T026(a),(b) block the revocation branch and T016. T026(c) is owned by F11/F12 and remains necessary to complete SC-008, but does not block T015 or T016. The task sequence now reflects this boundary.
 - Result: PASS - 0 CRITICAL, 0 HIGH. Static consistency only; no product behavior or implementation is changed.
+
+
+## 2026-11-09 Analyze - PR #67 T024 concurrent revocation evidence
+
+- Date: 2026-11-09 (Africa/Cairo), after the T024 task clarification.
+- Entry check: PASS - spec requirements and scenarios, PO clarifications, plan scope and FR-tagged tasks remain present.
+- Evidence review: T024 now requires both concurrent revocations to commit and each affected membership to record non-null revoked_at, alongside unchanged Platform Owner roles/count. No refusal is asserted because membership revocation does not remove Platform Owner access (S37-Q5 = A).
+- Result: PASS - 0 CRITICAL, 0 HIGH. Static consistency only; no product behavior or implementation is changed.
