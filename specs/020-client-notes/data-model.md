@@ -1,6 +1,6 @@
 # Client Notes — Data Model (proposal)
 
-This document describes a future schema only. It adds no SQL or migration file. Exact schema remains subject to the implementation-time scan of all origin refs. CN-MCQ-01..14 are resolved by the PO (spec.md Clarifications, including S37-PO-14, S37-PO-16 and the S38-PO-2 copy table). CN-MCQ-15 (DESIGN.md §11 UI values) was removed by S38-R9. CN-MCQ-16 (exit-protection copy, not a data-model item) is OPEN.
+This document describes a future schema only. It adds no SQL or migration file. Exact schema remains subject to the implementation-time scan of all origin refs. CN-MCQ-01..14 are resolved by the PO (spec.md Clarifications, including S37-PO-14, S37-PO-16 and the S38-PO-2 copy table). CN-MCQ-15 (DESIGN.md §11 UI values) was removed by S38-R9. CN-MCQ-16 (exit-protection copy, not a data-model item) is RESOLVED by S38-PO-10 and S38-PO-11 (rows 30–33).
 
 ## Existing model reused
 
