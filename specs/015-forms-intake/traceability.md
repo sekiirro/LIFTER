@@ -126,4 +126,12 @@ Local gates on `13ef649927e03cf7d5e62b11d65c8eeb5ea4d4f1`: typecheck, lint, form
 | --- | --- | --- | --- |
 | FR-004/006/008/013/024/025/026/036/037 — valid CodeRabbit fixes and local scheduler fixture | T141 | Stack D integrations passed 29/29 (`forms-r3-corrections`, `forms-default-onboarding`, `forms-assignment-mutations`, `forms-alert-channels`); scheduler E2E passed 1/1; typecheck, ESLint, Prettier, and unit suite passed (208 files / 2,519 tests). Copy test compares N08.low.foods bytes across spec and decision fixture. SECURITY INVOKER mutants were killed and function definition/security flags restored. | T141 implementation commit on this branch; full SHA recorded by the task report. |
 
-| FR-004/006/008/013/017/018/024/025 ? round-16 follow-up review fixes | T142 | Pending current-head unit, Stack D integration, Analyze, and scheduler E2E evidence; product-decision items remain excluded until PO answers. | Pending |
+| FR-004/006/008/013/017/018/024/025 ? round-16 follow-up review fixes | T142 | Pending current-head unit and Stack D integration evidence for T142; its three PO-gated items were subsequently decided by S41-PO-12 and are tracked under T143. | Pending |
+
+## S41-PO-12 traceability
+
+| Requirement | Task | Test/evidence | Commit |
+| --- | --- | --- | --- |
+| FR-017/018/035 - seven-day client-late catch-up and legacy owner-stage suppression | T143 | This task commit; `forms-alerts.test.ts::S41-PO-12 limits client-late catch-up to seven days and suppresses legacy owner notices`; mutation tests remove the catch-up bound and legacy suppression. Scheduler E2E `f15-scheduler-activation.test.ts::runs owner-activated F15 schedules through three cycles and delivers only through loopback fake transport` passed. | Full SHA in run report. |
+| FR-038 - reject compact-empty username with existing generic feedback before consumption | T143 | This task commit; `client-signup-transaction.test.ts::rejects compact-empty usernames before admission redemption`; mutation test accepts the empty compact form. | Full SHA in run report. |
+| FR-039 - replace stale unconsumed Terms selection with current published version and preserve history | T143 | This task commit; `forms-r3-assignment-consumer.test.ts::S41-PO-12 replaces a stale unconsumed selection and preserves its history`; retry, consumed, missing-current, concurrent retry, stale-refresh mutation, archive mutation, and forced-RLS mutation cases passed. | Full SHA in run report. |

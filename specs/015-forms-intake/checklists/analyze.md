@@ -203,3 +203,24 @@ The remaining machine-local references in T020 and T139 were replaced with the d
 ## S41 round 16 follow-up Analyze refresh — 2026-11-09
 
 Re-read spec.md, plan.md, and tasks.md for T142 and the current CodeRabbit follow-up. Numbered FRs/SCs and existing Given/When/Then scenarios cover the touched validation, assignment revision, erasure progression, correction, alert lifecycle, scheduler, and owner-notice contracts. Clarifications cite the binding PO records; S41-PO-3 approves only N08.low.foods exact EN bytes, with medium/high and other pending rows still pending. Plan and T142 map each technical correction to existing FRs and require forward-only SQL, Stack D tests, and security mutation restore evidence. The client-late catch-up/legacy de-dup, stale selected Terms replacement, and punctuation-only username findings remain explicit PO-MCQ-2/3/4 and are excluded from implementation; no ambiguities remain for the approved independent scope. Self-review checked undefined states (null/overflow, malformed localized labels, completed schedules), authorization/role paths, pending copy, prior PO conflicts, retention effects, and FR/task/test traceability. No further product question was identified. **CRITICAL: 0. HIGH: 0.** This Analyze follows the T142 spec/plan/tasks edits and precedes further implementation.
+
+## S41-PO-12 entry Analyze - 2026-11-10
+
+Re-read the updated F15 specification, plan, and task map for T143 before implementation. The touched requirements are FR-017/018/035 (client-late alerts), FR-038 (signup username), and FR-039 (Terms consent/approval selection); SC-028 and four Given/When/Then scenarios cover stale, consumed, missing-current, retry/concurrency, legacy notices, and compact-empty usernames. Clarifications quote S41-PO-12 option labels exactly and identify architect mappings separately. No new copy, permission, role, retention, or user flow is introduced. T143 maps the new SQL and tests to the touched FRs. The absent `research/` directory has no applicable T143 material; search was attempted and returned no directory. Existing scheduler and alert lifecycle rules remain in force; D-03 Trainer-late behavior is unchanged. The current tables make selections immutable and one-row-per-client, so implementation must preserve history explicitly while adding a current selection, with all unconsumed/consumed and no-current-version states tested. SECURITY DEFINER mutation evidence is required. No additional product ambiguity is identified. **CRITICAL: 0. HIGH: 0.** Entry PASS for T143. Analysis follows the latest spec, plan, and task edits and precedes implementation.
+
+### S41-PO-12 post-edit verification - 2026-11-10
+
+After the plan/task cross-reference correction, confirmed T143 is tagged FR-017/018/035/038/039, all five FR IDs are present in spec.md, SC-028 is present, the S41-PO-12 GWT scenarios exist, and traceability maps each FR group to T143. PO-MCQ-2/3/4 are decided and no longer open decisions for current scope; historical T142 text is explicitly dated and superseded by T143. The latest Clarifications states no open ambiguities for T143. **CRITICAL: 0. HIGH: 0.** Analyze remains current after the last spec/plan/tasks edit.
+
+### S41-PO-12 final spec wording check - 2026-11-10
+
+Refined the no-current-version acceptance case to cite the existing internal `stale_selection` outcome and fail-closed untouched state; it introduces no new user-facing message. Revalidated all touched cross references and exact PO choice labels after this final spec edit. CRITICAL 0; HIGH 0; no open T143 ambiguity.
+
+
+### S41-PO-12 cross-reference sweep - 2026-11-10
+
+Confirmed spec.md, plan.md, tasks.md, traceability.md and this Analyze all reference the T143 requirements FR-017/018/035/038/039; SC-028 is in the specification; T143 carries the same FR tags in tasks.md and both requirements in plan.md/traceability. No unreferenced touched ID or active pending status remains for PO-MCQ-2/3/4. The only pending records are test/commit evidence for work not yet verified or landed. CRITICAL: 0; HIGH: 0.
+
+### S41-PO-12 implementation verification refresh - 2026-11-10
+
+After T143 tests passed, updated its task and traceability evidence. Reconfirmed requirement, task, plan, traceability, and scenario cross-references; no decided PO item is still marked pending. Stack D integration tests cover concurrent approval retries, stale replacement history, consumed and missing-current selection states, seven-day alert bounds, legacy owner-stage suppression, and compact-empty signup rejection before ticket redemption. Mutation probes killed the stale-refresh, archival, forced-RLS, alert-bound, legacy-suppression, and username mutants. The three touched integration files passed 37/37, and the opt-in scheduler E2E passed 1/1 on Stack D. Analyze follows the final spec/plan/tasks edits. No additional product ambiguity is identified. CRITICAL: 0; HIGH: 0.

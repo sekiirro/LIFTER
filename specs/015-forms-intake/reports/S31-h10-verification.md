@@ -57,7 +57,7 @@ The baseline checkout was clean origin/main `d04ef52eb93df68b9361106a5ee4fd4fcae
 | `audit.test.ts` visibility | Statement timeout. | SQLSTATE `57014` instead of expected `42501` (timeout). | Suite file equal to main. Large audit table grew from 204,576 to 208,254 rows during branch common run; clean main also hit statement timeout. |
 | Registration-link issue/open/integrity/flexible suites | PASS. | PASS. | 7-file common batch: all registration-link suites passed on both; no branch delta in those files. |
 
-Common-suite evidence: clean main 7 files, 106 passed / 3 failed (two branding-upload, one audit); branch 7 files, 104 passed / 5 failed (same shared failures plus one stale GC timeout and one catalog taxonomy result). After data accumulated, focused origin/main reruns reproduced catalog taxonomy (1 failed/5 passed), branding owner GC (3 failed/2 passed), and branding upload recovery (2 failed/1 passed). Logs: `C:/Users/NEW LAP/.lifter/runs/s31-luna-f15-h10/main-suite.log`, `main-branch-diff-suite.log`, `branch-diff-suite.log`, `branch-client-recovery-final.log`, `branch-common-suites.log`.
+Common-suite evidence: clean main 7 files, 106 passed / 3 failed (two branding-upload, one audit); branch 7 files, 104 passed / 5 failed (same shared failures plus one stale GC timeout and one catalog taxonomy result). After data accumulated, focused origin/main reruns reproduced catalog taxonomy (1 failed/5 passed), branding owner GC (3 failed/2 passed), and branding upload recovery (2 failed/1 passed). Logs were kept outside the repository and are not retained as repository artifacts.
 
 Relevant row counts immediately before → after the branch common run:
 

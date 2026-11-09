@@ -194,4 +194,10 @@ Task T140 implements the four already-approved fixes in S40-R17 on existing PR #
 
 ### S41 round-16 follow-up (T142)
 
-Address verified CodeRabbit findings in existing FR scope, using RED-first regression tests and forward-only database changes. Keep stale-selection, client-late catch-up, and username edge behavior blocked pending PO-MCQ-2/3/4. Refresh Analyze after any spec, plan, or task edit; verify touched integrations only on isolated Stack D and retain security mutation/restore evidence.
+Address verified CodeRabbit findings in existing FR scope, using RED-first regression tests and forward-only database changes. PO-MCQ-2/3/4 are decided by S41-PO-12 and are implemented under T143. Refresh Analyze after any spec, plan, or task edit; verify touched integrations only on isolated Stack D and retain security mutation/restore evidence.
+
+### S41-PO-12 approved behavior (T143)
+
+Requirements: FR-017/018/035/038/039; success criterion SC-028.
+
+Implement stale, unconsumed Terms-selection replacement by appending the current published version while retaining the prior selection as immutable history; preserve approval serialization and fail closed when no current version exists. Implement the seven-day client-late catch-up bound and legacy owner-stage de-duplication without changing D-03 Trainer-late behavior. Reject compact-empty usernames before invite/Auth consumption and reuse existing generic username feedback. Use forward-only migrations, RED/GREEN direct integration coverage on Stack D, and SECURITY DEFINER mutation/restore evidence. No user-visible copy changes.

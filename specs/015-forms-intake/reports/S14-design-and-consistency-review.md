@@ -1,6 +1,6 @@
 # S14 Design Gate and Spec/Plan/Tasks Consistency Review
 
-**Scope:** documentation/specification and approved reference assets only. No rendered UI, application code, database, Docker, Supabase, tests, or `.env*` files were accessed or changed. The skills catalog at `C:/Users/NEW LAP/.lifter/design-skills-catalog.md` was read in full. Authority order is DESIGN.md → design-system artifacts/tokens/components → feature specs/decisions → advisory skills. No skill overrides the Design System.
+**Scope:** documentation/specification and approved reference assets only. No rendered UI, application code, database, Docker, Supabase, tests, or `.env*` files were accessed or changed. The local skills catalog was consulted as advisory. Authority order is DESIGN.md -> design-system artifacts/tokens/components -> feature specs/decisions -> advisory skills. No skill overrides the Design System.
 
 ## Skill applicability for this docs/spec-only unit
 

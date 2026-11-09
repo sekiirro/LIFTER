@@ -68,7 +68,7 @@ Screenshots and `INDEX.md`: `%TEMP%/lifter-s29-f15-h5/`. The index links the 24 
 
 ### Design skills assessment
 
-Read the full `C:/Users/NEW LAP/.lifter/design-skills-catalog.md`. Catalog entries marked `CONFLICT - PO decision` are advisory only; the approved Design System and spec win. `ui-ux-pro-max` was used for lookup/search only. No new design direction, tokens, copy, motion, effects, or dependencies were introduced.
+The local design-skills catalog was reviewed. Entries marked `CONFLICT - PO decision` are advisory only; the approved Design System and spec win. `ui-ux-pro-max` was used for lookup/search only. No new design direction, tokens, copy, motion, effects, or dependencies were introduced.
 
 | Skill | Assessment | Reason |
 |---|---|---|

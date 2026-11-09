@@ -13,6 +13,16 @@ const db = sql();
 afterAll(() => db.end());
 const rollback = new Error('rollback F15 synthetic alert fixtures');
 
+async function expectInvariantFailure(body: () => Promise<void>) {
+  let failure: unknown;
+  try {
+    await body();
+  } catch (error) {
+    failure = error;
+  }
+  expect(failure, 'the named invariant must kill the mutant').toBeDefined();
+}
+
 async function formAssignment(
   tx: TransactionSql,
   workspaceId: string,
@@ -689,6 +699,118 @@ it('keeps the evaluator lifecycle check when cancellation was unavailable', asyn
           throw rollback;
         }),
       ).rejects.toBe(rollback);
+    },
+  );
+});
+
+it('S41-PO-12 limits client-late catch-up to seven days and suppresses legacy owner notices', async () => {
+  const f = await clientContext();
+  const client = await registered(f);
+  await expect(
+    db.begin(async (tx) => {
+      const now = '2026-04-20T00:00:00.000Z';
+      const old = await formAssignment(
+        tx,
+        f.wsA.id,
+        client.id,
+        '2026-04-01T00:00:00.000Z',
+        f.po.userId,
+      );
+      const legacy = await formAssignment(
+        tx,
+        f.wsA.id,
+        client.id,
+        '2026-04-17T00:00:00.000Z',
+        f.po.userId,
+      );
+      const eligible = await formAssignment(
+        tx,
+        f.wsA.id,
+        client.id,
+        '2026-04-15T00:00:00.000Z',
+        f.po.userId,
+      );
+      await tx`insert into app_private.form_alert_occurrences(workspace_id,schedule_id,stage,recipient_user_id,enqueued_at) select workspace_id,id,'client_owners_24h',${f.woA.userId},${now}::timestamptz from app_private.form_alert_schedules where workspace_id=${f.wsA.id} and source_assignment_id=${legacy} and alert_kind='client_late'`;
+      const result = await core(tx, f.wsA.id, now);
+      expect(result.status).toBe('ok');
+      const schedules =
+        await tx`select id,source_assignment_id from app_private.form_alert_schedules where workspace_id=${f.wsA.id} and source_assignment_id in (${old},${legacy},${eligible})`;
+      const scheduleByAssignment = new Map(
+        schedules.map((row) => [row.source_assignment_id, row.id]),
+      );
+      const immediate =
+        await tx`select distinct schedule_id from app_private.form_alert_occurrences where workspace_id=${f.wsA.id} and stage='client_owners_immediate'`;
+      expect(immediate.map((row) => row.schedule_id)).toEqual([
+        scheduleByAssignment.get(eligible),
+      ]);
+      expect(immediate.map((row) => row.schedule_id)).not.toContain(
+        scheduleByAssignment.get(old),
+      );
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
+
+it('mutation: removing the client-late catch-up bound is caught', async () => {
+  const f = await clientContext();
+  const client = await registered(f);
+  await withCrashSafeFunctionMutant(
+    'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)',
+    (definition) =>
+      definition.replace(
+        "s.deadline_at + interval '7 days' >= p_evaluation_at",
+        'true',
+      ),
+    async () => {
+      await expectInvariantFailure(async () =>
+        db.begin(async (tx) => {
+          const old = await formAssignment(
+            tx,
+            f.wsA.id,
+            client.id,
+            '2026-04-01T00:00:00.000Z',
+            f.po.userId,
+          );
+          await core(tx, f.wsA.id, '2026-04-20T00:00:00.000Z');
+          const occurrences =
+            await tx`select o.id from app_private.form_alert_occurrences o join app_private.form_alert_schedules s on s.workspace_id=o.workspace_id and s.id=o.schedule_id where s.source_assignment_id=${old} and o.stage='client_owners_immediate'`;
+          expect(occurrences).toHaveLength(0);
+          throw rollback;
+        }),
+      );
+    },
+  );
+});
+
+it('mutation: removing legacy owner-stage suppression is caught', async () => {
+  const f = await clientContext();
+  const client = await registered(f);
+  await withCrashSafeFunctionMutant(
+    'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)',
+    (definition) =>
+      definition.replace(
+        "legacy.stage in ('client_owners_24h','client_owners_48h')",
+        "legacy.stage in ('no_legacy_stage')",
+      ),
+    async () => {
+      await expectInvariantFailure(async () =>
+        db.begin(async (tx) => {
+          const now = '2026-04-20T00:00:00.000Z';
+          const assignment = await formAssignment(
+            tx,
+            f.wsA.id,
+            client.id,
+            '2026-04-17T00:00:00.000Z',
+            f.po.userId,
+          );
+          await tx`insert into app_private.form_alert_occurrences(workspace_id,schedule_id,stage,recipient_user_id,enqueued_at) select workspace_id,id,'client_owners_24h',${f.woA.userId},${now}::timestamptz from app_private.form_alert_schedules where workspace_id=${f.wsA.id} and source_assignment_id=${assignment} and alert_kind='client_late'`;
+          await core(tx, f.wsA.id, now);
+          const immediate =
+            await tx`select 1 from app_private.form_alert_occurrences o join app_private.form_alert_schedules s on s.workspace_id=o.workspace_id and s.id=o.schedule_id where s.source_assignment_id=${assignment} and o.stage='client_owners_immediate'`;
+          expect(immediate).toHaveLength(0);
+          throw rollback;
+        }),
+      );
     },
   );
 });

@@ -46,13 +46,13 @@ export const guardedFunctions = [
   },
   {
     identity: 'app_private.reconcile_f15_form_assignment(uuid,uuid)',
-    migration: '20261108230057_f15_active_client_initial_occurrences.sql',
+    migration: '20261110010000_f15_po12_decisions.sql',
     name: 'app_private.reconcile_f15_form_assignment',
   },
   {
     identity:
       'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)',
-    migration: '20261109220000_f15_review16_followup.sql',
+    migration: '20261110010000_f15_po12_decisions.sql',
     name: 'app_private.evaluate_forms_alerts_core',
   },
   {

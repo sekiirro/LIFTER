@@ -43,6 +43,16 @@ async function runSignupMutation<T>(
   return result;
 }
 
+async function expectMutationFailure(body: () => Promise<void>) {
+  let failure: unknown;
+  try {
+    await body();
+  } catch (error) {
+    failure = error;
+  }
+  expect(failure, 'the named invariant must kill the mutant').toBeDefined();
+}
+
 function extendedFields(fixture: Awaited<ReturnType<typeof signupFixture>>) {
   return {
     ...fixture.fields,
@@ -171,6 +181,19 @@ it('keeps the SQL and TypeScript reserved-role username lists in parity', async 
   expect(row?.names).toEqual([...RESERVED_SIGNUP_ROLE_NAMES]);
 });
 
+it('rejects compact-empty usernames before admission redemption', async () => {
+  const fixture = await signupFixture(context);
+  expect(
+    await signup(db, fixture, { ...extendedFields(fixture), username: '___' }),
+  ).toEqual({ status: 'username_unavailable' });
+  expect(
+    await db`select redeemed_at from app_private.signup_admission_tickets where id=${fixture.ticket} and redeemed_at is not null`,
+  ).toHaveLength(0);
+  expect(
+    await db`select 1 from auth.users where email=${fixture.fields.email}`,
+  ).toHaveLength(0);
+});
+
 it('rejects usernames outside the approved normalized set before admission redemption', async () => {
   for (const username of [
     ' Client.123',
@@ -188,6 +211,30 @@ it('rejects usernames outside the approved normalized set before admission redem
   }
 });
 
+it('mutation: accepting compact-empty username is caught', async () => {
+  const fixture = await signupFixture(context);
+  await expectMutationFailure(async () =>
+    runSignupMutation(
+      fixture,
+      async (definition) =>
+        definition.replace(
+          'if username_compact=\'\' then return \'{"status":"username_unavailable"}\'::jsonb; end if;',
+          'if false then return \'{"status":"username_unavailable"}\'::jsonb; end if;',
+        ),
+      async (tx) => {
+        expect(
+          await signup(tx, fixture, {
+            ...extendedFields(fixture),
+            username: '___',
+          }),
+        ).toEqual({ status: 'username_unavailable' });
+        expect(
+          await tx`select redeemed_at from app_private.signup_admission_tickets where id=${fixture.ticket} and redeemed_at is not null`,
+        ).toHaveLength(0);
+      },
+    ),
+  );
+});
 it('mutation: skipping the approved normalized username character check permits a hyphenated value', async () => {
   const fixture = await signupFixture(context);
   const outcome = await runSignupMutation(

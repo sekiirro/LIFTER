@@ -3,13 +3,13 @@
 ## Scope and approvals
 
 - Implemented the PO-approved text and submission limits, shared validation/counter helper, and reusable bilingual answer field.
-- Approval source: `C:/Users/NEW LAP/.lifter/briefs/s13-po-decisions-2026-10-29.md`, “F15 text/submission limits — APPROVED”. The verbatim approval and architect mapping are recorded in `spec.md`.
+- Approval source: F15 text/submission limits Q1=A and Q2=A, quoted verbatim in `specs/015-forms-intake/spec.md` under the F15 text/submission limits section.
 - Database and integration work was not run. T012/T013 record shared validator calls and future database-level enforcement when the answer schema exists.
 - `docs/SESSION_HANDOFF.md` was not present in this checkout; used the binding F15 PO decision and approved Design System sources.
 
 ## Skill catalog review
 
-The full catalog at `C:/Users/NEW LAP/.lifter/design-skills-catalog.md` was reviewed. Applied skills were used during implementation/self-review; UI/UX Pro Max was lookup-only.
+The local design-skills catalog was consulted as advisory; applied skills were used during implementation/self-review, and UI/UX Pro Max was lookup-only.
 
 | Skill | Status | Reason |
 |---|---|---|
@@ -84,7 +84,7 @@ Used `DESIGN.md`, `specs/002-design-system/`, design tokens, existing `Field`/`B
 | Accessibility | PASS | Associated label, hint/counter/error descriptions, keyboard-visible focus, threshold-only polite announcement, RTL/LTR, and axe checks. No authored movement; existing border transition only. |
 | Loading/empty/error/success/disabled/pending/interaction states | PASS | Error, disabled, and interaction states are implemented. Loading, empty, success, and pending are not applicable to this synchronous leaf input. |
 | Bilingual copy | PASS | Arabic and English text comes from `lib/i18n/messages`; no user-facing component strings are hard-coded. |
-| Screenshot matrix | PASS | Rendered, reviewed, and saved under `C:\Users\NEWLAP~1\AppData\Local\Temp\lifter-s13-f15-ui\`: `ar-light-390.png`, `ar-dark-390.png`, `en-light-390.png`, `en-dark-390.png`, `ar-light-1440.png`, `ar-dark-1440.png`, `en-light-1440.png`, `en-dark-1440.png`. No findings required fixes. |
+| Screenshot matrix | PASS | Rendered, reviewed, and saved under a workstation temporary directory outside the repository: `ar-light-390.png`, `ar-dark-390.png`, `en-light-390.png`, `en-dark-390.png`, `ar-light-1440.png`, `ar-dark-1440.png`, `en-light-1440.png`, `en-dark-1440.png`. No findings required fixes. |
 | UI tests and axe | PASS | Component tests cover label association, counter, limit error, and direction. Axe reported 0 violations for AR/EN × light/dark. |
 | New dependency | PASS | No dependency added. |
 | `npm run size` | PASS | Worker 6,751.86 KiB uncompressed / 1,400.76 KiB gzip of 65,536 KiB; cron 2.85 KiB / 1.25 KiB. |
