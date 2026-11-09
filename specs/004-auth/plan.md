@@ -32,7 +32,7 @@ Client targeting stays closed until P1 creates client accounts (ND-F4-5).
 | VIII UI | `/login` and `/auth/recovery` are built on Design System components, AR (RTL) default plus EN, with axe e2e. ✅ |
 | IX Reliability | Rate-limit and record use advisory-locked transactions, so concurrent requests can't exceed the limit. ✅ |
 | Platform | Edge middleware is the supported OpenNext path (research R1). No deploy. ✅ |
-| Workflow | Sol Medium critique executed and dispositioned under S38-R4; security review required; implementation waits for passing Analyze, local feasibility and PO copy approval. |
+| Workflow | Sol Medium critique executed and dispositioned under S38-R4; security review required; implementation waits for passing Analyze and local feasibility; copy is approved (S39-PO-4/S39-PO-5). |
 **Post-design re-check**: no violations. B4 remains a production blocker (unchanged).
 ## Design
 See [research.md](research.md) (decisions R1–R9), [data-model.md](data-model.md) (migration) and [contracts/auth-surface.md](contracts/auth-surface.md) (routes, actions, library, env).
@@ -102,7 +102,7 @@ Migration versions (described only, not named here): T044 and T050a each add one
 If G1 or G2 fails, control B cannot be enforced and the conflict is raised again; no workaround is attempted.
 Local-only limits: all tests run on the local Supabase stack and local Inbucket. Test fixtures must set staff passwords when the user is created. A later admin password update for a staff identity is refused by control B, so a fixture that changes a staff password after creation must use the intent path.
 ## ND-F4-7 Design (staff self-service email reset; specified, NOT built)
-Status: specification only. No code, migration, env, hosted Supabase Auth or SMTP change. T033 entry requires answered PO decisions, PO approval of the COPY-F4-R6 PENDING-PO copy proposal, critique disposition S38-R4, and fresh Analyze with 0 open CRITICAL/HIGH. PDN-F4-7-14=B and -15=A are answered; -17 is closed by S38-PO-3; -01/-02/-03/-05/-09/-12 are answered; -04/-06/-10/-11/-16 are pruned or deferred. Write RED tests before implementation, then run G1-G6 feasibility checks; failed checks block implementation technically. Hosted work stays deferred under FR-020.
+Status: specification only. No code, migration, env, hosted Supabase Auth or SMTP change. T033 entry requires answered PO decisions, COPY-F4-R6 copy approval recorded (English S39-PO-4, Egyptian Arabic S39-PO-5), critique disposition S38-R4, and fresh Analyze with 0 open CRITICAL/HIGH. PDN-F4-7-14=B and -15=A are answered; -17 is closed by S38-PO-3; -01/-02/-03/-05/-09/-12 are answered; -04/-06/-10/-11/-16 are pruned or deferred. Write RED tests before implementation, then run G1-G6 feasibility checks; failed checks block implementation technically. Hosted work stays deferred under FR-020.
 Flow (requirements in spec.md FR-016 to FR-028):
 1. The request form lives on `/login` (no new public route, so the FR-005 allow-list does not change). It is a second server action beside `signIn`.
 2. Server action `requestStaffReset(email)` (proposed name) runs in this order, and the outcome is the same generic confirmation on every path (FR-018):
@@ -125,10 +125,10 @@ Constitution check for ND-F4-7:
 | III Least privilege | Staff only; clients get no email; the eligible roles are a PO decision (PDN-F4-7-02). |
 | IV Scope | PO S35-PO-1 decision; BRD line 130 and PRD-02 (docs/01 row) are the sources; D-07 sequencing is closed by the PO decision. Nothing outside the PO words is added without a PDN. |
 | VII Privacy | Tokens stay with the provider (hashed); no LIFTER-side secret; no email or token in logs or audit; audit of sensitive actions (FR-025). |
-| VIII UI | `/login` extension on Design System components; AR/EN; copy BLOCKED until approved (FR-027). |
+| VIII UI | `/login` extension on Design System components; AR/EN; copy approved (S39-PO-4/S39-PO-5; FR-027/FR-031). |
 | IX Reliability | Rate limit in one advisory-locked transaction; audit before send, fail closed; completion intent appended before any password change, closing row after, reconciliation for open intents; the `auth.users` guard refuses staff password changes without the intent (FR-025, FR-030 control B). |
 | Platform | No hosted change; local stack only for tests. |
-| Workflow | Sol Medium critique executed and dispositioned under S38-R4; security review required; implementation waits for passing Analyze, local feasibility and PO copy approval. |
+| Workflow | Sol Medium critique executed and dispositioned under S38-R4; security review required; implementation waits for passing Analyze and local feasibility; copy is approved (S39-PO-4/S39-PO-5). |
 ## Complexity Tracking
 | Item | Why | Simpler alternative rejected because |
 |---|---|---|

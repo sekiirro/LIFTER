@@ -1,22 +1,30 @@
-# Spec Kit Analyze — F4 Authentication, S38 round 6
+# Spec Kit Analyze — F4 Authentication, S39 round 7
 
-- Date: 2026-11-09 02:16 +02:00, after the last changes to spec.md, plan.md and tasks.md in this round.
-- Scope: specification and planning only. No application code, SQL, migration or test was changed or run.
-- Inputs: Sol Medium critique at `549c6466cea254e90dd180d20c7b1b976e35a267`; S38-PO-1, S38-PO-3, S38-PO-5; architect S38-R2, S38-R4 and S38-R7. Exact quoted extracts are in spec.md and the round report.
-- Method: cross-artifact review of spec.md, plan.md, tasks.md, research.md, traceability.md, contracts/auth-surface.md, data-model.md and this checklist against Spec Kit entry requirements and the critique findings.
+- Date: 2026-11-09 04:12 +02:00, after the last changes to spec.md, plan.md, tasks.md, traceability.md, copy-proposal.md and contracts/auth-surface.md in this round.
+- Scope: specification and planning only. No application code, SQL, migration, environment or test was changed or run.
+- Inputs: S39-PO-4 option 2 (English of the 13 former proposal rows approved as written); S39-PO-5 option 1 (Egyptian Arabic redraft approved exactly as in `runs/s39-haiku-f4-ar/copy-ar-redraft.md` "proposed Egyptian Arabic", plus the five-key term switch). Exact quoted extracts and mappings are in the round report; prior inputs are the S38 round-6 records.
+- Method: cross-artifact review of spec.md, plan.md, tasks.md, research.md, traceability.md, contracts/auth-surface.md, data-model.md and this checklist against Spec Kit entry requirements and the round-6 critique findings.
 
 ## Entry check (Spec Kit gate)
 
 | Check | Result | Evidence |
 |---|---|---|
-| Numbered FRs, measurable SCs, Given/When/Then scenarios cover the touched scope | PASS | spec.md FR-001–FR-030; SC-001–SC-015; US5 scenarios 1–14 cover request, hook failures, idempotent intent retry, session binding, reset outcome and timing |
-| Clarifications cite PO sources and state remaining ambiguities | PASS | spec.md Clarifications and S38 register quote S38-PO-1/3/5. No behavior decision is implicit; copy proposal is explicitly PENDING-PO. S38-R7's question about other sessions is answered by existing FR-025(b), FR-030 control C and PDN-F4-7-07. |
-| Plan covers touched scope; tasks have IDs and FR tags | PASS | plan.md provider-boundary design, G1–G6 and sequencing; tasks.md T033, T041, T049a–T049e, T050a/T050b and new T051 include FR tags. |
+| Numbered FRs, measurable SCs, Given/When/Then scenarios cover the touched scope | PASS | spec.md FR-001–FR-031; SC-001–SC-016; US5 scenarios 1–15 cover request, hook failures, idempotent intent retry, session binding, reset outcome, timing and the five-key Arabic term switch (scenario 15). |
+| Clarifications cite PO sources and state remaining ambiguities | PASS | spec.md records S39-PO-4/S39-PO-5; COPY-F4-R6 is resolved. S38 register quotes S38-PO-1/3/5. No behavior decision is implicit. |
+| Plan covers touched scope; tasks have IDs and FR tags | PASS | plan.md provider-boundary design, G1–G6 and sequencing; tasks.md T033, T041, T042, T049a–T049e, T050a/T050b, T051 and new T052 (FR-031) include FR tags. |
 | Analyze is dated after spec/plan/tasks edits and has 0 open CRITICAL/HIGH | PASS | This dated review; finding dispositions below. |
 
-**Spec-only gate result: PASS. Implementation entry: NOT READY.** T033 still requires PO approval of [copy-proposal.md](../copy-proposal.md) (COPY-F4-R6); a copy is also preserved at `C:/Users/NEW LAP/.lifter/runs/s38-luna-f4-r6/copy-proposal.md`. Local feasibility G1–G6 and RED/acceptance evidence remain unexecuted. These are explicit gates, not assumed approvals. No task is ticked.
+**Spec-only gate result: PASS. Implementation entry: NOT READY (technical gates only).** The copy condition is now satisfied: English approved by S39-PO-4, Egyptian Arabic and the five-key term switch by S39-PO-5. T033 still requires the remaining entry checks; local feasibility G1–G6, RED/acceptance evidence and T051 mutation evidence remain unexecuted. These are explicit technical gates, not unresolved requirements. No task is ticked.
 
-## Sol Medium critique disposition
+## S39 round 7 copy approval (resolves S38-F4-3)
+
+- `specs/004-auth/copy-proposal.md` now carries the final approved AR/EN table (26 rows). The 13 former "New proposal; PENDING-PO" rows use the S39-PO-4 English and the S39-PO-5 Egyptian Arabic byte-exact. No PENDING-PO marker remains.
+- spec.md FR-027 cites S39-PO-4/S39-PO-5 and reproduces the approved table after FR-029.
+- The five keys `auth.newPassword`, `auth.confirmPassword`, `auth.setPassword`, `auth.weak_password` and `auth.mismatch` carry only the S39-PO-5 term switch; this is FR-031 with SC-016. The catalog change is task T052 and is explicitly not made by this specification-only PR.
+- FR-031 lists every `origin/main` screen and test that reads the five keys: `app/auth/recovery/RecoveryForm.tsx`, `app/auth/recovery/page.tsx`, `lib/i18n/messages/{ar,en}.ts`, `tests/unit/auth-actions.test.ts`, plus indirect coverage in `tests/unit/messages.test.ts`, `tests/e2e/auth.spec.ts` and `tests/integration/client-accounts-verification.md`. `components/` has no read.
+- The two FR-029 strings remain byte-exact and are unchanged by the switch; a byte comparison confirmed all 26 rows, the 13 redraft strings and the four FR-029 strings.
+
+## Sol Medium critique disposition (S38 round 6, retained as history)
 
 S38-R4 recorded the critique result as NOT READY, CRITICAL 0 / HIGH 6 / MEDIUM 3 / LOW 1. The critique ran at the exact starting SHA. Its ten findings are resolved at the specification/process level as follows; implementation evidence remains required by the listed tasks.
 
@@ -29,10 +37,10 @@ S38-R4 recorded the critique result as NOT READY, CRITICAL 0 / HIGH 6 / MEDIUM 3
 | 5. Rate-limit ownership duplicated | HIGH | Fixed: hook is the authoritative counter for app/direct routes; app does not pre-consume; unknown-address accounting, mixed requests and concurrency are required. | spec.md FR-024/030; plan.md flow/G6; T038/T049c |
 | 6. No mutation evidence acceptance task | HIGH | Fixed: explicit T051 maps each security control to a disabling/bypass mutation and evidence/restoration requirements. | tasks.md T051; traceability.md |
 | 7. Gate order circular | MEDIUM | Fixed: RED tests precede local feasibility spikes; implementation entry and final acceptance are separate; spikes do not require their own GREEN result before they can run. | plan.md F4 execution order; tasks.md T033/T050a/T050b |
-| 8. PDN register mixes obsolete and product questions | MEDIUM | Fixed: -04/-06/-10/-11/-16 pruned or deferred; -17 closed; -01/-02/-03/-05/-09/-12 recorded answered; concrete copy table is PENDING-PO. | spec.md Open items/register; copy-proposal.md |
+| 8. PDN register mixes obsolete and product questions | MEDIUM | Fixed: -04/-06/-10/-11/-16 pruned or deferred; -17 closed; -01/-02/-03/-05/-09/-12 recorded answered; concrete copy table now approved. | spec.md Open items/register; copy-proposal.md |
 | CodeRabbit 7. Client manual-link completion could be changed by blanket login redirect | MEDIUM | Fixed: staff self-service redirects to login; client manual-link preserves FR-013 signed-in outcome. | spec.md FR-026; contracts/auth-surface.md; tasks.md T045 |
 | CodeRabbit 8. Blanket intent immutability could reject valid state transitions | MEDIUM | Fixed: identity/origin fields remain immutable; only guarded open-to-closed transitions are allowed, with timestamps set once; no-delete remains unconditional. | plan.md; data-model.md |
-| CodeRabbit 9. Copy proposal was only in local run directory | MEDIUM | Fixed: committed proposal is linked from the spec, contract, plan/tasks and Analyze; run-dir evidence copy retained. Approval remains pending. | copy-proposal.md; spec.md FR-027 |
+| CodeRabbit 9. Copy proposal was only in local run directory | MEDIUM | Fixed: committed proposal is linked from the spec, contract, plan/tasks and Analyze; run-dir evidence copy retained. Approval now recorded. | copy-proposal.md; spec.md FR-027 |
 | CodeRabbit 10. Refused requests must still be counted at the send hook | MEDIUM | Fixed: all valid requests reach the authoritative hook for policy accounting; acceptance asserts no email, generic mapped response, and shared counters. | contracts/auth-surface.md; tasks.md T038/T038a; FR-024 |
 | CodeRabbit 11. Contract copy link resolves to the wrong directory | MINOR | Fixed: link now resolves to `../copy-proposal.md`. | contracts/auth-surface.md |
 | CodeRabbit 12. Preserve client invalid-link instruction while using staff copy | MEDIUM | Fixed: existing `auth.invalid_link` catalog copy remains for client manual links; staff uses the exact approved FR-029 string. A display-only `flow=staff` marker selects copy and never affects authorization. | copy-proposal.md; spec.md FR-027/029; tasks.md T037a/T044a |
@@ -50,18 +58,19 @@ S38-R4 recorded the critique result as NOT READY, CRITICAL 0 / HIGH 6 / MEDIUM 3
 |---|---|---|---|
 | S38-F4-1 | MEDIUM | OPEN — implementation evidence | G1/G2 must prove a trusted initiating-session binding on the pinned local Auth path. Otherwise T050a remains blocked; no account-scope bypass is accepted. |
 | S38-F4-2 | MEDIUM | OPEN — local feasibility | G3–G6 and T049b–T049e have not run. They must establish hook behavior, unknown-address accounting, response observations, session revocation and recovery age before implementation acceptance. |
-| S38-F4-3 | MEDIUM | OPEN — PO copy approval | Proposed AR/EN recovery copy (COPY-F4-R6) is concrete but pending one PO review. Implementation tasks using those strings remain blocked until approval. |
+| S38-F4-3 | MEDIUM | CLOSED — copy approved | COPY-F4-R6 resolved by S39-PO-4 (English) and S39-PO-5 (Egyptian Arabic + five-key term switch). No PENDING-PO copy remains. |
 | S38-F4-4 | MEDIUM | OPEN — acceptance evidence | T051 mutation evidence and the T048 security/review/CI gates are not executed in this spec-only round. |
+| S39-F4-1 | LOW | CLOSED — tracked task | The five-key catalog change is not implemented by this spec-only PR by design; task T052 (FR-031) carries it with a byte-comparison test. |
 
-Open CRITICAL: **0**. Open HIGH: **0**. Open MEDIUM: **4**. Open LOW: **0**. The four medium items do not contradict the specified behavior; they are explicit implementation, copy-approval and acceptance gates.
+Open CRITICAL: **0**. Open HIGH: **0**. Open MEDIUM: **3**. Open LOW: **0**. The three medium items do not contradict the specified behavior; they are explicit implementation, feasibility and acceptance gates. All product decisions, including copy, are recorded.
 
 ## Requirements and task metrics
 
-- FRs: 30. SCs: 15, numbered SC-001 through SC-015. Given/When/Then scenarios: US1–US5, with 14 F4 scenarios.
-- Existing task count: 61; T051 added. Existing completed tasks remain unchanged. No task was ticked in this round.
-- F4 task coverage includes T033–T051; recovery control requirements trace to T049a–T049e, T050a/T050b and T051.
-- Spec-only readiness: PASS. Implementation readiness: FAIL until T033, G1–G6, the relevant RED tests, PO copy approval and implementation acceptance evidence pass.
-- Ambiguities: no unrecorded behavior ambiguity is claimed absent. COPY-F4-R6 approval is PENDING-PO. Session-binding feasibility is technical and explicitly gated. Existing other-session revocation rule is cited rather than guessed.
+- FRs: 31 (FR-031 added for the five-key term switch). SCs: 16 (SC-016 added). Given/When/Then scenarios: US1–US5, 15 F4 scenarios.
+- Existing task count: 61; T052 added (62). No task was ticked in this round.
+- F4 task coverage includes T033–T052; recovery control requirements trace to T049a–T049e, T050a/T050b and T051.
+- Spec-only readiness: PASS. Implementation readiness: FAIL until T033, G1–G6, the relevant RED tests and implementation acceptance evidence pass; copy is no longer a blocker.
+- Ambiguities: **No open ambiguities.** COPY-F4-R6 is resolved by S39-PO-4/S39-PO-5; the five-key term switch is fully specified (FR-031). Session-binding feasibility is technical and explicitly gated, not an open product question. Existing other-session revocation rule is cited rather than guessed.
 
 ## Session and outcome decisions
 

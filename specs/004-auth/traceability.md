@@ -32,7 +32,7 @@ Base: `origin/main` `7e2d0149b0370e4389b462130508352bbd69daa2`. Task mapping is 
 | ND-F4-2 delivery | S31-PO-2 SK-004-03 "Copy only" | spec.md Clarifications, ND-F4-2 | Satisfied: `components/auth/RecoveryLinkDialog.tsx:40` copies only; no share action |
 | ND-F4-3 session-lifetime enforcement deferral | S35-PO-1 "ND-F4-3=A (defer, track security blocker)"; `docs/13-production-readiness.md:34` ("PO decision: B"; RD-1 reconciled by S35-R6: both mean the deferral) | spec.md Clarifications, ND-F4-3 | None; no task; blocker stays Open, Pre-Production |
 | ND-F4-5 client-target sequencing | S35-PO-1 "ND-F4-5=A." (architect: option a) | spec.md Clarifications, ND-F4-5 | Pending P1 client accounts; denial until then unchanged |
-| ND-F4-7 staff email reset | S35-PO-1 line 9 (verbatim in spec.md Clarifications) | spec.md User Story 5, FR-016 to FR-030, SC-008 to SC-015, Security Notes, PDN-F4-7-01 to 13 | Specified only; implementation Phase 9 (T033 to T050); UNVERIFIED |
+| ND-F4-7 staff email reset | S35-PO-1 line 9 (verbatim in spec.md Clarifications) | spec.md User Story 5, FR-016 to FR-031, SC-008 to SC-016, Security Notes, PDN-F4-7-01 to 13 | Specified only; implementation Phase 9 (T033 to T052); UNVERIFIED |
 | PDN-F4-7-14 public /recover mechanism = B (send hook, control A) | S37-PO-8 item 2 = B; the option text is the written waiver of the built-in-email wording for the test phase only (`C:/Users/NEW LAP/.lifter/runs/s37-po/s37-po-1.verbatim.txt`) | spec.md FR-019, FR-030 control A, PDN-F4-7-14 | Specified; T050b after gate G6; UNVERIFIED |
 | PDN-F4-7-15 auth.users guard = A (local-only in test phase) | S37-PO-8 item 3 = A (consequence: staff password changes outside self-service refused, no override) | spec.md FR-030 control B, PDN-F4-7-15 | Specified; T050a; UNVERIFIED |
 | PDN-F4-7-17 local config containment | S38-PO-3, S38-R2 | spec.md FR-019/FR-020; plan.md; T050b | CLOSED: local-only T050b; hosted changes deferred |
@@ -66,10 +66,11 @@ No ND-F4-7 row is VERIFIED or MAPPED. Each status describes the planned test onl
 | FR-024 | T038, T044 | planned | none | UNVERIFIED | PDN-F4-7-03, 04 |
 | FR-025 | T039, T044, T045, T049d, T050a | planned | none | UNVERIFIED | FR-025 (a) to (h) durable intent, reconciliation (S36-PO-2 F4 line; PDN-F4-7-12 answered); user-visible sub-question awaits PO; guard in T050a |
 | FR-026 | T045 | planned | none | UNVERIFIED | ND-F4-3 session-lifetime blocker unchanged |
-| FR-027 | T042, T045 | planned | none | UNVERIFIED | Remaining copy in copy-proposal.md is PENDING-PO; approved FR-029 strings reused |
+| FR-027 | T042, T045, T052 | planned | none | UNVERIFIED | Copy approved: English S39-PO-4, Egyptian Arabic S39-PO-5; FR-029 strings reused byte-exact; five-key term switch in FR-031 |
 | FR-028 | T034 to T042, T048 | planned | none | UNVERIFIED | Security review pending |
 | FR-029 | T042b | localization and rendered-output byte comparison (planned) | none | UNVERIFIED | Four strings approved for only two states by S36-R6 |
 | FR-030 | T049a to T049e, T050a, T050b | direct /recover and updateUser negative tests plus local boundary implementation (planned) | E1 to E4 (bypass evidence, `research.md` R10) | UNVERIFIED | Control A: PDN-F4-7-14 = B, send hook not run (gate G6). Control B: PDN-F4-7-15 = A, guard not run. Controls C and D need gates G3 to G5 |
+| FR-031 | T042, T052 | catalog byte comparison (planned) | none | UNVERIFIED | S39-PO-5 term switch in five keys only; Arabic values approved |
 | SC-008 | T041 | planned | none | UNVERIFIED | - |
 | SC-009 | T038, T041 | planned | none | UNVERIFIED | - |
 | SC-010 | T040 | planned | none | UNVERIFIED | - |
@@ -78,6 +79,7 @@ No ND-F4-7 row is VERIFIED or MAPPED. Each status describes the planned test onl
 | SC-013 | T041 | local e2e timing from link open to successful reset (planned) | none | UNVERIFIED | 2-minute test target; 5-minute real-user UX target (S38-PO-5) |
 | SC-014 | T042b | byte comparison (planned) | none | UNVERIFIED | - |
 | SC-015 | T049a to T049e, T050a, T050b | local boundary negative tests and implementation (planned) | E1 to E4 (bypass evidence, `research.md` R10) | UNVERIFIED | PDN-F4-7-14 = B and PDN-F4-7-15 = A (S37-PO-8, answered); session-binding feasibility remains technical; -16 pruned; -17 closed by S38-PO-3; no hosted Auth changes |
+| SC-016 | T042, T052 | catalog byte comparison (planned) | none | UNVERIFIED | Five Arabic values per FR-031; English unchanged |
 
 ## S35-R5 rows (CodeRabbit round 2) - UNVERIFIED until implemented and executed
 
@@ -136,6 +138,7 @@ Evidence only. Source: `C:/Users/NEW LAP/.lifter/runs/s37-luna-f4-bypass2/report
 | PDN-F4-7-12, end recovery session and normal login; known success remains success-then-login on audit-close failure | S38-PO-5, architect S38-R7 | spec.md FR-025(h), FR-026, SC scenarios; contracts | DECIDED; tests unverified |
 | Other pre-existing account sessions end after reset | Existing FR-025(b), FR-030 control C, PDN-F4-7-07 | spec.md; T049e/T050a | Existing rule cited; no new PO decision |
 | Mutation evidence for recovery controls | Critique finding 6; constitution gate | tasks.md T051; spec.md FR-028/030 | REQUIRED; not executed in this spec-only round |
-| Remaining AR/EN strings | S38-R4 | run copy-proposal.md; spec.md FR-027 | PENDING-PO; not implementation-approved |
+| Remaining AR/EN strings | S39-PO-4, S39-PO-5 (resolves S38-R4 item) | copy-proposal.md; spec.md FR-027/FR-031 | APPROVED (English S39-PO-4, Arabic S39-PO-5); catalog change T052 not implemented |
+| Five-key Arabic term switch | S39-PO-5 | spec.md FR-031/SC-016; tasks.md T052 | APPROVED; catalog and byte test not implemented |
 
 No code, SQL, migration or test was implemented or executed in this round. All F4 implementation tasks remain unchecked.
