@@ -132,3 +132,9 @@ Revalidated after the final spec/plan/task edits: F15 has numbered FR-017/018/03
 ## S36 spec analysis rerun after final amendments - 2026-11-06
 
 Re-read `spec.md`, `plan.md`, and `tasks.md` after the last S36 edits. Numbered FR-017/018/035/040, measurable SC-022/026/027, Given/When/Then coverage, separate N11 and ALERTS clarification sections with byte-exact source paragraphs, T136-T138 task links and plan coverage all pass. MCQ S36-01/T104 and S36-02 remain explicitly open and block only the Trainer relation and late-event implementation choices. No alert code/migration changed. For the independent T136/T137 work and authorized spec-only ALERTS record, CRITICAL: 0; HIGH: 0; no other ambiguities remain.
+
+## S39 F15 round-7 Spec Kit analysis — 2026-11-09
+
+Revalidated `spec.md`, `plan.md`, and `tasks.md` after encoding the S38-PO-5 decisions. The PO line is quoted byte-exact in the ALERTS clarification; S36-01=A identifies the existing F12 client assignment as the responsible-Trainer source, and S36-02=A defines late intake as the configured client-submission deadline passing without an accepted submission. FR-017/018/035 and the Given/When/Then late-intake scenario express that scope; plan.md and T104/T138 link the work to existing FRs. T104 is unblocked for implementation of the approved routing and trigger, subject to RED-first tests. T138 records the already-approved specification change and does not authorize alert implementation or migration by itself. **No open ambiguities remain for S36-01/A, S36-02/A, T104 and T138. CRITICAL: 0. HIGH: 0.**
+
+Entry check: PASS for the T104/T138 scope. `spec.md` has numbered FRs, measurable success criteria, and Given/When/Then scenarios; Clarifications cite S38-PO-5 and explicitly close both decisions; `plan.md` covers the approved source and deadline; `tasks.md` assigns T104/T138 to FR-017/018/035; this dated Analyze follows all three updated artifacts. No implementation evidence is claimed here.
