@@ -1,6 +1,44 @@
 # Analyze — F11 client accounts
 
-## S40 round 2 analysis (S40-PO-10) — 2026-11-09 round 8 (current; written after the CodeRabbit round 2 fixes on head e143456c; supersedes round 7 for statuses)
+## S40 round 3 analysis (S40-PO-13 + S40-R19) — 2026-11-09 18:45 +02:00, round 9 (current; written after the round 3 edits to spec.md, plan.md, tasks.md, traceability.md and after the 003/012 cross-reference edits; supersedes round 8 for statuses)
+
+Entry check (Spec Kit gate section 1, for the touched scope): spec.md FR-018–FR-028 and SC-013–SC-022 with Given/When/Then US5 scenarios 1–8: PASS. Clarifications: Round 3 block quotes the S40-PO-13 MCQ lines byte-exact; S40-R19 labelled as architect ruling: PASS. plan.md P-S40-1..5 cover the touched scope: PASS. tasks.md T047–T062 carry FR tags: PASS. This file is dated after the last change: PASS.
+
+Decided in round 3 (PO): S40-F11-MCQ-1 = B (FR-018, spec 003 FR-015 S40 amendment), MCQ-2 = A (P-S40-1 guarded release, Admin API only, explicit S37-PO-16 exception for this mechanism), MCQ-11 = defaults (FR-028 a–f).
+Ruled in round 3 (architect, S40-R19, labelled): MCQ-4 keep ended rows; MCQ-8 in-app channel; MCQ-10 `manage_staff_access` (no matrix change). MCQ-12 stays PENDING (copy proposal file).
+
+Gap sweep (addendum C, before the first CodeRabbit request). Technical gaps fixed in this round:
+- G9-1 (fixed): a deleted client's active assignment row was not ended. P-S40-1 step B now ends it in the same transaction.
+- G9-2 (fixed): the unassigned list could include deleted clients. FR-027 excludes them.
+- G9-3 (fixed): concurrent approvals could over-assign one trainer. P-S40-5 adds a per-workspace lock and one active row per approval.
+- G9-4 (fixed): tie-break was not deterministic at equal timestamps. FR-028 (d) adds ascending `user_id`.
+- G9-5 (fixed): stale "BLOCKED by MCQ-1/-2/-4/-8/-10/-11" text in tasks, traceability and plan. Updated to the round 3 status.
+- G9-6 (fixed, 012): a deletion-pending or deleted client could be approved or rejected. 012 edge case refuses it with the FR-017 stale-state response.
+- G9-7 (fixed): 012 FR-022 did not name the approval commit as the FR-028 trigger. Cross-reference added.
+- G9-8 (fixed): the 012 Out of Scope line "client closure/deletion" now points to 011 FR-018–FR-026.
+
+Product questions raised in one batch (PENDING-PO; full options in `C:/Users/NEW LAP/.lifter/runs/s40-haiku-f11-r3/report.md`):
+- S40-F11-MCQ-12 (copy, carried), -13 (last active Workspace Owner deletion), -14 (personal fields on the terminal client row), -15 (capability for WO/Trainer/Sales deletion), -16 (never-assigned tie-break; "active client" reading), -17 (placement of the New workspace action; no switcher component on origin/main), -18 (financial-resolution confirmation content), -19 (workspace creation fields, slug, lost-response retry), -20 (Platform Owner self-deletion).
+
+Findings (round 9):
+| ID | Severity | Finding | Status |
+|---|---|---|---|
+| A-S40-R9-1 | MEDIUM (open, PO) | MCQ-12 copy not approved | OPEN — blocks T051/T056 copy |
+| A-S40-R9-2 | MEDIUM (open, PO) | MCQ-13 last active Workspace Owner | OPEN — blocks WO-last case of T047 |
+| A-S40-R9-3 | MEDIUM (open, PO) | MCQ-14 terminal client row fields | OPEN — blocks T048 field clearing |
+| A-S40-R9-4 | MEDIUM (open, PO) | MCQ-15 staff deletion capability | OPEN — blocks staff cases of T047/T048 |
+| A-S40-R9-5 | MEDIUM (open, PO) | MCQ-16 never-assigned tie-break; "active client" reading | OPEN — blocks T058/T062 sub-cases |
+| A-S40-R9-6 | MEDIUM (open, PO) | MCQ-17 placement (no switcher component on origin/main) | OPEN — blocks T051/T056 placement |
+| A-S40-R9-7 | MEDIUM (open, PO) | MCQ-18 financial-resolution confirmation content | OPEN — blocks T059 implementation |
+| A-S40-R9-8 | MEDIUM (open, PO) | MCQ-19 creation fields, slug, lost-response retry | OPEN — blocks T051/T056 form |
+| A-S40-R9-9 | MEDIUM (open, PO) | MCQ-20 Platform Owner self-deletion | OPEN — blocks self-deletion case of T047 |
+| A-S40-2 (round 8) | MEDIUM | Release mechanism | CLOSED (S40-PO-13 MCQ-2 = A) |
+| A-S40-15 (round 8) | MEDIUM | Staff deletion vs 003 FR-015 | CLOSED (S40-PO-13 MCQ-1 = B; 003 FR-015 S40 amendment) |
+| G9-1..G9-8 | fixed in round 9 | see above | CLOSED |
+
+Counts (round 9): CRITICAL open 0. HIGH open 0. MEDIUM open 9 (A-S40-R9-1..9, all PO-blocked, none a defect in the spec text). Cross-feature check: 003 FR-015 and 011 FR-018/P-S40-1 agree (no FK or trigger change; no hard deletion). "Zero open ambiguities" is NOT stated for S40. This is a static document review; it makes no implementation-conformity claim.
+
+## S40 round 2 analysis (S40-PO-10) — 2026-11-09 round 8 (superseded by round 9 for statuses; written after the CodeRabbit round 2 fixes on head e143456c)
 
 - Date: 2026-11-09, round 8. Written after the last change to spec.md, plan.md, tasks.md and traceability.md in this round.
 - CodeRabbit review on `e143456c` (14:22:59Z, CHANGES_REQUESTED, 2 actionable). Both checked against the current text and found VALID:
