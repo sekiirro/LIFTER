@@ -46,7 +46,7 @@ No ND-F4-7 row is VERIFIED or MAPPED. Each status describes the planned test onl
 | US5 scenario 1 (request, email, link) | T041, T043, T044 | `tests/e2e/auth.spec.ts` (planned) | none | UNVERIFIED | Not implemented |
 | US5 scenario 2 (no enumeration, no send) | T035, T041 | `tests/unit/staff-reset.test.ts`, `tests/e2e/auth.spec.ts` (planned) | none | UNVERIFIED | Not implemented |
 | US5 scenario 3 (GET does not consume, scanner prefetch) | T037, T037a, T044a, T045 | `tests/unit/auth-logs.test.ts`, `tests/integration/auth-recovery.test.ts` section "staff-reset-prefetch" (planned) | none | UNVERIFIED | Not implemented; provider verify-endpoint behaviour not relied on |
-| US5 scenario 4 (intent, set password, audit completed) | T039, T044, T045, T049d, T050a | `tests/integration/auth-recovery.test.ts` section "staff-reset-intent" (planned) | none | UNVERIFIED | Two-phase intent per FR-025 (a) to (h), database state machine (S36 round 4); user-visible sub-question of PDN-F4-7-12 awaits PO |
+| US5 scenario 4 (intent, set password, audit completed) | T039, T044, T045, T049d, T050a | `tests/integration/auth-recovery.test.ts` section "staff-reset-intent" (planned) | none | UNVERIFIED | Two-phase intent per FR-025 (a) to (h), database state machine (S36 round 4); PDN-F4-7-12 answered by S38-PO-5 and S38-R7 (success-then-login, no auto-login); control evidence remains UNVERIFIED |
 | US5 scenario 5 (used, expired, superseded) | T040 | `tests/integration/auth-recovery.test.ts` (planned; real expiry by backdating `recovery_sent_at`) | none | UNVERIFIED | Provider behaviour unverified (AT-3) |
 | US5 scenario 6 (rate limit refused) | T038 | `tests/integration/auth-recovery.test.ts` (planned) | none | UNVERIFIED | PDN-F4-7-03, 04 |
 | US5 scenario 7 (delivery cap) | T038, T044 | planned | none | UNVERIFIED | PDN-F4-7-01 |
@@ -64,7 +64,7 @@ No ND-F4-7 row is VERIFIED or MAPPED. Each status describes the planned test onl
 | FR-022 | T037, T037a, T044a, T045 | planned | none | UNVERIFIED | Scanner-safe app link (S35-R5 T2) |
 | FR-023 | T036, T044 | planned | none | UNVERIFIED | Hosted allow-list gated by FR-020 |
 | FR-024 | T038, T044 | planned | none | UNVERIFIED | PDN-F4-7-03, 04 |
-| FR-025 | T039, T044, T045, T049d, T050a | planned | none | UNVERIFIED | FR-025 (a) to (h) durable intent, reconciliation (S36-PO-2 F4 line; PDN-F4-7-12 answered); user-visible sub-question awaits PO; guard in T050a |
+| FR-025 | T039, T044, T045, T049d, T050a | planned | none | UNVERIFIED | FR-025 (a) to (h) durable intent, reconciliation (S36-PO-2 F4 line; PDN-F4-7-12 answered by S38-PO-5 and S38-R7); guard in T050a |
 | FR-026 | T045 | planned | none | UNVERIFIED | ND-F4-3 session-lifetime blocker unchanged |
 | FR-027 | T042, T045, T052 | planned | none | UNVERIFIED | Copy approved: English S39-PO-4, Egyptian Arabic S39-PO-5; FR-029 strings reused byte-exact; five-key term switch in FR-031 |
 | FR-028 | T034 to T042, T048 | planned | none | UNVERIFIED | Security review pending |
@@ -87,7 +87,7 @@ Spec-level fixes only. No row is VERIFIED.
 
 | Item | Severity | Requirement | Task(s) | Planned test(s) | Status |
 |---|---|---|---|---|---|
-| T1 password update vs completion audit | Superseded in round 4: FR-025 (a) to (h) and FR-030 controls B to D | FR-025, FR-030 | T039, T044, T045, T049a to T049e, T050a | `tests/integration/auth-recovery.test.ts` "staff-reset-guard", "staff-reset-intent", "staff-reset-sessions" (planned) | UNVERIFIED; control A open (PDN-F4-7-14) |
+| T1 password update vs completion audit | Superseded in round 4: FR-025 (a) to (h) and FR-030 controls B to D | FR-025, FR-030 | T039, T044, T045, T049a to T049e, T050a | `tests/integration/auth-recovery.test.ts` "staff-reset-guard", "staff-reset-intent", "staff-reset-sessions" (planned) | UNVERIFIED; control A decided (PDN-F4-7-14 = B, S37-PO-8) but not verified |
 | T2 default recovery email verifies on GET | HIGH until fixed; fixed in spec | FR-022 (app link, POST-only verify) | T037a, T044a | `tests/integration/auth-recovery.test.ts` "staff-reset-prefetch" (planned) | UNVERIFIED |
 | T3 built-in email scope end point | Minor (CodeRabbit); fixed in spec | FR-019 | T041, T044 | planned | UNVERIFIED; hosted scope deferred under FR-020/S38-PO-3 |
 | T4 Referrer-Policy on the page | Fixed in spec | FR-022 | T037, T045 | `tests/unit/auth-logs.test.ts` (planned) | UNVERIFIED |
