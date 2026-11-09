@@ -67,7 +67,7 @@ it('dispatches CI against a PR merge ref and rejects a mismatched second parent'
   expect(revisionSteps).toHaveLength(3);
   expect(
     revisionSteps.every((step) => {
-      const run = step.split('run: |')[1] ?? '';
+      const run = (step ?? '').split('run: |')[1] ?? '';
       return !run.includes('${{');
     }),
   ).toBe(true);
