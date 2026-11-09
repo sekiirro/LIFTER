@@ -4,6 +4,7 @@ import {
   classifyDocsOnlyPaths,
   validateSpecConsistency,
 } from '../../scripts/spec-consistency.mjs';
+import { formatCandidatesFromStatus } from '../../scripts/format-check-changed.mjs';
 
 describe('spec consistency validation', () => {
   it('accepts complete identifiers and a current Analyze date', () => {
@@ -22,10 +23,14 @@ describe('spec consistency validation', () => {
   });
 
   it.each([
-    ['unknown FR', { tasks: 'T001 [FR-999]' }],
-    ['unknown SC', { traceability: 'SC-999' }],
-    ['unknown task', { analyze: 'T999' }],
-  ])('rejects %s references', (_label, override) => {
+    ['unknown FR', { tasks: 'T001 [FR-999]' }, 'unknown identifier FR-999'],
+    ['unknown SC', { traceability: 'SC-999' }, 'unknown identifier SC-999'],
+    [
+      'unknown task',
+      { analyze: '# 2026-11-09 T999' },
+      'unknown identifier T999',
+    ],
+  ])('rejects %s references', (_label, override, expected) => {
     const files = {
       spec: 'FR-001 SC-001',
       plan: '2026-11-09',
@@ -38,7 +43,9 @@ describe('spec consistency validation', () => {
       tasksDate: '2026-11-09',
       ...override,
     };
-    expect(validateSpecConsistency(files).length).toBeGreaterThan(0);
+    expect(validateSpecConsistency(files)).toEqual(
+      expect.arrayContaining([expect.stringContaining(expected)]),
+    );
   });
 
   it('rejects stale Analyze dates and decided pending PO markers', () => {
@@ -71,6 +78,12 @@ describe('spec consistency validation', () => {
       }),
     ).toEqual(expect.arrayContaining([expect.stringMatching(/pending PO/i)]));
   });
+});
+
+it('omits deleted Markdown files from changed-file formatting checks', () => {
+  expect(
+    formatCandidatesFromStatus('D\0removed.md\0M\0changed.yaml\0'),
+  ).toEqual(['changed.yaml']);
 });
 
 describe('docs-only classification', () => {

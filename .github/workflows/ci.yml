@@ -61,7 +61,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 2
+          fetch-depth: 0
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/merge', inputs.pr) || github.sha }}
       - name: Verify and record CI revision
@@ -130,7 +130,7 @@ jobs:
       - run: npm run size
 
   integration-shard:
-    if: always() && (github.event_name != 'pull_request' || needs.docs-only.outputs.docs_only != 'true')
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.docs-only.outputs.docs_only != 'true') }}
     needs: [docs-only]
     name: integration shard ${{ matrix.shard }}/3
     outputs:
@@ -560,7 +560,7 @@ jobs:
           NODE
 
   storage:
-    if: always() && (github.event_name != 'pull_request' || needs.docs-only.outputs.docs_only != 'true')
+    if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.docs-only.outputs.docs_only != 'true') }}
     needs: [docs-only]
     runs-on: ubuntu-latest
     permissions:

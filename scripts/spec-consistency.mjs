@@ -3,8 +3,10 @@ import { execFileSync } from 'node:child_process';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+/** Classifies a complete changed-path list using the PO-approved docs allow-list. */
 export function classifyDocsOnlyPaths(input) {
   if (!Array.isArray(input) || input.length === 0) return false;
+  /** Checks one canonical repository-relative path against the allow-list. */
   const allowed = (raw) => {
     if (typeof raw !== 'string' || !raw || raw.includes('\\')) return false;
     const path = raw;
@@ -21,8 +23,10 @@ export function classifyDocsOnlyPaths(input) {
   });
 }
 
+/** Validates feature references, Analyze freshness, and decided PO markers. */
 export function validateSpecConsistency(files) {
   const errors = [];
+  /** Extracts matching feature identifiers from a source document. */
   const collect = (text, pattern) =>
     [...String(text || '').matchAll(pattern)].map((m) => m[0]);
   const requirements = new Set(collect(files.spec, /\bFR-\d{3}\b/g));
@@ -79,6 +83,7 @@ export function validateSpecConsistency(files) {
   return errors;
 }
 
+/** Runs the consistency validator or the workflow's path-classification mode. */
 function main() {
   const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
   if (process.argv[2] === '--classify-paths') {

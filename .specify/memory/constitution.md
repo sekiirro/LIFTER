@@ -179,6 +179,7 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   re-satisfy these checks on the new head; constitution-editing PRs need new explicit PO approval. Use
   `gh pr merge <n> --merge --match-head-commit <po_approved_head>`. Never use `--admin`,
   `--auto`, `--delete-branch`, or bypass branch protection. This is process-only because branch protection returns 403.
+  (c) For docs-only PRs, the three counted attempts are three full `workflow_dispatch` runs for the exact PR/head, each executing `validate`, all three integration shards, `integration`, and `storage`, and each started after exact-head CodeRabbit APPROVED. The `pull_request` run may skip integration/storage for docs-only changes and does not count as one of the three attempts. A PR is docs-only only when every changed path is a lowercase `.md` file beneath `docs/`, `specs/`, or `.specify/`, or exactly root `README.md` or `CHANGELOG.md`; both rename endpoints must qualify. Any other path or a path-detection error uses the ordinary full-CI attempt forms above. workflow_dispatch always runs full CI. No gate is relaxed.
 - Supplementary merge gates (from [docs/03-roadmap.md](../../docs/03-roadmap.md)): apply the preceding
   Main merge gate in full, including exact PR/head binding, run ID and attempt recording, per-job
   `success` and positive step-count checks, current-main merge-result validation, and the CI rerun

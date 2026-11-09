@@ -341,7 +341,12 @@ it('dispatches CI against a PR merge ref and rejects a mismatched second parent'
     /head_sha:\n\s+description: Exact PR head SHA to verify\n\s+required: true\n\s+type: string/,
   );
   expect(workflow).toContain("format('refs/pull/{0}/merge', inputs.pr)");
-  expect(workflow.match(/fetch-depth: 2/g)).toHaveLength(3);
+  const validate = workflow.slice(
+    workflow.indexOf('  validate:'),
+    workflow.indexOf('  integration-shard:'),
+  );
+  expect(validate).toContain('fetch-depth: 0');
+  expect(workflow.match(/fetch-depth: 2/g)).toHaveLength(2);
   expect(workflow.match(/git rev-parse HEAD\^2/g)).toHaveLength(3);
   expect(
     workflow.match(/CI_REPO: \$\{\{ github\.repository \}\}/g),
@@ -441,9 +446,15 @@ it('runs full CI outside pull-request docs-only changes and keeps dispatch jobs 
   expect(docs).toContain('git diff --no-renames --name-only -z');
   expect(docs).toContain('scripts/spec-consistency.mjs --classify-paths');
   expect(docs).toContain("github.event_name == 'pull_request'");
-  expect(shard).toMatch(/^    if: always\(\) && \(/m);
+  expect(shard).toContain(
+    "if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.docs-only.outputs.docs_only != 'true') }}",
+  );
   expect(shard).toContain("github.event_name != 'pull_request'");
-  expect(storage).toMatch(/^    if: always\(\) && \(/m);
+  expect(storage).toContain(
+    "if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.docs-only.outputs.docs_only != 'true') }}",
+  );
+  const aggregator = aggregatorJob(workflow);
+  expect(aggregator).toMatch(/^    if: always\(\) && /m);
   expect(storage).toContain("github.event_name != 'pull_request'");
   expect(workflow).toContain('Check feature spec consistency');
   expect(workflow).toContain(
