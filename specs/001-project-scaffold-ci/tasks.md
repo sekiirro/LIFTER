@@ -62,6 +62,6 @@ Tasks remain unchecked until the exact PR head has the required executed green C
 
 - [ ] T020 [FR-021, FR-023] Add verified manual dispatch runs to CI with exact merge-result parent validation and no-cancel concurrency; preserve PR/push behavior and read-only permissions.
 - [ ] T021 [FR-022] Shard all integration tests into three Vitest shards with unchanged per-shard stack setup and confirm shard union equals the full test list.
-- [ ] T022 [FR-023, FR-024] Update constitution 1.10.0, workflow guide, decision register, and gate-check d for parallel full-run provenance, standing approval, and the constitution PR exception while retaining gates a-c/e-h and all security requirements.
+- [ ] T022 [FR-023, FR-024] Update constitution 1.10.0, workflow guide, decision register, and gate-check d for trusted dispatch provenance (base-branch workflow and matching merge-result workflow blob), parallel full-run provenance, standing approval, and the constitution PR exception while retaining gates a-c/e-h and all security requirements.
 
 Tasks remain unchecked until tests and exact-head GitHub gate evidence are recorded.

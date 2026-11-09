@@ -2,7 +2,7 @@
 
 ## S38 amendment pre-implementation entry check
 
-**Date**: 2026-11-09 01:35:49 UTC (after S38 spec, plan, task, and post-analysis dispatch constraint updates). **Scope**: FR-021..FR-024, SC-011..SC-013, T020..T022.
+**Date**: 2026-11-09 03:55:00 UTC (after S38 spec, plan, task, and post-analysis dispatch constraint updates). **Scope**: FR-021..FR-024, SC-011..SC-013, T020..T022.
 
 - [x] `spec.md` has numbered FRs, measurable SCs, and Given/When/Then scenarios for touched scope. Existing scenarios plus FR-021..FR-024 specify dispatch provenance, three shard coverage, executed-run acceptance, and standing approval constraints.
 - [x] Clarifications cite PO source S38-PO-6 mapping (b),(d),(e), S38-PO-7, and S38-PO-8; **No open ambiguities** is explicit in `spec.md`.
@@ -44,3 +44,5 @@ The main-side CI requirements retain FR-015 to FR-019 and SC-006 to SC-009, with
 ## Verdict
 
 **PASS - 0 CRITICAL, 0 HIGH.**
+
+- Dispatch trust finding: gate-check requires the run ref to match the PR base branch and the ci.yml blob at that ref to match the tested merge result; all required jobs must log the same PR/head/merge values. The logger already emits those values in validate, every integration shard, and storage. No open ambiguities; 0 open CRITICAL/HIGH findings remain.
