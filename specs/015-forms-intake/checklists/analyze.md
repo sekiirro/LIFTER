@@ -162,3 +162,7 @@ Re-read the feature spec, plan, and task map after recording exact PO option lin
 ## S40 round-11 final analysis refresh — 2026-11-09
 
 Revalidated `spec.md`, `plan.md`, and `tasks.md` after current-head evidence was recorded for T115, T117, and T139. The four-file dependency closure and original-version prefix match `prefix-closure.md`; all remaining migration blobs/order were preserved, and the unique forward migration reconciles the two proven overlaps. The clean Stack D replay, 72/72 requested integrations, SECURITY DEFINER/RLS mutation restore (`RESTORE_DIFF_EXIT=0`), and local gates are evidenced in the S40 round-11 verification and run report. No behavior decision was added; a genuine behavior conflict remains an escalation condition. **CRITICAL: 0. HIGH: 0. No open ambiguities remain for the approved migration-order, signup-reconciliation, and validator scope.**
+
+## S40 hosted integration follow-up analysis — 2026-11-09
+
+Reviewed the exact-head hosted integration failures. The F15 generic duplicate string was a draft under S16 Q4=A; the approved D-08 bilingual message remains authoritative, so only the stale F15 fixture and duplicate-response test expectation are corrected. The F15 alert scheduler test is updated to discover the unchanged source under both original and safely-renamed migration clocks. No runtime behavior, workflow, or policy changes. Focused Stack D tests pass 80/80. **CRITICAL: 0. HIGH: 0. No open ambiguities for this test-fixture/harness repair.**

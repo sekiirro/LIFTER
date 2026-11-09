@@ -6,8 +6,8 @@
   },
   {
     "key": "clientSignup.duplicate",
-    "ar": "تعذّر إكمال التسجيل بهذه البيانات. يُرجى التواصل مع مدرّبك أو الدعم.",
-    "en": "We could not complete this registration with these details. Contact your coach or support."
+    "ar": "هذا البريد الإلكتروني مسجّل بالفعل. يُرجى التواصل مع الدعم.",
+    "en": "This email is already registered. Contact support."
   },
   {
     "key": "clientSignup.name",

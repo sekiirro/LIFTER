@@ -330,8 +330,7 @@ it('D-08 collisions are duplicate while link-class failures remain invalid', asy
     actionResults.push(result);
     expect(result).toEqual({
       status: 'duplicate',
-      message:
-        'We could not complete this registration with these details. Contact your coach or support.',
+      message: 'This email is already registered. Contact support.',
     });
     expect(result).not.toHaveProperty('invalidFields');
     expect(

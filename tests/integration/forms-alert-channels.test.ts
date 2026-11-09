@@ -238,7 +238,9 @@ it('keeps the F15 alert scheduler disabled after migration replay', async () => 
   const migrationFiles = walkFiles(
     join(repoRoot, 'supabase/migrations'),
   ).filter((path) =>
-    /^2026110403\d{4}_f15_.*\.sql$/.test(path.split(/[\\/]/).at(-1) ?? ''),
+    /^(?:2026110403|2026110823)\d{4}_f15_.*\.sql$/.test(
+      path.split(/[\\/]/).at(-1) ?? '',
+    ),
   );
   expect(migrationFiles.length).toBeGreaterThan(0);
   const migrations = migrationFiles.map((path) => readFileSync(path, 'utf8'));
