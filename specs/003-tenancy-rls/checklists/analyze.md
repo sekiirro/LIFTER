@@ -105,3 +105,12 @@ Open defect findings: **2** (A1 MEDIUM, A2 MEDIUM; both are evidence-coverage it
 - FR-016(d): T009 is a database-level characterization only. The app scan found no normal workspace-creation route; this feature records an external dependency on the normal manual PO flow and its acceptance evidence. No new mechanism or task is invented.
 - F11/F12: T021(c) remains the F3 add-first demotion test. T026(c) now separates the F11/F12 acceptance evidence for completed ownership change and removal of old-account workspace access from its no-insert assertion. No tests or implementation are claimed.
 - Result: PASS — 0 CRITICAL, 0 HIGH. FR-016(d)'s normal-flow evidence remains an external dependency; this static Analyze does not claim it is satisfied.
+
+
+## 2026-11-09 Analyze - PR #67 T021 review follow-up
+
+- Date: 2026-11-09 (Africa/Cairo), after the T021 and traceability edits.
+- Entry check: PASS - spec.md has numbered FRs, measurable SCs and Given/When/Then scenarios; the S37-PO-3 clarification explicitly settles manual normal-flow creation with no auto-provisioning and no open ambiguity on that behavior; plan.md covers the scope; FR-tagged tasks exist; this Analyze follows the edits.
+- T021 classification: (a), (c), and (e) are characterization of existing demotion, add-first transfer, and transaction rollback. Only missing guard assertions (b) sole-PO refusal and (d) concurrent-demotion protection require RED evidence before T015 and GREEN afterward. FR-014/SC-005 traceability now matches.
+- Scope is documentation-only; no tests, code, SQL, migrations, or task checkboxes changed.
+- Result: PASS - 0 CRITICAL, 0 HIGH. This is static consistency analysis only.
