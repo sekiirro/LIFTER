@@ -131,6 +131,13 @@ Open defect findings: **2** (A1 MEDIUM, A2 MEDIUM; both are evidence-coverage it
 - Evidence review: T024 now requires both concurrent revocations to commit and each affected membership to record non-null revoked_at, alongside unchanged Platform Owner roles/count. No refusal is asserted because membership revocation does not remove Platform Owner access (S37-Q5 = A).
 - Result: PASS - 0 CRITICAL, 0 HIGH. Static consistency only; no product behavior or implementation is changed.
 
+## 2026-11-09 21:30 +02:00 — S41 round 4 analysis (S41-PO-1 MCQ-13 = A and MCQ-15 = A; PR #73)
+
+- Scope: 003 FR-015 S40 amendment after the S41 edit. It now names `manage_staff_access` as the authorising capability for Workspace Owner, Trainer and Sales deletion (MCQ-15 = A), and records that the last active Workspace Owner may be deleted (MCQ-13 = A). The departure path, G1=A, the last-PO guard (FR-014) and the `staff_profiles` FK and trigger are unchanged.
+- Entry check: the amendment has a PO source (S41-PO-1, quoted in 011 spec.md Round 4), the existing capability matrix entry (no matrix change), and no new table or trigger. PASS.
+- Findings: CRITICAL 0. HIGH 0. MEDIUM 0 new. The 003 MEDIUM evidence items A1 and A2 are unchanged. The last-PO guard (T015) is unchanged.
+- Result: PASS, 0 CRITICAL, 0 HIGH. Static consistency only; no product behaviour, migration or implementation is changed.
+
 ## 2026-11-09 18:45 +02:00 — S40 round 3 analysis (S40-PO-13 MCQ-1 = B; PR #73)
 
 - Scope: FR-015 (S40 amendment), SC-007 wording, User Story 7 scenario 4, and the S40 amendment clarification in spec.md. Source: S40-PO-13 "S40-F11-MCQ-1: B: Allow deletion" (byte-exact, `C:/Users/NEW LAP/.lifter/runs/s40-po/s40-po-1.verbatim.txt`). Architect mapping (not PO words): the amendment supersedes G1=A for this point only; the last-PO guard (FR-014) is unchanged.

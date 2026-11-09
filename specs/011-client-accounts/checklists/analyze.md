@@ -1,6 +1,39 @@
 # Analyze — F11 client accounts
 
-## S40 round 6 analysis (CodeRabbit round 3 on head 765a6ae8, fix round, s41-haiku-f11-r4) — 2026-11-09 21:01 +02:00, round 12 (current; written after the fix edits to spec.md, plan.md, tasks.md and research/s40-pending-mcqs.md; supersedes round 11 for statuses)
+## S40 round 7 analysis (S41-PO-1..3 encoded; CodeRabbit round 3 findings F1-F6 on head a6fc277f, fix round; S41 gap sweep) — 2026-11-09 21:30 +02:00, round 13 (current; written after the S41 edits to spec.md, plan.md, tasks.md, traceability.md, research/s40-pending-mcqs.md and research/s40-new-workspace-copy-proposal.md; supersedes round 12 for statuses)
+
+Entry check (Spec Kit gate section 1; touched scope FR-018–FR-028, SC-013–SC-022, User Story 5 scenario 7, User Story 6, plan P-S40-1..5, tasks T047–T063):
+- spec.md keeps numbered FRs, measurable SCs and Given/When/Then scenarios: PASS.
+- Clarifications: Round 4 quotes the S41-PO-1..3 PO lines byte-exact in a code block, labels the architect mappings and the S41-R3 and S41-R4 rulings as architect words, and states the remaining open items: PASS. "Zero open ambiguities" is NOT stated for S40.
+- plan.md covers the touched scope (P-S40-1 through P-S40-5): PASS.
+- tasks.md T047–T063 carry FR tags and name the blocked part of each task: PASS.
+- This file is dated after the last change to spec, plan, tasks and traceability: PASS.
+
+Findings (round 13):
+
+| ID | Severity | Finding | Status |
+|---|---|---|---|
+| A-S41-1 | MEDIUM (open, PO) | New copy P1–P9 (Workspaces navigation label and page title, slug label, slug format hint, slug-clash error option B, financial-resolution category labels, acknowledgement text) is not approved | OPEN. Blocks T051 and T056 (new strings only) and T059 (labels and acknowledgement) |
+| A-S41-2 | MEDIUM (open, PO) | S41-GAP-MCQ-1: a retry with the same client key but different input is undecided | OPEN. Blocks the duplicate-key tests of T049 and the flow of T056 |
+| A-S41-3 | MEDIUM (open, PO) | S41-GAP-MCQ-2: appointing a new Workspace Owner after MCQ-13 = A is undecided | OPEN. Blocks the post-deletion state assertion of T047 (last Workspace Owner case) |
+| A-S41-4 | MEDIUM (open, architect gate, pre-existing) | Architect approval of the restricted system entry point (plan P-S40-5) before T062 | OPEN. Architect, not PO |
+| A-S41-5 | LOW (closed) | F1: Trainer deletion did not revoke memberships, end assignments or exclude deleted Trainers from distribution | CLOSED in FR-018, FR-028 (b), plan P-S40-1 step B and P-S40-5, tasks T050 and T058 |
+| A-S41-6 | LOW (closed) | F2: a delayed job after a Trainer departure could auto-reassign a client with an ended PO override | CLOSED in FR-028 (g), plan P-S40-5 (outcome `no_op_po_override_exists`), tasks T058 |
+| A-S41-7 | LOW (closed) | F3: slug-field copy not covered by the T056 implication | CLOSED in research/s40-new-workspace-copy-proposal.md (Implications) and research/s41-new-copy-proposal.md (P3, P4) |
+| A-S41-8 | LOW (closed) | F4: MCQ-14 options A and C identical | CLOSED: MCQ-14 = B decided; option C restored to its 765a6ae8 wording |
+| A-S41-9 | LOW (closed) | F5: MCQ-16 part 2 implication wrong for deletion-pending clients | CLOSED in research/s40-pending-mcqs.md |
+| A-S41-10 | LOW (closed) | F6: traceability FR-028 row omitted T063 | CLOSED in traceability.md |
+| A-S41-11 | LOW (closed, gap sweep) | Staff deletion step 0 has no client row, so the deletion-intent marker was undefined | CLOSED in plan P-S40-1 step 0 |
+| A-S41-12 | LOW (verification, gap sweep) | The T047 personal-field scan must cover the audit event details | CLOSED in T047 text. The signup audit branch records no name (`supabase/migrations/20261031122000_client_accounts_signup.sql:122–127`). Executed evidence is pending in T047 |
+| MCQ-12 to MCQ-20 (carried as MEDIUM in round 12) | closed | Decided by S41-PO-1..3 | CLOSED; encoded in spec.md Round 4 |
+
+Counts: CRITICAL open 0. HIGH open 0. MEDIUM open 4 (A-S41-1, -2, -3 are PO-blocked; A-S41-4 is an architect gate). LOW closed 12.
+
+Static consistency (run at 21:26 +02:00 and recorded in report.md): grep for "S41-R4 F1" to "F6", `no_op_po_override_exists`, the T063 traceability row, and the DECIDED lines of MCQ-12 to MCQ-20: PASS. PENDING-PO remains only on the copy strings (A-S41-1) and the two gap questions (A-S41-2, -3). Byte check of approved rows 1–9 (Node, spec.md Round 4 table against the approved r3 proposal table): PASS.
+
+Result: PASS, 0 CRITICAL and 0 HIGH. "Zero open ambiguities" is NOT stated for S40. This is a static document review; it makes no implementation-conformity claim.
+
+## S40 round 6 analysis (CodeRabbit round 3 on head 765a6ae8, fix round, s41-haiku-f11-r4) — 2026-11-09 21:01 +02:00, round 12 (superseded by round 13 for statuses; written after the fix edits to spec.md, plan.md, tasks.md and research/s40-pending-mcqs.md; supersedes round 11 for statuses)
 
 Findings addressed (CodeRabbit CHANGES_REQUESTED 5831034045 on 765a6ae8; 7 actionable, all inline):
 - plan.md:203, deleted-client manual write: the PO write path locks the client under the P-S40-1 step 0 deletion lock and rejects deletion_pending, release_pending, released or deleted clients (plan P-S40-2; spec FR-022; T050).

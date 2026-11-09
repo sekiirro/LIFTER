@@ -1,5 +1,13 @@
 # Analyze — F12 registration approval and payment recording
 
+## 2026-11-09 21:30 +02:00 — S41 round 4 analysis (S41-PO-1..3 and S41-R4 cross-reference; PR #73)
+
+- Scope: 012 FR-022 (approval commit as trigger for 011 distribution through a durable job) after the S41 edit that adds the delayed-job no-op for a Platform Owner manual assignment (011 FR-028 (g); S41-R4 F2). Other 012 FRs unchanged.
+- Entry check: FR-022 has an existing acceptance path (012 T016 and the 011 T063 cross-reference); no new requirement or copy is introduced. PASS.
+- Findings: CRITICAL 0. HIGH 0. MEDIUM 0 new. The 012 open items are unchanged; the P2 capability question (DG-F12-1) is an existing P2 item.
+- The PO decisions S41-PO-1..3 concern 011 only. Their 012 effect is the cross-reference above and nothing else.
+- Result: PASS, 0 CRITICAL, 0 HIGH. Static consistency only; no product behaviour, migration or implementation is changed.
+
 ## 2026-11-09 18:45 +02:00 — S40 round 3 analysis (S40-PO-13 + S40-R19 cross-references; PR #73)
 
 - Entry check (Spec Kit gate section 1): spec.md requirements, measurable SCs and Given/When/Then scenarios for the touched scope (FR-022, Out of Scope, edge cases): PASS. Clarifications: the 2026-10-28 and 2026-10-29 PO records are the register; the S40 cross-references cite S40-PO-13 and S40-R19 (architect ruling, labelled). PASS. plan.md and tasks.md: present; no task was added or changed in this round. PASS.

@@ -1,6 +1,6 @@
 # New workspace copy proposal (S40-F11-MCQ-12) — PENDING-PO
 
-Status: PROPOSAL ONLY. Not approved. Not encoded in `specs/011-client-accounts/spec.md`, `lib/i18n/messages/en.ts` or `ar.ts`. Byte-exact PO approval is required before any string is encoded (011 FR-021, tasks T051/T056).
+Status: rows 1-9 APPROVED byte-exact by S41-PO-3 (S40-F11-MCQ-12 = A), recorded in `specs/011-client-accounts/spec.md` Round 4 (row 1 role = Workspaces page action label, S41-PO-2 MCQ-17 = C). Not encoded in `lib/i18n/messages/en.ts` or `ar.ts` by this file (encoding is T056). Strings outside rows 1-9 (navigation label and page title, slug label, slug hint, slug-clash error, category labels, acknowledgement) are PENDING-PO in `research/s41-new-copy-proposal.md`. Byte-exact PO approval is required before any further string is encoded (011 FR-021 and FR-025, tasks T051/T056/T059).
 
 Authority: S40-R19 MCQ-12 (architect ruling, NOT PO words; `C:/Users/NEW LAP/.lifter/runs/s40-po/s40-architect-rulings.md`): "MCQ-12 = lane drafts EN + Egyptian Arabic copy for the New workspace action as a proposal file for PO byte-exact approval (not encoded until approved)." Entry point authority: S40-PO-10 item 7 (PO words): "Keep the previously proposed workspace-creation action."
 
@@ -33,6 +33,6 @@ Notes:
 - A) Approve rows 1–9 byte-exact, with row 9 only if MCQ-19 keeps a client-side name rule. Recommended.
 - B) PO supplies the exact EN and AR strings for rows 1–5, 7 and 9; rows 6 and 8 stay reused.
 
-Implications: A allows T056 to encode the strings once MCQ-17 and MCQ-19 are also answered. B delays T056 until the PO supplies copy. Both leave the spec with no guessed string until approval.
+Implications: A allows T056 to encode rows 1-9 once MCQ-17 and MCQ-19 are answered (both answered by S41-PO-2 and S41-PO-3, S41 round 4). Approval of rows 1-9 does NOT supply every string T056 needs: MCQ-19 = A adds an editable slug field whose EN/AR label (row P3), format hint (P4) and slug-clash error (P5 reuse of row 8, or P5b) are not in rows 1-9. Those strings are PENDING-PO in `research/s41-new-copy-proposal.md`, so T056 stays blocked for them until the PO supplies or approves them byte-exact. B delays T056 until the PO supplies copy. No string is guessed in either case.
 
 Blocked by MCQ-12 (copy only): T051 copy assertions and T056 string encoding. Placement (MCQ-17) and fields (MCQ-19) are separate blockers for the same tasks.
