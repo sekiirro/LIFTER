@@ -1,4 +1,5 @@
 import { readFileSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
 import { expect, it } from 'vitest';
 
 const INTEGRATION_SHARD_RUN =
@@ -146,30 +147,91 @@ it('exposes the required integration aggregator for all shard results', () => {
   expect(aggregator).not.toMatch(/secrets\./);
 });
 
-it('allows main-push integration aggregation with no PR or head SHA', () => {
-  const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
+it('executes the integration aggregator script against push and PR revision cases', () => {
+  const workflowPath =
+    process.env.CI_WORKFLOW_FILE ?? '.github/workflows/ci.yml';
+  const workflow = readFileSync(workflowPath, 'utf8');
   const aggregator = workflow.match(
     /^  integration:\n([\s\S]*?)(?=^  storage:)/m,
   )?.[1];
-  const fullSha = /^[0-9a-fA-F]{40}$/;
-  const validRevisions = (
-    event: string,
-    pr: string,
-    head: string,
-    merge: string,
-  ) =>
-    fullSha.test(merge) &&
-    (event === 'push' || (/^[0-9]+$/.test(pr) && fullSha.test(head)));
+  expect(aggregator).toBeDefined();
 
-  expect(validRevisions('push', '', '', 'a'.repeat(40))).toBe(true);
-  expect(validRevisions('pull_request', '', '', 'a'.repeat(40))).toBe(false);
-  expect(aggregator).toContain('CI_EVENT_NAME: ${{ github.event_name }}');
-  expect(aggregator).toContain('if [[ "$CI_EVENT_NAME" == "push" ]]; then');
-  expect(aggregator).toContain(
-    'if [[ ! "$MERGE_SHA_1" =~ ^[0-9a-fA-F]{40}$ ]]; then',
-  );
-  expect(aggregator).toContain('else');
-  expect(aggregator).toContain(
-    'if [[ ! "$PR_1" =~ ^[0-9]+$ || ! "$HEAD_SHA_1" =~ ^[0-9a-fA-F]{40}$ || ! "$MERGE_SHA_1" =~ ^[0-9a-fA-F]{40}$ ]]; then',
-  );
+  const script = aggregator?.match(
+    /^        run: \|\n((?:          .*\n|          \n)+)/m,
+  )?.[1];
+  expect(script).toBeDefined();
+  const bash =
+    process.platform === 'win32'
+      ? (process.env.GIT_BASH_PATH ??
+        'C:\\Program Files\\Git\\usr\\bin\\bash.exe')
+      : 'bash';
+  const head = 'a'.repeat(40);
+  const merge = 'b'.repeat(40);
+  const makeEnv = (
+    overrides: Partial<NodeJS.ProcessEnv> = {},
+  ): NodeJS.ProcessEnv => ({
+    PR_1: '72',
+    PR_2: '72',
+    PR_3: '72',
+    HEAD_SHA_1: head,
+    HEAD_SHA_2: head,
+    HEAD_SHA_3: head,
+    MERGE_SHA_1: merge,
+    MERGE_SHA_2: merge,
+    MERGE_SHA_3: merge,
+    CI_EVENT_NAME: 'pull_request',
+    SHARD_RESULT: 'success',
+    ...overrides,
+  });
+  const run = (env: NodeJS.ProcessEnv) =>
+    spawnSync(bash, ['-e', '-c', script ?? ''], {
+      encoding: 'utf8',
+      env,
+    });
+
+  const cases = [
+    {
+      name: 'push permits empty PR/head values with a valid merge SHA',
+      env: makeEnv({
+        CI_EVENT_NAME: 'push',
+        PR_1: '',
+        PR_2: '',
+        PR_3: '',
+        HEAD_SHA_1: '',
+        HEAD_SHA_2: '',
+        HEAD_SHA_3: '',
+      }),
+      expected: 0,
+    },
+    {
+      name: 'pull_request accepts valid revisions',
+      env: makeEnv(),
+      expected: 0,
+    },
+    {
+      name: 'a failed shard matrix fails',
+      env: makeEnv({ SHARD_RESULT: 'failure' }),
+      expected: 1,
+    },
+    {
+      name: 'a shard revision mismatch fails',
+      env: makeEnv({ HEAD_SHA_3: 'c'.repeat(40) }),
+      expected: 1,
+    },
+    {
+      name: 'an invalid SHA fails',
+      env: makeEnv({
+        MERGE_SHA_1: 'not-a-sha',
+        MERGE_SHA_2: 'not-a-sha',
+        MERGE_SHA_3: 'not-a-sha',
+      }),
+      expected: 1,
+    },
+  ];
+
+  for (const testCase of cases) {
+    const result = run(testCase.env);
+    if (result.error) throw result.error;
+    expect(result.status, testCase.name).toBe(testCase.expected);
+  }
 });
