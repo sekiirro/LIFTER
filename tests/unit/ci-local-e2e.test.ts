@@ -406,8 +406,8 @@ it('exposes the required integration aggregator for all shard results', () => {
     "merge_sha_3: ${{ matrix.shard == 3 && steps.revision.outputs.merge_sha || '' }}",
   );
   expect(aggregator).toMatch(/^    name: integration$/m);
-  expect(aggregator).toMatch(/^    needs: \[integration-shard\]$/m);
-  expect(aggregator).toMatch(/^    if: always\(\)$/m);
+  expect(aggregator).toMatch(/^    needs: \[docs-only, integration-shard\]$/m);
+  expect(aggregator).toMatch(/^    if: always\(\) && /m);
   expect(aggregator).toMatch(/needs\.integration-shard\.result/);
   expect(aggregator).toContain(
     'PR_1: ${{ needs.integration-shard.outputs.pr_1 }}',
@@ -428,6 +428,27 @@ it('exposes the required integration aggregator for all shard results', () => {
   expect(aggregator).toMatch(/exit 1/);
   expect(aggregator).not.toMatch(/uses: actions\/checkout/);
   expect(aggregator).not.toMatch(/secrets\./);
+});
+
+it('runs full CI outside pull-request docs-only changes and keeps dispatch jobs unconditional', () => {
+  const workflow = workflowText();
+  const docs = workflow.slice(
+    workflow.indexOf('  docs-only:'),
+    workflow.indexOf('  validate:'),
+  );
+  const shard = shardJob(workflow);
+  const storage = workflow.slice(workflow.indexOf('  storage:'));
+  expect(docs).toContain('git diff --no-renames --name-only -z');
+  expect(docs).toContain('scripts/spec-consistency.mjs --classify-paths');
+  expect(docs).toContain("github.event_name == 'pull_request'");
+  expect(shard).toMatch(/^    if: always\(\) && \(/m);
+  expect(shard).toContain("github.event_name != 'pull_request'");
+  expect(storage).toMatch(/^    if: always\(\) && \(/m);
+  expect(storage).toContain("github.event_name != 'pull_request'");
+  expect(workflow).toContain('Check feature spec consistency');
+  expect(workflow).toContain(
+    'Check formatting of changed Markdown, YAML, and JSON',
+  );
 });
 
 it('executes the integration aggregator script against push and PR revision cases', () => {

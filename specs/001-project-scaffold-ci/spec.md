@@ -7,7 +7,7 @@
 
 Governing documents: [Architecture v3](../../docs/02-architecture.md) (approved stack, not redesigned here), [Roadmap P0](../../docs/03-roadmap.md), Constitution v1.0.0.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 Actors: **Implementer** (Codex/OpenCode), **Reviewer** (Claude Technical Lead), **Product Owner**.
 
@@ -105,7 +105,6 @@ An implementer working against multiple fetched remote branches can detect, befo
 
 ---
 
-
 ### User Story 7 - Fast, exact-head CI evidence (Priority: P1)
 
 The PO and merge lane can collect three full CI results concurrently without accepting a result for a different PR head, while retaining every required test and security gate.
@@ -124,7 +123,7 @@ The PO and merge lane can collect three full CI results concurrently without acc
 - Windows and Linux developers produce the same results (line endings, path handling).
 - The local database tooling config is present, but no schema/migrations exist yet. Starting it is optional for this feature's gates.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -155,7 +154,7 @@ The PO and merge lane can collect three full CI results concurrently without acc
 - **FR-025**: The `integration-shard` matrix MUST run the full Playwright browser suite in every one of its three executions as a file-level `--shard=<k>/3` partition with `--workers=1`, no retries, no `fullyParallel`, and no skip or quarantine added by CI, while retaining the existing gates `LOCAL_SUPABASE_STORAGE_TEST=true` and `LOCAL_SUPABASE_PROVIDER_FAULT_TEST=true` in every shard. Each shard MUST retain the same ordered preconditions before browser execution (local stack start, exported stack and app environment, Vault signup-key provisioning, Storage readiness wait, Docker CLI availability), MUST assert that `npx playwright test --list --shard=<k>/3` is non-empty before running, MUST NOT preset `U8_SERVER_LOG_RUN_ID`, and MUST run exactly one app `webServer` per invocation. Existing browser spec files MUST NOT be edited, split or quarantined by this change.
 - **FR-026**: The required `integration` aggregator MUST download every shard's Playwright JSON report and Vitest JSON report and MUST fail unless: (i) the union of reported Playwright test identities equals the full `--list` identity set exactly once with no duplicates; (ii) the skipped count does not exceed the documented baseline of 38 (24 Stack-C-only exercise tests plus 14 project-guard shell tests) and every skipped identity is a documented baseline identity; (iii) the union of Vitest integration files executed equals the full integration-config file list exactly once; and (iv) zero Playwright failures, flaky results or report errors and zero Vitest failures occur. The existing shard-success and common-revision checks remain unchanged. The aggregator MUST keep `contents: read`, perform no checkout and use no secrets.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
@@ -220,3 +219,43 @@ The PO and merge lane can collect three full CI results concurrently without acc
 - The Worker size limit comes from the official Cloudflare limits page (checked 2026-10-27: 64 MiB uncompressed, no compressed limit) and stays overridable via `WORKER_SIZE_LIMIT_KIB`.
 - Design system, i18n/RTL, auth, tenancy, schema, jobs and backups are separate P0 features.
 - The GitHub remote exists. CodeRabbit reviews are enabled separately once configured.
+
+### User Story 8 - Self-checking spec and docs-only CI (Priority: P1)
+
+The maintainer wants CI to detect dangling feature identifiers, keep review focused on authored project files, and retain full integration/storage coverage for all non-docs changes.
+
+**Acceptance Scenarios**:
+
+1. **Given** a feature task, traceability, or analyze file references an unknown FR, SC, or task ID, **When** spec-consistency runs, **Then** it exits non-zero and identifies the source and identifier.
+2. **Given** Analyze predates a change to spec, plan, or tasks, **When** spec-consistency runs, **Then** it fails; when Analyze is current, the date check passes.
+3. **Given** a PO decision is recorded in docs/04, **When** a feature reference is marked pending for that decided identifier, **Then** spec-consistency fails.
+4. **Given** an allowed Markdown-only PR, **When** pull_request CI runs, **Then** validate and format/spec checks run and integration-shard, integration, and storage are skipped by design; any unlisted path or detection failure takes full CI, and a skipped integration cannot satisfy the aggregator.
+5. **Given** workflow_dispatch, **When** it runs for any PR, **Then** validate, all integration shards, integration, and storage run.
+6. **Given** a docs-only PR with exact-head APPROVED, **When** its green definition is evaluated, **Then** three full dispatch runs after approval are required; no gate is relaxed.
+
+### S41 requirements (S41-PO-8/9/10; S41-R11; S41-R15)
+
+- **FR-027**: CI validate MUST run a fail-closed spec-consistency check ensuring every FR/SC/task reference in the feature task, traceability and Analyze documents exists in its spec/tasks; Analyze date MUST NOT precede the latest spec/plan/tasks change; and no pending-PO marker may remain for a decision recorded in docs/04. `format:check` MUST cover changed Markdown, YAML and JSON.
+- **FR-028**: CodeRabbit path filters MUST exclude generated evidence only; feature specs, plans, tasks, source, tests, migrations and workflows MUST remain reviewable.
+- **FR-029**: Docs-only means every changed path is a `.md` file beneath `docs/`, `specs/`, or `.specify/`, or exactly root README.md or CHANGELOG.md. Both rename paths are checked. Detection errors and every unlisted path classify as non-docs-only. Only pull_request docs-only runs may skip integration-shard, integration and storage; workflow_dispatch always runs the full jobs. Required check names remain present, and integration MUST fail if its matrix was skipped.
+- **FR-030**: Constitution version MUST become 1.11.0 and define the docs-only green form as three full workflow_dispatch runs for the exact PR/head, started after exact-head APPROVED, each executing validate, all integration shards, integration and storage; a separate gate-check d proposal/patch is supplied, with no gate-check implementation change in this PR.
+
+### S41 measurable outcomes
+
+- **SC-016**: Unit cases prove valid references/date and reject unknown FR/SC/task references, stale Analyze, and decided pending-PO identifiers.
+- **SC-017**: A path table proves allow-list members as docs-only and disallowed, renamed, empty and error inputs as full-CI; dispatch jobs always run.
+- **SC-018**: This workflow-changing PR executes validate, integration-shard (all 3), integration and storage on its exact head.
+- **SC-019**: Constitution 1.11.0 states the approved docs-only green form and retains existing gates and exact-head PO approval for constitution changes.
+
+### S41 Given/When/Then edge scenarios
+
+1. **Given** a renamed path where either endpoint is outside the allow-list, **When** docs-only classification runs, **Then** the PR is non-docs-only.
+2. **Given** Git cannot enumerate the PR diff, **When** classification runs, **Then** the workflow fails closed into full PR jobs.
+3. **Given** a counted non-docs PR whose integration matrix is skipped or absent, **When** integration runs, **Then** it fails.
+4. **Given** a path has uppercase `.MD`, a non-Markdown extension, or is nested outside the listed roots, **When** classification runs, **Then** it is non-docs-only.
+
+## Clarifications (2026-11-09; no open ambiguities)
+
+- S41-PO-8: `Approved all 4 CI/CodeRabbit optimizations,`; S41-PO-9a: `docs/04 canonical (Rec.)`; S41-PO-9b: `3 full dispatches (Rec.)`; S41-PO-10: `B: A + README/CHANGELOG (Rec.)`. These are verbatim PO excerpts; source: `runs/s41-po/s41-po-1.verbatim.txt`.
+- S41-PO-10 architect mapping defines the exact allow-list and fail-closed rename/detection behavior; S41-R11 defines implementation and S41-R15 authorizes continuation. S40-PO-11: `No gate relaxation.`
+- No open ambiguities remain for this S41 scope.

@@ -42,7 +42,6 @@
 
 ---
 
-
 ## S38 amendment pre-implementation entry check
 
 **Date**: 2026-11-09 02:07:07 UTC (after S38 spec, plan, and task updates for trusted dispatch and fork-secret isolation). **Scope**: FR-021..FR-024, SC-011..SC-013, T020..T022.
@@ -88,6 +87,28 @@ The main-side CI requirements retain FR-015 to FR-019 and SC-006 to SC-009, with
 ## Verdict
 
 **PASS - 0 CRITICAL, 0 HIGH.**
+
+## S41-PO-8/9/10 and S41-R11 Analyze (2026-11-09)
+
+Scope analyzed: FR-027..FR-030, SC-016..SC-019, Story 8, T025..T032. Source decisions are recorded in `spec.md` Clarifications; the exact docs-only boundary and fail-closed behavior are specified, so no product ambiguity remains.
+
+- Reference validation is constrained to feature IDs and may not infer missing IDs; unknown references fail. Analyze freshness must be evaluated against the latest commit changing spec/plan/tasks, not timestamps from a potentially skewed filesystem clock.
+- Classifier path inputs must preserve rename endpoints and reject empty/unparseable diff output as docs-only. Only `.md` suffix in lowercase and the exact approved roots/filenames qualify. Detection errors choose full CI. Dispatch has no docs-only skip condition.
+- The integration aggregator must run under `always()` and require matrix `success`; `skipped`, `cancelled`, missing, or failed matrix results fail the aggregator. Required job IDs/names remain unchanged.
+- `.coderabbit.yaml` filters may cover generated evidence only. No source, tests, migrations, workflows, or authored spec materials are excluded.
+- `format:check` is already repository-wide (`prettier --check .`), subject to checking the Prettier ignore list for changed Markdown/YAML/JSON scope. Constitution text will only amend the docs-only green form and version/sync report; exact-head PO approval remains mandatory.
+- Tests are specified red-first, including path table and malformed/error inputs. CI hosted PR run must execute all required integration and storage jobs because this PR changes `ci.yml`.
+- Gate-check remains external; only proposal and patch are in the run directory. No gate is relaxed.
+
+**CRITICAL**: none. **HIGH**: none. **No open ambiguities** remain.
+
+### Verdict
+
+**PASS - 0 CRITICAL, 0 HIGH.** Analyze dated after the S41 spec, plan, and task amendments (2026-11-09); implementation may begin.
+
+### Post-format Analyze refresh (2026-11-09)
+
+Rechecked the final S41 spec, plan, and task text after formatting. All FR-027..FR-030 and SC-016..SC-019 references resolve; T025..T032 tags match; allow-list, rename endpoint, empty-diff, and detection-error outcomes agree across the three artifacts. No stale pending PO status or product ambiguity is introduced. **CRITICAL**: none. **HIGH**: none. **No open ambiguities** remain. **PASS.**
 
 - Dispatch trust finding: gate-check requires the run ref to match the PR base branch and the ci.yml blob at that ref to match the tested merge result; all required jobs must log the same PR/head/merge values. The logger already emits those values in validate, every integration shard, and storage. No open ambiguities; 0 open CRITICAL/HIGH findings remain.
 
