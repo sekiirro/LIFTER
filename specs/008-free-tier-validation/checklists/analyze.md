@@ -109,3 +109,11 @@
 - Scope: static comparison of the PARTIAL status and its stated limit (at most 15 supplied relations; other tables and database overhead not covered) against the existing `scripts/free-tier/db-usage.mjs` and projection-test descriptions. Task T013 remains unchecked; no tests were run and no evidence was added.
 - Findings: 0 open CRITICAL, 0 open HIGH. No open ambiguity is introduced.
 - Verdict: PASS for this documentation-only correction.
+
+## S41-R12 round-3 PR-wide re-analysis
+
+- Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), after edits to traceability, README, report and readiness note; no later spec/plan/tasks edits follow this analysis.
+- Scope: rechecked all 8 FR and 4 SC rows and all references to ND-F8-1/2/3. Current matrix totals are 3 VERIFIED / 5 PARTIAL FR and 0 VERIFIED / 4 PARTIAL SC; FR-003 is PARTIAL because credential-bearing query parameters pass through the probe; FR-006 remains PARTIAL for the 15-relation limit. ND-F8-1 is decided by S31-PO-4; schema/unit verification and production measurement remain pending.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tasks cover the feature.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests or measurements ran and no verification status was upgraded.
+- Verdict: PASS for the documentation-only corrections.

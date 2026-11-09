@@ -49,7 +49,7 @@ across their organizations before treating the organization as eligible.
 
 ## 3. Projection inputs (ND-F8-1)
 
-Pilot volumes: **NEEDS SOURCE CONFIRMATION**. `free-tier:project` refuses to project while any are missing.
+Pilot volumes: the illustrative input is decided by S31-PO-4 (ND-F8-1). Verify schema and units before measurement; `free-tier:project` projection remains pending that verification.
 
 Outstanding production gates: [07-production-readiness.md](07-production-readiness.md). They do not block local development or PR merges (PO 2026-10-27).
 

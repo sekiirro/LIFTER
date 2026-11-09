@@ -6,7 +6,7 @@ Static source inspection only. No tests, stacks, deployments, cloud queries, or 
 |---|---|---|---|---|
 | FR-001 | T003, T008-T011 | `tests/unit/free-tier-db.test.ts::uses a read-only transaction, bounded catalog reads...`; static review that tooling contains no deploy/write operation | Code/test on `d04ef52` | VERIFIED |
 | FR-002 | T003, T005-T006, T008-T009 | `tests/unit/free-tier-tail.test.ts::never prints fixture headers, queries, logs or exceptions`; token-bearing `/register/<token>` output is not asserted as redacted in console output and JSON aggregates | Code/test on `d04ef52`; token-path assertion not demonstrated | PARTIAL |
-| FR-003 | T002, T005, T008 | `tests/unit/free-tier-routes.test.ts::probes in bounded batches...`; URL safety checks | Code/test on `d04ef52` | VERIFIED |
+| FR-003 | T002, T005, T008 | `tests/unit/free-tier-routes.test.ts::probes in bounded batches...`; URL safety checks do not reject credential-bearing query parameters passed to the probe | Code/test on `d04ef52`; credential-bearing route input remains unhandled | PARTIAL |
 | FR-004 | T001, T006, T008 | `tests/unit/free-tier-tail.test.ts::aggregates the fixture...`; CPU threshold/report logic | Code/test on `d04ef52` | VERIFIED |
 | FR-005 | T003, T008-T009 | `tests/unit/free-tier-db.test.ts::uses a read-only transaction...`; DB usage tool/report fields | Code/test on `d04ef52` | VERIFIED |
 | FR-006 | T007-T008, T013 | `tests/unit/free-tier-projection.test.ts::reports absent and null volumes as MISSING...`; `scripts/free-tier/db-usage.mjs` supplies at most 15 relations, so completeness covers only those supplied relations. Other tables and database overhead are not covered; full database-projection coverage is not demonstrated | Code/test on `d04ef52`; full-projection coverage not demonstrated | PARTIAL |
@@ -19,6 +19,6 @@ Static source inspection only. No tests, stacks, deployments, cloud queries, or 
 
 ## Summary
 
-- Functional requirements: 4 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED. FR-006 remains PARTIAL because the projection covers at most the supplied 15 relations and omits other tables and database overhead.
+- Functional requirements: 3 VERIFIED, 5 PARTIAL, 0 NOT-FOUND, 0 DEFERRED. FR-006 remains PARTIAL because the projection covers at most the supplied 15 relations and omits other tables and database overhead.
 - Success criteria: 0 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Static verification only. T010/T011 remain historically checked but were not executed in this lane. ND-F8-1 is decided by S31-PO-4; ND-F8-2/3 remain open.

@@ -386,7 +386,7 @@ Record discrepancy RD-1: reconciled by Architect note S35-R6 (see the "Record di
 
 ### Session 2026-11-03 — compliance reconciliation
 
-- **Decision register:** `docs/04-changes-and-questions.md` D-19 is the approved scope authority per S31-PO-2. S31-PO-2/3 decisions are recorded above. ND-F4-7 remains open.
+- **Decision register:** `docs/04-changes-and-questions.md` D-19 is the approved scope authority per S31-PO-2. S31-PO-2/3 decisions are recorded above. Historical status (2026-11-03): ND-F4-7 remained open at that time. S35-PO-1 decided ND-F4-7 on 2026-11-06; implementation remains open as recorded above.
 - **Result:** approved product decisions are recorded without implementation changes. Implementation and configuration gaps remain tracked as tasks.
 - **Evidence limit:** Static source/test inspection only; no tests were executed in this lane.
 

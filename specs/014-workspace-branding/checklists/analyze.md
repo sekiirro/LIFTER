@@ -402,5 +402,13 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
 
 - Date: 2026-11-09 19:56:44 UTC, after the FR-011 and SC-007 statuses were corrected to PARTIAL and the historical core record restored.
 - Scope: current spec/traceability evidence; proxy success and error cache headers are asserted, but registration-route success/error headers are not. Preserve F14-A01..A03 and all later recorded findings/gates.
-- Current core matrix: 18 VERIFIED, 11 PARTIAL; FR-011 and SC-007 remain PARTIAL.
+- Current core matrix: 17 VERIFIED, 12 PARTIAL; FR-011 and SC-007 remain PARTIAL.
 - Findings: 0 open CRITICAL, 0 open HIGH; the existing medium production/evidence gaps remain. No tests or tasks were changed.
+
+## S41-R12 round-3 PR-wide re-analysis
+
+- Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), after correcting the current core total; no later spec/plan/tasks edits follow this analysis.
+- Scope: rechecked every traceability row and current Analyze total. Core matrix is 17 VERIFIED / 12 PARTIAL; FR-011 and SC-007 remain PARTIAL. Other historical/current feature rows, decision references, links and task evidence were checked without changing status.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks cover the feature.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no task/status changed.
+- Verdict: PASS for this documentation-only correction.

@@ -93,7 +93,7 @@ After PO approval, capture request events from the approved Worker in Bash with
 `npm run free-tier:tail -- tail.jsonl --json cpu.json`. Keep raw tail files
 private: they can contain headers, logs and exceptions. Only the parser's
 aggregates are suitable for the report. Local latency does not measure platform
-CPU. Pilot volumes remain **NEEDS SOURCE CONFIRMATION** (ND-F8-1).
+CPU. Pilot volumes use the illustrative input decided by S31-PO-4 (ND-F8-1); verify schema and units before measurement. Projection remains pending that verification.
 
 In PowerShell on Windows, create a new empty `tail.jsonl`, disable ACL inheritance,
 and grant only the current user FullControl **before** redirecting
@@ -504,8 +504,8 @@ the account holder sets a new password.
 ND-F4-3 requires 60-minute recovery-link expiry in every environment. The
 15-minute recovery-session TTL is independent: the application password-action
 check does not terminate the recovery session or block direct Auth API use after
-15 minutes. Session-lifetime enforcement remains an open pre-production blocker
-under docs/13-production-readiness.md AI-04. S31-PO-3 sets recovery generation
+15 minutes. Session-lifetime enforcement and hosted Auth expiry verification
+remain open pre-production blockers under docs/13-production-readiness.md AI-04. S31-PO-3 sets recovery generation
 limits at 10 per issuing staff account per rolling hour and 3 per client per
 rolling 24 hours across issuers. A placeholder enforcement exists in
 `app_private.recovery_link_limits()`

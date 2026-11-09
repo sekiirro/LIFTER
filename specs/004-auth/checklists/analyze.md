@@ -104,3 +104,11 @@ This round changes specification artifacts only. No code, SQL, migration, enviro
 - Scope: static check of ND-F4 decision versus implementation status, AI-04 expiry-verification ownership, T031 manual-link limit work, T033 self-service entry gate, and the Decision register anchor links.
 - Findings: 0 open CRITICAL, 0 open HIGH. No product decision or task status changed.
 - Verdict: PASS for the documentation corrections.
+
+## S41-R12 round-3 PR-wide re-analysis
+
+- Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), after the historical-status edit; no later spec/plan/tasks edits follow this analysis.
+- Scope: rechecked all FR-001..031 and SC-001..016 traceability/status references, decision rows and links against docs/04 and later S35-PO-1. The 2026-11-03 "remained open" statement is now explicitly historical; the 2026-11-06 decision and still-open implementation status are distinguished.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications explicitly record no open ambiguities for the decided values, and plan/tasks cover the feature. Existing UNVERIFIED/PARTIAL implementation rows remain so.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no implementation status changed.
+- Verdict: PASS for this documentation-only correction.

@@ -86,3 +86,11 @@
 - Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. ND-1..ND-7 remain open in plan.md; no value, role navigation, or visual choice is inferred by this reconciliation.
 - Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
 - Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.
+
+## S41-R12 round-3 PR-wide re-analysis
+
+- Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), after the shared-register link edit; no later spec/plan/tasks edits follow this analysis.
+- Scope: rechecked all 29 FR and 11 SC traceability rows, their cited evidence/statuses, current matrix totals (FR 19 VERIFIED / 10 PARTIAL; SC 6 VERIFIED / 5 PARTIAL), analysis totals, internal links and decision references. The S31-PO-7 Q5 quotation is at User Story 4 in the repository at this head; the register now targets that actual heading. PO wording is unchanged.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the feature; no open ambiguity is introduced. Existing PARTIAL rows remain PARTIAL.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no task or verification status changed.
+- Verdict: PASS for this docs-only reconciliation.

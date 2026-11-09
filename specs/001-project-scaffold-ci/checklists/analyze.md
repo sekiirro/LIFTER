@@ -133,3 +133,12 @@ The main-side CI requirements retain FR-015 to FR-019 and SC-006 to SC-009, with
 - Cross-references: FR-009 is numbered; FR-009 is linked by task T025; `9b4d7a4c9db0dc0493dbd6419a6fead95290f1dd` is the workflow evidence source. No copied PO decision text was changed.
 - Findings: 0 open CRITICAL, 0 open HIGH. S41-MCQ-001 is resolved by the architect ruling as a factual reconciliation; **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only reconciliation.
+
+## S41-R12 round-3 PR-wide re-analysis
+
+- Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), after the round-3 spec edits; no later spec/plan/tasks edits follow this analysis.
+- Scope: statically rechecked this feature's traceability rows and analyze totals, FR/SC/task references, workflow claims, and local links. Rechecked FR-009/FR-021 token wording and FR-022/FR-026 aggregator no-secret boundary against workflow revision 9d24e6444aea5f72ce5dd00e13d3d25c979c8619. The earlier 9b4d7a4c citation is insufficient for separate storage; round-3 spec evidence now points to the later revision.
+- Entry gate: PASS - numbered FRs, measurable SCs and GWT scenarios exist; Clarifications explicitly state no open ambiguities for this correction; plan/tasks cover the scope. Traceability rows FR-001..026 and SC-001..015 reviewed. FR-022/SC-012 is PARTIAL because its cited partition script is an external artifact and no committed test asserts the complete partition at this head; FR-024 documentation evidence cites current head ed9f3079. PENDING/platform-gated rows remain pending; no task status changed.
+- Traceability review left FR-022/SC-012 PARTIAL and retained FR-024 as documentation-VERIFIED with an explicit current-head commit.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation consistency only; no tests or CI were run and no test status was upgraded.
+- Verdict: PASS for this documentation-only correction.

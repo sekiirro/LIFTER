@@ -1,6 +1,6 @@
 # Contract: F11 public signup and F4 linkage
 
-**AD-F11-1: Decided (PO, 2026-10-28): option (i); C1–C4 binding.** PO selected direct Auth writes inside one database transaction. C1–C4 are binding conditions; options (ii) and 3b remain rejected alternatives with evidence retained in research.md. No implementation or hosted proof is claimed. ND-F11-1..10 are Decided (PO, 2026-10-28); verbatim decisions and explicit open sub-decisions are in [spec.md](spec.md#po-decision-register-and-open-sub-decisions).
+**AD-F11-1: Decided (PO, 2026-10-28): option (i); C1–C4 binding.** PO selected direct Auth writes inside one database transaction. C1–C4 are binding conditions; options (ii) and 3b remain rejected alternatives with evidence retained in research.md. No implementation or hosted proof is claimed. ND-F11-1..10 are Decided (PO, 2026-10-28); verbatim decisions and explicit open sub-decisions are in [spec.md](../spec.md#po-decision-register-and-open-sub-decisions).
 
 Design only; AD-F11-1 option (i) is PO-approved with binding C1–C4. The architecture selection is not implementation approval. ND-F11-1..10 are decided with explicit open sub-decisions. [Plan](../plan.md) owns policy seams; [model](../data-model.md) owns schema/grants. Never expose a general anonymous client CRUD API.
 

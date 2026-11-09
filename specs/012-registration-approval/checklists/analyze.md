@@ -75,3 +75,11 @@
 - Scope: migration already installed; T050 Stack A verification remains pending; no committed migration was edited. FR-002 cites T013 issued-binding evidence. FR-029 is PARTIAL because the cited test does not prove the UI retains the request and shows the uncertainty warning.
 - Findings: 0 open CRITICAL, 0 open HIGH; 22 VERIFIED and 7 PARTIAL functional requirements. No test was run or changed.
 - Verdict: PASS for documentation correction; Stack A and UI evidence gates remain open.
+
+## S41-R12 round-3 PR-wide re-analysis
+
+- Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), after traceability evidence/status edits; no later spec/plan/tasks edits follow this analysis.
+- Scope: rechecked all 29 FR and 11 SC identifiers across the traceability rows, current totals, task links and cited evidence. FR total remains 22 VERIFIED / 7 PARTIAL; SC total is now 6 VERIFIED / 5 PARTIAL. FR-016 cites T010 rollback, T017 audit assertions and T022 replay assertions. SC-004 remains PARTIAL pending T041; SC-005 remains VERIFIED with T023 staff role/commission projection and T017 owner-scoped audit evidence.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tasks are present. T041 is not represented as completed.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no status was upgraded.
+- Verdict: PASS for this documentation-only reconciliation.

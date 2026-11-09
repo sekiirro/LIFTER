@@ -47,3 +47,11 @@ T901 is complete after the 16-test page suite passed on the committed code, foll
 
 - Date: 2026-11-09 19:56:44 UTC, after the review-body finding summary was restored.
 - Existing open MEDIUM findings: ND-F10-4, ND-F10-5 (interim price default yes; PO confirmation remains required), and unchecked implementation task T035. No product behavior was inferred and no task status changed.
+
+## S41-R12 round-3 PR-wide re-analysis
+
+- Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), after the production-readiness link correction; no later spec/plan/tasks edits follow this analysis.
+- Scope: rechecked every traceability row, current Analyze totals, FR/SC/task references and local links for F10. The DP-04 link lives in docs/13-production-readiness.md and now targets the actual `NEEDS DECISION - residual open items` section anchor in specs/010-registration-links/spec.md. Existing ND-F10-4/5 open statements remain consistent with their decision status.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks are present.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no task/status changed.
+- Verdict: PASS for this docs-only link repair.
