@@ -43,9 +43,10 @@ No SQL or migration is supplied by this document. The following acceptance contr
 | Audit write fails during a create, edit or hard delete | Mutation rolled back; no row change; no successful audit event (FR-010) |
 | Rejected or denied write | No successful note-mutation event (`specs/005-audit-log` US1 scenario 2) |
 | Audit event for a successful create, edit or hard delete | Contains only actor, workspace, client ID, note ID, action and timestamp; contains no body text (CN-MCQ-07) |
-| Duplicate create with an already-used `(workspace_id, client_id, idempotency_key)` and the same trimmed body | Return the existing note row; no second row; no second create audit event (FR-011; CN-MCQ-18) |
-| Same-key create with a different trimmed body | Refuse as a key/body mismatch; no second note, no body change, no create audit event (CN-MCQ-22; S40-R9) |
-| Same-key retry after the note was hard-deleted | Return deleted/not-found; never recreate the note; no create audit event; the content-free key record survives with no body (CN-MCQ-20; S40-PO-6) |
+| Duplicate create with an already-used `(workspace_id, client_id, idempotency_key)` and the same trimmed body while the note is live | Return the existing note row; no second row; no second create audit event (FR-011; CN-MCQ-18) |
+| Same-key create with a different trimmed body while the note is live | Refuse as a key/body mismatch; no second note, no body change, no create audit event (CN-MCQ-22; S40-R9) |
+| Same-key retry after the note was hard-deleted | Return deleted/not-found regardless of the retry body; never recreate the note; no create audit event; the content-free key record survives with no body (CN-MCQ-20; S40-PO-6) |
+| Same-key reconciliation retry when no content-free key record exists (the earlier retry never reached the server) | Follow the normal create path: create the first note and its one create audit event; never treat a missing record as a deleted/not-found or mismatch outcome (FR-007, FR-011) |
 | Same-key retry after the note was edited | Compare against the original submission fingerprint, not the current edited body; a matching retry returns the existing note, a different trimmed body is a mismatch (FR-011; CN-MCQ-22; S40-R9) |
 | Content-free create-idempotency record | Holds workspace/client scope, key, a required one-way fingerprint of the original trimmed body, and an outcome state; never the note body or note text (CN-MCQ-20, CN-MCQ-22) |
 | Server-side pending note body for an unresolved create | No such record or column exists; only the content-free key record is stored, and the unresolved create's recovery state is device-local tab `sessionStorage` (CN-MCQ-24; S40-PO-12) |
