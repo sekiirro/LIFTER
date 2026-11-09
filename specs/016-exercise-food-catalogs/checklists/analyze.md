@@ -1,6 +1,6 @@
 # Analyze — F16 post-critique disposition (S40 round 9, current)
 
-- Date: 2026-11-09 13:05 +02:00 (round-9 re-analysis after the S40-R3 architect-ruling record was added to `spec.md` Clarifications; this record is the last spec-artifact change of the round). Round 8 record below is history.
+- Date: 2026-11-09 13:17 +02:00 (round-9 re-analysis after the S40-R3 architect-ruling record was added to `spec.md` Clarifications and after the two CodeRabbit round-9 fixes in `tasks.md` (T040, T074, dependency order); this record is the last spec-artifact change of the round). Round 8 record below is history.
 - Scope (round 9): architect ruling S40-R3 (`C:/Users/NEW LAP/.lifter/runs/s40-po/s40-architect-rulings.md`, paragraph S40-R3; architect words, not PO): A2 (table lock), A3 (`none` for FR-003-permitted absent optional values), A4 (`decision-register.md` unchanged), A5 (T090 and T043 as technical sequencing) accepted and recorded; A1 is a process item (fresh 2-request CodeRabbit allowance on the same head). No requirement, FR, SC, acceptance scenario, task or plan step changed. Spec-only: no code, SQL, migration, fixture or test changed.
 - Head at start of round 9: `12015d3c9ad6f3ee37e660f9b0fe503b14ff48fb` (`origin/speckit-016-redesign`; PR #66 headRefOid verified at the start gate).
 
@@ -10,8 +10,8 @@
 | --- | --- | --- |
 | spec.md has numbered FRs, measurable SCs and Given/When/Then scenarios for the touched scope | PASS | Re-verified: 39 distinct FR keys (FR-001 to FR-038, incl. FR-016a); 16 SC keys (SC-001 to SC-016); US1 to US6 unchanged. |
 | Clarifications recorded, or a PO-decision register entry citing the PO source | PASS | `spec.md` Clarifications: new round-9 entry "S40 round 9 — architect ruling S40-R3 (architect ruling, not PO; no requirement change)", placed before "S36-PO-5 F16 (S37 round 5)". Plus the S38 round 7 entry. "No open ambiguities" stated explicitly below. |
-| plan.md covers the touched scope; tasks.md has task IDs tagged with FR IDs | PASS | Unchanged in round 9. tasks.md: 92 task-ID rows, 92 distinct IDs (T001 to T075, T900, T901, T076 to T090), each FR-tagged; no duplicate rows. |
-| checklists/analyze.md dated after the last spec/plan/task change, with 0 open CRITICAL/HIGH | PASS | This record (2026-11-09 13:05 +02:00) is dated after the `spec.md` round-9 edit (the only spec-artifact change this round). Open CRITICAL 0; open HIGH 0. |
+| plan.md covers the touched scope; tasks.md has task IDs tagged with FR IDs | PASS (with the scope note below) | `tasks.md`: 92 task IDs, 92 distinct, no duplicate rows (T001 to T075, T900, T901, T076 to T090). 90 carry FR tags (checked per row, table and list forms). **T067 and T069 carry no FR tag by design**: they are historical audit rows (FR column `—`; T067 DONE in round 3, T069 in the F11/F12 lane, out of F16 scope). No work is planned under them. Corrected in round 9 after CodeRabbit `PRRT_kwDOVYgYQ861Opya`; the earlier "each FR-tagged" wording was wrong. |
+| checklists/analyze.md dated after the last spec/plan/task change, with 0 open CRITICAL/HIGH | PASS | This record (2026-11-09 13:17 +02:00) is dated after the last spec-artifact edits of the round (`spec.md` S40-R3 record; `tasks.md` T040, T074 and dependency order). Open CRITICAL 0; open HIGH 0 after the fixes below. |
 
 Result: **PASS**. Implementation is not authorized by this spec-only round. No task is ticked; T088 remains PENDING.
 
@@ -22,8 +22,10 @@ Result: **PASS**. Implementation is not authorized by this spec-only round. No t
 | R9-1 | Traceability | LOW | RESOLVED (recorded) | S40-R3 is recorded in `spec.md` Clarifications with the architect-ruling label. The record states it is not a PO decision and changes no requirement. |
 | R9-2 | Decision record | LOW | RESOLVED (by ruling) | A4: `decision-register.md` (a PO record) still carries the older F11/F12 wording (lines 20, 163, 185). Architect ruled no change; the F11/F12 spec lane carries client deletion. Recorded as pending in the F11/F12 lane, not in F16. |
 | R9-3 | Process | MEDIUM | OPEN, process (not an ambiguity) | A1: CodeRabbit APPROVED on the exact head is not yet reached; handled in the round-9 report (CodeRabbit state), not in the spec. |
+| R9-4 | Traceability (count claim) | LOW | FIXED | CodeRabbit `PRRT_kwDOVYgYQ861Opya` (`analyze.md:13`): the claim "all 92 tasks FR-tagged" was wrong; T067 and T069 have FR `—`. Corrected in the plan.md/tasks.md row above with the 90-tagged count and scope note. |
+| R9-5 | Dependency / data integrity (Instructions transition) | HIGH (CodeRabbit Major) | FIXED | CodeRabbit `PRRT_kwDOVYgYQ861Opyn` (`tasks.md:47`): T040 could stop submitting `instructions_*` before T054 carries stored Instructions into Notes, so an edit in that window could store a version without them. Fixed in `tasks.md`: T040's `instructions_*` removal never ships before T054 has committed and ships with T074 or after it (new dependency T040 → T054 for that removal only; no cycle: nothing in T054's chain depends on T040); T074 rollout restated; upgrade test now covers both sides of the cutover (before T054, after T054 under the old validator, after the joint T040/T074 change); dependency-order line updated. This is technical sequencing, not a product choice (the removal of Instructions is already S36-PO-5). No PO question. |
 
-No new product question was raised in round 9. No finding in round 9 is CRITICAL or HIGH.
+No new product question was raised in round 9. Open CRITICAL 0, HIGH 0 after the fixes (R9-5 was HIGH by CodeRabbit severity and is fixed in this round).
 
 Round-8 findings (A7 resolved; R8-1, A18, A20, A21, A39, A50, A22, A38) carry forward unchanged. Their status is in the round-8 record below.
 
