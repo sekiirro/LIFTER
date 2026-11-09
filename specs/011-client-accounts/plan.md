@@ -183,3 +183,41 @@ Coordinated rotation: SIGNUP_RATE_KEY rotation resets IP/link counters because c
 ## S33-PO-4 test hygiene
 
 Scope the recovery RLS probes to the intended public tables/RPCs with a deadline, and include client_signup status in failures. Preserve all existing expected allow/deny outcomes and recovery behavior.
+
+## S40 proposals — spec-only, NOT approved implementation
+
+These are minimal mechanism proposals for architect review. No migration, code, config or capability change is approved by this section. Each proposal is blocked by the PENDING-PO item named in it (see spec.md, S40 clarification). Options that the PO has not chosen are not encoded.
+
+### P-S40-1 Account deletion (FR-018–FR-020; blocked by S40-F11-MCQ-1, -2, -3, -6)
+
+- Actor: PO only through the existing `delete_client` capability (`lib/auth/capabilities.ts:18`; SQL matrix `supabase/migrations/20261027120000_tenancy.sql:52–53`).
+- Sequence, following the spec 013 purge order (`specs/013-freeze-renewal-refunds/quickstart.md:34`): (1) disable access first: the client moves to a terminal state; app `authorize()` and RLS deny it at every wall. (2) Release identifiers: clear `clients.email_normalized` and `clients.phone_e164` (`supabase/migrations/20261031121000_client_accounts_model.sql:68–69`) and the matching `app_private.account_identifier_claims` keys (`:85–86`). This needs nullable columns and an updated `check`, and changes the update-deny trigger (`:325–326`) for this one guarded transition only. The release guard `identifier_release_unresolved` (`:174–176`) must accept a release only from this path. (3) Auth side: via the supported Auth Admin API only (MCQ-2 option A), change the Auth email/phone to a non-usable value and ban the user. Never write `auth.users` directly from this path. (4) History: no FK, forbid-delete or audit change (FR-020).
+- Tests (T047): row counts and contents before and after; DELETE/TRUNCATE refused; re-registration in another workspace succeeds with zero copied data.
+- Known conflict: S37-PO-16 says "No hard deletion/new mechanism" (see MCQ-2).
+
+### P-S40-2 Responsible-Trainer assignment (FR-022, FR-023; blocked by S40-F11-MCQ-4, -5, -9)
+
+- Proposed record `public.client_trainer_assignments`: `id uuid pk`, `workspace_id uuid not null`, `client_id uuid not null`, `trainer_user_id uuid not null`, `assigned_by uuid not null` (references `staff_profiles(user_id)`, as other audit actors do), `assigned_at timestamptz not null default now()`, `ended_at timestamptz`, `ended_by uuid`.
+- Same-workspace relation: composite FK `(workspace_id, client_id)` → `public.clients(workspace_id, id)` (`client_accounts_model.sql:73`). Active membership and role: at write time a trigger verifies an active `workspace_memberships` row for `(workspace_id, trainer_user_id)` (`supabase/migrations/20261027120000_tenancy.sql:18–31`) and `staff_profiles.role = 'trainer'` (`:2`, `:4–8`).
+- Cardinality: one active row per client, as a partial unique index `(workspace_id, client_id) where ended_at is null`. Assumes MCQ-4 confirms one responsible Trainer.
+- Writes: append-only; the only update is setting `ended_at`/`ended_by`; DELETE and TRUNCATE refused with the existing `forbid_delete` pattern.
+- Access: RLS through `app_private.has_workspace_access(workspace_id, <capability>)`. Which capability (if any) is MCQ-4. No capability is added unless the PO approves it. FR-023: no grant to the assigned Trainer.
+- Consumers (FR-024, alerts): read only the active row.
+
+### P-S40-3 PO workspace creation (FR-021; blocked by S40-F11-MCQ-7 for UI only)
+
+- No schema change. Existing: `workspaces_insert_po` (`20261027120000_tenancy.sql:132–133`, PO only, `created_by = auth.uid()`); `workspaces_no_delete` (`20261027150100_audited_tables_no_delete.sql:12–13`); `audit_workspaces` after insert or update (`20261027150000_audit_log.sql:105`).
+- Tests (T049, not blocked): non-PO insert denied; PO insert records `created_by`; zero membership, client, staff, package or branding rows created.
+- UI (T051, blocked): entry point per MCQ-7; EN/AR copy needs byte-exact PO approval before encoding.
+
+### P-S40-4 Deferred client-late Trainer alert (FR-024; blocked by S40-F11-MCQ-8 and F15 branch)
+
+- Nothing in F11/F12 or the F15 release. Future consumer reads only the active assignment (P-S40-2). Trigger fixture: configured submission deadline passes without an accepted submission (S36-02=A, per S38-PO-5). Channel: the deferred notifications feature.
+
+### Conflicts recorded for the architect (not PO decisions)
+
+1. Premise: the S36-01 "existing F12 client assignment" does not exist on origin/main (`specs/012-registration-approval/spec.md:175`); this section specifies it as new, as S39-PO-8 directs.
+2. `FR-008` "Keep the capability matrix unchanged" versus any assignment capability (MCQ-4).
+3. S37-PO-16 "No hard deletion/new mechanism" versus any release mechanism (MCQ-2).
+4. Spec 013 `ledger-architecture.md:55` (no direct writes to Auth-managed tables) versus spec 011 FR-003 (direct writes, signup scope only).
+5. The last-PO guard is not implemented on origin/main (`specs/003-tenancy-rls/research.md:32`, F-A1; T015 pending).
