@@ -9,7 +9,7 @@ No SQL or migration is supplied by this document. The following acceptance contr
 - Read and create allow a Trainer (any client in the workspace, regardless of client assignment), a Workspace Owner, or a Platform Owner, each with current active membership in the workspace or PO scope. Sales and Client are denied.
 - Edit allows the original `author_user_id` only with current authorization in the note's workspace (active membership and a role still authorized, for example Trainer or Workspace Owner), or a Platform Owner in PO scope.
 - Delete allows Platform Owner only, scoped by the existing PO workspace access rule.
-- A non-PO actor with a revoked membership has zero workspace access. The Platform Owner follows the existing PO rule (the existing `app_private.has_workspace_access` grants Platform Owner access without a membership check). Caller-supplied IDs cannot widen the scope.
+- A non-PO actor with a revoked membership has zero workspace access. The Platform Owner follows the existing merged F3 platform-wide `app_private.has_workspace_access` PO rule (it grants Platform Owner access without a membership check; CN-MCQ-25; S40-PO-12 option A). Caller-supplied IDs cannot widen the scope.
 - The authorization checks must not rely on UI hiding or the service-role client as a substitute for the signed-identity RLS boundary.
 
 ## Required future denial/allow tests
@@ -18,6 +18,7 @@ No SQL or migration is supplied by this document. The following acceptance contr
 | --- | --- |
 | Trainer read and create for a client in the same workspace, not assigned to that Trainer | Allow |
 | Workspace Owner / PO read and create in authorized scope | Allow |
+| Platform Owner without a workspace membership row | Allow under the existing merged F3 platform-wide `app_private.has_workspace_access` PO rule (CN-MCQ-25; S40-PO-12) |
 | Note author edit with active membership and an authorized role (Trainer or Workspace Owner) in the workspace | Allow |
 | Note author whose current role is Sales, with active membership | Deny |
 | Note author edit after membership revoked, before restoration | Deny |
@@ -46,6 +47,7 @@ No SQL or migration is supplied by this document. The following acceptance contr
 | Same-key retry after the note was hard-deleted | Return deleted/not-found; never recreate the note; no create audit event; the content-free key record survives with no body (CN-MCQ-20; S40-PO-6) |
 | Same-key retry after the note was edited | Compare against the original submission fingerprint, not the current edited body; a matching retry returns the existing note, a different trimmed body is a mismatch (FR-011; CN-MCQ-22; S40-R9) |
 | Content-free create-idempotency record | Holds workspace/client scope, key, a required one-way fingerprint of the original trimmed body, and an outcome state; never the note body or note text (CN-MCQ-20, CN-MCQ-22) |
+| Server-side pending note body for an unresolved create | No such record or column exists; only the content-free key record is stored, and the unresolved create's recovery state is device-local tab `sessionStorage` (CN-MCQ-24; S40-PO-12) |
 | Unknown operation/role/capability | Deny by default |
 
 The future test suite must assert both database policy behavior and application/database matrix parity.
