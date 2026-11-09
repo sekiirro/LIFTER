@@ -230,6 +230,16 @@ PO sources: `C:/Users/NEW LAP/.lifter/runs/s37-po/s37-po-1.verbatim.txt` S37-PO-
 
 **No open ambiguities** (stated explicitly for this round; basis in `checklists/analyze.md`, dated 2026-11-09): every product question in spec, plan and tasks has a recorded PO answer; no PO-DECISION-NEEDED item is open. Dependencies (F19 persistence, T068 source, T066 docs) are not ambiguities.
 
+### S40 round 9 — architect ruling S40-R3 (architect ruling, not PO; no requirement change)
+
+Source: `C:/Users/NEW LAP/.lifter/runs/s40-po/s40-architect-rulings.md`, paragraph S40-R3, quoted byte-for-byte as UTF-8. These are architect words, not a PO decision; `decision-register.md` is unchanged.
+
+> S40-R3 (#66 A2-A5, s39-haiku-f16-r8 report sec. 8): A2 accepted - SHARE ROW EXCLUSIVE makes concurrent writers wait for the short identity-check/convert transaction; that is serialization, not a writer shutdown (consistent with S38-R11 PO-3). A3 accepted - FR-003-permitted absent optional values resolve to `none`; only missing required or incompatible canonical values are inventory blockers. A4 - no change to decision-register.md (PO record); the F11/F12 spec lane carries client deletion. A5 accepted - T090 storage split and T043 video_url allowlist extension are technical sequencing. A1: new round with a fresh 2-request CodeRabbit allowance on the same head.
+
+Effect: A2, A3, A4 and A5 are recorded as architect rulings on the round-8 items (table lock under S38-R11 PO-3; `none` for FR-003-permitted absent optional values; `decision-register.md` left as is; T090 and the T043 `video_url` allowlist extension as technical sequencing). A1 is a process item: the CodeRabbit APPROVED request for round 9 is recorded in `checklists/analyze.md` and the round report. No requirement, acceptance scenario, success criterion, FR, task or plan step changes in this record.
+
+**No open ambiguities** (stated explicitly for this round; basis in `checklists/analyze.md`, round-9 record): no new PO question was raised; the S40-R3 rulings resolve no product question and do not create one.
+
 ### S36-PO-5 F16 (S37 round 5)
 
 S36-PO-5 is final for F16 and supersedes conflicts in earlier S36 items. One canonical Global Library is editable only by the PO. Every workspace has its own branded, independently customizable library where authorized WO/Trainers may edit all eight fields locally: Name, Description, Notes, Video, Alternatives, Default Rest Time, Default RIR and Default Reps. New global exercises appear automatically without overwriting local customizations. Keep existing Notes; remove Instructions while preserving unique data into Notes. Defaults are optional, copied into editable planner entries on addition, and never live-linked. Published plans retain frozen values. Rest is 0–600 seconds in 15-second steps; RIR is an integer 0–5; Reps is an integer or range within 1–100. No production clients exist.

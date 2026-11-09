@@ -1,4 +1,42 @@
-# Analyze — F16 post-critique disposition (S39 round 8, current)
+# Analyze — F16 post-critique disposition (S40 round 9, current)
+
+- Date: 2026-11-09 13:05 +02:00 (round-9 re-analysis after the S40-R3 architect-ruling record was added to `spec.md` Clarifications; this record is the last spec-artifact change of the round). Round 8 record below is history.
+- Scope (round 9): architect ruling S40-R3 (`C:/Users/NEW LAP/.lifter/runs/s40-po/s40-architect-rulings.md`, paragraph S40-R3; architect words, not PO): A2 (table lock), A3 (`none` for FR-003-permitted absent optional values), A4 (`decision-register.md` unchanged), A5 (T090 and T043 as technical sequencing) accepted and recorded; A1 is a process item (fresh 2-request CodeRabbit allowance on the same head). No requirement, FR, SC, acceptance scenario, task or plan step changed. Spec-only: no code, SQL, migration, fixture or test changed.
+- Head at start of round 9: `12015d3c9ad6f3ee37e660f9b0fe503b14ff48fb` (`origin/speckit-016-redesign`; PR #66 headRefOid verified at the start gate).
+
+## Entry check (Spec Kit gate, section 1) — round 9
+
+| Box | Result | Evidence |
+| --- | --- | --- |
+| spec.md has numbered FRs, measurable SCs and Given/When/Then scenarios for the touched scope | PASS | Re-verified: 39 distinct FR keys (FR-001 to FR-038, incl. FR-016a); 16 SC keys (SC-001 to SC-016); US1 to US6 unchanged. |
+| Clarifications recorded, or a PO-decision register entry citing the PO source | PASS | `spec.md` Clarifications: new round-9 entry "S40 round 9 — architect ruling S40-R3 (architect ruling, not PO; no requirement change)", placed before "S36-PO-5 F16 (S37 round 5)". Plus the S38 round 7 entry. "No open ambiguities" stated explicitly below. |
+| plan.md covers the touched scope; tasks.md has task IDs tagged with FR IDs | PASS | Unchanged in round 9. tasks.md: 92 task-ID rows, 92 distinct IDs (T001 to T075, T900, T901, T076 to T090), each FR-tagged; no duplicate rows. |
+| checklists/analyze.md dated after the last spec/plan/task change, with 0 open CRITICAL/HIGH | PASS | This record (2026-11-09 13:05 +02:00) is dated after the `spec.md` round-9 edit (the only spec-artifact change this round). Open CRITICAL 0; open HIGH 0. |
+
+Result: **PASS**. Implementation is not authorized by this spec-only round. No task is ticked; T088 remains PENDING.
+
+## Round-9 findings
+
+| ID | Category | Severity | Status | Summary and evidence |
+| --- | --- | --- | --- | --- |
+| R9-1 | Traceability | LOW | RESOLVED (recorded) | S40-R3 is recorded in `spec.md` Clarifications with the architect-ruling label. The record states it is not a PO decision and changes no requirement. |
+| R9-2 | Decision record | LOW | RESOLVED (by ruling) | A4: `decision-register.md` (a PO record) still carries the older F11/F12 wording (lines 20, 163, 185). Architect ruled no change; the F11/F12 spec lane carries client deletion. Recorded as pending in the F11/F12 lane, not in F16. |
+| R9-3 | Process | MEDIUM | OPEN, process (not an ambiguity) | A1: CodeRabbit APPROVED on the exact head is not yet reached; handled in the round-9 report (CodeRabbit state), not in the spec. |
+
+No new product question was raised in round 9. No finding in round 9 is CRITICAL or HIGH.
+
+Round-8 findings (A7 resolved; R8-1, A18, A20, A21, A39, A50, A22, A38) carry forward unchanged. Their status is in the round-8 record below.
+
+## Counts (round 9)
+
+- Requirements: 39 FR keys, 16 SC keys. Tasks: 92 (T001 to T075, T900, T901, T076 to T090), 92 distinct IDs.
+- Ambiguities (product and spec): **0 open**. No PO question raised; the S40-R3 rulings resolve no product question and create none.
+- Severity (open): **CRITICAL 0, HIGH 0**.
+- "No open ambiguities": stated explicitly for round 9. Basis: S40-R3 (A2 to A5) recorded as architect rulings on round-8 technical items; no PO question is open; dependencies (F19 persistence, T068 source, T066 docs, F11/F12 follow-up) are not ambiguities.
+
+---
+
+## Round 8 record (history; superseded by the round-9 record above)
 
 - Date: 2026-11-09 07:30 +02:00 (fourth pass: FR-022 consistency sweep after CodeRabbit reviews on head `063f0751`; this record is the last spec-artifact change of the round). Third pass at 06:17 +02:00 (after CodeRabbit reviews 5821579127 and 5821593433 on head `5e8361d2`). Second pass at 06:02 +02:00 (after CodeRabbit review 5821150484 on head `fdba2594`). Earlier first pass at 04:37 +02:00 (re-analysis after all round-8 spec edits: spec.md FR-026 and A7 sentence, plan.md lines 7, 73 and 75, data-model.md FR-026 row, tasks.md T040, T059, T068, T074, the SC-003 coverage line, the T087 renumbering and new T088/T089, traceability.md T087 cell, and this record; this record is the last spec-artifact change of the round).
 - Scope: CodeRabbit review 5820293740 on head `0883fe6b24776801edffc4cb0704388744c2d707`: six actionable comments, all SPEC-FIX under S38-R11. Merge of `origin/main` `e8a1531b88f294563593b163bdbf3e6f4e17292a` resolved the `tasks.md` T048 collision by renumbering main's catalog-hardening row to T087. Spec-only: no code, SQL, migration, fixture or test changed.
