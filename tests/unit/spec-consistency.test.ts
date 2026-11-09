@@ -83,6 +83,8 @@ describe('docs-only classification', () => {
     ['.github/workflows/ci.yml', false],
     ['docs/guide.MD', false],
     ['docs/guide.txt', false],
+    [' docs/guide.md', false],
+    ['docs/guide.md ', false],
     ['docs/nested/../../src/app.ts', false],
   ])('%s → docsOnly=%s', (path, expected) => {
     expect(classifyDocsOnlyPaths([path])).toBe(expected);

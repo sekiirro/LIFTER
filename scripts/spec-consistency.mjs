@@ -7,7 +7,7 @@ export function classifyDocsOnlyPaths(input) {
   if (!Array.isArray(input) || input.length === 0) return false;
   const allowed = (raw) => {
     if (typeof raw !== 'string' || !raw || raw.includes('\\')) return false;
-    const path = raw.replace(/^\s+|\s+$/g, '');
+    const path = raw;
     if (path.split('/').some((segment) => segment === '.' || segment === '..'))
       return false;
     if (path === 'README.md' || path === 'CHANGELOG.md') return true;
