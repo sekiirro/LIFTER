@@ -2,7 +2,7 @@
 
 ## S38 amendment pre-implementation entry check
 
-**Date**: 2026-11-09 03:55:00 UTC (after S38 spec, plan, task, and post-analysis dispatch constraint updates). **Scope**: FR-021..FR-024, SC-011..SC-013, T020..T022.
+**Date**: 2026-11-09 02:07:07 UTC (after S38 spec, plan, and task updates for trusted dispatch and fork-secret isolation). **Scope**: FR-021..FR-024, SC-011..SC-013, T020..T022.
 
 - [x] `spec.md` has numbered FRs, measurable SCs, and Given/When/Then scenarios for touched scope. Existing scenarios plus FR-021..FR-024 specify dispatch provenance, three shard coverage, executed-run acceptance, and standing approval constraints.
 - [x] Clarifications cite PO source S38-PO-6 mapping (b),(d),(e), S38-PO-7, and S38-PO-8; **No open ambiguities** is explicit in `spec.md`.
@@ -14,6 +14,7 @@
 - Exact merge-result validation is required before test execution for dispatch events; the workflow prints the evidence values and the runner verifies `HEAD^2`.
 - Three shards use Vitest's deterministic shard assignments; locally enumerate full-suite and each shard to assert no omissions/duplicates. Supabase and environment setup plus provisioning remain in every shard. Playwright installation and the full browser suite run only in shard 1.
 - Each full attempt must have executed `validate`, all integration shards, and `storage`; gate-check event provenance must bind dispatch merge SHA parent2 to exact head and record run ID/source.
+- Dispatch provenance is trusted only from the PR base branch, with the workflow blob equal to the tested merge result; all required jobs log identical revision values. All jobs verify the PR head repository matches the base repository before dependency installation or untrusted code execution. The check uses unauthenticated public repository metadata and adds no permissions or secrets. No open ambiguities; 0 open CRITICAL/HIGH findings remain.
 - GitHub only accepts `workflow_dispatch` after the workflow exists on the default branch. Pre-merge evidence for this constitution PR uses sequential `pull_request` runs; dispatch-path proof is post-merge and must not be claimed yet.
 - No security gate is being removed or changed. Constitution-editing PRs remain outside standing PO approval.
 

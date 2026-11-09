@@ -37,6 +37,8 @@ jobs:
           CI_EVENT_NAME: ${{ github.event_name }}
           CI_PR: ${{ inputs.pr || github.event.pull_request.number }}
           CI_HEAD_SHA: ${{ inputs.head_sha || github.event.pull_request.head.sha }}
+          CI_REPO: ${{ github.repository }}
+          CI_API_URL: ${{ github.api_url }}
         run: |
           merge_sha=$(git rev-parse HEAD)
           if [[ "$CI_EVENT_NAME" == "workflow_dispatch" && ( ! "$CI_PR" =~ ^[0-9]+$ || ! "$CI_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ) ]]; then
@@ -48,6 +50,11 @@ jobs:
             second_parent=$(git rev-parse HEAD^2 2>/dev/null || true)
             if [[ "$second_parent" != "$CI_HEAD_SHA" ]]; then
               echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
+              exit 1
+            fi
+            head_repo=$(curl --fail --silent --show-error "$CI_API_URL/repos/$CI_REPO/pulls/$CI_PR" | jq -r '.head.repo.full_name // ""')
+            if [[ "$head_repo" != "$CI_REPO" ]]; then
+              echo "PR=$CI_PR head_repo=$head_repo; refusing fork PR before running untrusted code with repository secrets" >&2
               exit 1
             fi
           fi
@@ -103,6 +110,8 @@ jobs:
           CI_EVENT_NAME: ${{ github.event_name }}
           CI_PR: ${{ inputs.pr || github.event.pull_request.number }}
           CI_HEAD_SHA: ${{ inputs.head_sha || github.event.pull_request.head.sha }}
+          CI_REPO: ${{ github.repository }}
+          CI_API_URL: ${{ github.api_url }}
         run: |
           merge_sha=$(git rev-parse HEAD)
           if [[ "$CI_EVENT_NAME" == "workflow_dispatch" && ( ! "$CI_PR" =~ ^[0-9]+$ || ! "$CI_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ) ]]; then
@@ -114,6 +123,11 @@ jobs:
             second_parent=$(git rev-parse HEAD^2 2>/dev/null || true)
             if [[ "$second_parent" != "$CI_HEAD_SHA" ]]; then
               echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
+              exit 1
+            fi
+            head_repo=$(curl --fail --silent --show-error "$CI_API_URL/repos/$CI_REPO/pulls/$CI_PR" | jq -r '.head.repo.full_name // ""')
+            if [[ "$head_repo" != "$CI_REPO" ]]; then
+              echo "PR=$CI_PR head_repo=$head_repo; refusing fork PR before running untrusted code with repository secrets" >&2
               exit 1
             fi
           fi
@@ -180,6 +194,8 @@ jobs:
           CI_EVENT_NAME: ${{ github.event_name }}
           CI_PR: ${{ inputs.pr || github.event.pull_request.number }}
           CI_HEAD_SHA: ${{ inputs.head_sha || github.event.pull_request.head.sha }}
+          CI_REPO: ${{ github.repository }}
+          CI_API_URL: ${{ github.api_url }}
         run: |
           merge_sha=$(git rev-parse HEAD)
           if [[ "$CI_EVENT_NAME" == "workflow_dispatch" && ( ! "$CI_PR" =~ ^[0-9]+$ || ! "$CI_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ) ]]; then
@@ -191,6 +207,11 @@ jobs:
             second_parent=$(git rev-parse HEAD^2 2>/dev/null || true)
             if [[ "$second_parent" != "$CI_HEAD_SHA" ]]; then
               echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
+              exit 1
+            fi
+            head_repo=$(curl --fail --silent --show-error "$CI_API_URL/repos/$CI_REPO/pulls/$CI_PR" | jq -r '.head.repo.full_name // ""')
+            if [[ "$head_repo" != "$CI_REPO" ]]; then
+              echo "PR=$CI_PR head_repo=$head_repo; refusing fork PR before running untrusted code with repository secrets" >&2
               exit 1
             fi
           fi

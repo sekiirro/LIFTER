@@ -56,6 +56,15 @@ it('dispatches CI against a PR merge ref and rejects a mismatched second parent'
   expect(workflow.match(/fetch-depth: 2/g)).toHaveLength(3);
   expect(workflow.match(/git rev-parse HEAD\^2/g)).toHaveLength(3);
   expect(
+    workflow.match(/CI_REPO: \$\{\{ github\.repository \}\}/g),
+  ).toHaveLength(3);
+  expect(workflow.match(/curl --fail --silent --show-error/g)).toHaveLength(3);
+  expect(
+    workflow.match(
+      /refusing fork PR before running untrusted code with repository secrets/g,
+    ),
+  ).toHaveLength(3);
+  expect(
     workflow.match(
       /CI_HEAD_SHA: \$\{\{ inputs\.head_sha \|\| github\.event\.pull_request\.head\.sha \}\}/g,
     ),
