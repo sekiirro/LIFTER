@@ -2,7 +2,7 @@
 
 ## S40 spec-only analysis — 2026-11-09 (current; supersedes the scope gate below for S40 items)
 
-- Date: 2026-11-09 (round 2, after the CodeRabbit round-1 fixes; written after the last S40 change to spec.md, plan.md, tasks.md and traceability.md).
+- Date: 2026-11-09 (round 3, after the CodeRabbit round-1 and round-2 fixes; written after the last S40 change to spec.md, plan.md, tasks.md and traceability.md).
 - Scope: FR-018..FR-024, SC-013..SC-017, User Stories 5–8, S40 clarification (PO quotes and S40-F11-MCQ-1..9), plan.md "S40 proposals", tasks T047–T054 (unticked), traceability S40 rows.
 - Entry check (pre-PR, recorded in `report.md`): the existing scope PASSES; the NEW scope FAILS pre-PR (no FR/SC/Given-When-Then, no plan coverage, analysis dated 2026-11-04). This PR supplies the specification artifacts. No implementation is started.
 - Quote check: all PO quotes that appear in spec.md are byte-exact substrings of their PO records (`runs/s40-haiku-f11-spec/quote-check.mjs`: 9 of 9 spec-quoted lines OK; the 10th checked line is cited only in report.md).
@@ -24,6 +24,7 @@
 | A-S40-9 | RESOLVED (premise) | S36-01 presumed an existing F12 client assignment; none exists on origin/main (`specs/012-registration-approval/spec.md:175`). S39-PO-8 directs "add assignment to F11/F12 spec", so it is specified as new. | CLOSED in spec (FR-022); architect informed via report.md |
 | A-S40-10 | RESOLVED (scope) | Spec 011 Out of Scope listed "closure/deletion implementation" and "trainer assignment". The line is amended so the new FRs are not contradicted. | CLOSED |
 | A-S40-11 | RESOLVED (CodeRabbit round 1 on 745ada66, six findings, all valid) | (a) plan P-S40-1 step 3: the Auth placeholder conflicts with the agreement check in `client_accounts_model.sql:168–172`; a scoped exception is proposed. (b) P-S40-2: a revoked membership must not return an active assignee; T050 covers it. (c) SC-013 now excludes the identifiers supplied for the new signup. (d) T055 and T056 added as blocked implementation tasks. (e) T053 split: the F15 release test is separate and is not blocked by MCQ-8; the future alert fixture is T057. (f) T054 is per-requirement, not gated on future work. | CLOSED in this round; re-analysed here |
+| A-S40-12 | RESOLVED (CodeRabbit round 2 on 850c6892, two findings, both valid) | (a) plan P-S40-1 is not recoverable if the Auth update fails after the database step. Fixed: ordering is ban (A), then one transaction with a `release_pending` row (B), then an idempotent Auth placeholder retry (C), with completion only after confirmation (D); FR-018 and T047 gain the failure-and-retry case. (b) P-S40-2 trusted membership alone, while a PO can change a role without revoking membership (`supabase/migrations/20261027120000_tenancy.sql:127–128`). Fixed: the lookup also checks `staff_profiles.role = 'trainer'` at read time; T050 covers the role-change case. | CLOSED in this round; re-analysed here |
 
 ### Gate verdict
 
