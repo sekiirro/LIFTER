@@ -111,6 +111,14 @@ vitest.config.ts  playwright.config.ts
 - Update the unit assertions, traceability, constitution, and workflow guidance so the required-check list includes the aggregator and each shard execution, and the aggregator compares each shard revision tuple and logs the same revisions as every required job.
 - Test first by asserting the aggregator contract before workflow implementation, including a main-push case with empty PR/head values and a valid merge SHA.
 
+## S40 Playwright e2e sharding plan (S39-PO-3)
+
+- Keep the three `integration-shard` executions and all their existing preconditions. Remove only the `if: matrix.shard == 1` gating so every shard installs Playwright Chromium and runs the full browser suite's own file-level partition: `npm run e2e -- --shard=<k>/3 --workers=1 --reporter=json`. No retries, no `fullyParallel`, no skip/quarantine, no spec edits; environment gates (`LOCAL_SUPABASE_STORAGE_TEST`, `LOCAL_SUPABASE_PROVIDER_FAULT_TEST`) stay on the browser step in every shard.
+- Add the audit's missing-shard preconditions to every shard: Storage readiness wait (`node scripts/wait-storage-ready.mjs`) after environment export, and an explicit Docker CLI/daemon check before tests (the `client-accounts` kong stop/start spec). Keep one Playwright invocation per shard so each shard has exactly one `webServer` and its own U8 run id; never preset `U8_SERVER_LOG_RUN_ID`.
+- Before executing, record each shard's `npx playwright test --list` (full) and `--list --shard=<k>/3` inventory and fail if the shard list is empty; record the full Vitest integration file inventory with `npx vitest list --config vitest.integration.config.ts --json`. Upload Playwright and Vitest JSON reports (plus inventories) per shard with `actions/upload-artifact@v4`.
+- Extend the `integration` aggregator with a no-checkout coverage proof: download all shard artifacts, then assert (i) the union of reported Playwright identities equals the full list exactly once, (ii) skips stay within the documented 38-identity baseline, (iii) the union of Vitest integration files equals the full file list exactly once, and (iv) zero failures, flaky results, or report errors. Existing shard-success and revision-tuple checks remain byte-identical; `contents: read`, no secrets.
+- Verification: extend `tests/unit/ci-local-e2e.test.ts` red-first for e2e on all shards, the non-empty list guard, and executable coverage-script cases (valid, missing, duplicate, new skip, failure, missing Vitest file); run prettier/lint/unit/actionlint; record before/after job and critical-path wall times from run 42628343018 and the resulting PR runs.
+
 ## Complexity Tracking
 
 None.
