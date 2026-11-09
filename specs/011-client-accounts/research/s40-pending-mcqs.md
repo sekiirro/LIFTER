@@ -82,7 +82,7 @@ Question (part 2): the default balance is "active clients per trainer". Which cl
 - A) Approved client accounts with a current assignment row (`ended_at` null). **Recommended.**
 - B) Any non-deleted client account with a current assignment row.
 
-Implications: part 1 changes which trainer is picked in the first round of a new workspace. Part 2 changes whether a deletion-pending client counts. Under plan P-S40-1 step 0 the client is no longer approved, but its assignment row stays current until step B, and an Auth failure can extend that interval. Option B would count such a client while option A does not, which can change trainer selection. Pending clients never hold an assignment under the approval trigger (F5, S41-R4).
+Implications: part 1 changes which trainer is picked in the first round of a new workspace. Part 2 changes whether a deletion-pending client counts. Under plan P-S40-1 step 0 the client enters the deletion lifecycle while its assignment row stays current until step B, and an Auth failure can extend that interval. Option B would count such a client while option A does not, which can change trainer selection. Pending clients never hold an assignment under the approval trigger (F5, S41-R4). Correction (S41 round 6): the guarded release keeps `approval_state` unchanged, so FR-028 (c) now excludes an account in the F11 deletion lifecycle explicitly; the earlier reading that the client is no longer approved no longer applies.
 
 Blocked: the never-assigned and "active client" sub-cases of T058 and T062 only. The rest of the defaults (trigger = approval; balance; oldest-last tie-break; none eligible = unassigned list; PO override kept) are accepted by S40-PO-13.
 

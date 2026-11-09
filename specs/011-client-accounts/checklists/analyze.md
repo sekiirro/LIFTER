@@ -1,6 +1,27 @@
 # Analyze — F11 client accounts
 
-## S40 round 9 analysis (S41-PO-4, S41-PO-5, S41-GAP-MCQ-1/2 encoded; CodeRabbit round 6 findings on head 5836e0e3) — 2026-11-09 22:58 +02:00, round 15 (current; written after the final round 6 edits to spec.md, plan.md, tasks.md, traceability.md, checklists/analyze.md, research/s40-pending-mcqs.md, research/s41-new-copy-proposal.md and research/s40-new-workspace-copy-proposal.md; supersedes round 14 for statuses)
+## S40 round 10 analysis (CodeRabbit round 6 review 5832559377 on head 1c569497: 4 inline findings and 1 additional unverified comment) — 2026-11-09 22:59 +02:00, round 16 (current; written after the round 6 fix edits to spec.md, plan.md, tasks.md, traceability.md, research/s40-pending-mcqs.md, 012 spec.md, 012 tasks.md and the 012 Analyze; supersedes round 15 for statuses)
+
+Entry check (Spec Kit gate section 1): PASS. Numbered FRs, SCs and Given/When/Then scenarios keep their structure; the Round 5 PO quotes are unchanged and byte-exact; plan P-S40-1 and P-S40-5 cover the touched scope; tasks T047, T049, T051, T054, T056, T058, T059 and 012 T042 carry FR tags; this file is dated after the last change.
+
+Findings (round 16; each fixed or escalated):
+
+| ID | Severity | Finding (CodeRabbit round 6 review 5832559377) | Status |
+|---|---|---|---|
+| A-S41-31 | MINOR (fixed) | FR-028 balance counted an approved client with an active assignment even while it is in the deletion lifecycle, because deletion keeps `approval_state` | CLOSED: FR-028 (c) excludes `deletion_pending`, `release_pending` and released explicitly; plan P-S40-5, T058 and traceability SC-021 updated; the MCQ-16 implication corrected |
+| A-S41-32 | MINOR (fixed) | T059 accepted an audit event without asserting the required category or acknowledgement | CLOSED: T059 now asserts the selected category (P6-P8) and the acknowledgement (P9) are recorded, that the recorded category matches the selection, and that a missing value refuses the deletion |
+| A-S41-33 | MINOR (fixed) | The combined SC-013–SC-016 traceability row mapped T053, delaying those criteria until F15 exists | CLOSED: traceability now has one row per criterion (SC-013 T047; SC-014 T047, T048; SC-015 T049, T051, T056; SC-016 T050, T052, T055); T053 stays with SC-017 only |
+| A-S41-34 | MAJOR (fixed, 012) | A deleted rejected client still has `approval_state = 'rejected'`, so registration_reconsider could create a subscription and payment | CLOSED: 012 spec.md line 148 now applies the forward-only deletion-state check under the client lock to approve, reject and registration_reconsider, after authorised receipt replay; T042 adds the deleted rejected-client reconsideration case |
+| A-S41-35 | LOW (unverified, PO question) | The historical PO-override check has no time scope: a pre-approval manual assignment whose Trainer departs before approval makes the approval job a no-op and the client stays unassigned | OPEN (PO): raised as S41-GAP-MCQ-3 in the run report, not encoded. The current text follows S41-R4 F2 and S40-PO-13 MCQ-11 ("PO override always wins"); limiting the check to post-approval assignments is a product choice |
+| A-S41-4 | MEDIUM (open, architect gate) | Architect approval of the restricted continuation (plan P-S40-1) before T048 and of the restricted system entry point (plan P-S40-5) before T062 | OPEN. Architect, not PO |
+
+Counts: CRITICAL open 0. HIGH open 0. MEDIUM open 1 (A-S41-4, architect gate). LOW open 1 (A-S41-35, PO question). Round 15 items A-S41-24 to -30 stay closed.
+
+Static consistency (run at 22:59 +02:00, recorded in report.md): the FR-028, P-S40-5, T058, T059, traceability SC-013–SC-017 and 012 line 148/T042 rows agree; the copy byte check (97/97) and the ID sweep (69/69) pass on the final tree; the MCQ option text is unchanged except DECIDED and fact lines. 012 has its own round 6 entry dated after its edits.
+
+Result: PASS, 0 CRITICAL and 0 HIGH. No PO copy question remains open; the open items are the architect gate and the one new PO question above. This is a static document review; it makes no implementation-conformity claim.
+
+## S40 round 9 analysis (S41-PO-4, S41-PO-5, S41-GAP-MCQ-1/2 encoded; CodeRabbit round 6 findings on head 5836e0e3) — 2026-11-09 22:58 +02:00, round 15 (superseded by round 16 for statuses; written after the final round 6 edits to spec.md, plan.md, tasks.md, traceability.md, checklists/analyze.md, research/s40-pending-mcqs.md, research/s41-new-copy-proposal.md and research/s40-new-workspace-copy-proposal.md)
 
 Entry check (Spec Kit gate section 1): PASS. Numbered FRs, SCs and Given/When/Then scenarios keep their structure; Clarifications Round 5 quotes the S41-PO-4 and S41-PO-5 lines byte-exact and labels the architect mappings; plan P-S40-1 (including the Guard amendment and post-deletion state) and P-S40-3 cover the changed scope; tasks T047, T048, T049, T051, T054, T056 and T059 carry FR tags; this file is dated after the last change.
 

@@ -1,5 +1,12 @@
 # Analyze — F12 registration approval and payment recording
 
+## 2026-11-09 22:59 +02:00 — S41 round 6 analysis (CodeRabbit round 6 on head 1c569497: 012 spec.md line 148 and tasks T042; PR #73)
+
+- Scope: 012 spec.md line 148 and tasks.md T042 after CodeRabbit round 6. The deletion-state refusal now covers approve, reject and registration_reconsider, reads the F11 deletion state explicitly under the client lock (forward-only, 011 FR-018), and runs after an authorised receipt replay is checked. Because deletion keeps `approval_state` unchanged, a deleted rejected client still carries `rejected` and cannot be reconsidered into a subscription or payment. T042 adds the deleted rejected-client reconsideration case.
+- Entry check: FR-011 (replay returns the identical receipt) and FR-017 (stale states are not changed) remain consistent; FR-001 (PO/WO approval authority) is unchanged; the change is a technical enforcement of the already-decided terminal deletion state, not a new product rule. PASS.
+- Findings: CRITICAL 0. HIGH 0. MEDIUM 0 new. The P2 capability question (DG-F12-1) and the other open items are unchanged.
+- Result: PASS, 0 CRITICAL, 0 HIGH. Static consistency only; no product behaviour, migration or implementation is changed.
+
 ## 2026-11-09 21:46 +02:00 — S41 round 5 analysis (CodeRabbit round 5 on head db094e12: 012 spec.md line 148 and tasks T042; PR #73)
 
 - Scope: 012 spec.md line 148 (deletion-state refusal) and tasks.md T042 (RED case) after CodeRabbit round 5. A new approve or reject for a deletion-pending or deleted client is refused with the FR-017 stale-state response; an exact authorised replay with an existing receipt returns that identical receipt under FR-011 and changes nothing.
