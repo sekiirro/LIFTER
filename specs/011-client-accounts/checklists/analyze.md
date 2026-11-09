@@ -1,6 +1,42 @@
 # Analyze — F11 client accounts
 
-## S40 spec-only analysis — 2026-11-09 (current; supersedes the scope gate below for S40 items)
+## S40 round 2 analysis (S40-PO-10) — 2026-11-09 round 6 (current; written after the round 2 edits to spec.md, plan.md, tasks.md and traceability.md)
+
+- Date: 2026-11-09, round 6. Written after the last round 2 change to spec, plan, tasks and traceability. It supersedes the round 5 section below for S40 items.
+- Scope: FR-018..FR-028, SC-013..SC-021, User Stories 5–8 (scenarios 4–6 added), the spec "Round 2" block, plan.md "S40 proposals" P-S40-1..P-S40-5, tasks T047–T061, traceability S40 rows.
+- Entry check: numbered FRs, measurable SCs and Given/When/Then exist for the touched scope. Clarifications record S40-PO-10 byte-exact (`runs/s40-haiku-f11-r2/quote-check-r2.mjs`: 11 of 11 PO quotes OK; FR-025..028 and SC-018..021 each defined once). plan.md covers the touched scope. tasks.md has FR-tagged unticked tasks. "Zero open ambiguities" is NOT stated.
+- Conflict audit (step 1, before encoding): `runs/s40-haiku-f11-r2/conflicts.md`. Two GENUINE CONFLICTS, held PENDING-PO and not encoded: item 1 for Workspace Owner, Trainer and Sales deletion (spec 003 FR-015, G1=A) and item 2 for the release mechanism (S37-PO-16 "No hard deletion/new mechanism").
+- Coverage: FR-018→T047, T048, T059, T060; FR-019→T047; FR-020→T047, T048; FR-021→T049, T051, T056; FR-022→T050, T052, T055; FR-023→T050, T055; FR-024→T052, T053, T057; FR-025→T059; FR-026→T060; FR-027→T061; FR-028→T058. Every FR has a task and every SC maps to a task (SC-018→T059, SC-019→T060, SC-020→T061, SC-021→T058, T050).
+- Unchanged by this PR: `specs/012-registration-approval` (no owned behaviour), `specs/003-tenancy-rls`, `docs/03-roadmap.md` (follow-up only), all code, SQL and migrations.
+
+### Round 6 findings
+
+| ID | Severity | Finding | Status |
+|---|---|---|---|
+| A-S40-15 | MEDIUM (open, PO, GENUINE CONFLICT) | Non-PO staff deletion (S40-PO-10 item 1, "ALL roles") vs spec 003 FR-015 / G1=A (no deletion of auth user or `staff_profiles`; audit attribution kept). | OPEN — S40-F11-MCQ-1 (conflict form); blocks the non-PO branch only |
+| A-S40-1 (updated) | MEDIUM (open, PO, GENUINE CONFLICT) | Release mechanism vs S37-PO-16 "No hard deletion/new mechanism". The outcome (release) is approved by S37-PO-10 and S40-PO-10 item 2. | OPEN — S40-F11-MCQ-2 (conflict form); blocks T048 and the release tests |
+| A-S40-2 (updated) | RESOLVED in part | Auth-write rule (spec 013 `ledger-architecture.md:55`): a release is compatible only through the Auth Admin API. FR-018 now says so. | Rule compatible; mechanism still OPEN (MCQ-2) |
+| A-S40-3 (updated) | MEDIUM (open, PO) | PO-only write and PO-account deletion need a permission. FR-008 and FR-023 forbid a matrix change unless the PO approves one. | OPEN — S40-F11-MCQ-10 |
+| A-S40-4 (updated) | LOW | Items 1 (PO part), 3 and 6 encoded. The residual deletion scope is MCQ-1. | Partly CLOSED |
+| A-S40-5 | MEDIUM (dependency) | Spec 003 last-PO guard not implemented on origin/main (`research.md:32`, F-A1; T015 pending). It blocks Platform Owner account deletion (FR-026). | OPEN dependency on spec 003 |
+| A-S40-6 | MEDIUM (dependency) | F15 spec is not on origin/main. | OPEN — blocks T053 only |
+| A-S40-7 (updated) | MEDIUM (governance) | GOV-1 (independent critique) is approved by S40-PO-10 ("GOV-1: Approve critique") but is not in round 2's steps and was not run. | OPEN — architect to dispatch |
+| A-S40-16 | MEDIUM (open, PO) | Reassignment history (ended rows kept or replaced in place), the S40-F11-MCQ-4 residual. | OPEN — S40-F11-MCQ-4 |
+| A-S40-17 | MEDIUM (open, PO) | Automatic distribution rules: trigger, tie-break, inactive trainers, client-count and balance measure. | OPEN — S40-F11-MCQ-11; blocks T058 |
+| A-S40-18 | MEDIUM (open, PO) | EN/AR copy for the "New workspace" action. | OPEN — S40-F11-MCQ-12; blocks T051, T056 |
+| A-S40-19 | LOW (open, PO) | Alert channel (frequency decided). | OPEN — S40-F11-MCQ-8 channel; blocks T057 only |
+| A-S40-20 | LOW (follow-up) | Roadmap `docs/03-roadmap.md:26` and `docs/01-traceability.md:27` place balanced auto-assignment in P4; S40-PO-10 item 9 includes it. Judged NO CONFLICT (informed override). | Docs follow-up for the PO; not edited here |
+| A-S40-21 | LOW (interpretation) | "ONLY Platform Owner assigns" (item 4) vs automatic distribution (item 9). Encoded as: humans are PO-only; automatic distribution is a system action. | Encoded in FR-028; confirm via S40-F11-MCQ-11 |
+
+Prior round rows A-S40-8..A-S40-14 remain CLOSED as recorded in the round 5 section below.
+
+### Gate verdict (round 6)
+
+- CRITICAL open: 0. HIGH open: 0. MEDIUM open: 9 (A-S40-1, -3, -5, -6, -7, -15, -16, -17, -18). All are PO-blocked or dependency-blocked. None is a defect in the spec text.
+- PENDING-PO (explicit, blocks only the named tasks): S40-F11-MCQ-1 (conflict form), S40-F11-MCQ-2 (conflict form), S40-F11-MCQ-4 (reassignment history, residual), S40-F11-MCQ-8 (alert channel, residual), S40-F11-MCQ-10 (permission mechanism), S40-F11-MCQ-11 (automatic distribution rules), S40-F11-MCQ-12 (EN/AR copy).
+- "No open ambiguities" is NOT stated for S40. Implementation of the blocked tasks is not approved. No implementation is started.
+
+## S40 spec-only analysis — 2026-11-09 round 5 (superseded by round 6 above for S40 items)
 
 - Date: 2026-11-09 (round 5, after the CodeRabbit round-1 to round-4 fixes; written after the last S40 change to spec.md, plan.md, tasks.md and traceability.md).
 - Scope: FR-018..FR-024, SC-013..SC-017, User Stories 5–8, S40 clarification (PO quotes and S40-F11-MCQ-1..9), plan.md "S40 proposals", tasks T047–T054 (unticked), traceability S40 rows.
