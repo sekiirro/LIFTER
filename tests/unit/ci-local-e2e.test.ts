@@ -53,8 +53,24 @@ it('dispatches CI against a PR merge ref and rejects a mismatched second parent'
     /head_sha:\n\s+description: Exact PR head SHA to verify\n\s+required: true\n\s+type: string/,
   );
   expect(workflow).toContain("format('refs/pull/{0}/merge', inputs.pr)");
-  expect(workflow).toContain('git rev-parse HEAD^2');
-  expect(workflow).toContain('inputs.head_sha');
+  expect(workflow.match(/fetch-depth: 2/g)).toHaveLength(3);
+  expect(workflow.match(/git rev-parse HEAD\^2/g)).toHaveLength(3);
+  expect(
+    workflow.match(
+      /CI_HEAD_SHA: \$\{\{ inputs\.head_sha \|\| github\.event\.pull_request\.head\.sha \}\}/g,
+    ),
+  ).toHaveLength(3);
+  const revisionSteps = workflow
+    .split('- name: Verify and record CI revision')
+    .slice(1)
+    .map((step) => step.split('\n      - ')[0]);
+  expect(revisionSteps).toHaveLength(3);
+  expect(
+    revisionSteps.every((step) => {
+      const run = step.split('run: |')[1] ?? '';
+      return !run.includes('${{');
+    }),
+  ).toBe(true);
   expect(workflow).toContain('github.run_id');
   expect(workflow).toContain(
     "cancel-in-progress: ${{ github.event_name == 'pull_request' }}",

@@ -8,6 +8,8 @@ Implement FR-021..FR-024 and SC-011..SC-013 in the existing CI baseline. Add a `
 
 List the complete Vitest integration suite and each shard locally; confirm pairwise disjointness and exact union. Use GitHub-hosted runs as authoritative for PR gates. Confirm event payload/merge SHA provenance and executed job steps for both event paths. Keep run evidence under `C:/Users/NEW LAP/.lifter/runs/s38-const110-ci`. The full Playwright browser suite remains required and runs once in shard 1; every shard retains the same Supabase setup and runs only its own Vitest file partition.
 
+GitHub only accepts `workflow_dispatch` after the workflow exists on the default branch. This constitution PR uses sequential `pull_request` runs; dispatch-path proof is deferred until after an explicit PO exact-SHA approval and authorized merge. Do not merge this PR merely to test dispatch.
+
 **Branch**: `001-project-scaffold-ci` | **Date**: 2026-10-27 | **Spec**: [spec.md](spec.md)
 **Input**: Feature specification from `specs/001-project-scaffold-ci/spec.md`
 

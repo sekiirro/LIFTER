@@ -28,17 +28,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 2
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/merge', inputs.pr) || github.sha }}
       - name: Verify and record CI revision
         shell: bash
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_PR: ${{ inputs.pr || github.event.pull_request.number }}
+          CI_HEAD_SHA: ${{ inputs.head_sha || github.event.pull_request.head.sha }}
         run: |
           merge_sha=$(git rev-parse HEAD)
-          echo "PR=${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }} head_sha=${{ github.event_name == 'workflow_dispatch' && inputs.head_sha || github.event.pull_request.head.sha }} merge_sha=$merge_sha"
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" && ( ! "$CI_PR" =~ ^[0-9]+$ || ! "$CI_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ) ]]; then
+            echo "Invalid PR or full head SHA input" >&2
+            exit 1
+          fi
+          echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha"
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" ]]; then
             second_parent=$(git rev-parse HEAD^2 2>/dev/null || true)
-            if [[ "$second_parent" != "${{ inputs.head_sha }}" ]]; then
-              echo "PR=${{ inputs.pr }} head_sha=${{ inputs.head_sha }} merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
+            if [[ "$second_parent" != "$CI_HEAD_SHA" ]]; then
+              echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
               exit 1
             fi
           fi
@@ -85,17 +94,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 2
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/merge', inputs.pr) || github.sha }}
       - name: Verify and record CI revision
         shell: bash
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_PR: ${{ inputs.pr || github.event.pull_request.number }}
+          CI_HEAD_SHA: ${{ inputs.head_sha || github.event.pull_request.head.sha }}
         run: |
           merge_sha=$(git rev-parse HEAD)
-          echo "PR=${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }} head_sha=${{ github.event_name == 'workflow_dispatch' && inputs.head_sha || github.event.pull_request.head.sha }} merge_sha=$merge_sha"
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" && ( ! "$CI_PR" =~ ^[0-9]+$ || ! "$CI_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ) ]]; then
+            echo "Invalid PR or full head SHA input" >&2
+            exit 1
+          fi
+          echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha"
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" ]]; then
             second_parent=$(git rev-parse HEAD^2 2>/dev/null || true)
-            if [[ "$second_parent" != "${{ inputs.head_sha }}" ]]; then
-              echo "PR=${{ inputs.pr }} head_sha=${{ inputs.head_sha }} merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
+            if [[ "$second_parent" != "$CI_HEAD_SHA" ]]; then
+              echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
               exit 1
             fi
           fi
@@ -153,17 +171,26 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 2
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/merge', inputs.pr) || github.sha }}
       - name: Verify and record CI revision
         shell: bash
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_PR: ${{ inputs.pr || github.event.pull_request.number }}
+          CI_HEAD_SHA: ${{ inputs.head_sha || github.event.pull_request.head.sha }}
         run: |
           merge_sha=$(git rev-parse HEAD)
-          echo "PR=${{ github.event_name == 'workflow_dispatch' && inputs.pr || github.event.pull_request.number }} head_sha=${{ github.event_name == 'workflow_dispatch' && inputs.head_sha || github.event.pull_request.head.sha }} merge_sha=$merge_sha"
-          if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" && ( ! "$CI_PR" =~ ^[0-9]+$ || ! "$CI_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ) ]]; then
+            echo "Invalid PR or full head SHA input" >&2
+            exit 1
+          fi
+          echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha"
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" ]]; then
             second_parent=$(git rev-parse HEAD^2 2>/dev/null || true)
-            if [[ "$second_parent" != "${{ inputs.head_sha }}" ]]; then
-              echo "PR=${{ inputs.pr }} head_sha=${{ inputs.head_sha }} merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
+            if [[ "$second_parent" != "$CI_HEAD_SHA" ]]; then
+              echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
               exit 1
             fi
           fi
