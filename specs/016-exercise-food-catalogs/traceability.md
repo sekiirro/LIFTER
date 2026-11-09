@@ -95,3 +95,9 @@ The S35 detail-selector E2E evidence in the preceding row uses the mandated 390p
 | FR-011 | T901 | GitHub PR #43 validate, integration, and storage pull_request checks executed on final head; run IDs recorded in the S37 run report. | Rename commit 9c572fab72d97ba9bce48f52a5c466d9e414e6f7; blob identity proof: 20261108100000 = c6d3ff7c20cde9ee0f2436dd67592b3d70c97569, 20261108100100 = 1d45cd8cddde0bb182242949b872f8d96f6afdc4 (worktree hash-object equals HEAD tree blob); PO authority: S36-PO-4 item 6 and S37-PO-6 Option D; Stack C excluded and untouched. | DONE |
 
 Disclosure: the rename commit message trailers contain literal \n text rather than intended line breaks; history was not rewritten.
+
+## S38 catalog hardening traceability
+
+| Requirement | Task | Test | Evidence | Status |
+|---|---|---|---|---|
+| FR-011, FR-016, FR-018 | T048 | `tests/unit/exercise-detail-remove.test.tsx::clears the failure alert when the dialog is closed and reopened`; `tests/unit/exercise-editor-alternatives.test.tsx::uses stable exercise ids as keys for duplicate alternative names`; `tests/unit/exercise-library-actions.test.ts::returns invalid for malformed exercise/workspace ids without calling an RPC`; `tests/unit/catalog-food-actions.test.ts::rejects a malformed workspace id before database calls`; `tests/unit/catalog-variation-actions.test.ts::returns invalid for malformed workspace/exercise ids`; `tests/unit/catalog-server.test.ts::returns invalid for malformed id, targetId or workspaceId in mutate without calling RPC` | Commit `69709cd4`; S38-R3 architect ruling; focused unit suites executed RED then GREEN; typecheck, lint, prettier --check, check:secrets pass. | VERIFIED |

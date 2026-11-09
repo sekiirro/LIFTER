@@ -8,6 +8,7 @@ import type { Actor } from '../../lib/auth/authorize';
 vi.mock('server-only', () => ({}));
 const key = '11111111-1111-4111-8111-111111111111';
 const ws = '22222222-2222-4222-8222-222222222222';
+const targetId = '44444444-4444-4444-8444-444444444444';
 const rpc = vi.fn();
 const from = vi.fn();
 let currentActor: Actor | null;
@@ -279,7 +280,7 @@ describe('catalog server authorization and RPC boundary', () => {
         actions.mergeExercise({
           operationKey: key,
           id: ws,
-          targetId: 'target',
+          targetId: targetId,
           expectedVersion: 0,
         }),
         actions.transitionFood({
@@ -291,7 +292,7 @@ describe('catalog server authorization and RPC boundary', () => {
         actions.mergeFood({
           operationKey: key,
           id: ws,
-          targetId: 'target',
+          targetId: targetId,
           expectedVersion: 0,
         }),
       ]);
@@ -472,7 +473,7 @@ describe('catalog server authorization and RPC boundary', () => {
       catalog().mergeExercise({
         operationKey: key,
         id: ws,
-        targetId: 'target',
+        targetId: targetId,
         expectedVersion: 0,
       }),
       catalog().writeWorkspaceExercise({
@@ -509,7 +510,7 @@ describe('catalog server authorization and RPC boundary', () => {
       catalog().mergeFood({
         operationKey: key,
         id: ws,
-        targetId: 'target',
+        targetId: targetId,
         expectedVersion: 0,
       }),
     ];
@@ -527,25 +528,62 @@ describe('catalog server authorization and RPC boundary', () => {
     expect(rpc).not.toHaveBeenCalled();
   });
 
+  it('returns invalid for malformed id, targetId or workspaceId in mutate without calling RPC', async () => {
+    currentActor = {
+      userId: 'po',
+      role: 'platform_owner',
+      activeWorkspaceIds: [],
+    };
+    const cases = [
+      catalog().versionExercise({
+        operationKey: key,
+        id: 'not-a-uuid',
+        expectedVersion: 1,
+        request: {},
+      }),
+      catalog().mergeExercise({
+        operationKey: key,
+        id: ws,
+        targetId: 'not-a-uuid',
+        expectedVersion: 0,
+      }),
+      catalog().writeWorkspaceExercise({
+        operationKey: key,
+        workspaceId: 'not-a-uuid',
+        request: {},
+      }),
+      catalog().createFood({
+        operationKey: key,
+        workspaceId: 'not-a-uuid',
+        request: {},
+      }),
+    ];
+    const results = await Promise.all(cases);
+    expect(results).toEqual(
+      Array.from({ length: cases.length }, () => ({ status: 'invalid' })),
+    );
+    expect(rpc).not.toHaveBeenCalled();
+  });
+
   it('forwards merge revision names and returns a successful PO merge', async () => {
     rpc.mockResolvedValueOnce({
-      data: { exercise_id: ws, superseded_by: 'target' },
+      data: { exercise_id: ws, superseded_by: targetId },
       error: null,
     });
     await expect(
       catalog().mergeExercise({
         operationKey: key,
         id: ws,
-        targetId: 'target',
+        targetId: targetId,
         expectedVersion: 2,
       }),
     ).resolves.toEqual({
       status: 'ok',
-      data: { exercise_id: ws, superseded_by: 'target' },
+      data: { exercise_id: ws, superseded_by: targetId },
     });
     expect(rpc).toHaveBeenCalledWith('catalog_merge_exercise', {
       p_source_id: ws,
-      p_target_id: 'target',
+      p_target_id: targetId,
       p_expected_source_revision: 2,
       p_operation_key: key,
     });

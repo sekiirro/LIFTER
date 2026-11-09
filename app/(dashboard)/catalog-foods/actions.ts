@@ -11,6 +11,7 @@ import {
   type FoodEditorDraft,
 } from '../../../lib/catalog/food-editor';
 import { MAX_FOOD_ALTERNATIVES } from '../../../lib/catalog/schemas';
+import { isUuidV4 } from '../../../lib/catalog/uuid';
 
 export type FoodDuplicateReviewResult =
   | { status: 'none'; candidates: [] }
@@ -46,9 +47,6 @@ const FOOD_DRAFT_STRING_FIELDS = [
   'fat',
   'fiber',
 ] as const;
-const UUID_V4 =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-
 function isFoodDraft(value: unknown): value is FoodEditorDraft {
   if (
     !isRecord(value) ||
@@ -155,10 +153,9 @@ export async function saveCatalogFoodAction(
 ): Promise<CatalogFoodSaveResult> {
   if (
     !isFoodDraft(draft) ||
-    (workspaceId !== null && typeof workspaceId !== 'string') ||
+    (workspaceId !== null && !isUuidV4(workspaceId)) ||
     typeof confirmNearMatch !== 'boolean' ||
-    typeof operationKey !== 'string' ||
-    !UUID_V4.test(operationKey)
+    !isUuidV4(operationKey)
   )
     return { status: 'invalid' };
   const food = buildFoodEditorInput(draft);

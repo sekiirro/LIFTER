@@ -24,12 +24,22 @@ export function ExerciseDetailRemove({
 }) {
   const m = getMessages(locale);
   const operationKey = useRef<string | null>(null);
+  const attempt = useRef(0);
   const [open, setOpen] = useState(false);
   const [pending, setPending] = useState(false);
   const [removed, setRemoved] = useState(false);
   const [failed, setFailed] = useState(false);
 
+  /** Close the dialog and discard any in-flight removal attempt. */
+  function resetDialog() {
+    attempt.current += 1;
+    setOpen(false);
+    setFailed(false);
+    setPending(false);
+  }
+
   async function confirmRemove() {
+    const thisAttempt = attempt.current;
     setPending(true);
     setFailed(false);
     operationKey.current ??= crypto.randomUUID();
@@ -41,14 +51,15 @@ export function ExerciseDetailRemove({
         expectedRevision,
         operationKey: operationKey.current,
       });
+      if (thisAttempt !== attempt.current) return;
       if (result.status === 'ok') {
         setRemoved(true);
         setOpen(false);
       } else setFailed(true);
     } catch {
-      setFailed(true);
+      if (thisAttempt === attempt.current) setFailed(true);
     } finally {
-      setPending(false);
+      if (thisAttempt === attempt.current) setPending(false);
     }
   }
 
@@ -72,7 +83,7 @@ export function ExerciseDetailRemove({
         tone="destructive"
         loading={pending}
         onConfirm={() => void confirmRemove()}
-        onCancel={() => setOpen(false)}
+        onCancel={resetDialog}
       >
         {failed ? (
           <Alert tone="error" title={m['states.error.description']} />
