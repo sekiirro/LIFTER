@@ -32,3 +32,11 @@ Evidence run `41894845099`, attempt 1, on commit `447ceb0b69b8516abfa26c5b1289ef
 | FR-022 / SC-012 (integration partition and full coverage) | T021 | C:/Users/NEW LAP/.lifter/runs/s38-const110-ci/verify-shards.cjs | Vitest 5.0.5: 92 test files; shards 31/31/30; union 92; 0 missing; 0 duplicates (shard-partition.json). Playwright runs once in shard 1; unchanged suite selection. | VERIFIED (partition) |
 | FR-023 / SC-013 (allowed full attempts) | T022 | .github/workflows/ci.yml and C:/Users/NEW LAP/.lifter/tools/gate-check.mjs::gateD | Pending exact-head pull_request/dispatch run evidence and both-path self-test; run IDs and provenance will be recorded in report.md. | PENDING |
 | FR-024 (standing approval and constitution PR exception) | T022 | .specify/memory/constitution.md::Main merge gate; docs/08-agent-workflow.md::Main merge gate | Constitution-changing PR explicitly excluded from standing approval; this PR still requires explicit PO approval at exact SHA. | VERIFIED (documentation) |
+
+
+## S39 required integration status-check correction (FR-022, FR-023)
+
+| Requirement | Task | Test file::name | Evidence | Status |
+|---|---|---|---|---|
+| FR-022 / SC-012 (three matrix shards and successful aggregation) | T023 | `tests/unit/ci-local-e2e.test.ts::exposes the required integration aggregator for all shard results` | Implementation commit `1bbfd1d09ecc994a275dba79de1975ee9c26848b`; red-first regression was run against the original workflow and failed; focused suite passed 3/3 after implementation. `npm run lint`, `npm run format:check`, and `npm run typecheck` passed. GitHub exact-head CI is tracked separately in the round report. | VERIFIED (local) |
+| FR-023 (required exact `integration` check in every full attempt) | T023 | `.github/workflows/ci.yml::integration` | Workflow exposes an always-run `integration` aggregator depending on `integration-shard`; all shard results must be success. Final-head hosted execution is required by the merge gate and is recorded in the round report. | IMPLEMENTED |
