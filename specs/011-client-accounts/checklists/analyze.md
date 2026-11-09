@@ -1,6 +1,21 @@
 # Analyze — F11 client accounts
 
-## S40 round 5 analysis (CodeRabbit round 2 on head 7fe218b5, fix round) — 2026-11-09 19:10 +02:00, round 11 (current; written after the second fix edits to spec.md, plan.md and tasks.md; supersedes round 10 for statuses)
+## S40 round 6 analysis (CodeRabbit round 3 on head 765a6ae8, fix round, s41-haiku-f11-r4) — 2026-11-09 21:01 +02:00, round 12 (current; written after the fix edits to spec.md, plan.md, tasks.md and research/s40-pending-mcqs.md; supersedes round 11 for statuses)
+
+Findings addressed (CodeRabbit CHANGES_REQUESTED 5831034045 on 765a6ae8; 7 actionable, all inline):
+- plan.md:203, deleted-client manual write: the PO write path locks the client under the P-S40-1 step 0 deletion lock and rejects deletion_pending, release_pending, released or deleted clients (plan P-S40-2; spec FR-022; T050).
+- plan.md:203, concurrency: one per-workspace lock shared by the manual-write trigger, the distribution writer and the membership/role change triggers; ascending workspace_id order for multi-workspace role changes (architect technical choice; plan P-S40-2; T050 concurrency case).
+- plan.md:206, Workspace Owner read path: a SELECT-only policy for the WO's own workspace (no INSERT/UPDATE/DELETE); the exact helper is an architect technical choice before T055 (plan P-S40-2 Read; FR-027; T050).
+- plan.md:217, existing manual assignment: outcome `no_op_active_assignment_exists`, completed under the same lock; follows FR-028 (f) PO override always wins; no retry loop (plan P-S40-5 Delivery; spec FR-028 (g); T058).
+- spec.md:233, SC-014: existing audit/F12/F13/signup rows unchanged in content and none removed; only the append-only deletion audit rows the steps write are new (aligns with FR-025 confirmation audit event; plan P-S40-1 test line; T047 wording).
+- tasks.md:284, T054 gate: FR-028 verified only after T058, T062 and T063.
+- research/s40-pending-mcqs.md:42, S40-F11-MCQ-14 option C: clarified that email and phone are cleared by step D (FR-018, FR-020); the option set is unchanged and MCQ-14 stays PENDING-PO. No option is decided or encoded.
+
+No new product decision was encoded. The PO-blocked items (S40-F11-MCQ-12..20) are unchanged and not encoded; none of the findings needed a new MCQ.
+
+Gate after the fix: CRITICAL open 0. HIGH open 0. MEDIUM open 9 (MCQ-12..20, PO-blocked, unchanged). Static consistency re-run: grep for the new outcome name, SC-014 wording, T054 gate and the WO read clause across spec/plan/tasks: PASS.
+
+## S40 round 5 analysis (CodeRabbit round 2 on head 7fe218b5, fix round) — 2026-11-09 19:10 +02:00, round 11 (superseded by round 12 for statuses)
 
 Findings addressed (CodeRabbit CHANGES_REQUESTED 5829632170 on 7fe218b5; 4 actionable: 4 inline threads and 1 review-body "Unverified finding" that was verified against `supabase/migrations/20261031121000_client_accounts_model.sql:183`, the `signup_auth_claim_sync` trigger on `auth.users` email/phone update):
 - PRRT_kwDOVYgYQ861W2LK (plan.md:202, system actor for automatic rows): the record has `assignment_source` (`po_manual` | `system_distribution`), `assigned_by` required only for manual rows, `source_approval_id` for system rows. Attribution never needs an unrelated staff user.

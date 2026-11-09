@@ -39,7 +39,7 @@ Question: after the guarded release (plan P-S40-1 step D), which personal fields
 
 - A) Keep name and all other profile fields; only the email and phone identifiers are cleared.
 - B) Clear name and all profile fields at release; keep identifiers-free terminal state, IDs, status and timestamps. **Recommended.**
-- C) Keep every field and only mark the row terminal.
+- C) Keep every field except the email and phone identifiers, which step D clears (FR-018, FR-020), and only mark the row terminal.
 
 Implications: A keeps personal data of a departed client with no stated need (Constitution VII). B satisfies FR-020's no-copy rule and keeps the history rows referencing the client. C is the simplest but keeps the most personal data.
 
