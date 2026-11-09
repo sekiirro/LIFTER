@@ -617,4 +617,135 @@ describe('signup result focus', () => {
       expect(document.activeElement).toBe(input);
     },
   );
+
+  it('clears a client-side name error on edit without waiting for blur', async () => {
+    dom = new JSDOM('<!doctype html><html><body></body></html>', {
+      url: 'http://localhost/',
+    });
+    const globals = {
+      window: dom.window,
+      document: dom.window.document,
+      HTMLElement: dom.window.HTMLElement,
+      HTMLInputElement: dom.window.HTMLInputElement,
+      FormData: dom.window.FormData,
+      Event: dom.window.Event,
+      Node: dom.window.Node,
+      IS_REACT_ACT_ENVIRONMENT: true,
+    };
+    previousGlobals = new Map(
+      Object.keys(globals).map((key) => [
+        key,
+        Object.getOwnPropertyDescriptor(globalThis, key),
+      ]),
+    );
+    for (const [key, value] of Object.entries(globals))
+      Object.defineProperty(globalThis, key, { configurable: true, value });
+    const { createRoot } = await import('react-dom/client');
+    const action = vi.fn(async () => signupResult('complete', 'en'));
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+
+    await act(async () => {
+      root?.render(
+        createElement(SignupForm, {
+          action,
+          locale: 'en',
+          phoneCountries,
+        }),
+      );
+    });
+    const form = host.querySelector('form')!;
+    const name = host.querySelector<HTMLInputElement>('[name="name"]')!;
+    const dateOfBirth = host.querySelector<HTMLInputElement>(
+      '[name="dateOfBirth"]',
+    )!;
+    const username = host.querySelector<HTMLInputElement>('[name="username"]')!;
+    await act(async () => {
+      setInputValue(name, 'Heba Sami');
+      setInputValue(dateOfBirth, '1990-10-30');
+      setInputValue(username, 'valid_user');
+    });
+    await act(async () => {
+      form.requestSubmit();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(action).not.toHaveBeenCalled();
+    expect(name.getAttribute('aria-invalid')).toBe('true');
+    expect(host.querySelector('#signup-name-error')).not.toBeNull();
+
+    await act(async () => setInputValue(name, 'Heba Sami Nabil'));
+
+    expect(name.getAttribute('aria-invalid')).not.toBe('true');
+    expect(name.getAttribute('aria-describedby')).toBeNull();
+    expect(host.querySelector('#signup-name-error')).toBeNull();
+  });
+
+  it('moves focus to the pending status when the focused submit control is disabled', async () => {
+    dom = new JSDOM('<!doctype html><html><body></body></html>', {
+      url: 'http://localhost/',
+    });
+    const globals = {
+      window: dom.window,
+      document: dom.window.document,
+      HTMLElement: dom.window.HTMLElement,
+      HTMLInputElement: dom.window.HTMLInputElement,
+      FormData: dom.window.FormData,
+      Event: dom.window.Event,
+      Node: dom.window.Node,
+      IS_REACT_ACT_ENVIRONMENT: true,
+    };
+    previousGlobals = new Map(
+      Object.keys(globals).map((key) => [
+        key,
+        Object.getOwnPropertyDescriptor(globalThis, key),
+      ]),
+    );
+    for (const [key, value] of Object.entries(globals))
+      Object.defineProperty(globalThis, key, { configurable: true, value });
+    const { createRoot } = await import('react-dom/client');
+    const action = vi.fn(
+      () => new Promise<ReturnType<typeof signupResult>>(() => {}),
+    );
+    host = document.createElement('div');
+    document.body.append(host);
+    root = createRoot(host);
+
+    await act(async () => {
+      root?.render(
+        createElement(SignupForm, {
+          action,
+          locale: 'en',
+          phoneCountries,
+        }),
+      );
+    });
+    const name = host.querySelector<HTMLInputElement>('[name="name"]')!;
+    const dateOfBirth = host.querySelector<HTMLInputElement>(
+      '[name="dateOfBirth"]',
+    )!;
+    const username = host.querySelector<HTMLInputElement>('[name="username"]')!;
+    const submit = host.querySelector<HTMLButtonElement>(
+      'button[type="submit"]',
+    )!;
+    await act(async () => {
+      setInputValue(name, 'Heba Sami Nabil');
+      setInputValue(dateOfBirth, '1990-10-30');
+      setInputValue(username, 'heba_pending_focus');
+    });
+    await act(async () => submit.focus());
+    expect(document.activeElement).toBe(submit);
+
+    await act(async () => {
+      submit.click();
+      await new Promise((resolve) => setTimeout(resolve, 0));
+    });
+
+    expect(action).toHaveBeenCalledOnce();
+    expect(submit.disabled).toBe(true);
+    expect(document.activeElement).toBe(
+      host.querySelector('form p[role="status"]'),
+    );
+  });
 });
