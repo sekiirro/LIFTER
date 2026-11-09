@@ -1,6 +1,25 @@
 # Analyze — F11 client accounts
 
-## S40 round 2 analysis (S40-PO-10) — 2026-11-09 round 6 (current; written after the round 2 edits to spec.md, plan.md, tasks.md and traceability.md)
+## S40 round 2 analysis (S40-PO-10) — 2026-11-09 round 7 (current; written after the CodeRabbit fixes on the round 6 head 4ac8ec2e; supersedes round 6 for statuses)
+
+- Date: 2026-11-09, round 7. Written after the last change to spec.md, plan.md, tasks.md and traceability.md in this round.
+- CodeRabbit review on `4ac8ec2e` (14:12:34Z, CHANGES_REQUESTED, 5 actionable). All 5 were checked against the current text and found VALID. Fixed in this round:
+
+| ID | Severity | Finding (CodeRabbit thread) | Status |
+|---|---|---|---|
+| A-S40-22 | MAJOR (valid) | P-S40-1 sequence changes the `clients` row, so it cannot cover a Platform Owner account (`PRRT_kwDOVYgYQ861SU2F`). | FIXED: plan P-S40-1 scope bullet (client accounts only); FR-018 states the PO-account mechanism is PENDING-PO (S40-F11-MCQ-2, -10). |
+| A-S40-23 | MAJOR (valid) | Automatic distribution has no write path without a human PO session (`PRRT_kwDOVYgYQ861SU2J`). | FIXED: plan P-S40-5 system entry point, not approved and blocked by S40-F11-MCQ-11; FR-028 names the restricted entry point. |
+| A-S40-24 | MINOR (valid) | Key Entities required start/end history while MCQ-4 is open (`PRRT_kwDOVYgYQ861SU2S`). | FIXED: spec Key Entities reassignment history is PENDING-PO; plan record marked as not approved. |
+| A-S40-25 | MAJOR (valid) | T058 has no balance-measure gate (`PRRT_kwDOVYgYQ861SU2X`). | FIXED: T058 gate; FR-028 row not verified until a balance-measure test executes. |
+| A-S40-26 | MAJOR (valid) | No implementation task for FR-028 (`PRRT_kwDOVYgYQ861SU2e`). | FIXED: T062 added, FUTURE, blocked by S40-F11-MCQ-11 and architect approval of the entry-point design; FR-028 traceability row now lists T058, T062. |
+
+- Coverage update: FR-028 → T058, T062, SC-021 → T058, T050, T062. Every FR and SC still maps to a task.
+- Gate verdict (round 7): CRITICAL open 0. HIGH open 0. MEDIUM open 9 (unchanged from round 6: A-S40-1, -3, -5, -6, -7, -15, -16, -17, -18). The five CodeRabbit findings are closed by the fixes in this round, pending thread replies and the CodeRabbit re-review.
+- PENDING-PO unchanged: S40-F11-MCQ-1 and -2 (conflict form), -4 (residual), -8 (residual channel), -10, -11, -12. Zero open ambiguities are NOT stated for S40.
+
+### Round 6 (superseded for statuses; findings and coverage still applicable)
+
+## S40 round 2 analysis (S40-PO-10) — 2026-11-09 round 6 (superseded by round 7 for statuses; written after the round 2 edits to spec.md, plan.md, tasks.md and traceability.md)
 
 - Date: 2026-11-09, round 6. Written after the last round 2 change to spec, plan, tasks and traceability. It supersedes the round 5 section below for S40 items.
 - Scope: FR-018..FR-028, SC-013..SC-021, User Stories 5–8 (scenarios 4–6 added), the spec "Round 2" block, plan.md "S40 proposals" P-S40-1..P-S40-5, tasks T047–T061, traceability S40 rows.
