@@ -80,6 +80,27 @@ describe('body-fat derivative generator', () => {
     }
   });
 
+  it('requires an explicit source root instead of a machine-local default', async () => {
+    const item = await fixture();
+    const result = spawnSync(
+      process.execPath,
+      [
+        script,
+        '--output-root',
+        join(item.outputRoot, 'no-source'),
+        '--provenance',
+        item.provenancePath,
+      ],
+      {
+        encoding: 'utf8',
+        env: { ...process.env, BODY_FAT_SOURCE_ROOT: '' },
+      },
+    );
+
+    expect(result.status).not.toBe(0);
+    expect(result.stderr).toContain('--source-root');
+  });
+
   it('emits the same bytes on repeated runs and reports output size against the budget', async () => {
     const item = await fixture();
     const common = [

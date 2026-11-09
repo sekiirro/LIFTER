@@ -23,7 +23,7 @@ S25-PO-8 (verbatim): “**PO Decision — F15:** In-App + Telegram approved. No 
 3. Assign and verify a NEW isolated F15 database stack and exclusive lock before any DB-dependent task. Record project identity, distinct ports/endpoints, selector, isolation proof and lock owner without printing credentials. If the stack is unavailable or mismatched, stop DB work; never fall back to A or B.
 4. Allocate each F15 migration timestamp only after rechecking every actual F12/F14 migration. Use forward-only migrations. The plan reserves no timestamp.
 5. Use synthetic fixtures only. No real client Forms data until the 30-day all-copy retention review and applicable production-readiness gates are evidenced. Do not activate alert scheduling in a migration or enable Telegram delivery outside the fake test transport without the required runtime configuration and PO scheduler approval.
-6. Any rendered-UI implementation brief must append `C:/Users/NEW LAP/.lifter/briefs/frontend-design-gate.txt` and follow `DESIGN.md`.
+6. Any rendered-UI implementation work must follow the Frontend Design Gate recorded in `specs/015-forms-intake/reports/S18-r4-frontend-design-gate.md` and `DESIGN.md`.
 
 ## S26 verified Stack D / F12-F14 baseline (2026-11-02)
 

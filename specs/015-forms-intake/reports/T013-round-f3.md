@@ -23,4 +23,4 @@
 | Erase prior answer history | The integration assertion requires the original and corrected answer revisions in history. |
 | Fail submission audit | The injected audit trigger raises and the test confirms zero submission, SLA, and revision facts remain. |
 
-All SQL probes are synthetic and rollback-scoped. No migration was edited after it had been pushed; no production database or scheduler was used.
+All SQL probes are synthetic. The rollback-scoped probes roll back their writes; the concurrent test in `forms-r3-submissions` commits its synthetic fixtures and submission and does not delete them when connections close, so it is not rollback-scoped. No migration was edited after it had been pushed; no production database or scheduler was used.

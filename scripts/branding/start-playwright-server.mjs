@@ -9,7 +9,7 @@ process.env.SUPABASE_URL ??= process.env.API_URL;
 process.env.SUPABASE_ANON_KEY ??= process.env.ANON_KEY;
 process.env.SUPABASE_SERVICE_ROLE_KEY ??= process.env.SERVICE_ROLE_KEY;
 process.env.APP_ORIGIN ??= 'http://localhost:3000';
-process.env.LIFTER_E2E_ALLOW_HTTP = 'true';
+process.env.LIFTER_E2E_ALLOW_HTTP ??= 'true';
 
 const credential = await prepareLocalBrandingProxyCredential();
 if (credential) process.env.BRANDING_PROXY_JWT = credential;

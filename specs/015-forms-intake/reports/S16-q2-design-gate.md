@@ -75,16 +75,18 @@ Scope: change the existing public signup duplicate message only. `DESIGN.md` and
 | Accessibility | PASS | 8/8 axe runs had zero violations; status receives focus and is announced; email/phone/username remain unhighlighted on collisions. |
 | States and interactions | PASS | Duplicate error state verified; existing pending, invalid-field, and success states remain in the unchanged form implementation. |
 | Bilingual copy source | PASS | Duplicate copy comes from `lib/i18n/messages/en.ts` and `ar.ts`; no hard-coded UI copy was added. |
-| Rendered matrix | PASS | Eight screenshots saved under the OS temp directory and reviewed. |
+| Rendered matrix | PASS | Eight screenshots reviewed; retained copies are listed under Screenshots. |
 | Unit/e2e/axe and size | PASS | Unit 1,722/1,722; collision E2E 3/3; error-state matrix 8/8; size 6,942.65 KiB of 65,536 KiB. No dependency added. |
 
 ## Screenshots
 
-- `C:\Users\NEW LAP\AppData\Local\Temp\lifter-s16-q2-ar-light-mobile-0.png`
-- `C:\Users\NEW LAP\AppData\Local\Temp\lifter-s16-q2-ar-light-desktop-0.png`
-- `C:\Users\NEW LAP\AppData\Local\Temp\lifter-s16-q2-ar-dark-mobile-0.png`
-- `C:\Users\NEW LAP\AppData\Local\Temp\lifter-s16-q2-ar-dark-desktop-0.png`
-- `C:\Users\NEW LAP\AppData\Local\Temp\lifter-s16-q2-en-light-mobile-0.png`
-- `C:\Users\NEW LAP\AppData\Local\Temp\lifter-s16-q2-en-light-desktop-0.png`
-- `C:\Users\NEW LAP\AppData\Local\Temp\lifter-s16-q2-en-dark-mobile-0.png`
-- `C:\Users\NEW LAP\AppData\Local\Temp\lifter-s16-q2-en-dark-desktop-0.png`
+Retained copies (committed evidence):
+
+- [ar-light-mobile](evidence/s16-q2/ar-light-mobile-0.png)
+- [ar-light-desktop](evidence/s16-q2/ar-light-desktop-0.png)
+- [ar-dark-mobile](evidence/s16-q2/ar-dark-mobile-0.png)
+- [ar-dark-desktop](evidence/s16-q2/ar-dark-desktop-0.png)
+- [en-light-mobile](evidence/s16-q2/en-light-mobile-0.png)
+- [en-light-desktop](evidence/s16-q2/en-light-desktop-0.png)
+- [en-dark-mobile](evidence/s16-q2/en-dark-mobile-0.png)
+- [en-dark-desktop](evidence/s16-q2/en-dark-desktop-0.png)

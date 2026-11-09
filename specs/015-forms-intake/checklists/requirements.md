@@ -23,7 +23,7 @@
 
 ## Requirement Completeness
 
-- [x] No bracketed NEEDS CLARIFICATION markers remain; final Q1–Q8 are explicitly NOT DECIDED
+- [x] No bracketed NEEDS CLARIFICATION markers remain; former Q1–Q8 (historically NOT DECIDED at intake) are CLOSED by the binding PO decisions recorded in spec.md ("Former F15 questions Q1-Q8 are CLOSED")
 - [ ] Requirements are fully testable and unambiguous
 - [ ] All success criteria are unconditionally measurable
 - [x] Success criteria express outcomes rather than technology performance

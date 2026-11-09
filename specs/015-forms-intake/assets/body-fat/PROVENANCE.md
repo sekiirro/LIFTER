@@ -1,7 +1,7 @@
 # Body-fat reference asset provenance
 
 - Authority: D-S14-1 (2026-10-30).
-- Source: `C:/Users/NEW LAP/Desktop/YBS SYSTEM/public/body-fat/` (read-only).
+- Source: YBS SYSTEM repository, `public/body-fat/` (read-only; the local checkout path is supplied at run time through `--source-root` or `BODY_FAT_SOURCE_ROOT`).
 - Source repository HEAD observed read-only: `db9749a282a3acc37a967c0ce4763d88460b458b`.
 - Scope hashed: original image files under `female/`, `male/`, and `male-cinematic/` only. No original image binaries are committed. No YBS terms-and-conditions card or design was copied.
 - Output convention: optimized derivatives only under `public/images/body-fat/`; no originals are committed. A reproducible media script must read this source directory read-only, preserve the originals, emit WebP/AVIF at no more than 2x display width, and target <=150 KB per derivative.

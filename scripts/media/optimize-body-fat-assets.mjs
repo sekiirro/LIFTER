@@ -15,7 +15,6 @@ import {
 import { fileURLToPath } from 'node:url';
 
 const REPO_ROOT = resolve(dirname(fileURLToPath(import.meta.url)), '../..');
-const DEFAULT_SOURCE = 'C:/Users/NEW LAP/Desktop/YBS SYSTEM/public/body-fat';
 const DEFAULT_OUTPUT = join(REPO_ROOT, 'public/images/body-fat');
 const DEFAULT_PROVENANCE = join(
   REPO_ROOT,
@@ -52,7 +51,7 @@ const FORMAT_SETTINGS = {
 
 function parseArgs(argv) {
   const result = {
-    sourceRoot: DEFAULT_SOURCE,
+    sourceRoot: process.env.BODY_FAT_SOURCE_ROOT || null,
     outputRoot: DEFAULT_OUTPUT,
     provenancePath: DEFAULT_PROVENANCE,
     maxWidth: DEFAULT_MAX_WIDTH,
@@ -105,7 +104,7 @@ function displayHelp() {
     'Generate deterministic body-fat image derivatives from the read-only YBS originals.',
     '',
     'Options:',
-    `  --source-root PATH   Source directory (default: ${DEFAULT_SOURCE})`,
+    '  --source-root PATH   Source directory (default: BODY_FAT_SOURCE_ROOT; required when unset)',
     `  --output-root PATH   Derivative directory (default: ${DEFAULT_OUTPUT})`,
     `  --provenance PATH    Source hash table (default: ${DEFAULT_PROVENANCE})`,
     `  --max-width PIXELS   Maximum derivative width (default: ${DEFAULT_MAX_WIDTH})`,
@@ -329,6 +328,8 @@ async function main() {
     process.stdout.write(`${displayHelp()}\n`);
     return;
   }
+  if (!options.sourceRoot)
+    throw new Error('--source-root or BODY_FAT_SOURCE_ROOT is required');
 
   const sourceRoot = resolve(options.sourceRoot);
   const outputRoot = resolve(options.outputRoot);

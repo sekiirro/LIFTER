@@ -67,9 +67,10 @@ describe('S14 PO decision fixture', () => {
       'T08',
       'N07.training_timing',
       'N08',
+      'N11.feedback.0_2',
     ]);
     expect(cases.pendingENRows).toContain('N08.low.foods');
-    expect(cases.pendingENRows).toContain('N11.feedback.0_2');
+    expect(cases.pendingENRows).not.toContain('N11.feedback.0_2');
   });
 
   it('keeps historical S14 health-notice fixture separate from S17 product UI', () => {

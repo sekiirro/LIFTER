@@ -287,8 +287,6 @@ describe.runIf(
 
           const f = await clientContext();
           const clientFixture = await registered(f);
-          const a = f.actors.trainerA;
-          const b = f.actors.trainerB;
           const users = [
             f.actors.po,
             f.actors.woA,
@@ -332,10 +330,9 @@ describe.runIf(
           const deadline = new Date(
             Date.now() - 49 * 60 * 60 * 1000,
           ).toISOString();
-          let assignmentA: { assignmentId: string; scheduleId: string };
           let assignmentB: { assignmentId: string; scheduleId: string };
           await db.begin(async (tx) => {
-            assignmentA = await insertAlertAssignment(
+            await insertAlertAssignment(
               tx,
               f.wsA.id,
               clientFixture.id,
@@ -351,7 +348,7 @@ describe.runIf(
               deadline,
               f.actors.po.userId,
             );
-            const assignmentNoTrainer = await insertAlertAssignment(
+            await insertAlertAssignment(
               tx,
               f.wsA.id,
               clientFixture.id,
@@ -359,25 +356,18 @@ describe.runIf(
               deadline,
               f.actors.po.userId,
             );
-            await tx`update app_private.form_alert_schedules set trainer_user_id=${a.userId}
-        where id=${assignmentA!.scheduleId}`;
-            await tx`update app_private.form_alert_schedules set trainer_user_id=${b.userId}
-        where id=${assignmentB!.scheduleId}`;
-            await tx`insert into public.workspace_memberships(workspace_id,user_id,granted_by)
-        values(${f.wsA.id},${b.userId},${f.actors.po.userId})`;
-            void assignmentNoTrainer;
           });
 
-          for (const [trainer, chatId] of [
-            [a, '991001'],
-            [b, '991002'],
+          for (const [owner, chatId] of [
+            [f.actors.po, '991001'],
+            [f.actors.woA, '991002'],
           ] as const) {
             const linkToken = randomUUID()
               .replaceAll('-', '')
               .padEnd(64, 'f')
               .slice(0, 64);
             await db`insert into app_private.f15_telegram_link_tokens(token_hash,user_id,expires_at)
-        values(extensions.digest(${linkToken},'sha256'),${trainer.userId},clock_timestamp()+interval '10 minutes')`;
+        values(extensions.digest(${linkToken},'sha256'),${owner.userId},clock_timestamp()+interval '10 minutes')`;
             const [linked] =
               await db`select app_private.consume_f15_telegram_link_token(${linkToken},${chatId}) as ok`;
             expect(linked!.ok).toBe(true);
@@ -436,18 +426,14 @@ describe.runIf(
           const [first] = await db`
         select count(*)::int as occurrences,
           count(distinct (schedule_id,stage,recipient_user_id))::int as occurrence_keys,
-          count(*) filter (where stage='client_trainer_24h')::int as trainer_24h,
-          count(*) filter (where stage='client_owners_24h')::int as owner_24h,
-          count(*) filter (where stage='client_owners_48h')::int as owner_48h
+          count(*) filter (where stage='client_owners_immediate')::int as owner_immediate
         from app_private.form_alert_occurrences
         where workspace_id=${f.wsA.id}
       `;
           expect(first).toEqual({
-            occurrences: 10,
-            occurrence_keys: 10,
-            trainer_24h: 2,
-            owner_24h: 2,
-            owner_48h: 6,
+            occurrences: 6,
+            occurrence_keys: 6,
+            owner_immediate: 6,
           });
           const recipients = await db`
         select stage,recipient_user_id from app_private.form_alert_occurrences
@@ -455,19 +441,7 @@ describe.runIf(
       `;
           expect(
             recipients
-              .filter((row) => row.stage === 'client_trainer_24h')
-              .map((row) => row.recipient_user_id)
-              .sort(),
-          ).toEqual([a.userId, b.userId].sort());
-          expect(
-            recipients
-              .filter((row) => row.stage === 'client_owners_24h')
-              .map((row) => row.recipient_user_id)
-              .sort(),
-          ).toEqual([f.actors.po.userId, f.actors.woA.userId].sort());
-          expect(
-            recipients
-              .filter((row) => row.stage === 'client_owners_48h')
+              .filter((row) => row.stage === 'client_owners_immediate')
               .map((row) => row.recipient_user_id)
               .sort(),
           ).toEqual(
@@ -490,15 +464,15 @@ describe.runIf(
         where i.workspace_id=${f.wsA.id}
       `;
           expect(inbox).toEqual({
-            rows: 10,
-            delivered: 10,
+            rows: 6,
+            delivered: 6,
             recipient_mismatch: 0,
           });
           const enqueuedAudit = await db`
         select details from public.audit_events
         where workspace_id=${f.wsA.id} and action='form.alert_enqueued'
       `;
-          expect(enqueuedAudit).toHaveLength(10);
+          expect(enqueuedAudit).toHaveLength(6);
           expect(
             enqueuedAudit.every(
               (row) =>
@@ -515,7 +489,7 @@ describe.runIf(
           const jobs = await db`
         select payload from public.jobs where kind='forms.alert' and workspace_id=${f.wsA.id}
       `;
-          expect(jobs).toHaveLength(10);
+          expect(jobs).toHaveLength(6);
           expect(
             jobs.every(
               (row) =>
@@ -525,11 +499,11 @@ describe.runIf(
             ),
           ).toBe(true);
 
-          // Revoke after scheduler enqueue but before Telegram preparation/claim.
+          // Revoke an owner after scheduler enqueue but before Telegram preparation/claim.
           await db`update public.workspace_memberships set revoked_at=clock_timestamp(),revoked_by=${f.actors.po.userId}
-        where workspace_id=${f.wsA.id} and user_id=${b.userId} and revoked_at is null`;
+        where workspace_id=${f.wsA.id} and user_id=${f.actors.woA.userId} and revoked_at is null`;
           const [revokedLink] =
-            await db`select revoked_at from app_private.f15_telegram_links where user_id=${b.userId}`;
+            await db`select revoked_at from app_private.f15_telegram_links where user_id=${f.actors.woA.userId}`;
           expect(revokedLink!.revoked_at).not.toBeNull();
           const workerClient = admin();
           const initialDelivery = await runTelegramJobs({
@@ -539,12 +513,16 @@ describe.runIf(
           });
           expect(initialDelivery.failed).toBeGreaterThanOrEqual(2); // one revoked recipient and the injected transport failure
           await firstCycle;
-          expect(captureRows).toHaveLength(1);
-          expect(captureRows[0]).toEqual({
+          const alertMessage = {
             chat_id: '991001',
             text: 'You have a new form alert. Open your in-app inbox: https://app.example.test/forms/alerts',
             disable_web_page_preview: true,
-          });
+          };
+          expect(captureRows).toEqual([
+            alertMessage,
+            alertMessage,
+            alertMessage,
+          ]);
           expect(captureRows[0]!.text).not.toMatch(
             /client|answer|health|\bS26\b/i,
           );
@@ -552,47 +530,47 @@ describe.runIf(
         select status,attempts,run_at,last_error
         from public.jobs
         where kind='forms.alert' and workspace_id=${f.wsA.id}
-          and payload->>'recipient_id'=${a.userId}
-          and payload->>'stage'='client_trainer_24h'
+          and payload->>'recipient_id'=${f.actors.po.userId}
+          and payload->>'stage'='client_owners_immediate'
+          and status='pending'
       `;
-          expect(retry!.status).toBe('pending');
           expect(retry!.attempts).toBe(1);
           expect(retry!.last_error).toBe('telegram_transport');
           expect(new Date(retry!.run_at as string).getTime()).toBeGreaterThan(
             Date.now() + 50_000,
           );
-          const [revokedJob] = await db`
+          const revokedJobs = await db`
         select status,last_error from public.jobs
         where kind='forms.alert' and workspace_id=${f.wsA.id}
-          and payload->>'recipient_id'=${b.userId}
-          and payload->>'stage'='client_trainer_24h'
+          and payload->>'recipient_id'=${f.actors.woA.userId}
+          and payload->>'stage'='client_owners_immediate'
       `;
-          expect(revokedJob).toMatchObject({
-            status: 'dead',
-            last_error: 'authorization_changed',
-          });
+          expect(revokedJobs).toHaveLength(3);
+          expect(
+            revokedJobs.every(
+              (job) =>
+                job.status === 'dead' &&
+                job.last_error === 'authorization_changed',
+            ),
+          ).toBe(true);
 
           await waitForSuccessfulRuns(jobId, 3, 18 * 60 * 1000);
           const [afterCycles] = await db`
         select count(*)::int as occurrences,
           count(distinct (schedule_id,stage,recipient_user_id))::int as occurrence_keys,
-          count(*) filter (where stage='client_trainer_24h')::int as trainer_24h,
-          count(*) filter (where stage='client_owners_24h')::int as owner_24h,
-          count(*) filter (where stage='client_owners_48h')::int as owner_48h
+          count(*) filter (where stage='client_owners_immediate')::int as owner_immediate
         from app_private.form_alert_occurrences where workspace_id=${f.wsA.id}
       `;
           expect(afterCycles).toEqual({
-            occurrences: 12,
-            occurrence_keys: 12,
-            trainer_24h: 2,
-            owner_24h: 4,
-            owner_48h: 6,
+            occurrences: 6,
+            occurrence_keys: 6,
+            owner_immediate: 6,
           });
           const afterCycleAudits = await db`
         select details from public.audit_events
         where workspace_id=${f.wsA.id} and action='form.alert_enqueued'
       `;
-          expect(afterCycleAudits).toHaveLength(12);
+          expect(afterCycleAudits).toHaveLength(6);
           expect(
             afterCycleAudits.every(
               (row) =>
@@ -604,7 +582,7 @@ describe.runIf(
           const postRevocationOwners = await db`
         select recipient_user_id from app_private.form_alert_occurrences
         where workspace_id=${f.wsA.id} and schedule_id=${assignmentB!.scheduleId}
-          and stage='client_owners_24h' order by recipient_user_id
+          and stage='client_owners_immediate' order by recipient_user_id
       `;
           expect(
             postRevocationOwners.map((row) => row.recipient_user_id).sort(),
@@ -618,7 +596,7 @@ describe.runIf(
         where i.workspace_id=${f.wsA.id}
       `;
           expect(inboxAfterRevocation).toEqual({
-            rows: 12,
+            rows: 6,
             recipient_mismatch: 0,
           });
 
@@ -634,18 +612,25 @@ describe.runIf(
             appUrl: 'https://app.example.test',
           });
           expect(retried.failed).toBe(0);
-          expect(captureRows).toHaveLength(2);
-          expect(captureRows[1]).toEqual(captureRows[0]);
-          const [telegram] = await db`
+          expect(captureRows).toEqual([
+            alertMessage,
+            alertMessage,
+            alertMessage,
+            alertMessage,
+          ]);
+          const telegram = await db`
         select status,delivered_at from app_private.form_alert_deliveries
         where workspace_id=${f.wsA.id} and channel='telegram'
-          and recipient_user_id=${a.userId}
+          and recipient_user_id=${f.actors.po.userId}
       `;
-          expect(telegram!.status).toBe('delivered');
+          expect(telegram).toHaveLength(3);
+          expect(telegram.every((row) => row.status === 'delivered')).toBe(
+            true,
+          );
           const unauthorized = await db`
         select id from app_private.form_alert_deliveries
         where workspace_id=${f.wsA.id} and channel='telegram'
-          and recipient_user_id=${b.userId}
+          and recipient_user_id=${f.actors.woA.userId}
       `;
           expect(unauthorized).toEqual([]);
           expect(

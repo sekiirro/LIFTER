@@ -10,17 +10,10 @@
     "T03.6",
     "T08",
     "N07.training_timing",
-    "N08"
+    "N08",
+    "N11.feedback.0_2"
   ],
-  "pendingENRows": [
-    "B02",
-    "N01",
-    "N07",
-    "N07.2",
-    "N08.low.foods",
-    "N11.feedback.0_2",
-    "N12"
-  ],
+  "pendingENRows": ["B02", "N01", "N07", "N07.2", "N08.low.foods", "N12"],
   "parentIds": [
     "B01",
     "B02",
