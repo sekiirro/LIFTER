@@ -1,7 +1,9 @@
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import { deflateSync } from 'node:zlib';
 import { validateBrandingImage } from '../../lib/branding/image-validation';
 import { brandingValidatedObjectName } from '../../lib/branding/object-path';
-import { admin, sql } from './harness';
+import { admin, createStaff, sql } from './harness';
 import {
   registrationFixture,
   secret,
@@ -54,7 +56,108 @@ export function bannerPng(width = 316, height = 158): Buffer {
   ]);
 }
 
-export async function createPublishedBannerFixture() {
+/** Light artwork near L=0.5 reproduces the former contrast failure in glass mode. */
+export function brightBannerPng(): Buffer {
+  return readFileSync(
+    join(process.cwd(), 'tests/fixtures/registration-hero-bright-artwork.png'),
+  );
+}
+
+/**
+ * Dark artwork with bright local patches.
+ *
+ * The patches sit under the desktop card text area, the mobile card text
+ * area and the desktop preference pill, so an average-only dimming leaves a
+ * bright region directly behind white text.
+ */
+export function brightPatchBannerPng(width = 316, height = 158): Buffer {
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header[8] = 8;
+  header[9] = 6;
+  const base = [26, 28, 36];
+  const patch = [245, 245, 245];
+  const patches = [
+    { x0: 175, x1: 270, y0: 5, y1: 45 },
+    { x0: 150, x1: 216, y0: 118, y1: 150 },
+    { x0: 18, x1: 70, y0: 0, y1: 14 },
+  ];
+  const pixels = Buffer.alloc(height * (width * 4 + 1));
+  for (let row = 0; row < height; row += 1) {
+    const offset = row * (width * 4 + 1);
+    pixels[offset] = 0;
+    for (let x = 0; x < width; x += 1) {
+      const bright = patches.some(
+        (area) =>
+          x >= area.x0 && x < area.x1 && row >= area.y0 && row < area.y1,
+      );
+      const channels = bright ? patch : base;
+      const at = offset + 1 + x * 4;
+      pixels[at] = channels[0]!;
+      pixels[at + 1] = channels[1]!;
+      pixels[at + 2] = channels[2]!;
+      pixels[at + 3] = 255;
+    }
+  }
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    chunk('IHDR', header),
+    chunk('IDAT', deflateSync(pixels)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+}
+
+/**
+ * Mostly bright artwork with near-black patches behind the hero text.
+ *
+ * The average stays above the bright tone threshold while the sampled text
+ * region still holds dark pixels, which is the case the light theme has to
+ * answer with an opaque card.
+ */
+export function brightWithDarkPatchBannerPng(
+  width = 316,
+  height = 158,
+): Buffer {
+  const header = Buffer.alloc(13);
+  header.writeUInt32BE(width, 0);
+  header.writeUInt32BE(height, 4);
+  header[8] = 8;
+  header[9] = 6;
+  const base = [215, 215, 215];
+  const patch = [0, 0, 0];
+  const patches = [
+    { x0: 200, x1: 230, y0: 48, y1: 66 },
+    { x0: 165, x1: 195, y0: 126, y1: 142 },
+  ];
+  const pixels = Buffer.alloc(height * (width * 4 + 1));
+  for (let row = 0; row < height; row += 1) {
+    const offset = row * (width * 4 + 1);
+    pixels[offset] = 0;
+    for (let x = 0; x < width; x += 1) {
+      const dark = patches.some(
+        (area) =>
+          x >= area.x0 && x < area.x1 && row >= area.y0 && row < area.y1,
+      );
+      const channels = dark ? patch : base;
+      const at = offset + 1 + x * 4;
+      pixels[at] = channels[0]!;
+      pixels[at + 1] = channels[1]!;
+      pixels[at + 2] = channels[2]!;
+      pixels[at + 3] = 255;
+    }
+  }
+  return Buffer.concat([
+    Buffer.from([137, 80, 78, 71, 13, 10, 26, 10]),
+    chunk('IHDR', header),
+    chunk('IDAT', deflateSync(pixels)),
+    chunk('IEND', Buffer.alloc(0)),
+  ]);
+}
+
+export async function createPublishedBannerFixture(
+  bytes: Buffer = bannerPng(),
+) {
   const db = sql();
   const fixture = await registrationFixture();
   const token = secret();
@@ -62,7 +165,6 @@ export async function createPublishedBannerFixture() {
     token_hash: token.hash,
   });
   if (issued.error) throw new Error('Registration fixture issuance failed');
-  const bytes = bannerPng();
   const upload = await fixture.woA.client.rpc('branding_upload_begin', {
     workspace_id: fixture.wsA.id,
     role: 'banner',
@@ -155,6 +257,47 @@ export async function createPublishedBannerFixture() {
       await admin().storage.from('branding-staging').remove([stagingPath]);
       await admin().storage.from('branding-validated').remove([validatedPath]);
       await db.end();
+    },
+  };
+}
+
+/**
+ * One stable published artwork fixture with isolated links for a serial visual
+ * matrix. Separate tokens preserve per-test registration state without
+ * creating a full auth/workspace/package graph for every viewport case.
+ */
+export async function createPublishedBannerFixturePool(
+  bytes: Buffer = bannerPng(),
+) {
+  const fixture = await createPublishedBannerFixture(bytes);
+  const issueActors = [fixture.po, fixture.woA];
+  for (let index = 0; index < 4; index += 1) {
+    const owner = await createStaff(
+      'workspace_owner',
+      `banner-matrix-${index}`,
+    );
+    const membership = await admin().from('workspace_memberships').insert({
+      user_id: owner.userId,
+      workspace_id: fixture.wsA.id,
+      granted_by: fixture.po.userId,
+    });
+    if (membership.error)
+      throw new Error('Banner matrix issuer membership failed');
+    issueActors.push(owner);
+  }
+  return {
+    ...fixture,
+    issueActors,
+    issueToken: async (actorIndex: number) => {
+      const link = secret();
+      const actor = issueActors[actorIndex % issueActors.length];
+      if (!actor) throw new Error('Banner matrix issuer is missing');
+      const issued = await issue(fixture, actor.client, {
+        token_hash: link.hash,
+      });
+      if (issued.error)
+        throw new Error('Banner matrix registration link issuance failed');
+      return link.token;
     },
   };
 }

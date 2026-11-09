@@ -38,6 +38,9 @@ const draft = {
   rir: '2',
   alternativeExerciseIds: [],
 };
+const validExerciseId = '55555555-5555-4555-8555-555555555555';
+const validWorkspaceId = '22222222-2222-4222-8222-222222222222';
+const foreignWorkspaceId = '33333333-3333-4333-8333-333333333333';
 
 describe('production exercise authoring actions', () => {
   beforeEach(() => {
@@ -117,13 +120,13 @@ describe('production exercise authoring actions', () => {
       mocks.actor.mockResolvedValue({
         userId: 'reader',
         role,
-        activeWorkspaceIds: ['ws'],
+        activeWorkspaceIds: [validWorkspaceId],
       });
       expect(
         await saveExerciseAction({
           draft,
           scope: 'workspace',
-          workspaceId: 'ws',
+          workspaceId: validWorkspaceId,
           operationKey: '11111111-1111-4111-8111-111111111111',
         }),
       ).toEqual({ status: 'not_permitted' });
@@ -135,21 +138,21 @@ describe('production exercise authoring actions', () => {
     mocks.actor.mockResolvedValue({
       userId: 'trainer',
       role: 'trainer',
-      activeWorkspaceIds: ['ws-a'],
+      activeWorkspaceIds: [validWorkspaceId],
     });
     const result = await saveExerciseAction({
       draft,
       scope: 'workspace',
-      workspaceId: 'ws-a',
-      id: 'exercise-a',
+      workspaceId: validWorkspaceId,
+      id: validExerciseId,
       expectedVersion: 2,
       operationKey: '11111111-1111-4111-8111-111111111111',
     });
     expect(result.status).toBe('ok');
     expect(mocks.writeWorkspaceExercise).toHaveBeenCalledWith(
       expect.objectContaining({
-        workspaceId: 'ws-a',
-        id: 'exercise-a',
+        workspaceId: validWorkspaceId,
+        id: validExerciseId,
         expectedVersion: 2,
         operationKey: '11111111-1111-4111-8111-111111111111',
       }),
@@ -162,7 +165,7 @@ describe('production exercise authoring actions', () => {
       scope: 'global',
       workspaceId: null,
       operationKey: '11111111-1111-4111-8111-111111111111',
-      id: 'exercise-a',
+      id: validExerciseId,
       expectedVersion: 2,
       instructions: { ar: 'تعليمات قائمة', en: 'Existing instructions' },
     } as Parameters<typeof saveExerciseAction>[0]);
@@ -239,6 +242,39 @@ describe('production exercise authoring actions', () => {
     expect(mocks.removeWorkspaceExercise).not.toHaveBeenCalled();
   });
 
+  it('returns invalid for malformed exercise/workspace ids without calling an RPC', async () => {
+    const base = {
+      draft,
+      scope: 'global' as const,
+      workspaceId: null,
+      operationKey: '11111111-1111-4111-8111-111111111111',
+    };
+    expect(
+      await saveExerciseAction({ ...base, id: 'not-a-uuid' } as never),
+    ).toEqual({ status: 'invalid' });
+    expect(
+      await saveExerciseAction({
+        ...base,
+        scope: 'workspace',
+        workspaceId: 'not-a-uuid',
+      } as never),
+    ).toEqual({ status: 'invalid' });
+    expect(
+      await removeExerciseAction({
+        scope: 'global',
+        workspaceId: null,
+        exerciseId: 'not-a-uuid',
+        expectedRevision: 0,
+        operationKey: '11111111-1111-4111-8111-111111111111',
+      }),
+    ).toEqual({ status: 'invalid' });
+    expect(mocks.actor).not.toHaveBeenCalled();
+    expect(mocks.createExercise).not.toHaveBeenCalled();
+    expect(mocks.versionExercise).not.toHaveBeenCalled();
+    expect(mocks.transitionExercise).not.toHaveBeenCalled();
+    expect(mocks.removeWorkspaceExercise).not.toHaveBeenCalled();
+  });
+
   it('revalidates library and edited detail paths only after successful exercise mutations', async () => {
     const { revalidatePath: revalidate } = await import('next/cache');
     vi.mocked(revalidate).mockClear();
@@ -278,19 +314,18 @@ describe('production exercise authoring actions', () => {
     expect(revalidate).toHaveBeenCalledWith('/exercise-library');
     expect(revalidate).toHaveBeenCalledWith(`/exercise-library/${id}`);
     vi.mocked(revalidate).mockClear();
-    const workspaceId = '22222222-2222-4222-8222-222222222222';
     mocks.actor.mockResolvedValue({
       userId: 'trainer',
       role: 'trainer',
-      activeWorkspaceIds: [workspaceId],
+      activeWorkspaceIds: [validWorkspaceId],
     });
     mocks.writeWorkspaceExercise.mockResolvedValueOnce({ status: 'conflict' });
     const workspaceEdit = {
       draft,
       scope: 'workspace' as const,
-      workspaceId,
+      workspaceId: validWorkspaceId,
       operationKey: '11111111-1111-4111-8111-111111111111',
-      id,
+      id: validExerciseId,
       expectedVersion: 2,
     };
     await saveExerciseAction(workspaceEdit);
@@ -304,13 +339,13 @@ describe('production exercise authoring actions', () => {
     mocks.actor.mockResolvedValue({
       userId: 'trainer',
       role: 'trainer',
-      activeWorkspaceIds: ['ws-a'],
+      activeWorkspaceIds: [validWorkspaceId],
     });
     expect(
       await saveExerciseAction({
         draft,
         scope: 'workspace',
-        workspaceId: 'ws-b',
+        workspaceId: foreignWorkspaceId,
         operationKey: '11111111-1111-4111-8111-111111111111',
       }),
     ).toEqual({ status: 'not_permitted' });
