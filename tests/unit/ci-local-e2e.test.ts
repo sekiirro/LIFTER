@@ -110,11 +110,36 @@ it('exposes the required integration aggregator for all shard results', () => {
 
   expect(shardJob).toBeDefined();
   expect(shardJob).toContain('name: integration shard ${{ matrix.shard }}/3');
+  expect(shardJob).toContain('id: revision');
+  expect(shardJob).toContain(
+    "pr_1: ${{ matrix.shard == 1 && steps.revision.outputs.pr || '' }}",
+  );
+  expect(shardJob).toContain(
+    "head_sha_2: ${{ matrix.shard == 2 && steps.revision.outputs.head_sha || '' }}",
+  );
+  expect(shardJob).toContain(
+    "merge_sha_3: ${{ matrix.shard == 3 && steps.revision.outputs.merge_sha || '' }}",
+  );
   expect(aggregator).toBeDefined();
   expect(aggregator).toMatch(/^    name: integration$/m);
   expect(aggregator).toMatch(/^    needs: \[integration-shard\]$/m);
   expect(aggregator).toMatch(/^    if: always\(\)$/m);
   expect(aggregator).toMatch(/needs\.integration-shard\.result/);
+  expect(aggregator).toContain(
+    'PR_1: ${{ needs.integration-shard.outputs.pr_1 }}',
+  );
+  expect(aggregator).toContain(
+    'HEAD_SHA_2: ${{ needs.integration-shard.outputs.head_sha_2 }}',
+  );
+  expect(aggregator).toContain(
+    'MERGE_SHA_3: ${{ needs.integration-shard.outputs.merge_sha_3 }}',
+  );
+  expect(aggregator).toContain('\"$PR_1\" != \"$PR_2\"');
+  expect(aggregator).toContain('\"$HEAD_SHA_1\" != \"$HEAD_SHA_2\"');
+  expect(aggregator).toContain('\"$MERGE_SHA_1\" != \"$MERGE_SHA_2\"');
+  expect(aggregator).toContain(
+    'PR=$PR_1 head_sha=$HEAD_SHA_1 merge_sha=$MERGE_SHA_1',
+  );
   expect(aggregator).toMatch(/!= ['"]success['"]/);
   expect(aggregator).toMatch(/exit 1/);
   expect(aggregator).not.toMatch(/uses: actions\/checkout/);

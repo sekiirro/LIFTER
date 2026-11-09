@@ -90,6 +90,16 @@ jobs:
 
   integration-shard:
     name: integration shard ${{ matrix.shard }}/3
+    outputs:
+      pr_1: ${{ matrix.shard == 1 && steps.revision.outputs.pr || '' }}
+      head_sha_1: ${{ matrix.shard == 1 && steps.revision.outputs.head_sha || '' }}
+      merge_sha_1: ${{ matrix.shard == 1 && steps.revision.outputs.merge_sha || '' }}
+      pr_2: ${{ matrix.shard == 2 && steps.revision.outputs.pr || '' }}
+      head_sha_2: ${{ matrix.shard == 2 && steps.revision.outputs.head_sha || '' }}
+      merge_sha_2: ${{ matrix.shard == 2 && steps.revision.outputs.merge_sha || '' }}
+      pr_3: ${{ matrix.shard == 3 && steps.revision.outputs.pr || '' }}
+      head_sha_3: ${{ matrix.shard == 3 && steps.revision.outputs.head_sha || '' }}
+      merge_sha_3: ${{ matrix.shard == 3 && steps.revision.outputs.merge_sha || '' }}
     strategy:
       fail-fast: false
       matrix:
@@ -108,6 +118,7 @@ jobs:
           persist-credentials: false
           ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/merge', inputs.pr) || github.sha }}
       - name: Verify and record CI revision
+        id: revision
         shell: bash
         env:
           CI_EVENT_NAME: ${{ github.event_name }}
@@ -122,6 +133,9 @@ jobs:
             exit 1
           fi
           echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha"
+          echo "pr=$CI_PR" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$CI_HEAD_SHA" >> "$GITHUB_OUTPUT"
+          echo "merge_sha=$merge_sha" >> "$GITHUB_OUTPUT"
           if [[ "$CI_EVENT_NAME" == "workflow_dispatch" ]]; then
             second_parent=$(git rev-parse HEAD^2 2>/dev/null || true)
             if [[ "$second_parent" != "$CI_HEAD_SHA" ]]; then
@@ -190,12 +204,30 @@ jobs:
     steps:
       - name: Require successful integration shards
         env:
+          PR_1: ${{ needs.integration-shard.outputs.pr_1 }}
+          HEAD_SHA_1: ${{ needs.integration-shard.outputs.head_sha_1 }}
+          MERGE_SHA_1: ${{ needs.integration-shard.outputs.merge_sha_1 }}
+          PR_2: ${{ needs.integration-shard.outputs.pr_2 }}
+          HEAD_SHA_2: ${{ needs.integration-shard.outputs.head_sha_2 }}
+          MERGE_SHA_2: ${{ needs.integration-shard.outputs.merge_sha_2 }}
+          PR_3: ${{ needs.integration-shard.outputs.pr_3 }}
+          HEAD_SHA_3: ${{ needs.integration-shard.outputs.head_sha_3 }}
+          MERGE_SHA_3: ${{ needs.integration-shard.outputs.merge_sha_3 }}
           SHARD_RESULT: ${{ needs.integration-shard.result }}
         run: |
           if [[ "$SHARD_RESULT" != "success" ]]; then
             echo "Integration shard matrix concluded: $SHARD_RESULT" >&2
             exit 1
           fi
+          if [[ "$PR_1" != "$PR_2" || "$PR_1" != "$PR_3" || "$HEAD_SHA_1" != "$HEAD_SHA_2" || "$HEAD_SHA_1" != "$HEAD_SHA_3" || "$MERGE_SHA_1" != "$MERGE_SHA_2" || "$MERGE_SHA_1" != "$MERGE_SHA_3" ]]; then
+            echo "Integration shard revisions disagree" >&2
+            exit 1
+          fi
+          if [[ ! "$PR_1" =~ ^[0-9]+$ || ! "$HEAD_SHA_1" =~ ^[0-9a-fA-F]{40}$ || ! "$MERGE_SHA_1" =~ ^[0-9a-fA-F]{40}$ ]]; then
+            echo "Integration shard matrix did not export valid CI revisions" >&2
+            exit 1
+          fi
+          echo "PR=$PR_1 head_sha=$HEAD_SHA_1 merge_sha=$MERGE_SHA_1"
 
   storage:
     runs-on: ubuntu-latest
