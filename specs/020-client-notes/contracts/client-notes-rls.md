@@ -41,6 +41,10 @@ No SQL or migration is supplied by this document. The following acceptance contr
 | Audit write fails during a create, edit or hard delete | Mutation rolled back; no row change; no successful audit event (FR-010) |
 | Rejected or denied write | No successful note-mutation event (`specs/005-audit-log` US1 scenario 2) |
 | Audit event for a successful create, edit or hard delete | Contains only actor, workspace, client ID, note ID, action and timestamp; contains no body text (CN-MCQ-07) |
+| Duplicate create with an already-used `(workspace_id, client_id, idempotency_key)` and the same body | Return the existing note row; no second row; no second create audit event (FR-011; CN-MCQ-18) |
+| Same-key create with a different body | Refuse as a key/body mismatch; no second note, no body change, no create audit event (CN-MCQ-22; S40-R9) |
+| Same-key retry after the note was hard-deleted | Return deleted/not-found; never recreate the note; no create audit event; the content-free key record survives with no body (CN-MCQ-20; S40-PO-6) |
+| Content-free create-idempotency record | Holds workspace/client scope, key, an optional one-way body fingerprint and an outcome state; never the note body or note text (CN-MCQ-20, CN-MCQ-22) |
 | Unknown operation/role/capability | Deny by default |
 
 The future test suite must assert both database policy behavior and application/database matrix parity.
