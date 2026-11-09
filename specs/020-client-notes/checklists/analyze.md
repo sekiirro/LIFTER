@@ -1,23 +1,23 @@
 # Spec Kit Analyze — F20 Client Notes
 
-**Analysis date**: 2026-11-09T11:45Z (round 9, re-run after the S40-PO-3 approval of the CN-MCQ-19 exact copy was encoded as spec.md row 34, key `clientNotes.exitWarning.bodyInFlight`, in spec.md, plan.md, tasks.md, data-model.md, research.md and contracts/client-notes-api.md; every edit precedes this analysis)
+**Analysis date**: 2026-11-09T11:58Z (round 9, re-run after the S40-PO-3 approval of the CN-MCQ-19 exact copy was encoded as spec.md row 34, key `clientNotes.exitWarning.bodyInFlight`, and after the round-9 CodeRabbit review 5825479902 on `62e3cea5`; every spec, plan, tasks, contracts, data-model and research edit precedes this analysis)
 **Inputs**: spec.md, plan.md, tasks.md, data-model.md, research.md, contracts/client-notes-api.md, contracts/client-notes-rls.md
 **Scope**: Spec-only. No code, SQL, migrations, or runtime work.
 
 ## Verdict
 
-**0 open ambiguities in F20 behaviour. No PO item is pending.** CN-MCQ-01..14 are RESOLVED by the PO. CN-MCQ-16 (exit-protection copy and Save Draft) is RESOLVED by S38-PO-10 ("CN-MCQ-16 approved: unsaved-changes warning, no Save Draft. Approve proposed copy.") and S38-PO-11 ("Approved", confirming the draft strings in `runs/s38-po/cn-mcq-16-proposed-copy.md` rows 30-33). CN-MCQ-17 (Discard with an in-flight save) is RESOLVED by S39-PO-8, option A. CN-MCQ-18 (idempotent save/retry with DB-level duplicate prevention) is RESOLVED by S39-PO-9, option A, and encoded in FR-011, SC-007, Story 2 scenarios 7-8, plan.md, data-model.md, the API contract, T003, T004 and T015. CN-MCQ-19 (in-flight exit-warning copy) is RESOLVED by S40-PO-3, option Variant 1 (Recommended); its exact EN and Egyptian Arabic strings are encoded byte-exact as spec.md row 34, key `clientNotes.exitWarning.bodyInFlight`, and referenced from FR-006, FR-007, SC-004, Story 2 scenario 6, Story 3 scenario 8, plan.md, the API contract and tasks T005/T013. CN-MCQ-15 was removed by architect ruling S38-R9 under S38-PO-3 and its ID is not reused. No other open decision is recorded in the F20 register.
+**0 open CRITICAL/HIGH findings. CN-MCQ-19 is resolved and encoded; three round-9 CodeRabbit review questions are PENDING-PO (CN-MCQ-20, CN-MCQ-21, CN-MCQ-22) and are not encoded as behaviour.** CN-MCQ-01..14 are RESOLVED by the PO. CN-MCQ-16 (exit-protection copy and Save Draft) is RESOLVED by S38-PO-10 ("CN-MCQ-16 approved: unsaved-changes warning, no Save Draft. Approve proposed copy.") and S38-PO-11 ("Approved", confirming the draft strings in `runs/s38-po/cn-mcq-16-proposed-copy.md` rows 30-33). CN-MCQ-17 (Discard with an in-flight save) is RESOLVED by S39-PO-8, option A. CN-MCQ-18 (idempotent save/retry with DB-level duplicate prevention) is RESOLVED by S39-PO-9, option A, and encoded in FR-011, SC-007, Story 2 scenarios 7-8, plan.md, data-model.md, the API contract, T003, T004 and T015. CN-MCQ-19 (in-flight exit-warning copy) is RESOLVED by S40-PO-3, option Variant 1 (Recommended); its exact EN and Egyptian Arabic strings are encoded byte-exact as spec.md row 34, key `clientNotes.exitWarning.bodyInFlight`, and referenced from FR-006, FR-007, SC-004, Story 2 scenario 6, Story 3 scenario 8, plan.md, the API contract and tasks T005/T013. CN-MCQ-15 was removed by architect ruling S38-R9 under S38-PO-3 and its ID is not reused. CN-MCQ-20..22 are open PO questions recorded in the register and Clarifications item 14.
 
 Scope note (not an F20 ambiguity): the app-wide audit retention period (DP-02 / ND-F5-1 / B4, `docs/13-production-readiness.md`) is an open pre-production decision. CN-MCQ-13 makes Client Notes follow the existing `public.audit_events` retention unchanged, so F20 does not depend on it and does not decide it. It is tracked outside this feature.
 
 ## Counts verified against the artifacts
 
-- CN-MCQ IDs in the register: 18 defined (01-14, 16, 17, 18 and 19; CN-MCQ-15 removed, ID not reused). PO-resolved: 18 (01-14, 16, 17, 18 and 19).
+- CN-MCQ IDs in the register: 21 defined (01-14, 16, 17, 18, 19, 20, 21 and 22; CN-MCQ-15 removed, ID not reused). PO-resolved: 18 (01-14, 16, 17, 18 and 19). Open: 3 (20, 21 and 22).
 - Functional requirements: 11 (FR-001..FR-011). Success criteria: 7 (SC-001..SC-007). Tasks: 15 (T001..T015; T008..T015 are test tasks). Acceptance scenarios: Story 1 = 3, Story 2 = 8, Story 3 = 8.
 - Task ticks: 0 (`grep "\[x\]"` on tasks.md returns no match). All tasks remain unticked (spec-only; S38-R8).
 - Approved copy: CN-MCQ-08 rows 1–29 (S38-PO-2), CN-MCQ-16 rows 30–33 (S38-PO-11) and CN-MCQ-19 row 34 (S40-PO-3). Rows 1–33 are byte-identical to the previous head `cbc870bf` (script check over the copy table, 33/33 unchanged); row 34 is new.
 - Row 34 byte verification: EN and AR cells are byte-identical to Variant 1 of `runs/s40-ds-cn-r8/cn-mcq-19-copy-proposal.md` (60 / 48 Unicode code points respectively); row 31 is unchanged. Script: `runs/s40-ds-cn-r9/verify-copy.cjs` (ALL PASS), plus `runs/s40-ds-cn-r9/verify-rows.cjs` (rows 1-33 unchanged, row 34 present).
-- No `PENDING-PO` or blocked-on-copy statement remains in the feature folder; the only residual matches are none.
+- Three open PO items are recorded in the register (CN-MCQ-20..22) and Clarifications item 14; no answer or guessed behaviour is encoded for them. Threads `PRRT_kwDOVYgYQ861PcVq`, `PRRT_kwDOVYgYQ861PcV-` and `PRRT_kwDOVYgYQ861PcWG` remain open.
 - Contracts (`client-notes-api.md`, `client-notes-rls.md`): the create row carries the FR-011 idempotency key and duplicate-returns-existing rule; the display section carries row 34 with the key and both strings. The RLS contract has no copy and no exit rule; its "no row persisted" rows apply only to refused writes, not to Discard or to a duplicate-key return.
 
 ## Findings
@@ -31,16 +31,16 @@ Scope note (not an F20 ambiguity): the app-wide audit retention period (DP-02 / 
 
 ### Inconsistency check (round 9 edits)
 
-- Status lines in spec.md, plan.md and tasks.md agree: CN-MCQ-19 RESOLVED by S40-PO-3, no open behavioural ambiguities, no pending PO item, no implementation authorized.
+- Status lines in spec.md, plan.md and tasks.md agree: CN-MCQ-19 RESOLVED by S40-PO-3, no open behavioural ambiguity in the approved behaviour, three review questions PENDING-PO (CN-MCQ-20..22), no implementation authorized.
 - Row 34 (key `clientNotes.exitWarning.bodyInFlight`, EN and AR byte-exact) is stated consistently in spec.md (status, FR-006, FR-007, SC-004, Story 2 scenario 6, Story 3 scenario 8, Clarifications item 13, Session S40 block, copy-table note and register), plan.md (status, UI strings, in-flight body, phase 1 and PO decisions), tasks.md (status, T005, T013, coverage map and dependency order) and contracts/client-notes-api.md (display). No conflicting or guessed variant is encoded.
-- The CN-MCQ-08 table (rows 1–29) and CN-MCQ-16 rows (30–33) are unchanged; the new row 34 is additive. Row 31's scope remains unsubmitted text only.
+- The CN-MCQ-08 table (rows 1–29) and CN-MCQ-16 rows (30–33) are unchanged; the new row 34 is additive. Row 31 (body) is limited to unsubmitted text; rows 30, 32 and 33 (title, Stay, Discard) also label the in-flight warning.
 - The idempotency rule is stated identically in FR-011, SC-007, Story 2 scenarios 7–8, plan.md (data section, risk and phase 4), data-model.md (column `idempotency_key`, invariant 9 and migration description), contracts/client-notes-api.md (create row and denials), T003, T004 and T015.
 - No statement in spec.md, plan.md, tasks.md or the contracts promises cancellation, "no row persisted" or "no audit event" for a save that has already been submitted. The remaining "no row persisted" statements are refused-write cases only (Story 2 scenario 2, FR-002, SC-002, RLS contract rows 33/37/41).
 - Task ordering text (tasks.md "Dependency order") names CN-MCQ-16, CN-MCQ-17, CN-MCQ-18 and CN-MCQ-19 as resolved with row 34 encoded. The S38-R8 rule is unchanged: a test task is ticked only after its tests execute and pass. Tasks remain at 0 ticks.
 
 ### Constitution check
 
-The worktree contains no `.specify/memory/constitution.md` (searched: no `constitution*.md` in the repository). The gate applied is the lifter Spec Kit gate in the run brief: zero open ambiguities and zero open CRITICAL/HIGH before implementation. This analysis does not authorize implementation.
+The worktree contains no `.specify/memory/constitution.md` (searched: no `constitution*.md` in the repository). The gate applied is the lifter Spec Kit gate in the run brief: zero open CRITICAL/HIGH before implementation, and zero open ambiguities in approved behaviour. Three product questions (CN-MCQ-20..22) are explicitly PENDING-PO, so implementation is blocked. This analysis does not authorize implementation.
 
 ## Architect rulings and review findings applied to date
 
@@ -52,7 +52,13 @@ The worktree contains no `.specify/memory/constitution.md` (searched: no `consti
 - **CodeRabbit review 5820674376 on `0611ae89`** (CHANGES_REQUESTED, 1 inline finding on `spec.md:65`, Major · Data Integrity & Integration; thread `PRRT_kwDOVYgYQ861GZGQ`): **valid**. A PO decision was raised as CN-MCQ-17 and answered by S39-PO-8, option A. Fixed in round 7 and carried into rounds 8 and 9.
 - **CodeRabbit review 5822122189 on `38581d78`** (CHANGES_REQUESTED, 2 inline findings, both PO decisions):
   - `PRRT_kwDOVYgYQ861JMXx` `spec.md:93` (Major · Data Integrity & Integration): recovery for a save with no observable result and duplicate-safe retry. **Valid**; answered by S39-PO-9 as CN-MCQ-18 option A and encoded in FR-011, SC-007, Story 2 scenarios 7–8, plan.md, data-model.md, the API contract, T003, T004 and T015. No migration file is added. Resolved in phase 1 of round 8.
-  - `PRRT_kwDOVYgYQ861JMX2` `spec.md:190` (Major · Functional Correctness): the warning body overpromises loss for an in-flight save. **Valid**; answered by S40-PO-3 as CN-MCQ-19 option Variant 1 (Recommended), copy encoded byte-exact as row 34, and referenced from FR-006, FR-007, SC-004, Story 2 scenario 6, Story 3 scenario 8, plan.md, the API contract and T005/T013. Thread to be replied to with the fixing SHA and file:line, then resolved only because the finding is fixed.
+  - `PRRT_kwDOVYgYQ861JMX2` `spec.md:190` (Major · Functional Correctness): the warning body overpromises loss for an in-flight save. **Valid**; answered by S40-PO-3 as CN-MCQ-19 option Variant 1 (Recommended), copy encoded byte-exact as row 34, and referenced from FR-006, FR-007, SC-004, Story 2 scenario 6, Story 3 scenario 8, plan.md, the API contract and T005/T013. Replied with the fixing SHA and file:line (comment `4512357886`) and resolved.
+- **CodeRabbit review 5825479902 on `62e3cea5`** (CHANGES_REQUESTED, 5 inline findings):
+  - `PRRT_kwDOVYgYQ861PcVq` `data-model.md:27` (Major · Data Integrity & Integration): keep retry deduplication after a hard delete. **Valid product question** (retention/behaviour): escalated as CN-MCQ-20; no answer guessed. Thread open.
+  - `PRRT_kwDOVYgYQ861PcVx` `plan.md:42` (Minor · Functional Correctness): allow the shared title, Stay and Discard controls in the in-flight warning. **Valid editorial**; fixed (rows 30, 32 and 33 also label the in-flight warning; only row 31 body is limited to unsubmitted text).
+  - `PRRT_kwDOVYgYQ861PcV6` `research.md:5` (Minor · Functional Correctness): include later PO decisions in the source hierarchy. **Valid editorial**; fixed (S36 block is the baseline, later PO decisions supplement it).
+  - `PRRT_kwDOVYgYQ861PcV-` `spec.md:95` (Major · Functional Correctness): simultaneous pending and unsubmitted changes, plus warning labels. **Valid product question** (whether the field may be edited while saving and which body applies): escalated as CN-MCQ-21; the labels part is fixed. Thread open.
+  - `PRRT_kwDOVYgYQ861PcWG` `spec.md:99` (Minor · Data Integrity & Integration): reject same-key retries with a different body. **Valid product question** (key/body mismatch behaviour): escalated as CN-MCQ-22; no answer guessed. Thread open.
 - **CodeRabbit reply on thread `PRRT_kwDOVYgYQ861FR0f`** (review 5820575538, comment 4508576614, not a code finding): the copy file is outside the checkout. The strings are in spec.md rows 30–33 and were checked byte-exact against that external file, the same convention as the CN-MCQ-08 table (spec.md Clarifications). No change.
 - **PRRT_kwDOVYgYQ861FR0f** (spec.md, open, "obtain approval for bilingual copy and add exit-protection scenarios"): the copy is approved (S38-PO-11) and the exit-protection scenarios exist. Replied and resolved in the round-6 step.
 
@@ -71,11 +77,11 @@ The worktree contains no `.specify/memory/constitution.md` (searched: no `consti
 | FR-004 role × action | T002, T006, T011 |
 | FR-005 isolation, RLS | T003, T006, T011, T014 |
 | FR-006 PO decisions, reuse rule | T001, T007 |
-| FR-007 states, copy rows 1–34, Bidi, no icon, exit protection, no Save Draft (CN-MCQ-19 row 34) | T005, T013 |
+| FR-007 states, copy rows 1–34, Bidi, no icon, exit protection, no Save Draft (CN-MCQ-19 row 34; CN-MCQ-21 open) | T005, T013 |
 | FR-008 ordering | T008 |
 | FR-009 last write wins, local time | T004, T010, T013 |
 | FR-010 audit | T004, T012 |
-| FR-011 create idempotency, duplicate returns existing note | T003, T004, T015 |
+| FR-011 create idempotency, duplicate returns existing note (CN-MCQ-20 and CN-MCQ-22 open) | T003, T004, T015 |
 | SC-001..SC-007 | mapped in tasks.md coverage table |
 
 Every FR and SC has at least one task. No task lacks a requirement mapping.
@@ -87,13 +93,13 @@ Every FR and SC has at least one task. No task lacks a requirement mapping.
 - [x] Given/When/Then scenarios cover read, create (trim, boundary and idempotent retry), edit (including overlapping saves and immutable columns), delete, tenancy, role denial, Trainer cross-client access, restored membership, last save wins and exit protection (unsubmitted discard and in-flight saves, with the in-flight warning key named).
 - [x] Current role/membership model and backend/RLS enforcement are described; create idempotency is explicitly not an authorization factor.
 - [x] No SQL/migration version is invented; the migration scan is not relied upon; no migration file is added by this PR.
-- [x] Clarifications: CN-MCQ-01..14, CN-MCQ-16, CN-MCQ-17, CN-MCQ-18 and CN-MCQ-19 resolved; CN-MCQ-08 copy (rows 1–29), CN-MCQ-16 copy (rows 30–33) and CN-MCQ-19 row 34 recorded byte-exact; "no open ambiguities in F20 behaviour" stated explicitly with no pending PO item.
+- [x] Clarifications: CN-MCQ-01..14, CN-MCQ-16, CN-MCQ-17, CN-MCQ-18 and CN-MCQ-19 resolved; CN-MCQ-08 copy (rows 1–29), CN-MCQ-16 copy (rows 30–33) and CN-MCQ-19 row 34 recorded byte-exact; three round-9 review questions (CN-MCQ-20..22) recorded explicitly as PENDING-PO with options, and no answer encoded.
 - [x] UI follows the authority hierarchy; no icon; horizontal tab placement; text-only copy bound to the approved tables; no new UI value introduced; exit-protection behaviour from DESIGN.md §5 encoded; Save Draft not offered; no cancellation promise for an in-flight save (CN-MCQ-17); in-flight body is the approved row 34 (CN-MCQ-19).
 - [x] PO binding text quoted byte-exact in spec.md: S37-PO-6, S37-PO-7, S37-PO-14, S37-PO-16 (Client Notes line), S38-PO-2 (item 2), S38-PO-10, S38-PO-11, S39-PO-8 (Client Notes line), S39-PO-9 (both lines) and S40-PO-3 (`Variant 1 (Recommended)`), with the S40 architect mapping labelled as not PO words.
-- [x] Analyze dated after the last change to spec, plan, tasks, data-model, research and contracts (this analysis 2026-11-09T11:45Z follows every round-9 edit).
+- [x] Analyze dated after the last change to spec, plan, tasks, data-model, research and contracts (this analysis 2026-11-09T11:58Z follows every round-9 edit).
 - [x] Revoked-membership scope matches the existing PO rule (FR-004; spec.md Clarifications item 2): SC-001, Story 3 scenario 4, the RLS and API contracts, plan.md and T006 say non-PO revoked membership.
 - [x] Tasks: 0 ticks; T005 and T013 cover the exit-protection rows 30–34, including the exact CN-MCQ-19 row 34 string; T015 covers create idempotency.
 
 ## Result
 
-PASS for the spec-only PR analysis gate: 0 open CRITICAL, 0 open HIGH, 0 open MEDIUM and 0 open behavioural ambiguities. No PO item is pending. One LOW implementation-time check (textarea component mapping) remains. This result does not approve product decisions and does not authorize implementation.
+PASS for the spec-only PR analysis gate on severity: 0 open CRITICAL, 0 open HIGH and 0 open MEDIUM. CN-MCQ-19 is resolved and encoded; three round-9 CodeRabbit review questions (CN-MCQ-20 retry after a hard delete, CN-MCQ-21 editing while a save is in flight, CN-MCQ-22 same-key retry with a different body) are open PO decisions and are not encoded as behaviour, so implementation remains blocked on them. One LOW implementation-time check (textarea component mapping) remains. This result does not approve product decisions and does not authorize implementation.

@@ -2,7 +2,7 @@
 
 ## Scope and source hierarchy
 
-Behavior comes only from the final Client Notes block in `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-5.verbatim.txt`, with the earlier item 2 in `s36-po-4.verbatim.txt` quoted in `spec.md`. The final S36 PO text controls any conflict. `s36-architect-rulings-5.md` Client Notes / CN-1..4 is architectural mapping, not PO wording.
+Behavior starts from the final Client Notes block in `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-5.verbatim.txt` as the baseline, with the earlier item 2 in `s36-po-4.verbatim.txt` quoted in `spec.md`, and is supplemented by the later PO decisions recorded in `spec.md` Clarifications (S37, S38, S39 and S40, including create retry/idempotency and the in-flight exit warning). Where they differ, the later PO decision supersedes the earlier text. `s36-architect-rulings-5.md` Client Notes / CN-1..4 is architectural mapping, not PO wording.
 
 Tenant boundaries and role membership reuse the Constitution §I, `specs/003-tenancy-rls/spec.md`, `specs/004-auth/spec.md`, and `specs/011-client-accounts/spec.md`. Client Notes does not modify those existing feature scopes.
 
