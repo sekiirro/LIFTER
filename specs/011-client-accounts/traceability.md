@@ -21,7 +21,7 @@ No S40 requirement is implemented or verified. Every row is PLANNED with no test
 | FR-025 | T059 | `tests/integration/client-accounts-deletion.test.ts` (new) | none | PLANNED — MCQ-18 = A (S41-PO-2); category labels and acknowledgement approved byte-exact (S41-PO-4 P6-P9); no copy blocker |
 | FR-026 | T060 | `tests/integration/client-accounts-deletion.test.ts` (new) | none | PLANNED — BLOCKED by spec 003 T015 (MCQ-10 ruled, S40-R19) |
 | FR-027 | T061 | `tests/integration/unassigned-clients.test.ts` (new) | none | PLANNED — BLOCKED by T055; a membership revocation or role change still leaves clients unassigned with no automatic reassignment; a deleted Trainer's clients are reassigned by FR-028 (h) or listed as unassigned (S41-PO-11) |
-| FR-028 | T058, T062, T063 | `tests/integration/client-trainer-distribution.test.ts` (new) | none | PLANNED — MCQ-11 defaults accepted (S40-PO-13); MCQ-16 = A/A (S41-PO-2); trainer-deletion reassignment (h) decided (S41-PO-11); BLOCKED by T055; verified only after T058, T062 and T063 execute (S41-R4 F6), including the balance-measure test |
+| FR-028 | T058, T062, T063 | `tests/integration/client-trainer-distribution.test.ts` (new) | none | PLANNED — MCQ-11 defaults accepted (S40-PO-13); MCQ-16 = A/A (S41-PO-2); trainer-deletion reassignment (h) decided (S41-PO-11), with an overlapping client-deletion no-reassignment case; BLOCKED by T055; verified only after T058, T062 and T063 execute (S41-R4 F6), including the balance-measure test |
 | SC-013 | T047 | `tests/integration/client-accounts-deletion.test.ts` (new) | none | PLANNED |
 | SC-014 | T047, T048 | `tests/integration/client-accounts-deletion.test.ts` (new) | none | PLANNED |
 | SC-015 | T049, T051, T056 | `tests/integration/workspace-creation.test.ts` (new); `tests/e2e/workspace-creation.spec.ts` (new) | none | PLANNED |
@@ -30,5 +30,5 @@ No S40 requirement is implemented or verified. Every row is PLANNED with no test
 | SC-018 | T059 | as above | none | PLANNED — BLOCKED as FR-025 |
 | SC-019 | T060 | as above | none | PLANNED — BLOCKED as FR-026 |
 | SC-020 | T061 | as above | none | PLANNED — BLOCKED as FR-027 |
-| SC-021 | T058, T050 | as above | none | PLANNED — balance measure = approved clients with a current assignment row and no F11 deletion state (S41-PO-2 MCQ-16 part 2 = A); never-assigned first (MCQ-16 part 1 = A); deleted-Trainer reassignment (FR-028 (h)) decided (S41-PO-11) and verified only when T058 executes |
+| SC-021 | T058, T050 | as above | none | PLANNED — balance measure = approved clients with a current assignment row and no F11 deletion state (S41-PO-2 MCQ-16 part 2 = A); never-assigned first (MCQ-16 part 1 = A); deleted-Trainer reassignment (FR-028 (h)) decided (S41-PO-11), including the overlapping client-deletion no-reassignment case, and verified only when T058 executes |
 | SC-022 | T047, T048 | as FR-018 | none | PLANNED — staff deletion cases unblocked by S41-PO-1 MCQ-15 = A |

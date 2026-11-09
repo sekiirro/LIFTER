@@ -1,6 +1,23 @@
 # Analyze — F11 client accounts
 
-## S41 round 7 analysis (CodeRabbit round 7 review 5832806947 on head a5fdecb5: 3 inline findings; S41-PO-11 encoded; S41-R16) — 2026-11-10 00:12 +02:00, round 17 (current; written after the round 7 edits to spec.md, plan.md, tasks.md, traceability.md, research/s40-pending-mcqs.md, 012 spec.md, 012 tasks.md and both Analyze files; supersedes round 16 for statuses)
+## S41 round 8 analysis (CodeRabbit round 7 request 1 review 5833623693 on head fab3c6e5: 1 inline finding) — 2026-11-10 00:21 +02:00, round 18 (current; written after the round 7 finding-1 edits to spec.md, plan.md, tasks.md and traceability.md; supersedes round 17 for statuses)
+
+Entry check (Spec Kit gate section 1): PASS. FR-028 (h), SC-021, plan P-S40-1 step (B) and P-S40-5, T047/T058/T062 and the traceability rows are updated; this file is dated after the last change; the S41-PO-11 quote is unchanged and byte-exact.
+
+Findings (round 18; each fixed or open):
+
+| ID | Severity | Finding (CodeRabbit review 5833623693, spec.md:203) | Status |
+|---|---|---|---|
+| A-S41-39 | MAJOR (fixed) | Trainer-deletion reassignment did not exclude a client that is itself in the F11 deletion lifecycle; the reassignment would contradict the P-S40-5 client eligibility guard, and the case could keep retrying | CLOSED: FR-028 (h) and SC-021 now state that such a client is never reassigned, its active row is ended, the deletion-lifecycle no-op is recorded so it does not retry, and it is not listed as unassigned; plan P-S40-1 step (B) and P-S40-5 agree; T047/T058 add the overlapping-deletion test and T062 implements it; traceability FR-028/SC-021 updated; the Round 6 block records the technical resolution |
+| A-S41-4 | MEDIUM (open, architect gate) | Architect approval of the restricted continuation (plan P-S40-1) before T048 and of the restricted system entry point (plan P-S40-5) before T062 | OPEN. Architect, not PO |
+
+Counts: CRITICAL open 0. HIGH open 0. MEDIUM open 1 (A-S41-4, architect gate). LOW open 0. A-S41-39 is a technical interaction fix within decided scope; no new product question.
+
+Static consistency (run at 00:21 +02:00, recorded in report.md): the FR-028 (g)/(h), plan P-S40-1/P-S40-5, T047/T058/T062, traceability and Round 6 text agree on the overlapping-deletion outcome; the ID sweep passes on the final tree; no copy string changed; 012 and 003 are unchanged by this fix.
+
+Result: PASS, 0 CRITICAL and 0 HIGH. No PO product question is open. This is a static document review; it makes no implementation-conformity claim.
+
+## S41 round 7 analysis (CodeRabbit round 7 review 5832806947 on head a5fdecb5: 3 inline findings; S41-PO-11 encoded; S41-R16) — 2026-11-10 00:12 +02:00, round 17 (superseded by round 18 for statuses; written after the round 7 edits to spec.md, plan.md, tasks.md, traceability.md, research/s40-pending-mcqs.md, 012 spec.md, 012 tasks.md and both Analyze files)
 
 Entry check (Spec Kit gate section 1): PASS. Numbered FRs, SCs and Given/When/Then scenarios keep their structure; the Round 6 S41-PO-11 quote is byte-exact and its mapping is labelled architect words; plan P-S40-1, P-S40-2 and P-S40-5 cover the changed scope; tasks T047, T048, T050, T058, T062 and 012 T042 carry FR tags; this file is dated after the last change.
 
