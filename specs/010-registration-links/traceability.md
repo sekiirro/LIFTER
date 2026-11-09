@@ -14,13 +14,13 @@ This source map restores the original merged-scope requirement-to-evidence index
 |---|---|
 | FR-001 | Issuance role/scope: `registration-links-issue.test.ts` |
 | FR-002 | Current-version and snapshot integrity: `registration-links-issue.test.ts`, `registration-links-integrity.test.ts` |
-| FR-003 | Token generation, one-time response and protected reads: `registration-links-issue.test.ts`, `registration-links-read.test.ts` |
+| FR-003 | Token generation: `tests/unit/registration-links-token.test.ts::requests 32 random bytes, hashes encoded text and constructs origin-only URLs`; one-time response: `tests/unit/registration-links-actions.test.ts::returns show-once URL after signed hash-only commit and revalidates once`; issue/read integration evidence: `registration-links-issue.test.ts`, `registration-links-read.test.ts` |
 | FR-004 | Exact schedule validation and transactional integrity: `registration-links-issue.test.ts`, `registration-links-integrity.test.ts` |
 | FR-005 | Immutable fields and set-once guards: `registration-links-integrity.test.ts` |
 | FR-006 | T035 future rolling-limit implementation and verification; no completion claimed |
 | FR-007 | Generic open states and first-open semantics: `registration-links-open.test.ts` |
 | FR-008 | Injected-clock boundary and SQL parity: `registration-links-grace.test.ts`, `registration-links-open.test.ts` |
-| FR-009 | Public page, content and privacy: `registration-links-page.test.ts`, `client-accounts-headers.test.ts`, registration-link e2e evidence |
+| FR-009 | F10 no-form baseline: historical `tests/e2e/registration-links.spec.ts::valid fixture shows only the workspace name and minimal validity message` at `b66a5d6f`; F10 verification is recorded in the linked verification report. Current HEAD later includes F11 signup-form requirements (the `registration-links-page.test.ts` `request_secret` assertion and e2e signup-form test), so those current assertions are not evidence for F10's no-form baseline. |
 | FR-010 | Role-scoped link/schedule reads: `registration-links-read.test.ts` |
 | FR-011 | Issued/opened audit allow-list and event count: `registration-links-audit.test.ts` |
 | FR-012 | Staff editor and public journeys: registration-links unit/e2e suites in the verification report |

@@ -63,3 +63,12 @@ T901 is complete after the 16-test page suite passed on the committed code, foll
 - Scope: checked all mapped requirement identifiers against spec.md, the existing issue/integrity/open/grace/reads/audit/UI test files, T035, and the F10 verification report. The map adds no test execution or status upgrade; FR-006 remains unimplemented as documented.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no task status changed.
 - Verdict: PASS for this documentation-only source map.
+
+
+## S41 CodeRabbit round-3 final-finding re-analysis
+
+- Date: 2026-11-09 23:45 UTC, after the final baseline-map edits.
+- Scope: checked FR-003 token-generation and one-time-response test names against current HEAD files; both unit test files exist. Checked the F10 FR-009 no-form evidence in historical commit b66a5d6fa1f3d734bdaa7ac7be35fbfe1a97d575: its e2e test asserts zero forms and zero email/password fields. The current HEAD e2e test and registration-links-page.test.ts now cover F11 signup and are explicitly not used as evidence for F10 no-form baseline. The linked F10 verification report documents the historical verification; source-map update upgrades no status and claims no fresh run. Rechecked every F10 traceability row, Analyze aggregate, FR/SC/task reference, and local link.
+- Entry gate: PASS for the docs-only reconciliation; numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan, and tagged existing tasks are present.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
+- Verdict: PASS for this documentation-only source-map correction.

@@ -151,3 +151,11 @@ The main-side CI requirements retain FR-015 to FR-019 and SC-006 to SC-009, with
 - Result: FR-024 row has five cells; all current amendment rows retain their recorded evidence/status. No tests or CI were run and no task status changed.
 - Findings: 0 open CRITICAL, 0 open HIGH.
 - Verdict: PASS for these documentation corrections.
+
+
+## S41 CodeRabbit round-3 final-finding re-analysis
+
+- Date: 2026-11-09 23:45 UTC, after final FR-009 wording edits in spec.md, plan.md, research.md, and tasks.md.
+- Scope: rechecked the token boundary against workflow revision 9d24e6444aea5f72ce5dd00e13d3d25c979c8619: actions/checkout@v4 uses its GitHub-provided token for checkout on pull-request and push runs with contents: read; the workflow separately uses github.token for read-only revision/dispatch metadata requests. No repository-configured secrets are required by validate. The integration aggregator has no Docker Hub credentials; optional pull credentials remain limited to integration-shard/storage. FR-009, T025, and plan/research wording agree; T025 remains unchecked because no tests were run.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review; no workflow or application behavior changed. **No open ambiguities** remain for this factual reconciliation.
+- Verdict: PASS for this documentation-only correction.

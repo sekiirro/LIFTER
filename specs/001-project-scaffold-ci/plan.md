@@ -39,7 +39,7 @@ Design decisions are in [research.md](research.md).
 **Project Type**: Single web application (repo root)
 **Package manager**: npm 11 with a committed `package-lock.json` (already installed; no extra tooling)
 **Performance Goals**: Uncompressed worker ≤ 64 MiB official limit (FR-008)
-**Constraints**: $0; no secrets committed; `validate` requires no repository-configured secrets and uses GitHub-provided `github.token` only for read-only dispatch metadata requests; the `integration` aggregator has no Docker Hub credentials; only `integration-shard` and `storage` may use optional Docker Hub credentials for authenticated image pulls; no deployment secrets or deploy; no Cloudflare/Supabase account calls; Windows and Linux parity (`.gitattributes` LF)
+**Constraints**: $0; no secrets committed; `validate` requires no repository-configured secrets; on pull-request and push runs `actions/checkout@v4` uses GitHub-provided `github.token` with read-only `contents: read`, and the workflow also uses that token for read-only revision and dispatch metadata requests; the `integration` aggregator has no Docker Hub credentials; only `integration-shard` and `storage` may use optional Docker Hub credentials for authenticated image pulls; no deployment secrets or deploy; no Cloudflare/Supabase account calls; Windows and Linux parity (`.gitattributes` LF)
 **Scale/Scope**: Baseline only; no business features
 
 ## Constitution Check
@@ -146,4 +146,4 @@ References: **FR-020**, **SC-010**, **US6**, **T019**. PO source **S32-PO-3** (v
 
 ## S41-R7 FR-009 reconciliation
 
-FR-009 and User Story 2 record the current CI credential boundary from merged workflow commit `9d24e6444aea5f72ce5dd00e13d3d25c979c8619`: `validate` requires no repository-configured secrets and uses GitHub-provided `github.token` only for read-only dispatch metadata requests; the `integration` aggregator has no Docker Hub credentials; only `integration-shard` and `storage` may use optional Docker Hub pull credentials for authenticated image pulls, skipped when unset; no deployment secrets or deployment. This documents existing CI configuration, not a behavior change. Task T025 tracks the docs-only correction.
+FR-009 and User Story 2 record the current CI credential boundary from merged workflow commit `9d24e6444aea5f72ce5dd00e13d3d25c979c8619`: `validate` requires no repository-configured secrets; on pull-request and push runs `actions/checkout@v4` uses GitHub-provided `github.token` with read-only `contents: read`, and the workflow also uses that token for read-only revision and dispatch metadata requests. The `integration` aggregator has no Docker Hub credentials; only `integration-shard` and `storage` may use optional Docker Hub pull credentials for authenticated image pulls, skipped when unset; no deployment secrets or deployment. This documents existing CI configuration, not a behavior change. Task T025 tracks the docs-only correction.
