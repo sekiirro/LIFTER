@@ -529,22 +529,42 @@ it('kills migration activation, non-owner activation, missing scheduler lock, an
           async () => {
             const lockConnection = sql();
             const scheduler = sql();
-            await lockConnection`begin`;
-            await lockConnection`select pg_catalog.pg_advisory_xact_lock(11011,317)`;
+            let pending: Promise<unknown> | undefined;
             let finished = false;
-            const pending =
-              scheduler`select app_private.f15_alert_schedule_deactivate()`.finally(
-                () => {
-                  finished = true;
-                },
-              );
-            await new Promise((resolve) => setTimeout(resolve, 100));
-            const blocked = finished === false;
-            await lockConnection`commit`;
-            await pending;
-            await lockConnection.end();
-            await scheduler.end();
-            expect(blocked).toBe(true);
+            try {
+              await lockConnection`begin`;
+              await lockConnection`select pg_catalog.pg_advisory_xact_lock(11011,317)`;
+              const [session] = await scheduler`select pg_backend_pid() as pid`;
+              expect(session).toBeDefined();
+              const pid = session!.pid;
+              pending =
+                scheduler`select app_private.f15_alert_schedule_deactivate()`
+                  .execute()
+                  .finally(() => {
+                    finished = true;
+                  });
+              await expect
+                .poll(
+                  async () => {
+                    const [activity] = await lockConnection`
+                      select wait_event_type,wait_event
+                      from pg_catalog.pg_stat_activity where pid=${pid}
+                    `;
+                    if (activity?.wait_event_type === 'Lock')
+                      return activity.wait_event;
+                    return finished ? 'finished' : null;
+                  },
+                  { timeout: 5000 },
+                )
+                .toBe('advisory');
+              await lockConnection`commit`;
+              await pending;
+            } finally {
+              await lockConnection`rollback`.catch(() => undefined);
+              await pending?.catch(() => undefined);
+              await lockConnection.end();
+              await scheduler.end();
+            }
           },
         ),
     );

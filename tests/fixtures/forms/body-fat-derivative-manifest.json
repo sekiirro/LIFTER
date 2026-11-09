@@ -1,6 +1,5 @@
 {
   "schemaVersion": 1,
-  "sourceRoot": "C:/Users/NEW LAP/Desktop/YBS SYSTEM/public/body-fat/",
   "generator": "scripts/media/optimize-body-fat-assets.mjs",
   "formats": ["webp", "avif"],
   "maxDisplayWidth": 384,

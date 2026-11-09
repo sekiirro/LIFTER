@@ -11,7 +11,7 @@ Existing `TextAnswerField`, shared progression/validation, UI primitives, semant
 
 ## Design skills catalog review
 
-The complete catalog at `C:/Users/NEW LAP/.lifter/design-skills-catalog.md` contains 55 skills. Selection and reason for each:
+The design-skills catalog available to the author contained 55 skills. Selection and reason for each:
 
 | Skill | Status | Reason |
 |---|---|---|

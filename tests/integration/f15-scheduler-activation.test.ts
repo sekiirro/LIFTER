@@ -13,7 +13,7 @@ import {
 } from './registration-approval-operations-fixture';
 
 // Opt in only on Stack D with LIFTER_F15_SCHEDULER_E2E=1. From the repository root:
-// Remove-Item Env:TELEGRAM_BOT_TOKEN -ErrorAction SilentlyContinue; $env:SUPABASE_SAFE_CLI='node "C:/Program Files/nodejs/node_modules/npm/bin/npx-cli.js"'; $env:LIFTER_SUPABASE_STACK='d'; $env:LIFTER_F15_SCHEDULER_E2E='1'; node 'C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs' --workdir 'C:/Users/NEW LAP/Desktop/LFTR-p2/supabase-stack-d' --stack D exec -- node -e "process.chdir('C:/Users/NEW LAP/Desktop/LFTR-p2'); const r=require('node:child_process').spawnSync(process.execPath,['C:/Program Files/nodejs/node_modules/npm/bin/npm-cli.js','run','test:integration','--','tests/integration/f15-scheduler-activation.test.ts'],{stdio:'inherit',env:process.env}); process.exit(r.status ?? 1);"
+// See specs/015-forms-intake/quickstart.md for the repository-portable Stack D command.
 
 const db = sql();
 const runTag = randomUUID().replaceAll('-', '').slice(0, 12);

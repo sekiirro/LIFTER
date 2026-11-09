@@ -919,9 +919,9 @@ export function calculateAgeInCairo(
     .split('-')
     .map(Number) as [number, number, number];
   if (birthYear > year) return null;
-  return (
+  const age =
     year -
     birthYear -
-    (month < birthMonth || (month === birthMonth && day < birthDay) ? 1 : 0)
-  );
+    (month < birthMonth || (month === birthMonth && day < birthDay) ? 1 : 0);
+  return age < 0 ? null : age;
 }

@@ -59,7 +59,7 @@ All checks are design requirements; none is runtime-verified by this DB-free pla
 
 ## Architecture and Unit Boundaries
 
-The detailed ownership and DB classification is in [tasks.md](tasks.md). Body-fat source originals are read-only at `C:/Users/NEW LAP/Desktop/YBS SYSTEM/public/body-fat/`; reproducible derivatives go under `public/images/body-fat/` (WebP/AVIF, max 2x display width, target <=150 KB). Original binaries are never committed. DB-dependent F15 units require the PO-approved **Stack D**, verified isolated from Stacks A/B/C and against latest merged F12/F14. Pure helpers, policy logic, media and component tests use no DB. No F15 integration run, migration, Docker or Supabase operation is part of this specification amendment.
+The detailed ownership and DB classification is in [tasks.md](tasks.md). Body-fat source originals are documented, with source hashes, in [PROVENANCE.md](assets/body-fat/PROVENANCE.md); reproducible derivatives go under `public/images/body-fat/` (WebP/AVIF, max 2x display width, target <=150 KB). Original binaries are never committed. DB-dependent F15 units require the PO-approved **Stack D**, verified isolated from Stacks A/B/C and against latest merged F12/F14. Pure helpers, policy logic, media and component tests use no DB. No F15 integration run, migration, Docker or Supabase operation is part of this specification amendment.
 
 ### Default onboarding template and signup plan
 

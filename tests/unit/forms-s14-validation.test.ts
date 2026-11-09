@@ -155,6 +155,9 @@ describe('S14 form definition types and privacy metadata', () => {
     expect(
       calculateAgeInCairo('2027-01-01', new Date('2026-10-30T12:00:00.000Z')),
     ).toBeNull();
+    expect(
+      calculateAgeInCairo('2026-12-01', new Date('2026-10-30T12:00:00.000Z')),
+    ).toBeNull();
   });
 
   it('requires minimum, middle, and maximum slider labels', () => {
