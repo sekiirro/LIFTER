@@ -23,3 +23,32 @@ Evidence run `41894845099`, attempt 1, on commit `447ceb0b69b8516abfa26c5b1289ef
 | FR-015, FR-016, FR-017 | T016 | `.github/workflows/ci.yml::push_main_pull_request_and_concurrency` | Commit `447ceb0b69b8516abfa26c5b1289ef908bb92bf2`; run `41894845099` attempt 1, all three jobs green; CodeRabbit-confirmed queued-main-run behavior addressed with unique push groups. |
 | FR-018 | T017 | `.github/workflows/ci.yml::validate` | Commit `447ceb0b69b8516abfa26c5b1289ef908bb92bf2`; actionlint clean; validate job passed in run `41894845099` attempt 1 with no browser install step. |
 | FR-019 | T018 | `.github/workflows/ci.yml::storage` | Commit `447ceb0b69b8516abfa26c5b1289ef908bb92bf2`; actionlint clean; separate storage job passed in run `41894845099` attempt 1. |
+
+## S38 CI / constitution amendment (FR-021..FR-024, SC-011..SC-013)
+
+| Requirement | Task | Verification | Evidence | Status |
+|---|---|---|---|---|
+| FR-021 / SC-011 (dispatch ref and exact parent validation) | T020 | .github/workflows/ci.yml::Verify and record CI revision | Workflow is implemented. GitHub requires it on the default branch before dispatch. This PR still requires explicit PO exact-SHA approval; exact-head dispatch verification is pending after an authorized merge and is not claimed now. | PENDING (platform-gated) |
+| FR-022 / SC-012 (integration partition and full coverage) | T021 | C:/Users/NEW LAP/.lifter/runs/s38-const110-ci/verify-shards.cjs | Vitest 5.0.5: 92 test files; shards 31/31/30; union 92; 0 missing; 0 duplicates (shard-partition.json). Playwright runs once in shard 1; unchanged suite selection. | VERIFIED (partition) |
+| FR-023 / SC-013 (allowed full attempts) | T022 | .github/workflows/ci.yml and C:/Users/NEW LAP/.lifter/tools/gate-check.mjs::gateD | Pending exact-head pull_request/dispatch run evidence and both-path self-test; run IDs and provenance will be recorded in report.md. | PENDING |
+| FR-024 (standing approval and constitution PR exception) | T022 | .specify/memory/constitution.md::Main merge gate; docs/08-agent-workflow.md::Main merge gate | Constitution-changing PR explicitly excluded from standing approval; this PR still requires explicit PO approval at exact SHA. | VERIFIED (documentation) |
+
+
+## S39 required integration status-check correction (FR-022, FR-023)
+
+| Requirement | Task | Test file::name | Evidence | Status |
+|---|---|---|---|---|
+| FR-022 / SC-012 (three matrix shards and successful aggregation) | T023 | `tests/unit/ci-local-e2e.test.ts::exposes the required integration aggregator for all shard results`; `tests/unit/ci-local-e2e.test.ts::allows main-push integration aggregation with no PR or head SHA` | Commit `5cebe3693780f3c5cf02d79b3caf0672246ea653`; both relevant CI unit files passed 11/11 on this head, including the red-first aggregator and main-push revisions cases. `npm run typecheck`, `npm run lint`, and `npm run format:check` passed. GitHub exact-head CI is tracked separately in the round report. | VERIFIED (local) |
+| FR-023 (required exact `integration` check in every full attempt) | T023 | `.github/workflows/ci.yml::integration` | Workflow exposes an always-run `integration` aggregator depending on `integration-shard`; all shard results must be success, revision tuples must agree, and the aggregator logs the common revisions. Run `42563370293` on predecessor `f2901baff2210492f34536aa00bab5e735de8b05` executed all six required jobs successfully; final-head hosted runs are pending and recorded in the round report. | IMPLEMENTED |
+
+## S40 review correction — aggregator revision scope (FR-022, FR-023)
+
+| FR | Task | Test file::name | Evidence |
+|---|---|---|---|
+| FR-022, FR-023 | T023 | `tests/unit/ci-local-e2e.test.ts::executes the integration aggregator script against push and PR revision cases` | Commit `2624c90535603e3b1a0d3413343fb09c6af6fdb7`; focused file passed 4/4, including push/PR success, shard failure, tuple mismatch, and invalid SHA. RED proof: removing the shard-result guard in a temporary workflow copy made the new test fail (`expected 0 to be 1`); the temporary copy was deleted. On this commit, `npm run typecheck`, `npm run lint`, and `npm run format:check` passed. |
+
+## S40 review follow-up — authenticated dispatch metadata lookup (FR-021, FR-023)
+
+| FR | Task | Test file::name | Evidence | Status |
+|---|---|---|---|---|
+| FR-021, FR-023 | T020 | `tests/unit/ci-local-e2e.test.ts::dispatches CI against a PR merge ref and rejects a mismatched second parent` | Commit `f1aacd91d1385ae401a091b7bc0bcc716ab5cbc8`; the focused CI unit file passed 4/4, including assertions for token binding and authenticated headers in all three jobs. `npm run typecheck`, `npm run lint`, and `npm run format:check` passed. Exact-head GitHub dispatch verification remains pending and is not claimed. | IMPLEMENTED (local) |

@@ -4,6 +4,16 @@ on:
   push:
     branches: [main]
   pull_request:
+  workflow_dispatch:
+    inputs:
+      pr:
+        description: Pull request number to verify
+        required: true
+        type: number
+      head_sha:
+        description: Exact PR head SHA to verify
+        required: true
+        type: string
 
 concurrency:
   group: ci-${{ github.event_name }}-${{ github.event.pull_request.number || format('{0}-{1}', github.ref, github.run_id) }}
@@ -18,7 +28,40 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 2
           persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/merge', inputs.pr) || github.sha }}
+      - name: Verify and record CI revision
+        shell: bash
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_PR: ${{ inputs.pr || github.event.pull_request.number }}
+          CI_HEAD_SHA: ${{ inputs.head_sha || github.event.pull_request.head.sha }}
+          CI_REPO: ${{ github.repository }}
+          CI_API_URL: ${{ github.api_url }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          merge_sha=$(git rev-parse HEAD)
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" && ( ! "$CI_PR" =~ ^[0-9]+$ || ! "$CI_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ) ]]; then
+            echo "Invalid PR or full head SHA input" >&2
+            exit 1
+          fi
+          echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha"
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" ]]; then
+            second_parent=$(git rev-parse HEAD^2 2>/dev/null || true)
+            if [[ "$second_parent" != "$CI_HEAD_SHA" ]]; then
+              echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
+              exit 1
+            fi
+            response_file=$(mktemp)
+            trap 'rm -f "$response_file"' EXIT
+            curl --fail --silent --show-error --max-time 20 --retry 3 --retry-max-time 60 --retry-all-errors -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" --output "$response_file" "$CI_API_URL/repos/$CI_REPO/pulls/$CI_PR"
+            head_repo=$(jq -r '.head.repo.full_name // ""' "$response_file")
+            if [[ "$head_repo" != "$CI_REPO" ]]; then
+              echo "PR=$CI_PR head_repo=$head_repo; refusing fork PR before running untrusted code with repository secrets" >&2
+              exit 1
+            fi
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -46,7 +89,22 @@ jobs:
       - run: npm run build:cron
       - run: npm run size
 
-  integration:
+  integration-shard:
+    name: integration shard ${{ matrix.shard }}/3
+    outputs:
+      pr_1: ${{ matrix.shard == 1 && steps.revision.outputs.pr || '' }}
+      head_sha_1: ${{ matrix.shard == 1 && steps.revision.outputs.head_sha || '' }}
+      merge_sha_1: ${{ matrix.shard == 1 && steps.revision.outputs.merge_sha || '' }}
+      pr_2: ${{ matrix.shard == 2 && steps.revision.outputs.pr || '' }}
+      head_sha_2: ${{ matrix.shard == 2 && steps.revision.outputs.head_sha || '' }}
+      merge_sha_2: ${{ matrix.shard == 2 && steps.revision.outputs.merge_sha || '' }}
+      pr_3: ${{ matrix.shard == 3 && steps.revision.outputs.pr || '' }}
+      head_sha_3: ${{ matrix.shard == 3 && steps.revision.outputs.head_sha || '' }}
+      merge_sha_3: ${{ matrix.shard == 3 && steps.revision.outputs.merge_sha || '' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        shard: [1, 2, 3]
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -57,7 +115,44 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 2
           persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/merge', inputs.pr) || github.sha }}
+      - name: Verify and record CI revision
+        id: revision
+        shell: bash
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_PR: ${{ inputs.pr || github.event.pull_request.number }}
+          CI_HEAD_SHA: ${{ inputs.head_sha || github.event.pull_request.head.sha }}
+          CI_REPO: ${{ github.repository }}
+          CI_API_URL: ${{ github.api_url }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          merge_sha=$(git rev-parse HEAD)
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" && ( ! "$CI_PR" =~ ^[0-9]+$ || ! "$CI_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ) ]]; then
+            echo "Invalid PR or full head SHA input" >&2
+            exit 1
+          fi
+          echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha"
+          echo "pr=$CI_PR" >> "$GITHUB_OUTPUT"
+          echo "head_sha=$CI_HEAD_SHA" >> "$GITHUB_OUTPUT"
+          echo "merge_sha=$merge_sha" >> "$GITHUB_OUTPUT"
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" ]]; then
+            second_parent=$(git rev-parse HEAD^2 2>/dev/null || true)
+            if [[ "$second_parent" != "$CI_HEAD_SHA" ]]; then
+              echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
+              exit 1
+            fi
+            response_file=$(mktemp)
+            trap 'rm -f "$response_file"' EXIT
+            curl --fail --silent --show-error --max-time 20 --retry 3 --retry-max-time 60 --retry-all-errors -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" --output "$response_file" "$CI_API_URL/repos/$CI_REPO/pulls/$CI_PR"
+            head_repo=$(jq -r '.head.repo.full_name // ""' "$response_file")
+            if [[ "$head_repo" != "$CI_REPO" ]]; then
+              echo "PR=$CI_PR head_repo=$head_repo; refusing fork PR before running untrusted code with repository secrets" >&2
+              exit 1
+            fi
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -88,17 +183,61 @@ jobs:
           echo "APP_ORIGIN=http://localhost:3000" >> "$GITHUB_ENV"
       - name: Provision local Vault signup keys
         run: node tests/integration/client-accounts-provision.mjs
-      - name: Assert shared password policy DB parity
-        run: npm run test:integration -- tests/integration/password-policy-parity.test.ts
-      - run: npm run test:integration
+      - name: Run integration shard ${{ matrix.shard }} of 3
+        run: npm run test:integration -- --shard=${{ matrix.shard }}/3
       - run: npx playwright install --with-deps chromium
+        if: matrix.shard == 1
       - name: Run full Playwright suite against the local stack
         run: npm run e2e -- --workers=1
+        if: matrix.shard == 1
         env:
           LOCAL_SUPABASE_STORAGE_TEST: 'true'
           LOCAL_SUPABASE_PROVIDER_FAULT_TEST: 'true'
       - run: supabase stop --no-backup
         if: always()
+
+  integration:
+    name: integration
+    needs: [integration-shard]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Require successful integration shards
+        env:
+          PR_1: ${{ needs.integration-shard.outputs.pr_1 }}
+          HEAD_SHA_1: ${{ needs.integration-shard.outputs.head_sha_1 }}
+          MERGE_SHA_1: ${{ needs.integration-shard.outputs.merge_sha_1 }}
+          PR_2: ${{ needs.integration-shard.outputs.pr_2 }}
+          HEAD_SHA_2: ${{ needs.integration-shard.outputs.head_sha_2 }}
+          MERGE_SHA_2: ${{ needs.integration-shard.outputs.merge_sha_2 }}
+          PR_3: ${{ needs.integration-shard.outputs.pr_3 }}
+          HEAD_SHA_3: ${{ needs.integration-shard.outputs.head_sha_3 }}
+          MERGE_SHA_3: ${{ needs.integration-shard.outputs.merge_sha_3 }}
+          CI_EVENT_NAME: ${{ github.event_name }}
+          SHARD_RESULT: ${{ needs.integration-shard.result }}
+        run: |
+          if [[ "$SHARD_RESULT" != "success" ]]; then
+            echo "Integration shard matrix concluded: $SHARD_RESULT" >&2
+            exit 1
+          fi
+          if [[ "$PR_1" != "$PR_2" || "$PR_1" != "$PR_3" || "$HEAD_SHA_1" != "$HEAD_SHA_2" || "$HEAD_SHA_1" != "$HEAD_SHA_3" || "$MERGE_SHA_1" != "$MERGE_SHA_2" || "$MERGE_SHA_1" != "$MERGE_SHA_3" ]]; then
+            echo "Integration shard revisions disagree" >&2
+            exit 1
+          fi
+          if [[ "$CI_EVENT_NAME" == "push" ]]; then
+            if [[ ! "$MERGE_SHA_1" =~ ^[0-9a-fA-F]{40}$ ]]; then
+              echo "Integration shard matrix did not export a valid merge SHA" >&2
+              exit 1
+            fi
+          else
+            if [[ ! "$PR_1" =~ ^[0-9]+$ || ! "$HEAD_SHA_1" =~ ^[0-9a-fA-F]{40}$ || ! "$MERGE_SHA_1" =~ ^[0-9a-fA-F]{40}$ ]]; then
+              echo "Integration shard matrix did not export valid CI revisions" >&2
+              exit 1
+            fi
+          fi
+          echo "PR=$PR_1 head_sha=$HEAD_SHA_1 merge_sha=$MERGE_SHA_1"
 
   storage:
     runs-on: ubuntu-latest
@@ -111,7 +250,40 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
+          fetch-depth: 2
           persist-credentials: false
+          ref: ${{ github.event_name == 'workflow_dispatch' && format('refs/pull/{0}/merge', inputs.pr) || github.sha }}
+      - name: Verify and record CI revision
+        shell: bash
+        env:
+          CI_EVENT_NAME: ${{ github.event_name }}
+          CI_PR: ${{ inputs.pr || github.event.pull_request.number }}
+          CI_HEAD_SHA: ${{ inputs.head_sha || github.event.pull_request.head.sha }}
+          CI_REPO: ${{ github.repository }}
+          CI_API_URL: ${{ github.api_url }}
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          merge_sha=$(git rev-parse HEAD)
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" && ( ! "$CI_PR" =~ ^[0-9]+$ || ! "$CI_HEAD_SHA" =~ ^[0-9a-fA-F]{40}$ ) ]]; then
+            echo "Invalid PR or full head SHA input" >&2
+            exit 1
+          fi
+          echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha"
+          if [[ "$CI_EVENT_NAME" == "workflow_dispatch" ]]; then
+            second_parent=$(git rev-parse HEAD^2 2>/dev/null || true)
+            if [[ "$second_parent" != "$CI_HEAD_SHA" ]]; then
+              echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
+              exit 1
+            fi
+            response_file=$(mktemp)
+            trap 'rm -f "$response_file"' EXIT
+            curl --fail --silent --show-error --max-time 20 --retry 3 --retry-max-time 60 --retry-all-errors -H "Authorization: Bearer $GH_TOKEN" -H "Accept: application/vnd.github+json" --output "$response_file" "$CI_API_URL/repos/$CI_REPO/pulls/$CI_PR"
+            head_repo=$(jq -r '.head.repo.full_name // ""' "$response_file")
+            if [[ "$head_repo" != "$CI_REPO" ]]; then
+              echo "PR=$CI_PR head_repo=$head_repo; refusing fork PR before running untrusted code with repository secrets" >&2
+              exit 1
+            fi
+          fi
       - uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc

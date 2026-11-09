@@ -45,6 +45,12 @@
 
 - [x] T019 [US6] [FR-020, SC-010] Add the opt-in `--all-remote-refs` cross-branch mode to `scripts/check-migration-timestamps.mjs` plus the `check:migration-versions:remote` npm script: enumerate `refs/remotes/origin` via `git for-each-ref` (excluding symbolic `refs/remotes/origin/HEAD`), list each ref's `supabase/migrations` via `git ls-tree` (no checkout), exit non-zero reporting version + both filenames + carrying refs when one 14-digit version maps to two different filenames; same filename on several refs passes; default in-tree mode and CI unchanged; unit tests with an injected ref-listing function, RED first then GREEN. (S32-R3, S32-PO-3 "prevent future duplicates".) Tests executed and passed on the implementation commit (see traceability.md).
 
+## S39 required integration-check aggregator
+
+- [x] T023 [FR-022, FR-023] Rename the matrix job id to `integration-shard` without changing the three display names; add the `integration` always-run success aggregator that compares shard revision tuples, validates PR/head fields only on PR/dispatch events, and allows empty PR/head fields on main pushes with a valid merge SHA; extend `tests/unit/ci-local-e2e.test.ts` with a red-first contract test; update the authoritative required-check descriptions in the constitution and CI documentation; record focused test evidence in traceability.md after the test passes.
+
+T020-T022 remain unchecked until their tests and exact-head GitHub gate evidence are recorded. T023 is verified by its focused regression test and traceability entry.
+
 ## Dependencies
 
 B1 → B2 → B3. One writing agent at a time. T019 is independent of B1–B3 and lands after them as a CI-baseline tooling amendment.
@@ -57,3 +63,11 @@ B1 → B2 → B3. One writing agent at a time.
 - [x] T018 [FR-019] Preserve separate required `storage` job and existing job names, pinned actions, and every other workflow step; update docs/08-agent-workflow.md and document workflow changes in the PR body.
 
 Tasks remain unchecked until the exact PR head has the required executed green CI evidence and traceability evidence is recorded.
+
+## S38 CI and merge-gate amendment tasks
+
+- [ ] T020 [FR-021, FR-023] Add verified manual dispatch runs to CI with exact merge-result parent validation, authenticated PR metadata lookup, same-repository head checks before dependency installation in secret-bearing jobs, and no-cancel concurrency; preserve PR/push behavior and read-only permissions.
+- [ ] T021 [FR-022] Shard all integration tests into three Vitest shards with unchanged per-shard stack setup and confirm shard union equals the full test list.
+- [ ] T022 [FR-023, FR-024] Update constitution 1.10.0, workflow guide, decision register, and gate-check d for trusted dispatch provenance (base-branch workflow and matching merge-result workflow blob), parallel full-run provenance, standing approval, and the constitution PR exception while retaining gates a-c/e-h and all security requirements.
+
+Tasks remain unchecked until tests and exact-head GitHub gate evidence are recorded.
