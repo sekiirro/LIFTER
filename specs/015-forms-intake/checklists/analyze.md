@@ -194,3 +194,7 @@ T141 is limited to valid CodeRabbit findings in existing approved FR scope and l
 ## S41-PO-3 copy approval Analyze refresh — 2026-11-09
 
 The PO decision register records PO-MCQ-1 as “A: Approve as drafted.” The changed `spec.md` row and decision-case fixture both contain `Cottage cheese / plant protein / eggs / baladi bread`, and the targeted byte comparison confirms exact UTF-8 equality. The scope is limited to N08.low.foods; N08.medium.foods and N08.high.foods remain pending, and no runtime copy or other option is changed. Existing FR-026/036/037 and SC-026 cover exact approved EN row parity. **No open ambiguities remain for this approved row. CRITICAL: 0. HIGH: 0.**
+
+## T141 portable task-reference refresh — 2026-11-09
+
+The remaining machine-local references in T020 and T139 were replaced with the design-gate brief label and the tracked S40 round-11 verification artifact. This is a documentation-link repair only; no requirement or behavior changed. **No open ambiguities remain for T141. CRITICAL: 0. HIGH: 0.**
