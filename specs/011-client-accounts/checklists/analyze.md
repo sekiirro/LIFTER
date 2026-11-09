@@ -1,6 +1,23 @@
 # Analyze — F11 client accounts
 
-## S41 round 9 analysis (CodeRabbit round 7 request 2 review 5833719903 on head 4cb1c243: 3 Minor findings; S41-R19) — 2026-11-10 00:42 +02:00, round 19 (current; written after the round 8 edits to spec.md, traceability.md, research/s40-new-workspace-copy-proposal.md and docs/01-traceability.md; supersedes round 18 for statuses)
+## S41 round 10 analysis (CodeRabbit round 8 request 1 review 5833984333 on head 413917c1: 1 Minor finding; S41-R19 round 8) — 2026-11-10 00:53 +02:00, round 20 (current; written after the round 8 request-1 fix edits to traceability.md and tasks.md; supersedes round 19 for statuses)
+
+Entry check (Spec Kit gate section 1): PASS. The fix is traceability-only: it adds T058 and its test file to the FR-018 and FR-027 rows and requires T058 in both T054 verification gates, so the FR-018/FR-027 statements scoped in round 19 are verified by the task that actually tests the overlapping-deletion case. Numbered FR/SC/task structure is unchanged; this file is dated after the last change; the S41-PO-11 quote is unchanged and byte-exact.
+
+Findings (round 20; each fixed or open):
+
+| ID | Severity | Finding (CodeRabbit review 5833984333, traceability.md:14) | Status |
+|---|---|---|---|
+| A-S41-43 | MINOR (fixed) | The FR-018 traceability row (and the FR-027 row) claimed the deletion-lifecycle scope added in round 19 but listed only T047/T050/T060 and T061, while T047 delegates the overlapping-deletion case to T058; T050 and T061 do not test that overlap, and the T054 gates did not require T058 | CLOSED: the FR-018 row now lists T058 and `tests/integration/client-trainer-distribution.test.ts` and records that T047 delegates the overlapping-deletion case to T058; the FR-027 row adds T058 and the same test file (T061 keeps the remaining unassigned paths); T054 now requires T058 for FR-018 (trainer-deletion reassignment and overlapping-deletion case) and for FR-027 |
+| A-S41-4 | MEDIUM (open, architect gate) | Architect approval of the restricted continuation (plan P-S40-1) before T048 and of the restricted system entry point (plan P-S40-5) before T062 | OPEN. Architect, not PO |
+
+Counts: CRITICAL open 0. HIGH open 0. MEDIUM open 1 (A-S41-4, architect gate). LOW open 0. A-S41-43 is a traceability bookkeeping fix inside decided scope; no new product question.
+
+Static consistency (run at 00:53 +02:00, recorded in report.md): the FR-018/FR-027 rows, T047/T054/T058/T061 and the SC-021 wording name the same test owner for the overlapping-deletion case; the ID sweep passes on the final tree; the approved copy strings are unchanged (verify 97/97); 012 and 003 are unchanged.
+
+Result: PASS, 0 CRITICAL and 0 HIGH. No PO product question is open. This is a static document review; it makes no implementation-conformity claim.
+
+## S41 round 9 analysis (CodeRabbit round 7 request 2 review 5833719903 on head 4cb1c243: 3 Minor findings; S41-R19) — 2026-11-10 00:42 +02:00, round 19 (superseded by round 20 for statuses; written after the round 8 edits to spec.md, traceability.md, research/s40-new-workspace-copy-proposal.md and docs/01-traceability.md; supersedes round 18 for statuses)
 
 Entry check (Spec Kit gate section 1): PASS. The touched scope stays inside FR-018/FR-022/FR-027/FR-028 and SC-021; numbered FRs/SCs and Given/When/Then scenarios keep their structure; plan P-S40-1/P-S40-2/P-S40-5 and T047/T050/T058/T062 already state the same rule; this file is dated after the last change; the S41-PO-11 quote is unchanged and byte-exact.
 
