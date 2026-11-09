@@ -70,4 +70,8 @@ Tasks remain unchecked until the exact PR head has the required executed green C
 - [ ] T021 [FR-022] Shard all integration tests into three Vitest shards with unchanged per-shard stack setup and confirm shard union equals the full test list.
 - [ ] T022 [FR-023, FR-024] Update constitution 1.10.0, workflow guide, decision register, and gate-check d for trusted dispatch provenance (base-branch workflow and matching merge-result workflow blob), parallel full-run provenance, standing approval, and the constitution PR exception while retaining gates a-c/e-h and all security requirements.
 
+## S40 Playwright e2e sharding tasks
+
+- [ ] T024 [FR-025, FR-026, SC-014, SC-015] Run the Playwright browser suite as a file-level `--shard=<k>/3` partition in every `integration-shard` execution with unchanged environment gates, `--workers=1`, no retries and the same preconditions; add the non-empty shard-list guard, Storage readiness and Docker CLI preconditions; upload per-shard Playwright/Vitest JSON inventories and reports; extend the no-checkout `integration` aggregator with the fail-closed union/skip/failure coverage proof; extend `tests/unit/ci-local-e2e.test.ts` red-first, update the workflow guide, and record traceability plus before/after wall times.
+
 Tasks remain unchecked until tests and exact-head GitHub gate evidence are recorded.

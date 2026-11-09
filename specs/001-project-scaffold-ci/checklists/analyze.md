@@ -1,5 +1,26 @@
 # F1 001-project-scaffold-ci - Analyze (S34 main merge reconciliation)
 
+## S40 pre-implementation analysis (Playwright e2e sharding)
+
+**Date**: 2026-11-09 14:33 UTC (after the S40 edits to spec.md, plan.md and tasks.md). **Scope**: FR-025, FR-026, SC-014, SC-015, User Story 5 scenario 8, T024.
+
+- [x] `spec.md` has numbered FRs (FR-025, FR-026), measurable SCs (SC-014, SC-015) and a Given/When/Then scenario (US5.8) for the touched scope.
+- [x] Clarifications record the byte-exact S39-PO-3 authority and state explicitly: **No open ambiguities** remain.
+- [x] `plan.md` has an S40 Playwright sharding section covering the touched scope; `tasks.md` has T024 tagged FR-025, FR-026, SC-014 and SC-015.
+- [x] This analysis is dated after the last spec/plan/tasks change and finds 0 open CRITICAL/HIGH findings.
+
+### Findings
+
+- File-level sharding is the only safe partition: the S39 audit (sections 3, 7) shows `fullyParallel` would break `branding-production-ui` declaration order and `client-accounts` shared tokens, shared server-log slice and the kong stop/start fault test. FR-025 therefore fixes file shards, `--workers=1`, no retries and unedited specs.
+- Shard composition is authoritative from the tree: 282/156/191 = 629, all non-empty (N=5 was shown empty in the audit, hence N stays 3). Banner-loaded (273 tests) is one indivisible group, so shard 1 remains the longest; the expected critical path is bounded by shard 1's Vitest step plus ≈6 min of browser tests versus the 13.8 min single-job e2e step, so SC-015 is achievable without splitting the banner spec.
+- Every shard needs the audit's §2.1/§2.2/§2.4 preconditions because the hidden 5.6 min integration warm-up disappears: Vault provisioning with `SIGNUP_*` export, `scripts/wait-storage-ready.mjs`, and a Docker CLI/daemon check for the kong fault test. One Playwright invocation per shard keeps exactly one `webServer` and a per-shard U8 manifest; `U8_SERVER_LOG_RUN_ID` must never be preset.
+- Coverage proof is possible without checkout: shard jobs upload Playwright full/shard `--list` inventories, Vitest full file inventory, and the JSON run reports; the aggregator downloads artifacts and compares identities (`file::project::title path`) and Vitest file sets. Missing artifacts fail the download step, so the proof cannot silently pass.
+- Skip baseline is exact and reproducible: 24 `exercise-library-production` tests skip via `beforeAll` on Stack A (the whole file, all 24 listed identities), and 14 `shell` project-guard skips are static; the ceiling is 38 with a documented identity allowlist. Environment regressions surface as new skip identities or as failures.
+- Existing aggregator properties are preserved: `contents: read`, no checkout, no secrets, and the existing success/revision-tuple step is unchanged; only new steps are appended.
+- No new secrets, permissions, rulesets or concurrency/dispatch changes; `validate` and `storage` are untouched. No product behaviour changes. **CRITICAL**: none. **HIGH**: none.
+
+**Verdict**: PASS — 0 CRITICAL, 0 HIGH.
+
 ## S39 pre-implementation analysis
 
 **Date**: 2026-11-09 05:07:56 UTC (after latest S39 spec, plan, and task updates). **Scope**: FR-022, FR-023, SC-012, T023; required-check name mapping, revision propagation, main-push revision validation, and three integration matrix executions.
