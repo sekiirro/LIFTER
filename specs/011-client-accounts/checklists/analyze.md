@@ -1,6 +1,17 @@
 # Analyze — F11 client accounts
 
-## S40 round 4 analysis (CodeRabbit round 1 on head d8bb100d, fix round) — 2026-11-09 18:56 +02:00, round 10 (current; written after the fix edits to spec.md, plan.md, tasks.md, research/ and after the 012 FR-022 edit; supersedes round 9 for statuses)
+## S40 round 5 analysis (CodeRabbit round 2 on head 7fe218b5, fix round) — 2026-11-09 19:10 +02:00, round 11 (current; written after the second fix edits to spec.md, plan.md and tasks.md; supersedes round 10 for statuses)
+
+Findings addressed (CodeRabbit CHANGES_REQUESTED 5829632170 on 7fe218b5; 4 actionable: 4 inline threads and 1 review-body "Unverified finding" that was verified against `supabase/migrations/20261031121000_client_accounts_model.sql:183`, the `signup_auth_claim_sync` trigger on `auth.users` email/phone update):
+- PRRT_kwDOVYgYQ861W2LK (plan.md:202, system actor for automatic rows): the record has `assignment_source` (`po_manual` | `system_distribution`), `assigned_by` required only for manual rows, `source_approval_id` for system rows. Attribution never needs an unrelated staff user.
+- PRRT_kwDOVYgYQ861W2LT (plan.md:207, role change is global): a role change away from trainer ends the Trainer's active rows in every workspace; a membership revocation ends them only in that workspace; restoration never reactivates.
+- PRRT_kwDOVYgYQ861W2Le (plan.md:217, job completion): the job records `completed_at` and `outcome` in the same transaction; a retry checks the job, not the assignment rows.
+- PRRT_kwDOVYgYQ861W2Ln (tasks.md:292, durable job emission): new forward-only task T063 (FUTURE, blocked by the S40 gate, the T062 design approval and 012 approval implementation); distinct from the approval fact of 012 T016.
+- Review-body unverified finding (plan.md:195, claim sync replaces the old email claim at step C): step C is a guarded exception to `signup_auth_claim_sync`; the old claims stay reserved by the release_pending client until step D; a pause between C and D is tested in T047.
+
+Gate after the fix: CRITICAL open 0. HIGH open 0. MEDIUM open 9 (MCQ-12..20, PO-blocked, unchanged). Static consistency re-run: PASS.
+
+## S40 round 4 analysis (CodeRabbit round 1 on head d8bb100d, fix round) — 2026-11-09 18:56 +02:00, round 10 (superseded by round 11 for statuses)
 
 Findings addressed (CodeRabbit CHANGES_REQUESTED 5829417127 on d8bb100d; 5 inline threads plus 1 review-body finding; all valid):
 - PRRT_kwDOVYgYQ861Wf10 (analyze.md:20, product-question options not repo-accessible): full options for MCQ-12..20 are in `research/s40-pending-mcqs.md`; the copy proposal is `research/s40-new-workspace-copy-proposal.md`; references repointed.
