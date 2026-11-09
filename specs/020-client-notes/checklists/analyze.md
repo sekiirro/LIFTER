@@ -1,6 +1,6 @@
 # Spec Kit Analyze — F20 Client Notes
 
-**Analysis date**: 2026-11-09T14:35Z (round 11, re-run after the S40-PO-10 CN-MCQ-23 encoding and the round-11 CodeRabbit fixes; every spec, plan, tasks, contracts, data-model and research edit precedes this analysis)
+**Analysis date**: 2026-11-09T15:15Z (round 12, re-run after the round-12 CodeRabbit fixes to data-model.md, spec.md FR-007/FR-010 and Story 2 scenario 6, tasks.md, plan.md and the contracts; every spec, plan, tasks, contracts, data-model and research edit precedes this analysis)
 **Inputs**: spec.md, plan.md, tasks.md, data-model.md, research.md, contracts/client-notes-api.md, contracts/client-notes-rls.md
 **Scope**: Spec-only. No code, SQL, migrations, or runtime work.
 
@@ -50,9 +50,23 @@ Scope note (not an F20 ambiguity): the app-wide audit retention period (DP-02 / 
 - No statement in spec.md, plan.md, tasks.md or the contracts promises cancellation, "no row persisted" or "no audit event" for a save that has already been submitted. The remaining "no row persisted" statements are refused-write cases only (Story 2 scenario 2, FR-002, SC-002, RLS contract body rows).
 - Task ordering text (tasks.md "Dependency order") names CN-MCQ-16, CN-MCQ-17, CN-MCQ-18, CN-MCQ-19, CN-MCQ-20, CN-MCQ-21 and CN-MCQ-22 as resolved/ruled with their encodings. The S38-R8 rule is unchanged: a test task is ticked only after its tests execute and pass. Tasks remain at 0 ticks.
 
-### Constitution check
+### Constitution check (round 12)
 
-The worktree contains no `.specify/memory/constitution.md` (searched: no `constitution*.md` in the repository). The gate applied is the lifter Spec Kit gate in the run brief: zero open CRITICAL/HIGH before implementation, and zero open ambiguities in approved behaviour. All F20 PO questions are resolved and the one architect ruling is encoded, so no F20 ambiguity blocks implementation; implementation itself still requires its own approval. This analysis does not authorize implementation.
+The constitution is present at `.specify/memory/constitution.md` (version 1.4.0; `git ls-tree` at `36db167e` lists it). The round-11 statement that it was absent was wrong and is corrected here. Governance requires every spec, plan and review to include this check. Result per principle:
+
+- **I. Strict Workspace Isolation: PASS.** Every note relation carries `workspace_id`; the note and the create-idempotency record each carry a `(workspace_id, id)` unique key (data-model.md; FR-005; contracts/client-notes-rls.md). Access is denied by default at both walls. Foreign-workspace negative tests are in T011 and T014.
+- **II. Immutable Financial Truth: NOT APPLICABLE.** No ledger, payroll or subscription data.
+- **III. Platform Owner Governance & Least Privilege: PASS.** Hard delete is PO-only; the existing role set is reused; Sales and Client are denied (FR-004, FR-005).
+- **IV. Approved Scope Only: PASS.** Client Notes is PO-approved (S36-PO-5, S37-PO-6, S37-PO-7). No PRD-12 exclusion or YBS behaviour is built.
+- **V. Versioned, Non-Retroactive Content: NOT APPLICABLE.** Notes are not plans, forms or catalog entries. The PO's "no version history" rule is FR-003.
+- **VI. Human-Governed People Decisions: NOT APPLICABLE.** No KPI, incentive, deduction or termination behaviour.
+- **VII. Privacy & Health-Data Protection: PASS for the spec, with an implementation check.** Audit is metadata-only (FR-010; CN-MCQ-07). Round 12 adds to FR-010 that note text is not written to logs. An author who leaves is kept as "Unavailable author" (CN-MCQ-06). The log-scrub check runs at implementation (T012 and the merge gates).
+- **VIII. Bilingual, Accessible, Design-System UI: PASS for the spec; implementation gate pending.** FR-006 and FR-007 require DESIGN.md and the existing components, AR RTL and EN LTR, and `Bidi` wrapping with no machine translation. The Frontend Design Gate (real screenshots for AR/EN × light/dark × mobile/desktop, all states, accessibility) applies at implementation (T013, SC-005).
+- **IX. Reliable, Idempotent Operations: PASS.** Create idempotency and the note write are atomic; the hard delete's key-state update, note removal and audit event are atomic (FR-010, FR-011; T003, T004, T015).
+- **Development Workflow: PASS.** Spec Kit order is followed (Specify, Clarify, Plan, Tasks, Analyze). No implementation is authorized by this spec-only PR, and no task is ticked (0 `[x]`).
+- **Deviations:** none. No complexity-tracking entry is needed.
+
+The lifter Spec Kit gate applies as well: zero open CRITICAL/HIGH before implementation and zero open ambiguities in approved behaviour. All F20 PO questions are resolved, and the one architect ruling is encoded. This analysis does not authorize implementation.
 
 ## Architect rulings and review findings applied to date
 
@@ -60,6 +74,7 @@ The worktree contains no `.specify/memory/constitution.md` (searched: no `consti
 - **S40-R9 (architect ruling, not PO)**: CN-MCQ-22 decided as option A: a same-idempotency-key create with a different body is rejected as a key/body mismatch: no second note, no body change, no create audit event; no user copy added. Encoded in round 10.
 - **S40-PO-10 (PO)**: CN-MCQ-23 answered, option A, “Existing error copy (Rec.)”. The parenthesised mapping is architect words, labelled as such in spec.md: the unknown-result exit uses the approved generic save-error body CN-MCQ-08 row 18 with title/Stay/Discard rows 30/32/33; rows 31 and 34 are not reused; leaving cancels nothing; the unresolved create keeps its key for Retry; no new copy. Encoded in round 11.
 - **CodeRabbit review 5827032656 on `cc5da506`** (CHANGES_REQUESTED, 2 inline findings): both fixed. `PRRT_kwDOVYgYQ861SRXa` (spec.md:85) asked for the edit-retry contract; the spec now states that an edit retry is a new save, not an idempotent replay (no edit idempotency key), so a later edit is replaced under last save wins (CN-MCQ-11; FR-009) and each successful write emits its own audit event (FR-010), in FR-009, Story 3 scenario 8 and T010. `PRRT_kwDOVYgYQ861SRXm` (tasks.md:49) asked for an SC-007 coverage row; added and mapped to T004/T015.
+- **CodeRabbit review 5827871352 on `36db167e`** (CHANGES_REQUESTED, 3 inline findings, all valid, none a new product question): (1) `analyze.md:55` constitution check, fixed by the Constitution check section above (the file exists; checked per principle). (2) `data-model.md:20`, fixed: the note and the create-idempotency record carry `(workspace_id, id)` unique keys (constitution Principle I), in data-model.md, the migration description, T003, the RLS contract and plan.md. (3) `spec.md:95` (FR-007), fixed: a Retry refused by the server does not resolve the original create attempt; the text, read-only field and key stay, and no new create starts (CN-MCQ-23 rule, no new copy), in FR-007, Story 2 scenario 6, the API contract and T015 (refused-Retry test). FR-010 also now states that note text is not written to logs (constitution Principle VII).
 - **S38-R8** (CodeRabbit thread `PRRT_kwDOVYgYQ861E1-8`, tasks.md dependency order): a test task is ticked only after its tests execute and pass (constitution §3); red runs are recorded as evidence with the box unticked. Unchanged in round 10.
 - **S38-R9** (CN-MCQ-15, DESIGN.md §11 UI values): removed as a PO question (S38-PO-3). The Client Notes UI reuses existing Design System components and values and introduces no new breakpoint, touch-size, focus or token value. Unchanged in round 10.
 - **CodeRabbit review 5820142764 on `e2b6a6e3`** (revoked-membership scope): fixed in `f080dc77`; non-PO scope in SC-001, Story 3 scenario 4, both contracts, plan.md and T006.

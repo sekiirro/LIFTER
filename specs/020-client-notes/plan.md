@@ -54,7 +54,7 @@ Add independent plain-text notes to Client Details with a workspace/client compo
 
 ## Risks and mitigations
 
-- **Cross-workspace exposure**: composite client/workspace integrity plus two authorization walls and direct RLS negative coverage.
+- **Cross-workspace exposure**: composite client/workspace integrity, `(workspace_id, id)` unique keys on the note and the create-idempotency record (constitution Principle I), two authorization walls and direct RLS negative coverage.
 - **Role drift**: reuse the existing role matrix and assert app/database parity.
 - **Attribution**: original author and creation timestamp are kept; edits set `edited_at` only.
 - **Duplicate note on retry**: a client-generated idempotency key plus note-side and key-record unique constraints on `(workspace_id, client_id, idempotency_key)`, written atomically by a hardened boundary, return the existing note on a duplicate create; body equality is checked after trimming; a same-key different-body retry is a mismatch refusal; a retry after a hard delete returns deleted/not-found and never recreates the note; a retry after an edit compares against the original submission fingerprint, not the edited body; tests cover retry without an observable result, duplicate-key reuse, mismatch, retry after delete, retry after edit, direct/concurrent writes and the same key in another workspace/client scope (CN-MCQ-18, CN-MCQ-20, CN-MCQ-22; FR-011; S40-PO-6; S40-R9).

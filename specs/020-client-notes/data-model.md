@@ -17,7 +17,7 @@ One row represents one independent note. Proposed relation name: `public.client_
 
 | Attribute | Proposed type/constraint | Source |
 | --- | --- | --- |
-| `id` | UUID primary key | Technical shape, subject to implementation review. Also the deterministic list tie-break. |
+| `id` | UUID, required; `(workspace_id, id)` unique key, which the note's relations reference | Constitution Principle I (tenant-owned relations use composite `(workspace_id, id)` keys). Also the deterministic list tie-break. |
 | `workspace_id` | UUID, required | Tenant isolation requirement. |
 | `client_id` | UUID, required; composite FK `(workspace_id, client_id) -> public.clients(workspace_id,id)` | Binds note to one client in one workspace. |
 | `author_user_id` | UUID, required; references verified staff identity | PO requires author attribution. Never accepted from untrusted request input. Retained, never nulled or deleted, when the author becomes unavailable (CN-MCQ-06). |
@@ -34,6 +34,7 @@ One row records one create attempt for duplicate prevention. Proposed relation n
 
 | Attribute | Proposed type/constraint | Source |
 | --- | --- | --- |
+| `id` | UUID, required; `(workspace_id, id)` unique key | Constitution Principle I (composite `(workspace_id, id)` identity for a tenant-owned record). Holds no note content. |
 | `workspace_id` | UUID, required | Tenant isolation; FR-011. |
 | `client_id` | UUID, required; composite FK `(workspace_id, client_id) -> public.clients(workspace_id,id)` | Binds the key to one client in one workspace. |
 | `idempotency_key` | Client-generated text, required; unique together with `workspace_id` and `client_id` | FR-011 (CN-MCQ-18; S39-PO-9). |
@@ -56,4 +57,4 @@ No note body, note text or other note content is copied into this record. The no
 
 ## Planned migration description
 
-A future forward-only migration may add the note relation, composite workspace/client integrity, the `edited_at` column, the `idempotency_key` column, a note-side unique constraint on `(workspace_id, client_id, idempotency_key)`, the content-free create-idempotency record with its `(workspace_id, client_id, idempotency_key)` unique constraint and no body column, grants/policies or hardened mutation functions, and any required authorization parity. No migration filename/version is specified in this spec-only PR. At implementation time, rescan every origin ref for the highest migration version and choose a unique version above it; current scan evidence is in the run report.
+A future forward-only migration may add the note relation with a `(workspace_id, id)` unique key on it and on the create-idempotency record, composite workspace/client integrity, the `edited_at` column, the `idempotency_key` column, a note-side unique constraint on `(workspace_id, client_id, idempotency_key)`, the content-free create-idempotency record with its `(workspace_id, client_id, idempotency_key)` unique constraint and no body column, grants/policies or hardened mutation functions, and any required authorization parity. No migration filename/version is specified in this spec-only PR. At implementation time, rescan every origin ref for the highest migration version and choose a unique version above it; current scan evidence is in the run report.

@@ -4,7 +4,7 @@ No SQL or migration is supplied by this document. The following acceptance contr
 
 ## Scope and policy
 
-- Every note has a non-null `workspace_id` and `client_id`; same-workspace composite integrity binds it to `public.clients`.
+- Every note has a non-null `workspace_id` and `client_id`; same-workspace composite integrity binds it to `public.clients`. The note and the create-idempotency record each carry a `(workspace_id, id)` unique key (constitution Principle I).
 - RLS is ENABLED and FORCED. Policies default to deny. No anonymous note privileges.
 - Read and create allow a Trainer (any client in the workspace, regardless of client assignment), a Workspace Owner, or a Platform Owner, each with current active membership in the workspace or PO scope. Sales and Client are denied.
 - Edit allows the original `author_user_id` only with current authorization in the note's workspace (active membership and a role still authorized, for example Trainer or Workspace Owner), or a Platform Owner in PO scope.
