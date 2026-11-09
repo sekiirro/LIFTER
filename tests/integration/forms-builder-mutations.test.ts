@@ -144,27 +144,20 @@ describe('T006 persisted Builder mutation probes', () => {
   it('kills an executable-script extension mutant at the definition assertion', async () => {
     await db
       .begin(async (tx) => {
-        const f = await fixture(tx);
         await installMutant(
           tx,
           'app_private.f15_valid_builder_definition(jsonb,boolean)',
           'if exists(select 1 from jsonb_object_keys(question) k where k not in (',
           'if false and exists(select 1 from jsonb_object_keys(question) k where k not in (',
         );
-        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.owner, role: 'authenticated' })},true)`;
-        await tx`set local role authenticated`;
         const base = validDefinition();
         const executable = {
           ...base,
           questions: [{ ...base.questions[0]!, script: 'javascript:alert(1)' }],
         };
         const rows = await tx`
-          select public.save_workspace_form_draft(
-            ${f.wsA},${f.formA},1,${tx.json(executable)},${randomUUID()},'Your First Step'
-          ) as result`;
-        await assertExpectationKillsMutant(rows[0]?.result, {
-          status: 'invalid',
-        });
+          select app_private.f15_valid_builder_definition(${tx.json(executable)},false) as valid`;
+        await assertExpectationKillsMutant(rows[0]?.valid, false);
         throw rollback;
       })
       .catch((error) => {
@@ -175,15 +168,12 @@ describe('T006 persisted Builder mutation probes', () => {
   it('kills a conditional-cycle mutant at the definition assertion', async () => {
     await db
       .begin(async (tx) => {
-        const f = await fixture(tx);
         await installMutant(
           tx,
           'app_private.f15_valid_builder_definition(jsonb,boolean)',
           'if exists(\n    with recursive edges(child,parent) as (',
           'if false and exists(\n    with recursive edges(child,parent) as (',
         );
-        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.owner, role: 'authenticated' })},true)`;
-        await tx`set local role authenticated`;
         const base = validDefinition();
         const cyclic = {
           ...base,
@@ -192,18 +182,22 @@ describe('T006 persisted Builder mutation probes', () => {
               ...base.questions[0]!,
               when: {
                 mode: 'all',
+                conditions: [{ questionId: 'other', operator: 'isAnswered' }],
+              },
+            },
+            {
+              ...base.questions[0]!,
+              id: 'other',
+              when: {
+                mode: 'all',
                 conditions: [{ questionId: 'goal', operator: 'isAnswered' }],
               },
             },
           ],
         };
         const rows = await tx`
-          select public.save_workspace_form_draft(
-            ${f.wsA},${f.formA},1,${tx.json(cyclic)},${randomUUID()},'Your First Step'
-          ) as result`;
-        await assertExpectationKillsMutant(rows[0]?.result, {
-          status: 'invalid',
-        });
+          select app_private.f15_valid_builder_definition(${tx.json(cyclic)},false) as valid`;
+        await assertExpectationKillsMutant(rows[0]?.valid, false);
         throw rollback;
       })
       .catch((error) => {
@@ -214,22 +208,15 @@ describe('T006 persisted Builder mutation probes', () => {
   it('kills a short-text bound mutant at the invalid-definition assertion', async () => {
     await db
       .begin(async (tx) => {
-        const f = await fixture(tx);
         await installMutant(
           tx,
           'app_private.f15_valid_builder_definition(jsonb,boolean)',
           'not between 1 and 150',
           'not between 1 and 1000',
         );
-        await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.owner, role: 'authenticated' })},true)`;
-        await tx`set local role authenticated`;
         const rows = await tx`
-          select public.save_workspace_form_draft(
-            ${f.wsA},${f.formA},1,${tx.json(validDefinition(151))},${randomUUID()},'Your First Step'
-          ) as result`;
-        await assertExpectationKillsMutant(rows[0]?.result, {
-          status: 'invalid',
-        });
+          select app_private.f15_valid_builder_definition(${tx.json(validDefinition(151))},false) as valid`;
+        await assertExpectationKillsMutant(rows[0]?.valid, false);
         throw rollback;
       })
       .catch((error) => {

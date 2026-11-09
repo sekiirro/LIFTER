@@ -194,7 +194,7 @@ it('mutation: skipping the normalized username character check permits a format-
     fixture,
     async (definition) =>
       definition.replace(
-        /if normalized_username !~ '\^\[a-z0-9_\.\]\{3,30\}\$' then return '\{"status":"invalid"\}'::jsonb; end if;/u,
+        /if\s+normalized_username\s*!~\s*'[^']+'\s+then\s+return\s+'[^']+'::jsonb;\s+end if;/u,
         '-- format-control policy mutation',
       ),
     async (tx) =>

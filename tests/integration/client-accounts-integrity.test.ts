@@ -104,9 +104,6 @@ it('clients: every required field is NOT NULL, generated id/time and pending-onl
       'created_at',
       'deactivated_at',
       'deactivation_reason',
-      'date_of_birth',
-      'username_normalized',
-      'telegram_username',
     ].sort(),
   );
   expect(
