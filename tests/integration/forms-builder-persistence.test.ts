@@ -85,10 +85,13 @@ function definition(label = 'Editable prompt') {
 }
 
 it('accepts the approved B06 identifier for the N12 series selector', async () => {
-  const value = definition();
+  const value = structuredClone(starter) as unknown as MutableDefinition;
+  value.questions = value.questions.filter(
+    (question) => question['id'] !== 'B06',
+  );
   value.questions.unshift({
     id: 'B06',
-    sectionId: 'section-1',
+    sectionId: 'basic',
     type: 'singleChoice',
     required: true,
     privacy: 'personal',

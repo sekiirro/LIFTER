@@ -2,28 +2,19 @@ import { randomUUID } from 'node:crypto';
 import type postgres from 'postgres';
 import { afterAll, describe, expect, it } from 'vitest';
 import { sql } from './harness';
+import starter from '../../lib/forms/s14-starter-content.json';
 
 const db = sql();
 afterAll(() => db.end());
 const rollback = new Error('T006 mutation probe rollback');
 
 function validDefinition(charLimit = 150) {
-  return {
-    title: { en: 'Your First Step', ar: 'خطوتك الأولى' },
-    sections: [{ id: 'start', title: { en: 'Start', ar: 'البداية' } }],
-    questions: [
-      {
-        id: 'goal',
-        sectionId: 'start',
-        type: 'shortText',
-        required: false,
-        charLimit,
-        label: { en: 'Goal', ar: 'الهدف' },
-      },
-    ],
-    deadlineDays: 3,
-    copyStatus: 'draft',
-  };
+  const value = structuredClone(starter);
+  const question = value.questions.find((candidate) => candidate.id === 'B05');
+  if (!question)
+    throw new Error('The starter short-text fixture is missing B05');
+  question.charLimit = charLimit;
+  return value;
 }
 
 async function fixture(tx: postgres.TransactionSql) {
@@ -153,7 +144,11 @@ describe('T006 persisted Builder mutation probes', () => {
         const base = validDefinition();
         const executable = {
           ...base,
-          questions: [{ ...base.questions[0]!, script: 'javascript:alert(1)' }],
+          questions: base.questions.map((question, index) =>
+            index === 0
+              ? { ...question, script: 'javascript:alert(1)' }
+              : question,
+          ),
         };
         const rows = await tx`
           select app_private.f15_valid_builder_definition(${tx.json(executable)},false) as valid`;
@@ -177,23 +172,27 @@ describe('T006 persisted Builder mutation probes', () => {
         const base = validDefinition();
         const cyclic = {
           ...base,
-          questions: [
-            {
-              ...base.questions[0]!,
-              when: {
-                mode: 'all',
-                conditions: [{ questionId: 'other', operator: 'isAnswered' }],
-              },
-            },
-            {
-              ...base.questions[0]!,
-              id: 'other',
-              when: {
-                mode: 'all',
-                conditions: [{ questionId: 'goal', operator: 'isAnswered' }],
-              },
-            },
-          ],
+          questions: base.questions.map((question) =>
+            question.id === 'B01'
+              ? {
+                  ...question,
+                  when: {
+                    mode: 'all',
+                    conditions: [{ questionId: 'B02', operator: 'isAnswered' }],
+                  },
+                }
+              : question.id === 'B02'
+                ? {
+                    ...question,
+                    when: {
+                      mode: 'all',
+                      conditions: [
+                        { questionId: 'B01', operator: 'isAnswered' },
+                      ],
+                    },
+                  }
+                : question,
+          ),
         };
         const rows = await tx`
           select app_private.f15_valid_builder_definition(${tx.json(cyclic)},false) as valid`;

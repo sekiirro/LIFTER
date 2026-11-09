@@ -48,7 +48,7 @@ function extendedFields(fixture: Awaited<ReturnType<typeof signupFixture>>) {
     ...fixture.fields,
     name: 'Client Example Synthetic',
     date_of_birth: '1990-04-12',
-    username: `Ｆit.Client.${fixture.link.replaceAll('-', '').slice(0, 8)}`,
+    username: `Fit.Client.${fixture.link.replaceAll('-', '').slice(0, 8)}`,
     telegram_username: '@FitClient_1',
   };
 }
@@ -144,13 +144,13 @@ it('rolls back profile, Auth identity, and link consumption together on a later 
   ).toHaveLength(0);
 });
 
-it('rejects a reserved username before link redemption and normalizes compatibility forms server-side', async () => {
+it('rejects a reserved username before link redemption and normalizes accepted usernames', async () => {
   const fixture = await signupFixture(context);
   const fields = extendedFields(fixture);
 
   expect(
-    await signup(db, fixture, { ...fields, username: 'Ｐｌａｔｆｏｒｍ' }),
-  ).toEqual({ status: 'invalid' });
+    await signup(db, fixture, { ...fields, username: 'PLATFORM' }),
+  ).toEqual({ status: 'username_unavailable' });
   expect(
     await db`select redeemed_at from app_private.signup_admission_tickets where id=${fixture.ticket} and redeemed_at is not null`,
   ).toHaveLength(0);
@@ -188,19 +188,19 @@ it('rejects usernames outside the approved normalized set before admission redem
   }
 });
 
-it('mutation: skipping the normalized username character check permits a format-control bypass', async () => {
+it('mutation: skipping the ASCII username character check permits a hyphenated value', async () => {
   const fixture = await signupFixture(context);
   const outcome = await runSignupMutation(
     fixture,
     async (definition) =>
       definition.replace(
-        /if\s+normalized_username\s*!~\s*'[^']+'\s+then\s+return\s+'[^']+'::jsonb;\s+end if;/u,
-        '-- format-control policy mutation',
+        "or fields->>'username' !~ '^[A-Za-z0-9_.]{3,30}$'",
+        'false',
       ),
     async (tx) =>
       signup(tx, fixture, {
         ...extendedFields(fixture),
-        username: 'platform\u200B',
+        username: 'client-name',
       }),
   );
   expect(outcome).toEqual({ status: 'complete' });
@@ -278,20 +278,20 @@ it('mutation: accepting a reserved username is caught and rolled back', async ()
     async (tx) =>
       signup(tx, fixture, {
         ...extendedFields(fixture),
-        username: 'Ｐｌａｔｆｏｒｍ',
+        username: 'PLATFORM',
       }),
   );
   expect(outcome).toEqual({ status: 'complete' });
 });
 
-it('mutation: skipping server NFKC normalization is caught and rolled back', async () => {
+it('mutation: skipping server username lowercasing is caught and rolled back', async () => {
   const fixture = await signupFixture(context);
   const outcome = await runSignupMutation(
     fixture,
     async (definition) =>
       definition.replace(
         /normalized_username\s*:=\s*lower\(normalize\(fields->>'username',\s*NFKC\)\);/u,
-        "normalized_username:=lower(fields->>'username');",
+        "normalized_username:=fields->>'username';",
       ),
     async (tx) => signup(tx, fixture, extendedFields(fixture)),
   );
