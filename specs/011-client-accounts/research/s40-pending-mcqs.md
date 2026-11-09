@@ -1,6 +1,6 @@
 # S40 pending PO questions (F11/F12 account lifecycle, round 3)
 
-Status: MCQ-12 to -20 DECIDED by S41-PO-1..3 (each entry carries its DECIDED line; encoded in spec.md Round 4, plan.md, tasks.md and traceability.md). The copy strings that those decisions needed are APPROVED by S41-PO-4 (P1-P9) and S41-PO-5 (workspace-create error) and are encoded in spec.md Round 5; the drafts in `research/s41-new-copy-proposal.md` are history only and P5b is dropped. S41-GAP-MCQ-1 and -2 (end of file) are DECIDED by S41-PO-4 and encoded. No copy or gap question remains open. MCQ-1 to -11 keep their earlier status. The S40 implementation gate (tasks.md, S40 section) stays closed only for the architect design gates and task dependencies named per task.
+Status: MCQ-12 to -20 DECIDED by S41-PO-1..3 (each entry carries its DECIDED line; encoded in spec.md Round 4, plan.md, tasks.md and traceability.md). The copy strings that those decisions needed are APPROVED by S41-PO-4 (P1-P9) and S41-PO-5 (workspace-create error) and are encoded in spec.md Round 5; the drafts in `research/s41-new-copy-proposal.md` are history only and P5b is dropped. S41-GAP-MCQ-1 and -2 (below) are DECIDED by S41-PO-4 and encoded; S41-GAP-MCQ-3 (end of file) is DECIDED by S41-PO-11 and encoded in spec.md Round 6. No copy or gap question remains open. MCQ-1 to -11 keep their earlier status. The S40 implementation gate (tasks.md, S40 section) stays closed only for the architect design gates and task dependencies named per task.
 
 Numbering: S40-F11-MCQ-n. Authority for decided items: S40-PO-13 (MCQ-1 = B, MCQ-2 = A, MCQ-11 = defaults), quoted in spec.md Round 3. Architect rulings (labelled, not PO words): S40-R19 MCQ-4, MCQ-8, MCQ-10; MCQ-12 is a proposal (research/s40-new-workspace-copy-proposal.md).
 
@@ -183,3 +183,19 @@ Question: after the last active Workspace Owner is deleted, may the Platform Own
 Implications: A restores approvals and client oversight at the workspace level with no new mechanism. B leaves the workspace permanently without a Workspace Owner. C changes the S41-PO-1 answer and needs the PO to confirm it.
 
 Blocked: none. The post-deletion state assertion of T047 for the last-active Workspace Owner case is unblocked by S41-GAP-MCQ-2 = A. Every other T047 case is unaffected.
+
+## S41-GAP-MCQ-3 — trainer assignment before approval and reassignment after a Trainer deletion (raised by the S41 gap sweep)
+
+**DECIDED — S41-PO-11, C + A** ("C + A. No trainer assignment before client approval. After approval, auto-assign or allow manual override. If the assigned trainer is deleted, auto-reassign to an active trainer using balanced distribution. Preserve audit history."). The PO record is quoted byte-exact, up to its "(Architect mapping" line, in spec.md Round 6 and `C:/Users/NEW LAP/.lifter/runs/s41-po/s41-po-1.verbatim.txt`. Encoded in FR-022, FR-027, FR-028 (a), (g), (h), SC-021, plan P-S40-1 step (B), P-S40-2 and P-S40-5, tasks T047, T050, T058 and T062, and traceability; 012 FR-022 and 012 T042 carry the cross-reference. S41-PO-11 supersedes S41-R4 F2 and the FR-027 "no automatic reassignment" wording for the trainer-deletion case only. Blocked: none.
+
+Facts: after S41-R4 F2 and S40-PO-13 MCQ-11, a manual PO assignment could exist before approval and, once ended, made the approval job a recorded no-op, leaving the client unassigned; every Trainer departure was also a no-op with no reassignment. The PO has decided the timing and the Trainer-deletion behaviour.
+
+Question (as raised): when a PO manually assigned a Trainer before approval and that Trainer departs before approval, should the approval still distribute the client automatically?
+
+- A) Yes: only a manual assignment made at or after approval blocks auto-distribution; a lapsed pre-approval choice does not. **Recommended at the time.**
+- B) No: any manual assignment, including an ended pre-approval one, keeps the no-op and the client stays unassigned until the PO assigns again.
+- C) Refuse manual assignment for a pending-approval client at write time, so the case cannot arise (changes FR-022 and the P-S40-2 eligibility).
+
+Implications: the PO answered C + A. C removes the pre-approval case and changes FR-022 and the P-S40-2 manual-write eligibility; A lets the PO override after approval. The answer also adds the Trainer-deletion rule: on deletion of an assigned Trainer's account, each of that Trainer's clients is automatically reassigned to an active, non-revoked trainer of the workspace by the same balanced distribution, or listed as unassigned when none is eligible; every assignment, override, end and reassignment keeps its ended row (start, end, actor or system) in audit history. This replaces the earlier "never auto-reassigns" reading for the Trainer-deletion case only; a delayed job that finds an active manual assignment, or a manual assignment ended by a membership revocation or role change, still completes as a recorded no-op.
+
+Blocked: none. The pre-approval refusal and post-approval override cases of T050, the reassignment cases of T047/T058/T062 and the T048 012 operation dependency are unblocked by S41-PO-11.

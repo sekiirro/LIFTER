@@ -1,6 +1,26 @@
 # Analyze — F11 client accounts
 
-## S40 round 10 analysis (CodeRabbit round 6 review 5832559377 on head 1c569497: 4 inline findings and 1 additional unverified comment) — 2026-11-09 22:59 +02:00, round 16 (current; written after the round 6 fix edits to spec.md, plan.md, tasks.md, traceability.md, research/s40-pending-mcqs.md, 012 spec.md, 012 tasks.md and the 012 Analyze; supersedes round 15 for statuses)
+## S41 round 7 analysis (CodeRabbit round 7 review 5832806947 on head a5fdecb5: 3 inline findings; S41-PO-11 encoded; S41-R16) — 2026-11-10 00:12 +02:00, round 17 (current; written after the round 7 edits to spec.md, plan.md, tasks.md, traceability.md, research/s40-pending-mcqs.md, 012 spec.md, 012 tasks.md and both Analyze files; supersedes round 16 for statuses)
+
+Entry check (Spec Kit gate section 1): PASS. Numbered FRs, SCs and Given/When/Then scenarios keep their structure; the Round 6 S41-PO-11 quote is byte-exact and its mapping is labelled architect words; plan P-S40-1, P-S40-2 and P-S40-5 cover the changed scope; tasks T047, T048, T050, T058, T062 and 012 T042 carry FR tags; this file is dated after the last change.
+
+Findings (round 17; each fixed or decided):
+
+| ID | Severity | Finding (CodeRabbit round 7 review 5832806947; S41-R16) | Status |
+|---|---|---|---|
+| A-S41-35 | LOW (closed by PO) | The historical PO-override check had no time scope; a pre-approval manual assignment whose Trainer departed made the approval job a no-op and left the client unassigned | CLOSED: S41-PO-11 = C + A decides the timing and the Trainer-deletion reassignment; encoded in FR-022, FR-027, FR-028 (a), (g), (h), SC-021, plan P-S40-1/P-S40-2/P-S40-5, T047/T050/T058/T062, traceability and the DECIDED entry in `research/s40-pending-mcqs.md` |
+| A-S41-36 | MINOR (fixed) | Finding 1: the staff claim guard was keyed to an intent "past step (C)", so `signup_auth_claim_sync` could replace the old claim keys during the step C Auth call itself | CLOSED: plan P-S40-1 now sets an in-progress intent state (`auth_release_in_progress`) in one transaction immediately before the step (C) Auth call and keeps it until step (D) commits; T047 tests the pause including the call |
+| A-S41-37 | MINOR (fixed) | Finding 2: the global S40 gate said no PO product question was open while S41-GAP-MCQ-3 was open | CLOSED: S41-PO-11 encoded; the gate text and `research/s40-pending-mcqs.md` now record S41-GAP-MCQ-3 as DECIDED with the question, options and implications in the repository |
+| A-S41-38 | MINOR (fixed) | Finding 3: T048 did not own the forward-only 012 operation changes that enforce the deletion-state check, require 012 T042 before release, and preserve authorised receipt replay | CLOSED: T048 now owns those 012 operation changes, makes the step (D) release depend on 012 T042, and preserves the FR-011 replay; 012 spec.md line 148 and 012 T042 carry the same dependency |
+| A-S41-4 | MEDIUM (open, architect gate) | Architect approval of the restricted continuation (plan P-S40-1) before T048 and of the restricted system entry point (plan P-S40-5) before T062 | OPEN. Architect, not PO |
+
+Counts: CRITICAL open 0. HIGH open 0. MEDIUM open 1 (A-S41-4, architect gate). LOW open 0. Round 16 items A-S41-31 to -34 stay closed; A-S41-35 is closed by S41-PO-11.
+
+Static consistency (run at 00:12 +02:00, recorded in report.md): the FR-022/FR-027/FR-028/SC-021, plan P-S40-1/P-S40-2/P-S40-5, T047/T048/T050/T058/T062 and traceability rows agree; every old "no automatic reassignment" sentence now names the trainer-deletion exception; the ID sweep and the S41-PO-11 byte check pass on the final tree; 012 has its own round 7 entry dated after its edits; 003 was not edited this round and its round 5 entry stays after its last edit.
+
+Result: PASS, 0 CRITICAL and 0 HIGH. No PO product question remains open in the S40 scope. This is a static document review; it makes no implementation-conformity claim.
+
+## S40 round 10 analysis (CodeRabbit round 6 review 5832559377 on head 1c569497: 4 inline findings and 1 additional unverified comment) — 2026-11-09 22:59 +02:00, round 16 (superseded by round 17 for statuses; written after the round 6 fix edits to spec.md, plan.md, tasks.md, traceability.md, research/s40-pending-mcqs.md, 012 spec.md, 012 tasks.md and the 012 Analyze)
 
 Entry check (Spec Kit gate section 1): PASS. Numbered FRs, SCs and Given/When/Then scenarios keep their structure; the Round 5 PO quotes are unchanged and byte-exact; plan P-S40-1 and P-S40-5 cover the touched scope; tasks T047, T049, T051, T054, T056, T058, T059 and 012 T042 carry FR tags; this file is dated after the last change.
 

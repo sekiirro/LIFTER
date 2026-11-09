@@ -1,6 +1,13 @@
 # Analyze — F12 registration approval and payment recording
 
-## 2026-11-09 22:59 +02:00 — S41 round 6 analysis (CodeRabbit round 6 on head 1c569497: 012 spec.md line 148 and tasks T042; PR #73)
+## 2026-11-10 00:11 +02:00 — S41 round 7 analysis (CodeRabbit round 7 review 5832806947 finding 3; S41-PO-11 cross-reference; PR #73)
+
+- Scope: 012 spec.md line 148 (the deletion-state check now names the 011 T048 owner and the 012 T042 gate) and FR-022 (the delayed-job no-op now excludes the Trainer-deletion reassignment of 011 FR-028 (h)), plus the gating note in tasks.md T042. The S41-PO-11 cross-reference changes no F12 decision: approval still auto-assigns through 011, and a deleted rejected client is still refused before any subscription or payment.
+- Entry check: FR-011 (an authorised replay returns the identical receipt), FR-017 (stale states are not changed) and FR-001 (PO/WO approval authority) remain consistent; 011 T048 now owns the forward-only 012 operation changes and requires this task to pass before the 011 deletion release ships. PASS.
+- Findings: CRITICAL 0. HIGH 0. MEDIUM 0 new. The P2 capability question (DG-F12-1) and the other open items are unchanged.
+- Result: PASS, 0 CRITICAL, 0 HIGH. Static consistency only; no product behaviour, migration or implementation is changed.
+
+## 2026-11-09 22:59 +02:00 — S41 round 6 analysis (CodeRabbit round 6 on head 1c569497: 012 spec.md line 148 and tasks T042; PR #73) (superseded by round 7 for statuses)
 
 - Scope: 012 spec.md line 148 and tasks.md T042 after CodeRabbit round 6. The deletion-state refusal now covers approve, reject and registration_reconsider, reads the F11 deletion state explicitly under the client lock (forward-only, 011 FR-018), and runs after an authorised receipt replay is checked. Because deletion keeps `approval_state` unchanged, a deleted rejected client still carries `rejected` and cannot be reconsidered into a subscription or payment. T042 adds the deleted rejected-client reconsideration case.
 - Entry check: FR-011 (replay returns the identical receipt) and FR-017 (stale states are not changed) remain consistent; FR-001 (PO/WO approval authority) is unchanged; the change is a technical enforcement of the already-decided terminal deletion state, not a new product rule. PASS.
