@@ -1,6 +1,6 @@
 # Analyze — F16 post-critique disposition (S40 round 11, current)
 
-- Date: 2026-11-09 15:27 +02:00 (pass 2, after CodeRabbit review `5826471568` on `eb4c1e3d`; after every round-11 spec-artifact edit, including the pass-2 edits to `tasks.md` T062, T063, T068, `plan.md` step 1 and status, and `spec.md` PDN-S40-F16-05 and -06. Earlier pass-1 record at 15:13 +02:00. Edits: `spec.md` S40 round 11 entry, US2 scenario 9, FR-014, FR-031, FR-038, SC-016 and the `spec.md:103` scope note; `plan.md` status, migration steps 1 and 3; `data-model.md` (`exercise_variations`, `exercise_variation_versions`, Effective resolution); `tasks.md` (T052, T054, T062, T063, T074, dependency order); `traceability.md` (FR-026, FR-031, FR-032, SC-016); `contracts/catalog-api.md`. This record is the last spec-artifact change of the round.
+- Date: 2026-11-09 15:38 +02:00 (pass 3, after CodeRabbit review `5826613092` on `616cc9fa`; spec.md FR-011 and SC-009 edited; this record is the last spec-artifact change of the round). Pass 2 at 15:27 +02:00 ( after CodeRabbit review `5826471568` on `eb4c1e3d`; after every round-11 spec-artifact edit, including the pass-2 edits to `tasks.md` T062, T063, T068, `plan.md` step 1 and status, and `spec.md` PDN-S40-F16-05 and -06. Earlier pass-1 record at 15:13 +02:00. Edits: `spec.md` S40 round 11 entry, US2 scenario 9, FR-014, FR-031, FR-038, SC-016 and the `spec.md:103` scope note; `plan.md` status, migration steps 1 and 3; `data-model.md` (`exercise_variations`, `exercise_variation_versions`, Effective resolution); `tasks.md` (T052, T054, T062, T063, T074, dependency order); `traceability.md` (FR-026, FR-031, FR-032, SC-016); `contracts/catalog-api.md`. This record is the last spec-artifact change of the round.
 - Scope (round 11): S40-PO-7 (PO, verbatim quote in `spec.md` "S40 round 11 — S40-PO-7") resolves PDN-S40-F16-02. S40-R11 (architect ruling, not PO) rules PDN-S40-F16-03: joint delivery of T054, T040 and T074, with the interim guards removed. S40-R12 (architect ruling) adds the `workspace_private` branch to the effective resolution contract. S40-R13 (architect ruling) adds the pre-deployment ordering gate to T052. Opens PDN-S40-F16-04 (PO). Spec-only: no code, SQL, migration, fixture or test changed.
 - Head at start of round 11: `c886ce10e9060ef6701a81e048e89f5a7dcef963`.
 
@@ -36,6 +36,15 @@ Severity below is this record's own classification. CodeRabbit labels all three 
 | R11-8 | `contracts/export-read-isolation.md:4` (omit trainer Notes from client projections) | MEDIUM (CodeRabbit Major, product question) | OPEN (PO), PDN-S40-F16-06 | Client visibility of trainer Notes is not decided in the spec. Not changed (no default encoded). Options and advisory recommendation in `spec.md` "S40 round 11 — PDN-S40-F16-06". Blocks only the client Notes projection (T058, F19/P4). |
 
 Pass-2 gate check: open CRITICAL 0, open HIGH 0. The three CodeRabbit "Major" items are recorded as MEDIUM because each is an open PO question that blocks only its own part, consistent with the round-10 treatment of PDN items.
+
+## Pass 3 findings (CodeRabbit round 11 second review, `5826613092` on `616cc9fa`, 2 inline comments)
+
+| ID | Area | Severity | Status | Disposition |
+| --- | --- | --- | --- | --- |
+| R11-9 | `spec.md:124` FR-011 (immutability rule vs approved cutover deletion) | LOW (CodeRabbit Minor, valid) | FIXED | FR-011 excepts the approved cutover deletion of legacy variation version history under FR-031 and FR-038 (S40-PO-7; scope PDN-S40-F16-05). Audit events are stated as never deleted. |
+| R11-10 | `spec.md:180` SC-009 (only override or Global video) | MEDIUM (CodeRabbit Major, valid) | FIXED | SC-009 now also covers a workspace-private exercise's own current video or explicit absence (`none`) (FR-024, FR-026; F16-MCQ-9 answered a). The restriction on other workspaces' media is kept. |
+
+Pass-3 gate check: open CRITICAL 0, open HIGH 0. Open MEDIUM: PDN-S40-F16-04, PDN-S40-F16-05, PDN-S40-F16-06 (unchanged; PO items).
 
 ## Counts (round 11)
 
