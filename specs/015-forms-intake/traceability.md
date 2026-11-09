@@ -93,3 +93,10 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 | --- | --- | --- | --- |
 | FR-024 / FR-025 — shared default-onboarding function source parity | T136 | Commit f828aa5; tests/unit/function-drift-guard.test.ts passed 1/1 on current A head; N11 focused suite also passed (18 tests across 2 files). | f828aa5 |
 | FR-040 / FR-026 / FR-036 / FR-037 — exact approved N11 English feedback bands and preserved Arabic feedback | T137 | Commit bbd4834; tests/unit/forms-n11-feedback.test.ts passed on current A head, covering exact strings and scores 0, 2, 3, 4, 5, 6, 7, 8, 9 and 10 (18 tests across the focused run). | bbd4834 |
+
+## S40 round 10 — partial / blocked
+
+| FR | Task | Test / evidence | Status |
+|---|---|---|---|
+| FR-004/006/008/024/025/038/039 | T139 | `tests/unit/migration-timestamps.test.ts` 15/15; `npm run check:migration-timestamps` validated 186 files; all-ref scan across 98 origin refs found max `20261108230000`, and the 70 renamed versions `20261108230001`–`20261108230110` are valid and preserve relative order. Rename commit `3551faf8e167195092a1605697e9ab63edd829bd` shows R100/0 SQL changes; per-file blob hashes are in `C:/Users/NEW LAP/.lifter/runs/s40-luna-f15-r10/rename-map.json`. Clean replay on authorized Stack D stopped at migration `20261108230004_f15_auth_identity_collisions_and_reader_policies.sql`: `CREATE FUNCTION app_private.signup_auth_identity_column(...)` collides with main's already-defined signature (SQLSTATE 42723). No reconciliation migration, Stack D target integration test, or completion checkbox is claimed. | OPEN; PDN-S40-03 required before any migration-order exception or push. |
+| FR-024/025 | T139 | `tests/integration/rls-catalog.test.ts`: deduplicate only the expected function-name inventory with `Set`; actual database rows and all SECURITY DEFINER, RLS, owner, search-path, and grant assertions remain unchanged. Typecheck/lint passed. Integration assertion not executed because clean replay stopped before tests. | OPEN; do not mark T139 complete. |

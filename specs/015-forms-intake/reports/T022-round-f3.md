@@ -6,7 +6,7 @@
 - Added a session-cookie adapter for the existing draft, submit, and correction endpoints. The form saves once before submit; no autosave/debounce behavior was added. Raw provider errors stay server-side and route responses remain private/no-store.
 - Added the exact canonical UUID destination to the F12 client route allowlist. After approval, status polling redirects only when the reader finds exactly one unsubmitted assignment; otherwise it stays on the existing `/` destination. The status page remains the manual recovery path.
 - Kept `/showcase/forms` behind its existing flag. Added localized loading and unavailable states using existing message keys/components.
-- Stack D additions: forward migrations `20261104032000_f15_client_assignment_route.sql` and `20261104032100_f15_client_route_destination_ambiguity_fix.sql`; no reset or production migration occurred.
+- Stack D additions: forward migrations `20261108230040_f15_client_assignment_route.sql` and `20261108230041_f15_client_route_destination_ambiguity_fix.sql`; no reset or production migration occurred.
 
 ## Mutation evidence
 

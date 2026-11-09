@@ -8,7 +8,7 @@ import {
 } from '../../lib/auth/capabilities';
 
 const capabilityMigration = readFileSync(
-  'supabase/migrations/20261104024000_f15_shared_forms_capability_reconciliation.sql',
+  'supabase/migrations/20261108230019_f15_shared_forms_capability_reconciliation.sql',
   'utf8',
 );
 const auditMigration = readFileSync(

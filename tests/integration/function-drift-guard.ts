@@ -7,8 +7,8 @@ export const guardedFunctions = [
   {
     identity: 'app_private.f15_valid_builder_definition(jsonb,boolean)',
     migration: [
-      '20261108021002_f15_builder_slider_validation_guard_localized.sql',
-      '20261108021001_f15_builder_slider_validation_guard.sql',
+      '20261108230110_f15_builder_slider_validation_guard_localized.sql',
+      '20261108230109_f15_builder_slider_validation_guard.sql',
       '20261108020200_f15_localized_slider_labels.sql',
     ],
     name: 'app_private.f15_valid_builder_definition',
@@ -17,57 +17,57 @@ export const guardedFunctions = [
     identity: 'app_private.ensure_default_onboarding_form(uuid,uuid)',
     migration: [
       '20261108021000_f15_localized_n11_starter_labels.sql',
-      '20261104023000_f15_default_provisioning_configuration.sql',
+      '20261108230018_f15_default_provisioning_configuration.sql',
     ],
     name: 'app_private.ensure_default_onboarding_form',
   },
   {
     identity:
       'app_private.save_workspace_form_draft(uuid,uuid,integer,jsonb,uuid,uuid,text)',
-    migration: '20261107010000_f15_review_fixes.sql',
+    migration: '20261108230050_f15_review_fixes.sql',
     name: 'app_private.save_workspace_form_draft',
   },
   {
     identity:
       'public.configure_intake_assignment_policy(uuid,uuid,integer,text,uuid[],text,jsonb,jsonb)',
-    migration: '20261107010000_f15_review_fixes.sql',
+    migration: '20261108230050_f15_review_fixes.sql',
     name: 'public.configure_intake_assignment_policy',
   },
   {
     identity:
       'app_private.materialize_intake_assignment_occurrence_core(uuid,uuid,text,date)',
-    migration: '20261107032400_f15_active_client_initial_occurrences.sql',
+    migration: '20261108230057_f15_active_client_initial_occurrences.sql',
     name: 'app_private.materialize_intake_assignment_occurrence_core',
   },
   {
     identity: 'app_private.reconcile_f15_form_assignment(uuid,uuid)',
-    migration: '20261107032400_f15_active_client_initial_occurrences.sql',
+    migration: '20261108230057_f15_active_client_initial_occurrences.sql',
     name: 'app_private.reconcile_f15_form_assignment',
   },
   {
     identity:
       'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)',
-    migration: '20261108020100_f15_cancel_alerts_after_lifecycle_end.sql',
+    migration: '20261108230104_f15_cancel_alerts_after_lifecycle_end.sql',
     name: 'app_private.evaluate_forms_alerts_core',
   },
   {
     identity: 'app_private.cancel_f15_client_alerts(uuid,uuid)',
-    migration: '20261108020100_f15_cancel_alerts_after_lifecycle_end.sql',
+    migration: '20261108230104_f15_cancel_alerts_after_lifecycle_end.sql',
     name: 'app_private.cancel_f15_client_alerts',
   },
   {
     identity: 'app_private.f15_alert_schedule_immutable()',
-    migration: '20261104030800_f15_alert_schedules.sql',
+    migration: '20261108230029_f15_alert_schedules.sql',
     name: 'app_private.f15_alert_schedule_immutable',
   },
   {
     identity: 'app_private.f15_alert_schedule_activate()',
-    migration: '20261104030800_f15_alert_schedules.sql',
+    migration: '20261108230029_f15_alert_schedules.sql',
     name: 'app_private.f15_alert_schedule_activate',
   },
   {
     identity: 'app_private.f15_alert_schedule_deactivate()',
-    migration: '20261104030800_f15_alert_schedules.sql',
+    migration: '20261108230029_f15_alert_schedules.sql',
     name: 'app_private.f15_alert_schedule_deactivate',
   },
   {
