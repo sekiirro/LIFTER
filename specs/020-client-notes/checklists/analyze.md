@@ -1,6 +1,6 @@
 # Spec Kit Analyze — F20 Client Notes
 
-**Analysis date**: 2026-11-09T12:42Z (round 10, re-run after S40-PO-6 resolved CN-MCQ-20 and CN-MCQ-21 and architect ruling S40-R9 decided CN-MCQ-22; every spec, plan, tasks, contracts, data-model and research edit precedes this analysis)
+**Analysis date**: 2026-11-09T13:05Z (round 10, re-run after the S40-PO-6/S40-R9 encoding and after CodeRabbit review 5826069631 on `40748f79` raised five findings; all five are fixed and every spec, plan, tasks, contracts, data-model and research edit precedes this analysis)
 **Inputs**: spec.md, plan.md, tasks.md, data-model.md, research.md, contracts/client-notes-api.md, contracts/client-notes-rls.md
 **Scope**: Spec-only. No code, SQL, migrations, or runtime work.
 
@@ -20,8 +20,9 @@ Scope note (not an F20 ambiguity): the app-wide audit retention period (DP-02 / 
 - CN-MCQ-20 is encoded in FR-011, the data-model content-free create-idempotency record, SC-007, T003, T004 and T015.
 - CN-MCQ-21 is encoded in FR-007, Story 2 scenario 6, Story 3 scenario 8, plan.md, the API contract, T005 and T013.
 - CN-MCQ-22 is encoded in FR-011, SC-002, SC-007, the data-model create-key rule, the API and RLS contracts and T015.
-- No new user-visible string is added. The mismatch and deleted/not-found outcomes use the existing generic save-error state (CN-MCQ-08 row 18); the architect ruling S40-R9 states "no user copy added (generic existing save-failed state)".
-- Contracts (`client-notes-api.md`, `client-notes-rls.md`): the create row carries same-key/same-body return, same-key/different-body mismatch refusal and retry-after-delete deleted/not-found; the display section carries the read-only-while-in-flight rule; the RLS contract adds duplicate-key, mismatch, retry-after-delete and content-free-record test rows. The RLS contract's "no row persisted" rows apply only to refused writes, not to Discard or to a duplicate-key return.
+- No new user-visible string is added. The mismatch and deleted/not-found outcomes use the existing generic save-error state (CN-MCQ-08 row 18); the architect ruling S40-R9 states "no user copy added (generic existing save-failed state)". The unknown-result recovery uses the existing save-error and Retry rows 18 and 17 under PO-approved DESIGN.md Q51.
+- Contracts (`client-notes-api.md`, `client-notes-rls.md`): the create row carries same-key/same-body return with trimmed body equality, same-key/different-body mismatch refusal, retry-after-delete deleted/not-found, note-side uniqueness and the atomic hardened boundary; the display section carries the read-only-while-in-flight rule and the unknown-result recovery; the RLS contract adds duplicate-key, mismatch, retry-after-delete, retry-after-edit and content-free-record test rows and requires the fingerprint. The RLS contract's "no row persisted" rows apply only to refused writes, not to Discard or to a duplicate-key return.
+- Round-10 CodeRabbit review 5826069631 raised five findings (2 Major, 3 Minor). All five are fixed: the fingerprint is required and retry-after-edit compares the original submission (RLS contract); the note row has its own unique constraint plus a hardened atomic write boundary (data-model, FR-011, T003, T015); retry body equality is defined after trimming (FR-011, data-model, API contract, T015); Story 2 scenarios 7-8 and SC-007 now qualify live/matching-body returns and state the mismatch and deleted outcomes; the unknown-result state retains text and offers the existing Retry/save-error states under PO-approved DESIGN.md Q51. None is a new product question.
 
 ## Findings
 
@@ -37,7 +38,9 @@ Scope note (not an F20 ambiguity): the app-wide audit retention period (DP-02 / 
 - Status lines in spec.md, plan.md and tasks.md agree: CN-MCQ-20 and CN-MCQ-21 RESOLVED by S40-PO-6, CN-MCQ-22 RULED by S40-R9, no open F20 PO question, no open behavioural ambiguity in the approved behaviour, no implementation authorized.
 - CN-MCQ-20 (content-free idempotency record; retry after a hard delete returns deleted/not-found and never recreates the note) is stated consistently in FR-011, SC-007, the data-model entity, invariant 9 and migration description, the API and RLS contracts, T003, T004 and T015, and the register.
 - CN-MCQ-21 (note field read-only while a save is in flight; only row 34 applies; no combined warning state; no new copy) is stated consistently in FR-007, Story 2 scenario 6, Story 3 scenario 8, the copy-table note, plan.md, the API contract, T005 and T013, and the register.
-- CN-MCQ-22 (same-key different-body mismatch: no second note, no body change, no create audit event) is stated consistently in FR-011, SC-002, SC-007, the data-model create-key rule, the API and RLS contracts, T004 and T015, and the register. The architect ruling is labelled as not a PO question.
+- CN-MCQ-22 (same-key different-body mismatch: no second note, no body change, no create audit event, body equality after trimming) is stated consistently in FR-011, SC-002, SC-007, Story 2 scenarios 7-8, the data-model create-key rule and invariants, the API and RLS contracts, T004 and T015, and the register. The architect ruling is labelled as not a PO question.
+- The note-side unique constraint and the hardened atomic write boundary are stated in FR-011, the data-model `idempotency_key` attribute, the create-key entity and invariant 9, the API and RLS contracts, T003 and T015. At most one live note can reference a key; the key record survives a hard delete.
+- The unknown-result recovery is stated consistently in FR-007, Story 2 scenario 6, Story 3 scenario 8, the API contract, plan.md (UI and risk), and T005/T013. It reuses the existing save-error and Retry rows 18 and 17 under PO-approved DESIGN.md Q51; no new copy is added.
 - The CN-MCQ-08 table (rows 1–29), CN-MCQ-16 rows (30–33) and CN-MCQ-19 row 34 are unchanged; no new copy row was added. Row 31 (body) is limited to unsubmitted text; rows 30, 32 and 33 (title, Stay, Discard) also label the in-flight warning.
 - The idempotency rule is stated identically in FR-011, SC-002, SC-007, Story 2 scenarios 7–8, plan.md (data section, risk and phases 4/6), data-model.md (column, entity, invariant 9 and migration description), both contracts, T003, T004 and T015.
 - No statement in spec.md, plan.md, tasks.md or the contracts promises cancellation, "no row persisted" or "no audit event" for a save that has already been submitted. The remaining "no row persisted" statements are refused-write cases only (Story 2 scenario 2, FR-002, SC-002, RLS contract body rows).
@@ -67,6 +70,7 @@ The worktree contains no `.specify/memory/constitution.md` (searched: no `consti
   - `PRRT_kwDOVYgYQ861PcV-` `spec.md:95` (Major · Functional Correctness): simultaneous pending and unsubmitted changes, plus warning labels. **Valid product question**; the labels part was fixed in `2272ca83`; the behaviour part is answered by S40-PO-6 as CN-MCQ-21 option A (field read-only while in flight; only row 34 applies). Encoded in FR-007, Story 2 scenario 6, Story 3 scenario 8, T005 and T013.
   - `PRRT_kwDOVYgYQ861PcWG` `spec.md:99` (Minor · Data Integrity & Integration): reject same-key retries with a different body. **Valid**; ruled by S40-R9 as CN-MCQ-22 option A. Encoded in FR-011, SC-002, SC-007, both contracts, T004 and T015.
 - **PRRT_kwDOVYgYQ861FR0f** (spec.md, "obtain approval for bilingual copy and add exit-protection scenarios"): the copy is approved (S38-PO-11) and the exit-protection scenarios exist. Replied and resolved in the round-6 step.
+- **CodeRabbit review 5826069631 on `40748f79`** (CHANGES_REQUESTED, 5 inline findings): all five fixed. `PRRT_kwDOVYgYQ861QhiN` (rls.md:47) requires the original-body fingerprint and adds retry-after-edit coverage; `PRRT_kwDOVYgYQ861QhiU` (data-model.md:27) adds the note-side unique constraint and hardened atomic write boundary; `PRRT_kwDOVYgYQ861QhiY` (data-model.md:40) defines retry body equality after trimming; `PRRT_kwDOVYgYQ861Qhie` (spec.md:68) qualifies Story 2 scenarios 7-8 and SC-007 for live/matching-body, mismatch and deleted outcomes; `PRRT_kwDOVYgYQ861Qhig` (spec.md:95) defines the unknown-result recovery using existing save-error/Retry rows 17-18 under PO-approved DESIGN.md Q51.
 
 ## Round-4 CodeRabbit history (kept for traceability)
 
@@ -83,11 +87,11 @@ The worktree contains no `.specify/memory/constitution.md` (searched: no `consti
 | FR-004 role × action | T002, T006, T011 |
 | FR-005 isolation, RLS | T003, T006, T011, T014 |
 | FR-006 PO decisions, reuse rule | T001, T007 |
-| FR-007 states, copy rows 1–34, Bidi, no icon, exit protection, no Save Draft, field read-only while in flight (CN-MCQ-21; S40-PO-6) | T005, T013 |
+| FR-007 states, copy rows 1–34, Bidi, no icon, exit protection, no Save Draft, field read-only while in flight, unknown-result recovery with existing Retry/save-error rows (CN-MCQ-21; S40-PO-6; DESIGN.md Q51) | T005, T013 |
 | FR-008 ordering | T008 |
 | FR-009 last write wins, local time | T004, T010, T013 |
 | FR-010 audit | T004, T012 |
-| FR-011 create idempotency, duplicate returns existing note, mismatch refusal, retry-after-delete deleted/not-found (CN-MCQ-20, CN-MCQ-22) | T003, T004, T015 |
+| FR-011 create idempotency, duplicate returns existing note, trimmed body equality, note-side uniqueness and hardened boundary, mismatch refusal, retry-after-delete deleted/not-found, retry-after-edit fingerprint (CN-MCQ-20, CN-MCQ-22) | T003, T004, T015 |
 | SC-001..SC-007 | mapped in tasks.md coverage table |
 
 Every FR and SC has at least one task. No task lacks a requirement mapping.
@@ -104,8 +108,8 @@ Every FR and SC has at least one task. No task lacks a requirement mapping.
 - [x] PO binding text quoted byte-exact in spec.md: S37-PO-6, S37-PO-7, S37-PO-14, S37-PO-16 (Client Notes line), S38-PO-2 (item 2), S38-PO-10, S38-PO-11, S39-PO-8 (Client Notes line), S39-PO-9 (both lines), S40-PO-3 (`Variant 1 (Recommended)`) and S40-PO-6 (both PO lines), with the S40-PO-3 and S40-PO-6 parenthesised mappings labelled as not PO words; the S40-R9 architect ruling is quoted and labelled as not a PO question.
 - [x] Analyze dated after the last change to spec, plan, tasks, data-model, research and contracts (this analysis 2026-11-09T12:42Z follows every round-10 edit).
 - [x] Revoked-membership scope matches the existing PO rule (FR-004; spec.md Clarifications item 2): SC-001, Story 3 scenario 4, the RLS and API contracts, plan.md and T006 say non-PO revoked membership.
-- [x] Tasks: 0 ticks; T003/T004/T015 cover the content-free idempotency record, mismatch and retry-after-delete; T005/T013 cover the exit-protection rows 30–34 and the read-only-while-in-flight rule.
+- [x] Tasks: 0 ticks; T003/T004/T015 cover the content-free idempotency record, trimmed body equality, note-side uniqueness/hardened boundary, mismatch and retry-after-delete/after-edit; T005/T013 cover the exit-protection rows 30–34, the read-only-while-in-flight rule and the unknown-result recovery with existing rows 17-18.
 
 ## Result
 
-PASS for the spec-only PR analysis gate on severity: 0 open CRITICAL, 0 open HIGH and 0 open MEDIUM. All F20 PO questions are resolved (CN-MCQ-20 and CN-MCQ-21 by S40-PO-6) and the one architect ruling (CN-MCQ-22 by S40-R9) is encoded; no open ambiguity remains in the approved behaviour. One LOW implementation-time check (textarea component mapping) remains. This result does not approve product decisions and does not authorize implementation.
+PASS for the spec-only PR analysis gate on severity: 0 open CRITICAL, 0 open HIGH and 0 open MEDIUM. All F20 PO questions are resolved (CN-MCQ-20 and CN-MCQ-21 by S40-PO-6) and the one architect ruling (CN-MCQ-22 by S40-R9) is encoded; no open ambiguity remains in the approved behaviour. The five CodeRabbit review 5826069631 findings are fixed within decided scope, including the unknown-result recovery under PO-approved DESIGN.md Q51. One LOW implementation-time check (textarea component mapping) remains. This result does not approve product decisions and does not authorize implementation.
