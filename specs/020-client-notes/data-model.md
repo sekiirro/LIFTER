@@ -1,6 +1,6 @@
 # Client Notes — Data Model (proposal)
 
-This document describes a future schema only. It adds no SQL or migration file. Exact schema remains subject to the implementation-time scan of all origin refs. CN-MCQ-01..14 are resolved by the PO (spec.md Clarifications, including S37-PO-14, S37-PO-16 and the S38-PO-2 copy table). CN-MCQ-15 (DESIGN.md §11 UI values) was removed by S38-R9. CN-MCQ-16 (exit-protection copy, not a data-model item) is RESOLVED by S38-PO-10 and S38-PO-11 (rows 30–33). CN-MCQ-17 (Discard with an in-flight save) is RESOLVED by S39-PO-8. CN-MCQ-18 (idempotent create with DB-level duplicate prevention) is RESOLVED by S39-PO-9. CN-MCQ-19 (in-flight warning copy) has its direction approved by S39-PO-9; its exact strings are PENDING-PO and are not a data-model item.
+This document describes a future schema only. It adds no SQL or migration file. Exact schema remains subject to the implementation-time scan of all origin refs. CN-MCQ-01..14 are resolved by the PO (spec.md Clarifications, including S37-PO-14, S37-PO-16 and the S38-PO-2 copy table). CN-MCQ-15 (DESIGN.md §11 UI values) was removed by S38-R9. CN-MCQ-16 (exit-protection copy, not a data-model item) is RESOLVED by S38-PO-10 and S38-PO-11 (rows 30–33). CN-MCQ-17 (Discard with an in-flight save) is RESOLVED by S39-PO-8. CN-MCQ-18 (idempotent create with DB-level duplicate prevention) is RESOLVED by S39-PO-9. CN-MCQ-19 (in-flight warning copy) is RESOLVED by S40-PO-3, option Variant 1 (Recommended), and is a copy row (spec.md row 34), not a data-model item.
 
 ## Existing model reused
 
