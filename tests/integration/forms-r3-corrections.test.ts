@@ -28,8 +28,9 @@ it('T014 appends a client self-correction without changing the original or loggi
     health: 'updated synthetic health value',
   };
 
-  await expect(
-    db.begin(async (tx) => {
+  let outerError: unknown;
+  try {
+    await db.begin(async (tx) => {
       expect(
         (
           await sqlCall(
@@ -44,7 +45,12 @@ it('T014 appends a client self-correction without changing the original or loggi
         insert into app_private.terms_policy_versions(version,policy_kind,status)
         values(${policy},'terms','published')
       `;
-      const definition = { questions: [{ id: 'ordinary' }, { id: 'health' }] };
+      const definition = {
+        questions: [
+          { id: 'ordinary', type: 'shortText', charLimit: 10 },
+          { id: 'health', type: 'longText', charLimit: 1000 },
+        ],
+      };
       await tx`insert into public.forms(id,workspace_id,name)
         values(${formId},${context.wsA.id},'T014 synthetic corrections')`;
       await tx`
@@ -102,6 +108,29 @@ it('T014 appends a client self-correction without changing the original or loggi
       expect(revisionMutationKilled).toBe(true);
       await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: client.userId, role: 'authenticated' })},true)`;
       await tx`set local role authenticated`;
+      const [originalSecurity] =
+        await tx`select pg_catalog.pg_get_functiondef('public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text)'::regprocedure) as definition`;
+      const securityRollback = new Error('rollback security mutation');
+      let securityMutationKilled = false;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`reset role`;
+          await sp`alter function public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text) security invoker`;
+          const [mutated] =
+            await sp`select p.prosecdef from pg_catalog.pg_proc p where p.oid='public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text)'::regprocedure`;
+          try {
+            expect(mutated?.prosecdef).toBe(true);
+          } catch {
+            securityMutationKilled = true;
+          }
+          throw securityRollback;
+        }),
+      ).rejects.toBe(securityRollback);
+      expect(securityMutationKilled).toBe(true);
+      const [restoredSecurity] =
+        await tx`select pg_catalog.pg_get_functiondef('public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text)'::regprocedure) as definition, (select p.prosecdef from pg_catalog.pg_proc p where p.oid='public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text)'::regprocedure) as prosecdef`;
+      expect(restoredSecurity?.definition).toBe(originalSecurity?.definition);
+      expect(restoredSecurity?.prosecdef).toBe(true);
       await expect(
         tx.savepoint(async (sp) => {
           await sp`
@@ -119,6 +148,19 @@ it('T014 appends a client self-correction without changing the original or loggi
         ) as result
       `;
       expect(overlongNote?.result).toEqual({ status: 'answer_too_long' });
+      const [overCharLimit] = await tx`select public.correct_form_answer(
+        ${context.wsA.id},${assignmentId},1,${randomUUID()},${tx.json({ ordinary: 'x'.repeat(11), health: 'safe' })},'synthetic note'
+      ) as result`;
+      expect(overCharLimit?.result).toEqual({ status: 'answer_too_long' });
+      const [overAnswerBytes] = await tx`select public.correct_form_answer(
+        ${context.wsA.id},${assignmentId},1,${randomUUID()},${tx.json({ ordinary: 'ok', health: '??'.repeat(1025) })},'synthetic note'
+      ) as result`;
+      expect(overAnswerBytes?.result).toEqual({ status: 'answer_too_long' });
+      await tx`reset role`;
+      expect(
+        await tx`select count(*)::int as count from public.form_answer_revisions where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}`,
+      ).toEqual([{ count: 1 }]);
+      await tx`set local role authenticated`;
       const [result] = await tx`
         select public.correct_form_answer(
           ${context.wsA.id},${assignmentId},1,${intentKey},${tx.json(correctedAnswers)},'synthetic correction note'
@@ -177,7 +219,7 @@ it('T014 appends a client self-correction without changing the original or loggi
           await sp`set local role authenticated`;
           await sp`
             select public.correct_form_answer(
-              ${context.wsA.id},${assignmentId},2,${secondIntentKey},${sp.json({ ...correctedAnswers, ordinary: 'must rollback' })},'synthetic mutation note'
+              ${context.wsA.id},${assignmentId},2,${secondIntentKey},${sp.json({ ...correctedAnswers, ordinary: 'rollback' })},'synthetic mutation note'
             )
           `;
         }),
@@ -209,8 +251,11 @@ it('T014 appends a client self-correction without changing the original or loggi
         ).rejects.toBe(rollback);
       }
       throw rollback;
-    }),
-  ).rejects.toBe(rollback);
+    });
+  } catch (error) {
+    outerError = error;
+  }
+  expect(outerError).toBe(rollback);
 });
 
 it('T014 keeps Trainer, WO, and PO correction roles pending shared capability reconciliation', async () => {

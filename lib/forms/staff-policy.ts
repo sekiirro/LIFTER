@@ -21,15 +21,11 @@ export function resolveClientDeadlineDays(input: {
   return days;
 }
 
-export function getClientReminderSchedule(
-  deadlineAt: string,
-  trainerAssigned: boolean,
-) {
+export function getClientReminderSchedule(deadlineAt: string) {
   const schedule = calculateClientLateAlertSchedule(deadlineAt);
   return {
-    firstAt: trainerAssigned ? schedule.trainerAt : schedule.noTrainerAt,
-    firstAudience: trainerAssigned ? ('trainer' as const) : ('owners' as const),
-    escalationAt: schedule.ownersAt,
+    firstAt: schedule.ownersAt,
+    firstAudience: 'owners' as const,
     reassignmentResetsClock: schedule.reassignmentResetsClock,
     trainerLatePolicy: 'd03' as const,
   };

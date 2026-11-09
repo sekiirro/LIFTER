@@ -2,7 +2,6 @@ const CAIRO_TIME_ZONE = 'Africa/Cairo';
 const RULE_ID = 'cairo-d03-v1';
 const MINUTE_MS = 60_000;
 const HOUR_MS = 60 * MINUTE_MS;
-const DAY_MS = 24 * HOUR_MS;
 
 export type CairoD03Deadline = {
   ruleId: typeof RULE_ID;
@@ -19,9 +18,7 @@ export type CairoClientSubmissionDeadline = {
 };
 
 export type ClientLateAlertSchedule = {
-  trainerAt: string;
   ownersAt: string;
-  noTrainerAt: string;
   reassignmentResetsClock: false;
 };
 
@@ -133,18 +130,15 @@ export function calculateCairoClientSubmissionDeadline(
   };
 }
 
-/** Schedules client-late alerts from the original deadline instant. */
+/** Client-late alerts notify authorized owners immediately at the deadline. */
 export function calculateClientLateAlertSchedule(
   deadlineAt: string,
 ): ClientLateAlertSchedule {
   const deadlineInstant = Date.parse(deadlineAt);
   if (!Number.isFinite(deadlineInstant))
     throw new TypeError('deadlineAt must be a valid instant');
-
   return {
-    trainerAt: new Date(deadlineInstant + DAY_MS).toISOString(),
-    ownersAt: new Date(deadlineInstant + 2 * DAY_MS).toISOString(),
-    noTrainerAt: new Date(deadlineInstant + DAY_MS).toISOString(),
+    ownersAt: new Date(deadlineInstant).toISOString(),
     reassignmentResetsClock: false,
   };
 }

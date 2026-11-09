@@ -70,114 +70,59 @@ async function core(
   return row!.result as { status: string; enqueued?: number };
 }
 
-// PDN-S39-F15-01 (S39-PO-8) defers client-to-Trainer assignment and the client-late Trainer alert to F11/F12.
-// Keep this integration scenario out of F15 until that separate specification work lands.
-it.skip('uses client-late +24h and +48h clocks and routes no-Trainer cases to both owners', async () => {
+it('notifies only PO and WO at the client deadline, regardless of Trainer assignment', async () => {
   const f = await clientContext();
   const client = await registered(f);
   await expect(
     db.begin(async (tx) => {
       const deadline = '2026-02-01T10:00:00.000Z';
-      const assigned = await formAssignment(
+      const assignment = await formAssignment(
         tx,
         f.wsA.id,
         client.id,
         deadline,
         f.po.userId,
       );
-      await formAssignment(tx, f.wsA.id, client.id, deadline, f.po.userId);
-      await tx`update app_private.form_alert_schedules
-        set trainer_user_id=${f.trainerA.userId}
-        where workspace_id=${f.wsA.id} and source_assignment_id=${assigned} and alert_kind='client_late'`;
-      const [before] = await tx`select id from app_private.form_alert_schedules
-        where workspace_id=${f.wsA.id} and source_assignment_id=${assigned} and alert_kind='client_late'`;
-      expect(before?.id).toBeTruthy();
-      const scheduledAudit =
-        await tx`select action,details from public.audit_events
-        where workspace_id=${f.wsA.id} and target_id=${before!.id}
-          and action='form.alert_scheduled'`;
-      expect(scheduledAudit).toHaveLength(1);
-      expect(
-        Object.keys(
-          scheduledAudit[0]!.details as Record<string, unknown>,
-        ).sort(),
-      ).toEqual(['kind', 'schedule_id', 'source_assignment_id']);
-      await tx`insert into public.workspace_memberships(workspace_id,user_id,granted_by)
-        values(${f.wsA.id},${f.trainerB.userId},${f.po.userId})`;
-      await tx`update app_private.form_alert_schedules
-        set trainer_user_id=${f.trainerB.userId}
-        where workspace_id=${f.wsA.id} and source_assignment_id=${assigned} and alert_kind='client_late'`;
-      const updatedAudit =
-        await tx`select action,details from public.audit_events
-        where workspace_id=${f.wsA.id} and target_id=${before!.id}
-          and action='form.alert_source_updated'`;
-      expect(updatedAudit).toHaveLength(2);
-      expect(
-        updatedAudit.every(
-          (row) =>
-            Object.keys(row.details as Record<string, unknown>)
-              .sort()
-              .join(',') === 'kind,schedule_id,source_assignment_id',
-        ),
-      ).toBe(true);
-
-      expect(await core(tx, f.wsA.id, '2026-02-02T09:59:59.999Z')).toEqual({
+      await tx`update app_private.form_alert_schedules set trainer_user_id=${f.trainerA.userId}
+      where workspace_id=${f.wsA.id} and source_assignment_id=${assignment} and alert_kind='client_late'`;
+      expect(await core(tx, f.wsA.id, '2026-02-01T09:59:59.999Z')).toEqual({
         status: 'ok',
         enqueued: 0,
       });
-      expect(await core(tx, f.wsA.id, '2026-02-02T10:00:00.000Z')).toEqual({
+      expect(await core(tx, f.wsA.id, deadline)).toEqual({
         status: 'ok',
-        enqueued: 3,
+        enqueued: 2,
       });
-      const at24 = await tx`select o.stage,o.recipient_user_id,j.kind,j.payload,
-          e.details
-        from app_private.form_alert_occurrences o
-        join public.jobs j on j.id=o.job_id
-        join public.audit_events e on e.target_id=o.id and e.action='form.alert_enqueued'
-        where o.workspace_id=${f.wsA.id}
-        order by o.stage,o.recipient_user_id`;
-      expect(at24).toHaveLength(3);
+      const rows = await tx`select o.stage,o.recipient_user_id,j.kind,j.payload
+      from app_private.form_alert_occurrences o join public.jobs j on j.id=o.job_id
+      where o.workspace_id=${f.wsA.id} order by o.recipient_user_id`;
+      expect(rows).toHaveLength(2);
+      expect(rows.map((row) => row.recipient_user_id).sort()).toEqual(
+        [f.po.userId, f.woA.userId].sort(),
+      );
       expect(
-        at24.filter((row) => row.stage === 'client_trainer_24h'),
-      ).toMatchObject([
-        { recipient_user_id: f.trainerB.userId, kind: 'forms.alert' },
-      ]);
+        rows.every(
+          (row) =>
+            row.stage === 'client_owners_immediate' &&
+            row.kind === 'forms.alert',
+        ),
+      ).toBe(true);
       expect(
-        at24
-          .filter((row) => row.stage === 'client_owners_24h')
-          .map((row) => row.recipient_user_id)
-          .sort(),
-      ).toEqual([f.po.userId, f.woA.userId].sort());
-      for (const row of at24) {
-        expect(
-          Object.keys(row.payload as Record<string, unknown>).sort(),
-        ).toEqual(['alert_id', 'recipient_id', 'stage']);
-        expect(
-          Object.keys(row.details as Record<string, unknown>).sort(),
-        ).toEqual(['recipient_id', 'schedule_id', 'stage']);
-      }
-
+        rows.every(
+          (row) =>
+            Object.keys(row.payload as Record<string, unknown>)
+              .sort()
+              .join(',') === 'alert_id,recipient_id,stage',
+        ),
+      ).toBe(true);
       expect(await core(tx, f.wsA.id, '2026-02-02T10:00:00.000Z')).toEqual({
         status: 'ok',
         enqueued: 0,
       });
       expect(await core(tx, f.wsA.id, '2026-02-03T10:00:00.000Z')).toEqual({
         status: 'ok',
-        enqueued: 4,
+        enqueued: 0,
       });
-      const at48 =
-        await tx`select stage,recipient_user_id from app_private.form_alert_occurrences
-        where workspace_id=${f.wsA.id} and stage='client_owners_48h'`;
-      expect(at48).toHaveLength(4);
-      expect(at48.map((row) => row.recipient_user_id).sort()).toEqual(
-        [f.po.userId, f.woA.userId, f.po.userId, f.woA.userId].sort(),
-      );
-      const [schedule] =
-        await tx`select deadline_at from app_private.form_alert_schedules
-        where workspace_id=${f.wsA.id} and source_assignment_id=${assigned} and alert_kind='client_late'`;
-      expect(new Date(schedule!.deadline_at as string).toISOString()).toBe(
-        deadline,
-      );
       throw rollback;
     }),
   ).rejects.toBe(rollback);
@@ -319,8 +264,8 @@ it('skips finished client-late schedules before taking a bounded evaluator batch
         insert into app_private.form_alert_occurrences(
           workspace_id,schedule_id,stage,recipient_user_id,job_id,enqueued_at
         ) values
-          (${f.wsA.id},${finishedSchedule?.id},'client_owners_48h',${f.po.userId},null,'2026-04-04T00:00:00Z'),
-          (${f.wsA.id},${finishedSchedule?.id},'client_owners_48h',${f.woA.userId},null,'2026-04-04T00:00:00Z')
+          (${f.wsA.id},${finishedSchedule?.id},'client_owners_immediate',${f.po.userId},null,'2026-04-04T00:00:00Z'),
+          (${f.wsA.id},${finishedSchedule?.id},'client_owners_immediate',${f.woA.userId},null,'2026-04-04T00:00:00Z')
       `;
 
       const staleTrainerAssignment = await formAssignment(
@@ -379,16 +324,16 @@ it('rechecks recipient authorization at enqueue time and returns a safe error fo
         where workspace_id=${f.wsA.id} and source_assignment_id=${assignment} and alert_kind='client_late'`;
       await tx`update public.workspace_memberships
         set revoked_at=clock_timestamp(),revoked_by=${f.po.userId}
-        where workspace_id=${f.wsA.id} and user_id=${f.trainerA.userId} and revoked_at is null`;
+        where workspace_id=${f.wsA.id} and user_id=${f.woA.userId} and revoked_at is null`;
       expect(await core(tx, f.wsA.id, '2026-04-02T00:00:00.000Z')).toEqual({
         status: 'ok',
-        enqueued: 2,
+        enqueued: 1,
       });
       const recipients = await tx`select stage,recipient_user_id
         from app_private.form_alert_occurrences where workspace_id=${f.wsA.id}`;
-      expect(recipients.map((row) => row.recipient_user_id).sort()).toEqual(
-        [f.po.userId, f.woA.userId].sort(),
-      );
+      expect(recipients).toEqual([
+        { stage: 'client_owners_immediate', recipient_user_id: f.po.userId },
+      ]);
       expect(await core(tx, f.wsA.id, null)).toEqual({
         status: 'invalid_input',
       });
@@ -397,7 +342,7 @@ it('rechecks recipient authorization at enqueue time and returns a safe error fo
   ).rejects.toBe(rollback);
 });
 
-it('waits for a concurrent membership revocation and excludes the recipient at enqueue', async () => {
+it('waits for concurrent workspace-owner revocation and excludes the recipient at enqueue', async () => {
   const f = await clientContext();
   const client = await registered(f);
   const assignment = await db.begin(async (tx) =>
@@ -427,7 +372,7 @@ it('waits for a concurrent membership revocation and excludes the recipient at e
   const hold = revoker.begin(async (tx) => {
     await tx`update public.workspace_memberships
       set revoked_at=clock_timestamp(),revoked_by=${f.po.userId}
-      where workspace_id=${f.wsA.id} and user_id=${f.trainerA.userId} and revoked_at is null`;
+      where workspace_id=${f.wsA.id} and user_id=${f.woA.userId} and revoked_at is null`;
     releaseRevocation();
     await evaluatorBlocked;
   });
@@ -462,19 +407,24 @@ it('waits for a concurrent membership revocation and excludes the recipient at e
     releaseCommit();
     await hold;
     const [result] = await evaluation;
-    expect(result!.result).toEqual({ status: 'ok', enqueued: 0 });
+    expect(result!.result).toEqual({ status: 'ok', enqueued: 1 });
     const [fallback] = await db`
       select app_private.evaluate_forms_alerts_core(
         '2026-04-11T00:00:00Z'::timestamptz,${f.wsA.id}::uuid,250
       ) as result`;
-    expect(fallback!.result).toEqual({ status: 'ok', enqueued: 2 });
+    expect(fallback!.result).toEqual({ status: 'ok', enqueued: 0 });
+    expect(
+      await db`select stage,recipient_user_id from app_private.form_alert_occurrences where workspace_id=${f.wsA.id}`,
+    ).toEqual([
+      { stage: 'client_owners_immediate', recipient_user_id: f.po.userId },
+    ]);
     const recipients = await db`select stage,recipient_user_id
       from app_private.form_alert_occurrences
       where workspace_id=${f.wsA.id} and schedule_id=(
         select id from app_private.form_alert_schedules where source_assignment_id=${assignment}
       )`;
     expect(recipients.map((row) => row.recipient_user_id).sort()).toEqual(
-      [f.po.userId, f.woA.userId].sort(),
+      [f.po.userId].sort(),
     );
   } finally {
     releaseCommit();
@@ -499,7 +449,7 @@ it('cancels client-late alert rows immediately when a client relationship ends',
         f.po.userId,
       );
       const evaluated = await core(tx, f.wsA.id, '2026-04-12T00:00:00.000Z');
-      expect(evaluated).toEqual({ status: 'ok', enqueued: 4 });
+      expect(evaluated).toEqual({ status: 'ok', enqueued: 2 });
       const [before] = await tx`
         select count(*)::int as count from app_private.form_alert_inbox
         where source_assignment_id=${assignment}

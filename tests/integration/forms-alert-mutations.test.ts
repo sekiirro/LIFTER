@@ -114,15 +114,15 @@ async function setupClient() {
   return { f, client };
 }
 
-it('kills combined clocks, reassignment deadline reset, and omitted-owner mutants', async () => {
+it('kills delayed client-late stages, reassignment deadline reset, and omitted-owner mutants', async () => {
   {
     const { f, client } = await setupClient();
     await withCrashSafeFunctionMutant(
       CORE,
       (source) =>
         source.replace(
-          "schedule_row.deadline_at + interval '24 hours' as stage_at\n        where schedule_row.alert_kind='client_late'",
           "schedule_row.deadline_at as stage_at\n        where schedule_row.alert_kind='client_late'",
+          "schedule_row.deadline_at + interval '24 hours' as stage_at\n        where schedule_row.alert_kind='client_late'",
         ),
       async () =>
         expectInvariantFailure(
@@ -142,7 +142,7 @@ it('kills combined clocks, reassignment deadline reset, and omitted-owner mutant
                 await evaluate(tx, f.wsA.id, '2026-05-01T10:00:00.000Z'),
               ).toEqual({
                 status: 'ok',
-                enqueued: 0,
+                enqueued: 2,
               });
             }),
         ),
@@ -197,7 +197,7 @@ it('kills combined clocks, reassignment deadline reset, and omitted-owner mutant
             await evaluate(tx, f.wsA.id, '2026-05-06T10:00:00.000Z');
             const recipients = await tx`select recipient_user_id
               from app_private.form_alert_occurrences
-              where workspace_id=${f.wsA.id} and stage='client_owners_48h'`;
+              where workspace_id=${f.wsA.id} and stage='client_owners_immediate'`;
             expect(
               recipients.map((row) => row.recipient_user_id).sort(),
             ).toEqual([f.po.userId, f.woA.userId].sort());
@@ -207,15 +207,19 @@ it('kills combined clocks, reassignment deadline reset, and omitted-owner mutant
   }
 });
 
-it('kills revoked-recipient, duplicate-stage, and answer-text mutants', async () => {
+it('kills delayed-owner-stage, duplicate-stage, and answer-text mutants', async () => {
   {
     const { f, client } = await setupClient();
     await withCrashSafeFunctionMutant(
       CORE,
-      (source) => source.replaceAll('and wm.revoked_at is null', ''),
+      (source) =>
+        source.replace(
+          "schedule_row.deadline_at as stage_at\n        where schedule_row.alert_kind='client_late'",
+          "schedule_row.deadline_at + interval '24 hours' as stage_at\n        where schedule_row.alert_kind='client_late'",
+        ),
       async () =>
         expectInvariantFailure(
-          'revoked Trainer must not receive a queued alert',
+          'immediate owner stage must enqueue the platform owner',
           () =>
             rollbackProbe(async (tx) => {
               const assignment = await makeAssignment(
@@ -229,14 +233,14 @@ it('kills revoked-recipient, duplicate-stage, and answer-text mutants', async ()
               where workspace_id=${f.wsA.id} and source_assignment_id=${assignment}`;
               await tx`update public.workspace_memberships
               set revoked_at=clock_timestamp(),revoked_by=${f.po.userId}
-              where workspace_id=${f.wsA.id} and user_id=${f.trainerA.userId} and revoked_at is null`;
-              await evaluate(tx, f.wsA.id, '2026-05-08T10:00:00.000Z');
+              where workspace_id=${f.wsA.id} and user_id=${f.woA.userId} and revoked_at is null`;
+              await evaluate(tx, f.wsA.id, '2026-05-07T10:00:00.000Z');
               const recipients =
                 await tx`select recipient_user_id from app_private.form_alert_occurrences
               where workspace_id=${f.wsA.id}`;
               expect(
                 recipients.map((row) => row.recipient_user_id).sort(),
-              ).toEqual([f.po.userId, f.woA.userId].sort());
+              ).toEqual([f.po.userId].sort());
             }),
         ),
     );

@@ -88,13 +88,35 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
         ) as definition
       `;
       const originalDefinition = definitionRow!.definition as string;
+      const securityRollback = new Error('rollback security mutation');
+      let securityMutationKilled = false;
+      await expect(
+        tx.savepoint(async (sp) => {
+          await sp`reset role`;
+          await sp`alter function public.save_form_draft(uuid,uuid,integer,uuid,jsonb) security invoker`;
+          const [mutated] =
+            await sp`select p.prosecdef from pg_catalog.pg_proc p where p.oid='public.save_form_draft(uuid,uuid,integer,uuid,jsonb)'::regprocedure`;
+          try {
+            expect(mutated?.prosecdef).toBe(true);
+          } catch {
+            securityMutationKilled = true;
+          }
+          throw securityRollback;
+        }),
+      ).rejects.toBe(securityRollback);
+      expect(securityMutationKilled).toBe(true);
+      const [restoredSecurity] =
+        await tx`select pg_catalog.pg_get_functiondef('public.save_form_draft(uuid,uuid,integer,uuid,jsonb)'::regprocedure) as definition, (select p.prosecdef from pg_catalog.pg_proc p where p.oid='public.save_form_draft(uuid,uuid,integer,uuid,jsonb)'::regprocedure) as prosecdef`;
+      expect(restoredSecurity?.definition).toBe(originalDefinition);
+      expect(restoredSecurity?.prosecdef).toBe(true);
       let baselinePassed = false;
       await expect(
         tx.savepoint(async (sp) => {
           const [baseline] = await sp`
             select public.save_form_draft(
               ${context.wsA.id},${assignmentId},0,${randomUUID()},${sp.json({ q1: 'baseline draft' })}
-            ) as result`;
+            ) as result
+          `;
           expect(baseline?.result).toEqual({
             status: 'saved',
             revision: 1,
@@ -108,18 +130,17 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
         baselinePassed,
         'unmutated draft save must pass before mutants',
       ).toBe(true);
-      await expect(
-        tx.savepoint(async (sp) => {
-          await sp`set local role authenticated`;
-          await sp`
-            select public.save_form_draft(
-              ${context.wsA.id},${assignmentId},0,${randomUUID()},
-              ${sp.json({ N08: 'low', 'N08.foods': ['high:salmon'] })}
-            ) as result
-          `;
-        }),
-      ).rejects.toThrow('invalid_form_answer_snapshot');
+      const [invalidN08] = await tx`
+        select public.save_form_draft(
+          ${context.wsA.id},${assignmentId},0,${randomUUID()},
+          ${tx.json({ N08: 'low', 'N08.foods': ['high:salmon'] })}
+        ) as result
+      `;
+      expect(invalidN08?.result).toEqual({ status: 'invalid' });
       await tx`reset role`;
+      expect(
+        await tx`select count(*)::int as count from public.form_answer_drafts where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}`,
+      ).toEqual([{ count: 0 }]);
       const [draftState] = await tx`
         select coalesce(revision, 0)::int as revision
         from public.form_answer_drafts

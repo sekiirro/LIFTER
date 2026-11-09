@@ -52,7 +52,7 @@ export const guardedFunctions = [
   {
     identity:
       'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)',
-    migration: '20261108230104_f15_cancel_alerts_after_lifecycle_end.sql',
+    migration: '20261109151500_f15_client_late_owner_notices.sql',
     name: 'app_private.evaluate_forms_alerts_core',
   },
   {

@@ -96,11 +96,12 @@ describe('calculateCairoClientSubmissionDeadline', () => {
 });
 
 describe('calculateClientLateAlertSchedule', () => {
-  it('anchors owner notices to the approved elapsed-hour deadline', () => {
+  it('notifies owners at the configured deadline with no delayed stage', () => {
     expect(
       calculateClientLateAlertSchedule('2026-10-29T21:59:59.999Z'),
-    ).toMatchObject({
-      ownersAt: '2026-10-31T21:59:59.999Z',
+    ).toEqual({
+      ownersAt: '2026-10-29T21:59:59.999Z',
+      reassignmentResetsClock: false,
     });
   });
 
@@ -108,8 +109,9 @@ describe('calculateClientLateAlertSchedule', () => {
     const schedule = calculateClientLateAlertSchedule(
       '2023-04-27T20:59:59.999Z',
     );
-    expect(schedule).toMatchObject({
-      ownersAt: '2023-04-29T20:59:59.999Z',
+    expect(schedule).toEqual({
+      ownersAt: '2023-04-27T20:59:59.999Z',
+      reassignmentResetsClock: false,
     });
   });
 

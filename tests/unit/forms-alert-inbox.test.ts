@@ -9,7 +9,7 @@ const row = {
   delivery_id: '11111111-1111-4111-8111-111111111111',
   workspace_id: '22222222-2222-4222-8222-222222222222',
   source_assignment_id: '33333333-3333-4333-8333-333333333333',
-  stage: 'client_trainer_24h',
+  stage: 'client_owners_immediate',
   created_at: '2026-11-01T00:00:00.000Z',
   read_at: null,
 };

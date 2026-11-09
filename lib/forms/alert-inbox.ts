@@ -15,6 +15,7 @@ export type AlertInboxRpc = {
 };
 
 const stages = new Set([
+  'client_owners_immediate',
   'client_trainer_24h',
   'client_owners_24h',
   'client_owners_48h',
