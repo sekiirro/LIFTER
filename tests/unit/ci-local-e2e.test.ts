@@ -1,9 +1,8 @@
 import { readFileSync } from 'node:fs';
 import { expect, it } from 'vitest';
 
-// Line-anchored so the password-parity step (`npm run test:integration --
-// tests/...`) cannot satisfy the match on the full integration command.
-const FULL_INTEGRATION_RUN = /^ {6}- run: npm run test:integration$/m;
+const INTEGRATION_SHARD_RUN =
+  /^ {8}run: npm run test:integration -- --shard=\$\{\{ matrix\.shard \}\}\/3$/m;
 
 it('runs the full Playwright suite after local-stack integration tests', () => {
   const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
@@ -16,7 +15,8 @@ it('runs the full Playwright suite after local-stack integration tests', () => {
   )?.[0];
   expect(supabaseStart).toBeDefined();
   expect(supabaseStart).not.toMatch(/-x[^\n]*\bstorage-api\b/);
-  expect(integration).toMatch(FULL_INTEGRATION_RUN);
+  expect(integration).toMatch(INTEGRATION_SHARD_RUN);
+  expect(integration).toContain('shard: [1, 2, 3]');
   expect(integration).toContain(
     'run: npx playwright install --with-deps chromium',
   );
@@ -29,10 +29,35 @@ it('runs the full Playwright suite after local-stack integration tests', () => {
   expect(integration.indexOf('Export app server environment')).toBeLessThan(
     integration.indexOf('run: npm run e2e -- --workers=1'),
   );
-  expect(integration.search(FULL_INTEGRATION_RUN)).toBeLessThan(
+  expect(integration.search(INTEGRATION_SHARD_RUN)).toBeLessThan(
     integration.indexOf('run: npx playwright install --with-deps chromium'),
   );
   expect(
     integration.indexOf('run: npx playwright install --with-deps chromium'),
   ).toBeLessThan(integration.indexOf('run: npm run e2e -- --workers=1'));
+  expect(integration).toMatch(
+    /- run: npx playwright install --with-deps chromium\n\s+if: matrix\.shard == 1/,
+  );
+  expect(integration).toMatch(
+    /run: npm run e2e -- --workers=1\n\s+if: matrix\.shard == 1/,
+  );
+});
+
+it('dispatches CI against a PR merge ref and rejects a mismatched second parent', () => {
+  const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
+  expect(workflow).toMatch(/workflow_dispatch:\n\s+inputs:/);
+  expect(workflow).toMatch(
+    /pr:\n\s+description: Pull request number to verify\n\s+required: true\n\s+type: number/,
+  );
+  expect(workflow).toMatch(
+    /head_sha:\n\s+description: Exact PR head SHA to verify\n\s+required: true\n\s+type: string/,
+  );
+  expect(workflow).toContain("format('refs/pull/{0}/merge', inputs.pr)");
+  expect(workflow).toContain('git rev-parse HEAD^2');
+  expect(workflow).toContain('inputs.head_sha');
+  expect(workflow).toContain('github.run_id');
+  expect(workflow).toContain(
+    "cancel-in-progress: ${{ github.event_name == 'pull_request' }}",
+  );
+  expect(workflow).toContain('permissions:\n  contents: read');
 });
