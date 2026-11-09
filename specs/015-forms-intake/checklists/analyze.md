@@ -170,3 +170,19 @@ Reviewed the exact-head hosted integration failures. The F15 generic duplicate s
 ## S40 round-12 CodeRabbit remediation analysis — 2026-11-09
 
 Re-read spec, quickstart, traceability and the architecture D-08 section after the exact-head CodeRabbit review on 12e4be50. No new requirement, permission, copy, default or retention rule is introduced. Quickstart Q-V12/Q-V15 are aligned to the existing client-late trigger in `contracts/retention-and-alerts.md` (configured deadline passing without an accepted submission; immediate authorized PO+WO notices; client-to-Trainer routing and client-late Trainer alert deferred under PDN-S39-F15-01); D-03 Trainer-late rules are unchanged. The alerts route normalizes the `before` cursor to ISO 8601 with the existing 400 `invalid` contract; the new unit test covers it. The configure-policy mutation check now propagates the RPC result and adds an unmutated baseline. **CRITICAL: 0. HIGH: 0. No open ambiguities for this CodeRabbit remediation scope.**
+
+## S40 F15 round-13 entry analysis — 2026-11-09
+
+Re-read spec.md, plan.md and tasks.md for T140, the four existing-PR fixes explicitly approved by architect ruling S40-R17 under the already-decided F15 contract. FR-007/008/013/017/018/021/024/035 provide numbered requirements and measurable success criteria; answer-size and charLimit bounds are stated in FR-007, correction authorization/snapshot behavior in FR-013/021/024, and immediate client-late owner notifications/no client-late Trainer routing in FR-017/018/035. Existing Given/When/Then scenarios cover client-late scheduling/lifecycle, validation and correction. Clarifications record PDN-S39-F15-01 and state no open ambiguities for the approved behavior; T140 maps all affected requirements. The plan specifies forward-only migrations, direct-RPC tests, Stack D and mutation evidence. Local media-codec prerequisites are documentation only. No UI, policy, scope, copy, permission, retention, or default decision is introduced. **CRITICAL: 0. HIGH: 0. No open ambiguities remain for T140.** Entry PASS before implementation.
+
+## S40 F15 round-13 Analyze refresh — 2026-11-09
+
+T140's implementation trace includes the alert inbox stage allow-list and integration function-drift source mapping, both required consumers of the approved immediate owner-stage evaluator. The updated Plan/Tasks still map to existing FR-007/008/013/017/018/021/024/035 and no product decision or user-facing scope was added. **CRITICAL: 0. HIGH: 0. No open ambiguities remain.** Revalidated before implementation continues.
+
+## S40 F15 round-13 clean-replay analysis refresh — 2026-11-09
+
+The required clean Stack D replay exposed that the pushed evaluator referenced public.form_submissions, while the current schema stores submissions in app_private.form_submissions. T140's forward evaluator replacement now uses the actual relation; this preserves the existing accepted-submission suppression behavior and is required for clean replay. The change remains within FR-017/018/035 and the immediate-owner alert decision. No new product decision. **CRITICAL: 0. HIGH: 0. No open ambiguities.**
+
+## S40 F15 round-13 authorization analysis refresh — 2026-11-09
+
+T140 retains FR-018's existing enqueue-time authorization rule for immediate client-late owners. The forward evaluator serializes workspace-owner membership revocations before selecting current recipients; its direct concurrency integration regression verifies a revoked owner is excluded while the platform owner receives the immediate alert. Existing D-03 Trainer-late behavior remains covered unchanged. This is authorization parity with the approved contract, not a new role or permission. **CRITICAL: 0. HIGH: 0. No open ambiguities.**

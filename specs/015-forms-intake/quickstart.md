@@ -106,3 +106,7 @@ No update to `docs/13-production-readiness.md` is made by this planning artifact
 
 The delivery worker also reads `TELEGRAM_BOT_USERNAME` to build the staff bot link and `APP_URL` to build the in-app inbox link. These are configuration key names only; tests use fake transport and local example URLs.
 `TELEGRAM_WORKER_SECRET` guards the internal job-worker route; provision it as a server-only runtime secret before configuring an external runner. The scheduler remains disabled.
+
+## Local media test prerequisites
+
+The body-fat asset optimization unit test invokes ffmpeg and requires an ffmpeg build with the libaom-av1 and libwebp encoders available. Install those codecs locally before running tests/unit/optimize-body-fat-assets.test.ts; the test is intentionally not skipped when a codec is missing. CI installs the required codecs.

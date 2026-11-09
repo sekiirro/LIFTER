@@ -112,3 +112,10 @@ The authorized-route screenshot matrix and the shared client-recovery probe-batc
 | FR-024 / FR-025 / FR-038 / FR-039 — preserve the D-08 approved duplicate response and verify scheduler-disabled migrations after safe rename | T139 | Hosted failure on `1419cce` identified a stale F15 draft-copy expectation and original-clock-only migration-source matcher. Updated `tests/fixtures/forms/approved-f15-copy.json` and `tests/integration/client-accounts-signup.test.ts` to D-08's exact approved bilingual message; `tests/integration/forms-alert-channels.test.ts` now discovers both old and safely-renamed clocks without reducing assertions. Stack D targeted rerun passed 2 files / 80 tests. | `0826de38c8564f0363dee945f5ab87f48ac63e12`. |
 
 Local gates on `13ef649927e03cf7d5e62b11d65c8eeb5ea4d4f1`: typecheck, lint, format check, and unit suite passed (203 files / 2,509 tests). On the follow-up source, typecheck/lint/format passed; the full unit suite had 2,508 passed / 1 unrelated Windows process-timeout PID-capture failure. Final exact-head hosted CI outcome is captured in `C:/Users/NEW LAP/.lifter/runs/s40-luna-f15-r11/report.md`.
+
+
+## S40 round 13 verification
+
+| Requirement | Task | Test/evidence | Commit |
+| --- | --- | --- | --- |
+| FR-007/008/013/017/018/021/024/035 — immediate authorized owner alerts and pre-write answer validation | T140 | Stack D clean reset/replay; touched integration files passed 14/14: `forms-alerts.test.ts` (7), `forms-alert-mutations.test.ts` (4), `forms-r3-corrections.test.ts` (2), `forms-r3-drafts.test.ts` (1). Changed unit files passed 17/17. SECURITY DEFINER mutations were killed; exact function definitions and `prosecdef` flags restored. | `48cd934c1b64503830a08655d3accdfc7450c900`; `reports/S40-r13-verification.md` |
