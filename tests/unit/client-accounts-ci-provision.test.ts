@@ -61,11 +61,16 @@ it('uses the root profile for the Storage-ready integration e2e gate', () => {
     workflow.indexOf('\n  integration-shard:'),
   );
   const storageE2e = integration.slice(
-    integration.indexOf('Run full Playwright suite against the local stack'),
+    integration.indexOf(
+      'Run Playwright suite shard ${{ matrix.shard }} of 3 against the local stack',
+    ),
   );
 
   expect(integration).not.toMatch(/LIFTER_SUPABASE_STACK:\s*b/);
   expect(integration).not.toContain('working-directory: supabase-stack-b');
+  expect(storageE2e).toContain(
+    'run: npm run e2e -- --shard=${{ matrix.shard }}/3 --workers=1',
+  );
   expect(storageE2e).toContain("LOCAL_SUPABASE_STORAGE_TEST: 'true'");
 });
 
