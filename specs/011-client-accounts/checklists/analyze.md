@@ -1,6 +1,20 @@
 # Analyze — F11 client accounts
 
-## S40 round 2 analysis (S40-PO-10) — 2026-11-09 round 7 (current; written after the CodeRabbit fixes on the round 6 head 4ac8ec2e; supersedes round 6 for statuses)
+## S40 round 2 analysis (S40-PO-10) — 2026-11-09 round 8 (current; written after the CodeRabbit round 2 fixes on head e143456c; supersedes round 7 for statuses)
+
+- Date: 2026-11-09, round 8. Written after the last change to spec.md, plan.md, tasks.md and traceability.md in this round.
+- CodeRabbit review on `e143456c` (14:22:59Z, CHANGES_REQUESTED, 2 actionable). Both checked against the current text and found VALID:
+
+| ID | Severity | Finding | Status |
+|---|---|---|---|
+| A-S40-27 | MINOR (valid) | Key Entities required one record linked to an active Trainer per client, while FR-027 allows clients with no valid assignment (`spec.md:208`). FR-022 said each client "MUST resolve" to a Trainer, with the same contradiction. | FIXED: Key Entities and FR-022 allow zero or one valid assignment (unassigned, FR-027); membership checked at resolution. |
+| A-S40-28 | MINOR (valid) | The T054 gate for FR-018 did not require T060 or the spec 003 T015 guard for the Platform Owner branch (`tasks.md:282`). | FIXED: T054 FR-018 gate adds T060 and spec 003 T015 for the Platform Owner branch. |
+
+- Gate verdict (round 8): CRITICAL open 0. HIGH open 0. MEDIUM open 9 (unchanged). PENDING-PO unchanged: S40-F11-MCQ-1, -2 (conflict form), -4, -8, -10, -11, -12. Zero open ambiguities are NOT stated for S40.
+
+### Round 7 (superseded for statuses)
+
+## S40 round 2 analysis (S40-PO-10) — 2026-11-09 round 7 (superseded by round 8 for statuses; written after the CodeRabbit fixes on the round 6 head 4ac8ec2e)
 
 - Date: 2026-11-09, round 7. Written after the last change to spec.md, plan.md, tasks.md and traceability.md in this round.
 - CodeRabbit review on `4ac8ec2e` (14:12:34Z, CHANGES_REQUESTED, 5 actionable). All 5 were checked against the current text and found VALID. Fixed in this round:
