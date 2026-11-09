@@ -1,4 +1,40 @@
-# Analyze — F16 post-critique disposition (S40 round 9, current)
+# Analyze — F16 post-critique disposition (S40 round 10, current)
+
+- Date: 2026-11-09 14:03 +02:00 (after every round-10 spec-artifact edit: `spec.md` S40 round 10 entry and edits at lines 40, 112, 116, 146, 187; `plan.md`; `data-model.md`; `research.md`; `contracts/catalog-api.md`; `tasks.md`; `traceability.md`; `verification-s40-po5.md`). This record is the last spec-artifact change of the round.
+- Scope (round 10): S40-PO-5 (PO, verbatim quote in `spec.md` Clarifications, "S40 round 10"). Resolves PDN-S40-F16-01. Replaces the Instructions-to-Notes carry-over for legacy exercise rows only; every other S36-PO-5 rule is unchanged. Opens PDN-S40-F16-02 and PDN-S40-F16-03. Spec-only: no code, SQL, migration, fixture or test changed.
+- Head at start of round 10: `c6d620b9ec47a2facf8bfac08ea654cd945514ac` (PR #66 headRefOid verified at the start gate).
+
+## Entry check (Spec Kit gate, section 1) — round 10
+
+| Box | Result | Evidence |
+| --- | --- | --- |
+| spec.md has numbered FRs, measurable SCs and Given/When/Then scenarios for the touched scope | PASS | 39 FR keys (FR-001 to FR-038 incl. FR-016a) and 16 SC keys, counts unchanged. Touched: US2 scenario 9 (`spec.md:40`), FR-038 (`:112`), FR-003 (`:116`), FR-031 (`:146`), SC-016 (`:187`). |
+| Clarifications recorded, or a PO-decision register entry citing the PO source | PASS | `spec.md` "S40 round 10 — S40-PO-5" quotes the PO line verbatim (byte-checked against `s40-po-1.verbatim.txt` line 18). PDN-S40-F16-02 and PDN-S40-F16-03 are recorded as open PO items. "No open ambiguities" is NOT stated. |
+| plan.md covers the touched scope; tasks.md has task IDs tagged with FR IDs | PASS | `plan.md` line 20, migration steps 1 and 3 (lines 73, 75), line 166. `tasks.md`: 92 task IDs unchanged, no task added or removed; the touched rows keep their FR tags. T067 and T069 remain untagged by design (historical). |
+| checklists/analyze.md dated after the last spec/plan/task change, with 0 open CRITICAL/HIGH | PASS | This record (2026-11-09 14:03 +02:00) is the last spec-artifact change of the round. Open CRITICAL 0, HIGH 0 (R10-2 and R10-3 are MEDIUM, see below). |
+
+Result: **PASS** for the touched scope (spec-only). Implementation is NOT authorized. Tasks T037, T040, T049, T054, T057, T062, T063 and T074 remain unticked. The T054 write-path guard, the deletion scope (T062(a), T063) and the interim handling (T074) are blocked until PDN-S40-F16-02 and PDN-S40-F16-03 are answered.
+
+## Round-10 findings
+
+| ID | Category | Severity | Status | Summary and evidence |
+| --- | --- | --- | --- | --- |
+| R10-1 | Decision encoding | — | FIXED | S40-PO-5 encoded: the Instructions-to-Notes carry-over is replaced by legacy-row deletion at cutover, Notes only, no Instructions field. Every other S36-PO-5 rule unchanged. |
+| R10-2 | Open PO item (scope of "delete") | MEDIUM | OPEN (PO) | PDN-S40-F16-02. S40-PO-5 says "Delete them"; `data-model.md` (`exercise_variation_versions` row) and FR-031 keep legacy history readable and unchanged; T062(a), T063 and FR-031 carry valid legacy videos ("no video lost", S37-PO-10). Blocks T062(a), T063 and the legacy history rows. MEDIUM, not HIGH: no implementation is authorized this round and the conflict is confined to legacy rows. |
+| R10-3 | Open PO item (interim writes) | MEDIUM | OPEN (PO) | PDN-S40-F16-03. Handling of an `instructions_*` key that a version write submits between T054 and the joint T040/T074 change. Blocks the T054 guard and the T074 interim upgrade tests. MEDIUM for the same reason as R10-2. |
+| R10-4 | Verification | — | DONE | No real data affected: `verification-s40-po5.md`. No test in the PR asserts the Instructions merge (the PR changes `specs/016` only; checked with `git diff --name-only origin/main...HEAD`), so no test file is edited; the RED tests in T037 and T074 carry the updated assertions. |
+| R10-5 | Process | MEDIUM | OPEN (process, not a spec ambiguity) | CodeRabbit APPROVED on the final head is recorded in the round-10 report, §3. |
+
+## Counts (round 10)
+
+- Requirements: 39 FR keys, 16 SC keys. Tasks: 92 distinct IDs (unchanged).
+- Ambiguities (product and spec): **2 open**, both PO items (PDN-S40-F16-02, PDN-S40-F16-03).
+- Severity (open): **CRITICAL 0, HIGH 0**.
+- "No open ambiguities": NOT stated for round 10.
+
+---
+
+## Round 9 record (history; superseded by the round-10 record above)
 
 - Date: 2026-11-09 13:42 +02:00 (round-9 re-analysis after the S40-R3 architect-ruling record was added to `spec.md` Clarifications and after the CodeRabbit round-9 fixes in `tasks.md` (T040 Global form and sequencing, T054, T074, dependency order) and `plan.md` step 3; this record is the last spec-artifact change of the round). Round 8 record below is history.
 - Scope (round 9): architect ruling S40-R3 (`C:/Users/NEW LAP/.lifter/runs/s40-po/s40-architect-rulings.md`, paragraph S40-R3; architect words, not PO): A2 (table lock), A3 (`none` for FR-003-permitted absent optional values), A4 (`decision-register.md` unchanged), A5 (T090 and T043 as technical sequencing) accepted and recorded; A1 is a process item (fresh 2-request CodeRabbit allowance on the same head). No requirement, FR, SC, acceptance scenario, task or plan step changed. Spec-only: no code, SQL, migration, fixture or test changed.

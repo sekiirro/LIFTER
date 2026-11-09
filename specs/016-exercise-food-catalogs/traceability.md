@@ -73,7 +73,7 @@ Planned tests are named for the tests to be written. Nothing in this table is ve
 
 | FR | Task | Planned test (not yet written) | Evidence |
 |---|---|---|---|
-| FR-001, FR-002, FR-003, FR-004, FR-014, FR-018, FR-030 | T037 | contract tests for shared identity, exact eight-field allowlist and value formats, English-required/Arabic-optional Global and Workspace names, one optional Description in any language, at most three unique Alternatives, PO-only Global edits, local isolation, automatic Global appearance, defaults copied at addition, and Instructions-to-Notes preservation | none |
+| FR-001, FR-002, FR-003, FR-004, FR-014, FR-018, FR-030 | T037 | contract tests for shared identity, exact eight-field allowlist and value formats, English-required/Arabic-optional Global and Workspace names, one optional Description in any language, at most three unique Alternatives, PO-only Global edits, local isolation, automatic Global appearance, defaults copied at addition, and legacy exercise rows deleted at cutover with no Instructions-to-Notes merge (S40-PO-5) | none |
 | FR-003, FR-014, FR-016 | T046, T047 | override identity, composite keys, CAS, idempotency, one audit event | none |
 | FR-025 | T048 | alternatives child rows: composite targets, exactly-one-target CHECK, active-at-write | none |
 | FR-023 | T043 | canonical video: current-version read, validator, allowlist key | none |
@@ -86,11 +86,11 @@ Planned tests are named for the tests to be written. Nothing in this table is ve
 | FR-013 | T057 | audit allowlist with changed-field codes for exactly the eight fields — `name`, `description`, `notes`, `video`, `alternatives`, `default_rest_time`, `default_rir`, `default_reps`; no `instructions` code | none |
 | FR-022 | T060 | F12 guard rejects `workspace_id` changes | none |
 | FR-014 | T061 | host list parity across SQL and TypeScript validators; `docs.google.com` rejected | none |
-| FR-031 | T062, T063 | carry valid non-dummy legacy videos; delete dummy `docs.google.com` values; “no video lost” excludes these dummy links; Notes/Instructions preservation | none |
+| FR-031 | T062, T063 | carry valid non-dummy legacy videos; delete dummy `docs.google.com` values; “no video lost” excludes these dummy links; legacy row deletion with no Instructions-to-Notes merge (S40-PO-5) | none |
 | FR-035 | T064 | override search normalization and bounds | none |
 | SC-005 | T065 | library list and batch resolve benchmark on a 10k fixture | none |
 | SC-013 | T037, T047 | Rest/RIR/Reps boundary and format validation | none |
-| SC-016 | T037, T062, T063 | preserve Notes and unique Instructions into Notes; no Instructions library field | none |
+| SC-016 | T037, T062, T063 | keep Notes; legacy rows deleted, no Instructions merged into Notes (S40-PO-5); no Instructions library field | none |
 | FR-003, FR-018, FR-023, FR-024, FR-025 | T074, T075 | Global and workspace-private eight-field version completion: Notes, Defaults, Description, Name and Alternatives storage, validators and allowlists (positive and negative per field, data-model.md coverage table) | none |
 | FR-026 | T037, T047 | null = inherit for the seven optional fields; reset writes null; Alternatives empty list distinct from inherit | none |
 | FR-025 | T048 | published-plan reads return frozen alternatives after a target is removed or merged; library reads skip it | none |
