@@ -1,6 +1,6 @@
 # Analyze — F11 client accounts
 
-## S40 round 9 analysis (S41-PO-4, S41-PO-5, S41-GAP-MCQ-1/2 encoded; CodeRabbit round 6 findings on head 5836e0e3) — 2026-11-09 22:33 +02:00, round 15 (current; written after the round 6 edits to spec.md, plan.md, tasks.md, traceability.md, checklists/analyze.md, research/s40-pending-mcqs.md, research/s41-new-copy-proposal.md and research/s40-new-workspace-copy-proposal.md; supersedes round 14 for statuses)
+## S40 round 9 analysis (S41-PO-4, S41-PO-5, S41-GAP-MCQ-1/2 encoded; CodeRabbit round 6 findings on head 5836e0e3) — 2026-11-09 22:58 +02:00, round 15 (current; written after the final round 6 edits to spec.md, plan.md, tasks.md, traceability.md, checklists/analyze.md, research/s40-pending-mcqs.md, research/s41-new-copy-proposal.md and research/s40-new-workspace-copy-proposal.md; supersedes round 14 for statuses)
 
 Entry check (Spec Kit gate section 1): PASS. Numbered FRs, SCs and Given/When/Then scenarios keep their structure; Clarifications Round 5 quotes the S41-PO-4 and S41-PO-5 lines byte-exact and labels the architect mappings; plan P-S40-1 (including the Guard amendment and post-deletion state) and P-S40-3 cover the changed scope; tasks T047, T048, T049, T051, T054, T056 and T059 carry FR tags; this file is dated after the last change.
 
@@ -22,7 +22,7 @@ Findings (round 15; each fixed or closed):
 
 Counts: CRITICAL open 0. HIGH open 0. MEDIUM open 1 (A-S41-4, architect gate). Closed in round 15: A-S41-1, -2, -3 and A-S41-24 to -30.
 
-Static consistency (run at 22:30 +02:00, recorded in report.md): the FR-021/FR-025/FR-018, T047/T048/T049/T051/T054/T056/T059 and traceability FR-018/FR-021/FR-025/SC-017 rows agree; every referenced plan step exists; the MCQ option text is unchanged except the DECIDED and fact lines; no PENDING copy status remains for a decided string except in clearly marked history. Byte check of P1-P9 and of the two PO quote blocks against the verbatim file (Node): PASS; row 8 AR is unchanged and differs from P5 AR as S41-PO-5 requires.
+Static consistency (run at 22:57 +02:00, recorded in report.md): the FR-021/FR-025/FR-018, T047/T048/T049/T051/T054/T056/T059 and traceability FR-018/FR-021/FR-025/SC-017 rows agree; every referenced plan step exists; the MCQ option text is unchanged except the DECIDED and fact lines; no PENDING copy status remains for a decided string except in clearly marked history. Byte check of P1-P9 and of the two PO quote blocks against the verbatim file (Node): PASS; row 8 AR is unchanged and differs from P5 AR as S41-PO-5 requires.
 
 Result: PASS, 0 CRITICAL and 0 HIGH. No PO copy or product ambiguity remains open; the non-PO items are the architect gate above and the stated single-current-responsible-Trainer working assumption (plan P-S40-2). This is a static document review; it makes no implementation-conformity claim.
 
