@@ -105,6 +105,8 @@ export function SignupForm({
   >([]);
   const [identityFocusRequest, setIdentityFocusRequest] = useState(0);
   const focusIdentityErrorAfterRenderRef = useRef(false);
+  const focusPendingStatusRef = useRef(false);
+  const submitButtonRef = useRef<HTMLButtonElement>(null);
   const previousResultFocusRef = useRef<{
     result: SignupPublicResult;
     sequence: number;
@@ -221,6 +223,12 @@ export function SignupForm({
     resultRef.current?.focus();
   }, [pending, result, submitted, submissionSequence]);
 
+  useEffect(() => {
+    if (!pending || !focusPendingStatusRef.current) return;
+    focusPendingStatusRef.current = false;
+    resultRef.current?.focus();
+  }, [pending]);
+
   if (result.status === 'sign_out_required')
     return (
       <p role="status" className={styles.message}>
@@ -262,6 +270,8 @@ export function SignupForm({
           return;
         }
         submittingRef.current = true;
+        focusPendingStatusRef.current =
+          document.activeElement === submitButtonRef.current;
         setSubmitted(true);
         setUsernameServerErrorDismissed(false);
         const secret = event.currentTarget.elements.namedItem('request_secret');
@@ -302,7 +312,10 @@ export function SignupForm({
             }
             type="text"
             value={name}
-            onChange={(event) => setName(event.currentTarget.value)}
+            onChange={(event) => {
+              setName(event.currentTarget.value);
+              changeIdentityField('name');
+            }}
             autoComplete="name"
             required
             disabled={pending}
@@ -634,7 +647,7 @@ export function SignupForm({
           </span>
         )}
       </label>
-      <Button type="submit" disabled={pending}>
+      <Button ref={submitButtonRef} type="submit" disabled={pending}>
         {pending ? messages.pending : messages.submit}
       </Button>
       {submitted &&
