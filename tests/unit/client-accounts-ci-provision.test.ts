@@ -36,7 +36,9 @@ it('provisions the explicitly selected stack into its own ignored env file', () 
 });
 
 it('runs the shared password DB parity suite once through integration shards', () => {
-  const integration = workflow.slice(workflow.indexOf('\n  integration:'));
+  const integration = workflow.slice(
+    workflow.indexOf('\n  integration-shard:'),
+  );
   const provision = integration.indexOf(
     'node tests/integration/client-accounts-provision.mjs',
   );
@@ -55,7 +57,9 @@ it('runs the shared password DB parity suite once through integration shards', (
 });
 
 it('uses the root profile for the Storage-ready integration e2e gate', () => {
-  const integration = workflow.slice(workflow.indexOf('\n  integration:'));
+  const integration = workflow.slice(
+    workflow.indexOf('\n  integration-shard:'),
+  );
   const storageE2e = integration.slice(
     integration.indexOf('Run full Playwright suite against the local stack'),
   );

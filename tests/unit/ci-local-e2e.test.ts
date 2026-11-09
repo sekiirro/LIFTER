@@ -9,7 +9,8 @@ it('runs the full Playwright suite after local-stack integration tests', () => {
   const [validate, integration] = workflow.split(/^  integration-shard:\s*$/m);
 
   expect(validate).not.toMatch(/run:\s*CI=1 npm run e2e/);
-  if (!integration) throw new Error('CI integration job is missing');
+  if (!integration)
+    throw new Error('CI integration-shard matrix job is missing');
   const supabaseStart = integration.match(
     /^ {6}- run: supabase start .*$/m,
   )?.[0];
