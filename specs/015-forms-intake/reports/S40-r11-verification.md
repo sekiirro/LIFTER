@@ -26,7 +26,7 @@ Date: 2026-11-09. Scope: PR #57, existing approved F15 behavior, PDN-S40-03=A. N
 
 First push: `1419cce2574e3d5d5ed6106a1030834c2f3d57f2`. Exact-head pull_request run `42619956092` completed: validate PASS, storage PASS, integration FAIL (121 files passed / 2 failed / 3 skipped; 1,631 tests passed / 2 failed / 5 skipped).
 
-Hosted failures and fixes: `client-accounts-signup.test.ts` expected the S16 generic duplicate draft even though PO Q4=A left that wording unapproved and D-08 remains authoritative; the stale fixture and assertion are now aligned to D-08's exact bilingual duplicate copy. `forms-alert-channels.test.ts` only searched original migration clocks; source discovery now also includes the safely renamed `2026110823xxxx` F15 files. Runtime copy and migration SQL are unchanged by these fixes. Targeted Stack D rerun passed 2 files / 80 tests. New-head hosted CI observation is pending.
+Hosted failures and fixes: `client-accounts-signup.test.ts` expected the S16 generic duplicate draft even though PO Q4=A left that wording unapproved and D-08 remains authoritative; the stale fixture and assertion are now aligned to D-08's exact bilingual duplicate copy. `forms-alert-channels.test.ts` only searched original migration clocks; source discovery now also includes the safely renamed `2026110823xxxx` F15 files. Runtime copy and migration SQL are unchanged by these fixes. Targeted Stack D rerun passed 2 files / 80 tests. The final exact-head hosted CI outcome is recorded in the round-11 run report.
 
 No CodeRabbit request was made. No workflow file was changed. No merge was performed.
 
