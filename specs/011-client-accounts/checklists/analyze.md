@@ -23,6 +23,14 @@ T900 has been marked complete only after its focused integration tests passed on
 
 - Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), after PR-wide status/reference inspection; no later spec/plan/tasks edits follow this analysis.
 - Scope: rechecked the traceability evidence row, Analyze totals, FR/task references, clarifications and open retention decisions against docs/04 and later PO records. ND-F5-1/B4 and other-audit-retention pending statements remain open; decided signup-attempt retention is not described as pending.
-- Entry gate: PASS - numbered FRs, measurable SCs and GWT scenarios are present; plan, Clarifications and tagged tasks cover the feature.
+- Entry gate: INCOMPLETE - numbered FRs, measurable SCs, GWT scenarios, plan and Clarifications are present, but task requirement tags do not cover the full feature. T900 tags only FR-008 and FR-012; retain the gap until the full task set is tagged to its originating FRs.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no task/status changed.
 - Verdict: PASS for this PR-wide documentation audit.
+
+
+## S41 CodeRabbit round-3 task-tag re-analysis
+
+- Date: 2026-11-09 23:17 UTC, after PR-wide task-tag inspection.
+- Scope: the touched task-tag gate. T900 carries FR-008 and FR-012 tags, but those tags do not cover all FRs in F11.
+- Entry gate: INCOMPLETE for full feature task-tag coverage; retain the gap until missing task tags are present. This docs-only correction does not change task checkboxes or statuses.
+- Findings: 0 open CRITICAL, 0 open HIGH.

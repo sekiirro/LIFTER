@@ -16,7 +16,7 @@
 - Every shard needs the audit's §2.1/§2.2/§2.4 preconditions because the hidden 5.6 min integration warm-up disappears: Vault provisioning with `SIGNUP_*` export, `scripts/wait-storage-ready.mjs`, and a Docker CLI/daemon check for the kong fault test. One Playwright invocation per shard keeps exactly one `webServer` and a per-shard U8 manifest; `U8_SERVER_LOG_RUN_ID` must never be preset.
 - Coverage proof is possible without checkout: shard jobs upload Playwright full/shard `--list` inventories, Vitest full file inventory, and the JSON run reports; the aggregator downloads artifacts and compares identities (`file::project::title path`) and Vitest file sets. Missing artifacts fail the download step, so the proof cannot silently pass.
 - Skip baseline is exact and reproducible: 24 `exercise-library-production` tests skip via `beforeAll` on Stack A (the whole file, all 24 listed identities), and 14 `shell` project-guard skips are static; the ceiling is 38 with a documented identity allowlist. Environment regressions surface as new skip identities or as failures.
-- Existing aggregator properties are preserved: `contents: read`, no checkout, optional Docker Hub pull credentials only for authenticated image pulls, and the existing success/revision-tuple step is unchanged; no deployment secrets are used.
+- Existing aggregator properties are preserved: `contents: read`, no checkout, and no Docker Hub credentials; optional Docker Hub pull credentials are limited to authenticated image pulls in `integration-shard` and `storage`; the existing success/revision-tuple step is unchanged, and no deployment secrets are used.
 - No new secrets, permissions, rulesets or concurrency/dispatch changes; `validate` and `storage` are untouched. No product behaviour changes. **CRITICAL**: none. **HIGH**: none.
 
 **Verdict**: PASS — 0 CRITICAL, 0 HIGH.
@@ -142,3 +142,12 @@ The main-side CI requirements retain FR-015 to FR-019 and SC-006 to SC-009, with
 - Traceability review left FR-022/SC-012 PARTIAL and retained FR-024 as documentation-VERIFIED with an explicit current-head commit.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation consistency only; no tests or CI were run and no test status was upgraded.
 - Verdict: PASS for this documentation-only correction.
+
+
+## S41 CodeRabbit round-3 correction re-analysis
+
+- Date: 2026-11-09 23:17 UTC, after the credential-boundary edits to plan, research and tasks, FR-024 traceability row correction, and restored baseline source map.
+- Scope: verified the credential descriptions against workflow revision `9d24e6444aea5f72ce5dd00e13d3d25c979c8619`; `validate` requires no repository-configured secrets and uses `github.token` only for read-only metadata requests; the `integration` aggregator has no Docker Hub credentials; authenticated pull credentials are limited to `integration-shard` and `storage`. Restored the original FR-001..014 source map without upgrading statuses.
+- Result: FR-024 row has five cells; all current amendment rows retain their recorded evidence/status. No tests or CI were run and no task status changed.
+- Findings: 0 open CRITICAL, 0 open HIGH.
+- Verdict: PASS for these documentation corrections.

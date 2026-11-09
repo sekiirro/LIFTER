@@ -5,3 +5,27 @@
 | FR-012, FR-014 | T900 | `tests/e2e/registration-links.spec.ts::required local authenticated registration acceptance › ar po: exact terms, keyboard, schedule, copy-only, scope and themes` | Commit `4d47ed6`; three #41 Playwright specs passed 27/27 on current head and fresh Stack C. |
 
 | FR-009, FR-014 | T901 | `tests/unit/registration-links-page.test.ts::public page uses no actor and shows only name/validity` | Commit `78b1093`; targeted unit run 16/16 passed with Stack C environment injected. Full unit gate subsequently passed 2,011/2,011. |
+
+## S41 baseline FR-001..FR-014 and SC-001..SC-006 map
+
+This source map restores the original merged-scope requirement-to-evidence index. FR definitions remain in [spec.md](spec.md); detailed execution and mutation evidence is in [registration-links-verification.md](../../tests/integration/registration-links-verification.md). It does not claim fresh execution or upgrade a status. FR-006 remains unimplemented under T035 as recorded in the spec.
+
+| Requirement | Existing task/evidence map |
+|---|---|
+| FR-001 | Issuance role/scope: `registration-links-issue.test.ts` |
+| FR-002 | Current-version and snapshot integrity: `registration-links-issue.test.ts`, `registration-links-integrity.test.ts` |
+| FR-003 | Token generation, one-time response and protected reads: `registration-links-issue.test.ts`, `registration-links-read.test.ts` |
+| FR-004 | Exact schedule validation and transactional integrity: `registration-links-issue.test.ts`, `registration-links-integrity.test.ts` |
+| FR-005 | Immutable fields and set-once guards: `registration-links-integrity.test.ts` |
+| FR-006 | T035 future rolling-limit implementation and verification; no completion claimed |
+| FR-007 | Generic open states and first-open semantics: `registration-links-open.test.ts` |
+| FR-008 | Injected-clock boundary and SQL parity: `registration-links-grace.test.ts`, `registration-links-open.test.ts` |
+| FR-009 | Public page, content and privacy: `registration-links-page.test.ts`, `client-accounts-headers.test.ts`, registration-link e2e evidence |
+| FR-010 | Role-scoped link/schedule reads: `registration-links-read.test.ts` |
+| FR-011 | Issued/opened audit allow-list and event count: `registration-links-audit.test.ts` |
+| FR-012 | Staff editor and public journeys: registration-links unit/e2e suites in the verification report |
+| FR-013 | F11 atomic-consumption handoff: F11 registration-link integration tests and verification matrix |
+| FR-014 | Required regression and mutation evidence: full [F10 verification report](../../tests/integration/registration-links-verification.md) |
+| SC-001..SC-006 | Role/scope, immutable terms, open parity, audit, accessible journey and mutation gates: issue, integrity, open, grace, reads, audit and UI/e2e suites in the linked verification report |
+
+Evidence remains bounded by each requirement's existing traceability/status record; this index is not new test evidence.

@@ -74,11 +74,11 @@ The following merged-feature compliance traceability maps were added by the S30 
 | 009 Packages | [specs/009-packages/traceability.md](../specs/009-packages/traceability.md) |
 | 004 Authentication | [specs/004-auth/traceability.md](../specs/004-auth/traceability.md) |
 | 008 Free-tier Validation Prep | [specs/008-free-tier-validation/traceability.md](../specs/008-free-tier-validation/traceability.md) |
-| 010 Registration Links | [specs/010-registration-links/traceability.md](../specs/010-registration-links/traceability.md) |
+| 010 Registration Links (FR-001..014 baseline + later evidence) | [specs/010-registration-links/traceability.md](../specs/010-registration-links/traceability.md) requirement map; [tests/integration/registration-links-verification.md](../tests/integration/registration-links-verification.md) test/mutation evidence |
 | 013 Freeze, Renewal, and Refunds | [specs/013-freeze-renewal-refunds/traceability.md](../specs/013-freeze-renewal-refunds/traceability.md) |
 | 014 Workspace Branding (core) | [specs/014-workspace-branding/traceability.md](../specs/014-workspace-branding/traceability.md) |
-| 011 Client Accounts and Signup | [specs/011-client-accounts/traceability.md](../specs/011-client-accounts/traceability.md) |
-| 001 Project Scaffold (original merged scope) | [specs/001-project-scaffold-ci/traceability.md](../specs/001-project-scaffold-ci/traceability.md) |
+| 011 Client Accounts and Signup (FR-001..017 baseline matrix) | [tests/integration/client-accounts-verification.md](../tests/integration/client-accounts-verification.md) FR-001..017 / SC-001..012 acceptance-evidence matrix; [specs/011-client-accounts/traceability.md](../specs/011-client-accounts/traceability.md) later task evidence |
+| 001 Project Scaffold (original FR-001..014 plus later amendments) | [specs/001-project-scaffold-ci/traceability.md](../specs/001-project-scaffold-ci/traceability.md) |
 | 002 Design System (merged scope) | [specs/002-design-system/traceability.md](../specs/002-design-system/traceability.md) |
 
 The separate S30 coverage for the PR #28 shipped Design System delta is tracked in its own docs-only PR and is not duplicated in the merged-scope map above. Features 003, 005, 006, and 007 remain assigned to the parallel compliance lane.

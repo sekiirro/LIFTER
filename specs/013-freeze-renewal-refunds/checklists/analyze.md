@@ -74,7 +74,7 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 | F13-R4-03 | LOW | This file, S31 round 6 Coverage line | Retention was tracked under SC-010 and hosted verification under SC-014. SC-010 covers audit/delivered-productivity; SC-014 covers Stack C Auth hook/worker. | Coverage line corrected: retention under FR-029 and B4/ND-F5-1 (DP-01/DP-02); hosted verification under FR-019/FR-035, T020, and F13-PB-03. Coverage counts and SC-009 status unchanged. |
 
 - **Coverage:** FR mapping remains 36/36; SC mapping 14/14. SC-005, SC-009, SC-011, SC-012, SC-013 remain PARTIAL; FR-035 remains PARTIAL (hosted proof blocked by D-20). FR/SC verification counts in `traceability.md`: 32 VERIFIED / 4 PARTIAL FRs; 9 VERIFIED / 5 PARTIAL SCs; 41 VERIFIED / 9 PARTIAL total.
-- **Verdict:** 0 CRITICAL, 0 HIGH, 2 MEDIUM carried (F13-A01 retention production blockers; S31 SC-009 numeric-overflow evidence gap). F13-A02's disposition is superseded, not downgraded or hidden: T020 remains open and blocked; no finding is reclassified downward. Static review only; no tests executed.
+- **Verdict:** 0 CRITICAL, 0 HIGH, 3 MEDIUM carried (F13-A01 retention production blockers; F13-A02/T020 D-20 hosting conflict remains open and blocked; S31 SC-009 numeric-overflow evidence gap). T020 remains open; no finding is reclassified downward. Static review only; no tests executed.
 ## S41 main-sync reconciliation re-analysis
 
 - Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
@@ -90,3 +90,10 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks are present.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no task/status changed.
 - Verdict: PASS for this PR-wide documentation audit.
+
+
+## S41 CodeRabbit round-3 historical finding-count re-analysis
+
+- Date: 2026-11-09 23:17 UTC, after correcting the carried-medium count.
+- Scope: S33 historical disposition of F13-A02/T020 alongside F13-A01 and SC-009. F13-A02 remains counted as a carried medium finding; T020 remains open and blocked.
+- Findings: 0 open CRITICAL, 0 open HIGH. No task/status changed.

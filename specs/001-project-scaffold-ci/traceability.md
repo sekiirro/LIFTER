@@ -31,7 +31,7 @@ Evidence run `41894845099`, attempt 1, on commit `447ceb0b69b8516abfa26c5b1289ef
 | FR-021 / SC-011 (dispatch ref and exact parent validation) | T020 | .github/workflows/ci.yml::Verify and record CI revision | Workflow is implemented. GitHub requires it on the default branch before dispatch. This PR still requires explicit PO exact-SHA approval; exact-head dispatch verification is pending after an authorized merge and is not claimed now. | PENDING (platform-gated) |
 | FR-022 / SC-012 (integration partition and full coverage) | T021 | C:/Users/NEW LAP/.lifter/runs/s38-const110-ci/verify-shards.cjs | Vitest 5.0.5: 92 test files; shards 31/31/30; union 92; 0 missing; 0 duplicates (shard-partition.json). Playwright runs once in shard 1; unchanged suite selection. | PARTIAL (partition evidence is an external run artifact; no committed test asserts the complete Vitest partition at this head) |
 | FR-023 / SC-013 (allowed full attempts) | T022 | .github/workflows/ci.yml and C:/Users/NEW LAP/.lifter/tools/gate-check.mjs::gateD | Pending exact-head pull_request/dispatch run evidence and both-path self-test; run IDs and provenance will be recorded in report.md. | PENDING |
-| FR-024 (standing approval and constitution PR exception) | T022 | .specify/memory/constitution.md::Main merge gate; docs/08-agent-workflow.md::Main merge gate | Constitution-changing PR explicitly excluded from standing approval; this PR still requires explicit PO approval at exact SHA. | Evidence: commit `ed9f3079cf4011be5faf9015146ad78851e01379` documents the gate in both sources; no test applies. | VERIFIED (documentation) |
+| FR-024 (standing approval and constitution PR exception) | T022 | `.specify/memory/constitution.md::Main merge gate`; `docs/08-agent-workflow.md::Main merge gate` | Constitution-changing PR explicitly excluded from standing approval; this PR still requires explicit PO approval at exact SHA. Commit `ed9f3079cf4011be5faf9015146ad78851e01379` documents the gate in both sources; no test applies. | VERIFIED (documentation) |
 
 
 ## S39 required integration status-check correction (FR-022, FR-023)
@@ -62,3 +62,27 @@ Spec commit `75cacff3166fb13b13be8eb4cf248e0a03c2aaa7` (requirements, plan, T024
 | FR-025 / SC-014 (non-empty file-level Playwright shard on every integration shard) | T024 | `tests/unit/ci-local-e2e.test.ts::runs a file-level Playwright shard on every integration shard` | Commit `b282b558`; focused CI unit file 6/6, full unit suite 167 files / 2259 tests passed, `npm run typecheck`, `npm run lint`, `npm run format:check` and actionlint 1.7.12 passed. The test rejects any `if: matrix.shard == 1` gating and requires `--shard=${{ matrix.shard }}/3 --workers=1 --reporter=json`, both env gates, ordered stack/export/Vault/Storage/Docker/inventory preconditions, the non-empty list guard, and the per-shard artifact upload. | VERIFIED (local) |
 | FR-026 / SC-014 (fail-closed union/skip/failure coverage proof in the no-checkout aggregator) | T024 | `tests/unit/ci-local-e2e.test.ts::fails the integration aggregator unless every shard reports full coverage`; `::executes the sharded coverage proof against tampered reports` | Commit `b282b558`; the extracted aggregator script passed against a synthetic artifact set built from the real 629-test inventory: `{"acceptable":true,"playwright":{"listed":629,"reported":629,"skipped":38,"passed":591},"vitest":{"files":92},"shards":3}`. Tampered fixtures fail closed for a missing test, a duplicate across shards, a new skipped title, an unexpected failure and a missing Vitest file. | VERIFIED (local) |
 | SC-015 (integration critical path shorter than baseline) | T024 | main push run 42628343018 on `405e23e4` vs the PR's executed runs | Baseline: first required job 13:46:01Z → aggregator end 14:03:43Z = 17m42s (shard 1 17m35s). PR before/after job and critical-path times are recorded in `C:/Users/NEW LAP/.lifter/runs/s40-ds-e2e-shard/report.md` once executed. | PENDING (exact-head GitHub) |
+
+
+## S41 baseline FR-001..FR-014 map
+
+This source map restores the original merged-scope requirement links without upgrading verification status. The requirement text remains in [spec.md](spec.md); tasks and executable evidence are linked below. The existing exact-head and historical execution limits remain in force.
+
+| Requirement | Task/artifact mapping | Evidence source |
+|---|---|---|
+| FR-001 | T001-T006; approved TypeScript application scaffold | `tsconfig.json`, package scripts and repository source |
+| FR-002 | T010, T015; documented local commands | `README.md` Development section |
+| FR-003 | T002-T003, T015; lint and format gates | ESLint/Prettier configuration and `format:check`/`lint` scripts |
+| FR-004 | T006-T008; unit runner and health contract | `vitest.config.ts`, `tests/unit/health.test.ts` |
+| FR-005 | T009; browser smoke | `tests/e2e/health.spec.ts` |
+| FR-006 | T007-T008; health route | `app/api/health/route.ts`, `tests/unit/health.test.ts`, `tests/e2e/health.spec.ts` |
+| FR-007 | T005, T011-T012; edge build | `package.json` build script, `wrangler.jsonc`, CI workflow |
+| FR-008 | T011, T014; size report and threshold | `scripts/size-report.mjs`, `tests/unit/size-report.test.ts` |
+| FR-009 | T012; CI baseline | `.github/workflows/ci.yml`; later FR-015..FR-026 rows below |
+| FR-010 | T013; local DB configuration only | `supabase/config.toml` and `.gitignore` |
+| FR-011 | T004; placeholder environment example and secret exclusions | `.env.example`, `.gitignore` |
+| FR-012 | T010, T015; README instructions | `README.md` |
+| FR-013 | T001-T002; runtime/package pins | `.nvmrc`, `package.json`, `package-lock.json` |
+| FR-014 | T011-T012; Linux CI edge build and size gates | `.github/workflows/ci.yml`, `scripts/size-report.mjs` |
+
+The table is a source map only; it does not assert fresh test execution or mark any requirement VERIFIED.

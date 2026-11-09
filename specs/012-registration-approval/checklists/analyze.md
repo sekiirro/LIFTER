@@ -79,7 +79,15 @@
 ## S41-R12 round-3 PR-wide re-analysis
 
 - Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), after traceability evidence/status edits; no later spec/plan/tasks edits follow this analysis.
-- Scope: rechecked all 29 FR and 11 SC identifiers across the traceability rows, current totals, task links and cited evidence. FR total remains 22 VERIFIED / 7 PARTIAL; SC total is now 6 VERIFIED / 5 PARTIAL. FR-016 cites T010 rollback, T017 audit assertions and T022 replay assertions. SC-004 remains PARTIAL pending T041; SC-005 remains VERIFIED with T023 staff role/commission projection and T017 owner-scoped audit evidence.
-- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tasks are present. T041 is not represented as completed.
+- Scope: rechecked all 29 FR and 11 SC identifiers across the traceability rows, current totals, task links and cited evidence. FR total is 21 VERIFIED / 8 PARTIAL after FR-007 is marked PARTIAL; SC total is 6 VERIFIED / 5 PARTIAL. T041 is complete for mock status/accessibility outcomes; the signed-session proof remains pending in U9. FR-016 cites T010 rollback, T017 audit assertions and T022 replay assertions. SC-004 remains PARTIAL pending U9 real signed-session evidence; SC-005 remains VERIFIED with T023 staff role/commission projection and T017 owner-scoped audit evidence.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tasks are present. T041 is complete for mock status/accessibility outcomes; real signed-session proof remains pending in U9.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no status was upgraded.
 - Verdict: PASS for this documentation-only reconciliation.
+
+
+## S41 CodeRabbit round-3 traceability re-analysis
+
+- Date: 2026-11-09 23:17 UTC, after FR-007 status and FR-014..015 evidence corrections.
+- Current totals: FR 21 VERIFIED / 8 PARTIAL; SC 6 VERIFIED / 5 PARTIAL. FR-007 remains PARTIAL until an already-open pending page observes approval through its existing signed session. T041 is complete for mock status/accessibility outcomes; the real signed-session proof remains pending in U9. FR-014..015 includes T020 exact-correction replay and T022 audit replay assertions.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no task status changed.
+- Verdict: PASS for this documentation-only evidence correction.

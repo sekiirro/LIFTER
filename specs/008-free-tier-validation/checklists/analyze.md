@@ -113,7 +113,16 @@
 ## S41-R12 round-3 PR-wide re-analysis
 
 - Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), after edits to traceability, README, report and readiness note; no later spec/plan/tasks edits follow this analysis.
-- Scope: rechecked all 8 FR and 4 SC rows and all references to ND-F8-1/2/3. Current matrix totals are 3 VERIFIED / 5 PARTIAL FR and 0 VERIFIED / 4 PARTIAL SC; FR-003 is PARTIAL because credential-bearing query parameters pass through the probe; FR-006 remains PARTIAL for the 15-relation limit. ND-F8-1 is decided by S31-PO-4; schema/unit verification and production measurement remain pending.
+- Scope: rechecked all 8 FR and 4 SC rows and all references to ND-F8-1/2/3. Current matrix totals are 2 VERIFIED / 6 PARTIAL FR and 0 VERIFIED / 4 PARTIAL SC; FR-003 is PARTIAL because credential-bearing query parameters pass through the probe; FR-005 is PARTIAL because console output omits `--count` values outside the top 15 without `--json`; FR-006 remains PARTIAL for the 15-relation limit and the `reltuples = -1` estimate. ND-F8-1 is decided by S31-PO-4; schema/unit verification and production measurement remain pending.
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tasks cover the feature.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests or measurements ran and no verification status was upgraded.
 - Verdict: PASS for the documentation-only corrections.
+
+
+## S41 CodeRabbit round-3 evidence re-analysis
+
+- Date: 2026-11-09 23:17 UTC, after the spec, traceability and total corrections.
+- Scope: rechecked FR-005 console output against `db-usage.mjs` (`console.table(report.tables)`) and the `report.counts` JSON field; rechecked FR-006 projection math against `Math.max(reltuples, 1)` and the top-15 relation selection.
+- Current matrix totals: 2 VERIFIED / 6 PARTIAL FR; 0 VERIFIED / 4 PARTIAL SC. FR-005 and FR-006 are PARTIAL for the documented output and unknown-row/coverage limitations.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static inspection only; no tests ran and no verification status was upgraded.
+- Verdict: PASS for this documentation-only evidence correction.

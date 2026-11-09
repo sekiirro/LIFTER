@@ -34,7 +34,7 @@
   - Triggers: push + pull_request; runs on `ubuntu-latest`.
   - Node from `.nvmrc`, npm cache.
   - Steps: `npm ci` → typecheck → lint → format:check → test → build:edge → size → install Playwright Chromium → e2e.
-  - `permissions: contents: read`; `validate` uses no secrets; later `integration`/`storage` jobs may use optional Docker Hub pull credentials only for authenticated image pulls; no deployment secrets or deploy.
+  - `permissions: contents: read`; `validate` requires no repository-configured secrets and uses GitHub-provided `github.token` only for read-only dispatch metadata requests; the `integration` aggregator has no Docker Hub credentials; only `integration-shard` and `storage` may use optional Docker Hub pull credentials for authenticated image pulls; no deployment secrets or deploy.
 - [x] T013 [P] Commit only Supabase local config `supabase/config.toml` (+ its `.gitignore`) from `npx supabase init`; no migrations or seed data
 - [x] T014 Unit-test the size-report's pure comparison function in `tests/unit/size-report.test.ts` (under, equal and over the limit → exit code)
 - [x] T015 Run all Windows-capable quickstart steps; fix failures; run `npm run format`
@@ -79,4 +79,4 @@ Tasks remain unchecked until tests and exact-head GitHub gate evidence are recor
 
 ## S41 documentation reconciliation
 
-- [ ] T025 [FR-009] Reconcile the CI credential boundary in the feature specification, plan, and research from merged workflow commit `9b4d7a4c9db0dc0493dbd6419a6fead95290f1dd`: `validate` uses no secrets; later `integration`/`storage` jobs may use optional Docker Hub credentials only for authenticated image pulls; no deployment secrets or deploy. Documentation only; no workflow change.
+- [ ] T025 [FR-009] Reconcile the CI credential boundary in the feature specification, plan, and research from merged workflow commit `9d24e6444aea5f72ce5dd00e13d3d25c979c8619`: `validate` requires no repository-configured secrets and uses GitHub-provided `github.token` only for read-only dispatch metadata requests; the `integration` aggregator has no Docker Hub credentials; only `integration-shard` and `storage` may use optional Docker Hub credentials for authenticated image pulls; no deployment secrets or deploy. Documentation only; no workflow change.

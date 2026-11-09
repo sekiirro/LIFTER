@@ -392,16 +392,16 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
 
 | ID | Severity | Finding | Disposition |
 |---|---|---|---|
-| F14-A01 | MEDIUM | FR-009 owner-facing upload controls and alt-text editor UI were deferred to F14b. | Keep the owner-editor row PARTIAL; do not include F14b work in the core scope. |
+| F14-A01 | MEDIUM | FR-009 owner-facing upload controls and alt-text editor UI were approved DEFERRED to F14b. | Preserve DEFERRED for the FR-009 owner-editor row; FR-009 as a whole remains PARTIAL. Do not change the deferral or include F14b work in core scope. |
 | F14-A02 | MEDIUM | Capacity, backup/restore, complete Q-M coverage and hosted release evidence remain open production gates. | Keep tasks unchecked; do not claim hosted verification or a PO deferral. |
-| F14-A03 | MEDIUM | Proxy helper tests cover private/no-store, but registration responses lack a route-level private/no-store assertion. | Keep FR-011 and SC-007 PARTIAL until the registration response matrix is asserted. |
+| F14-A03 | MEDIUM | Proxy helper tests cover private/no-store. Invalid registration responses assert no-store and referrer-policy headers, but the full private, no-store matrix is not established. | Keep FR-011 and SC-007 PARTIAL until the registration response matrix is asserted. |
 
-**S31 refresh (historical):** FR-011 remains PARTIAL for the missing registration-route private header assertion. Coverage mapping remains 18/18 FR and 11/11 SC; no CRITICAL/HIGH. Static review only.
+**S31 refresh (historical):** FR-011 remains PARTIAL because invalid registration responses assert no-store and referrer-policy, but complete private, no-store coverage across the registration response matrix is not demonstrated. Coverage mapping remains 18/18 FR and 11/11 SC; no CRITICAL/HIGH. Static review only.
 
 ## S41 current traceability re-analysis
 
 - Date: 2026-11-09 19:56:44 UTC, after the FR-011 and SC-007 statuses were corrected to PARTIAL and the historical core record restored.
-- Scope: current spec/traceability evidence; proxy success and error cache headers are asserted, but registration-route success/error headers are not. Preserve F14-A01..A03 and all later recorded findings/gates.
+- Scope: current spec/traceability evidence; proxy success and error cache headers are asserted. Invalid registration responses assert no-store and referrer-policy, but the full private, no-store registration matrix is not established. Preserve F14-A01..A03 and all later recorded findings/gates.
 - Current core matrix: 17 VERIFIED, 12 PARTIAL; FR-011 and SC-007 remain PARTIAL.
 - Findings: 0 open CRITICAL, 0 open HIGH; the existing medium production/evidence gaps remain. No tests or tasks were changed.
 
@@ -412,3 +412,11 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks cover the feature.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no task/status changed.
 - Verdict: PASS for this documentation-only correction.
+
+
+## S41 CodeRabbit round-3 registration-header re-analysis
+
+- Date: 2026-11-09 23:17 UTC, after correcting the historical deferral and registration-header descriptions.
+- Scope: preserve DEFERRED for the FR-009 owner-editor row; core FR-009 remains PARTIAL. Invalid registration responses assert no-store and referrer-policy, but the full private, no-store response matrix is not demonstrated. FR-011 and SC-007 remain PARTIAL.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests or tasks changed.
+- Verdict: PASS for these documentation-only corrections.

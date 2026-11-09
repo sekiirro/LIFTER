@@ -55,3 +55,11 @@ T901 is complete after the 16-test page suite passed on the committed code, foll
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks are present.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no task/status changed.
 - Verdict: PASS for this docs-only link repair.
+
+
+## S41 CodeRabbit round-3 baseline-map re-analysis
+
+- Date: 2026-11-09 23:17 UTC, after restoring the baseline FR-001..FR-014 / SC-001..SC-006 source map in traceability.md.
+- Scope: checked all mapped requirement identifiers against spec.md, the existing issue/integrity/open/grace/reads/audit/UI test files, T035, and the F10 verification report. The map adds no test execution or status upgrade; FR-006 remains unimplemented as documented.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no task status changed.
+- Verdict: PASS for this documentation-only source map.

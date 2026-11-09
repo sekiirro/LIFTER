@@ -85,9 +85,13 @@ The PO receives one report in a fixed format. It shows each limit, the measured 
 
 ### Session 2026-11-03 — compliance reconciliation
 
-- **Decision register:** `docs/04-changes-and-questions.md` D-06 and the owner decision dated 2026-10-27 cited in this spec; ND-F8-1 is decided by S31-PO-4. ND-F8-2/3 remain unresolved.
-- **Result:** S31-PO-4 supplies illustrative pilot values; T012 verifies schema units before recording table-level volumes. F8 remains preparation-only; actual environment measurements remain gated on explicit PO deployment approval. Authenticated-route permission remains open and is not defaulted.
+- **Decision register:** `docs/04-changes-and-questions.md` D-06 and the owner decision dated 2026-10-27 cited in this spec. The F8 pilot-volume analysis was unresolved at this session; ND-F8-2/3 also remained unresolved.
+- **Result at this session:** F8 remained preparation-only; actual environment measurements were gated on explicit PO deployment approval. Authenticated-route permission remained open and was not defaulted.
 - **Evidence limit:** Static source/test inspection only; no tests or cloud actions were performed in this lane.
+
+### S31-PO-4 decision refresh — 2026-11-04
+
+S31-PO-4 decided ND-F8-1 as illustrative pilot values only: 2 workspaces × 150 clients/workspace × 2 staff/workspace × 2 plans/client × 2 new plan versions/client/month. T012 verifies schema units before recording table-level volumes. ND-F8-2/3 remain unresolved; no deployment or authenticated-route measurement is authorized by this refresh.
 
 ## Assumptions
 
