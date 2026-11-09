@@ -116,7 +116,7 @@ This review follows the S34-PO-2..6 and PD-S34-NEW-01 clarifications added to `s
 
 ## S36 T136 CI remediation analysis - 2026-11-06
 
-The existing drift guard hard-coded the localized starter-label migration present on B but absent on A; the current A hosted Storage run fails with `missing migration source for app_private.ensure_default_onboarding_form`. T136 adds an ordered source fallback to A's `20261107032500_f15_retirement_default_lock.sql` while retaining the localized source first for B. Scope is test-harness recovery only within FR-024/025; no product behavior, policy, SQL migration, or security assertion changes. A contract regression asserts the ordered sources. **CRITICAL: 0. HIGH: 0. No open ambiguities for this task.**
+The existing drift guard maps the localized starter-label migration on B first and falls back on A to `20261104023000_f15_default_provisioning_configuration.sql`, the latest migration on A that defines `app_private.ensure_default_onboarding_form`. The ordered mapping is test-harness-only within FR-024/025; no product behavior, policy, SQL migration, or security assertion changes. **CRITICAL: 0. HIGH: 0. No open ambiguities for this task.**
 
 
 ## S36 N11 and ALERTS clarification analysis - 2026-11-06

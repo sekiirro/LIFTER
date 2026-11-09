@@ -33,7 +33,7 @@ it('restores an abandoned committed function mutant from its migration and fails
     )?.migration,
   ).toEqual([
     '20261108021000_f15_localized_n11_starter_labels.sql',
-    '20261107032500_f15_retirement_default_lock.sql',
+    '20261104023000_f15_default_provisioning_configuration.sql',
   ]);
   for (const item of guardedFunctions) {
     const { identity } = item;

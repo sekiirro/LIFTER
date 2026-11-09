@@ -99,7 +99,7 @@ it('T022 exposes only the signed client assignment and audited answer reads', as
       workspace_id: context.wsA.id,
       version_snapshot: definition,
       signup_profile: {
-        full_name: 'U3 synthetic test',
+        full_name: 'U3 synthetic client',
         date_of_birth: '1990-04-12',
       },
     });
