@@ -225,6 +225,6 @@ The PO and merge lane can collect three full CI results concurrently without acc
 
 ### Session 2026-11-03 — merged-scope compliance reconciliation
 
-- **Decision register:** `docs/04-changes-and-questions.md`; `docs/01-traceability.md` is the shared traceability index. This entry is limited to the original merged scaffold FR-001..FR-014. Self-hosted CI coverage FR-015..FR-020 is separately owned by SK-A4 and is not duplicated here.
+- **Decision register:** `docs/04-changes-and-questions.md`; `docs/01-traceability.md` is the shared traceability index. This entry is limited to the original merged scaffold FR-001..FR-014. FR-015..FR-019 cover CI optimization and FR-020 covers the migration-version guard. S33-PO-4 postpones self-hosted runner work; no runner work is specified here.
 - **Result:** The original scaffold behavior and artifact scope remain as specified by FR-001..FR-014. One policy question remains open: whether FR-009's original no-secrets constraint applies only to the baseline job or to later integration/storage jobs that use optional Docker Hub credentials. No interpretation is made here.
 - **Evidence limit:** Static repository inspection only; no tests or CI were run in this lane.

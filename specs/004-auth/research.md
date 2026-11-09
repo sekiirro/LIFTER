@@ -30,7 +30,7 @@
   - Consuming the token only on POST stops link scanners and chat previews from burning the link.
   - `APP_ORIGIN` comes from server configuration, never from the request `Host` header, to prevent host-header injection.
   - The default `action_link` would send the client to the Supabase domain and needs redirect-URL configuration.
-- **Expiry**: PO decision ND-F4-3 requires 60 minutes in all environments; recovery session TTL is independently 15 minutes. S31-PO-2 confirms D-19; T031 tracks verification that provider configuration matches the approved expiry. The provider's prior local default is not a policy source.
+- **Expiry**: PO decision ND-F4-3 requires 60 minutes in all environments; recovery session TTL is independently 15 minutes. S31-PO-2 confirms D-19; AI-04 in docs/13-production-readiness.md tracks hosted provider-expiry verification. The provider's prior local default is not a policy source.
 
 ## R5 — Audit and rate-limit ordering (two walls, no orphaned links)
 
@@ -54,7 +54,7 @@
 
 ## R7 — Rate limits (ND-F4-4)
 
-- **Decision**: The limits live in one SQL function, `app_private.recovery_link_limits()`, which returns `(per_actor_max, per_target_max, window)`. Existing implementation placeholders are 20 per actor and 3 per target per rolling hour. S31-PO-3 approves 10 per issuer per rolling hour and 3 per client per rolling 24 hours across issuers. Existing configuration does not conform; T033 tracks future implementation/configuration evidence.
+- **Decision**: The limits live in one SQL function, `app_private.recovery_link_limits()`, which returns `(per_actor_max, per_target_max, window)`. Existing implementation placeholders are 20 per actor and 3 per target per rolling hour. S31-PO-3 approves 10 per issuer per rolling hour and 3 per client per rolling 24 hours across issuers. Existing configuration does not conform; T031 tracks implementation and tests for the decided manual-link limits; T033 is the staff self-service implementation-entry gate.
 - **Rationale**: The limits are enforced in the database, in the same transaction as the insert, so they work across Worker isolates without needing a KV store ($0).
 
 ## R8 — Keeping the privileged key server-side

@@ -68,3 +68,10 @@
 - Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. Existing approval-flow decisions and separately recorded open gates remain unchanged; no new behavior is specified.
 - Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
 - Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.
+
+## S41 review-finding re-analysis
+
+- Date: 2026-11-09 19:56:44 UTC, after the T051 task and FR-002/FR-029 traceability corrections.
+- Scope: migration already installed; T050 Stack A verification remains pending; no committed migration was edited. FR-002 cites T013 issued-binding evidence. FR-029 is PARTIAL because the cited test does not prove the UI retains the request and shows the uncertainty warning.
+- Findings: 0 open CRITICAL, 0 open HIGH; 22 VERIFIED and 7 PARTIAL functional requirements. No test was run or changed.
+- Verdict: PASS for documentation correction; Stack A and UI evidence gates remain open.

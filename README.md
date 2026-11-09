@@ -501,8 +501,11 @@ logged or stored by LIFTER, and returned only after the issuance and audit event
 commit. Opening it does not consume it: the Continue action verifies it, then
 the account holder sets a new password.
 
-ND-F4-3 requires 60-minute recovery-link expiry in every environment and an
-independent 15-minute recovery session. S31-PO-3 sets recovery generation
+ND-F4-3 requires 60-minute recovery-link expiry in every environment. The
+15-minute recovery-session TTL is independent: the application password-action
+check does not terminate the recovery session or block direct Auth API use after
+15 minutes. Session-lifetime enforcement remains an open pre-production blocker
+under docs/13-production-readiness.md AI-04. S31-PO-3 sets recovery generation
 limits at 10 per issuing staff account per rolling hour and 3 per client per
 rolling 24 hours across issuers. A placeholder enforcement exists in
 `app_private.recovery_link_limits()`

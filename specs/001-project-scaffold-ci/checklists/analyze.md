@@ -114,6 +114,13 @@ The main-side CI requirements retain FR-015 to FR-019 and SC-006 to SC-009, with
 
 - Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
 - Scope: static Spec Kit recheck of the current-main baseline, Clarifications and decision citations, FR/SC/scenario and FR-tagged task cross-references, and the PR #52 compliance edits. Documentation only; no implementation or test task was marked complete, and no tests were executed.
-- Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. The reconciliation remains limited to merged scaffold requirements; the newer self-hosted CI FR-015..FR-026 scope retains its own existing analysis.
+- Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. FR-015..FR-019 cover CI optimization, FR-020 is the migration-version guard, and S33-PO-4 postpones self-hosted runner work.
 - Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
 - Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.
+
+## S41 review-finding re-analysis
+
+- Date: 2026-11-09 19:56:44 UTC, after the spec scope correction.
+- Scope: static alignment of the Clarifications entry and Analyze scope: FR-015..FR-019 are CI optimization, FR-020 is the migration-version guard, and S33-PO-4 postpones self-hosted runner work.
+- Findings: 0 open CRITICAL, 0 open HIGH. No workflow or task status changed. The pre-existing FR-009 question about optional Docker Hub credentials in later jobs remains open and is escalated as S41-MCQ-001 in the run report; no interpretation is encoded.
+- Verdict: PASS for the documentation correction.

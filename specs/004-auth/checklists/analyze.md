@@ -97,3 +97,10 @@ This round changes specification artifacts only. No code, SQL, migration, enviro
 - Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. FR-015 now states the already-approved Trainer denial boundary until T032; the approved all-workspace-Trainer capability remains unimplemented until its separate cycle.
 - Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
 - Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.
+
+## S41 review-finding re-analysis
+
+- Date: 2026-11-09 19:56:44 UTC, after the documentation reference/status corrections.
+- Scope: static check of ND-F4 decision versus implementation status, AI-04 expiry-verification ownership, T031 manual-link limit work, T033 self-service entry gate, and the Decision register anchor links.
+- Findings: 0 open CRITICAL, 0 open HIGH. No product decision or task status changed.
+- Verdict: PASS for the documentation corrections.

@@ -404,8 +404,8 @@ prices stay in own currency while collection reporting uses only the approved im
 
 ### Session 2026-11-03 — compliance reconciliation
 
-- **Decision register:** `docs/04-changes-and-questions.md` D-09/D-10, D-11, D-13, and D-17; `NEEDS DECISION` ND-F9-1..5 above.
-- **Result:** At this 2026-11-03 session, ND-F9-1..5 remained open as written. S31-PO-4 (SK-009-04, 2026-11-04) later decided ND-F9-4 as denied; ND-F9-1..3 and ND-F9-5 remain open. ND-F9-1..3 and ND-F9-5 do not block local development; they remain decision gates for the affected product policy/catalog and production uses. No other ambiguity was identified in the merged F9 scope.
+- **Decision register:** `docs/04-changes-and-questions.md` D-09/D-10, D-11, D-13, and D-17; `NEEDS DECISION` ND-F9-2, ND-F9-3 and ND-F9-5 above; ND-F9-1 currency is settled by the S31-PO-4/5 market/currency decisions.
+- **Result:** At this 2026-11-03 session, ND-F9-1..5 remained open as written. Later S31-PO-4/5 settled ND-F9-1 with the market/currency matrix and S31-PO-4 (SK-009-04, 2026-11-04) decided ND-F9-4 as denied; ND-F9-2, ND-F9-3 and ND-F9-5 remain open. These remaining decisions do not block local development; they remain decision gates for the affected product policy/catalog and production uses. No other ambiguity was identified in the merged F9 scope.
 - **Evidence limit:** Static source/test inspection only; no tests were executed in this lane.
 
 ## Assumptions

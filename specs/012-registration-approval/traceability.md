@@ -5,7 +5,7 @@ Static source inspection only. No test suite was executed in this compliance lan
 | Requirement | Task(s) | Asserting test(s) | Evidence | Status |
 |---|---|---|---|---|
 | FR-001 | T006-T011, T014, T028 | `tests/unit/registration-approval-capabilities.test.ts::denies Sales approval while preserving Sales payment recording`; decision/role integration tests | Code and test files on `d04ef52` | VERIFIED |
-| FR-002..003 | T008-T017 | `tests/integration/registration-approval-integrity.test.ts::T009 valid initial graph...`; `tests/integration/registration-approval-audit.test.ts::T017 real approval RPC...` | Code/tests on `d04ef52` | VERIFIED |
+| FR-002..003 | T008-T017 | FR-002 issued-binding: `tests/integration/registration-approval-operations.test.ts::T013 committed signup binding survives consumed/expired link, disabled offer and newer version`; FR-003 synthetic payment graph: `tests/integration/registration-approval-integrity.test.ts::T009 valid initial graph...`; approval audit: `tests/integration/registration-approval-audit.test.ts::T017 real approval RPC...` | Code/tests on `d04ef52` | VERIFIED |
 | FR-004..005, FR-009..010 | T004-T005, T009, T013, T018-T022 | `tests/integration/registration-approval-integrity.test.ts::T009 SQL commission agrees with BigInt...`; `tests/integration/registration-approval-corrections.test.ts::T019 correction negates stored original exactly...` | Code/tests on `d04ef52` | VERIFIED |
 | FR-006, FR-008, FR-017..018 | T008, T010, T023, T026, T028-T032, T042 | `tests/integration/registration-approval-client-access.test.ts::T042 real F11 client JWT...`; integrity and audit tests | Code/tests on `d04ef52` | VERIFIED |
 | FR-007 | T024, T026, T029, T031, T038-T043 | `tests/integration/registration-approval-client-access.test.ts::T024 zero-argument self status...`; `tests/unit/registration-approval-status-page.test.ts` | Code/tests on `d04ef52` | VERIFIED |
@@ -21,7 +21,7 @@ Static source inspection only. No test suite was executed in this compliance lan
 | FR-026 | T014 | `tests/integration/registration-approval-decisions.test.ts::T014 only PO can reconsider...` | Code/tests on `d04ef52` | VERIFIED |
 | FR-027 | T018-T021 | `tests/integration/registration-approval-activation.test.ts`; correction sequence tests | Code/tests on `d04ef52` | VERIFIED |
 | FR-028 | T033-T034 | `tests/unit/registration-approval-page.test.ts`; `tests/unit/registration-approval-messages.test.ts` | Code/tests on `d04ef52`; rendered dashboard journey not executed here | PARTIAL |
-| FR-029 | T028, T033-T035 | `tests/unit/registration-approval-payment-request-keys.test.ts::reuses uncertain collection and correction keys...`; replay tests | Code/tests on `d04ef52` | VERIFIED |
+| FR-029 | T028, T033-T035 | `tests/unit/registration-approval-payment-request-keys.test.ts::reuses uncertain collection and correction keys...`; no cited test asserts that the UI retains the full request and displays the uncertainty warning | Code/test on `d04ef52`; UI warning evidence not demonstrated | PARTIAL |
 | SC-001..003 | T004-T005, T008-T022, T042 | integrity, correction, money and replay tests listed above | Code/tests on `d04ef52` | VERIFIED |
 | SC-004..005 | T024-T032, T038-T043 | self-status and client-access integration tests | Code/tests on `d04ef52` | VERIFIED |
 | SC-006..007 | T008-T022, T042, T044 | `tests/integration/registration-approval-replay.test.ts`; audit and integrity tests | Code/tests on `d04ef52`; mutation campaign T044 not executed in this lane | PARTIAL |
@@ -30,6 +30,6 @@ Static source inspection only. No test suite was executed in this compliance lan
 
 ## Summary
 
-- Functional requirements: 23 VERIFIED, 6 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- Functional requirements: 22 VERIFIED, 7 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Success criteria: 7 VERIFIED, 4 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Execution: static verification only; no suite run. T050-T054 are not checked by this reconciliation.

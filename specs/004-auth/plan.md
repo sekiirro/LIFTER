@@ -44,7 +44,7 @@ Generation sequence (server action `generateRecoveryLink(targetUserId)`):
 5. RPC `recovery_link_record(target)` with the user JWT. On failure → mapped as in step 2, and the link is discarded.
 6. Return `{ status: 'ok', link: buildRecoveryUrl(APP_ORIGIN, hashed_token) }`.
 ## NEEDS DECISION
-ND-F4-1..7, as listed in [spec.md](spec.md#needs-decision-owner-sub-decisions-not-invented-here). The interim behavior is deny or minimal in every case. ND-F4-3 (expiry) and ND-F4-4 (limits) are now decided (spec Clarifications; S31-PO-3 SK-004-04); ND-F4-6 is decided as clients only (S31-PO-2 SK-004-06). The limits are not yet configured to the decided values: task T031 (FR-010). S35-PO-1 decided ND-F4-5=A (option a) and ND-F4-7 (staff email reset, specified in the ND-F4-7 Design section above, not built); ND-F4-3 session-lifetime remains an open security blocker.
+ND-F4-1..7, as listed in [spec.md](spec.md#decision-register-owner-sub-decisions). The interim behavior is deny or minimal in every case. ND-F4-3 (expiry) and ND-F4-4 (limits) are now decided (spec Clarifications; S31-PO-3 SK-004-04); ND-F4-6 is decided as clients only (S31-PO-2 SK-004-06). The limits are not yet configured to the decided values: task T031 (FR-010). S35-PO-1 decided ND-F4-5=A (option a) and ND-F4-7 (staff email reset, specified in the ND-F4-7 Design section above, not built); ND-F4-3 session-lifetime remains an open security blocker.
 ## Project Structure
 ```text
 supabase/migrations/20261028120000_auth_recovery_links.sql

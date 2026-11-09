@@ -24,7 +24,7 @@ T901 is complete after the 16-test page suite passed on the committed code, foll
 - Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
 - Scope: static Spec Kit recheck of the current-main baseline, Clarifications and decision citations, FR/SC/scenario and FR-tagged task cross-references, and the PR #52 compliance edits. Documentation only; no implementation or test task was marked complete, and no tests were executed.
 - Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. Existing F12 decisions and any separately recorded open gates remain unchanged; no new behavior is specified.
-- Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
+- Findings: 0 open CRITICAL, 0 open HIGH. The open findings below retain the existing decision and implementation gates; no task status changed.
 - Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.
 
 ## S41 outside-diff finding re-analysis
@@ -33,3 +33,17 @@ T901 is complete after the 16-test page suite passed on the committed code, foll
 - Scope: static consistency check against spec.md FR-012/ND-F10-5 and research.md R9; the plan now states the binding interim yes default, required PO confirmation, and separate continued commission denial.
 - Findings: 0 open CRITICAL, 0 open HIGH; no product decision or task status changed.
 - Verdict: PASS for this plan clarification.
+
+
+### S41 open findings retained
+
+| ID | Severity | Finding | Status |
+|---|---|---|---|
+| ND-F10-4 | MEDIUM | Public content beyond workspace name remains undecided; the current plan uses only name and validity messages. | Open; no additional content is inferred. |
+| ND-F10-5 | MEDIUM | Sales/Trainer price visibility has interim binding default yes, with PO confirmation still required. | Open; commission remains denied. |
+| T035 | MEDIUM | The approved 50-per-authorized-account rolling-24-hour limit is not implemented or verified. | T035 remains unchecked; implementation and tests are pending. |
+
+**Current finding count:** 0 CRITICAL, 0 HIGH, 3 MEDIUM, 0 LOW. No requirement or task was marked complete.
+
+- Date: 2026-11-09 19:56:44 UTC, after the review-body finding summary was restored.
+- Existing open MEDIUM findings: ND-F10-4, ND-F10-5 (interim price default yes; PO confirmation remains required), and unchecked implementation task T035. No product behavior was inferred and no task status changed.

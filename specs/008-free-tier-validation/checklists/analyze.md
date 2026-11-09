@@ -94,3 +94,10 @@
 - Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. Existing ND-F8-2 deployment approval and ND-F8-3 authenticated test-account approval remain explicit and unchanged.
 - Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
 - Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.
+
+## S41 traceability re-analysis
+
+- Date: 2026-11-09 19:56:44 UTC, after FR-002 and FR-006 were changed to PARTIAL.
+- Scope: traceability status matches the evidence limits: the token-bearing register path is not asserted as redacted, and supplied-relation fixtures do not prove the full database projection. No test or implementation change was made.
+- Findings: 0 open CRITICAL, 0 open HIGH; 4 VERIFIED and 4 PARTIAL functional requirements.
+- Verdict: PASS for honest status reporting; these technical gaps remain open.

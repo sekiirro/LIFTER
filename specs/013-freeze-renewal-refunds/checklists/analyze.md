@@ -79,6 +79,6 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 
 - Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
 - Scope: static Spec Kit recheck of the current-main baseline, Clarifications and decision citations, FR/SC/scenario and FR-tagged task cross-references, and the PR #52 compliance edits. Documentation only; no implementation or test task was marked complete, and no tests were executed.
-- Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. Existing refund and freeze decision records remain authoritative; no new policy or lifecycle behavior is specified.
+- Result: The current traceability matrix is 0 VERIFIED, 43 PARTIAL, and 7 UNVERIFIED; SC-014 is PARTIAL. This is the S41 status; S33 counts remain historical. Existing findings, approvals, implementation gates and verification details remain unchanged. No new product ambiguity or behavior was introduced.
 - Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
 - Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.

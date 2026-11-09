@@ -130,3 +130,10 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. S31-PO-4 SK-009-04 records ND-F9-4 as denied after the historical 2026-11-03 session; ND-F9-1..3 and ND-F9-5 remain open.
 - Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
 - Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.
+
+## S41 review-finding re-analysis
+
+- Date: 2026-11-09 19:56:44 UTC, after the F9 clarification update.
+- Scope: static check of the historical 2026-11-03 status and later S31 decisions. ND-F9-1 (market/currency) and ND-F9-4 (commission denial) are decided; ND-F9-2, ND-F9-3 and ND-F9-5 remain open.
+- Findings: 0 open CRITICAL, 0 open HIGH. Existing product decisions and non-blocking local-development effect are preserved.
+- Verdict: PASS for this reconciliation.

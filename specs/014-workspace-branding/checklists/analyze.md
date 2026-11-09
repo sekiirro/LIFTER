@@ -385,3 +385,22 @@ The change is docs-only. No SQL, test, code, schema, data, or shared-migration c
 - Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. Existing branding approvals and separately recorded implementation/acceptance gates remain unchanged; no new visual behavior is specified.
 - Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
 - Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.
+
+## Restored historical core analysis (S31 record)
+
+The core F14 analysis and S31 refresh are restored here as historical evidence; later rounds remain below and current traceability status is stated in the S41 re-analysis.
+
+| ID | Severity | Finding | Disposition |
+|---|---|---|---|
+| F14-A01 | MEDIUM | FR-009 owner-facing upload controls and alt-text editor UI were deferred to F14b. | Keep the owner-editor row PARTIAL; do not include F14b work in the core scope. |
+| F14-A02 | MEDIUM | Capacity, backup/restore, complete Q-M coverage and hosted release evidence remain open production gates. | Keep tasks unchecked; do not claim hosted verification or a PO deferral. |
+| F14-A03 | MEDIUM | Proxy helper tests cover private/no-store, but registration responses lack a route-level private/no-store assertion. | Keep FR-011 and SC-007 PARTIAL until the registration response matrix is asserted. |
+
+**S31 refresh (historical):** FR-011 remains PARTIAL for the missing registration-route private header assertion. Coverage mapping remains 18/18 FR and 11/11 SC; no CRITICAL/HIGH. Static review only.
+
+## S41 current traceability re-analysis
+
+- Date: 2026-11-09 19:56:44 UTC, after the FR-011 and SC-007 statuses were corrected to PARTIAL and the historical core record restored.
+- Scope: current spec/traceability evidence; proxy success and error cache headers are asserted, but registration-route success/error headers are not. Preserve F14-A01..A03 and all later recorded findings/gates.
+- Current core matrix: 18 VERIFIED, 11 PARTIAL; FR-011 and SC-007 remain PARTIAL.
+- Findings: 0 open CRITICAL, 0 open HIGH; the existing medium production/evidence gaps remain. No tests or tasks were changed.
