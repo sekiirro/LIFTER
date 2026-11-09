@@ -112,7 +112,7 @@ Food create/version requests may provide `p_alternatives: [{alternative_food_id,
 
 ## F16 redesign override and client-view contracts (design only)
 
-The canonical exercise identity stays global and shared. Each workspace's override is an isolated, versioned overlay whose customizable field set is exactly Name, Description, Notes, Video, Alternatives, Default Rest Time, Default RIR and Default Reps. Instructions is removed; every legacy exercise row is deleted at cutover, not migrated (S40-PO-5). The UI shows global entries together with the selected workspace's override state. Trainer-created exercises remain separate workspace-private identities. PO actions made in a personal workspace affect only that workspace override; canonical edits are available only in the explicit global admin scope (F16-MCQ-5 answered a).
+The canonical exercise identity stays global and shared. Each workspace's override is an isolated, versioned overlay whose customizable field set is exactly Name, Description, Notes, Video, Alternatives, Default Rest Time, Default RIR and Default Reps. Instructions is removed; every legacy exercise row is deleted at cutover, not migrated (S40-PO-5), together with its version history and legacy videos (S40-PO-7). The UI shows global entries together with the selected workspace's override state. Trainer-created exercises remain separate workspace-private identities. PO actions made in a personal workspace affect only that workspace override; canonical edits are available only in the explicit global admin scope (F16-MCQ-5 answered a).
 
 Two mutation contracts are required:
 

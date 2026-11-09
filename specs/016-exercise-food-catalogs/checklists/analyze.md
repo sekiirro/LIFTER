@@ -1,4 +1,41 @@
-# Analyze — F16 post-critique disposition (S40 round 10, current)
+# Analyze — F16 post-critique disposition (S40 round 11, current)
+
+- Date: 2026-11-09 15:13 +02:00 (after every round-11 spec-artifact edit: `spec.md` S40 round 11 entry, US2 scenario 9, FR-014, FR-031, FR-038, SC-016 and the `spec.md:103` scope note; `plan.md` status, migration steps 1 and 3; `data-model.md` (`exercise_variations`, `exercise_variation_versions`, Effective resolution); `tasks.md` (T052, T054, T062, T063, T074, dependency order); `traceability.md` (FR-026, FR-031, FR-032, SC-016); `contracts/catalog-api.md`. This record is the last spec-artifact change of the round.
+- Scope (round 11): S40-PO-7 (PO, verbatim quote in `spec.md` "S40 round 11 — S40-PO-7") resolves PDN-S40-F16-02. S40-R11 (architect ruling, not PO) rules PDN-S40-F16-03: joint delivery of T054, T040 and T074, with the interim guards removed. S40-R12 (architect ruling) adds the `workspace_private` branch to the effective resolution contract. S40-R13 (architect ruling) adds the pre-deployment ordering gate to T052. Opens PDN-S40-F16-04 (PO). Spec-only: no code, SQL, migration, fixture or test changed.
+- Head at start of round 11: `c886ce10e9060ef6701a81e048e89f5a7dcef963`.
+
+## Entry check (Spec Kit gate, section 1) — round 11
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| spec.md has numbered FRs, measurable SCs and Given/When/Then scenarios for the touched scope | PASS | FR-001 to FR-038 (incl. FR-016a), 39 keys; SC-001 to SC-016, 16 keys; US2 scenario 9 edited in place (numbering unchanged). |
+| Clarifications recorded, or a PO-decision register entry citing the PO source | PASS | `spec.md` "S40 round 11 — S40-PO-7" quotes the PO answer `A: Delete all (Rec.)` and the architect mapping byte-exact against `s40-po-1.verbatim.txt` lines 27-28. "S40 round 11 — architect rulings S40-R11, S40-R12, S40-R13" quotes the three paragraphs byte-exact against `s40-architect-rulings.md` (labelled architect rulings, NOT PO). PDN-S40-F16-04 recorded as open. |
+| plan.md covers the touched scope; tasks.md has task IDs tagged with FR IDs | PASS | `plan.md` status, steps 1 and 3; `tasks.md` T052, T054, T062, T063, T074, dependency order. No task added; 92 task IDs unchanged. |
+| checklists/analyze.md dated after the last spec/plan/tasks change, 0 open CRITICAL/HIGH | PASS | This record (2026-11-09 15:13 +02:00); open CRITICAL 0, open HIGH 0 (see findings). |
+
+Result: **PASS** for the touched scope (spec-only). Implementation is NOT authorized. No task is ticked. Tasks T037, T040, T049, T054, T057, T062, T063 and T074 remain unticked.
+
+## Findings (round 11)
+
+| ID | Area | Severity | Status | Disposition |
+| --- | --- | --- | --- | --- |
+| R11-1 | PDN-S40-F16-02, decided by S40-PO-7 | — | FIXED (PO) | Legacy exercise rows, their immutable version history (`exercise_variation_versions` rows of legacy rows) and legacy videos are deleted at cutover, none carried over. Encoded in FR-014, FR-031, FR-038, US2 scenario 9, SC-016, `plan.md` steps 1 and 3, `data-model.md` rows 25 and 26, T054, T062(a), T063, T074 (upgrade test), dependency order, `traceability.md` FR-031 and SC-016, `contracts/catalog-api.md`. Carry-over checks and the backfill rule are removed as moot. Audit history is not rewritten. |
+| R11-2 | PDN-S40-F16-03, ruled by S40-R11 (architect, not PO) | — | FIXED (architect ruling) | Joint delivery of T054, T040 and T074 in one PR and deploy. The round-10 interim write-path guard and interim default-bounds guard in T054 are removed with their upgrade and post-cutover tests (plan step 3, T054, T074). |
+| R11-3 | S40-R12, workspace_private branch (CodeRabbit `PRRT_kwDOVYgYQ861QIW-`) | MEDIUM | FIXED (architect ruling) | `data-model.md` Effective resolution gains the `workspace_private` input and result branch: private-row values and sources; missing field source `none`; private video is its own `video_url` or `none`; no canonical or override fallback. Canonical branch unchanged. Source label matches the `ExerciseSnapshotV2` vocabulary (FR-027). |
+| R11-4 | S40-R13, T052 ordering gate and STOP/recovery (CodeRabbit `PRRT_kwDOVYgYQ861QIXF`) | MEDIUM | FIXED (architect ruling) | T052 gains gate (c): pre-deployment comparison of unapplied F16 migrations with the target's applied versions; a published F16 migration that now sorts earlier is a STOP; no automatic waiver; recovery case by case under S36-PO-4 item 6, S40-PO-1 and S40-PO-4. `traceability.md` FR-032 updated. |
+| R11-5 | PDN-S40-F16-04, Notes destination of legacy note text (found in round 11) | MEDIUM | OPEN (PO) | S40-PO-7 deletes the legacy rows. S36-PO-5 ("Keep existing Notes") and `spec.md:103` ("no legacy note text is deleted or rewritten") still apply, and S40-PO-7 says every other rule is unchanged. The conflict is not decided here. Blocked: Notes part of T062(b) and T063, the T054 deletion order, the legacy-row note clause of FR-031 and `spec.md:103`. Options and advisory recommendation in `spec.md` "S40 round 11 — PDN-S40-F16-04". Other tasks are unaffected. |
+
+## Counts (round 11)
+
+- Requirements inventory: FR-001 to FR-038 (incl. FR-016a), 39 keys; SC-001 to SC-016, 16 keys; US1 to US6.
+- Tasks: 92 task IDs, unchanged. No task ticked.
+- Severity (open): **CRITICAL 0, HIGH 0**. Open MEDIUM: PDN-S40-F16-04 (PO, R11-5). Process item R10-5 (CodeRabbit approval record, not a spec ambiguity) stays as recorded in the round-10 record.
+- "No open ambiguities": **NOT stated.** PDN-S40-F16-04 is open. PDN-S40-F16-02 is resolved (S40-PO-7). PDN-S40-F16-03 is ruled by the architect (S40-R11), not by the PO.
+
+---
+
+## Round 10 record (history; superseded by the round-11 record above)
+
 
 - Date: 2026-11-09 14:32 +02:00 (after every round-10 spec-artifact edit: `spec.md` S40 round 10 entry and edits at lines 40, 112, 116, 146, 187; `plan.md`; `data-model.md`; `research.md`; `contracts/catalog-api.md`; `tasks.md`; `traceability.md`; `verification-s40-po5.md`). This record is the last spec-artifact change of the round.
 - Scope (round 10): S40-PO-5 (PO, verbatim quote in `spec.md` Clarifications, "S40 round 10"). Resolves PDN-S40-F16-01. Replaces the Instructions-to-Notes carry-over for legacy exercise rows only; every other S36-PO-5 rule is unchanged. Opens PDN-S40-F16-02 and PDN-S40-F16-03. Spec-only: no code, SQL, migration, fixture or test changed.
