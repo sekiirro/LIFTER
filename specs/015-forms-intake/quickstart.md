@@ -109,4 +109,4 @@ The delivery worker also reads `TELEGRAM_BOT_USERNAME` to build the staff bot li
 
 ## Local media test prerequisites
 
-The body-fat asset optimization unit test invokes ffmpeg and requires an ffmpeg build with the libaom-av1 and libwebp encoders available. Install those codecs locally before running tests/unit/optimize-body-fat-assets.test.ts; the test is intentionally not skipped when a codec is missing. CI installs the required codecs.
+The body-fat asset optimization unit test invokes ffmpeg and ffprobe and requires an ffmpeg build with the libaom-av1 and libwebp encoders available. Install those codecs and the ffprobe tool locally before running tests/unit/optimize-body-fat-assets.test.ts; the test is intentionally not skipped when a codec or tool is missing. CI installs the required codecs.

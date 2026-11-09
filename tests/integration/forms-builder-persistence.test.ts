@@ -155,6 +155,10 @@ it('rejects N12 and derived definitions with absent required selector metadata',
       ],
     },
   ];
+  const control = { ...base, questions: [selector, mealCount, derived] };
+  const [controlResult] = await db`
+    select app_private.f15_valid_builder_definition(${db.json(control)},false) as valid`;
+  expect(controlResult!.valid).toBe(true);
   for (const invalid of cases) {
     const [result] = await db`
       select app_private.f15_valid_builder_definition(${db.json(invalid)},false) as valid`;
