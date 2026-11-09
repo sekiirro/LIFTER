@@ -154,17 +154,17 @@ Blocked: the self-deletion case of T047 only.
 
 ## S41-GAP-MCQ-1 — a retry of workspace creation with the same client key but different input (raised by the S41 gap sweep)
 
-Facts: S41-PO-3 MCQ-19 = A decided that a retry with the same client key returns the same workspace and never creates a second one. It does not say what happens when the retry carries a different name, or when the first request is still in flight. This is not encoded.
+Facts: S41-PO-3 MCQ-19 = A decided that a retry with the same client key returns the same workspace and never creates a second one. It does not say what happens when the retry carries a different name or a different slug (the slug is editable), or when the first request is still in flight. This is not encoded.
 
-Question: what does a retry with the same client key return when its name differs from the first request?
+Question: what does a retry with the same client key return when its name or its slug differs from the first request?
 
-- A) The same key with the same name returns the existing workspace. The same key with a different name is refused with the generic error (approved copy row 8). **Recommended.**
-- B) The same key always returns the existing workspace; the different name is ignored without a message.
-- C) The same key is refused with the generic error in every case, even for an identical request; the PO then checks the Workspaces page.
+- A) The same key with the same name and slug returns the existing workspace. The same key with a different name or slug is refused with the generic error (approved copy row 8). **Recommended.**
+- B) The same key always returns the existing workspace; a different name or slug is ignored without a message.
+- C) The same key is refused with the generic error in every case, even for an identical request. This reopens S41-PO-3 MCQ-19 (a retry returns the same workspace) and changes FR-021; choosing it is a PO decision to reopen MCQ-19.
 
-Implications: A keeps the no-second-workspace rule and never changes a name silently. B hides an input change from the PO. C makes a workspace that was created look failed after a lost response.
+Implications: A keeps the no-second-workspace rule and never changes a name or a slug silently. B hides an input change from the PO. C makes a workspace that was created look failed after a lost response.
 
-Blocked: the duplicate-key edge-case tests of T049 and the flow of T056 only. Copy: row 8 is approved; no new string is needed for any option.
+Blocked: the different-input retry tests of T049 and the retry flow of T056 only. The identical lost-response retry is decided by S41-PO-3 MCQ-19 and is tested under T049 (S41 CodeRabbit finding on tasks.md:284). Copy: row 8 is approved; no new string is needed for any option.
 
 ## S41-GAP-MCQ-2 — appointing a new Workspace Owner after MCQ-13 = A (raised by the S41 gap sweep)
 

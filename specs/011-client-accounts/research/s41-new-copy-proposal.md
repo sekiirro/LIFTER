@@ -15,9 +15,9 @@ Counts: UTF-16 code units and Unicode code points are equal for every string bel
 | P1 | Workspaces navigation label (PO only) | Workspaces | مساحات العمل | 10 | 12 | NEW, PENDING-PO |
 | P2 | Workspaces page title (PO only) | Workspaces | مساحات العمل | 10 | 12 | NEW, PENDING-PO (same strings as P1 proposed; PO may approve them separately) |
 | P3 | Slug field label (MCQ-19 = A; editable slug) | Workspace slug | معرّف مساحة العمل في الرابط | 14 | 27 | NEW, PENDING-PO |
-| P4 | Slug format hint (lowercase a-z, 0-9, hyphen) | Use lowercase letters, numbers and hyphens only. | استخدم حروف إنجليزية صغيرة وأرقام وشرطة (-) بس. | 48 | 47 | NEW, PENDING-PO |
+| P4 | Slug format hint (lowercase a-z, 0-9, hyphen; at most 50 characters; no leading or trailing hyphen, the rule of `workspaces.slug` at `supabase/migrations/20261027120000_tenancy.sql:13`) | Use lowercase letters, numbers and hyphens only. Up to 50 characters, not starting or ending with a hyphen. | استخدم حروف إنجليزية صغيرة وأرقام وشرطة (-) بس. ٥٠ حرف كحد أقصى، ومينفعش تبدأ أو تنتهي بشرطة. | 107 | 93 | NEW, PENDING-PO |
 | P5 | Slug-clash error, option A: reuse of approved row 8 | Unable to complete the request. Please try again. | تعذّر إتمام الطلب. حاول مرة أخرى. | 49 | 33 | REUSE of approved row 8, no new string (see note 1) |
-| P5b | Slug-clash error, option B: new slug-specific text | This slug is already used. Choose another. | المعرّف ده مستخدم قبل كده. اختار معرّف تاني. | 42 | 44 | NEW, PENDING-PO, only if the PO chooses B |
+| P5b | Slug-clash error, option B: new slug-specific text | This slug is already used. Choose another. | المعرّف ده مستخدم قبل كده. اختار معرّف تاني. | 42 | 44 | NEW, PENDING-PO. Choosing it reopens S41-PO-3 MCQ-19 (generic clash error) and changes FR-021 |
 | P6 | Financial-resolution category 1 | Refunded outside LIFTER | اتردّ برّه LIFTER | 23 | 17 | NEW, PENDING-PO |
 | P7 | Financial-resolution category 2 | Forfeited under the contract | اتحجز حسب العقد | 28 | 15 | NEW, PENDING-PO |
 | P8 | Financial-resolution category 3 | Other | حاجة تانية | 5 | 10 | NEW, PENDING-PO |
@@ -25,7 +25,7 @@ Counts: UTF-16 code units and Unicode code points are equal for every string bel
 
 ## Notes
 
-1. Slug-clash error (MCQ-19 = A says "a clash returns a generic error"). Option A reuses approved row 8 (`packages.unavailable`, `lib/i18n/messages/en.ts`, `ar.ts:111`). It fits the generic-error wording of MCQ-19 and needs no new string. Caveat for the PO: row 8 says "Please try again", which will not succeed until the slug is changed. The PO decides whether that is acceptable. Option B is a new slug-specific message (P5b), needed only if the PO wants the clash named.
+1. Slug-clash error (MCQ-19 = A says "a clash returns a generic error"). Option A reuses approved row 8 (`packages.unavailable`, `lib/i18n/messages/en.ts`, `ar.ts:111`). It fits the generic-error wording of MCQ-19 and needs no new string. Caveat for the PO: row 8 says "Please try again", which will not succeed until the slug is changed. The PO decides whether that is acceptable. Option B is a new slug-specific message (P5b); choosing it reopens MCQ-19's generic-error decision and changes FR-021, so it is a PO decision and not a reading of MCQ-19. The same choice (row 8 or a new message) applies to a slug rejected for format or length; P4 is the hint shown before submission.
 2. Category labels (P6 to P8) are the three examples of S40-F11-MCQ-18 option A: "refunded outside LIFTER", "forfeited under the contract", "other". The PO may change the set and the labels. The label "Refunded outside LIFTER" records a fact the PO enters; it is not a refund record. It creates no refund, ledger, collection, correction or cancellation row (011 FR-025; spec 013 FR-014 and FR-018 are not used).
 3. The acknowledgement text (P9) is the explicit acknowledgement required by MCQ-18 = A. It is stored only in the append-only audit event with account reference, actor and time.
 4. Row P2 (page title) repeats P1 by design. If the PO wants a different page title, that is a new PENDING-PO string.
@@ -35,7 +35,7 @@ Counts: UTF-16 code units and Unicode code points are equal for every string bel
 ## Options for PO (S41 copy batch)
 
 - A) Approve P1 to P4, P5 (reuse of row 8), P6 to P9 byte-exact as drafted. Recommended.
-- B) Approve as A but choose P5b for the slug clash instead of P5.
+- B) Approve as A but choose P5b for the slug clash instead of P5. Choosing P5b reopens S41-PO-3 MCQ-19 (the clash returns a generic error) and changes FR-021; it is the PO's decision.
 - C) PO supplies other exact EN and AR strings for any row; the rows not supplied stay PENDING-PO.
 
 Implications: A allows T051, T056 and T059 to encode these strings once they are approved byte-exact. B adds a clash-specific message. C delays the rows the PO changes. In every option, nothing is encoded until the PO approves byte-exact.

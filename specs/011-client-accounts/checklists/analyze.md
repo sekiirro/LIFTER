@@ -1,6 +1,36 @@
 # Analyze — F11 client accounts
 
-## S40 round 7 analysis (S41-PO-1..3 encoded; CodeRabbit round 3 findings F1-F6 on head a6fc277f, fix round; S41 gap sweep) — 2026-11-09 21:30 +02:00, round 13 (current; written after the S41 edits to spec.md, plan.md, tasks.md, traceability.md, research/s40-pending-mcqs.md and research/s40-new-workspace-copy-proposal.md; supersedes round 12 for statuses)
+## S40 round 8 analysis (CodeRabbit round 5 review 5831641422 on head db094e12, CHANGES_REQUESTED, 10 findings: 9 inline threads and 1 additional comment; fix round) — 2026-11-09 21:46 +02:00, round 14 (current; written after the round 5 fix edits to spec.md, plan.md, tasks.md, traceability.md, docs/01-traceability.md, research/s40-pending-mcqs.md, research/s41-new-copy-proposal.md; supersedes round 13 for statuses)
+
+Entry check (Spec Kit gate section 1): PASS. Numbered FRs, SCs and Given/When/Then scenarios unchanged in structure; Clarifications Round 4 still quotes the S41-PO lines byte-exact and labels architect words; plan P-S40-1 and P-S40-3 cover the changed scope; tasks T042 (012), T047, T049, T054 carry FR tags; this file is dated after the last change.
+
+Findings (round 14; each fixed, unless marked open):
+
+| ID | Severity | Finding (CodeRabbit round 5) | Status |
+|---|---|---|---|
+| A-S41-13 | MEDIUM (fixed) | Staff accounts have no client row, so the step C claim reservation did not protect a staff email or phone before step D | CLOSED: plan P-S40-1 step C (staff exception limited to a valid staff intent); spec FR-018; tasks T047 staff-intent pause case |
+| A-S41-14 | MEDIUM (fixed) | A Platform Owner's self-deletion could not complete after step 0 denies the actor's session | CLOSED as design: plan P-S40-1 restricted continuation (architect approval before T048, see A-S41-4); spec FR-018; tasks T047 |
+| A-S41-15 | LOW (fixed) | Retry rule ignored a changed slug | CLOSED as PO question: S41-GAP-MCQ-1 covers name or slug (research/s40-pending-mcqs.md); PO decision OPEN (A-S41-2) |
+| A-S41-16 | LOW (fixed) | Slug hint omitted the DB boundary rules (50 characters, no leading or trailing hyphen) | CLOSED: proposal P4 (EN and AR, recounted); spec FR-021 and plan P-S40-3 state the rule (`supabase/migrations/20261027120000_tenancy.sql:13`) |
+| A-S41-17 | LOW (fixed) | Option B (P5b) named the slug clash, conflicting with FR-021's generic error | CLOSED: proposal P5b and Options mark it as reopening MCQ-19 and changing FR-021 |
+| A-S41-18 | MEDIUM (fixed) | FR-021 verification gate lacked an identical lost-response retry test | CLOSED: tasks T049 (identical retry case) and T054 gate; different-input case stays pending (S41-GAP-MCQ-1) |
+| A-S41-19 | LOW (fixed) | Traceability rows did not separate decision-unblocked work from the global S40 gate, and omitted S41-GAP-MCQ-1 for FR-021 | CLOSED: traceability FR-018 and FR-021 rows |
+| A-S41-20 | LOW (fixed) | FR-019 row omitted T048; FR-023 row omitted T052 (T054 requires both) | CLOSED: traceability FR-019 and FR-023 rows |
+| A-S41-21 | MEDIUM (fixed) | 012 line 148 refused every approve and reject for a deleted client, including an exact replay that FR-011 requires to return its receipt | CLOSED: 012 spec.md line 148 (new request refused; exact replay returns receipt); 012 tasks T042 replay case |
+| A-S41-22 | LOW (fixed) | docs/01-traceability.md BRD-05 row still said the MCQ-16 reading was PENDING | CLOSED: docs/01-traceability.md row 27 updated to S41-PO-2 MCQ-16 = A/A |
+| A-S41-23 | LOW (fixed, unverified finding) | Option C of S41-GAP-MCQ-1 rejected an identical retry, conflicting with the decided MCQ-19 rule | CLOSED: option C is marked as reopening MCQ-19 and changing FR-021; a PO decision, not a reading |
+| A-S41-1 | MEDIUM (open, PO) | Copy P1–P9 not approved | OPEN (unchanged). Blocks T051, T056 (new strings), T059 (labels, acknowledgement) |
+| A-S41-2 | MEDIUM (open, PO) | S41-GAP-MCQ-1 (retry with different name or slug, or in flight) | OPEN (unchanged). Blocks the different-input tests of T049 and the retry flow of T056 |
+| A-S41-3 | MEDIUM (open, PO) | S41-GAP-MCQ-2 (appointing a new Workspace Owner after MCQ-13 = A) | OPEN (unchanged). Blocks the post-deletion state of T047 (last Workspace Owner case) |
+| A-S41-4 | MEDIUM (open, architect gate) | Architect approval of the restricted system entry point (plan P-S40-5) and of the restricted continuation (plan P-S40-1) before T062 and T048 | OPEN. Architect, not PO |
+
+Counts: CRITICAL open 0. HIGH open 0. MEDIUM open 4 (A-S41-1, -2, -3 PO-blocked; A-S41-4 architect gate). Closed in round 14: 11 (A-S41-13 to -23 except those listed open).
+
+Static consistency (run at 21:44 +02:00, recorded in report.md): grep for "S41 CodeRabbit", the FR-019 and FR-023 mapping rows, "restricted continuation", `no_op_po_override_exists`, and the removed PENDING wording in docs/01-traceability.md row 27: PASS. Byte check of approved rows 1–9 (Node): PASS (re-run after the proposal edits; the proposal change does not touch rows 1–9).
+
+Result: PASS, 0 CRITICAL and 0 HIGH. "Zero open ambiguities" is NOT stated for S40. This is a static document review; it makes no implementation-conformity claim.
+
+## S40 round 7 analysis (S41-PO-1..3 encoded; CodeRabbit round 3 findings F1-F6 on head a6fc277f, fix round; S41 gap sweep) — 2026-11-09 21:30 +02:00, round 13 (superseded by round 14 for statuses; written after the S41 edits to spec.md, plan.md, tasks.md, traceability.md, research/s40-pending-mcqs.md and research/s40-new-workspace-copy-proposal.md; supersedes round 12 for statuses)
 
 Entry check (Spec Kit gate section 1; touched scope FR-018–FR-028, SC-013–SC-022, User Story 5 scenario 7, User Story 6, plan P-S40-1..5, tasks T047–T063):
 - spec.md keeps numbered FRs, measurable SCs and Given/When/Then scenarios: PASS.

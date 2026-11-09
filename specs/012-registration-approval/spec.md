@@ -145,7 +145,7 @@ Authorized PO/WO/Sales configure the upfront amount, total payment count, indivi
 - A partial amount is rejected; payment method and free-text reference fields do not exist. F10 due-date offsets for installments 2+ begin only at activation; due dates do not exist before activation.
 - Rejection never grants client access or creates a subscription/payment event. Only PO may reconsider rejected to approved; recovery and identity/link release remain outside F12.
 - UI screens and components must cover loading, empty, error, and success states and satisfy the Frontend Design Gate and DESIGN.md in both Arabic RTL and English LTR.
-- A client in deletion-pending or deleted state (011 FR-018, S40-PO-13) is not pending-approval: approve and reject are refused with the stale-state response of FR-017, and no subscription, obligation or payment is created for it.
+- A client in deletion-pending or deleted state (011 FR-018, S40-PO-13) is not pending-approval: a new approve or reject request is refused with the stale-state response of FR-017, and no subscription, obligation or payment is created for it. An exact authorised replay of an approve or reject that already has a receipt returns that identical receipt under FR-011 and changes nothing; the replay is re-authorised before any receipt is disclosed (S41 CodeRabbit finding on this line; tests in tasks.md T042).
 
 ## Requirements
 

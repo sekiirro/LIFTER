@@ -1,5 +1,12 @@
 # Analyze — F12 registration approval and payment recording
 
+## 2026-11-09 21:46 +02:00 — S41 round 5 analysis (CodeRabbit round 5 on head db094e12: 012 spec.md line 148 and tasks T042; PR #73)
+
+- Scope: 012 spec.md line 148 (deletion-state refusal) and tasks.md T042 (RED case) after CodeRabbit round 5. A new approve or reject for a deletion-pending or deleted client is refused with the FR-017 stale-state response; an exact authorised replay with an existing receipt returns that identical receipt under FR-011 and changes nothing.
+- Entry check: the requirement now agrees with FR-011 (replay re-authorises and returns the identical receipt) and FR-017 (stale states are not changed). The new case is a RED test case in T042, not a new task. PASS.
+- Findings: CRITICAL 0. HIGH 0. MEDIUM 0 new. The earlier open items are unchanged; the P2 capability question (DG-F12-1) remains an existing P2 item.
+- Result: PASS, 0 CRITICAL, 0 HIGH. Static consistency only; no product behaviour, migration or implementation is changed.
+
 ## 2026-11-09 21:30 +02:00 — S41 round 4 analysis (S41-PO-1..3 and S41-R4 cross-reference; PR #73)
 
 - Scope: 012 FR-022 (approval commit as trigger for 011 distribution through a durable job) after the S41 edit that adds the delayed-job no-op for a Platform Owner manual assignment (011 FR-028 (g); S41-R4 F2). Other 012 FRs unchanged.
