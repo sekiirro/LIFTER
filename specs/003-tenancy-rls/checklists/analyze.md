@@ -130,3 +130,12 @@ Open defect findings: **2** (A1 MEDIUM, A2 MEDIUM; both are evidence-coverage it
 - Entry check: PASS - spec requirements and scenarios, PO clarifications, plan scope and FR-tagged tasks remain present.
 - Evidence review: T024 now requires both concurrent revocations to commit and each affected membership to record non-null revoked_at, alongside unchanged Platform Owner roles/count. No refusal is asserted because membership revocation does not remove Platform Owner access (S37-Q5 = A).
 - Result: PASS - 0 CRITICAL, 0 HIGH. Static consistency only; no product behavior or implementation is changed.
+
+## 2026-11-09 18:45 +02:00 — S40 round 3 analysis (S40-PO-13 MCQ-1 = B; PR #73)
+
+- Scope: FR-015 (S40 amendment), SC-007 wording, User Story 7 scenario 4, and the S40 amendment clarification in spec.md. Source: S40-PO-13 "S40-F11-MCQ-1: B: Allow deletion" (byte-exact, `C:/Users/NEW LAP/.lifter/runs/s40-po/s40-po-1.verbatim.txt`). Architect mapping (not PO words): the amendment supersedes G1=A for this point only; the last-PO guard (FR-014) is unchanged.
+- Entry check: PASS for the touched scope: FR-015, the departure requirement and its scenarios remain present; PO clarifications recorded; plan (P-S40-1 in spec 011) covers the deletion path; the FR-tagged tasks are in spec 011 (T047, T048).
+- Consistency: the departure path (deactivate + revoke) is unchanged and still does not delete the auth user or `staff_profiles` row. The deletion path (011 FR-018, P-S40-1) keeps the RESTRICT FK and `staff_profiles_no_delete` trigger in force (no FK or trigger change). `staff_profiles` holds only `user_id`, `role` and `created_at` (`supabase/migrations/20261027120000_tenancy.sql:4–8`), so no identifying field remains there.
+- Architect reading (not PO words), recorded for PO visibility: "no hard deletion of history" (S40-PO-13 MCQ-2 = A) keeps the auth user row as a banned, identifier-released reference.
+- Findings: CRITICAL 0. HIGH 0. New MEDIUM (open, PO-blocked): none in 003. The staff deletion capability (011 S40-F11-MCQ-15) and the last-active Workspace Owner case (011 S40-F11-MCQ-13) are open in spec 011 and block only those cases.
+- Result: PASS - 0 CRITICAL, 0 HIGH. Static consistency only; no product behavior, migration or implementation is changed. The 2 MEDIUM evidence items A1 and A2 are unchanged.
