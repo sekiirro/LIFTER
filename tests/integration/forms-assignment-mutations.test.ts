@@ -80,19 +80,19 @@ async function functionDefinition(tx: TransactionSql, identity: string) {
   return row!.definition as string;
 }
 
-async function withFunctionMutant(
+async function withFunctionMutant<T>(
   tx: TransactionSql,
   identity: string,
   mutate: (definition: string) => string,
-  body: () => Promise<void>,
-) {
+  body: () => Promise<T>,
+): Promise<T> {
   const original = await functionDefinition(tx, identity);
   const mutant = mutate(original);
   if (!mutant || mutant === original)
     throw new Error(`Mutation did not change ${identity}`);
   await tx.unsafe(mutant);
   try {
-    await body();
+    return await body();
   } finally {
     await tx.unsafe(original);
   }
@@ -682,7 +682,7 @@ it('kills Sales configuration and stale authorization after lock-wait mutants', 
     pending = caller.begin(async (tx) => {
       const identity =
         'public.configure_intake_assignment_policy(uuid,uuid,integer,text,uuid[],text,jsonb,jsonb)';
-      await withFunctionMutant(
+      return withFunctionMutant(
         tx,
         identity,
         (definition) =>
@@ -733,6 +733,25 @@ it('kills Sales configuration and stale authorization after lock-wait mutants', 
       'authorization revoked during lock wait must return not_found',
       () => expect(result).toEqual({ status: 'not_found' }),
     );
+    const baseline = await caller.begin(async (tx) => {
+      await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+      await tx`set local role authenticated`;
+      try {
+        const [row] = await tx`
+          select public.configure_intake_assignment_policy(
+            ${f.wsA.id},${formId},1,'new_clients','{}'::uuid[],'onboarding',
+            '{"client_deadline_days":7}'::jsonb,'{"frozen":true,"inactive":true}'::jsonb
+          ) as result
+        `;
+        return row!.result;
+      } finally {
+        await tx`reset role`;
+      }
+    });
+    expect(
+      baseline,
+      'unmutated function must return not_found for the revoked trainer',
+    ).toEqual({ status: 'not_found' });
   } finally {
     if (release) release();
     await Promise.allSettled([hold, ...(pending ? [pending] : [])]);
