@@ -11,6 +11,7 @@ import {
   validateVideoVariationDraft,
   type VideoVariationDraft,
 } from '../../../lib/catalog/video-variation';
+import { isUuidV4 } from '../../../lib/catalog/uuid';
 
 export type AuthoringWorkspacesResult = CatalogResult<
   { id: string; name: string }[]
@@ -40,8 +41,8 @@ function isVideoVariationDraft(value: unknown): value is VideoVariationDraft {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return false;
   const draft = value as Record<string, unknown>;
   return (
-    typeof draft.workspaceId === 'string' &&
-    typeof draft.exerciseId === 'string' &&
+    isUuidV4(draft.workspaceId) &&
+    isUuidV4(draft.exerciseId) &&
     typeof draft.videoUrl === 'string' &&
     typeof draft.note === 'string'
   );
@@ -52,9 +53,8 @@ export async function loadWorkspaceVideoVariationsAction(
   exerciseId?: string,
 ): Promise<VideoVariationLoadResult> {
   if (
-    typeof workspaceId !== 'string' ||
-    !workspaceId.trim() ||
-    (exerciseId !== undefined && typeof exerciseId !== 'string')
+    !isUuidV4(workspaceId) ||
+    (exerciseId !== undefined && !isUuidV4(exerciseId))
   )
     return { status: 'invalid' };
   const variationRows: unknown[] = [];
@@ -125,15 +125,12 @@ export async function saveVideoVariationAction(
     (expectedVersion !== null &&
       (typeof expectedVersion !== 'number' ||
         !Number.isInteger(expectedVersion))) ||
-    typeof operationKey !== 'string'
+    !isUuidV4(operationKey)
   )
     return { status: 'invalid' };
   if (
     Object.keys(validateVideoVariationDraft(draft)).length ||
-    (expectedVersion !== null && !Number.isInteger(expectedVersion)) ||
-    !/^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i.test(
-      operationKey,
-    )
+    (expectedVersion !== null && !Number.isInteger(expectedVersion))
   )
     return { status: 'invalid' };
   return writeVariation({

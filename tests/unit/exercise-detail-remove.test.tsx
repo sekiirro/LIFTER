@@ -99,6 +99,22 @@ describe('Exercise Detail Remove confirmation', () => {
     expect(button(en['dialog.confirm'])).toBeTruthy();
   });
 
+  it('clears the failure alert when the dialog is closed and reopened', async () => {
+    removeAction.mockResolvedValue({ status: 'unavailable' });
+    await render();
+    await act(async () => button(en['catalog.editorRemove']).click());
+    await act(async () => button(en['dialog.confirm']).click());
+    expect(host.querySelector('dialog [role="alert"]')).toBeTruthy();
+    await act(async () => button(en['dialog.cancel']).click());
+    expect(host.querySelector('dialog')?.hasAttribute('open')).toBe(false);
+    removeAction.mockClear();
+    await act(async () => button(en['catalog.editorRemove']).click());
+    const dialog = host.querySelector('dialog');
+    expect(dialog?.hasAttribute('open')).toBe(true);
+    expect(dialog?.querySelector('[role="alert"]')).toBeFalsy();
+    expect(removeAction).not.toHaveBeenCalled();
+  });
+
   it('maps the pending live region to a visually-hidden CSS-module class', async () => {
     await render();
     const liveRegion = host.querySelector('[aria-live="polite"]');

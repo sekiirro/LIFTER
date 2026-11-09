@@ -32,6 +32,7 @@ const draft: FoodEditorDraft = {
   alternatives: [],
 };
 const operationKey = '11111111-1111-4111-8111-111111111111';
+const validWorkspaceId = '22222222-2222-4222-8222-222222222222';
 
 describe('catalog food server actions', () => {
   beforeEach(() => {
@@ -51,7 +52,7 @@ describe('catalog food server actions', () => {
           { foodId: 'food-2', portionQuantity: '50', portionUnit: 'g' },
         ],
       },
-      'workspace-1',
+      validWorkspaceId,
       false,
       operationKey,
     );
@@ -162,8 +163,9 @@ describe('catalog food server actions', () => {
 
   it.each([
     ['wrong workspace type', 7, false, operationKey],
-    ['wrong confirmation type', 'workspace-1', 'yes', operationKey],
-    ['malformed operation key', 'workspace-1', false, 'not-a-uuid'],
+    ['malformed workspace id', 'not-a-uuid', false, operationKey],
+    ['wrong confirmation type', validWorkspaceId, 'yes', operationKey],
+    ['malformed operation key', validWorkspaceId, false, 'not-a-uuid'],
   ])(
     'rejects %s before database calls',
     async (_label, workspaceId, confirmNearMatch, key) => {
@@ -182,14 +184,14 @@ describe('catalog food server actions', () => {
   it('passes explicit near-match confirmation and only supported food fields through the wall', async () => {
     const result = await saveCatalogFoodAction(
       draft,
-      'workspace-1',
+      validWorkspaceId,
       true,
       operationKey,
     );
     expect(result.status).toBe('ok');
     expect(createFoodMock).toHaveBeenCalledWith(
       expect.objectContaining({
-        workspaceId: 'workspace-1',
+        workspaceId: validWorkspaceId,
         operationKey,
         request: expect.objectContaining({
           confirm_near_match: true,
