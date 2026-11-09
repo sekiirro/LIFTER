@@ -84,7 +84,7 @@ describe('catalog TypeScript and SQL role parity fixture', () => {
       'Client',
       'Unknown/unauthenticated',
     ]);
-    expect(expected.operations).toHaveLength(8);
+    expect(expected.operations).toHaveLength(10);
     assertParity(expected, sql);
   });
   it('fails when any role permission is changed or removed from the SQL fixture', () => {

@@ -1,23 +1,112 @@
-﻿# Analyze: Project Scaffold & CI Baseline (original merged scope)
+# F1 001-project-scaffold-ci - Analyze (S34 main merge reconciliation)
 
-- **Date:** 2026-11-03
-- **Analyzed commit:** `ea75860483339fd40fdd5445f2ff6d4a71a35680` (before local clarification/artifact changes)
-- **Scope:** Original merged scope FR-001..FR-014 and SC-001..SC-005 only. Excludes SK-A4 self-hosted CI coverage FR-015..FR-020. Static review; no tests executed.
-- **Inventory:** spec, plan, tasks, research, quickstart, health contract, requirements checklist present; Analyze and traceability were absent.
+## S40 pre-implementation analysis (Playwright e2e sharding)
+
+**Date**: 2026-11-09 14:33 UTC (after the S40 edits to spec.md, plan.md and tasks.md). **Scope**: FR-025, FR-026, SC-014, SC-015, User Story 5 scenario 8, T024.
+
+- [x] `spec.md` has numbered FRs (FR-025, FR-026), measurable SCs (SC-014, SC-015) and a Given/When/Then scenario (US5.8) for the touched scope.
+- [x] Clarifications record the byte-exact S39-PO-3 authority and state explicitly: **No open ambiguities** remain.
+- [x] `plan.md` has an S40 Playwright sharding section covering the touched scope; `tasks.md` has T024 tagged FR-025, FR-026, SC-014 and SC-015.
+- [x] This analysis is dated after the last spec/plan/tasks change and finds 0 open CRITICAL/HIGH findings.
+
+### Findings
+
+- File-level sharding is the only safe partition: the S39 audit (sections 3, 7) shows `fullyParallel` would break `branding-production-ui` declaration order and `client-accounts` shared tokens, shared server-log slice and the kong stop/start fault test. FR-025 therefore fixes file shards, `--workers=1`, no retries and unedited specs.
+- Shard composition is authoritative from the tree: 282/156/191 = 629, all non-empty (N=5 was shown empty in the audit, hence N stays 3). Banner-loaded (273 tests) is one indivisible group, so shard 1 remains the longest; the expected critical path is bounded by shard 1's Vitest step plus ≈6 min of browser tests versus the 13.8 min single-job e2e step, so SC-015 is achievable without splitting the banner spec.
+- Every shard needs the audit's §2.1/§2.2/§2.4 preconditions because the hidden 5.6 min integration warm-up disappears: Vault provisioning with `SIGNUP_*` export, `scripts/wait-storage-ready.mjs`, and a Docker CLI/daemon check for the kong fault test. One Playwright invocation per shard keeps exactly one `webServer` and a per-shard U8 manifest; `U8_SERVER_LOG_RUN_ID` must never be preset.
+- Coverage proof is possible without checkout: shard jobs upload Playwright full/shard `--list` inventories, Vitest full file inventory, and the JSON run reports; the aggregator downloads artifacts and compares identities (`file::project::title path`) and Vitest file sets. Missing artifacts fail the download step, so the proof cannot silently pass.
+- Skip baseline is exact and reproducible: 24 `exercise-library-production` tests skip via `beforeAll` on Stack A (the whole file, all 24 listed identities), and 14 `shell` project-guard skips are static; the ceiling is 38 with a documented identity allowlist. Environment regressions surface as new skip identities or as failures.
+- Existing aggregator properties are preserved: `contents: read`, no checkout, no secrets, and the existing success/revision-tuple step is unchanged; only new steps are appended.
+- No new secrets, permissions, rulesets or concurrency/dispatch changes; `validate` and `storage` are untouched. No product behaviour changes. **CRITICAL**: none. **HIGH**: none.
+
+**Verdict**: PASS — 0 CRITICAL, 0 HIGH.
+
+## S39 pre-implementation analysis
+
+**Date**: 2026-11-09 05:07:56 UTC (after latest S39 spec, plan, and task updates). **Scope**: FR-022, FR-023, SC-012, T023; required-check name mapping, revision propagation, main-push revision validation, and three integration matrix executions.
+
+- [x] `spec.md` has numbered FRs, measurable SCs, and Given/When/Then coverage for the matrix, aggregator, push event, and exact-once shard scope.
+- [x] Clarifications cite the architect ruling for this exact required-check correction; **No open ambiguities** is explicit.
+- [x] `plan.md` covers the matrix id and always-run aggregator; `tasks.md` has T023 tagged with FR-022 and FR-023.
+- [x] This analysis is dated after the spec/plan/tasks edits and finds 0 open CRITICAL/HIGH findings.
+
+### Findings
+
+- GitHub branch protection requires the exact check name `integration`; matrix display names alone do not supply it. A separate aggregator depending on the matrix with `if: always()` can expose the required name and fail closed on failed, skipped, or cancelled shards. On success it receives unique shard-specific outputs, compares all three PR/head/merge tuples, fails on disagreement, and logs the common values.
+- The matrix id change preserves shard display names, setup, test partition, and coverage. The aggregator uses no checkout, secrets, or additional stack.
+- Required-check documentation, test assertions, and gate evidence must record both the three shard executions and aggregator. GitHub combines outputs from matrix jobs and does not guarantee completion order; unique per-shard output names avoid collisions. Each replica derives the same PR/head/merge values from the existing revision step, and the aggregator compares all three tuples before logging. The exactly-once criterion applies to the three integration-shard executions; the distinct Storage lane can also select tests from the integration config.
+- Main `push` events do not provide PR number or PR head SHA. Requiring them unconditionally would break the existing main-push CI path; validate the common merge SHA for push and all three revisions for PR/dispatch.
+- No product behavior or security requirement changes. **CRITICAL**: none. **HIGH**: none.
+
+**Verdict**: PASS - 0 CRITICAL, 0 HIGH.
+
+---
+
+
+## S38 amendment pre-implementation entry check
+
+**Date**: 2026-11-09 02:07:07 UTC (after S38 spec, plan, and task updates for trusted dispatch and fork-secret isolation). **Scope**: FR-021..FR-024, SC-011..SC-013, T020..T022.
+
+- [x] `spec.md` has numbered FRs, measurable SCs, and Given/When/Then scenarios for touched scope. Existing scenarios plus FR-021..FR-024 specify dispatch provenance, three shard coverage, executed-run acceptance, and standing approval constraints.
+- [x] Clarifications cite PO source S38-PO-6 mapping (b),(d),(e), S38-PO-7, and S38-PO-8; **No open ambiguities** is explicit in `spec.md`.
+- [x] `plan.md` covers dispatch validation, integration sharding, gate-check provenance and preserved security checks; `tasks.md` has T020..T022 tagged with FR IDs.
+- [x] This Analyze is dated after the spec/plan/tasks changes and finds 0 open CRITICAL/HIGH findings.
+
+### Findings
+
+- Exact merge-result validation is required before test execution for dispatch events; the workflow prints the evidence values and the runner verifies `HEAD^2`.
+- Three shards use Vitest's deterministic shard assignments; locally enumerate full-suite and each shard to assert no omissions/duplicates. Supabase and environment setup plus provisioning remain in every shard. Playwright installation and the full browser suite run only in shard 1.
+- Each full attempt must have executed `validate`, all integration shards, and `storage`; gate-check event provenance must bind dispatch merge SHA parent2 to exact head and record run ID/source.
+- Dispatch provenance is trusted only from the PR base branch, with the workflow blob equal to the tested merge result; all required jobs log identical revision values. All jobs verify the PR head repository matches the base repository before dependency installation or untrusted code execution. The check uses unauthenticated public repository metadata and adds no permissions or secrets. No open ambiguities; 0 open CRITICAL/HIGH findings remain.
+- GitHub only accepts `workflow_dispatch` after the workflow exists on the default branch. Pre-merge evidence for this constitution PR uses sequential `pull_request` runs; dispatch-path proof is post-merge and must not be claimed yet.
+- No security gate is being removed or changed. Constitution-editing PRs remain outside standing PO approval.
+
+**Verdict**: PASS — 0 open CRITICAL/HIGH findings. PO decisions are explicit; no product decision is needed.
+
+**Date**: 2026-11-05. **Pass**: post-merge consistency re-analysis for S33 CI optimization (FR-015 to FR-019, SC-006 to SC-009, T016 to T018) and S32 migration-version guard (FR-020, SC-010, US6, T019). Main was merged into the #54 branch after #59 and #55 landed.
+
+## Entry check (LIFTER Spec Kit gate, PO S29-PO-2)
+
+- [x] spec.md has numbered FRs, measurable SCs and Given/When/Then scenarios for both scopes: FR-015 to FR-019 / SC-006 to SC-009 / User Story 5 cover CI efficiency; FR-020 / SC-010 / User Story 6 cover cross-branch migration-version detection.
+- [x] Clarifications cite binding S33-PO-4 for CI scope and S32-PO-3 plus S32-R3 for the migration guard; both explicitly state: No open ambiguities.
+- [x] plan.md covers both CI optimization and migration guard scopes.
+- [x] tasks.md contains unique IDs: T016 to T018 for CI and T019 tagged FR-020/SC-010 for migration guard.
+- [x] This analysis is dated after the post-merge spec/plan/tasks edits; findings below have 0 open CRITICAL/HIGH.
+
+## ID collision resolution
+
+The main-side CI requirements retain FR-015 to FR-019 and SC-006 to SC-009, with tasks T016 to T018 and User Story 5. The #54 migration-guard side was renumbered only: FR-015 to FR-020, SC-006 to SC-010, T016 to T019, User Story 5 to User Story 6. References in spec, plan, tasks and traceability were updated. No tests cited feature IDs.
 
 ## Findings
 
-| ID | Severity | Artifact | Finding | Disposition |
-|---|---|---|---|---|
-| F01-A01 | MEDIUM | `spec.md:FR-009`; `.github/workflows/ci.yml` | Original FR-009 prohibits secrets, while evolved integration/storage workflow jobs define optional Docker Hub credentials. The original scaffold ownership boundary does not establish whether that later workflow change supersedes the original constraint. | Raise SK-001-01; do not revise requirement or CI. |
-| F01-A02 | MEDIUM | `spec.md:FR-004/005/009`; test artifacts | Static tests cover health and size comparison, but no asserting test located for every listed scaffold/CI behavior; the current workflow also no longer matches the original listed gate sequence exactly. | Classify unproven behavior PARTIAL; no test execution or checkbox edits. |
-
-## Coverage and consistency
-
-- FR-to-task mapping: 14/14. SC-to-task mapping: 5/5.
-- Current artifact inventory supports the original scaffold scope; later workflow evolution is kept separate from SK-A4's FR-015..FR-020 ownership.
-- No application files, CI, tests, or task checkboxes changed.
+- Scope and traceability: CI event/concurrency/browser/storage requirements map to the existing #60 workflow changes and T016 to T018; migration guard FR-020/SC-010 maps to the opt-in script, existing unit tests, and T019.
+- No workflow behavior was authored in this conflict resolution; workflow changes come from the already merged main branch. Main CI efficiency requirements remain intact.
+- The migration guard remains opt-in detection-only; the in-tree checker and CI wiring remain unchanged. No migration file or product behavior is changed by conflict resolution.
+- Clarifications cover both approved scopes; no unresolved product decision or ambiguity was found.
+- **CRITICAL**: none. **HIGH**: none.
 
 ## Verdict
 
-**PASS WITH OPEN PO DECISION** — 0 CRITICAL, 0 HIGH, 2 MEDIUM; 19/19 FR/SC mapped. Static evidence only.
+**PASS - 0 CRITICAL, 0 HIGH.**
+
+- Dispatch trust finding: gate-check requires the run ref to match the PR base branch and the ci.yml blob at that ref to match the tested merge result; all required jobs must log the same PR/head/merge values. The logger already emits those values in validate, every integration shard, and storage. No open ambiguities; 0 open CRITICAL/HIGH findings remain.
+
+## S40 CodeRabbit request 2 follow-up analysis
+
+**Date**: 2026-11-09 11:45 UTC (after the S40 review corrections to spec, plan, and task text). **Scope**: FR-021, FR-023, SC-011, SC-013, T020, T023; authenticate the existing dispatch PR metadata lookup and distinguish PR-run provenance from dispatch workflow-ref provenance.
+
+- [x] `spec.md` retains measurable FR-021/FR-023 requirements and Given/When/Then acceptance scenarios; the mixed-run scenario now requires the PR run on the exact head and applies trusted base-workflow/blob checks to dispatch runs.
+- [x] Clarifications and PO approvals remain explicit; **No open ambiguities** remain for this technical review correction.
+- [x] `plan.md` covers Bearer authentication of the dispatch metadata lookup using `github.token` under existing `contents: read`; `tasks.md` records this under T020 [FR-021, FR-023].
+- [x] This analysis follows the latest spec/plan/task changes. Findings have 0 open CRITICAL/HIGH issues.
+
+### Findings
+
+- Use the workflow-provided `github.token` only to authenticate the existing GET of pull-request metadata in validate, each integration shard, and storage. Keep `contents: read`; do not add permissions or expose the token in logs. Existing fork rejection remains before dependency installation or untrusted execution.
+- Preserve `pull_request` provenance as exact PR-head checks. The trusted base-branch workflow ref and matching workflow-blob requirement applies to `workflow_dispatch` attempts.
+- Update the focused workflow contract test to require the token binding and Bearer/Accept headers in all three metadata-fetching jobs. No application behavior, schema, or product choice changes.
+- **CRITICAL**: none. **HIGH**: none. **No open ambiguities** remain.
+
+### Verdict
+
+**PASS - 0 CRITICAL, 0 HIGH.**

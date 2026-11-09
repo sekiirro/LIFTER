@@ -249,6 +249,14 @@ export const en: Record<keyof typeof ar, string> = {
   'showcase.retryCount': 'Retry count',
   'showcase.print': 'Print sample',
   'clientSignup.name': 'Name',
+  'clientSignup.dateOfBirth': 'Date of birth',
+  'clientSignup.username': 'Username',
+  'clientSignup.usernameUnavailable':
+    'This username is unavailable. Choose another.',
+  'clientSignup.usernameFormatError':
+    'Use 3–30 characters: English letters, numbers, periods, or underscores.',
+  'clientSignup.telegramUsername': 'Telegram username',
+  'clientSignup.optional': 'Optional',
   'clientSignup.email': 'Email',
   'clientSignup.country': 'Country',
   'clientSignup.phone': 'Phone number',
@@ -415,7 +423,7 @@ export const en: Record<keyof typeof ar, string> = {
   'registrationApproval.statusDenied': 'This status page is not available.',
   'registrationApproval.statusRedirectFallback':
     'Automatic navigation did not complete. Continue to the home page.',
-  // DRAFT (T017): catalog list/search interface copy pending PO approval.
+  // S26 copy batch: approved strings are locked by catalog-approved-copy.test.ts.
   'catalog.exerciseTitle': 'Exercise library',
   'catalog.exerciseIntro':
     'Search available exercises and filter by primary muscle or equipment.',
@@ -435,6 +443,31 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.loading': 'Loading the library…',
   'catalog.emptyTitle': 'Nothing here yet',
   'catalog.emptyDescription': 'Library items will appear here once added.',
+  // DRAFT (S27): catalog.addExercise
+  // DRAFT (S27): catalog.nextPage
+  // DRAFT (S27): catalog.paginationLabel
+  // DRAFT (S27): catalog.editorScope
+  // DRAFT (S27): catalog.editorGlobalScope
+  // DRAFT (S27): catalog.editorWorkspaceScope
+  // DRAFT (S27): catalog.editorWorkspace
+  // DRAFT (S27): catalog.detailTitle
+  // DRAFT (S27): catalog.detailVersion
+  // DRAFT (S27): catalog.detailWorkspace
+  // DRAFT (S27): catalog.detailVideo
+  // DRAFT (S27): catalog.detailOpenVideo
+  // DRAFT (S27): catalog.detailNoVideo
+  // DRAFT (S27): catalog.detailMergedTo
+  // DRAFT (S27): catalog.editAsNewVersion
+  // DRAFT (S27): catalog.editorErrorTextTooLong
+  // DRAFT (S27): catalog.foodErrorTooLong
+  // DRAFT (S27): catalog.editorSecondaryMuscles
+  'catalog.addExercise': 'Add exercise',
+  'catalog.nextPage': 'Next page',
+  'catalog.paginationLabel': 'Exercise library pagination',
+  'catalog.editorScope': 'Exercise scope',
+  'catalog.editorGlobalScope': 'Global library',
+  'catalog.editorWorkspaceScope': 'Workspace only',
+  'catalog.editorWorkspace': 'Workspace',
   'catalog.noResultsTitle': 'No results',
   'catalog.noResultsDescription': 'Try different search words or filters.',
   'catalog.errorTitle': 'Unable to load the library',
@@ -450,6 +483,7 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.carbs': 'Carbohydrates',
   'catalog.fat': 'Fat',
   'catalog.showcaseTitle': 'Catalog list shell',
+  'catalog.showcaseKendoWorkspace': 'Kendo demo workspace',
   'catalog.showcaseIntro':
     'Arabic-first and English preview with search, filters, and states.',
   'catalog.showcaseNotice':
@@ -461,11 +495,10 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.stateEmpty': 'Empty',
   'catalog.stateNoResults': 'No results',
   'catalog.stateError': 'Error',
-  // DRAFT (T022): exercise editor interface copy pending PO approval.
+  // S26 copy batch: approved exercise editor strings are locked by catalog-approved-copy.test.ts.
   'catalog.editorTitle': 'Exercise editor',
   'catalog.editorIntroGlobal':
     'Create a global exercise or edit its plan defaults. These values populate a plan and coaches may override them.',
-  // DRAFT (F16): scope-aware exercise editor subtitle pending PO approval.
   'catalog.editorIntroWorkspace':
     'Create an exercise for this workspace or edit its plan defaults. Coaches may override these values when adding the exercise to a plan.',
   'catalog.editorDefaultsTitle': 'Plan defaults',
@@ -513,6 +546,19 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.editorStatusError': 'Unable to save the exercise',
   'catalog.editorStatusErrorDescription':
     'Your changes were not saved. Try again.',
+  'catalog.detailTitle': 'Exercise details',
+  'catalog.detailVersion': 'Current version',
+  'catalog.detailWorkspace': 'Workspace variation',
+  'catalog.detailVideo': 'Exercise video reference',
+  'catalog.detailOpenVideo': 'Open video reference',
+  'catalog.detailNoVideo':
+    'No video reference is available for this workspace.',
+  'catalog.detailMergedTo':
+    'This exercise has been merged into the active exercise:',
+  'catalog.editorSecondaryMuscles': 'Secondary muscles',
+  'catalog.editAsNewVersion': 'Edit as new version',
+  'catalog.editorErrorTextTooLong': 'Use 120 characters or fewer.',
+  'catalog.foodErrorTooLong': 'The text is too long for this field.',
   'catalog.editorErrorRequired': 'This field is required.',
   'catalog.editorErrorPositiveInteger':
     'Enter a whole number greater than zero.',
@@ -523,7 +569,7 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.editorErrorChoice': 'Choose a value from the list.',
   'catalog.editorErrorTooManyAlternatives':
     'Choose no more than three alternatives.',
-  // DRAFT (T022): showcase controls for the exercise editor preview.
+  // S26 copy batch: approved showcase labels are locked by catalog-approved-copy.test.ts.
   'catalog.showcaseView': 'View',
   'catalog.showcaseViewList': 'List',
   'catalog.showcaseViewEditor': 'Exercise editor',
@@ -539,4 +585,99 @@ export const en: Record<keyof typeof ar, string> = {
   'catalog.showcaseCoachingWork': 'Coaching work',
   'catalog.showcaseCoachingWorkOn': 'On',
   'catalog.showcaseCoachingWorkOff': 'Off',
+  'catalog.foodEditorTitle': 'Add food',
+  'catalog.foodPreviewHeading': 'Food catalog preview',
+  'catalog.foodNames': 'Food names',
+  'catalog.foodNameAr': 'Arabic name',
+  'catalog.foodNameEn': 'English name',
+  'catalog.foodIdentity': 'Food identity',
+  'catalog.foodProduct': 'Canonical product',
+  'catalog.foodPreparation': 'Preparation',
+  'catalog.foodWeighing': 'Weighing state',
+  'catalog.foodOriginWorkspace': 'Creation workspace',
+  'catalog.foodChooseWorkspace': 'Select a workspace',
+  'catalog.foodNoOrigin': 'No workspace context',
+  'catalog.foodWorkspaceRequired':
+    'Select the workspace where you have coaching access.',
+  'catalog.foodRaw': 'Raw',
+  'catalog.foodCooked': 'Cooked',
+  'catalog.foodNotApplicable': 'Not applicable',
+  'catalog.foodBasis': 'Reference basis',
+  'catalog.foodPer100g': 'Per {amount} g',
+  'catalog.foodPer100ml': 'Per {amount} ml',
+  'catalog.foodNutrition': 'Nutrition per {amount}',
+  'catalog.foodKcal': 'Energy (kcal)',
+  'catalog.foodKcalUnit': 'kcal',
+  'catalog.foodProtein': 'Protein (g)',
+  'catalog.foodCarbs': 'Carbohydrates (g)',
+  'catalog.foodFat': 'Fat (g)',
+  'catalog.foodFiber': 'Fiber (g), optional',
+  'catalog.foodKcalWarningOnly':
+    'Calories differ from the {protein}/{carbs}/{fat} macro estimate. This warning will not prevent saving.',
+  'catalog.foodServings': 'Serving units',
+  'catalog.foodServingAr': 'Serving label in Arabic',
+  'catalog.foodServingEn': 'Serving label in English',
+  'catalog.foodServingQuantity': 'Equivalent in the selected basis',
+  'catalog.foodServingAdd': 'Add serving unit',
+  'catalog.foodServingRemove': 'Remove serving unit',
+  'catalog.foodAlternatives': 'Food alternatives',
+  'catalog.foodAlternativeAdd': 'Add alternative',
+  'catalog.foodAlternativeRemove': 'Remove alternative',
+  'catalog.foodAlternativeFood': 'Alternative food',
+  'catalog.foodAlternativePortion': 'Portion quantity',
+  'catalog.foodAlternativeUnit': 'Portion unit',
+  'catalog.foodAlternativeLimit': 'Up to three alternatives can be added.',
+  'catalog.foodAlternativeSaveUnavailable':
+    'Food alternatives are not stored by the current catalog service. Remove alternatives before saving this food.',
+  'catalog.foodErrorRequired': 'Complete this required field.',
+  'catalog.foodErrorSummaryTitle': 'Review the fields that need attention',
+  'catalog.foodErrorSummaryLink': 'Go to the field that needs attention',
+  'catalog.foodErrorNumeric': 'Enter a number greater than or equal to zero.',
+  'catalog.foodErrorMacroLimit':
+    'Combined protein, carbohydrates and fat must not exceed {amount} g.',
+  'catalog.foodErrorServing': 'Enter a serving equivalent greater than zero.',
+  'catalog.foodErrorServingLabel': 'Enter a serving name in Arabic or English.',
+  'catalog.foodErrorAlternativePortion': 'Enter a portion greater than zero.',
+  'catalog.foodEditorSave': 'Save food',
+  'catalog.foodSaveSuccess': 'Food saved and available in the catalog.',
+  'catalog.foodSaving': 'Saving food',
+  'catalog.foodSaveError': 'Unable to save the food',
+  'catalog.foodSaveErrorDescription':
+    "We couldn't confirm the save. Check the food list before retrying.",
+  'catalog.duplicateExactTitle': 'This food already exists',
+  'catalog.duplicateNearTitle': 'Review similar foods',
+  'catalog.duplicateExactDescription':
+    'Choose the existing food to continue. A second matching food cannot be added.',
+  'catalog.duplicateNearDescription':
+    'These foods have a similar name and nutrition profile. Review them before continuing.',
+  'catalog.duplicateConfirm':
+    'I reviewed these matches and want to add this food anyway',
+  'catalog.duplicateContinue': 'Continue with this food',
+  'catalog.duplicateCancel': 'Back to editing',
+  'catalog.duplicateNoCandidates': 'No matching foods were found.',
+  'catalog.duplicateSelectExisting': 'Select existing food',
+  'catalog.duplicateExistingSelected': 'Existing food selected.',
+  'catalog.videoVariationTitle': 'Workspace exercise video',
+  'catalog.videoVariationWorkspace': 'Selected workspace',
+  'catalog.videoVariationExercise': 'Global exercise',
+  'catalog.videoVariationUrl': 'HTTPS video URL',
+  'catalog.videoVariationNote': 'Workspace only note',
+  'catalog.videoVariationSave': 'Save video mapping',
+  'catalog.videoVariationSaving': 'Saving video mapping',
+  'catalog.videoVariationSaved': 'Video mapping saved.',
+  'catalog.videoVariationInvalidUrl':
+    'Use an HTTPS YouTube or Google Drive URL only.',
+  'catalog.videoVariationRequired': 'Enter a valid video URL or a note.',
+  'catalog.videoVariationWorkspaceRequired': 'Choose a workspace explicitly.',
+  'catalog.videoVariationExerciseRequired': 'Choose a global exercise.',
+  'catalog.videoVariationUnavailable':
+    'Could not save the video mapping. Try again.',
+  'catalog.videoVariationForeignOnly':
+    'Only mappings for the selected workspace appear here.',
+  'catalog.videoVariationNoWorkspace':
+    'No workspace is available for you to manage video mappings.',
+  'catalog.videoVariationNoExercise':
+    'No global exercises are available for video mappings.',
+  'catalog.videoVariationNoteTooLong':
+    'The note must be {amount} characters or fewer.',
 };

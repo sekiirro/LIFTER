@@ -1,133 +1,92 @@
-# Analyze: F4 Authentication and manual recovery
+# Spec Kit Analyze — F4 Authentication, S39 round 7
 
-- **Date:** 2026-11-03
-- **Analyzed commit:** `43963eab79d0cd4f511267d3a0ede1181f201e2a` (baseline); final evidence review at `458fa385ef2fa5c8c023b8db3743b11e17303062` includes the local F4 clarification and the traceability reconciliation.
-- **Scope:** static consistency and evidence review; no tests executed.
-- **Inventory:** `spec.md` (FR-001..015, SC-001..007, scenarios and ND-F4 register), `plan.md`, `tasks.md`, research/quickstart/contracts/data-model, `checklists/requirements.md`; no prior feature `checklists/analyze.md` or `traceability.md`.
+- Date: 2026-11-09 04:56 +02:00, after the last changes to spec.md, plan.md, tasks.md, traceability.md, copy-proposal.md and contracts/auth-surface.md in this round, and after the round-7 review fixes to spec.md (SC-016), traceability.md and tasks.md (T041/T041a, T048).
+- Scope: specification and planning only. No application code, SQL, migration, environment or test was changed or run.
+- Inputs: S39-PO-4 option 2 (English of the 13 former proposal rows approved as written); S39-PO-5 option 1 (Egyptian Arabic redraft approved exactly as in `runs/s39-haiku-f4-ar/copy-ar-redraft.md` "proposed Egyptian Arabic", plus the five-key term switch). Exact quoted extracts and mappings are in the round report; prior inputs are the S38 round-6 records.
+- Method: cross-artifact review of spec.md, plan.md, tasks.md, research.md, traceability.md, contracts/auth-surface.md, data-model.md and this checklist against Spec Kit entry requirements and the round-6 critique findings.
 
-## Findings
+## Entry check (Spec Kit gate)
 
-| ID | Severity | Artifact | Finding | Disposition |
-|---|---|---|---|---|
-| F4-A01 | MEDIUM | `spec.md:129-135` | ND-F4-1: Trainer eligibility remains open; current behavior denies Trainers. | Preserved and escalated as SK-004-02. |
-| F4-A02 | MEDIUM | `spec.md:130` | ND-F4-2: link delivery remains copy-only pending a decision. | Preserved and escalated as SK-004-03. |
-| F4-A03 | MEDIUM | `spec.md:132` | ND-F4-4: actor/target rate-limit values remain configuration placeholders in local/dev; production needs a decision. | Preserved and escalated as SK-004-04. |
-| F4-A04 | MEDIUM | `spec.md:133` | ND-F4-5: sequencing of client-target enablement across F4/P1 remains open; the current path denies targets before the P1 test seam. | Preserved and escalated as SK-004-05. |
-| F4-A05 | MEDIUM | `spec.md:134` | ND-F4-6: whether PO staff recovery is included remains open and unbuilt. | Preserved and escalated as SK-004-06. |
-| F4-A06 | MEDIUM | `spec.md:135` | ND-F4-7: SMTP/self-service reset timing remains open; the flow is sequenced, not removed. | Preserved and escalated as SK-004-07. |
-| F4-A07 | MEDIUM | `tasks.md:T030`; `docs/04-changes-and-questions.md:D-19` | T030 says D-19 is pending PO approval, but D-19 is already recorded as an owner decision; the underlying approval status/source is not present in this checkout's allowed records. | Preserve both statements and escalate SK-004-01; do not infer approval from the register entry. |
+| Check | Result | Evidence |
+|---|---|---|
+| Numbered FRs, measurable SCs, Given/When/Then scenarios cover the touched scope | PASS | spec.md FR-001–FR-031; SC-001–SC-016; US5 scenarios 1–15 cover request, hook failures, idempotent intent retry, session binding, reset outcome, timing and the five-key Arabic term switch (scenario 15). |
+| Clarifications cite PO sources and state remaining ambiguities | PASS | spec.md records S39-PO-4/S39-PO-5; COPY-F4-R6 is resolved. S38 register quotes S38-PO-1/3/5. No behavior decision is implicit. |
+| Plan covers touched scope; tasks have IDs and FR tags | PASS | plan.md provider-boundary design, G1–G6 and sequencing; tasks.md T033, T041, T042, T049a–T049e, T050a/T050b, T051 and new T052 (FR-031) include FR tags. |
+| Analyze is dated after spec/plan/tasks edits and has 0 open CRITICAL/HIGH | PASS | This dated review; finding dispositions below. |
 
-## Coverage and consistency
+**Spec-only gate result: PASS. Implementation entry: NOT READY (technical gates only).** The copy condition is now satisfied: English approved by S39-PO-4, Egyptian Arabic and the five-key term switch by S39-PO-5. T033 still requires the remaining entry checks; local feasibility G1–G6, RED/acceptance evidence and T051 mutation evidence remain unexecuted. These are explicit technical gates, not unresolved requirements. No task is ticked.
 
-- FR-to-task and SC-to-task mapping exists in the task artifact; all 15 FRs and 7 SCs have acceptance scenarios.
-- The clarification entry cites D-19 and keeps all unresolved decisions explicit. ND-F4-3's 60-minute link expiry, one-time use, replacement invalidation, and independent 15-minute session are marked decided in the spec and are not reopened.
-- Concrete tests and controls were inspected statically. No tests were executed. T030 remains unchecked; no task status was changed.
+## S39 round 7 copy approval (resolves S38-F4-3)
 
-## Verdict
+- `specs/004-auth/copy-proposal.md` now carries the final approved AR/EN table (26 rows). The 13 former "New proposal; PENDING-PO" rows use the S39-PO-4 English and the S39-PO-5 Egyptian Arabic byte-exact. No PENDING-PO marker remains.
+- spec.md FR-027 cites S39-PO-4/S39-PO-5 and reproduces the approved table after FR-029.
+- The five keys `auth.newPassword`, `auth.confirmPassword`, `auth.setPassword`, `auth.weak_password` and `auth.mismatch` carry only the S39-PO-5 term switch; this is FR-031 with SC-016. The catalog change is task T052 and is explicitly not made by this specification-only PR.
+- FR-031 lists every `origin/main` screen and test that reads the five keys: `app/auth/recovery/RecoveryForm.tsx`, `app/auth/recovery/page.tsx`, `lib/i18n/messages/{ar,en}.ts`, `tests/unit/auth-actions.test.ts`, plus indirect coverage in `tests/unit/messages.test.ts`, `tests/e2e/auth.spec.ts` and `tests/integration/client-accounts-verification.md`. `components/` has no read.
+- The two FR-029 strings remain byte-exact and are unchanged by the switch; a byte comparison confirmed all 26 rows, the 13 redraft strings and the four FR-029 strings.
 
-**PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 7 MEDIUM; 22/22 FR/SC items mapped. The open items do not authorize guessed product behavior.
+## Sol Medium critique disposition (S38 round 6, retained as history)
 
-## S31 round 6 refresh
+S38-R4 recorded the critique result as NOT READY, CRITICAL 0 / HIGH 6 / MEDIUM 3 / LOW 1. The critique ran at the exact starting SHA. Its ten findings are resolved at the specification/process level as follows; implementation evidence remains required by the listed tasks.
 
-- **Date:** 2026-11-04
-- **Reviewed after:** S31-PO-2/3 changes to `spec.md`, `plan.md`, `tasks.md`, `research.md`, `data-model.md`, and `README.md`; static only, no tests run.
-- **Decisions:** D-19 is approved as the scope authority. Trainer scope, copy-only delivery, client-only recovery, client lookup sequencing, and rate values are recorded per S31-PO-2/3. ND-F4-7 remains open.
-- **Evidence gaps:** approved Trainer permission and approved rate values are not implemented/asserted. Provider expiry configuration in every environment is not verified; T031 tracks that gap. T030 closure is PO-directed, but remains unchecked pending current-head review/CI gates under the task evidence rule.
-- **Coverage:** FR mapping 15/15, SC mapping 7/7; traceability reports 9 VERIFIED / 6 PARTIAL functional requirements and 4 VERIFIED / 3 PARTIAL success criteria. 0 CRITICAL, 0 HIGH; 7 MEDIUM. No new PO ambiguity found.
+| Finding | Severity at critique | Round-6 disposition | Evidence |
+|---|---:|---|---|
+| 1. S38-PO-3 absent; PDN-17 and hosted path block local work | HIGH | Fixed: exact PO words recorded; T050b is local-only; hosted changes and Resend deferred; PDN-17 closed. | spec.md S38 register, FR-019/020; plan.md; tasks.md T033/T050b |
+| 2. Hook failure classes overclaim generic response | HIGH | Fixed technically: refusal, caught audit error, unavailable transport and timeout are separate; no-send/no-fallback required; direct outcomes recorded; no mapper assumption. | spec.md FR-018/030; plan.md G6; T049b/T049c |
+| 3. Hook trust boundary and secrets unspecified | HIGH | Fixed technically: authenticated invocation, schema/action validation, identity/destination checks, secret protection, idempotence, audit-before-send and no token logs required. | plan.md Control A/G6; tasks.md T049c/T050b; contracts/auth-surface.md |
+| 4. Account-scoped intent permits competing session | HIGH | Remediated technically: intent bound to initiating user/session; guard requires trusted request context; competing session negative; infeasible binding blocks T050a. No exception accepted. | spec.md FR-025(b), US5 scenario 13; plan.md G1/G2; T049a/T050a |
+| 5. Rate-limit ownership duplicated | HIGH | Fixed: hook is the authoritative counter for app/direct routes; app does not pre-consume; unknown-address accounting, mixed requests and concurrency are required. | spec.md FR-024/030; plan.md flow/G6; T038/T049c |
+| 6. No mutation evidence acceptance task | HIGH | Fixed: explicit T051 maps each security control to a disabling/bypass mutation and evidence/restoration requirements. | tasks.md T051; traceability.md |
+| 7. Gate order circular | MEDIUM | Fixed: RED tests precede local feasibility spikes; implementation entry and final acceptance are separate; spikes do not require their own GREEN result before they can run. | plan.md F4 execution order; tasks.md T033/T050a/T050b |
+| 8. PDN register mixes obsolete and product questions | MEDIUM | Fixed: -04/-06/-10/-11/-16 pruned or deferred; -17 closed; -01/-02/-03/-05/-09/-12 recorded answered; concrete copy table now approved. | spec.md Open items/register; copy-proposal.md |
+| CodeRabbit 7. Client manual-link completion could be changed by blanket login redirect | MEDIUM | Fixed: staff self-service redirects to login; client manual-link preserves FR-013 signed-in outcome. | spec.md FR-026; contracts/auth-surface.md; tasks.md T045 |
+| CodeRabbit 8. Blanket intent immutability could reject valid state transitions | MEDIUM | Fixed: identity/origin fields remain immutable; only guarded open-to-closed transitions are allowed, with timestamps set once; no-delete remains unconditional. | plan.md; data-model.md |
+| CodeRabbit 9. Copy proposal was only in local run directory | MEDIUM | Fixed: committed proposal is linked from the spec, contract, plan/tasks and Analyze; run-dir evidence copy retained. Approval now recorded. | copy-proposal.md; spec.md FR-027 |
+| CodeRabbit 10. Refused requests must still be counted at the send hook | MEDIUM | Fixed: all valid requests reach the authoritative hook for policy accounting; acceptance asserts no email, generic mapped response, and shared counters. | contracts/auth-surface.md; tasks.md T038/T038a; FR-024 |
+| CodeRabbit 11. Contract copy link resolves to the wrong directory | MINOR | Fixed: link now resolves to `../copy-proposal.md`. | contracts/auth-surface.md |
+| CodeRabbit 12. Preserve client invalid-link instruction while using staff copy | MEDIUM | Fixed: existing `auth.invalid_link` catalog copy remains for client manual links; staff uses the exact approved FR-029 string. A display-only `flow=staff` marker selects copy and never affects authorization. | copy-proposal.md; spec.md FR-027/029; tasks.md T037a/T044a |
+| CodeRabbit 13. Session revocation did not cover Data API JWT replay | HIGH | Fixed as an acceptance gate: T049e proves pre-reset access at a protected Data API resource and requires replay denial after reset; any success blocks T050a and control-C acceptance until a technical control is proven. | spec.md FR-030 control C; plan.md G3; tasks.md T049e; traceability.md |
+| CodeRabbit 14. PDN-13 gates were stale after PDN-14 was answered | MINOR | Fixed: current T033, feasibility and RED-test prerequisites are stated; release block remains until controls and FR-020 pass. | spec.md PDN-F4-7-13; tasks.md T033/T049/T050 |
+| CodeRabbit 15. Retry after ambiguous begin could be stranded | MINOR | Fixed: `begin` is idempotent for the same verified session and reuses its fresh intent without a duplicate audit; another session is refused. | spec.md FR-025(a), scenario 14; plan.md; data-model.md; tasks.md T049d |
+| CodeRabbit 16. E2E did not verify the new password works | MINOR | Fixed: T041 now verifies old-password failure and successful sign-in with the new password after normal-login handoff. | tasks.md T041 |
+| CodeRabbit 17. T050a omitted control-D acceptance | MINOR | Fixed: T050a requires the control-D subset of T049b separately from control-A/T050b acceptance. | tasks.md T049b/T050a; spec.md PDN-F4-7-13 |
+| 9. Contracts/data model omit recovery | MEDIUM | Fixed: both artifacts now describe local staff recovery actions, session-bound intent, hook boundary, audit/limits, session outcomes and hosted deferral. | contracts/auth-surface.md; data-model.md |
+| 10. Analyze metrics and status stale | LOW | Fixed: unique finding IDs, current dispositions and metrics below; prior round critique is recorded as executed. | This checklist; traceability.md |
 
-## S32 SK-B round 7 refresh
+## Current findings
 
-- **Date:** 2026-11-04T12:53:27+02:00 (after the S32-SK-B7 documentation edits).
-- **Analyzed commit:** `4a831dc3b9f9ea401c3c6265856cdc320277acbb` (S32-SK-B7 base); the reviewed patch changes `spec.md`, `data-model.md`, and this refresh only.
-- **Scope:** static consistency and evidence review; no tests, scans, stacks, or implementation actions performed.
+| ID | Severity | Status | Detail / gate |
+|---|---|---|---|
+| S38-F4-1 | MEDIUM | OPEN — implementation evidence | G1/G2 must prove a trusted initiating-session binding on the pinned local Auth path. Otherwise T050a remains blocked; no account-scope bypass is accepted. |
+| S38-F4-2 | MEDIUM | OPEN — local feasibility | G3–G6 and T049b–T049e have not run. They must establish hook behavior, unknown-address accounting, response observations, session revocation and recovery age before implementation acceptance. |
+| S38-F4-3 | MEDIUM | CLOSED — copy approved | COPY-F4-R6 resolved by S39-PO-4 (English) and S39-PO-5 (Egyptian Arabic + five-key term switch). No PENDING-PO copy remains. |
+| S38-F4-4 | MEDIUM | OPEN — acceptance evidence | T051 mutation evidence and the T048 security/review/CI gates are not executed in this spec-only round. |
+| S39-F4-1 | LOW | CLOSED — tracked task | The five-key catalog change is not implemented by this spec-only PR by design; task T052 (FR-031) carries it with a byte-comparison test. |
 
-### Findings
+Open CRITICAL: **0**. Open HIGH: **0**. Open MEDIUM: **3**. Open LOW: **0**. The three medium items do not contradict the specified behavior; they are explicit implementation, feasibility and acceptance gates. All product decisions, including copy, are recorded.
 
-| ID | Severity | Artifact | Finding | Disposition |
-|---|---|---|---|---|
-| F4-B7-01 | LOW | `spec.md:FR-006`; `data-model.md` capability matrix | The shared membership qualifier made PO scope ambiguous, and the TypeScript matrix instruction did not explicitly carry the approved future Trainer scope into the same future parity change. | Corrected as a documentation-only clarification: PO is independent of workspace membership; WO requires active membership in the client's workspace; Trainer parity remains deferred to its own approved Spec Kit cycle. No behavior was implemented. |
-| F4-A01 (inherited) | MEDIUM | `traceability.md` FR-006/SC-003; `tasks.md:T032` | Approved all-workspace-Trainer recovery behavior remains unimplemented and has no asserting test. | Preserve the existing PARTIAL traceability status and leave T032 unchecked. No new product decision is required. |
+## Requirements and task metrics
 
-### Coverage and verdict
+- FRs: 31 (FR-031 added for the five-key term switch). SCs: 16 (SC-016 added). Given/When/Then scenarios: US1–US5, 15 F4 scenarios.
+- Existing task count: 61; T052 added (62); T041a added by the round-7 review fix (63). No task was ticked in this round.
+- F4 task coverage includes T033–T052 plus T041a; recovery control requirements trace to T049a–T049e, T050a/T050b and T051.
+- Spec-only readiness: PASS. Implementation readiness: FAIL until T033, G1–G6, the relevant RED tests and implementation acceptance evidence pass; copy is no longer a blocker.
+- Ambiguities: **No open ambiguities.** COPY-F4-R6 is resolved by S39-PO-4/S39-PO-5; the five-key term switch is fully specified (FR-031). Session-binding feasibility is technical and explicitly gated, not an open product question. Existing other-session revocation rule is cited rather than guessed.
 
-- FR-to-task mapping remains 15/15; SC-to-task mapping remains 7/7 (22/22 total). No task checkbox or evidence status changed.
-- The S31-PO-2 clarification remains recorded in `spec.md`; there are no ambiguities about the approved role scope. Existing ND-F4-7 and implementation/configuration gaps remain explicit.
-- Constitution I/III/IV alignment is preserved: role scope remains explicit, both authorization walls remain required, and the new Trainer behavior is not implemented early.
-- **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 7 inherited MEDIUM, 1 LOW resolved in this round; 22/22 FR/SC items mapped.
+## Round 7 review fixes (revalidated)
 
-## S33 SK-52 round 8 refresh
+Two review findings were fixed after the first review of the inserted copy; Analyse was re-run after those edits.
 
-- **Date:** 2026-11-04T18:13:06+02:00 (after the S33 PR #52 fix-round edits).
-- **Analyzed commit:** this fix commit (S33 round for PR #52; base `2eb3733`). The reviewed patch changes `README.md`, `specs/004-auth/plan.md` and this refresh only.
-- **Scope:** static consistency and evidence review; no tests, scans, stacks, or implementation actions performed.
+- SC-016 (spec.md, FR-031) was clarified so its catalog comparison is measurable: pre-existing keys and their English values are compared against `origin/main`; the approved recovery-key additions required by FR-027/T042 and the five-key Arabic term switch are explicitly permitted; no unapproved change is allowed. This removes the contradiction with FR-027 and T042 without changing any requirement or adding one.
+- traceability.md decision-gap notes no longer describe PDN-F4-7-12 or PDN-F4-7-14 as pending: PDN-F4-7-12 is answered by S38-PO-5/S38-R7, and PDN-F4-7-14 = B (S37-PO-8). Their control evidence stays UNVERIFIED.
+- tasks.md CI prerequisites now match `.github/workflows/ci.yml`: T048 requires the three executed green jobs (`validate` with its `check:secrets` step, `integration`, `storage`) instead of a non-existent secret-scan job; T041 records its dependency on the new T041a, which schedules enabling local Inbucket mail capture in the `integration` job (local-only, implementation round). No workflow file is changed by this specification-only PR.
+- Revalidation: 0 open CRITICAL, 0 open HIGH, 0 open LOW; the three MEDIUM items remain the scheduled gates. **No open ambiguities.**
 
-### Findings
+## Session and outcome decisions
 
-| ID | Severity | Artifact | Finding | Disposition |
-|---|---|---|---|---|
-| F4-R8-01 | LOW | `README.md`; `specs/004-auth/plan.md:19,63` | The README/plan wording stated configuration values were unverified without recording that a placeholder enforcement exists and mismatches the approved S31-PO-3 limits. | Corrected as documentation-only wording: `app_private.recovery_link_limits()` (`20261028120000_auth_recovery_links.sql`) enforces 20 per actor and 3 per target per one-hour window, which does not match the approved S31-PO-3 limits (10 per issuing staff account per rolling hour; 3 per client per rolling 24 hours across issuers). No claim that approved values are enforced; no configuration verification has been executed in this lane; implementation/verification remains with T032/T033. |
-| F4-R8-02 | LOW | `specs/004-auth/plan.md:38` | Constitution Check III still said Trainer is deny-by-default "until ND-F4-1" even though ND-F4-1 is decided (spec.md:129, S31-PO-2). | Corrected as documentation-only wording: Trainer is deny-by-default until T032 completes its separate implementation cycle, RLS, tests, and security review. Matrix parity is tested as before; no capability, RLS or matrix behavior changed. |
+- Existing spec rule: FR-025(b) requires revocation of the user's other sessions during the successful password change; FR-030 control C and PDN-F4-7-07 repeat that rule. T049e tests the other pre-existing sessions. Therefore S38-R7's conditional MCQ is not raised.
+- After known success, the recovery session ends and the user goes to normal login without auto-login. If closing audit fails after known success, retain the success-then-login result and require reconciliation. Ambiguous Auth outcomes remain open for reconciliation.
+- Limits: 5 per account per rolling hour, 10 global requests per rolling hour, and a separate cap of 2 local test deliveries per hour.
 
-### Coverage and verdict
+## No implementation
 
-- FR-to-task mapping remains 15/15; SC-to-task mapping remains 7/7 (22/22 total). No task checkbox or evidence status changed.
-- Requirement semantics are unchanged (S31-PO-3 remains the authority; no scope or behavior change); no FR/SC re-mapping is required. Existing ND-F4-7 and implementation/configuration gaps remain explicit.
-- Constitution I/III/IV alignment is preserved: both authorization walls remain required, Trainer stays denied until its own approved Spec Kit cycle, and no Trainer behavior is implemented early.
-- **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 7 inherited MEDIUM, 2 LOW documentation-only corrections in this round; 22/22 FR/SC items mapped.
-
-## S33 SK-52 round 9 refresh
-
-- **Date:** 2026-11-04T19:51:07+02:00 (after the S33 PR #52 fix-round-2 edits).
-- **Analyzed commit:** this fix commit (S33 round 2 for PR #52; base `327bce2`). The reviewed patch changes `tasks.md` (T031 wording) and this refresh only.
-- **Scope:** static consistency and evidence review; no tests, scans, stacks, or implementation actions performed.
-
-### Findings
-
-| ID | Severity | Artifact | Finding | Disposition |
-|---|---|---|---|---|
-| F4-R9-01 | LOW | `tasks.md:T031` | T031 asked for recovery-link provider expiry evidence from one approved safe environment while ND-F4-3 (decided PO 2026-10-29) requires a 60-minute expiry in every environment. | Corrected as documentation-only task wording: T031 now requires per-environment provider/configuration evidence for every supported environment, or a documented configuration parity proof for any environment not checked directly; "No implementation change is implied" is preserved. FR-012/SC-005 semantics are unchanged (ND-F4-3 remains the authority); no checkbox changed. |
-
-### Coverage and verdict
-
-- FR-to-task mapping remains 15/15; SC-to-task mapping remains 7/7 (22/22 total). No task checkbox or evidence status changed.
-- Requirement semantics are unchanged; no FR/SC re-mapping is required. ND-F4-3 is unchanged and explicit.
-- Constitution I/III/IV alignment is preserved: no capability, matrix, RLS, or recovery-link behavior changed.
-- **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 7 inherited MEDIUM, 1 LOW documentation-only correction in this round; 22/22 FR/SC items mapped.
-
-## S33 SK-52 fix round 4 refresh
-
-- **Date:** 2026-11-04T21:49:05+02:00 (after the S33 PR #52 round-4 edits).
-- **Analyzed commit:** `ab3111caeecbac0594eaf7d3cb42de5c1fba0ebe` (this round-4 fix commit's parent; the analyzed state is held in that revision, and this section lands in the round-4 fix commit). Round 2 landed as `ff2174de9e9594d76f8497b0108fd6e23cb813be`.
-- **Scope:** static consistency and evidence review; no tests, scans, stacks, deployments, cloud queries, or implementation actions performed. No `spec.md`, `plan.md` or `tasks.md` text changed in this round.
-
-### Findings
-
-| ID | Severity | Artifact | Finding | Disposition |
-|---|---|---|---|---|
-| F4-R4-01 | LOW | `traceability.md` FR-001/FR-002/FR-003/FR-007/FR-011 rows | Task references did not match task ownership: FR-001 and FR-002 omitted T014 (owns sign-in), FR-003 omitted T015 (owns sign-out), FR-007 cited work through T020 while the cited unit test is owned by T021, and FR-011 cited the `tests/e2e/auth.spec.ts::closing the recovery dialog clears the displayed link` assertion without T016 (owner of `tests/e2e/auth.spec.ts`, which contains the cited test). | Corrected as documentation-only traceability reconciliation: FR-001/FR-002 now cite `T014`, FR-003 cites `T015`, FR-007 cites `T017-T021`, FR-011 cites `T016,T019-T020,T024`. No asserting test, evidence value, or status changed; all five rows remain VERIFIED. Requirement semantics unchanged. |
-
-### Coverage and verdict
-
-- FR-to-task mapping remains 15/15; SC-to-task mapping remains 7/7 (22/22 total). No task checkbox or evidence status changed.
-- Requirement semantics are unchanged; no FR/SC re-mapping is required. ND-F4-7 and implementation/configuration gaps remain explicit.
-- Constitution I/III/IV alignment is preserved: no capability, matrix, RLS, or recovery-link behavior changed.
-- **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 7 inherited MEDIUM, 1 LOW documentation-only correction in this round; 22/22 FR/SC items mapped.
-
-## S33 SK-52 fix round 5 refresh
-
-- **Date:** 2026-11-04T22:56:44+02:00 (after the S33 PR #52 round-5 edits).
-- **Analyzed commit:** `70d465e1b2c76f952e8222b212acafc36520eabf` (parent of this round-5 fix commit; the analyzed state is held in that revision, and this section lands in the round-5 fix commit). Round 4 landed as `70d465e1b2c76f952e8222b212acafc36520eabf`.
-- **Scope:** static consistency and evidence review; no tests, scans, stacks, deployments, cloud queries, or implementation actions performed. This round changes `specs/004-auth/plan.md` (Constitution IV Scope row) and this refresh only. No `spec.md` or `tasks.md` text changed.
-
-### Findings
-
-| ID | Severity | Artifact | Finding | Disposition |
-|---|---|---|---|---|
-| F4-R5-01 | LOW | `specs/004-auth/plan.md:39` (Constitution IV Scope row) | The line said the WO/Trainer extension was "owner decision 2026-10-27, to be registered as D-19 (PO approval in this PR)", contradicting the recorded approved state of D-19. | Corrected as documentation-only wording: the row now records D-19 as approved and the recovery scope authority — "clients only; all workspace Trainers may issue a link for any client in the workspace; copy-only delivery; keep as built/F4 owns recovery/client lookup from P1" (verbatim from `docs/04-changes-and-questions.md` D-19, approved S31-PO-2/SK-004-01; `specs/004-auth/spec.md` decision register). No capability, matrix, RLS, or tasks text changed; requirement meaning unchanged; no FR/SC re-mapping. |
-
-### Coverage and verdict
-
-- FR-to-task mapping remains 15/15; SC-to-task mapping remains 7/7 (22/22 total). No task checkbox or evidence status changed.
-- Requirement semantics are unchanged (S31-PO-2/3 remain the authority; no scope or behavior change); no FR/SC re-mapping is required. ND-F4-7 and implementation/configuration gaps remain explicit.
-- Constitution I/III/IV alignment is preserved: the plan now matches the recorded D-19 approval; no capability, matrix, RLS, or recovery-link behavior changed.
-- **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 7 inherited MEDIUM, 1 LOW documentation-only correction in this round; 22/22 FR/SC items mapped.
+This round changes specification artifacts only. No code, SQL, migration, environment or test file changed. No tests were executed. Local Supabase and hosted services were not run or changed.

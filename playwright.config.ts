@@ -67,7 +67,9 @@ export default defineConfig({
   ],
   webServer: {
     command:
-      'npm run build && node scripts/branding/start-playwright-server.mjs',
+      process.env.PLAYWRIGHT_FIXTURE_ONLY === '1'
+        ? 'npm run build && node tests/e2e/start-server-capture.mjs'
+        : 'npm run build && node scripts/branding/start-playwright-server.mjs',
     url: new URL('/api/health', baseURL).toString(),
     env: {
       ...process.env,

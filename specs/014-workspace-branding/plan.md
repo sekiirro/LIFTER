@@ -86,10 +86,33 @@ DB and Storage work runs locally only on stack B: project `lifter-stack-b`, port
 ### User interfaces
 
 - All UI changes follow [DESIGN.md](../../DESIGN.md) and the [Frontend Design Gate](../../docs/09-frontend-design-gate.md), now merged to main. Existing tokens and `deriveBrand`/`BrandScope` remain authoritative. Keep semantic success/warning/error tokens unchanged.
-- Registration uses DG-F14-1 Premium Centered Card. Hero Banner is image-only with required bilingual alt text and locale fallback; uploader confirms identity content only; no pricing, contact, CTA, links or text fields. Controls never overlap imagery. Final aspect/height values follow a Frontend Design Gate prototype.
+- Registration uses DG-F14-1 Premium Centered Card. Hero Banner is image-only with required bilingual alt text and locale fallback; uploader confirms identity content only; no pricing, contact, CTA, links or text fields baked into artwork. The separate glass card may overlap the image per S32-PO-2 Q2. Final aspect/height values follow a Frontend Design Gate prototype.
 - Editor is DG-F14-2 desktop split editor/live preview and mobile tabs, previewing Registration, Staff Dashboard and Client Portal placeholder. DG-F14-3 inline original/adjusted color explanation.
 - Contrast is checked for each surface's real backgrounds and states. `deriveBrand` covers neutral surfaces only; banner text remains off image or uses guaranteed-contrast scrim from existing tokens. Resolve workspace/version per request, discard late switch responses, use neutral defaults with no scope. Client Portal is brand data/token contract only, conditional on P4.
 - Frontend Design Gate evidence is a later UI implementation gate: AR-RTL/EN-LTR × light/dark × 390/1440px, tablet if layout changes, interaction/state/accessibility coverage, screenshots reviewed against DESIGN.md. No UI is implemented or rendered in this planning change.
+
+## Hero scope mapping (S20-S29 PO decisions; S29-PO-3 Q7)
+
+The Production Registration Hero is governed by FR-026-FR-030 and SC-018-SC-022 in `spec.md`; `hero-implementation-plan.md` is the implementation detail plan and must remain subordinate to those requirements and quoted PO sources. Signup field restoration is an F14 requirement under FR-028. F15 owns Intake prefill and is a dependency; F14 must not duplicate the Intake behavior. Glisse requirements are limited to the approved Hero treatment, existing theme/brand/accessibility decisions and remaining authorized Glisse work. S30-PO-2 (option 1a) and S30-PO-6 (90% `--color-card` tint) settle the dense dark-form field surface and the form/CTA tint for T052: the change stays inside the Hero module, reuses existing tokens, and leaves the shared glass recipes, token files and `DESIGN.md` untouched.
+
+S35-PO-1 approves Hero option A for the error border: use the existing `error.fg` token for light-theme Hero field error borders (`#991B1B`), with no new token or color and no dark-theme change. T063 covers this scoped presentation and its rendered contrast evidence.
+
+### S32 signup and banner clarifications — FR-008 / FR-028
+
+S32-PO-9 Q9 requires an audit of existing usernames and a remediation proposal for PO approval before adding the database username constraint. This Hero run audits Stack B only with aggregate counts and anonymized pattern classes; it makes no data changes and performs no production audit. Under S34-PO-1 H2=A, no username DB constraint or validation against existing accounts is added in this round. Keep T058 open pending safe remediation; no data or schema changes occur here. Q10 approves the exact EN unavailable/format strings; S34-PO-1 H1=A approves the exact EN/AR strings. Wire the Arabic strings byte-for-byte, retaining Western digits 3 and 30. Q11 requires the server username error to clear on edit, live format feedback to resume, and availability to be checked on submit only.
+
+- S32-PO-2 Q2 (`PRRT_kwDOVYgYQ86zbaS5`) makes the glass card a separate presentation layer that may overlap banner artwork. FR-008 restricts text baked into the image; it does not forbid the card layer over the artwork. No rendered change is planned for this clarification.
+- S32-PO-2 Q3 (`PRRT_kwDOVYgYQ86zbaS7`) requires identical username-specific unavailable status for taken and reserved names, mapped to `invalid_input` on Username and focused there. The database/RPC result must not disclose which condition occurred. Exact EN/AR strings are approved by S32-PO-9 Q10 and S34-PO-1 H1=A and are recorded in the F14 decision register and unit fixtures.
+- S32-PO-8 Q7 (`PRRT_kwDOVYgYQ86zeI67`) requires new signups to use a 3–30 character ASCII username containing only `[A-Za-z0-9_.]`, case-insensitively. Enforce this approved new-signup rule in the client schema, `validateSignupFields`, and `client_signup`. S34-PO-1 H2=A defers database enforcement and validation against existing accounts pending safe remediation; do not add a database check constraint in this round. Keep T058 open. Before any separately approved constraint work, use a Stack B aggregate count only for violating rows; do not inspect row contents.
+- Tests first: unit RED for field validation/status mapping/focus, then GREEN; Stack B integration tests cover both username-specific unavailable cases and invalid formats. Use synthetic test accounts only.
+- No database-constraint migration is in this round under S34-PO-1 H2=A. T058 stays open pending safe remediation. Any future constraint migration requires a separate approved scope and version-uniqueness scan across origin refs; never edit pushed migrations `20261104001000` or `20261108230000`.
+- Frontend verification for the username error state covers AR/EN, light/dark, and 360/390/1024px with screenshots under the run temp directory. Existing approved typography, tokens, spacing and error-state component behavior remain authoritative; no visual layout change is in scope.
+
+### S34 r23 existing-PR review fixes
+
+- T061 aligns the historical signup clarification and plan text with S34-PO-1 H1=A/H2=A: the exact Arabic copy is approved and shipped; existing-account enforcement and its database constraint remain deferred with T058 open.
+- T062 maintains the already-approved FR-028 signup checks by using valid identity values except for the field each test intends to reject. Relative-date fixtures must retain their intended future/past condition. No production behavior, schema, or UI decision changes in this follow-up.
+- S37-PO-8 item 1 authorizes the one-time ordering exception for the shared `20261104001000_f15_signup_profile.sql` migration (identical blob `88d6dc78` on six origin refs, including F15). The signup username unavailable migration is now `20261108230000_signup_username_unavailable.sql`; leave the shared migration untouched. This is migration ordering maintenance for FR-028 and does not alter migration contents or signup behavior.
 
 ## Project Structure
 
@@ -164,3 +187,6 @@ No constitution exception is requested. The necessary additional complexity is b
 
 - **Architect items**: AD-F14-1 migration/audit ordering remains an implementation sequencing constraint; hosted compatibility proof and pinned Stack-B header/operation proof are acceptance gates, not design alternatives. AD-F14-2's port list is decided and bounded as stated above.
 - **Genuine PO conflicts**: None identified after applying final F14-1..8. Numeric upload caps and banner aspect/height are intentionally evidence/design-derived gates specified by the PO, not unresolved choices to invent here.
+## S33-PO-4 test and DB hygiene
+
+A new forward migration may replace only branding_gc_claim, branding_gc_finalize, and branding_asset_attach with their already-approved current-main bodies, then assert required source markers. GC tests must drain using bounded deadlines and identify fixture objects across pages; no product behavior or grants change.

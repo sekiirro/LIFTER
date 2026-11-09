@@ -275,9 +275,27 @@ test.describe('local public registration states (required for review)', () => {
     await expect(
       page.locator('main [name="email"], main [name="password"]'),
     ).toHaveCount(2);
-    await expect(page.getByLabel(m['clientSignup.name'])).toBeVisible();
-    await expect(page.getByLabel(m['clientSignup.email'])).toBeVisible();
-    await expect(page.getByLabel(m['clientSignup.password'])).toBeVisible();
+    await expect(
+      page.getByLabel(m['clientSignup.name'], { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel(m['clientSignup.dateOfBirth'], { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel(m['clientSignup.username'], { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel(
+        `${m['clientSignup.telegramUsername']} (${m['clientSignup.optional']})`,
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel(m['clientSignup.email'], { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel(m['clientSignup.password'], { exact: true }),
+    ).toBeVisible();
     expect(await violations(page)).toEqual([]);
     const raw = await page.request.get(`${link}/`, { maxRedirects: 0 });
     expect(raw.status()).toBe(308);
@@ -329,7 +347,9 @@ test.describe('required local authenticated registration acceptance', () => {
             exact: true,
           }),
         ).toBeVisible();
-        await page.goto(`/registration-links?workspace=${f.wsA.id}`);
+        const registrationResponse = await page.goto(
+          `/registration-links?workspace=${f.wsA.id}`,
+        );
         await expect(page.locator('html')).toHaveAttribute(
           'dir',
           locale === 'ar' ? 'rtl' : 'ltr',
@@ -339,6 +359,14 @@ test.describe('required local authenticated registration acceptance', () => {
             name: m['registration.title'],
             exact: true,
           }),
+          `registration route status=${registrationResponse?.status()} url=${page.url()} body=${(
+            await page
+              .locator('body')
+              .innerText()
+              .catch(() => '')
+          )
+            .replace(/\s+/g, ' ')
+            .slice(0, 300)}`,
         ).toBeVisible();
         await expect(
           page.getByText('1200 XTS', { exact: false }),

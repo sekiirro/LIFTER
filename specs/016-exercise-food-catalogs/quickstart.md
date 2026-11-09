@@ -4,7 +4,7 @@ S25-PO-3 assigned Stack C for F16. This quickstart records the Stack C-only loca
 
 ## Migration window
 
-F16 may use migration timestamps from **20261106000000 through 20261106195959 UTC**, inclusive. Every timestamp must encode a valid UTC clock time (`HHMMSS` from `000000` to `235959`). Do not overlap Plan Core's `20261106200000` through `20261106235959` range. Rebase/merge after F15 verification and latest `role_has_capability` definition before authoring migrations.
+Round 3 (FR-032) withdraws the fixed window `20261106000000`-`20261106195959`. Each F16 migration version must be strictly greater than the highest version on any origin ref at implementation time (highest on 2026-11-06: `20261108021002`). Run two checks immediately before each implementation commit and again before each push: an ordering check (every local F16 version strictly greater than the highest version of any other migration file across origin refs; a local migration already on an origin ref is not its own bound) and `npm run check:migration-versions:remote` (remote filename-conflict check; not an ordering check). Every timestamp must encode a valid UTC clock time (`HHMMSS` from `000000` to `235959`). Author after PR #43's migrations (`20261106125000`, `20261107030000`), and rebase onto the latest `role_has_capability` definition before authoring migrations.
 
 ## Entry conditions
 

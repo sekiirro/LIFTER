@@ -1,32 +1,64 @@
-# Project Scaffold & CI Baseline — Traceability (original merged scope)
+# F1 Traceability — S32 cross-branch migration-version guard amendment (FR-020, SC-010)
 
-**Scope:** FR-001..FR-014, SC-001..SC-005. SK-A4 owns separate FR-015..FR-020; those are excluded. Static inspection only; no suite/CI run.
+Analyzed source commit: `a1a4412` (implementation); round-2 CodeRabbit-fix commit on `chore-migration-version-guard` (this section landed with it). Tests executed locally on the working tree before commit (2026-11-04). VERIFIED requires a concrete asserting test.
 
-| Requirement | Tasks | Tests / static evidence | Status |
+| Requirement | Task(s) | Test(s) (file::test name) | Evidence | Status | Gap |
+|---|---|---|---|---|---|
+| FR-020 (opt-in `--all-remote-refs` mode; no FR-009 regression) | T019 | `tests/unit/migration-timestamps.test.ts::cross-branch migration-version guard > fails when one version maps to two different filenames across refs`; `::passes when the same version and filename appear on several refs`; `::passes when no version overlaps across refs`; `::reports every conflicting version in a single run`; `::ignores filenames without a 14-digit version`; `::checkRemoteRefs uses the injected ref-lister and reports failure`; `::checkRemoteRefs passes when nothing conflicts`; `::remote-ref parsing helpers > excludes only refs/remotes/origin/HEAD and keeps other refs ending in /HEAD`; `::remote-ref parsing helpers > parses NUL-delimited ls-tree output without dropping non-ASCII filenames`; `::remote-ref parsing helpers > returns an empty list for empty ls-tree output` | Commit `a1a4412` (implementation) + round-2 CodeRabbit-fix commit (this amendment); `npm run test:unit` 141 files / 2021 tests passed on the round-2 head; in-tree mode run: `Validated 111 migration timestamps; 11 documented merged exceptions allowed.` | VERIFIED (unit) | The real-repo scan (`git for-each-ref` + `git ls-tree -z` against fetched `origin/*`) is exercised manually, not in unit tests (by design — unit tests inject the ref-lister); after `git fetch origin --prune` (78 remote refs) it reports `Cross-ref migration-version check passed across 78 remote refs; no version maps to different filenames.` (exit 0); `20261107030000` appears only on `refs/remotes/origin/016-catalog-ui`. |
+| SC-010 (single-run full report; non-zero exit; in-tree CI unchanged) | T019 | `::reports every conflicting version in a single run` (multiple conflicts all reported); `::checkRemoteRefs uses the injected ref-lister and reports failure` (non-zero path); `::checkRemoteRefs passes when nothing conflicts` (exit-0 path); `::remote-ref parsing helpers > excludes only refs/remotes/origin/HEAD and keeps other refs ending in /HEAD`; `::remote-ref parsing helpers > parses NUL-delimited ls-tree output without dropping non-ASCII filenames` | Commit `a1a4412` + round-2 commit; real-repo run after fetch: `Cross-ref migration-version check passed across 78 remote refs; no version maps to different filenames.` (exit 0) — F15 #44 rename landed; `20261107030000` only on `refs/remotes/origin/016-catalog-ui`; `ci.yml` unchanged in this amendment (default in-tree check only) | VERIFIED (unit + manual real-repo) | CI wiring of the cross-ref mode is intentionally out of scope (would be a workflow change; recorded in analyze.md). |
+
+## Notes
+
+- Default in-tree behaviour is covered by the pre-existing tests (`validateMigrationFilenames` block, unchanged: 5 passed before and after).
+- Gate results on the implementation commit: typecheck ✓, lint ✓, format:check ✓, check:migration-timestamps ✓ (111 migrations), check:secrets ✓ (after `npm run build`, since the worktree had no client build output; fresh-clone default is exit 1 with "No client build directories found.").
+- Round 2 (CodeRabbit PR #54): `parseOriginRemoteRefs` / `parseMigrationTreeOutput` extracted as exported pure helpers; `git ls-tree` now runs with `-z`; `check:migration-versions:remote` reports a clean pass across 78 fetched remote refs (exit 0). Gates on the round-2 head: `test:unit` ✓ (141 files / 2021 tests), lint ✓, typecheck ✓, format:check ✓, check:migration-timestamps ✓ (111 migrations), check:secrets ✓ (exit 0). Default in-tree mode unchanged and performs no git/network access.
+- Existing `tests/unit/migration-timestamps.test.ts::migration timestamp validation` rows are untouched.
+
+# Traceability — S33 CI Optimization
+
+Evidence run `41894845099`, attempt 1, on commit `447ceb0b69b8516abfa26c5b1289ef908bb92bf2`: executed `validate`, `integration`, and `storage` on GitHub-hosted `ubuntu-latest`; all three succeeded. The next PR head is documentation-only for recording this evidence and will receive its own required CI runs.
+
+| FR | Task | Test file::name | Evidence |
 |---|---|---|---|
-| FR-001 | T001-T006 | `package.json`, `tsconfig.json`, `next.config.ts`; no single asserting scaffold test located | PARTIAL |
-| FR-002 | T001,T010 | `README.md` Development section | PARTIAL |
-| FR-003 | T003,T015 | `.prettierrc`, `eslint.config.mjs`, package scripts; no assertion test | PARTIAL |
-| FR-004 | T006-T008,T014 | `tests/unit/health.test.ts` — `returns exactly the public health fields with the package version`; no run recorded | PARTIAL |
-| FR-005 | T009 | `tests/e2e/health.spec.ts` — `GET /api/health returns the public health contract`; suite not rerun | PARTIAL |
-| FR-006 | T008 | `specs/001-project-scaffold-ci/contracts/health.md`; `app/api/health/route.ts`; `lib/health.ts` — exact public health fields | VERIFIED |
-| FR-007 | T005,T012,T015 | `build:edge` script and original CI artifact; no assertion test | PARTIAL |
-| FR-008 | T011,T014 | `tests/unit/size-report.test.ts` — `Worker size limit` comparison cases | PARTIAL |
-| FR-009 | T012,T015 | Current workflow inspected; secrets use in later jobs conflicts with original scope wording; see SK-001-01 | PARTIAL |
-| FR-010 | T013 | `supabase/config.toml`; static configuration inventory | PARTIAL |
-| FR-011 | T004 | `.env.example` and tracked-file inspection; no asserting test | PARTIAL |
-| FR-012 | T010 | README Development section; static documentation inspection | PARTIAL |
-| FR-013 | T001 | `.nvmrc`, `package.json` packageManager/engine declarations | PARTIAL |
-| FR-014 | T012,T015 | CI platform inspection and edge build scripts; no lane test executed | PARTIAL |
-| SC-001 | T001-T015 | `quickstart.md`, README, historical implementation tasks; no fresh-clone run | PARTIAL |
-| SC-002 | T012,T015 | Workflow inspected; coverage/secret conflict is unresolved | PARTIAL |
-| SC-003 | T007-T009 | Health unit and e2e assertions; no smoke run recorded | PARTIAL |
-| SC-004 | T011,T014 | Size-report comparison test and script | PARTIAL |
-| SC-005 | T012 | Workflow inspection only; no deploy/paid-service assertion test | PARTIAL |
+| FR-015, FR-016, FR-017 | T016 | `.github/workflows/ci.yml::push_main_pull_request_and_concurrency` | Commit `447ceb0b69b8516abfa26c5b1289ef908bb92bf2`; run `41894845099` attempt 1, all three jobs green; CodeRabbit-confirmed queued-main-run behavior addressed with unique push groups. |
+| FR-018 | T017 | `.github/workflows/ci.yml::validate` | Commit `447ceb0b69b8516abfa26c5b1289ef908bb92bf2`; actionlint clean; validate job passed in run `41894845099` attempt 1 with no browser install step. |
+| FR-019 | T018 | `.github/workflows/ci.yml::storage` | Commit `447ceb0b69b8516abfa26c5b1289ef908bb92bf2`; actionlint clean; separate storage job passed in run `41894845099` attempt 1. |
 
-## Summary
+## S38 CI / constitution amendment (FR-021..FR-024, SC-011..SC-013)
 
-- FR: 1 VERIFIED, 13 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
-- SC: 0 VERIFIED, 5 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
-- No tasks were checked or unchecked in this documentation-only pass; no tests were run.
+| Requirement | Task | Verification | Evidence | Status |
+|---|---|---|---|---|
+| FR-021 / SC-011 (dispatch ref and exact parent validation) | T020 | .github/workflows/ci.yml::Verify and record CI revision | Workflow is implemented. GitHub requires it on the default branch before dispatch. This PR still requires explicit PO exact-SHA approval; exact-head dispatch verification is pending after an authorized merge and is not claimed now. | PENDING (platform-gated) |
+| FR-022 / SC-012 (integration partition and full coverage) | T021 | C:/Users/NEW LAP/.lifter/runs/s38-const110-ci/verify-shards.cjs | Vitest 5.0.5: 92 test files; shards 31/31/30; union 92; 0 missing; 0 duplicates (shard-partition.json). Playwright runs once in shard 1; unchanged suite selection. | VERIFIED (partition) |
+| FR-023 / SC-013 (allowed full attempts) | T022 | .github/workflows/ci.yml and C:/Users/NEW LAP/.lifter/tools/gate-check.mjs::gateD | Pending exact-head pull_request/dispatch run evidence and both-path self-test; run IDs and provenance will be recorded in report.md. | PENDING |
+| FR-024 (standing approval and constitution PR exception) | T022 | .specify/memory/constitution.md::Main merge gate; docs/08-agent-workflow.md::Main merge gate | Constitution-changing PR explicitly excluded from standing approval; this PR still requires explicit PO approval at exact SHA. | VERIFIED (documentation) |
 
+
+## S39 required integration status-check correction (FR-022, FR-023)
+
+| Requirement | Task | Test file::name | Evidence | Status |
+|---|---|---|---|---|
+| FR-022 / SC-012 (three matrix shards and successful aggregation) | T023 | `tests/unit/ci-local-e2e.test.ts::exposes the required integration aggregator for all shard results`; `tests/unit/ci-local-e2e.test.ts::allows main-push integration aggregation with no PR or head SHA` | Commit `5cebe3693780f3c5cf02d79b3caf0672246ea653`; both relevant CI unit files passed 11/11 on this head, including the red-first aggregator and main-push revisions cases. `npm run typecheck`, `npm run lint`, and `npm run format:check` passed. GitHub exact-head CI is tracked separately in the round report. | VERIFIED (local) |
+| FR-023 (required exact `integration` check in every full attempt) | T023 | `.github/workflows/ci.yml::integration` | Workflow exposes an always-run `integration` aggregator depending on `integration-shard`; all shard results must be success, revision tuples must agree, and the aggregator logs the common revisions. Run `42563370293` on predecessor `f2901baff2210492f34536aa00bab5e735de8b05` executed all six required jobs successfully; final-head hosted runs are pending and recorded in the round report. | IMPLEMENTED |
+
+## S40 review correction — aggregator revision scope (FR-022, FR-023)
+
+| FR | Task | Test file::name | Evidence |
+|---|---|---|---|
+| FR-022, FR-023 | T023 | `tests/unit/ci-local-e2e.test.ts::executes the integration aggregator script against push and PR revision cases` | Commit `2624c90535603e3b1a0d3413343fb09c6af6fdb7`; focused file passed 4/4, including push/PR success, shard failure, tuple mismatch, and invalid SHA. RED proof: removing the shard-result guard in a temporary workflow copy made the new test fail (`expected 0 to be 1`); the temporary copy was deleted. On this commit, `npm run typecheck`, `npm run lint`, and `npm run format:check` passed. |
+
+## S40 review follow-up — authenticated dispatch metadata lookup (FR-021, FR-023)
+
+| FR | Task | Test file::name | Evidence | Status |
+|---|---|---|---|---|
+| FR-021, FR-023 | T020 | `tests/unit/ci-local-e2e.test.ts::dispatches CI against a PR merge ref and rejects a mismatched second parent` | Commit `f1aacd91d1385ae401a091b7bc0bcc716ab5cbc8`; the focused CI unit file passed 4/4, including assertions for token binding and authenticated headers in all three jobs. `npm run typecheck`, `npm run lint`, and `npm run format:check` passed. Exact-head GitHub dispatch verification remains pending and is not claimed. | IMPLEMENTED (local) |
+
+## S40 Playwright e2e sharding (FR-025, FR-026, SC-014, SC-015)
+
+Spec commit `75cacff3166fb13b13be8eb4cf248e0a03c2aaa7` (requirements, plan, T024, Analyze with 0 CRITICAL/HIGH). Implementation commit `b282b558ed58be9180ef46767c35338fcac6778a`.
+
+| Requirement | Task | Test file::name | Evidence | Status |
+|---|---|---|---|---|
+| FR-025 / SC-014 (non-empty file-level Playwright shard on every integration shard) | T024 | `tests/unit/ci-local-e2e.test.ts::runs a file-level Playwright shard on every integration shard` | Commit `b282b558`; focused CI unit file 6/6, full unit suite 167 files / 2259 tests passed, `npm run typecheck`, `npm run lint`, `npm run format:check` and actionlint 1.7.12 passed. The test rejects any `if: matrix.shard == 1` gating and requires `--shard=${{ matrix.shard }}/3 --workers=1 --reporter=json`, both env gates, ordered stack/export/Vault/Storage/Docker/inventory preconditions, the non-empty list guard, and the per-shard artifact upload. | VERIFIED (local) |
+| FR-026 / SC-014 (fail-closed union/skip/failure coverage proof in the no-checkout aggregator) | T024 | `tests/unit/ci-local-e2e.test.ts::fails the integration aggregator unless every shard reports full coverage`; `::executes the sharded coverage proof against tampered reports` | Commit `b282b558`; the extracted aggregator script passed against a synthetic artifact set built from the real 629-test inventory: `{"acceptable":true,"playwright":{"listed":629,"reported":629,"skipped":38,"passed":591},"vitest":{"files":92},"shards":3}`. Tampered fixtures fail closed for a missing test, a duplicate across shards, a new skipped title, an unexpected failure and a missing Vitest file. | VERIFIED (local) |
+| SC-015 (integration critical path shorter than baseline) | T024 | main push run 42628343018 on `405e23e4` vs the PR's executed runs | Baseline: first required job 13:46:01Z → aggregator end 14:03:43Z = 17m42s (shard 1 17m35s). PR before/after job and critical-path times are recorded in `C:/Users/NEW LAP/.lifter/runs/s40-ds-e2e-shard/report.md` once executed. | PENDING (exact-head GitHub) |

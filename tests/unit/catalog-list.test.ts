@@ -5,6 +5,7 @@ import {
   catalogSearchKeyAction,
   formatCatalogCount,
   hasActiveCatalogFilters,
+  hasSubmittedCatalogSearch,
   initialCatalogShellState,
   isCatalogListKind,
   reduceCatalogShellState,
@@ -31,6 +32,16 @@ const foodIds = (query = '', filters = {}) =>
   ).map((item) => item.id);
 
 describe('catalog list projection', () => {
+  it('uses the submitted query when pending input changes the live query', () => {
+    const initial = initialCatalogShellState('exercise', 'previous search');
+    const edited = reduceCatalogShellState(initial, {
+      type: 'query',
+      value: '',
+    });
+    expect(edited.query).toBe('');
+    expect(hasSubmittedCatalogSearch(edited.search)).toBe(true);
+  });
+
   it('keeps only active items of the requested kind', () => {
     expect(exerciseIds()).toEqual([
       'mock-exercise-1',
@@ -199,8 +210,8 @@ describe('catalog list projection', () => {
     expect(hasActiveCatalogFilters({})).toBe(false);
     expect(hasActiveCatalogFilters({ basis: 'g' })).toBe(true);
     expect(hasActiveCatalogFilters({ muscleGroup: '' })).toBe(false);
-    expect(formatCatalogCount('النتائج: {count}', 3)).toBe('النتائج: 3');
-    expect(formatCatalogCount('Results: {count}', 0)).toBe('Results: 0');
+    expect(formatCatalogCount('النتائج: {count}', 3, 'ar')).toBe('النتائج: ٣');
+    expect(formatCatalogCount('Results: {count}', 0, 'en')).toBe('Results: 0');
   });
 
   it('recognizes the two supported catalog kinds', () => {

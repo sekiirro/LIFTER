@@ -28,11 +28,11 @@ A fresh clone can be installed and then typechecked, linted, unit-tested and bui
 
 ### User Story 2 - Automated CI gates (Priority: P1)
 
-Every push and pull request runs the same gates automatically and reports pass/fail.
+Pushes to main and pull requests run the same gates automatically and report pass/fail.
 
 **Why this priority**: The Constitution requires independent, repeatable quality gates before commit/merge.
 
-**Independent Test**: Push a branch. CI runs typecheck, lint, unit tests and the edge build, and reports status.
+**Independent Test**: Push to main. CI runs typecheck, lint, unit tests and the edge build, and reports status.
 
 **Acceptance Scenarios**:
 
@@ -71,7 +71,54 @@ Each build reports the edge-worker size against the official Workers size limit 
 
 ---
 
-### Edge Cases
+### User Story 5 - Focused CI event coverage (Priority: P1)
+
+The Product Owner wants main pushes and pull requests to receive the required CI checks without duplicate push checks on feature branches or wasted work on superseded pull request heads. The Storage checks remain a distinct required job.
+
+**Independent Test**: Inspect workflow event filters, concurrency behavior, and job definitions; observe one PR-head run and confirm the Storage job reports independently.
+
+**Acceptance Scenarios**:
+
+1. **Given** a push to a branch other than `main`, **When** GitHub evaluates workflow triggers, **Then** the push trigger does not run CI.
+2. **Given** a push to `main`, **When** GitHub evaluates workflow triggers, **Then** one push-triggered CI run starts.
+3. **Given** a pull request head commit, **When** GitHub evaluates workflow triggers, **Then** CI runs for the pull request head.
+4. **Given** an earlier CI run for a pull request is still active, **When** a newer head supersedes it, **Then** the earlier pull request run is canceled; main push runs are never canceled or replaced by concurrency.
+5. **Given** the validate job has no browser-dependent steps, **When** validate runs, **Then** it does not install the unused Playwright browser.
+6. **Given** CI runs, **When** Storage checks execute, **Then** they remain a distinct `storage` job with an independent result.
+7. **Given** a push to `main` with no PR number or PR head SHA, **When** the integration aggregator runs after all shards succeed, **Then** it accepts empty PR/head values if the three shard tuples agree and each supplies a valid merge SHA.
+8. **Given** all Playwright browser specs in the configured e2e suite, **When** the three `integration-shard` executions run, **Then** each shard runs its own non-empty file-level Playwright shard with the same local-stack preconditions and environment gates, and the required `integration` aggregator fails unless the union of the reported Playwright and Vitest identities is exactly the full suite, skipped tests stay within the documented baseline, and no test failed.
+
+### User Story 6 - Cross-branch migration-version guard (Priority: P2)
+
+An implementer working against multiple fetched remote branches can detect, before merge, that two unmerged branches picked the same 14-digit migration version for different filenames — without touching the working tree.
+
+**Why this priority**: The S31 incident (`20261107030000` chosen by both `015-forms-intake` (F15 #44) and `016-catalog-ui` (F16 #43)) showed that the in-tree duplicate check cannot see across branches. S32-PO-3 authorises the preventive half of that incident ("prevent future duplicates"); the rename of #44 is a separate lane.
+
+**Independent Test**: With remote refs already fetched by the caller, run `npm run check:migration-versions:remote`; it enumerates `refs/remotes/origin/*`, lists each ref's `supabase/migrations` via `git ls-tree` without checkout, and exits non-zero reporting the version, both filenames and the carrying refs when one version maps to two different filenames; otherwise it exits 0.
+
+**Acceptance Scenarios**:
+
+1. **Given** two fetched remote refs each carry a `supabase/migrations` entry with the same 14-digit version and different filenames, **When** the cross-ref check runs, **Then** it exits non-zero and reports the version, both filenames, and the refs that carry them.
+2. **Given** several fetched remote refs carry the same version with the same filename, **When** the cross-ref check runs, **Then** it exits 0.
+3. **Given** no version maps to two different filenames across the fetched remote refs, **When** the cross-ref check runs, **Then** it exits 0 and prints a summary of the refs scanned.
+4. **Given** the default in-tree check (`npm run check:migration-timestamps`) runs, **When** it executes, **Then** its behaviour, output and CI wiring are unchanged by this amendment.
+
+---
+
+
+### User Story 7 - Fast, exact-head CI evidence (Priority: P1)
+
+The PO and merge lane can collect three full CI results concurrently without accepting a result for a different PR head, while retaining every required test and security gate.
+
+**Acceptance Scenarios**:
+
+1. **Given** a dispatch request with PR number and full head SHA, **When** CI starts, **Then** it checks out `refs/pull/<n>/merge`, prints PR/head/merge SHAs, and exits before validation unless the merge commit's second parent is the supplied head.
+2. **Given** all integration tests in the configured suite, **When** the three shards run, **Then** the shard assignments are disjoint and collectively run each integration test exactly once, each shard uses the same stack setup, and the required `integration` aggregator succeeds only when all shards succeed.
+3. **Given** one pull_request run and two dispatch runs complete concurrently for the same exact head, **When** gate-check d evaluates them, **Then** only distinct successful runs count when the pull_request run is on the exact head and each dispatch run uses the PR base branch trusted workflow whose workflow blob matches the tested merge result; every required job must log identical revisions and execute validate, all integration shards, and storage, and the gate reports the run IDs and sources.
+4. **Given** a PR changes the constitution, **When** the standing approval rule is evaluated, **Then** it is excluded and explicit PO approval of the exact head is required.
+5. **Given** a dispatch targets a fork PR, **When** the workflow validates its source, **Then** it fails before dependency installation or untrusted code execution in secret-bearing jobs.
+
+## Edge Cases
 
 - A missing local env file must not break typecheck, lint, unit tests or build. A committed example file documents the variables (with no values).
 - Windows and Linux developers produce the same results (line endings, path handling).
@@ -89,12 +136,24 @@ Each build reports the edge-worker size against the official Workers size limit 
 - **FR-006**: The app MUST expose a public health endpoint returning only `status` and `version`.
 - **FR-007**: The edge build MUST produce the worker artifact for the approved edge host without deploying it.
 - **FR-008**: A size-report command MUST compute the worker bundle size (uncompressed, plus gzip shown for information), compare the uncompressed size to a configurable limit (default = official Workers limit of 64 MiB uncompressed; Cloudflare has no compressed limit, verified 2026-10-27), print headroom, and exit non-zero when over.
-- **FR-009**: CI MUST run typecheck, lint, format check, unit tests, edge build and size report on every push and PR. CI MUST use no secrets and MUST NOT deploy.
+- **FR-009**: CI MUST run typecheck, lint, format check, unit tests, edge build and size report on pushes to main and pull requests. CI MUST use no secrets and MUST NOT deploy.
 - **FR-010**: Local database tooling configuration MUST be committed (no schema, no migrations, no credentials).
 - **FR-011**: No secrets or real env values may be committed. A placeholder-only example env file MUST exist.
 - **FR-012**: A README section MUST document prerequisites, commands and the gate list.
 - **FR-013**: Runtime and package-manager versions MUST be pinned for reproducibility (Node 24, `npm@11.17.0`, verified installed).
 - **FR-014**: The edge build and size report MUST run in Linux CI. The edge adapter's Windows support is limited, so these two checks are not required on Windows.
+- **FR-020**: The migration-timestamp tooling MUST provide an opt-in cross-branch mode (`node scripts/check-migration-timestamps.mjs --all-remote-refs`, exposed as npm script `check:migration-versions:remote`) that enumerates `refs/remotes/origin` via `git for-each-ref`, lists each ref's `supabase/migrations` via `git ls-tree` (no checkout), and exits non-zero when one 14-digit version maps to two different filenames on any refs, reporting the version, both filenames and the carrying refs. The same filename on several refs MUST NOT fail. The default in-tree mode MUST remain byte-for-byte behaviourally unchanged and MUST NOT perform any git or network access. The cross-ref mode MUST NOT make network calls beyond what the caller already fetched, MUST NOT check out or modify any ref, and MUST exclude the `refs/remotes/origin/HEAD` symbolic ref from enumeration.
+- **FR-015**: CI push events MUST run only for the `main` branch; pushes to other branches MUST NOT start a push-triggered CI run.
+- **FR-016**: CI MUST run for pull request heads through the `pull_request` event.
+- **FR-017**: CI MUST cancel superseded pull request runs using a concurrency group scoped by pull request number; main push runs MUST use unique concurrency groups so queued runs are never replaced.
+- **FR-018**: The `validate` job MUST NOT install Playwright browser binaries when none of its steps use a browser.
+- **FR-019**: The Storage checks MUST remain a distinct required CI job named `storage`, with an independently reported result.
+- **FR-021**: CI MUST support manually dispatched full CI runs for a PR number and exact head SHA, check out `refs/pull/<n>/merge`, and fail before checks unless the checked-out merge result's second parent equals the supplied head SHA. Before dependency installation or untrusted code execution, secret-bearing jobs MUST fail dispatches whose PR head repository differs from the base repository. The PR metadata lookup MUST authenticate with `github.token` under the existing read-only `contents: read` permission. The workflow MUST print the PR, supplied head SHA, and merge SHA; dispatch runs MUST have unique, non-canceling concurrency groups.
+- **FR-022**: The `integration-shard` matrix CI job MUST divide the full integration test list into three non-overlapping Vitest shards, each with the same stack setup, so their union runs every integration test exactly once per attempt. Its display names MUST remain `integration shard 1/3`, `integration shard 2/3`, and `integration shard 3/3`. A separate required job with id and name `integration` MUST depend on `integration-shard`, run with `if: always()`, and fail unless the shard matrix result is exactly `success`. On a successful attempt, the aggregator MUST compare and log the common PR/head/merge revisions exported by all three shard jobs using distinct shard-specific output names. For `push` events, it MUST require a valid merge SHA and shard agreement but MUST allow PR number and head SHA to be empty; for non-push events, it MUST require valid PR number, head SHA, and merge SHA values. The aggregator MUST use `ubuntu-latest`, grant only `contents: read`, and perform no checkout or secret access. `validate`, `storage`, security checks, and all existing test coverage remain required.
+- **FR-023**: The main merge gate MUST accept three distinct successful full CI attempts on the exact PR head from either sequential `pull_request` attempts or one `pull_request` plus two concurrent manual dispatch runs on merge refs whose second parent is the same head SHA. A dispatch run MUST use the PR base branch trusted workflow ref, that workflow file MUST match the tested merge result, and all required jobs MUST log identical PR/head/merge SHAs. Each attempt MUST execute `validate`, all three `integration-shard` jobs, the `integration` aggregator, and `storage`. Gate-check d MUST enforce exact-head provenance and identical logged PR/head/merge revisions across every required job in executed `pull_request` attempts. The aggregator MUST compare the three integration-shard output tuples and log their shared tuple before succeeding; it does not compare revisions from `validate` or `storage`. A code failure voids the head; infra failures are recorded and never counted.
+- **FR-024**: Standing PO merge approval applies only to normal PRs after all eight live gates pass on the exact head and an independent architect review of the full diff is recorded for that SHA. The merge lane records `po_approved_head`, rechecks gates immediately before merge, and merges with `--match-head-commit`; any head change voids approval. PRs changing `.specify/memory/constitution.md` always require explicit PO approval for the exact SHA.
+- **FR-025**: The `integration-shard` matrix MUST run the full Playwright browser suite in every one of its three executions as a file-level `--shard=<k>/3` partition with `--workers=1`, no retries, no `fullyParallel`, and no skip or quarantine added by CI, while retaining the existing gates `LOCAL_SUPABASE_STORAGE_TEST=true` and `LOCAL_SUPABASE_PROVIDER_FAULT_TEST=true` in every shard. Each shard MUST retain the same ordered preconditions before browser execution (local stack start, exported stack and app environment, Vault signup-key provisioning, Storage readiness wait, Docker CLI availability), MUST assert that `npx playwright test --list --shard=<k>/3` is non-empty before running, MUST NOT preset `U8_SERVER_LOG_RUN_ID`, and MUST run exactly one app `webServer` per invocation. Existing browser spec files MUST NOT be edited, split or quarantined by this change.
+- **FR-026**: The required `integration` aggregator MUST download every shard's Playwright JSON report and Vitest JSON report and MUST fail unless: (i) the union of reported Playwright test identities equals the full `--list` identity set exactly once with no duplicates; (ii) the skipped count does not exceed the documented baseline of 38 (24 Stack-C-only exercise tests plus 14 project-guard shell tests) and every skipped identity is a documented baseline identity; (iii) the union of Vitest integration files executed equals the full integration-config file list exactly once; and (iv) zero Playwright failures, flaky results or report errors and zero Vitest failures occur. The existing shard-success and common-revision checks remain unchanged. The aggregator MUST keep `contents: read`, perform no checkout and use no secrets.
 
 ## Success Criteria *(mandatory)*
 
@@ -105,6 +164,55 @@ Each build reports the edge-worker size against the official Workers size limit 
 - **SC-003**: The health endpoint responds successfully in 100% of smoke runs and exposes exactly 2 fields.
 - **SC-004**: The size report states the used percentage of the 64 MiB uncompressed Worker limit on every build.
 - **SC-005**: 0 deployments and 0 paid-service calls occur as part of this feature.
+- **SC-010**: Running `npm run check:migration-versions:remote` on a fetched repository reports every cross-branch same-version/different-filename pair (version, both filenames, carrying refs) in a single run and exits non-zero when at least one exists; same-filename-on-many-refs passes; the in-tree CI step output and exit behaviour are unchanged from before this amendment.
+- **SC-006**: A push to `main` starts one push-triggered CI run; a push to a non-main branch starts none; pull requests receive CI through `pull_request`.
+- **SC-007**: When a newer head supersedes an active pull request run, the older pull request run is canceled, while main push runs remain uncanceled and are never replaced by concurrency grouping.
+- **SC-008**: The `validate` job contains no Playwright browser installation step if no validate step uses a browser.
+- **SC-009**: Every CI run reports distinct `validate`, `integration`, and `storage` jobs, with Storage required independently.
+- **SC-011**: A manual dispatch for a PR tests only `refs/pull/<n>/merge` and exits before CI unless its second parent matches the supplied full head SHA; it does not replace or cancel other runs.
+- **SC-012**: The three `integration-shard` assignments are disjoint and collectively run every integration test exactly once; every PR or dispatch attempt requires all three shards, the `integration` aggregator, `validate`, and `storage` to succeed with executed steps. The aggregator fails if the shard job is failed, skipped, or cancelled. Exactly-once applies to the three `integration-shard` executions; the separate Storage lane may also run tests selected by the integration config. For main-branch push runs, the aggregator accepts empty PR/head values when the merge SHA is valid and all shard revision tuples agree.
+- **SC-013**: Gate d recognizes only distinct successful, executed full attempts with exact-head provenance from the allowed event sources; gate-check reports attempt IDs and sources. Gates a-c and e-h remain in force, and constitution PRs require explicit exact-SHA PO approval.
+- **SC-014**: The three `integration-shard` executions collectively report all 629 Playwright tests exactly once (591 executed and the 38 documented baseline skips on the baseline suite) and the full Vitest integration file list exactly once; a missing, duplicated, newly skipped, failed, flaky or errored test makes the `integration` aggregator fail.
+- **SC-015**: On a main push, the integration critical path (first required job start to aggregator completion) is shorter than the 17 m 42 s baseline of main run 42628343018 on 405e23e4, while `validate` and `storage` job definitions remain unchanged.
+
+## Clarifications
+
+### Session 2026-11-09 (S39 push revision validation correction)
+
+- Review correction for the existing `push` trigger: main pushes have no PR number or head SHA; the aggregator validates the merge SHA on push and requires PR/head/merge values on pull_request and workflow_dispatch. This preserves the existing main push CI path.
+- **No open ambiguities** remain for this correction.
+
+### Session 2026-11-09 (S39 architect CI check-name correction)
+
+- Architect ruling for PR #72: preserve the three display names `integration shard 1/3` through `3/3`, rename the matrix job id to `integration-shard`, and expose a required `integration` aggregator status check that fails for any non-success matrix result. On success, the aggregator compares all three shard output tuples and logs their identical PR/head/merge revisions. This records the required-check mapping; it introduces no new product behavior.
+- **No open ambiguities** remain for this correction.
+
+### Session 2026-11-04
+
+- **S33-PO-4 (binding)**: The Product Owner directed: “S33-Q6: Approve Option 2. Implement all proposed CI optimizations, but keep the Storage job separate for now.” The same decision directs GitHub-hosted runners, postpones local self-hosted runner work and PR #45, and preserves exact-head CodeRabbit approval, zero unresolved threads, three executed green CI runs, and explicit PO approval per merge. No automatic merges.
+- The approved CI scope for this specification is: push events only on `main`; `pull_request` CI per pull request head; PR-only concurrency that cancels superseded runs while unique main-push groups prevent queued runs from being replaced; remove the unused Playwright browser installation from `validate` only when no validate step uses a browser; retain `validate`, `integration`, and separate required `storage` jobs and all other steps/checks.
+- **No open ambiguities** remain for this CI optimization scope.
+
+### Session 2026-11-04 (S32 — placement of the cross-branch migration-version guard)
+
+- Q (architect ruling S32-R3, answering S32-PO-DECISION-1): which feature owns the cross-branch migration-version guard — a new numbered spec, `001-project-scaffold-ci`, `016-exercise-food-catalogs`, or a PO gate waiver? → A: `001-project-scaffold-ci`, as a CI-baseline tooling amendment. Reason (S32-R3, verbatim rationale): the migration-timestamp checker already runs as the CI step "Validate migration timestamps" (CI baseline, FR-009 family); a new numbered spec would consume a roadmap feature number. Spec placement for repo tooling is technical governance, not a product decision.
+- PO source: S32-PO-3 (verbatim): "Rename F15 #44's conflicting migration via git mv, preserve F16 #43, verify DB state, repair Stack D history if needed, rerun gates, and prevent future duplicates." Only "prevent future duplicates" is in scope in this amendment; the #44 rename, DB-state verification, Stack D history repair and gate reruns are separate lanes and are not changed here. S32-PO-2 Q4 classifies this lane as low-risk tooling + tests.
+- Scope of this amendment: FR-020, SC-010, User Story 6, task T019, the opt-in `--all-remote-refs` mode, its unit tests, and this Clarifications entry. The default in-tree mode and the CI step "Validate migration timestamps" are unchanged. No existing 001 requirement (FR-001..FR-019, SC-001..SC-009) is modified.
+- **No open ambiguities.** The guard is detection-and-fail only; it does not rename migrations, does not alter CI behaviour, and consumes only refs the caller already fetched.
+
+### Session 2026-11-09 (S40 Playwright e2e sharding)
+
+- PO authority S39-PO-3 (second paragraph, byte-exact): "I approve 3 isolated CI shards for Playwright + Integration. Assign implementation to DeepSeek, NOT Luna, after its read-only safety audit, Constitution 1.10.0 merge, and writer-slot availability. Preserve full coverage, independent review, all CI gates, 3 complete green runs, exact-SHA requirements, and concurrency limits. Report blockers; no unauthorized merges."
+- Scope: FR-025, FR-026, SC-014, SC-015, User Story 5 scenario 8 and task T024. The Playwright browser suite becomes a file-level `--shard=<k>/3` partition executed in every existing shard job. Environment gates, `--workers=1`, no retries, one `webServer` per shard, unchanged stack/Vault/Storage/Docker preconditions, and unedited spec files are mandatory. The `integration` aggregator adds a fail-closed coverage proof over each shard's uploaded Playwright and Vitest JSON reports; its existing success and revision checks are unchanged, and it still performs no checkout and uses no secrets.
+- The 2026-11-04 approved CI scope sentence ("retain `validate`, `integration`, and separate required `storage` jobs") remains satisfied: the required `integration` status is still produced by the aggregator, and the three `integration-shard` executions are the same integration job family already approved by S38-PO-6/7 and accepted by the PO in S39-PO-3.
+- No new secrets, permissions, rulesets, branch-protection settings or concurrency/dispatch behaviour are introduced. File-level sharding is kept because test-level parallelisation would break `branding-production-ui` declaration-order and `client-accounts` shared-token/log/kong-fault assumptions (S39 audit sections 2-3).
+- **No open ambiguities** remain for this scope.
+
+### Session 2026-11-09 (S38 constitution 1.10.0 and CI speedups)
+
+- PO authority is recorded byte-exact in the S38 amendment history: S38-PO-6 with architect mapping items (b), (d), and (e), and the full S38-PO-7 and S38-PO-8 messages.
+- Scope: FR-021..FR-024 and SC-011..SC-013; manual same-head merge-result CI runs; three-way integration sharding with complete test union; and the gate-d constitution exception and standing approval behavior. All existing security checks and test coverage remain required. No product behavior is changed.
+- **No open ambiguities.** PO decisions specify all event sources, exact-SHA binding, required jobs, standing approval conditions, and the constitution amendment exception.
 
 ## Assumptions
 

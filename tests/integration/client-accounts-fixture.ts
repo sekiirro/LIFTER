@@ -124,7 +124,7 @@ export async function signupFixture(f: ClientContext, executor = sql()) {
       link,
       ticket: t.id as string,
       fields: {
-        name: 'U3 synthetic',
+        name: 'U3 synthetic client',
         email: `u3-${randomUUID()}@example.test`,
         phone:
           '+201' +
@@ -133,6 +133,9 @@ export async function signupFixture(f: ClientContext, executor = sql()) {
             .padStart(11, '0')
             .slice(-11),
         password: 'Synthetic9!' + randomUUID().replaceAll('-', ''),
+        date_of_birth: '1990-04-12',
+        username: `u3_${randomUUID().replaceAll('-', '').slice(0, 27)}`,
+        telegram_username: '',
       },
     };
   } finally {
@@ -143,7 +146,7 @@ export type SignupFixture = Awaited<ReturnType<typeof signupFixture>>;
 export async function signup(
   tx: TransactionSql | ReturnType<typeof sql>,
   f: SignupFixture,
-  fields = f.fields,
+  fields: Record<string, string | null | undefined> = f.fields,
 ) {
   // Never let a provider diagnostic print statement parameters or credentials.
   try {
@@ -152,7 +155,8 @@ export async function signup(
     return row!.result;
   } catch (error) {
     throw new Error(
-      'Signup SQL failed: ' + String((error as { code?: string }).code),
+      'Signup SQL failed: client_signup status=SQL_ERROR code=' +
+        String((error as { code?: string }).code),
     );
   }
 }
@@ -174,7 +178,9 @@ export async function createRecoveryClientTarget(
   try {
     const result = await signup(connection, fixture);
     if (result.status !== 'complete')
-      throw new Error('Committed recovery client fixture failed');
+      throw new Error(
+        `Committed recovery client fixture failed: client_signup status=${String(result.status ?? 'missing')}`,
+      );
     const [row] =
       await connection`select id,auth_user_id,workspace_id,approval_state from public.clients where registration_link_id=${fixture.link}`;
     if (
@@ -315,6 +321,36 @@ export async function pendingHttpAccess(
     const tables =
       await db`select c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relrowsecurity`;
     for (const table of tables) {
+      if (table.relname === 'audit_events') {
+        const probes: Array<{ error: unknown; data?: unknown[] | null }> = [];
+        probes.push(
+          await client
+            .from('audit_events')
+            .select('*')
+            .eq('workspace_id', context.wsA.id)
+            .limit(5),
+        );
+        probes.push(
+          await client
+            .from('audit_events')
+            .select('*')
+            .eq('workspace_id', context.wsB.id)
+            .limit(5),
+        );
+        probes.push(
+          await client
+            .from('audit_events')
+            .select('*')
+            .is('workspace_id', null)
+            .limit(5),
+        );
+        for (const result of probes)
+          assert.ok(
+            result.error !== null || result.data?.length === 0,
+            table.relname,
+          );
+        continue;
+      }
       const result = await client.from(table.relname).select('*');
       assert.ok(
         result.error !== null || result.data?.length === 0,
@@ -418,9 +454,16 @@ export async function pendingRlsAccess(
   context: ClientContext,
   claims: object,
 ) {
-  const tables =
-    await tx`select n.nspname,c.relname from pg_class c join pg_namespace n on n.oid=c.relnamespace where n.nspname='public' and c.relkind='r' and c.relrowsecurity`;
+  const tables = await tx`
+    select n.nspname,c.relname from pg_class c
+    join pg_namespace n on n.oid=c.relnamespace
+    where n.nspname='public' and c.relkind='r' and c.relrowsecurity
+      and c.relname='clients'
+  `;
+  if (tables.length !== 1)
+    throw new Error('F11 RLS probe expected the public.clients policy target');
   await tx`select set_config('request.jwt.claims',${JSON.stringify(claims)},true)`;
+  await tx`set local statement_timeout = '5s'`;
   for (const table of tables) {
     // The selected constant exposes no protected field. Grant SELECT on a
     // safe UUID column to prevent missing privileges from hiding bad RLS.

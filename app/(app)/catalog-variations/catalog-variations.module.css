@@ -1,0 +1,14 @@
+.main {
+  display: grid;
+  gap: var(--space-5);
+  inline-size: min(100% - 2 * var(--space-4), 56rem);
+  margin-inline: auto;
+  padding-block: var(--space-6);
+}
+
+.main h1 {
+  margin: 0;
+  color: var(--color-text);
+  font-size: var(--text-xl);
+  line-height: var(--line-height-heading);
+}
