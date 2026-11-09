@@ -168,8 +168,9 @@ it('executes the integration aggregator script against push and PR revision case
   const head = 'a'.repeat(40);
   const merge = 'b'.repeat(40);
   const makeEnv = (
-    overrides: Partial<NodeJS.ProcessEnv> = {},
+    overrides: Record<string, string> = {},
   ): NodeJS.ProcessEnv => ({
+    NODE_ENV: 'test',
     PR_1: '72',
     PR_2: '72',
     PR_3: '72',
