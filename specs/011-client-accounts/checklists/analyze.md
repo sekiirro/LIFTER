@@ -1,6 +1,18 @@
 # Analyze — F11 client accounts
 
-## S40 round 3 analysis (S40-PO-13 + S40-R19) — 2026-11-09 18:45 +02:00, round 9 (current; written after the round 3 edits to spec.md, plan.md, tasks.md, traceability.md and after the 003/012 cross-reference edits; supersedes round 8 for statuses)
+## S40 round 4 analysis (CodeRabbit round 1 on head d8bb100d, fix round) — 2026-11-09 18:56 +02:00, round 10 (current; written after the fix edits to spec.md, plan.md, tasks.md, research/ and after the 012 FR-022 edit; supersedes round 9 for statuses)
+
+Findings addressed (CodeRabbit CHANGES_REQUESTED 5829417127 on d8bb100d; 5 inline threads plus 1 review-body finding; all valid):
+- PRRT_kwDOVYgYQ861Wf10 (analyze.md:20, product-question options not repo-accessible): full options for MCQ-12..20 are in `research/s40-pending-mcqs.md`; the copy proposal is `research/s40-new-workspace-copy-proposal.md`; references repointed.
+- PRRT_kwDOVYgYQ861Wf1- (plan.md:195, identifier release before Auth confirms): P-S40-1 now releases nothing at step B. Client identifiers and claims stay reserved until step D, which runs after Auth step C is confirmed. Tests: T047 old-email/new-phone and new-email/old-phone reuse.
+- PRRT_kwDOVYgYQ861Wf2E (plan.md:207, departed assignment reactivated on membership or role restoration): P-S40-2 ends the Trainer's active rows on membership revocation or role change away from trainer (trigger, same transaction); no reactivation; the assignment stores `workspace_membership_id`; T050 tests both restoration cases.
+- PRRT_kwDOVYgYQ861Wf2K (plan.md:217, distribution after deletion): P-S40-5 locks the client row with the deletion lock and re-checks eligibility; delayed events are a no-op; T058 tests.
+- Review-body finding (012 spec.md:176, approval-event delivery to distribution, "Unverified finding"): 011 FR-028 (g) durable job written in the approval transaction, retries, backlog, idempotent; 012 FR-022 cross-reference; T058 tests. Treated as valid (a crash after approval would leave an eligible client unassigned).
+- PRRT_kwDOVYgYQ861Wf2T (tasks.md:276, global clarification gate): tasks.md S40 section now states the global gate; T047/T048 notes say decision-unblocked only; spec Assumptions line updated. Zero open ambiguities is NOT stated.
+
+Gate: CRITICAL open 0. HIGH open 0. MEDIUM open 9 (MCQ-12..20, unchanged, PO-blocked). Re-run static consistency after the fix: PASS.
+
+## S40 round 3 analysis (S40-PO-13 + S40-R19) — 2026-11-09 18:45 +02:00, round 9 (superseded by round 10 for statuses; written after the round 3 edits to spec.md, plan.md, tasks.md, traceability.md and after the 003/012 cross-reference edits)
 
 Entry check (Spec Kit gate section 1, for the touched scope): spec.md FR-018–FR-028 and SC-013–SC-022 with Given/When/Then US5 scenarios 1–8: PASS. Clarifications: Round 3 block quotes the S40-PO-13 MCQ lines byte-exact; S40-R19 labelled as architect ruling: PASS. plan.md P-S40-1..5 cover the touched scope: PASS. tasks.md T047–T062 carry FR tags: PASS. This file is dated after the last change: PASS.
 
@@ -17,7 +29,7 @@ Gap sweep (addendum C, before the first CodeRabbit request). Technical gaps fixe
 - G9-7 (fixed): 012 FR-022 did not name the approval commit as the FR-028 trigger. Cross-reference added.
 - G9-8 (fixed): the 012 Out of Scope line "client closure/deletion" now points to 011 FR-018–FR-026.
 
-Product questions raised in one batch (PENDING-PO; full options in `C:/Users/NEW LAP/.lifter/runs/s40-haiku-f11-r3/report.md`):
+Product questions raised in one batch (PENDING-PO; full options in `research/s40-pending-mcqs.md`):
 - S40-F11-MCQ-12 (copy, carried), -13 (last active Workspace Owner deletion), -14 (personal fields on the terminal client row), -15 (capability for WO/Trainer/Sales deletion), -16 (never-assigned tie-break; "active client" reading), -17 (placement of the New workspace action; no switcher component on origin/main), -18 (financial-resolution confirmation content), -19 (workspace creation fields, slug, lost-response retry), -20 (Platform Owner self-deletion).
 
 Findings (round 9):

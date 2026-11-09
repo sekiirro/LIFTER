@@ -1,0 +1,133 @@
+# S40 pending PO questions (F11/F12 account lifecycle, round 3)
+
+Status: PENDING-PO. Each question blocks only the part named. None is encoded as a requirement. The S40 implementation gate (tasks.md, S40 section) stays closed until the Clarify step records zero open ambiguities for S40, which is not stated.
+
+Numbering: S40-F11-MCQ-n. Authority for decided items: S40-PO-13 (MCQ-1 = B, MCQ-2 = A, MCQ-11 = defaults), quoted in spec.md Round 3. Architect rulings (labelled, not PO words): S40-R19 MCQ-4, MCQ-8, MCQ-10; MCQ-12 is a proposal (research/s40-new-workspace-copy-proposal.md).
+
+---
+
+## S40-F11-MCQ-12 — EN/AR copy of the "New workspace" action (carried)
+
+Question: approve the copy in `research/s40-new-workspace-copy-proposal.md` byte-exact, or supply other strings?
+
+- A) Approve the proposal rows 1 to 9 byte-exact (row 9 only if MCQ-19 keeps a client-side name rule). **Recommended.**
+- B) The PO supplies the exact EN and AR strings for rows 1 to 5, 7 and 9; rows 6 and 8 stay as reused approved strings.
+
+Implications: A lets T056 encode once MCQ-17 and MCQ-19 are also answered. B delays T056 until the strings arrive. No guessed string is encoded in either case.
+
+Blocked: copy assertions in T051 and string encoding in T056 only.
+
+---
+
+## S40-F11-MCQ-13 — deleting the last active Workspace Owner
+
+Question: may a Workspace Owner account be deleted when it is the last active Workspace Owner of its workspace? (The PO text covers all roles but says nothing about this consequence.)
+
+- A) Allowed. The workspace then has no Workspace Owner; approvals fall to the PO only (011/012 FR-001).
+- B) Refused while it is the last active Workspace Owner, with the existing `not_permitted` / SQLSTATE 42501 convention (spec 003 FR-014 style).
+- C) Allowed only after a replacement active Workspace Owner exists (add-first, as S30-PO-3 Q8 does for the Platform Owner). **Recommended.**
+
+Implications: A leaves pending clients waiting for the PO. B blocks the deletion until a human is changed by other means. C keeps the approver boundary intact and matches the rule already applied to the Platform Owner.
+
+Blocked: the Workspace Owner last-account case of T047 only.
+
+---
+
+## S40-F11-MCQ-14 — personal fields on the terminal client row after release
+
+Question: after the guarded release (plan P-S40-1 step D), which personal fields of the client row are kept?
+
+- A) Keep name and all other profile fields; only the email and phone identifiers are cleared.
+- B) Clear name and all profile fields at release; keep identifiers-free terminal state, IDs, status and timestamps. **Recommended.**
+- C) Keep every field and only mark the row terminal.
+
+Implications: A keeps personal data of a departed client with no stated need (Constitution VII). B satisfies FR-020's no-copy rule and keeps the history rows referencing the client. C is the simplest but keeps the most personal data.
+
+Blocked: the field-clearing step of T048 and the personal-field scan in T047 only.
+
+---
+
+## S40-F11-MCQ-15 — capability for Workspace Owner, Trainer and Sales deletion
+
+Question: which existing capability authorises deletion of Workspace Owner, Trainer and Sales accounts? (S40-R19 MCQ-10 covers the Platform Owner accounts and the PO-only assignment write only.)
+
+- A) `manage_staff_access` (PO-only, no matrix change; the same capability as S40-R19 MCQ-10). **Recommended.**
+- B) `delete_client` (a client capability; it would extend its meaning to staff).
+- C) A new PO-only capability (a matrix change; needs explicit approval).
+
+Implications: A reuses the staff-management capability, keeps the matrix, and matches MCQ-10. B mixes client and staff authority. C adds a matrix change (FR-008, FR-023).
+
+Blocked: the staff cases of T047 and T048 only.
+
+---
+
+## S40-F11-MCQ-16 — tie-break for trainers with no prior assignment, and the "active client" reading
+
+Question (part 1): in the default tie-break "oldest last assignment", where does a trainer with no prior assignment sort?
+- A) First (never assigned = oldest). **Recommended.**
+- B) Last.
+- C) Equal rank; ordered only by ascending `user_id`.
+
+Question (part 2): the default balance is "active clients per trainer". Which clients count as active?
+- A) Approved client accounts with a current assignment row (`ended_at` null). **Recommended.**
+- B) Any non-deleted client account with a current assignment row.
+
+Implications: part 1 changes which trainer is picked in the first round of a new workspace. Part 2 changes whether pending or deletion-pending clients count (they never hold an assignment under the approval trigger, so the difference is small).
+
+Blocked: the never-assigned and "active client" sub-cases of T058 and T062 only. The rest of the defaults (trigger = approval; balance; oldest-last tie-break; none eligible = unassigned list; PO override kept) are accepted by S40-PO-13.
+
+---
+
+## S40-F11-MCQ-17 — placement of the "New workspace" action
+
+Facts: no workspace switcher component exists on origin/main. The only workspace selector found is the branding page selector (`tests/e2e/branding-production-ui.spec.ts:265`, `#branding-workspace`). S40-PO-10 item 7 keeps "the previously proposed workspace-creation action", which was a switcher action.
+
+- A) Build a workspace switcher in the app shell with the PO-only action (new UI; needs the design gate). **Recommended**, because it is the proposed action.
+- B) Place the PO-only action on the existing branding workspace selector surface.
+- C) A PO-only "Workspaces" page in navigation (round 1 option B).
+
+Implications: A adds shell UI and a design-gate pass. B is the smallest change but puts workspace creation on a branding screen. C adds a navigation entry.
+
+Blocked: the placement part of T051 and T056 only.
+
+---
+
+## S40-F11-MCQ-18 — content of the financial-resolution confirmation (FR-025)
+
+Question: S40-PO-10 item 3 asks for an "appropriate refund/financial-resolution confirmation" and says it is never an actual refund. What does the confirmation record?
+
+- A) A required resolution category chosen by the PO (for example: refunded outside LIFTER, forfeited under the contract, other) plus an explicit acknowledgement; stored only in the append-only audit event with the account reference, actor and time. **Recommended.**
+- B) An explicit acknowledgement only, with no category.
+- C) A required short reason, no personal data, stored in the audit event.
+
+Implications: in every option the confirmation creates no refund, ledger, collection, correction or cancellation row (FR-025), and must not use the spec 013 refund path. The "refunded outside LIFTER" category must not be read as a refund record. A gives the most evidence; B is the simplest; C risks free text.
+
+Blocked: the confirmation UI and record of T059 only; the refusal without confirmation is in force.
+
+---
+
+## S40-F11-MCQ-19 — fields of the workspace creation form
+
+Facts: `workspaces.name` is required (1–120 characters) and `workspaces.slug` is required and unique (`supabase/migrations/20261027120000_tenancy.sql:12–13`). Nothing approved says how the slug is produced, what happens on a slug clash, or what a retry after a lost response does.
+
+- A) PO enters the name; the slug is generated from the name (lowercase a–z, 0–9, hyphen), shown and editable; a clash returns a generic error; a retry with the same client key returns the same workspace and never creates a second one. **Recommended.**
+- B) PO enters name and slug explicitly; a clash returns a generic error; the same retry rule as A.
+- C) PO enters the name only; the slug is generated server-side with a random suffix (no clash case); the same retry rule as A.
+
+Implications: A and B need the clash and retry copy (the proposal has no copy for these). C avoids the clash case but gives slugs the PO cannot choose.
+
+Blocked: the creation form in T051 and T056 only.
+
+---
+
+## S40-F11-MCQ-20 — Platform Owner deleting their own account
+
+Question: may a Platform Owner delete their own account while other valid Platform Owners exist? (The last-PO guard, FR-026, applies in every option.)
+
+- A) Allowed when another valid Platform Owner exists.
+- B) Refused for self-deletion; another Platform Owner must perform it. **Recommended.**
+- C) Allowed only with the approval of a second Platform Owner.
+
+Implications: A allows a self-service exit with no second check. B avoids a self-initiated lockout and a single actor both starting and completing a release. C adds a new approval step not in any approved record.
+
+Blocked: the self-deletion case of T047 only.
