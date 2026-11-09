@@ -4,7 +4,7 @@ import { LOCALE_COOKIE, THEME_COOKIE } from '../../lib/design/preferences';
 import { getMessages } from '../../lib/i18n';
 
 const origin = new URL(
-  process.env.PLAYWRIGHT_BASE_URL ?? 'http://localhost:3000',
+  process.env.PLAYWRIGHT_BASE_URL || 'http://localhost:3000',
 ).origin;
 const local = Boolean(
   process.env.DB_URL || process.env.SUPABASE_DB_URL || process.env.API_URL,

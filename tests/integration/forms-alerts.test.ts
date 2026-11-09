@@ -306,6 +306,125 @@ it('skips finished client-late schedules before taking a bounded evaluator batch
   ).rejects.toBe(rollback);
 });
 
+it('does not let a trainer schedule with all due stages enqueued consume the batch', async () => {
+  const f = await clientContext();
+  const client = await registered(f);
+  await expect(
+    db.begin(async (tx) => {
+      const trainerAssignment = await formAssignment(
+        tx,
+        f.wsA.id,
+        client.id,
+        null,
+        f.po.userId,
+      );
+      const [trainerSchedule] = await tx`
+        insert into app_private.form_alert_schedules(
+          workspace_id,source_assignment_id,alert_kind,deadline_at,trainer_user_id
+        ) values(
+          ${f.wsA.id},${trainerAssignment},'trainer_late','2026-05-01T00:00:00Z',${f.trainerA.userId}
+        ) returning id`;
+      await tx`insert into app_private.form_alert_occurrences(
+        workspace_id,schedule_id,stage,recipient_user_id,job_id,enqueued_at
+      ) values
+        (${f.wsA.id},${trainerSchedule!.id},'trainer_initial',${f.trainerA.userId},null,'2026-05-01T00:00:00Z'),
+        (${f.wsA.id},${trainerSchedule!.id},'trainer_owners_24h',${f.po.userId},null,'2026-05-02T00:00:00Z'),
+        (${f.wsA.id},${trainerSchedule!.id},'trainer_owners_24h',${f.woA.userId},null,'2026-05-02T00:00:00Z')`;
+
+      const clientAssignment = await formAssignment(
+        tx,
+        f.wsA.id,
+        client.id,
+        '2026-05-03T00:00:00Z',
+        f.po.userId,
+      );
+      const result = await core(tx, f.wsA.id, '2026-05-03T00:00:00Z', 1);
+      expect(result).toEqual({ status: 'ok', enqueued: 2 });
+      const clientOccurrences = await tx`
+        select stage,recipient_user_id from app_private.form_alert_occurrences
+        where workspace_id=${f.wsA.id} and schedule_id=(
+          select id from app_private.form_alert_schedules
+          where workspace_id=${f.wsA.id} and source_assignment_id=${clientAssignment}
+            and alert_kind='client_late'
+        ) order by recipient_user_id`;
+      expect(clientOccurrences).toHaveLength(2);
+      const newTrainerOccurrences = await tx`
+        select id from app_private.form_alert_occurrences
+        where workspace_id=${f.wsA.id} and schedule_id=${trainerSchedule!.id}
+          and enqueued_at='2026-05-03T00:00:00Z'`;
+      expect(newTrainerOccurrences).toHaveLength(0);
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
+
+it('treats an already-deactivated client without a retention row as ended', async () => {
+  const f = await clientContext();
+  const client = await registered(f);
+  await expect(
+    db.begin(async (tx) => {
+      const assignment = await formAssignment(
+        tx,
+        f.wsA.id,
+        client.id,
+        '2026-05-01T00:00:00Z',
+        f.po.userId,
+      );
+      await tx`alter table public.clients disable trigger f12_client_transition`;
+      await tx`alter table public.clients disable trigger f15_client_retention_fact`;
+      await tx`update public.clients set deactivated_at='2026-05-02T00:00:00Z',deactivation_reason='refund'
+        where workspace_id=${f.wsA.id} and id=${client.id}`;
+      await tx`alter table public.clients enable trigger f15_client_retention_fact`;
+      await tx`alter table public.clients enable trigger f12_client_transition`;
+      const [active] = await tx`
+        select app_private.f15_client_alert_lifecycle_active(${f.wsA.id},${assignment}) as active`;
+      expect(active?.active).toBe(false);
+      throw rollback;
+    }),
+  ).rejects.toBe(rollback);
+});
+
+it('kills a lifecycle mutant that ignores client deactivation', async () => {
+  await withCrashSafeFunctionMutant(
+    'app_private.f15_client_alert_lifecycle_active(uuid,uuid)',
+    (source) => source.replace('and c.deactivated_at is null', 'and true'),
+    async () => {
+      const f = await clientContext();
+      const client = await registered(f);
+      let assertionFailed = false;
+      await expect(
+        db.begin(async (tx) => {
+          const assignment = await formAssignment(
+            tx,
+            f.wsA.id,
+            client.id,
+            '2026-05-01T00:00:00Z',
+            f.po.userId,
+          );
+          await tx`alter table public.clients disable trigger f12_client_transition`;
+          await tx`alter table public.clients disable trigger f15_client_retention_fact`;
+          await tx`update public.clients set deactivated_at='2026-05-02T00:00:00Z',deactivation_reason='refund'
+            where workspace_id=${f.wsA.id} and id=${client.id}`;
+          await tx`alter table public.clients enable trigger f15_client_retention_fact`;
+          await tx`alter table public.clients enable trigger f12_client_transition`;
+          const [active] = await tx`
+            select app_private.f15_client_alert_lifecycle_active(${f.wsA.id},${assignment}) as active`;
+          try {
+            expect(active?.active).toBe(false);
+          } catch {
+            assertionFailed = true;
+          }
+          throw rollback;
+        }),
+      ).rejects.toBe(rollback);
+      expect(
+        assertionFailed,
+        'the deactivation invariant must kill the mutant',
+      ).toBe(true);
+    },
+  );
+});
+
 it('rechecks recipient authorization at enqueue time and returns a safe error for invalid evaluation input', async () => {
   const f = await clientContext();
   const client = await registered(f);
@@ -413,19 +532,14 @@ it('waits for concurrent workspace-owner revocation and excludes the recipient a
         '2026-04-11T00:00:00Z'::timestamptz,${f.wsA.id}::uuid,250
       ) as result`;
     expect(fallback!.result).toEqual({ status: 'ok', enqueued: 0 });
-    expect(
-      await db`select stage,recipient_user_id from app_private.form_alert_occurrences where workspace_id=${f.wsA.id}`,
-    ).toEqual([
-      { stage: 'client_owners_immediate', recipient_user_id: f.po.userId },
-    ]);
     const recipients = await db`select stage,recipient_user_id
       from app_private.form_alert_occurrences
       where workspace_id=${f.wsA.id} and schedule_id=(
         select id from app_private.form_alert_schedules where source_assignment_id=${assignment}
       )`;
-    expect(recipients.map((row) => row.recipient_user_id).sort()).toEqual(
-      [f.po.userId].sort(),
-    );
+    expect(recipients).toEqual([
+      { stage: 'client_owners_immediate', recipient_user_id: f.po.userId },
+    ]);
   } finally {
     releaseCommit();
     await hold.catch(() => undefined);

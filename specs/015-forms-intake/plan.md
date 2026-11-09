@@ -190,3 +190,8 @@ Keep T115's approved F15 normalized username rule aligned with its transaction m
 ## S40 F15 round-13 CodeRabbit remediation
 
 Task T140 implements the four already-approved fixes in S40-R17 on existing PR #57, without changing product scope: align the client-late helper, inbox allow-list and integration drift guard with SQL evaluation to immediate PO+WO notices with no client-late Trainer or +24h/+48h stages while preserving D-03 and binding the accepted-submission check to app_private.form_submissions; serialize owner-membership revocation at enqueue; add correction RPC per-answer UTF-8 byte and snapshot charLimit checks before insert; return {"status":"invalid"} for inconsistent N08 draft answers before write; document local ffmpeg libaom-av1/libwebp prerequisites without skipping tests. All SQL changes are forward-only, new versions are unique across all origin refs, and Stack D direct-RPC/integration verification plus SECURITY DEFINER mutation evidence is required. No open ambiguities remain for these architect-approved fixes.
+
+
+### S41 round-16 follow-up (T142)
+
+Address verified CodeRabbit findings in existing FR scope, using RED-first regression tests and forward-only database changes. Keep stale-selection, client-late catch-up, and username edge behavior blocked pending PO-MCQ-2/3/4. Refresh Analyze after any spec, plan, or task edit; verify touched integrations only on isolated Stack D and retain security mutation/restore evidence.

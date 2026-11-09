@@ -125,3 +125,5 @@ Local gates on `13ef649927e03cf7d5e62b11d65c8eeb5ea4d4f1`: typecheck, lint, form
 | Requirement | Task | Test/evidence | Commit |
 | --- | --- | --- | --- |
 | FR-004/006/008/013/024/025/026/036/037 — valid CodeRabbit fixes and local scheduler fixture | T141 | Stack D integrations passed 29/29 (`forms-r3-corrections`, `forms-default-onboarding`, `forms-assignment-mutations`, `forms-alert-channels`); scheduler E2E passed 1/1; typecheck, ESLint, Prettier, and unit suite passed (208 files / 2,519 tests). Copy test compares N08.low.foods bytes across spec and decision fixture. SECURITY INVOKER mutants were killed and function definition/security flags restored. | T141 implementation commit on this branch; full SHA recorded by the task report. |
+
+| FR-004/006/008/013/017/018/024/025 ? round-16 follow-up review fixes | T142 | Pending current-head unit, Stack D integration, Analyze, and scheduler E2E evidence; product-decision items remain excluded until PO answers. | Pending |

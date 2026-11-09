@@ -20,10 +20,14 @@ Each run used the Stack D safe wrapper and `tests/integration/forms-purge.test.t
 Command template (the filter and mutant name shown in each row were supplied per run):
 
 ```powershell
-$env:SUPABASE_SAFE_CLI='node "C:/Program Files/nodejs/node_modules/npm/bin/npx-cli.js"'
+$repoRoot = (Resolve-Path .).Path
+$stackWorkdir = Join-Path $repoRoot 'supabase-stack-d'
+$nodeDir = Split-Path (Get-Command node).Source
+$env:SUPABASE_SAFE_CLI = "node `"$nodeDir/node_modules/npm/bin/npx-cli.js`""
 $env:LIFTER_SUPABASE_STACK='d'
 $env:F15_T018_MUTANT='<mutant>'
-node 'C:/Users/NEW LAP/.lifter/tools/supabase-safe.mjs' --workdir 'C:/Users/NEW LAP/Desktop/LFTR-p2/supabase-stack-d' --stack D exec -- npm run test:integration -- tests/integration/forms-purge.test.ts --reporter=dot -t '<filter>'
+$safeWrapper = Join-Path $env:USERPROFILE '.lifter/tools/supabase-safe.mjs'
+node $safeWrapper --workdir $stackWorkdir --stack D exec -- npm run test:integration -- tests/integration/forms-purge.test.ts --reporter=dot -t '<filter>'
 ```
 
-Per-run console output is retained in `C:/Users/NEW LAP/.lifter/runs/s27-luna-f15-h2/mutant-*.log`. The temporary mutation hooks were backed up, removed, and the source test file returned byte-for-byte to its pre-probe contents; `git diff -- tests/integration/forms-purge.test.ts` was empty afterward.
+Per-run console logs were kept outside the repository and are not retained as repository artifacts. The temporary mutation hooks were backed up, removed, and the source test file returned byte-for-byte to its pre-probe contents; `git diff -- tests/integration/forms-purge.test.ts` was empty afterward.

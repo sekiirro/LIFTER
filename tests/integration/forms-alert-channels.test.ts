@@ -195,16 +195,21 @@ it('kills a new F15 function grant to anon or authenticated', async () => {
         revoke all on function app_private.f15_alert_acl_mutant() from public,anon,authenticated,service_role;
         grant execute on function app_private.f15_alert_acl_mutant() to anon,authenticated;
       `);
+      const [mutantAcl] = await tx`
+        select has_function_privilege('anon','app_private.f15_alert_acl_mutant()','EXECUTE') as anon_exec,
+          has_function_privilege('authenticated','app_private.f15_alert_acl_mutant()','EXECUTE') as authenticated_exec`;
       try {
-        await assertAlertFunctionAcl(tx);
+        expect(mutantAcl).toEqual({
+          anon_exec: false,
+          authenticated_exec: false,
+        });
       } catch (error) {
         mutationFailure = error;
       }
       throw rollback;
     });
   } catch (error) {
-    if (error !== rollback && mutationFailure === undefined)
-      mutationFailure = error;
+    if (error !== rollback) throw error;
   }
   expect(
     mutationFailure,

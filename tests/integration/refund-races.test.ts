@@ -1,4 +1,5 @@
 import { randomUUID } from 'node:crypto';
+import { readFileSync } from 'node:fs';
 import { afterAll, expect, it } from 'vitest';
 import type { JSONValue, TransactionSql } from 'postgres';
 import { clientContext, graph, sql } from './registration-approval-fixture';
@@ -15,6 +16,75 @@ import {
 
 const db = sql();
 afterAll(() => db.end());
+
+it('backfills retention facts from matching historical refund operations', async () => {
+  const f = await clientContext();
+  const purchase = await bought(f);
+  await db.begin((tx) => activate(tx, f, purchase));
+
+  const migration = readFileSync(
+    new URL(
+      '../../supabase/migrations/20261109220000_f15_review16_followup.sql',
+      import.meta.url,
+    ),
+    'utf8',
+  );
+  const backfill = migration.match(
+    /insert into app_private\.form_retention_windows\([\s\S]*?on conflict \(workspace_id,client_id,source_event_id\) do nothing;/i,
+  )?.[0];
+  expect(backfill).toBeTruthy();
+
+  await db`alter table public.clients disable trigger f15_client_retention_fact`;
+  try {
+    const result = await f.po.client.rpc('record_refund', {
+      request: {
+        workspace_id: f.wsA.id,
+        client_id: purchase.t.id,
+        purchase_id: purchase.sid,
+        request_key: randomUUID(),
+        amount_minor: '400',
+        external_confirmation: true,
+      },
+    });
+    expect(result.error).toBeNull();
+    expect(result.data).toMatchObject({ status: 'ok' });
+  } finally {
+    await db`alter table public.clients enable trigger f15_client_retention_fact`;
+  }
+
+  const [before] = await db`
+    select c.deactivated_at,r.id as refund_id,
+      count(w.id)::int as retention_count
+    from public.clients c
+    join public.refund_operations r
+      on r.workspace_id=c.workspace_id and r.client_id=c.id and r.recorded_at=c.deactivated_at
+    left join app_private.form_retention_windows w
+      on w.workspace_id=c.workspace_id and w.client_id=c.id and w.source_event_id=r.id
+    where c.workspace_id=${f.wsA.id} and c.id=${purchase.t.id}
+    group by c.deactivated_at,r.id`;
+  expect(before?.retention_count).toBe(0);
+  await db.unsafe(backfill!);
+  await db.unsafe(backfill!);
+  const [after] = await db`
+    select w.source_event_id,w.source_kind,w.ended_at,w.purge_after,
+      c.deactivated_at,r.id as refund_id
+    from app_private.form_retention_windows w
+    join public.clients c on c.workspace_id=w.workspace_id and c.id=w.client_id
+    join public.refund_operations r
+      on r.workspace_id=c.workspace_id and r.client_id=c.id and r.recorded_at=c.deactivated_at
+    where c.workspace_id=${f.wsA.id} and c.id=${purchase.t.id}`;
+  expect(after).toMatchObject({
+    source_event_id: before?.refund_id,
+    source_kind: 'refund',
+    ended_at: before?.deactivated_at,
+    deactivated_at: before?.deactivated_at,
+    refund_id: before?.refund_id,
+  });
+  expect(new Date(after!.purge_after as string).getTime()).toBe(
+    new Date(before!.deactivated_at as string).getTime() +
+      30 * 24 * 60 * 60 * 1000,
+  );
+});
 
 async function seed() {
   const f = await clientContext();

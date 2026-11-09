@@ -120,6 +120,21 @@ describe('selectFormErasureTargets', () => {
     expect(result.auditRowIds).toEqual(['audit-change-v1', 'audit-view-v2']);
   });
 
+  it('handles presentation labels on snapshot questions during progression', () => {
+    const labeledDefinition = {
+      ...formDefinition,
+      questions: formDefinition.questions.map((question) => ({
+        ...question,
+        label: { en: `Label ${question.id}`, ar: `وصف ${question.id}` },
+      })),
+    } as ErasureFormDefinition;
+
+    const result = select({ formDefinition: labeledDefinition });
+
+    expect(result.answerIds).toEqual(['answer-injury-v1', 'answer-injury-v2']);
+    expect(result.auditRowIds).toEqual(['audit-change-v1', 'audit-view-v2']);
+  });
+
   it('selects currently inapplicable answers while leaving still-applicable answers untouched', () => {
     const result = select({
       branchChange: {

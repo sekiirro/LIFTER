@@ -198,3 +198,8 @@ The PO decision register records PO-MCQ-1 as “A: Approve as drafted.” The ch
 ## T141 portable task-reference refresh — 2026-11-09
 
 The remaining machine-local references in T020 and T139 were replaced with the design-gate brief label and the tracked S40 round-11 verification artifact. This is a documentation-link repair only; no requirement or behavior changed. **No open ambiguities remain for T141. CRITICAL: 0. HIGH: 0.**
+
+
+## S41 round 16 follow-up Analyze refresh — 2026-11-09
+
+Re-read spec.md, plan.md, and tasks.md for T142 and the current CodeRabbit follow-up. Numbered FRs/SCs and existing Given/When/Then scenarios cover the touched validation, assignment revision, erasure progression, correction, alert lifecycle, scheduler, and owner-notice contracts. Clarifications cite the binding PO records; S41-PO-3 approves only N08.low.foods exact EN bytes, with medium/high and other pending rows still pending. Plan and T142 map each technical correction to existing FRs and require forward-only SQL, Stack D tests, and security mutation restore evidence. The client-late catch-up/legacy de-dup, stale selected Terms replacement, and punctuation-only username findings remain explicit PO-MCQ-2/3/4 and are excluded from implementation; no ambiguities remain for the approved independent scope. Self-review checked undefined states (null/overflow, malformed localized labels, completed schedules), authorization/role paths, pending copy, prior PO conflicts, retention effects, and FR/task/test traceability. No further product question was identified. **CRITICAL: 0. HIGH: 0.** This Analyze follows the T142 spec/plan/tasks edits and precedes further implementation.

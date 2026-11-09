@@ -15,7 +15,7 @@ export const guardedFunctions = [
   },
   {
     identity: 'app_private.f15_valid_slider_label(jsonb)',
-    migration: '20261108230111_f15_signup_main_reconciliation.sql',
+    migration: '20261109220000_f15_review16_followup.sql',
     name: 'app_private.f15_valid_slider_label',
   },
   {
@@ -29,7 +29,7 @@ export const guardedFunctions = [
   {
     identity:
       'app_private.save_workspace_form_draft(uuid,uuid,integer,jsonb,uuid,uuid,text)',
-    migration: '20261108230050_f15_review_fixes.sql',
+    migration: '20261109220000_f15_review16_followup.sql',
     name: 'app_private.save_workspace_form_draft',
   },
   {
@@ -52,8 +52,13 @@ export const guardedFunctions = [
   {
     identity:
       'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)',
-    migration: '20261109151500_f15_client_late_owner_notices.sql',
+    migration: '20261109220000_f15_review16_followup.sql',
     name: 'app_private.evaluate_forms_alerts_core',
+  },
+  {
+    identity: 'app_private.f15_client_alert_lifecycle_active(uuid,uuid)',
+    migration: '20261109220000_f15_review16_followup.sql',
+    name: 'app_private.f15_client_alert_lifecycle_active',
   },
   {
     identity: 'app_private.cancel_f15_client_alerts(uuid,uuid)',

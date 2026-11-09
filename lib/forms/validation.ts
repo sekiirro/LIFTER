@@ -187,19 +187,27 @@ function isFeedbackBands(
 function isSliderLabels(
   value: unknown,
 ): value is NonNullable<FormQuestion['labels']> {
+  const isValidLabel = (label: unknown): boolean =>
+    typeof label === 'string'
+      ? label.trim().length > 0 &&
+        utf8ByteLength(label) <= APPROVED_FORM_BOUNDS.maxTextBytes
+      : isPlainRecord(label) &&
+        hasOnlyDataProperties(label) &&
+        Object.keys(label).length === 2 &&
+        typeof label.en === 'string' &&
+        typeof label.ar === 'string' &&
+        label.en.trim().length > 0 &&
+        label.ar.trim().length > 0 &&
+        utf8ByteLength(label.en) <= APPROVED_FORM_BOUNDS.maxTextBytes &&
+        utf8ByteLength(label.ar) <= APPROVED_FORM_BOUNDS.maxTextBytes;
+
   return (
     isPlainRecord(value) &&
     hasOnlyDataProperties(value) &&
     Object.keys(value).every((key) =>
       ['minimum', 'middle', 'maximum'].includes(key),
     ) &&
-    ['minimum', 'middle', 'maximum'].every(
-      (key) =>
-        typeof value[key] === 'string' &&
-        value[key].length > 0 &&
-        utf8ByteLength(value[key] as string) <=
-          APPROVED_FORM_BOUNDS.maxTextBytes,
-    )
+    ['minimum', 'middle', 'maximum'].every((key) => isValidLabel(value[key]))
   );
 }
 

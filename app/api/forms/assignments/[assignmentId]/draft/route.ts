@@ -44,6 +44,7 @@ export async function POST(
     !('expected_revision' in body) ||
     !Number.isInteger(body.expected_revision) ||
     (body.expected_revision as number) < 0 ||
+    (body.expected_revision as number) > 2_147_483_647 ||
     !('intent_key' in body) ||
     typeof body.intent_key !== 'string' ||
     !uuidPattern.test(body.intent_key) ||

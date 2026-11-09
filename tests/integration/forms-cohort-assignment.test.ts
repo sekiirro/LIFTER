@@ -1,5 +1,6 @@
 import { afterAll, describe, expect, it } from 'vitest';
 import { randomUUID } from 'node:crypto';
+import type { TransactionSql } from 'postgres';
 import {
   clientContext,
   registered,
@@ -19,17 +20,26 @@ async function expectInvariantFailure(body: () => Promise<void>) {
   }
   expect(failure, 'the named invariant must kill the mutant').toBeDefined();
 }
-async function createForm(workspaceId: string, termsVersion?: string) {
-  const policy = termsVersion ?? `t010-${randomUUID()}`;
+async function insertForm(
+  tx: TransactionSql,
+  workspaceId: string,
+  policy: string,
+) {
   const formId = randomUUID();
-  if (!termsVersion) {
-    await db`insert into app_private.terms_policy_versions(version,policy_kind,status)
-      values(${policy},'terms','published')`;
-  }
-  await db`insert into public.forms(id,workspace_id,name) values(${formId},${workspaceId},'T010 policy')`;
-  await db`insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
-    values(${workspaceId},${formId},1,${policy},${db.json({ questions: [] })},'published')`;
+  await tx`insert into public.forms(id,workspace_id,name) values(${formId},${workspaceId},'T010 policy')`;
+  await tx`insert into public.form_versions(workspace_id,form_id,version_number,terms_policy_version,definition,status)
+    values(${workspaceId},${formId},1,${policy},${tx.json({ questions: [] })},'published')`;
   return formId;
+}
+
+async function createForm(workspaceId: string) {
+  return db.begin(async (tx) => {
+    await tx`lock table app_private.terms_policy_versions in share row exclusive mode`;
+    const policy = `t010-${randomUUID()}`;
+    await tx`insert into app_private.terms_policy_versions(version,policy_kind,status)
+      values(${policy},'terms','published')`;
+    return insertForm(tx, workspaceId, policy);
+  });
 }
 
 function policyArgs(
@@ -327,14 +337,17 @@ describe('T010/T023 per-form assignment policy', () => {
 
   it('S25-R2 allows future onboarding/manual delivery and excludes future all-active recurring delivery', async () => {
     const { context, client } = await futureApprovedClient();
-    const sharedTerms = `t010-${randomUUID()}`;
-    await db`insert into app_private.terms_policy_versions(version,policy_kind,status)
-      values(${sharedTerms},'terms','published')`;
-    const formIds = {
-      onboarding: await createForm(context.wsA.id, sharedTerms),
-      manual: await createForm(context.wsA.id, sharedTerms),
-      active: await createForm(context.wsA.id, sharedTerms),
-    };
+    const formIds = await db.begin(async (tx) => {
+      await tx`lock table app_private.terms_policy_versions in share row exclusive mode`;
+      const sharedTerms = `t010-${randomUUID()}`;
+      await tx`insert into app_private.terms_policy_versions(version,policy_kind,status)
+        values(${sharedTerms},'terms','published')`;
+      return {
+        onboarding: await insertForm(tx, context.wsA.id, sharedTerms),
+        manual: await insertForm(tx, context.wsA.id, sharedTerms),
+        active: await insertForm(tx, context.wsA.id, sharedTerms),
+      };
+    });
     const onboardingPolicy = await context.po.client.rpc(
       'configure_intake_assignment_policy',
       policyArgs(

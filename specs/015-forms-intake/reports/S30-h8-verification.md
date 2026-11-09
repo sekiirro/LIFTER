@@ -43,7 +43,7 @@ Comparisons against commit `5084916` show B06 Arabic/English labels match byte-f
 
 ## Frontend design gate
 
-Catalog reviewed in full: `C:/Users/NEW LAP/.lifter/design-skills-catalog.md` (54 skills). The PO-approved hierarchy in `DESIGN.md` and `specs/002-design-system/` controls; the catalog marks several upstream visual skills as `CONFLICT - PO decision`, so they provide no authority to add styles/tokens. No rendered UI implementation was changed in h8; this gate reviews the existing changed FormPreview, QuestionFlow, and SignupForm surfaces.
+Catalog review covered 54 skills. The PO-approved hierarchy in `DESIGN.md` and `specs/002-design-system/` controls; upstream visual skills marked `CONFLICT - PO decision` provide no authority to add styles/tokens. No rendered UI implementation was changed in h8; this gate reviews the existing changed FormPreview, QuestionFlow, and SignupForm surfaces.
 
 | Skill | Result | Reason |
 |---|---|---|
@@ -105,7 +105,7 @@ Catalog reviewed in full: `C:/Users/NEW LAP/.lifter/design-skills-catalog.md` (5
 
 ### Rendered self-review
 
-Screenshots: `%TEMP%/lifter-s30-f15-h8/INDEX.md` (64 PNGs). Matrix includes FormPreview, QuestionFlow and SignupForm in AR/EN × light/dark × 390/1440; FormPreview also has 768px captures. Reviewed representative mobile/desktop captures across RTL/LTR and both themes against `DESIGN.md` §12. Visual verdict: PASS; no added colors, spacing, radii, fonts, components, or effects. Existing Arabic RTL and English LTR hierarchy remain legible at narrow and wide widths. Source Playwright specs include axe checks; focused route run is listed under final gates. The full state matrix is retained in the temp directory.
+Screenshots: 64 PNGs were captured during the original run in a temporary directory that is no longer available; no screenshot artifact is retained in the repository. Matrix covered FormPreview, QuestionFlow and SignupForm in AR/EN × light/dark × 390/1440; FormPreview also had 768px captures. The original review recorded representative mobile/desktop captures across RTL/LTR and both themes against `DESIGN.md` §12. Visual verdict: PASS; no added colors, spacing, radii, fonts, components, or effects. Existing Arabic RTL and English LTR hierarchy were recorded as legible at narrow and wide widths. Source Playwright specs include axe checks; focused route run is listed under final gates. The full state matrix is unavailable for independent inspection.
 
 Checklist: tokens only PASS (changed implementation has no new style values); Geist/IBM Plex Sans Arabic PASS; `Bidi` handling PASS where mixed-direction values occur; component/layout consistency PASS; light/dark contrast PASS by rendered review; keyboard/focus and accessible names PASS in E2E/axe; required states PASS in rendered cases; bilingual copy from messages PASS; screenshots PASS. The sample workspace-brand light/dark token and axe test passed in the final browser gate.
 
@@ -197,7 +197,7 @@ The previous h7 commit-by-commit RED/GREEN/security-mutation table above remains
 ### Frontend gate and signup blob delta
 
 - Catalog: all 54 entries reviewed in full; applicability table and conflict notes are in this report. The Design System remains authoritative. The focus behavior introduced no new visual token, layout, or copy.
-- Screenshots: `%TEMP%\lifter-s30-f15-h8\INDEX.md` plus 64 PNGs; rendered AR/EN × light/dark × 390/1440 for FormPreview, QuestionFlow, and SignupForm, with builder 768px captures. Axe runs in the source specs. Sample workspace brand `#0F766E` passed light/dark token and axe checks.
+- Screenshots: 64 PNGs were captured during the original run in an ephemeral temporary directory and are unavailable as repository artifacts. Rendering covered AR/EN ? light/dark ? 390/1440 for FormPreview, QuestionFlow, and SignupForm, with builder 768px captures. Axe runs are represented by the source specs. Sample workspace brand `#0F766E` passed light/dark token and axe checks.
 - Against `5084916`, the only signup-profile source file changed is `app/register/[token]/SignupForm.tsx`, current blob `97602bf73d729c1c52d3c2a269e472e9ab8d81ee`. Hero re-sync changes: preserve focus while the user edits identity fields; expose and clear the name field error association as it is corrected; focus the first invalid identity field after the rendered error state on submit. No signup migration, profile payload, or other signup-profile file changed in h8.
 
 ### CodeRabbit state and PO decisions

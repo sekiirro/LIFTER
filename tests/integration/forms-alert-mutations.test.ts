@@ -114,6 +114,66 @@ async function setupClient() {
   return { f, client };
 }
 
+async function trainerBatchProbe(
+  f: Awaited<ReturnType<typeof clientContext>>,
+  client: Awaited<ReturnType<typeof registered>>,
+) {
+  let expectedAssertionFailed = false;
+  await rollbackProbe(async (tx) => {
+    const trainerAssignment = await makeAssignment(tx, f, client.id, null);
+    const [trainerSchedule] = await tx`
+      insert into app_private.form_alert_schedules(
+        workspace_id,source_assignment_id,alert_kind,deadline_at,trainer_user_id
+      ) values(
+        ${f.wsA.id},${trainerAssignment},'trainer_late','2026-05-01T00:00:00Z',${f.trainerA.userId}
+      ) returning id`;
+    await tx`insert into app_private.form_alert_occurrences(
+      workspace_id,schedule_id,stage,recipient_user_id,job_id,enqueued_at
+    ) values
+      (${f.wsA.id},${trainerSchedule!.id},'trainer_initial',${f.trainerA.userId},null,'2026-05-01T00:00:00Z'),
+      (${f.wsA.id},${trainerSchedule!.id},'trainer_owners_24h',${f.po.userId},null,'2026-05-02T00:00:00Z'),
+      (${f.wsA.id},${trainerSchedule!.id},'trainer_owners_24h',${f.woA.userId},null,'2026-05-02T00:00:00Z')`;
+    const clientAssignment = await makeAssignment(
+      tx,
+      f,
+      client.id,
+      '2026-05-03T00:00:00Z',
+    );
+    const [row] = await tx`
+      select app_private.evaluate_forms_alerts_core(
+        '2026-05-03T00:00:00Z'::timestamptz,${f.wsA.id}::uuid,1
+      ) as result`;
+    try {
+      expect(row!.result).toEqual({ status: 'ok', enqueued: 2 });
+    } catch {
+      expectedAssertionFailed = true;
+    }
+    if (!expectedAssertionFailed) {
+      const [clientOccurrences] = await tx`
+        select count(*)::int as count from app_private.form_alert_occurrences
+        where workspace_id=${f.wsA.id} and schedule_id=(
+          select id from app_private.form_alert_schedules
+          where workspace_id=${f.wsA.id} and source_assignment_id=${clientAssignment}
+            and alert_kind='client_late'
+        )`;
+      expect(clientOccurrences?.count).toBe(2);
+    }
+  });
+  return expectedAssertionFailed;
+}
+
+it('kills a trainer batch-starvation mutant and restores the evaluator', async () => {
+  const { f, client } = await setupClient();
+  await withCrashSafeFunctionMutant(
+    CORE,
+    (source) => source.replace("s.alert_kind <> 'trainer_late'", 'true'),
+    async () => {
+      expect(await trainerBatchProbe(f, client)).toBe(true);
+    },
+  );
+  expect(await trainerBatchProbe(f, client)).toBe(false);
+});
+
 it('kills delayed client-late stages, reassignment deadline reset, and omitted-owner mutants', async () => {
   {
     const { f, client } = await setupClient();

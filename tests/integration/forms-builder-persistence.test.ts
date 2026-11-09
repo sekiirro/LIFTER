@@ -180,6 +180,40 @@ it('rejects a slider definition without its validation object', async () => {
 });
 
 describe('T006/T009 persisted Builder writes', () => {
+  it('rejects a null expected revision before hashing or first-save work', async () => {
+    await expect(
+      db.begin(async (tx) => {
+        const fixture = await workspace(tx);
+        const formId = randomUUID();
+        const policy = `null-revision-${fixture.workspaceId}`;
+        await tx`insert into app_private.terms_policy_versions(version,policy_kind,status)
+          values(${policy},'terms','published')`;
+        const [result] = await tx`
+          select app_private.save_workspace_form_draft(
+            ${fixture.workspaceId},${formId},null::integer,${tx.json(definition())},${randomUUID()},${fixture.actor},'Null revision'
+          ) as result`;
+        expect(result?.result).toEqual({ status: 'invalid' });
+        expect(
+          await tx`select id from public.forms where workspace_id=${fixture.workspaceId} and id=${formId}`,
+        ).toHaveLength(0);
+        throw rollback;
+      }),
+    ).rejects.toBe(rollback);
+  });
+
+  it('requires both localized slider labels to be nonblank and within the byte bound', async () => {
+    const [valid] = await db`
+      select app_private.f15_valid_slider_label(${db.json({ en: 'Low', ar: 'منخفض' })}) as valid`;
+    const [blankArabic] = await db`
+      select app_private.f15_valid_slider_label(${db.json({ en: 'Low', ar: '   ' })}) as valid`;
+    const [oversizedEnglish] = await db`
+      select app_private.f15_valid_slider_label(${db.json({ en: 'x'.repeat(4097), ar: 'منخفض' })}) as valid`;
+
+    expect(valid?.valid).toBe(true);
+    expect(blankArabic?.valid).toBe(false);
+    expect(oversizedEnglish?.valid).toBe(false);
+  });
+
   it('rejects whitespace English form names before creating a draft', async () => {
     await expect(
       db.begin(async (tx) => {

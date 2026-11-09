@@ -108,6 +108,36 @@ describe('T013 submission and correction HTTP validation', () => {
     );
   });
 
+  it('rejects revisions outside the database int32 range before write RPCs', async () => {
+    const draftResponse = await saveDraft(
+      request(`/api/forms/assignments/${assignmentId}/draft`, {
+        expected_revision: 2_147_483_648,
+        intent_key: intentKey,
+        answer_values: validAnswers,
+      }),
+      { params: Promise.resolve({ assignmentId }) },
+    );
+    await expectSafeInvalid(draftResponse, 'invalid');
+    expect(client.rpc).not.toHaveBeenCalledWith(
+      'save_form_draft',
+      expect.anything(),
+    );
+
+    client.rpc.mockClear();
+    const submitResponse = await submit(
+      request(`/api/forms/assignments/${assignmentId}/submit`, {
+        expected_revision: 2_147_483_648,
+        intent_key: intentKey,
+      }),
+      { params: Promise.resolve({ assignmentId }) },
+    );
+    await expectSafeInvalid(submitResponse, 'invalid');
+    expect(client.rpc).not.toHaveBeenCalledWith(
+      'submit_form_assignment',
+      expect.anything(),
+    );
+  });
+
   it('maps a submitted-draft result to a non-retryable conflict response', async () => {
     client.rpc.mockImplementation(async (name: string) =>
       name === 'read_form_assignment_context'

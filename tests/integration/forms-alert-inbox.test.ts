@@ -14,6 +14,22 @@ const coreName =
   'app_private.evaluate_forms_alerts_core(timestamptz,uuid,integer)';
 const writeName = 'app_private.write_f15_in_app_alert(uuid)';
 const readName = 'public.read_form_alert_inbox(integer,timestamptz)';
+class MutationInvariantFailure extends Error {
+  constructor(
+    readonly mutationLabel: string,
+    cause: unknown,
+  ) {
+    super(`${mutationLabel} mutant failed its named assertion`, { cause });
+  }
+}
+
+function expectMutantInvariant(label: string, assertion: () => void) {
+  try {
+    assertion();
+  } catch (error) {
+    throw new MutationInvariantFailure(label, error);
+  }
+}
 
 async function definition(tx: TransactionSql, identity: string) {
   const [row] = await tx`
@@ -84,14 +100,35 @@ async function fixture(tx: TransactionSql) {
 }
 
 async function expectMutation(label: string, run: () => Promise<void>) {
-  let failed: unknown;
+  let namedFailure: MutationInvariantFailure | undefined;
   try {
     await run();
   } catch (error) {
-    failed = error;
+    if (error instanceof MutationInvariantFailure) {
+      if (error.mutationLabel !== label) throw error;
+      namedFailure = error;
+    } else if (error !== rollback) {
+      throw error;
+    }
   }
-  expect(failed, `${label} mutant must fail the named assertion`).toBeDefined();
+  expect(
+    namedFailure,
+    `${label} mutant must fail the named assertion`,
+  ).toBeDefined();
 }
+
+it('does not count setup failures or rollback as a killed mutation', async () => {
+  await expect(
+    expectMutation('setup failure', async () => {
+      throw new Error('fixture setup failed');
+    }),
+  ).rejects.toThrow('fixture setup failed');
+  await expect(
+    expectMutation('rollback only', async () => {
+      throw rollback;
+    }),
+  ).rejects.toThrow('rollback only mutant must fail the named assertion');
+});
 
 it('writes one IDs-only in-app delivery per queued occurrence and audits recipient reads/mark-read', async () => {
   await expect(
@@ -350,6 +387,8 @@ it('kills a cross-recipient inbox-read mutant', async () => {
       );
       expect(mutant).not.toBe(source);
       await tx.unsafe(mutant);
+      await tx`update public.staff_profiles set role='workspace_owner'::public.staff_role
+        where user_id=${f.trainerB.userId}`;
       await tx`select set_config('request.jwt.claims',${JSON.stringify({
         sub: f.trainerB.userId,
         role: 'authenticated',
@@ -357,7 +396,9 @@ it('kills a cross-recipient inbox-read mutant', async () => {
       await tx`set local role authenticated`;
       const rows =
         await tx`select * from public.read_form_alert_inbox(20,null)`;
-      expect(rows).toEqual([]);
+      expectMutantInvariant('recipient-only read', () =>
+        expect(rows).toEqual([]),
+      );
       throw rollback;
     }),
   );
@@ -385,7 +426,9 @@ it('kills a duplicate in-app delivery mutant', async () => {
       await tx`select app_private.write_f15_in_app_alert(${occurrenceId})`;
       const rows = await tx`select id from app_private.form_alert_deliveries
         where alert_occurrence_id=${occurrenceId} and channel='in_app'`;
-      expect(rows).toHaveLength(1);
+      expectMutantInvariant('per-channel delivery uniqueness', () =>
+        expect(rows).toHaveLength(1),
+      );
       throw rollback;
     }),
   );
@@ -405,11 +448,13 @@ it('kills an answer-text-in-jobs payload mutant', async () => {
       const [job] = await tx`select j.payload from public.jobs j
         join app_private.form_alert_occurrences o on o.job_id=j.id
         where o.id=${occurrenceId}`;
-      expect(Object.keys(job!.payload as object).sort()).toEqual([
-        'alert_id',
-        'recipient_id',
-        'stage',
-      ]);
+      expectMutantInvariant('IDs-only enqueue payload', () =>
+        expect(Object.keys(job!.payload as object).sort()).toEqual([
+          'alert_id',
+          'recipient_id',
+          'stage',
+        ]),
+      );
       void f;
       throw rollback;
     }),

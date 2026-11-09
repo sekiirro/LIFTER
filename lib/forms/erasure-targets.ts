@@ -92,12 +92,17 @@ export function selectFormErasureTargets(
     return emptySelection();
   }
 
+  const progressionQuestions = formDefinition.questions.map((question) => {
+    const sanitized = { ...question } as FormQuestion & { label?: unknown };
+    delete sanitized.label;
+    return sanitized;
+  });
   const previousState = evaluateProgression({
-    questions: formDefinition.questions,
+    questions: progressionQuestions,
     answers: branchChange.previousAnswers,
   });
   const currentState = evaluateProgression({
-    questions: formDefinition.questions,
+    questions: progressionQuestions,
     answers: branchChange.currentAnswers,
   });
   if (previousState.errors.length > 0 || currentState.errors.length > 0)

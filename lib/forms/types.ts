@@ -67,9 +67,9 @@ export type FormQuestion = {
   purpose?: 'n12-series';
   unit?: LocalizedFormText;
   labels?: {
-    minimum: string;
-    middle: string;
-    maximum: string;
+    minimum: string | LocalizedFormText;
+    middle: string | LocalizedFormText;
+    maximum: string | LocalizedFormText;
   };
   feedbackBands?: readonly FormFeedbackBand[];
   assetReferences?: readonly string[];
