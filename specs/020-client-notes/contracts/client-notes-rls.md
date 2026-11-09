@@ -32,6 +32,7 @@ No SQL or migration is supplied by this document. The following acceptance contr
 | Trainer in workspace A accesses workspace B note or client in B | Deny |
 | Forged workspace/client/author identity | Deny or ignore untrusted field; never widen |
 | Body blank after trimming, or over 5,000 Unicode code points after trimming | Deny; no row persisted (CN-MCQ-02, CN-MCQ-14) |
+| Body containing U+0000 | Deny; no row persisted; existing generic save-error state (row 18); no new copy (FR-002) |
 | Body with leading or trailing whitespace and 1 to 5,000 code points after trimming | Allow; stored as the trimmed text (CN-MCQ-14; S37-PO-16) |
 | Body of 5,000 code points plus leading or trailing whitespace | Allow; stored as the 5,000 code points without that whitespace (CN-MCQ-14) |
 | Body with interior whitespace or line breaks | Allow; interior formatting stored unchanged (S37-PO-16) |
@@ -48,6 +49,7 @@ No SQL or migration is supplied by this document. The following acceptance contr
 | Same-key retry after the note was edited | Compare against the original submission fingerprint, not the current edited body; a matching retry returns the existing note, a different trimmed body is a mismatch (FR-011; CN-MCQ-22; S40-R9) |
 | Content-free create-idempotency record | Holds workspace/client scope, key, a required one-way fingerprint of the original trimmed body, and an outcome state; never the note body or note text (CN-MCQ-20, CN-MCQ-22) |
 | Server-side pending note body for an unresolved create | No such record or column exists; only the content-free key record is stored, and the unresolved create's recovery state is device-local tab `sessionStorage` (CN-MCQ-24; S40-PO-12) |
+| Recovery record after sign-out or account switch | Cleared; a different actor cannot read or retry it, including through direct `sessionStorage` access (CN-MCQ-24; FR-007) |
 | Unknown operation/role/capability | Deny by default |
 
 The future test suite must assert both database policy behavior and application/database matrix parity.
