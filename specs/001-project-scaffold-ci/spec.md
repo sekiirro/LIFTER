@@ -104,6 +104,17 @@ An implementer working against multiple fetched remote branches can detect, befo
 ---
 
 
+### User Story 7 - Fast, exact-head CI evidence (Priority: P1)
+
+The PO and merge lane can collect three full CI results concurrently without accepting a result for a different PR head, while retaining every required test and security gate.
+
+**Acceptance Scenarios**:
+
+1. **Given** a dispatch request with PR number and full head SHA, **When** CI starts, **Then** it checks out `refs/pull/<n>/merge`, prints PR/head/merge SHAs, and exits before validation unless the merge commit's second parent is the supplied head.
+2. **Given** all integration tests in the configured suite, **When** the three shards run, **Then** the shard sets are disjoint and their union equals the full test list, with the same stack setup and all shard results required.
+3. **Given** one PR run and two dispatch runs complete concurrently for the same exact head, **When** gate-check d evaluates them, **Then** only distinct successful runs with executed validate, all integration shards, and storage count, and their run IDs and sources are reported.
+4. **Given** a PR changes the constitution, **When** the standing approval rule is evaluated, **Then** it is excluded and explicit PO approval of the exact head is required.
+
 ## Edge Cases
 
 - A missing local env file must not break typecheck, lint, unit tests or build. A committed example file documents the variables (with no values).
@@ -134,6 +145,10 @@ An implementer working against multiple fetched remote branches can detect, befo
 - **FR-017**: CI MUST cancel superseded pull request runs using a concurrency group scoped by pull request number; main push runs MUST use unique concurrency groups so queued runs are never replaced.
 - **FR-018**: The `validate` job MUST NOT install Playwright browser binaries when none of its steps use a browser.
 - **FR-019**: The Storage checks MUST remain a distinct required CI job named `storage`, with an independently reported result.
+- **FR-021**: CI MUST support manually dispatched full CI runs for a PR number and exact head SHA, check out `refs/pull/<n>/merge`, and fail before checks unless the checked-out merge result's second parent equals the supplied head SHA. The workflow MUST print the PR, supplied head SHA, and merge SHA; dispatch runs MUST have unique, non-canceling concurrency groups.
+- **FR-022**: The `integration` CI job MUST divide the full integration test list into three non-overlapping Vitest shards, each with the same stack setup, so the union runs every integration test exactly once per attempt. `validate`, `storage`, security checks, and all existing test coverage remain required.
+- **FR-023**: The main merge gate MUST accept three distinct successful full CI attempts on the exact PR head from either sequential `pull_request` attempts or one `pull_request` plus two concurrent manual dispatch runs on merge refs whose second parent is the same head SHA; each attempt MUST execute `validate`, every integration shard, and `storage`. A code failure voids the head; infra failures are recorded and never counted.
+- **FR-024**: Standing PO merge approval applies only to normal PRs after all eight live gates pass on the exact head and an independent architect review of the full diff is recorded for that SHA. The merge lane records `po_approved_head`, rechecks gates immediately before merge, and merges with `--match-head-commit`; any head change voids approval. PRs changing `.specify/memory/constitution.md` always require explicit PO approval for the exact SHA.
 
 ## Success Criteria *(mandatory)*
 
@@ -149,6 +164,9 @@ An implementer working against multiple fetched remote branches can detect, befo
 - **SC-007**: When a newer head supersedes an active pull request run, the older pull request run is canceled, while main push runs remain uncanceled and are never replaced by concurrency grouping.
 - **SC-008**: The `validate` job contains no Playwright browser installation step if no validate step uses a browser.
 - **SC-009**: Every CI run reports distinct `validate`, `integration`, and `storage` jobs, with Storage required independently.
+- **SC-011**: A manual dispatch for a PR tests only `refs/pull/<n>/merge` and exits before CI unless its second parent matches the supplied full head SHA; it does not replace or cancel other runs.
+- **SC-012**: Three shards have disjoint test assignments and their union equals the full integration test list; every attempt runs each integration test exactly once and requires all shards plus `validate` and `storage` to succeed with executed steps.
+- **SC-013**: Gate d recognizes only distinct successful, executed full attempts with exact-head provenance from the allowed event sources; gate-check reports attempt IDs and sources. Gates a-c and e-h remain in force, and constitution PRs require explicit exact-SHA PO approval.
 
 ## Clarifications
 
@@ -164,6 +182,12 @@ An implementer working against multiple fetched remote branches can detect, befo
 - PO source: S32-PO-3 (verbatim): "Rename F15 #44's conflicting migration via git mv, preserve F16 #43, verify DB state, repair Stack D history if needed, rerun gates, and prevent future duplicates." Only "prevent future duplicates" is in scope in this amendment; the #44 rename, DB-state verification, Stack D history repair and gate reruns are separate lanes and are not changed here. S32-PO-2 Q4 classifies this lane as low-risk tooling + tests.
 - Scope of this amendment: FR-020, SC-010, User Story 6, task T019, the opt-in `--all-remote-refs` mode, its unit tests, and this Clarifications entry. The default in-tree mode and the CI step "Validate migration timestamps" are unchanged. No existing 001 requirement (FR-001..FR-019, SC-001..SC-009) is modified.
 - **No open ambiguities.** The guard is detection-and-fail only; it does not rename migrations, does not alter CI behaviour, and consumes only refs the caller already fetched.
+
+### Session 2026-11-09 (S38 constitution 1.10.0 and CI speedups)
+
+- PO authority is recorded byte-exact in the S38 amendment history: S38-PO-6 with architect mapping items (b), (d), and (e), and the full S38-PO-7 and S38-PO-8 messages.
+- Scope: FR-021..FR-024 and SC-011..SC-013; manual same-head merge-result CI runs; three-way integration sharding with complete test union; and the gate-d constitution exception and standing approval behavior. All existing security checks and test coverage remain required. No product behavior is changed.
+- **No open ambiguities.** PO decisions specify all event sources, exact-SHA binding, required jobs, standing approval conditions, and the constitution amendment exception.
 
 ## Assumptions
 

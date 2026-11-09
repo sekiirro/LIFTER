@@ -23,3 +23,12 @@ Evidence run `41894845099`, attempt 1, on commit `447ceb0b69b8516abfa26c5b1289ef
 | FR-015, FR-016, FR-017 | T016 | `.github/workflows/ci.yml::push_main_pull_request_and_concurrency` | Commit `447ceb0b69b8516abfa26c5b1289ef908bb92bf2`; run `41894845099` attempt 1, all three jobs green; CodeRabbit-confirmed queued-main-run behavior addressed with unique push groups. |
 | FR-018 | T017 | `.github/workflows/ci.yml::validate` | Commit `447ceb0b69b8516abfa26c5b1289ef908bb92bf2`; actionlint clean; validate job passed in run `41894845099` attempt 1 with no browser install step. |
 | FR-019 | T018 | `.github/workflows/ci.yml::storage` | Commit `447ceb0b69b8516abfa26c5b1289ef908bb92bf2`; actionlint clean; separate storage job passed in run `41894845099` attempt 1. |
+
+## S38 CI / constitution amendment (FR-021..FR-024, SC-011..SC-013)
+
+| Requirement | Task | Verification | Evidence | Status |
+|---|---|---|---|---|
+| FR-021 / SC-011 (dispatch ref and exact parent validation) | T020 | .github/workflows/ci.yml::Verify and record CI revision | Pending exact-head GitHub workflow_dispatch run and logged PR/head/merge SHA values; run IDs will be recorded in C:/Users/NEW LAP/.lifter/runs/s38-const110-ci/report.md. | PENDING |
+| FR-022 / SC-012 (integration partition and full coverage) | T021 | C:/Users/NEW LAP/.lifter/runs/s38-const110-ci/verify-shards.cjs | Vitest 5.0.5: 92 test files; shards 31/31/30; union 92; 0 missing; 0 duplicates (shard-partition.json). Playwright runs once in shard 1; unchanged suite selection. | VERIFIED (partition) |
+| FR-023 / SC-013 (allowed full attempts) | T022 | .github/workflows/ci.yml and C:/Users/NEW LAP/.lifter/tools/gate-check.mjs::gateD | Pending exact-head pull_request/dispatch run evidence and both-path self-test; run IDs and provenance will be recorded in report.md. | PENDING |
+| FR-024 (standing approval and constitution PR exception) | T022 | .specify/memory/constitution.md::Main merge gate; docs/08-agent-workflow.md::Main merge gate | Constitution-changing PR explicitly excluded from standing approval; this PR still requires explicit PO approval at exact SHA. | VERIFIED (documentation) |

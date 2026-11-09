@@ -1,5 +1,23 @@
 # F1 001-project-scaffold-ci - Analyze (S34 main merge reconciliation)
 
+## S38 amendment pre-implementation entry check
+
+**Date**: 2026-11-09 (after S38 spec, plan, and task updates). **Scope**: FR-021..FR-024, SC-011..SC-013, T020..T022.
+
+- [x] `spec.md` has numbered FRs, measurable SCs, and Given/When/Then scenarios for touched scope. Existing scenarios plus FR-021..FR-024 specify dispatch provenance, three shard coverage, executed-run acceptance, and standing approval constraints.
+- [x] Clarifications cite PO source S38-PO-6 mapping (b),(d),(e), S38-PO-7, and S38-PO-8; **No open ambiguities** is explicit in `spec.md`.
+- [x] `plan.md` covers dispatch validation, integration sharding, gate-check provenance and preserved security checks; `tasks.md` has T020..T022 tagged with FR IDs.
+- [x] This Analyze is dated after the spec/plan/tasks changes and finds 0 open CRITICAL/HIGH findings.
+
+### Findings
+
+- Exact merge-result validation is required before test execution for dispatch events; the workflow prints the evidence values and the runner verifies `HEAD^2`.
+- Three shards use Vitest's deterministic shard assignments; locally enumerate full-suite and each shard to assert no omissions/duplicates. All setup steps (Supabase and environment, provisioning, Playwright and browser suites) stay in each shard.
+- Each full attempt must have executed `validate`, all integration shards, and `storage`; gate-check event provenance must bind dispatch merge SHA parent2 to exact head and record run ID/source.
+- No security gate is being removed or changed. Constitution-editing PRs remain outside standing PO approval.
+
+**Verdict**: PASS — 0 open CRITICAL/HIGH findings. PO decisions are explicit; no product decision is needed.
+
 **Date**: 2026-11-05. **Pass**: post-merge consistency re-analysis for S33 CI optimization (FR-015 to FR-019, SC-006 to SC-009, T016 to T018) and S32 migration-version guard (FR-020, SC-010, US6, T019). Main was merged into the #54 branch after #59 and #55 landed.
 
 ## Entry check (LIFTER Spec Kit gate, PO S29-PO-2)

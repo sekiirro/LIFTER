@@ -1,5 +1,13 @@
 # Implementation Plan: Project Scaffold & CI Baseline (P0-F1)
 
+## S38-PO-7 CI and merge-gate amendment (2026-11-09)
+
+Implement FR-021..FR-024 and SC-011..SC-013 in the existing CI baseline. Add a `workflow_dispatch` trigger with required PR number and full head SHA inputs. Dispatch runs use a unique run-scoped concurrency group, check out the PR merge ref, print PR/head/merge SHAs, and fail before test work unless `HEAD^2` equals the supplied SHA. Preserve pull-request and main push behavior and `contents: read` permissions. Shard the existing full Vitest integration selection into three disjoint groups using the existing stack setup for each shard; do not remove or weaken any test or security step. Update gate-check d to count successful, executed PR attempts or exact-head dispatch runs, recording run IDs and sources; leave gates a-c and e-h unchanged. Document the constitution exception and standing approval protocol in the constitution, workflow guide, decision register, and PR body. This amendment PR itself always needs explicit PO exact-SHA approval.
+
+### Verification approach
+
+List the complete Vitest integration suite and each shard locally; confirm pairwise disjointness and exact union. Use GitHub-hosted runs as authoritative for PR gates. Confirm event payload/merge SHA provenance and executed job steps for both event paths. Keep run evidence under `C:/Users/NEW LAP/.lifter/runs/s38-const110-ci`. The full Playwright browser suite remains required and runs once in shard 1; every shard retains the same Supabase setup and runs only its own Vitest file partition.
+
 **Branch**: `001-project-scaffold-ci` | **Date**: 2026-10-27 | **Spec**: [spec.md](spec.md)
 **Input**: Feature specification from `specs/001-project-scaffold-ci/spec.md`
 
