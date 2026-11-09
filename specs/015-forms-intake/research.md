@@ -101,15 +101,13 @@
   channels: in-app is always on; Telegram is optional for explicitly linked
   staff; email is out of scope. The scheduler remains disabled pending separate
   PO approval.
-- Client-late clocks are independent from D-03 Trainer-late clocks: a client
-  client-late owner notices follow the current approved F15 trigger; client-to-Trainer assignment/routing and the Trainer alert are deferred to F11/F12 under PDN-S39-F15-01.
-  (Superseded historical timing detail: the F15 Trainer stage is deferred by
-  PDN-S39-F15-01; retain this note only as prior design history.) Reassignment changes the recipient
-  without changing the original deadline. D-03 Trainer-late retains its existing
-  Q4 initial and owner-escalation timing/catch-up rules. T017's pg_cron schedule
-  uses the owner-only F11 activation/deactivation pattern and is not activated
-  by the migration; explicit-time integration tests call the private evaluator
-  core directly.
+- Client-late evaluation uses the configured submission deadline and immediately notifies authorized owners when it passes without an accepted submission.
+  Client-to-Trainer assignment/routing and the client-late Trainer alert are deferred
+  to F11/F12 under PDN-S39-F15-01. S36-01=A remains the future authoritative
+  source rule. D-03 Trainer-late retains its separate Q4 initial and owner-
+  escalation timing/catch-up rules. T017's pg_cron schedule uses the owner-only
+  F11 activation/deactivation pattern and is not activated by the migration;
+  explicit-time integration tests call the private evaluator core directly.
 
 ## S25-PO-8 / S25-R4 channel boundary
 
