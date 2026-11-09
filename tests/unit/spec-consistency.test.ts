@@ -1,10 +1,52 @@
-import { describe, expect, it } from 'vitest';
-import { readFileSync } from 'node:fs';
+import { describe, expect, it, afterEach, beforeEach } from 'vitest';
 import {
+  mkdirSync,
+  mkdtempSync,
+  readFileSync,
+  rmSync,
+  writeFileSync,
+} from 'node:fs';
+import { tmpdir } from 'node:os';
+import { join } from 'node:path';
+import {
+  checkChangedFeatures,
   classifyDocsOnlyPaths,
+  gitChangedPaths,
+  resolveDiffRange,
+  runCiCheck,
   validateSpecConsistency,
 } from '../../scripts/spec-consistency.mjs';
 import { formatCandidatesFromStatus } from '../../scripts/format-check-changed.mjs';
+
+const BASE_SHA = 'a'.repeat(40);
+
+/** Writes a minimal feature directory; `tasks: null` omits tasks.md. */
+function makeFeature(
+  root: string,
+  name: string,
+  options: {
+    spec?: string;
+    tasks?: string | null;
+    traceability?: string;
+    analyze?: string;
+  } = {},
+) {
+  const directory = join(root, 'specs', name);
+  mkdirSync(join(directory, 'checklists'), { recursive: true });
+  writeFileSync(
+    join(directory, 'spec.md'),
+    options.spec ?? '# Feature\nFR-001\nSC-001',
+  );
+  if (options.tasks !== null)
+    writeFileSync(
+      join(directory, 'tasks.md'),
+      options.tasks ?? 'T001 [FR-001, SC-001]',
+    );
+  if (options.traceability)
+    writeFileSync(join(directory, 'traceability.md'), options.traceability);
+  if (options.analyze)
+    writeFileSync(join(directory, 'checklists/analyze.md'), options.analyze);
+}
 
 describe('spec consistency validation', () => {
   it('accepts complete identifiers and a current Analyze date', () => {
@@ -20,6 +62,21 @@ describe('spec consistency validation', () => {
       tasksDate: '2026-11-09',
     };
     expect(validateSpecConsistency(files)).toEqual([]);
+  });
+
+  it('accepts an ISO datetime Analyze date', () => {
+    expect(
+      validateSpecConsistency({
+        spec: 'FR-001 SC-001',
+        tasks: 'T001 [FR-001, SC-001]',
+        traceability: 'FR-001 T001',
+        analyze: '**Analysis date**: 2026-11-10T22:18Z\nFR-001 T001',
+        decisions: '',
+        specDate: '2026-11-10',
+        planDate: '2026-11-10',
+        tasksDate: '2026-11-10',
+      }),
+    ).toEqual([]);
   });
 
   it.each([
@@ -77,6 +134,171 @@ describe('spec consistency validation', () => {
         tasksDate: '2026-11-09',
       }),
     ).toEqual(expect.arrayContaining([expect.stringMatching(/pending PO/i)]));
+  });
+});
+
+describe('changed-feature spec consistency', () => {
+  let root: string;
+
+  beforeEach(() => {
+    root = mkdtempSync(join(tmpdir(), 'spec-consistency-'));
+  });
+
+  afterEach(() => {
+    rmSync(root, { recursive: true, force: true });
+  });
+
+  it('checks every touched feature in a multi-feature diff', () => {
+    makeFeature(root, '001-alpha');
+    makeFeature(root, '002-beta', { tasks: 'T001 [FR-999]' });
+    const result = checkChangedFeatures({
+      changedPaths: ['specs/001-alpha/spec.md', 'specs/002-beta/tasks.md'],
+      root,
+      latestCommitDate: () => '2026-11-10',
+    });
+    expect(result.features).toEqual(['specs/001-alpha', 'specs/002-beta']);
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining(
+          'specs/002-beta: tasks.md: unknown identifier FR-999',
+        ),
+      ]),
+    );
+  });
+
+  it('ignores an inconsistent feature that is not in the diff', () => {
+    makeFeature(root, '001-alpha');
+    makeFeature(root, '002-beta', { tasks: 'T001 [FR-999]' });
+    const result = checkChangedFeatures({
+      changedPaths: ['specs/001-alpha/tasks.md'],
+      root,
+      latestCommitDate: () => '2026-11-10',
+    });
+    expect(result.features).toEqual(['specs/001-alpha']);
+    expect(result.errors).toEqual([]);
+  });
+
+  it('fails when a touched feature has no tasks.md', () => {
+    makeFeature(root, '003-gamma', { tasks: null });
+    const result = checkChangedFeatures({
+      changedPaths: ['specs/003-gamma/spec.md'],
+      root,
+      latestCommitDate: () => '2026-11-10',
+    });
+    expect(result.errors).toEqual(
+      expect.arrayContaining([expect.stringContaining('missing tasks.md')]),
+    );
+  });
+
+  it('checks traceability and Analyze only when present', () => {
+    makeFeature(root, '004-delta');
+    expect(
+      checkChangedFeatures({
+        changedPaths: ['specs/004-delta/spec.md'],
+        root,
+        latestCommitDate: () => '2026-11-10',
+      }).errors,
+    ).toEqual([]);
+    makeFeature(root, '005-epsilon', {
+      analyze: '# Analyze 2026-11-09\nT999',
+    });
+    expect(
+      checkChangedFeatures({
+        changedPaths: ['specs/005-epsilon/spec.md'],
+        root,
+        latestCommitDate: () => '2026-11-10',
+      }).errors,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('analyze.md: unknown identifier T999'),
+      ]),
+    );
+  });
+
+  it('fails closed when a feature has no commit history date', () => {
+    makeFeature(root, '006-zeta');
+    const result = checkChangedFeatures({
+      changedPaths: ['specs/006-zeta/spec.md'],
+      root,
+      latestCommitDate: () => {
+        throw new Error('no spec/plan/tasks commit history');
+      },
+    });
+    expect(result.errors).toEqual(
+      expect.arrayContaining([expect.stringContaining('no spec/plan/tasks')]),
+    );
+  });
+});
+
+describe('changed-path enumeration', () => {
+  it('derives the diff range from each event', () => {
+    const payload = (value: unknown) => JSON.stringify(value);
+    expect(
+      resolveDiffRange('pull_request', {
+        eventPath: 'event.json',
+        readEvent: () => payload({ pull_request: { base: { sha: BASE_SHA } } }),
+      }),
+    ).toBe(`${BASE_SHA}...HEAD`);
+    expect(
+      resolveDiffRange('push', {
+        eventPath: 'event.json',
+        readEvent: () => payload({ before: BASE_SHA }),
+      }),
+    ).toBe(`${BASE_SHA}...HEAD`);
+    expect(resolveDiffRange('workflow_dispatch', {})).toBe('HEAD^1...HEAD');
+    expect(() =>
+      resolveDiffRange('pull_request', {
+        eventPath: 'event.json',
+        readEvent: () => 'not json',
+      }),
+    ).toThrow();
+  });
+
+  it('fails closed when the diff cannot be enumerated', () => {
+    const result = runCiCheck({
+      eventName: 'pull_request',
+      root: '.',
+      env: { GITHUB_EVENT_PATH: 'event.json' },
+      git: () => {
+        throw new Error('git diff failed');
+      },
+      latestCommitDate: () => '2026-11-10',
+      readEvent: () =>
+        JSON.stringify({ pull_request: { base: { sha: BASE_SHA } } }),
+    });
+    expect(result.errors).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('changed-path enumeration failed'),
+      ]),
+    );
+  });
+
+  it('includes deleted paths so removed feature documents fail closed', () => {
+    let received: string[] = [];
+    const paths = gitChangedPaths('HEAD^1...HEAD', (args: string[]) => {
+      received = args;
+      return 'specs/006-zeta/tasks.md\0';
+    });
+    expect(paths).toEqual(['specs/006-zeta/tasks.md']);
+    expect(received).toContain('--diff-filter=ACDMRTUXB');
+  });
+
+  it('rejects an empty path list', () => {
+    expect(() => gitChangedPaths('HEAD^1...HEAD', () => '')).toThrow(
+      /no changed paths/,
+    );
+    expect(
+      runCiCheck({
+        eventName: 'workflow_dispatch',
+        root: '.',
+        git: () => '',
+        latestCommitDate: () => '2026-11-10',
+      }).errors,
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringContaining('changed-path enumeration failed'),
+      ]),
+    );
   });
 });
 

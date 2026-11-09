@@ -112,6 +112,30 @@ Rechecked the final S41 spec, plan, and task text after formatting. All FR-027..
 
 - Dispatch trust finding: gate-check requires the run ref to match the PR base branch and the ci.yml blob at that ref to match the tested merge result; all required jobs must log the same PR/head/merge values. The logger already emits those values in validate, every integration shard, and storage. No open ambiguities; 0 open CRITICAL/HIGH findings remain.
 
+## S41-R20 changed-feature coverage re-analysis (2026-11-10)
+
+**Date**: 2026-11-10 (after the S41-R20 edits to FR-027, SC-016, the S41 scenarios, plan.md and T025). **Scope**: FR-027, SC-016, Story 8 scenario 5, T025; CI spec-consistency must cover every `specs/<feature>/` touched by the change.
+
+- [x] `spec.md` states changed-path enumeration per event, the required `spec.md`/`tasks.md`, the optional `traceability.md`/`checklists/analyze.md`, untouched-feature exclusion and fail-closed enumeration, with acceptance scenario 1 and Story 8 scenario 5 covering the touched/untouched case.
+- [x] SC-016 is measurable by named unit cases; T025 lists every new case and is tagged FR-027/SC-016.
+- [x] `plan.md` describes the same enumeration and per-feature scope; no other requirement text changed.
+- [x] Clarifications and PO authority (S41-PO-8/9/10, S41-R11, S41-R15, S41-R20) still apply; no product decision is introduced. **No open ambiguities** remain.
+- [x] This analysis is dated after the latest spec/plan/tasks edit and records 0 open CRITICAL/HIGH findings.
+
+### Findings
+
+- Ruling S41-R20 correctly identifies that the previous CI mode hard-coded `specs/001-project-scaffold-ci`, so S41-R11 (1) was not delivered for other features. The check now derives feature directories from the diff and validates only those; an untouched feature cannot fail the run and a touched feature cannot be skipped.
+- Enumeration is fail closed: a missing/malformed event payload, invalid base SHA, unsupported event with no local base, failed `git diff`, or empty diff exits non-zero. Pull_request uses `base.sha...HEAD`, push `before...HEAD`, workflow_dispatch `HEAD^1...HEAD` (the PR merge diff), matching S41-R20. Deleted paths are included in enumeration, so deleting a touched feature's `spec.md` or `tasks.md` fails closed instead of silently skipping the feature.
+- Audit of in-flight PR heads with the new check (read-only `git show`/`git log`, no checkout): #57 `1ea89ace`, #68 `70420d57` and #73 `3a5a13bf` would fail. #57 and #68 have stale Analyze dates relative to their latest spec/plan/tasks commit; #73's 003 and 012 Analyze files reference task identifiers owned by other feature directories, which the per-feature rule treats as unknown. Recorded in the run report; no other PR is modified here.
+- Per-feature validation reuses the existing identifier/date/pending-PO logic. `checklists/analyze.md` is required only when present, so features without that file are not newly failed by this change; all current feature directories carry `spec.md` and `tasks.md`, so requiring both cannot break an untouched feature.
+- Local runs without `GITHUB_EVENT_NAME` derive the base from the main merge base and are informational only; hosted CI always supplies the event name and payload, so the local fallback cannot widen CI scope.
+- Tests: 8 new cases (multi-feature, untouched ignored, missing tasks.md, optional traceability/analyze, missing commit date, event ranges, enumeration failure, empty list) were executed RED against the previous script (8 failed, 22 passed) and GREEN after implementation (30/30).
+- No schema, migration, secret, permission, product-copy or user-visible behaviour changes. **CRITICAL**: none. **HIGH**: none.
+
+### Verdict
+
+**PASS — 0 CRITICAL, 0 HIGH.** Implementation may proceed for FR-027/SC-016 under S41-R20.
+
 ## S40 CodeRabbit request 2 follow-up analysis
 
 **Date**: 2026-11-09 11:45 UTC (after the S40 review corrections to spec, plan, and task text). **Scope**: FR-021, FR-023, SC-011, SC-013, T020, T023; authenticate the existing dispatch PR metadata lookup and distinguish PR-run provenance from dispatch workflow-ref provenance.

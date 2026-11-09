@@ -226,7 +226,7 @@ The maintainer wants CI to detect dangling feature identifiers, keep review focu
 
 **Acceptance Scenarios**:
 
-1. **Given** a feature task, traceability, or analyze file references an unknown FR, SC, or task ID, **When** spec-consistency runs, **Then** it exits non-zero and identifies the source and identifier.
+1. **Given** any feature directory in the changed-path diff has a task, traceability, or analyze file that references an unknown FR, SC, or task ID, **When** spec-consistency runs, **Then** it exits non-zero and identifies the feature, source and identifier; a feature directory absent from the diff is not evaluated.
 2. **Given** Analyze predates a change to spec, plan, or tasks, **When** spec-consistency runs, **Then** it fails; when Analyze is current, the date check passes.
 3. **Given** a PO decision is recorded in docs/04, **When** a feature reference is marked pending for that decided identifier, **Then** spec-consistency fails.
 4. **Given** an allowed Markdown-only PR, **When** pull_request CI runs, **Then** validate and format/spec checks run and integration-shard, integration, and storage are skipped by design; any unlisted path or detection failure takes full CI, and a skipped integration cannot satisfy the aggregator.
@@ -235,14 +235,14 @@ The maintainer wants CI to detect dangling feature identifiers, keep review focu
 
 ### S41 requirements (S41-PO-8/9/10; S41-R11; S41-R15)
 
-- **FR-027**: CI validate MUST run a fail-closed spec-consistency check ensuring every FR/SC/task reference in the feature task, traceability and Analyze documents exists in its spec/tasks; Analyze date MUST NOT precede the latest spec/plan/tasks change; and no pending-PO marker may remain for a decision recorded in docs/04. `format:check` MUST cover changed Markdown, YAML and JSON.
+- **FR-027**: CI validate MUST run a fail-closed spec-consistency check covering every `specs/<feature>/` directory touched by the change. Changed paths are enumerated from the base...head diff for pull_request, the before...after diff for push, and the first-parent...merge diff for workflow_dispatch; any enumeration error exits non-zero. Each touched feature MUST provide `spec.md` and `tasks.md`, and every FR/SC/task reference in its tasks, traceability and Analyze documents MUST exist in its spec/tasks; Analyze date MUST NOT precede the latest spec/plan/tasks change. `traceability.md` and `checklists/analyze.md` are checked when present. Untouched features are not checked. No pending-PO marker may remain for a decision recorded in docs/04. `format:check` MUST cover changed Markdown, YAML and JSON.
 - **FR-028**: CodeRabbit path filters MUST exclude generated evidence only; feature specs, plans, tasks, source, tests, migrations and workflows MUST remain reviewable.
 - **FR-029**: Docs-only means every changed path is a `.md` file beneath `docs/`, `specs/`, or `.specify/`, or exactly root README.md or CHANGELOG.md. Both rename paths are checked. Detection errors and every unlisted path classify as non-docs-only. Only pull_request docs-only runs may skip integration-shard, integration and storage; workflow_dispatch always runs the full jobs. Required check names remain present, and integration MUST fail if its matrix was skipped.
 - **FR-030**: Constitution version MUST become 1.11.0 and define the docs-only green form as three full workflow_dispatch runs for the exact PR/head, started after exact-head APPROVED, each executing validate, all integration shards, integration and storage; a separate gate-check d proposal/patch is supplied, with no gate-check implementation change in this PR.
 
 ### S41 measurable outcomes
 
-- **SC-016**: Unit cases prove valid references/date and reject unknown FR/SC/task references, stale Analyze, and decided pending-PO identifiers.
+- **SC-016**: Unit cases prove valid references/date and reject unknown FR/SC/task references, stale Analyze, and decided pending-PO identifiers; a multi-feature diff checks every touched feature, an inconsistent untouched feature is ignored, a touched feature missing `tasks.md` fails, and a changed-path enumeration error fails closed.
 - **SC-017**: A path table proves allow-list members as docs-only and disallowed, renamed, empty and error inputs as full-CI; dispatch jobs always run.
 - **SC-018**: This workflow-changing PR executes validate, integration-shard (all 3), integration and storage on its exact head.
 - **SC-019**: Constitution 1.11.0 states the approved docs-only green form and retains existing gates and exact-head PO approval for constitution changes.
@@ -253,6 +253,7 @@ The maintainer wants CI to detect dangling feature identifiers, keep review focu
 2. **Given** Git cannot enumerate the PR diff, **When** classification runs, **Then** the workflow fails closed into full PR jobs.
 3. **Given** a counted non-docs PR whose integration matrix is skipped or absent, **When** integration runs, **Then** it fails.
 4. **Given** a path has uppercase `.MD`, a non-Markdown extension, or is nested outside the listed roots, **When** classification runs, **Then** it is non-docs-only.
+5. **Given** one change touches two feature directories, **When** spec-consistency runs, **Then** both are checked and a third, untouched feature with inconsistent documents does not fail the run.
 
 ## Clarifications (2026-11-09; no open ambiguities)
 

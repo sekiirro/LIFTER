@@ -78,7 +78,7 @@ Tasks remain unchecked until tests and exact-head GitHub gate evidence are recor
 
 ## S41 CI/CodeRabbit optimization tasks
 
-- [ ] T025 [FR-027, SC-016] Write unit tests for spec-consistency first (unknown FR/SC/task IDs, date freshness, decided pending-PO markers, valid case), execute RED, then implement `scripts/spec-consistency.mjs` and wire it into validate.
+- [ ] T025 [FR-027, SC-016] Write unit tests for spec-consistency first (unknown FR/SC/task IDs, date freshness, decided pending-PO markers, valid case, multi-feature diff, untouched inconsistent feature ignored, touched feature missing tasks.md, changed-path enumeration error fails closed), execute RED, then implement `scripts/spec-consistency.mjs` changed-feature enumeration and wire it into validate.
 - [ ] T026 [FR-029, SC-017] Write table-driven docs-only path classification tests first (allow-list, disallowed paths, renames, empty/error input); execute RED, implement fail-closed classifier, then wire pull_request conditionals while dispatch remains full and aggregator rejects skipped integration.
 - [ ] T027 [FR-028] Add CodeRabbit path_filters for generated evidence only and assert protected paths remain included.
 - [ ] T028 [FR-027, FR-029, SC-018] Verify format:check coverage, preserve required job names, run local workflow/unit/static checks and prove this workflow-changing PR runs the full CI jobs.
