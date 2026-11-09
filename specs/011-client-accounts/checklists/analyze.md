@@ -1,6 +1,25 @@
 # Analyze — F11 client accounts
 
-## S41 round 8 analysis (CodeRabbit round 7 request 1 review 5833623693 on head fab3c6e5: 1 inline finding) — 2026-11-10 00:21 +02:00, round 18 (current; written after the round 7 finding-1 edits to spec.md, plan.md, tasks.md and traceability.md; supersedes round 17 for statuses)
+## S41 round 9 analysis (CodeRabbit round 7 request 2 review 5833719903 on head 4cb1c243: 3 Minor findings; S41-R19) — 2026-11-10 00:42 +02:00, round 19 (current; written after the round 8 edits to spec.md, traceability.md, research/s40-new-workspace-copy-proposal.md and docs/01-traceability.md; supersedes round 18 for statuses)
+
+Entry check (Spec Kit gate section 1): PASS. The touched scope stays inside FR-018/FR-022/FR-027/FR-028 and SC-021; numbered FRs/SCs and Given/When/Then scenarios keep their structure; plan P-S40-1/P-S40-2/P-S40-5 and T047/T050/T058/T062 already state the same rule; this file is dated after the last change; the S41-PO-11 quote is unchanged and byte-exact.
+
+Findings (round 19; each fixed or open):
+
+| ID | Severity | Finding (CodeRabbit review 5833719903) | Status |
+|---|---|---|---|
+| A-S41-40 | MINOR (fixed) | SC-021 required every one of a deleted Trainer's clients to be reassigned, while FR-028 (h) and T058 keep a client that is itself in the F11 deletion lifecycle unassigned and off the list; the two criteria could not both pass (spec.md:240) | CLOSED: SC-021 now scopes the reassignment criterion to clients outside the F11 deletion lifecycle (`deletion_pending`, `release_pending` or released) and says such a client is never reassigned, is not listed as unassigned, and its no-op is recorded without a retry; FR-018, FR-027, edge case 8, the S40 lifecycle bullet, Key Entities, T050/T058 and the traceability FR-018/FR-027 rows use the same scope; FR-028 (c)/(h) and plan P-S40-5 already carried it |
+| A-S41-41 | MINOR (fixed) | `research/s40-new-workspace-copy-proposal.md:31-40` still said MCQ-12 blocked T051 copy assertions and T056 string encoding after MCQ-12, MCQ-17 and MCQ-19 were decided | CLOSED: the closing statement now records that MCQ-12/17/19 no longer block T051 or T056, that the S40 global gate and the frontend design gate still apply, and that T056 follows T051 RED; T051, T056 and the tasks.md S40 gate already agree |
+| A-S41-42 | MINOR (fixed) | `docs/01-traceability.md:27` (BRD-05) counted "approved clients with a current assignment row" without the F11 deletion exclusion, which can select a different Trainer than FR-028 (c) | CLOSED: the row now says "with a current assignment row and no F11 deletion state" and cites FR-028 (c); `docs/03-roadmap.md` makes no balance, reassignment or SC-021 claim, so it needed no edit (checked line 23) |
+| A-S41-4 | MEDIUM (open, architect gate) | Architect approval of the restricted continuation (plan P-S40-1) before T048 and of the restricted system entry point (plan P-S40-5) before T062 | OPEN. Architect, not PO |
+
+Counts: CRITICAL open 0. HIGH open 0. MEDIUM open 1 (A-S41-4, architect gate). LOW open 0. All three round 7 findings are documentation consistency fixes inside decided scope; no new product question.
+
+Static consistency (run at 00:42 +02:00, recorded in report.md): every "deleted Trainer's clients are reassigned" statement in 011 spec, tasks and traceability now carries the F11 deletion-lifecycle scope or defers to FR-028 (h); the ID sweep passes on the final tree; the approved copy strings are unchanged (verify 97/97); 012 and 003 are unchanged (012 FR-022 defers to 011 FR-028 (h); 003 FR-015 keeps the departure path separate from the F11 deletion path).
+
+Result: PASS, 0 CRITICAL and 0 HIGH. No PO product question is open. This is a static document review; it makes no implementation-conformity claim.
+
+## S41 round 8 analysis (CodeRabbit round 7 request 1 review 5833623693 on head fab3c6e5: 1 inline finding) — 2026-11-10 00:21 +02:00, round 18 (superseded by round 19 for statuses; written after the round 7 finding-1 edits to spec.md, plan.md, tasks.md and traceability.md; supersedes round 17 for statuses)
 
 Entry check (Spec Kit gate section 1): PASS. FR-028 (h), SC-021, plan P-S40-1 step (B) and P-S40-5, T047/T058/T062 and the traceability rows are updated; this file is dated after the last change; the S41-PO-11 quote is unchanged and byte-exact.
 

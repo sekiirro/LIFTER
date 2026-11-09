@@ -37,4 +37,4 @@ Decided A by S41-PO-3 ("A: Approve rows 1-9 (Rec.)"). Rows 1-9 are approved byte
 
 Implications: A allows T056 to encode rows 1-9 once MCQ-17 and MCQ-19 are answered (both answered by S41-PO-2 and S41-PO-3, S41 round 4). Approval of rows 1-9 did NOT by itself supply every string T056 needs: MCQ-19 = A adds an editable slug field whose EN/AR label (P3), format hint (P4) and workspace-create error (P5) are not in rows 1-9. Those strings are now APPROVED by S41-PO-4/S41-PO-5 and encoded in spec.md Round 5, so T056 has all copy. B delays T056 until the PO supplies copy. No string is guessed in either case.
 
-Blocked by MCQ-12 (copy only): T051 copy assertions and T056 string encoding. Placement (MCQ-17) and fields (MCQ-19) are separate blockers for the same tasks.
+MCQ-12, MCQ-17 and MCQ-19 no longer block T051 or T056. The S40 global gate and frontend design gate still apply; T056 also follows T051 RED.
