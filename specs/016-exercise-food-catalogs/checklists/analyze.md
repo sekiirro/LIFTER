@@ -1,6 +1,6 @@
 # Analyze — F16 post-critique disposition (S39 round 8, current)
 
-- Date: 2026-11-09 04:37 +02:00 (re-analysis after all round-8 spec edits: spec.md FR-026 and A7 sentence, plan.md lines 7, 73 and 75, data-model.md FR-026 row, tasks.md T040, T059, T068, T074, the SC-003 coverage line, the T087 renumbering and new T088/T089, traceability.md T087 cell, and this record; this record is the last spec-artifact change of the round).
+- Date: 2026-11-09 06:02 +02:00 (second pass after CodeRabbit review 5821150484 on head `fdba2594`; this record is the last spec-artifact change of the round). Earlier first pass at 04:37 +02:00 (re-analysis after all round-8 spec edits: spec.md FR-026 and A7 sentence, plan.md lines 7, 73 and 75, data-model.md FR-026 row, tasks.md T040, T059, T068, T074, the SC-003 coverage line, the T087 renumbering and new T088/T089, traceability.md T087 cell, and this record; this record is the last spec-artifact change of the round).
 - Scope: CodeRabbit review 5820293740 on head `0883fe6b24776801edffc4cb0704388744c2d707`: six actionable comments, all SPEC-FIX under S38-R11. Merge of `origin/main` `e8a1531b88f294563593b163bdbf3e6f4e17292a` resolved the `tasks.md` T048 collision by renumbering main's catalog-hardening row to T087. Spec-only: no code, SQL, migration, fixture or test changed.
 - Authority: S38-R11 (architect ruling, not a PO decision; PO-1 to PO-3 are spec fixes); S37-PO-10 (dummy-link removal, no legacy support); S37-PO-1 Q2 = A; S37-PO-11 (critique approval); S38-PO-3.
 
@@ -28,6 +28,15 @@ Result: **PASS**. Implementation is not authorized by this spec-only round; the 
 
 Rejected: none. Product decisions raised: none (all six are spec fixes or technical choices under S38-R11).
 
+**Second pass (CodeRabbit review 5821150484 on head `fdba2594`, two findings; both verified live):**
+
+| Thread | Path:line | Finding | Disposition |
+| --- | --- | --- | --- |
+| `PRRT_kwDOVYgYQ861HPRb` (new) | `tasks.md:47` | T049 → T074 → T054 → T050 → T049 ordering cycle. Introduced by the round-8 T074 wording (validator applies after the T054 cutover) while T049 needs canonical Notes, Defaults and Alternatives storage that only T074 described. | FIXED: storage split into new prerequisite task T090 (ordered before T049 and T054; RED storage/composite-key tests; validators stay in T074 and T075). T049 and T054 depend on T090; T074 depends on T054; T075 on T090. Chain checked: T090's prerequisites (T037, T043, T044, T045, T046, T048, T052, T068) do not depend on the chain; no cycle. |
+| `PRRT_kwDOVYgYQ861FqJl` (reopened) | `tasks.md:40` | Pausing conversions does not close the window: a canonical or workspace-private write between the recheck and the conversion could bypass the PO gate. | FIXED (technical, no PO question): the conversion compares the source version captured by the recheck with the current version inside the cutover transaction (compare-and-set); on mismatch only the affected conversion pauses and the recheck is repeated; T063 adds the concurrency test. The writer-shutdown choice of S38-R11 PO-3 is unchanged. |
+
+Counts after the second pass: 92 tasks (T001–T075, T900, T901, T076–T090); 92 distinct IDs verified; CRITICAL 0, HIGH 0; no new PO question.
+
 ## Findings register — round 8
 
 | ID | Category | Severity | Status | Summary and evidence |
@@ -45,11 +54,11 @@ Rejected: none. Product decisions raised: none (all six are spec fixes or techni
 
 - Requirements inventory: FR-001 to FR-038 (incl. FR-016a), 39 keys; SC-001 to SC-016, 16 keys.
 - SC-003 → T088 (timed interaction check; PENDING evidence; T024 and T030 are supporting functional coverage only).
-- Tasks: T001 to T075, T900, T901, T076 to T086 (PR #43 lane, renumbered in round 7), T087 (main-side S38-R3 catalog hardening, renumbered from T048 during the round-8 merge), T088 (timed SC-003 check) and T089 (this round's spec-only follow-up). Verified live: 91 distinct task IDs, no duplicate rows.
+- Tasks: T001 to T075, T900, T901, T076 to T086 (PR #43 lane, renumbered in round 7), T087 (main-side S38-R3 catalog hardening, renumbered from T048 during the round-8 merge), T088 (timed SC-003 check) T089 (this round's spec-only follow-up), and T090 (the storage prerequisite split from T074 and T075). Verified live: 92 distinct task IDs, no duplicate rows.
 
 ## Counts (round 8)
 
-- Requirements: 39 FR keys, 16 SC keys. Tasks: 91 (T001–T075, T900, T901, T076–T089).
+- Requirements: 39 FR keys, 16 SC keys. Tasks: 92 (T001–T075, T900, T901, T076–T090).
 - Ambiguities (product and spec): **0 open**. No new PO question was raised in round 8.
 - Severity (open): **CRITICAL 0, HIGH 0**.
 - "No open ambiguities": stated explicitly for round 8. Basis: S38-R11 classifies all six findings as spec fixes or technical choices, and no genuine PO question remains open.
@@ -121,15 +130,15 @@ Severity follows the speckit-analyze heuristic. "Open" means it still blocks som
 ## Coverage (split as required by D9)
 
 - Requirements inventory: FR-001 to FR-038 (including FR-016a), 39 keys; SC-001 to SC-016, 16 keys.
-- Tasks: T001 to T075 (the redesign and its historical rows), T900 and T901 (historical), and T076 to T086 (the PR #43 lane's completed tasks, renumbered from T037 to T047 during the S38 round 7 merge; see the ID note in `tasks.md`), T087 (the main-side S38-R3 catalog-hardening task, renumbered from T048), T088 (the S39 round-8 timed SC-003 check), and T089 (the S39 round-8 CodeRabbit spec-only follow-up), 91 in total.
+- Tasks: T001 to T075 (the redesign and its historical rows), T900 and T901 (historical), and T076 to T086 (the PR #43 lane's completed tasks, renumbered from T037 to T047 during the S38 round 7 merge; see the ID note in `tasks.md`), T087 (the main-side S38-R3 catalog-hardening task, renumbered from T048), T088 (the S39 round-8 timed SC-003 check), T089 (the S39 round-8 CodeRabbit spec-only follow-up), and T090 (the S39 round-8 storage prerequisite split from T074 and T075), 92 in total.
 - **Historical evidence (T001–T036, T900, T901 and T076–T086; closed rows):** these cover the S25/S26 food, catalog and security work. FR-005 to FR-011, FR-019 and FR-021 have no new redesign API test. Their evidence is historical (T024 to T028 and the S25 release gate), and the food scope has not changed since S25. This is recorded as accepted historical-evidence coverage, pending architect confirmation. These rows are not described as dedicated S36 tests.
-- **Planned redesign tests (T037–T075, T088, T089):** each row names its FR IDs. Coverage for FR-001 to FR-004, FR-014, FR-018, FR-022 to FR-038 is planned, not evidenced. Per-field positive and negative cells are in the `data-model.md` coverage table.
+- **Planned redesign tests (T037–T075, T088–T090):** each row names its FR IDs. Coverage for FR-001 to FR-004, FR-014, FR-018, FR-022 to FR-038 is planned, not evidenced. Per-field positive and negative cells are in the `data-model.md` coverage table.
 - **Implementation coverage (T043–T075):** Global and private storage, validators and allowlists for the eight fields are allocated to T043, T044, T045, T046, T047, T048, T074 and T075. None is implemented; evidence is blank in `traceability.md`.
 - Success criteria: SC-001 → T037, T047; SC-002 → T037, T046, T051; SC-003 → T088 (timed interaction check; PENDING evidence; T024 and T030 are supporting functional coverage only); SC-004 → T003; SC-005 → T034, T065; SC-006 → T037, T051, T058; SC-007 → T037, T047, T055; SC-008 → T037, T047; SC-009 → T050, T051, T058; SC-010 → T040; SC-011 → T050, T056; SC-012 → T046, T050; SC-013 → T037, T047, T074, T075; SC-014 → T051, T055; SC-015 → T052; SC-016 → T037, T062, T063, T074, T075.
 
 ## Counts
 
-- Requirements: 39 FR keys, 16 SC keys. Tasks: 91 (T001–T075, T900, T901, T076–T089).
+- Requirements: 39 FR keys, 16 SC keys. Tasks: 88 (T001–T075, T900, T901, T076–T086).
 - Ambiguities (product and spec): **0 open**. Answered in part: A10 (T068 is a task dependency, not a question).
 - Severity (open): **CRITICAL 0, HIGH 0**. MEDIUM 5 (A18, A20, A21, A39, A50). LOW 2 (A22, A38).
 - Round 7 closed: A7, A10 (answered in part), A19, A53 and D1–D10 (D3 conditional item not raised).
