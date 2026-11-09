@@ -1,6 +1,6 @@
 # Spec Kit Analyze — F20 Client Notes
 
-**Analysis date**: 2026-11-09T01:00Z (round 6, re-run after the S38-PO-10 and S38-PO-11 encoding of CN-MCQ-16 in spec.md, plan.md, tasks.md, data-model.md and research.md; every spec, plan, tasks, data-model and research edit precedes this analysis)
+**Analysis date**: 2026-11-09T01:12Z (round 6, re-run after the S38-PO-10 and S38-PO-11 encoding of CN-MCQ-16 in spec.md, plan.md, tasks.md, data-model.md and research.md, and after the CodeRabbit review 5820602643 fix in contracts/client-notes-api.md line 18; every spec, plan, tasks, contracts, data-model and research edit precedes this analysis)
 **Inputs**: spec.md, plan.md, tasks.md, data-model.md, research.md, contracts/client-notes-api.md, contracts/client-notes-rls.md
 **Scope**: Spec-only. No code, SQL, migrations, or runtime work.
 
@@ -17,7 +17,7 @@ Scope note (not an F20 ambiguity): the app-wide audit retention period (DP-02 / 
 - Task ticks: 0 (`grep "\[x\]"` on tasks.md returns no match). All tasks remain unticked (spec-only; S38-R8).
 - Approved copy: CN-MCQ-08 rows 1–29 (S38-PO-2) and CN-MCQ-16 rows 30–33 (S38-PO-11). Rows 30–33 were byte-compared against `runs/s38-po/cn-mcq-16-proposed-copy.md` (EN and AR, title, body, Stay, Discard); all four match. The browser close/reload line matches the source line byte-exact.
 - Stale-reference grep over the feature folder for `OPEN`, `open ambiguit`, `blocked by`, `NOT approved` and `CN-MCQ-16`: no live open item. Every CN-MCQ-16 reference is in the RESOLVED form.
-- Contracts (`client-notes-api.md`, `client-notes-rls.md`): no reference to CN-MCQ-15 or DESIGN.md §11, and no exit-protection copy. The API contract has no unsaved-change rule, which is a UI rule and does not belong there.
+- Contracts (`client-notes-api.md`, `client-notes-rls.md`): no reference to CN-MCQ-15 or DESIGN.md §11. The API contract names the exit-protection copy as CN-MCQ-16 rows 30–33 (line 18, updated in this round); it has no unsaved-change behaviour rule, which is a UI rule and does not belong there. The RLS contract has no copy.
 
 ## Findings
 
@@ -45,6 +45,8 @@ The worktree contains no `.specify/memory/constitution.md` (searched: no `consti
 - **S38-R9** (CN-MCQ-15, DESIGN.md §11 UI values): removed as a PO question (S38-PO-3). The Client Notes UI reuses existing Design System components and values and introduces no new breakpoint, touch-size, focus or token value. Unchanged in round 6.
 - **CodeRabbit review 5820142764 on `e2b6a6e3`** (revoked-membership scope): fixed in `f080dc77`; non-PO scope in SC-001, Story 3 scenario 4, both contracts, plan.md and T006.
 - **CodeRabbit review 5820103675 on `c428158d`** (exit protection): behaviour encoded in `e2b6a6e3`; the copy is now approved (CN-MCQ-16, S38-PO-11) and encoded in round 6.
+- **CodeRabbit review 5820602643 on `ccdf5b45`** (CHANGES_REQUESTED, 1 inline finding on `contracts/client-notes-api.md:18`, Minor · Functional Correctness): **valid**. The line said no copy outside rows 1–29 is approved, which would block the approved CN-MCQ-16 warning (rows 30–33). Fixed in this round: the line now names rows 30–33 for the exit-protection warning and keeps rows 1–29 for all other copy. Analyze re-run after this contract edit (this file's date).
+- **CodeRabbit reply on thread `PRRT_kwDOVYgYQ861FR0f`** (review 5820575538, comment 4508576614, not a code finding): the copy file is outside the checkout. The strings are in spec.md rows 30–33 and were checked byte-exact against that external file, the same convention as the CN-MCQ-08 table (spec.md Clarifications). No change.
 - **PRRT_kwDOVYgYQ861FR0f** (spec.md, open, "obtain approval for bilingual copy and add exit-protection scenarios"): the copy is approved (S38-PO-11) and the exit-protection scenarios exist (Story 2 scenario 5, Story 3 scenario 7). Replied with the round-6 commit SHA and file:line evidence, then resolved in the round-6 step.
 
 ## Round-4 CodeRabbit history (kept for traceability)

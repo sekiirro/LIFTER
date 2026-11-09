@@ -15,7 +15,7 @@ This is a behavioral contract for later implementation, not an API endpoint nami
 
 - Timestamps are shown in the viewer's local time zone in the CN-MCQ-08 row 29 format (FR-009, CN-MCQ-12).
 - A note with an unavailable author shows the CN-MCQ-08 row 26 label “Unavailable author” / “صاحب الملاحظة غير متاح” (FR-002, CN-MCQ-06).
-- Edited marker: CN-MCQ-08 row 25. Byline: row 28. All other strings: CN-MCQ-08 table rows 1–29 in spec.md; no other copy is approved.
+- Edited marker: CN-MCQ-08 row 25. Byline: row 28. Exit-protection warning copy (title, body, Stay and Discard): CN-MCQ-16 rows 30–33 in spec.md (S38-PO-11). All other strings: CN-MCQ-08 table rows 1–29 in spec.md; no other copy is approved.
 
 ## Denials
 
