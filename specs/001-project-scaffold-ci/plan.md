@@ -100,9 +100,16 @@ vitest.config.ts  playwright.config.ts
 - Set the push branch filter to `main`; retain the `pull_request` trigger.
 - Add top-level event-scoped concurrency grouping with PR number for pull requests. Give each push run a unique group containing its event name, ref, and run ID; set cancellation true only for `pull_request` events. This prevents GitHub from replacing a pending main run in a shared concurrency group.
 - Inspect every `validate` step for browser use. If none uses a browser, remove only the Playwright browser install from `validate`.
-- Preserve job names `validate`, `integration`, and `storage`; leave Storage separate and required. Preserve every other step and existing action pin.
+- Preserve `validate` and `storage`; rename the shard matrix id to `integration-shard` while keeping its display name `integration shard ${{ matrix.shard }}/3`; add required aggregator id/name `integration` with `needs: [integration-shard]`, `if: always()`, and failure unless the matrix result is exactly success. Keep the aggregator on ubuntu-latest with contents: read and no checkout/secrets. Leave Storage separate and required. Preserve every other step and existing action pin.
 - Update docs/08-agent-workflow.md in the same PR and include all workflow changes in the PR description.
 - Validate with actionlint and the authorized diff secret scan with positive control; then use the required hosted CI/CodeRabbit review gates on the exact PR head. No merge is part of this plan.
+
+## S39 required status-check correction
+
+- Keep the three matrix shard executions and setup intact under job id `integration-shard`; retain the visible per-shard names.
+- Add a light `integration` aggregator that runs after the matrix even when shards fail or are cancelled, and returns failure for any matrix conclusion other than `success`.
+- Update the unit assertion, traceability, constitution, and workflow guidance so the required-check list includes the aggregator and each shard execution.
+- Test first by asserting the aggregator contract before workflow implementation.
 
 ## Complexity Tracking
 

@@ -111,7 +111,7 @@ The PO and merge lane can collect three full CI results concurrently without acc
 **Acceptance Scenarios**:
 
 1. **Given** a dispatch request with PR number and full head SHA, **When** CI starts, **Then** it checks out `refs/pull/<n>/merge`, prints PR/head/merge SHAs, and exits before validation unless the merge commit's second parent is the supplied head.
-2. **Given** all integration tests in the configured suite, **When** the three shards run, **Then** the shard sets are disjoint and their union equals the full test list, with the same stack setup and all shard results required.
+2. **Given** all integration tests in the configured suite, **When** the three shards run, **Then** the shard sets are disjoint and their union equals the full test list, each shard uses the same stack setup, and the required `integration` aggregator succeeds only when all shards succeed.
 3. **Given** one PR run and two dispatch runs complete concurrently for the same exact head, **When** gate-check d evaluates them, **Then** only distinct successful runs from the PR base branch trusted workflow whose workflow blob matches the tested merge result and whose jobs log identical revisions count with executed validate, all integration shards, and storage, and their run IDs and sources are reported.
 4. **Given** a PR changes the constitution, **When** the standing approval rule is evaluated, **Then** it is excluded and explicit PO approval of the exact head is required.
 5. **Given** a dispatch targets a fork PR, **When** the workflow validates its source, **Then** it fails before dependency installation or untrusted code execution in secret-bearing jobs.
@@ -147,8 +147,8 @@ The PO and merge lane can collect three full CI results concurrently without acc
 - **FR-018**: The `validate` job MUST NOT install Playwright browser binaries when none of its steps use a browser.
 - **FR-019**: The Storage checks MUST remain a distinct required CI job named `storage`, with an independently reported result.
 - **FR-021**: CI MUST support manually dispatched full CI runs for a PR number and exact head SHA, check out `refs/pull/<n>/merge`, and fail before checks unless the checked-out merge result's second parent equals the supplied head SHA. Before dependency installation or untrusted code execution, secret-bearing jobs MUST fail dispatches whose PR head repository differs from the base repository. The workflow MUST print the PR, supplied head SHA, and merge SHA; dispatch runs MUST have unique, non-canceling concurrency groups.
-- **FR-022**: The `integration` CI job MUST divide the full integration test list into three non-overlapping Vitest shards, each with the same stack setup, so the union runs every integration test exactly once per attempt. `validate`, `storage`, security checks, and all existing test coverage remain required.
-- **FR-023**: The main merge gate MUST accept three distinct successful full CI attempts on the exact PR head from either sequential `pull_request` attempts or one `pull_request` plus two concurrent manual dispatch runs on merge refs whose second parent is the same head SHA. A dispatch run MUST use the PR base branch trusted workflow ref, that workflow file MUST match the tested merge result, and all required jobs MUST log identical PR/head/merge SHAs. Each attempt MUST execute `validate`, every integration shard, and `storage`. A code failure voids the head; infra failures are recorded and never counted.
+- **FR-022**: The `integration-shard` matrix CI job MUST divide the full integration test list into three non-overlapping Vitest shards, each with the same stack setup, so the union runs every integration test exactly once per attempt. Its display names MUST remain `integration shard 1/3`, `integration shard 2/3`, and `integration shard 3/3`. A separate required job with id and name `integration` MUST depend on `integration-shard`, run with `if: always()`, and fail unless the shard matrix result is exactly `success`. The aggregator MUST use `ubuntu-latest`, grant only `contents: read`, and perform no checkout or secret access. `validate`, `storage`, security checks, and all existing test coverage remain required.
+- **FR-023**: The main merge gate MUST accept three distinct successful full CI attempts on the exact PR head from either sequential `pull_request` attempts or one `pull_request` plus two concurrent manual dispatch runs on merge refs whose second parent is the same head SHA. A dispatch run MUST use the PR base branch trusted workflow ref, that workflow file MUST match the tested merge result, and all required jobs MUST log identical PR/head/merge SHAs. Each attempt MUST execute `validate`, all three `integration-shard` jobs, the `integration` aggregator, and `storage`. A code failure voids the head; infra failures are recorded and never counted.
 - **FR-024**: Standing PO merge approval applies only to normal PRs after all eight live gates pass on the exact head and an independent architect review of the full diff is recorded for that SHA. The merge lane records `po_approved_head`, rechecks gates immediately before merge, and merges with `--match-head-commit`; any head change voids approval. PRs changing `.specify/memory/constitution.md` always require explicit PO approval for the exact SHA.
 
 ## Success Criteria *(mandatory)*
@@ -166,10 +166,15 @@ The PO and merge lane can collect three full CI results concurrently without acc
 - **SC-008**: The `validate` job contains no Playwright browser installation step if no validate step uses a browser.
 - **SC-009**: Every CI run reports distinct `validate`, `integration`, and `storage` jobs, with Storage required independently.
 - **SC-011**: A manual dispatch for a PR tests only `refs/pull/<n>/merge` and exits before CI unless its second parent matches the supplied full head SHA; it does not replace or cancel other runs.
-- **SC-012**: Three shards have disjoint test assignments and their union equals the full integration test list; every attempt runs each integration test exactly once and requires all shards plus `validate` and `storage` to succeed with executed steps.
+- **SC-012**: Three integration-shard jobs have disjoint test assignments and their union equals the full integration test list; every attempt runs each integration test exactly once and requires all shards, the `integration` aggregator, `validate`, and `storage` to succeed with executed steps. The aggregator fails if the shard job is failed, skipped, or cancelled.
 - **SC-013**: Gate d recognizes only distinct successful, executed full attempts with exact-head provenance from the allowed event sources; gate-check reports attempt IDs and sources. Gates a-c and e-h remain in force, and constitution PRs require explicit exact-SHA PO approval.
 
 ## Clarifications
+
+### Session 2026-11-09 (S39 architect CI check-name correction)
+
+- Architect ruling for PR #72: preserve the three display names `integration shard 1/3` through `3/3`, rename the matrix job id to `integration-shard`, and expose a required `integration` aggregator status check that fails for any non-success matrix result. This records the required-check mapping; it introduces no new product behavior.
+- **No open ambiguities** remain for this correction.
 
 ### Session 2026-11-04
 

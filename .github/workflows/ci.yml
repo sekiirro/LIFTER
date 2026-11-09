@@ -88,7 +88,7 @@ jobs:
       - run: npm run build:cron
       - run: npm run size
 
-  integration:
+  integration-shard:
     name: integration shard ${{ matrix.shard }}/3
     strategy:
       fail-fast: false
@@ -179,6 +179,23 @@ jobs:
           LOCAL_SUPABASE_PROVIDER_FAULT_TEST: 'true'
       - run: supabase stop --no-backup
         if: always()
+
+  integration:
+    name: integration
+    needs: [integration-shard]
+    if: always()
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - name: Require successful integration shards
+        env:
+          SHARD_RESULT: ${{ needs.integration-shard.result }}
+        run: |
+          if [[ "$SHARD_RESULT" != "success" ]]; then
+            echo "Integration shard matrix concluded: $SHARD_RESULT" >&2
+            exit 1
+          fi
 
   storage:
     runs-on: ubuntu-latest

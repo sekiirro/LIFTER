@@ -1,5 +1,26 @@
 # F1 001-project-scaffold-ci - Analyze (S34 main merge reconciliation)
 
+## S39 pre-implementation analysis
+
+**Date**: 2026-11-09 (after S39 spec, plan, and task updates). **Scope**: FR-022, FR-023, SC-012, T023; required-check name mapping for three integration matrix executions.
+
+- [x] `spec.md` has numbered FRs, measurable SCs, and Given/When/Then coverage for the matrix plus aggregator contract.
+- [x] Clarifications cite the architect ruling for this exact required-check correction; **No open ambiguities** is explicit.
+- [x] `plan.md` covers the matrix id and always-run aggregator; `tasks.md` has T023 tagged with FR-022 and FR-023.
+- [x] This analysis is dated after the spec/plan/tasks edits and finds 0 open CRITICAL/HIGH findings.
+
+### Findings
+
+- GitHub branch protection requires the exact check name `integration`; matrix display names alone do not supply it. A separate aggregator depending on the matrix with `if: always()` can expose the required name and fail closed on failed, skipped, or cancelled shards.
+- The matrix id change preserves shard display names, setup, test partition, and coverage. The aggregator uses no checkout, secrets, or additional stack.
+- Required-check documentation, test assertions, and gate evidence must record both the three shard executions and aggregator.
+- No product behavior or security requirement changes. **CRITICAL**: none. **HIGH**: none.
+
+**Verdict**: PASS ? 0 CRITICAL, 0 HIGH.
+
+---
+
+
 ## S38 amendment pre-implementation entry check
 
 **Date**: 2026-11-09 02:07:07 UTC (after S38 spec, plan, and task updates for trusted dispatch and fork-secret isolation). **Scope**: FR-021..FR-024, SC-011..SC-013, T020..T022.

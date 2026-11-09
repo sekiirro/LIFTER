@@ -6,7 +6,7 @@ const INTEGRATION_SHARD_RUN =
 
 it('runs the full Playwright suite after local-stack integration tests', () => {
   const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
-  const [validate, integration] = workflow.split(/^  integration:\s*$/m);
+  const [validate, integration] = workflow.split(/^  integration-shard:\s*$/m);
 
   expect(validate).not.toMatch(/run:\s*CI=1 npm run e2e/);
   if (!integration) throw new Error('CI integration job is missing');
@@ -96,4 +96,26 @@ it('dispatches CI against a PR merge ref and rejects a mismatched second parent'
     "cancel-in-progress: ${{ github.event_name == 'pull_request' }}",
   );
   expect(workflow).toContain('permissions:\n  contents: read');
+});
+
+it('exposes the required integration aggregator for all shard results', () => {
+  const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
+  const shardJob = workflow.match(
+    /^  integration-shard:\n([\s\S]*?)(?=^  integration:)/m,
+  )?.[1];
+  const aggregator = workflow.match(
+    /^  integration:\n([\s\S]*?)(?=^  storage:)/m,
+  )?.[1];
+
+  expect(shardJob).toBeDefined();
+  expect(shardJob).toContain('name: integration shard ${{ matrix.shard }}/3');
+  expect(aggregator).toBeDefined();
+  expect(aggregator).toMatch(/^    name: integration$/m);
+  expect(aggregator).toMatch(/^    needs: \[integration-shard\]$/m);
+  expect(aggregator).toMatch(/^    if: always\(\)$/m);
+  expect(aggregator).toMatch(/needs\.integration-shard\.result/);
+  expect(aggregator).toMatch(/!= ['"]success['"]/);
+  expect(aggregator).toMatch(/exit 1/);
+  expect(aggregator).not.toMatch(/uses: actions\/checkout/);
+  expect(aggregator).not.toMatch(/secrets\./);
 });
