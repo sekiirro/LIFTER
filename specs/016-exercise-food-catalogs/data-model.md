@@ -60,7 +60,7 @@ This is a logical model for implementation planning, subordinate to the approved
 
 ## F16 redesign decision history
 
-S35-PO-3 supersedes S35-PO-1, S35-PO-2 and PR #64's independent workspace copies while retaining those historical records; see `decision-register.md`. S36-PO-2 answers F16-MCQ-1, -3, -4, -5, -6 (-2 and -7 moot). Round 3 (critique response) adds FR-023 to FR-035 to this model. S36-PO-3 answers F16-MCQ-A, -B, -C, -D, -E, -F (name field), -G, -H, -I and -9 (decision register). F16-MCQ-J is answered by S36-PO-5. S37-PO-1 Q2 and S37-PO-10 close F16-MCQ-O, -P, -Q, -F-R and -G-R; F16-MCQ-D-R is specified in F11/F12 outside F16. A7 is dispositioned in S38 round 7 under S37-PO-11 (critique-response §7).
+S35-PO-3 supersedes S35-PO-1, S35-PO-2 and PR #64's independent workspace copies while retaining those historical records; see `decision-register.md`. S36-PO-2 answers F16-MCQ-1, -3, -4, -5, -6 (-2 and -7 moot). Round 3 (critique response) adds FR-023 to FR-035 to this model. S36-PO-3 answers F16-MCQ-A, -B, -C, -D, -E, -F (name field), -G, -H, -I and -9 (decision register). F16-MCQ-J is answered by S36-PO-5. S37-PO-1 Q2 and S37-PO-10 close F16-MCQ-O, -P, -Q, -F-R and -G-R; F16-MCQ-D-R's F11/F12 follow-up is pending, outside F16. A7 is dispositioned in S38 round 7 under S37-PO-11 (critique-response §7).
 
 ### S37 (S36-PO-5) field contract
 

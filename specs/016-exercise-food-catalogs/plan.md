@@ -1,6 +1,6 @@
 # Implementation Plan: F16 Exercise & Food Catalogs
 
-**Spec**: spec.md (same folder) | **Status**: S38 round 7 spec-only reconciliation of the Sol Medium critique (S37-PO-11). No code, SQL, migration or fixture is part of this round. All F16 product decisions are closed; F16-MCQ-D-R is specified in F11/F12 and out of F16 scope. A7 is dispositioned by this round under S37-PO-11.
+**Spec**: spec.md (same folder) | **Status**: S38 round 7 spec-only reconciliation of the Sol Medium critique (S37-PO-11). No code, SQL, migration or fixture is part of this round. All F16 product decisions are closed; F16-MCQ-D-R has a pending F11/F12 follow-up (F11 and F12 exclude client deletion) and is out of F16 scope. A7 is dispositioned by this round under S37-PO-11.
 
 ## Summary
 
