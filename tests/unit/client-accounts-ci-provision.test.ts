@@ -6,6 +6,7 @@ const provisioner = readFileSync(
   'tests/integration/client-accounts-provision.mjs',
   'utf8',
 );
+const integrationConfig = readFileSync('vitest.integration.config.ts', 'utf8');
 
 it('runs Vault provisioning after local stack export and before integration tests', () => {
   const exportStep = workflow.indexOf('name: Export local stack environment');
@@ -34,19 +35,23 @@ it('provisions the explicitly selected stack into its own ignored env file', () 
   expect(provisioner).toContain("localSupabaseContainer('db', stack)");
 });
 
-it('runs the shared password DB parity suite explicitly in the integration job', () => {
+it('runs the shared password DB parity suite once through integration shards', () => {
   const integration = workflow.slice(workflow.indexOf('\n  integration:'));
   const provision = integration.indexOf(
     'node tests/integration/client-accounts-provision.mjs',
   );
-  const parity = integration.indexOf(
-    'npm run test:integration -- tests/integration/password-policy-parity.test.ts',
+  const shard = integration.indexOf(
+    'npm run test:integration -- --shard=${{ matrix.shard }}/3',
   );
   expect(provision).toBeGreaterThanOrEqual(0);
-  expect(parity).toBeGreaterThan(provision);
+  expect(shard).toBeGreaterThan(provision);
+  expect(integration).not.toContain('password-policy-parity.test.ts');
+  expect(integrationConfig).toContain(
+    "include: ['tests/integration/**/*.test.ts']",
+  );
   expect(
-    integration.indexOf('- run: npm run test:integration\n'),
-  ).toBeGreaterThan(parity);
+    readFileSync('tests/integration/password-policy-parity.test.ts', 'utf8'),
+  ).toContain('DB password parity:');
 });
 
 it('uses the root profile for the Storage-ready integration e2e gate', () => {
