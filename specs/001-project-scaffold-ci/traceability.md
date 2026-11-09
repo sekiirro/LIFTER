@@ -46,3 +46,9 @@ Evidence run `41894845099`, attempt 1, on commit `447ceb0b69b8516abfa26c5b1289ef
 | FR | Task | Test file::name | Evidence |
 |---|---|---|---|
 | FR-022, FR-023 | T023 | `tests/unit/ci-local-e2e.test.ts::executes the integration aggregator script against push and PR revision cases` | Commit `2624c90535603e3b1a0d3413343fb09c6af6fdb7`; focused file passed 4/4, including push/PR success, shard failure, tuple mismatch, and invalid SHA. RED proof: removing the shard-result guard in a temporary workflow copy made the new test fail (`expected 0 to be 1`); the temporary copy was deleted. On this commit, `npm run typecheck`, `npm run lint`, and `npm run format:check` passed. |
+
+## S40 review follow-up — authenticated dispatch metadata lookup (FR-021, FR-023)
+
+| FR | Task | Test file::name | Evidence | Status |
+|---|---|---|---|---|
+| FR-021, FR-023 | T020 | `tests/unit/ci-local-e2e.test.ts::dispatches CI against a PR merge ref and rejects a mismatched second parent` | Commit `f1aacd91d1385ae401a091b7bc0bcc716ab5cbc8`; the focused CI unit file passed 4/4, including assertions for token binding and authenticated headers in all three jobs. `npm run typecheck`, `npm run lint`, and `npm run format:check` passed. Exact-head GitHub dispatch verification remains pending and is not claimed. | IMPLEMENTED (local) |
