@@ -188,14 +188,14 @@ it('rejects usernames outside the approved normalized set before admission redem
   }
 });
 
-it('mutation: skipping the ASCII username character check permits a hyphenated value', async () => {
+it('mutation: skipping the approved normalized username character check permits a hyphenated value', async () => {
   const fixture = await signupFixture(context);
   const outcome = await runSignupMutation(
     fixture,
     async (definition) =>
       definition.replace(
-        "or fields->>'username' !~ '^[A-Za-z0-9_.]{3,30}$'",
-        'false',
+        'if normalized_username !~ \'^[a-z0-9_.]{3,30}$\' then return \'{"status":"invalid"}\'::jsonb; end if;',
+        'if false then return \'{"status":"invalid"}\'::jsonb; end if;',
       ),
     async (tx) =>
       signup(tx, fixture, {
@@ -204,6 +204,117 @@ it('mutation: skipping the ASCII username character check permits a hyphenated v
       }),
   );
   expect(outcome).toEqual({ status: 'complete' });
+});
+
+it('mutation: creating a Terms receipt during signup is caught and rolled back', async () => {
+  const fixture = await signupFixture(context);
+  const outcome = await runSignupMutation(
+    fixture,
+    async (definition, tx) => {
+      await tx`
+        insert into app_private.terms_policy_versions(version,policy_kind,status)
+        values('signup-mutation-terms','terms','published')`;
+      return definition.replace(
+        'insert into app_private.client_signup_operations(workspace_id,client_id,auth_user_id,registration_link_id,request_secret_hash)',
+        `insert into app_private.terms_consent_receipts(workspace_id,client_id,policy_version) values(link.workspace_id,new_client,'signup-mutation-terms');\n    insert into app_private.client_signup_operations(workspace_id,client_id,auth_user_id,registration_link_id,request_secret_hash)`,
+      );
+    },
+    async (tx) => {
+      const result = await signup(tx, fixture, extendedFields(fixture));
+      const receipts = await tx`
+        select 1 from app_private.terms_consent_receipts where client_id=(select id from public.clients where registration_link_id=${fixture.link})`;
+      return { result, receiptCount: receipts.length };
+    },
+  );
+  expect(outcome).toEqual({ result: { status: 'complete' }, receiptCount: 1 });
+});
+
+it('stores DOB, normalized username and optional Telegram in the atomic signup', async () => {
+  const fixture = await signupFixture(context);
+  const usernameSuffix = fixture.link.replaceAll('-', '').slice(0, 8);
+  const fields: Record<string, string | null | undefined> = {
+    ...fixture.fields,
+    name: 'Heba Sami Nabil',
+    date_of_birth: '1990-04-12',
+    username: `Lifter.User.${usernameSuffix}`,
+    telegram_username: '',
+  };
+
+  expect(await signup(db, fixture, fields)).toEqual({ status: 'complete' });
+
+  const [client] = await db`
+    select date_of_birth, username_normalized, telegram_username
+    from public.clients where registration_link_id=${fixture.link}`;
+  expect(client).toEqual({
+    date_of_birth: new Date('1990-04-12T00:00:00.000Z'),
+    username_normalized: `lifter.user.${usernameSuffix}`,
+    telegram_username: null,
+  });
+
+  const second = await signupFixture(context);
+  const duplicateFields: Record<string, string | null | undefined> = {
+    ...second.fields,
+    name: 'Heba Sami Nabil',
+    date_of_birth: '1990-04-12',
+    username: `LIFTER.USER.${usernameSuffix}`,
+    telegram_username: '@Heba_Test1',
+  };
+  expect(await signup(db, second, duplicateFields)).toEqual({
+    status: 'username_unavailable',
+  });
+
+  const otherWorkspace = await clientContext();
+  const third = await signupFixture(otherWorkspace);
+  const otherWorkspaceFields: Record<string, string | null | undefined> = {
+    ...third.fields,
+    name: 'Heba Sami Nabil',
+    date_of_birth: '1990-04-12',
+    username: `lifter.user.${usernameSuffix}`,
+    telegram_username: '',
+  };
+  expect(await signup(db, third, otherWorkspaceFields)).toEqual({
+    status: 'complete',
+  });
+
+  const optionalTelegram = await signupFixture(context);
+  const optionalUsername = `Lifter.Optional.${optionalTelegram.link.replaceAll('-', '').slice(0, 8)}`;
+  const optionalFields: Record<string, string | null | undefined> = {
+    ...optionalTelegram.fields,
+    name: 'Heba Sami Nabil',
+    date_of_birth: '1990-04-12',
+    username: optionalUsername,
+    telegram_username: '',
+  };
+  expect(await signup(db, optionalTelegram, optionalFields)).toEqual({
+    status: 'complete',
+  });
+  const signedIn = await anonClient().auth.signInWithPassword({
+    email: optionalTelegram.fields.email,
+    password: optionalTelegram.fields.password,
+  });
+  expect(signedIn.error).toBeNull();
+});
+
+it('returns one generic username-unavailable result for reserved names and rejects invalid formats', async () => {
+  const reserved = await signupFixture(context);
+  const reservedFields = {
+    ...reserved.fields,
+    name: 'Heba Sami Nabil',
+    date_of_birth: '1990-04-12',
+    username: 'PLATFORM',
+  };
+  const invalidFields = {
+    ...reserved.fields,
+    name: 'Heba Sami Nabil',
+    date_of_birth: '1990-04-12',
+    username: 'ab',
+  };
+
+  const reservedResult = await signup(db, reserved, reservedFields);
+  const formatResult = await signup(db, reserved, invalidFields);
+
+  expect(reservedResult).toEqual({ status: 'username_unavailable' });
+  expect(formatResult).toEqual({ status: 'invalid' });
 });
 
 it('enforces name, past DOB, and optional Telegram syntax at the transaction boundary', async () => {
@@ -323,11 +434,12 @@ it('mutation: creating a Terms receipt during signup is caught and rolled back',
 
 it('stores DOB, normalized username and optional Telegram in the atomic signup', async () => {
   const fixture = await signupFixture(context);
+  const usernameSuffix = fixture.link.replaceAll('-', '').slice(0, 8);
   const fields: Record<string, string | null | undefined> = {
     ...fixture.fields,
     name: 'Heba Sami Nabil',
     date_of_birth: '1990-04-12',
-    username: 'Fit.Client',
+    username: `Lifter.User.${usernameSuffix}`,
     telegram_username: '',
   };
 
@@ -338,7 +450,7 @@ it('stores DOB, normalized username and optional Telegram in the atomic signup',
     from public.clients where registration_link_id=${fixture.link}`;
   expect(client).toEqual({
     date_of_birth: new Date('1990-04-12T00:00:00.000Z'),
-    username_normalized: 'fit.client',
+    username_normalized: `lifter.user.${usernameSuffix}`,
     telegram_username: null,
   });
 
@@ -347,7 +459,7 @@ it('stores DOB, normalized username and optional Telegram in the atomic signup',
     ...second.fields,
     name: 'Heba Sami Nabil',
     date_of_birth: '1990-04-12',
-    username: 'FIT.CLIENT',
+    username: `LIFTER.USER.${usernameSuffix}`,
     telegram_username: '@Heba_Test1',
   };
   expect(await signup(db, second, duplicateFields)).toEqual({
@@ -360,7 +472,7 @@ it('stores DOB, normalized username and optional Telegram in the atomic signup',
     ...third.fields,
     name: 'Heba Sami Nabil',
     date_of_birth: '1990-04-12',
-    username: 'fit.client',
+    username: `lifter.user.${usernameSuffix}`,
     telegram_username: '',
   };
   expect(await signup(db, third, otherWorkspaceFields)).toEqual({
@@ -368,11 +480,12 @@ it('stores DOB, normalized username and optional Telegram in the atomic signup',
   });
 
   const optionalTelegram = await signupFixture(context);
+  const optionalUsername = `Lifter.Optional.${optionalTelegram.link.replaceAll('-', '').slice(0, 8)}`;
   const optionalFields: Record<string, string | null | undefined> = {
     ...optionalTelegram.fields,
     name: 'Heba Sami Nabil',
     date_of_birth: '1990-04-12',
-    username: 'telegram_optional',
+    username: optionalUsername,
     telegram_username: '',
   };
   expect(await signup(db, optionalTelegram, optionalFields)).toEqual({

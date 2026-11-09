@@ -277,10 +277,15 @@ describe('T006/T009 persisted Builder writes', () => {
     await withCrashSafeFunctionMutant(
       'app_private.f15_valid_builder_definition(jsonb,boolean)',
       (body) =>
-        body.replace(
-          "jsonb_typeof(question->'labels'->'middle') is distinct from 'string'",
-          'false',
-        ),
+        body
+          .replace(
+            "or not app_private.f15_valid_slider_label(question->'labels'->'middle')",
+            'or false',
+          )
+          .replace(
+            "or btrim(coalesce(question->'labels'->'middle'->>'en',question->'labels'->'middle'->>'ar',question->'labels'->>'middle',''))=''",
+            'or false',
+          ),
       async () =>
         expectInvariantFailure(async () => {
           const invalid = structuredClone(

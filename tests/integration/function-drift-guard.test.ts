@@ -14,6 +14,7 @@ it('restores an abandoned committed function mutant from its migration and fails
     expect.arrayContaining([
       'app_private.f15_alert_schedule_activate()',
       'app_private.f15_alert_schedule_deactivate()',
+      'app_private.f15_valid_slider_label(jsonb)',
     ]),
   );
   expect(

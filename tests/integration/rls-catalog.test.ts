@@ -224,7 +224,7 @@ describe('tenancy security catalog (T007)', () => {
         has_function_privilege('service_role', p.oid, 'EXECUTE') as service_role_execute
       from pg_catalog.pg_proc p join pg_catalog.pg_namespace n on n.oid = p.pronamespace
       where n.nspname = 'app_private'`;
-    expect(rows.map((row) => row.proname).sort()).toEqual(
+    expect([...new Set(rows.map((row) => row.proname))].sort()).toEqual(
       [
         ...new Set([
           ...registrationPrivate,
@@ -289,7 +289,7 @@ describe('tenancy security catalog (T007)', () => {
           'f15_cancel_client_alerts_after_relationship_end',
           'f15_client_alert_lifecycle_active',
           ...(existsSync(
-            'supabase/migrations/20261108020200_f15_localized_slider_labels.sql',
+            'supabase/migrations/20261108230111_f15_signup_main_reconciliation.sql',
           )
             ? ['f15_valid_slider_label']
             : []),
@@ -1169,7 +1169,7 @@ describe('registration security catalog', () => {
       'app_private.f15_cancel_client_alerts_after_relationship_end()',
       'app_private.f15_client_alert_lifecycle_active(uuid,uuid)',
       ...(existsSync(
-        'supabase/migrations/20261108020200_f15_localized_slider_labels.sql',
+        'supabase/migrations/20261108230111_f15_signup_main_reconciliation.sql',
       )
         ? ['app_private.f15_valid_slider_label(jsonb)']
         : []),

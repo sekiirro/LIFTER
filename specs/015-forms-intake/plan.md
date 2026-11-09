@@ -177,3 +177,12 @@ T137 adds the exact S35-PO-3 N11 English feedback strings to the EN message cata
 ## S40 existing-PR migration-order remediation
 
 For PR #57, first apply the PO-approved filename-only migration rename after auditing all origin refs. Reconcile later main definitions against the approved F15 contracts under FR-004/006/008/024/025/038/039: each final function/policy/table definition must preserve main behavior and approved F15 behavior. Do not edit pushed SQL; use one forward migration only where a tested conflict requires it. Migration SQL must be replayed on the PO-approved Stack D, with before/after container StartedAt recorded. Security-definer/RLS changes require executed mutation/restore evidence. If approved behavior is genuinely in conflict, stop that item and request a PO decision.
+
+## S40 F15 round-11 migration-order execution
+
+Apply S40-PO-4's revised PDN-S40-03 mapping: retain only the SQL-proven minimal prefix at original versions, with per-file gate-check exceptions; restore those filenames with new `git mv` commits; preserve every pushed SQL blob; rename remaining migrations above main/all origin refs in original relative order; then use one all-refs-unique forward migration to reconcile main and approved F15 signup definitions. Verify with clean Stack D reset and migration replay, mutation/restore/diff evidence, and the three specified integration suites. Keep #58 and workflow files untouched.
+
+
+## S40 F15 round-11 integration defects
+
+Keep T115's approved F15 normalized username rule aligned with its transaction mutation regression; update the matcher to the current function source without weakening the assertion. Complete existing T117 within the single forward migration: provide the SQL slider-label validator referenced by the latest builder validator, keep its null/missing-middle checks, and prove the missing-middle mutation fails and restores. These changes repair existing FR-004/006/038/039 implementation and test drift; no new product behavior is introduced.

@@ -14,6 +14,11 @@ export const guardedFunctions = [
     name: 'app_private.f15_valid_builder_definition',
   },
   {
+    identity: 'app_private.f15_valid_slider_label(jsonb)',
+    migration: '20261108230111_f15_signup_main_reconciliation.sql',
+    name: 'app_private.f15_valid_slider_label',
+  },
+  {
     identity: 'app_private.ensure_default_onboarding_form(uuid,uuid)',
     migration: [
       '20261108021000_f15_localized_n11_starter_labels.sql',

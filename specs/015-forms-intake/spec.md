@@ -712,3 +712,15 @@ No deviation is proposed. Spec Debate is complete; this revision records the bin
 ### S17 F15 supersession (2026-10-30; PO decision section 3)
 
 Your First Step («خطوتك الأولى») is the default ordinary editable onboarding form in Forms. Its Arabic title is PO-approved verbatim by “Session 17 PO decision — F15 default form Arabic title”; the Arabic Forms section name «النماذج» is also PO-given. Workspace Owners may edit, replace, or select another onboarding form. Previously supplied S14 questions are editable starter content, not a fixed catalog. Assignment and delivery timing are configurable per form under Q3=D. There is no standalone health notice; use «عن بياناتك الصحية» / “About your health data” only where genuinely useful. This does not alter Terms Card consent. The T3 MCQ is closed. Published versions and assignment snapshots remain immutable.
+
+
+
+## Clarifications - S40-PO-1/-2/-4 (2026-11-09)
+
+PO option lines quoted verbatim from the authoritative S40 decision record:
+
+- S40-PO-1: A: Safe rename (Recommended)
+- S40-PO-2: A: Approve ffmpeg step (Recommended)
+- S40-PO-4: A: Keep small prefix (Rec.)
+
+The parenthesized mappings in the PO record are architect wording, not PO words. The S40-PO-4 architect mapping revises the S40-PO-1 mapping for PDN-S40-03: retain 20261104005000_f15_auth_identity_collisions_and_reader_policies.sql and its minimal dependency-closed earlier #57 prefix at original versions below main; rename all other #57 migrations above main and all origin refs without changing SQL content; add one forward migration above the renamed set to reconcile the final definitions. Prefix exception filenames (each retained at its original version): `20261104002000_f15_terms_consent.sql`, `20261104003000_f15_s14_forms.sql`, `20261104004000_f15_s14_privacy.sql`, and `20261104005000_f15_auth_identity_collisions_and_reader_policies.sql`. The SQL reference proof is in round-11 prefix-closure evidence. No open ambiguities remain for this approved sequencing. A genuine difference in main versus approved F15 behavior remains excluded pending a PO decision.
