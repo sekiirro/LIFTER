@@ -1,4 +1,34 @@
-# Analyze — F16 post-critique disposition (S40 round 11, current)
+# Analyze — F16 post-critique disposition (S40 round 12, current; round 11 record follows)
+
+## Round 12 (current)
+
+- Date: 2026-11-09 15:48 +02:00. Dated after every round-12 spec-artifact edit (`spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `traceability.md`, `contracts/catalog-api.md`, `contracts/export-read-isolation.md`); this record is the last spec-artifact change of the round.
+- Scope (round 12): S40-PO-8 (PO; verbatim quote in `spec.md` "S40 round 12") resolves PDN-S40-F16-05 (A) and PDN-S40-F16-06 (B). S40-R15 (architect ruling, NOT PO) resolves PDN-S40-F16-04. Spec-only: no code, SQL, migration, fixture or test file changed; "tests" below are the planned RED test descriptions in `tasks.md`.
+- Head at start of round 12: `6fe8228aaeaaf44f0e579a98376ce2ae01f844b6`.
+
+Entry check: PASS.
+
+| Check | Result | Evidence |
+| --- | --- | --- |
+| numbered FRs and measurable SCs with Given/When/Then for the touched scope | PASS | `spec.md` US2 scenario 9; FR-011, FR-014, FR-020, FR-031, FR-038; SC-016 |
+| Clarifications recorded with PO source or architect label | PASS | `spec.md` "S40 round 12 — S40-PO-8" quotes `s40-po-1.verbatim.txt` S40-PO-8 byte-exact (architect mapping labelled); "S40 round 12 — S40-R15" quotes `s40-architect-rulings.md` (labelled architect ruling, not PO) |
+| plan.md and tasks.md cover the touched scope with task IDs | PASS | `plan.md` status, migration steps 1 and 3, snapshot paragraph; `tasks.md` T037, T054, T058, T062, T063, T068, T074 and dependency order |
+| analyze dated after last change, 0 open CRITICAL/HIGH | PASS | this record |
+
+| ID | Source | Severity | Status | Disposition |
+| --- | --- | --- | --- | --- |
+| R12-1 | PDN-S40-F16-04, architect ruling S40-R15 | MEDIUM | RESOLVED (architect, not PO) | Legacy Notes are deleted with their rows; S36-PO-5 note preservation applies to non-legacy data only. Edge Cases note bullet (`spec.md` former line 103) reworded. FR-031, FR-038, SC-016, T054, T062(b), T063, `data-model.md` row 26, traceability updated. |
+| R12-2 | PDN-S40-F16-05, PO S40-PO-8 = A | MEDIUM | RESOLVED (PO) | Cutover deletes all pre-F16 exercise data, defined in FR-031 (legacy variation rows and history; pre-F16 canonical and workspace-private identities, versions and videos). Updated: FR-011 exception, FR-014, FR-020 exception, FR-038, US2 scenario 9, SC-016; `plan.md` status, steps 1 and 3, snapshot paragraph; `data-model.md` (new pre-F16 identity row); T037, T054, T062(a), T063, T068, T074, dependency order; traceability; `contracts/catalog-api.md`. CodeRabbit thread `PRRT_kwDOVYgYQ861RQcN` (`plan.md:73`) is answered after the push. |
+| R12-3 | PDN-S40-F16-06, PO S40-PO-8 = B | MEDIUM | RESOLVED (PO) | Trainer exercise Notes (workspace override and workspace-private) are part of the client-visible frozen snapshot and the F19/P4 projection; no flag, no new copy. Updated: `contracts/export-read-isolation.md:4`; T058 (projection includes frozen Notes; a later trainer edit does not change the published value; mutation test); traceability row FR-027/FR-029 to T058. CodeRabbit thread `PRRT_kwDOVYgYQ861RQcB` (`contracts/export-read-isolation.md:4`) is answered after the push. |
+| R12-4 | Consequence of S40-PO-8 F16-05 = A | MEDIUM | CLOSED (covered by S40-PO-8; not raised as PO question) | The conditional conversion PO item of plan step 1 (preserve-history versus written conversion rule) no longer applies, because pre-F16 content is deleted, not converted. Recorded in plan step 1 and T068. |
+| R12-5 | Consequence of S40-PO-8 F16-05 = A | LOW | CLOSED (acceptance criterion fixed) | Mock snapshots are "deleted or reset" (architect mapping of S40-PO-8). The per-snapshot choice is an implementation choice inside a fixed criterion: after cutover no snapshot or plan row may reference a deleted identity or version (FR-038, SC-016; T054 and T063 tests). It changes no user-visible rule, and no default is encoded here. |
+| R12-6 | S40-PO-5 verification | — | GATE (implementation, not an ambiguity) | The target-database check that no real data is affected is a precondition of the deletion (FR-031; T068 deletion gate). It has NOT been performed: this round is spec-only and has no target-database access. |
+
+- Severity (open): **CRITICAL 0, HIGH 0, MEDIUM 0**.
+- "No open ambiguities": **STATED** for round 12. Basis: PDN-S40-F16-02 (S40-PO-7), -03 (S40-R11), -04 (S40-R15), -05 and -06 (S40-PO-8) are all resolved. R12-4 and R12-5 are consequences inside existing PO decisions with a fixed acceptance criterion; R12-6 is a gate, not a question. The round-11 "NOT stated" lines below are superseded by this record.
+- CodeRabbit pre-round state: 72 review threads, 1 page, 2 unresolved (`PRRT_kwDOVYgYQ861RQcB`, `PRRT_kwDOVYgYQ861RQcN`); evidence `C:/Users/NEW LAP/.lifter/runs/s40-haiku-f16-r12/threads-pre.json`.
+
+## Round 11 (history)
 
 - Date: 2026-11-09 15:38 +02:00 (pass 3, after CodeRabbit review `5826613092` on `616cc9fa`; spec.md FR-011 and SC-009 edited; this record is the last spec-artifact change of the round). Pass 2 at 15:27 +02:00 ( after CodeRabbit review `5826471568` on `eb4c1e3d`; after every round-11 spec-artifact edit, including the pass-2 edits to `tasks.md` T062, T063, T068, `plan.md` step 1 and status, and `spec.md` PDN-S40-F16-05 and -06. Earlier pass-1 record at 15:13 +02:00. Edits: `spec.md` S40 round 11 entry, US2 scenario 9, FR-014, FR-031, FR-038, SC-016 and the `spec.md:103` scope note; `plan.md` status, migration steps 1 and 3; `data-model.md` (`exercise_variations`, `exercise_variation_versions`, Effective resolution); `tasks.md` (T052, T054, T062, T063, T074, dependency order); `traceability.md` (FR-026, FR-031, FR-032, SC-016); `contracts/catalog-api.md`. This record is the last spec-artifact change of the round.
 - Scope (round 11): S40-PO-7 (PO, verbatim quote in `spec.md` "S40 round 11 — S40-PO-7") resolves PDN-S40-F16-02. S40-R11 (architect ruling, not PO) rules PDN-S40-F16-03: joint delivery of T054, T040 and T074, with the interim guards removed. S40-R12 (architect ruling) adds the `workspace_private` branch to the effective resolution contract. S40-R13 (architect ruling) adds the pre-deployment ordering gate to T052. Opens PDN-S40-F16-04 (PO). Spec-only: no code, SQL, migration, fixture or test changed.

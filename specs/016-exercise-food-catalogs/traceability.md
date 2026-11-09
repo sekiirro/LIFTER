@@ -73,7 +73,7 @@ Planned tests are named for the tests to be written. Nothing in this table is ve
 
 | FR | Task | Planned test (not yet written) | Evidence |
 |---|---|---|---|
-| FR-001, FR-002, FR-003, FR-004, FR-014, FR-018, FR-030 | T037 | contract tests for shared identity, exact eight-field allowlist and value formats, English-required/Arabic-optional Global and Workspace names, one optional Description in any language, at most three unique Alternatives, PO-only Global edits, local isolation, automatic Global appearance, defaults copied at addition, and legacy exercise rows deleted at cutover with no Instructions-to-Notes merge (S40-PO-5) | none |
+| FR-001, FR-002, FR-003, FR-004, FR-014, FR-018, FR-030 | T037 | contract tests for shared identity, exact eight-field allowlist and value formats, English-required/Arabic-optional Global and Workspace names, one optional Description in any language, at most three unique Alternatives, PO-only Global edits, local isolation, automatic Global appearance, defaults copied at addition, and pre-F16 exercise data deleted at cutover with no Instructions-to-Notes merge (S40-PO-5, S40-PO-8); legacy Notes deleted with their rows (S40-R15) | none |
 | FR-003, FR-014, FR-016 | T046, T047 | override identity, composite keys, CAS, idempotency, one audit event | none |
 | FR-025 | T048 | alternatives child rows: composite targets, exactly-one-target CHECK, active-at-write | none |
 | FR-023 | T043 | canonical video: current-version read, validator, allowlist key | none |
@@ -86,11 +86,12 @@ Planned tests are named for the tests to be written. Nothing in this table is ve
 | FR-013 | T057 | audit allowlist with changed-field codes for exactly the eight fields — `name`, `description`, `notes`, `video`, `alternatives`, `default_rest_time`, `default_rir`, `default_reps`; no `instructions` code | none |
 | FR-022 | T060 | F12 guard rejects `workspace_id` changes | none |
 | FR-014 | T061 | host list parity across SQL and TypeScript validators; `docs.google.com` rejected | none |
-| FR-031 | T062, T063 | legacy exercise rows, their immutable version history and legacy videos deleted at cutover, none carried over (S40-PO-7); dummy `docs.google.com` values deleted; no Instructions-to-Notes merge (S40-PO-5); legacy Notes destination open as PDN-S40-F16-04 | none |
+| FR-031 | T062, T063 | all pre-F16 exercise data (legacy rows with their version history and videos; pre-F16 canonical and workspace-private identities, versions and videos) deleted at cutover, none carried over (S40-PO-7, S40-PO-8); dummy `docs.google.com` values deleted; no Instructions-to-Notes merge (S40-PO-5); legacy Notes deleted with their rows (S40-R15) | none |
 | FR-035 | T064 | override search normalization and bounds | none |
 | SC-005 | T065 | library list and batch resolve benchmark on a 10k fixture | none |
 | SC-013 | T037, T047 | Rest/RIR/Reps boundary and format validation | none |
-| SC-016 | T037, T062, T063 | legacy rows, their version history and legacy videos deleted (S40-PO-7); no Instructions merged into Notes (S40-PO-5); no Instructions library field; Notes destination open as PDN-S40-F16-04 | none |
+| SC-016 | T037, T062, T063 | pre-F16 exercise data, version history and videos deleted (S40-PO-7, S40-PO-8); no mock plan snapshot references deleted data (S40-PO-8); no Instructions merged into Notes (S40-PO-5); no Instructions library field; legacy Notes deleted with their rows (S40-R15) | none |
+| FR-027, FR-029 | T058 | client projection includes the frozen trainer exercise Notes of a workspace override and of a workspace-private exercise; no visibility flag or new copy (S40-PO-8, PDN-S40-F16-06 = B) | none |
 | FR-003, FR-018, FR-023, FR-024, FR-025 | T074, T075 | Global and workspace-private eight-field version completion: Notes, Defaults, Description, Name and Alternatives storage, validators and allowlists (positive and negative per field, data-model.md coverage table) | none |
 | FR-026 | T037, T047 | null = inherit for the seven optional fields; reset writes null; Alternatives empty list distinct from inherit | none |
 | FR-025 | T048 | published-plan reads return frozen alternatives after a target is removed or merged; library reads skip it | none |
