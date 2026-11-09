@@ -1,6 +1,6 @@
 # S40-PO-5 verification — no real data affected (S40 round 10)
 
-Read-only check, run at head `c6d620b9ec47a2facf8bfac08ea654cd945514ac` (round 10 start) and re-checked for the spec commit `989e5de7`. Scope: tracked repo configuration, CI workflows, migrations, tests and fixtures. No `.env*`, credentials or secrets were read. Date: 2026-11-09 14:19 +02:00.
+Read-only check, run at head `c6d620b9ec47a2facf8bfac08ea654cd945514ac` (round 10 start) and re-checked for the spec commit `989e5de7`. Scope: tracked repo configuration, CI workflows, migrations, tests and fixtures. No `.env*`, credentials or secrets were read. Date: 2026-11-09 14:32 +02:00.
 
 | Check | Evidence (file:line) | Result |
 | --- | --- | --- |
