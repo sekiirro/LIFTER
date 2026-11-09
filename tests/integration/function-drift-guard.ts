@@ -17,7 +17,7 @@ export const guardedFunctions = [
     identity: 'app_private.ensure_default_onboarding_form(uuid,uuid)',
     migration: [
       '20261108021000_f15_localized_n11_starter_labels.sql',
-      '20261107032500_f15_retirement_default_lock.sql',
+      '20261104023000_f15_default_provisioning_configuration.sql',
     ],
     name: 'app_private.ensure_default_onboarding_form',
   },
