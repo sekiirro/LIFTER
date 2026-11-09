@@ -1,6 +1,25 @@
 # Analyze — F11 client accounts
 
-## S41 round 10 analysis (CodeRabbit round 8 request 1 review 5833984333 on head 413917c1: 1 Minor finding; S41-R19 round 8) — 2026-11-10 00:53 +02:00, round 20 (current; written after the round 8 request-1 fix edits to traceability.md and tasks.md; supersedes round 19 for statuses)
+## S41 round 11 analysis (CodeRabbit round 8 request 2 review 5834084184 on head 862cec81: 1 Minor inline, 1 Major outside-diff, 1 nitpick; S41-R22) — 2026-11-10 01:08 +02:00, round 21 (current; written after the round 9 fix edits to plan.md, tasks.md and traceability.md; supersedes round 20 for statuses)
+
+Entry check (Spec Kit gate section 1): PASS. The fix is documentation-only inside decided scope: it adds the completed-deletion case to T061, the T050 test file to the FR-018/FR-027 rows plus T050 to the FR-027 row and both T054 gates, and the step C Auth Admin metadata clear to plan P-S40-1 and T047. Numbered FR/SC/task structure is unchanged; the Clarifications and S41-PO-11 quote are unchanged and byte-exact; plan P-S40-1 and T047 cover the metadata clear; this file is dated after the last change.
+
+Findings (round 21; each fixed or open):
+
+| ID | Severity | Finding (CodeRabbit review 5834084184) | Status |
+|---|---|---|---|
+| A-S41-44 | MINOR (fixed) | The FR-018 and FR-027 verification rows omitted `tests/integration/client-trainer-assignment.test.ts`, FR-027 omitted T050, and T054 did not require T050, so the rows could be marked verified without T050's Trainer membership restoration and Workspace Owner read-only unassigned tests (traceability.md:14, 23) | CLOSED: both rows now list `tests/integration/client-trainer-assignment.test.ts` (new, T050); the FR-027 task cell lists T061, T050, T058 and records T050's unassigned-read and assignment/reassignment coverage; T054 requires T050 for FR-018 and FR-027 |
+| A-S41-45 | MAJOR (fixed) | A staff user can have a name in `auth.users.raw_user_meta_data`; changing only email and phone left that name in the retained Auth user, contrary to 003's non-identifying-reference requirement (plan.md:190-202) | CLOSED: plan P-S40-1 step C now clears the identifying name, profile and contact keys from the retained Auth user's `raw_user_meta_data` through the Auth Admin API only (client and staff accounts), confirmed before step D releases the identifiers and reports deletion complete; no direct `auth.*` write is added; T047 and the plan tests assert the metadata is absent after completion (003 FR-015 S40 amendment; FR-020; S41-PO-1 MCQ-14 = B; S41-R22) |
+| A-S41-46 | LOW (fixed) | T061 checked list exclusion during overlapping deletions but not that a client whose deletion has completed is absent from the unassigned list (tasks.md:284) | CLOSED: T061 now asserts that a client whose deletion has completed is not listed; FR-027 already says a deleted client is not listed |
+| A-S41-4 | MEDIUM (open, architect gate) | Architect approval of the restricted continuation (plan P-S40-1) before T048 and of the restricted system entry point (plan P-S40-5) before T062 | OPEN. Architect, not PO |
+
+Counts: CRITICAL open 0. HIGH open 0. MEDIUM open 1 (A-S41-4, architect gate). LOW open 0. A-S41-44 to -46 are documentation/security clarifications inside decided scope; no new product question.
+
+Static consistency (run at 01:08 +02:00, recorded in report.md): the FR-018/FR-027 rows, T047/T050/T054/T058/T061 and the plan P-S40-1 steps name the same test owner and metadata requirement; 003 FR-015, 011 FR-018/FR-020/SC-022, 012 FR-022, docs/01-traceability.md and docs/03-roadmap.md contain no conflicting assignment/balance/deletion statement; the ID sweep passes on the final tree; the approved copy strings are unchanged (verify 97/97).
+
+Result: PASS, 0 CRITICAL and 0 HIGH. No PO product question is open. This is a static document review; it makes no implementation-conformity claim.
+
+## S41 round 10 analysis (CodeRabbit round 8 request 1 review 5833984333 on head 413917c1: 1 Minor finding; S41-R19 round 8) — 2026-11-10 00:53 +02:00, round 20 (superseded by round 21 for statuses; written after the round 8 request-1 fix edits to traceability.md and tasks.md; supersedes round 19 for statuses)
 
 Entry check (Spec Kit gate section 1): PASS. The fix is traceability-only: it adds T058 and its test file to the FR-018 and FR-027 rows and requires T058 in both T054 verification gates, so the FR-018/FR-027 statements scoped in round 19 are verified by the task that actually tests the overlapping-deletion case. Numbered FR/SC/task structure is unchanged; this file is dated after the last change; the S41-PO-11 quote is unchanged and byte-exact.
 
