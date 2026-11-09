@@ -58,7 +58,7 @@ No ND-F4-7 row is VERIFIED or MAPPED. Each status describes the planned test onl
 | FR-016 | T034, T043 | planned | none | UNVERIFIED | PDN-F4-7-02 |
 | FR-017 | T041, T043 | planned | none | UNVERIFIED | - |
 | FR-018 | T035, T041, T043 | planned | none | UNVERIFIED | Timing tolerance AT-2 |
-| FR-019 | T041, T044 | planned | none | UNVERIFIED | PDN-F4-7-01 answered A; local-only hook under S38-PO-3; hosted work deferred |
+| FR-019 | T041, T041a, T044 | planned | none | UNVERIFIED | PDN-F4-7-01 answered A; local-only hook under S38-PO-3; hosted work deferred; T041a enables local Inbucket capture in CI |
 | FR-020 | T046, T047 | documentation check | none | UNVERIFIED | Gated; hosted out of scope |
 | FR-021 | T040, T044 | planned | none | UNVERIFIED | AT-3 |
 | FR-022 | T037, T037a, T044a, T045 | planned | none | UNVERIFIED | Scanner-safe app link (S35-R5 T2) |

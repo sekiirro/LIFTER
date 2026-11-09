@@ -1,6 +1,6 @@
 # Spec Kit Analyze — F4 Authentication, S39 round 7
 
-- Date: 2026-11-09 04:44 +02:00, after the last changes to spec.md, plan.md, tasks.md, traceability.md, copy-proposal.md and contracts/auth-surface.md in this round, and after the round-7 review fixes to spec.md (SC-016) and traceability.md.
+- Date: 2026-11-09 04:56 +02:00, after the last changes to spec.md, plan.md, tasks.md, traceability.md, copy-proposal.md and contracts/auth-surface.md in this round, and after the round-7 review fixes to spec.md (SC-016), traceability.md and tasks.md (T041/T041a, T048).
 - Scope: specification and planning only. No application code, SQL, migration, environment or test was changed or run.
 - Inputs: S39-PO-4 option 2 (English of the 13 former proposal rows approved as written); S39-PO-5 option 1 (Egyptian Arabic redraft approved exactly as in `runs/s39-haiku-f4-ar/copy-ar-redraft.md` "proposed Egyptian Arabic", plus the five-key term switch). Exact quoted extracts and mappings are in the round report; prior inputs are the S38 round-6 records.
 - Method: cross-artifact review of spec.md, plan.md, tasks.md, research.md, traceability.md, contracts/auth-surface.md, data-model.md and this checklist against Spec Kit entry requirements and the round-6 critique findings.
@@ -67,8 +67,8 @@ Open CRITICAL: **0**. Open HIGH: **0**. Open MEDIUM: **3**. Open LOW: **0**. The
 ## Requirements and task metrics
 
 - FRs: 31 (FR-031 added for the five-key term switch). SCs: 16 (SC-016 added). Given/When/Then scenarios: US1–US5, 15 F4 scenarios.
-- Existing task count: 61; T052 added (62). No task was ticked in this round.
-- F4 task coverage includes T033–T052; recovery control requirements trace to T049a–T049e, T050a/T050b and T051.
+- Existing task count: 61; T052 added (62); T041a added by the round-7 review fix (63). No task was ticked in this round.
+- F4 task coverage includes T033–T052 plus T041a; recovery control requirements trace to T049a–T049e, T050a/T050b and T051.
 - Spec-only readiness: PASS. Implementation readiness: FAIL until T033, G1–G6, the relevant RED tests and implementation acceptance evidence pass; copy is no longer a blocker.
 - Ambiguities: **No open ambiguities.** COPY-F4-R6 is resolved by S39-PO-4/S39-PO-5; the five-key term switch is fully specified (FR-031). Session-binding feasibility is technical and explicitly gated, not an open product question. Existing other-session revocation rule is cited rather than guessed.
 
@@ -78,6 +78,7 @@ Two review findings were fixed after the first review of the inserted copy; Anal
 
 - SC-016 (spec.md, FR-031) was clarified so its catalog comparison is measurable: pre-existing keys and their English values are compared against `origin/main`; the approved recovery-key additions required by FR-027/T042 and the five-key Arabic term switch are explicitly permitted; no unapproved change is allowed. This removes the contradiction with FR-027 and T042 without changing any requirement or adding one.
 - traceability.md decision-gap notes no longer describe PDN-F4-7-12 or PDN-F4-7-14 as pending: PDN-F4-7-12 is answered by S38-PO-5/S38-R7, and PDN-F4-7-14 = B (S37-PO-8). Their control evidence stays UNVERIFIED.
+- tasks.md CI prerequisites now match `.github/workflows/ci.yml`: T048 requires the three executed green jobs (`validate` with its `check:secrets` step, `integration`, `storage`) instead of a non-existent secret-scan job; T041 records its dependency on the new T041a, which schedules enabling local Inbucket mail capture in the `integration` job (local-only, implementation round). No workflow file is changed by this specification-only PR.
 - Revalidation: 0 open CRITICAL, 0 open HIGH, 0 open LOW; the three MEDIUM items remain the scheduled gates. **No open ambiguities.**
 
 ## Session and outcome decisions
