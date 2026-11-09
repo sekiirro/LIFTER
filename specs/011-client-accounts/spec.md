@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-28
 
-**Status**: Draft; ND-F11-1..10 Decided (PO, 2026-10-28); PO sub-decisions decided; archived-state/review and audit retention deferred on ND-F5-1; AD-F11-1 Decided (PO, 2026-10-28): option (i); C1–C4 binding remains. Specification/clarification artifacts only, not implementation approval.
+**Status**: Draft; ND-F11-1..10 Decided (PO, 2026-10-28); PO sub-decisions decided; archived-state/review and audit retention deferred on ND-F5-1; AD-F11-1 Decided (PO, 2026-10-28): option (i); C1–C4 binding remains. Specification/clarification artifacts only, not implementation approval. S40 (2026-11-09, spec-only): account deletion (FR-018–FR-020), PO workspace creation (FR-021), authoritative responsible-Trainer assignment (FR-022–FR-023) and the deferred client-late Trainer alert (FR-024) are specified from S37-PO-10, S37-PO-16 (S37-Q4=A), S39-PO-7 and S39-PO-8; open points are S40-F11-MCQ-1..9 (PENDING-PO) and block implementation of the affected tasks.
 
 **Input**: User description, corrected by architect review R1: F11 — Client accounts + signup. A prospective client who opens a valid F10 registration link (`/register/[token]`) can create a LIFTER client account. Client creation, guarded registration-link consumption (sets `consumed_at` once) and successful-change audit commit in one database transaction. Auth identity consistency is a binding outcome under FR-003, using the PO-approved AD-F11-1 option (i) direct transactional Auth writes subject to C1–C4. Invalid, expired, consumed or otherwise invalid links return only the generic invalid response. Email and phone are globally unique across accounts; duplicates return D-08's generic duplicate message without field/account/workspace disclosure. Bind the client to the issued workspace/offer/version snapshot. Apply app `authorize()` and DB RLS (`has_workspace_access()`), with audit via `audit_row_change()` extended from its latest body in `supabase/migrations/20261030120000_registration_links.sql`. Supply the client dependency for F4 recovery (ND-F4-5), without resolving that decision. Exclude F12 subscriptions/approval/ledger/commission/payments, F13 freeze/renewal/refunds and SMTP/email verification (D-19). Public content beyond the signup form remains ND-F10-4.
 
@@ -90,6 +90,62 @@ As a prospective client, I can use Arabic or English, keyboard or mobile, withou
 2. **Given** any registration/signup response, including errors, **When** inspected, **Then** no-referrer/no-store apply and logs, analytics, metadata and redirects contain no token/hash, credential or client PII (FR-009/011/014).
 3. **Given** committed signup, **When** completion feedback appears, **Then** it neither implies approval/payment/activation nor redirects with the token; the client is pending-approval with no client access through either wall; generic completion creates no signup session; client signs in after approval (ND-F11-6b) (FR-014/015).
 
+### User Story 5 - Deleted client frees identifiers without transfer (Priority: P2, S40)
+
+As a Platform Owner, I can delete a departed client's account so that the same email and phone can register again in another workspace, with no data moved and all history kept.
+
+**Why this priority**: S37-PO-10 and S36 F16 decided the outcome; the release mechanism is PENDING-PO (S40-F11-MCQ-1..3).
+
+**Independent Test**: Synthetic client A1 in workspace A is deleted; the same email/phone is registered in workspace B; verify no A1 data appears in B and all A1 history rows are unchanged.
+
+**Acceptance Scenarios**:
+
+1. **Given** a client account in workspace A and a Platform Owner holding `delete_client`, **When** the PO deletes that account through the approved mechanism, **Then** the account can no longer use any client capability at any wall, and its email and phone are released from global uniqueness (FR-018).
+2. **Given** a deleted account whose email and phone were released, **When** a new valid link in workspace B is used with the same email and phone, **Then** FR-001 signup succeeds with one new client in B, and nothing from the deleted account is copied, linked or merged into it (FR-019).
+3. **Given** a deleted account with audit, F12 or F13 records, **When** deletion completes, **Then** every one of those records is present and unchanged, and no DELETE or TRUNCATE removed any row (FR-020).
+4. **Given** a non-PO role (Workspace Owner, Trainer, Sales, or the client), **When** it attempts deletion, **Then** the request is denied by app `authorize()` and DB RLS with no state change.
+
+### User Story 6 - Platform Owner creates a workspace (Priority: P2, S40)
+
+As a Platform Owner, I can create my own workspace through the normal app flow, with nothing provisioned for me automatically.
+
+**Why this priority**: S39-PO-7 Option A asks for the requirement and acceptance evidence in F11/F12 without delaying current work. The entry point is PENDING-PO (S40-F11-MCQ-7).
+
+**Independent Test**: As a PO, create a workspace; as a non-PO, attempt the same; verify rows and access.
+
+**Acceptance Scenarios**:
+
+1. **Given** a signed-in Platform Owner, **When** they create a workspace through the approved flow, **Then** one workspace is recorded with `created_by` equal to the PO, and no membership, client, staff, package or branding row is created automatically (FR-021).
+2. **Given** a signed-in PO, **When** they open the new workspace, **Then** they can use it under their existing platform access, without a membership row (`supabase/migrations/20261027120000_tenancy.sql:67–68`).
+3. **Given** a Workspace Owner, Trainer, Sales user or client, **When** they attempt to create a workspace, **Then** the attempt is denied and no workspace row is written (FR-021).
+
+### User Story 7 - Client has one authoritative responsible Trainer (Priority: P2, S40)
+
+As a workspace staff member, I can see which Trainer is responsible for each client, from a single record, and that record never grants access.
+
+**Why this priority**: S39-PO-8 requires the assignment in F11/F12; S36-01=A names the existing client assignment as the authoritative source (architect mapping; no such record exists on origin/main, see report.md). Who may change it is PENDING-PO (S40-F11-MCQ-4, -5, -9).
+
+**Independent Test**: Assign a same-workspace active Trainer to a client; attempt cross-workspace and inactive assignments; verify lookups and capability matrix.
+
+**Acceptance Scenarios**:
+
+1. **Given** a client in workspace A and an active `trainer` membership in A, **When** the authorized assignment is recorded, **Then** the client's responsible Trainer resolves to that Trainer from the assignment record alone (FR-022).
+2. **Given** a Trainer whose membership is in workspace B, **When** an assignment in workspace A is attempted, **Then** it is rejected and no record is written (FR-022).
+3. **Given** a recorded assignment, **When** the assigned Trainer uses any surface, **Then** no capability, membership, staff role or client access changes, and the capability matrix is unchanged (FR-023).
+
+### User Story 8 - Client-late Trainer alert is deferred (Priority: P3, S40)
+
+As the product owner, I know the client-late Trainer alert is not in F15's release and will be specified as a future requirement that uses the responsible Trainer from User Story 7.
+
+**Why this priority**: S39-PO-8 PDN-S39-F15-01 = 1 defers the alert. The trigger is S36-02=A (submission deadline passes without an accepted submission).
+
+**Independent Test**: Release test suite proves zero alert rows and zero notifications are emitted by F11/F12 and F15 release code.
+
+**Acceptance Scenarios**:
+
+1. **Given** the F15 release, **When** a client's submission deadline passes without an accepted submission, **Then** no Trainer alert is created, sent or rendered (FR-024).
+2. **Given** a future approved alert feature, **When** its trigger fires, **Then** the alert targets only the responsible Trainer from the assignment record and carries no client data beyond the approved alert content (FR-024, FR-022).
+
 ### Edge Cases
 
 - Concurrent double signup, replay and lost-success-response retry: at most one account per link; consumed links return generic invalid even when the successful response was lost. No credential/account recovery from a consumed token.
@@ -125,6 +181,14 @@ As a prospective client, I can use Arabic or English, keyboard or mobile, withou
 - **FR-016**: Signed-in client/staff visitors MUST receive a manual sign-out prompt before registration. No automatic sign-out, account linking, merge, staff conversion or extra membership; no token in redirects or login-next URLs (ND-F11-8).
 - **FR-017 (AUTH-SIGNUP-01)**: Disable Supabase public signup with `[auth] enable_signup = false` in `supabase/config.toml`. Anonymous `signUp` MUST be rejected. Admin-created staff, owner and trainer accounts and existing F4 password recovery MUST continue to work. Verify rejected anonymous signup plus the existing staff-creation and F4 recovery integration suites; config/test changes are U1 implementation work only.
 
+- **FR-018 (S40, account deletion; S37-PO-10, S37-PO-16 S37-Q4=A)**: Only a Platform Owner holding `delete_client` (the existing PO-only capability: `lib/auth/capabilities.ts:18` and MATRIX, PO only) MAY delete a client account. Deletion MUST revoke the account's access at every wall (app `authorize()`, DB RLS via `has_workspace_access()` and client policies, direct PostgREST/RPC and Storage), so that app and RPC paths deny a deleted account even while a JWT issued before deletion remains valid. Deletion MUST also release the account's email and phone from the global uniqueness scope (FR-007), so that the same email and phone can complete FR-001 signup in another workspace. The release mechanism, its Auth-side effect and any precondition are PENDING-PO (S40-F11-MCQ-1, -2, -3); no mechanism is approved by this FR.
+- **FR-019 (S40, no data transfer; S37-PO-10, S36 F16)**: Deletion and re-registration MUST NOT transfer, merge, link, copy or reassign any client, workspace, history, financial, audit or Auth data from the deleted account to an account in another workspace. A departing client registers a new account elsewhere through FR-001 and starts with no data from the deleted account. FR-006 (no merge/transfer on collision) remains in force.
+- **FR-020 (S40, history preserved; S36 F16 "Preserve history", S37-PO-16 "retain history")**: Deletion MUST preserve the deleted account's history: append-only audit events, F12 subscription/installment/payment/approval records, F13 ledger records, signup records and issued-link snapshots stay present and unchanged under their existing guards (forbid-delete, RESTRICT foreign keys, immutable triggers). No row of that history is hard-deleted or truncated. Whether a released email or phone may remain in preserved history is PENDING-PO (S40-F11-MCQ-2).
+- **FR-021 (S40, PO workspace creation; S39-PO-7 Option A, S37-PO-3)**: A Platform Owner MUST be able to create a workspace through the normal app flow, with no special auto-provisioning. Only a holder of `manage_workspaces` (PO only: `lib/auth/capabilities.ts:20`; `supabase/migrations/20261027120000_tenancy.sql:132–133` `workspaces_insert_po`) may create one; every other role is denied. The creating PO is recorded as `created_by`. Creation MUST NOT create automatically any workspace membership, client, staff, package or branding row. The UI entry point is PENDING-PO (S40-F11-MCQ-7). Acceptance evidence for this FR is a task in tasks.md (T049, T051), not started, and it does not block any current PR (S39-PO-7 "without delaying current work").
+- **FR-022 (S40, authoritative responsible-Trainer assignment; S39-PO-8, S38-PO-5 with S36-01=A)**: Each client account in a workspace MUST resolve to its responsible Trainer through one authoritative client→Trainer assignment record in that workspace. That record is the only source for any responsible-Trainer lookup (FR-024 included). The assigned user MUST hold an active membership in that same workspace and the `trainer` staff role (`supabase/migrations/20261027120000_tenancy.sql:2`, `:18`; active-membership uniqueness at `:30–31`). A cross-workspace assignment MUST be rejected. Who may create or change an assignment, and the unassigned case, are PENDING-PO (S40-F11-MCQ-4, -5). No assignment record exists on origin/main; this FR specifies it as new.
+- **FR-023 (S40, assignment boundary and grant)**: A responsible-Trainer assignment MUST NOT grant any capability, membership, staff role or client access, and MUST NOT change the capability matrix or the walls in FR-008/FR-009. Balanced auto-assignment (roadmap P4, BRD-05) and form assignment (REQ-P2-01, P2) are outside this FR; their overlap is PENDING-PO (S40-F11-MCQ-9).
+- **FR-024 (S40, deferred client-late Trainer alert; S39-PO-8 PDN-S39-F15-01 = 1, S38-PO-5 with S36-02=A)**: The client-late Trainer alert is DEFERRED: F15 ships without it, and F11/F12 create, send or render no alert now. When it is later approved, it is a future requirement that MUST: trigger when a client's configured submission deadline passes without an accepted submission (S36-02=A); target only the client's responsible Trainer from FR-022; and carry no client data beyond approved alert content. Frequency and channel are PENDING-PO (S40-F11-MCQ-8). The F15 spec/tasks/tests/docs update required by S39-PO-8 is recorded as a blocker on the F15 branch, which is not on origin/main.
+
 ### Key Entities _(include if feature involves data)_
 
 - **Auth identity**: stable Supabase Auth user identity and protected email/password credentials; no dual staff/client role and no password copies in client/audit records.
@@ -132,6 +196,7 @@ As a prospective client, I can use Arabic or English, keyboard or mobile, withou
 - **Registration link**: existing F10 hashed, expiring, single-use credential with immutable snapshot, first-open and set-once consumed markers; raw token is not stored.
 - **Issued offer/version snapshot**: historical workspace/offer/version/terms binding retained for F12; current catalog changes do not replace it.
 - **Audit event**: append-only safe successful-change evidence with workspace/target correlation; structured attempts/failures live in durable admission evidence; event names/payload allow-list are technical design. Signup-attempt logs have 30-day retention; other retention undecided.
+- **Client responsible-Trainer assignment (S40)**: one authoritative record per client in its workspace, linking the client to a same-workspace active `trainer` membership, with start/end history; grants no access (FR-022/FR-023). Proposed structure is in plan.md (S40 proposals); cardinality and lifecycle are PENDING-PO (S40-F11-MCQ-4).
 
 ## Success Criteria _(mandatory)_
 
@@ -151,6 +216,12 @@ As a prospective client, I can use Arabic or English, keyboard or mobile, withou
 - **SC-011**: Before and after ND-F5-1 defines archived state, every archived-identity collision returns the identical generic D-08 payload bytes, HTTP status and headers, with no measurable timing branch beyond the existing duplicate path; zero automatic registration/reactivation/merge or account-existence disclosure. Archived-state/admin-review design remains deferred on ND-F5-1 (ND-F11-9a/9b). Test against the local stack with 20 warm-up requests, then at least 200 interleaved trials per condition in randomized order: ordinary duplicate and archived-identity collision fixture (use a synthetic stand-in path until archived state exists). Compare the timing samples with a two-sample Kolmogorov-Smirnov or Mann-Whitney test; pass when p >= 0.01 and the absolute median difference is < 5 ms, and assert identical payload bytes/status/headers. Record raw timings in the evidence file. This is a regression detector, not a guarantee, and sets no latency SLA.
 - **SC-012**: Attempt, success, failure, link-consumption and cleanup scenarios each emit required structured evidence at their specified transaction boundaries; rollback/replay emits zero false success/consumption events. Scans find zero secrets in audit and zero IP/ip_key/token/token hash/email/phone/name in attempt logs (ND-F11-10). Auth-compat guard failure is the explicit zero-write exception: no attempt row, audit row or consumption; evidence is structured server-side event fields `code` and `timestamp` only, with fixed code `AUTH_COMPAT_GUARD_FAILED` and no PII/IP/token/hash.
 
+- **SC-013 (S40, FR-018/FR-019)**: In 100% of synthetic deletion fixtures, the released email and phone register successfully in another workspace (one new client per attempt), and zero deleted-account attributes appear in the new account, its links, its audit or any response. Zero cross-workspace copies or merges. Verified by the planned tests in T047.
+- **SC-014 (S40, FR-020)**: In 100% of synthetic deletions, the row count and content of the deleted account's audit, F12, F13 and signup records are identical before and after deletion; zero DELETE or TRUNCATE statements succeed on any of them.
+- **SC-015 (S40, FR-021)**: 100% of workspace-creation attempts by non-PO roles are denied with zero rows written; 100% of PO creations record `created_by` = the PO and create zero membership, client, staff, package or branding rows.
+- **SC-016 (S40, FR-022/FR-023)**: 100% of responsible-Trainer lookups in fixtures resolve from the assignment record only; 100% of cross-workspace and inactive-membership assignments are rejected; 100% of assignments leave the capability matrix and every role's access unchanged.
+- **SC-017 (S40, FR-024)**: In the F15 release test suite, zero Trainer alert rows or notifications are created for an expired submission deadline; the future alert trigger fixture (S36-02=A) is defined but not enabled.
+
 ## Assumptions
 
 - F10 issuance/open behavior and immutable snapshots are dependencies. Its 24-hour lifetime and first-open 30-minute grace remain unchanged for open; ND-F11-4 requires signup strictly before `expires_at` with no grace.
@@ -166,7 +237,7 @@ As a prospective client, I can use Arabic or English, keyboard or mobile, withou
 - F12 subscriptions, approval/rejection, ledger, commission and payments; F13 freeze, renewal and refunds.
 - SMTP/email verification/self-service email-reset rollout; changes to F4 recovery policies, expiry, delivery, permissions or rates.
 - Public content beyond the form (ND-F10-4), marketing, checkout, support CTA or sales funnel; no branding-policy decision.
-- Intake/health-data collection, trainer assignment, plan delivery/access, Telegram linking, merging/transfer, closure/deletion implementation or retention schedules except the approved 30-day signup-attempt logs.
+- Intake/health-data collection, form assignment, balanced auto-assignment (S40-F11-MCQ-9), plan delivery/access, Telegram linking, merging/transfer (no client transfers between workspaces, FR-019), retention schedules except the approved 30-day signup-attempt logs. Account deletion (FR-018–FR-020) and the responsible-Trainer assignment record (FR-022–FR-023) are specified by S40 but their implementation is blocked until the PENDING-PO items in the S40 clarification are answered.
 - Dependencies, capability-matrix changes, committed-migration edits, seeds/catalog changes, cloud-linked commands, deployment and PR creation. Implementation requires later plan/tasks/analyze and independent review.
 
 ## PO decision register and open sub-decisions
@@ -231,3 +302,42 @@ Coordinated rotation: SIGNUP_RATE_KEY rotation resets IP/link counters because c
 ### Session 2026-11-04 — S33-PO-4
 
 PO source: S33-PO-4, “Fix stack drift, flaky tests, billing-related CI blockers, and PR/issue backlog organization.” The S33 F11 change is limited to bounding/scoping the existing recovery RLS verification probes and surfacing the already-returned client signup status in test diagnostics. It does not change client recovery or authorization behavior. No open ambiguities remain within this test-only S33 scope; existing ND-F5-1/B4 audit-retention decisions remain open and out of scope.
+
+### Session 2026-11-09 — S40 spec-only (account lifecycle, workspace creation, responsible-Trainer assignment)
+
+PO words below are quoted byte-exact from the PO records. Architect mappings are labelled and are not PO words.
+
+- S37-PO-10 (`C:/Users/NEW LAP/.lifter/runs/s37-po/s37-po-1.verbatim.txt`): "Account deletion frees email/phone for fresh registration in another workspace, no data transfer. Record in F11/F12."
+- S36 F16 line (`C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-2.verbatim.txt`): "No client transfers between workspaces; departing clients register new accounts elsewhere. Preserve history."
+- S37-PO-16 (`s37-po-1.verbatim.txt`): "S37-Q4=A: F11/F12 safe deletion; revoke access, release email/phone, retain history; authorize replacement PO first. No hard deletion/new mechanism."
+- S37-PO-4 (`s37-po-1.verbatim.txt`): "...Preserve last-PO guard, zero-access revocation, and tenant isolation. ...avoid unnecessary complexity."
+- S37-PO-3 (`s37-po-1.verbatim.txt`): "PO creates their own workspace manually through the normal user flow—no special auto-provisioning."
+- S39-PO-7 (`C:/Users/NEW LAP/.lifter/runs/s39-po/s39-po-1.verbatim.txt`): "Workspace creation: Option A, add to F11/F12 spec without delaying current work."
+- S39-PO-8 (`s39-po-1.verbatim.txt`): "* F15 Trainer Alert: Option 1. Defer alert, add assignment to F11/F12 spec, update tests/docs."
+- S38-PO-5 (`C:/Users/NEW LAP/.lifter/runs/s38-po/s38-po-1.verbatim.txt`): "S36-01=A, S36-02=A, PDN-01=A, PDN-02=A, PDN-03=B, PDN-05=A, PDN-12=A, PDN-09=A. ..." (architect mapping: S36-01 = the existing F12 client assignment is the authoritative client-to-responsible-Trainer source; S36-02 = a configured submission deadline passes without an accepted submission.)
+
+Decided by these PO words: deletion frees email/phone for registration in another workspace with no data transfer and preserved history (FR-018–FR-020); PO workspace creation through the normal flow with no auto-provisioning (FR-021); the assignment is added to F11/F12 and the client-late Trainer alert is deferred (FR-022–FR-024).
+
+Discrepancy (architect finding, not a PO decision): origin/main has no client-to-Trainer assignment record. F12 excludes assignment (`specs/012-registration-approval/spec.md:175`). The S36-01 wording "existing F12 client assignment" is therefore specified here as a NEW record (S39-PO-8 "add assignment to F11/F12 spec"). Evidence: `report.md`, step 1.
+
+Governance (not a product question): an independent critique of this spec is not approved; `docs/03-roadmap.md:40` and S36-PO-5 require explicit PO approval per invocation. Implementation is not approved for any PENDING-PO item.
+
+PENDING-PO items. No option is encoded as a requirement. Affected tasks in tasks.md are blocked as listed.
+
+**S40-F11-MCQ-1 — Deletion scope.** Question: does FR-018 cover only client accounts, or also the Platform Owner account replaced under S37-Q4 ("old account" safe deletion)? Options: A) client accounts only; staff departures stay deactivate/revoke under spec 003 FR-015. B) client accounts and the replaced PO account through the same guarded path. C) client accounts now; the PO-account path is specified later in spec 003. Implications: A keeps the staff rules of spec 003 and D-16 separation. B releases staff identities before the last-PO guard exists (spec 003 F-A1, T015). C defers the PO path. Recommendation: A. Blocked: T047 (staff cases), T048.
+
+**S40-F11-MCQ-2 — Identifier-release mechanism.** Question: how are a deleted account's email and phone released from global uniqueness, given that the client row is immutable and RESTRICT-linked (`supabase/migrations/20261031121000_client_accounts_model.sql:65, 68–69, 315–327`), the claim-sync refuses to release keys (`:174–176`), and GoTrue email is unique in `auth.users`? Options: A) a guarded release: the client row is kept with a terminal state, release columns are cleared by one PO-only operation, the Auth email/phone change goes through the supported Auth Admin API, and history is kept. B) hard delete of the client row and the Auth user. C) defer the mechanism until the PO approves one. Implications: A is a new mechanism, which conflicts with S37-PO-16 "No hard deletion/new mechanism", changes the claim-sync and immutability guards, and needs the Auth Admin path (spec 013 `ledger-architecture.md:55` forbids direct writes to Auth-managed tables; spec 011 FR-003's direct writes are for signup only). B conflicts with FR-020 and the RESTRICT/forbid-delete guards. C leaves FR-018 unimplemented. Recommendation: A, with explicit PO approval of the new mechanism. Blocked: T048, T050 (release tests).
+
+**S40-F11-MCQ-3 — Deletion precondition for history.** Question: may a client with an active subscription, unpaid obligations, or an F13 refund/lockout be deleted? Options: A) yes at any time. B) no while a subscription is active or obligations are unpaid; allowed after the F12/F13 lifecycle ends. C) no for any client with financial history. Implications: A can release identifiers while paid access is live, and the F13 lockout must still deny. B delays some deletions. C makes FR-018 rarely usable. Recommendation: B. Blocked: T048 precondition.
+
+**S40-F11-MCQ-4 — Assignment authority and reassignment.** Question: who may create or change a client's responsible-Trainer assignment, and does a reassignment end the prior record and keep it? (Assumes one current responsible Trainer per client; confirm.) Options: A) PO and Workspace Owner; the prior record is ended and kept. B) PO, Workspace Owner and Sales; the prior record is ended and kept. C) PO and Workspace Owner; a reassignment replaces the record in place, history only in audit. Implications: no existing capability governs assignment. A and B need a new capability or matrix change, and FR-008 says "Keep the capability matrix unchanged", so PO approval is needed. B gives Sales a scope no spec grants. C loses assignment history. Recommendation: A. Blocked: T050 write path.
+
+**S40-F11-MCQ-5 — Unassigned or departed-Trainer client.** Question: what happens to a client with no current responsible Trainer (not yet assigned, or the Trainer's membership is revoked or deactivated under spec 003 FR-015)? Options: A) shown in a PO/WO-only unassigned list; no alert is routed. B) F12 approval is blocked until an assignment exists (changes F12 behaviour). C) the client's Trainer alerts route to PO/WO. Implications: A invents no role. B changes spec 012, which this PR does not edit. C adds recipients beyond "Trainer Alert" (S39-PO-8). Recommendation: A. Blocked: T050 unassigned read, T052.
+
+**S40-F11-MCQ-6 — Deleting the last Platform Owner.** Question: may a Platform Owner account be deleted while it is the last valid PO? Context: PO access is platform-scoped (`supabase/migrations/20261027120000_tenancy.sql:43–45`), not per workspace, so "workspace's last PO" is read as the platform's last PO. The last-PO guard is not implemented on origin/main (`specs/003-tenancy-rls/research.md:32`, F-A1; T015 pending). Options: A) refuse with the existing `not_permitted`/SQLSTATE 42501 convention (spec 003 FR-014), enforced before any PO deletion ships. B) allow only after a replacement PO exists, checked under the spec 003 serialization lock. C) allow with a PO-only override mechanism. Implications: A and B state the same rule. C is a new mechanism beyond S37-PO-4 "Preserve last-PO guard". Recommendation: A. Blocked: PO-account deletion (only if MCQ-1 = B).
+
+**S40-F11-MCQ-7 — Workspace creation entry point.** Question: where does a PO start workspace creation? No create-workspace UI or action exists on origin/main; only `workspaces_insert_po` exists (`supabase/migrations/20261027120000_tenancy.sql:132–133`). Options: A) a "New workspace" action in the existing workspace switcher, shown only to a PO. B) a PO-only Workspaces page in navigation. C) an operator/SQL path only. Implications: A and B add UI copy that needs byte-exact EN/AR PO approval. C contradicts "normal user flow" (S37-PO-3). Recommendation: A. Blocked: T051 only; the database path in T049 is not blocked.
+
+**S40-F11-MCQ-8 — Deferred alert frequency and channel.** Question: once the deferred client-late Trainer alert is approved, how many alerts does one missed deadline produce? Options: A) one alert per client per missed deadline. B) repeats daily until an accepted submission exists or the Trainer acknowledges. C) one alert plus one reminder before the deadline. Implications: B needs acknowledgement state. C adds a trigger that S36-02=A does not state. The channel belongs to the notifications feature, which is deferred (spec 013 defers rendering to notifications). Recommendation: A. Blocked: T053 (future only).
+
+**S40-F11-MCQ-9 — Assignment scope versus balanced auto-assignment.** Question: does the F11/F12 assignment include automatic balancing, or only the manual authoritative record? The roadmap places least-loaded auto-assignment in P4 (`docs/03-roadmap.md:26`; `docs/01-traceability.md:27`, AT-ASN-01, "client count" definition unconfirmed). Options: A) manual authoritative record only; balancing stays in P4. B) include least-loaded auto-assignment with a deterministic tie-break now. C) defer all assignment to P4 (conflicts with S39-PO-8). Implications: B pulls P4 scope and an unconfirmed client-count definition into F11/F12. Recommendation: A. Blocked: T050 auto-assignment logic.
