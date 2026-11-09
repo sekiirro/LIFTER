@@ -1,6 +1,6 @@
 # Implementation Plan: F20 Client Notes
 
-**Spec**: [spec.md](spec.md) | **Status**: Proposed; CN-MCQ-01..14 resolved by the PO (CN-MCQ-08 by S38-PO-2); CN-MCQ-16 resolved by S38-PO-10 and S38-PO-11 (exit-protection copy rows 30–33; no Save Draft); CN-MCQ-15 removed by S38-R9; no open ambiguities in F20; implementation is not authorized by this spec-only PR.
+**Spec**: [spec.md](spec.md) | **Status**: Proposed; CN-MCQ-01..14 resolved by the PO (CN-MCQ-08 by S38-PO-2); CN-MCQ-16 resolved by S38-PO-10 and S38-PO-11 (exit-protection copy rows 30-33; no Save Draft); CN-MCQ-17 resolved by S39-PO-8 (Discard leaves; no cancellation claim for an in-flight save); CN-MCQ-15 removed by S38-R9; no open ambiguities in F20; implementation is not authorized by this spec-only PR.
 
 ## Summary
 
@@ -37,12 +37,12 @@ Add independent plain-text notes to Client Details with a workspace/client compo
 - Timestamps use the viewer's local time zone (CN-MCQ-12) in the CN-MCQ-08 row 29 format.
 - Strings: only the approved CN-MCQ-08 table in spec.md (rows 1–29) and the approved CN-MCQ-16 table (rows 30–33) are used; no other copy is added. Mixed-direction text uses the existing `Bidi` component (README.md).
 - Do not invent colors, layout details, responsive breakpoints or token values. The Client Notes UI reuses existing Design System components and their existing values (S38-R9): the DESIGN.md §6 tabs pattern; the existing textarea, button, dialog, toast and States components; existing tokens and breakpoints. It introduces no new breakpoint, touch-size, focus or token value. A value that exists neither in DESIGN.md nor in an existing component becomes a PO question only when implementation needs it, under the frontend design gate.
-- Exit protection (DESIGN.md §5, Q54; spec.md FR-007): an editor with unsaved create or edit text shows a Stay/Discard warning on exit, using the CN-MCQ-16 strings (rows 30–33) and no Save Draft. Browser close/reload uses the browser's built-in warning (its text cannot be customized).
+- Exit protection (DESIGN.md §5, Q54; spec.md FR-007): an editor with unsaved create or edit text shows a Stay/Discard warning on exit, using the CN-MCQ-16 strings (rows 30-33) and no Save Draft. Discard leaves the editor and discards only text that has not been submitted. A save already submitted is not cancelled: the server commits or refuses it, and a committed save keeps its row and its one audit event (CN-MCQ-17; S39-PO-8). Browser close/reload uses the browser's built-in warning (its text cannot be customized).
 - No motion is required or proposed.
 
 ## Implementation phases (future, after MCQ decisions)
 
-1. (Done in round 6: CN-MCQ-16 resolved by S38-PO-10 and S38-PO-11; spec/plan/tasks updated; Analyze re-run with zero open ambiguities.) Implementation still requires its own approval before any implementation task.
+1. (Done in round 6: CN-MCQ-16 resolved by S38-PO-10 and S38-PO-11; spec/plan/tasks updated; Analyze re-run with zero open ambiguities. Round 7: CN-MCQ-17 resolved by S39-PO-8; Discard and in-flight-save wording aligned in spec/plan/tasks/contracts; Analyze re-run.) Implementation still requires its own approval before any implementation task.
 2. Confirm authorization integration against current client detail permissions; define app/database capability parity and write contract.
 3. Implement forward-only schema and RLS with a version chosen after required all-origin migration rescan.
 4. Implement server actions/reads with verified actor and current client/workspace scope, last-save-wins edits and metadata-only audit.
@@ -55,12 +55,14 @@ Add independent plain-text notes to Client Details with a workspace/client compo
 - **Cross-workspace exposure**: composite client/workspace integrity plus two authorization walls and direct RLS negative coverage.
 - **Role drift**: reuse the existing role matrix and assert app/database parity.
 - **Attribution**: original author and creation timestamp are kept; edits set `edited_at` only.
-- **Unapproved interaction/copy**: UI copy is only the approved CN-MCQ-08 table (rows 1–29) and CN-MCQ-16 table (rows 30–33); design values come only from the reused Design System components (S38-R9); no icon is used.
+- **Unapproved interaction/copy**: UI copy is only the approved CN-MCQ-08 table (rows 1-29) and CN-MCQ-16 table (rows 30-33); design values come only from the reused Design System components (S38-R9); no icon is used.
+- **Overpromised exit outcome**: the exit-protection wording claims only what is decided: unsubmitted text is discarded, and a submitted save is never cancelled but takes the server result (committed or refused) with its audit event (CN-MCQ-17; S39-PO-8).
 - **Audit/content duplication**: audit payload is metadata only (CN-MCQ-07); a generic row-snapshot audit must not store body text. Retention is inherited from `public.audit_events` (CN-MCQ-13); the existing period stays open as DP-02.
 
 ## PO decisions
 
 - Resolved: CN-MCQ-01..14 (spec.md Clarifications; S37-PO-6, S37-PO-7, S37-PO-14, S37-PO-16 and S38-PO-2).
-- Resolved: CN-MCQ-16 (exit-protection copy rows 30–33; Save Draft not offered) by S38-PO-10 and S38-PO-11.
+- Resolved: CN-MCQ-16 (exit-protection copy rows 30-33; Save Draft not offered) by S38-PO-10 and S38-PO-11.
+- Resolved: CN-MCQ-17 (Discard leaves; a submitted save is not cancelled and takes the server result) by S39-PO-8.
 - Open: none in F20.
 - Removed: CN-MCQ-15 (DESIGN.md §11 UI values) by architect ruling S38-R9; the design-system reuse rule is recorded in spec.md FR-006 and FR-007.
