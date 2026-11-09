@@ -371,3 +371,10 @@ The change is docs-only. No SQL, test, code, schema, data, or shared-migration c
 - The traceability entry for T065 is recorded after GREEN (see `traceability.md`).
 
 **Findings count:** 0 CRITICAL, 0 HIGH. **Verdict:** PASS for T065 entry under S29-PO-3 Q6.
+
+## Round 22 — s38 signup form UX fix T066 (2026-11-09)
+
+- Scope: T066 [FR-015, FR-028]: Name re-validation on edit after a submitted identity error (F1), and focus retention when a pending submission disables the focused control (F2). Source: the read-only s38 bug hunt on PR #30 head `5102877f`.
+- Not in scope: F3 (registration-link reuse mapped to `duplicate`). Verified NOT CONFIRMED at `5102877f`: the migration returns `invalid` for that constraint, so no fix is made.
+- Coverage: FR-015 (accessible UI, focus) and FR-028 (identity field error and focus rules). No requirement text changed, no product or copy decision is needed, no visual change, no migration change.
+- Findings count: 0 CRITICAL, 0 HIGH. Verdict: PASS for T066 entry.
