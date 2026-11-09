@@ -1,4 +1,5 @@
 import { parsePrice } from './validation';
+import { formatNumber, numberingLocale } from '../i18n/format';
 type Locale = 'ar' | 'en';
 // Runtime metadata is descriptive formatting, never an allowed-currency policy.
 function exponent(currency: string): number | null {
@@ -11,9 +12,7 @@ function exponent(currency: string): number | null {
   );
 }
 function localDigits(value: string, locale: Locale): string {
-  const digits = Array.from({ length: 10 }, (_, n) =>
-    new Intl.NumberFormat(locale, { useGrouping: false }).format(n),
-  );
+  const digits = Array.from({ length: 10 }, (_, n) => formatNumber(n, locale));
   return value.replace(/[0-9]/g, (n) => digits[Number(n)]!);
 }
 export function formatMinorUnits(
@@ -31,7 +30,7 @@ export function formatMinorUnits(
     return locale === 'ar' ? `\u2068${text}\u2069` : text;
   }
   const scale = 10n ** BigInt(places);
-  const integer = new Intl.NumberFormat(locale, {
+  const integer = new Intl.NumberFormat(numberingLocale(locale), {
     maximumFractionDigits: 0,
   }).format(amount / scale);
   const separator =

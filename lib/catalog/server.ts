@@ -3,6 +3,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import { authorize, type Actor } from '../auth/authorize';
 import type { Role } from '../auth/capabilities';
 import { createSessionClient } from '../supabase/server';
+import { isUuidV4 } from './uuid';
 
 type RpcError = { code?: string; message?: string };
 type RpcResult<T = unknown> = { data: T | null; error: RpcError | null };
@@ -30,6 +31,31 @@ export type CatalogMutation = {
   transition?: 'remove' | 'restore';
   request?: Record<string, unknown>;
 };
+export type FoodDuplicateQuery = {
+  name: string;
+  language: 'ar' | 'en';
+  basis: 'g' | 'ml';
+  productIdentity: string;
+  preparationIdentity: string;
+  weighingState: 'raw' | 'cooked' | 'not_applicable';
+  kcal: number;
+};
+export type CatalogWorkspaceOption = { id: string; name: string };
+export type CatalogExerciseDetailRow = {
+  exercise_id: string;
+  version: number;
+  payload: Record<string, unknown>;
+  created_at: string;
+  created_by: string | null;
+  origin_workspace_id: string | null;
+  name_ar: string;
+  name_en: string;
+  requested_id: string;
+  survivor_id: string;
+  lifecycle_state: 'active' | 'removed';
+  lifecycle_revision: number;
+  variation: { workspace_id: string; video_url: string } | null;
+};
 export type CatalogAlternativeInput = {
   foodId: string;
   version: number;
@@ -44,8 +70,6 @@ export type CatalogDependencies = {
   actor: (client: SessionClient) => Promise<Actor | null>;
 };
 
-const UUID_V4 =
-  /^[0-9a-f]{8}-[0-9a-f]{4}-4[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 const ROLE_BY_DB: Record<string, Role> = {
   platform_owner: 'platform_owner',
   workspace_owner: 'workspace_owner',
@@ -56,6 +80,7 @@ const operationNames = {
   createExercise: 'catalog_create_exercise',
   versionExercise: 'catalog_version_exercise',
   transitionExercise: 'catalog_transition_exercise',
+  removeWorkspaceExercise: 'catalog_remove_workspace_exercise',
   mergeExercise: 'catalog_merge_exercise',
   writeWorkspaceExercise: 'catalog_write_workspace_exercise',
   writeVariation: 'catalog_write_variation',
@@ -151,7 +176,7 @@ export function createCatalogServer(deps: CatalogDependencies) {
     (a.role !== null && a.role !== 'sales' && a.activeWorkspaceIds.length > 0);
   const scoped = (a: Actor, workspaceId?: string) =>
     !!workspaceId && !!a.role && authorize(a, 'coaching_work', workspaceId);
-  const keyValid = (key: string) => UUID_V4.test(key);
+  const keyValid = (key: string) => isUuidV4(key);
   async function mutate(
     input: CatalogMutation,
     name: string,
@@ -161,9 +186,59 @@ export function createCatalogServer(deps: CatalogDependencies) {
     const ready = await prepare(allowed);
     if (ready.result) return ready.result;
     if (!keyValid(input.operationKey)) return { status: 'invalid' };
+    if (input.workspaceId != null && !isUuidV4(input.workspaceId))
+      return { status: 'invalid' };
+    if (input.id != null && !isUuidV4(input.id)) return { status: 'invalid' };
+    if (input.targetId != null && !isUuidV4(input.targetId))
+      return { status: 'invalid' };
     return rpc(ready.client!, name, args(input));
   }
   return {
+    authoringWorkspaces() {
+      return (async (): Promise<CatalogResult<CatalogWorkspaceOption[]>> => {
+        const ready = await prepare((a) => isPO(a) || coachingSomewhere(a));
+        if (ready.result)
+          return { status: ready.result.status } as CatalogResult<
+            CatalogWorkspaceOption[]
+          >;
+        try {
+          const response = await ready
+            .client!.from('workspaces')
+            .select('id,name')
+            .order('name');
+          if (response.error || !response.data)
+            return { status: 'unavailable' };
+          const workspaces = response.data.filter(
+            (workspace: { id: string }) =>
+              isPO(ready.actor!) || scoped(ready.actor!, workspace.id),
+          );
+          return {
+            status: 'ok',
+            data: workspaces.map((workspace: { id: string; name: string }) => ({
+              id: workspace.id,
+              name: workspace.name,
+            })),
+          };
+        } catch {
+          return { status: 'unavailable' };
+        }
+      })();
+    },
+    foodDuplicateCandidates(input: FoodDuplicateQuery) {
+      return (async (): Promise<CatalogResult> => {
+        const ready = await prepare(coachingSomewhere);
+        if (ready.result) return ready.result;
+        return rpc(ready.client!, 'catalog_food_duplicate_candidates', {
+          p_name: input.name,
+          p_language: input.language,
+          p_basis: input.basis,
+          p_product_identity: input.productIdentity,
+          p_preparation_identity: input.preparationIdentity,
+          p_weighing_state: input.weighingState,
+          p_kcal: input.kcal,
+        });
+      })();
+    },
     search(input: CatalogSearchInput) {
       return (async (): Promise<CatalogResult> => {
         const ready = await prepare(
@@ -179,6 +254,43 @@ export function createCatalogServer(deps: CatalogDependencies) {
           cursor: input.cursor ?? null,
           workspace_id: input.workspaceId ?? null,
         });
+      })();
+    },
+    exerciseDetail(input: {
+      exerciseId: string;
+      scope?: 'global' | 'workspace';
+      workspaceId?: string | null;
+    }) {
+      return (async (): Promise<CatalogResult<CatalogExerciseDetailRow[]>> => {
+        const workspaceScope = input.scope === 'workspace';
+        const ready = await prepare((actor) =>
+          workspaceScope
+            ? !!input.workspaceId &&
+              (isPO(actor) || scoped(actor, input.workspaceId))
+            : coachingSomewhere(actor) &&
+              (!input.workspaceId ||
+                isPO(actor) ||
+                scoped(actor, input.workspaceId)),
+        );
+        if (ready.result)
+          return { status: ready.result.status } as CatalogResult<
+            CatalogExerciseDetailRow[]
+          >;
+        return rpc<CatalogExerciseDetailRow[]>(
+          ready.client!,
+          workspaceScope
+            ? 'catalog_workspace_exercise_detail'
+            : 'catalog_exercise_detail',
+          workspaceScope
+            ? {
+                p_exercise_id: input.exerciseId,
+                p_workspace_id: input.workspaceId,
+              }
+            : {
+                p_exercise_id: input.exerciseId,
+                p_workspace_id: input.workspaceId ?? null,
+              },
+        );
       })();
     },
     createExercise: (i: CatalogMutation) =>
@@ -200,6 +312,18 @@ export function createCatalogServer(deps: CatalogDependencies) {
         p_transition: x.transition,
         p_operation_key: x.operationKey,
       })),
+    removeWorkspaceExercise: (i: CatalogMutation) =>
+      mutate(
+        i,
+        operationNames.removeWorkspaceExercise,
+        (a) => !!i.workspaceId?.trim() && (isPO(a) || scoped(a, i.workspaceId)),
+        (x) => ({
+          p_workspace_id: x.workspaceId,
+          p_exercise_id: x.id,
+          p_expected_revision: x.expectedVersion,
+          p_operation_key: x.operationKey,
+        }),
+      ),
     mergeExercise: (i: CatalogMutation) =>
       mutate(i, operationNames.mergeExercise, isPO, (x) => ({
         p_source_id: x.id,
@@ -224,7 +348,10 @@ export function createCatalogServer(deps: CatalogDependencies) {
       mutate(
         i,
         operationNames.writeVariation,
-        (a) => scoped(a, i.workspaceId),
+        (a) =>
+          typeof i.workspaceId === 'string' &&
+          i.workspaceId.trim().length > 0 &&
+          (isPO(a) || scoped(a, i.workspaceId)),
         (x) => ({
           p_workspace_id: x.workspaceId,
           p_exercise_id: x.id,
@@ -320,10 +447,14 @@ const catalog = createCatalogServer({
   actor: loadSessionActor,
 });
 export const {
+  authoringWorkspaces,
+  foodDuplicateCandidates,
   search,
+  exerciseDetail,
   createExercise,
   versionExercise,
   transitionExercise,
+  removeWorkspaceExercise,
   mergeExercise,
   writeWorkspaceExercise,
   writeVariation,

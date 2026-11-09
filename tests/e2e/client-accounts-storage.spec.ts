@@ -101,11 +101,11 @@ test('a real pending-client JWT cannot read or write Storage', async ({
     ]);
     await page.setExtraHTTPHeaders({ 'CF-Connecting-IP': '203.0.113.30' });
     await page.goto(`/register/${link.token}`);
-    await page.getByLabel('Name', { exact: true }).fill('Storage Fixture User');
+    await page.getByLabel('Name', { exact: true }).fill('Storage Test Fixture');
     await page.getByLabel('Date of birth', { exact: true }).fill('1990-04-12');
     await page
       .getByLabel('Username', { exact: true })
-      .fill(`storage_${randomUUID().slice(0, 8)}`);
+      .fill(`storage${randomUUID().replaceAll('-', '').slice(0, 22)}`);
     await page.getByLabel('Email', { exact: true }).fill(email);
     await page
       .getByRole('textbox', { name: 'Phone number' })

@@ -242,6 +242,14 @@ export const ar = {
   'showcase.retryCount': 'عدد المحاولات',
   'showcase.print': 'نموذج الطباعة',
   'clientSignup.name': 'الاسم',
+  'clientSignup.dateOfBirth': 'تاريخ الميلاد',
+  'clientSignup.usernameUnavailable':
+    'اسم المستخدم ده غير متاح. اختار اسم تاني.',
+  'clientSignup.usernameFormatError':
+    'استخدم من 3 لـ30 حرف: حروف إنجليزي أو أرقام أو نقطة أو شرطة سفلية.',
+  'clientSignup.username': 'اسم المستخدم',
+  'clientSignup.telegramUsername': 'اسم مستخدم تيليجرام',
+  'clientSignup.optional': 'اختياري',
   'clientSignup.email': 'البريد الإلكتروني',
   'clientSignup.country': 'الدولة',
   'clientSignup.phone': 'رقم الهاتف',
@@ -401,7 +409,7 @@ export const ar = {
   'registrationApproval.statusDenied': 'صفحة الحالة هذه غير متاحة.',
   'registrationApproval.statusRedirectFallback':
     'لم يكتمل الانتقال التلقائي. يمكنك المتابعة إلى الصفحة الرئيسية.',
-  // DRAFT (T017): catalog list/search interface copy pending PO approval.
+  // S26 copy batch: approved strings are locked by catalog-approved-copy.test.ts.
   'catalog.exerciseTitle': 'مكتبة التمارين',
   'catalog.exerciseIntro':
     'ابحث في التمارين المتاحة وصفّها حسب العضلة الأساسية أو المعدات.',
@@ -421,6 +429,31 @@ export const ar = {
   'catalog.loading': 'جارٍ تحميل المكتبة…',
   'catalog.emptyTitle': 'لا توجد عناصر بعد',
   'catalog.emptyDescription': 'ستظهر عناصر المكتبة هنا بعد إضافتها.',
+  // DRAFT (S27): catalog.addExercise
+  // DRAFT (S27): catalog.nextPage
+  // DRAFT (S27): catalog.paginationLabel
+  // DRAFT (S27): catalog.editorScope
+  // DRAFT (S27): catalog.editorGlobalScope
+  // DRAFT (S27): catalog.editorWorkspaceScope
+  // DRAFT (S27): catalog.editorWorkspace
+  // DRAFT (S27): catalog.detailTitle
+  // DRAFT (S27): catalog.detailVersion
+  // DRAFT (S27): catalog.detailWorkspace
+  // DRAFT (S27): catalog.detailVideo
+  // DRAFT (S27): catalog.detailOpenVideo
+  // DRAFT (S27): catalog.detailNoVideo
+  // DRAFT (S27): catalog.detailMergedTo
+  // DRAFT (S27): catalog.editAsNewVersion
+  // DRAFT (S27): catalog.editorErrorTextTooLong
+  // DRAFT (S27): catalog.foodErrorTooLong
+  // DRAFT (S27): catalog.editorSecondaryMuscles
+  'catalog.addExercise': 'إضافة تمرين',
+  'catalog.nextPage': 'الصفحة التالية',
+  'catalog.paginationLabel': 'ترقيم صفحات مكتبة التمارين',
+  'catalog.editorScope': 'نطاق التمرين',
+  'catalog.editorGlobalScope': 'المكتبة العامة',
+  'catalog.editorWorkspaceScope': 'مساحة العمل فقط',
+  'catalog.editorWorkspace': 'مساحة العمل',
   'catalog.noResultsTitle': 'لا توجد نتائج',
   'catalog.noResultsDescription': 'جرّب كلمات بحث أو عوامل تصفية مختلفة.',
   'catalog.errorTitle': 'تعذّر تحميل المكتبة',
@@ -436,6 +469,7 @@ export const ar = {
   'catalog.carbs': 'الكربوهيدرات',
   'catalog.fat': 'الدهون',
   'catalog.showcaseTitle': 'غلاف قائمة المكتبة',
+  'catalog.showcaseKendoWorkspace': 'مساحة كيندو التجريبية',
   'catalog.showcaseIntro':
     'معاينة عربية أولًا مع الإنجليزية، والبحث وعوامل التصفية والحالات.',
   'catalog.showcaseNotice':
@@ -447,11 +481,10 @@ export const ar = {
   'catalog.stateEmpty': 'فارغة',
   'catalog.stateNoResults': 'لا نتائج',
   'catalog.stateError': 'خطأ',
-  // DRAFT (T022): exercise editor interface copy pending PO approval.
+  // S26 copy batch: approved exercise editor strings are locked by catalog-approved-copy.test.ts.
   'catalog.editorTitle': 'محرر التمرين',
   'catalog.editorIntroGlobal':
     'أنشئ تمرينًا عالميًا أو حرّر إعداداته الافتراضية للخطة. تُستخدم هذه القيم عند إضافة التمرين، ويمكن للمدرّب تجاوزها.',
-  // DRAFT (F16): scope-aware exercise editor subtitle pending PO approval.
   'catalog.editorIntroWorkspace':
     'أنشئ تمرينًا لهذه المساحة أو حرّر إعداداته الافتراضية. يمكن للمدرّبين تجاوزها عند إضافة التمرين إلى خطة.',
   'catalog.editorDefaultsTitle': 'إعدادات الخطة الافتراضية',
@@ -498,6 +531,17 @@ export const ar = {
     'التمارين العالمية يديرها مالك المنصة. لا يمكن لهذا الدور حفظها أو حوكمتها.',
   'catalog.editorStatusError': 'تعذّر حفظ التمرين',
   'catalog.editorStatusErrorDescription': 'لم تُحفظ تغييراتك. حاول مرة أخرى.',
+  'catalog.detailTitle': 'تفاصيل التمرين',
+  'catalog.detailVersion': 'الإصدار الحالي',
+  'catalog.detailWorkspace': 'تنويعة مساحة العمل',
+  'catalog.detailVideo': 'رابط فيديو التمرين',
+  'catalog.detailOpenVideo': 'فتح رابط الفيديو',
+  'catalog.detailNoVideo': 'لا يوجد رابط فيديو لهذه المساحة.',
+  'catalog.detailMergedTo': 'تم دمج هذا التمرين مع التمرين النشط:',
+  'catalog.editorSecondaryMuscles': 'العضلات الثانوية',
+  'catalog.editAsNewVersion': 'تحرير كإصدار جديد',
+  'catalog.editorErrorTextTooLong': 'النص أطول من الحد المسموح لهذا الحقل.',
+  'catalog.foodErrorTooLong': 'النص أطول من الحد المسموح لهذا الحقل.',
   'catalog.editorErrorRequired': 'هذا الحقل مطلوب.',
   'catalog.editorErrorPositiveInteger': 'أدخل عددًا صحيحًا أكبر من صفر.',
   'catalog.editorErrorIntegerRange': 'أدخل عددًا صحيحًا ضمن النطاق المسموح.',
@@ -505,7 +549,7 @@ export const ar = {
     'يجب ألا يتجاوز الحد الأدنى للتكرارات الحد الأقصى.',
   'catalog.editorErrorChoice': 'اختر قيمة من القائمة.',
   'catalog.editorErrorTooManyAlternatives': 'اختر ثلاثة بدائل كحد أقصى.',
-  // DRAFT (T022): showcase controls for the exercise editor preview.
+  // S26 copy batch: approved showcase labels are locked by catalog-approved-copy.test.ts.
   'catalog.showcaseView': 'العرض',
   'catalog.showcaseViewList': 'القائمة',
   'catalog.showcaseViewEditor': 'محرر التمرين',
@@ -521,6 +565,99 @@ export const ar = {
   'catalog.showcaseCoachingWork': 'دعم التوجيه',
   'catalog.showcaseCoachingWorkOn': 'مفعل',
   'catalog.showcaseCoachingWorkOff': 'معطل',
+  'catalog.foodEditorTitle': 'إضافة طعام',
+  'catalog.foodPreviewHeading': 'معاينة كتالوج الطعام',
+  'catalog.foodNames': 'أسماء الطعام',
+  'catalog.foodNameAr': 'الاسم بالعربية',
+  'catalog.foodNameEn': 'الاسم بالإنجليزية',
+  'catalog.foodIdentity': 'هوية الطعام',
+  'catalog.foodProduct': 'المنتج الأساسي',
+  'catalog.foodPreparation': 'طريقة التحضير',
+  'catalog.foodWeighing': 'حالة الوزن',
+  'catalog.foodOriginWorkspace': 'مساحة العمل عند الإضافة',
+  'catalog.foodChooseWorkspace': 'اختر مساحة عمل',
+  'catalog.foodNoOrigin': 'دون ربط بمساحة عمل',
+  'catalog.foodWorkspaceRequired':
+    'اختر مساحة العمل التي لديك فيها صلاحية التوجيه.',
+  'catalog.foodRaw': 'نيئ',
+  'catalog.foodCooked': 'مطبوخ',
+  'catalog.foodNotApplicable': 'لا ينطبق',
+  'catalog.foodBasis': 'وحدة القياس المرجعية',
+  'catalog.foodPer100g': 'لكل {amount} غ',
+  'catalog.foodPer100ml': 'لكل {amount} مل',
+  'catalog.foodNutrition': 'القيم الغذائية لكل {amount}',
+  'catalog.foodKcal': 'الطاقة (سعرة حرارية)',
+  'catalog.foodKcalUnit': 'سعرة حرارية',
+  'catalog.foodProtein': 'البروتين (غ)',
+  'catalog.foodCarbs': 'الكربوهيدرات (غ)',
+  'catalog.foodFat': 'الدهون (غ)',
+  'catalog.foodFiber': 'الألياف (غ)، اختياري',
+  'catalog.foodKcalWarningOnly':
+    'تختلف السعرات عن تقدير المغذيات بمعادلة {protein}/{carbs}/{fat}. لن يمنع هذا التحذير الحفظ.',
+  'catalog.foodServings': 'وحدات الحصة',
+  'catalog.foodServingAr': 'اسم الحصة بالعربية',
+  'catalog.foodServingEn': 'اسم الحصة بالإنجليزية',
+  'catalog.foodServingQuantity': 'المكافئ بوحدة القياس المحددة',
+  'catalog.foodServingAdd': 'إضافة وحدة حصة',
+  'catalog.foodServingRemove': 'إزالة وحدة الحصة',
+  'catalog.foodAlternatives': 'بدائل الطعام',
+  'catalog.foodAlternativeAdd': 'إضافة بديل',
+  'catalog.foodAlternativeRemove': 'إزالة البديل',
+  'catalog.foodAlternativeFood': 'الطعام البديل',
+  'catalog.foodAlternativePortion': 'كمية الحصة',
+  'catalog.foodAlternativeUnit': 'وحدة الحصة',
+  'catalog.foodAlternativeLimit': 'يمكن إضافة ثلاثة بدائل كحد أقصى.',
+  'catalog.foodAlternativeSaveUnavailable':
+    'خدمة الكتالوج الحالية لا تحفظ بدائل الطعام. أزل البدائل قبل حفظ الطعام.',
+  'catalog.foodErrorRequired': 'أكمل هذا الحقل المطلوب.',
+  'catalog.foodErrorSummaryTitle': 'راجع الحقول التي تحتاج إلى تصحيح',
+  'catalog.foodErrorSummaryLink': 'انتقل إلى الحقل الذي يحتاج إلى تصحيح',
+  'catalog.foodErrorNumeric': 'أدخل رقمًا لا يقل عن صفر.',
+  'catalog.foodErrorMacroLimit':
+    'يجب ألا يتجاوز مجموع البروتين والكربوهيدرات والدهون {amount} غ.',
+  'catalog.foodErrorServing': 'أدخل مكافئ حصة أكبر من صفر.',
+  'catalog.foodErrorServingLabel': 'أدخل اسم الحصة بالعربية أو الإنجليزية.',
+  'catalog.foodErrorAlternativePortion': 'أدخل كمية حصة أكبر من صفر.',
+  'catalog.foodEditorSave': 'حفظ الطعام',
+  'catalog.foodSaveSuccess': 'تم حفظ الطعام وأصبح متاحًا في الكتالوج.',
+  'catalog.foodSaving': 'جارٍ حفظ الطعام',
+  'catalog.foodSaveError': 'تعذّر حفظ الطعام',
+  'catalog.foodSaveErrorDescription':
+    'تعذّر تأكيد الحفظ. راجع قائمة الطعام قبل إعادة المحاولة.',
+  'catalog.duplicateExactTitle': 'هذا الطعام موجود بالفعل',
+  'catalog.duplicateNearTitle': 'مراجعة الأطعمة المتشابهة',
+  'catalog.duplicateExactDescription':
+    'اختر الطعام الموجود للمتابعة. لا يمكن إضافة طعام مطابق مرة أخرى.',
+  'catalog.duplicateNearDescription':
+    'تتشابه هذه الأطعمة في الاسم والقيم الغذائية. راجعها قبل المتابعة.',
+  'catalog.duplicateConfirm':
+    'راجعت هذه النتائج وأريد إضافة هذا الطعام رغم ذلك',
+  'catalog.duplicateContinue': 'متابعة إضافة هذا الطعام',
+  'catalog.duplicateCancel': 'العودة إلى التعديل',
+  'catalog.duplicateNoCandidates': 'لم يتم العثور على أطعمة مطابقة.',
+  'catalog.duplicateSelectExisting': 'اختيار الطعام الموجود',
+  'catalog.duplicateExistingSelected': 'تم اختيار الطعام الموجود.',
+  'catalog.videoVariationTitle': 'فيديو التمرين لمساحة العمل',
+  'catalog.videoVariationWorkspace': 'مساحة العمل المحددة',
+  'catalog.videoVariationExercise': 'التمرين العام',
+  'catalog.videoVariationUrl': 'رابط الفيديو',
+  'catalog.videoVariationNote': 'ملاحظة خاصة بمساحة العمل',
+  'catalog.videoVariationSave': 'حفظ ربط الفيديو',
+  'catalog.videoVariationSaving': 'جارٍ حفظ ربط الفيديو',
+  'catalog.videoVariationSaved': 'تم حفظ ربط الفيديو.',
+  'catalog.videoVariationInvalidUrl':
+    'استخدم رابطًا آمنًا من يوتيوب أو جوجل درايف فقط.',
+  'catalog.videoVariationRequired': 'أدخل رابط فيديو صالحًا أو ملاحظة.',
+  'catalog.videoVariationWorkspaceRequired': 'اختر مساحة العمل صراحةً.',
+  'catalog.videoVariationExerciseRequired': 'اختر تمرينًا عامًا.',
+  'catalog.videoVariationUnavailable': 'تعذّر حفظ ربط الفيديو. حاول مرة أخرى.',
+  'catalog.videoVariationForeignOnly':
+    'تظهر هنا روابط مساحة العمل المحددة فقط.',
+  'catalog.videoVariationNoWorkspace':
+    'لا توجد مساحة عمل متاحة لك لإدارة ربط فيديو.',
+  'catalog.videoVariationNoExercise':
+    'لا توجد تمارين عامة متاحة لربط فيديو بها.',
+  'catalog.videoVariationNoteTooLong': 'يجب ألا تتجاوز الملاحظة {amount} حرف.',
   'forms.intake.n11.feedback.0_2': 'إحساس قليل جدًا بالجوع',
   'forms.intake.n11.feedback.3_4': 'جوع خفيف',
   'forms.intake.n11.feedback.5_6': 'جوع متوسط',

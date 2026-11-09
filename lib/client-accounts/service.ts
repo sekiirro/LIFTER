@@ -166,10 +166,13 @@ export async function processClientSignup(
     const signup = record(completed.data);
     switch (signup?.status) {
       case 'invalid':
-      case 'duplicate':
       case 'complete':
       case 'unavailable':
         return signupResult(signup.status, input.locale);
+      case 'username_unavailable':
+        return signupResult('invalid_input', input.locale, ['username']);
+      case 'duplicate':
+        return signupResult('duplicate', input.locale);
       default:
         return signupResult('unavailable', input.locale);
     }

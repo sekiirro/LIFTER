@@ -68,6 +68,20 @@ function trackedServer(actor: (typeof actors)[number]) {
 }
 
 describe('catalog server authorization uses the signed-in user RPC path', () => {
+  it('serves an empty filtered search through the session catalog wall', async () => {
+    const result = await server(workspaces.trainerA).search({
+      kind: 'exercise',
+      query: `s27-empty-${randomUUID()}`,
+      filters: {
+        primary_muscle_code: 'chest',
+        equipment_codes: ['barbell'],
+        page_size: 21,
+      },
+    });
+    expect(result.status).toBe('ok');
+    if (result.status === 'ok') expect(result.data).toEqual([]);
+  });
+
   it('matches the six role states for catalog search and the principal mutation classes', async () => {
     const expectedRead = [true, true, true, false, false, false];
     const expectedGlobalWrite = [true, false, false, false, false, false];
@@ -241,12 +255,13 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
       ).toBe(false);
 
     const workspaceAction = server(workspaces.trainerA);
+    const workspaceName = `Workspace filter payload ${randomUUID()}`;
     const workspaceCreated = await workspaceAction.writeWorkspaceExercise({
       operationKey: fixtureKey(),
       workspaceId: workspaces.wsA.id,
       request: {
         name_ar: `Ø§Ø®ØªØ¨Ø§Ø± ${randomUUID()}`,
-        name_en: `Workspace filter payload ${randomUUID()}`,
+        name_en: workspaceName,
         primary_muscle_code: 'chest',
         secondary_muscle_codes: [],
         equipment_codes: ['barbell'],
@@ -260,7 +275,7 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
       ).exercise_id;
       const workspaceResult = await workspaceAction.search({
         kind: 'workspace_exercise',
-        query: '',
+        query: workspaceName,
         workspaceId: workspaces.wsA.id,
         filters: {
           primary_muscle_code: 'chest',
@@ -271,6 +286,23 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
       if (workspaceResult.status === 'ok')
         expect(
           (workspaceResult.data as Array<{ result_id: string }>).some(
+            (row) => row.result_id === workspaceExerciseId,
+          ),
+        ).toBe(true);
+
+      const workspaceFilteredResult = await workspaceAction.search({
+        kind: 'workspace_exercise',
+        query: '',
+        workspaceId: workspaces.wsA.id,
+        filters: {
+          primary_muscle_code: 'chest',
+          equipment_codes: ['barbell'],
+        },
+      });
+      expect(workspaceFilteredResult.status).toBe('ok');
+      if (workspaceFilteredResult.status === 'ok')
+        expect(
+          (workspaceFilteredResult.data as Array<{ result_id: string }>).some(
             (row) => row.result_id === workspaceExerciseId,
           ),
         ).toBe(true);

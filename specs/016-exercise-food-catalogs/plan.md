@@ -46,6 +46,8 @@ Mutation ordering is canonical across F16 writers: authorize action and explicit
 
 Routes under `app/(dashboard)/catalog/{exercises,foods}`: list + search + filters, detail with version history, add/edit forms (edit = new version), Remove and Restore where authorized, merge dialog (PO), variation editor (workspace). Remove is a non-destructive soft deletion. Shared Zod schemas in `lib/catalog/` reused by F17/F18. Frontend Design Gate applies; any design gap -> PO.
 
+S30-PO-9 and S31-PO-1 Q3 exercise UI/backend: lifecycle actions are removed from Exercise Add/Edit; Merge and Restore controls are absent from the exercise UI; Remove is offered only from Exercise Detail after explicit confirmation. Reuse existing bilingual keys `catalog.editorRemove`, `dialog.confirm`, `dialog.cancel`, and `catalog.editorLifecycleRemoved`; do not add copy. Global removal remains PO-only. Workspace removal is allowed to PO with explicit workspace scope and WO/Trainer with current `coaching_work` in their own workspace. Add the current lifecycle revision to the detail projection and implement `catalog_remove_workspace_exercise` as a forward-only migration/RPC. Both removal paths append inactive lifecycle/audit markers, use expected-revision CAS and action-bound idempotency, and preserve content, plans, snapshots, historical references, and underlying data. Do not add workspace Restore or change existing global transition behavior. The list-to-detail navigation must carry explicit scope and workspace identity so the detail action is reachable without conflating global and tenant identities.
+
 ### Snapshot contract (consumed by F17/F18)
 
 `lib/catalog/snapshot.ts` exports `ExerciseSnapshotV1`/`FoodSnapshotV1` and builders that take explicit versions only (FR-020), retaining canonical exercise identity only; selected workspace videos are resolved dynamically, not stored in plan-version snapshots. Frozen fixture contract tests; F17/F18 consume the same fixtures.
@@ -101,3 +103,13 @@ The supporting design artifacts on this feature branch are reconciled to this ca
 ## S33-PO-4 test hygiene
 
 Taxonomy search integration coverage must use a unique narrow filter or explicitly paginate with a fixed maximum while preserving the expected search result and authorization checks.
+
+
+## S37-PO-4 migration rename safety (PR #43)
+
+Preserve the approved F16 behavior and migration contents while safely renaming the two conflicting migration files. Under S37-PO-6 Option D, Stack C is excluded and must remain untouched; do not issue any command, query, or harness call targeting Stack C. Its applied migration history is not a gate for this PR because Stack C is excluded; repair its history later only under a PO-approved procedure if ever needed. Use the prior round's B/D applied-history audit (both old versions absent) and refresh the all-origin-ref migration scan. Choose unique valid timestamps strictly above the maximum on every origin ref, preserving the migrations' internal order. Rename only with `git mv`; prove each file content is byte-identical. This is authorized by S36-PO-4 item 6 (= A), ?Safely rename conflicting migrations. Audit applied migration history, preserve data, and verify clean deployment order. No migration-rule waiver.?, and S36-PO-5 #43, ?#43: safely rename migrations after checking applied histories.? Architect rulings: S36-R5 and the #43 mapping in `s36-architect-rulings-4.md`.
+
+
+## S37-PO-6 Option D clarification (PR #43)
+
+Stack C is excluded and untouched for this PR: no command, query, or harness call may target it. Its history is repaired later only under a PO-approved procedure if ever needed. This follows the exact PO decision recorded at `C:/Users/NEW LAP/.lifter/runs/s37-po/s37-po-1.verbatim.txt` (S37-PO-6).

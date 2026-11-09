@@ -275,9 +275,27 @@ test.describe('local public registration states (required for review)', () => {
     await expect(
       page.locator('main [name="email"], main [name="password"]'),
     ).toHaveCount(2);
-    await expect(page.getByLabel(m['clientSignup.name'])).toBeVisible();
-    await expect(page.getByLabel(m['clientSignup.email'])).toBeVisible();
-    await expect(page.getByLabel(m['clientSignup.password'])).toBeVisible();
+    await expect(
+      page.getByLabel(m['clientSignup.name'], { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel(m['clientSignup.dateOfBirth'], { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel(m['clientSignup.username'], { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel(
+        `${m['clientSignup.telegramUsername']} (${m['clientSignup.optional']})`,
+        { exact: true },
+      ),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel(m['clientSignup.email'], { exact: true }),
+    ).toBeVisible();
+    await expect(
+      page.getByLabel(m['clientSignup.password'], { exact: true }),
+    ).toBeVisible();
     expect(await violations(page)).toEqual([]);
     const raw = await page.request.get(`${link}/`, { maxRedirects: 0 });
     expect(raw.status()).toBe(308);

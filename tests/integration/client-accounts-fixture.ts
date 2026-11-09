@@ -134,7 +134,7 @@ export async function signupFixture(f: ClientContext, executor = sql()) {
             .slice(-11),
         password: 'Synthetic9!' + randomUUID().replaceAll('-', ''),
         date_of_birth: '1990-04-12',
-        username: `u3_${randomUUID().replaceAll('-', '').slice(0, 24)}`,
+        username: `u3_${randomUUID().replaceAll('-', '').slice(0, 27)}`,
         telegram_username: '',
       },
     };

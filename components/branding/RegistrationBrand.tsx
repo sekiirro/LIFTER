@@ -17,12 +17,14 @@ export function brandingAssetUrl(
 }
 
 export function RegistrationBrand({
+  bannerMode = 'inline',
   brand,
   locale,
   token,
   renderHandle,
   fallbackName,
 }: {
+  bannerMode?: 'inline' | 'stage';
   brand?: PublicBrandingProjection;
   locale: Locale;
   token: string;
@@ -37,29 +39,34 @@ export function RegistrationBrand({
     <BrandScope
       color={brand?.color ?? DEFAULT_BRAND}
       className={styles.identity}
+      data-registration-identity=""
+      data-registration-banner-mode={bannerMode}
     >
-      {brand?.banner && handle ? (
-        <Image
-          className={styles.banner}
-          src={brandingAssetUrl(token, handle, 'banner')}
-          width={1152}
-          height={576}
-          unoptimized
-          alt={
-            brand.bannerAlt[locale] ||
-            brand.bannerAlt[locale === 'ar' ? 'en' : 'ar']
-          }
-          data-registration-banner=""
-          decoding="async"
-        />
-      ) : (
+      {bannerMode === 'inline' && brand?.banner && handle ? (
+        <div className={styles.bannerFrame} data-registration-banner-frame="">
+          <Image
+            className={styles.bannerImage}
+            src={brandingAssetUrl(token, handle, 'banner')}
+            width={1600}
+            height={800}
+            unoptimized
+            alt={
+              brand.bannerAlt[locale] ||
+              brand.bannerAlt[locale === 'ar' ? 'en' : 'ar']
+            }
+            data-registration-banner=""
+            loading="eager"
+            decoding="async"
+          />
+        </div>
+      ) : bannerMode === 'inline' ? (
         <div
           className={styles.bannerFallback}
           role="img"
           aria-label={messages['f14Banner.fallbackAlt']}
           data-registration-banner-fallback=""
         />
-      )}
+      ) : null}
       {brand?.logo && handle && (
         <Image
           className={styles.logo}

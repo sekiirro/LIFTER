@@ -1,0 +1,73 @@
+.main {
+  display: grid;
+  gap: var(--space-5);
+  inline-size: min(100% - 2 * var(--space-4), 64rem);
+  margin-inline: auto;
+  padding-block: var(--space-6);
+}
+
+.header {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: center;
+  justify-content: space-between;
+}
+
+.header h1 {
+  margin: 0;
+  font-size: var(--text-2xl);
+  line-height: var(--line-height-heading);
+  text-wrap: balance;
+}
+
+.header p {
+  margin-block-start: var(--space-2);
+  color: var(--color-text-muted);
+  text-wrap: pretty;
+}
+
+.action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-block-size: var(--touch-min);
+  padding: var(--space-2) var(--space-4);
+  border: 1px solid var(--brand-fill);
+  border-radius: var(--radius-button);
+  background: var(--brand-fill);
+  color: var(--brand-on-fill);
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.scopeForm {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-3);
+  align-items: end;
+}
+
+.scopeField {
+  display: grid;
+  gap: var(--space-1);
+  color: var(--color-text);
+  font-size: var(--text-sm);
+  font-weight: 600;
+}
+
+.scopeField select {
+  min-block-size: var(--touch-min);
+  max-inline-size: 100%;
+  padding: var(--space-2) var(--space-3);
+  border: 1px solid var(--color-border-strong);
+  border-radius: var(--radius-button);
+  background: var(--color-bg);
+  color: var(--color-text);
+  font: inherit;
+}
+
+.pagination {
+  display: flex;
+  justify-content: center;
+}

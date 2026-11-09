@@ -1,0 +1,159 @@
+/*
+ * Production liquid-glass material API:
+ * - .liquidGlass: the PO base recipe, including 4px backdrop blur.
+ * - .liquidGlassStrong: the stronger standalone surface, including 8px blur.
+ * - .liquidGlassEdge: the shared edge recipe without blur for nested controls.
+ */
+.liquidGlass,
+.liquidGlassStrong,
+.liquidGlassEdge {
+  position: relative;
+  isolation: isolate;
+  border: 0;
+  background: rgba(255, 255, 255, 0.01);
+  background-blend-mode: luminosity;
+  box-shadow: inset 0 1px 1px rgba(255, 255, 255, 0.1);
+}
+
+.liquidGlass {
+  overflow: hidden;
+  backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
+}
+
+.liquidGlass::before,
+.liquidGlassStrong::before,
+.liquidGlassEdge::before {
+  position: absolute;
+  z-index: 3;
+  inset: 0;
+  padding: 1.4px;
+  border-radius: inherit;
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.45) 0%,
+    rgba(255, 255, 255, 0.15) 20%,
+    transparent 40%,
+    transparent 60%,
+    rgba(255, 255, 255, 0.15) 80%,
+    rgba(255, 255, 255, 0.45) 100%
+  );
+  content: '';
+  pointer-events: none;
+  -webkit-mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  -webkit-mask-composite: xor;
+  mask:
+    linear-gradient(#fff 0 0) content-box,
+    linear-gradient(#fff 0 0);
+  mask-composite: exclude;
+}
+
+.liquidGlassStrong {
+  overflow: hidden;
+  backdrop-filter: blur(8px) saturate(1.05);
+  -webkit-backdrop-filter: blur(8px) saturate(1.05);
+  box-shadow:
+    inset 0 1px 1px rgba(255, 255, 255, 0.16),
+    inset 0 -1px 1px rgba(0, 0, 0, 0.2),
+    inset 0 0 0 1px rgba(255, 255, 255, 0.03),
+    0 28px 72px rgba(0, 0, 0, 0.3),
+    0 4px 14px rgba(0, 0, 0, 0.14);
+}
+
+.liquidGlassEdge {
+  overflow: visible;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+:global([data-registration-hero][data-hero-layout='centered'])
+  .liquidGlassEdge::before {
+  display: none;
+}
+
+.liquidGlassStrong::before {
+  background: linear-gradient(
+    to bottom,
+    rgba(255, 255, 255, 0.5) 0%,
+    rgba(255, 255, 255, 0.2) 20%,
+    transparent 40%,
+    transparent 60%,
+    rgba(255, 255, 255, 0.2) 80%,
+    rgba(255, 255, 255, 0.5) 100%
+  );
+}
+
+@supports not (
+  (backdrop-filter: blur(1px)) or (-webkit-backdrop-filter: blur(1px))
+) {
+  .liquidGlass,
+  .liquidGlassStrong {
+    overflow: hidden;
+    border: 1px solid var(--color-border-strong);
+    background: var(--color-card);
+    color: var(--color-text);
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+  }
+
+  .liquidGlass::before,
+  .liquidGlassStrong::before {
+    display: none;
+  }
+}
+
+@media (prefers-reduced-transparency: reduce), (prefers-contrast: more) {
+  .liquidGlass,
+  .liquidGlassStrong,
+  .liquidGlassEdge {
+    border: 2px solid currentColor;
+    background: var(--color-card);
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+    box-shadow: 0 24px 64px rgba(0, 0, 0, 0.28);
+  }
+
+  .liquidGlass::before,
+  .liquidGlassStrong::before,
+  .liquidGlassEdge::before {
+    display: none;
+  }
+}
+
+@media (forced-colors: active) {
+  .liquidGlass,
+  .liquidGlassStrong,
+  .liquidGlassEdge {
+    border: 2px solid CanvasText;
+    background: Canvas;
+    color: CanvasText;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .liquidGlass::before,
+  .liquidGlassStrong::before,
+  .liquidGlassEdge::before {
+    display: none;
+  }
+}
+
+@media print {
+  .liquidGlass,
+  .liquidGlassStrong,
+  .liquidGlassEdge {
+    border: 1px solid currentColor;
+    background: transparent;
+    box-shadow: none;
+    backdrop-filter: none;
+    -webkit-backdrop-filter: none;
+  }
+
+  .liquidGlass::before,
+  .liquidGlassStrong::before,
+  .liquidGlassEdge::before {
+    display: none;
+  }
+}

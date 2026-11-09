@@ -157,7 +157,7 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
   >
   > Record this distinction in the constitution. No implementation changes yet.
 - Mandatory Spec Debate: the architect drafts the spec and architecture; an independent critique by a model other than the spec's author is mandatory for every feature (S30-PO-8 Q15; S36-PO-5). Sol Medium is used exclusively for this critique (see Development Workflow & Quality Gates above). Each invocation requires explicit PO approval before the critic is invoked; do not use a critic the PO has not approved or skip the critique. If approval is absent or no approved critic is available, stop and ask the PO and hold feature acceptance until the approved critique is complete. By default there is one response round, with more rounds only for significant unresolved issues. The architect incorporates critique and presents unresolved product/design decisions to the PO. Implementation starts only after PO approval and a completed plan/tasks. AI agreement never replaces PO approval; the architect remains the final technical authority.
-- Controlled Parallel Development: at most six concurrent delegated agents (S36-PO-5; the orchestrating architect is not counted). Each writer uses an isolated worktree and branch and edits disjoint files. Only one
+- Controlled Parallel Development: at most eight concurrent delegated agents (the orchestrating architect is not counted), of which at most five may write to pull requests at the same time. On-demand slots include the PO-approved Sol Medium critique, which keeps its per-invocation PO approval (S37-PO-15; S37-PO-12; S37-PO-13). Each writer uses an isolated worktree and branch and edits disjoint files. Only one
   writer may hold a stack lock for Docker or Supabase operations that start, stop, restart, reset,
   provision, migrate, seed, or write shared DB state; other writers stay out of that stack while the
   lock is held. Use one DB user per stack. Feature branches integrate sequentially, each after
@@ -201,7 +201,7 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Every spec, plan and review MUST include a constitution check. Deviations MUST be justified in
   the plan's complexity tracking and approved before implementation.
 
-**Version**: 1.8.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-08 (model routing aligned to S36-PO-5 and zero open ambiguities before implementation, S37-PO-1 Q1; earlier: controlled model-routing flexibility, S36-PO-4 item 3; merge-gate no-writes-to-main sentence, S36-R9; earlier: merge-gate CI attempt wording, S35-PO-1/S36-R2; development-agent synthetic-data rule and production-AI distinction; S31-PO-7 Q6/S31-PO-8; CI provenance, mutation-evidence binding, and required-check list; S31-R4/R5/R6)
+**Version**: 1.9.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-08 (eight concurrent slots with at most five PR writers, S37-PO-15; earlier: model routing aligned to S36-PO-5 and zero open ambiguities before implementation, S37-PO-1 Q1; earlier: controlled model-routing flexibility, S36-PO-4 item 3; merge-gate no-writes-to-main sentence, S36-R9; earlier: merge-gate CI attempt wording, S35-PO-1/S36-R2; development-agent synthetic-data rule and production-AI distinction; S31-PO-7 Q6/S31-PO-8; CI provenance, mutation-evidence binding, and required-check list; S31-R4/R5/R6)
 
 ### Sync impact report and amendment note - 2026-10-29 (D-27)
 
@@ -254,3 +254,22 @@ Changed: (1) The model-routing text now states the PO's final words instead of a
 Unchanged: mandatory independent critique with per-invocation PO approval, independent architect review and executed mutation evidence for high-risk work, all security, CI, CodeRabbit and exact-SHA PO merge gates, PO authority, the Absolute PO Decision Rule, Sol High and xhigh prohibition, the performance log, and the production-AI safeguards.
 
 Dependent documents updated in the same PR, separate commit: `docs/08-agent-workflow.md`, `docs/03-roadmap.md`, and `docs/04-changes-and-questions.md` (D-29 revised, D-30 added). No application code, tests, migrations, or CI workflow files changed.
+
+### Sync impact report and amendment note - 2026-11-08 (S37-PO-12; S37-PO-13; S37-PO-15)
+
+MINOR (version 1.8.0 to 1.9.0; governance rule change to the concurrency limit). Authority: the PO messages recorded verbatim in `s37-po-1.verbatim.txt`, sections S37-PO-12, S37-PO-13 and S37-PO-15, quoted byte-exact:
+
+> S37-PO-12 (PO message verbatim, re Sol critique slot): "no open for Sol a 7 slot when using in crituqe"
+> Architect reading recorded at the time: open a 7th concurrent slot for Sol when it runs a critique.
+
+> S37-PO-13 (PO message verbatim): "A"
+> Option A as presented: "add one sentence to the constitution saying a PO-approved Sol Medium critique may run as a 7th slot. It would go in a small new PR right after #48 merges. Then #48 merges at 5e22855e as you approved, and the critique waits for that PR's own gates and your approval. Interim: Sol runs only when fewer than 6 agents are running."
+
+> S37-PO-15 (PO message verbatim): "approve"
+> Architect mapping of item (2) as recorded: "a constitution amendment for 8 concurrent slots with at most 5 PR-writing lanes (the Sol Medium critique is one of the on-demand slots; supersedes the separate 7th-slot wording of S37-PO-13 by folding it into the same amendment PR)".
+
+Changed: (1) Controlled Parallel Development: the cap moves from six to eight concurrent delegated agents (the orchestrating architect not counted), of which at most five may write to pull requests at the same time. On-demand slots include the PO-approved Sol Medium critique, folded into this single amendment as S37-PO-15 records. (2) Worktree isolation, disjoint files and one stack-lock writer are unchanged. (3) Not broadened: this text grants no Sol use beyond the PO-approved, per-invocation spec/plan critique; Sol Medium remains exclusively for that critique, and Sol High and xhigh remain prohibited. The model allocation table is operational and is not encoded in this constitution.
+
+Unchanged: every gate in Development Workflow & Quality Gates (Clarify and Analyze, mandatory independent critique, the main merge gate and its CI, CodeRabbit and exact-SHA requirements, PO merge approval, supplementary gates), the Absolute PO Decision Rule, the free-model secrets and sensitive-task guardrail (S13), per-invocation PO approval for Sol Medium (S13 session 14), the performance log, and the production-AI safeguards (S31-PO-8).
+
+Dependent documents updated in the same PR and commit: `docs/08-agent-workflow.md` (the six-agent cap line) and `docs/04-changes-and-questions.md` (decision-register row D-31). No application code, tests, migrations, or CI workflow files changed.

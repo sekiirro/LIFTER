@@ -109,11 +109,54 @@ describe('catalog list shell presentation', () => {
     expect(html).not.toContain('data-testid="catalog-list"');
   });
 
+  it('renders exercise rows and offers manual Add in the empty state', () => {
+    const rows = render({ locale: 'en', items: mockExerciseItems });
+    expect(rows).toContain('Barbell Bench Press');
+    const empty = render({
+      locale: 'en',
+      items: [],
+      emptyActionHref: '/exercise-library/new',
+      emptyActionLabel: 'Add exercise',
+    });
+    expect(empty).toContain('href="/exercise-library/new"');
+    expect(empty).toContain('Add exercise');
+  });
+
+  it('does not re-filter a server-filtered exercise page on the client', () => {
+    const row = {
+      id: 'server-match',
+      kind: 'exercise' as const,
+      names: {
+        ar: '\u0627\u062E\u062A\u0628\u0627\u0631',
+        en: 'Server matched row',
+      },
+      primaryMuscle: 'chest' as const,
+      equipment: 'barbell' as const,
+      lifecycleState: 'active' as const,
+    };
+    const html = render({
+      locale: 'en',
+      items: [row],
+      serverFiltered: true,
+      initialFilters: { equipment: 'dumbbell' },
+    });
+    expect(html).toContain('Server matched row');
+  });
+
   it('renders the no-results state when the submitted search matches nothing', () => {
     const html = render({ initialQuery: 'zzzz-no-match' });
     expect(html).toContain(ar['catalog.noResultsTitle']);
     expect(html).toContain(ar['catalog.noResultsDescription']);
     expect(html).not.toContain('data-testid="catalog-list"');
+  });
+
+  it('renders no-results when the server returns no rows for an active filter', () => {
+    const html = render({
+      items: [],
+      initialFilters: { muscleGroup: 'chest' },
+    });
+    expect(html).toContain(ar['catalog.noResultsTitle']);
+    expect(html).not.toContain(ar['catalog.emptyTitle']);
   });
 
   it('renders a safe retryable error without item data', () => {
