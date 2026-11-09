@@ -1,3 +1,37 @@
+# New copy proposal, round 4 (S41) — APPROVED (S41-PO-4, S41-PO-5)
+
+Status: APPROVED byte-exact by S41-PO-4 (A-S41-1, PO free text) and S41-PO-5. The approved strings P1-P9 are encoded in `specs/011-client-accounts/spec.md` Round 5 and are the authority together with the PO verbatim file `C:/Users/NEW LAP/.lifter/runs/s41-po/s41-po-1.verbatim.txt`. This file is kept as history only; the pre-approval drafts below are NOT authoritative. P5b is DROPPED and is not in force. Encoding into `lib/i18n/messages/en.ts` and `ar.ts` is T056/T059 work, not part of this spec PR.
+
+Key names in the table are proposed technical names; no i18n file is changed by this file.
+
+## Approved rows (S41-PO-4; encoded in spec.md Round 5)
+
+| # | Surface | EN | AR (Egyptian) | EN chars | AR chars |
+|---|---|---|---|---|---|
+| P1 | Workspaces navigation label (PO only); key `nav.workspaces` (proposed) | Workspaces | مساحات العمل | 10 | 12 |
+| P2 | Workspaces page title (PO only); key `workspaces.title` (proposed) | Workspaces | مساحات العمل | 10 | 12 |
+| P3 | Slug field label; key `workspaces.slugLabel` (proposed) | Workspace slug | اسم مساحة العمل في الرابط | 14 | 25 |
+| P4 | Slug format hint; key `workspaces.slugHint` (proposed) | Use lowercase letters, numbers and hyphens only. Up to 50 characters, not starting or ending with a hyphen. | استخدم حروف إنجليزي صغيرة وأرقام وشرطة (-) بس. بحد أقصى 50 حرف، ومينفعش تبدأ أو تنهي بشرطة. | 107 | 91 |
+| P5 | Workspace-create error; own key `workspaces.createError` (proposed); not `packages.unavailable` | Unable to complete the request. Please try again. | حصلت مشكلة ومقدرناش نكمّل طلبك. جرّب تاني. | 49 | 42 |
+| P6 | Financial-resolution category 1; key `accountDeletion.categoryRefundedOutsideLifter` (proposed) | Refunded outside LIFTER | تم رد المبلغ خارج ليفتر | 23 | 23 |
+| P7 | Financial-resolution category 2; key `accountDeletion.categoryForfeitedUnderContract` (proposed) | Forfeited under the contract | تم التنازل عن المبلغ حسب العقد | 28 | 30 |
+| P8 | Financial-resolution category 3; key `accountDeletion.categoryOther` (proposed) | Other | سبب تاني | 5 | 8 |
+| P9 | Financial-resolution acknowledgement; key `accountDeletion.financialAcknowledgement` (proposed) | I understand this only records the financial resolution. It does not process a refund, collect a payment, or cancel any subscription or debt. | أنا فاهم إن ده مجرد تسجيل للتسوية المالية، ومش معناه إن ليفتر رجّع أي فلوس، أو حصّل أي مبالغ، أو ألغى أي اشتراكات أو مستحقات. | 141 | 125 |
+
+## S41-PO-5 — workspace-create error
+
+All workspace-create errors (generic create failure, unknown result, slug clash and a same-key different-input retry) use P5 under their own message key, not `packages.unavailable`. `packages.unavailable` and every other existing use keep approved row 8 AR unchanged. The P5 AR differs from approved row 8 AR; S41-PO-5 settles that conflict.
+
+## P5b — DROPPED
+
+P5b (the slug-specific clash message) was option B of the round 4 proposal. S41-PO-4 supplies P5 for every workspace-create error and S41-PO-5 confirms it; P5b is dropped and must not be encoded. Choosing it would have reopened S41-PO-3 MCQ-19 and changed FR-021.
+
+---
+
+## History — the pre-approval proposal (NOT authoritative; kept for audit)
+
+Banner: every "PENDING-PO", "PROPOSAL ONLY" and draft string in this section is historical. It was superseded by S41-PO-4/S41-PO-5 and must not be encoded. The approved table above and spec.md Round 5 are the authority.
+
 # New copy proposal, round 4 (S41) — PENDING-PO
 
 Status: PROPOSAL ONLY. PENDING-PO. Nothing in this file is approved or encoded. No string is encoded in `lib/i18n/messages/en.ts` or `ar.ts`, and no string is written into spec.md as a requirement. Byte-exact PO approval is required before any row is used (011 FR-021 and FR-025; tasks T051, T056, T059).

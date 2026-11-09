@@ -131,6 +131,13 @@ Open defect findings: **2** (A1 MEDIUM, A2 MEDIUM; both are evidence-coverage it
 - Evidence review: T024 now requires both concurrent revocations to commit and each affected membership to record non-null revoked_at, alongside unchanged Platform Owner roles/count. No refusal is asserted because membership revocation does not remove Platform Owner access (S37-Q5 = A).
 - Result: PASS - 0 CRITICAL, 0 HIGH. Static consistency only; no product behavior or implementation is changed.
 
+## 2026-11-09 22:33 +02:00 — S41 round 5 analysis (S41-GAP-MCQ-2 = A; PR #73)
+
+- Scope: 003 S40 amendment paragraph after the S41-PO-4 edit. It now records that, after the last active Workspace Owner is deleted (S41-PO-1 MCQ-13 = A), the Platform Owner may appoint a new Workspace Owner through the existing PO-only grant path of FR-005 (S41-GAP-MCQ-2 = A). No capability, grant, matrix entry, trigger or FR text changes; FR-014 and FR-005 are unchanged.
+- Entry check: the amendment has a PO source (S41-PO-4, quoted byte-exact in 011 spec.md Round 5), uses the existing FR-005 path, and adds no new table or trigger. PASS.
+- Findings: CRITICAL 0. HIGH 0. MEDIUM 0 new. The 003 MEDIUM evidence items A1 and A2 are unchanged. The last-PO guard (T015) is unchanged.
+- Result: PASS, 0 CRITICAL, 0 HIGH. Static consistency only; no product behaviour, migration or implementation is changed.
+
 ## 2026-11-09 21:30 +02:00 — S41 round 4 analysis (S41-PO-1 MCQ-13 = A and MCQ-15 = A; PR #73)
 
 - Scope: 003 FR-015 S40 amendment after the S41 edit. It now names `manage_staff_access` as the authorising capability for Workspace Owner, Trainer and Sales deletion (MCQ-15 = A), and records that the last active Workspace Owner may be deleted (MCQ-13 = A). The departure path, G1=A, the last-PO guard (FR-014) and the `staff_profiles` FK and trigger are unchanged.

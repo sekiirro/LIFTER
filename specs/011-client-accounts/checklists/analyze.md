@@ -1,6 +1,32 @@
 # Analyze — F11 client accounts
 
-## S40 round 8 analysis (CodeRabbit round 5 review 5831641422 on head db094e12, CHANGES_REQUESTED, 10 findings: 9 inline threads and 1 additional comment; fix round) — 2026-11-09 21:46 +02:00, round 14 (current; written after the round 5 fix edits to spec.md, plan.md, tasks.md, traceability.md, docs/01-traceability.md, research/s40-pending-mcqs.md, research/s41-new-copy-proposal.md; supersedes round 13 for statuses)
+## S40 round 9 analysis (S41-PO-4, S41-PO-5, S41-GAP-MCQ-1/2 encoded; CodeRabbit round 6 findings on head 5836e0e3) — 2026-11-09 22:33 +02:00, round 15 (current; written after the round 6 edits to spec.md, plan.md, tasks.md, traceability.md, checklists/analyze.md, research/s40-pending-mcqs.md, research/s41-new-copy-proposal.md and research/s40-new-workspace-copy-proposal.md; supersedes round 14 for statuses)
+
+Entry check (Spec Kit gate section 1): PASS. Numbered FRs, SCs and Given/When/Then scenarios keep their structure; Clarifications Round 5 quotes the S41-PO-4 and S41-PO-5 lines byte-exact and labels the architect mappings; plan P-S40-1 (including the Guard amendment and post-deletion state) and P-S40-3 cover the changed scope; tasks T047, T048, T049, T051, T054, T056 and T059 carry FR tags; this file is dated after the last change.
+
+Findings (round 15; each fixed or closed):
+
+| ID | Severity | Finding (CodeRabbit round 6 review 5831851722) | Status |
+|---|---|---|---|
+| A-S41-24 | MEDIUM (fixed) | `f12_guard_client_transition` rejected every deletion update and `audit_client_approval` accounting was unaddressed | CLOSED: plan P-S40-1 Guard amendment (forward amendment limited to the guarded deletion transitions, approval and refund branches preserved, deletion does not change `approval_state`, deletion audit rows); FR-018; T047 and T048 |
+| A-S41-25 | MEDIUM (fixed) | The restricted continuation omitted step A (Auth ban); a crash right after step 0 was untested | CLOSED: plan P-S40-1 restricted continuation now performs and confirms step A first; T047 adds the crash-immediately-after-step-0 case |
+| A-S41-26 | LOW (closed by PO) | Option B of S41-GAP-MCQ-2 is a governance change, not a no-appointment path | CLOSED: S41-GAP-MCQ-2 = A decided (S41-PO-4); option B is not chosen and is moot; the DECIDED line records the governance point |
+| A-S41-27 | LOW (closed by PO) | P4 Arabic hint said "numbers" rather than ASCII 0-9 | CLOSED: superseded by the PO-supplied P4 byte-exact (S41-PO-4); the approved text is used and no draft wording remains in force |
+| A-S41-28 | LOW (closed by PO) | P7 draft Arabic read as "withheld", not "forfeited" | CLOSED: superseded by the PO-supplied P7 byte-exact (S41-PO-4) |
+| A-S41-29 | LOW (closed by PO) | P5b guidance could apply the clash message to format errors | CLOSED: P5b is dropped (S41-PO-4/-5); every workspace-create error uses P5 under its own message key, so no clash-specific message remains |
+| A-S41-30 | LOW (fixed) | The SC-017 traceability row omitted T057 | CLOSED: traceability rows now separate SC-013–SC-016 from SC-017, which lists T053 and T057 and marks T057 as future fixture evidence, not a prerequisite for the F15 release |
+| A-S41-1 | MEDIUM (closed) | Copy P1-P9 not approved | CLOSED: P1-P9 approved byte-exact by S41-PO-4; encoded in spec.md Round 5 |
+| A-S41-2 | MEDIUM (closed) | S41-GAP-MCQ-1 retry with different input | CLOSED: A decided (S41-PO-4); encoded in FR-021, plan P-S40-3, T049 and T056 |
+| A-S41-3 | MEDIUM (closed) | S41-GAP-MCQ-2 appointing a new Workspace Owner | CLOSED: A decided (S41-PO-4); encoded in FR-018, plan P-S40-1 and T047 |
+| A-S41-4 | MEDIUM (open, architect gate) | Architect approval of the restricted continuation (plan P-S40-1) before T048 and of the restricted system entry point (plan P-S40-5) before T062 | OPEN. Architect, not PO; not a PO ambiguity |
+
+Counts: CRITICAL open 0. HIGH open 0. MEDIUM open 1 (A-S41-4, architect gate). Closed in round 15: A-S41-1, -2, -3 and A-S41-24 to -30.
+
+Static consistency (run at 22:30 +02:00, recorded in report.md): the FR-021/FR-025/FR-018, T047/T048/T049/T051/T054/T056/T059 and traceability FR-018/FR-021/FR-025/SC-017 rows agree; every referenced plan step exists; the MCQ option text is unchanged except the DECIDED and fact lines; no PENDING copy status remains for a decided string except in clearly marked history. Byte check of P1-P9 and of the two PO quote blocks against the verbatim file (Node): PASS; row 8 AR is unchanged and differs from P5 AR as S41-PO-5 requires.
+
+Result: PASS, 0 CRITICAL and 0 HIGH. No PO copy or product ambiguity remains open; the non-PO items are the architect gate above and the stated single-current-responsible-Trainer working assumption (plan P-S40-2). This is a static document review; it makes no implementation-conformity claim.
+
+## S40 round 8 analysis (CodeRabbit round 5 review 5831641422 on head db094e12, CHANGES_REQUESTED, 10 findings: 9 inline threads and 1 additional comment; fix round) — 2026-11-09 21:46 +02:00, round 14 (superseded by round 15 for statuses; written after the round 5 fix edits to spec.md, plan.md, tasks.md, traceability.md, docs/01-traceability.md, research/s40-pending-mcqs.md, research/s41-new-copy-proposal.md)
 
 Entry check (Spec Kit gate section 1): PASS. Numbered FRs, SCs and Given/When/Then scenarios unchanged in structure; Clarifications Round 4 still quotes the S41-PO lines byte-exact and labels architect words; plan P-S40-1 and P-S40-3 cover the changed scope; tasks T042 (012), T047, T049, T054 carry FR tags; this file is dated after the last change.
 

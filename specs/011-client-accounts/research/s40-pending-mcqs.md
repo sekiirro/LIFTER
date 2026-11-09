@@ -1,6 +1,6 @@
 # S40 pending PO questions (F11/F12 account lifecycle, round 3)
 
-Status: MCQ-12 to -20 DECIDED by S41-PO-1..3 (each entry carries its DECIDED line; encoded in spec.md Round 4, plan.md, tasks.md and traceability.md). New copy strings for those decisions are PENDING-PO in `research/s41-new-copy-proposal.md` and are not encoded. S41-GAP-MCQ-1 and -2 (end of file) are PENDING-PO and are not encoded. MCQ-1 to -11 keep their earlier status. The S40 implementation gate (tasks.md, S40 section) stays closed for copy-dependent and gap-dependent tasks until those items are answered.
+Status: MCQ-12 to -20 DECIDED by S41-PO-1..3 (each entry carries its DECIDED line; encoded in spec.md Round 4, plan.md, tasks.md and traceability.md). The copy strings that those decisions needed are APPROVED by S41-PO-4 (P1-P9) and S41-PO-5 (workspace-create error) and are encoded in spec.md Round 5; the drafts in `research/s41-new-copy-proposal.md` are history only and P5b is dropped. S41-GAP-MCQ-1 and -2 (end of file) are DECIDED by S41-PO-4 and encoded. No copy or gap question remains open. MCQ-1 to -11 keep their earlier status. The S40 implementation gate (tasks.md, S40 section) stays closed only for the architect design gates and task dependencies named per task.
 
 Numbering: S40-F11-MCQ-n. Authority for decided items: S40-PO-13 (MCQ-1 = B, MCQ-2 = A, MCQ-11 = defaults), quoted in spec.md Round 3. Architect rulings (labelled, not PO words): S40-R19 MCQ-4, MCQ-8, MCQ-10; MCQ-12 is a proposal (research/s40-new-workspace-copy-proposal.md).
 
@@ -8,7 +8,7 @@ Numbering: S40-F11-MCQ-n. Authority for decided items: S40-PO-13 (MCQ-1 = B, MCQ
 
 ## S40-F11-MCQ-12 — EN/AR copy of the "New workspace" action (carried)
 
-**DECIDED — S41-PO-3, MCQ-12 = A** ("A: Approve rows 1-9 (Rec.)"). Rows 1-9 are encoded byte-exact in spec.md Round 4 (row 1 role = Workspaces page action label, per MCQ-17 = C). Strings outside rows 1-9 remain PENDING-PO in `research/s41-new-copy-proposal.md`. Blocked: none for rows 1-9.
+**DECIDED — S41-PO-3, MCQ-12 = A** ("A: Approve rows 1-9 (Rec.)"). Rows 1-9 are encoded byte-exact in spec.md Round 4 (row 1 role = Workspaces page action label, per MCQ-17 = C). Strings outside rows 1-9 are approved as P1-P9 by S41-PO-4/S41-PO-5 and encoded in spec.md Round 5 (P5b dropped). Blocked: none.
 
 Question: approve the copy in `research/s40-new-workspace-copy-proposal.md` byte-exact, or supply other strings?
 
@@ -90,7 +90,7 @@ Blocked: the never-assigned and "active client" sub-cases of T058 and T062 only.
 
 ## S40-F11-MCQ-17 — placement of the "New workspace" action
 
-**DECIDED — S41-PO-2, MCQ-17 = C** ("C: Workspaces page"). Encoded in FR-021 and plan P-S40-3; the frontend design gate applies before UI work. Options A and B are not chosen. Blocked: the navigation label and page title copy only (PENDING-PO, `research/s41-new-copy-proposal.md`).
+**DECIDED — S41-PO-2, MCQ-17 = C** ("C: Workspaces page"). Encoded in FR-021 and plan P-S40-3; the frontend design gate applies before UI work. Options A and B are not chosen. Blocked: none; the navigation label and page title (P1, P2) are approved by S41-PO-4 and encoded in Round 5.
 
 Facts: no workspace switcher component exists on origin/main. The only workspace selector found is the branding page selector (`tests/e2e/branding-production-ui.spec.ts:265`, `#branding-workspace`). S40-PO-10 item 7 keeps "the previously proposed workspace-creation action", which was a switcher action.
 
@@ -106,7 +106,7 @@ Blocked: the placement part of T051 and T056 only.
 
 ## S40-F11-MCQ-18 — content of the financial-resolution confirmation (FR-025)
 
-**DECIDED — S41-PO-2, MCQ-18 = A** ("A: Category + ack (Rec.)"). Encoded in FR-025 and plan P-S40-1a; T059. Blocked: the category labels and acknowledgement text only (PENDING-PO, `research/s41-new-copy-proposal.md`).
+**DECIDED — S41-PO-2, MCQ-18 = A** ("A: Category + ack (Rec.)"). Encoded in FR-025 and plan P-S40-1a; T059. Blocked: none; the category labels (P6-P8) and acknowledgement (P9) are approved by S41-PO-4 and encoded in Round 5.
 
 Question: S40-PO-10 item 3 asks for an "appropriate refund/financial-resolution confirmation" and says it is never an actual refund. What does the confirmation record?
 
@@ -122,7 +122,7 @@ Blocked: the confirmation UI and record of T059 only; the refusal without confir
 
 ## S40-F11-MCQ-19 — fields of the workspace creation form
 
-**DECIDED — S41-PO-3, MCQ-19 = A** ("A: Name + editable slug (Rec.)"). Encoded in FR-021 and plan P-S40-3; T051, T056. Blocked: the slug field label, slug format hint and slug-clash error copy only (PENDING-PO, `research/s41-new-copy-proposal.md`). The retry edge case is S41-GAP-MCQ-1.
+**DECIDED — S41-PO-3, MCQ-19 = A** ("A: Name + editable slug (Rec.)"). Encoded in FR-021 and plan P-S40-3; T051, T056. Blocked: none; the slug field label (P3), slug format hint (P4) and workspace-create error (P5) are approved by S41-PO-4/S41-PO-5 and encoded in Round 5; the retry edge case is decided by S41-GAP-MCQ-1 = A.
 
 Facts: `workspaces.name` is required (1–120 characters) and `workspaces.slug` is required and unique (`supabase/migrations/20261027120000_tenancy.sql:12–13`). Nothing approved says how the slug is produced, what happens on a slug clash, or what a retry after a lost response does.
 
@@ -154,7 +154,9 @@ Blocked: the self-deletion case of T047 only.
 
 ## S41-GAP-MCQ-1 — a retry of workspace creation with the same client key but different input (raised by the S41 gap sweep)
 
-Facts: S41-PO-3 MCQ-19 = A decided that a retry with the same client key returns the same workspace and never creates a second one. It does not say what happens when the retry carries a different name or a different slug (the slug is editable), or when the first request is still in flight. This is not encoded.
+**DECIDED — S41-PO-4, S41-GAP-MCQ-1 = A** ("A: Refuse, generic error (Rec.)"). Encoded in FR-021, plan P-S40-3, T049 and T056. Same key + same name and slug returns the existing workspace; same key + a different name or slug is refused with the P5 workspace-create error and creates no second workspace. A retry while the first request is in flight is serialized on the client key (architect technical reading of the no-second-workspace rule; not a PO decision). Blocked: none. Option C would have reopened S41-PO-3 MCQ-19; it is not chosen.
+
+Facts: S41-PO-3 MCQ-19 = A decided that a retry with the same client key returns the same workspace and never creates a second one. It did not say what happens when the retry carries a different name or a different slug (the slug is editable), or when the first request is still in flight. S41-GAP-MCQ-1 = A now decides the different-input case; the in-flight case is handled by the client-key serialization (technical reading, not a PO decision).
 
 Question: what does a retry with the same client key return when its name or its slug differs from the first request?
 
@@ -164,11 +166,13 @@ Question: what does a retry with the same client key return when its name or its
 
 Implications: A keeps the no-second-workspace rule and never changes a name or a slug silently. B hides an input change from the PO. C makes a workspace that was created look failed after a lost response.
 
-Blocked: the different-input retry tests of T049 and the retry flow of T056 only. The identical lost-response retry is decided by S41-PO-3 MCQ-19 and is tested under T049 (S41 CodeRabbit finding on tasks.md:284). Copy: row 8 is approved; no new string is needed for any option.
+Blocked: none. The different-input retry tests of T049 and the retry flow of T056 are unblocked by S41-GAP-MCQ-1 = A. The identical lost-response retry is decided by S41-PO-3 MCQ-19 and is tested under T049 (S41 CodeRabbit finding on tasks.md:284). Copy: P5 is approved (S41-PO-4, S41-PO-5); no new string is needed.
 
 ## S41-GAP-MCQ-2 — appointing a new Workspace Owner after MCQ-13 = A (raised by the S41 gap sweep)
 
-Facts: S41-PO-1 MCQ-13 = A allows deleting the last active Workspace Owner, which leaves the workspace with no Workspace Owner. The decided text does not say whether a new Workspace Owner may be appointed afterwards. This is not encoded.
+**DECIDED — S41-PO-4, S41-GAP-MCQ-2 = A** ("A: Yes, existing grant (Rec.)"). Encoded in FR-018, plan P-S40-1 post-deletion state and T047. After the last active Workspace Owner is deleted, the Platform Owner may appoint a new Workspace Owner through the existing PO-only staff grant path of spec 003 FR-005; no new capability and no matrix change. Option B is not chosen and is moot: the existing PO membership-grant policy does not depend on an active Workspace Owner, so adopting B would have required a new enforcement restriction and tests, which the PO did not choose. Blocked: none.
+
+Facts: S41-PO-1 MCQ-13 = A allows deleting the last active Workspace Owner, which leaves the workspace with no Workspace Owner. S41-GAP-MCQ-2 = A decides that the Platform Owner may appoint a new Workspace Owner afterwards through the existing PO-only staff grant path of spec 003 FR-005.
 
 Question: after the last active Workspace Owner is deleted, may the Platform Owner appoint a new Workspace Owner in that workspace?
 
@@ -178,4 +182,4 @@ Question: after the last active Workspace Owner is deleted, may the Platform Own
 
 Implications: A restores approvals and client oversight at the workspace level with no new mechanism. B leaves the workspace permanently without a Workspace Owner. C changes the S41-PO-1 answer and needs the PO to confirm it.
 
-Blocked: the post-deletion state assertion of T047 for the last-active Workspace Owner case only. Not blocked: every other T047 case.
+Blocked: none. The post-deletion state assertion of T047 for the last-active Workspace Owner case is unblocked by S41-GAP-MCQ-2 = A. Every other T047 case is unaffected.
