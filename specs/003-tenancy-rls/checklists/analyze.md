@@ -114,3 +114,11 @@ Open defect findings: **2** (A1 MEDIUM, A2 MEDIUM; both are evidence-coverage it
 - T021 classification: (a), (c), and (e) are characterization of existing demotion, add-first transfer, and transaction rollback. Only missing guard assertions (b) sole-PO refusal and (d) concurrent-demotion protection require RED evidence before T015 and GREEN afterward. FR-014/SC-005 traceability now matches.
 - Scope is documentation-only; no tests, code, SQL, migrations, or task checkboxes changed.
 - Result: PASS - 0 CRITICAL, 0 HIGH. This is static consistency analysis only.
+
+
+## 2026-11-09 Analyze - PR #67 external T026 dependency
+
+- Date: 2026-11-09 (Africa/Cairo), after the dependency-sequence edit in tasks.md.
+- Entry check: PASS - spec.md requirements, measurable SCs and Given/When/Then scenarios remain; S37-PO-3 clarification and explicit no-open-ambiguity statement remain; plan scope and FR-tagged tasks remain present.
+- Dependency review: T026(a),(b) block the revocation branch and T016. T026(c) is owned by F11/F12 and remains necessary to complete SC-008, but does not block T015 or T016. The task sequence now reflects this boundary.
+- Result: PASS - 0 CRITICAL, 0 HIGH. Static consistency only; no product behavior or implementation is changed.

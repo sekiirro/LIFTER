@@ -44,7 +44,7 @@ T001 → T002 → T003/T004/T005 → T006 → T007–T010 → T011 → T012 → 
 T013 → T014 → T016.
 T013 → T021 (RED, demotion path) → T015 (demotion and staff-profile-deletion branches).
 T013 → T022 (characterization, membership-revocation path; S37-Q5 = A) → T015 (membership-revocation branch, characterization).
-T013 → T024 (membership-revocation characterization, S37-Q5 = A), T025, T026, T027 → T015 (revocation branch) → T016. T023 is RETIRED by S37-PO-3 and S37-PO-4.
+T013 → T024 (membership-revocation characterization, S37-Q5 = A), T025, T026(a),(b), T027 → T015 (revocation branch) → T016. T026(c) is supplied by the separate F11/F12 spec and remains required for SC-008; it is not a prerequisite for T015 or T016. T023 is RETIRED by S37-PO-3 and S37-PO-4.
 T014 and T015 must both be complete before T016.
 T013 → T017 → T020 → T018 → T019 (S35 G1 lane; resolved to deactivate+revoke; no deletion).
 
