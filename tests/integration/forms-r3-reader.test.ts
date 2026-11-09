@@ -175,6 +175,8 @@ describe('T004 single audited answer reader', () => {
           "jsonb_build_object('view', p_view, 'revision', viewed_revision, 'sex', answer_result->>'sex')",
         );
         expect(auditLeakMutant).not.toBe(readerDefinition!.definition);
+        let killed = false;
+        const leakKilled = new Error('audit leak mutant killed');
         await expect(
           tx.savepoint(async (sp) => {
             await sp.unsafe(auditLeakMutant);
@@ -187,11 +189,17 @@ describe('T004 single audited answer reader', () => {
               from public.audit_events
               where action='form.answer_viewed' and target_id=${assignmentId}
             `;
-            expect(JSON.stringify(mutantAudit!.details)).not.toContain(
-              'female',
-            );
+            try {
+              expect(JSON.stringify(mutantAudit!.details)).not.toContain(
+                'female',
+              );
+            } catch {
+              killed = true;
+              throw leakKilled;
+            }
           }),
-        ).rejects.toThrow();
+        ).rejects.toBe(leakKilled);
+        expect(killed).toBe(true);
         throw rollback;
       }),
     ).rejects.toBe(rollback);

@@ -231,6 +231,8 @@ describe('T048 personal-data authorization and erasure', () => {
           { answer_values: { sex: 'female', marker: 'synthetic draft' } },
         ]);
 
+        let killed = false;
+        const purgeKilled = new Error('cross-tenant purge mutant killed');
         await expect(
           tx.savepoint(async (sp) => {
             await sp.unsafe(`create or replace function app_private.purge_ended_form_answers(p_workspace_id uuid,p_client_id uuid)
@@ -252,11 +254,17 @@ describe('T048 personal-data authorization and erasure', () => {
             await sp`
               select app_private.purge_ended_form_answers(${targetContext.wsA.id},${targetClient.id})
             `;
-            expect(
-              await sp`select answer_values from public.form_answer_revisions where assignment_id=${otherAssignment}`,
-            ).toHaveLength(1);
+            const surviving =
+              await sp`select answer_values from public.form_answer_revisions where assignment_id=${otherAssignment}`;
+            try {
+              expect(surviving).toHaveLength(1);
+            } catch {
+              killed = true;
+              throw purgeKilled;
+            }
           }),
-        ).rejects.toThrow();
+        ).rejects.toBe(purgeKilled);
+        expect(killed).toBe(true);
         throw rollback;
       }),
     ).rejects.toBe(rollback);

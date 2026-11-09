@@ -11,15 +11,20 @@ export function scheduleDraftAutosave(
   firstDirtyAt: number,
   now = Date.now(),
 ): () => void {
-  const debounce = setTimeout(save, AUTOSAVE_DEBOUNCE_MS);
-  const maxUnsaved = setTimeout(
-    save,
-    Math.max(0, AUTOSAVE_MAX_UNSAVED_MS - (now - firstDirtyAt)),
-  );
-  return () => {
+  const cancel = () => {
     clearTimeout(debounce);
     clearTimeout(maxUnsaved);
   };
+  const fire = () => {
+    cancel();
+    save();
+  };
+  const debounce = setTimeout(fire, AUTOSAVE_DEBOUNCE_MS);
+  const maxUnsaved = setTimeout(
+    fire,
+    Math.max(0, AUTOSAVE_MAX_UNSAVED_MS - (now - firstDirtyAt)),
+  );
+  return cancel;
 }
 
 export async function withAutosaveTimeout<T>(
