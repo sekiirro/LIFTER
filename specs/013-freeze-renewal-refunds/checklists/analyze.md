@@ -75,3 +75,10 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 
 - **Coverage:** FR mapping remains 36/36; SC mapping 14/14. SC-005, SC-009, SC-011, SC-012, SC-013 remain PARTIAL; FR-035 remains PARTIAL (hosted proof blocked by D-20). FR/SC verification counts in `traceability.md`: 32 VERIFIED / 4 PARTIAL FRs; 9 VERIFIED / 5 PARTIAL SCs; 41 VERIFIED / 9 PARTIAL total.
 - **Verdict:** 0 CRITICAL, 0 HIGH, 2 MEDIUM carried (F13-A01 retention production blockers; S31 SC-009 numeric-overflow evidence gap). F13-A02's disposition is superseded, not downgraded or hidden: T020 remains open and blocked; no finding is reclassified downward. Static review only; no tests executed.
+## S41 main-sync reconciliation re-analysis
+
+- Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
+- Scope: static Spec Kit recheck of the current-main baseline, Clarifications and decision citations, FR/SC/scenario and FR-tagged task cross-references, and the PR #52 compliance edits. Documentation only; no implementation or test task was marked complete, and no tests were executed.
+- Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. Existing refund and freeze decision records remain authoritative; no new policy or lifecycle behavior is specified.
+- Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
+- Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.

@@ -123,3 +123,10 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - Findings: 0 CRITICAL, 0 HIGH. The earlier findings CR-01 (line 84) and CR-02 (line 10) are closed by these two edits. No new finding.
 - Ambiguity status: **No open ambiguities** in the scope of this round (`spec.md:84`, `tasks.md:10`). Pre-existing gates are recorded unchanged and are not touched here: BLOCKED-COPY, ND-F9-2/3/5, C5 teardown review (T064b pre-implementation, T070 post-implementation), FX provider/security review (T059/T062).
 - Verdict: PASS — 0 CRITICAL, 0 HIGH. This is static consistency analysis only; it does not authorize implementation and claims no test evidence.
+## S41 main-sync reconciliation re-analysis
+
+- Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
+- Scope: static Spec Kit recheck of the current-main baseline, Clarifications and decision citations, FR/SC/scenario and FR-tagged task cross-references, and the PR #52 compliance edits. Documentation only; no implementation or test task was marked complete, and no tests were executed.
+- Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. S31-PO-4 SK-009-04 records ND-F9-4 as denied after the historical 2026-11-03 session; ND-F9-1..3 and ND-F9-5 remain open.
+- Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
+- Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.

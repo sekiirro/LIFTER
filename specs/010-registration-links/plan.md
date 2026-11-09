@@ -55,7 +55,7 @@ Both tables force RLS; safe invoker views expose exact money text and omit hash/
 
 Public UI decision for this increment: valid workspace name and validity message; generic invalid otherwise. No feature flag or Continue area is needed because no action/form is rendered. This is the minimal option explicitly allowed by binding design, not resolution of ND-F10-4. No price or package internals. Add exact public route shape to middleware; preserve no-referrer after response recreation and do not log request paths. Dynamic/no-store prevents secret-bearing request cache artifacts. Host logging verification remains a production obligation under the never-log rule.
 
-Staff UI uses accessible-workspace selector and F9 available/current terms, exact-money schedule editor for PO/WO/Sales, Copy-only show-once dialog and scoped recent statuses. Price visibility remains open under ND-F10-5; commission stays omitted for Sales/Trainer under S31-PO-4 SK-009-04. Existing landing-link pattern only pending final navigation decision.
+Staff UI uses accessible-workspace selector and F9 available/current terms, exact-money schedule editor for PO/WO/Sales, Copy-only show-once dialog and scoped recent statuses. Interim binding default: Sales/Trainer price visibility is yes while ND-F10-5 remains open; PO confirmation remains required. Commission stays omitted for Sales/Trainer under S31-PO-4 SK-009-04. Existing landing-link pattern only pending final navigation decision.
 
 ## Phase 2 — Tasks and gates
 

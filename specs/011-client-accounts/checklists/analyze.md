@@ -11,3 +11,10 @@
 ## Post-verification S33 re-analysis — 2026-11-04
 
 T900 has been marked complete only after its focused integration tests passed on the committed code head. Traceability records commit `1d157df` and executed coverage. S33 scope remains test-only; 0 open CRITICAL/HIGH findings.
+## S41 main-sync reconciliation re-analysis
+
+- Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
+- Scope: static Spec Kit recheck of the current-main baseline, Clarifications and decision citations, FR/SC/scenario and FR-tagged task cross-references, and the PR #52 compliance edits. Documentation only; no implementation or test task was marked complete, and no tests were executed.
+- Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. Existing approved client-account behavior and separately recorded open gates remain unchanged; no new behavior is specified.
+- Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
+- Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.

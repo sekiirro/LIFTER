@@ -79,3 +79,10 @@
 - 2026-11-05: Refreshed after commit 6233642 and SC-005 evidence entry. T034 is removed from FR-021 mapping; SC-005 cites the executed `tests/unit/messages.test.ts::has identical nonempty catalogs` result. Finding severity unchanged: CRITICAL 0, HIGH 0, MEDIUM 3, LOW 0.
 
 - 2026-11-03: Initial S30 reconciliation of PR #28 scope at `e69688a`; refreshed source quotations and citations against `a9b37cc` with no new findings.
+## S41 main-sync reconciliation re-analysis
+
+- Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
+- Scope: static Spec Kit recheck of the current-main baseline, Clarifications and decision citations, FR/SC/scenario and FR-tagged task cross-references, and the PR #52 compliance edits. Documentation only; no implementation or test task was marked complete, and no tests were executed.
+- Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. ND-1..ND-7 remain open in plan.md; no value, role navigation, or visual choice is inferred by this reconciliation.
+- Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
+- Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.

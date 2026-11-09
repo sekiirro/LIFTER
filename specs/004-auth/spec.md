@@ -134,7 +134,7 @@ A staff member who has forgotten their password requests a reset email from the 
 - **FR-012**: A recovery link MUST be single-use, MUST expire (value: ND-F4-3), and MUST be invalidated when a newer link is generated for the same account and purpose. Its secret MUST be stored only in hashed form (Constitution VII).
 - **FR-013**: Opening a valid recovery link MUST let the account holder set a new password (meeting the same password rules as sign-in) and then sign them in. Invalid, used or expired links MUST show a message asking the user to contact staff for a new link.
 - **FR-014**: All sign-in and recovery pages MUST be available in Arabic (RTL, default) and English (LTR), keyboard accessible, with labeled inputs, clear errors and loading states, built on the Design System.
-- **FR-015**: Negative tests MUST cover: foreign-workspace generation, Sales and Trainer denial, anonymous access to protected routes, forged actor inputs, link reuse, expired and superseded links, rate-limit refusal, absence of the privileged credential in browser bundles, and absence of links/tokens in logs and audit details.
+- **FR-015**: Negative tests MUST cover: foreign-workspace generation, Sales denial, Trainer denial until T032 completes (the approved all-workspace-Trainer permission remains unavailable until that implementation ships), anonymous access to protected routes, forged actor inputs, link reuse, expired and superseded links, rate-limit refusal, absence of the privileged credential in browser bundles, and absence of links/tokens in logs and audit details.
 
 ND-F4-7 (staff self-service email reset; S35-PO-1). Specified, not built. Status of every ND-F4-7 requirement: UNVERIFIED until implemented and executed (see traceability.md).
 

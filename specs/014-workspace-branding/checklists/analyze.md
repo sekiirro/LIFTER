@@ -378,3 +378,10 @@ The change is docs-only. No SQL, test, code, schema, data, or shared-migration c
 - Not in scope: F3 (registration-link reuse mapped to `duplicate`). Verified NOT CONFIRMED at `5102877f`: the migration returns `invalid` for that constraint, so no fix is made.
 - Coverage: FR-015 (accessible UI, focus) and FR-028 (identity field error and focus rules). No requirement text changed, no product or copy decision is needed, no visual change, no migration change.
 - Findings count: 0 CRITICAL, 0 HIGH. Verdict: PASS for T066 entry.
+## S41 main-sync reconciliation re-analysis
+
+- Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
+- Scope: static Spec Kit recheck of the current-main baseline, Clarifications and decision citations, FR/SC/scenario and FR-tagged task cross-references, and the PR #52 compliance edits. Documentation only; no implementation or test task was marked complete, and no tests were executed.
+- Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. Existing branding approvals and separately recorded implementation/acceptance gates remain unchanged; no new visual behavior is specified.
+- Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
+- Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.

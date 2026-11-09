@@ -1,4 +1,4 @@
-﻿# Analyze — S33-PO-4 (2026-11-04)
+# Analyze — S33-PO-4 (2026-11-04)
 
 - Scope: authenticated registration-links Playwright failure diagnostics (T900).
 - Spec: numbered FRs, measurable SCs, and Given/When/Then scenarios exist for the touched acceptance route.
@@ -19,3 +19,17 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 ## Post-verification S33 re-analysis — 2026-11-04
 
 T901 is complete after the 16-test page suite passed on the committed code, followed by the complete unit suite (2,011/2,011). Traceability cites commit `78b1093`. Findings remain 0 open CRITICAL/HIGH.
+## S41 main-sync reconciliation re-analysis
+
+- Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
+- Scope: static Spec Kit recheck of the current-main baseline, Clarifications and decision citations, FR/SC/scenario and FR-tagged task cross-references, and the PR #52 compliance edits. Documentation only; no implementation or test task was marked complete, and no tests were executed.
+- Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. Existing F12 decisions and any separately recorded open gates remain unchanged; no new behavior is specified.
+- Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
+- Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.
+
+## S41 outside-diff finding re-analysis
+
+- Date: 2026-11-09 19:25:11 UTC, after the plan.md interim-price-default clarification.
+- Scope: static consistency check against spec.md FR-012/ND-F10-5 and research.md R9; the plan now states the binding interim yes default, required PO confirmation, and separate continued commission denial.
+- Findings: 0 open CRITICAL, 0 open HIGH; no product decision or task status changed.
+- Verdict: PASS for this plan clarification.

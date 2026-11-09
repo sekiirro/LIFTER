@@ -87,3 +87,10 @@
 - ND-F8-1 remains decided by S31-PO-4; ND-F8-2 and ND-F8-3 remain explicitly open. No new ambiguity was introduced; offline scope is unchanged from the spec.
 - Constitution IV alignment is preserved: preparation-only scope, no deployment/no cloud-write boundary, and no invented approval are unchanged.
 - **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 2 inherited MEDIUM (ND-F8-2/ND-F8-3), 1 LOW documentation-only correction in this round; 12/12 FR/SC items mapped.
+## S41 main-sync reconciliation re-analysis
+
+- Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
+- Scope: static Spec Kit recheck of the current-main baseline, Clarifications and decision citations, FR/SC/scenario and FR-tagged task cross-references, and the PR #52 compliance edits. Documentation only; no implementation or test task was marked complete, and no tests were executed.
+- Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. Existing ND-F8-2 deployment approval and ND-F8-3 authenticated test-account approval remain explicit and unchanged.
+- Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
+- Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.

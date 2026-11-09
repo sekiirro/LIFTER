@@ -90,3 +90,10 @@ Two review findings were fixed after the first review of the inserted copy; Anal
 ## No implementation
 
 This round changes specification artifacts only. No code, SQL, migration, environment or test file changed. No tests were executed. Local Supabase and hosted services were not run or changed.
+## S41 main-sync reconciliation re-analysis
+
+- Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
+- Scope: static Spec Kit recheck of the current-main baseline, Clarifications and decision citations, FR/SC/scenario and FR-tagged task cross-references, and the PR #52 compliance edits. Documentation only; no implementation or test task was marked complete, and no tests were executed.
+- Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. FR-015 now states the already-approved Trainer denial boundary until T032; the approved all-workspace-Trainer capability remains unimplemented until its separate cycle.
+- Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
+- Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.

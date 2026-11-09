@@ -5,7 +5,7 @@ Static source inspection only. No tests, stacks, deployments, cloud queries, or 
 | Requirement | Task(s) | Asserting test/control | Evidence | Status |
 |---|---|---|---|---|
 | FR-001 | T003, T008-T011 | `tests/unit/free-tier-db.test.ts::uses a read-only transaction, bounded catalog reads...`; static review that tooling contains no deploy/write operation | Code/test on `d04ef52` | VERIFIED |
-| FR-002 | T005-T006, T008-T009 | `tests/unit/free-tier-tail.test.ts::never prints fixture headers, queries, logs or exceptions`; redaction and no-credential controls | Code/test on `d04ef52` | VERIFIED |
+| FR-002 | T003, T005-T006, T008-T009 | `tests/unit/free-tier-tail.test.ts::never prints fixture headers, queries, logs or exceptions`; redaction and no-credential controls | Code/test on `d04ef52` | VERIFIED |
 | FR-003 | T002, T005, T008 | `tests/unit/free-tier-routes.test.ts::probes in bounded batches...`; URL safety checks | Code/test on `d04ef52` | VERIFIED |
 | FR-004 | T001, T006, T008 | `tests/unit/free-tier-tail.test.ts::aggregates the fixture...`; CPU threshold/report logic | Code/test on `d04ef52` | VERIFIED |
 | FR-005 | T003, T008-T009 | `tests/unit/free-tier-db.test.ts::uses a read-only transaction...`; DB usage tool/report fields | Code/test on `d04ef52` | VERIFIED |

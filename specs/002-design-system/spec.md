@@ -229,6 +229,6 @@ Users see the approved Glisse Liquid Glass treatment on the floating mobile navi
 
 ### Session 2026-11-03 — merged-scope compliance reconciliation
 
-- **Decision register:** `docs/04-changes-and-questions.md` (D-18 and the recorded F2 open-decision register), `DESIGN.md` sections 2, 4, 5, 10 and 11, plus the S21/S26/S27/S28 PO records cited in the Design System coverage PR. This entry applies to the already-merged F2 scope only.
+- **Decision register:** `docs/04-changes-and-questions.md` (D-18), `specs/002-design-system/plan.md` (ND-1..ND-7 open-decision register), `DESIGN.md` sections 2, 4, 5, 10 and 11, plus the S21/S26/S27/S28 PO records cited in the Design System coverage PR. This entry applies to the already-merged F2 scope only.
 - **Result:** Zero open ambiguities in the behavior already decided for F2. Existing ND-1..ND-7 remain open as recorded in `plan.md`; no value or role navigation is inferred from this reconciliation. PR #28 shipped-scope additions are documented separately in the S30 Design System coverage PR.
 - **Evidence limit:** Static artifact, implementation and test inspection only; no tests were executed in this lane.

@@ -1,7 +1,7 @@
 # Analyze: F12 Registration approval and payments
 
 - **Date:** 2026-11-03
-- **Analysed commit:** `d04ef52eb93df68b9361106a5ee4fd4fcaebb108` (origin/main baseline; this artifact follows the local spec/task reconciliation)
+- **Analyzed commit:** `d04ef52eb93df68b9361106a5ee4fd4fcaebb108` (origin/main baseline; this artifact follows the local spec/task reconciliation)
 - **Scope:** static consistency and evidence review; no test suites executed.
 - **Entry inventory:** `spec.md` (FR-001..029, SC-001..011, acceptance scenarios); `plan.md`, `tasks.md`, `research.md`, `data-model.md`, `contracts/*`, `quickstart.md`, `checklists/requirements.md`; clarifications recorded in `spec.md`; no prior `analyze.md` or `traceability.md`.
 
@@ -9,7 +9,7 @@
 
 | ID | Severity | Artifact | Finding | Disposition |
 |---|---|---|---|---|
-| F12-A01 | MEDIUM | `tasks.md:T051` | The planned migration filename was stale; the shipped migration is `20261101131000_flexible_registration_link_terms_forward.sql`. | Corrected to the exact shipped filename; migration exists on the analysed commit. |
+| F12-A01 | MEDIUM | `tasks.md:T051` | The planned migration filename was stale; the shipped migration is `20261101131000_flexible_registration_link_terms_forward.sql`. | Corrected to the exact shipped filename; migration exists on the analyzed commit. |
 | F12-A02 | MEDIUM | `tasks.md:T053`, `tests/unit/registration-links-flexible-ui.test.ts` | The task names a UI test file that is absent. Existing pure validation and dialog tests cover parts of the schedule contract, but no matching file proves the full listed UI acceptance matrix. | Left task unchecked; UI-specific traceability is PARTIAL. No requirement changed. |
 
 ## Coverage and consistency
@@ -61,3 +61,10 @@
 - Requirement-to-test evidence remains recorded in `traceability.md`; FR-013 now points at executed tests that assert the requirement. Tests were inspected statically in this lane; the cited Stack A U4 GREEN run is recorded in `tests/integration/registration-approval-verification.md`.
 - Clarifications: zero open ambiguities for F12 scope, citing D-23 and the final F12 PO record; P2's Trainer capability question remains explicitly outside F12 (FR-022).
 - **PASS WITH MEDIUM EVIDENCE GAPS** — 0 CRITICAL, 0 HIGH, 2 MEDIUM (F12-A01, F12-A02; unchanged), 2 LOW documentation-only corrections in this round; 40/40 FR/SC items mapped.
+## S41 main-sync reconciliation re-analysis
+
+- Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
+- Scope: static Spec Kit recheck of the current-main baseline, Clarifications and decision citations, FR/SC/scenario and FR-tagged task cross-references, and the PR #52 compliance edits. Documentation only; no implementation or test task was marked complete, and no tests were executed.
+- Result: Entry checks PASS for numbered FRs, measurable SCs and Given/When/Then coverage in this touched scope; plan and FR-tagged task coverage remains present. No new product ambiguity or unapproved behavior was introduced. Existing approval-flow decisions and separately recorded open gates remain unchanged; no new behavior is specified.
+- Findings: 0 open CRITICAL, 0 open HIGH. Existing medium/low findings, pending approvals, implementation gates and verification status remain as recorded above.
+- Verdict: PASS for this documentation-only reconciliation; no task checkbox or verification status changed.
