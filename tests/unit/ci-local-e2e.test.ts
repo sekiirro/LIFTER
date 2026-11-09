@@ -145,3 +145,31 @@ it('exposes the required integration aggregator for all shard results', () => {
   expect(aggregator).not.toMatch(/uses: actions\/checkout/);
   expect(aggregator).not.toMatch(/secrets\./);
 });
+
+it('allows main-push integration aggregation with no PR or head SHA', () => {
+  const workflow = readFileSync('.github/workflows/ci.yml', 'utf8');
+  const aggregator = workflow.match(
+    /^  integration:\n([\s\S]*?)(?=^  storage:)/m,
+  )?.[1];
+  const fullSha = /^[0-9a-fA-F]{40}$/;
+  const validRevisions = (
+    event: string,
+    pr: string,
+    head: string,
+    merge: string,
+  ) =>
+    fullSha.test(merge) &&
+    (event === 'push' || (/^[0-9]+$/.test(pr) && fullSha.test(head)));
+
+  expect(validRevisions('push', '', '', 'a'.repeat(40))).toBe(true);
+  expect(validRevisions('pull_request', '', '', 'a'.repeat(40))).toBe(false);
+  expect(aggregator).toContain('CI_EVENT_NAME: ${{ github.event_name }}');
+  expect(aggregator).toContain('if [[ "$CI_EVENT_NAME" == "push" ]]; then');
+  expect(aggregator).toContain(
+    'if [[ ! "$MERGE_SHA_1" =~ ^[0-9a-fA-F]{40}$ ]]; then',
+  );
+  expect(aggregator).toContain('else');
+  expect(aggregator).toContain(
+    'if [[ ! "$PR_1" =~ ^[0-9]+$ || ! "$HEAD_SHA_1" =~ ^[0-9a-fA-F]{40}$ || ! "$MERGE_SHA_1" =~ ^[0-9a-fA-F]{40}$ ]]; then',
+  );
+});

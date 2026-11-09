@@ -107,9 +107,9 @@ vitest.config.ts  playwright.config.ts
 ## S39 required status-check correction
 
 - Keep the three matrix shard executions and setup intact under job id `integration-shard`; retain the visible per-shard names.
-- Add a light `integration` aggregator that runs after the matrix even when shards fail or are cancelled, returns failure for any matrix conclusion other than `success`, and compares all three shard revision tuples using unique shard-specific outputs and logs the common PR/head/merge revisions on success.
+- Add a light `integration` aggregator that runs after the matrix even when shards fail or are cancelled, returns failure for any matrix conclusion other than `success`, and compares all three shard revision tuples using unique shard-specific outputs. On PR and dispatch events, require PR/head/merge values; on main pushes, require a valid merge SHA while allowing empty PR/head values. Log the common revisions on success.
 - Update the unit assertions, traceability, constitution, and workflow guidance so the required-check list includes the aggregator and each shard execution, and the aggregator compares each shard revision tuple and logs the same revisions as every required job.
-- Test first by asserting the aggregator contract before workflow implementation.
+- Test first by asserting the aggregator contract before workflow implementation, including a main-push case with empty PR/head values and a valid merge SHA.
 
 ## Complexity Tracking
 

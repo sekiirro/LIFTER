@@ -2,7 +2,7 @@
 
 ## S39 pre-implementation analysis
 
-**Date**: 2026-11-09 (after S39 spec, plan, and task updates). **Scope**: FR-022, FR-023, SC-012, T023; required-check name mapping, revision propagation, and three integration matrix executions.
+**Date**: 2026-11-09 (after S39 spec, plan, and task updates). **Scope**: FR-022, FR-023, SC-012, T023; required-check name mapping, revision propagation, main-push revision validation, and three integration matrix executions.
 
 - [x] `spec.md` has numbered FRs, measurable SCs, and Given/When/Then coverage for the matrix plus aggregator contract.
 - [x] Clarifications cite the architect ruling for this exact required-check correction; **No open ambiguities** is explicit.
@@ -14,6 +14,7 @@
 - GitHub branch protection requires the exact check name `integration`; matrix display names alone do not supply it. A separate aggregator depending on the matrix with `if: always()` can expose the required name and fail closed on failed, skipped, or cancelled shards. On success it receives unique shard-specific outputs, compares all three PR/head/merge tuples, fails on disagreement, and logs the common values.
 - The matrix id change preserves shard display names, setup, test partition, and coverage. The aggregator uses no checkout, secrets, or additional stack.
 - Required-check documentation, test assertions, and gate evidence must record both the three shard executions and aggregator. GitHub combines outputs from matrix jobs and does not guarantee completion order; unique per-shard output names avoid collisions. Each replica derives the same PR/head/merge values from the existing revision step, and the aggregator compares all three tuples before logging.
+- Main `push` events do not provide PR number or PR head SHA. Requiring them unconditionally would break the existing main-push CI path; validate the common merge SHA for push and all three revisions for PR/dispatch.
 - No product behavior or security requirement changes. **CRITICAL**: none. **HIGH**: none.
 
 **Verdict**: PASS - 0 CRITICAL, 0 HIGH.

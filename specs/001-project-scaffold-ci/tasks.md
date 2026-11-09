@@ -47,7 +47,7 @@
 
 ## S39 required integration-check aggregator
 
-- [x] T023 [FR-022, FR-023] Rename the matrix job id to `integration-shard` without changing the three display names; add the `integration` always-run success aggregator that logs the PR/head/merge revisions exported by a shard; extend `tests/unit/ci-local-e2e.test.ts` with a red-first contract test; update the authoritative required-check descriptions in the constitution and CI documentation; record focused test evidence in traceability.md after the test passes.
+- [x] T023 [FR-022, FR-023] Rename the matrix job id to `integration-shard` without changing the three display names; add the `integration` always-run success aggregator that compares shard revision tuples, validates PR/head fields only on PR/dispatch events, and allows empty PR/head fields on main pushes with a valid merge SHA; extend `tests/unit/ci-local-e2e.test.ts` with a red-first contract test; update the authoritative required-check descriptions in the constitution and CI documentation; record focused test evidence in traceability.md after the test passes.
 
 T020-T022 remain unchecked until their tests and exact-head GitHub gate evidence are recorded. T023 is verified by its focused regression test and traceability entry.
 
