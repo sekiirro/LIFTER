@@ -102,9 +102,9 @@
   staff; email is out of scope. The scheduler remains disabled pending separate
   PO approval.
 - Client-late clocks are independent from D-03 Trainer-late clocks: a client
-  alert is due to the assigned, currently authorized Trainer at deadline+24h;
-  if no eligible Trainer exists then PO+WO receive the +24h stage, and PO+WO
-  receive the +48h stage in either case. Reassignment changes the recipient
+  client-late owner notices follow the current approved F15 trigger; client-to-Trainer assignment/routing and the Trainer alert are deferred to F11/F12 under PDN-S39-F15-01.
+  (Superseded historical timing detail: the F15 Trainer stage is deferred by
+  PDN-S39-F15-01; retain this note only as prior design history.) Reassignment changes the recipient
   without changing the original deadline. D-03 Trainer-late retains its existing
   Q4 initial and owner-escalation timing/catch-up rules. T017's pg_cron schedule
   uses the owner-only F11 activation/deactivation pattern and is not activated

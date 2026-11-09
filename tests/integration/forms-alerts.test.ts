@@ -70,7 +70,9 @@ async function core(
   return row!.result as { status: string; enqueued?: number };
 }
 
-it('uses the client-late +24h and +48h clocks, transfers the Trainer stage, and routes no-Trainer cases to both owners', async () => {
+// PDN-S39-F15-01 (S39-PO-8) defers client-to-Trainer assignment and the client-late Trainer alert to F11/F12.
+// Keep this integration scenario out of F15 until that separate specification work lands.
+it.skip('uses client-late +24h and +48h clocks and routes no-Trainer cases to both owners', async () => {
   const f = await clientContext();
   const client = await registered(f);
   await expect(
