@@ -52,7 +52,10 @@ jobs:
               echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
               exit 1
             fi
-            head_repo=$(curl --fail --silent --show-error "$CI_API_URL/repos/$CI_REPO/pulls/$CI_PR" | jq -r '.head.repo.full_name // ""')
+            response_file=$(mktemp)
+            trap 'rm -f "$response_file"' EXIT
+            curl --fail --silent --show-error --max-time 20 --retry 3 --retry-max-time 60 --retry-all-errors --output "$response_file" "$CI_API_URL/repos/$CI_REPO/pulls/$CI_PR"
+            head_repo=$(jq -r '.head.repo.full_name // ""' "$response_file")
             if [[ "$head_repo" != "$CI_REPO" ]]; then
               echo "PR=$CI_PR head_repo=$head_repo; refusing fork PR before running untrusted code with repository secrets" >&2
               exit 1
@@ -125,7 +128,10 @@ jobs:
               echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
               exit 1
             fi
-            head_repo=$(curl --fail --silent --show-error "$CI_API_URL/repos/$CI_REPO/pulls/$CI_PR" | jq -r '.head.repo.full_name // ""')
+            response_file=$(mktemp)
+            trap 'rm -f "$response_file"' EXIT
+            curl --fail --silent --show-error --max-time 20 --retry 3 --retry-max-time 60 --retry-all-errors --output "$response_file" "$CI_API_URL/repos/$CI_REPO/pulls/$CI_PR"
+            head_repo=$(jq -r '.head.repo.full_name // ""' "$response_file")
             if [[ "$head_repo" != "$CI_REPO" ]]; then
               echo "PR=$CI_PR head_repo=$head_repo; refusing fork PR before running untrusted code with repository secrets" >&2
               exit 1
@@ -209,7 +215,10 @@ jobs:
               echo "PR=$CI_PR head_sha=$CI_HEAD_SHA merge_sha=$merge_sha second_parent=$second_parent; refusing mismatched merge ref" >&2
               exit 1
             fi
-            head_repo=$(curl --fail --silent --show-error "$CI_API_URL/repos/$CI_REPO/pulls/$CI_PR" | jq -r '.head.repo.full_name // ""')
+            response_file=$(mktemp)
+            trap 'rm -f "$response_file"' EXIT
+            curl --fail --silent --show-error --max-time 20 --retry 3 --retry-max-time 60 --retry-all-errors --output "$response_file" "$CI_API_URL/repos/$CI_REPO/pulls/$CI_PR"
+            head_repo=$(jq -r '.head.repo.full_name // ""' "$response_file")
             if [[ "$head_repo" != "$CI_REPO" ]]; then
               echo "PR=$CI_PR head_repo=$head_repo; refusing fork PR before running untrusted code with repository secrets" >&2
               exit 1
