@@ -1,6 +1,21 @@
-# Analyze — F16 post-critique disposition (S40 round 12, current; round 11 record follows)
+# Analyze — F16 post-critique disposition (S40 round 13, current; round 12 record follows)
 
-## Round 12 (current)
+## Round 13 (current)
+
+- Date: 2026-11-09 17:47 +02:00 (15:47 UTC), after CodeRabbit review `5828405929` (submitted 15:45:01Z) on head `c03957b46c778ccbad69c5f92ed5b2da1c9f8b65`. Its inline thread `4514683205` (`tasks.md:40`, T068) has two findings. Dated after every round-13 spec-artifact edit (`tasks.md` T068 only); this record is the last spec-artifact change of the round.
+- Scope (round 13): spec-only, technical gaps in T068 within the decided scope S40-PO-5, S40-PO-7, S40-PO-8 (PO) and S40-R11, S40-R15 (architect). No code, SQL, migration, fixture or test file changed; "tests" below are planned RED test descriptions in `tasks.md`. No new product question.
+- Head at start of round 13: `c03957b46c778ccbad69c5f92ed5b2da1c9f8b65`.
+
+Entry check: PASS.
+
+| ID | Source | Severity | Status | Disposition |
+| --- | --- | --- | --- | --- |
+| R13-1 | CodeRabbit review `5828405929`, `tasks.md:40` T068 finding A (Major, data integrity) | HIGH | FIXED | Valid: an invocation that started before the cutover keeps the RPC body it loaded, so the round-12 re-validation (new bodies only) does not cover it. T068 adds a BEFORE INSERT guard on `exercise_versions` and `workspace_exercise_versions`, installed by the cutover transaction, using the same shared validator as T074 and T075 and raising the RPC's existing validation error. Concurrency test: start the old invocation before cutover, pause after validation, resume after cutover, expect rejection with no version row inserted. |
+| R13-2 | CodeRabbit review `5828405929`, `tasks.md:40` T068 finding B (Major, data integrity) | HIGH | FIXED | Valid: the disposability gate and the locked identity comparison were separate checks, so the verified set could differ from the deleted set. T068 binds the gate result to the exact verified IDs; the locked transaction compares the set it deletes against them; any difference pauses the deletion and repeats the gate; no deletion if disposability cannot be established. Concurrency test: an identity added after the gate and before the lock. |
+| R13-3 | Addendum C self-review of the touched T068 text | — | CHECKED | Covered: in-flight (R13-1); delete (verified set, R13-2); concurrency (tests in R13-1 and R13-2); retry: a rejected stale create returns the RPC's existing validation error, so no new copy is needed. No undefined state left and no new product question. |
+| R13-4 | S40-PO-5 target-database check | — | GATE (implementation, unchanged from R12-6) | Not performed: spec-only round, no target-database access. |
+
+## Round 12
 
 - Date: 2026-11-09 16:28 +02:00 (pass 4, after the CodeRabbit follow-up reply `4513754684` on head `9b6c0279`, which found that the pass-3 lock order alone did not prevent the cycle; see R12-13). Pass 3 at 16:17 +02:00 (after CodeRabbit review `5827087965` on `4b84e288`; pass 2 at 16:02 +02:00 after review `5826912779` on `a0aff053`; pass 1 at 15:48 +02:00 for commit `a0aff053`). Dated after every round-12 spec-artifact edit (`spec.md`, `plan.md`, `tasks.md`, `data-model.md`, `traceability.md`, `contracts/catalog-api.md`, `contracts/export-read-isolation.md`); this record is the last spec-artifact change of the round.
 - Scope (round 12): S40-PO-8 (PO; verbatim quote in `spec.md` "S40 round 12") resolves PDN-S40-F16-05 (A) and PDN-S40-F16-06 (B). S40-R15 (architect ruling, NOT PO) resolves PDN-S40-F16-04. Spec-only: no code, SQL, migration, fixture or test file changed; "tests" below are the planned RED test descriptions in `tasks.md`.
