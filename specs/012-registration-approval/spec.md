@@ -4,7 +4,7 @@
 
 **Created**: 2026-10-28
 
-**Status**: FINAL PO policy reconciled 2026-10-29 with the 2026-10-28 decisions. Plan/tasks are proposed artifacts; implementation approval remains separate.
+**Status**: FINAL PO policy reconciled 2026-10-29 with the 2026-10-28 decisions. Plan/tasks are proposed artifacts; implementation approval remains separate. S40 round 3 (2026-11-09, S40-PO-13 and S40-R19): cross-references only (FR-022 distribution trigger, out-of-scope deletion boundary, deleted-client edge case); no F12 decision changed.
 
 **Input**: F12 registration approval, rejection, initial subscription snapshot, installment obligations, and confirmed payment recording, based on F11 client accounts and F10 issued registration-link snapshots.
 
@@ -145,6 +145,7 @@ Authorized PO/WO/Sales configure the upfront amount, total payment count, indivi
 - A partial amount is rejected; payment method and free-text reference fields do not exist. F10 due-date offsets for installments 2+ begin only at activation; due dates do not exist before activation.
 - Rejection never grants client access or creates a subscription/payment event. Only PO may reconsider rejected to approved; recovery and identity/link release remain outside F12.
 - UI screens and components must cover loading, empty, error, and success states and satisfy the Frontend Design Gate and DESIGN.md in both Arabic RTL and English LTR.
+- A client in deletion-pending or deleted state (011 FR-018, S40-PO-13) is not pending-approval: approve and reject are refused with the stale-state response of FR-017, and no subscription, obligation or payment is created for it.
 
 ## Requirements
 
@@ -172,7 +173,7 @@ Authorized PO/WO/Sales configure the upfront amount, total payment count, indivi
 - **FR-019**: F12 user interfaces MUST follow the [Frontend Design Gate](../../docs/09-frontend-design-gate.md) and the repository [DESIGN.md](../../DESIGN.md): Arabic-first RTL and English LTR, dark/light modes, responsive and keyboard-accessible interaction, WCAG 2.2 AA contrast, and loading/empty/error/success states. The approved UI decisions are recorded as DG-F12-1..4.
 - **FR-020**: F12 MUST implement the decisions recorded in ND-F12-1..7 and DG-F12-1..4 below; the final 2026-10-29 record also applies; no former conservative default remains in force.
 - **FR-021**: Approval MUST use a dedicated full-page client review; the payment amount MUST be automatic and read-only with explicit confirmation; status badges MUST use soft semantic Design System tokens.
-- **FR-022**: F12 MUST emit an approved-registration event for P2 to consume, including the approved client and workspace identity. F12 MUST NOT include form selection, assignment, templates, or intake UI; post-approval automatic form assignment and intake presentation on client login are delivered by P2 per REQ-P2-01. P2 must preserve mandatory Basic/Workout/Nutrition intake and workspace authorization. The capability that authorizes Trainer form selection remains open for the P2 spec.
+- **FR-022**: F12 MUST emit an approved-registration event for P2 to consume, including the approved client and workspace identity. The approval commit is also the trigger for the 011 automatic responsible-Trainer distribution (011 FR-028; S40-PO-13 MCQ-11 defaults). That distribution is a separate system write after the approval commit: it grants no access, creates no payment or subscription effect and does not change approval semantics. F12 MUST NOT include form selection, assignment, templates, or intake UI; post-approval automatic form assignment and intake presentation on client login are delivered by P2 per REQ-P2-01. P2 must preserve mandatory Basic/Workout/Nutrition intake and workspace authorization. The capability that authorizes Trainer form selection remains open for the P2 spec.
 
 - **FR-023**: F12 MUST extend F10 link creation with explicit Upfront amount, installment count, individual amounts and due timing. Existing schedule storage and exact-total enforcement are reused. Default timing is upfront at approval and remainder at offset 30 from Cairo activation date; no default upfront amount/percentage is invented. Every issued link/agreement, amount and custom offset remains immutable. See the [F10 reconciliation addendum](../010-registration-links/addendum-f12-flexible-installments.md).
 - **FR-024**: F12 MUST provide an authenticated standalone Pending/Approved/Rejected page with lightweight automatic approval detection and safe redirect, Manual Refresh and manual-navigation fallback. Only existing authorized routes may be used; approval MUST NOT imply activation or plan availability. The safe self-status reader is the only pending/rejected data exception.
@@ -222,7 +223,7 @@ Authorized PO/WO/Sales configure the upfront amount, total payment count, indivi
 - **F13**: Subscription freeze, renewal, full refunds (D-15), expiry policy, overdue enforcement, notifications, and related workflows. F12 includes only the minimum PO-only correction reversal of a collection event; F13 full refunds remain separate.
 - **P2**: Building the intake form engine/templates, form-selection and assignment UI, and intake presentation on client login. F12 emits the approval event P2 hooks; REQ-P2-01 carries the approved post-approval assignment requirement. No partial form engine or form UI is in F12.
 - **P4**: Installment overdue restriction/notices, expiry enforcement/notifications, and finance reporting. Activation occurs after both initial workout and nutrition plans are delivered (independent delivery records); later installment due dates do not exist until activation.
-- Payment gateway, online checkout, in-app payment processing, or LIFTER commission settlement; bulk actions; client closure/deletion; changing F11 recovery, Auth identity, or consumed-link behavior.
+- Payment gateway, online checkout, in-app payment processing, or LIFTER commission settlement; bulk actions; client closure/deletion (account deletion is specified in 011 FR-018–FR-026 by S40-PO-13; F12 adds no deletion behavior); changing F11 recovery, Auth identity, or consumed-link behavior.
 - Payment methods, free-text payment references, and partial installment collections.
 
 ## Architect Decisions (technical decisions)
