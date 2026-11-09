@@ -49,7 +49,7 @@ No SQL or migration is supplied by this document. The following acceptance contr
 | Same-key reconciliation retry when no content-free key record exists (the earlier retry never reached the server) | Follow the normal create path: create the first note and its one create audit event; never treat a missing record as a deleted/not-found or mismatch outcome (FR-007, FR-011) |
 | Same-key retry after the note was edited | Compare against the original submission fingerprint, not the current edited body; a matching retry returns the existing note, a different trimmed body is a mismatch (FR-011; CN-MCQ-22; S40-R9) |
 | Content-free create-idempotency record | Holds workspace/client scope, key, a required one-way fingerprint of the original trimmed body, and an outcome state; never the note body or note text (CN-MCQ-20, CN-MCQ-22) |
-| Server-side pending note body for an unresolved create | No such record or column exists; only the content-free key record is stored, and the unresolved create's recovery state is device-local tab `sessionStorage` (CN-MCQ-24; S40-PO-12) |
+| Server-side pending note body for an unresolved create | No such record or column exists; only the content-free key record is stored, and the unresolved create's recovery state is device-local tab `sessionStorage`, or page memory only when storage is unavailable or its pre-dispatch write fails (CN-MCQ-24; S40-PO-12) |
 | Recovery record after sign-out or account switch | Cleared; a different actor cannot read or retry it, including through direct `sessionStorage` access (CN-MCQ-24; FR-007) |
 | Unknown operation/role/capability | Deny by default |
 
