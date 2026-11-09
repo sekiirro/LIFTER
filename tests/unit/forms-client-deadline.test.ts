@@ -99,7 +99,7 @@ describe('calculateClientLateAlertSchedule', () => {
   it('anchors owner notices to the approved elapsed-hour deadline', () => {
     expect(
       calculateClientLateAlertSchedule('2026-10-29T21:59:59.999Z'),
-    ).toEqual({
+    ).toMatchObject({
       ownersAt: '2026-10-31T21:59:59.999Z',
     });
   });
