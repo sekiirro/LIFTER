@@ -302,7 +302,23 @@ Effect (architect rulings, not PO decisions; `decision-register.md` is unchanged
 - **Recommendation (advisory only):** (b), because S40-PO-5 says "Keep Notes only" and S40-PO-7 says every other rule is unchanged.
 - **Blocked:** the Notes destination part of T062(b) and T063, the T054 deletion order, and the legacy-row note clause of FR-031 and `spec.md:103`. Other tasks are unaffected.
 
-**No open ambiguities** is NOT stated for this round: PDN-S40-F16-04 is open. PDN-S40-F16-02 is resolved (S40-PO-7). PDN-S40-F16-03 is ruled by S40-R11 (architect ruling, not PO).
+### S40 round 11 — PDN-S40-F16-05 (open PO item, found in round 11 CodeRabbit review on `eb4c1e3d`)
+
+- **Question:** S40-PO-5 and S40-PO-7 say "legacy exercise rows". Does that cover only the legacy variation tables (`exercise_variations` and `exercise_variation_versions`, labelled "legacy" in `data-model.md`) and their legacy videos, or also the pre-F16 canonical and workspace-private exercise identities and their versions (`exercises`, `exercise_versions`, `workspace_exercises`, `workspace_exercise_versions`)?
+- **Options:** (a) only the legacy variation tables and their legacy videos; canonical and private identities keep their versions, and only the Instructions field leaves the library model; (b) also the pre-F16 canonical and private identities and their versions, so the library restarts without them, after a check that no published plan snapshot references them; (c) only pre-F16 identities whose payload carries `instructions_*`, with their versions.
+- **Implications:** (a) is the least destructive and keeps snapshot references valid (FR-020); (b) deletes the catalog content that S40-PO-5 may call mock data, but can break published snapshot references and needs a referenced-by check; (c) splits the deletion by payload, which conflicts with FR-038 ("including rows without Instructions").
+- **Recommendation (advisory only):** (a), because the data-model labels only the variation tables as legacy and FR-020 requires snapshot references to stay valid.
+- **Blocked:** the deletion of any identity or version outside the legacy variation tables (T054, T062(a), T063, FR-031 and FR-038 wording "every legacy exercise row"). Until answered, the deletion is limited to the variation tables.
+
+### S40 round 11 — PDN-S40-F16-06 (open PO item, found in round 11 CodeRabbit review on `eb4c1e3d`)
+
+- **Question:** The eight library fields include Notes. Should a trainer's Notes be visible to the client through the F19/P4 client plan projection and client-visible snapshots?
+- **Options:** (a) no: Notes are stored in the snapshot but omitted from every client projection, with a disclosure test; (b) yes: Notes are part of the frozen non-video snapshot and visible to the authorized client; (c) yes only for Notes a trainer marks as client-facing, which needs a new flag and copy.
+- **Implications:** (a) keeps internal trainer notes internal and needs a projection exclusion; (b) is simplest but exposes internal notes to clients; (c) adds a field and new copy.
+- **Recommendation (advisory only):** (a), because the spec states no client-visible Notes rule and does not describe trainer Notes as client-facing.
+- **Blocked:** the client projection of Notes (F19/P4 wrapper, T058) and its negative disclosure test. Staff views and the rest of F16 are unaffected.
+
+**No open ambiguities** is NOT stated for this round: PDN-S40-F16-04, PDN-S40-F16-05 and PDN-S40-F16-06 are open. PDN-S40-F16-02 is resolved (S40-PO-7). PDN-S40-F16-03 is ruled by S40-R11 (architect ruling, not PO).
 ### S36-PO-5 F16 (S37 round 5)
 
 S36-PO-5 is final for F16 and supersedes conflicts in earlier S36 items. One canonical Global Library is editable only by the PO. Every workspace has its own branded, independently customizable library where authorized WO/Trainers may edit all eight fields locally: Name, Description, Notes, Video, Alternatives, Default Rest Time, Default RIR and Default Reps. New global exercises appear automatically without overwriting local customizations. Keep existing Notes; remove Instructions while preserving unique data into Notes. Defaults are optional, copied into editable planner entries on addition, and never live-linked. Published plans retain frozen values. Rest is 0–600 seconds in 15-second steps; RIR is an integer 0–5; Reps is an integer or range within 1–100. No production clients exist.
