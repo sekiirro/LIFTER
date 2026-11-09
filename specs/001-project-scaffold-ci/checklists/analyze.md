@@ -69,3 +69,23 @@ The main-side CI requirements retain FR-015 to FR-019 and SC-006 to SC-009, with
 **PASS - 0 CRITICAL, 0 HIGH.**
 
 - Dispatch trust finding: gate-check requires the run ref to match the PR base branch and the ci.yml blob at that ref to match the tested merge result; all required jobs must log the same PR/head/merge values. The logger already emits those values in validate, every integration shard, and storage. No open ambiguities; 0 open CRITICAL/HIGH findings remain.
+
+## S40 CodeRabbit request 2 follow-up analysis
+
+**Date**: 2026-11-09 11:45 UTC (after the S40 review corrections to spec, plan, and task text). **Scope**: FR-021, FR-023, SC-011, SC-013, T020, T023; authenticate the existing dispatch PR metadata lookup and distinguish PR-run provenance from dispatch workflow-ref provenance.
+
+- [x] `spec.md` retains measurable FR-021/FR-023 requirements and Given/When/Then acceptance scenarios; the mixed-run scenario now requires the PR run on the exact head and applies trusted base-workflow/blob checks to dispatch runs.
+- [x] Clarifications and PO approvals remain explicit; **No open ambiguities** remain for this technical review correction.
+- [x] `plan.md` covers Bearer authentication of the dispatch metadata lookup using `github.token` under existing `contents: read`; `tasks.md` records this under T020 [FR-021, FR-023].
+- [x] This analysis follows the latest spec/plan/task changes. Findings have 0 open CRITICAL/HIGH issues.
+
+### Findings
+
+- Use the workflow-provided `github.token` only to authenticate the existing GET of pull-request metadata in validate, each integration shard, and storage. Keep `contents: read`; do not add permissions or expose the token in logs. Existing fork rejection remains before dependency installation or untrusted execution.
+- Preserve `pull_request` provenance as exact PR-head checks. The trusted base-branch workflow ref and matching workflow-blob requirement applies to `workflow_dispatch` attempts.
+- Update the focused workflow contract test to require the token binding and Bearer/Accept headers in all three metadata-fetching jobs. No application behavior, schema, or product choice changes.
+- **CRITICAL**: none. **HIGH**: none. **No open ambiguities** remain.
+
+### Verdict
+
+**PASS - 0 CRITICAL, 0 HIGH.**

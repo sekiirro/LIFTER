@@ -60,9 +60,12 @@ it('dispatches CI against a PR merge ref and rejects a mismatched second parent'
   expect(
     workflow.match(/CI_REPO: \$\{\{ github\.repository \}\}/g),
   ).toHaveLength(3);
+  expect(workflow.match(/GH_TOKEN: \$\{\{ github\.token \}\}/g)).toHaveLength(
+    3,
+  );
   expect(
     workflow.match(
-      /curl --fail --silent --show-error --max-time 20 --retry 3 --retry-max-time 60 --retry-all-errors --output "\$response_file"/g,
+      /curl --fail --silent --show-error --max-time 20 --retry 3 --retry-max-time 60 --retry-all-errors -H "Authorization: Bearer \$GH_TOKEN" -H "Accept: application\/vnd\.github\+json" --output "\$response_file"/g,
     ),
   ).toHaveLength(3);
   expect(workflow.match(/response_file=\$\(mktemp\)/g)).toHaveLength(3);
