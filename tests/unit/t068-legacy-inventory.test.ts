@@ -21,9 +21,15 @@ describe('T068 legacy inventory output', () => {
     expect(serialized).not.toContain(privateUrl);
     expect(serialized).not.toContain(privateName);
     expect(report.legacy.workspaceCount).toBe(2);
-    expect(report.legacy.variationRowsByWorkspace.workspace_001.rowCount).toBe(1);
+    const rowsByWorkspace = report.legacy.variationRowsByWorkspace as Record<
+      string,
+      { rowCount: number; currentPayload: { videoUrlByHost: { youtube: number } } }
+    >;
+    const workspaceRow = rowsByWorkspace.workspace_001;
+    expect(workspaceRow).toBeDefined();
+    expect(workspaceRow?.rowCount).toBe(1);
     expect(report.legacy.workspacesWithoutExplicitRow).toBe(1);
-    expect(report.legacy.variationRowsByWorkspace.workspace_001.currentPayload.videoUrlByHost.youtube).toBe(1);
+    expect(workspaceRow?.currentPayload.videoUrlByHost.youtube).toBe(1);
     expect(report.canonical.exerciseVersions.rowsWithInstructions).toBe(1);
   });
 });

@@ -6,7 +6,6 @@ import postgres from 'postgres';
 const lifecycleStates = ['active', 'removed', 'merged'];
 const hasValue = (object, key) => Object.hasOwn(object ?? {}, key) && object[key] !== null && object[key] !== undefined;
 const objectOrEmpty = value => value && typeof value === 'object' && !Array.isArray(value) ? value : {};
-const arrayOrEmpty = value => Array.isArray(value) ? value : [];
 const isInteger = value => Number.isInteger(value);
 
 function videoHostClass(value) {

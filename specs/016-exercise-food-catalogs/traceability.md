@@ -139,3 +139,9 @@ Disclosure: the rename commit message trailers contain literal \n text rather th
 | Requirement | Task | Test | Evidence | Status |
 |---|---|---|---|---|
 | FR-031, FR-003 | T068 | `tests/unit/t068-legacy-inventory.test.ts::emits counts only when fake rows contain notes, URLs, or payload text` | Base tool commit `9ebdbf7e88c2a7fe8eee6e4deb02528d8d05ad57`; workspace-count assertion was RED then GREEN (1/1) in the S45 T068 follow-up; counts-only Stack A replay report at `specs/016-exercise-food-catalogs/evidence/t068-stack-a-inventory-2026-11-10.json`. | VERIFIED |
+
+## S45 T037 contract tests
+
+| Requirement | Task | Test | Evidence | Status |
+|---|---|---|---|---|
+| FR-001, FR-002, FR-003, FR-004, FR-014, FR-018, FR-030, FR-036, FR-037, FR-038, SC-001, SC-006, SC-013, SC-016 | T037 | `tests/integration/catalog-exercise-t037-contract.test.ts::T037 Global and workspace-private write contracts`; `::Name field contract`; `::Description field contract`; `::Notes field contract`; `::Video field contract`; `::Alternatives field contract`; `::Default Rest Time field contract`; `::Default RIR field contract`; `::Default Reps field contract`; `::T037 contract distinctions` | T037 contract-test commit (`HEAD`); Stack A RED before expected-failure conversion: 17 failing, 25 passing; post-conversion focused Stack A run: 31 passing, 23 expected failures. Expected failures are tagged for T043/T047/T048/T074/T075. | CONTRACTS RECORDED |
