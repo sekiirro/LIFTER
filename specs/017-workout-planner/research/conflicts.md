@@ -73,16 +73,16 @@
 
 ## 7. Decision history (resolved items retained)
 
-| Id        | Question                                                   | Where     |
-| --------- | ---------------------------------------------------------- | --------- |
-| F17-MCQ-1 | RESOLVED: zero rows on add                                 | spec §8.5 |
-| F17-MCQ-2 | RESOLVED: copy editable Notes/Alternatives                 | spec §8.5 |
-| F17-MCQ-3 | RESOLVED: reject zero-copy Assign                          | spec §8.5 |
-| F17-MCQ-4 | RESOLVED: skip and report held copy                        | spec §8.5 |
-| F17-MCQ-5 | RESOLVED: RED unresolved refs; block load                  | spec §8.5 |
-| F17-MCQ-6 | RESOLVED: export-authorized roles                          | spec §8.5 |
-| S43-MCQ-A | RESOLVED by S43-PO-5: approved prompt body EN/AR           | spec §8.6 |
-| F17-MCQ-8 | RESOLVED: UI labels; authored text; English exercise names | spec §8.5 |
-| F17-MCQ-9 | RESOLVED: consecutive 7-calendar-day blocks                | spec §8.5 |
+| Id        | Question                                                               | Where     |
+| --------- | ---------------------------------------------------------------------- | --------- |
+| F17-MCQ-1 | RESOLVED: zero rows on add                                             | spec §8.5 |
+| F17-MCQ-2 | RESOLVED: copy editable Notes/Alternatives                             | spec §8.5 |
+| F17-MCQ-3 | RESOLVED: reject zero-copy Assign                                      | spec §8.5 |
+| F17-MCQ-4 | RESOLVED: skip and report held copy                                    | spec §8.5 |
+| F17-MCQ-5 | RESOLVED: RED unresolved refs; block load                              | spec §8.5 |
+| F17-MCQ-6 | RESOLVED: export-authorized roles                                      | spec §8.5 |
+| S43-MCQ-A | RESOLVED by S43-PO-5: approved prompt body EN/AR                       | spec §8.6 |
+| F17-MCQ-8 | RESOLVED: UI labels; authored text; English exercise names             | spec §8.5 |
+| F17-MCQ-9 | RESOLVED: consecutive 7-program-day blocks; no calendar start required | spec §8.5 |
 
 No conflict above is resolved by guessing; each ends in a sourced rule or an MCQ.

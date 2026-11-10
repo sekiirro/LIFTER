@@ -15,8 +15,8 @@ Only published revisions are exportable. Selection is explicit; if several revis
 ## 2. Required content (all three options)
 
 - Plan title and client-facing plan identity (no internal ids, no PII beyond what the plan itself displays).
-- Days in order, including rest days.
-- Exercise names as authored.
+- Days in order, including rest days, with day titles when present.
+- Exercise names as authored and descriptions from the published revision when present.
 - Sets in order, labelled warm-up or working.
 - Reps or rep range per set, using the exercise entry's `reps` prescription.
 - Prescribed load with unit and mode (`bodyweight`, `added weight` kg/lb, `assisted` kg/lb).

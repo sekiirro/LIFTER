@@ -22,10 +22,10 @@ Semantics:
 
 0. Read the selected templates' current immutable versions once at run start and record them; a version created concurrently does not join the run. A retired template is not selectable.
 1. Resolve the selected template set and the target workspace set at request time.
-2. For `all_workspaces`: include only workspaces with `ever_received_global_assignment = false`. A workspace with only self-created templates is included (literal PO A2).
+2. For `all_workspaces`: retain the full request-time workspace set, then divide it into assignment targets (`ever_received_global_assignment = false`) and skipped workspaces (`ever_received_global_assignment = true`). A workspace with only self-created templates remains an assignment target (literal PO A2).
 3. For `specific_workspaces`: include the named workspaces regardless of prior assignment.
 4. For each target workspace, for each selected template version: create a copy only if that workspace does not already hold any copy of that template identity; otherwise skip and report the workspace/template pair. Never update, reset, delete or overwrite an existing copy or version.
-5. Record one item per targeted workspace with its outcome and the created copy ids. If a targeted workspace receives no copies in a batch that creates at least one copy overall, its committed receipt outcome is `no_copies`; the batch still commits. If the total batch would create zero copies, reject before any batch/state writes (S44-PO-2; architect mapping (S44-R2); S42-PO-8 zero-copy rule remains).
+5. Record one item per requested workspace with its outcome and the created copy ids. Each workspace excluded from All Workspaces because its flag is true receives `skipped_already_assigned`. If an assignment target receives no copies in a batch that creates at least one copy overall, its committed receipt outcome is `no_copies`; the batch still commits. If the total batch would create zero copies, reject before any batch/state writes (S44-PO-2; architect mapping (S44-R2); S42-PO-8 zero-copy rule remains).
 6. Set `ever_received_global_assignment = true` for workspaces that received at least one copy; a workspace with `no_copies` does not have this flag newly set.
 7. Later global template creation or versioning distributes nothing. Later workspace creation receives nothing.
 
