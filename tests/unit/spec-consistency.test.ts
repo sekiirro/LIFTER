@@ -16,7 +16,10 @@ import {
   runCiCheck,
   validateSpecConsistency,
 } from '../../scripts/spec-consistency.mjs';
-import { formatCandidatesFromStatus } from '../../scripts/format-check-changed.mjs';
+import {
+  formatCandidatesFromStatus,
+  resolveFormatBase,
+} from '../../scripts/format-check-changed.mjs';
 
 const BASE_SHA = 'a'.repeat(40);
 
@@ -314,6 +317,54 @@ it('omits deleted Markdown files from changed-file formatting checks', () => {
   expect(
     formatCandidatesFromStatus('D\0removed.md\0M\0changed.yaml\0'),
   ).toEqual(['changed.yaml']);
+});
+
+describe('changed-file format base', () => {
+  it('prefers the PR merge-ref first parent over the event base', () => {
+    const git = (args: string[]) => {
+      expect(args).toEqual(['rev-list', '--parents', '-n', '1', 'HEAD']);
+      return `mergecommit ${BASE_SHA} ${'d'.repeat(40)}\n`;
+    };
+    expect(
+      resolveFormatBase({
+        eventName: 'pull_request',
+        envBase: 'c'.repeat(40),
+        git,
+      }),
+    ).toBe(BASE_SHA);
+  });
+
+  it('falls back to the provided base without a merge HEAD', () => {
+    expect(
+      resolveFormatBase({
+        eventName: 'pull_request',
+        envBase: BASE_SHA,
+        git: () => 'singleparent\n',
+      }),
+    ).toBe(BASE_SHA);
+    expect(
+      resolveFormatBase({
+        eventName: 'push',
+        envBase: BASE_SHA,
+        git: () => 'singleparent\n',
+      }),
+    ).toBe(BASE_SHA);
+  });
+
+  it('uses HEAD^1 for workflow_dispatch and fails without a base', () => {
+    expect(
+      resolveFormatBase({
+        eventName: 'workflow_dispatch',
+        git: (args: string[]) => {
+          expect(args).toEqual(['rev-parse', 'HEAD^1']);
+          return `${BASE_SHA}\n`;
+        },
+      }),
+    ).toBe(BASE_SHA);
+    expect(
+      resolveFormatBase({ eventName: undefined, git: () => 'x\n' }),
+    ).toBeNull();
+  });
 });
 
 describe('docs-only classification', () => {

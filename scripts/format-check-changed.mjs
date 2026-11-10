@@ -23,18 +23,42 @@ export function formatCandidatesFromStatus(raw) {
   return candidates;
 }
 
+/**
+ * Resolves the comparison base for changed-file checks. Pull_request uses the
+ * PR merge commit's first parent because the event base SHA can lag the base
+ * the merge ref was built on; other events use the provided base.
+ */
+export function resolveFormatBase(options = {}) {
+  const { eventName, envBase, git } = options;
+  if (eventName === 'pull_request') {
+    try {
+      const [, ...parents] = git(['rev-list', '--parents', '-n', '1', 'HEAD'])
+        .trim()
+        .split(/\s+/);
+      if (parents.length >= 2) return parents[0];
+    } catch {
+      // Fall back to the provided base below.
+    }
+  }
+  if (envBase) return envBase;
+  if (eventName === 'workflow_dispatch')
+    return git(['rev-parse', 'HEAD^1']).trim();
+  return null;
+}
+
 /** Checks changed Markdown, YAML, and JSON files without honoring broad ignore rules. */
 async function main() {
   const repo = process.cwd();
-  let base = process.env.FORMAT_BASE_SHA;
-  if (!base && process.env.GITHUB_EVENT_NAME === 'workflow_dispatch')
-    base = execFileSync('git', ['rev-parse', 'HEAD^1'], {
-      cwd: repo,
-      encoding: 'utf8',
-    }).trim();
+  const git = (args) =>
+    execFileSync('git', args, { cwd: repo, encoding: 'utf8' });
+  const base = resolveFormatBase({
+    eventName: process.env.GITHUB_EVENT_NAME,
+    envBase: process.env.FORMAT_BASE_SHA,
+    git,
+  });
   if (!base)
     throw new Error(
-      'FORMAT_BASE_SHA is required to check changed documentation/config files',
+      'A base revision is required to check changed documentation/config files',
     );
   const changed = execFileSync(
     'git',
