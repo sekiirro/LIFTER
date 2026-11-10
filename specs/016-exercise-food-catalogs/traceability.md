@@ -133,3 +133,9 @@ Disclosure: the rename commit message trailers contain literal \n text rather th
 | Requirement | Task | Test | Evidence | Status |
 |---|---|---|---|---|
 | FR-011, FR-016, FR-018 | T087 | `tests/unit/exercise-detail-remove.test.tsx::clears the failure alert when the dialog is closed and reopened`; `tests/unit/exercise-editor-alternatives.test.tsx::uses stable exercise ids as keys for duplicate alternative names`; `tests/unit/exercise-library-actions.test.ts::returns invalid for malformed exercise/workspace ids without calling an RPC`; `tests/unit/catalog-food-actions.test.ts::rejects a malformed workspace id before database calls`; `tests/unit/catalog-variation-actions.test.ts::returns invalid for malformed workspace/exercise ids`; `tests/unit/catalog-server.test.ts::returns invalid for malformed id, targetId or workspaceId in mutate without calling RPC` | Commit `69709cd4`; S38-R3 architect ruling; focused unit suites executed RED then GREEN; typecheck, lint, prettier --check, check:secrets pass. | VERIFIED |
+
+## S45 T068 legacy inventory
+
+| Requirement | Task | Test | Evidence | Status |
+|---|---|---|---|---|
+| FR-031, FR-003 | T068 | `tests/unit/t068-legacy-inventory.test.ts::emits counts only when fake rows contain notes, URLs, or payload text` | Base tool commit `9ebdbf7e88c2a7fe8eee6e4deb02528d8d05ad57`; workspace-count assertion was RED then GREEN (1/1) in the S45 T068 follow-up; counts-only Stack A replay report at `specs/016-exercise-food-catalogs/evidence/t068-stack-a-inventory-2026-11-10.json`. | VERIFIED |

@@ -160,6 +160,7 @@ export function summarizeInventory(data) {
     generatedAtUtc: new Date().toISOString(),
     stack: 'A',
     legacy: {
+      workspaceCount: workspaces.length,
       variationRowCount: variations.length,
       variationVersionRowCount: variationVersions.length,
       lifecycle: Object.fromEntries(lifecycleStates.map(state => [state, variations.filter(row => row.lifecycle_state === state).length])),
