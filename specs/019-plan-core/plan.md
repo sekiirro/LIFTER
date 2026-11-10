@@ -14,7 +14,7 @@ F17/F18 retain ownership of content schemas. F16 `ExerciseSnapshotV2`, immutable
 - Forward-extend `subscription_activations` with `activation_source` (`plan_deliveries`, `po_override`, `renewal`) and nullable typed links that can reference `plan_deliveries` only. CHECK/FK constraints enforce source-specific link shapes and kind/workspace/client/subscription correspondence. Preserve `delivery_event_id` as source operation ID. Classify existing rows only from evidence; unknown legacy source blocks migration review.
 - Initial delivery, activation, unit, receipt, and audit are one database transaction. Any failure rolls back the whole current delivery. No outbox/jobs fallback is allowed. Use a unique `(workspace_id, subscription_id)` activation guard and operation-key replay.
 - Reuse F12 lock order: client → subscription → plan root → relevant content rows → operation ledger; for multi-plan copy lock sorted Plan IDs. Recheck authorization/current membership, current subscription, client state, assignment, and CAS values after waits. No lock-order inversion.
-- Use RESTRICT/no-cascade references for author, plan, revision, delivery, activation, unit, and audit history. F11 deletion compatibility depends on pending PR #73 ; retain non-login author ID per pending F11 deletion policy.
+- Use RESTRICT/no-cascade references for author, plan, revision, delivery, activation, unit, and audit history. F11 deletion compatibility depends on pending PR #73; retain non-login author ID per pending F11 deletion policy.
 - No migration version is reserved. The implementation lane scans all refs immediately before selecting a version and before committing/pushing a new migration.
 
 ## Cross-feature ownership and dependencies
