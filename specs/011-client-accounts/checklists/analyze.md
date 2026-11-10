@@ -1,5 +1,9 @@
 # Analyze — F11 client accounts
 
+## S45 round 26 analysis - 2026-11-10 17:38 UTC
+
+Revalidated after Prettier formatting of all Markdown files changed by PR #73, including the two touched spec artifacts. These formatting-only changes preserve the fenced PO quote and copy text; the exact S41-PO-11 source wording remains present byte-for-byte. The seven round-24 review fixes and all FR/task mappings remain unchanged. No new FR/SC/task or PO decision was introduced. Prettier bypass check passes on all changed Markdown. The main changed-file script on a local merge is pending final rerun after the formatting-only commit. CRITICAL open 0; HIGH open 0; the pre-existing A-S41-4 MEDIUM architect gate remains open.
+
 ## S45 round 25 re-analysis - 2026-11-10 17:34 UTC
 
 Revalidated after formatting the changed Markdown with Prettier's ignore file bypassed. The resulting edits are table alignment/wrapping plus the seven approved consistency fixes; the semantic findings and cross-references recorded in round 24 still apply. T053 exemption and FR-022/T063 follow-up agree with their task gates. No new FR, SC, task or product decision was introduced. Prettier check with an explicit empty ignore file and git diff --check pass. Main scripts/format-check-changed.mjs against the local merge remains pending. Counts remain CRITICAL 0, HIGH 0; A-S41-4 remains the pre-existing MEDIUM architect gate.

@@ -165,7 +165,7 @@ As the product owner, I know the client-late Trainer alert is not in F15's relea
 - Token-bearing access/error logs, telemetry, login-next redirects, referrers/caches: scrub every capture point; no-referrer/no-store on invalid/errors too; no third-party content receives token-bearing referrers.
 - Shared IP clients: enforce BOTH 5 attempts/link/15 minutes and 30/IP/hour; either exhausted limit returns a generic, non-disclosing response. Count attempts in a durable admission transaction independent of signup rollback. ND-F11-5a is decided: every submission reaching admission counts; fixed 15-minute link/1-hour IP windows aligned with expiry; AD-F11-2 is an architect decision; issuance limits ND-F10-3 are unchanged. Attempt logs contain no IP/ip_key; HMAC counters expire at window end (automatic expiry; no usable counter beyond the window), subject to C1 privacy decision Decided (PO, 2026-10-28).
 
-- S40 account lifecycle: a deletion-pending or deleted client is denied at every wall (P-S40-1 step 0) and cannot be approved or rejected; the F12 stale-state refusal (012 FR-017) applies. Deleting the last active Workspace Owner of a workspace is allowed (S41-PO-1 MCQ-13 = A); the workspace is then left with no Workspace Owner and its client approvals fall to the Platform Owner only, who may appoint a new Workspace Owner through the existing PO-only staff grant path (003 FR-005; S41-GAP-MCQ-2 = A). A Trainer whose assigned clients lose their assignment because the Trainer's membership is revoked or role changed leaves those clients unassigned (FR-027); none is reassigned automatically on those events. When a Trainer *account* is deleted, each of that Trainer's clients outside the F11 deletion lifecycle is automatically reassigned to an eligible active trainer of the workspace by balanced distribution, or appears unassigned when none is eligible; a client in the F11 deletion lifecycle is neither reassigned nor listed (FR-028 (h); S41-PO-11, which supersedes S41-R4 F2 and the earlier no-reassignment wording for this case only).
+- S40 account lifecycle: a deletion-pending or deleted client is denied at every wall (P-S40-1 step 0) and cannot be approved or rejected; the F12 stale-state refusal (012 FR-017) applies. Deleting the last active Workspace Owner of a workspace is allowed (S41-PO-1 MCQ-13 = A); the workspace is then left with no Workspace Owner and its client approvals fall to the Platform Owner only, who may appoint a new Workspace Owner through the existing PO-only staff grant path (003 FR-005; S41-GAP-MCQ-2 = A). A Trainer whose assigned clients lose their assignment because the Trainer's membership is revoked or role changed leaves those clients unassigned (FR-027); none is reassigned automatically on those events. When a Trainer _account_ is deleted, each of that Trainer's clients outside the F11 deletion lifecycle is automatically reassigned to an eligible active trainer of the workspace by balanced distribution, or appears unassigned when none is eligible; a client in the F11 deletion lifecycle is neither reassigned nor listed (FR-028 (h); S41-PO-11, which supersedes S41-R4 F2 and the earlier no-reassignment wording for this case only).
 
 ## Requirements _(mandatory)_
 
@@ -317,6 +317,7 @@ Pending-approval clients have **zero client access** through app `authorize()`, 
 Coordinated rotation: SIGNUP_RATE_KEY rotation resets IP/link counters because counter keys derive from the active key. Admission uses only the current single `ip_key`, with no old-key lookup. Accept up to one extra window of attempts per key (at most 1 hour for the IP window). Rotation is rare and manual: rotate the server environment and Vault value together; old-key counters expire naturally. Never log key values or identifiers derived from IPs. Counter expiry remains aligned to fixed windows (15 minutes/link, 1 hour/IP), and every submission reaching admission counts; invalid/replayed attestations receive no counter credit or ticket.
 
 **I1 dependency:** U2 (T007/T008) owns the minimal `signup_admission_tickets` schema and internal guarded redemption primitive, including request-secret hash/link binding, one-use NULL-to-timestamp transition and business-failure/infrastructure rollback semantics. Only explicitly pre-admitted synthetic tickets are available to U3 tests. U5 (T019/T020) owns attested issuance, nonces, counters, operational purge and admission integration. The redemption primitive has no public issuer/grant and requires no U5 object at the U2/U3 exits. AD-F11-1 option (i) is PO-approved; C1–C4 are binding conditions.
+
 ### Session 2026-11-04 — S33-PO-4
 
 PO source: S33-PO-4, “Fix stack drift, flaky tests, billing-related CI blockers, and PR/issue backlog organization.” The S33 F11 change is limited to bounding/scoping the existing recovery RLS verification probes and surfacing the already-returned client signup status in test diagnostics. It does not change client recovery or authorization behavior. No open ambiguities remain within this test-only S33 scope; existing ND-F5-1/B4 audit-retention decisions remain open and out of scope.
@@ -367,6 +368,7 @@ Authority: S40-PO-10 (`C:/Users/NEW LAP/.lifter/runs/s40-po/s40-po-1.verbatim.tx
 PO words, byte-exact:
 
 > F11 MCQs (free text):
+>
 > 1. Account deletion covers ALL roles, including PO, but never the last PO.
 > 2. Release email/phone after deletion.
 > 3. Active subscriptions/dues don't automatically block deletion. Require appropriate refund/financial-resolution confirmation; never treat confirmation as an actual refund.
@@ -408,6 +410,7 @@ Architect mapping (NOT PO words): MCQ-1 = B: FR-018 and spec 003 FR-015 (S40 ame
 Architect ruling S40-R19 (NOT PO words; `C:/Users/NEW LAP/.lifter/runs/s40-po/s40-architect-rulings.md`): MCQ-4 = keep ended assignment rows (start, end, actor) (FR-022); MCQ-8 = existing in-app channel, no Telegram or email (FR-024); MCQ-10 = reuse the PO-only `manage_staff_access`, no matrix change (FR-018 PO accounts, FR-022, FR-023); MCQ-12 = architect copy proposal for PO byte-exact approval, not encoded (FR-021).
 
 Consequences that the PO text does not decide, raised as one PENDING-PO batch (full options, implications and recommendations in `research/s40-pending-mcqs.md`):
+
 - **S40-F11-MCQ-12** (carried): EN/AR copy of the New workspace action. Proposal file `research/s40-new-workspace-copy-proposal.md`. Blocks copy only (FR-021, T051, T056).
 - **S40-F11-MCQ-13**: deleting the last active Workspace Owner of a workspace. Blocks the WO-last case of T047 only.
 - **S40-F11-MCQ-14**: which personal fields the terminal client row keeps after release. Blocks the field-clearing step of T048 and the scan in T047.
@@ -444,6 +447,7 @@ PO-MCQ-1: A: Approve as drafted
 ```
 
 Architect mappings (NOT PO words; `s41-po-1.verbatim.txt`, each "(Architect mapping" line):
+
 - MCQ-13 = A: a Workspace Owner account may be deleted even when it is the workspace's last active Workspace Owner (FR-018, FR-021 unchanged in scope).
 - MCQ-15 = A: deletion of Workspace Owner, Trainer and Sales accounts is authorised by the existing PO-only `manage_staff_access`; no matrix change.
 - MCQ-20 = A: a Platform Owner may delete their own account when another valid Platform Owner exists; the last-PO guard (FR-026) is unchanged.
@@ -458,31 +462,31 @@ Architect rulings (NOT PO words): S41-R3 (no spec edit unless a CodeRabbit findi
 
 Decisions encoded:
 
-| Question | PO answer (S41) | Encoded in | Still open |
-|---|---|---|---|
-| S40-F11-MCQ-12 | A (S41-PO-3) | FR-021; copy table below | None; P1-P9 approved in Round 5 (S41-PO-4/-5) |
-| S40-F11-MCQ-13 | A (S41-PO-1) | FR-018; User Story 5 scenario 7; plan P-S40-1; T047 | None |
-| S40-F11-MCQ-14 | B (S41-PO-1) | FR-020; plan P-S40-1 step D; T047, T048 | None |
-| S40-F11-MCQ-15 | A (S41-PO-1) | FR-018; plan P-S40-1 actor; 003 FR-015 S40 amendment; T047, T048 | None |
-| S40-F11-MCQ-16 | A and A (S41-PO-2) | FR-028 (c), (d); plan P-S40-5; T058; SC-021 | None |
-| S40-F11-MCQ-17 | C (S41-PO-2) | FR-021; plan P-S40-3; T051, T056 | None; P1/P2 approved in Round 5 |
-| S40-F11-MCQ-18 | A (S41-PO-2) | FR-025; plan P-S40-1a; T059 | None; P6-P9 approved in Round 5 |
-| S40-F11-MCQ-19 | A (S41-PO-3) | FR-021; plan P-S40-3; T051, T056 | None; P3-P5 approved in Round 5; retry rule S41-GAP-MCQ-1 = A |
-| S40-F11-MCQ-20 | A (S41-PO-1) | FR-018; plan P-S40-1 actor; T047, T060 | None |
+| Question       | PO answer (S41)    | Encoded in                                                       | Still open                                                    |
+| -------------- | ------------------ | ---------------------------------------------------------------- | ------------------------------------------------------------- |
+| S40-F11-MCQ-12 | A (S41-PO-3)       | FR-021; copy table below                                         | None; P1-P9 approved in Round 5 (S41-PO-4/-5)                 |
+| S40-F11-MCQ-13 | A (S41-PO-1)       | FR-018; User Story 5 scenario 7; plan P-S40-1; T047              | None                                                          |
+| S40-F11-MCQ-14 | B (S41-PO-1)       | FR-020; plan P-S40-1 step D; T047, T048                          | None                                                          |
+| S40-F11-MCQ-15 | A (S41-PO-1)       | FR-018; plan P-S40-1 actor; 003 FR-015 S40 amendment; T047, T048 | None                                                          |
+| S40-F11-MCQ-16 | A and A (S41-PO-2) | FR-028 (c), (d); plan P-S40-5; T058; SC-021                      | None                                                          |
+| S40-F11-MCQ-17 | C (S41-PO-2)       | FR-021; plan P-S40-3; T051, T056                                 | None; P1/P2 approved in Round 5                               |
+| S40-F11-MCQ-18 | A (S41-PO-2)       | FR-025; plan P-S40-1a; T059                                      | None; P6-P9 approved in Round 5                               |
+| S40-F11-MCQ-19 | A (S41-PO-3)       | FR-021; plan P-S40-3; T051, T056                                 | None; P3-P5 approved in Round 5; retry rule S41-GAP-MCQ-1 = A |
+| S40-F11-MCQ-20 | A (S41-PO-1)       | FR-018; plan P-S40-1 actor; T047, T060                           | None                                                          |
 
 Approved copy rows 1-9 (S41-PO-3, MCQ-12 = A; byte-exact, verified by Node comparison with the proposal table). Row 1 role is the Workspaces page action label (MCQ-17 = C); the strings are unchanged. Row 6 and row 8 are reused approved strings, not new text.
 
-| # | Role | EN | AR (Egyptian) |
-|---|---|---|---|
-| 1 | Workspaces page action label (PO only) | New workspace | مساحة عمل جديدة |
-| 2 | Dialog title | Create a new workspace | اعمل مساحة عمل جديدة |
-| 3 | Dialog body (no auto-provisioning, FR-021) | The new workspace starts empty. No members, clients, packages or branding are added automatically. | مساحة العمل الجديدة هتبدأ فاضية. مفيش أعضاء ولا عملاء ولا باقات ولا علامة تتضاف لوحدها. |
-| 4 | Name field label | Workspace name | اسم مساحة العمل |
-| 5 | Confirm button | Create workspace | اعمل مساحة العمل |
-| 6 | Cancel button (reuses `dialog.cancel`) | Cancel | إلغاء |
-| 7 | Success feedback | Workspace created. | تم إنشاء مساحة العمل. |
-| 8 | Generic error (reuses `packages.unavailable`) | Unable to complete the request. Please try again. | تعذّر إتمام الطلب. حاول مرة أخرى. |
-| 9 | Name validation (MCQ-19 = A, client-entered name 1-120 characters) | Enter a workspace name of up to 120 characters. | اكتب اسم مساحة العمل، 120 حرف كحد أقصى. |
+| #   | Role                                                               | EN                                                                                                 | AR (Egyptian)                                                                           |
+| --- | ------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------- |
+| 1   | Workspaces page action label (PO only)                             | New workspace                                                                                      | مساحة عمل جديدة                                                                         |
+| 2   | Dialog title                                                       | Create a new workspace                                                                             | اعمل مساحة عمل جديدة                                                                    |
+| 3   | Dialog body (no auto-provisioning, FR-021)                         | The new workspace starts empty. No members, clients, packages or branding are added automatically. | مساحة العمل الجديدة هتبدأ فاضية. مفيش أعضاء ولا عملاء ولا باقات ولا علامة تتضاف لوحدها. |
+| 4   | Name field label                                                   | Workspace name                                                                                     | اسم مساحة العمل                                                                         |
+| 5   | Confirm button                                                     | Create workspace                                                                                   | اعمل مساحة العمل                                                                        |
+| 6   | Cancel button (reuses `dialog.cancel`)                             | Cancel                                                                                             | إلغاء                                                                                   |
+| 7   | Success feedback                                                   | Workspace created.                                                                                 | تم إنشاء مساحة العمل.                                                                   |
+| 8   | Generic error (reuses `packages.unavailable`)                      | Unable to complete the request. Please try again.                                                  | تعذّر إتمام الطلب. حاول مرة أخرى.                                                       |
+| 9   | Name validation (MCQ-19 = A, client-entered name 1-120 characters) | Enter a workspace name of up to 120 characters.                                                    | اكتب اسم مساحة العمل، 120 حرف كحد أقصى.                                                 |
 
 Round 4 left these open; Round 5 closes them: the navigation label and page title (P1, P2), slug field label (P3), slug format hint (P4), workspace-create error (P5) and financial-resolution category labels and acknowledgement (P6-P9) are approved byte-exact (S41-PO-4, S41-PO-5; Round 5 table). P5b is dropped and the drafts it replaced are kept only as history in `research/s41-new-copy-proposal.md`.
 
@@ -560,6 +564,7 @@ All workspace-create errors
 ```
 
 Architect mappings (NOT PO words; the "(Architect mapping" lines of the same file):
+
 - A-S41-1 = PO-supplied strings P1-P9 replace the drafts of `research/s41-new-copy-proposal.md` byte-exact; P5b is dropped. The P5 AR differs from approved row 8 AR, so S41-PO-5 settles that conflict.
 - S41-PO-5 = the P5 AR "حصلت مشكلة ومقدرناش نكمّل طلبك. جرّب تاني." replaces approved row 8 AR for every workspace-creation error (generic create failure, unknown result, slug clash and a same-key different-input retry); the EN stays "Unable to complete the request. Please try again."; `packages.unavailable` and every other existing use keep row 8 AR "تعذّر إتمام الطلب. حاول مرة أخرى.". Workspace creation therefore uses its own message key instead of reusing `packages.unavailable`.
 - S41-GAP-MCQ-1 = A: the same client key with the same name and slug returns the existing workspace; the same key with a different name or slug is refused with the workspace-create generic error (P5) and creates no second workspace.
@@ -568,26 +573,26 @@ Architect mappings (NOT PO words; the "(Architect mapping" lines of the same fil
 
 Decisions encoded:
 
-| Question | PO answer | Encoded in | Still open |
-|---|---|---|---|
-| A-S41-1 (copy P1-P9) | P1-P9 supplied byte-exact (S41-PO-4) | FR-021 (P1-P5); FR-025 (P6-P9); plan P-S40-1a and P-S40-3; T051, T056, T059 | None |
-| S41-PO-5 (workspace-create error) | All workspace-create errors use P5 | FR-021; plan P-S40-3; T049, T056 | None |
-| S41-GAP-MCQ-1 | A (S41-PO-4) | FR-021; plan P-S40-3; T049, T056 | None |
-| S41-GAP-MCQ-2 | A (S41-PO-4) | FR-018; plan P-S40-1 post-deletion state; T047 | None |
+| Question                          | PO answer                            | Encoded in                                                                  | Still open |
+| --------------------------------- | ------------------------------------ | --------------------------------------------------------------------------- | ---------- |
+| A-S41-1 (copy P1-P9)              | P1-P9 supplied byte-exact (S41-PO-4) | FR-021 (P1-P5); FR-025 (P6-P9); plan P-S40-1a and P-S40-3; T051, T056, T059 | None       |
+| S41-PO-5 (workspace-create error) | All workspace-create errors use P5   | FR-021; plan P-S40-3; T049, T056                                            | None       |
+| S41-GAP-MCQ-1                     | A (S41-PO-4)                         | FR-021; plan P-S40-3; T049, T056                                            | None       |
+| S41-GAP-MCQ-2                     | A (S41-PO-4)                         | FR-018; plan P-S40-1 post-deletion state; T047                              | None       |
 
 Approved copy P1-P9 (S41-PO-4, byte-exact, verified by Node comparison with the verbatim file). Key names are proposed technical names; this spec PR changes no i18n file (encoding is T056 and T059).
 
-| # | Role | EN | AR (Egyptian) | EN chars | AR chars |
-|---|---|---|---|---|---|
-| P1 | Navigation label (PO only) — key `nav.workspaces` (proposed) | Workspaces | مساحات العمل | 10 | 12 |
-| P2 | Page title (PO only) — key `workspaces.title` (proposed) | Workspaces | مساحات العمل | 10 | 12 |
-| P3 | Slug field label — key `workspaces.slugLabel` (proposed) | Workspace slug | اسم مساحة العمل في الرابط | 14 | 25 |
-| P4 | Slug format hint — key `workspaces.slugHint` (proposed) | Use lowercase letters, numbers and hyphens only. Up to 50 characters, not starting or ending with a hyphen. | استخدم حروف إنجليزي صغيرة وأرقام وشرطة (-) بس. بحد أقصى 50 حرف، ومينفعش تبدأ أو تنهي بشرطة. | 107 | 91 |
-| P5 | Workspace-create error — own key `workspaces.createError` (proposed); not `packages.unavailable` | Unable to complete the request. Please try again. | حصلت مشكلة ومقدرناش نكمّل طلبك. جرّب تاني. | 49 | 42 |
-| P6 | Financial-resolution category 1 — key `accountDeletion.categoryRefundedOutsideLifter` (proposed) | Refunded outside LIFTER | تم رد المبلغ خارج ليفتر | 23 | 23 |
-| P7 | Financial-resolution category 2 — key `accountDeletion.categoryForfeitedUnderContract` (proposed) | Forfeited under the contract | تم التنازل عن المبلغ حسب العقد | 28 | 30 |
-| P8 | Financial-resolution category 3 — key `accountDeletion.categoryOther` (proposed) | Other | سبب تاني | 5 | 8 |
-| P9 | Financial-resolution acknowledgement — key `accountDeletion.financialAcknowledgement` (proposed) | I understand this only records the financial resolution. It does not process a refund, collect a payment, or cancel any subscription or debt. | أنا فاهم إن ده مجرد تسجيل للتسوية المالية، ومش معناه إن ليفتر رجّع أي فلوس، أو حصّل أي مبالغ، أو ألغى أي اشتراكات أو مستحقات. | 141 | 125 |
+| #   | Role                                                                                              | EN                                                                                                                                            | AR (Egyptian)                                                                                                                 | EN chars | AR chars |
+| --- | ------------------------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------- | -------- | -------- |
+| P1  | Navigation label (PO only) — key `nav.workspaces` (proposed)                                      | Workspaces                                                                                                                                    | مساحات العمل                                                                                                                  | 10       | 12       |
+| P2  | Page title (PO only) — key `workspaces.title` (proposed)                                          | Workspaces                                                                                                                                    | مساحات العمل                                                                                                                  | 10       | 12       |
+| P3  | Slug field label — key `workspaces.slugLabel` (proposed)                                          | Workspace slug                                                                                                                                | اسم مساحة العمل في الرابط                                                                                                     | 14       | 25       |
+| P4  | Slug format hint — key `workspaces.slugHint` (proposed)                                           | Use lowercase letters, numbers and hyphens only. Up to 50 characters, not starting or ending with a hyphen.                                   | استخدم حروف إنجليزي صغيرة وأرقام وشرطة (-) بس. بحد أقصى 50 حرف، ومينفعش تبدأ أو تنهي بشرطة.                                   | 107      | 91       |
+| P5  | Workspace-create error — own key `workspaces.createError` (proposed); not `packages.unavailable`  | Unable to complete the request. Please try again.                                                                                             | حصلت مشكلة ومقدرناش نكمّل طلبك. جرّب تاني.                                                                                    | 49       | 42       |
+| P6  | Financial-resolution category 1 — key `accountDeletion.categoryRefundedOutsideLifter` (proposed)  | Refunded outside LIFTER                                                                                                                       | تم رد المبلغ خارج ليفتر                                                                                                       | 23       | 23       |
+| P7  | Financial-resolution category 2 — key `accountDeletion.categoryForfeitedUnderContract` (proposed) | Forfeited under the contract                                                                                                                  | تم التنازل عن المبلغ حسب العقد                                                                                                | 28       | 30       |
+| P8  | Financial-resolution category 3 — key `accountDeletion.categoryOther` (proposed)                  | Other                                                                                                                                         | سبب تاني                                                                                                                      | 5        | 8        |
+| P9  | Financial-resolution acknowledgement — key `accountDeletion.financialAcknowledgement` (proposed)  | I understand this only records the financial resolution. It does not process a refund, collect a payment, or cancel any subscription or debt. | أنا فاهم إن ده مجرد تسجيل للتسوية المالية، ومش معناه إن ليفتر رجّع أي فلوس، أو حصّل أي مبالغ، أو ألغى أي اشتراكات أو مستحقات. | 141      | 125      |
 
 P5 is the workspace-create error only, under its own message key. Approved row 8 of the Round 4 table remains the `packages.unavailable` string for every other existing use and keeps its AR "تعذّر إتمام الطلب. حاول مرة أخرى." (S41-PO-5). P5b of the proposal is dropped; the drafts it replaced are kept only as history in `research/s41-new-copy-proposal.md`.
 
@@ -606,8 +611,8 @@ Architect mapping (NOT PO words; the "(Architect mapping" line of the same recor
 
 Decisions encoded:
 
-| Question | PO answer (S41) | Encoded in | Still open |
-|---|---|---|---|
+| Question                                                            | PO answer (S41)   | Encoded in                                                                                                                                       | Still open                                                        |
+| ------------------------------------------------------------------- | ----------------- | ------------------------------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------------- |
 | S41-GAP-MCQ-3 (assignment timing and trainer-deletion reassignment) | C + A (S41-PO-11) | FR-022; FR-027; FR-028 (a), (g), (h); SC-021; plan P-S40-1 step (B), P-S40-2, P-S40-5; T047, T050, T058, T062; traceability; 012 FR-022 and T042 | None for this question; see "Ambiguities remaining after Round 6" |
 
 Supersession recorded precisely: S41-PO-11 replaces S41-R4 F2 and the earlier FR-027 "no automatic reassignment runs on departure" wording for the trainer-deletion case only. A delayed approval job that finds an active PO manual assignment still completes as a recorded no-op; a manual assignment that ended because of a membership revocation or a role change also stays a no-op (S41-R4 F2 remains in force for those cases). A Trainer membership revocation or a role change away from `trainer` still leaves the clients unassigned with no automatic reassignment. The question, its options and its implications are recorded in `research/s40-pending-mcqs.md` (S41-GAP-MCQ-3, DECIDED).

@@ -5,7 +5,7 @@
 **Status**: Draft
 **Input**: Roadmap P0 "Supabase RLS scaffolding, authorize() + permission matrix, isolation test harness". Constitution I and III. Architecture v3 § Multi-tenancy. BRD-02 (roles, multi-workspace staff, consistent role). D-09, D-10, D-16.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 Actors: **Platform Owner (PO)**, **Workspace Owner (WO)**, **Trainer**, **Sales**, **Reviewer**. No login UI exists yet. Identities are database auth users created by tests or seed scripts. Login flows come in F4.
 
@@ -80,7 +80,7 @@ A reusable test harness provisions isolated fixtures (two workspaces, users per 
 - The PO has a role but no memberships, and still has access by role (BRD line 40).
 - Duplicate active membership for the same (workspace, user) is impossible. Re-granting access after a revocation creates a new active row and keeps the old one.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -176,7 +176,7 @@ A departed trainer's access is removed by deactivating the trainer and revoking 
 
 S35-PO-1 source: `C:/Users/NEW LAP/.lifter/runs/s35-haiku-ledger2/s35-po-1.verbatim.txt` (architect notes: `C:/Users/NEW LAP/.lifter/runs/s35-haiku-ledger2/notes.txt`). G1 is resolved to deactivate/revoke (no deletion); G2's guard scope is settled. PO-ESCALATION G1 is closed by this decision. The current schema has no deactivation capability; T020 tracks adding it (tagged FR-015).
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 - **SC-001**: 100% of tenancy tables have RLS enabled and forced, verified by a catalog query in the test suite.
 - **SC-002**: The isolation suite passes, with ≥ 1 foreign-workspace negative test per table and per governance write, for each of the 4 non-PO identities (WO, trainer, sales, anonymous).
