@@ -16,7 +16,6 @@ const ALLOWED_HOSTS = new Set([
   'www.youtube.com',
   'youtu.be',
   'drive.google.com',
-  'docs.google.com',
 ]);
 
 export function isAllowedCatalogVideoUrl(value: string): boolean {

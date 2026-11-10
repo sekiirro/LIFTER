@@ -157,3 +157,9 @@ Disclosure: the rename commit message trailers contain literal \n text rather th
 | FR | Task | Test | Evidence | Status |
 |---|---|---|---|---|
 | FR-024, FR-004 | T045 | `tests/integration/catalog-exercise-t037-contract.test.ts::T045 stores private exercise video only in the owning workspace version`; `::T045 rejects a private video write for a foreign workspace`; `::T045 applies the canonical video validator to private exercise writes` | Stack A RED mutation: bypassing `app_private.catalog_video_url_allowed` made the private Vimeo rejection fail because the RPC accepted the URL. Stack A reset restored committed migrations; focused contract suite GREEN: 48 passed, 28 expected failures. T045 implementation commit and run details: `C:/Users/NEW LAP/.lifter/runs/s45-luna-f16-t045/report.md`. | VERIFIED |
+
+## S45 T061 video host allowlist parity
+
+| FR | Task | Test | Evidence | Status |
+|---|---|---|---|---|
+| FR-014 | T061 | `tests/integration/catalog-exercise-t037-contract.test.ts::Video field contract > rejects a malformed or disallowed Video value on the Global write path (T061)`; `::rejects a malformed or disallowed Video value on the private write path (T061)`; `tests/unit/catalog-video-variation.test.tsx::T061 rejects docs.google.com while allowing Drive videos` | RED: Stack A global/private writes accepted Docs; unit validator accepted Docs. GREEN after Stack A reset applied `20261110130000_catalog_video_host_policy.sql`: focused integration suites 3 files / 58 passed / 26 existing expected failures; affected unit suites 3 files / 48 passed. Re-allowing Docs independently in TypeScript and SQL made the unit test and both SQL write tests fail. Lint and typecheck passed. T052 gates and full evidence: `C:/Users/NEW LAP/.lifter/runs/s45-luna-f16-t045/report.md`. | VERIFIED |

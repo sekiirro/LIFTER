@@ -601,3 +601,11 @@ T900 has been marked complete only after its focused integration test passed on 
 - **Entry check:** PASS. `spec.md` FR-024/FR-004 and its workspace-private video scenarios define the scope; the S36-PO-3 answer to F16-MCQ-9 governs client projection separately. `plan.md` specifies private video in version content and owning-workspace writes. `tasks.md` T045 is FR-tagged and depends on T043. D16-3 and S37-PO-10 close host behavior; no open ambiguity.
 - **Findings:** 0 open CRITICAL, 0 open HIGH. No PO decision needed.
 - **Gate:** PASS for T045. Stack A test and mutation evidence is recorded in `traceability.md` and the lane report.
+
+## S45 T061 video host allowlist parity
+
+- **Date:** 2026-11-10 20:23 UTC, after T061 task-status and traceability updates.
+- **Scope:** Align SQL and TypeScript video validators with D16-3 / S45-R9: HTTPS YouTube and Google Drive hosts only; reject `docs.google.com`.
+- **Entry check:** PASS. `spec.md` FR-014 identifies D16-3 and explicitly excludes Docs; `decision-register.md` records the closed S37-PO-10 decision; S45-R9 confirms implementation scope. `plan.md` describes the validator and host list; `tasks.md` T061 is tagged FR-014. No open ambiguity or PO decision.
+- **Findings:** 0 open CRITICAL, 0 open HIGH.
+- **Gate:** PASS for T061. Stack A RED/GREEN, SQL and TypeScript mutation results, T052 ordering checks, lint and typecheck are recorded in `traceability.md` and the lane report.

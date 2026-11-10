@@ -222,8 +222,7 @@ describe.each([
     expect(version?.payload).toMatchObject({ [key]: valid });
   });
 
-  const rejectionIt = field === 'Video' ? it.fails : it;
-  rejectionIt(
+  it(
     `rejects a malformed or disallowed ${field} value on the Global write path (${field === 'Video' ? 'T061' : task})`,
     async () => {
       await expect(
@@ -307,8 +306,7 @@ describe.each([
     expect(version?.payload).toMatchObject({ [key]: valid });
   });
 
-  const privateRejectionIt = field === 'Video' ? it.fails : it;
-  privateRejectionIt(
+  it(
     `rejects a malformed or disallowed ${field} value on the private write path (${field === 'Video' ? 'T061' : 'T075'})`,
     async () => {
       await expect(

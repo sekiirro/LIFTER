@@ -59,6 +59,15 @@ describe('workspace video variation UI (T023)', () => {
       expect(isAllowedCatalogVideoUrl(url)).toBe(false);
   });
 
+  it('T061 rejects docs.google.com while allowing Drive videos', () => {
+    expect(isAllowedCatalogVideoUrl('https://docs.google.com/document/d/id')).toBe(
+      false,
+    );
+    expect(isAllowedCatalogVideoUrl('https://drive.google.com/file/d/id')).toBe(
+      true,
+    );
+  });
+
   it('rejects allowed-host URLs with a query or fragment immediately after the host', () => {
     expect(isAllowedCatalogVideoUrl('https://youtube.com?x=1')).toBe(false);
     expect(isAllowedCatalogVideoUrl('https://youtube.com#x')).toBe(false);
