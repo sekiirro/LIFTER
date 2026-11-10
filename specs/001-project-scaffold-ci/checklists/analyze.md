@@ -112,6 +112,17 @@ Rechecked the final S41 spec, plan, and task text after formatting. All FR-027..
 
 - Dispatch trust finding: gate-check requires the run ref to match the PR base branch and the ci.yml blob at that ref to match the tested merge result; all required jobs must log the same PR/head/merge values. The logger already emits those values in validate, every integration shard, and storage. No open ambiguities; 0 open CRITICAL/HIGH findings remain.
 
+## S41-R20 CodeRabbit round-1 findings (2026-11-10, after the review on `4f95609b`)
+
+Scope: FR-022, FR-027, SC-012, T028 and the pending-marker matcher.
+
+- [x] All three findings were verified against the code/spec at head and are valid.
+- [x] Pending-PO matching now uses an escaped identifier with token boundaries, so a decided `S41-PO-1` no longer matches `S41-PO-10`; a unit case covers both directions.
+- [x] FR-027 now names the changed-file formatter (`scripts/format-check-changed.mjs`) for changed Markdown/YAML/JSON, including ignored `docs/`, `specs/` and `.specify/` paths, and keeps the repository-wide `format:check`; T028 matches.
+- [x] FR-022 and SC-012 scope full-CI matrix/aggregator execution to attempts that are not `pull_request` docs-only, keep the skip-fails rule whenever the aggregator must run, and no longer contradict FR-029.
+- [x] This analysis follows the latest spec/tasks edits, no product decision is introduced, and **No open ambiguities** remain.
+- **CRITICAL**: none. **HIGH**: none. **PASS.**
+
 ## S41-R20 changed-feature coverage re-analysis (2026-11-10)
 
 **Date**: 2026-11-10 (after the S41-R20 edits to FR-027, SC-016, the S41 scenarios, plan.md and T025). **Scope**: FR-027, SC-016, Story 8 scenario 5, T025; CI spec-consistency must cover every `specs/<feature>/` touched by the change.

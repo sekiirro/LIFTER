@@ -85,14 +85,14 @@ export function validateSpecConsistency(files, options = {}) {
     collect(files.decisions, /\b(?:S\d{2}-PO-\d+[a-z]?|D-\d+|PO-MCQ-\d+)\b/gi),
   );
   const pendingText = [files.tasks, files.traceability, analyze].join('\n');
+  /** Escapes a decided identifier before placing it in a RegExp. */
+  const escapeRegExp = (value) => value.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   for (const id of decisions) {
+    // Token boundaries keep S41-PO-1 from matching S41-PO-10.
+    const idPattern = new RegExp(`\\b${escapeRegExp(id)}\\b`, 'i');
     const hasPendingMarker = pendingText
       .split('\n')
-      .some(
-        (line) =>
-          line.toLowerCase().includes(id.toLowerCase()) &&
-          /pending\s+PO/i.test(line),
-      );
+      .some((line) => idPattern.test(line) && /pending\s+PO/i.test(line));
     if (hasPendingMarker)
       errors.push(
         `feature task/traceability/analyze docs: decided identifier ${id} still marked pending PO`,

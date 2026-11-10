@@ -67,6 +67,30 @@ describe('spec consistency validation', () => {
     expect(validateSpecConsistency(files)).toEqual([]);
   });
 
+  it('matches decided identifiers on token boundaries', () => {
+    const files = {
+      spec: 'FR-001 SC-001',
+      tasks: 'T001 [FR-001, SC-001]',
+      traceability: 'FR-001 T001',
+      analyze: '# 2026-11-10 S41-PO-10 pending PO',
+      decisions: 'S41-PO-1',
+      specDate: '2026-11-10',
+      planDate: '2026-11-10',
+      tasksDate: '2026-11-10',
+    };
+    expect(validateSpecConsistency(files)).toEqual([]);
+    expect(
+      validateSpecConsistency({
+        ...files,
+        analyze: '# 2026-11-10 S41-PO-1 pending PO',
+      }),
+    ).toEqual(
+      expect.arrayContaining([
+        expect.stringMatching(/S41-PO-1 still marked pending PO/),
+      ]),
+    );
+  });
+
   it('accepts an ISO datetime Analyze date', () => {
     expect(
       validateSpecConsistency({
