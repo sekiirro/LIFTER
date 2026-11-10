@@ -9,7 +9,7 @@
 ## Phase 0 — contracts and pure functions
 
 - [ ] **T001 (50m) — Freeze the F17 role/permission matrix fixture.** `[PURE-TS][INDEPENDENT]` (FR-020; SC-010). Table-driven matrix for PO, WO, Trainer, Sales, client, foreign workspace, revoked membership across plan, template, assignment, export and volume. RED: at least one row mismatches the spec matrix. GREEN: all rows agree with `spec.md` FR-020. Mutation: flip one role's expectation and prove the test fails.
-- [ ] **T002 (50m) — Workout document schema v1 validator.** `[PURE-TS][NEEDS-F16]` (FR-002, FR-003; SC-012). Days/items/sets, ids, entry-level reps value/range and rest/RIR bounds, set type/load modes, three-alternative cap, reference shape without `variation`. RED: invalid payloads rejected. GREEN: valid fixtures accepted. Mutation: remove one bound/target check and prove its test fails.
+- [ ] **T002 (50m) — Workout document schema v1 validator.** `[PURE-TS][NEEDS-F16]` (FR-002, FR-003; SC-012). Days/items/sets, ids, entry-level reps value/range and rest/RIR bounds, set type/load modes, three-alternative cap, reference shape without `variation`, and no items on rest days. Acceptance tests: valid session item passes; a rest-day item and an attempted add/move to a rest day fail with `invalid_document`; rejected operations make no write, and a rejected move leaves its item on the source day. RED: invalid payloads rejected. GREEN: valid fixtures accepted. Mutation: remove one bound, target or rest-day-item check and prove its test fails.
 - [ ] **T003 (50m) — Id continuity and duplicate remap.** `[PURE-TS][INDEPENDENT]` (FR-002; SC-012). Preserve unchanged ids; duplicate exercise remaps item+sets; duplicate day remaps day+items+sets; field-for-field equality; no collisions. RED before implementation. Mutation: skip one descendant level and prove collision test fails.
 - [ ] **T004 (50m) — Add-time default copy.** `[PURE-TS][NEEDS-F16]` (FR-004, FR-005; SC-001). Copy only Default Rest Time, Default RIR, Default Reps into entry-level prescription fields; absent → blank; no live link; applies after load; never re-defaults. A new entry has zero set rows. RED: live-link/re-default/blank-substitution cases fail. GREEN: A1-1..A1-5 pass. Mutation: reintroduce a live read and prove the test fails. Editable Notes/Alternatives are copied on add (S42-PO-8).
 - [ ] **T053 (30m) — Zero-set prescription persistence.** `[PURE-TS][INDEPENDENT]` (FR-004, FR-005; SC-001). Save/reload an entry with zero sets, change library defaults, reload again, and assert Rest/RIR/Reps/Notes/Alternatives remain the copied and edited entry values. Adding a set uses entry values and performs no library reread. RED first; mutation: delete entry-level prescription fields and prove the test fails.
@@ -33,7 +33,7 @@
 ## Phase 2 — plan lifecycle integration
 
 - [ ] **T018 (50m) — Create plan (blank / template / existing plan).** `[APP/API][NEEDS-STACK][NEEDS-PLAN-CORE]` (FR-001, FR-014; SC-006). F19 creation lock + operation key. RED: duplicate submit creates a second root. Mutation: remove lock/ledger check and prove failure.
-- [ ] **T019 (50m) — Autosave and Save as Draft with CAS.** `[APP/API][NEEDS-STACK][NEEDS-PLAN-CORE]` (FR-015; SC-006). Private draft, ongoing autosave, stale revision conflict, no-op autosave never clears readiness. RED first. Mutation: remove the revision check and prove conflict failure.
+- [ ] **T019 (50m) — Autosave and Save as Draft with CAS.** `[APP/API][NEEDS-STACK][NEEDS-PLAN-CORE]` (FR-002, FR-015; SC-006, SC-012). Private draft, ongoing autosave, stale revision conflict, no-op autosave never clears readiness. Acceptance test: adding or moving an item to a rest day is rejected with `invalid_document` before persistence; the draft is unchanged and a rejected move leaves the item on its source day. RED first. Mutation: remove the revision or rest-day validation check and prove conflict/rejection failure.
 - [ ] **T020 (50m) — Ready & Publish gates.** `[APP/API][RISK: HIGH][NEEDS-STACK][NEEDS-PLAN-CORE][NEEDS-F13]` (FR-015; SC-006). Intake + current subscription gates, explicit revision selection, refusal writes zero revision/delivery, publish without prior Save as Draft. RED first. Mutation: remove a gate and prove the refusal test fails.
 - [ ] **T021 (50m) — Immutable revisions and newest-first listing.** `[DB/SECURITY][RISK: HIGH][NEEDS-STACK][NEEDS-PLAN-CORE]` (FR-001, FR-015). Trigger + grants prevent mutation; no auto-archive. RED first. Mutation: remove the trigger/grant and prove failure.
 - [ ] **T022 (50m) — Contributor set per published revision.** `[APP/API][NEEDS-STACK][NEEDS-PLAN-CORE]` (FR-027; SC-015). Each successful save/publish attributes the acting staff member; a published revision exposes an immutable contributor set (staff ids, action codes, timestamps only) since the previous revision. RED first. Mutation: remove attribution or widen the payload and prove failure.
@@ -69,7 +69,7 @@
 ## Phase 6 — UI
 
 - [ ] **T042 (50m) — Draft/publish UI and conflict handling.** `[UI][NEEDS-PLAN-CORE]` (FR-015; SC-006). Autosave indicator, optional Save as Draft, single Ready & Publish, conflict display, no-op autosave preserves readiness. RED first. Mutation: clear readiness on a no-op or hide the conflict and prove failure.
-- [ ] **T043 (50m) — Plan builder UI.** `[UI][INDEPENDENT]` (FR-002, FR-024; SC-012). Sessions/rest days, items, sets, notes, alternatives; reorder, cross-day move, duplicate; keyboard move controls. RED first. Mutation: remove a keyboard alternative or id preservation and prove failure.
+- [ ] **T043 (50m) — Plan builder UI.** `[UI][INDEPENDENT]` (FR-002, FR-024; SC-012). Sessions/rest days, items, sets, notes, alternatives; reorder, cross-day move, duplicate; keyboard move controls. Acceptance tests: adding or moving an item to a rest day is rejected with `invalid_document` and no write; a rejected move leaves the item on its source day; rest days cannot display or retain items. RED first. Mutation: remove a keyboard alternative, id preservation or rest-day rejection and prove failure.
 - [ ] **T044 (50m) — Template manager and assignment UI.** `[UI][INDEPENDENT]` (FR-008, FR-010, FR-011; SC-004). List global/own/assigned, load, create/edit, PO assignment wizard with Step 1/Step 2 and skip explanations. RED first. Mutation: remove scope gating or a state distinction and prove failure.
 - [ ] **T045 (45m) — AR/EN Playwright and axe matrix.** `[TEST][INDEPENDENT]` (FR-024; SC-013). AR RTL and EN, light/dark, mobile/desktop, keyboard, axe, all required states. RED first. Mutation: remove one accessible name or RTL assertion and prove failure.
 - [ ] **T046 (45m) — Assignment state visibility tests.** `[TEST][INDEPENDENT]` (FR-011; SC-004). Never-assigned, intentionally partial and own-templates-only are distinguishable in the PO view and in run receipts. RED first. Mutation: collapse two states and prove failure.
@@ -77,7 +77,7 @@
 ## Phase 7 — security, performance, release
 
 - [ ] **T047 (60m) — Full negative matrix.** `[DB/SECURITY][RISK: HIGH][NEEDS-STACK]` (FR-020; SC-010). Foreign-workspace app + RLS, direct DML denial, Sales/client/unaffiliated/revoked denial, PO-only global/assignment, replay vs conflict, indistinguishable denials. RED first. Mutation: remove each guard and prove its row fails.
-- [ ] **T048 (45m) — 1,000-operation property test.** `[TEST][INDEPENDENT]` (FR-002; SC-012). Reorder/move/duplicate with zero parameter corruption. RED first. Mutation: corrupt one generated parameter and prove detection.
+- [ ] **T048 (45m) — 1,000-operation property test.** `[TEST][INDEPENDENT]` (FR-002; SC-012). Reorder/move/duplicate with zero parameter corruption; generated add/move attempts targeting rest days are rejected with `invalid_document`, leave the document unchanged, and preserve the source item after a rejected move. RED first. Mutation: corrupt one generated parameter or allow one rest-day item and prove detection.
 - [ ] **T049 (50m) — Concurrency and retry suite.** `[TEST][RISK: HIGH][NEEDS-STACK]` (FR-021; SC-010). 100 retries of create/save/publish/assign; concurrent runs; unknown result after commit; no duplicates or overwrites. RED first. Mutation: remove a uniqueness guard and prove duplicate detection.
 - [ ] **T050 (60m) — Performance benchmark and size-cap decision.** `[DB/SECURITY][RISK: HIGH][NEEDS-STACK]` (FR-022; SC-014). Re-benchmark a 7-day/40-exercise plan and the maximum accepted document; choose the final cap from evidence. RED first. Mutation: remove each measured assertion and prove the gate fails. No historical number is accepted without a fresh measurement.
 - [ ] **T051 (50m) — Migration validation and release gate.** `[DB/SECURITY][RISK: HIGH][NEEDS-STACK]` (FR-022; SC-014). Unique versions above the highest across all refs, fresh + upgrade paths, audit atomicity, zero direct DML, all mutation evidence recorded. RED first. Mutation: remove each security-critical assertion in turn and prove the gate fails.
@@ -98,35 +98,35 @@ Shared fixtures are appended, never overwritten, under concurrency.
 
 ## Traceability
 
-| Requirement | Tasks                              |
-| ----------- | ---------------------------------- |
-| FR-001      | T012, T018, T021, T030             |
-| FR-002      | T002, T003, T012, T034, T043, T048 |
-| FR-003      | T002, T011, T012, T031, T034, T035 |
-| FR-004      | T004, T031, T033, T053             |
-| FR-005      | T004, T033                         |
-| FR-006      | T005, T029                         |
-| FR-007      | T004, T031 (zero set rows decided) |
-| FR-008      | T013, T023, T024, T044             |
-| FR-009      | T014, T025, T044                   |
-| FR-010      | T009, T014, T025, T027, T044       |
-| FR-011      | T009, T014, T025, T026, T027, T046 |
-| FR-012      | T011, T024, T028                   |
-| FR-013      | T005, T013, T023, T029             |
-| FR-014      | T005, T018, T030                   |
-| FR-015      | T019, T020, T021, T042             |
-| FR-016      | T006, T036                         |
-| FR-017      | T007, T037, T038, T039             |
-| FR-018      | T007, T037, T038, T041             |
-| FR-019      | T008, T040                         |
-| FR-020      | T001, T016, T017, T024, T047       |
-| FR-021      | T014, T019, T026, T049             |
-| FR-022      | T010, T015, T050, T051             |
-| FR-023      | T031, T032                         |
-| FR-024      | T032, T042, T043, T044, T045, T052 |
-| FR-025      | T020, T039, T047                   |
-| FR-026      | Excluded by spec; no tasks         |
-| FR-027      | T019, T020, T022                   |
+| Requirement | Tasks                                    |
+| ----------- | ---------------------------------------- |
+| FR-001      | T012, T018, T021, T030                   |
+| FR-002      | T002, T003, T012, T019, T034, T043, T048 |
+| FR-003      | T002, T011, T012, T031, T034, T035       |
+| FR-004      | T004, T031, T033, T053                   |
+| FR-005      | T004, T033                               |
+| FR-006      | T005, T029                               |
+| FR-007      | T004, T031 (zero set rows decided)       |
+| FR-008      | T013, T023, T024, T044                   |
+| FR-009      | T014, T025, T044                         |
+| FR-010      | T009, T014, T025, T027, T044             |
+| FR-011      | T009, T014, T025, T026, T027, T046       |
+| FR-012      | T011, T024, T028                         |
+| FR-013      | T005, T013, T023, T029                   |
+| FR-014      | T005, T018, T030                         |
+| FR-015      | T019, T020, T021, T042                   |
+| FR-016      | T006, T036                               |
+| FR-017      | T007, T037, T038, T039                   |
+| FR-018      | T007, T037, T038, T041                   |
+| FR-019      | T008, T040                               |
+| FR-020      | T001, T016, T017, T024, T047             |
+| FR-021      | T014, T019, T026, T049                   |
+| FR-022      | T010, T015, T050, T051                   |
+| FR-023      | T031, T032                               |
+| FR-024      | T032, T042, T043, T044, T045, T052       |
+| FR-025      | T020, T039, T047                         |
+| FR-026      | Excluded by spec; no tasks               |
+| FR-027      | T019, T020, T022                         |
 
 | Criterion | Tasks                                    |
 | --------- | ---------------------------------------- |

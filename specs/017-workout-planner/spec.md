@@ -1,7 +1,7 @@
 # Feature Specification: F17 Workout Templates & Workout Planner
 
 **Feature Branch**: `speckit-017-workout-planner-s42`
-**Status**: Updated spec-only draft (S44, 2026-11-10). Encodes binding PO decisions A1–A4 from `C:/Users/NEW LAP/.lifter/runs/s42-po/f17-f18-po-decisions-source.md` on top of `origin/main` `d0c5d1ac7ec8adb13ad12712f85cf9702a97a414`. **No implementation, migration, code, test, workflow or runtime change is authorized by this draft.** The numbered MCQs in §8.5 are resolved; the new rest-day move question in §8.7 blocks only rest-day item/move validation and its tests.
+**Status**: Updated spec-only draft (S44, 2026-11-10). Encodes binding PO decisions A1–A4 from `C:/Users/NEW LAP/.lifter/runs/s42-po/f17-f18-po-decisions-source.md` on top of `origin/main` `d0c5d1ac7ec8adb13ad12712f85cf9702a97a414`. **No implementation, migration, code, test, workflow or runtime change is authorized by this draft.** The numbered MCQs in §8.5 and S44-MCQ-F17-1 are resolved; there are no open product ambiguities in the current F17 spec scope.
 **Phase**: Specify → Clarify → Plan → Tasks → Analyze (draft). P3 on `docs/03-roadmap.md:25`.
 **Companion artifacts**: `plan.md`, `data-model.md`, `contracts/`, `tasks.md`, `traceability.md`, `checklists/analyze.md`, `research/po-decision-matrix.md`, `research/conflicts.md`, `research/section-b-assessment.md`.
 
@@ -78,8 +78,9 @@ Staff autosave continuously; `Save as Draft` is optional reassurance, and `Ready
 4. **A3-4 (stable ID, private draft, immutable revision)** — **Given** an existing plan, **When** it is published and later edited and republished, **Then** the Plan ID is unchanged, the draft stays private and each publication appends one immutable revision under the pending F19 contract.
 5. **A3-5 (publish gates)** — **Given** a plan for a client without a current subscription, or a client whose intake is not submitted, **When** `Ready & Publish` is attempted, **Then** it is refused and neither a published revision nor a delivery is created.
 6. **A3-6 (volume credit)** — **Given** a session with 3 working sets of an exercise whose primary muscle is Chest and secondary muscles are Triceps and Front Delts, plus 2 warm-up sets, **When** volume is reported, **Then** Chest receives 3.0, Triceps 1.5 and Front Delts 1.5 for that session, and warm-up sets add 0.
-7. **A3-7 (per session and program-day weeks)** — **Given** a day-indexed plan, **When** volume is reported, **Then** totals use consecutive program-day blocks: days 1?7, 8?14, and so on; rest days remain in those blocks and contribute zero volume; the final partial block is a week, with no calendar start required.
+7. **A3-7 (per session and program-day weeks)** — **Given** a day-indexed plan with item-free rest days, **When** volume is reported, **Then** totals use consecutive program-day blocks: days 1?7, 8?14, and so on; rest days remain in those blocks and contribute zero volume; the final partial block is a week, with no calendar start required.
 8. **A3-8 (approval gate)** — **Given** a client who is not approved, **When** staff attempt to create or edit a plan draft, **Then** the action is refused per the approved-client rule; after approval, drafting and the A3-1 direct publish flow become available.
+9. **A3-9 (rest-day item rejection)** — **Given** a plan document with an exercise item on a session day, **When** staff try to move it to a rest day, **Then** validation rejects the operation with `invalid_document`, writes nothing, and leaves the item on its source day. **Given** a rest day, **When** staff try to add an exercise item to it, **Then** validation rejects the operation with `invalid_document` and writes nothing; rest days contain no exercise items.
 
 ### US4 — PDF, Excel and Copy AI Prompt (Priority: P2, PO A4)
 
@@ -121,7 +122,7 @@ Staff export a selected published revision as PDF or Excel with complete usable 
 ### Plan content
 
 - **FR-001 — Plan identity and subscription binding (F19 delegation).** A workout plan root carries `workspace_id` and `client_id`; it is bound to a subscription only by a delivery row. Stable Plan ID, private mutable autosaved draft, immutable published revisions, delivery, activation and productivity units follow the **pending F19 PR** (its `specs/019-plan-core/spec.md` F19-FR-001..014). F17 MUST NOT create a second plan root, draft, revision, delivery or activation writer. (F19-FR-002; pending PR — not a main fact.)
-- **FR-002 — Workout document content.** The plan document MUST support: ordered days (session or rest) with day notes; ordered exercise items with stable ids and entry-level Reps (single value or inclusive range), Rest, RIR, Notes, and up to three unique catalog-based trainer-selected Alternatives; ordered set rows typed `warmup` or `working` with load as a tagged union `bodyweight` (no value/unit) | `added_weight` (positive exact decimal + `kg`/`lb`) | `assisted` (positive exact decimal + `kg`/`lb`) (D17-7=A). Rest/RIR/Reps/Notes/Alternatives live on the exercise entry independently of set rows (S43-R9 Sol-3). (PO S20-15, S20-16; F16 FR-003.)
+- **FR-002 — Workout document content.** The plan document MUST support: ordered days (session or rest) with day notes; ordered exercise items with stable ids on session days only and entry-level Reps (single value or inclusive range), Rest, RIR, Notes, and up to three unique catalog-based trainer-selected Alternatives; ordered set rows typed `warmup` or `working` with load as a tagged union `bodyweight` (no value/unit) | `added_weight` (positive exact decimal + `kg`/`lb`) | `assisted` (positive exact decimal + `kg`/`lb`) (D17-7=A). Adding an item to a rest day or moving one there MUST be rejected with `invalid_document` and no writes; a rejected move leaves the item on its source day. Rest/RIR/Reps/Notes/Alternatives live on the exercise entry independently of set rows (S43-R9 Sol-3). (PO S20-15, S20-16; F16 FR-003; S44-PO-11; architect mapping (S44-R10).)
 - **FR-003: Exercise reference and F16 V2 resolution.** An exercise reference MUST identify its source (`global` or `workspace_private`), stable identity, source workspace when applicable, and immutable source-catalog version. A workspace-private ref uses its own workspace-private version and has no override. A global ref may also pin the applicable override version and source workspace; consumers MUST distinguish that source workspace from the destination and MUST NOT resolve a foreign override as destination-local. It MUST NOT use a `variation` reference; legacy variation semantics are deleted at the F16 cutover (F16 FR-031, F16 FR-038). Effective resolution of the eight library fields follows F16 FR-026, including canonical-only resolution when authoring a new Global Workout Template. A promoted template may retain workspace-private references and captured authorized values; unresolved or foreign references are flagged RED and block loading. On add, capture/pin source versions and copy effective non-video values into the editable entry. Draft save/reload preserves pins and values, but plan-entry values remain editable; later catalog/override edits do not change them. Publication freezes the entry's current trainer-edited non-video values with the original add-time pins and does not reread library data. Video is never stored and is resolved live from the current authorized library value on every authorized read/export (F16 FR-020, F16 FR-027, F16 SC-009, F16 SC-011; S44-PO-2; architect mapping (S44-R2)).
 - **FR-004 — Add-time library defaults (PO A1).** When a fresh exercise is added from the library, the plan's ordinary editable prescription fields MUST be populated with the current F16 library defaults that exist — Default Rest Time, Default RIR, Default Reps. A default that is absent leaves the matching field blank. Values are copied at add time and are never live-linked to library defaults. No second set of separate "default" fields is created. (PO A1; F16 FR-027, F16 FR-037, F16 SC-011.)
 - **FR-005 — Add-time copy scope (PO A1).** The add-time copy applies to a blank `Create New Plan` flow and to a new exercise inserted after loading a template or another plan. It MUST NOT re-default exercises that were already copied, loaded or edited. (PO A1.)
@@ -179,7 +180,7 @@ Logical only; see `data-model.md`. WorkoutPlan (root = workspace + client; subsc
 - **SC-009 — Copy Prompt fidelity (A4).** The generated prompt contains 100% of the authorized content, all exercise/alternative details and resolved video URLs, includes a hyperlink-formatting request, and contains zero instructions to invent/replace exercises, alter values or generate alternatives. The Copy AI Prompt action label and Copied confirmation match the byte-exact S43-PO-1 MCQ-2 strings for the selected UI language; EN/AR goldens compare prompt bytes with contracts/copy-ai-prompt.md after {{PLAN_CONTENT}} substitution for both locales; the payload substitution is the only permitted difference.
 - **SC-010 — Authorization and idempotency.** Foreign-workspace, Sales, client, unaffiliated and revoked-membership attempts are denied generically; 100 retries of create/save/publish/assign with one operation key create no duplicates; concurrent writes cannot overwrite a newer draft or duplicate an assignment.
 - **SC-011: Snapshot and live Video (F16).** Global and applicable override versions/non-video values are captured when an exercise is added; private exercises pin their workspace-private version. Later library edits change zero existing draft entries; trainer edits to entry values are included at publication with the original source pins. Muscle membership is read from the pinned immutable source version. The next authorized read/export resolves current Video; no Video URL is stored in the plan revision.
-- **SC-012 — Document integrity.** 1,000 randomized reorder/move/duplicate operations produce zero parameter corruption; ids are preserved for unchanged items and remapped for duplicates; reps and all three load variants round-trip exactly.
+- **SC-012 — Document integrity.** 1,000 randomized reorder/move/duplicate operations produce zero parameter corruption; ids are preserved for unchanged items and remapped for duplicates; reps and all three load variants round-trip exactly. Every attempted add or move to a rest day is rejected with `invalid_document` and leaves the document byte-identical to its pre-operation state; a rejected cross-day move leaves the item on its source day.
 - **SC-013 — Bilingual, accessible, approved copy only.** AR/EN, light/dark, mobile/desktop, keyboard reorder and axe checks pass; no user-visible string is rendered that is not PO-approved byte-exact.
 - **SC-014 — Performance (provisional, not a requirement).** The historical Worker CPU p95 ≤ 8 ms / max < 10 ms, DB/API p95 ≤ 300 ms and 512 KB figures are retained **only** as unvalidated provisional targets for a future benchmark; they MUST NOT be treated as accepted limits, and no new number may be invented. (Section B8.)
 - **SC-015 — Contributor attribution.** After two staff edit a plan and one publishes, exactly one new revision exposes both staff with action codes and timestamps, no content/PII; trainer deletion leaves the contributor set and revision count unchanged.
@@ -272,7 +273,7 @@ architect mapping (S43-R1): The Copy AI Prompt label supersedes the historical `
 - Global-template reads are no longer "every workspace via `can_read_global_coaching_content()`"; distribution is explicit PO assignment of independent copies. That helper is historic F16 plan wording and is not an F17 requirement.
 - Exports are no longer PDF/Excel only; `Copy AI Prompt` is a third option.
 - Volume 0.5 secondary credit is direct PO (A3); the old "approved fraction" placeholder is closed.
-- "Each exercise carries editable warm-up/working sets ... defaults" in old FR-005 is closed by F16's eight fields and PO A1; set-row initialization is an MCQ, not a catalog field.
+- "Each exercise carries editable warm-up/working sets ... defaults" in old FR-005 is closed by F16's eight fields and PO A1; set-row initialization is resolved as zero rows on add, not a catalog field.
 
 ### 8.5 Clarifications / PO-decision register
 
@@ -322,23 +323,21 @@ architect mapping (S44-R2): In a Specific Workspaces Assign that creates at leas
 S44-PO-2 (2026-11-10): S44-MCQ-2="A: When added (Recommended)"
 architect mapping (S44-R2): At add, pin the effective source version(s) and copy non-video values into the editable entry; publication freezes the entry values as currently edited, with those original pins. Later catalog/override edits do not alter the draft or snapshot.
 
-S44-MCQ-1 and S44-MCQ-2 are resolved by S44-PO-2 as mapped by S44-R2. All earlier F17 PO decisions remain resolved. One product question remains open in §8.7: whether a rest day can contain/move exercise items, because rest days contribute zero volume but the document currently permits items on them.
+S44-MCQ-1 and S44-MCQ-2 are resolved by S44-PO-2 as mapped by S44-R2. All earlier F17 PO decisions remain resolved. S44-MCQ-F17-1 is resolved by S44-PO-11 as mapped by S44-R10: rest days contain no exercise items; adding or moving an item to one is rejected with no writes, and a rejected move keeps the item on its source day. No open ambiguities remain in the current F17 spec scope.
 
-### 8.7 PO-DECISION-NEEDED — rest-day exercise items
+### 8.7 Resolved decision — rest-day exercise items
 
-**S44-MCQ-F17-1 · Feature:** F17 Workout Planner · **Where:** `contracts/workout-plan-document.md` §1 and §2; `spec.md` A3-7 and FR-002.
+**S44-MCQ-F17-1 · Feature:** F17 Workout Planner · **Where:** `contracts/workout-plan-document.md` §1 and §2; `spec.md` A3-7 and A3-9 and FR-002.
 
-When an exercise item is moved to a day whose kind is `rest`, what should happen?
+**S44-PO-11 (2026-11-10): A: Reject the move (Recommended)**
 
-- **A. Reject the move and keep the source item in place.** Rest days remain item-free; move validation and its tests enforce this. (Recommendation for consideration only; not encoded.)
-- **B. Convert the target day to a session as part of the move.** The day then participates in volume as a training day; conversion and its tests must be explicit.
-- **C. Allow the item on a rest day and define its volume treatment.** This requires specifying whether its working sets count or remain zero-volume.
+architect mapping (S44-R10): F17: moving (or adding) an exercise item onto a rest day is rejected with no writes; the item stays on its source day; rest days never hold exercise items.
 
-**Blocked:** the rest-day item/move validation behavior and corresponding acceptance tests. No option is encoded pending PO decision.
+The move/add rejection uses the existing generic `invalid_document` error. A failed operation makes no document write; a rejected move leaves the item on its source day.
 
 ### 8.8 Gate statement
 
-S43-MCQ-A/C and S44-MCQ-1/2 are resolved by the cited PO decisions. S44-MCQ-F17-1 remains open and blocks only rest-day item/move validation and its tests. All unrelated spec corrections in this fix are within settled scope.
+S43-MCQ-A/C, S44-MCQ-1/2, and S44-MCQ-F17-1 are resolved by the cited PO decisions and architect mappings. No open MCQs remain in this feature scope. All unrelated spec corrections in this fix are within settled scope.
 
 ## 9. Cross-feature supersessions and notes
 
@@ -373,7 +372,7 @@ Nutrition (F18); catalogs (F16); Plan Core delivery/activation/productivity/clie
 - **VII Privacy and health-data protection**: no plan content in logs/audit; exports audited; synthetic data only. PASS.
 - **VIII Bilingual, accessible UI**: AR/EN, RTL, keyboard, Design Gate; no unapproved strings (MCQ-7/8). PASS with copy gate open.
 - **IX Reliable, idempotent operations**: operation keys, CAS, idempotent assignment. PASS (design intent).
-- **Workflow gate**: The original nine F17 MCQs and S44-MCQ-1/2 are resolved by cited PO words or architect mappings. S44-MCQ-F17-1 blocks only rest-day item/move validation and its tests. Analyze is dated after the last spec/plan/tasks edit and must show zero open CRITICAL/HIGH findings. See `checklists/analyze.md`.
+- **Workflow gate**: The original nine F17 MCQs, S44-MCQ-1/2, and S44-MCQ-F17-1 are resolved by cited PO words or architect mappings. No open ambiguities remain in the current F17 spec scope. Analyze is dated after the last spec/plan/tasks edit and must show zero open CRITICAL/HIGH findings. See `checklists/analyze.md`.
 
 ## 12. Draft boundary
 

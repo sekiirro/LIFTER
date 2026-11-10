@@ -125,3 +125,28 @@ Scope: the 10 unresolved CodeRabbit inline threads on exact head b5362e5d88f989e
 | LOW      | 0 open        | ID/task cross-reference sweep complete; task checkboxes remain unticked.                                                                                                          |
 
 **Analyze result: CRITICAL 0; HIGH 0; MEDIUM 1 PO decision; LOW 0.**
+
+## S44 PR #78 CR round 4 Analyze — 2026-11-10 15:36 UTC
+
+Scope: encode the S44-PO-11 answer to S44-MCQ-F17-1, mapped by S44-R10, across F17 spec artifacts after the outside-diff note on PR #78. The PO answer is byte-exact in §8.7: `A: Reject the move (Recommended)`. No runtime implementation or acceptance-test execution is claimed.
+
+### Entry and cross-artifact checks
+
+- PASS — `spec.md` has numbered FRs, measurable SCs, and Given/When/Then scenarios for the touched scope. FR-002 and A3-9 require no-write rejection when an item is added/moved to a rest day; A3-7 states rest days are item-free and remain in volume week blocks. A rejected move leaves the item on its source day. SC-012 makes unchanged-document and source-item assertions measurable.
+- PASS — §8.7 records S44-PO-11 and architect mapping (S44-R10) separately, closes S44-MCQ-F17-1, and states no open ambiguities remain in the current F17 spec scope.
+- PASS — `contracts/workout-plan-document.md` §1 forbids rest-day items; §2 defines rejected add/move behavior and source preservation; §5 uses the existing generic `invalid_document` code and specifies validation before writes.
+- PASS — `plan.md` and `data-model.md` state the same empty-rest-day invariant. Volume's existing rule that rest days remain in program-day week boundaries is unchanged.
+- PASS — `tasks.md` T002/T019/T043/T048 specify validator, persistence, UI, and property-test acceptance cases, including no writes and source preservation; FR-002/SC-012 mappings agree. No task checkbox was ticked because no implementation tests ran.
+- PASS — `traceability.md` maps FR-002 to S44-PO-11/S44-R10, the related tasks, and planned test intent; evidence remains `none` and status remains PLANNED.
+- PASS — decision matrix and Section B assessment reflect closure; no stale open/blocked status for S44-MCQ-F17-1 remains in the active artifacts.
+
+### Hostile cross-artifact findings
+
+| Severity | Finding | Evidence / disposition                                                                                                                             |
+| -------- | ------- | -------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CRITICAL | 0 open  | Spec-only change; no schema, privilege, runtime or persistence implementation.                                                                     |
+| HIGH     | 0 open  | Rejection is atomic, source item remains on source day, error matches the existing generic naming, and rest-day invariant agrees across artifacts. |
+| MEDIUM   | 0 open  | S44-MCQ-F17-1 is closed by the cited PO answer and mapping; no remaining product ambiguity in scope.                                               |
+| LOW      | 0 open  | FR/task/SC/traceability cross-references agree; task checkboxes remain unticked.                                                                   |
+
+**Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
