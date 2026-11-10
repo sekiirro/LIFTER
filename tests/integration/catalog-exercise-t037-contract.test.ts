@@ -146,7 +146,7 @@ describe.each([
     'Video',
     'video_url',
     'https://youtu.be/abcdefghijk',
-    'https://docs.google.com/document/d/id',
+    'https://vimeo.com/123456789',
     'T043',
   ],
   ['Alternatives', 'alternatives', [], ['a', 'b', 'c', 'd'], 'T074'],
@@ -160,7 +160,7 @@ describe.each([
     'T074',
   ],
 ] as const)('%s field contract', (field, key, valid, invalid, task) => {
-  const contractIt = field === 'Name' ? it : it.fails;
+  const contractIt = field === 'Name' || task === 'T043' ? it : it.fails;
   contractIt(`${field}: stores an allowed Global value (${task})`, async () => {
     const result = await createGlobal({
       ...core,
@@ -181,6 +181,35 @@ describe.each([
     await expect(
       createGlobal({ ...core, name_ar: 'تمرين', [key]: invalid }),
     ).rejects.toBeDefined();
+  });
+
+  it('T043 appends canonical video changes as immutable versions and audits video', async () => {
+    const firstUrl = 'https://youtu.be/abcdefghijk';
+    const secondUrl = 'https://www.youtube.com/watch?v=abcdefghijk';
+    const created = await createGlobal({ ...core, name_ar: 'تمرين', video_url: firstUrl });
+    const exerciseId = (created[0]?.catalog_create_exercise as { exercise_id: string }).exercise_id;
+    const versioned = await asActor(poId, (tx) => tx`
+      select public.catalog_version_exercise(${exerciseId}, 1, ${randomUUID()},
+        ${tx.json({ ...core, name_ar: 'تمرين', video_url: secondUrl })})
+    `);
+    expect(versioned[0]?.catalog_version_exercise).toEqual({ exercise_id: exerciseId, version: 2 });
+    const rows = await db`
+      select version, payload ->> 'video_url' as video_url from public.exercise_versions
+      where exercise_id = ${exerciseId} order by version
+    `;
+    expect(rows).toEqual([{ version: 1, video_url: firstUrl }, { version: 2, video_url: secondUrl }]);
+    const detail = await asActor(poId, (tx) => tx`
+      select * from public.catalog_exercise_detail(${exerciseId})
+    `);
+    expect(detail).toHaveLength(1);
+    expect(detail[0]?.version).toBe(2);
+    expect(detail[0]?.payload).toMatchObject({ video_url: secondUrl });
+    const audit = await db`
+      select details -> 'changed_fields' as changed_fields from public.audit_events
+      where action = 'catalog.exercise_versioned' and target_id = ${exerciseId}
+      order by id desc limit 1
+    `;
+    expect(audit[0]?.changed_fields).toContain('video');
   });
 
   contractIt(`${field}: stores an allowed private value (T075)`, async () => {

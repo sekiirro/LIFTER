@@ -145,3 +145,9 @@ Disclosure: the rename commit message trailers contain literal \n text rather th
 | Requirement | Task | Test | Evidence | Status |
 |---|---|---|---|---|
 | FR-001, FR-002, FR-003, FR-004, FR-014, FR-018, FR-030, FR-036, FR-037, FR-038, SC-001, SC-006, SC-013, SC-016 | T037 | `tests/integration/catalog-exercise-t037-contract.test.ts::T037 Global and workspace-private write contracts`; `::Name field contract`; `::Description field contract`; `::Notes field contract`; `::Video field contract`; `::Alternatives field contract`; `::Default Rest Time field contract`; `::Default RIR field contract`; `::Default Reps field contract`; `::T037 contract distinctions` | T037 contract-test commit (`HEAD`); Stack A RED before expected-failure conversion: 17 failing, 25 passing; post-conversion focused Stack A run: 31 passing, 23 expected failures. Expected failures are tagged for T043/T047/T048/T074/T075. | CONTRACTS RECORDED |
+
+## S45 T043 canonical exercise Video
+
+| Requirement | Task | Test | Evidence | Status |
+|---|---|---|---|---|
+| FR-023, FR-014 | T043 | `tests/integration/catalog-exercise-t037-contract.test.ts::Video field contract`; `::T043 appends canonical video changes as immutable versions and audits video`; `tests/integration/catalog-exercise-operations.test.ts`; `tests/integration/catalog-video-resolution.test.ts` | RED on Stack A: canonical `video_url` rejected by shared validator; GREEN after migration: focused contract + operations 49 passed / 26 expected failures, video resolver 5 passed. `npm run typecheck`, `npm run lint`; unit suites `catalog-server` and `catalog-variation-actions` 38 passed. | VERIFIED |
