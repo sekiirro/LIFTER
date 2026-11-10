@@ -1,5 +1,21 @@
 # Analyze — F11 client accounts
 
+## S45 Greptile remediation analysis — 2026-11-10 21:49 UTC
+
+Entry check for this existing-PR review fix: numbered FRs, measurable SCs and Given/When/Then scenarios exist for FR-018/FR-022; the FR-022 deletion-intent case is now explicit in acceptance scenario 7 and SC-016; plan P-S40-1/P-S40-2 covers the touched scope; T047/T050 are tagged to FR-018/FR-022 and remain unticked. Clarifications and PO decision records exist, but the required explicit statement of zero open ambiguities is not satisfied: the feature still records the S40 gate as NOT recorded and identifies non-PO architect gates and the MCQ-4 cardinality working assumption. This is a FAIL for new implementation work; the existing-PR review-fix exception permits these scoped documentation corrections only. No product choice is made.
+
+Live review collection at exact head 5d4b896b649c24a4d245df168bf30f1fb5bf22b4: all 77 review threads fetched in one GraphQL page (no next page; no nested comment page overflow); all 175 reviews fetched in two pages; all 52 issue comments fetched in one page. Exactly two threads remain unresolved, both Greptile P2s: PRRT_kwDOVYgYQ8616F_N (staff deletion intent does not deny retained Platform Owner access) and PRRT_kwDOVYgYQ8616F_T (manual Trainer assignment may pass after deletion intent but before membership revocation). No additional open inline, outside-diff, nitpick, review-body, or additional-comment finding was present. No finding is tied to an open MCQ.
+
+Finding 1 — valid, fixed in plan P-S40-1: app authorization and DB/RLS access checks now reject a staff account with any valid durable deletion intent, including completed intents, overriding retained role-based access and denying pre-existing JWTs. T047 adds staff JWT checks while the intent is in progress and after completion. This operationalizes the existing FR-018 account-deactivation requirement and the durable-intent design; it adds no capability or permission.
+
+Finding 2 — valid, fixed in plan P-S40-2: shared manual assignment eligibility now rejects a Trainer with a valid deletion intent before step (B) revokes memberships. Under the shared workspace lock, intent-first results in zero assignment rows; write-first is ended or reassigned in step (B). T050 covers both orderings. This follows the existing Trainer-departure rules and S41-PO-11; it adds no role or assignment permission.
+
+ID/cross-reference sweep: FR-018 -> T047 (including staff JWT denial), FR-022 -> T050 (including manual assignment during the pre-revocation interval); existing SC-013/SC-014/SC-016 mappings remain. Plan P-S40-1/P-S40-2 and traceability rows agree. No FR/SC/MCQ/task ID changed; FR-022 and SC-016 text plus acceptance scenario 7 now state the manual-assignment deletion-intent guard. Research decisions and source records are untouched. Analyze is dated after the edits.
+
+S41 checklist: (1) hostile review of every added line — pending final diff review; (2) ID/cross-reference sweep — PASS above; (3) decision repeats — PASS, both gaps fixed within existing decisions, no MCQ; (4) local formatting/static checks — pending; (5) code/SQL/migration tests — N/A, spec-only; (6) byte-exact PO quote/copy check — N/A, no PO quotes or approved copy touched.
+
+Gate: CRITICAL open 0; HIGH open 0. Pre-existing MEDIUM architect gate A-S41-4 and the nonzero-ambiguity S40 gate remain. This is analysis of specification consistency only, not implementation conformity.
+
 ## S45 round 26 analysis - 2026-11-10 17:38 UTC
 
 Revalidated after Prettier formatting of all Markdown files changed by PR #73, including the two touched spec artifacts. These formatting-only changes preserve the fenced PO quote and copy text; the exact S41-PO-11 source wording remains present byte-for-byte. The seven round-24 review fixes and all FR/task mappings remain unchanged. No new FR/SC/task or PO decision was introduced. Prettier bypass check passes on all changed Markdown. The main changed-file script on a local merge is pending final rerun after the formatting-only commit. CRITICAL open 0; HIGH open 0; the pre-existing A-S41-4 MEDIUM architect gate remains open.
