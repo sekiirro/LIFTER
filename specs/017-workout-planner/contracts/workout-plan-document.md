@@ -33,7 +33,8 @@ Item {
 ExerciseRef {
   source: 'global' | 'workspace_private'
   identity_id: uuid
-  version: integer                  // immutable catalog version
+  version: integer                  // immutable global catalog version captured on add
+  overrideVersion?: integer | null  // applicable workspace override version captured on add; null means none
   workspace_id?: uuid               // required for workspace_private; identifies its source workspace
   // no `variation` field (F16 FR-031 / F16 FR-038)
 }
@@ -54,7 +55,7 @@ Set {
 
 1. Ids are unique within a document; unchanged items keep their ids across revisions; deliberate duplicates get new ids for the item and every descendant set (and a duplicated day remaps the day id and all descendants).
 2. Reorder, cross-day move and duplicate preserve every entry prescription and set type/load field-for-field and never corrupt reps/load/rest/RIR/notes.
-3. Each plan exercise entry stores editable prescription fields (Rest, RIR, Reps, Notes, Alternatives) independently of its set rows. These fields are on the item shape, not the set shape. A fresh entry may have zero set rows and still retains these values. Adding sets later does not reread library defaults; entry prescriptions remain editable at plan-entry level. Set rows contain only their id, warm-up/working type, and load prescription. A reference stores an immutable catalog version. It never stores a resolved name, description, video URL or other library value as the authoritative source; the planner entry's non-video values are those captured for freezing at publication.
+3. Each plan exercise entry stores editable prescription fields (Rest, RIR, Reps, Notes, Alternatives) independently of its set rows. These fields are on the item shape, not the set shape. A fresh entry may have zero set rows and still retains these values. Adding sets later does not reread library defaults; entry prescriptions remain editable at plan-entry level. Set rows contain only their id, warm-up/working type, and load prescription. When the exercise is added, its reference captures/pins the effective global catalog version and applicable workspace override version (null when none applies), and its effective non-video values. Draft save/reload preserves both. Later edits to either source do not change the draft entry. Publication freezes the captured values and pins into `ExerciseSnapshotV2` (S44-PO-2; architect mapping (S44-R2)).
 4. Alternatives reference at most three unique targets, validated active at selection, resolved through F16 FR-026. Removed/merged targets are shown unavailable in the draft and never substituted.
 5. Fresh authoring of a global Workout Template resolves exercises canonical-only (F16 FR-026); workspace overrides and workspace-private exercises cannot be newly added. A promoted template may retain existing workspace-private exercise references; unresolved references are flagged RED and block loading until fixed (S42-PO-8). Promotion is not fresh global authoring.
 6. A workspace-private reference carries its source `workspace_id` and uses the composite `(workspace_id, identity_id)` for lookup and authorization. A missing source workspace, unresolved reference or foreign-workspace reference is invalid; loading is blocked for unresolved or foreign references, and denials are generic.
@@ -68,7 +69,7 @@ Set {
 
 ## 4. Publication snapshot
 
-At publication the revision embeds `ExerciseSnapshotV2` per referenced exercise with the frozen non-video values (name, description, notes, alternatives, copied/edited defaults). Video is excluded and resolved live per authorized read/export. Later library, override, Remove or Merge operations never rewrite the snapshot.
+At publication the revision embeds `ExerciseSnapshotV2` per referenced exercise with the global catalog version, applicable override version (or null), and non-video values captured when the exercise was added (name, description, notes, alternatives, copied/edited defaults). Video is excluded and resolved live per authorized read/export. Later library, override, Remove or Merge operations never rewrite the draft entry or snapshot.
 
 ## 5. Validation and versioning
 

@@ -54,3 +54,26 @@ Scope: eight in-scope technical corrections after the initial review and CodeRab
 Eight technical findings fixed within current PO decisions; two behavior choices remain blocked. Plan-level notes flow through PDF, Excel and prompt payload under the existing complete-plan contract. The approved prompt template bytes are untouched. No stale prohibition of promoted private references or PO cross-workspace governance remains in the touched FR/task text. The PO template exception does not grant cross-workspace plan access to any role or authorize copying workspace templates into a different workspace. Static-only byte approval is consistent at both contract status and detailed rule.
 
 **Analyze result: CRITICAL 0; HIGH 0; MEDIUM 2 PO-blocked; LOW 0.**
+
+## S44 PO-decision and formatting update — 2026-11-10 12:42 UTC
+
+This section supersedes the earlier S44 entry's two-open-MCQ status. S44-PO-2 (2026-11-10) resolves MCQ-1=A and MCQ-2=A; architect mapping S44-R2 is recorded beside the verbatim answers in `spec.md` §8.6.
+
+### Scope and cross-artifact review
+
+- PASS — `spec.md` FR-003, FR-010/011, SC-004/011 and §8.6 encode both decisions. No open MCQs remain.
+- PASS — `workout-plan-document.md`, `data-model.md`, `plan.md`, T011/T031, and traceability encode add-time effective global/override version and value capture, persistence across draft reload, and publication from captured values; Video remains live.
+- PASS — `template-assignment.md`, `data-model.md`, `plan.md`, T009/T025, and traceability encode per-workspace `no_copies` in a committed mixed-result batch and preserve rejection when total copies would be zero.
+- PASS — task tags remain aligned: T009/T025 → FR-010/011 and SC-003/004; T011/T031 → FR-003 and SC-011 (T031 also FR-004/023 and SC-001). Every referenced ID exists in spec, plan, tasks, traceability and research.
+- PASS — analyze is dated after these spec/plan/tasks changes; task checkboxes remain unticked because implementation tests have not run.
+
+### Findings
+
+| Severity | Finding | Disposition                                                                                                   |
+| -------- | ------- | ------------------------------------------------------------------------------------------------------------- |
+| CRITICAL | 0 open  | No implementation/schema/privilege change in this spec-only lane.                                             |
+| HIGH     | 0 open  | Capture timing and mixed-batch receipt behavior match cited PO answer and architect mapping across artifacts. |
+| MEDIUM   | 0 open  | Both prior S44 product questions are resolved by S44-PO-2.                                                    |
+| LOW      | 0 open  | IDs, tags, and traceability align.                                                                            |
+
+**Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**

@@ -25,8 +25,8 @@ Semantics:
 2. For `all_workspaces`: include only workspaces with `ever_received_global_assignment = false`. A workspace with only self-created templates is included (literal PO A2).
 3. For `specific_workspaces`: include the named workspaces regardless of prior assignment.
 4. For each target workspace, for each selected template version: create a copy only if that workspace does not already hold any copy of that template identity; otherwise skip and report the workspace/template pair. Never update, reset, delete or overwrite an existing copy or version.
-5. Record one item per targeted workspace with outcome (`assigned`, `skipped_already_assigned`, `no_copies`, `denied`) and the created copy ids.
-6. Set `ever_received_global_assignment = true` for workspaces that received at least one copy. A selection resolving to zero copies is rejected before batch/state writes (S42-PO-8; architect mapping (S42 matrix): F17-MCQ-3=C).
+5. Record one item per targeted workspace with its outcome and the created copy ids. If a targeted workspace receives no copies in a batch that creates at least one copy overall, its committed receipt outcome is `no_copies`; the batch still commits. If the total batch would create zero copies, reject before any batch/state writes (S44-PO-2; architect mapping (S44-R2); S42-PO-8 zero-copy rule remains).
+6. Set `ever_received_global_assignment = true` for workspaces that received at least one copy; a workspace with `no_copies` does not have this flag newly set.
 7. Later global template creation or versioning distributes nothing. Later workspace creation receives nothing.
 
 ## 4. Idempotency and concurrency
@@ -55,15 +55,15 @@ The implementation MUST be able to report which of the three applies; state (c) 
 
 ## 7. Operation results
 
-| Result                     | Meaning                                                                                            |
-| -------------------------- | -------------------------------------------------------------------------------------------------- |
-| `assigned`                 | at least one copy created                                                                          |
-| `skipped_already_assigned` | All Workspaces skipped a workspace with the flag set                                               |
-| `no_copies`                | not returned as a committed Assign; reject before writes if the operation would create zero copies |
-| `denied`                   | caller not PO or workspace unavailable; generic to the caller                                      |
-| `key_conflict`             | same operation key, different request                                                              |
-| `stale_version`            | template identity changed under a concurrent edit                                                  |
+| Result                     | Meaning                                                                                                  |
+| -------------------------- | -------------------------------------------------------------------------------------------------------- |
+| `assigned`                 | at least one copy created                                                                                |
+| `skipped_already_assigned` | All Workspaces skipped a workspace with the flag set                                                     |
+| `no_copies`                | targeted workspace received none in a batch that committed because at least one copy was created overall |
+| `denied`                   | caller not PO or workspace unavailable; generic to the caller                                            |
+| `key_conflict`             | same operation key, different request                                                                    |
+| `stale_version`            | template identity changed under a concurrent edit                                                        |
 
 ## 8. Test obligations (future)
 
-Foreign-workspace and non-PO negatives; All/Specific/All-Except matrices over the Kendo/Alpha/Beta/Gamma fixture; concurrent double-run; replay and key-conflict; copy independence after workspace edits; promotion separation; retirement effects; no live link read.
+Foreign-workspace and non-PO negatives; All/Specific/All-Except matrices over the Kendo/Alpha/Beta/Gamma fixture, including one targeted workspace returning `no_copies` while another is assigned and zero-total rejection; concurrent double-run; replay and key-conflict; copy independence after workspace edits; promotion separation; retirement effects; no live link read.
