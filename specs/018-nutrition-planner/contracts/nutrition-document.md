@@ -40,7 +40,7 @@ The document is the value stored in `nutrition_plan_version_contents.document` (
 }
 ```
 
-- Every meal is visible on every day. Day type does not filter meal visibility or totals.
+- Each meal is visible on, and counted only in, the day that contains it: the single implicit day for `single_day`, or its own `days[]` entry for `seven_day`. A meal stored in one `days[]` entry never appears on, and never contributes to, another day, so two days holding different meals have independent totals. "Every day" in F18 wording therefore means "the meal's containing day", never "all seven days". Day type does not filter meal visibility or totals; there is no training/rest-day conditional.
 - A meal's `note` is its Meal Notes field. An item's `note` is its separate Food Notes field. Each is independently editable and clearable; changing one preserves the other.
 - `recipeUrl` is the D18-6 optional recipe/preparation link. When `null`, neither the link nor its icon is rendered.
 
@@ -78,7 +78,7 @@ The document is the value stored in `nutrition_plan_version_contents.document` (
 ## 2. Invariants (validator must reject on violation)
 
 1. `single_day` ⇒ exactly one implicit day, no `days` array, `implicitDayTypeId` present and resolvable; `seven_day` ⇒ `days` has exactly indexes 0–6, each once, every `dayTypeId` resolvable, `implicitDayTypeId` absent.
-2. Every document, day-type, meal, item and alternative id is unique within its scope; every referenced id resolves; every meal is associated with its document day or days and is visible on every day. Day type does not filter meals or totals.
+2. Every document, day-type, meal, item and alternative id is unique within its scope; every referenced id resolves; every meal is associated with exactly one document day (the implicit day for `single_day`, its own `days[]` entry for `seven_day`) and is visible and counted only on that day. Day type does not filter meals or totals.
 3. Every item/alternative references one exact `(foodId, foodVersion)`; no alias or "latest" reference is stored.
 4. `quantity.value` is a positive decimal string with ≤ 3 decimal places; no exponent, no locale separators, no Arabic-Indic digits in the stored value (input normalization happens in the UI before storage).
 5. `unit.kind` disambiguates a basis unit (`{kind: "basis", value: "g"|"ml"}`) from a declared catalog serving (`{kind: "serving", unitKey}`). A catalog key may itself be `g` or `ml`, including when it matches the food basis; tagged references keep the two meanings distinct. A basis must match the food version basis and a serving key must resolve to that exact version's declared serving row; cross-basis or undeclared units are rejected (`F18-FR-004`).
@@ -137,6 +137,6 @@ Rules:
 ## 5. Validator/fixture obligations
 
 - One fixture set with accept/reject pairs for every invariant above, run by the application validator and the SQL/RPC validator; both must produce the same accept/reject decision and the same field code.
-- Boundary fixtures: 0.001 basis g, 9999.999 quantity, three alternatives vs four, a food with one serving vs several, `g` food with an `ml` basis request, `g` and `ml` catalog keys (including a key matching the food basis), a serving with `basis_qty = 100`, every meal visible and counted on training and rest days, separate independently editable Meal Notes and Food Notes, missing `implicitDayTypeId`, duplicate `dayIndex`, duplicate ids, unknown key, non-HTTPS or wrong-host recipe URL.
+- Boundary fixtures: 0.001 basis g, 9999.999 quantity, three alternatives vs four, a food with one serving vs several, `g` food with an `ml` basis request, `g` and `ml` catalog keys (including a key matching the food basis), a serving with `basis_qty = 100`, a `seven_day` fixture whose days hold different meals (each day total counts only its own day's meals, and all-training/all-rest day types filter nothing), separate independently editable Meal Notes and Food Notes, missing `implicitDayTypeId`, duplicate `dayIndex`, duplicate ids, unknown key, non-HTTPS or wrong-host recipe URL.
 - Golden computed-value fixtures: finite-decimal precision/carry boundaries, values below/above 10 g for display, zero-valued foods, aggregates that differ from the sum of rounded items. Inputs are finite decimals and the algorithm divides only by 100, so a repeating-fraction output such as 1/3 is not a realizable fixture.
 - The fixtures are frozen per `schemaVersion`/`algorithmVersion`; a new version adds fixtures and never edits the old expectation set.

@@ -34,10 +34,10 @@ Empty set after resolution ⇒ `invalid_selection`, no batch. Retired templates 
 
 ### Step 2 — workspace set
 
-| Mode       | Set                                                                                                                                                                                                                                      |
-| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `all`      | Every **existing** workspace that is **uninitialized for nutrition** at operation time (no `outcome='assigned'` nutrition assignment item ever). Workspaces created later are excluded; a rerun excludes already-initialized workspaces. |
-| `specific` | Exactly `workspaceIds` (must exist; distinct). May include initialized/partially assigned workspaces.                                                                                                                                    |
+| Mode       | Set                                                                                                                                                                                                                                                                                                                                                                                                                                                  |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `all`      | Every **existing** workspace that is **uninitialized for nutrition** at operation time (no `outcome='assigned'` nutrition assignment item ever). Workspaces created after the operation are excluded from it, and already-initialized workspaces are skipped. An exact-key replay returns the original batch and never adds later-created workspaces; a later operation under a **new** key includes any workspace that is still uninitialized then. |
+| `specific` | Exactly `workspaceIds` (must exist; distinct). May include initialized/partially assigned workspaces.                                                                                                                                                                                                                                                                                                                                                |
 
 ### Per (workspace, template) outcome
 
@@ -64,7 +64,7 @@ Any existing copy of a targeted global template identity is skipped regardless o
 
 ## 5. Tests (minimum)
 
-1. All × All: uninitialized workspaces receive exactly one copy each; initialized (complete and partial) are skipped; a later-created workspace receives nothing on rerun.
+1. All × All: uninitialized workspaces receive exactly one copy each; initialized (complete and partial) are skipped. A workspace created after the batch receives nothing automatically or on an exact-key replay, but is included in a later new-key operation if still uninitialized.
 2. Specific × Specific: fills only missing templates; any retained existing copy, active or retired and regardless of source version, is `skipped_existing`; customization bytes are unchanged and the skipped pair is reported.
 3. All Except: excluded templates are absent; the rest are assigned.
 4. Retired template rejected from `specific`/`excludeIds`; not offered by All.

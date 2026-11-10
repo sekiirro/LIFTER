@@ -71,7 +71,7 @@ dayTotal(field)  = sum(exact itemValue(field) for every item in every meal on th
 documentTotal    = sum(dayTotal(field) across the document's day instances)
 ```
 
-Every meal is visible on every day and all of its items contribute to that day's total. Day types, including training/rest classification and carb-cycling targets, remain available for their other nutrition uses; they do not filter meals or totals. Meal Notes and Food Notes are separate fields in the document and are independently editable: changing or clearing one preserves the other's value.
+Each meal is visible on, and all of its items contribute only to, the day that contains it (the single implicit day for `single_day`, its own `days[]` entry for `seven_day`); days holding different meals therefore have independent totals. Day types, including training/rest classification and carb-cycling targets, remain available for their other nutrition uses; they do not filter meals or totals. Meal Notes and Food Notes are separate fields in the document and are independently editable: changing or clearing one preserves the other's value.
 
 - Persist exact computed decimal values without storage rounding. The persisted decimal scale must be large enough to represent the exact product of the declared input scales. No intermediate rounding occurs anywhere; aggregates are computed from exact item values, never rounded stored/display values.
 - A quantity for an undeclared serving key or a basis reference that does not match the food basis is rejected (F18-FR-004). The tagged kind distinguishes basis `g` from a catalog serving whose key is also `g`.

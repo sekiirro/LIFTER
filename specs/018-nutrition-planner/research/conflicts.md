@@ -112,4 +112,4 @@ F18-MCQ-1..6 are resolved per S42-PO-8/S43-PO-1. S43-MCQ-A is resolved by S43-PO
 
 ## S44 review reconciliation (2026-11-10)
 
-S44-PO-7 closes S44-MCQ-F18-1. Meal-level day applicability is removed: every meal remains visible on every day and contributes to that day's totals, with no Ready/publish rule based on day-type matching. The earlier draft assumptions and blocked question remain historical and are marked superseded in the spec decision register. Day types and carb cycling remain for unrelated nutrition behavior. No other open product decision was introduced.
+S44-PO-7 closes S44-MCQ-F18-1. Meal-level day applicability is removed: every meal remains visible on its containing day (the single implicit day, or its own `days[]` entry in a seven-day document) and contributes only to that day's totals, with no Ready/publish rule based on day-type matching. The earlier draft assumptions and blocked question remain historical and are marked superseded in the spec decision register. Day types and carb cycling remain for unrelated nutrition behavior. No other open product decision was introduced.
