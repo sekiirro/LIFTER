@@ -220,5 +220,9 @@ No task is complete or ticked by this documentation-only cycle. RED-first descri
 
 These tasks follow separately labelled **architect mapping (S43-R7/R8)** in spec.md. They remain unchecked and no migration is authored.
 
-- [ ] T077 [FR-034, FR-036, SC-024, SC-026] Preserve the immutable Silver < Gold < Platinum rank model and implement rank/duration upgrade eligibility after the offer structure and rank placement are decided. Rank placement and dependent eligibility work are BLOCKED by S43-F9-MCQ-2.
-- [ ] T078 [FR-035, SC-025] Preserve workspace-scoped EN/AR tier display defaults using byte-exact PO-approved names; implement renaming independent of rank after the actor is decided. Authorization and audit behavior are BLOCKED by S43-F9-MCQ-3.
+- [ ] T077 [FR-034, FR-036, SC-024, SC-026] Specify and implement all three immutable Silver < Gold < Platinum tier offers within every category, with rank on the tier offer, then implement rank/duration eligibility. Decision resolved by S43-PO-8; implementation/tests remain unstarted.
+- [ ] T078 [FR-035, SC-025] Specify PO global per-locale renaming and Workspace Owner overrides within their workspace only; keep rank and terms unchanged. Decision resolved by S43-PO-8; implementation/tests remain unstarted.
+
+## S43-PO-8 resolved tier tasks
+
+T077 and T078 are unblocked. T077 covers three ranked offers per each of the four categories, offer-level immutable rank placement, and rank/duration eligibility fixtures. T078 covers PO global per-locale renaming, workspace-only Workspace Owner overrides, authorization/audit coverage, and proof that names change neither rank nor commercial terms. Tasks remain unchecked until implementation tests pass.

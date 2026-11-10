@@ -453,12 +453,12 @@ No constitutional exception is requested. Session 12/13 PO decisions are incorpo
 
 PO source wording: all 11 S43-PO-5 lines are copied byte-exact, and S43-PO-6 lines are copied byte-exact in the Clarifications / PO-decision register below. Architect decisions remain separate and are labelled **architect mapping (S43-R6)**. S43-PO-5 is FINAL and supersedes S43-PO-3/4 where they overlap.
 
-**architect mapping (S43-R6/R7/R8):** One continuous subscription per client; qualifying upgrades use fixed rank/duration; equal-price upgrade is free and lower-price selection is refused; active/expired renewal arithmetic, freeze gates, pre-activation upgrade, refund basis, renewal-then-upgrade credit/payment/duration, revenue, activation-row representation, points, plans, and manual dates follow FR-037..042 and SC-015..032. S43-PO-6 resolves S43-F13-MCQ-7..11 only; remaining product ambiguities are listed below as PO-DECISION-NEEDED.
+**architect mapping (S43-R6/R7/R8):** One continuous subscription per client; qualifying upgrades use fixed rank/duration; equal-price upgrade is free and lower-price selection is refused; active/expired renewal arithmetic, freeze gates, pre-activation upgrade, refund basis, renewal-then-upgrade credit/payment/duration, revenue, activation-row representation, points, plans, and manual dates follow FR-037..042 and SC-015..032. S43-PO-6 resolves S43-F13-MCQ-7..11; S43-PO-8 resolves the five Sol-debate product questions, recorded with byte-exact PO words and separate architect mappings below.
 
 ### Functional requirements
 
 - **FR-037 - Continuous subscription:** Each client has exactly one continuous subscription. Upgrade and renewal mutate its existing subscription state and append immutable operation, payment/revenue, and audit facts; they never create overlapping subscriptions. Serialize concurrent requests by expected revision. Subscription state, operation receipt, payment/revenue, and audit facts commit atomically; a failed operation writes none of them. If a caller loses the response after commit, exact authorized replay returns the same receipt without extra effects; stale distinct requests fail without partial writes. Initial activation occurs once. Renewal and upgrade write their own lifecycle/ledger events and never write a new activation row. (S43-PO-5 item 1; architect mapping (S43-R8))
-- **FR-038 - Upgrade eligibility, credit, term, and revenue:** Permit upgrade to a package with a higher immutable platform tier rank at any duration, or the same rank with a longer duration. Credit the full payment attributable to the package being replaced, never a prorated balance; for renewal-then-upgrade, credit only the original package payment and preserve separately paid renewal duration and payments. Equal package price is a free upgrade; a lower package price is refused. Higher-tier upgrades with equal or longer duration start from the original subscription start; higher-tier shorter-duration upgrades start on the upgrade date. For any upgrade completed before activation, the upgraded term begins on activation, overriding those calendar anchors until activation occurs. Record only additional payments as new revenue. Reject upgrade while frozen until unfrozen and reject upgrade after expiry. (S43-PO-5 items 2, 9-10; S43-PO-6)
+- **FR-038 - Upgrade eligibility, credit, term, and revenue:** Permit upgrade to a package with a higher immutable tier-offer rank at any duration, or the same rank with a longer duration. Upgrade only within the same currency; refuse a mixed-currency selection before writes and perform no conversion. Credit the full payment attributable to the package being replaced, never a prorated balance; for renewal-then-upgrade, credit only the original package payment and preserve separately paid renewal duration and payments. Equal package price is a free upgrade; a lower package price is refused. Same-rank longer and higher-rank equal/longer upgrades start from the original subscription start, except after an expired renewal, when the renewal start date is the anchor; higher-rank shorter-duration upgrades start on the upgrade date. For any upgrade completed before activation, the upgraded term begins on activation, overriding those calendar anchors until activation occurs. Record only additional payments as new revenue. Reject upgrade while frozen until unfrozen and reject upgrade after expiry. (S43-PO-5 items 2, 9-10; S43-PO-6; S43-PO-8; architect mapping (S43-R10))
 - **FR-039 - Renewal:** For a non-frozen subscription, extend current expiry by the full purchased duration and record the full renewal price as revenue. An expired subscription renews from today, with expiry today plus the purchased duration. Renewal changes the existing subscription and writes a renewal lifecycle/ledger event; it writes no new activation row. Freezing extends expiry by counted frozen days. If renewal is followed by upgrade, preserve separately paid renewal duration and payment. (S43-PO-5 items 1, 3-4, 8; architect mapping (S43-R8))
 - **FR-040 - Manual edits and plans:** Only Platform Owner may manually adjust subscription dates, including after expiry; each adjustment is audited and creates no revenue. Eligible new and existing clients may receive unlimited plan revisions/publications under normal permissions. Upgrade and renewal require no plan; plan publication creates no additional trainer point.
 - **FR-041 - Productivity:** Award one production point per new client once. A returning client never counts as new. Upgrades, renewals, and plan publications award no additional points.
@@ -605,19 +605,19 @@ S43-PO-6 (2026-11-10): * Never prorate upgrade credit. Record only additional pa
 
 **architect mapping (S43-R7):** Upgrade credit is never prorated and new revenue is limited to additional payments.
 
-### PO-DECISION-NEEDED: S43-R9 questions
+### S43-R9 product questions — resolved by S43-PO-8
 
-S43-PO-6 resolves the prior S43-F13-MCQ-7..11 only. No open ambiguities remain beyond the five PO questions below and independent technical/security gates. Those product questions remain open, and affected task scopes stay BLOCKED.
+S43-PO-6 resolves the prior S43-F13-MCQ-7..11. S43-PO-8 resolves all five Sol-debate product questions below; no open product ambiguity remains in these affected scopes and their affected tasks are unblocked. Independent technical/security gates remain separately listed.
 
-- **S43-F9-MCQ-2 — tier structure / rank placement (replaces prior MCQ-2):** see specs/009-packages/spec.md:327-329, 340-341 and T077. What offer structure carries the fixed tiers? Options: (A) multiple ranked offers per category (Sol recommendation); (B) one fixed tier per category; (C) replace the four-category model. Implications: A allows several ranked offers in each existing market/type category; B retains one package/tier per category; C changes the four-category identity and package initialization. Recommendation: A. BLOCKED: F9 offer/rank placement and F13 T042 rank-dependent upgrade work/tests.
-- **S43-F9-MCQ-3 — tier-label authority:** see specs/009-packages/spec.md:328, 400 and T078. Who may edit tier labels? Options: (A) PO only; (B) WO only; (C) PO globally and WO within that WO's workspace (Sol recommendation). Implications: A centralizes edits; B permits only local workspace edits; C supports global and scoped local edits with corresponding audit/authorization rules. Recommendation: C. BLOCKED: F9 label mutation permissions, audit actor policy and role tests.
-- **S43-F18-MCQ-1 — historical nutrition exports:** see specs/018-nutrition-planner/contracts/nutrition-api.md:93 and specs/018-nutrition-planner/research/po-decision-matrix.md:49 (Sol-9 finding). When exporting a historical nutrition revision after its selection has been removed or invalidated, what should appear? Options: (A) that revision's last valid client selection (Sol recommendation); (B) coach original only; (C) require an explicit authorized export choice. Implications: A preserves delivered historical state and needs revision-scoped selection retention; B drops that state from the export; C adds a choice flow and authorization check. Recommendation: A. BLOCKED: F18 historical nutrition export behavior and its acceptance/task coverage; this lane does not alter F18 files.
-- **S43-F13-MCQ-12 — post-lapse upgrade anchor:** see specs/013-freeze-renewal-refunds/spec.md:461, 470, 652 and T042. After an expired renewal starts today, does a later equal/longer upgrade use (A) that restarted paid-period start (Sol recommendation) or (B) the lifetime first activation date? Implications: A anchors to the current restarted paid period; B counts time before it restarted. Recommendation: A. BLOCKED: post-lapse upgrade start-date rule and T042 acceptance fixtures.
-- **S43-F13-MCQ-13 — cross-currency upgrade:** see specs/009-packages/spec.md:312, 321, 328 and specs/013-freeze-renewal-refunds/spec.md:461, T042. May an upgrade credit one currency against a package priced in another? Options: (A) same-currency only (Sol recommendation); (B) permit cross-currency upgrades under a PO-approved conversion policy. Implications: A rejects a mixed-currency pair without writes; B requires an authoritative conversion source/date, rate, rounding, audit and revenue treatment. Recommendation: A, because existing reporting FX rules do not decide upgrade-credit conversion. BLOCKED: cross-currency eligibility and related F13 service/financial fixtures.
+- **S43-F9-MCQ-2 — tier structure / rank placement (replaces prior MCQ-2):** see specs/009-packages/spec.md:327-329, 340-341 and T077. What offer structure carries the fixed tiers? Options: (A) multiple ranked offers per category (Sol recommendation); (B) one fixed tier per category; (C) replace the four-category model. Implications: A allows several ranked offers in each existing market/type category; B retains one package/tier per category; C changes the four-category identity and package initialization. Recommendation before PO answer: A. Status: RESOLVED by S43-PO-8 source line 3; F9 offer/rank placement and F13 T042 rank-dependent upgrade work are unblocked.
+- **S43-F9-MCQ-3 — tier-label authority:** see specs/009-packages/spec.md:328, 400 and T078. Who may edit tier labels? Options: (A) PO only; (B) WO only; (C) PO globally and WO within that WO's workspace (Sol recommendation). Implications: A centralizes edits; B permits only local workspace edits; C supports global and scoped local edits with corresponding audit/authorization rules. Recommendation before PO answer: C. Status: RESOLVED by S43-PO-8 source line 4; F9 label mutation permissions, audit actor policy, and role tests are unblocked.
+- **S43-F18-MCQ-1 — historical nutrition exports:** see specs/018-nutrition-planner/contracts/nutrition-api.md:93 and specs/018-nutrition-planner/research/po-decision-matrix.md:49 (Sol-9 finding). When exporting a historical nutrition revision after its selection has been removed or invalidated, what should appear? Options: (A) that revision's last valid client selection (Sol recommendation); (B) coach original only; (C) require an explicit authorized export choice. Implications: A preserves delivered historical state and needs revision-scoped selection retention; B drops that state from the export; C adds a choice flow and authorization check. Recommendation before PO answer: A. Status: RESOLVED by S43-PO-8 source line 5; F18 historical nutrition export behavior and its acceptance/task coverage are specified in the paired F18 PR.
+- **S43-F13-MCQ-12 — post-lapse upgrade anchor (historical question; resolved by S43-PO-8):** see specs/013-freeze-renewal-refunds/spec.md:461, 470, 652 and T042. After an expired renewal starts today, does a later equal/longer upgrade use (A) that restarted paid-period start (Sol recommendation) or (B) the lifetime first activation date? Implications: A anchors to the current restarted paid period; B counts time before it restarted. Recommendation before PO answer: A. Status: RESOLVED by S43-PO-8 source line 6; T042 is unblocked for the post-lapse upgrade anchor.
+- **S43-F13-MCQ-13 — cross-currency upgrade (historical question; resolved by S43-PO-8):** see specs/009-packages/spec.md:312, 321, 328 and specs/013-freeze-renewal-refunds/spec.md:461, T042. May an upgrade credit one currency against a package priced in another? Options: (A) same-currency only (Sol recommendation); (B) permit cross-currency upgrades under a PO-approved conversion policy. Implications: A rejects a mixed-currency pair without writes; B requires an authoritative conversion source/date, rate, rounding, audit and revenue treatment. Recommendation before PO answer: A. Status: RESOLVED by S43-PO-8 source line 7; T042 is unblocked for same-currency eligibility and refusal before writes.
 
 ### Related-spec reconciliation
 
-- **F9 tier inventory (read-only):** specs/009-packages defines immutable market/type and versioned price/duration, but no tier-rank field (`specs/009-packages/data-model.md:29,38-46,65-73`; `specs/009-packages/spec.md:308-312`). S43-PO-6 defines the fixed rank concept/order; S43-F9-MCQ-2 now decides the offer structure and rank placement.
+- **F9 tier inventory (read-only):** specs/009-packages defines immutable market/type and versioned price/duration, but no tier-rank field (`specs/009-packages/data-model.md:29,38-46,65-73`; `specs/009-packages/spec.md:308-312`). S43-PO-6 defines the fixed rank concept/order; S43-PO-8 resolves offer structure and rank placement on each tier offer within its category.
 - **F12 initial subscription scope:** specs/012-registration-approval creates the initial subscription; F13 owns renewal and continuity reconciliation. No new F12 requirement is inferred.
 - F13 old successor/one-unstarted-renewal and renewal-point clauses are marked superseded above; prior freeze-duration rules remain in force, with S43-PO-5 freeze extension and frozen-operation rules layered on top.
 
@@ -656,10 +656,10 @@ The supersession applies wherever older rules are repeated in this feature earli
 
 FR-037 requires exactly one subscription per client across the product; an upgrade package must belong to that subscription workspace. This supersedes the older per-workspace interpretation under S43-PO-5 item 1 and architect mapping (S43-R6).
 
-- **SC-027:** All higher-tier upgrades with equal/longer duration use the original start; shorter duration uses upgrade date.
+- **SC-027:** Same-rank longer and higher-rank equal/longer upgrades use the original start; after an expired renewal the renewal start is the anchor; higher-rank shorter duration uses the upgrade date.
 - **SC-028:** Upgrade duration begins at activation for pre-activation upgrades; zero duration is consumed before activation.
 - **SC-029:** Upgrade renewal-then-upgrade credit equals only the original package payment; renewal payments and duration remain unchanged.
-- **SC-030:** New revenue equals additional upgrade payments only; no prorated credit is used.
+- **SC-030:** New revenue equals additional same-currency upgrade payments only; no prorated credit or currency conversion is used, and a mixed-currency upgrade is refused before writes.
 - **SC-031:** Full refund covers the selected package payment including upgrade charges; separate renewal payments are not automatically refunded.
 - **SC-032:** Renewal and upgrade after initial activation create lifecycle/ledger events but zero additional activation rows.
 
@@ -707,3 +707,38 @@ Fixed tier hierarchy: Silver < Gold < Platinum. Workspaces can rename tiers, but
 ```text
 Arabic tier names are سيلفر، جولد، بلاتينيوم.
 ```
+
+## S43-PO-8 decision register — PO words and architect mapping are separate
+
+### S43-F13-MCQ-12 — resolved
+
+- Where: FR-038, SC-027, lifecycle contract, T042.
+- Question: After an expired renewal restarts service, what anchors a later equal/longer upgrade?
+- Options: A) that renewal's start date; B) lifetime first activation date.
+- Implications: A anchors the term to the restarted paid period; B counts elapsed time before that period.
+- Recommendation before PO answer: A.
+- Status: RESOLVED by S43-PO-8 source line 6; T042 is unblocked for this case.
+- PO words (byte-exact):
+
+> 4. After expired renewal, upgrade calculations use the renewal start date.
+
+- architect mapping (S43-R10): After an expired renewal starts today, its start date becomes the anchor for a later equal/longer upgrade.
+
+### S43-F13-MCQ-13 — resolved
+
+- Where: FR-038, SC-030, lifecycle contract, T042.
+- Question: May an upgrade combine package payments in different currencies?
+- Options: A) same currency only; B) use a conversion policy.
+- Implications: A refuses a mixed-currency upgrade before writes and performs no conversion; B requires a separately approved conversion source, date, rate, rounding, audit, and revenue policy.
+- Recommendation before PO answer: A.
+- Status: RESOLVED by S43-PO-8 source line 7; T042 is unblocked for this case.
+- PO words (byte-exact):
+
+> 5. Upgrades require the same currency; no cross-currency conversion.
+
+- architect mapping (S43-R10): Upgrade is permitted only when existing and selected package currencies are identical; no conversion is performed.
+
+### S43-PO-8 acceptance scenarios
+
+- **Given** a client has an expired subscription that is renewed today, **When** the client later makes a qualifying same-rank longer or higher-rank equal/longer upgrade, **Then** the renewal start date anchors the upgraded term. (FR-038; SC-027; architect mapping (S43-R10))
+- **Given** the current and selected upgrade packages use different currencies, **When** the upgrade is requested, **Then** the system refuses before any write and performs no currency conversion. **Given** both packages use the same currency, **When** the other upgrade rules permit it, **Then** normal same-currency credit and revenue rules apply. (FR-038; SC-030; architect mapping (S43-R10))

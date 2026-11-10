@@ -228,4 +228,8 @@ The constitutional external-model rule applies to development AI handling. S31-P
 
 ## S43-PO-6/7 package-tier data-model delta (no migration authored)
 
-**architect mapping (S43-R7, reconsidered by S43-R9):** Preserve the immutable platform rank values (`silver`, `gold`, `platinum`) and comparison order Silver < Gold < Platinum. The entity that carries rank and the offer structure are blocked by S43-F9-MCQ-2; do not assume rank belongs on the current one-row-per-market/type package identity. Tier display names use the PO-approved EN/AR defaults and do not change rank; label-edit authority is blocked by S43-F9-MCQ-3. This note specifies no column, table, migration, SQL, or implementation.
+**architect mapping (S43-R10):** Each of the four existing package category rows has all three tier offers: Silver, Gold, and Platinum. Each tier offer belongs to one category and stores the immutable platform rank; rank is compared within a category and never inferred from price, duration, or localized label. Tier display names resolve per locale from PO-controlled global names with optional Workspace Owner override scoped to that owner's workspace. Renaming affects display only and cannot alter price, duration, currency, or other commercial terms. This note specifies no migration, SQL, or implementation.
+
+## S43-PO-8 tier-offer data model
+
+Each of the four existing package category rows has all three tier offers: Silver, Gold, and Platinum. Each tier offer belongs to one category and stores the immutable platform rank; rank is compared within a category and never inferred from price, duration, or localized label. Tier display names resolve per locale from PO-controlled global names with optional Workspace Owner override scoped to that owner's workspace. Renaming affects display only and cannot alter price, duration, currency, or other commercial terms. **architect mapping (S43-R10).**

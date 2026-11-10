@@ -244,6 +244,10 @@ No migration file, SQL, application implementation, test, build or stack operati
 
 The S33 package acceptance adjustment verifies that the synthetic workspace begins without offers and reports route status/rendered content when an expected empty state is absent. No product behavior or UI changes are in scope.
 
-## S43-PO-6/7 package-tier design delta (specification only)
+## S43-PO-6/7 and S43-PO-8 package-tier design delta (specification only)
 
-PO wording is byte-exact in specs/009-packages/spec.md; interpretation is separately labelled **architect mapping (S43-R7/R8/R9)**. Preserve fixed immutable rank values and order plus the approved EN/AR names. Defer rank placement and offer structure to S43-F9-MCQ-2; defer label-edit authority to S43-F9-MCQ-3. Eligibility details that depend on offer structure and placement remain blocked. No migration is authored here.
+PO wording is byte-exact in specs/009-packages/spec.md; interpretation is separately labelled **architect mapping (S43-R10)**. Each of the four categories has Silver, Gold, and Platinum tier offers with immutable rank on each offer. PO renames are global per locale; Workspace Owner overrides are scoped to that workspace. Renaming changes neither rank nor terms. Rank eligibility and authorization design are specified; implementation remains unstarted. No migration is authored here.
+
+### S43-PO-8 scope now specified
+
+The four market/type categories each contain Silver, Gold, and Platinum tier offers; rank belongs to the tier offer within its category. PO renames are global per locale, Workspace Owner overrides are workspace-local, and neither changes rank or terms. T077 and T078 are unblocked for implementation planning. **architect mapping (S43-R10).**

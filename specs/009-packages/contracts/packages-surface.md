@@ -163,4 +163,8 @@ Historical FX reporting preserves source transaction/settlement currency and sep
 
 ## S43-PO-6/7 package-tier contract delta (no migration authored)
 
-**architect mapping (S43-R7/R8/R9):** Preserve the immutable rank concept and Silver < Gold < Platinum order, but defer which offer entity carries rank and how offers relate to the four package categories under S43-F9-MCQ-2. Localized tier names use PO-approved EN/AR defaults and cannot alter rank; label-edit authority remains unresolved under S43-F9-MCQ-3. No RPC signature, table, migration, or implementation is authored by this note.
+**architect mapping (S43-R10):** Every package category exposes all three tier offers, each carrying its immutable rank. Tier display names are localized: PO changes apply globally per locale, while a Workspace Owner override is visible only in that workspace. Authorization enforces the workspace boundary. A rename changes no rank or commercial term. No RPC signature, table, migration, or implementation is authored by this note.
+
+## S43-PO-8 tier-offer and label contract
+
+Every package category exposes all three tier offers, each carrying its immutable rank. Tier display names are localized: PO changes apply globally per locale, while a Workspace Owner override is visible only in that workspace. Authorization must enforce the workspace boundary. A rename changes no rank or commercial term. **architect mapping (S43-R10).**

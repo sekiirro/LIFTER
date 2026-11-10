@@ -86,7 +86,14 @@ No S34 task is ticked. This cycle ran no tests, SQL, migration, stack, build, UI
 
 ## S43-PO-6/7 tier amendment traceability
 
-| FR                              | Task | Test/evidence status                                                                                                               |
-| ------------------------------- | ---- | ---------------------------------------------------------------------------------------------------------------------------------- |
-| FR-034, FR-036 / SC-024, SC-026 | T077 | Rank values/order specified; offer structure and rank placement BLOCKED by S43-F9-MCQ-2; dependent implementation/tests unstarted. |
-| FR-035 / SC-025                 | T078 | Defaults approved byte-exact; label edit authorization BLOCKED by S43-F9-MCQ-3; implementation/tests unstarted.                    |
+| FR                              | Task | Test/evidence status                                                                                                        |
+| ------------------------------- | ---- | --------------------------------------------------------------------------------------------------------------------------- |
+| FR-034, FR-036 / SC-024, SC-026 | T077 | S43-PO-8 resolves three ranked tier offers in each category with rank on each offer; implementation/tests unstarted.        |
+| FR-035 / SC-025                 | T078 | S43-PO-8 resolves PO global per-locale names and workspace-local Workspace Owner overrides; implementation/tests unstarted. |
+
+## S43-PO-8 decision traceability
+
+| FR / SC                         | Task | Decision and coverage                                                                                                                                                            |
+| ------------------------------- | ---- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-034, FR-036 / SC-024, SC-026 | T077 | Resolved: each category has all three tier offers; immutable rank is carried by each tier offer. Rank/duration behavior is specified; implementation and tests remain unstarted. |
+| FR-035 / SC-025                 | T078 | Resolved: PO global per-locale names and workspace-local Workspace Owner overrides; rank and terms are invariant. Implementation and tests remain unstarted.                     |
