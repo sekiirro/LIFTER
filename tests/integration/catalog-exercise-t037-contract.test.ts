@@ -658,6 +658,15 @@ describe('T037 remaining workspace and identity contracts', () => {
   );
 
   it.fails(
+    'keeps published exercise alternatives frozen after target removal or merge (T050/T056; published-plan surface absent)',
+    async () => {
+      throw new Error(
+        'No published-plan alternative snapshot surface exists in this repository; tracked by tasks.md T050/T056.',
+      );
+    },
+  );
+
+  it.fails(
     'T054/T062 cutover deletes legacy rows and never merges Instructions into Notes',
     async () => {
       const files = await readdir(join(process.cwd(), 'supabase/migrations'));

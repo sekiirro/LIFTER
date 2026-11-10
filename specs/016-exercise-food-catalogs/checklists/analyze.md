@@ -577,7 +577,7 @@ T900 has been marked complete only after its focused integration test passed on 
 
 ## S45 T068 evidence re-analysis for T043 entry gate
 
-- **Date:** 2026-11-10 18:47 UTC, after the T068 status/evidence update in 	asks.md and traceability evidence in the S45 base commit 7ff8c1d2.
+- **Date:** 2026-11-10 18:47 UTC, after the T068 status/evidence update in tasks.md and traceability evidence in the S45 base commit 7ff8c1d2.
 - **Scope:** Revalidate T043 implementation entry. The T068 edit marks the already-approved inventory complete and cites its executed evidence; it changes no product requirement, acceptance criterion, scope, plan, or task behavior.
 - **Spec:** F16 numbered functional requirements include FR-023 and FR-014; measurable success criteria and Given/When/Then scenarios are present. The invalid/disallowed-host video edge case and D16-3 HTTPS YouTube/Google Drive host decision cover the T043 validator behavior.
 - **Clarifications:** spec.md has a Clarifications section, cites the approved D16-3 decision, and explicitly states no open ambiguities for the relevant scope.
@@ -617,3 +617,12 @@ T900 has been marked complete only after its focused integration test passed on 
 - **Entry check:** PASS. `spec.md` FR-003/FR-014/FR-016 and User Story 2 acceptance scenarios 1–3 cover the touched scope. Clarifications and `decision-register.md` cite S36-PO-3; F16-MCQ-A is answered (a), and the current spec states no open ambiguities. `plan.md` covers override storage/resolution. `tasks.md` T046 is tagged FR-003/FR-014/FR-016 and depends on completed T043, T052 and T068.
 - **Findings:** 0 open CRITICAL, 0 open HIGH. No PO decision needed.
 - **Gate:** PASS for T046. Stack A RED/GREEN, per-key, append-only and RLS mutation results, unit suites, lint, typecheck and both T052 gates are recorded in the lane report.
+
+## S45 T048 exercise override alternatives
+
+- **Date:** 2026-11-10 21:04 UTC, after the T048 task evidence update.
+- **Scope:** `exercise_override_alternatives` stores each global or same-workspace private target under one immutable override version. It enforces one target, 1–3 positions, target uniqueness, active-at-write validation, append-only rows and workspace-scoped library reads that omit targets removed later. No product requirement, plan, or decision changed.
+- **Entry check:** PASS. `spec.md` FR-025 defines global/private targets, exactly one target, same-workspace isolation, active-at-write behavior, frozen rows, removed-target library filtering, and empty-list semantics; the Given/When/Then exercise override scenarios cover workspace-specific alternatives. `plan.md` covers versioned overrides and library resolution. `tasks.md` T048 is tagged FR-025/FR-003 and follows T046/T045. Clarifications cite S36-PO-3 and S37-PO-10; there are no open ambiguities for this scope.
+- **Findings:** 0 open CRITICAL, 0 open HIGH. Published-plan alternatives remain outside this task because F17/F18 plan persistence is absent; regression is tracked as expected failure under T050/T056.
+- **T052:** all 107 fetched origin refs / 7,941 migration paths scanned; maximum filename version `20261110140000` on `origin/016-impl-s45`; new valid clock-time version `20261110205300` is greater. Separate `npm run check:migration-versions:remote` passed across 106 remote refs.
+- **Gate:** PASS for T048. Stack A RED/GREEN and both required schema mutations are recorded in `C:/Users/NEW LAP/.lifter/runs/s45-luna-f16-t048b/report.md`.
