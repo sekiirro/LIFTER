@@ -177,3 +177,25 @@ Scope: encode the S44-PO-11 answer to S44-MCQ-F17-1, mapped by S44-R10, across F
 | LOW      | 0 open  | FR/task/SC/traceability cross-references agree; task checkboxes remain unticked.                                                                   |
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## S45 Greptile PR #78 follow-up Analyze — 2026-11-10 22:16 UTC
+
+Scope: Greptile P2 `data-model.md` Workout document row omits the editable `name` and optional `description` fields required by `contracts/workout-plan-document.md`. This is a spec consistency correction within FR-003; no product behavior is added and no implementation task is authorized or marked complete.
+
+### Entry and cross-artifact checks
+
+- PASS — `spec.md` retains numbered FRs, measurable SCs and Given/When/Then scenarios; its Clarifications and decision register state there are no open ambiguities in current F17 scope.
+- PASS — `contracts/workout-plan-document.md` defines editable `name` and optional `description`, persistence through draft save/reload and publication behavior; `data-model.md` now lists the same fields and draft persistence under Workout document.
+- PASS — `plan.md`, T031 in `tasks.md`, and FR-003 / SC-011 in `traceability.md` already cover the same entry fields. IDs and FR/task/SC mappings are unchanged; no PO quotation was edited.
+- PASS — this Analyze entry is dated after the `data-model.md` edit. No task checkbox changed and no implementation tests are claimed.
+
+### Hostile cross-artifact findings
+
+| Severity | Finding | Disposition                                                                       |
+| -------- | ------- | --------------------------------------------------------------------------------- |
+| CRITICAL | 0 open  | Spec-only consistency correction.                                                 |
+| HIGH     | 0 open  | The logical document row now matches the contract's editable, saved entry fields. |
+| MEDIUM   | 0 open  | No new product ambiguity or MCQ.                                                  |
+| LOW      | 0 open  | FR/task/SC cross-references remain aligned.                                       |
+
+**Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
