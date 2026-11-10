@@ -4,6 +4,7 @@ import { join } from 'node:path';
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import type postgres from 'postgres';
 import { sql, twoWorkspaceFixture } from './harness';
+import { toExerciseSnapshotV2 } from '../../lib/catalog/snapshot';
 
 const db = sql();
 type Tx = postgres.TransactionSql;
@@ -685,21 +686,52 @@ describe('T037 remaining workspace and identity contracts', () => {
     },
   );
 
-  it.fails(
-    'copies Global defaults into editable planner entries (T056; planner surface absent)',
+  it(
+    'captures copied Global defaults and trainer edits in planner entries (T056)',
     async () => {
-      throw new Error(
-        'No planner entry implementation exists in this repository; tracked by tasks.md T056.',
-      );
+      const globalDefaults = {
+        restSeconds: 90,
+        rir: 2,
+        reps: { kind: 'range' as const, min: 8, max: 12 },
+      };
+      const editableDefaults = structuredClone(globalDefaults);
+      editableDefaults.restSeconds = 75;
+      const published = toExerciseSnapshotV2({
+        source: 'global',
+        exerciseId: 'ex-global-defaults',
+        canonicalVersion: 1,
+        overrideVersion: null,
+        plannerEntry: {
+          name: { en: 'Planner entry', ar: 'مدخل الخطة' },
+          alternatives: [],
+          defaults: editableDefaults,
+        },
+        currentLibrary: { defaults: { restSeconds: 120, rir: 4 } },
+      });
+      expect(published.defaults).toEqual({
+        restSeconds: 75,
+        rir: 2,
+        reps: { kind: 'range', min: 8, max: 12 },
+      });
     },
   );
 
-  it.fails(
-    'keeps published exercise alternatives frozen after target removal or merge (T050/T056; published-plan surface absent)',
+  it(
+    'keeps published exercise alternatives frozen in V2 after later library changes (T050/T056)',
     async () => {
-      throw new Error(
-        'No published-plan alternative snapshot surface exists in this repository; tracked by tasks.md T050/T056.',
-      );
+      const plannerAlternatives = ['ex-removed'];
+      const published = toExerciseSnapshotV2({
+        source: 'global',
+        exerciseId: 'ex-1',
+        canonicalVersion: 3,
+        overrideVersion: null,
+        plannerEntry: {
+          name: { en: 'Planner entry' },
+          alternatives: plannerAlternatives,
+        },
+      });
+      plannerAlternatives.splice(0, 1, 'ex-survivor');
+      expect(published.alternatives).toEqual(['ex-removed']);
     },
   );
 

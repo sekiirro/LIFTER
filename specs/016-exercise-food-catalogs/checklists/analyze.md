@@ -681,3 +681,13 @@ T900 has been marked complete only after its focused integration test passed on 
 - T052 before commit: pending final fetch/scan and separate remote filename-conflict check.
 - Verdict: PASS for T049.
 - T052 before commit: PASS. Fetch + scan covered all 107 origin refs / 7,946 migration-path appearances; highest is `20261110224100` on `origin/016-impl-s45`; new `20261110231300` is greater and clock fields 23:13:00 are valid. Separate `npm run check:migration-versions:remote` passed across 106 refs.
+
+## S46 T056 implementation analysis — 2026-11-10 23:47:56 UTC (Z)
+
+- Scope: `ExerciseSnapshotV2` type/schema and fixtures under FR-020/FR-027/FR-037. No database or migration changes. Historical metadata remains available from immutable canonical/private version references; V2 freezes planner-entry Name, Description, Notes, Alternatives and Rest/RIR/Reps, and omits Video for current authorized live resolution.
+- Entry check: PASS. `spec.md` contains numbered FRs, measurable SCs and the publication Given/When/Then scenario; clarifications cite the approved live-Video decision and close the relevant questions. `plan.md` snapshot contract and `tasks.md` T056 cover this scope. This re-analysis follows the T056 completion evidence/status update; 0 open CRITICAL/HIGH findings. No requirement text changed and no PO decision is needed.
+- Verification: RED was recorded before implementation (6 V2 tests failed on missing exports). GREEN: Stack A T037 contract suite passed 57 tests with 22 existing expected failures; focused snapshot suites passed 22/22; lint and typecheck passed. T037 T056 expected failures are now normal tests. Stack A was reset before integration verification.
+- Mutations: reading defaults from the later library failed the planner-entry value test; adding Video to V2 failed schema validation; altering the V1 exercise fixture failed its byte-for-byte golden test. Each mutant was restored. All three V1 fixtures remain unchanged by `git diff` and baseline hashes.
+- Findings: 0 open CRITICAL, 0 open HIGH. No product ambiguity found.
+- Verdict: PASS for T056.
+- Evidence: `C:/Users/NEW LAP/.lifter/runs/s46-luna-f16-t056b/report.md`.
