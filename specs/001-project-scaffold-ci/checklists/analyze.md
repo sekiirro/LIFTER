@@ -42,7 +42,6 @@
 
 ---
 
-
 ## S38 amendment pre-implementation entry check
 
 **Date**: 2026-11-09 02:07:07 UTC (after S38 spec, plan, and task updates for trusted dispatch and fork-secret isolation). **Scope**: FR-021..FR-024, SC-011..SC-013, T020..T022.
@@ -89,7 +88,65 @@ The main-side CI requirements retain FR-015 to FR-019 and SC-006 to SC-009, with
 
 **PASS - 0 CRITICAL, 0 HIGH.**
 
+## S41-PO-8/9/10 and S41-R11 Analyze (2026-11-09)
+
+Scope analyzed: FR-027..FR-030, SC-016..SC-019, Story 8, T025..T032. Source decisions are recorded in `spec.md` Clarifications; the exact docs-only boundary and fail-closed behavior are specified, so no product ambiguity remains.
+
+- Reference validation is constrained to feature IDs and may not infer missing IDs; unknown references fail. Analyze freshness must be evaluated against the latest commit changing spec/plan/tasks, not timestamps from a potentially skewed filesystem clock.
+- Classifier path inputs must preserve rename endpoints and reject empty/unparseable diff output as docs-only. Only `.md` suffix in lowercase and the exact approved roots/filenames qualify. Detection errors choose full CI. Dispatch has no docs-only skip condition.
+- The integration aggregator must run under `always()` and require matrix `success`; `skipped`, `cancelled`, missing, or failed matrix results fail the aggregator. Required job IDs/names remain unchanged.
+- `.coderabbit.yaml` filters may cover generated evidence only. No source, tests, migrations, workflows, or authored spec materials are excluded.
+- `format:check` is already repository-wide (`prettier --check .`), subject to checking the Prettier ignore list for changed Markdown/YAML/JSON scope. Constitution text will only amend the docs-only green form and version/sync report; exact-head PO approval remains mandatory.
+- Tests are specified red-first, including path table and malformed/error inputs. CI hosted PR run must execute all required integration and storage jobs because this PR changes `ci.yml`.
+- Gate-check remains external; only proposal and patch are in the run directory. No gate is relaxed.
+
+**CRITICAL**: none. **HIGH**: none. **No open ambiguities** remain.
+
+### Verdict
+
+**PASS - 0 CRITICAL, 0 HIGH.** Analyze dated after the S41 spec, plan, and task amendments (2026-11-09); implementation may begin.
+
+### Post-format Analyze refresh (2026-11-09)
+
+Rechecked the final S41 spec, plan, and task text after formatting. All FR-027..FR-030 and SC-016..SC-019 references resolve; T025..T032 tags match; allow-list, rename endpoint, empty-diff, and detection-error outcomes agree across the three artifacts. No stale pending PO status or product ambiguity is introduced. **CRITICAL**: none. **HIGH**: none. **No open ambiguities** remain. **PASS.**
+
 - Dispatch trust finding: gate-check requires the run ref to match the PR base branch and the ci.yml blob at that ref to match the tested merge result; all required jobs must log the same PR/head/merge values. The logger already emits those values in validate, every integration shard, and storage. No open ambiguities; 0 open CRITICAL/HIGH findings remain.
+
+## S41-R20 CodeRabbit round-1 findings (2026-11-10, after the review on `4f95609b`)
+
+Scope: FR-022, FR-027, SC-012, T028 and the pending-marker matcher.
+
+- [x] All three findings were verified against the code/spec at head and are valid.
+- [x] Pending-PO matching now uses an escaped identifier with token boundaries, so a decided `S41-PO-1` no longer matches `S41-PO-10`; a unit case covers both directions.
+- [x] FR-027 now names the changed-file formatter (`scripts/format-check-changed.mjs`) for changed Markdown/YAML/JSON, including ignored `docs/`, `specs/` and `.specify/` paths, and keeps the repository-wide `format:check`; T028 matches.
+- [x] FR-022 and SC-012 scope full-CI matrix/aggregator execution to attempts that are not `pull_request` docs-only, keep the skip-fails rule whenever the aggregator must run, and no longer contradict FR-029.
+- [x] This analysis follows the latest spec/tasks edits, no product decision is introduced, and **No open ambiguities** remain.
+- **CRITICAL**: none. **HIGH**: none. **PASS.**
+
+## S41-R20 changed-feature coverage re-analysis (2026-11-10)
+
+**Date**: 2026-11-10 (after the S41-R20 edits to FR-027, SC-016, the S41 scenarios, plan.md and T025). **Scope**: FR-027, SC-016, Story 8 scenario 5, T025; CI spec-consistency must cover every `specs/<feature>/` touched by the change.
+
+- [x] `spec.md` states changed-path enumeration per event, the required `spec.md`/`tasks.md`, the optional `traceability.md`/`checklists/analyze.md`, untouched-feature exclusion and fail-closed enumeration, with acceptance scenario 1 and Story 8 scenario 5 covering the touched/untouched case.
+- [x] SC-016 is measurable by named unit cases; T025 lists every new case and is tagged FR-027/SC-016.
+- [x] `plan.md` describes the same enumeration and per-feature scope; no other requirement text changed.
+- [x] Clarifications and PO authority (S41-PO-8/9/10, S41-R11, S41-R15, S41-R20) still apply; no product decision is introduced. **No open ambiguities** remain.
+- [x] This analysis is dated after the latest spec/plan/tasks edit and records 0 open CRITICAL/HIGH findings.
+
+### Findings
+
+- Ruling S41-R20 correctly identifies that the previous CI mode hard-coded `specs/001-project-scaffold-ci`, so S41-R11 (1) was not delivered for other features. The check now derives feature directories from the diff and validates only those; an untouched feature cannot fail the run and a touched feature cannot be skipped.
+- Hosted run 42735243489 showed the pull_request event payload's `base.sha` can lag the base (main had advanced to the #68 merge) used to build the PR merge ref, which made the three-dot diff include main-only feature changes (020). The fix uses the merge commit's first parent (`rev-list --parents -n 1 HEAD`) for pull_request and falls back to the event base SHA only when HEAD is not a merge commit. The same stale base affected `scripts/format-check-changed.mjs`, which then checked main-only 020 files; `resolveFormatBase` now applies the identical first-parent rule for pull_request. Unit cases cover both overrides.
+- Enumeration is fail closed: a missing/malformed event payload, invalid base SHA, unsupported event with no local base, failed `git diff`, or empty diff exits non-zero. Pull_request uses `base.sha...HEAD`, push `before...HEAD`, workflow_dispatch `HEAD^1...HEAD` (the PR merge diff), matching S41-R20. Deleted paths are included in enumeration, so deleting a touched feature's `spec.md` or `tasks.md` fails closed instead of silently skipping the feature.
+- Audit of in-flight PR heads with the new check (read-only `git show`/`git log`, no checkout): #57 `1ea89ace`, #68 `70420d57` and #73 `3a5a13bf` would fail. #57 and #68 have stale Analyze dates relative to their latest spec/plan/tasks commit; #73's 003 and 012 Analyze files reference task identifiers owned by other feature directories, which the per-feature rule treats as unknown. Recorded in the run report; no other PR is modified here.
+- Per-feature validation reuses the existing identifier/date/pending-PO logic. `checklists/analyze.md` is required only when present, so features without that file are not newly failed by this change; all current feature directories carry `spec.md` and `tasks.md`, so requiring both cannot break an untouched feature.
+- Local runs without `GITHUB_EVENT_NAME` derive the base from the main merge base and are informational only; hosted CI always supplies the event name and payload, so the local fallback cannot widen CI scope.
+- Tests: 8 new cases (multi-feature, untouched ignored, missing tasks.md, optional traceability/analyze, missing commit date, event ranges, enumeration failure, empty list) were executed RED against the previous script (8 failed, 22 passed) and GREEN after implementation (30/30).
+- No schema, migration, secret, permission, product-copy or user-visible behaviour changes. **CRITICAL**: none. **HIGH**: none.
+
+### Verdict
+
+**PASS — 0 CRITICAL, 0 HIGH.** Implementation may proceed for FR-027/SC-016 under S41-R20.
 
 ## S40 CodeRabbit request 2 follow-up analysis
 

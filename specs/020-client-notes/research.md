@@ -1,0 +1,37 @@
+# Client Notes — Research
+
+## Scope and source hierarchy
+
+Behavior starts from the final Client Notes block in `C:/Users/NEW LAP/.lifter/runs/s36-po/s36-po-5.verbatim.txt` as the baseline, with the earlier item 2 in `s36-po-4.verbatim.txt` quoted in `spec.md`, and is supplemented by the later PO decisions recorded in `spec.md` Clarifications (S37, S38, S39 and S40, including create retry/idempotency and the in-flight exit warning). Where they differ, the later PO decision supersedes the earlier text. `s36-architect-rulings-5.md` Client Notes / CN-1..4 is architectural mapping, not PO wording.
+
+Tenant boundaries and role membership reuse the Constitution §I, `specs/003-tenancy-rls/spec.md`, `specs/004-auth/spec.md`, and `specs/011-client-accounts/spec.md`. Client Notes does not modify those existing feature scopes.
+
+## Existing authorization facts
+
+- F3 defines roles `platform_owner`, `workspace_owner`, `trainer`, and `sales`; unlisted role/capability pairs deny by default.
+- Current workspace access uses a verified `auth.uid()`, a current staff role, active membership (`revoked_at IS NULL`) and role capability. A Platform Owner has the existing all-workspace branch without a membership check (`app_private.has_workspace_access`; CN-MCQ-25; S40-PO-12).
+- `coaching_work` is approved for Platform Owner, Workspace Owner and Trainer; Sales is denied.
+- Client accounts are workspace-owned `public.clients` rows with composite same-workspace keys.
+- The app layer's pure `authorize(actor, capability, workspaceId)` must match the database matrix. UI visibility is not an authorization boundary.
+- Existing DESIGN.md §6 describes staff client details with horizontal scrollable tabs on mobile, and §11 leaves roles' detailed mobile tabs, icon library, touch sizing and exact breakpoints unresolved.
+
+## Technical alternatives, not product choices
+
+| Concern | Alternative A | Alternative B | Constraint |
+| --- | --- | --- | --- |
+| Note storage | Workspace-scoped row linked to client | Embedded JSON/text field on client | Independent entries and workspace/client composite integrity favor a row entity; PO has not selected a physical representation. |
+| Read boundary | RLS on the note relation | UI/server-only check | PO expressly requires backend/RLS; UI-only authorization is invalid. |
+| Edit history | Append-only versions | Update current entry | PO expressly says no version history; current-row edit is consistent with that statement. |
+| Delete | Soft delete / recycle bin | Hard delete | PO expressly requires permanent hard-delete by PO only. |
+
+## Open research / decisions
+
+CN-MCQ-01..07 and CN-MCQ-09..12 in `spec.md` are resolved by S37-PO-6 and S37-PO-7; CN-MCQ-13 (audit retention) and CN-MCQ-14 (stored body form, whitespace scope per S37-PO-16) are resolved by S37-PO-14 and S37-PO-16; CN-MCQ-08 (copy) is resolved by S38-PO-2 (all quoted byte-exact in spec.md). CN-MCQ-15 (DESIGN.md §11 UI values) was removed by architect ruling S38-R9: the Client Notes UI reuses existing Design System components and values. CN-MCQ-16 (exit-protection copy and Save Draft, DESIGN.md §5 Q54) is RESOLVED by S38-PO-10 and S38-PO-11: rows 30–33 are the approved copy, and Save Draft is not offered. CN-MCQ-17 (Discard with an in-flight save) is RESOLVED by S39-PO-8, option A. CN-MCQ-18 (idempotent save/retry with DB-level duplicate prevention) is RESOLVED by S39-PO-9, option A. CN-MCQ-19 (in-flight warning copy) is RESOLVED by S40-PO-3, option Variant 1 (Recommended): the exact EN and Egyptian Arabic strings are spec.md row 34, key `clientNotes.exitWarning.bodyInFlight`. CN-MCQ-20 (retry after a hard delete) and CN-MCQ-21 (note field read-only while a save is in flight) are RESOLVED by S40-PO-6, options A. CN-MCQ-22 (same-key retry with a different body) is RULED by architect ruling S40-R9, option A (not a PO question). CN-MCQ-23 (exit-warning copy and Stay/Discard behavior while a save outcome is unknown) is RESOLVED by S40-PO-10, option A: the unknown-result exit warning uses the approved generic save-error body CN-MCQ-08 row 18 with title/Stay/Discard rows 30/32/33; rows 31 and 34 are not reused; leaving cancels nothing; the unresolved create keeps its key for Retry; no new copy. CN-MCQ-24 (unresolved-create recovery state) is RESOLVED by S40-PO-12, option A: the text, key and original body are kept in that tab's browser `sessionStorage` until the server result is known, then cleared; same-tab reload only when written; a failed pre-dispatch write (for example `QuotaExceededError`) falls back to page memory and still lets the create proceed, but duplicate prevention across a reload is not guaranteed; no server-side pending body; no new copy. CN-MCQ-25 (Platform Owner access versus Principle I) is RESOLVED by S40-PO-12, option A: follows the existing merged F3 platform-wide `app_private.has_workspace_access` rule; no constitution change. Earlier recommendations are superseded by the PO answers and the architect ruling. There are no implementation claims in this research artifact.
+
+## Audit fact to verify at implementation
+
+The F11 generic audit function `audit_row_change()` is cited by the approved branding plan (`specs/014-workspace-branding/tasks.md`). Client Notes audit MUST NOT use any generic row capture that would store `body` (FR-010). Verify the function's payload before any reuse.
+
+## Audit retention fact (CN-MCQ-13)
+
+The existing audit history is `public.audit_events` (`supabase/migrations/20261027150000_audit_log.sql`). Its immutability triggers block update, delete and truncate, including for the owner. No migration in `supabase/migrations/` defines a purge for it. The retention period is an open pre-production decision (DP-02 / ND-F5-1 / B4 in `docs/13-production-readiness.md` and `docs/07-production-readiness.md`). Client Notes audit events inherit that policy unchanged.

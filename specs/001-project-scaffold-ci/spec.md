@@ -7,7 +7,7 @@
 
 Governing documents: [Architecture v3](../../docs/02-architecture.md) (approved stack, not redesigned here), [Roadmap P0](../../docs/03-roadmap.md), Constitution v1.0.0.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 Actors: **Implementer** (Codex/OpenCode), **Reviewer** (Claude Technical Lead), **Product Owner**.
 
@@ -105,7 +105,6 @@ An implementer working against multiple fetched remote branches can detect, befo
 
 ---
 
-
 ### User Story 7 - Fast, exact-head CI evidence (Priority: P1)
 
 The PO and merge lane can collect three full CI results concurrently without accepting a result for a different PR head, while retaining every required test and security gate.
@@ -124,7 +123,7 @@ The PO and merge lane can collect three full CI results concurrently without acc
 - Windows and Linux developers produce the same results (line endings, path handling).
 - The local database tooling config is present, but no schema/migrations exist yet. Starting it is optional for this feature's gates.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -149,13 +148,13 @@ The PO and merge lane can collect three full CI results concurrently without acc
 - **FR-018**: The `validate` job MUST NOT install Playwright browser binaries when none of its steps use a browser.
 - **FR-019**: The Storage checks MUST remain a distinct required CI job named `storage`, with an independently reported result.
 - **FR-021**: CI MUST support manually dispatched full CI runs for a PR number and exact head SHA, check out `refs/pull/<n>/merge`, and fail before checks unless the checked-out merge result's second parent equals the supplied head SHA. Before dependency installation or untrusted code execution, secret-bearing jobs MUST fail dispatches whose PR head repository differs from the base repository. The PR metadata lookup MUST authenticate with `github.token` under the existing read-only `contents: read` permission. The workflow MUST print the PR, supplied head SHA, and merge SHA; dispatch runs MUST have unique, non-canceling concurrency groups.
-- **FR-022**: The `integration-shard` matrix CI job MUST divide the full integration test list into three non-overlapping Vitest shards, each with the same stack setup, so their union runs every integration test exactly once per attempt. Its display names MUST remain `integration shard 1/3`, `integration shard 2/3`, and `integration shard 3/3`. A separate required job with id and name `integration` MUST depend on `integration-shard`, run with `if: always()`, and fail unless the shard matrix result is exactly `success`. On a successful attempt, the aggregator MUST compare and log the common PR/head/merge revisions exported by all three shard jobs using distinct shard-specific output names. For `push` events, it MUST require a valid merge SHA and shard agreement but MUST allow PR number and head SHA to be empty; for non-push events, it MUST require valid PR number, head SHA, and merge SHA values. The aggregator MUST use `ubuntu-latest`, grant only `contents: read`, perform no checkout, and access no repository-configured secrets; `actions/download-artifact@v4` uses the GitHub-provided per-job `ACTIONS_RUNTIME_TOKEN` for artifact retrieval, which is a GitHub Actions runtime token (not limited to the artifact service) and is not a repository-configured secret. `validate`, `storage`, security checks, and all existing test coverage remain required.
+- **FR-022**: On full-CI attempts (every attempt except a `pull_request` docs-only run under FR-029), the `integration-shard` matrix CI job MUST divide the full integration test list into three non-overlapping Vitest shards, each with the same stack setup, so their union runs every integration test exactly once per attempt. Its display names MUST remain `integration shard 1/3`, `integration shard 2/3`, and `integration shard 3/3`. A separate required job with id and name `integration` MUST depend on `integration-shard`, run with `if: always()` on those attempts, and fail unless the shard matrix result is exactly `success`; on a `pull_request` docs-only run the matrix and aggregator are skipped by design and are not required, and a skipped matrix on an attempt where the aggregator must run fails it. On a successful attempt, the aggregator MUST compare and log the common PR/head/merge revisions exported by all three shard jobs using distinct shard-specific output names. For `push` events, it MUST require a valid merge SHA and shard agreement but MUST allow PR number and head SHA to be empty; for non-push events, it MUST require valid PR number, head SHA, and merge SHA values. The aggregator MUST use `ubuntu-latest`, grant only `contents: read`, perform no checkout, and access no repository-configured secrets; `actions/download-artifact@v4` uses the GitHub-provided per-job `ACTIONS_RUNTIME_TOKEN` for artifact retrieval, which is a GitHub Actions runtime token (not limited to the artifact service) and is not a repository-configured secret. `validate`, `storage`, security checks, and all existing test coverage remain required.
 - **FR-023**: The main merge gate MUST accept three distinct successful full CI attempts on the exact PR head from either sequential `pull_request` attempts or one `pull_request` plus two concurrent manual dispatch runs on merge refs whose second parent is the same head SHA. A dispatch run MUST use the PR base branch trusted workflow ref, that workflow file MUST match the tested merge result, and all required jobs MUST log identical PR/head/merge SHAs. Each attempt MUST execute `validate`, all three `integration-shard` jobs, the `integration` aggregator, and `storage`. Gate-check d MUST enforce exact-head provenance and identical logged PR/head/merge revisions across every required job in executed `pull_request` attempts. The aggregator MUST compare the three integration-shard output tuples and log their shared tuple before succeeding; it does not compare revisions from `validate` or `storage`. A code failure voids the head; infra failures are recorded and never counted.
 - **FR-024**: Standing PO merge approval applies only to normal PRs after all eight live gates pass on the exact head and an independent architect review of the full diff is recorded for that SHA. The merge lane records `po_approved_head`, rechecks gates immediately before merge, and merges with `--match-head-commit`; any head change voids approval. PRs changing `.specify/memory/constitution.md` always require explicit PO approval for the exact SHA.
 - **FR-025**: The `integration-shard` matrix MUST run the full Playwright browser suite in every one of its three executions as a file-level `--shard=<k>/3` partition with `--workers=1`, no retries, no `fullyParallel`, and no skip or quarantine added by CI, while retaining the existing gates `LOCAL_SUPABASE_STORAGE_TEST=true` and `LOCAL_SUPABASE_PROVIDER_FAULT_TEST=true` in every shard. Each shard MUST retain the same ordered preconditions before browser execution (local stack start, exported stack and app environment, Vault signup-key provisioning, Storage readiness wait, Docker CLI availability), MUST assert that `npx playwright test --list --shard=<k>/3` is non-empty before running, MUST NOT preset `U8_SERVER_LOG_RUN_ID`, and MUST run exactly one app `webServer` per invocation. Existing browser spec files MUST NOT be edited, split or quarantined by this change.
 - **FR-026**: The required `integration` aggregator MUST download every shard's Playwright JSON report and Vitest JSON report and MUST fail unless: (i) the union of reported Playwright test identities equals the full `--list` identity set exactly once with no duplicates; (ii) the skipped count does not exceed the documented baseline of 38 (24 Stack-C-only exercise tests plus 14 project-guard shell tests) and every skipped identity is a documented baseline identity; (iii) the union of Vitest integration files executed equals the full integration-config file list exactly once; and (iv) zero Playwright failures, flaky results or report errors and zero Vitest failures occur. The existing shard-success and common-revision checks remain unchanged. The aggregator MUST keep `contents: read`, perform no checkout, and access no repository-configured secrets; its artifact download uses `actions/download-artifact@v4` with the GitHub-provided per-job `ACTIONS_RUNTIME_TOKEN`, which is a GitHub Actions runtime token (not limited to the artifact service) and is not a repository-configured secret.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 
@@ -170,7 +169,7 @@ The PO and merge lane can collect three full CI results concurrently without acc
 - **SC-008**: The `validate` job contains no Playwright browser installation step if no validate step uses a browser.
 - **SC-009**: Every CI run reports distinct `validate`, `integration`, and `storage` jobs, with Storage required independently.
 - **SC-011**: A manual dispatch for a PR tests only `refs/pull/<n>/merge` and exits before CI unless its second parent matches the supplied full head SHA; it does not replace or cancel other runs.
-- **SC-012**: The three `integration-shard` assignments are disjoint and collectively run every integration test exactly once; every PR or dispatch attempt requires all three shards, the `integration` aggregator, `validate`, and `storage` to succeed with executed steps. The aggregator fails if the shard job is failed, skipped, or cancelled. Exactly-once applies to the three `integration-shard` executions; the separate Storage lane may also run tests selected by the integration config. For main-branch push runs, the aggregator accepts empty PR/head values when the merge SHA is valid and all shard revision tuples agree.
+- **SC-012**: The three `integration-shard` assignments are disjoint and collectively run every integration test exactly once; every full-CI PR or dispatch attempt (a `pull_request` attempt that is not docs-only under FR-029) requires all three shards, the `integration` aggregator, `validate`, and `storage` to succeed with executed steps. The aggregator fails if the shard job is failed, skipped, or cancelled on an attempt where it runs. Exactly-once applies to the three `integration-shard` executions; the separate Storage lane may also run tests selected by the integration config. For main-branch push runs, the aggregator accepts empty PR/head values when the merge SHA is valid and all shard revision tuples agree.
 - **SC-013**: Gate d recognizes only distinct successful, executed full attempts with exact-head provenance from the allowed event sources; gate-check reports attempt IDs and sources. Gates a-c and e-h remain in force, and constitution PRs require explicit exact-SHA PO approval.
 - **SC-014**: The three `integration-shard` executions collectively report all 629 Playwright tests exactly once (591 executed and the 38 documented baseline skips on the baseline suite) and the full Vitest integration file list exactly once; a missing, duplicated, newly skipped, failed, flaky or errored test makes the `integration` aggregator fail.
 - **SC-015**: On a main push, the integration critical path (first required job start to aggregator completion) is shorter than the 17 m 42 s baseline of main run 42628343018 on 405e23e4, while `validate` and `storage` job definitions remain unchanged.
@@ -235,3 +234,44 @@ The PO and merge lane can collect three full CI results concurrently without acc
 - S41-R7 resolves the prior FR-009 wording as a factual reconciliation, not a product question. The baseline `validate` job uses no repository-configured secrets. On pull-request and push runs, `actions/checkout@v4` uses GitHub-provided `github.token` with read-only `contents: read` permission; the workflow also uses that token for PR revision and dispatch metadata API requests (FR-021). It is distinct from repository-configured secrets. The `integration` aggregator has no repository-configured secrets and no Docker Hub credentials; its artifact download uses the GitHub-provided per-job `ACTIONS_RUNTIME_TOKEN` through `actions/download-artifact@v4`. Optional Docker Hub pull credentials in `integration-shard` and `storage` are job-level environment variables available to every step of those jobs, including `npm ci` and repository test code; the authenticated-pull restriction describes intended use, not step isolation, and login is skipped when credentials are unset. No deployment secrets are used and CI does not deploy.
 - Evidence: merged CI workflow revision [`9d24e6444aea5f72ce5dd00e13d3d25c979c8619`](https://github.com/sekiirro/LIFTER/blob/9d24e6444aea5f72ce5dd00e13d3d25c979c8619/.github/workflows/ci.yml), which contains separate `integration-shard`, `integration`, and `storage` jobs and the read-only metadata lookup.
 - **No open ambiguities** remain for this clarification; no new behavior is specified.
+
+### User Story 8 - Self-checking spec and docs-only CI (Priority: P1)
+
+The maintainer wants CI to detect dangling feature identifiers, keep review focused on authored project files, and retain full integration/storage coverage for all non-docs changes.
+
+**Acceptance Scenarios**:
+
+1. **Given** any feature directory in the changed-path diff has a task, traceability, or analyze file that references an unknown FR, SC, or task ID, **When** spec-consistency runs, **Then** it exits non-zero and identifies the feature, source and identifier; a feature directory absent from the diff is not evaluated.
+2. **Given** Analyze predates a change to spec, plan, or tasks, **When** spec-consistency runs, **Then** it fails; when Analyze is current, the date check passes.
+3. **Given** a PO decision is recorded in docs/04, **When** a feature reference is marked pending for that decided identifier, **Then** spec-consistency fails.
+4. **Given** an allowed Markdown-only PR, **When** pull_request CI runs, **Then** validate and format/spec checks run and integration-shard, integration, and storage are skipped by design; any unlisted path or detection failure takes full CI, and a skipped integration cannot satisfy the aggregator.
+5. **Given** workflow_dispatch, **When** it runs for any PR, **Then** validate, all integration shards, integration, and storage run.
+6. **Given** a docs-only PR with exact-head APPROVED, **When** its green definition is evaluated, **Then** three full dispatch runs after approval are required; no gate is relaxed.
+
+### S41 requirements (S41-PO-8/9/10; S41-R11; S41-R15)
+
+- **FR-027**: CI validate MUST run a fail-closed spec-consistency check covering every `specs/<feature>/` directory touched by the change. Changed paths are enumerated from the base...head diff for pull_request (the merge commit's first parent when HEAD is the PR merge commit, otherwise the event base SHA), the before...after diff for push, and the first-parent...merge diff for workflow_dispatch; any enumeration error exits non-zero. Each touched feature MUST provide `spec.md` and `tasks.md`, and every FR/SC/task reference in its tasks, traceability and Analyze documents MUST exist in its spec/tasks; Analyze date MUST NOT precede the latest spec/plan/tasks change. `traceability.md` and `checklists/analyze.md` are checked when present. Untouched features are not checked. No pending-PO marker may remain for a decision recorded in docs/04. The changed-file formatter (`scripts/format-check-changed.mjs`) MUST check every changed Markdown, YAML and JSON file, including paths under `docs/`, `specs/` and `.specify/` that the repository-wide `format:check` ignores by configuration; both checks MUST run in validate.
+- **FR-028**: CodeRabbit path filters MUST exclude generated evidence only; feature specs, plans, tasks, source, tests, migrations and workflows MUST remain reviewable.
+- **FR-029**: Docs-only means every changed path is a `.md` file beneath `docs/`, `specs/`, or `.specify/`, or exactly root README.md or CHANGELOG.md. Both rename paths are checked. Detection errors and every unlisted path classify as non-docs-only. Only pull_request docs-only runs may skip integration-shard, integration and storage; workflow_dispatch always runs the full jobs. Required check names remain present, and integration MUST fail if its matrix was skipped.
+- **FR-030**: Constitution version MUST become 1.11.0 and define the docs-only green form as three full workflow_dispatch runs for the exact PR/head, started after exact-head APPROVED, each executing validate, all integration shards, integration and storage; a separate gate-check d proposal/patch is supplied, with no gate-check implementation change in this PR.
+
+### S41 measurable outcomes
+
+- **SC-016**: Unit cases prove valid references/date and reject unknown FR/SC/task references, stale Analyze, and decided pending-PO identifiers; a multi-feature diff checks every touched feature, an inconsistent untouched feature is ignored, a touched feature missing `tasks.md` fails, and a changed-path enumeration error fails closed.
+- **SC-017**: A path table proves allow-list members as docs-only and disallowed, renamed, empty and error inputs as full-CI; dispatch jobs always run.
+- **SC-018**: This workflow-changing PR executes validate, integration-shard (all 3), integration and storage on its exact head.
+- **SC-019**: Constitution 1.11.0 states the approved docs-only green form and retains existing gates and exact-head PO approval for constitution changes.
+
+### S41 Given/When/Then edge scenarios
+
+1. **Given** a renamed path where either endpoint is outside the allow-list, **When** docs-only classification runs, **Then** the PR is non-docs-only.
+2. **Given** Git cannot enumerate the PR diff, **When** classification runs, **Then** the workflow fails closed into full PR jobs.
+3. **Given** a counted non-docs PR whose integration matrix is skipped or absent, **When** integration runs, **Then** it fails.
+4. **Given** a path has uppercase `.MD`, a non-Markdown extension, or is nested outside the listed roots, **When** classification runs, **Then** it is non-docs-only.
+5. **Given** one change touches two feature directories, **When** spec-consistency runs, **Then** both are checked and a third, untouched feature with inconsistent documents does not fail the run.
+
+## Clarifications (2026-11-09; no open ambiguities)
+
+- S41-PO-8: `Approved all 4 CI/CodeRabbit optimizations,`; S41-PO-9a: `docs/04 canonical (Rec.)`; S41-PO-9b: `3 full dispatches (Rec.)`; S41-PO-10: `B: A + README/CHANGELOG (Rec.)`. These are verbatim PO excerpts; source: `runs/s41-po/s41-po-1.verbatim.txt`.
+- S41-PO-10 architect mapping defines the exact allow-list and fail-closed rename/detection behavior; S41-R11 defines implementation and S41-R15 authorizes continuation. S40-PO-11: `No gate relaxation.`
+- No open ambiguities remain for this S41 scope.

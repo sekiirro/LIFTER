@@ -76,7 +76,19 @@ Tasks remain unchecked until the exact PR head has the required executed green C
 
 Tasks remain unchecked until tests and exact-head GitHub gate evidence are recorded.
 
-
 ## S41 documentation reconciliation
 
 - [ ] T025 [FR-009] Reconcile the CI credential boundary in the feature specification, plan, and research from merged workflow commit `9d24e6444aea5f72ce5dd00e13d3d25c979c8619`: `validate` requires no repository-configured secrets; on pull-request and push runs `actions/checkout@v4` uses GitHub-provided `github.token` with read-only `contents: read`, and the workflow also uses that token for read-only revision and dispatch metadata requests; the `integration` aggregator has no repository-configured secrets and no Docker Hub credentials, and its artifact download uses the GitHub-provided per-job `ACTIONS_RUNTIME_TOKEN`; only `integration-shard` and `storage` may use optional Docker Hub pull credentials, set as job-level environment variables available to every step in those jobs, for authenticated image pulls; no deployment secrets or deploy. Documentation only; no workflow change.
+
+## S41 CI/CodeRabbit optimization tasks
+
+- [ ] T025 [FR-027, SC-016] Write unit tests for spec-consistency first (unknown FR/SC/task IDs, date freshness, decided pending-PO markers, valid case, multi-feature diff, untouched inconsistent feature ignored, touched feature missing tasks.md, changed-path enumeration error fails closed), execute RED, then implement `scripts/spec-consistency.mjs` changed-feature enumeration and wire it into validate.
+- [ ] T026 [FR-029, SC-017] Write table-driven docs-only path classification tests first (allow-list, disallowed paths, renames, empty/error input); execute RED, implement fail-closed classifier, then wire pull_request conditionals while dispatch remains full and aggregator rejects skipped integration.
+- [ ] T027 [FR-028] Add CodeRabbit path_filters for generated evidence only and assert protected paths remain included.
+- [ ] T028 [FR-027, FR-029, SC-018] Verify the repository `format:check` scope plus the changed-file formatter (`scripts/format-check-changed.mjs`), preserve required job names, run local workflow/unit/static checks and prove this workflow-changing PR runs the full CI jobs.
+- [ ] T029 [FR-030, SC-019] Amend Constitution 1.10.0 to 1.11.0 with docs-only three-dispatch green form and sync impact report; no other principle changes.
+- [ ] T030 [FR-030] Write `s41-luna-ci-opt3/gate-check-d-proposal.md` and matching patch outside the repository; do not edit gate-check.mjs.
+- [ ] T031 [FR-027, FR-028, FR-029, FR-030] Complete pre-request checklist, CodeRabbit review (max 2 requests; incremental first request per S41-R13), fix all valid findings in one push, then exact-head approval and sequential executed PR reruns.
+- [ ] T032 [FR-030] Run gate-check on final exact head; record expected gate e failure. Do not merge.
+
+> NOTE (s46 merge): the `T025 [FR-009]` reconciliation task above and the `T025 [FR-027, SC-016]` task above share the id `T025` (one from each merged side; both kept verbatim). Renumbering is deferred to the owning lanes/architect; see run report.
