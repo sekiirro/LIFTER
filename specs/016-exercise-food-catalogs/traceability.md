@@ -158,6 +158,12 @@ Disclosure: the rename commit message trailers contain literal \n text rather th
 |---|---|---|---|---|
 | FR-003, FR-023, FR-027 | T044 | `tests/integration/catalog-exercise-t037-contract.test.ts::T044 canonical Description storage and freeze > stores one optional-language Description in each immutable canonical version`; `::rejects a second localized Description field`; `Description field contract` | T044 task commit (this commit); Stack A RED: canonical Description was rejected. GREEN after reset: contract, operations and detail suites passed (62 passed / 25 existing expected failures). Version 1 remains unchanged when version 2 is created, and detail resolves the current version. Mutant accepting `description_en` as a second value failed the negative test. Full lane report: `C:/Users/NEW LAP/.lifter/runs/s45-luna-f16-t090/report.md`. | VERIFIED |
 
+## S45 T090 exercise version storage
+
+| Requirement | Task | Test | Evidence | Status |
+|---|---|---|---|---|
+| FR-001, FR-003, FR-004, FR-018, FR-023, FR-024, FR-025, FR-030 | T090 | `tests/integration/catalog-exercise-version-storage.test.ts::stores Notes and Defaults on both immutable version tables`; `::bounds Global Alternatives to three unique active Global identities`; `::enforces private Alternatives target shape and the composite workspace key`; `::rejects an inactive target at child-row write time`; `::keeps storage forced-RLS, append-only and without direct DML grants` | T090 task commit (this commit); Stack A RED on absent columns/tables; GREEN storage suite 5/5 and six focused integration files 79 passed / 25 expected failures after reset. Mutants removing the private composite target FK and canonical Notes column each failed the targeted test and were restored. Catalog unit suites 30/30; lint/typecheck pass. Full lane report: `C:/Users/NEW LAP/.lifter/runs/s45-luna-f16-t090/report.md`. | VERIFIED |
+
 ## S45 T045 workspace-private exercise Video
 
 | FR | Task | Test | Evidence | Status |

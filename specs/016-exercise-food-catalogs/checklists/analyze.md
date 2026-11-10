@@ -656,3 +656,16 @@ T900 has been marked complete only after its focused integration test passed on 
 - Evidence: Stack A RED then GREEN; `catalog-exercise-t037-contract.test.ts`, `catalog-exercise-operations.test.ts`, and `catalog-exercise-detail.test.ts`: 62 passed, 25 existing expected failures. Mutation accepting `description_en` was killed by the second-value rejection test and then restored. T044 status and FR-to-test evidence are recorded in `tasks.md` and `traceability.md`.
 - Findings: 0 open CRITICAL, 0 open HIGH. No open ambiguities. No PO decision required.
 - Verdict: PASS for T044; T090 remains pending in dependency order.
+
+
+## S45 T090 implementation re-analysis
+
+- Date: 2026-11-10 22:47 UTC, after T090 task-status and traceability updates.
+- Scope: T090 storage prerequisite for T074/T075; FR-001, FR-003, FR-004, FR-018, FR-023, FR-024, FR-025, FR-030. No requirement text changed.
+- Entry check: PASS. The T090 requirements and acceptance scenarios remain as analyzed in round 13; plan and dependency order place storage after T044 and before T049/T054. The latest full Analyze round reported 0 open CRITICAL/HIGH and explicitly stated no open ambiguities.
+- Implementation: canonical and workspace-private immutable version tables now have Notes and Defaults columns. Global and private Alternatives are immutable child tables with composite parent keys, exactly-one-target for private rows, active-at-write triggers, max-three positions, unique targets, forced RLS, append-only guards and no direct DML grants. T074/T075 value validators remain unchanged.
+- Evidence: Stack A RED on absent columns and child tables; GREEN after reset: storage suite 5/5; six focused integration suites 79 passed, 25 expected failures belonging to later tasks. Three affected catalog unit suites passed 30/30; lint/typecheck passed.
+- Mutations: removing the private Alternatives composite target FK caused the key assertion to fail; removing canonical Notes caused the storage-shape assertion to fail. Both changes restored; final GREEN ran after database reset.
+- T052 before commit: fetched and scanned all 107 origin refs (271 unique migration path/version pairs); highest remote migration `20261110213000`; T090 `20261110224100` is strictly greater than every remote version and the T044 migration. Separate `npm run check:migration-versions:remote` passed across 106 refs.
+- Findings: 0 open CRITICAL, 0 open HIGH. No open ambiguities. No PO decision required.
+- Verdict: PASS for T090.
