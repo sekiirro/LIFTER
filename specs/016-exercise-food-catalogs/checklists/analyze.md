@@ -635,3 +635,13 @@ T900 has been marked complete only after its focused integration test passed on 
 - **Findings:** 0 open CRITICAL, 0 open HIGH. No PO decision needed.
 - **T052:** all 107 fetched origin refs / 7,941 migration paths scanned; maximum existing version `20261110140000`; T048 local migration is `20261110205300`; T057 migration is `20261110210800`, valid and strictly greater. Separate remote filename-conflict check passed across 106 refs.
 - **Gate:** PASS for T057. RED/GREEN, value-payload mutation, and affected unit/integration evidence are in `C:/Users/NEW LAP/.lifter/runs/s45-luna-f16-t048b/report.md`.
+
+## S45 implementation round 14 — T047
+
+- **Date:** 2026-11-10 22:02:20 UTC (Z). Appended after T047 completion evidence was added to `tasks.md` and `traceability.md`; no requirement text changed.
+- **Scope:** T047 workspace-scoped writes for the eight FR-003 fields, validation, CAS, action-bound idempotency, post-lock authorization, alternatives versioning and one audit event. Stack A only.
+- **Entry check:** PASS. `spec.md` has numbered FRs, measurable SCs and Given/When/Then scenarios for workspace overrides; PO answers for the eight-field set, PO write reach, resets, empty Alternatives and D16-3 are recorded in the feature clarifications/decision register; `plan.md` and `tasks.md` contain T047 and its FR tags/predecessors; this dated record follows the task status update. The prior Analyze round 13 records PASS and no open HIGH items; this round found no open CRITICAL/HIGH findings.
+- **Verification:** RED failed against the absent RPC; after migration and Stack A reset, five focused integration files passed 69 tests with 27 existing expected failures. Mutations for CAS, post-lock auth recheck, operation payload comparison, ninth-field rejection, D16-3 host validation and current-version read each failed their targeted test; Stack A reset after each restoration. Focused unit suites passed 52/52; lint and typecheck passed.
+- **T052:** all 107 origin refs were scanned after fetch; 7,943 migration-file appearances, maximum `20261110210800`; `20261110213000` is strictly greater and has valid clock fields. Separate `npm run check:migration-versions:remote` passed across 106 refs.
+- **Findings:** none open at CRITICAL or HIGH. No PO decision needed.
+- **Gate:** PASS for T047. Full evidence: `C:/Users/NEW LAP/.lifter/runs/s45-luna-f16-t047c/report.md`.

@@ -181,3 +181,9 @@ Disclosure: the rename commit message trailers contain literal \n text rather th
 | FR | Task | Test | Evidence | Status |
 |---|---|---|---|---|
 | FR-013, FR-003 | T057 | `tests/integration/catalog-exercise-audit.test.ts::accepts only the eight FR-003 codes for canonical and workspace exercise changes`; `::rejects legacy exercise detail codes outside the FR-003 field set`; `::rejects values, URLs, and free text from the audit payload` | Stack A RED: 2/3 failed against the old writer. GREEN: audit suite 3/3; 8 affected integration suites 94 passed / 27 expected failures. Mutant adding `value` to audit payload key allowlist failed the no-values test. Lint, typecheck and 28 catalog/exercise unit files (288 passed) succeeded. T057 commit SHA and full report: `C:/Users/NEW LAP/.lifter/runs/s45-luna-f16-t048b/report.md`. | VERIFIED |
+
+## S45 T047 workspace exercise override writes
+
+| FR | Task | Test | Evidence | Status |
+|---|---|---|---|---|
+| FR-003, FR-014, FR-016, FR-018 | T047 | `tests/integration/catalog-exercise-override-write.test.ts::creates, versions, resets, and records exactly one audit per write`; `::replays the same action and payload, rejects key reuse with a different payload, stale CAS, and invalid fields`; `::enforces workspace authorization and permits the PO workspace override reach`; `::places the authorization recheck after the locked revision read` | This task commit (`HEAD`); RED against missing RPC; final Stack A GREEN: 5 focused integration files, 69 passed / 27 expected failures. Six mutants killed: CAS check, post-lock authorization recheck, operation payload comparison, exact field allowlist, D16-3 video host check, and current-version read. `npm run lint`, `npm run typecheck`, and focused unit suites 52/52 passed. Full report: `C:/Users/NEW LAP/.lifter/runs/s45-luna-f16-t047c/report.md`. | VERIFIED |
