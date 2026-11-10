@@ -1,0 +1,149 @@
+# Implementation Plan: F18 Nutrition Templates & Nutrition Planner
+
+**Spec**: [spec.md](spec.md) · **Design detail**: [data-model.md](data-model.md) · **Contracts**: [contracts/](contracts/)
+**Status**: S42 spec-only draft. No code, migration, UI, test or workflow change is part of this plan's delivery. Implementation entry is **blocked** by F18-MCQ-1..6.
+
+## Summary
+
+Nutrition plans on the pending F19 Plan Core contract: a versioned nutrition document (single-day or seven-day, day types, conditional meals, foods with exact quantities, coach alternatives, notes, optional recipe link) with one exact-decimal algorithm implemented identically in TypeScript and SQL; publish-time snapshot rebuild and server-side recomputation; PO-only global nutrition templates with PO-only manual Assign into independent workspace copies; workspace template management; version-scoped self-only client alternative selection with client-visible recalculation; PDF/Excel/`Copy Prompt for AI` exports that distinguish the coach original from the client's permitted selection.
+
+## Technical context
+
+- Same stack as F16/F17: Next.js on Cloudflare + Supabase; RLS at the database wall, application check at the first wall; SECURITY DEFINER RPCs for writes; the shared operation-key ledger for idempotency.
+- Consumes, never forks: F19 lifecycle/delivery/activation (pending), F16 `FoodSnapshotV1`, `catalog_search`, serving units, immutable food versions, `can_read_global_coaching_content()`/`is_platform_owner()`/`has_workspace_access` as they exist on `main`.
+- Pending dependencies are cited as pending. This plan does not assume an unmerged F19 schema is final; the F18 foreign keys adapt to the merged F19 keys while the F18 invariants stay fixed.
+
+## Constitution check
+
+| Principle | Plan response |
+| --- | --- |
+| I Workspace isolation | Composite tenant keys on every F18 table; two walls; foreign-workspace negatives per endpoint/table/export. Global template tables are platform-scope with no workspace read policy. |
+| II Financial truth | n/a; productivity units are F19's. |
+| III PO governance | PO-only global templates, Assign and Make it Global; existing checks only; Sales denied. |
+| IV Approved scope | Every requirement traces to PRD-05/06/12, D18-x, A5/A6 or F19; no invented behavior; open questions are MCQs. |
+| V Versioned content | Immutable revisions/template versions; exact-version food snapshots; single stored rounding; schema/algorithm version frozen per revision. |
+| VI People decisions | n/a. |
+| VII Privacy | Health-adjacent content; audit allowlist + log scrub; exports/selection audited; prompt privacy gated by MCQ-4/5. |
+| VIII Bilingual UI | AR-first RTL + EN-LTR, design gate, keyboard access, no machine translation, no unapproved copy. |
+| IX Idempotency | Operation keys, CAS, deterministic lock order, no duplicate revision/copy/selection/batch. |
+
+## Design
+
+### 1. Identity and lifecycle (F19)
+
+F18 adds no plan/draft/revision/delivery/activation table. A nutrition plan root is an F19 root with `plan_kind='nutrition'`, `workspace_id` and `client_id`; the subscription is bound only by a `plan_deliveries` row at Ready & Publish. F18 supplies:
+- document validation and computed values at draft save and publish;
+- the publish-time snapshot rebuild (inside the F19 publish transaction);
+- selection carry-forward inside that same transaction;
+- nutrition export reads.
+
+### 2. Document schema v1
+
+Implemented as a frozen, versioned schema module with one fixture set shared by the app validator, the RPC validator and the renderer. `single_day` has an always-required `implicitDayTypeId`; `seven_day` covers dayIndex 0–6 exactly once. Ids are unique within the document; duplicated content remaps its own and descendant ids. Quantities/targets are decimal strings. The optional recipe/preparation link is an HTTPS URL on YouTube or Google Drive only (D18-6); the F16 exercise-video host rule (D16-3/FR-014) does not govern nutrition recipe links, and no `docs.google.com` exception is invented beyond the approved "Google Drive" wording. Contract: `contracts/nutrition-document.md`.
+
+### 3. Canonical algorithm and total derivation
+
+One TypeScript implementation (BigInt coefficient/scale on decimal strings) and one SQL implementation (`numeric`, no intermediate rounding) run the same 500-case golden fixture set, including repeating fractions, precision boundaries, alternatives and selected-alternative totals. Inputs use the live F16 scales; stored results are `numeric(12,4)` half-even once; aggregates come from exact values. Display is a pure string function (calories integer; macro < 10 g one decimal, ≥ 10 g integer). The display tie rule is F18-MCQ-3.
+
+### 4. Publish path
+
+`publish_nutrition_revision(expected_revision, operation_key)` (SECURITY DEFINER, invoked from the F19 Ready & Publish flow):
+1. authorize (two walls) → resolve the current subscription per F19 (no current subscription ⇒ refused before any nutrition work);
+2. take the F19 lock order → lock draft → idempotency lookup → re-read expected revision → recheck authorization and lifecycle;
+3. parse the document with the frozen validator;
+4. load every referenced exact food version (items + alternatives), build the per-(version, serving unit) snapshot map, recompute all values in SQL;
+5. insert the F19 revision + the F18 content row atomically;
+6. carry forward valid selections by stable item/alternative id;
+7. write one publish audit event; the F19 delivery/activation/productivity writes happen in the same transaction, not here.
+
+Caller-supplied snapshots/totals are ignored. Unchanged re-publish returns the existing revision without a new content row. A missing referenced food version fails the publish with no revision.
+
+### 5. Client selection
+
+`select_nutrition_alternative(plan_version_id, item_id, alternative_id | null, operation_key)`:
+authorize the authenticated client for their own plan and current subscription; lock the plan root; lock/read the selection row; idempotency lookup; re-read the current published revision; verify the item and alternative exist in that immutable revision; upsert/delete; bump `selection_revision`; one audit event; generic failures.
+
+Client-visible values are derived on read from the revision's snapshot map and the alternative's coach-specified portion. No stored selected totals. See `contracts/nutrition-api.md`.
+
+### 6. Templates and Assign
+
+- Global: platform-scope identities + immutable versions, PO-only writes and reads.
+- Workspace: tenant-scope identities + immutable versions with `origin_global_template_id/version`, branded `display_name`, `coaching_work` RLS, PO cross-workspace rights.
+- Assign: one transaction, one operation key, PO-only. Step 1 mode (all/specific/all_except), Step 2 mode (all/specific). `All Workspaces` evaluates **nutrition-only** initialization at operation time; `Specific Workspaces` skips templates the workspace already holds from the same source version. Per target, either create one workspace template from the current global version (independent copy) or record `skipped_existing`. No update, no overwrite, no top-up. A newer global version is F18-MCQ-6. Contract: `contracts/template-assignment.md`.
+- Make it Global: PO-only; validate the source for client data/private references; refuse with field codes; on success create a separate global identity + version.
+- Load: creation-time/empty-draft only; copy one explicit immutable template version into the private draft; deep copy, new ids; no live link; a destructive load into existing content is refused.
+
+### 7. Exports
+
+One shared export reader returns an authorized projection (plan, revision, content, computed values, alternatives, selection) and feeds three renderers:
+- PDF (shared RTL print layout);
+- Excel (workbook skeleton, text-only coach cells, formula-injection tests);
+- `Copy Prompt for AI` (faithful plan text; no generation instruction).
+
+Both walls are checked before any read; every success and denial is audited. Coach-original vs client-selection layout: F18-MCQ-1. Prompt actor/text/language/selection: F18-MCQ-4/5/2.
+
+### 8. Audit and privacy
+
+One audit module extension with nutrition action codes and a field allowlist. No content, quantities, macros, notes, recipe text, URLs, document JSON or raw keys. Log-scrub tests assert zero health-content occurrences. Export denials are audited with resource ids only.
+
+### 9. UI
+
+The editor, alternatives editor and template manager reuse existing design-system components and the existing AR/EN catalogs; the historic F18 UI evidence is reference only (mocked projections, not merged). No new user-visible string is added by this draft; a copy gate is required before implementation. Keyboard alternatives to drag, accessible live totals, and loading/empty/error/conflict/unavailable states are acceptance criteria.
+
+### 10. Performance and capacity
+
+No hard-coded envelope is adopted. Before implementation, define the maximum document envelope and bench it on the merged stack; the historic Worker p95 ≤ 5 ms and DB/API p95 ≤ 300 ms figures are provisional and must be re-measured (`F18-SC-006`). Record bytes per revision and template against the F16/F19 storage budget.
+
+## Contracts
+
+| File | Covers |
+| --- | --- |
+| [contracts/nutrition-document.md](contracts/nutrition-document.md) | Document v1 shape, invariants, snapshot keying, computed-value shape, validator fixture rules |
+| [contracts/nutrition-api.md](contracts/nutrition-api.md) | RPCs, actions, authorization matrix, idempotency/lock order, selection, export/prompt reader, audit codes |
+| [contracts/template-assignment.md](contracts/template-assignment.md) | Global/workspace template lifecycle, Assign modes and skip rules, Make it Global, load/copy, state derivation, open item |
+
+## Validation phases
+
+1. **Contract fixtures (independent)**: document schema, macro/total goldens, publish ignore-caller-data, selection, assignment state machine, export/prompt fidelity.
+2. **Persistence**: F18 content table on F19 revisions, snapshot map build, computed values, immutability/privileges.
+3. **RPCs**: publish, selection, carry-forward, template create/version/retire/load, Assign, Make it Global — each with RED-first negative tests.
+4. **Security matrix**: every endpoint/table/export; foreign workspace/client, Sales, client, revoked membership, direct DML, replay/conflict, concurrency, malformed references, forged payloads.
+5. **Exports**: goldens AR/EN, selection distinction, formula injection, prompt fidelity.
+6. **Audit**: allowlist + log scrub.
+7. **Benchmark**: envelope defined and measured; provisional numbers replaced.
+8. **Release**: migration ordering/scan, fresh replay + upgrade rehearsal, zero direct DML, frozen schema/algorithm, full gates.
+
+Each task begins with its failing test, then the minimal implementation, then the named mutation. Database work runs on an assigned local stack, never a shared one. Analysis must be re-run after any spec/plan/task change.
+
+## Migration
+
+None reserved. At implementation time: scan every `origin` ref, choose one unused version above the global maximum, forward-only, no destructive change, no edit to a pushed migration, and rehearse fresh + upgrade before merge.
+
+## Dependencies
+
+Hard: F16 merged (food versions, serving units, snapshot transport) — **landed**. F19 merged (identity/draft/revision/delivery/activation) — **pending**. F13 merged (entitlement) — landed. F17 is a parallel lane; F18 shares assignment *shape* but not tables/types and does not depend on F17 code.
+
+## Risks
+
+| Risk | Mitigation |
+| --- | --- |
+| TS/SQL macro divergence | One golden set executed by both; algorithm version frozen per revision; mutation tests on rounding and aggregate derivation. |
+| Snapshot cannot serve multiple serving units | Per-(version, serving unit) snapshot map; publish rebuild test with two units of one food version. |
+| F19 key/shape drift | F18 foreign keys adapt to merged F19 keys; invariants unchanged; integration test fails fast if the revision composite key is missing. |
+| Assignment overload/wrong skip | Pure state-machine fixtures for all/specific/all-except × all/specific, initialized/partial/uninitialized, retries. |
+| Selection drift or forgery | Ids-only selection, derived totals, composite FKs, self-only RPC, plan-root serialization, negative and race tests. |
+| Export leaks cross-workspace | Both walls before read; negative matrix per renderer; audit denials. |
+| Unapproved copy | Hard copy gate; no new string in this draft. |
+| Unbounded document | Envelope defined and benchmarked before implementation. |
+
+## Complexity tracking
+
+| Deviation | Why | Status |
+| --- | --- | --- |
+| F18 content side table keyed to F19 revisions | F19 owns lifecycle but not the nutrition shape; keeps domain content versioned with the revision without forking lifecycle | Technical; reconcile with F19 implementation (F18-C-10) |
+| Contributor attribution retained in F18 | PRD-06 requires independent contributions; F19 spec currently omits it | Technical; move to F19 if it lands there (F18-C-11) |
+| Selection totals derived on read | Prevents drift and editability of client-visible values | Accepted; caching allowed only with the stated key |
+
+## Open items and blocked work
+
+F18-MCQ-1 export layout; F18-MCQ-2 prompt selection; F18-MCQ-3 display tie mode; F18-MCQ-4 prompt actor; F18-MCQ-5 prompt text/language; F18-MCQ-6 newer global version on re-assignment. Each blocks only its named contract, test and UI surface; nothing in this plan decides them.
