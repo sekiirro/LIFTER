@@ -1,0 +1,78 @@
+# F17 Traceability — spec-only draft (S42)
+
+**Status**: planning traceability. Nothing in F17 is implemented or verified. `PLANNED` means the requirement has tasks and test intent; it is **not** evidence. No task is ticked. No test was written or executed for this draft. Historic evidence is cited separately and is **not** acceptance evidence.
+
+**Draft base**: `origin/main` `d0c5d1ac7ec8adb13ad12712f85cf9702a97a414`.
+**Artifacts**: `spec.md`, `plan.md`, `data-model.md`, `contracts/`, `tasks.md`, this file, `checklists/analyze.md`, `research/`.
+
+## 1. Functional requirements
+
+| FR | PO / source | Tasks | Test intent (future) | Evidence | Status |
+|---|---|---|---|---|---|
+| FR-001 Plan identity/subscription binding | pending F19 FR-002 | T012, T018, T021, T030 | Duplicate-submit creates one root; no `subscription_id` on root; delivery-only binding | none | PLANNED |
+| FR-002 Workout document | S20-15, S20-16 | T002, T003, T012, T034, T043, T048 | Schema accept/reject; 1,000-op property test | none | PLANNED |
+| FR-003 Exercise reference / V2 | F16 FR-026/027, SC-009/011 | T002, T011, T012, T031, T034, T035 | No `variation`; canonical-only template authoring; frozen non-video; live Video | none | PLANNED |
+| FR-004 Add-time defaults | PO A1 | T004, T031, T033 | Copy three defaults; no live link; absent → blank | none | PLANNED (partly blocked MCQ-1/2) |
+| FR-005 Copy scope | PO A1 | T004, T033 | Blank + post-load add; no re-default | none | PLANNED |
+| FR-006 Load preserves source | PO A1 | T005, T029 | 0 RIR preserved; destination independent | none | PLANNED |
+| FR-007 No invented catalog fields | PO A1 | T004, T031 | No set-count field; no fabricated rows | none | PLANNED (set rows blocked MCQ-1) |
+| FR-008 Template ownership/versioning | PO A2, D17-3 | T013, T023, T024, T044 | PO-only global; workspace staff scope; append-only versions | none | PLANNED |
+| FR-009 No automatic distribution | PO A2 | T014, T025, T044 | New workspace zero; global create distributes zero | none | PLANNED |
+| FR-010 Assign operation | PO A2 | T009, T014, T025, T027, T044 | All/Specific/All-Except × All/Specific matrix; skip partial; no overwrite | none | PLANNED (partly blocked MCQ-3/4) |
+| FR-011 Assignment state/retries | PO A2 | T009, T014, T025, T026, T027, T046 | Three states; replay/conflict; no duplicate | none | PLANNED (blocked MCQ-3) |
+| FR-012 PO governance/promotion | PO A2 | T024, T028 | Separate copy; original retained; no private refs | none | PLANNED (blocked MCQ-5) |
+| FR-013 Load template | PO A2, D17-3 | T005, T013, T023, T029 | Version pin; id remap; no template mutation | none | PLANNED |
+| FR-014 Copy plan | pending F19 FR-008 | T005, T018, T030 | Latest published values; no ownership/history/video | none | PLANNED |
+| FR-015 Autosave/draft/publish | PO A3, D17-5, pending F19 SC-003 | T019, T020, T021, T042 | Publish without draft save; gates; one revision | none | PLANNED |
+| FR-016 Volume | PO A3, D17-1 | T006, T036 | Exact table; warm-up 0; per session/week | none | PLANNED (week blocked MCQ-9) |
+| FR-017 Export scope/security | PO A4, D17-8 | T007, T037, T038, T039 | Published-only; audit success+denial; injection guard | none | PLANNED |
+| FR-018 Export completeness | PO A4 | T007, T037, T038, T041 | Full field list; revision N while N+1 | none | PLANNED (layout blocked MCQ-8) |
+| FR-019 Copy Prompt for AI | PO A4 | T008, T040 | Content+URLs; no prohibited instruction | none | PLANNED (blocked MCQ-6/7) |
+| FR-020 Authorization matrix | PO A2/A6, pending F19 FR-009 | T001, T016, T017, T024, T047 | Role/scope negatives; generic denial | none | PLANNED |
+| FR-021 Idempotency/concurrency/audit | pending F19 FR-010 | T014, T019, T026, T049 | 100 retries; concurrent runs; one audit | none | PLANNED |
+| FR-022 Schema versioning/size | historic FR-014, B8 | T010, T015, T050, T051 | Fail closed; provisional cap re-benchmarked | none | PLANNED |
+| FR-023 Exercise picker | F16 FR-004/026/030 | T031, T032 | Bounded search; explicit version; exclusion | none | PLANNED |
+| FR-024 Bilingual/accessible UI | Constitution VIII | T032, T042, T043, T044, T045, T052 | AR/EN, RTL, keyboard, axe, Design Gate | none | PLANNED (copy blocked MCQ-7/8) |
+| FR-025 Cross-feature boundaries | F13 FR-028, pending F19 FR-011 | T020, T039, T047 | Expiry denial owned by P4; no client surface | none | PLANNED |
+| FR-026 Out of scope | PRD-12, PO A4 | — | Exclusion assertion (no Hevy/AI alternatives) | none | N/A by design |
+| FR-027 Contributor attribution | PRD-06, historic FR-004b | T019, T020, T022 | Immutable contributor set; no content/PII | none | PLANNED |
+
+## 2. Success criteria
+
+| SC | Tasks | Test intent | Evidence | Status |
+|---|---|---|---|---|
+| SC-001 | T004, T005, T029, T031, T033 | Defaults copy matrix incl. 0 RIR example | none | PLANNED |
+| SC-002 | T013, T025, T044 | Zero distribution on create | none | PLANNED |
+| SC-003 | T009, T014, T025, T046 | Kendo/Alpha/Beta All Workspaces matrix | none | PLANNED |
+| SC-004 | T009, T014, T025, T046 | Specific Workspaces, partial state, no dup/overwrite | none | PLANNED |
+| SC-005 | T005, T013, T024, T028 | Copy independence + promotion | none | PLANNED |
+| SC-006 | T012, T018, T019, T020, T021, T042 | Publish without draft; gates; one revision | none | PLANNED |
+| SC-007 | T006, T036 | Volume table | none | PLANNED |
+| SC-008 | T007, T037, T038, T039, T041 | Field parity, goldens, audit, injection | none | PLANNED |
+| SC-009 | T008, T040 | Prompt fidelity/prohibitions | none | PLANNED |
+| SC-010 | T001, T014, T016, T017, T026, T047, T049 | Negative matrix, retries, concurrency | none | PLANNED |
+| SC-011 | T005, T011, T031, T034, T035 | Snapshot frozen / Video live | none | PLANNED |
+| SC-012 | T002, T003, T043, T048 | 1,000-op property | none | PLANNED |
+| SC-013 | T041, T045, T052 | AR/EN/a11y/approved copy | none | PLANNED |
+| SC-014 | T050, T051 | Re-benchmark; no historical number | none | PLANNED |
+| SC-015 | T022 | Contributor set | none | PLANNED |
+
+## 3. PO decision coverage
+
+Every A1–A4 rule maps to FR/SC and a Given/When/Then scenario; the full matrix (with DIRECT PO / INFERRED / RECOMMENDATION classification) is in `research/po-decision-matrix.md`. Summary: A1 → FR-004..FR-007, SC-001; A2 → FR-008..FR-013, SC-002..SC-005; A3 → FR-015, FR-016, SC-006, SC-007; A4 → FR-017..FR-019, SC-008, SC-009.
+
+## 4. Historic references (NOT evidence)
+
+| Artifact | Branch / commit | Use | Not accepted because |
+|---|---|---|---|
+| `specs/017-workout-planner/spec.md` | `origin/sk-017` `86a763cb` | Wording reuse | Pre-dates PO A1–A4; `variation`, subscription-bound root, global read model superseded |
+| `plan.md`, `tasks.md` | `origin/sk-017` | Structure reuse | Agent-owner tags not authoritative (A7); obsolete migration ranges |
+| `T036-evidence.md`, `T037-evidence.md` | `origin/sk-017` | Test-intent reference | Built on superseded contracts; runtime evidence not re-run on this head |
+| `checklists/analyze.md`, `traceability.md` | `origin/sk-017` | Format reference | Dated before this draft; claims do not carry |
+| Branches `origin/017-workout-planner`, `origin/017-t037-templates` | tips `fd84fbaa`, `7743aee3` | Diff comparison | Partial implementation; no cherry-pick |
+
+No code, test, table name or migration version from these branches is adopted by this draft.
+
+## 5. Verification statement
+
+No test suite, typecheck, lint or database check was run, because this change touches only Markdown under `specs/017-workout-planner/`. The only executed check is Prettier formatting on the touched files (recorded in the run report). Any future task may be ticked only after its tests executed and passed on the current head, with `commit + test file::name` evidence recorded here.

@@ -1,0 +1,88 @@
+# F17 conflict register — old vs new, cross-feature collisions
+
+**Status**: spec-only draft (S42). Verified against live files on `origin/main` `d0c5d1ac7ec8adb13ad12712f85cf9702a97a414`, the pending F19 PR working tree (`C:/Users/NEW LAP/Desktop/LFTR-s42-f19/specs/019-plan-core/`), and historic F17 refs (`origin/sk-017` `86a763cb`, `origin/017-workout-planner` `fd84fbaa`, `origin/017-t037-templates` `7743aee3`).
+
+**Resolution rule**: PO Section A > F19 PO decisions S42-PO-2..6 + pending F19 spec > `origin/main` (Constitution, decision register, F16, F13) > historic references. A historic statement is never retained merely because code implemented it.
+
+## 1. Root, identity and delivery
+
+| Id | Conflict | Old evidence | New authority | Resolution | Residual |
+|---|---|---|---|---|---|
+| C-01 | Plan root bound to `subscription_id` | `origin/sk-017:specs/017-workout-planner/spec.md:75` (FR-001), `:98` (Key Entities) | Pending F19 `spec.md:24` (F19-FR-002): root carries workspace + client; subscription only via a delivery row | Root = workspace + client. No `subscription_id` on the F17 root. Delivery binding is F19's. | None; F19 pending merge. |
+| C-02 | Paired first-delivery transaction ("both plan ids + expected ready revisions", one pair writer) | `origin/sk-017` FR-001a (`:76`), `debate.md` R1/R2, `plan.md:19` | Pending F19 `spec.md:26` (F19-FR-004): independent deliveries; activation when both kinds have a committed delivery; one atomic transaction | Removed. F17 supplies the workout delivery content only; no pair writer, no paired publish. | None. |
+| C-03 | Durable retry item / outbox for activation | `origin/sk-017:plan.md:19`, `tasks.md` T019 "durable retry" | S42-PO-2 architecture (verbatim `s42-po-1.verbatim.txt:7`): delivery + activation + productivity in one atomic transaction, no outbox/jobs fallback; pending F19 `spec.md:26` | Removed from F17 wording. F17 does not implement any retry queue for activation. | None. |
+| C-04 | Activation state could be "unavailable" and block publish | `origin/sk-017:debate.md` R7 | Pending F19 `spec.md:42` SC-003 + S42-PO-4 MCQ-12 "C: Block publishing" | Publish without a current subscription is simply refused; no undefined activation state is exposed to F17. | None. |
+
+## 2. Exercise content, defaults and snapshots
+
+| Id | Conflict | Old evidence | New authority | Resolution | Residual |
+|---|---|---|---|---|---|
+| C-05 | Each exercise carries editable warm-up/working set counts and defaults | `origin/sk-017:spec.md:83` (FR-005); `docs/04-changes-and-questions.md:89` (S20-13 "warm-up/working sets") | PO A1 lines 27–31 ("Do not invent a default number-of-sets or warm-up/working-set field in F16"); F16 `spec.md:116,154` | F16 keeps its eight fields; F17 copies only the three F16 defaults. Set-row initialization is **F17-MCQ-1**, not a catalog field. | Open MCQ-1. |
+| C-06 | Adding an exercise prefills alternatives (and possibly notes) from the catalog | `docs/04:89` (S20-13 lists "alternatives" among prefilled defaults); `origin/sk-017:spec.md:83` | F16 `spec.md:154` ("Alternatives is a separate one-of-eight library field, not a default"); F16 FR-027 (`:142`) copies only Rest/RIR/Reps | Not retained as a rule. Notes/Alternatives seeding is **F17-MCQ-2**. | Open MCQ-2. |
+| C-07 | Exercise reference includes `variation: {id, version}`; snapshots use `ExerciseSnapshotV1` | `origin/sk-017:spec.md:78` (FR-003), `:86` (FR-008), `plan.md:25` | F16 `spec.md:116` (eight fields), `:141` (F16 FR-026), `:142` (F16 FR-027), `:165` (`ExerciseSnapshotV2`), `:112` (F16 FR-038 pre-F16 data deleted), `:146` (F16 FR-031) | Reference is `{source, identity, version}`; no variation. Snapshot is `ExerciseSnapshotV2`; Video live. | None. |
+| C-08 | Video URL resolved dynamically but old text also allowed snapshot assumptions | `origin/sk-017:spec.md:47,86` | F16 `spec.md:134` (F16 FR-020), `:180` (F16 SC-009), `:182` (F16 SC-011) | Non-video values frozen; Video live on every authorized read/export; never stored in the revision. | None. |
+| C-09 | Picker selects an exercise **and variation** version | `origin/sk-017:spec.md:79` (FR-003a), `tasks.md` T026/T027 | F16 `spec.md:112` (F16 FR-038), `:146` (F16 FR-031), `:141` (F16 FR-026) | Picker selects an exercise identity/version only; no variation. | None. |
+
+## 3. Templates, distribution and governance
+
+| Id | Conflict | Old evidence | New authority | Resolution | Residual |
+|---|---|---|---|---|---|
+| C-10 | Global templates are readable by every workspace via `can_read_global_coaching_content()`; workspace loads them directly | `origin/sk-017:spec.md:84` (FR-006), `:90` (FR-012), `plan.md:29,45` | PO A2 lines 35–42: no automatic distribution; PO-only manual Assign; assigned templates become independent workspace-owned copies | Global templates are not a workspace read surface. A workspace gets copies only by PO assignment. The helper is not an F17 requirement. | None. |
+| C-11 | Global templates are a separate table set with their own read view; no distribution state | `origin/sk-017:spec.md:84`, `plan.md:29` | PO A2 | Adds assignment run ledger + per-workspace distribution state + copy provenance (`data-model.md` §4–5). | None. |
+| C-12 | "Safe Make it Global" from an eligible workspace template | `docs/04:91` (D17-3); `origin/sk-017:spec.md:84` | PO A2 lines 40–41: promote as a **separate copy**, retaining the original; avoid moving private refs | Promotion = new global identity/version; source untouched. Private-reference handling is **F17-MCQ-5**. | Open MCQ-5. |
+| C-13 | PO promoted by mutating/relabelling the workspace template | Historic implementation wording only (no PO authority) | PO A2 "separate copy, retaining the original" | Rejected. Any promote-in-place implementation must be replaced at implementation time. | None (design). |
+| C-14 | Workspace template create/edit requires `coaching_work`; old wording did not distinguish assignment-created copies | `origin/sk-017:spec.md:90` (FR-012) | PO A2 line 40 + FR-020 | Applies equally to assigned copies: they are ordinary workspace templates after creation. | None. |
+| C-15 | `Kendo Templates` read as a naming rule | PO A2 line 40 example | PO wording "e.g." | Treated as illustrative, not an approved label. Any visible naming string needs PO copy approval. | Copy gate. |
+| C-16 | All Workspaces eligibility could be interpreted per-template ("library") | PO A2 line 38 ambiguous noun | PO A2 lines 38–39: skip a workspace that received **any** assignment; distinguish partial from uninitialized | Per-workspace durable flag. Own-templates-only = never assigned (literal reading, spec §8.3). | Zero-copy case MCQ-3; newer version MCQ-4. |
+
+## 4. Publish, exports and performance
+
+| Id | Conflict | Old evidence | New authority | Resolution | Residual |
+|---|---|---|---|---|---|
+| C-17 | Exports = PDF + Excel only | `origin/sk-017:spec.md:89` (FR-011), `:57` (US5) | PO A4 lines 50–55 | Add `Copy Prompt for AI`; PDF/Excel retained; audit and formula-injection protections retained. | Role/text/layout MCQ-6/7/8. |
+| C-18 | Export content list omitted alternatives/video links in the AI context | `origin/sk-017:spec.md:89`; `debate.md` R12 | PO A4 lines 52–54 | Full FR-018 field list in all three options; PDF includes alternatives; video links live-resolved. | Layout MCQ-8. |
+| C-19 | Publish requires submitted intake only | `docs/04:91` (D17-5=A); `origin/sk-017:spec.md:85` (FR-007) | Kept, plus S42-PO-4 MCQ-12 = C for a current subscription (pending F19) | Both gates apply; refusal writes zero revision/delivery. | None. |
+| C-20 | Worker CPU p95 ≤ 8 ms / max < 10 ms, DB p95 ≤ 300 ms, 512 KB cap, 350 MB projection | `origin/sk-017:spec.md:106` (SC-005), FR-014 `:92`, plan `:53` | Section B8 (not a decision): revalidate hardcoded constraints; PO A7 (no production data) | Provisional only (SC-014); no number is a requirement or invented; re-benchmark before use. | Benchmark task T050. |
+| C-21 | F17/F18 migration ranges reserved | `docs/03-roadmap.md:64-65`; `origin/sk-017:plan.md:53` | Pending F19 treats the Plan Core/F17/F18 ranges as obsolete; highest version across refs is higher | No version reserved by this draft; allocate at implementation above the highest ref. | T051. |
+| C-22 | Contributor attribution per published revision | `origin/sk-017:spec.md:80` (FR-004b) | PRD-06 ("other trainer contributions recorded independently"); A6 edit roles | Retained unchanged as FR-027/SC-015. No supersession. | None. |
+
+## 5. Cross-feature collisions
+
+| Id | Collision | Evidence | Resolution |
+|---|---|---|---|
+| X-01 | F16 US6 title says "client viewing a global template", while clients see published plans, not templates | `specs/016-exercise-food-catalogs/spec.md:74` | Cross-feature note (spec §9): F16 US6 is a video-resolution scenario; its wording does not create a client template surface for F17. F16 is untouched by this draft. |
+| X-02 | F16 global-template authoring vs workspace resolution | F16 `spec.md:141` (canonical-only) | Adopted in FR-003; no workspace override or private alternative participates in a global template. |
+| X-03 | F16 defaults are exactly three, while S20-13 and old F17 imply set/alternative prefills | F16 `spec.md:154`; `docs/04:89` | F16 wins for the catalog field set; prefills beyond the three are MCQ-2/MCQ-1. |
+| X-04 | F19 owns copy semantics including sets/reps/RIR/rest/Notes | Pending F19 `spec.md:30` (F19-FR-008) | F17 defines the workout-specific content fields and id remap; it does not redefine ownership/history/delivery copy rules. |
+| X-05 | F19 owns editor roles and "any client plan in the workspace" | Pending F19 `spec.md:31` (F19-FR-009); A6 | FR-020 adopts the same matrix; F17 adds no role and no new capability (`lib/auth/capabilities.ts:22,36,43`). |
+| X-06 | F13 says "Do not create a public/standalone activation writer" and restricts renewal units | `specs/013-freeze-renewal-refunds/spec.md:146` (FR-005), `:154` (FR-013) | Superseded only as recorded by F19 (Override initial-only; renewal no unit). F17 implements neither writer. |
+| X-07 | F13/P4 expiry blocks plan content; F17 exports could be mistaken for an exemption | `specs/013-freeze-renewal-refunds/spec.md:170` (F13 FR-028), `:211` (F13 SC-012) | FR-025: F17 adds no exemption; P4 owns enforcement and the expiry surface. |
+| X-08 | docs/02 architecture says publish snapshots "canonical exercise ids" | `docs/02-architecture.md:88` | Consistent with F16 V2 references; Video remains live. No doc change made by this draft. |
+| X-09 | F18 nutrition templates share the Assign pattern (A5 Q1=A) but are a distinct collection | PO A5 (contextual, source line 59) | F17 tables/types are workout-only; no shared template table with F18. Shared UI patterns are allowed; shared records are not. |
+| X-10 | `can_read_global_coaching_content()` exists only as F16 plan/debate wording, not as a main implementation fact | `specs/016-exercise-food-catalogs/plan.md`, `debate.md` (grep, main) | Not used by F17. FR-020 uses explicit PO/workspace authorization. |
+
+## 6. Historic evidence and process collisions
+
+| Id | Collision | Evidence | Resolution |
+|---|---|---|---|
+| P-01 | Old tasks hard-code personal `OWNER=` labels | `origin/sk-017:tasks.md:5,11-79` | A7: historic owner labels are not authoritative. New tasks use skill/risk tags only; no agent/model names. |
+| P-02 | Old analyze/traceability dated 2026-11-03 and claiming partial verification | `origin/sk-017:traceability.md:1-3`, `checklists/analyze.md` | Not carried. New analyze is dated after this draft's edits and claims no implementation. |
+| P-03 | Old tasks ticked `[x]` for work on a superseded contract | `origin/sk-017:tasks.md` T001, T002, T031-T033, T036, T037, T041, T042 | Ticks are not carried; all new tasks unchecked. Historic code is reference only. |
+| P-04 | Old debate and plan assume a shared Plan Core PR already created | `origin/sk-017:debate.md` R6, `plan.md:19` | F19 is a pending PR, not merged. F17 treats it as a hard dependency and cites it as pending. |
+| P-05 | Old spec says "PO-approved specification; not implemented" | `origin/sk-017:spec.md:4` | Status reset to spec-only draft; PO A1–A4 not previously encoded in F17. |
+
+## 7. Unresolved (must not be silently resolved)
+
+| Id | Question | Where |
+|---|---|---|
+| F17-MCQ-1 | Set-row initialization on add | spec §8.5 |
+| F17-MCQ-2 | Notes/Alternatives seeding on add | spec §8.5 |
+| F17-MCQ-3 | Zero-copy Assign run marking | spec §8.5 |
+| F17-MCQ-4 | Newer global version into an existing workspace copy | spec §8.5 |
+| F17-MCQ-5 | Promotion with workspace-private references | spec §8.5 |
+| F17-MCQ-6 | Who may use Copy Prompt for AI | spec §8.5 |
+| F17-MCQ-7 | Exact prompt text and language | spec §8.5 |
+| F17-MCQ-8 | AR/EN export layout and name rendering | spec §8.5 |
+| F17-MCQ-9 | Definition of "week" for volume | spec §8.5 |
+
+No conflict above is resolved by guessing; each ends in a sourced rule or an MCQ.
