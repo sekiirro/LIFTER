@@ -186,3 +186,7 @@ Enforcement uses the existing merged checks (`app_private.is_platform_owner()`, 
 4. RLS/privilege audit: FORCE RLS, `REVOKE ALL` then grant the minimum, explicit policies per table, and foreign-workspace negatives for each.
 5. Rehearse fresh replay **and** upgrade from the current merged schema before merge.
 6. Verify the F19 revision composite keys exist before adding the F18 FK; if F19 key names differ, adapt only the foreign keys, never the F18 invariants.
+
+## S43-PO-8 revision-scoped selection retention
+
+Retain each published revision's last valid client selection as revision-scoped history suitable for authorized PDF/Excel export. A later selection on a newer revision must not replace the historical revision's selection in an export. **architect mapping (S43-R10).**

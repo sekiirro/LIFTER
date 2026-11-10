@@ -23,7 +23,7 @@ Status legend: `SPECIFIED` = requirement and design are complete and internally 
 | F18-FR-011  | A5 Q2=A, S20-19, S42-PO-3 Q9 (DIRECT)                       | T004, T010                   | `nutrition-api.md` §4, data-model §3 | SPECIFIED                                                                                             |
 | F18-FR-012  | A5 Q2=A, D18-9=A (DIRECT)                                   | T004, T011                   | data-model §2-3                      | SPECIFIED                                                                                             |
 | F18-FR-013  | A5 Q2=A, PRD-05 (DIRECT)                                    | T004, T010, T023             | plan §5, contract §6                 | SPECIFIED (selected primary; per-item coach note; S43-PO-2 for prompt note and totals representation) |
-| F18-FR-014  | PRD-05, D18-6, S20-16 pattern (DIRECT)                      | T005, T023                   | contract §6                          | Current-revision export specified; historical-revision export BLOCKED by S43-F18-MCQ-7                |
+| F18-FR-014  | PRD-05, D18-6, S20-16 pattern (DIRECT)                      | T005, T023                   | contract §6                          | Current-revision export specified; historical-revision export specified by S43-PO-8                   |
 | F18-FR-015  | A5 Q3=A (DIRECT)                                            | T005, T024                   | contract §6, plan §7                 | SPECIFIED prompt body resolved by S43-PO-5                                                            |
 | F18-FR-016  | Constitution VII, retained F18 FR-010a (DIRECT)             | T016                         | contract §7                          | SPECIFIED                                                                                             |
 | F18-FR-017  | Constitution I/III, F16 FR-012/033 (DIRECT)                 | T018                         | data-model §6, contract §2           | SPECIFIED                                                                                             |
@@ -35,19 +35,19 @@ Status legend: `SPECIFIED` = requirement and design are complete and internally 
 
 ## 2. Success criteria → task
 
-| Criterion  | Task(s)                | Evidence expected                                                                  | Status                                                                 |
-| ---------- | ---------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
-| F18-SC-001 | T002, T008, T022, T027 | identical TS/SQL golden run (500 cases)                                            | SPECIFIED                                                              |
-| F18-SC-002 | T018, T019, T027       | full negative/concurrency matrix                                                   | SPECIFIED                                                              |
-| F18-SC-003 | T026                   | multi-plan projection fixture                                                      | SPECIFIED                                                              |
-| F18-SC-004 | T001, T008, T027       | invalid-unit matrix                                                                | SPECIFIED                                                              |
-| F18-SC-005 | T005, T023, T024       | Current AR/EN export goldens + prompt fidelity; historical revision choice pending | Current revision specified; historical export BLOCKED by S43-F18-MCQ-7 |
-| F18-SC-006 | T021                   | recorded envelope + benchmark report                                               | SPECIFIED                                                              |
-| F18-SC-007 | T006, T014             | assignment state-machine fixtures                                                  | SPECIFIED (skip/report all held versions)                              |
-| F18-SC-008 | T004, T010, T011       | selection/carry-forward fixtures                                                   | SPECIFIED                                                              |
-| F18-SC-009 | T012, T015             | template isolation + Make it Global fixtures                                       | SPECIFIED                                                              |
-| F18-SC-010 | T016                   | log-scrub report                                                                   | SPECIFIED                                                              |
-| F18-SC-011 | T002, T025             | display fixtures                                                                   | SPECIFIED (half-up)                                                    |
+| Criterion  | Task(s)                | Evidence expected                                             | Status                                                              |
+| ---------- | ---------------------- | ------------------------------------------------------------- | ------------------------------------------------------------------- |
+| F18-SC-001 | T002, T008, T022, T027 | identical TS/SQL golden run (500 cases)                       | SPECIFIED                                                           |
+| F18-SC-002 | T018, T019, T027       | full negative/concurrency matrix                              | SPECIFIED                                                           |
+| F18-SC-003 | T026                   | multi-plan projection fixture                                 | SPECIFIED                                                           |
+| F18-SC-004 | T001, T008, T027       | invalid-unit matrix                                           | SPECIFIED                                                           |
+| F18-SC-005 | T005, T023, T024       | Current and historical AR/EN export goldens + prompt fidelity | Current revision specified; historical export specified by S43-PO-8 |
+| F18-SC-006 | T021                   | recorded envelope + benchmark report                          | SPECIFIED                                                           |
+| F18-SC-007 | T006, T014             | assignment state-machine fixtures                             | SPECIFIED (skip/report all held versions)                           |
+| F18-SC-008 | T004, T010, T011       | selection/carry-forward fixtures                              | SPECIFIED                                                           |
+| F18-SC-009 | T012, T015             | template isolation + Make it Global fixtures                  | SPECIFIED                                                           |
+| F18-SC-010 | T016                   | log-scrub report                                              | SPECIFIED                                                           |
+| F18-SC-011 | T002, T025             | display fixtures                                              | SPECIFIED (half-up)                                                 |
 
 ## 3. Delegated and excluded
 
@@ -71,8 +71,8 @@ Status legend: `SPECIFIED` = requirement and design are complete and internally 
 
 ## 5. Open decisions attached to traceability
 
-| MCQ                           | Requirements/rows affected                                                   |
-| ----------------------------- | ---------------------------------------------------------------------------- |
-| Resolved S43-MCQ-A (S43-PO-5) | F18-FR-015 P3/P4 byte equality after payload substitution, T024              |
-| Resolved S43-MCQ-B (S43-PO-2) | F18-SC-005; per-item prompt note and client-selection totals, T005/T023/T024 |
-| **BLOCKED S43-F18-MCQ-7**     | **F18-FR-014 / F18-SC-005; T023 historical-revision export behavior**        |
+| MCQ                               | Requirements/rows affected                                                                                            |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
+| Resolved S43-MCQ-A (S43-PO-5)     | F18-FR-015 P3/P4 byte equality after payload substitution, T024                                                       |
+| Resolved S43-MCQ-B (S43-PO-2)     | F18-SC-005; per-item prompt note and client-selection totals, T005/T023/T024                                          |
+| Resolved S43-F18-MCQ-7 (S43-PO-8) | F18-FR-014 / F18-SC-005; T023 exports the last valid selection for the requested historical revision; task unblocked. |

@@ -150,3 +150,7 @@ Hard: F16 merged (food versions, serving units, snapshot transport) — **landed
 ## Open items and blocked work
 
 S43-MCQ-A prompt body EN/AR is resolved by S43-PO-5 and has per-locale byte-equality acceptance. The S43-MCQ-B representation is decided by S43-PO-2 (per-item coach-original note in exports and copied prompt; client-selection totals only).
+
+## S43-PO-8 historical export plan
+
+T023 implements the revision-scoped last-valid-selection export contract and its PDF/Excel goldens. Historical exports read selection history for the requested revision and never substitute the current revision's selection. The task is unblocked and remains unchecked until implementation tests pass. **architect mapping (S43-R10).**

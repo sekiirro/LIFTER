@@ -86,11 +86,11 @@ Enforcement rules:
 plan: { id, workspaceId, clientId (staff only), title, dates }
 revision: { id, revisionNumber, publishedAt }
 content: { document, computedValues }
-selection: { itemId, alternativeId, selectedValues }[]   // current permitted only
+selection: { itemId, alternativeId, selectedValues }[]   // last valid selection for the requested revision
 ```
 
 - Both walls checked before any row is read.
-- `revision_id` MUST be a published revision of the stated plan. For a non-current published revision, the selection projection is PO-DECISION-NEEDED (S43-F18-MCQ-7): A) retain that revision's last valid selection (recommended); B) coach original only; C) explicit authorized export choice. Until answered, historical-revision exports are blocked; no selection behavior is assumed. Current-revision exports use the current permitted selection.
+- `revision_id` MUST be a published revision of the stated plan. For any published revision, the selection projection is the client's last valid selection for that specific revision. A historical export MUST NOT substitute the current revision's selection. (S43-PO-8 source line 5; architect mapping (S43-R10)).
 - PDF/Excel renderers consume the projection; neither re-reads tables.
 - Render the selected value as primary with its recalculated totals; place the labelled coach original beside the affected item. With no selection, render the coach original only. Totals rows contain client-selection totals only; the copied prompt includes the per-item coach-original side note (S43-PO-2; architect mapping (S43-R4)).
 - Excel cells containing coach text are written as text; formula prefixes are never evaluated.
