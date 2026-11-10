@@ -152,6 +152,12 @@ Disclosure: the rename commit message trailers contain literal \n text rather th
 |---|---|---|---|---|
 | FR-023, FR-014 | T043 | `tests/integration/catalog-exercise-t037-contract.test.ts::Video field contract`; `::T043 appends canonical video changes as immutable versions and audits video`; `tests/integration/catalog-exercise-operations.test.ts`; `tests/integration/catalog-video-resolution.test.ts` | Initial RED/GREEN and focused suites are recorded in the S45 T043 lane report. Architect remediation commit (full SHA in `C:/Users/NEW LAP/.lifter/runs/s45-luna-f16-t043d/report.md`): Stack A contract 45 passed / 28 expected failures; operations 3 passed; resolver 5 passed; units 38 passed; typecheck and lint passed. Both required mutations were killed: host-check removal made the Vimeo rejection fail; replacing the current-version read with null made canonical version append fail. Stack A was reset after each mutation and after restoration. | VERIFIED |
 
+## S45 T044 canonical exercise Description
+
+| Requirement | Task | Test | Evidence | Status |
+|---|---|---|---|---|
+| FR-003, FR-023, FR-027 | T044 | `tests/integration/catalog-exercise-t037-contract.test.ts::T044 canonical Description storage and freeze > stores one optional-language Description in each immutable canonical version`; `::rejects a second localized Description field`; `Description field contract` | T044 task commit (this commit); Stack A RED: canonical Description was rejected. GREEN after reset: contract, operations and detail suites passed (62 passed / 25 existing expected failures). Version 1 remains unchanged when version 2 is created, and detail resolves the current version. Mutant accepting `description_en` as a second value failed the negative test. Full lane report: `C:/Users/NEW LAP/.lifter/runs/s45-luna-f16-t090/report.md`. | VERIFIED |
+
 ## S45 T045 workspace-private exercise Video
 
 | FR | Task | Test | Evidence | Status |

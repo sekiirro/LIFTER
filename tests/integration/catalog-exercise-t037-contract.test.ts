@@ -205,7 +205,8 @@ describe.each([
     'T074',
   ],
 ] as const)('%s field contract', (field, key, valid, invalid, task) => {
-  const contractIt = field === 'Name' || task === 'T043' ? it : it.fails;
+  const contractIt = field === 'Name' || field === 'Description' || task === 'T043' ? it : it.fails;
+  const privateContractIt = field === 'Name' || field === 'Description' || task === 'T043' ? it : it.fails;
   contractIt(`${field}: stores an allowed Global value (${task})`, async () => {
     const result = await createGlobal({
       ...core,
@@ -290,7 +291,7 @@ describe.each([
     expect(audit[0]?.changed_fields).toContain('video');
   });
 
-  contractIt(`${field}: stores an allowed private value (T075)`, async () => {
+  privateContractIt(`${field}: stores an allowed private value (T075)`, async () => {
     const result = await createPrivate({
       ...core,
       name_ar: 'تمرين',
@@ -314,6 +315,44 @@ describe.each([
       ).rejects.toBeDefined();
     },
   );
+});
+
+describe('T044 canonical Description storage and freeze', () => {
+  it('stores one optional-language Description in each immutable canonical version (T044)', async () => {
+    const first = 'شرح باللغة العربية فقط';
+    const second = 'Updated English description';
+    const created = await createGlobal({ ...core, name_ar: 'تمرين', description: first });
+    const exerciseId = (
+      created[0]?.catalog_create_exercise as { exercise_id: string }
+    ).exercise_id;
+
+    await asActor(poId, (tx) =>
+      tx`select public.catalog_version_exercise(${exerciseId}, 1, ${randomUUID()}, ${tx.json({ ...core, name_ar: 'تمرين', description: second })})`,
+    );
+
+    const versions = await db`
+      select version, payload ->> 'description' as description
+      from public.exercise_versions where exercise_id = ${exerciseId}
+      order by version
+    `;
+    expect(versions).toEqual([
+      { version: 1, description: first },
+      { version: 2, description: second },
+    ]);
+    const detail = await asActor(poId, (tx) =>
+      tx`select * from public.catalog_exercise_detail(${exerciseId})`,
+    );
+    expect(detail[0]?.payload).toMatchObject({ description: second });
+  });
+
+  it('rejects a second localized Description field (T044)', async () => {
+    await expect(
+      createGlobal({ ...core, name_ar: 'تمرين', description: 'One value', description_en: 'Second value' }),
+    ).rejects.toBeDefined();
+    await expect(
+      createGlobal({ ...core, name_ar: 'تمرين', description: 'One value', description_ar: 'قيمة ثانية' }),
+    ).rejects.toBeDefined();
+  });
 });
 
 describe('T037 contract distinctions', () => {

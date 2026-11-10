@@ -645,3 +645,14 @@ T900 has been marked complete only after its focused integration test passed on 
 - **T052:** all 107 origin refs were scanned after fetch; 7,943 migration-file appearances, maximum `20261110210800`; `20261110213000` is strictly greater and has valid clock fields. Separate `npm run check:migration-versions:remote` passed across 106 refs.
 - **Findings:** none open at CRITICAL or HIGH. No PO decision needed.
 - **Gate:** PASS for T047. Full evidence: `C:/Users/NEW LAP/.lifter/runs/s45-luna-f16-t047c/report.md`.
+
+
+## S45 T044 implementation re-analysis
+
+- Date: 2026-11-10 22:36 UTC, after the T044 task-status and traceability updates.
+- Scope: T044 implementation only; FR-003, FR-023 and FR-027. No spec, plan or task requirement changed.
+- Entry check: PASS. `spec.md` records S37-PO-10's one optional Description value in any language and publication freeze; `plan.md` covers immutable canonical versions; T044 is FR-tagged and follows completed T043. The latest prior full Analyze round is round 13 (2026-11-09 15:47 UTC), with 0 open CRITICAL/HIGH and explicit "No open ambiguities".
+- Implementation: canonical payload validator admits only the singular `description` key; JSON scalar values remain in immutable `exercise_versions.payload`. Existing version selection supplies the current canonical Description; published snapshot integration remains T056.
+- Evidence: Stack A RED then GREEN; `catalog-exercise-t037-contract.test.ts`, `catalog-exercise-operations.test.ts`, and `catalog-exercise-detail.test.ts`: 62 passed, 25 existing expected failures. Mutation accepting `description_en` was killed by the second-value rejection test and then restored. T044 status and FR-to-test evidence are recorded in `tasks.md` and `traceability.md`.
+- Findings: 0 open CRITICAL, 0 open HIGH. No open ambiguities. No PO decision required.
+- Verdict: PASS for T044; T090 remains pending in dependency order.
