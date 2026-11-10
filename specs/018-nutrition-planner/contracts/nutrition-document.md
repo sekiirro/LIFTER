@@ -41,8 +41,8 @@ The document is the value stored in `nutrition_plan_version_contents.document` (
 }
 ```
 
-- `conditional` is derived from the resolved day type's `trainingDay` for `single_day` (a `training_days_only` meal is legal only when the implicit day type is a training day) and evaluated per day for `seven_day`.
-- A `training_days_only` meal in a document with no reachable training day is a **draft warning** and a **hard rejection** at Ready and publish.
+- `conditional` is evaluated against the resolved day type for a `single_day` and independently against each day's type for `seven_day`. A conditional meal is omitted on any day whose type does not satisfy it.
+- For `single_day`, a `training_days_only` meal is reachable only if the implicit day type is a training day. For `seven_day`, it is reachable if at least one day has a training type. The handling of a document containing an unreachable conditional meal at draft, Ready, and publish is blocked pending S44-MCQ-F18-1; see the run report.
 - `recipeUrl` is the D18-6 optional recipe/preparation link. When `null`, neither the link nor its icon is rendered.
 
 ### Item
@@ -52,7 +52,7 @@ The document is the value stored in `nutrition_plan_version_contents.document` (
   "id": "i-1",
   "foodId": "uuid",
   "foodVersion": 3,
-  "quantity": { "value": "37.5", "unit": "g" | "ml" | "<serving unit_key>" },
+  "quantity": { "value": "37.5", "unit": { "kind": "basis", "value": "g" | "ml" } | { "kind": "serving", "unitKey": "<serving unit_key>" } },
   "note": "free text" | null,
   "alternatives": [ /* Alternative, max 3 */ ]
 }
@@ -65,7 +65,10 @@ The document is the value stored in `nutrition_plan_version_contents.document` (
   "id": "a-1",
   "foodId": "uuid",
   "foodVersion": 2,
-  "quantity": { "value": "1.5", "unit": "<serving unit_key>" }
+  "quantity": {
+    "value": "1.5",
+    "unit": { "kind": "serving", "unitKey": "<serving unit_key>" }
+  }
 }
 ```
 
@@ -76,10 +79,10 @@ The document is the value stored in `nutrition_plan_version_contents.document` (
 ## 2. Invariants (validator must reject on violation)
 
 1. `single_day` ⇒ exactly one implicit day, no `days` array, `implicitDayTypeId` present and resolvable; `seven_day` ⇒ `days` has exactly indexes 0–6, each once, every `dayTypeId` resolvable, `implicitDayTypeId` absent.
-2. Every document, day-type, meal, item and alternative id is unique within its scope; every referenced id resolves; every meal is reachable by at least one day.
+2. Every document, day-type, meal, item and alternative id is unique within its scope; every referenced id resolves; every meal is associated with its document day or days. Conditional meals are included only on days whose resolved type satisfies the condition; validation of a conditional meal with no matching day is blocked pending S44-MCQ-F18-1.
 3. Every item/alternative references one exact `(foodId, foodVersion)`; no alias or "latest" reference is stored.
 4. `quantity.value` is a positive decimal string with ≤ 3 decimal places; no exponent, no locale separators, no Arabic-Indic digits in the stored value (input normalization happens in the UI before storage).
-5. `unit` is the food version's basis (`g`/`ml`) or one of its declared serving unit keys; a cross-basis unit is rejected (`F18-FR-004`).
+5. `unit.kind` disambiguates a basis unit (`{kind: "basis", value: "g"|"ml"}`) from a declared catalog serving (`{kind: "serving", unitKey}`). A catalog key may itself be `g` or `ml`, including when it matches the food basis; tagged references keep the two meanings distinct. A basis must match the food version basis and a serving key must resolve to that exact version's declared serving row; cross-basis or undeclared units are rejected (`F18-FR-004`).
 6. Targets, when present, are non-negative decimal strings with ≤ 3 decimals; `targets: null` is valid (D18-2=A) and totals are still computed.
 7. `recipeUrl`, when present, is an absolute HTTPS URL on YouTube or Google Drive (D18-6). No other host, no credentials in the URL. The exact host allowlist lives in the implementation validator and is contract-tested for both allowed and rejected hosts.
 8. No unknown keys are accepted (strict parse); unknown keys fail the save/publish.
@@ -111,25 +114,30 @@ Rules:
 
 ```json
 {
-  "food:<food_id>@<version>#<unit_key>": {
-    "foodId": "…", "version": 3,
-    "names": { "ar": "…", "en": "…" },
-    "basis": "g" | "ml",
-    "productIdentity": "…", "preparationIdentity": "…", "weighingState": "raw|cooked|not_applicable",
-    "kcal": "…", "protein": "…", "carbs": "…", "fat": "…", "fiber": "…|null",
-    "serving": { "servingId": "<unit_key>", "labels": { "ar": "…", "en": "…" }, "basisQuantity": "…" }
+  "food:<food_id>@<version>#basis:<basis_unit>": { "kind": "basis", "foodId": "...", "version": 3, "names": { "ar": "...", "en": "..." }, "basis": "g" | "ml", "productIdentity": "...", "preparationIdentity": "...", "weighingState": "raw|cooked|not_applicable", "per100": { "kcal": "...", "protein": "...", "carbs": "...", "fat": "...", "fiber": "...|null" } },
+  "food:<food_id>@<version>#serving:<serving_id>": {
+    "kind": "serving",
+    "unitKey": "<catalog unit_key>",
+    "snapshot": {
+      "foodId": "…", "version": 3,
+      "names": { "ar": "…", "en": "…" },
+      "basis": "g" | "ml",
+      "productIdentity": "…", "preparationIdentity": "…", "weighingState": "raw|cooked|not_applicable",
+      "kcal": "…", "protein": "…", "carbs": "…", "fat": "…", "fiber": "…|null",
+      "serving": { "servingId": "<real F16 serving row id>", "labels": { "ar": "…", "en": "…" }, "basisQuantity": "…" }
+    }
   }
 }
 ```
 
-- One entry per **distinct (food version, serving unit)** referenced by items and alternatives. This is required because `FoodSnapshotV1` freezes exactly one serving equivalent (`lib/catalog/snapshot.ts:15-37,164-242`).
-- For a basis quantity (`g`/`ml`), `serving.basisQuantity` is `"1"` and `servingId` is the basis token; the item's quantity is already in basis units. The basis token is an F18 transport key, **not** an F16 serving row id; validators must not resolve it against `food_serving_units`.
+- One entry per distinct `(food version, unit kind, unit identity)` referenced by items and alternatives. The `basis:` and `serving:` key namespaces cannot collide, even when an F16 catalog `unit_key` is `g` or `ml` and matches the food basis.
+- A `basis` entry stores frozen food display data and per-100 values but no catalog serving. A `serving` entry carries its exact catalog `unitKey` and wraps the exact F16 `FoodSnapshotV1` for that serving row, including its real `servingId`, labels and `basisQuantity`; F18 never fabricates a basis token as an F16 serving id. Preserve existing F16 keys `g` and `ml` as catalog-serving references when tagged `kind: "serving"`.
 - Values are serialized from the exact F16 columns at their fixed scale (kcal 1 dp, macros 2 dp, basis quantity 3 dp), with no floating-point round-trip.
 - Only the database publish path writes this map. A caller-supplied map is ignored (`F18-FR-005`).
 
 ## 5. Validator/fixture obligations
 
 - One fixture set with accept/reject pairs for every invariant above, run by the application validator and the SQL/RPC validator; both must produce the same accept/reject decision and the same field code.
-- Boundary fixtures: 0.001 g, 9999.999 quantity, three alternatives vs four, a food with one serving vs several, `g` food with an `ml` request, `training_days_only` with/without a training day, missing `implicitDayTypeId`, duplicate `dayIndex`, duplicate ids, unknown key, non-HTTPS or wrong-host recipe URL.
-- Golden computed-value fixtures: repeating fractions (1/3), 4-decimal carry (`…5` at the 5th decimal), values below/above 10 g for display, zero-valued foods, aggregates that differ from the sum of rounded items.
+- Boundary fixtures: 0.001 basis g, 9999.999 quantity, three alternatives vs four, a food with one serving vs several, `g` food with an `ml` basis request, `g` and `ml` catalog keys (including a key matching the food basis), a serving with `basis_qty = 100`, `training_days_only` with/without a matching training day (validation outcome pending S44-MCQ-F18-1), missing `implicitDayTypeId`, duplicate `dayIndex`, duplicate ids, unknown key, non-HTTPS or wrong-host recipe URL.
+- Golden computed-value fixtures: finite-decimal precision/carry boundaries, values below/above 10 g for display, zero-valued foods, aggregates that differ from the sum of rounded items. Inputs are finite decimals and the algorithm divides only by 100, so a repeating-fraction output such as 1/3 is not a realizable fixture.
 - The fixtures are frozen per `schemaVersion`/`algorithmVersion`; a new version adds fixtures and never edits the old expectation set.

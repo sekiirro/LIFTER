@@ -49,13 +49,13 @@ Empty set after resolution ⇒ `invalid_selection`, no batch. Retired templates 
 
 - `All Workspaces` never tops up a partial workspace: a workspace with any prior nutrition assignment is skipped entirely, even if it is missing other templates.
 - `All Workspaces` affects only workspaces existing at the operation time.
-- `Specific Workspaces` fills only missing selected templates and never overwrites customization; the any held source version is skipped and reported per S43-PO-1.
+- `Specific Workspaces` fills only missing selected templates and never overwrites customization; any retained copy, including a retired copy, is skipped and reported per S43-PO-1.
 - A workspace that created its own templates but never received a nutrition assignment remains uninitialized.
 - A workspace may hold at most one copy of a global template identity: `UNIQUE (workspace_id, origin_global_template_id)`.
 - If a template is retired between set resolution and copy creation, the batch re-reads status under lock and records `skipped_ineligible`; it is never copied. If a concurrent batch already created the same copy, the later transaction re-reads and records `skipped_existing` instead of failing.
-- If the workspace set is empty, or all selected template/workspace pairs would be skipped/ineligible so no copies would be made, reject the Assign before batch/state writes (S42-PO-8; architect mapping (S42 matrix): SH-3).
+- After current authorization, check the operation key and canonical request hash before resolving live targets or applying the new-operation zero-copy check. A matching replay returns the original batch id and items even when current resolution would now produce zero copies; a changed payload with the same key is `key_conflict`.
+- For a new operation key, if the workspace set is empty or all selected template/workspace pairs would be skipped/ineligible so no copies would be made, reject the Assign before batch/state writes (S42-PO-8; architect mapping (S42 matrix): SH-3).
 - A batch either fully commits or writes nothing.
-- Replaying the same operation key returns the same batch id and items; a changed payload with the same key is `key_conflict`.
 - The batch and its items are immutable; there is no "undo" surface. Removing a copy is a normal workspace template retire.
 
 ### Decided re-assignment behavior
@@ -65,14 +65,14 @@ Any existing copy of a targeted global template identity is skipped regardless o
 ## 5. Tests (minimum)
 
 1. All × All: uninitialized workspaces receive exactly one copy each; initialized (complete and partial) are skipped; a later-created workspace receives nothing on rerun.
-2. Specific × Specific: fills only missing templates; a same-version existing copy is `skipped_existing`; customization bytes are unchanged; any held source version is skipped and reported.
+2. Specific × Specific: fills only missing templates; any retained existing copy, active or retired and regardless of source version, is `skipped_existing`; customization bytes are unchanged and the skipped pair is reported.
 3. All Except: excluded templates are absent; the rest are assigned.
 4. Retired template rejected from `specific`/`excludeIds`; not offered by All.
 5. Retry with the same key ⇒ identical batch; different payload ⇒ `key_conflict`.
-6. Concurrent Assign operations serialize; no duplicate copy for one (workspace, template).
+6. Concurrent Assign operations serialize; no duplicate copy for one (workspace, template), including when a retained copy is retired.
 7. Workspace isolation: workspace B cannot list/load/count/infer A's copies; non-PO cannot read the global library.
 8. Make it Global: eligible version ⇒ separate global identity; ineligible ⇒ refused with codes and no row; original unchanged.
 9. Nutrition vs workout independence: a workspace initialized for workouts is still uninitialized for nutrition, and vice versa.
 10. Foreign-workspace negative on every template read/write/load path.
 11. Retire between resolution and copy ⇒ `skipped_ineligible`, no copy; concurrent batch on the same target ⇒ one `assigned`, one `skipped_existing`, no error.
-12. A zero-workspace or zero-copy Assign ⇒ rejected before writes.
+12. A new zero-workspace or zero-copy Assign is rejected before writes; replaying a previously committed request with the same key and hash returns its original batch before live zero-copy validation.

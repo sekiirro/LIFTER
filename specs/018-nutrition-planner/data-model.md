@@ -27,15 +27,15 @@ nutrition_workspace_templates -> nutrition_workspace_template_versions     [F18,
 
 ### `nutrition_plan_version_contents`
 
-| Column                                   | Contract                                                                                                                                                                                                                                                                                                                                     |
-| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `workspace_id`, `plan_id`, `revision_id` | Tenant + F19 plan root + F19 immutable revision. Composite FK `(workspace_id, plan_id, revision_id) -> plan_revisions(workspace_id, plan_id, id)` with `ON DELETE RESTRICT`. `UNIQUE (workspace_id, revision_id)`.                                                                                                                           |
-| `schema_version`                         | Frozen document schema version (integer). Selects the validator/renderer/export/algorithm version. Never reinterpreted.                                                                                                                                                                                                                      |
-| `algorithm_version`                      | Macro-algorithm version used for the stored values. Immutable per row.                                                                                                                                                                                                                                                                       |
-| `document`                               | The immutable nutrition document v1 (see `contracts/nutrition-document.md`). No client selection, no computed totals authored by the caller.                                                                                                                                                                                                 |
-| `snapshot_map`                           | `{ [snapshotKey]: FoodSnapshotV1 }`, built by the database at publish from exact F16 food versions. `snapshotKey = food:<food_id>@<version>#<unit_key>`, where `unit_key` is `g`/`ml` for a basis quantity or the declared serving `unit_key`. One entry per distinct (food version, serving unit) referenced by items **and** alternatives. |
-| `computed_values`                        | Exact-arithmetic results stored once: per-item values, per-meal totals, per-day totals, document totals, each as an exact decimal string at a scale sufficient for the exact product of declared input scales. No storage rounding is performed. Derived from exact intermediates, never from already-rounded item values.                   |
-| `created_at`, `created_by`               | Server time and acting staff id from the publish transaction (audit reference, not client-visible).                                                                                                                                                                                                                                          |
+| Column                                   | Contract                                                                                                                                                                                                                                                                                                                                                                                      |
+| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `workspace_id`, `plan_id`, `revision_id` | Tenant + F19 plan root + F19 immutable revision. Composite FK `(workspace_id, plan_id, revision_id) -> plan_revisions(workspace_id, plan_id, id)` with `ON DELETE RESTRICT`. `UNIQUE (workspace_id, revision_id)`.                                                                                                                                                                            |
+| `schema_version`                         | Frozen document schema version (integer). Selects the validator/renderer/export/algorithm version. Never reinterpreted.                                                                                                                                                                                                                                                                       |
+| `algorithm_version`                      | Macro-algorithm version used for the stored values. Immutable per row.                                                                                                                                                                                                                                                                                                                        |
+| `document`                               | The immutable nutrition document v1 (see `contracts/nutrition-document.md`). No client selection, no computed totals authored by the caller.                                                                                                                                                                                                                                                  |
+| `snapshot_map`                           | `{ [snapshotKey]: NutritionSnapshotEntry }`, built by the database at publish from exact F16 food versions. Keys use `#basis:<unit>` or `#serving:<serving_id>`; one entry per distinct (food version, unit kind, unit identity) referenced by items **and** alternatives. Basis entries store per-100 data; serving entries wrap the exact F16 `FoodSnapshotV1` and its real serving-row id. |
+| `computed_values`                        | Exact-arithmetic results stored once: per-item values, per-meal totals, per-day totals, document totals, each as an exact decimal string at a scale sufficient for the exact product of declared input scales. No storage rounding is performed. Derived from exact intermediates, never from already-rounded item values.                                                                    |
+| `created_at`, `created_by`               | Server time and acting staff id from the publish transaction (audit reference, not client-visible).                                                                                                                                                                                                                                                                                           |
 
 Rules:
 
@@ -62,17 +62,19 @@ Transport is decimal strings, including inside `FoodSnapshotV1` (`specs/016-exer
 
 ```text
 basisQuantity =
-    quantityValue                                   if unit is the food's basis (g or ml)
-    quantityValue * serving.basis_qty               if unit is a declared serving unit
+    quantityValue                                   if unit.kind = basis and unit.value matches food.basis
+    quantityValue * serving.basis_qty               if unit.kind = serving and unitKey resolves on the exact food version
 itemValue(field) = per100(field) * basisQuantity / 100
 exactValue       = exactDecimalProduct(per100(field), basisQuantity) / 100
 mealTotal(field) = sum(exact itemValue(field))
-dayTotal(field)  = sum(exact itemValue(field) of its meal items)
-documentTotal    = sum(exact itemValue(field))
+dayTotal(field)  = sum(exact itemValue(field) only for items in meals active on that day)
+documentTotal    = sum(dayTotal(field) across the document's day instances)
 ```
 
+For a seven-day document, apply each meal's condition to that day's resolved day type before adding its items to the day total. For `single_day`, evaluate against its implicit day type. The policy for rejecting a conditional meal that matches no day is blocked pending S44-MCQ-F18-1; this does not change per-day omission.
+
 - Persist exact computed decimal values without storage rounding. The persisted decimal scale must be large enough to represent the exact product of the declared input scales. No intermediate rounding occurs anywhere; aggregates are computed from exact item values, never rounded stored/display values.
-- A quantity for an undeclared unit or a cross-basis unit is rejected (F18-FR-004).
+- A quantity for an undeclared serving key or a basis reference that does not match the food basis is rejected (F18-FR-004). The tagged kind distinguishes basis `g` from a catalog serving whose key is also `g`.
 - Display is a pure function of the exact persisted decimal string: calories integer; protein/carbohydrate/fat one decimal below 10 g and integer at or above 10 g (D18-4=C + S27-PO-2). A below-threshold value that rounds to 10.0 renders `10`; zero renders `0` (S27 evidence). Round half-up exactly once for the requested display precision; display never writes back. For example, exact `1.44996` displays as `1.4` at one decimal, without first rounding to four decimals. This is a technical settlement (architect ruling S43-R9, accepting Sol-1), separate from PO wording.
 - Worked non-tie examples: protein 12.34 per 100 g at 37 g → exact `4.5658`, stored `4.5658`, displayed `4.6`; fat 12.34 per 100 g at 37 g → displayed `4.6`; a `1.5` serving of a 30 g serving → basis `45.000` g.
 - Values that do not fit the exact persistence precision reject the whole publish. The prior `numeric(12,4)` storage proposal is superseded by this exact-persistence rule (architect ruling S43-R9, Sol-1).
@@ -93,15 +95,23 @@ The selection stores ids only (`item_id`, `alternative_id`). Client-visible sele
 | `client_id`                              | Plan's client; self only, derived from `auth.uid()`.                                                                                                                                                                      |
 | `item_id`                                | Stable document item id.                                                                                                                                                                                                  |
 | `alternative_id`                         | Coach-approved alternative id in that item, in that revision.                                                                                                                                                             |
-| `selection_revision`                     | Monotonic integer per row for client-side compare/retry; not a domain version.                                                                                                                                            |
 | `created_at`, `updated_at`, `created_by` | Server time; `created_by` must equal the authenticated client.                                                                                                                                                            |
 
 - `UNIQUE (workspace_id, plan_version_id, item_id)` → at most one active selection per item per revision.
-- No row = coach default. **Clear deletes the row** and appends one audit event; deletion is not a "hidden null".
+- No row = coach default. **Clear deletes the row** and appends one audit event; deletion is not a "hidden null". The durable per-revision counter below survives the deletion.
 - Only the selection RPC writes. Direct DML is revoked from every role, including `service_role`.
 - A row is only valid if `alternative_id` still exists in that item of `plan_version_id`; because the revision is immutable, validity is decidable without a join to mutable data.
-- Rows for earlier revisions are retained as history but are not exposed by the client projection (which shows the latest revision); they never affect a newer revision.
+- Rows for earlier revisions are retained as history but are not exposed by the client's latest-revision projection; an authorized staff export may read that revision's last valid selection through the requested-revision projection. They never affect a newer revision.
 - When a plan or client is deleted: no cascade deletes a revision, template, selection or audit history; plan roots use F19 `ON DELETE RESTRICT` (F19-FR-012). Selections have no independent deletion surface in F18, and trainer deletion is F19/F11's (author references retain the non-login account id per `F19-MCQ-13`).
+
+### `client_nutrition_selection_revision_counters`
+
+| Column                            | Contract                                                                                                                 |
+| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `workspace_id`, `plan_version_id` | Composite key and FK to the immutable plan revision; one counter covers the full selection projection for that revision. |
+| `selection_revision`              | Monotonic integer, default 0; increment exactly once for every real selection change for any item in the revision.       |
+
+The counter row is upserted with the first real selection change and retained even after all selection rows are cleared. A no-op select or clear does not create/increment it. It is never reset or deleted while the revision is retained. Only the selection RPC writes it; direct DML is revoked and RLS follows the selection table's tenant boundary. Projection caches key on `(authenticated client, plan id, revision id, selection_revision)`; an absent counter reads as 0. This prevents a clear followed by a later selection from reusing a cache key.
 
 ### Selection state machine
 
@@ -152,7 +162,7 @@ For the **nutrition** collection only:
 
 - **Uninitialized** = no `nutrition_template_assignment_items` row with `outcome='assigned'` for that workspace, ever.
 - **Initialized (partial or complete)** = at least one such row. Partial assignment is a normal, intentional state; nothing tops it up.
-- **Already holds global template T** = an active workspace template with `origin_global_template_id = T`, regardless of `origin_global_template_version` (used for `skipped_existing`). Every skipped workspace/template pair is included in the PO report.
+- **Already holds global template T** = any retained workspace template, active or retired, with `origin_global_template_id = T`, regardless of `origin_global_template_version` (used for `skipped_existing`). Every skipped workspace/template pair is included in the PO report.
 
 `All Workspaces` selects workspaces that are uninitialized at operation time and exist at operation time. `Specific Workspaces` targets exactly the chosen workspaces and skips/reports every template identity they already hold, regardless of source version. Reject the Assign before writes if no copies would be created. A workspace with its own hand-made nutrition templates but no assignment item is still uninitialized (A5 Q1=A + A2: only an assignment initializes).
 
@@ -172,9 +182,9 @@ Enforcement uses the existing merged checks (`app_private.is_platform_owner()`, 
 ## 7. Integrity, locking, retention
 
 - Composite tenant FKs on every tenant-owned table; `ON DELETE RESTRICT` on every plan/revision/template/selection reference. No cascade deletes content history. Platform-scope global tables and assignment batches have no `workspace_id` and no tenant FK by design.
-- Lock order follows the pending F19 contract (level-2 authority): client → subscription (publish only) → plan root → draft/revision rows → selection rows → operation ledger. Template batch: PO/batch creation lock → global template identities in sorted UUID order → per-workspace copy creation in sorted workspace id order → operation ledger. The idempotency lookup happens after the target locks and before the authorization recheck that precedes any write or replay disclosure.
+- Lock order follows the pending F19 contract (level-2 authority): client → subscription (publish only) → plan root → draft/revision rows → selection rows → operation ledger. For template batches, after current PO authorization, take the batch-creation lock and check the operation key/hash before resolving live global targets or workspaces; on a replay, recheck authorization before disclosure. For a new key, resolve targets, then lock global template identities in sorted UUID order and workspace copies in sorted workspace-id order before writing the batch and operation receipt.
 - Assignment batch creation and per-target copy creation share one transaction; a failure writes no partial batch (no partial distribution).
-- Selecting while publishing: the publish holds the plan-root lock while it reads selections and carries them forward; a racing selection against the old revision fails `stale_version` and writes nothing.
+- Selecting while publishing: the publish holds the plan-root lock while it reads selections and carries them forward; a racing selection against the old revision fails `stale_version`, leaves selection/domain state unchanged and records the required denial audit.
 - Retention: revisions, template versions, assignment batches/items, selections (historically) and audit events are not deleted by F18. Client/plan deletion follows F19/F11; nutrition rows restrict instead of cascading.
 - No `security definer` function is introduced without: explicit `search_path`, `EXECUTE` revoked from `public`/`anon`/`authenticated`/`service_role` except the intended role, authorization before any read, and a mutation/negative test.
 

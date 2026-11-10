@@ -100,12 +100,16 @@
 | RESOLVED-BY-PO             |      3 | C-01, C-02, C-09 |
 | RESOLVED-DESIGN / INFERRED |      3 | C-03, C-04, C-05 |
 | VERIFIED                   |      2 | C-13, C-17       |
-| OPEN-MCQ                   |      0 | none             |
+| OPEN-MCQ                   |      1 | S44-MCQ-F18-1    |
 | OPEN-TECH                  |      3 | C-06, C-10, C-11 |
 | REGISTER GAP               |      2 | C-08, C-15       |
 | HISTORIC                   |      3 | C-12, C-14, C-16 |
-| **Total**                  | **17** |                  |
+| **Total**                  | **18** |                  |
 
 ## S43 reconciliation (2026-11-10)
 
-F18-MCQ-1..6 are resolved per S42-PO-8/S43-PO-1. S43-MCQ-A is resolved by S43-PO-5; exact prompt bytes are in contracts/copy-ai-prompt.md. S43-MCQ-B is resolved by S43-PO-2: per-item note in exports and copied prompt; client-selection totals only. No additional product conflict was found in this register; open technical items C-10/C-11 remain technical reconciliation, not product decisions.
+F18-MCQ-1..6 are resolved per S42-PO-8/S43-PO-1. S43-MCQ-A is resolved by S43-PO-5; exact prompt bytes are in contracts/copy-ai-prompt.md. S43-MCQ-B is resolved by S43-PO-2: per-item note in exports and copied prompt; client-selection totals only. The S43 review found no additional product conflict at that time; open technical items C-10/C-11 remain technical reconciliation, not product decisions.
+
+## S44 review reconciliation (2026-11-10)
+
+S44-MCQ-F18-1 is the sole open product decision raised by the #79 review. Existing text disagreed on whether a training-only meal that matches no day blocks Ready/publish. Per-day omission and condition-aware totals are specified; only the validator outcome for an unreachable conditional meal is blocked. Options, implications, recommendation and blocked scope are recorded in the run report at `C:/Users/NEW LAP/.lifter/runs/s44-luna-fix79/report.md`. All other #79 findings were confirmed as technical or already decided by the cited PO records.

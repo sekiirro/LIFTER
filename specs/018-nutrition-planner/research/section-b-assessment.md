@@ -9,10 +9,10 @@
 **Assessment**:
 
 - The suggested third state (c) is already covered by (a) under the PO wording: A2 (`:40`) says a workspace starts with nothing distributed, and only an assignment delivers templates. A workspace that authored its own templates has still "never received a global-template assignment". Making (c) a separate state would create a fourth behaviour with no PO source.
-- The minimal durable state is therefore two derived facts, not a stored enum: `has any successful assignment item for the nutrition collection` (initialized) and `holds a copy originating from global template T` (skip on Specific). Both are derivable from the immutable batch items; a separate state table would have to be kept consistent with them and could contradict them after a failed batch.
+- The minimal durable state is therefore two derived facts, not a stored enum: `has any successful assignment item for the nutrition collection` (initialized) and `has any retained copy originating from global template T` (skip on Specific, including a retired copy). Initialization is derivable from immutable batch items; copy identity is derived from the workspace template's origin metadata. A separate state table would have to be kept consistent with them and could contradict them after a failed batch.
 - "Previously distributed individual templates" and "exclusions" are handled by the per-target outcome (`skipped_existing`, `assigned`, `skipped_ineligible`) and by the template set modes (`all`, `specific`, `all_except`).
 - "Version changes" is the one genuine gap. A2/Q1=A say re-assignment never duplicates or overwrites, but not what to do with a newer global version. S43-PO-1 later resolves this: skip and report any held copy regardless of source version.
-- "Retries without duplication" is solved by the shared operation-key ledger plus the unique `(workspace_id, origin_global_template_id, origin_global_template_version)` constraint.
+- "Retries without duplication" is solved by the shared operation-key ledger plus the unique `(workspace_id, origin_global_template_id)` constraint, independent of source version and status. Retired copies remain retained and count as already held.
 
 **Verdict**: ACCEPT-WITH-CHANGES. Adopt (a)/(b) as derived state; reject (c) as a separate state; escalate the newer-version axis.
 

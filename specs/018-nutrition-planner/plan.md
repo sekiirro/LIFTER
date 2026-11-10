@@ -1,7 +1,7 @@
 # Implementation Plan: F18 Nutrition Templates & Nutrition Planner
 
 **Spec**: [spec.md](spec.md) · **Design detail**: [data-model.md](data-model.md) · **Contracts**: [contracts/](contracts/)
-**Status**: S43 updated spec-only draft. No code, migration, UI, test or workflow change is part of this plan's delivery. Implementation entry remains blocked by S43-PO-5 approved prompt copy for prompt body copy and by the pending F19 contract.
+**Status**: S43 updated spec-only draft. No code, migration, UI, test or workflow change is part of this plan's delivery. Prompt copy is approved byte-exact by S43-PO-5 (architect mapping S43-R6); implementation entry remains blocked by the pending F19 contract.
 
 ## Summary
 
@@ -40,11 +40,11 @@ F18 adds no plan/draft/revision/delivery/activation table. A nutrition plan root
 
 ### 2. Document schema v1
 
-Implemented as a frozen, versioned schema module with one fixture set shared by the app validator, the RPC validator and the renderer. `single_day` has an always-required `implicitDayTypeId`; `seven_day` covers dayIndex 0–6 exactly once. Ids are unique within the document; duplicated content remaps its own and descendant ids. Quantities/targets are decimal strings. The optional recipe/preparation link is an HTTPS URL on YouTube or Google Drive only (D18-6); the F16 exercise-video host rule (D16-3/FR-014) does not govern nutrition recipe links, and no `docs.google.com` exception is invented beyond the approved "Google Drive" wording. Contract: `contracts/nutrition-document.md`.
+Implemented as a frozen, versioned schema module with one fixture set shared by the app validator, the RPC validator and the renderer. `single_day` has an always-required `implicitDayTypeId`; `seven_day` covers dayIndex 0–6 exactly once. Ids are unique within the document; duplicated content remaps its own and descendant ids. Quantities/targets are decimal strings; quantity units use a tagged basis-or-serving reference so catalog keys `g` and `ml` remain distinct from basis units. Conditional meals are evaluated per day and excluded from non-matching days and their totals; behavior when no day matches is blocked pending S44-MCQ-F18-1. The optional recipe/preparation link is an HTTPS URL on YouTube or Google Drive only (D18-6); the F16 exercise-video host rule (D16-3/FR-014) does not govern nutrition recipe links, and no `docs.google.com` exception is invented beyond the approved "Google Drive" wording. Contract: `contracts/nutrition-document.md`.
 
 ### 3. Canonical algorithm and total derivation
 
-One TypeScript implementation (BigInt coefficient/scale on decimal strings) and one SQL implementation (`numeric`, no intermediate rounding) run the same golden fixture set, including repeating fractions, precision boundaries, alternatives and selected-alternative totals. Inputs use the live F16 scales; stored results preserve the exact computed decimal at a scale sufficient for the declared input scales; storage does not round. Display applies half-up once from the exact value and never changes stored values. Aggregates come from full-precision exact values. Display is a pure string function (calories integer; macro < 10 g one decimal, ≥ 10 g integer). Display and canonicalization use half-up rounding (S43-PO-1; architect mapping (S43-R1)).
+One TypeScript implementation (BigInt coefficient/scale on decimal strings) and one SQL implementation (`numeric`, no intermediate rounding) run the same golden fixture set, including finite-decimal precision boundaries, alternatives, selected-alternative totals, and conditional meals excluded from inactive-day totals. Apply each meal's condition before summing item values into a day total; document totals sum the day totals. Inputs use the live F16 scales; stored results preserve the exact computed decimal at a scale sufficient for the declared input scales; storage does not round. Display applies half-up once from the exact value and never changes stored values. Aggregates come from full-precision exact values. Display is a pure string function (calories integer; macro < 10 g one decimal, ≥ 10 g integer). Display and canonicalization use half-up rounding (S43-PO-1; architect mapping (S43-R1)). Since the supported finite-decimal inputs are multiplied and divided only by 100, repeating-fraction outputs are not realizable fixtures.
 
 ### 4. Publish path
 
@@ -53,17 +53,17 @@ One TypeScript implementation (BigInt coefficient/scale on decimal strings) and 
 1. authorize (two walls) → resolve the current subscription per F19 (no current subscription ⇒ refused before any nutrition work);
 2. take the F19 lock order → lock draft → idempotency lookup → re-read expected revision → recheck authorization and lifecycle;
 3. parse the document with the frozen validator;
-4. load every referenced exact food version (items + alternatives), build the per-(version, serving unit) snapshot map, recompute all values in SQL;
+4. load every referenced exact food version (items + alternatives), build the per-(version, unit kind, unit identity) snapshot map, recompute all values in SQL;
 5. insert the F19 revision + the F18 content row atomically;
 6. carry forward valid selections by stable item/alternative id;
 7. write one publish audit event; the F19 delivery/activation/productivity writes happen in the same transaction, not here.
 
-Caller-supplied snapshots/totals are ignored. Unchanged re-publish returns the existing revision without a new content row. A missing referenced food version fails the publish with no revision.
+Caller-supplied snapshots/totals are ignored. Replaying the same operation key with the same canonical request returns its original receipt; each new authorized Ready & Publish operation appends a new revision and delivery, even when content is unchanged. A missing referenced food version fails the publish with no revision.
 
 ### 5. Client selection
 
 `select_nutrition_alternative(plan_version_id, item_id, alternative_id | null, operation_key)`:
-authorize the authenticated client for their own plan and current subscription; lock the plan root; lock/read the selection row; idempotency lookup; re-read the current published revision; verify the item and alternative exist in that immutable revision; upsert/delete; bump `selection_revision`; one audit event; generic failures.
+authorize the authenticated client for their own plan and current subscription; lock the plan root; lock/read the selection row and per-revision counter; idempotency lookup; re-read the current published revision; verify the item and alternative exist in that immutable revision; upsert/delete and increment the durable per-revision counter only on a real change; one success audit event; generic failures with the required denial audit and no domain-state change.
 
 Client-visible values are derived on read from the revision's snapshot map and the alternative's coach-specified portion. No stored selected totals. See `contracts/nutrition-api.md`.
 
@@ -71,7 +71,7 @@ Client-visible values are derived on read from the revision's snapshot map and t
 
 - Global: platform-scope identities + immutable versions, PO-only writes and reads.
 - Workspace: tenant-scope identities + immutable versions with `origin_global_template_id/version`, branded `display_name`, `coaching_work` RLS, PO cross-workspace rights.
-- Assign: one transaction, one operation key, PO-only. Step 1 mode (all/specific/all_except), Step 2 mode (all/specific). `All Workspaces` evaluates **nutrition-only** initialization at operation time; `Specific Workspaces` skips and reports any template identity the workspace already holds regardless of source version. A zero-copy Assign is rejected before writes. Per target, create one independent workspace copy only for missing identities; never update, overwrite or top up. Contract: `contracts/template-assignment.md`.
+- Assign: one transaction, one operation key, PO-only. Step 1 mode (all/specific/all_except), Step 2 mode (all/specific). Check an authorized key/hash replay before resolving live targets or applying zero-copy validation; a new zero-copy operation is rejected before writes. `All Workspaces` evaluates **nutrition-only** initialization at operation time; `Specific Workspaces` skips and reports any retained copy, active or retired, of a template identity regardless of source version. Per target, create one independent workspace copy only for missing identities; never update, overwrite or top up. Contract: `contracts/template-assignment.md`.
 - Make it Global: PO-only; validate the source for client data/private references; refuse with field codes; on success create a separate global identity + version.
 - Load: creation-time/empty-draft only; copy one explicit immutable template version into the private draft; deep copy, new ids; no live link; a destructive load into existing content is refused.
 
