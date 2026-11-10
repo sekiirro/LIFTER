@@ -27,7 +27,7 @@
 
 ## S45 R3 review-fix analysis
 
-**Analyzed:** 2026-11-10 22:43 UTC
+**Analyzed:** 2026-11-11 00:51 Africa/Cairo
 **Scope:** CodeRabbit round-3 fixes for expired-renewal term anchoring and cumulative refund caps.
 
 - PASS: the expired-renewal anchor is the renewal operation date in lifecycle mapping; this follows the existing approved mapping and makes no new product choice.

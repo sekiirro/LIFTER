@@ -26,7 +26,7 @@
 
 ## S45 R3 review-fix analysis
 
-**Analyzed:** 2026-11-10 22:43 UTC
+**Analyzed:** 2026-11-11 00:51 Africa/Cairo
 **Scope:** CodeRabbit round-3 fixes in the baseline/forward-contract descriptions and FR-002 traceability.
 
 - PASS: FR-002 remains rank-inclusive only in the planned delta; the shipped baseline and its old publication signature are described without tier_rank.
