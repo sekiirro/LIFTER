@@ -55,7 +55,7 @@ Eight technical findings fixed within current PO decisions; two behavior choices
 
 **Analyze result: CRITICAL 0; HIGH 0; MEDIUM 2 PO-blocked; LOW 0.**
 
-## S44 PO-decision and formatting update — 2026-11-10 12:42 UTC
+## S44 PO-decision and formatting update — 2026-11-10 12:47 UTC
 
 This section supersedes the earlier S44 entry's two-open-MCQ status. S44-PO-2 (2026-11-10) resolves MCQ-1=A and MCQ-2=A; architect mapping S44-R2 is recorded beside the verbatim answers in `spec.md` §8.6.
 
@@ -64,6 +64,7 @@ This section supersedes the earlier S44 entry's two-open-MCQ status. S44-PO-2 (2
 - PASS — `spec.md` FR-003, FR-010/011, SC-004/011 and §8.6 encode both decisions. No open MCQs remain.
 - PASS — `workout-plan-document.md`, `data-model.md`, `plan.md`, T011/T031, and traceability encode add-time effective global/override version and value capture, persistence across draft reload, and publication from captured values; Video remains live.
 - PASS — `template-assignment.md`, `data-model.md`, `plan.md`, T009/T025, and traceability encode per-workspace `no_copies` in a committed mixed-result batch and preserve rejection when total copies would be zero.
+- PASS — hostile post-push review caught and corrected an unescaped union separator in the `data-model.md` exercise-reference table; it now renders as one table row and retains the pinned source semantics.
 - PASS — task tags remain aligned: T009/T025 → FR-010/011 and SC-003/004; T011/T031 → FR-003 and SC-011 (T031 also FR-004/023 and SC-001). Every referenced ID exists in spec, plan, tasks, traceability and research.
 - PASS — analyze is dated after these spec/plan/tasks changes; task checkboxes remain unticked because implementation tests have not run.
 
