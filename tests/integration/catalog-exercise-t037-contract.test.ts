@@ -719,7 +719,7 @@ describe('T037 remaining workspace and identity contracts', () => {
   it(
     'keeps published exercise alternatives frozen in V2 after later library changes (T050/T056)',
     async () => {
-      const plannerAlternatives = ['ex-removed'];
+      const plannerAlternatives = [{ globalExerciseId: 'ex-removed' }];
       const published = toExerciseSnapshotV2({
         source: 'global',
         exerciseId: 'ex-1',
@@ -730,8 +730,10 @@ describe('T037 remaining workspace and identity contracts', () => {
           alternatives: plannerAlternatives,
         },
       });
-      plannerAlternatives.splice(0, 1, 'ex-survivor');
-      expect(published.alternatives).toEqual(['ex-removed']);
+      plannerAlternatives.splice(0, 1, { globalExerciseId: 'ex-survivor' });
+      expect(published.alternatives).toEqual([
+        { globalExerciseId: 'ex-removed' },
+      ]);
     },
   );
 

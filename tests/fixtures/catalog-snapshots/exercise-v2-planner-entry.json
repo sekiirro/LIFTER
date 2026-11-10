@@ -11,7 +11,9 @@
   "description": "Planner description",
   "notes": "Trainer note",
   "alternatives": [
-    "ex-2"
+    {
+      "globalExerciseId": "ex-2"
+    }
   ],
   "defaults": {
     "restSeconds": 75,

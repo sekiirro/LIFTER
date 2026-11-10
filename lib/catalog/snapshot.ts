@@ -14,6 +14,7 @@ export type ExerciseSnapshotV1 = ExerciseSnapshot;
 
 /** Frozen planner-entry values for an exercise at publication time. */
 export type ExerciseSnapshotV2 = {
+  schemaVersion: 2;
   source: 'global' | 'workspace_private';
   exerciseId?: string;
   canonicalVersion?: number;
@@ -23,7 +24,10 @@ export type ExerciseSnapshotV2 = {
   name: { ar?: string; en: string };
   description?: string;
   notes?: string;
-  alternatives: string[];
+  alternatives: (
+    | { globalExerciseId: string }
+    | { workspaceExerciseId: string }
+  )[];
   defaults: {
     restSeconds?: number;
     rir?: number | null;
@@ -686,7 +690,7 @@ function canonicalExerciseSnapshotV2(
   out.name = { ...input.name };
   if (input.description !== undefined) out.description = input.description;
   if (input.notes !== undefined) out.notes = input.notes;
-  out.alternatives = [...input.alternatives];
+  out.alternatives = input.alternatives.map((alternative) => ({ ...alternative }));
   out.defaults = { ...input.defaults };
   return out;
 }
@@ -746,11 +750,29 @@ function validateExerciseSnapshotV2Impl(input: unknown): ExerciseSnapshotV2 {
     if (obj[field] !== undefined && typeof obj[field] !== 'string')
       throw new Error(`${field} must be a string`);
   }
-  if (
-    !Array.isArray(obj.alternatives) ||
-    !obj.alternatives.every((value) => typeof value === 'string' && value.trim())
-  )
-    throw new Error('alternatives must contain strings');
+  if (!Array.isArray(obj.alternatives) || obj.alternatives.length > 3)
+    throw new Error('alternatives must contain at most three targets');
+  const alternativeKeys = new Set<string>();
+  for (const value of obj.alternatives) {
+    if (!value || typeof value !== 'object' || Array.isArray(value))
+      throw new Error('alternative must be a target object');
+    const target = value as Record<string, unknown>;
+    const hasGlobalTarget = Object.hasOwn(target, 'globalExerciseId');
+    const hasWorkspaceTarget = Object.hasOwn(target, 'workspaceExerciseId');
+    if (hasGlobalTarget === hasWorkspaceTarget)
+      throw new Error('alternative must contain exactly one target');
+    const allowedTargetKey = hasGlobalTarget
+      ? 'globalExerciseId'
+      : 'workspaceExerciseId';
+    assertNoUnknownKeys(target, [allowedTargetKey], 'alternative');
+    if (obj.source === 'global' && hasWorkspaceTarget)
+      throw new Error('Global snapshots require Global alternatives');
+    const targetId = asString(target[allowedTargetKey], allowedTargetKey);
+    const uniqueKey = `${allowedTargetKey}:${targetId}`;
+    if (alternativeKeys.has(uniqueKey))
+      throw new Error('alternatives must be unique');
+    alternativeKeys.add(uniqueKey);
+  }
   if (!obj.defaults || typeof obj.defaults !== 'object' || Array.isArray(obj.defaults))
     throw new Error('defaults must be an object');
   const defaults = obj.defaults as Record<string, unknown>;
@@ -785,6 +807,10 @@ function validateExerciseSnapshotV2Impl(input: unknown): ExerciseSnapshotV2 {
         throw new Error('defaults.reps range is invalid');
     } else throw new Error('defaults.reps.kind is invalid');
   }
+  const alternatives = obj.alternatives.map((value) => ({
+    ...(value as Record<string, unknown>),
+  })) as ExerciseSnapshotV2['alternatives'];
+  obj.alternatives = alternatives;
   return input as ExerciseSnapshotV2;
 }
 

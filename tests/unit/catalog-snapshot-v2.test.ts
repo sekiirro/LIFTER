@@ -21,7 +21,7 @@ const plannerEntry = {
   name: { en: 'Planner edited name', ar: 'اسم المدرب' },
   description: 'Planner description',
   notes: 'Trainer note',
-  alternatives: ['ex-2'],
+  alternatives: [{ globalExerciseId: 'ex-2' }],
   defaults: { restSeconds: 75, rir: 1, reps: { kind: 'fixed' as const, value: 10 } },
 };
 
@@ -34,6 +34,7 @@ describe('ExerciseSnapshotV2 (T056)', () => {
       overrideVersion: 5,
       plannerEntry,
     });
+    expect(snapshot.schemaVersion).toBe(2);
     expect(serializeExerciseSnapshotV2(snapshot)).toBe(
       readFileSync(fixturePath, 'utf8').trim(),
     );
@@ -102,9 +103,75 @@ describe('ExerciseSnapshotV2 (T056)', () => {
       plannerEntry: entry,
     });
     entry.defaults.restSeconds = 300;
-    entry.alternatives.push('ex-3');
+    entry.alternatives.push({ globalExerciseId: 'ex-3' });
     expect(snapshot.defaults.restSeconds).toBe(75);
-    expect(snapshot.alternatives).toEqual(['ex-2']);
+    expect(snapshot.alternatives).toEqual([{ globalExerciseId: 'ex-2' }]);
+  });
+
+  it('preserves both allowed target kinds for workspace-private exercises', () => {
+    const snapshot = toExerciseSnapshotV2({
+      source: 'workspace_private',
+      workspaceExerciseId: 'wex-1',
+      workspaceExerciseVersion: 2,
+      plannerEntry: {
+        name: { en: 'Private exercise' },
+        alternatives: [
+          { globalExerciseId: 'ex-2' },
+          { workspaceExerciseId: 'wex-2' },
+        ],
+      },
+    });
+    expect(snapshot.alternatives).toEqual([
+      { globalExerciseId: 'ex-2' },
+      { workspaceExerciseId: 'wex-2' },
+    ]);
+  });
+
+  it('rejects private targets on a Global source snapshot', () => {
+    expect(() => parseExerciseSnapshotV2({
+      ...fixture as object,
+      alternatives: [{ workspaceExerciseId: 'wex-2' }],
+    })).toThrow();
+  });
+
+  it('rejects alternative objects with both or neither target key', () => {
+    expect(() => parseExerciseSnapshotV2({
+      schemaVersion: 2,
+      source: 'workspace_private',
+      workspaceExerciseId: 'wex-1',
+      workspaceExerciseVersion: 2,
+      name: { en: 'Private exercise' },
+      defaults: {},
+      alternatives: [{ globalExerciseId: 'ex-2', workspaceExerciseId: 'wex-2' }],
+    })).toThrow();
+    expect(() => parseExerciseSnapshotV2({
+      schemaVersion: 2,
+      source: 'workspace_private',
+      workspaceExerciseId: 'wex-1',
+      workspaceExerciseVersion: 2,
+      name: { en: 'Private exercise' },
+      defaults: {},
+      alternatives: [{}],
+    })).toThrow();
+  });
+
+  it('rejects duplicate alternatives and more than three targets', () => {
+    expect(() => parseExerciseSnapshotV2({
+      ...fixture as object,
+      alternatives: [
+        { globalExerciseId: 'ex-2' },
+        { globalExerciseId: 'ex-2' },
+      ],
+    })).toThrow();
+    expect(() => parseExerciseSnapshotV2({
+      ...fixture as object,
+      alternatives: [
+        { globalExerciseId: 'ex-2' },
+        { globalExerciseId: 'ex-3' },
+        { globalExerciseId: 'ex-4' },
+        { globalExerciseId: 'ex-5' },
+      ],
+    })).toThrow();
   });
 
   it('parses the V2 fixture and rejects unknown frozen fields', () => {

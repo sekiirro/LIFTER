@@ -691,3 +691,14 @@ T900 has been marked complete only after its focused integration test passed on 
 - Findings: 0 open CRITICAL, 0 open HIGH. No product ambiguity found.
 - Verdict: PASS for T056.
 - Evidence: `C:/Users/NEW LAP/.lifter/runs/s46-luna-f16-t056b/report.md`.
+
+## S46 T056 architect-fix re-analysis — 2026-11-10 23:57:18 UTC (Z)
+
+- Scope: required technical corrections to the accepted T056 `ExerciseSnapshotV2` implementation under FR-020/FR-027/FR-037: type `schemaVersion: 2`; preserve ordered exactly-one-target alternatives as Global/private objects, with a maximum of three unique targets and Global-source snapshots restricted to Global targets. No product requirements changed.
+- Entry check: PASS. `spec.md` numbered FRs, measurable SCs, Given/When/Then scenarios and explicit no-open-ambiguities clarification remain in force; `plan.md` and T056 task cover this scope; this entry follows T056 task and traceability evidence updates. No open CRITICAL/HIGH findings.
+- RED: snapshot suites failed 7 tests / passed 19; typecheck identified missing `ExerciseSnapshotV2.schemaVersion`. Implementation followed the recorded RED.
+- GREEN: after Stack A reset using `supabase-safe.mjs`, T037 contract suite passed 57, with 22 existing expected failures; snapshot unit suites passed 26/26; `npm run lint`, `npm run typecheck`, and `git diff --check` passed. V1 fixture `git diff` is empty.
+- Mutations: removing the source-kind check made `rejects private targets on a Global source snapshot` fail. Weakening exactly-one-target validation to accept both keys made `rejects alternative objects with both or neither target key` fail. Restored both mutations and reran clean GREEN.
+- Findings: 0 open CRITICAL, 0 open HIGH. No ambiguity and no PO decision required.
+- Verdict: PASS for the two architect-required T056 technical corrections.
+- Evidence: `C:/Users/NEW LAP/.lifter/runs/s46-luna-f16-t056c/report.md`.
