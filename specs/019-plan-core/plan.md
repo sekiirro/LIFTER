@@ -27,9 +27,9 @@ F17/F18 retain ownership of content schemas. F16 `ExerciseSnapshotV2`, immutable
 
 ## Sequencing and validation
 
-1. Encode F19-MCQ-15/16, S42-PO-6, and S43-PO-5 items 1 and 7; encode S43-PO-5/6 decisions for S43-F19-MCQ-1..5. Ready & Publish fails closed on missing eligibility, unresolved legacy chains, or unexpected continuity violation. F13-FR-037 and the deployed F13 renewal-continuity change are prerequisites to enabling F19 delivery.
+1. Encode F19-MCQ-15/16/17, S42-PO-6, and S43-PO-5 items 1 and 7; encode S43-PO-5/6 decisions for S43-F19-MCQ-1..5. Ready & Publish fails closed on missing eligibility, uncorrected mock/test overlap, multiple active subscription projections, or unexpected continuity violation. F13-FR-037, its deployed renewal-continuity change, and the audited dry-run-first idempotent cleanup are prerequisites to enabling F19 delivery.
 2. Implement roots/drafts/revisions and authorized CAS writes (FR-001, FR-009, FR-010, FR-012).
-3. Implement the single delivery table, delivery projection, and copy contracts (FR-002, FR-003, FR-008, FR-013).
+3. Before enabling F19 delivery, deploy the F13-FR-037 renewal-continuity change and complete the dry-run-first, audited, idempotent safe cleanup that corrects only invalid overlaps in mock/test legacy records. Do not add production reconciliation or a subscription-selection rule. Then implement the single delivery table, delivery projection, and copy contracts (FR-002, FR-003, FR-008, FR-013).
 4. Implement automatic activation and unit transaction plus PO override (FR-004, FR-006, FR-007, FR-014); renewal mutates the existing subscription (FR-005). Award at most one unit per client. If unassigned, credit completing delivery Trainer publisher; refuse completion if publisher is not a Trainer. Already-active Override is rejected with not_permitted and no writes or changes.
 5. Integrate client expiry/access and F17/F18/F16 consumers (FR-008, FR-011, FR-013).
 6. Require real-DB integration tests for durability, rollback, idempotency replay, concurrency, CAS, cross-tenant denial, activation uniqueness, override recipient, in-place renewal and once-per-client unit, and deletion RESTRICT. Static and mocked tests never count as persistence evidence.
@@ -39,6 +39,6 @@ F17/F18 retain ownership of content schemas. F16 `ExerciseSnapshotV2`, immutable
 - S43-F19-MCQ-1..6 are resolved by S43-PO-5/6 and architect mapping (S43-R8); see F13-FR-040, F13-FR-041 and F13-FR-037.
 - S42-PO-6: informational expiry page title/body only; no buttons or actions.
 - F19-MCQ-15: already-active Override is rejected with `not_permitted`; nothing is written or changed.
-- F19-MCQ-16: auto-bind the sole resolved eligible subscription; no chooser. Delivery for unresolved legacy overlap remains blocked under MCQ-17.
-- F19-MCQ-17: legacy overlapping predecessor/successor chains remain unresolved and block affected delivery; see the run report for the PO decision options and recommendation. Do not infer a selection or migration rule.
+- F19-MCQ-16: auto-bind the sole resolved eligible subscription; no chooser. Delivery for uncorrected legacy overlap or more than one active subscription projection remains blocked under the resolved MCQ-17 decision.
+- F19-MCQ-17 is resolved by S45-PO-2; architect mapping S45-R4 requires safe cleanup of only invalid overlaps before enabling F19 delivery. Records are mock/test-only; no production reconciliation or selection rule is specified. Until corrected continuity is verified, F19 fails closed for the affected client, including any client with more than one active subscription projection.
 - Existing documents on `origin/main` contain conflicts listed in `spec.md` Cross-feature supersessions. They are deliberately not edited in this PR; PO S41-PO-9a assigns later docs/04 register consolidation.
