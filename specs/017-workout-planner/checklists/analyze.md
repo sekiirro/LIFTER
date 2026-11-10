@@ -30,13 +30,13 @@
 Entry Analyze result before the S44 PR #78 fix lane: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0. F17 open PO MCQ IDs at that point: none. Superseded by the S44 fix-lane Analyze below.
 
 
-## S44 PR #78 fix-lane Analyze - 2026-11-10 12:09 UTC
+## S44 PR #78 fix-lane Analyze - 2026-11-10 12:17 UTC
 
-Scope: the six in-scope corrections to export completeness/template substitution, private reference identity, initial assigned-copy versioning, PO template authorization, and promoted-template task coverage. S44-MCQ-1/2 are left unencoded pending PO decision.
+Scope: eight in-scope technical corrections after the initial review and CodeRabbit follow-up replies. These cover export completeness/template substitution, private reference identity, assigned-copy versioning, PO template authorization, promoted-template task coverage, explicit all-role plan isolation, and static-only copy approval. S44-MCQ-1/2 remain unencoded pending PO decision.
 
 ### Entry and cross-artifact checks
 
-- PASS - numbered FRs, measurable SCs, and Given/When/Then scenarios remain in `spec.md`; FR-018/019 now name document-level notes consistently.
+- PASS - numbered FRs, measurable SCs, and Given/When/Then scenarios remain in `spec.md`; FR-018/019 name document-level notes consistently; FR-020 keeps plan access denied across workspaces for every role and allows only the PO template exception.
 - PASS - Clarifications (section 8), PO decision register and exact PO sources are cited; the two newly discovered product choices are explicit in `runs/s44-luna-fix78/report.md`. No ambiguity is treated as decided.
 - PASS - `plan.md` covers exports, exercise resolution/publication and template assignment; `tasks.md` T007/T008/T011/T024/T025/T028/T031 cover the touched scope with unchanged FR tags; `traceability.md` descriptions align for FR-012/018/019.
 - PASS - this Analyze record is dated after the final spec/plan/tasks edits in this lane.
@@ -52,6 +52,6 @@ Scope: the six in-scope corrections to export completeness/template substitution
 
 ### Disposition summary
 
-Six findings fixed within current PO decisions; two behavior choices remain blocked. Plan-level notes flow through PDF, Excel and prompt payload under the existing complete-plan contract. The approved prompt template bytes are untouched. No stale prohibition of promoted private references or PO cross-workspace governance remains in the touched FR/task text.
+Eight technical findings fixed within current PO decisions; two behavior choices remain blocked. Plan-level notes flow through PDF, Excel and prompt payload under the existing complete-plan contract. The approved prompt template bytes are untouched. No stale prohibition of promoted private references or PO cross-workspace governance remains in the touched FR/task text. The PO template exception does not grant cross-workspace plan access to any role. Static-only byte approval is consistent at both contract status and detailed rule.
 
 **Analyze result: CRITICAL 0; HIGH 0; MEDIUM 2 PO-blocked; LOW 0.**

@@ -1,6 +1,6 @@
 # Contract — Workout exports and Copy AI Prompt
 
-**Status**: spec-only draft (S42). No implementation. Every user-visible string requires PO approval byte-exact; no Arabic string is drafted here.
+**Status**: spec-only draft (S42). No implementation. Static user-visible strings and prompt-template text require PO approval byte-exact. Authored plan content substituted for {{PLAN_CONTENT}} follows plan authorization and preservation rules; no Arabic static UI string is drafted here.
 
 ## 1. Export surface
 
