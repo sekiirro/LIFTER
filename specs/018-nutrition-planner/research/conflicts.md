@@ -24,7 +24,7 @@
 
 - **Old**: `origin/sk-018:specs/018-nutrition-planner/spec.md:86` (FR-003) and `plan.md:23` assume serving equivalences ≤ 4 decimals.
 - **Now**: `supabase/migrations/20261106093000_catalog_food_versions_and_servings.sql:28` defines `basis_qty numeric(12,3)`; per-100 values are `kcal numeric(7,1)` and macros `numeric(7,2)` (`:9-13`).
-- **Status**: RESOLVED-DESIGN. F18-FR-003/data-model §2 use the live scales; plan quantities stay ≤ 3 dp; stored computed values are `numeric(12,4)`.
+- **Status**: RESOLVED-DESIGN. F18-FR-003/data-model §2 use the live scales; plan quantities stay ≤ 3 dp; Sol-1 requires exact persistence without storage rounding.
 
 ## F18-C-05 — `FoodSnapshotV1` freezes one serving, a plan may use several
 
@@ -36,11 +36,11 @@
 - **Evidence**: `lib/catalog/snapshot.ts:21-37` types kcal/macros/serving quantity as `number`; `specs/016-exercise-food-catalogs/plan.md:38` says snapshot transport uses decimal strings.
 - **Status**: OPEN-TECH. F18 requires fixed-scale decimal-string transport and forbids binary floating-point in calculation. The implementation must parse `FoodSnapshotV1` at fixed scale or serialize its fields as strings; if F16 changes the builder type, F18 follows. No PO decision.
 
-## F18-C-07 — Display rounding: S27 half-up vs A5 "one final half-even rounding step"
+## F18-C-07 — Display rounding: S27 half-up vs A5 final rounding
 
 - **Evidence**: `git show origin/sk-018:specs/018-nutrition-planner/S27-decimal-evidence.md` ("rounds half-up at display time only"); A5 Q4 (`runs/s42-po/f17-f18-po-decisions-source.md:62`) "one final half-even rounding step".
-- **Reading checked**: A5 Q4 also says "Retain existing display rules", which supports half-up at display and half-even for stored totals. It is not unambiguous.
-- **Status**: OPEN-MCQ (F18-MCQ-3). F18-FR-003 asserts only the threshold/precision and the single stored half-even step; display tie behavior is not asserted until decided.
+- **Reading checked**: S43-PO-1 settles half-up display. S43-R9 Sol-1 technically settles exact persistence without storage rounding.
+- **Status**: PO display rule resolved by S43-PO-1 MCQ-4; technical exact-persistence/no-storage-rounding rule by S43-R9 Sol-1. Aggregates use exact values; TS and SQL tie/double-rounding goldens must agree.
 
 ## F18-C-08 — S27-PO-2 is not in the decision register
 
@@ -95,13 +95,17 @@
 
 ## Summary
 
-| Status | Count | IDs |
-| --- | ---: | --- |
-| RESOLVED-BY-PO | 3 | C-01, C-02, C-09 |
-| RESOLVED-DESIGN / INFERRED | 3 | C-03, C-04, C-05 |
-| VERIFIED | 2 | C-13, C-17 |
-| OPEN-MCQ | 1 | C-07 (F18-MCQ-3) |
-| OPEN-TECH | 3 | C-06, C-10, C-11 |
-| REGISTER GAP | 2 | C-08, C-15 |
-| HISTORIC | 3 | C-12, C-14, C-16 |
-| **Total** | **17** | |
+| Status                     |  Count | IDs              |
+| -------------------------- | -----: | ---------------- |
+| RESOLVED-BY-PO             |      3 | C-01, C-02, C-09 |
+| RESOLVED-DESIGN / INFERRED |      3 | C-03, C-04, C-05 |
+| VERIFIED                   |      2 | C-13, C-17       |
+| OPEN-MCQ                   |      0 | none             |
+| OPEN-TECH                  |      3 | C-06, C-10, C-11 |
+| REGISTER GAP               |      2 | C-08, C-15       |
+| HISTORIC                   |      3 | C-12, C-14, C-16 |
+| **Total**                  | **17** |                  |
+
+## S43 reconciliation (2026-11-10)
+
+F18-MCQ-1..6 are resolved per S42-PO-8/S43-PO-1. S43-MCQ-A is resolved by S43-PO-5; exact prompt bytes are in contracts/copy-ai-prompt.md. S43-MCQ-B is resolved by S43-PO-2: per-item note in exports and copied prompt; client-selection totals only. No additional product conflict was found in this register; open technical items C-10/C-11 remain technical reconciliation, not product decisions.

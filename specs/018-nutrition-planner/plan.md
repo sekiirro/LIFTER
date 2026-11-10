@@ -1,11 +1,11 @@
 # Implementation Plan: F18 Nutrition Templates & Nutrition Planner
 
 **Spec**: [spec.md](spec.md) · **Design detail**: [data-model.md](data-model.md) · **Contracts**: [contracts/](contracts/)
-**Status**: S42 spec-only draft. No code, migration, UI, test or workflow change is part of this plan's delivery. Implementation entry is **blocked** by F18-MCQ-1..6.
+**Status**: S43 updated spec-only draft. No code, migration, UI, test or workflow change is part of this plan's delivery. Implementation entry remains blocked by S43-PO-5 approved prompt copy for prompt body copy and by the pending F19 contract.
 
 ## Summary
 
-Nutrition plans on the pending F19 Plan Core contract: a versioned nutrition document (single-day or seven-day, day types, conditional meals, foods with exact quantities, coach alternatives, notes, optional recipe link) with one exact-decimal algorithm implemented identically in TypeScript and SQL; publish-time snapshot rebuild and server-side recomputation; PO-only global nutrition templates with PO-only manual Assign into independent workspace copies; workspace template management; version-scoped self-only client alternative selection with client-visible recalculation; PDF/Excel/`Copy Prompt for AI` exports that distinguish the coach original from the client's permitted selection.
+Nutrition plans on the pending F19 Plan Core contract: a versioned nutrition document (single-day or seven-day, day types, conditional meals, foods with exact quantities, coach alternatives, notes, optional recipe link) with one exact-decimal algorithm implemented identically in TypeScript and SQL; publish-time snapshot rebuild and server-side recomputation; PO-only global nutrition templates with PO-only manual Assign into independent workspace copies; workspace template management; version-scoped self-only client alternative selection with client-visible recalculation; PDF/Excel/`Copy AI Prompt` exports that distinguish the coach original from the client's permitted selection.
 
 ## Technical context
 
@@ -15,23 +15,24 @@ Nutrition plans on the pending F19 Plan Core contract: a versioned nutrition doc
 
 ## Constitution check
 
-| Principle | Plan response |
-| --- | --- |
-| I Workspace isolation | Composite tenant keys on every F18 table; two walls; foreign-workspace negatives per endpoint/table/export. Global template tables are platform-scope with no workspace read policy. |
-| II Financial truth | n/a; productivity units are F19's. |
-| III PO governance | PO-only global templates, Assign and Make it Global; existing checks only; Sales denied. |
-| IV Approved scope | Every requirement traces to PRD-05/06/12, D18-x, A5/A6 or F19; no invented behavior; open questions are MCQs. |
-| V Versioned content | Immutable revisions/template versions; exact-version food snapshots; single stored rounding; schema/algorithm version frozen per revision. |
-| VI People decisions | n/a. |
-| VII Privacy | Health-adjacent content; audit allowlist + log scrub; exports/selection audited; prompt privacy gated by MCQ-4/5. |
-| VIII Bilingual UI | AR-first RTL + EN-LTR, design gate, keyboard access, no machine translation, no unapproved copy. |
-| IX Idempotency | Operation keys, CAS, deterministic lock order, no duplicate revision/copy/selection/batch. |
+| Principle             | Plan response                                                                                                                                                                                                    |
+| --------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| I Workspace isolation | Composite tenant keys on every F18 table; two walls; foreign-workspace negatives per endpoint/table/export. Global template tables are platform-scope with no workspace read policy.                             |
+| II Financial truth    | n/a; productivity units are F19's.                                                                                                                                                                               |
+| III PO governance     | PO-only global templates, Assign and Make it Global; existing checks only; Sales denied.                                                                                                                         |
+| IV Approved scope     | Every requirement traces to PRD-05/06/12, D18-x, A5/A6 or F19; no invented behavior; open questions are MCQs.                                                                                                    |
+| V Versioned content   | Immutable revisions/template versions; exact-version food snapshots; single stored rounding; schema/algorithm version frozen per revision.                                                                       |
+| VI People decisions   | n/a.                                                                                                                                                                                                             |
+| VII Privacy           | Health-adjacent content; audit allowlist + log scrub; exports/selection audited; prompt privacy follows the resolved staff export-authorization rule; body EN/AR matches the approved local byte-exact contract. |
+| VIII Bilingual UI     | AR-first RTL + EN-LTR, design gate, keyboard access, no machine translation, no unapproved copy.                                                                                                                 |
+| IX Idempotency        | Operation keys, CAS, deterministic lock order, no duplicate revision/copy/selection/batch.                                                                                                                       |
 
 ## Design
 
 ### 1. Identity and lifecycle (F19)
 
 F18 adds no plan/draft/revision/delivery/activation table. A nutrition plan root is an F19 root with `plan_kind='nutrition'`, `workspace_id` and `client_id`; the subscription is bound only by a `plan_deliveries` row at Ready & Publish. F18 supplies:
+
 - document validation and computed values at draft save and publish;
 - the publish-time snapshot rebuild (inside the F19 publish transaction);
 - selection carry-forward inside that same transaction;
@@ -43,11 +44,12 @@ Implemented as a frozen, versioned schema module with one fixture set shared by 
 
 ### 3. Canonical algorithm and total derivation
 
-One TypeScript implementation (BigInt coefficient/scale on decimal strings) and one SQL implementation (`numeric`, no intermediate rounding) run the same 500-case golden fixture set, including repeating fractions, precision boundaries, alternatives and selected-alternative totals. Inputs use the live F16 scales; stored results are `numeric(12,4)` half-even once; aggregates come from exact values. Display is a pure string function (calories integer; macro < 10 g one decimal, ≥ 10 g integer). The display tie rule is F18-MCQ-3.
+One TypeScript implementation (BigInt coefficient/scale on decimal strings) and one SQL implementation (`numeric`, no intermediate rounding) run the same golden fixture set, including repeating fractions, precision boundaries, alternatives and selected-alternative totals. Inputs use the live F16 scales; stored results preserve the exact computed decimal at a scale sufficient for the declared input scales; storage does not round. Display applies half-up once from the exact value and never changes stored values. Aggregates come from full-precision exact values. Display is a pure string function (calories integer; macro < 10 g one decimal, ≥ 10 g integer). Display and canonicalization use half-up rounding (S43-PO-1; architect mapping (S43-R1)).
 
 ### 4. Publish path
 
 `publish_nutrition_revision(expected_revision, operation_key)` (SECURITY DEFINER, invoked from the F19 Ready & Publish flow):
+
 1. authorize (two walls) → resolve the current subscription per F19 (no current subscription ⇒ refused before any nutrition work);
 2. take the F19 lock order → lock draft → idempotency lookup → re-read expected revision → recheck authorization and lifecycle;
 3. parse the document with the frozen validator;
@@ -69,18 +71,19 @@ Client-visible values are derived on read from the revision's snapshot map and t
 
 - Global: platform-scope identities + immutable versions, PO-only writes and reads.
 - Workspace: tenant-scope identities + immutable versions with `origin_global_template_id/version`, branded `display_name`, `coaching_work` RLS, PO cross-workspace rights.
-- Assign: one transaction, one operation key, PO-only. Step 1 mode (all/specific/all_except), Step 2 mode (all/specific). `All Workspaces` evaluates **nutrition-only** initialization at operation time; `Specific Workspaces` skips templates the workspace already holds from the same source version. Per target, either create one workspace template from the current global version (independent copy) or record `skipped_existing`. No update, no overwrite, no top-up. A newer global version is F18-MCQ-6. Contract: `contracts/template-assignment.md`.
+- Assign: one transaction, one operation key, PO-only. Step 1 mode (all/specific/all_except), Step 2 mode (all/specific). `All Workspaces` evaluates **nutrition-only** initialization at operation time; `Specific Workspaces` skips and reports any template identity the workspace already holds regardless of source version. A zero-copy Assign is rejected before writes. Per target, create one independent workspace copy only for missing identities; never update, overwrite or top up. Contract: `contracts/template-assignment.md`.
 - Make it Global: PO-only; validate the source for client data/private references; refuse with field codes; on success create a separate global identity + version.
 - Load: creation-time/empty-draft only; copy one explicit immutable template version into the private draft; deep copy, new ids; no live link; a destructive load into existing content is refused.
 
 ### 7. Exports
 
 One shared export reader returns an authorized projection (plan, revision, content, computed values, alternatives, selection) and feeds three renderers:
+
 - PDF (shared RTL print layout);
 - Excel (workbook skeleton, text-only coach cells, formula-injection tests);
-- `Copy Prompt for AI` (faithful plan text; no generation instruction).
+- `Copy AI Prompt` (faithful plan text; no generation instruction).
 
-Both walls are checked before any read; every success and denial is audited. Coach-original vs client-selection layout: F18-MCQ-1. Prompt actor/text/language/selection: F18-MCQ-4/5/2.
+Both walls are checked before any read; every success and denial is audited. Client selection is primary with recalculated totals; coach original is a per-item side note. Staff export-authorized roles may invoke Copy AI Prompt; selection/totals are included. Prompt body is byte-exact in contracts/copy-ai-prompt.md; substitute {{PLAN_CONTENT}} only (S43-PO-5; architect mapping (S43-R6)). The copied prompt includes the per-item coach-original note and totals rows contain client-selection totals only (S43-PO-2; architect mapping (S43-R4)).
 
 ### 8. Audit and privacy
 
@@ -96,11 +99,11 @@ No hard-coded envelope is adopted. Before implementation, define the maximum doc
 
 ## Contracts
 
-| File | Covers |
-| --- | --- |
-| [contracts/nutrition-document.md](contracts/nutrition-document.md) | Document v1 shape, invariants, snapshot keying, computed-value shape, validator fixture rules |
-| [contracts/nutrition-api.md](contracts/nutrition-api.md) | RPCs, actions, authorization matrix, idempotency/lock order, selection, export/prompt reader, audit codes |
-| [contracts/template-assignment.md](contracts/template-assignment.md) | Global/workspace template lifecycle, Assign modes and skip rules, Make it Global, load/copy, state derivation, open item |
+| File                                                                 | Covers                                                                                                                                 |
+| -------------------------------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| [contracts/nutrition-document.md](contracts/nutrition-document.md)   | Document v1 shape, invariants, snapshot keying, computed-value shape, validator fixture rules                                          |
+| [contracts/nutrition-api.md](contracts/nutrition-api.md)             | RPCs, actions, authorization matrix, idempotency/lock order, selection, export/prompt reader, audit codes                              |
+| [contracts/template-assignment.md](contracts/template-assignment.md) | Global/workspace template lifecycle, Assign modes and skip rules, Make it Global, load/copy, state derivation, S43 assignment decision |
 
 ## Validation phases
 
@@ -121,29 +124,29 @@ None reserved. At implementation time: scan every `origin` ref, choose one unuse
 
 ## Dependencies
 
-Hard: F16 merged (food versions, serving units, snapshot transport) — **landed**. F19 merged (identity/draft/revision/delivery/activation) — **pending**. F13 merged (entitlement) — landed. F17 is a parallel lane; F18 shares assignment *shape* but not tables/types and does not depend on F17 code.
+Hard: F16 merged (food versions, serving units, snapshot transport) — **landed**. F19 merged (identity/draft/revision/delivery/activation) — **pending**. F13 merged (entitlement) — landed. F17 is a parallel lane; F18 shares assignment _shape_ but not tables/types and does not depend on F17 code.
 
 ## Risks
 
-| Risk | Mitigation |
-| --- | --- |
-| TS/SQL macro divergence | One golden set executed by both; algorithm version frozen per revision; mutation tests on rounding and aggregate derivation. |
-| Snapshot cannot serve multiple serving units | Per-(version, serving unit) snapshot map; publish rebuild test with two units of one food version. |
-| F19 key/shape drift | F18 foreign keys adapt to merged F19 keys; invariants unchanged; integration test fails fast if the revision composite key is missing. |
-| Assignment overload/wrong skip | Pure state-machine fixtures for all/specific/all-except × all/specific, initialized/partial/uninitialized, retries. |
-| Selection drift or forgery | Ids-only selection, derived totals, composite FKs, self-only RPC, plan-root serialization, negative and race tests. |
-| Export leaks cross-workspace | Both walls before read; negative matrix per renderer; audit denials. |
-| Unapproved copy | Hard copy gate; no new string in this draft. |
-| Unbounded document | Envelope defined and benchmarked before implementation. |
+| Risk                                         | Mitigation                                                                                                                             |
+| -------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------- |
+| TS/SQL macro divergence                      | One golden set executed by both; algorithm version frozen per revision; mutation tests on rounding and aggregate derivation.           |
+| Snapshot cannot serve multiple serving units | Per-(version, serving unit) snapshot map; publish rebuild test with two units of one food version.                                     |
+| F19 key/shape drift                          | F18 foreign keys adapt to merged F19 keys; invariants unchanged; integration test fails fast if the revision composite key is missing. |
+| Assignment overload/wrong skip               | Pure state-machine fixtures for all/specific/all-except × all/specific, initialized/partial/uninitialized, retries.                    |
+| Selection drift or forgery                   | Ids-only selection, derived totals, composite FKs, self-only RPC, plan-root serialization, negative and race tests.                    |
+| Export leaks cross-workspace                 | Both walls before read; negative matrix per renderer; audit denials.                                                                   |
+| Unapproved copy                              | Hard copy gate; no new string in this draft.                                                                                           |
+| Unbounded document                           | Envelope defined and benchmarked before implementation.                                                                                |
 
 ## Complexity tracking
 
-| Deviation | Why | Status |
-| --- | --- | --- |
+| Deviation                                     | Why                                                                                                                        | Status                                                  |
+| --------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------- |
 | F18 content side table keyed to F19 revisions | F19 owns lifecycle but not the nutrition shape; keeps domain content versioned with the revision without forking lifecycle | Technical; reconcile with F19 implementation (F18-C-10) |
-| Contributor attribution retained in F18 | PRD-06 requires independent contributions; F19 spec currently omits it | Technical; move to F19 if it lands there (F18-C-11) |
-| Selection totals derived on read | Prevents drift and editability of client-visible values | Accepted; caching allowed only with the stated key |
+| Contributor attribution retained in F18       | PRD-06 requires independent contributions; F19 spec currently omits it                                                     | Technical; move to F19 if it lands there (F18-C-11)     |
+| Selection totals derived on read              | Prevents drift and editability of client-visible values                                                                    | Accepted; caching allowed only with the stated key      |
 
 ## Open items and blocked work
 
-F18-MCQ-1 export layout; F18-MCQ-2 prompt selection; F18-MCQ-3 display tie mode; F18-MCQ-4 prompt actor; F18-MCQ-5 prompt text/language; F18-MCQ-6 newer global version on re-assignment. Each blocks only its named contract, test and UI surface; nothing in this plan decides them.
+S43-MCQ-A prompt body EN/AR is resolved by S43-PO-5 and has per-locale byte-equality acceptance. The S43-MCQ-B representation is decided by S43-PO-2 (per-item coach-original note in exports and copied prompt; client-selection totals only).

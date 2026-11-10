@@ -11,7 +11,7 @@
 - The suggested third state (c) is already covered by (a) under the PO wording: A2 (`:40`) says a workspace starts with nothing distributed, and only an assignment delivers templates. A workspace that authored its own templates has still "never received a global-template assignment". Making (c) a separate state would create a fourth behaviour with no PO source.
 - The minimal durable state is therefore two derived facts, not a stored enum: `has any successful assignment item for the nutrition collection` (initialized) and `holds a copy originating from global template T` (skip on Specific). Both are derivable from the immutable batch items; a separate state table would have to be kept consistent with them and could contradict them after a failed batch.
 - "Previously distributed individual templates" and "exclusions" are handled by the per-target outcome (`skipped_existing`, `assigned`, `skipped_ineligible`) and by the template set modes (`all`, `specific`, `all_except`).
-- "Version changes" is the one genuine gap. A2/Q1=A say re-assignment never duplicates or overwrites, but not what to do with a newer global version. This is a product choice, not a technical one: **F18-MCQ-6**.
+- "Version changes" is the one genuine gap. A2/Q1=A say re-assignment never duplicates or overwrites, but not what to do with a newer global version. S43-PO-1 later resolves this: skip and report any held copy regardless of source version.
 - "Retries without duplication" is solved by the shared operation-key ledger plus the unique `(workspace_id, origin_global_template_id, origin_global_template_version)` constraint.
 
 **Verdict**: ACCEPT-WITH-CHANGES. Adopt (a)/(b) as derived state; reject (c) as a separate state; escalate the newer-version axis.
@@ -39,8 +39,8 @@
 
 **Assessment**:
 
-- Totals are fully defined by D4 plus F16 scales: exact intermediates, one stored half-even rounding at 4 dp, aggregates from exact values. The selected alternative uses the same function with its own exact version and the coach-specified portion (F18-FR-012).
-- The export representation is **not** fully decided: Q2=A requires a clear distinction, but not a layout. Two columns, an inline note, or two sections are all compatible. This is a real product/UX choice: **F18-MCQ-1**. The projection returns both sides separately so no renderer can silently choose (matrix R7).
+- Totals are fully defined by D4 plus F16 scales: exact intermediates, half-up final canonicalization with full internal precision, aggregates from exact values. The selected alternative uses the same function with its own exact version and the coach-specified portion (F18-FR-012).
+- S43-PO-1 later resolves the layout: selection primary with a labelled coach-original per-item side note; S43-PO-2 resolves S43-MCQ-B: the prompt includes the per-item coach-original note and totals rows contain client-selection totals only. The projection returns both sides separately so no renderer can silently choose (matrix R7).
 - Stale/unauthorized ids: an alternative id that is not in that item's list in that immutable revision is decidably invalid without a catalog lookup. Foreign client, wrong plan/version, expired subscription and forged tuples all fail generically (F18-FR-011, contract §4).
 - The more subtle stale case is a selection racing a publish. The plan-root lock plus current-revision recheck gives one deterministic outcome; the client retries with a new key on `stale_version`.
 - F16 verification uncovered two real constraints the suggestion did not anticipate: one `FoodSnapshotV1` freezes one serving (so the map is keyed per serving unit), and the live TS type is `number` (so exact transport needs fixed-scale parsing/serialization). Both are technical, not PO.
@@ -71,7 +71,7 @@
 
 **Assessment**:
 
-- The pending F19 spec already answers these; F18 must not restate or fork them. Verified against the pending text: stable private draft, direct Ready & Publish, every delivered plan visible, no published-without-delivery (S42-PO-4 MCQ-12 C), activation once after both first kinds, later plans/revisions never reactivate, renewals no unit, expiry blocks content.
+- The pending F19 spec already answers these; F18 must not restate or fork them. Verified against the pending text: stable private draft, direct Ready & Publish, every delivered plan visible, no published-without-delivery (S42-PO-4 MCQ-12 C), activation once after both first kinds, later plans/revisions never reactivate, returning clients never count as new, and renewals add no unit under S43-PO-5 item 7 (architect mapping (S43-R8)), expiry blocks content.
 - The one F18-specific risk is a stale historic sentence: old F18 FR-001 delegated to "PC-FR-001..007" and old tasks implied an independent nutrition publish path. Both are dropped.
 - Draft security and direct publish are pure F19 concerns; F18 only validates nutrition content on save and requires the F19 precondition before building snapshots.
 - Attribution: F18 keeps contributor attribution (PRD-06) but does not own assignment, activation recipient or productivity. The F19 recipient rules are consumed, not reimplemented.
@@ -87,8 +87,8 @@
 **Assessment**:
 
 - Content completeness is directly required by A5 Q2/Q3 and F18-FR-014/015; version selection is "one selected published revision".
-- Client-selected alternatives: Q2=A decides that exports/projections distinguish coach original vs selection; it does **not** decide the layout (F18-MCQ-1) or the prompt content (F18-MCQ-2).
-- Privacy: both walls before any read, one audit event per success and denial, no content in audit. Prompt text is copied outside the platform, which is why the actor (F18-MCQ-4) and exact text (F18-MCQ-5) are product questions, not engineering.
+- Client-selected alternatives: Q2=A decides that exports/projections distinguish coach original vs selection; S43-PO-1 decides per-item layout and S42-PO-8 decides prompt selection/totals; S43-PO-2 resolves the remaining format reach: the copied prompt includes the per-item coach-original note; totals rows are client-selection totals only.
+- Privacy: both walls before any read, one audit event per success and denial, no content in audit. Prompt text is copied outside the platform, which is why the actor is decided as export-authorized staff; prompt body is approved byte-exact in the feature-local contract (S43-PO-5).
 - Formula injection is engineering: write coach cells as text and test `=`, `+`, `-`, `@`.
 - AR/EN and RTL are design-gate obligations with rendered evidence, not copy approval.
 - The split is clean: layout/prompt wording/actor are PO; renderer, escaping, RTL and authorization are engineering.
@@ -126,3 +126,7 @@
 **Verdict**: ACCEPT. Reuse the reasoning and test taxonomy, rebuild everything that touches lifecycle, schema or copy.
 
 **Encoded**: `research/po-decision-matrix.md` E, conflicts F18-C-14/C-16, tasks T001–T027 (all new IDs, no inherited completion).
+
+## S43 decision updates
+
+S43-PO-1 resolves the former F18-MCQ-1/3/6 conflicts: selection is primary with a coach-original per-item side note, rounding is half-up with full internal precision, and any held template copy is skipped/reported. S42-PO-8 resolves prompt selection/totals and actor rights. S43-PO-5 approves the prompt body; S43-PO-2 resolves S43-MCQ-B: per-item note in prompt, client-selection totals only.

@@ -27,15 +27,15 @@ nutrition_workspace_templates -> nutrition_workspace_template_versions     [F18,
 
 ### `nutrition_plan_version_contents`
 
-| Column | Contract |
-| --- | --- |
-| `workspace_id`, `plan_id`, `revision_id` | Tenant + F19 plan root + F19 immutable revision. Composite FK `(workspace_id, plan_id, revision_id) -> plan_revisions(workspace_id, plan_id, id)` with `ON DELETE RESTRICT`. `UNIQUE (workspace_id, revision_id)`. |
-| `schema_version` | Frozen document schema version (integer). Selects the validator/renderer/export/algorithm version. Never reinterpreted. |
-| `algorithm_version` | Macro-algorithm version used for the stored values. Immutable per row. |
-| `document` | The immutable nutrition document v1 (see `contracts/nutrition-document.md`). No client selection, no computed totals authored by the caller. |
-| `snapshot_map` | `{ [snapshotKey]: FoodSnapshotV1 }`, built by the database at publish from exact F16 food versions. `snapshotKey = food:<food_id>@<version>#<unit_key>`, where `unit_key` is `g`/`ml` for a basis quantity or the declared serving `unit_key`. One entry per distinct (food version, serving unit) referenced by items **and** alternatives. |
-| `computed_values` | Exact-arithmetic results stored once: per-item values, per-meal totals, per-day totals, document totals, each as a fixed-scale decimal string at 4 decimals. Derived from exact intermediates, never from already-rounded item values. |
-| `created_at`, `created_by` | Server time and acting staff id from the publish transaction (audit reference, not client-visible). |
+| Column                                   | Contract                                                                                                                                                                                                                                                                                                                                     |
+| ---------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `workspace_id`, `plan_id`, `revision_id` | Tenant + F19 plan root + F19 immutable revision. Composite FK `(workspace_id, plan_id, revision_id) -> plan_revisions(workspace_id, plan_id, id)` with `ON DELETE RESTRICT`. `UNIQUE (workspace_id, revision_id)`.                                                                                                                           |
+| `schema_version`                         | Frozen document schema version (integer). Selects the validator/renderer/export/algorithm version. Never reinterpreted.                                                                                                                                                                                                                      |
+| `algorithm_version`                      | Macro-algorithm version used for the stored values. Immutable per row.                                                                                                                                                                                                                                                                       |
+| `document`                               | The immutable nutrition document v1 (see `contracts/nutrition-document.md`). No client selection, no computed totals authored by the caller.                                                                                                                                                                                                 |
+| `snapshot_map`                           | `{ [snapshotKey]: FoodSnapshotV1 }`, built by the database at publish from exact F16 food versions. `snapshotKey = food:<food_id>@<version>#<unit_key>`, where `unit_key` is `g`/`ml` for a basis quantity or the declared serving `unit_key`. One entry per distinct (food version, serving unit) referenced by items **and** alternatives. |
+| `computed_values`                        | Exact-arithmetic results stored once: per-item values, per-meal totals, per-day totals, document totals, each as an exact decimal string at a scale sufficient for the exact product of declared input scales. No storage rounding is performed. Derived from exact intermediates, never from already-rounded item values.                   |
+| `created_at`, `created_by`               | Server time and acting staff id from the publish transaction (audit reference, not client-visible).                                                                                                                                                                                                                                          |
 
 Rules:
 
@@ -48,13 +48,13 @@ Rules:
 
 ### Input scales (verified against live `main`)
 
-| Input | Live storage | Source |
-| --- | --- | --- |
-| per-100 kcal | `numeric(7,1)` | `supabase/migrations/20261106093000_catalog_food_versions_and_servings.sql:9` |
-| per-100 protein/carbohydrate/fat/fiber | `numeric(7,2)` | same file `:10-13` |
-| serving basis quantity | `numeric(12,3)` | same file `:28` |
-| plan quantity | document decimal string, ≤ 3 decimals | F18-FR-003 |
-| stored computed value | `numeric(12,4)`, serialized fixed-scale | F18-FR-003 |
+| Input                                  | Live storage                                                                          | Source                                                                        |
+| -------------------------------------- | ------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| per-100 kcal                           | `numeric(7,1)`                                                                        | `supabase/migrations/20261106093000_catalog_food_versions_and_servings.sql:9` |
+| per-100 protein/carbohydrate/fat/fiber | `numeric(7,2)`                                                                        | same file `:10-13`                                                            |
+| serving basis quantity                 | `numeric(12,3)`                                                                       | same file `:28`                                                               |
+| plan quantity                          | document decimal string, ≤ 3 decimals                                                 | F18-FR-003                                                                    |
+| stored computed value                  | exact decimal numeric at declared-input product scale, serialized as a decimal string | F18-FR-003                                                                    |
 
 Transport is decimal strings, including inside `FoodSnapshotV1` (`specs/016-exercise-food-catalogs/plan.md:38` "Snapshot transport per FR-020 uses decimal strings"). The existing TypeScript builder types these as `number` (`lib/catalog/snapshot.ts:21-37`); the implementation must parse/format at fixed scale and must not rely on binary floating point. This is a technical item, not a product question.
 
@@ -65,17 +65,17 @@ basisQuantity =
     quantityValue                                   if unit is the food's basis (g or ml)
     quantityValue * serving.basis_qty               if unit is a declared serving unit
 itemValue(field) = per100(field) * basisQuantity / 100
-storedValue      = roundHalfEven(exactResult, 4)    // once, at storage
-mealTotal(field) = roundHalfEven(sum(exact itemValue(field)), 4)
-dayTotal(field)  = roundHalfEven(sum(exact itemValue(field) of its meal items), 4)
-documentTotal    = roundHalfEven(sum(exact itemValue(field)), 4)
+exactValue       = exactDecimalProduct(per100(field), basisQuantity) / 100
+mealTotal(field) = sum(exact itemValue(field))
+dayTotal(field)  = sum(exact itemValue(field) of its meal items)
+documentTotal    = sum(exact itemValue(field))
 ```
 
-- No intermediate rounding anywhere. Aggregates are never computed by adding stored/rounded item values.
+- Persist exact computed decimal values without storage rounding. The persisted decimal scale must be large enough to represent the exact product of the declared input scales. No intermediate rounding occurs anywhere; aggregates are computed from exact item values, never rounded stored/display values.
 - A quantity for an undeclared unit or a cross-basis unit is rejected (F18-FR-004).
-- Display is a pure function of the stored decimal string: calories integer; protein/carbohydrate/fat one decimal below 10 g and integer at or above 10 g (D18-4=C + S27-PO-2). A below-threshold value that rounds to 10.0 renders `10`; zero renders `0` (S27 evidence). The tie/threshold rounding mode is F18-MCQ-3 (open); display never writes back.
+- Display is a pure function of the exact persisted decimal string: calories integer; protein/carbohydrate/fat one decimal below 10 g and integer at or above 10 g (D18-4=C + S27-PO-2). A below-threshold value that rounds to 10.0 renders `10`; zero renders `0` (S27 evidence). Round half-up exactly once for the requested display precision; display never writes back. For example, exact `1.44996` displays as `1.4` at one decimal, without first rounding to four decimals. This is a technical settlement (architect ruling S43-R9, accepting Sol-1), separate from PO wording.
 - Worked non-tie examples: protein 12.34 per 100 g at 37 g → exact `4.5658`, stored `4.5658`, displayed `4.6`; fat 12.34 per 100 g at 37 g → displayed `4.6`; a `1.5` serving of a 30 g serving → basis `45.000` g.
-- Values that do not fit `numeric(12,4)` reject the whole publish.
+- Values that do not fit the exact persistence precision reject the whole publish. The prior `numeric(12,4)` storage proposal is superseded by this exact-persistence rule (architect ruling S43-R9, Sol-1).
 - Alternative foods are snapshotted and computed exactly like primary items; a selection reuses the same function, never a second one.
 
 ### Selected-alternative derivation
@@ -86,15 +86,15 @@ The selection stores ids only (`item_id`, `alternative_id`). Client-visible sele
 
 ### `client_nutrition_alternative_selections`
 
-| Column | Contract |
-| --- | --- |
-| `workspace_id`, `plan_id` | Tenant + stable F19 plan root. Composite FK `(workspace_id, plan_id, client_id)` to the plan root; `client_id` is derived at write from that root, never from the caller. |
-| `plan_version_id` | Exact published revision the selection applies to. Composite FK `(workspace_id, plan_id, plan_version_id) -> plan_revisions(workspace_id, plan_id, id)`; must be the current published, delivered revision at write time. |
-| `client_id` | Plan's client; self only, derived from `auth.uid()`. |
-| `item_id` | Stable document item id. |
-| `alternative_id` | Coach-approved alternative id in that item, in that revision. |
-| `selection_revision` | Monotonic integer per row for client-side compare/retry; not a domain version. |
-| `created_at`, `updated_at`, `created_by` | Server time; `created_by` must equal the authenticated client. |
+| Column                                   | Contract                                                                                                                                                                                                                  |
+| ---------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `workspace_id`, `plan_id`                | Tenant + stable F19 plan root. Composite FK `(workspace_id, plan_id, client_id)` to the plan root; `client_id` is derived at write from that root, never from the caller.                                                 |
+| `plan_version_id`                        | Exact published revision the selection applies to. Composite FK `(workspace_id, plan_id, plan_version_id) -> plan_revisions(workspace_id, plan_id, id)`; must be the current published, delivered revision at write time. |
+| `client_id`                              | Plan's client; self only, derived from `auth.uid()`.                                                                                                                                                                      |
+| `item_id`                                | Stable document item id.                                                                                                                                                                                                  |
+| `alternative_id`                         | Coach-approved alternative id in that item, in that revision.                                                                                                                                                             |
+| `selection_revision`                     | Monotonic integer per row for client-side compare/retry; not a domain version.                                                                                                                                            |
+| `created_at`, `updated_at`, `created_by` | Server time; `created_by` must equal the authenticated client.                                                                                                                                                            |
 
 - `UNIQUE (workspace_id, plan_version_id, item_id)` → at most one active selection per item per revision.
 - No row = coach default. **Clear deletes the row** and appends one audit event; deletion is not a "hidden null".
@@ -128,7 +128,7 @@ The carry-forward is part of the publish transaction and is decided from stable 
 
 ### `nutrition_workspace_templates`
 
-`workspace_id`, `id` (composite PK), `status` (`active` \| `retired`), `display_name` (workspace-branded), `current_version`, `origin_global_template_id` (nullable), `origin_global_template_version` (nullable), `created_at`, `created_by`, `retired_at`. `UNIQUE (workspace_id, origin_global_template_id, origin_global_template_version)` prevents a second copy of the same source version in one workspace; if `F18-MCQ-6` selects option A, the stricter `UNIQUE (workspace_id, origin_global_template_id)` is added. Origin metadata is masked from non-PO actors (F16 FR-013 pattern).
+`workspace_id`, `id` (composite PK), `status` (`active` \| `retired`), `display_name` (workspace-branded), `current_version`, `origin_global_template_id` (nullable), `origin_global_template_version` (nullable), `created_at`, `created_by`, `retired_at`. `UNIQUE (workspace_id, origin_global_template_id)` permits at most one workspace copy per global template identity, regardless of source version. Origin metadata is masked from non-PO actors (F16 FR-013 pattern).
 
 ### `nutrition_workspace_template_versions`
 
@@ -152,20 +152,20 @@ For the **nutrition** collection only:
 
 - **Uninitialized** = no `nutrition_template_assignment_items` row with `outcome='assigned'` for that workspace, ever.
 - **Initialized (partial or complete)** = at least one such row. Partial assignment is a normal, intentional state; nothing tops it up.
-- **Already holds the same source version of template T** = an active workspace template with `origin_global_template_id = T` **and** `origin_global_template_version = current global version` (used for `skipped_existing`). A copy from a different source version is `F18-MCQ-6` and is not classified here.
+- **Already holds global template T** = an active workspace template with `origin_global_template_id = T`, regardless of `origin_global_template_version` (used for `skipped_existing`). Every skipped workspace/template pair is included in the PO report.
 
-`All Workspaces` selects workspaces that are uninitialized at operation time and exist at operation time. `Specific Workspaces` targets exactly the chosen workspaces and skips only templates they already hold from the same source version. A workspace with its own hand-made nutrition templates but no assignment item is still uninitialized (A5 Q1=A + A2: only an assignment initializes).
+`All Workspaces` selects workspaces that are uninitialized at operation time and exist at operation time. `Specific Workspaces` targets exactly the chosen workspaces and skips/reports every template identity they already hold, regardless of source version. Reject the Assign before writes if no copies would be created. A workspace with its own hand-made nutrition templates but no assignment item is still uninitialized (A5 Q1=A + A2: only an assignment initializes).
 
 ## 6. Authorization matrix
 
-| Actor | Global templates | Assign / Make it Global | Workspace templates | Nutrition plan draft/publish | Exports / prompt | Client selection |
-| --- | --- | --- | --- | --- | --- | --- |
-| Platform Owner | read + manage | **yes** | full across workspaces (view/edit/copy) | any workspace (F19-FR-009) | yes | no |
-| Workspace Owner | none | no | own workspace, with `coaching_work` | own workspace | own workspace | no |
-| Trainer | none | no | own workspace, with `coaching_work` | own workspace | own workspace | no |
-| Sales | none | no | none | none | none | no |
-| Client | none | no | none | none (self-read via F19 projection only) | none in the F18 staff UI; P4 may consume the export projection under its own rules | self only; prompt only if `F18-MCQ-4` = B |
-| Unaffiliated / revoked | none | no | none | none | none | no |
+| Actor                  | Global templates | Assign / Make it Global | Workspace templates                     | Nutrition plan draft/publish             | Exports / prompt                                                                   | Client selection                                           |
+| ---------------------- | ---------------- | ----------------------- | --------------------------------------- | ---------------------------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------------------------- |
+| Platform Owner         | read + manage    | **yes**                 | full across workspaces (view/edit/copy) | any workspace (F19-FR-009)               | yes                                                                                | no                                                         |
+| Workspace Owner        | none             | no                      | own workspace, with `coaching_work`     | own workspace                            | own workspace                                                                      | no                                                         |
+| Trainer                | none             | no                      | own workspace, with `coaching_work`     | own workspace                            | own workspace                                                                      | no                                                         |
+| Sales                  | none             | no                      | none                                    | none                                     | none                                                                               | no                                                         |
+| Client                 | none             | no                      | none                                    | none (self-read via F19 projection only) | none in the F18 staff UI; P4 may consume the export projection under its own rules | self only; prompt uses the same staff export authorization |
+| Unaffiliated / revoked | none             | no                      | none                                    | none                                     | none                                                                               | no                                                         |
 
 Enforcement uses the existing merged checks (`app_private.is_platform_owner()`, `app_private.has_workspace_access(workspace_id, 'coaching_work')`) and the F3 platform-wide PO rule; F18 adds no capability and no role (F16 FR-033 pattern). Verified on `main`: `app_private.has_workspace_access` returns true for the Platform Owner without a membership row and maps `coaching_work` to Platform Owner / Workspace Owner / Trainer (`supabase/migrations/20261027120000_tenancy.sql:48-80`). Every denial is generic and writes one denial audit event only for exports/selection.
 
