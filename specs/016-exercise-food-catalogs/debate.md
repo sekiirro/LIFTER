@@ -7,7 +7,7 @@ Historical review record. It preserves earlier proposals and deliberation only; 
 | # | Sev | Verdict | Reasoning / integration |
 |---|---|---|---|
 | R1 | critical | ACCEPTED (adjusted) | Draft's INVOKER-only model was unimplementable with no DML grants. Adopted the established F12-F15 SECURITY DEFINER pattern (plan Technical Context). Not a new architecture amendment: practice already moved; docs/02 "SECURITY INVOKER" recorded as doc drift. |
-| R2 | major | ACCEPTED | FR-020 explicit-version snapshot builders incl. selected variation version. Cross-feature: F17 document must carry `variationVersion` (apply in F17 v1). |
+| R2 | major | ACCEPTED | FR-020 explicit-version snapshot builders incl. selected variation version. Cross-feature: F17 document must carry `variationVersion` (apply in F17 v1). **Superseded in S36 round 3 (critique F1, F17.8):** pinning a variation version contradicts live video (FR-014, FR-027). Snapshots pin the override version reference and frozen names and instructions (`ExerciseSnapshotV2`); video is never pinned. The historical row is kept unchanged. |
 | R3 | major | ACCEPTED | FR-011 rewritten: exactly three one-way identity mutations; composite FK pointer->version. |
 | R4 | major | ACCEPTED | FR-016a versioned taxonomy; plan tables updated. |
 | R5 | major | ACCEPTED | FR-016 operation-key semantics, FOR UPDATE + re-read, recheck after waits, deterministic merge locking. |
