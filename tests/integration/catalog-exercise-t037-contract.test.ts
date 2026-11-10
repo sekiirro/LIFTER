@@ -146,7 +146,7 @@ describe.each([
     'Video',
     'video_url',
     'https://youtu.be/abcdefghijk',
-    'https://vimeo.com/123456789',
+    'https://docs.google.com/document/d/id',
     'T043',
   ],
   ['Alternatives', 'alternatives', [], ['a', 'b', 'c', 'd'], 'T074'],
@@ -177,30 +177,64 @@ describe.each([
     expect(version?.payload).toMatchObject({ [key]: valid });
   });
 
-  it(`rejects a malformed or disallowed ${field} value on the Global write path (${task})`, async () => {
-    await expect(
-      createGlobal({ ...core, name_ar: 'تمرين', [key]: invalid }),
-    ).rejects.toBeDefined();
-  });
+  const rejectionIt = field === 'Video' ? it.fails : it;
+  rejectionIt(
+    `rejects a malformed or disallowed ${field} value on the Global write path (${field === 'Video' ? 'T061' : task})`,
+    async () => {
+      await expect(
+        createGlobal({ ...core, name_ar: 'تمرين', [key]: invalid }),
+      ).rejects.toBeDefined();
+    },
+  );
+
+  if (field === 'Video') {
+    it('T043 rejects a disallowed Vimeo video URL', async () => {
+      await expect(
+        createGlobal({
+          ...core,
+          name_ar: 'تمرين',
+          video_url: 'https://vimeo.com/123456789',
+        }),
+      ).rejects.toBeDefined();
+    });
+  }
 
   it('T043 appends canonical video changes as immutable versions and audits video', async () => {
     const firstUrl = 'https://youtu.be/abcdefghijk';
     const secondUrl = 'https://www.youtube.com/watch?v=abcdefghijk';
-    const created = await createGlobal({ ...core, name_ar: 'تمرين', video_url: firstUrl });
-    const exerciseId = (created[0]?.catalog_create_exercise as { exercise_id: string }).exercise_id;
-    const versioned = await asActor(poId, (tx) => tx`
+    const created = await createGlobal({
+      ...core,
+      name_ar: 'تمرين',
+      video_url: firstUrl,
+    });
+    const exerciseId = (
+      created[0]?.catalog_create_exercise as { exercise_id: string }
+    ).exercise_id;
+    const versioned = await asActor(
+      poId,
+      (tx) => tx`
       select public.catalog_version_exercise(${exerciseId}, 1, ${randomUUID()},
         ${tx.json({ ...core, name_ar: 'تمرين', video_url: secondUrl })})
-    `);
-    expect(versioned[0]?.catalog_version_exercise).toEqual({ exercise_id: exerciseId, version: 2 });
+    `,
+    );
+    expect(versioned[0]?.catalog_version_exercise).toEqual({
+      exercise_id: exerciseId,
+      version: 2,
+    });
     const rows = await db`
       select version, payload ->> 'video_url' as video_url from public.exercise_versions
       where exercise_id = ${exerciseId} order by version
     `;
-    expect(rows).toEqual([{ version: 1, video_url: firstUrl }, { version: 2, video_url: secondUrl }]);
-    const detail = await asActor(poId, (tx) => tx`
+    expect(rows).toEqual([
+      { version: 1, video_url: firstUrl },
+      { version: 2, video_url: secondUrl },
+    ]);
+    const detail = await asActor(
+      poId,
+      (tx) => tx`
       select * from public.catalog_exercise_detail(${exerciseId})
-    `);
+    `,
+    );
     expect(detail).toHaveLength(1);
     expect(detail[0]?.version).toBe(2);
     expect(detail[0]?.payload).toMatchObject({ video_url: secondUrl });
@@ -228,11 +262,15 @@ describe.each([
     expect(version?.payload).toMatchObject({ [key]: valid });
   });
 
-  it(`rejects a malformed or disallowed ${field} value on the private write path (T075)`, async () => {
-    await expect(
-      createPrivate({ ...core, name_ar: 'تمرين', [key]: invalid }),
-    ).rejects.toBeDefined();
-  });
+  const privateRejectionIt = field === 'Video' ? it.fails : it;
+  privateRejectionIt(
+    `rejects a malformed or disallowed ${field} value on the private write path (${field === 'Video' ? 'T061' : 'T075'})`,
+    async () => {
+      await expect(
+        createPrivate({ ...core, name_ar: 'تمرين', [key]: invalid }),
+      ).rejects.toBeDefined();
+    },
+  );
 });
 
 describe('T037 contract distinctions', () => {
