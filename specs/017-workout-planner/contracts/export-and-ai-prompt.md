@@ -18,12 +18,14 @@ Only published revisions are exportable. Selection is explicit; if several revis
 - Days in order, including rest days.
 - Exercise names as authored.
 - Sets in order, labelled warm-up or working.
-- Reps or rep range per set.
+- Reps or rep range per set, using the exercise entry's `reps` prescription.
 - Prescribed load with unit and mode (`bodyweight`, `added weight` kg/lb, `assisted` kg/lb).
-- Rest per set and RIR per set; workout-level, day-level and exercise-entry notes as defined by the document schema.
+- Rest per set and RIR per set, using the exercise entry's `restSec` and `rir` prescriptions; workout-level, day-level and exercise-entry notes as defined by the document schema.
 - Trainer-selected alternatives (up to three per exercise).
 - Applicable exercise and alternative video links, resolved live from the current authorized library at export time; no video URL is read from the frozen snapshot.
 - For the AI prompt: the same content plus a hyperlink-formatting request.
+
+The document schema stores Reps, Rest and RIR once per exercise entry (`Item`); a `Set` holds only its id, type and load. Exports therefore repeat the entry's prescription values beside each exported set and add no per-set prescription fields. An entry with zero sets exports its entry-level prescriptions once.
 
 The output must be usable for training without the platform UI; online video links still require internet.
 

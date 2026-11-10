@@ -78,3 +78,27 @@ This section supersedes the earlier S44 entry's two-open-MCQ status. S44-PO-2 (2
 | LOW      | 0 open  | IDs, tags, and traceability align.                                                                            |
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## S44 Greptile P2 fix-lane Analyze — 2026-11-10 13:33 UTC
+
+Scope: three unresolved Greptile P2 findings on head `6f70703c887119f0a41bc9f4847b9e6039bedd9d` — replay check ordering before the assignment run row (`data-model.md` §5.2), run-level versus permanent identity-level copy keys (`data-model.md` §5.2), and the export field mapping for entry-level Reps/Rest/RIR (`contracts/export-and-ai-prompt.md` §2). No FR, SC, task or scope change; product behaviour is unchanged.
+
+### Entry and cross-artifact checks
+
+- PASS — `spec.md` has numbered FRs, measurable SCs and Given/When/Then scenarios for the touched assignment and export scope; §8 Clarifications and §8.6 PO-decision register record the cited PO sources and state "No open ambiguities".
+- PASS — `plan.md` covers assignment idempotency and export content; `tasks.md` T007/T009/T025/T026/T027/T037/T038/T041/T053 carry the touched rules with unchanged FR tags; `traceability.md` FR-011/FR-018 rows remain consistent.
+- PASS — the corrections restate existing decisions only: S44-PO-2/S44-R2 mixed-batch receipts, S42-PO-8 zero-copy rejection, S43-PO-1 skip-regardless-of-version, and the entry-level prescription schema. No new product decision is encoded.
+- PASS — this Analyze section is dated after the final edits to `data-model.md` and `contracts/export-and-ai-prompt.md` in this lane.
+
+### Hostile cross-artifact findings
+
+| Severity | Finding | Disposition                                                                                                                                                                                    |
+| -------- | ------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CRITICAL | 0 open  | No implementation, schema or privilege change in this spec-only lane.                                                                                                                          |
+| HIGH     | 0 open  | Replay ordering, copy-key scope and the export data source now agree across `data-model.md` §5.2/§5.3, `contracts/template-assignment.md` §2/§4 and `contracts/export-and-ai-prompt.md` §2/§6. |
+| MEDIUM   | 0 open  | The three P2 findings are corrected in text; no behaviour change, no open MCQ.                                                                                                                 |
+| LOW      | 0 open  | IDs and task tags are unchanged; task checkboxes remain unticked because no implementation tests were run.                                                                                     |
+
+Disposition: the assignment transaction now checks the ledger by operation key before any write, creating the run row only for a new accepted request; the version-bearing run key is distinguished from the permanent `(workspace_id, global_template_id)` identity key; exports state that Reps/Rest/RIR come from the entry-level prescription and that sets carry only type and load. All three statements preserve S42-PO-8, S43-PO-1 and S44-PO-2/S44-R2 behaviour.
+
+**Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**

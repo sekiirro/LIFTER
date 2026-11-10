@@ -65,9 +65,9 @@ A zero-copy Assign is rejected before the batch or distribution-state flag is wr
 
 ### 5.2 Idempotency, retry and concurrency
 
-- The run row is created under a transaction-scoped advisory lock derived from the actor+operation key, then the assignment ledger is checked. An exact replay returns the stored per-workspace outcomes before any new copy is created. Same key with different selection/target arguments returns `key_conflict`.
+- Under a transaction-scoped advisory lock derived from the actor+operation key, the assignment ledger is checked first: an exact replay returns the stored per-workspace outcomes after current authorization is rechecked and creates nothing new; the same key with different selection/target arguments returns `key_conflict`. Only a new request proceeds to eligibility calculation, and it creates the run row, copies, items and distribution-state changes in the same transaction.
 - Per-target-workspace writes take that workspace's assignment lock so two PO tabs cannot interleave All/Specific runs on the same workspace. The eligibility read and the flag write occur in the same transaction.
-- The identity-level copy uniqueness key includes the template **version**. A replay of the same run cannot duplicate a copy; a different run targeting a template version the workspace already holds copies is skipped, not duplicated.
+- The run-level copy key is `(run_id, workspace_id, global_template_id, global_template_version)`. The permanent identity-level key is `(workspace_id, global_template_id)` and excludes the source version. A replay cannot duplicate a copy; a different run skips and reports any template identity the workspace already holds, regardless of source version.
 - Cancellation/failure before commit leaves no run row, no flag change and no copy. An unknown client result after commit is resolved by replaying the same operation key, which returns the original receipt.
 - A resolved Assign that would create zero copies is rejected before the run, item, or state marker is written (S42-PO-8; architect mapping (S42 matrix): F17-MCQ-3=C).
 
