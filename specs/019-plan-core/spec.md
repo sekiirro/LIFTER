@@ -145,7 +145,7 @@ S43-PO-6 (2026-11-10): Fixed tier hierarchy: Silver < Gold < Platinum. Workspace
 
 architect mapping (S43-R7): Silver < Gold < Platinum is immutable platform rank; workspace display names may change. Higher-tier equal/longer duration starts from original start; shorter starts on upgrade date; pre-activation duration starts on activation; preserve separate renewal duration and payments.
 
-architect mapping supersession (S43-R9): S43-R9 defers rank placement pending S43-F9-MCQ-2 on catalog structure. The S43-PO-6 hierarchy quote above remains PO-approved, but this F19 artifact does not establish which package identity carries a rank.
+architect mapping supersession (S43-R10): S43-PO-8 resolves the catalog structure: each package category offers all three tiers, and rank belongs to the tier offer within that category. F19 consumes the F9 tier-offer rank; no rank is added to the F19 plan or delivery identity.
 
 **S43-F19-MCQ-6 ? resolved by architect mapping (S43-R8), not a PO decision.**
 

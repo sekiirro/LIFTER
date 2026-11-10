@@ -1,7 +1,7 @@
 # Spec Kit Analyze - F19 Shared Plan Core
 
-**Analyzed:** 2026-11-10 05:43 UTC
-**Method:** Cross-artifact review after S43-R9 Sol-8 compatibility, S43-R7 supersession, and Sol-10 traceability updates.
+**Analyzed:** 2026-11-10 06:13 UTC
+**Method:** Cross-artifact review after S43-R9 Sol-8 compatibility, S43-PO-8 tier-offer decision, and Sol-10 traceability updates.
 
 ## Entry check
 
@@ -25,6 +25,8 @@
 - MCQ-1..5: S43-PO-5/6 text is quoted byte-exact and separated from S43-R8/R7 mapping.
 - MCQ-6: architect-only ruling says lifecycle/ledger events, no new activation row; source enum for new activations is limited to plan_deliveries and po_override.
 - One eligible continuous subscription is ensured by F13-FR-037; publish fails closed if violated (F19-FR-002).
+
+- S43-F9-MCQ-2 is resolved by S43-PO-8; F19 consumes rank from the F9 tier offer and does not add rank to a plan/delivery identity.
 
 ## Analyze result
 
