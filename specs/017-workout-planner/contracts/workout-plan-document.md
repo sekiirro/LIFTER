@@ -22,6 +22,9 @@ Day {
 Item {
   id: uuid
   exercise: ExerciseRef
+  reps?: { value: int } | { min: int, max: int }   // 1..100; entry-level prescription
+  restSec?: int                     // 0..600, step 15; entry-level prescription
+  rir?: int                         // 0..5; entry-level prescription
   notes?: string
   alternatives: ExerciseRef[]       // max 3 unique targets (F16 FR-025)
   sets: Set[]                       // ordered
@@ -37,14 +40,10 @@ ExerciseRef {
 Set {
   id: uuid
   type: 'warmup' | 'working'
-  reps: { value: int } | { min: int, max: int }   // 1..100, min <= max
   load:
     | { mode: 'bodyweight' }
     | { mode: 'added_weight', value: decimal_string, unit: 'kg' | 'lb' }
     | { mode: 'assisted', value: decimal_string, unit: 'kg' | 'lb' }
-  restSec?: int                     // 0..600, step 15
-  rir?: int                         // 0..5
-  notes?: string
 }
 ```
 
@@ -53,10 +52,10 @@ Set {
 ## 2. Invariants
 
 1. Ids are unique within a document; unchanged items keep their ids across revisions; deliberate duplicates get new ids for the item and every descendant set (and a duplicated day remaps the day id and all descendants).
-2. Reorder, cross-day move and duplicate preserve every parameter field-for-field and never corrupt reps/load/rest/RIR/notes.
-3. A reference stores an immutable catalog version. It never stores a resolved name, description, video URL or other library value as the authoritative source; the planner entry's non-video values are those captured for freezing at publication.
+2. Reorder, cross-day move and duplicate preserve every entry prescription and set type/load field-for-field and never corrupt reps/load/rest/RIR/notes.
+3. Each plan exercise entry stores editable prescription fields (Rest, RIR, Reps, Notes, Alternatives) independently of its set rows. These fields are on the item shape, not the set shape. A fresh entry may have zero set rows and still retains these values. Adding sets later does not reread library defaults; entry prescriptions remain editable at plan-entry level. Set rows contain only their id, warm-up/working type, and load prescription. A reference stores an immutable catalog version. It never stores a resolved name, description, video URL or other library value as the authoritative source; the planner entry's non-video values are those captured for freezing at publication.
 4. Alternatives reference at most three unique targets, validated active at selection, resolved through F16 FR-026. Removed/merged targets are shown unavailable in the draft and never substituted.
-5. Global Workout Template documents resolve exercises canonical-only (F16 FR-026); workspace overrides and workspace-private exercises do not participate in a global template.
+5. Fresh authoring of a global Workout Template resolves exercises canonical-only (F16 FR-026); workspace overrides and workspace-private exercises cannot be newly added. A promoted template may retain existing workspace-private exercise references; unresolved references are flagged RED and block loading until fixed (S42-PO-8). Promotion is not fresh global authoring.
 6. A workspace-private reference uses its composite `(workspace_id, identity)`. A foreign-workspace private reference is invalid and denied generically.
 
 ## 3. Add-time defaults (PO A1)
@@ -64,7 +63,7 @@ Set {
 - On add, copy the current F16 `Default Rest Time`, `Default RIR` and `Default Reps` into the entry's ordinary `restSec`, `rir` and `reps` fields.
 - Missing default → leave the field absent/blank; never substitute another exercise, another workspace or a platform-wide value.
 - Copy happens once at add. Later library edits never change existing entries; loading never re-defaults; a new add uses the defaults current at that moment.
-- No catalog field is added, and no set-row count is fixed by this contract (F17-MCQ-1).
+- No catalog field is added. A newly added plan exercise starts with zero set rows (S42-PO-8), while its entry-level prescription fields persist independently of sets.
 
 ## 4. Publication snapshot
 
@@ -79,13 +78,13 @@ At publication the revision embeds `ExerciseSnapshotV2` per referenced exercise 
 
 ## 6. Operations (logical, no SQL)
 
-| Operation | Effect | Concurrency |
-|---|---|---|
-| create plan | creates the F19 root via Plan Core; F17 supplies an empty or copied document | F19 creation lock + operation key |
-| save draft / autosave | writes draft content at expected revision | CAS on draft revision + operation key |
-| save as draft | same write, explicitly confirmed | CAS |
-| ready & publish | validates, gates intake + current subscription, appends one revision with snapshot | CAS on draft/revision + F19 publish path |
-| copy plan | copies latest published revision values | new root, no source mutation |
-| load template | copies template version content with id remap | no template mutation |
+| Operation             | Effect                                                                             | Concurrency                              |
+| --------------------- | ---------------------------------------------------------------------------------- | ---------------------------------------- |
+| create plan           | creates the F19 root via Plan Core; F17 supplies an empty or copied document       | F19 creation lock + operation key        |
+| save draft / autosave | writes draft content at expected revision                                          | CAS on draft revision + operation key    |
+| save as draft         | same write, explicitly confirmed                                                   | CAS                                      |
+| ready & publish       | validates, gates intake + current subscription, appends one revision with snapshot | CAS on draft/revision + F19 publish path |
+| copy plan             | copies latest published revision values                                            | new root, no source mutation             |
+| load template         | copies template version content with id remap                                      | no template mutation                     |
 
 Errors are generic (`not_permitted`, `not_found`, `stale_version`, `key_conflict`, `invalid_document`); `not_permitted` and `not_found` are indistinguishable to the caller.
