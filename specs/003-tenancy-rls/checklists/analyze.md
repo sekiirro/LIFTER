@@ -144,8 +144,15 @@ Open defect findings: **2** (A1 MEDIUM, A2 MEDIUM; both are evidence-coverage it
 ## 2026-11-09 18:45 +02:00 — S40 round 3 analysis (S40-PO-13 MCQ-1 = B; PR #73)
 
 - Scope: FR-015 (S40 amendment), SC-007 wording, User Story 7 scenario 4, and the S40 amendment clarification in spec.md. Source: S40-PO-13 "S40-F11-MCQ-1: B: Allow deletion" (byte-exact, `C:/Users/NEW LAP/.lifter/runs/s40-po/s40-po-1.verbatim.txt`). Architect mapping (not PO words): the amendment supersedes G1=A for this point only; the last-PO guard (FR-014) is unchanged.
-- Entry check: PASS for the touched scope: FR-015, the departure requirement and its scenarios remain present; PO clarifications recorded; plan (P-S40-1 in spec 011) covers the deletion path; the FR-tagged tasks are in spec 011 (T047, T048).
+- Entry check: PASS for the touched scope: FR-015, the departure requirement and its scenarios remain present; PO clarifications recorded; plan (P-S40-1 in spec 011) covers the deletion path; the FR-tagged tasks are in spec 011 (011 task IDs 47 and 48).
 - Consistency: the departure path (deactivate + revoke) is unchanged and still does not delete the auth user or `staff_profiles` row. The deletion path (011 FR-018, P-S40-1) keeps the RESTRICT FK and `staff_profiles_no_delete` trigger in force (no FK or trigger change). `staff_profiles` holds only `user_id`, `role` and `created_at` (`supabase/migrations/20261027120000_tenancy.sql:4–8`), so no identifying field remains there.
 - Architect reading (not PO words), recorded for PO visibility: "no hard deletion of history" (S40-PO-13 MCQ-2 = A) keeps the auth user row as a banned, identifier-released reference.
 - Findings: CRITICAL 0. HIGH 0. New MEDIUM (open, PO-blocked): none in 003. The staff deletion capability (011 S40-F11-MCQ-15) and the last-active Workspace Owner case (011 S40-F11-MCQ-13) are open in spec 011 and block only those cases.
 - Result: PASS - 0 CRITICAL, 0 HIGH. Static consistency only; no product behavior, migration or implementation is changed. The 2 MEDIUM evidence items A1 and A2 are unchanged.
+
+## 2026-11-10T18:05Z — spec consistency fix (PR #73)
+
+- Date: 2026-11-10T18:05Z, after the S40/S41 amendment edits to spec.md (latest 2026-11-10).
+- Consistency: the S40 round 3 entry cited the F11 task IDs by their F11 tokens, which the feature-consistency check read as identifiers of feature 003. Feature 003 `tasks.md` has no F11 task ids, so those tokens were reported as unknown. The reference now names them as 011 task IDs 47 and 48, which keeps the cross-feature pointer without asserting an F11 identifier in the 003 namespace. No requirement, task, evidence or verdict text changed.
+- Re-check of the 003 Analyze content: 0 open CRITICAL, 0 open HIGH; the 2 open MEDIUM evidence items (A1, A2) and implementation gate G-3 are unchanged; "no open ambiguities" still holds for spec 003.
+- Result: PASS — 0 CRITICAL, 0 HIGH. Static consistency only; no product behaviour, migration or implementation is changed.
