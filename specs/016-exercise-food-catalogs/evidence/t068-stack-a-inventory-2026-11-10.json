@@ -1,0 +1,27 @@
+{
+  "dateUtc": "2026-11-10",
+  "mainSha": "c88816d2bb815ef813f333677ab3cef36a650128",
+  "stack": "A",
+  "status": "BLOCKED_BEFORE_INVENTORY",
+  "entryCheck": {
+    "status": "PASS",
+    "spec": "specs/016-exercise-food-catalogs/spec.md: numbered FRs, measurable SCs, Given/When/Then scenarios",
+    "clarifications": "specs/016-exercise-food-catalogs/decision-register.md and spec.md: no open ambiguities stated",
+    "planAndTask": "specs/016-exercise-food-catalogs/plan.md migration step 1; tasks.md T068 [FR-031, FR-003]",
+    "analyze": "specs/016-exercise-food-catalogs/checklists/analyze.md: dated 2026-11-09; 0 open CRITICAL and 0 open HIGH"
+  },
+  "stackStartup": {
+    "status": "FAILED",
+    "error": "ContainerStartError starting supabase_db_lifter: Docker could not bind TCP port 54322; bind failed with an access-permissions error.",
+    "diagnostic": "Windows reports 54241-54340 as an excluded TCP port range, which includes 54322. No stack configuration or host port reservation was changed."
+  },
+  "inventory": {
+    "status": "NOT_RUN",
+    "counts": null,
+    "reason": "Stack A could not start, so db reset and the read-only inventory were not run. No database counts are claimed."
+  },
+  "deletionGate": {
+    "disposableMockData": "UNESTABLISHED",
+    "reason": "The requested origin/main replay and seed provenance check could not run because Stack A was unavailable. No disposition was inferred."
+  }
+}
