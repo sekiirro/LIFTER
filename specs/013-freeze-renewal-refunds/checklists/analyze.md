@@ -1,27 +1,30 @@
-# F13 plan analysis
+# Spec Kit Analyze - F13 S43-R9 continuity settlement
 
-**Pass**: spec ↔ plan ↔ tasks consistency review. No implementation or tests run. **Model/effort**: Luna High.
+**Date:** 2026-11-10 05:32 UTC (after the last spec/plan/tasks edit)
+**Method:** Static cross-artifact review of spec.md, plan.md, tasks.md, data-model.md, contracts/lifecycle-and-entitlement.md, research.md, traceability.md, related F9 tier/currency requirements and Sol's findings. Checked FR/SC/GWT/task mapping, source quoting, effective inventory, purchase/refund identity, open MCQs and blocked tasks.
 
-## Findings
+## Entry check
 
-- FR-001–FR-036 are mapped to one or more named units in tasks.md; FR-034/035/036 have dedicated gate and parity coverage. SC-001–SC-013 map to the financial, freeze, renewal, calendar, authorization, audit, UI-gate and P4/P5 integration units listed there.
-- Every task names an originating FR/SC/decision, owner files, DB need, tests-first RED→GREEN evidence and a named mutation check for security/financial logic. No implementation code is included.
-- PO-1 uses atomic deactivation/outbox plus a synchronous Custom Access Token hook to deny new issuance; the server-side Auth Admin ban worker remains defense in depth. Stack C integration verifies sign-in/refresh denial while the worker fails. F12 U4 is merged and verified at PR #18 / `e3a2534`; reuse its writer and function contracts.
-- F13 database and Auth API verification is assigned to isolated Stack C (lifter-stack-c). Stack A/B remain prohibited targets.
-- Order F13 migrations after the integrated replay baseline: enumerate only F12/F14 migrations present in the implementation branch and replay; never depend on unmerged migrations. Rebuild shared audit and capability bodies from the latest integrated versions.
-- Capability delta and bidirectional parity are sequenced after both F12 and F14. Cross-feature table/FK/function/i18n/dashboard/nav/CI interactions and merge ordering are stated in tasks.md.
-- Remaining production blocker: technical and legal feasibility of 30-day retention across all recoverable copies, including backups.
+- PASS - spec.md has numbered FRs, measurable SCs and Given/When/Then scenarios for continuity, upgrade, renewal, refund, activation and points.
+- PASS - S43-PO-5/6/7 source blocks are copied programmatically from verbatim files; architect mappings are separately labelled. The Clarifications register states no open ambiguity is assumed closed beyond cited PO rulings.
+- PASS - plan.md covers the affected scope and inventories effective renewal/entitlement seams through migration 20261103130700, including migration 20261103127000, body 20261103130000:48-169, 20261103130500, entitlement and renewal package lookup tests. T041/T042/T045 carry matching FR/SC tags.
+- PASS - Analyze is dated after the last spec/plan/tasks edit.
 
-## Issues corrected during analysis
+## Findings by severity
 
-No critical or high inconsistency found in the generated planning artifacts. No PO policy is inferred beyond the binding decision record and feature spec. Constitution check has no exception. No rendered UI task is included; the future UI gate requirement is explicit in plan.md.
+- CRITICAL: 0 open.
+- HIGH: 0 open, except rank-dependent upgrade work blocked by S43-F9-MCQ-2, post-lapse upgrade anchor blocked by S43-F13-MCQ-12, and cross-currency behavior blocked by S43-F13-MCQ-13. No guess is embedded in a requirement or test expectation.
+- MEDIUM: 5 PO decisions open: S43-F9-MCQ-2, S43-F9-MCQ-3, S43-F18-MCQ-1, S43-F13-MCQ-12 and S43-F13-MCQ-13. The affected work is explicitly BLOCKED in the task/decision register. S43-PO-6 resolves earlier S43-F13-MCQ-7..11 only.
+- LOW: 0 open.
 
-## Remaining medium/low observations
+## Sol finding disposition
 
-- F12 U4 RPC and receipt shapes are verified against merged PR #18 at `e3a2534`; planning copies must use the pinned merged contract and must not create a duplicate payment writer.
-- The Auth design is resolved as the Custom Access Token hook plus the Auth Admin worker; the isolated database and Auth API stack is assigned to Stack C (`lifter-stack-c`).
-- F13 UI is outside this plan's implementation units; any later request to add rendered UI must use the Frontend Design Gate and DESIGN.md.
+- Sol-6: implementation inventory now covers entitlement.ts, entitlement unit/integration tests, migration 20261103127000, 20261103130000:48-169, replacement seams through 20261103130700 including 20261103130500, renewal package lookup tests, and fresh/upgrade replay tasks.
+- Sol-7: immutable original/upgrade-charge/renewal purchase records, paid-period/collection/refundable balance linkage, tenant composite keys, and refund-after-upgrade isolation test are specified.
+- Sol-10: FR-037..042 and SC-015..032 are mapped to T041..T047; R9 questions and blockers are synchronized across spec, plan, tasks, traceability and this Analyze. No test, migration or code is claimed as executed.
 
-## S24 round 16 implementation addendum
+## Cross-artifact checks
 
-Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the immutable lineage-tail guard and makes each required `record_renewal` key reject absence as `invalid_input`. The quickstart and task history record the new current endpoint; round 12's 82-migration replay remains historical.
+- T041 includes forward replacement and fresh/upgrade replay coverage; T042 includes rank/post-lapse/currency blockers; T045 includes immutable purchase links and refund isolation coverage.
+- The F9-dependent tier structure and label authority are cross-referenced by the same MCQ IDs in F9 and F13.
+- No stale statement says all S43 questions are resolved; only S43-F13-MCQ-7..11 are closed by S43-PO-6.
