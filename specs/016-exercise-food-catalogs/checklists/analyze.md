@@ -626,3 +626,12 @@ T900 has been marked complete only after its focused integration test passed on 
 - **Findings:** 0 open CRITICAL, 0 open HIGH. Published-plan alternatives remain outside this task because F17/F18 plan persistence is absent; regression is tracked as expected failure under T050/T056.
 - **T052:** all 107 fetched origin refs / 7,941 migration paths scanned; maximum filename version `20261110140000` on `origin/016-impl-s45`; new valid clock-time version `20261110205300` is greater. Separate `npm run check:migration-versions:remote` passed across 106 remote refs.
 - **Gate:** PASS for T048. Stack A RED/GREEN and both required schema mutations are recorded in `C:/Users/NEW LAP/.lifter/runs/s45-luna-f16-t048b/report.md`.
+
+## S45 T057 exercise audit field allowlist
+
+- **Date:** 2026-11-10 21:20 UTC, after the T057 task evidence update.
+- **Scope:** Restrict canonical and workspace exercise audit changes to the exact FR-003 codes (`name`, `description`, `notes`, `video`, `alternatives`, `default_rest_time`, `default_rir`, `default_reps`). Add the scoped override audit action and reject values, URLs and free text. Existing canonical and private write RPCs keep their operation, authorization, CAS and idempotency logic; only their audit changed-field codes are updated.
+- **Entry check:** PASS. `spec.md` FR-013/FR-003 and the audit contract define fixed changed-field codes and reject content values. `plan.md` requires a single audit event with no values. `tasks.md` T057 is tagged FR-013/FR-003 and depends on T046. D16 decision records leave no ambiguity for this scope.
+- **Findings:** 0 open CRITICAL, 0 open HIGH. No PO decision needed.
+- **T052:** all 107 fetched origin refs / 7,941 migration paths scanned; maximum existing version `20261110140000`; T048 local migration is `20261110205300`; T057 migration is `20261110210800`, valid and strictly greater. Separate remote filename-conflict check passed across 106 refs.
+- **Gate:** PASS for T057. RED/GREEN, value-payload mutation, and affected unit/integration evidence are in `C:/Users/NEW LAP/.lifter/runs/s45-luna-f16-t048b/report.md`.
