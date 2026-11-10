@@ -16,12 +16,21 @@
 
 - `CreatePlanRequest`: explicit `createMode: 'blank' | 'template' | 'existing_plan'`, `clientId`, `kind`, mode-specific `templateId` or `sourcePlanId`, and `operationKey`. Workspace and actor are derived from current authorization, not trusted request fields. Source plan must be in an authorized workspace and available to the actor. Copy rules are F19-FR-008.
 - `DraftWriteRequest`: `{ planId, expectedDraftVersion, content, operationKey, intent: 'autosave' | 'save_draft' }`. Both intents mutate only the private draft. Neither publishes, delivers, nor creates a root.
-- `ReadyAndPublishRequest`: `{ planId, expectedDraftVersion, expectedPublishedRevision, operationKey }`. It appends one immutable revision using CAS. Ready & Publish binds delivery to the client's continuous subscription under F13-FR-037 and F19-FR-002. Each successful publish appends a revision and delivery row in one operation. Without an eligible subscription, or if continuity is unexpectedly violated, the request fails closed with `not_permitted` and no writes.
+- `ReadyAndPublishRequest`: `{ planId, expectedDraftVersion, expectedPublishedRevision, operationKey }`. It appends one immutable revision using CAS. Ready & Publish binds delivery to the client's resolved continuous subscription under F13-FR-037 and F19-FR-002. Each successful publish appends a revision and delivery row in one operation. Without an eligible subscription, while a legacy chain is unresolved, or if continuity is unexpectedly violated, the request fails closed with `not_permitted` and no writes.
 - `OverrideActivateRequest`: Platform Owner-only, initial-subscription target, operation key, plus a trainer recipient only when no trainer is assigned. The selected recipient is not an assignment input. Cancelled/refunded, deactivated, or already-active targets return `not_permitted`; these refusals write or change nothing.
 
 ## Results and errors
 
-Success returns a typed result with `status: 'ok'`, replay indicator, stable Plan/revision IDs, and the original immutable receipt on exact replay. Do not return internal operation IDs to clients. Failure results are closed and contain no free-form detail.
+Success returns `{ status: 'ok', replayed, receipt }`, where `receipt` is the immutable operation-specific result and an exact authorized replay returns that original receipt. Its fields are limited to identifiers and values created by that operation:
+
+| Operation                 | Success receipt                                                |
+| ------------------------- | -------------------------------------------------------------- |
+| `CreatePlanRequest`       | `planId`; no revision ID exists for a blank or copied draft.   |
+| `DraftWriteRequest`       | `planId` and the resulting `draftVersion`.                     |
+| `ReadyAndPublishRequest`  | `planId`, `revisionId`, and the resulting revision number.     |
+| `OverrideActivateRequest` | Activation outcome only; no Plan or revision IDs are included. |
+
+Do not return internal operation IDs to clients. Failure results are closed and contain no free-form detail.
 
 | Result          | Meaning                                                                                                                |
 | --------------- | ---------------------------------------------------------------------------------------------------------------------- |
