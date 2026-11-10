@@ -78,7 +78,7 @@
 
 ## S41-R12 round-3 PR-wide re-analysis
 
-- Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), after traceability evidence/status edits; no later spec/plan/tasks edits follow this analysis.
+- Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), recording the state at that time after traceability evidence/status edits; the later plan reconciliation is recorded in the S43 analysis below.
 - Scope: rechecked all 29 FR and 11 SC identifiers across the traceability rows, current totals, task links and cited evidence. FR total is 21 VERIFIED / 8 PARTIAL after FR-007 is marked PARTIAL; SC total is 6 VERIFIED / 5 PARTIAL. T041 is complete for mock status/accessibility outcomes; the signed-session proof remains pending in U9. FR-016 cites T010 rollback, T017 audit assertions and T022 replay assertions. SC-004 remains PARTIAL pending U9 real signed-session evidence; SC-005 remains VERIFIED with T023 staff role/commission projection and T017 owner-scoped audit evidence.
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tasks are present. T041 is complete for mock status/accessibility outcomes; real signed-session proof remains pending in U9.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no status was upgraded.
@@ -100,3 +100,12 @@
 - Current totals: FR 20 VERIFIED / 9 PARTIAL; SC 6 VERIFIED / 5 PARTIAL. SC-004 remains PARTIAL pending U9 real signed-session evidence.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no tests ran. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+
+## S43 CodeRabbit finding reconciliation — 2026-11-10 08:52 UTC
+
+- Scope: static review of the live PR #52 findings for this feature, migration status in plan.md, FR/SC traceability and cited tests/verification record. Plan and traceability edits are dated above; spec, task identifiers, requirements, and implementation are unchanged.
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks are present. T051 migration verification remains pending; no task checkbox changed.
+- Evidence: FR-024 is PARTIAL because existing unit/route tests use mocked status reads and do not establish authenticated-page automatic detection. FR-007 and SC-004 are VERIFIED by T042 (`registration-approval-operations.test.ts::T042 real F11 client session observes pending then approved status without signing in again`; final S14 verification reports T042 45/45 passed) and T024 (`registration-approval-client-access.test.ts::T024 zero-argument self status returns only the signed client state`; `::T024 foreign and nonexistent users receive the same denial; no target can be supplied`). FR-026 retains VERIFIED status with T014 rejection, invalid-shape, and PO-only reconsideration assertions. The installed U1F migration and pending T051 verification are stated consistently in plan.md and tasks.md.
+- Totals: FR 20 VERIFIED / 9 PARTIAL (29); SC 7 VERIFIED / 4 PARTIAL (11). FR-024's page-level detection gap remains explicit; it is not inferred from FR-007/SC-004 evidence.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests executed and no task status changed.
+- Verdict: PASS for this documentation reconciliation; no product decision or requirement meaning changed.

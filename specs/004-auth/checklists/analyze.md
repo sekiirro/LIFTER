@@ -107,8 +107,16 @@ This round changes specification artifacts only. No code, SQL, migration, enviro
 
 ## S41-R12 round-3 PR-wide re-analysis
 
-- Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), after the historical-status edit; no later spec/plan/tasks edits follow this analysis.
+- Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), recording the state at that time after the historical-status edit; the later FR-010 clarification is recorded in the S43 analysis below.
 - Scope: rechecked all FR-001..031 and SC-001..016 traceability/status references, decision rows and links against docs/04 and later S35-PO-1. The 2026-11-03 "remained open" statement is now explicitly historical; the 2026-11-06 decision and still-open implementation status are distinguished.
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications explicitly record no open ambiguities for the decided values, and plan/tasks cover the feature. Existing UNVERIFIED/PARTIAL implementation rows remain so.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no implementation status changed.
 - Verdict: PASS for this documentation-only correction.
+
+## S43 CodeRabbit finding reconciliation — 2026-11-10 08:52 UTC
+
+- Scope: static review of FR-010 wording against the S31-PO-3 decision, data-model.md's current recovery_link_limits() values, and task T031.
+- Entry gate: PASS — FRs, SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the existing scope; T031 remains unchecked for the unimplemented approved limits.
+- Result: FR-010 now distinguishes approved limits (10 per issuer per rolling hour; 3 per client per rolling 24 hours across issuers) from the current 20-per-actor and 3-per-target per rolling-hour implementation. The spec meaning and PO quote are unchanged; no task or verification status was upgraded.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests executed.
+- Verdict: PASS for this documentation correction.

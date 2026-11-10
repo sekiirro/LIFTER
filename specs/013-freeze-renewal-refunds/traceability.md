@@ -10,7 +10,7 @@ Columns: `Requirement` (FR/SC from `spec.md`) → `Task(s)` (from `tasks.md`) �
 
 ## Known gaps
 
-- Spec `013` has no `## Clarifications` heading and no explicit "No open ambiguities" statement; PO decisions are recorded inline ("PO Decisions", "PO Decisions — Session 13") and in `docs/04-changes-and-questions.md` (ND-01/ND-08 marked DECIDED). Pre-existing gap; recorded here per architect ruling S35-R1; `spec.md` is not edited in this lane.
+- Clarifications-heading gap resolved: `spec.md` now has a `## Clarifications` heading at line 329. The explicit "No open ambiguities" statement remains unverified and is tracked separately; no claim is made that this wording gap is resolved.
 - Spec `013` Analyze date check is UNCERTAIN: the `checklists/analyze.md` "dated after" check cannot be confirmed. `spec.md` and `checklists/analyze.md` were last changed in the same commit (`547ecd2`, 2026-11-01T21:43:32+02:00), so their dates do not show that Analyze is later than the last spec change. Recorded per architect instruction S35-R4; `analyze.md` and `spec.md` are not edited in this lane.
 - T019 (retention legal/technical) and T020 (production readiness) remain OPEN; see Blocked tasks.
 
