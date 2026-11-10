@@ -75,3 +75,14 @@ Tasks remain unchecked until the exact PR head has the required executed green C
 - [x] T024 [FR-025, FR-026, SC-014, SC-015] Run the Playwright browser suite as a file-level `--shard=<k>/3` partition in every `integration-shard` execution with unchanged environment gates, `--workers=1`, no retries and the same preconditions; add the non-empty shard-list guard, Storage readiness and Docker CLI preconditions; upload per-shard Playwright/Vitest JSON inventories and reports; extend the no-checkout `integration` aggregator with the fail-closed union/skip/failure coverage proof; extend `tests/unit/ci-local-e2e.test.ts` red-first, update the workflow guide, and record traceability plus before/after wall times.
 
 Tasks remain unchecked until tests and exact-head GitHub gate evidence are recorded.
+
+## S41 CI/CodeRabbit optimization tasks
+
+- [ ] T025 [FR-027, SC-016] Write unit tests for spec-consistency first (unknown FR/SC/task IDs, date freshness, decided pending-PO markers, valid case, multi-feature diff, untouched inconsistent feature ignored, touched feature missing tasks.md, changed-path enumeration error fails closed), execute RED, then implement `scripts/spec-consistency.mjs` changed-feature enumeration and wire it into validate.
+- [ ] T026 [FR-029, SC-017] Write table-driven docs-only path classification tests first (allow-list, disallowed paths, renames, empty/error input); execute RED, implement fail-closed classifier, then wire pull_request conditionals while dispatch remains full and aggregator rejects skipped integration.
+- [ ] T027 [FR-028] Add CodeRabbit path_filters for generated evidence only and assert protected paths remain included.
+- [ ] T028 [FR-027, FR-029, SC-018] Verify the repository `format:check` scope plus the changed-file formatter (`scripts/format-check-changed.mjs`), preserve required job names, run local workflow/unit/static checks and prove this workflow-changing PR runs the full CI jobs.
+- [ ] T029 [FR-030, SC-019] Amend Constitution 1.10.0 to 1.11.0 with docs-only three-dispatch green form and sync impact report; no other principle changes.
+- [ ] T030 [FR-030] Write `s41-luna-ci-opt3/gate-check-d-proposal.md` and matching patch outside the repository; do not edit gate-check.mjs.
+- [ ] T031 [FR-027, FR-028, FR-029, FR-030] Complete pre-request checklist, CodeRabbit review (max 2 requests; incremental first request per S41-R13), fix all valid findings in one push, then exact-head approval and sequential executed PR reruns.
+- [ ] T032 [FR-030] Run gate-check on final exact head; record expected gate e failure. Do not merge.

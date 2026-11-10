@@ -341,7 +341,12 @@ it('dispatches CI against a PR merge ref and rejects a mismatched second parent'
     /head_sha:\n\s+description: Exact PR head SHA to verify\n\s+required: true\n\s+type: string/,
   );
   expect(workflow).toContain("format('refs/pull/{0}/merge', inputs.pr)");
-  expect(workflow.match(/fetch-depth: 2/g)).toHaveLength(3);
+  const validate = workflow.slice(
+    workflow.indexOf('  validate:'),
+    workflow.indexOf('  integration-shard:'),
+  );
+  expect(validate).toContain('fetch-depth: 0');
+  expect(workflow.match(/fetch-depth: 2/g)).toHaveLength(2);
   expect(workflow.match(/git rev-parse HEAD\^2/g)).toHaveLength(3);
   expect(
     workflow.match(/CI_REPO: \$\{\{ github\.repository \}\}/g),
@@ -406,8 +411,8 @@ it('exposes the required integration aggregator for all shard results', () => {
     "merge_sha_3: ${{ matrix.shard == 3 && steps.revision.outputs.merge_sha || '' }}",
   );
   expect(aggregator).toMatch(/^    name: integration$/m);
-  expect(aggregator).toMatch(/^    needs: \[integration-shard\]$/m);
-  expect(aggregator).toMatch(/^    if: always\(\)$/m);
+  expect(aggregator).toMatch(/^    needs: \[docs-only, integration-shard\]$/m);
+  expect(aggregator).toMatch(/^    if: always\(\) && /m);
   expect(aggregator).toMatch(/needs\.integration-shard\.result/);
   expect(aggregator).toContain(
     'PR_1: ${{ needs.integration-shard.outputs.pr_1 }}',
@@ -428,6 +433,33 @@ it('exposes the required integration aggregator for all shard results', () => {
   expect(aggregator).toMatch(/exit 1/);
   expect(aggregator).not.toMatch(/uses: actions\/checkout/);
   expect(aggregator).not.toMatch(/secrets\./);
+});
+
+it('runs full CI outside pull-request docs-only changes and keeps dispatch jobs unconditional', () => {
+  const workflow = workflowText();
+  const docs = workflow.slice(
+    workflow.indexOf('  docs-only:'),
+    workflow.indexOf('  validate:'),
+  );
+  const shard = shardJob(workflow);
+  const storage = workflow.slice(workflow.indexOf('  storage:'));
+  expect(docs).toContain('git diff --no-renames --name-only -z');
+  expect(docs).toContain('scripts/spec-consistency.mjs --classify-paths');
+  expect(docs).toContain("github.event_name == 'pull_request'");
+  expect(shard).toContain(
+    "if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.docs-only.outputs.docs_only != 'true') }}",
+  );
+  expect(shard).toContain("github.event_name != 'pull_request'");
+  expect(storage).toContain(
+    "if: ${{ !cancelled() && (github.event_name != 'pull_request' || needs.docs-only.outputs.docs_only != 'true') }}",
+  );
+  const aggregator = aggregatorJob(workflow);
+  expect(aggregator).toMatch(/^    if: always\(\) && /m);
+  expect(storage).toContain("github.event_name != 'pull_request'");
+  expect(workflow).toContain('Check feature spec consistency');
+  expect(workflow).toContain(
+    'Check formatting of changed Markdown, YAML, and JSON',
+  );
 });
 
 it('executes the integration aggregator script against push and PR revision cases', () => {
