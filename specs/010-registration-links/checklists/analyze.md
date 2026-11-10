@@ -80,3 +80,11 @@ T901 is complete after the 16-test page suite passed on the committed code, foll
 - Scope: `docs/07-production-readiness.md` states its statuses are historical and directs readers to `docs/13-production-readiness.md`; plan.md and spec.md now link the current register. Confirmed the role-scoped and secret-column read tests are in `tests/integration/registration-links-reads.test.ts` (the previously cited `registration-links-read.test.ts` is a unit suite that stays cited for FR-010). FR-003 cites the issue integration suite and the reads integration suite; FR-010 cites both the unit and integration suites. No status was upgraded; the baseline map still claims no fresh execution, and FR-006 remains unimplemented under T035.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no tests ran and no status changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+
+## S46 CodeRabbit round-5 finding re-analysis
+
+- Date: 2026-11-10 23:29 UTC (2026-11-11 01:29 Africa/Cairo), after the F3 traceability FR-006 relabel.
+- Scope: F3 — the FR-006 row now attributes the existing stale-terms/failure-handling tests to FR-006, not T035 (tasks.md confirms T035 is an unchecked future task); the rolling-24-hour limit note is kept as unimplemented/unverified. No status changed; FR-006 remains incomplete under T035.
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
+- Verdict: PASS for this documentation-only correction.

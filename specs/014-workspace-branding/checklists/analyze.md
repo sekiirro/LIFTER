@@ -428,3 +428,11 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
 - Scope: T041 runs the Q-M01..Q-M30 matrix, whose Q-M16 inspects registration response headers for `private, no-store`; T041 now carries FR-011 and SC-007, and both traceability rows name T041 as the pending matrix check. Both requirements remain PARTIAL because the full registration-route response matrix is still not demonstrated.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests or tasks were executed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+
+## S46 CodeRabbit round-5 finding re-analysis
+
+- Date: 2026-11-10 23:29 UTC (2026-11-11 01:29 Africa/Cairo), after the F6 quickstart Q-M16 clarification.
+- Scope: F6 — Q-M16 now explicitly requires registration-route valid and invalid responses to assert private, no-store, so a proxy-only check cannot satisfy T041's pending matrix item. FR-011 and SC-007 remain PARTIAL; traceability rows already name T041 (Q-M16) as the pending check. No status changed and no new requirement added (FR-011/SC-007 already demand this coverage).
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.

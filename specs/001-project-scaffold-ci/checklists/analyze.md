@@ -233,3 +233,11 @@ Scope: FR-022, FR-027, SC-012, T028 and the pending-marker matcher.
 - Cross-references: FR-022, FR-026, plan aggregator steps, research, T012/T025 and the earlier S42 analyze entry agree. No PO decision text changed.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no workflow, test, or application behavior changed. **No open ambiguities** remain for this factual reconciliation.
 - Verdict: PASS for this documentation-only correction.
+
+## S46 CodeRabbit round-5 finding + main-merge re-analysis
+
+- Date: 2026-11-10 23:29 UTC (2026-11-11 01:29 Africa/Cairo), after merge `26fbb798` (origin/main `deac6a90`) and the F1 traceability fix.
+- Scope: F1 — the S41 baseline FR-001..FR-014 map now restores the `a917c40` baseline FR statuses and SC-001..SC-005 mappings with static-evidence limits (FR 1 VERIFIED / 13 PARTIAL; SC 0 VERIFIED / 5 PARTIAL; no upgrade, no fresh run claimed). Merge kept both S41 plan sections, merged FR-022 (main docs-only clause + credential-boundary clause), both Clarifications blocks, both tasks sections (duplicate T025 `[FR-009]` vs `[FR-027, SC-016]` noted for owning lanes), main S38/S40 rows, and both S41 baseline-map and S41-R20 sections.
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no tests ran and no verification status was upgraded. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.

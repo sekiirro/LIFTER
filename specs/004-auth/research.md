@@ -30,7 +30,7 @@
   - Consuming the token only on POST stops link scanners and chat previews from burning the link.
   - `APP_ORIGIN` comes from server configuration, never from the request `Host` header, to prevent host-header injection.
   - The default `action_link` would send the client to the Supabase domain and needs redirect-URL configuration.
-- **Expiry**: PO decision ND-F4-3 requires 60 minutes in all environments; recovery session TTL is independently 15 minutes. S31-PO-2 confirms D-19; AI-04 in docs/13-production-readiness.md tracks hosted provider-expiry verification. The provider's prior local default is not a policy source.
+- **Expiry**: PO decision ND-F4-3 requires 60 minutes in all environments; the 15-minute recovery session TTL is the approved requirement, but enforcement is not currently implemented and remains a pre-production blocker (the application check does not terminate the session or block direct Auth API use after that time; see README and docs/13-production-readiness.md AI-04). S31-PO-2 confirms D-19; AI-04 in docs/13-production-readiness.md tracks hosted provider-expiry verification. The provider's prior local default is not a policy source.
 
 ## R5 — Audit and rate-limit ordering (two walls, no orphaned links)
 

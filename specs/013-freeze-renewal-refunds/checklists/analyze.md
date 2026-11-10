@@ -97,3 +97,11 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Date: 2026-11-09 23:17 UTC, after correcting the carried-medium count.
 - Scope: S33 historical disposition of F13-A02/T020 alongside F13-A01 and SC-009. F13-A02 remains counted as a carried medium finding; T020 remains open and blocked.
 - Findings: 0 open CRITICAL, 0 open HIGH. No task/status changed.
+
+## S46 CodeRabbit round-5 finding re-analysis
+
+- Date: 2026-11-10 23:29 UTC (2026-11-11 01:29 Africa/Cairo), after the F5 traceability date-check rewrite.
+- Scope: F5 — the Known-gaps date-check row now retains the S35-R4 UNCERTAIN record as history and states the current check is satisfied (S41 re-analyses of 2026-11-09 postdate the latest spec/plan/tasks changes of 2026-11-04/11-01). This S46 section postdates all spec/plan/tasks edits. Matrix totals unchanged (0 VERIFIED / 43 PARTIAL / 7 UNVERIFIED); T019/T020 remain open/blocked.
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks are present.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
+- Verdict: PASS for this documentation-only correction.

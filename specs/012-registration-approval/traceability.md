@@ -18,7 +18,7 @@ Static source inspection only. No test suite was executed in this compliance lan
 | FR-022 | T013, T016-T017, T025-T027 | `tests/integration/registration-approval-audit.test.ts::T017 real approval RPC emits exactly one safe approval fact...` asserts approval audit emission only; P2 intake and workspace authorization assertions are not covered by this evidence | Code/tests on `d04ef52`; P2 handoff in D-23 | PARTIAL |
 | FR-023 / SC-009 | T049-T054 | `tests/unit/registration-links-flexible.test.ts::requires exact price totals...`; `tests/integration/registration-links-flexible.test.ts::T050 flexible RPC delegates exact terms...`; named T053 UI test file absent | Code/tests/migration on `d04ef52`; migration `20261101131000_flexible_registration_link_terms_forward.sql` | PARTIAL |
 | FR-024 | T038-T043 | `tests/unit/registration-approval-status-page.test.ts`; `tests/unit/registration-approval-status-route.test.ts` | Code/tests on `d04ef52` | PARTIAL — mocked tests cover status-reader outcomes but do not establish that the authenticated page automatically detects approval; page-level detection remains an evidence gap. |
-| SC-010 | T038-T043 | `tests/unit/registration-approval-status-page.test.ts`; `tests/unit/registration-approval-status-route.test.ts` | Code/tests on `d04ef52` | VERIFIED |
+| SC-010 | T038-T043 | `tests/unit/registration-approval-status-page.test.ts`; `tests/unit/registration-approval-status-route.test.ts` | Code/tests on `d04ef52`; page recovery after redirect failure is not asserted | PARTIAL |
 | FR-026 | T014 | `tests/integration/registration-approval-decisions.test.ts::T014 only PO can reconsider; stale normal approval never reopens a rejected client`; `::T014 %s rejection changes only approval state and records the single reason`; `::T014 unapproved rejection shape fails without transition %#` | Code/tests on `d04ef52` | VERIFIED |
 | FR-027 | T018-T021 | `tests/integration/registration-approval-activation.test.ts`; correction sequence tests | Code/tests on `d04ef52` | VERIFIED |
 | FR-028 | T033-T034 | `tests/unit/registration-approval-page.test.ts`; `tests/unit/registration-approval-messages.test.ts` | Code/tests on `d04ef52`; rendered dashboard journey not executed here | PARTIAL |
@@ -33,5 +33,5 @@ Static source inspection only. No test suite was executed in this compliance lan
 ## Summary
 
 - Functional requirements: 20 VERIFIED, 9 PARTIAL, 0 NOT-FOUND, 0 DEFERRED. FR-012 is PARTIAL because the cited replay and revocation-after-wait tests do not assert the full lock order (client, subscription, then obligations/ledger).
-- Success criteria: 6 VERIFIED, 5 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
+- Success criteria: 5 VERIFIED, 6 PARTIAL, 0 NOT-FOUND, 0 DEFERRED.
 - Execution: static verification only; no suite run. T050-T054 are not checked by this reconciliation.

@@ -45,7 +45,7 @@ S38-R4 recorded the critique result as NOT READY, CRITICAL 0 / HIGH 6 / MEDIUM 3
 | CodeRabbit 11. Contract copy link resolves to the wrong directory | MINOR | Fixed: link now resolves to `../copy-proposal.md`. | contracts/auth-surface.md |
 | CodeRabbit 12. Preserve client invalid-link instruction while using staff copy | MEDIUM | Fixed: existing `auth.invalid_link` catalog copy remains for client manual links; staff uses the exact approved FR-029 string. A display-only `flow=staff` marker selects copy and never affects authorization. | copy-proposal.md; spec.md FR-027/029; tasks.md T037a/T044a |
 | CodeRabbit 13. Session revocation did not cover Data API JWT replay | HIGH | Fixed as an acceptance gate: T049e proves pre-reset access at a protected Data API resource and requires replay denial after reset; any success blocks T050a and control-C acceptance until a technical control is proven. | spec.md FR-030 control C; plan.md G3; tasks.md T049e; traceability.md |
-| CodeRabbit 14. PDN-13 gates were stale after PDN-14 was answered | MINOR | Fixed: current T033, feasibility and RED-test prerequisites are stated; release block remains until controls and FR-020 pass. | spec.md PDN-F4-7-13; tasks.md T033/T049/T050 |
+| CodeRabbit 14. PDN-13 gates were stale after PDN-14 was answered | MINOR | Fixed: current T033, feasibility and RED-test prerequisites are stated; release block remains until controls and FR-020 pass. | spec.md PDN-F4-7-13; tasks.md T033/T049/T050a/T050b |
 | CodeRabbit 15. Retry after ambiguous begin could be stranded | MINOR | Fixed: `begin` is idempotent for the same verified session and reuses its fresh intent without a duplicate audit; another session is refused. | spec.md FR-025(a), scenario 14; plan.md; data-model.md; tasks.md T049d |
 | CodeRabbit 16. E2E did not verify the new password works | MINOR | Fixed: T041 now verifies old-password failure and successful sign-in with the new password after normal-login handoff. | tasks.md T041 |
 | CodeRabbit 17. T050a omitted control-D acceptance | MINOR | Fixed: T050a requires the control-D subset of T049b separately from control-A/T050b acceptance. | tasks.md T049b/T050a; spec.md PDN-F4-7-13 |
@@ -119,4 +119,12 @@ This round changes specification artifacts only. No code, SQL, migration, enviro
 - Entry gate: PASS — FRs, SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the existing scope; T031 remains unchecked for the unimplemented approved limits.
 - Result: FR-010 now distinguishes approved limits (10 per issuer per rolling hour; 3 per client per rolling 24 hours across issuers) from the current 20-per-actor and 3-per-target per rolling-hour implementation. The spec meaning and PO quote are unchanged; no task or verification status was upgraded.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests executed.
+- Verdict: PASS for this documentation correction.
+
+## S46 CodeRabbit round-5 finding re-analysis
+
+- Date: 2026-11-10 23:29 UTC (2026-11-11 01:29 Africa/Cairo), after the F2 research.md Expiry clarification.
+- Scope: F2 — research.md now states the 15-minute recovery session TTL is the approved requirement while enforcement is not implemented and remains a pre-production blocker (README ND-F4-3 note; docs/13-production-readiness.md AI-04). The 60-minute all-environment requirement is preserved. No requirement meaning changed.
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests executed and no status changed.
 - Verdict: PASS for this documentation correction.

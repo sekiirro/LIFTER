@@ -109,3 +109,11 @@
 - Totals: FR 20 VERIFIED / 9 PARTIAL (29); SC 7 VERIFIED / 4 PARTIAL (11). FR-024's page-level detection gap remains explicit; it is not inferred from FR-007/SC-004 evidence.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests executed and no task status changed.
 - Verdict: PASS for this documentation reconciliation; no product decision or requirement meaning changed.
+
+## S46 CodeRabbit round-5 finding re-analysis
+
+- Date: 2026-11-10 23:29 UTC (2026-11-11 01:29 Africa/Cairo), after the F4 SC-010 traceability correction.
+- Scope: F4 — SC-010 is now PARTIAL: the cited status-page/route tests assert redirect-on-transition and home-fallback-on-failure but do not assert page-level link retention after a redirect failure (spec SC-010). Summary counts updated to FR 20 VERIFIED / 9 PARTIAL, SC 5 VERIFIED / 6 PARTIAL. No other row changed.
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks are present. No task checkbox changed.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests executed.
+- Verdict: PASS for this documentation reconciliation; no product decision or requirement meaning changed.

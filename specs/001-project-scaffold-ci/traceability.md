@@ -67,22 +67,29 @@ Spec commit `75cacff3166fb13b13be8eb4cf248e0a03c2aaa7` (requirements, plan, T024
 
 This source map restores the original merged-scope requirement links without upgrading verification status. The requirement text remains in [spec.md](spec.md); tasks and executable evidence are linked below. The existing exact-head and historical execution limits remain in force.
 
-| Requirement | Task/artifact mapping | Evidence source |
-|---|---|---|
-| FR-001 | T001-T006; approved TypeScript application scaffold | `tsconfig.json`, package scripts and repository source |
-| FR-002 | T010, T015; documented local commands | `README.md` Development section |
-| FR-003 | T002-T003, T015; lint and format gates | ESLint/Prettier configuration and `format:check`/`lint` scripts |
-| FR-004 | T006-T008; unit runner and health contract | `vitest.config.ts`, `tests/unit/health.test.ts` |
-| FR-005 | T009; browser smoke | `tests/e2e/health.spec.ts` |
-| FR-006 | T007-T008; health route | `app/api/health/route.ts`, `tests/unit/health.test.ts`, `tests/e2e/health.spec.ts` |
-| FR-007 | T005, T011-T012; edge build | `package.json` build script, `wrangler.jsonc`, CI workflow |
-| FR-008 | T011, T014; size report and threshold | `scripts/size-report.mjs`, `tests/unit/size-report.test.ts` |
-| FR-009 | T012; CI baseline | `.github/workflows/ci.yml`; later FR-015..FR-026 rows below |
-| FR-010 | T013; local DB configuration only | `supabase/config.toml` and `.gitignore` |
-| FR-011 | T004; placeholder environment example and secret exclusions | `.env.example`, `.gitignore` |
-| FR-012 | T010, T015; README instructions | `README.md` |
-| FR-013 | T001-T002; runtime/package pins | `.nvmrc`, `package.json`, `package-lock.json` |
-| FR-014 | T011-T012; Linux CI edge build and size gates | `.github/workflows/ci.yml`, `scripts/size-report.mjs` |
+| Requirement | Tasks | Tests / static evidence | Status |
+|---|---|---|---|
+| FR-001 | T001-T006 | `package.json`, `tsconfig.json`, `next.config.ts`; no single asserting scaffold test located | PARTIAL |
+| FR-002 | T001,T010 | `README.md` Development section | PARTIAL |
+| FR-003 | T003,T015 | `.prettierrc`, `eslint.config.mjs`, package scripts; no assertion test | PARTIAL |
+| FR-004 | T006-T008,T014 | `tests/unit/health.test.ts` — `returns exactly the public health fields with the package version`; no run recorded | PARTIAL |
+| FR-005 | T009 | `tests/e2e/health.spec.ts` — `GET /api/health returns the public health contract`; suite not rerun | PARTIAL |
+| FR-006 | T008 | `specs/001-project-scaffold-ci/contracts/health.md`; `app/api/health/route.ts`; `lib/health.ts` — exact public health fields | VERIFIED |
+| FR-007 | T005,T012,T015 | `build:edge` script and original CI artifact; no assertion test | PARTIAL |
+| FR-008 | T011,T014 | `tests/unit/size-report.test.ts` — `Worker size limit` comparison cases | PARTIAL |
+| FR-009 | T012,T015 | Current workflow inspected; secrets use in later jobs conflicts with original scope wording; see SK-001-01 | PARTIAL |
+| FR-010 | T013 | `supabase/config.toml`; static configuration inventory | PARTIAL |
+| FR-011 | T004 | `.env.example` and tracked-file inspection; no asserting test | PARTIAL |
+| FR-012 | T010 | README Development section; static documentation inspection | PARTIAL |
+| FR-013 | T001 | `.nvmrc`, `package.json` packageManager/engine declarations | PARTIAL |
+| FR-014 | T012,T015 | CI platform inspection and edge build scripts; no lane test executed | PARTIAL |
+| SC-001 | T001-T015 | `quickstart.md`, README, historical implementation tasks; no fresh-clone run | PARTIAL |
+| SC-002 | T012,T015 | Workflow inspected; coverage/secret conflict is unresolved | PARTIAL |
+| SC-003 | T007-T009 | Health unit and e2e assertions; no smoke run recorded | PARTIAL |
+| SC-004 | T011,T014 | Size-report comparison test and script | PARTIAL |
+| SC-005 | T012 | Workflow inspection only; no deploy/paid-service assertion test | PARTIAL |
+
+Baseline summary (restored, not upgraded): FR 1 VERIFIED, 13 PARTIAL; SC 0 VERIFIED, 5 PARTIAL. No tasks were checked or unchecked in this documentation-only pass; no tests were run.
 
 The table is a source map only; it does not assert fresh test execution or mark any requirement VERIFIED.
 
