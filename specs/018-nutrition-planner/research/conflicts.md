@@ -95,16 +95,16 @@
 
 ## Summary
 
-| Status                     |  Count | IDs                             |
-| -------------------------- | -----: | ------------------------------- |
+| Status                     |  Count | IDs                                   |
+| -------------------------- | -----: | ------------------------------------- |
 | RESOLVED-BY-PO             |      5 | C-01, C-02, C-07, C-09, S44-MCQ-F18-1 |
-| RESOLVED-DESIGN / INFERRED |      3 | C-03, C-04, C-05                |
-| VERIFIED                   |      2 | C-13, C-17                      |
-| OPEN-MCQ                   |      0 | —                               |
-| OPEN-TECH                  |      3 | C-06, C-10, C-11                |
-| REGISTER GAP               |      2 | C-08, C-15                      |
-| HISTORIC                   |      3 | C-12, C-14, C-16                |
-| **Total**                  | **18** |                                 |
+| RESOLVED-DESIGN / INFERRED |      3 | C-03, C-04, C-05                      |
+| VERIFIED                   |      2 | C-13, C-17                            |
+| OPEN-MCQ                   |      0 | —                                     |
+| OPEN-TECH                  |      3 | C-06, C-10, C-11                      |
+| REGISTER GAP               |      2 | C-08, C-15                            |
+| HISTORIC                   |      3 | C-12, C-14, C-16                      |
+| **Total**                  | **18** |                                       |
 
 ## S43 reconciliation (2026-11-10)
 
