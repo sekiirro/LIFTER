@@ -151,3 +151,9 @@ Disclosure: the rename commit message trailers contain literal \n text rather th
 | Requirement | Task | Test | Evidence | Status |
 |---|---|---|---|---|
 | FR-023, FR-014 | T043 | `tests/integration/catalog-exercise-t037-contract.test.ts::Video field contract`; `::T043 appends canonical video changes as immutable versions and audits video`; `tests/integration/catalog-exercise-operations.test.ts`; `tests/integration/catalog-video-resolution.test.ts` | Initial RED/GREEN and focused suites are recorded in the S45 T043 lane report. Architect remediation commit (full SHA in `C:/Users/NEW LAP/.lifter/runs/s45-luna-f16-t043d/report.md`): Stack A contract 45 passed / 28 expected failures; operations 3 passed; resolver 5 passed; units 38 passed; typecheck and lint passed. Both required mutations were killed: host-check removal made the Vimeo rejection fail; replacing the current-version read with null made canonical version append fail. Stack A was reset after each mutation and after restoration. | VERIFIED |
+
+## S45 T045 workspace-private exercise Video
+
+| FR | Task | Test | Evidence | Status |
+|---|---|---|---|---|
+| FR-024, FR-004 | T045 | `tests/integration/catalog-exercise-t037-contract.test.ts::T045 stores private exercise video only in the owning workspace version`; `::T045 rejects a private video write for a foreign workspace`; `::T045 applies the canonical video validator to private exercise writes` | Stack A RED mutation: bypassing `app_private.catalog_video_url_allowed` made the private Vimeo rejection fail because the RPC accepted the URL. Stack A reset restored committed migrations; focused contract suite GREEN: 48 passed, 28 expected failures. T045 implementation commit and run details: `C:/Users/NEW LAP/.lifter/runs/s45-luna-f16-t045/report.md`. | VERIFIED |

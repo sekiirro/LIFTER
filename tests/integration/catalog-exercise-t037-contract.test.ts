@@ -12,6 +12,7 @@ let poId: string;
 let workspaceOwnerId: string;
 let trainerId: string;
 let workspaceId: string;
+let foreignWorkspaceId: string;
 
 beforeAll(async () => {
   const fixture = await twoWorkspaceFixture();
@@ -19,6 +20,7 @@ beforeAll(async () => {
   workspaceOwnerId = fixture.woA.userId;
   trainerId = fixture.trainerA.userId;
   workspaceId = fixture.wsA.id;
+  foreignWorkspaceId = fixture.wsB.id;
 });
 
 afterAll(async () => db.end());
@@ -122,6 +124,49 @@ describe('T037 Global and workspace-private write contracts', () => {
   it('rejects fields outside the workspace exercise allowlist (T037/T075)', async () => {
     await expect(
       createPrivate({ ...core, unapproved_field: 'must not persist' }),
+    ).rejects.toBeDefined();
+  });
+
+  it('T045 stores private exercise video only in the owning workspace version', async () => {
+    const videoUrl = 'https://youtu.be/abcdefghijk';
+    const result = await createPrivate({
+      ...core,
+      name_ar: 'ØªÙ…Ø±ÙŠÙ† Ø®Ø§Øµ',
+      video_url: videoUrl,
+    });
+    const exerciseId = (
+      result[0]?.catalog_write_workspace_exercise as { exercise_id: string }
+    ).exercise_id;
+    const [version] = await db`
+      select workspace_id, payload ->> 'video_url' as video_url
+      from public.workspace_exercise_versions
+      where workspace_exercise_id = ${exerciseId} and version = 1
+    `;
+    expect(version).toEqual({ workspace_id: workspaceId, video_url: videoUrl });
+    await expect(
+      db`select exercise_id from public.exercise_versions where exercise_id = ${exerciseId}`,
+    ).resolves.toHaveLength(0);
+  });
+
+  it('T045 rejects a private video write for a foreign workspace', async () => {
+    await expect(
+      asActor(trainerId, (tx) =>
+        tx`select public.catalog_write_workspace_exercise(${foreignWorkspaceId}, null, null, ${randomUUID()}, ${tx.json({
+          ...core,
+          name_ar: 'ØªÙ…Ø±ÙŠÙ† Ø®Ø§Øµ',
+          video_url: 'https://youtu.be/abcdefghijk',
+        })})`,
+      ),
+    ).rejects.toMatchObject({ code: '42501' });
+  });
+
+  it('T045 applies the canonical video validator to private exercise writes', async () => {
+    await expect(
+      createPrivate({
+        ...core,
+        name_ar: 'ØªÙ…Ø±ÙŠÙ† Ø®Ø§Øµ',
+        video_url: 'https://vimeo.com/123456789',
+      }),
     ).rejects.toBeDefined();
   });
 });

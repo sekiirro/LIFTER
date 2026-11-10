@@ -593,3 +593,11 @@ T900 has been marked complete only after its focused integration test passed on 
 - **Spec Kit entry check:** PASS. `spec.md` has numbered FRs, measurable SCs, and Given/When/Then scenarios; Clarifications cite D16-3 and state no open ambiguities. `plan.md` covers canonical video storage, version writes, host validation, and reads. `tasks.md` T043 names FR-023/FR-014 and predecessors T052/T037/T068. The S45 T068 gate is recorded above.
 - **Findings:** 0 open CRITICAL, 0 open HIGH. No PO decision or ambiguity found.
 - **Gate:** PASS for T043 implementation and evidence update. Runtime evidence is recorded in `traceability.md`; T052 migration gates are recorded in the S45 run report.
+
+## S45 T045 workspace-private exercise Video
+
+- **Date:** 2026-11-10 20:17 UTC, after the T045 test, task-status, and traceability updates.
+- **Scope:** T045 stores a nullable private exercise `video_url` in immutable version content, using the owning-workspace write operation and the shared T043 URL validator. No schema or product behavior change was needed because T043's validator extension already flows through `catalog_write_workspace_exercise`.
+- **Entry check:** PASS. `spec.md` FR-024/FR-004 and its workspace-private video scenarios define the scope; the S36-PO-3 answer to F16-MCQ-9 governs client projection separately. `plan.md` specifies private video in version content and owning-workspace writes. `tasks.md` T045 is FR-tagged and depends on T043. D16-3 and S37-PO-10 close host behavior; no open ambiguity.
+- **Findings:** 0 open CRITICAL, 0 open HIGH. No PO decision needed.
+- **Gate:** PASS for T045. Stack A test and mutation evidence is recorded in `traceability.md` and the lane report.
