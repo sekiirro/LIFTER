@@ -20,7 +20,7 @@ Only published revisions are exportable. Selection is explicit; if several revis
 - Sets in order, labelled warm-up or working.
 - Reps or rep range per set.
 - Prescribed load with unit and mode (`bodyweight`, `added weight` kg/lb, `assisted` kg/lb).
-- Rest per set, RIR per set, set/exercise/day notes.
+- Rest per set and RIR per set; workout-level, day-level and exercise-entry notes as defined by the document schema.
 - Trainer-selected alternatives (up to three per exercise).
 - Applicable exercise and alternative video links, resolved live from the current authorized library at export time; no video URL is read from the frozen snapshot.
 - For the AI prompt: the same content plus a hyperlink-formatting request.
@@ -58,8 +58,8 @@ Export labels use the UI language, authored text is preserved, and exercise name
 
 - Trainer-authored content is displayed as authored; no machine translation (Constitution VIII).
 - Arabic renders RTL and English LTR; both must be readable and printable.
-- No user-visible label, column header, button or prompt line is rendered unless it equals a PO-approved string byte-for-byte.
+- Static user-visible labels, column headers, buttons and prompt-template text must match PO-approved strings byte-for-byte. Authored plan content substituted for `{{PLAN_CONTENT}}` follows the plan authorization and preservation rules; it is not static template text.
 
 ## 6. Test obligations (future)
 
-Golden PDF/Excel fixtures for revision N while N+1 exists; field-coverage assertions for §2; AR/EN UI-language, authored-text and English-name checks per S42-PO-8; audit success/denial rows; injection strings (`=1+1`, `+1`, `-1`, `@SUM(A1)`, leading-space variants); prompt prohibitions (no "invent", "replace", "generate alternatives" instruction); video divergence after a library change; denial for draft, foreign workspace, Sales, client, revoked membership.
+Golden PDF/Excel fixtures for revision N while N+1 exists; field-coverage assertions for every field in section 2, including `WorkoutDocument.notes` in PDF, Excel and `{{PLAN_CONTENT}}`; AR/EN UI-language, authored-text and English-name checks per S42-PO-8; audit success/denial rows; injection strings (`=1+1`, `+1`, `-1`, `@SUM(A1)`, leading-space variants); prompt prohibitions (no "invent", "replace", "generate alternatives" instruction); video divergence after a library change; denial for draft, foreign workspace, Sales, client, revoked membership.

@@ -3,12 +3,12 @@
 **Analyzed:** 2026-11-10 05:43 UTC
 **Method:** Cross-artifact and S41 hostile review of the updated F17 spec-only scope after S43-R9 Sol-3/Sol-4.
 
-## Entry check
+## Entry check at the start of the S44 lane (2026-11-10 05:43 UTC)
 
-- PASS ? numbered FRs, measurable SCs, and Given/When/Then scenarios cover touched scope, including A1-9 zero-set prescription persistence and A2-13 fresh-authoring/promoted-reference distinction.
-- PASS ? resolved decisions are recorded with byte-exact PO quotations separate from architect mapping (spec.md ?8.6). S43-MCQ-A and S43-MCQ-C are resolved; no unresolved F17 PO MCQ remains. The S43-R9 PO questions are outside F17 scope and are registered separately.
-- PASS ? plan/tasks cover program-day weeks; T053 verifies zero-set entry prescriptions survive save/reload and changed library defaults; T011 aligns canonical-only fresh global authoring with promoted unresolved references flagged RED and blocked from load.
-- PASS ? this Analyze pass follows the last spec/plan/tasks edits and reports 0 open CRITICAL/HIGH findings.
+- PASS at lane entry - numbered FRs, measurable SCs, and Given/When/Then scenarios covered the then-touched scope, including A1-9 zero-set prescription persistence and A2-13 fresh-authoring/promoted-reference distinction.
+- PASS at lane entry - prior resolved decisions were recorded with byte-exact PO quotations separate from architect mappings (spec.md section 8.6). S43-MCQ-A and S43-MCQ-C were resolved; S44-MCQ-1 and S44-MCQ-2 were discovered during this review and are listed below.
+- PASS at lane entry - plan/tasks covered program-day weeks; T053 verified zero-set entry prescriptions survive save/reload and changed library defaults; T011 aligned canonical-only fresh global authoring with promoted unresolved references flagged RED and blocked from load.
+- PASS at lane entry - the then-current Analyze followed the last prior spec/plan/tasks edits and reported 0 open CRITICAL/HIGH findings.
 
 ## Cross-artifact findings
 
@@ -27,4 +27,31 @@
 
 ## Analyze result
 
-CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0. F17 open PO MCQ IDs: none; nine former F17 MCQs are resolved. Shared R9 MCQs are outside this feature and registered in the run report.
+Entry Analyze result before the S44 PR #78 fix lane: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0. F17 open PO MCQ IDs at that point: none. Superseded by the S44 fix-lane Analyze below.
+
+
+## S44 PR #78 fix-lane Analyze - 2026-11-10 12:09 UTC
+
+Scope: the six in-scope corrections to export completeness/template substitution, private reference identity, initial assigned-copy versioning, PO template authorization, and promoted-template task coverage. S44-MCQ-1/2 are left unencoded pending PO decision.
+
+### Entry and cross-artifact checks
+
+- PASS - numbered FRs, measurable SCs, and Given/When/Then scenarios remain in `spec.md`; FR-018/019 now name document-level notes consistently.
+- PASS - Clarifications (section 8), PO decision register and exact PO sources are cited; the two newly discovered product choices are explicit in `runs/s44-luna-fix78/report.md`. No ambiguity is treated as decided.
+- PASS - `plan.md` covers exports, exercise resolution/publication and template assignment; `tasks.md` T007/T008/T011/T024/T025/T028/T031 cover the touched scope with unchanged FR tags; `traceability.md` descriptions align for FR-012/018/019.
+- PASS - this Analyze record is dated after the final spec/plan/tasks edits in this lane.
+
+### Hostile cross-artifact findings
+
+| Severity | Finding | Evidence / disposition |
+| --- | --- | --- |
+| CRITICAL | 0 open | No new code, schema or privilege behavior is being implemented. |
+| HIGH | 0 open | PO scope exception is explicit; private-reference source workspace is retained; copy identity and version 1 are both specified; static prompt approval does not prohibit authored payload substitution. |
+| MEDIUM | 2 PO questions | S44-MCQ-1 controls mixed per-workspace outcomes; S44-MCQ-2 controls exercise effective-value capture timing. Both remain in the lane report and their review threads stay unresolved. |
+| LOW | 0 open | Task checkboxes remain unticked; no implementation tests were run. |
+
+### Disposition summary
+
+Six findings fixed within current PO decisions; two behavior choices remain blocked. Plan-level notes flow through PDF, Excel and prompt payload under the existing complete-plan contract. The approved prompt template bytes are untouched. No stale prohibition of promoted private references or PO cross-workspace governance remains in the touched FR/task text.
+
+**Analyze result: CRITICAL 0; HIGH 0; MEDIUM 2 PO-blocked; LOW 0.**

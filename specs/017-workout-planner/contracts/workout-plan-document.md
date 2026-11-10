@@ -34,6 +34,7 @@ ExerciseRef {
   source: 'global' | 'workspace_private'
   identity_id: uuid
   version: integer                  // immutable catalog version
+  workspace_id?: uuid               // required for workspace_private; identifies its source workspace
   // no `variation` field (F16 FR-031 / F16 FR-038)
 }
 
@@ -56,7 +57,7 @@ Set {
 3. Each plan exercise entry stores editable prescription fields (Rest, RIR, Reps, Notes, Alternatives) independently of its set rows. These fields are on the item shape, not the set shape. A fresh entry may have zero set rows and still retains these values. Adding sets later does not reread library defaults; entry prescriptions remain editable at plan-entry level. Set rows contain only their id, warm-up/working type, and load prescription. A reference stores an immutable catalog version. It never stores a resolved name, description, video URL or other library value as the authoritative source; the planner entry's non-video values are those captured for freezing at publication.
 4. Alternatives reference at most three unique targets, validated active at selection, resolved through F16 FR-026. Removed/merged targets are shown unavailable in the draft and never substituted.
 5. Fresh authoring of a global Workout Template resolves exercises canonical-only (F16 FR-026); workspace overrides and workspace-private exercises cannot be newly added. A promoted template may retain existing workspace-private exercise references; unresolved references are flagged RED and block loading until fixed (S42-PO-8). Promotion is not fresh global authoring.
-6. A workspace-private reference uses its composite `(workspace_id, identity)`. A foreign-workspace private reference is invalid and denied generically.
+6. A workspace-private reference carries its source `workspace_id` and uses the composite `(workspace_id, identity_id)` for lookup and authorization. A missing source workspace, unresolved reference or foreign-workspace reference is invalid; loading is blocked for unresolved or foreign references, and denials are generic.
 
 ## 3. Add-time defaults (PO A1)
 

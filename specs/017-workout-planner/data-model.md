@@ -74,7 +74,7 @@ A zero-copy Assign is rejected before the batch or distribution-state flag is wr
 ### 5.3 No duplicate and no overwrite
 
 - A workspace copy is created at most once per (workspace, global template identity), regardless of source version. Creating it never updates, resets or deletes an existing workspace template or version.
-- Assignment never writes into `workout_workspace_template_versions`; it inserts a new template identity (or, if the same origin identity already exists, adds nothing at all).
+- For each eligible selected template, assignment creates a new workspace template identity and inserts its immutable version 1 into `workout_workspace_template_versions` in the same transaction. It never updates an existing workspace template or version; when the workspace already holds the origin identity, assignment adds nothing.
 - Later global edits/versions create a new immutable global version. A workspace holding any copy of the identity is skipped regardless of source version, and the pair is reported; no second copy or update is created (S43-PO-1; architect mapping (S43-R1)).
 - There is no live-linked copy: a workspace copy read never joins back to global content for rendering.
 
