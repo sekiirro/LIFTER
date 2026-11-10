@@ -123,7 +123,7 @@ No further product ambiguity remains in the resolved FX rounding, calendar/publi
 
 Architect rulings on PR #53 review findings PD-F9-CR-01 and PD-F9-CR-02 are recorded verbatim below. They are architect words, not PO words; no PO approval is claimed for them.
 
-> S39-R8 (#53 PD-F9-CR-01, not a PO question): duration is offer identity, already decided in FR-002 ("workspace, package and duration identity MUST remain fixed"), FR-005 (publication snapshots its duration) and spec.md:262. spec.md:84 "duration terms" is an editorial inconsistency: reword to say versions snapshot the offer's fixed duration (no versioned duration change). No retirement/lifecycle question arises: a different duration is a different offer, and availability changes only through existing PO operations (FR-002); no automatic retirement is added (S38-PO-3).
+> S39-R8 (#53 PD-F9-CR-01, not a PO question): duration is one part of offer identity, already decided in FR-002 (workspace/package/duration-days/tier-rank identity MUST remain fixed), FR-005 (publication snapshots its duration) and spec.md:262. spec.md:84 "duration terms" is an editorial inconsistency: reword to say versions snapshot the offer's fixed duration (no versioned duration change). No retirement/lifecycle question arises: a different duration is a different offer, and availability changes only through existing PO operations (FR-002); no automatic retirement is added (S38-PO-3).
 
 > S39-R9 (#53 PD-F9-CR-02, not a PO question): the Spec Kit gate section 3 (S29-PO-2) requires the implementer to record evidence in specs/<feature>/traceability.md. Amend tasks.md:10 so the implementer may edit traceability.md and verification evidence files within the task's scope; all other specs/ files stay off-limits to implementers.
 
@@ -292,7 +292,7 @@ prices stay in own currency while collection reporting uses only the approved im
 ## Functional Requirements
 
 - **FR-001**: Only PO may create a globally unique canonical lowercase-slug package code. Code and creation attribution MUST remain historically recoverable. Existing mock deletion follows the C5 preflight in FR-028; future real-package retirement follows FR-023 and preserves referenced history. Labels MUST NOT identify canonical package codes (BRD 53; S32-PO-4; C5).
-- **FR-002**: Each workspace/package/duration-days combination MUST have exactly one offer. Offers MUST be created by publication only; their workspace, package and duration identity MUST remain fixed. Only availability and current version may change, through PO operations (BRD 40/53).
+- **FR-002**: Each workspace/package/duration-days/tier-rank combination MUST have exactly one offer. `tier_rank` MUST be one of Silver, Gold, or Platinum and remain immutable with the offer’s workspace, category package and duration identity. Offers MUST be created by publication only; publication MUST allow different tier ranks in the same workspace, category package and duration. Only availability and current version may change, through PO operations (BRD 40/53; S43-PO-8).
 - **FR-003**: Durations MUST be preset 1/3/6/8/12 thirty-day months or explicit custom whole days ≥1. No calendar-month arithmetic or invented business upper bound is allowed (D-11; ND-F9-2).
 - **FR-004**: Every published version MUST require authored AR/EN names of 1..120 characters excluding blank-only values, positive integer minor-unit price with uppercase three-letter currency, and explicitly supplied commission of 0..10000 basis points. No financial/catalog defaults or seed data (BRD 54/317; Constitution II/IV).
 - **FR-005**: Publication MUST atomically number versions from 1 per offer, snapshot its duration and author/time, and set the current version. Concurrent distinct publications MUST be consecutive; identical-term retries MUST be handled in the database without duplicated effects (Constitution IX).
@@ -343,7 +343,7 @@ prices stay in own currency while collection reporting uses only the approved im
 ### Key Entities
 
 - **Package category**: one of four immutable market × type identities per workspace, represented by the workspace-scoped package row itself (S34-PO-6; no separate category entity), unique on `(workspace_id, market, type)`. Commercial values live on versions and are workspace-specific; initialization supplies no real commercial values.
-- **Package offer**: the logical workspace sellable package/duration identity, availability and current published version of one category package row; it references that row by `package_id` and MUST NOT pair a package row with a different workspace.
+- **Package offer**: the logical workspace sellable package/duration/tier-rank identity, availability and current published version of one category package row; it references that row by `package_id` and MUST NOT pair a package row with a different workspace. Different tier ranks may coexist at the same duration.
 - **Package version**: immutable numbered commercial terms; edits append a version and preserve client/assignment snapshots. Market/type remain immutable category attributes (C1; S33-11).
 - **Market**: approved attribute with display labels Egypt and International (S34-PO-2 and S35-PO-1 F9=A; the canonical machine literal is exactly `Egypt`/`International`, the same title-case tokens as the wire and stored value); it controls the permitted currency set but is never inferred from a stored currency.
 - **Package type**: approved value `Year-round` or `Promotional`; Promotional availability follows the Africa/Cairo half-open period and issued-link rules in FR-030.
@@ -531,6 +531,7 @@ Arabic tier names are سيلفر، جولد، بلاتينيوم.
 
 ### S43-PO-8 acceptance scenarios
 
-- **Given** any one of the four package categories, **When** its available tier offers are read, **Then** Silver, Gold, and Platinum are all present and each offer carries its immutable rank within that category. (FR-034/036; SC-024/026; architect mapping (S43-R10))
+- **Given** any one of the four package categories with published Silver, Gold, and Platinum offers, **When** its tier offers are read without filtering by availability, **Then** all three are present and each offer carries its immutable rank within that category. (FR-002/034/036; SC-024/026; architect mapping (S43-R10))
+- **Given** one category has offers at the same duration, **When** the PO publishes Silver, Gold, and Platinum, **Then** three offers coexist with distinct immutable ranks, even if one or more are unavailable. (FR-002/007/034; SC-024; architect mapping (S43-R10))
 - **Given** a PO renames a tier in one locale, **When** workspaces read that locale, **Then** the new global display name is used unless a workspace-local override exists, and no rank or commercial term changes. (FR-035; SC-025; architect mapping (S43-R10))
 - **Given** a Workspace Owner renames a tier in one locale, **When** their workspace reads that locale, **Then** the override appears only in that workspace; other workspaces retain their resolved names, and no rank or commercial term changes. (FR-035; SC-025; architect mapping (S43-R10))

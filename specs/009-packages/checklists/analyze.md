@@ -1,26 +1,25 @@
-# Spec Kit Analyze — F9 S43-PO-8 settlement
+# Spec Kit Analyze — F9 S43-PO-8 tier offer identity amendment
 
-**Analyzed:** 2026-11-10 06:18 UTC
-**Method:** Cross-artifact review after S43-PO-8 across spec.md, plan.md, tasks.md, data-model.md, contracts/packages-surface.md, traceability.md, research, and consuming F13 requirements.
+**Analyzed:** 2026-11-10 16:50 UTC
+**Method:** Reconciled FR-002, S43-PO-8 acceptance scenarios, offer logical key and uniqueness, publication input, T077 tags, plan, data model, contract, traceability, and availability-independent tier reads; verified the forward-only migration boundary.
 
 ## Entry check
 
-- PASS — numbered FRs, measurable SCs, and Given/When/Then scenarios cover all four categories, offer-level rank, PO global rename, and workspace-local overrides.
-- PASS — S43-PO-8 PO lines are copied byte-exactly into the resolved decision register; architect mapping (S43-R10) is separately labelled.
-- PASS — plan, data model, contract, task tags, traceability, and GWT scenarios agree. T077/T078 are unblocked and remain unchecked pending implementation tests.
-- PASS — this Analyze pass follows the last spec/plan/tasks edit.
+- PASS — numbered FRs, measurable SCs and Given/When/Then scenarios cover all three tier ranks in each category and same-duration coexistence.
+- PASS — S43-PO-8 is the binding clarification; no open product ambiguity remains for rank placement.
+- PASS — plan, offer model, publication/action contracts, T077 and FR-002 traceability agree on workspace/category/duration/rank identity.
+- PASS — this Analyze pass follows the latest spec, plan and task edits.
 
 ## Findings
 
 - CRITICAL: 0 open.
 - HIGH: 0 open.
-- MEDIUM: 0 open PO decisions. S43-PO-8 resolves all five Sol-debate product questions across F9/F13/F18; unrelated implementation, copy, and security gates remain separately recorded.
-- LOW: 0 cross-artifact ID or task-tag mismatches found in the touched F9 tier scope.
+- MEDIUM: 0 open PO decisions.
+- LOW: 0 cross-artifact ID or task-tag mismatches found in the tier-offer identity scope.
 
-## Decision and task status
+## Evidence status
 
-- S43-F9-MCQ-2 and S43-F9-MCQ-3 are resolved by S43-PO-8 source lines 3–4. T077/T078 are unblocked.
-- Historical MCQ wording is retained as history and explicitly marked resolved; current requirements put rank on each tier offer within its category.
-- No implementation task is checked off; this PR changes specifications only.
+- T077 remains unchecked; rank-inclusive implementation and tests are pending. Existing PR #9 tests only verify pre-tier duration uniqueness; traceability marks the new outcome UNVERIFIED.
+- No implementation task is marked complete; this lane changes specifications only.
 
 **Analyze result:** CRITICAL 0; HIGH 0; MEDIUM 0 open PO decisions; LOW 0.

@@ -1,25 +1,26 @@
-# Spec Kit Analyze — F13 S43-PO-8 settlement
+# Spec Kit Analyze — F13 continuity review-fix settlement
 
-**Analyzed:** 2026-11-10 06:23 UTC
-**Method:** Cross-artifact review after S43-PO-8 across spec.md, plan.md, tasks.md, data-model.md, lifecycle contract, traceability, research, and F9 rank requirements.
+**Analyzed:** 2026-11-10 16:51 UTC
+**Method:** Reconciled S43-PO-5/6/8 wording, FR-005/011/012/014/017/018/021/037-042, refund selection/allocation model, lifecycle and refund contracts, ledger architecture, research, traceability, tasks and acceptance scenarios. Reviewed in-flight, unknown-result, retry, deletion, concurrency and crash-between-step states for the spec-only changes.
 
 ## Entry check
 
-- PASS — numbered FRs, measurable SCs, and Given/When/Then scenarios cover the post-lapse anchor and cross-currency refusal.
-- PASS — all PO-8 source lines are copied byte-exactly into the decision register; architect mapping (S43-R10) is separately labelled.
-- PASS — FR-038, SC-027/030, data model, lifecycle contract, plan, T042, traceability, and the decision register agree. T042 is unblocked and remains unchecked pending implementation tests.
-- PASS — this Analyze pass follows the last spec/plan/tasks edit.
+- PASS — numbered FRs, measurable SCs and Given/When/Then scenarios cover current continuity and refund behavior.
+- PARTIAL — prior PO decisions are recorded byte-exactly; pre-activation renewal remains ambiguous and is escalated as S45-F13-MCQ-1 in the execution report. No guessed behavior was encoded.
+- PASS — existing plan/tasks cover review-fix scope; historical evidence remains historical and no task completion state changed.
+- PASS — this Analyze pass follows the latest spec, plan and task edits; the F13 review fixes introduce no CRITICAL/HIGH finding.
 
 ## Findings
 
 - CRITICAL: 0 open.
 - HIGH: 0 open.
-- MEDIUM: 0 open PO decisions. S43-PO-8 resolves tier structure/rank placement, label authority, historical export selection, post-lapse anchor, and currency eligibility. Independent technical/security gates remain separately identified.
-- LOW: 0 cross-artifact ID or task-tag mismatches found in the touched F13 upgrade scope.
+- MEDIUM: 1 open PO decision — S45-F13-MCQ-1, whether renewal is permitted before initial activation and, if so, its start/expiry anchor.
+- LOW: 0 FR/task/SC ID or task-tag mismatches found in the touched continuity and refund scope.
 
-## Decision and task status
+## Decision and evidence status
 
-- S43-F9-MCQ-2/3, S43-F18-MCQ-1, S43-F13-MCQ-12/13 are resolved and superseded by S43-PO-8 source lines 3–7 as mapped in S43-R10.
-- T042 is unblocked for rank, post-lapse, and same-currency behavior. It remains unchecked; no implementation tests ran in this docs-only lane.
+- FR-011/012/013 and FR-014/017/018 are UNVERIFIED where current requirements differ from cited successor-era or single-purchase test evidence; see traceability.md.
+- Refund grouping maps the PO-approved full package refund to original-package plus upgrade-charge allocations; renewal purchases remain separate groups.
+- No task is marked complete; no behavior tests were run in this docs-only fix.
 
-**Analyze result:** CRITICAL 0; HIGH 0; MEDIUM 0 open PO decisions; LOW 0.
+**Analyze result:** CRITICAL 0; HIGH 0; MEDIUM 1 open PO decision; LOW 0.
