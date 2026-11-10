@@ -182,6 +182,7 @@ export function resolveDiffRange(eventName, options = {}) {
     specBaseSha,
     eventPath,
     localBase,
+    mergeBase,
     readEvent = (path) => readFileSync(path, 'utf8'),
   } = options;
   if (specBaseSha) {
@@ -190,6 +191,8 @@ export function resolveDiffRange(eventName, options = {}) {
     return `${specBaseSha}...HEAD`;
   }
   if (eventName === 'workflow_dispatch') return 'HEAD^1...HEAD';
+  if (eventName === 'pull_request' && SHA_PATTERN.test(String(mergeBase || '')))
+    return `${mergeBase}...HEAD`;
   if (eventName === 'pull_request' || eventName === 'push') {
     if (!eventPath)
       throw new Error(
@@ -254,6 +257,7 @@ export function runCiCheck(options = {}) {
     decisions = '',
     readEvent = (path) => readFileSync(path, 'utf8'),
     localBase,
+    mergeBase,
   } = options;
   if (typeof git !== 'function')
     return {
@@ -275,6 +279,7 @@ export function runCiCheck(options = {}) {
       specBaseSha: env.SPEC_BASE_SHA,
       eventPath: env.GITHUB_EVENT_PATH,
       localBase,
+      mergeBase,
       readEvent,
     });
   } catch (error) {
@@ -341,6 +346,17 @@ function main() {
       throw new Error(`no spec/plan/tasks commit history for ${featureDir}`);
     return value;
   };
+  /** First parent of the PR merge commit is the base the merge ref was built on. */
+  const pullRequestMergeBase = () => {
+    try {
+      const [, ...parents] = git(['rev-list', '--parents', '-n', '1', 'HEAD'])
+        .trim()
+        .split(/\s+/);
+      return parents.length >= 2 ? parents[0] : null;
+    } catch {
+      return null;
+    }
+  };
   /** Uses the main branch merge base only for local runs with no event. */
   const localBase = () => {
     for (const candidate of ['origin/main', 'main']) {
@@ -364,6 +380,8 @@ function main() {
       latestCommitDate,
       decisions,
       localBase: eventName ? undefined : localBase(),
+      mergeBase:
+        eventName === 'pull_request' ? pullRequestMergeBase() : undefined,
     });
   } catch (error) {
     result = {

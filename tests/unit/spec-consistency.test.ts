@@ -245,6 +245,14 @@ describe('changed-path enumeration', () => {
         readEvent: () => payload({ before: BASE_SHA }),
       }),
     ).toBe(`${BASE_SHA}...HEAD`);
+    expect(
+      resolveDiffRange('pull_request', {
+        eventPath: 'event.json',
+        mergeBase: BASE_SHA,
+        readEvent: () =>
+          payload({ pull_request: { base: { sha: 'b'.repeat(40) } } }),
+      }),
+    ).toBe(`${BASE_SHA}...HEAD`);
     expect(resolveDiffRange('workflow_dispatch', {})).toBe('HEAD^1...HEAD');
     expect(() =>
       resolveDiffRange('pull_request', {
