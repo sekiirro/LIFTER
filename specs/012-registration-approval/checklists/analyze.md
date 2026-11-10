@@ -1,5 +1,14 @@
 # Analyze — F12 registration approval and payment recording
 
+## 2026-11-10 08:42 +02:00 - S43 finding 73 analysis (CodeRabbit thread PRRT_kwDOVYgYQ861jSoF; PR #73)
+
+- Scope: split the deletion-state replay and deleted-client reconsideration cases out of F12 U9 T042 into T055; keep T042's remaining U9 coverage intact; require both T042 and T055 before the 011 deletion release (spec.md FR-022 cross-reference; 011 T048 release gate).
+- Validation: the finding is valid. The cases depend on 011 T048's forward-only 012 operation changes and therefore made U9 depend on work that is explicitly gated for the 011 deletion release. T055 is a separate post-T042 gate, outside U9, and runs after those operation changes exist. The 011 release remains blocked until both verification tasks pass on the current head.
+- Entry check: FR-011 replay semantics, FR-017 stale-state behavior, FR-001 authorization and their existing acceptance scenarios remain present and unchanged; clarified deletion lifecycle cross-reference remains tied to 011 FR-018/T048. No product behavior or copy changed. Clarifications and PO records remain applicable; no new product decision is introduced. Zero open ambiguities is not claimed: the existing non-PO A-S41-4 review gates and the single-current-responsible-Trainer working assumption remain recorded. This is an existing open PR fix within approved scope. T042 retains its US7 tag; T055 carries US7, FR-011 and FR-017 tags, and the task coverage table maps T055 to FR-011/017. PASS.
+- Cross-reference check: 011 T048 owns the forward-only operation changes and names both 012 T042/T055 as release prerequisites; 012 FR-022 and task text agree. No task is marked complete because no tests ran.
+- Findings: CRITICAL 0, HIGH 0, MEDIUM 0 new.
+- Result: PASS. Static consistency analysis only; no implementation or product behavior changed.
+
 ## 2026-11-10 00:11 +02:00 — S41 round 7 analysis (CodeRabbit round 7 review 5832806947 finding 3; S41-PO-11 cross-reference; PR #73)
 
 - Scope: 012 spec.md line 148 (the deletion-state check now names the 011 T048 owner and the 012 T042 gate) and FR-022 (the delayed-job no-op now excludes the Trainer-deletion reassignment of 011 FR-028 (h)), plus the gating note in tasks.md T042. The S41-PO-11 cross-reference changes no F12 decision: approval still auto-assigns through 011, and a deleted rejected client is still refused before any subscription or payment.
