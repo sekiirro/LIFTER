@@ -68,7 +68,7 @@
 ## Phase 6: Review (Claude)
 
 - [x] T011 Re-run the gates. Run `free-tier:db` against the local stack and `free-tier:probe` against a local `next start`. Fill the offline rows of `docs/06-free-tier-report.md`. PR, CI, CodeRabbit (FR-001..FR-008, SC-001..SC-004).
-- [ ] T012 Verify each S31-PO-4 pilot unit against the current schema, record the mapping and source in the projection volume artifact, and complete offline projection after verification. Defer deployment-dependent and authenticated-route measurements until the independently open decisions are approved. FR-006.
+- [ ] T012 Verify each S31-PO-4 pilot unit against the current schema and check the supplied relation's row estimate, record the mapping and source in the projection volume artifact, and complete offline projection after verification. If a relation's per-row basis is unknown (for example PostgreSQL `reltuples = -1` for an unanalyzed table), defer that projection or mark the result invalid instead of completing it. Defer deployment-dependent and authenticated-route measurements until the independently open decisions are approved. FR-006.
 
 ## Dependencies
 

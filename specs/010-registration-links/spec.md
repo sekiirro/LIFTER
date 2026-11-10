@@ -106,7 +106,7 @@ Strict equality at expiry/grace is invalid; opening early must not shorten expir
 - **ND-F10-5**: Sales/Trainer price visibility on staff screen. Interim binding default: yes; price is separate from commission. PO confirmation remains required.
 - Carry **ND-F9-1** allowed currencies (format only), **ND-F9-2** custom-duration bounds (existing technical limits), **ND-F9-3** actual catalog/terms (NEEDS SOURCE CONFIRMATION, no seeds), **ND-F9-4** Sales/Trainer commission visibility (denied), **ND-F9-5** final navigation (existing landing pattern only).
 
-Existing [production gates](../../docs/07-production-readiness.md), including B4 and recovery decisions, remain open. ND-F4 expiry/limits do not replace F10's fixed 24 hours or its own rate decision. Local work/PRs remain permitted; no deployment/cloud migration is authorized.
+Existing [production gates](../../docs/13-production-readiness.md), including B4 and recovery decisions, remain open. ND-F4 expiry/limits do not replace F10's fixed 24 hours or its own rate decision. Local work/PRs remain permitted; no deployment/cloud migration is authorized.
 
 ## Clarifications
 

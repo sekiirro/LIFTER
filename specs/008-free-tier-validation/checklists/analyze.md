@@ -126,3 +126,12 @@
 - Current matrix totals: 2 VERIFIED / 6 PARTIAL FR; 0 VERIFIED / 4 PARTIAL SC. FR-005 and FR-006 are PARTIAL for the documented output and unknown-row/coverage limitations.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static inspection only; no tests ran and no verification status was upgraded.
 - Verdict: PASS for this documentation-only evidence correction.
+
+
+## S42 CodeRabbit full-review coverage-evidence re-analysis
+
+- Date: 2026-11-10 03:04 UTC, after the round-4 corrections to `tasks.md` T012 and the `traceability.md` SC-004 row.
+- Scope: rechecked the projection estimate handling in `scripts/free-tier/lib/projection.mjs` (`Math.max(reltuples, 1)`, so PostgreSQL `reltuples = -1` becomes a one-row guess) and T012 now requires checking each supplied relation's row estimate and deferring or invalidating a projection whose per-row basis is unknown. Rechecked the tool CLIs: `http-probe.mjs`, `parse-tail.mjs` and `db-usage.mjs` do not implement `--help`, so the SC-004 row now cites the README "Free-tier validation" after-PO-approval instructions instead of CLI help.
+- Current matrix totals unchanged: 2 VERIFIED / 6 PARTIAL FR; 0 VERIFIED / 4 PARTIAL SC. FR-006 and SC-004 remain PARTIAL.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no tests ran and no status was upgraded. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.

@@ -167,3 +167,12 @@ The main-side CI requirements retain FR-015 to FR-019 and SC-006 to SC-009, with
 - Cross-references: FR-009, FR-022, FR-026, User Story 2 scenario 2, the S41-R7 clarification, plan constraints and S39/S40 sections, research, T012 and T025 now state the same boundary. The earlier "no secret access" shorthand in this file and in round-3 sections is defined by this entry as no repository-configured secrets. No PO decision text was changed; T025 remains unchecked because no tests were run.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no workflow, test, or application behavior changed. **No open ambiguities** remain for this factual reconciliation.
 - Verdict: PASS for this documentation-only correction.
+
+
+## S42 CodeRabbit full-review token-scope re-analysis
+
+- Date: 2026-11-10 03:04 UTC, after the round-4 second-batch FR-022/FR-026 wording correction.
+- Scope: rechecked the `ACTIONS_RUNTIME_TOKEN` description against the Actions runtime behaviour used by `actions/download-artifact@v4` (ci.yml line 271). The token is a per-job GitHub Actions runtime token that is not limited to the artifact service (the same runtime token also authenticates Actions cache requests), so FR-022 and FR-026 no longer claim an artifact-only scope. Both keep "no repository-configured secrets", `contents: read` and no checkout. The S42 credential entries above remain otherwise accurate; the Docker Hub job-level env description is unchanged.
+- Cross-references: FR-022, FR-026, plan aggregator steps, research, T012/T025 and the earlier S42 analyze entry agree. No PO decision text changed.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no workflow, test, or application behavior changed. **No open ambiguities** remain for this factual reconciliation.
+- Verdict: PASS for this documentation-only correction.

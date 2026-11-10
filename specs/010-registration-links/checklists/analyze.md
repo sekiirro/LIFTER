@@ -72,3 +72,11 @@ T901 is complete after the 16-test page suite passed on the committed code, foll
 - Entry gate: PASS for the docs-only reconciliation; numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan, and tagged existing tasks are present.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
 - Verdict: PASS for this documentation-only source-map correction.
+
+
+## S42 CodeRabbit full-review link-and-citation re-analysis
+
+- Date: 2026-11-10 03:04 UTC, after the round-4 plan/spec production-readiness link change and the traceability FR-003/FR-010 citation corrections.
+- Scope: `docs/07-production-readiness.md` states its statuses are historical and directs readers to `docs/13-production-readiness.md`; plan.md and spec.md now link the current register. Confirmed the role-scoped and secret-column read tests are in `tests/integration/registration-links-reads.test.ts` (the previously cited `registration-links-read.test.ts` is a unit suite that stays cited for FR-010). FR-003 cites the issue integration suite and the reads integration suite; FR-010 cites both the unit and integration suites. No status was upgraded; the baseline map still claims no fresh execution, and FR-006 remains unimplemented under T035.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no tests ran and no status changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.

@@ -420,3 +420,11 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
 - Scope: preserve DEFERRED for the FR-009 owner-editor row; core FR-009 remains PARTIAL. Invalid registration responses assert no-store and referrer-policy, but the full private, no-store response matrix is not demonstrated. FR-011 and SC-007 remain PARTIAL.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests or tasks changed.
 - Verdict: PASS for these documentation-only corrections.
+
+
+## S42 CodeRabbit full-review requirement-link re-analysis
+
+- Date: 2026-11-10 03:04 UTC, after the round-4 T041 tag correction and the FR-011/SC-007 traceability references.
+- Scope: T041 runs the Q-M01..Q-M30 matrix, whose Q-M16 inspects registration response headers for `private, no-store`; T041 now carries FR-011 and SC-007, and both traceability rows name T041 as the pending matrix check. Both requirements remain PARTIAL because the full registration-route response matrix is still not demonstrated.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests or tasks were executed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.

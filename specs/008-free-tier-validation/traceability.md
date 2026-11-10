@@ -15,7 +15,7 @@ Static source inspection only. No tests, stacks, deployments, cloud queries, or 
 | SC-001 | T003-T004, T007, T009-T011 | Offline commands and report fields in `docs/06-free-tier-report.md`; full row-by-row completion evidence is not present | Source/docs on `d04ef52` | PARTIAL |
 | SC-002 | T001-T011 | Scope/tool inspection shows no deployment or cloud-resource mutation path; no runtime attempt made | Source on `d04ef52` | PARTIAL |
 | SC-003 | T005-T006, T008 | `tests/unit/free-tier-tail.test.ts::never prints fixture headers, queries, logs or exceptions`; only the tested tail-output path is asserted, not every tool output | Code/test on `d04ef52` | PARTIAL |
-| SC-004 | T005-T006, T009 | CLI help and README/quickstart procedure describe the post-approval commands without deployment steps | Source/docs on `d04ef52`; not run against a deployment | PARTIAL |
+| SC-004 | T005-T006, T009 | The post-approval instructions in [`README.md`](../../README.md) ("Free-tier validation", after-PO-approval paragraph) describe the commands without deployment steps; the tool CLIs do not implement `--help` | Source/docs on `d04ef52`; not run against a deployment | PARTIAL |
 
 ## Summary
 

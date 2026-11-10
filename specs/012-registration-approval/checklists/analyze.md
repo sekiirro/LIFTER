@@ -91,3 +91,12 @@
 - Current totals: FR 21 VERIFIED / 8 PARTIAL; SC 6 VERIFIED / 5 PARTIAL. FR-007 remains PARTIAL until an already-open pending page observes approval through its existing signed session. T041 is complete for mock status/accessibility outcomes; the real signed-session proof remains pending in U9. FR-014..015 includes T020 exact-correction replay and T022 audit replay assertions.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no task status changed.
 - Verdict: PASS for this documentation-only evidence correction.
+
+
+## S42 CodeRabbit full-review traceability re-analysis
+
+- Date: 2026-11-10 03:04 UTC, after the round-4 traceability citations for FR-004..005/FR-009..010 and FR-011..012.
+- Scope: rechecked the T018 payments suite (activation, sequence, invalid-input and Cairo-date tests), the T015 exact-replay and binding tests, and the T020 exact-replay, revocation-after-wait and subscription-lock tests. FR-004..005/FR-009..010 stay VERIFIED with the T018 activation/sequence/collection-input evidence added alongside the commission and correction citations. FR-011 stays VERIFIED; FR-012 is now PARTIAL because the full lock order (client, subscription, then obligations/ledger) is not asserted as a whole by the cited tests, while staff re-authorization after a wait is asserted.
+- Current totals: FR 20 VERIFIED / 9 PARTIAL; SC 6 VERIFIED / 5 PARTIAL. SC-004 remains PARTIAL pending U9 real signed-session evidence.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no tests ran. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.
