@@ -17,7 +17,7 @@ Question: approve the copy in `research/s40-new-workspace-copy-proposal.md` byte
 
 Implications: A lets T056 encode once MCQ-17 and MCQ-19 are also answered. B delays T056 until the strings arrive. No guessed string is encoded in either case.
 
-Blocked: copy assertions in T051 and string encoding in T056 only.
+Historical blocker: before S41-PO-3/S41-PO-4/5, copy assertions in T051 and string encoding in T056 awaited the PO. The decisions and approved strings cited above cleared it; it is not an active gate.
 
 ---
 
@@ -33,7 +33,7 @@ Question: may a Workspace Owner account be deleted when it is the last active Wo
 
 Implications: A leaves pending clients waiting for the PO. B blocks the deletion until a human is changed by other means. C keeps the approver boundary intact and matches the rule already applied to the Platform Owner.
 
-Blocked: the Workspace Owner last-account case of T047 only.
+Historical blocker: before S41-PO-1, the last-Workspace-Owner case of T047 awaited the PO. S41-PO-1 MCQ-13 = A cleared it; it is not an active gate.
 
 ---
 
@@ -49,7 +49,7 @@ Question: after the guarded release (plan P-S40-1 step D), which personal fields
 
 Implications: A keeps personal data of a departed client with no stated need (Constitution VII). B satisfies FR-020's no-copy rule and keeps the history rows referencing the client. C is the simplest but keeps the most personal data.
 
-Blocked: the field-clearing step of T048 and the personal-field scan in T047 only.
+Historical blocker: before S41-PO-1, the field-clearing step of T048 and personal-field scan in T047 awaited the PO. S41-PO-1 MCQ-14 = B cleared it; it is not an active gate.
 
 ---
 
@@ -65,7 +65,7 @@ Question: which existing capability authorises deletion of Workspace Owner, Trai
 
 Implications: A reuses the staff-management capability, keeps the matrix, and matches MCQ-10. B mixes client and staff authority. C adds a matrix change (FR-008, FR-023).
 
-Blocked: the staff cases of T047 and T048 only.
+Historical blocker: before S41-PO-1, the staff cases of T047 and T048 awaited the PO. S41-PO-1 MCQ-15 = A cleared it; it is not an active gate.
 
 ---
 
@@ -74,17 +74,19 @@ Blocked: the staff cases of T047 and T048 only.
 **DECIDED — S41-PO-2, MCQ-16 part 1 = A** ("A: First (Rec.)") and **part 2 = A** ("A: Approved + assigned (Rec.)"). Encoded in spec.md FR-028 (c), (d), SC-021, plan P-S40-5, tasks T058. Blocked: none.
 
 Question (part 1): in the default tie-break "oldest last assignment", where does a trainer with no prior assignment sort?
+
 - A) First (never assigned = oldest). **Recommended.**
 - B) Last.
 - C) Equal rank; ordered only by ascending `user_id`.
 
 Question (part 2): the default balance is "active clients per trainer". Which clients count as active?
+
 - A) Approved client accounts with a current assignment row (`ended_at` null). **Recommended.**
 - B) Any non-deleted client account with a current assignment row.
 
 Implications: part 1 changes which trainer is picked in the first round of a new workspace. Part 2 changes whether a deletion-pending client counts. Under plan P-S40-1 step 0 the client enters the deletion lifecycle while its assignment row stays current until step B, and an Auth failure can extend that interval. Option B would count such a client while option A does not, which can change trainer selection. Pending clients never hold an assignment under the approval trigger (F5, S41-R4). Correction (S41 round 6): the guarded release keeps `approval_state` unchanged, so FR-028 (c) now excludes an account in the F11 deletion lifecycle explicitly; the earlier reading that the client is no longer approved no longer applies.
 
-Blocked: the never-assigned and "active client" sub-cases of T058 and T062 only. The rest of the defaults (trigger = approval; balance; oldest-last tie-break; none eligible = unassigned list; PO override kept) are accepted by S40-PO-13.
+Historical blocker: before S41-PO-2, the never-assigned and "active client" sub-cases of T058 and T062 awaited the PO. MCQ-16 = A/A cleared them; the remaining defaults (trigger = approval; balance; oldest-last tie-break; none eligible = unassigned list; PO override kept) were accepted by S40-PO-13. They are not active gates.
 
 ---
 
@@ -100,7 +102,7 @@ Facts: no workspace switcher component exists on origin/main. The only workspace
 
 Implications: A adds shell UI and a design-gate pass. B is the smallest change but puts workspace creation on a branding screen. C adds a navigation entry.
 
-Blocked: the placement part of T051 and T056 only.
+Historical blocker: before S41-PO-2 MCQ-17 = C, placement in T051 and T056 awaited the PO. The Workspaces page placement is decided and is not an active gate.
 
 ---
 
@@ -116,7 +118,7 @@ Question: S40-PO-10 item 3 asks for an "appropriate refund/financial-resolution 
 
 Implications: in every option the confirmation creates no refund, ledger, collection, correction or cancellation row (FR-025), and must not use the spec 013 refund path. The "refunded outside LIFTER" category must not be read as a refund record. A gives the most evidence; B is the simplest; C risks free text.
 
-Blocked: the confirmation UI and record of T059 only; the refusal without confirmation is in force.
+Historical blocker: before S41-PO-2 MCQ-18 = A, the confirmation UI and record of T059 awaited the PO. The decision and approved strings cleared it; refusal without confirmation remains in force.
 
 ---
 
@@ -132,7 +134,7 @@ Facts: `workspaces.name` is required (1–120 characters) and `workspaces.slug` 
 
 Implications: A and B need the clash and retry copy (the proposal has no copy for these). C avoids the clash case but gives slugs the PO cannot choose.
 
-Blocked: the creation form in T051 and T056 only.
+Historical blocker: before S41-PO-3 MCQ-19 = A, the creation form in T051 and T056 awaited the PO. The decision and approved strings cleared it; it is not an active gate.
 
 ---
 
@@ -148,7 +150,7 @@ Question: may a Platform Owner delete their own account while other valid Platfo
 
 Implications: A allows a self-service exit with no second check. B avoids a self-initiated lockout and a single actor both starting and completing a release. C adds a new approval step not in any approved record.
 
-Blocked: the self-deletion case of T047 only.
+Historical blocker: before S41-PO-1 MCQ-20 = A, the self-deletion case of T047 awaited the PO. The decision cleared it; it is not an active gate.
 
 ---
 
@@ -196,6 +198,6 @@ Question (as raised): when a PO manually assigned a Trainer before approval and 
 - B) No: any manual assignment, including an ended pre-approval one, keeps the no-op and the client stays unassigned until the PO assigns again.
 - C) Refuse manual assignment for a pending-approval client at write time, so the case cannot arise (changes FR-022 and the P-S40-2 eligibility).
 
-Implications: the PO answered C + A. C removes the pre-approval case and changes FR-022 and the P-S40-2 manual-write eligibility; A lets the PO override after approval. The answer also adds the Trainer-deletion rule: on deletion of an assigned Trainer's account, each of that Trainer's clients is automatically reassigned to an active, non-revoked trainer of the workspace by the same balanced distribution, or listed as unassigned when none is eligible; every assignment, override, end and reassignment keeps its ended row (start, end, actor or system) in audit history. This replaces the earlier "never auto-reassigns" reading for the Trainer-deletion case only; a delayed job that finds an active manual assignment, or a manual assignment ended by a membership revocation or role change, still completes as a recorded no-op.
+Implications: the PO answered C + A. C removes the pre-approval case and changes FR-022 and the P-S40-2 manual-write eligibility; A lets the PO override after approval. The answer also adds the Trainer-deletion rule: on deletion of an assigned Trainer's account, each of that Trainer's clients outside the F11 deletion lifecycle is automatically reassigned to an active, non-revoked trainer of the workspace by the same balanced distribution, or listed as unassigned when none is eligible; a client already in `deletion_pending`, `release_pending` or released is excluded from both reassignment and the unassigned list, and the deletion-lifecycle no-op is recorded without retry. Every assignment, override, end and reassignment keeps its ended row (start, end, actor or system) in audit history. This replaces the earlier "never auto-reassigns" reading for the Trainer-deletion case only; a delayed job that finds an active manual assignment, or a manual assignment ended by a membership revocation or role change, still completes as a recorded no-op.
 
 Blocked: none. The pre-approval refusal and post-approval override cases of T050, the reassignment cases of T047/T058/T062 and the T048 012 operation dependency are unblocked by S41-PO-11.

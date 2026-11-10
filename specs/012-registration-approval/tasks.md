@@ -157,23 +157,23 @@ Stories 1/2 share the atomic client transition foundation; 3/4 share obligation 
 
 ## Traceability and unit exits
 
-| Requirement / outcome                                 | Tasks / evidence                                                             |
-| ----------------------------------------------------- | ---------------------------------------------------------------------------- |
-| FR-001 / ND1 role removal                             | T006–T011/T014/T028; Q-V03, Q-M01/02/09                                      |
-| FR-002..003 immutable binding/subscription            | T008–T017; Q-V05, Q-M03/06/12                                                |
-| FR-004..005/009..010 confirmed full ledger/commission | T004–T005/T009/T013/T018–T022; Q-V02/07/08, Q-M05..08/12                     |
-| FR-006/008/017..018 isolation/projection              | T008/T010/T023/T026/T028–T032/T042/T055; Q-V03/04/09/12, Q-M01..04/09..11/15 |
-| FR-007 live client status                             | T024/T026/T029/T031/T038–T043; Q-V12/14, Q-M14                               |
-| FR-011..012 receipts/locks                            | T015–T016/T020–T021/T028–T030/T042/T055; Q-V09/10, Q-M05/10/11               |
-| FR-013 historical dates                               | T006–T009/T018/T021; Q-V07, fresh Cairo/invalid date probes                  |
-| FR-014..015 correction                                | T019–T022/T035/T043; Q-V08..10, Q-M06/08/09                                  |
-| FR-016 audit                                          | T010–T017/T022/T044; Q-V11, Q-M13                                            |
-| FR-019..021 / DG2..4 UI                               | T033–T043/T045; Q-V14, Q-M18; docs/09 retained evidence                      |
-| FR-022 / REQ-P2-01                                    | T013/T016–T017/T025–T027; Q-V13, Q-M16/17; no form implementation            |
-| SC-001..003                                           | Q-V02/05/07/08/10; U1–U4/U9                                                  |
-| SC-004..005                                           | Q-V03/04/09/12; U5/U6/U8/U9                                                  |
-| SC-006..007                                           | Q-V05/08..11/13 and Q-M checks; U2–U4/U9                                     |
-| SC-008                                                | Q-V14/doc09; U7–U9                                                           |
+| Requirement / outcome                                 | Tasks / evidence                                                                                                                                  |
+| ----------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------- |
+| FR-001 / ND1 role removal                             | T006–T011/T014/T028; Q-V03, Q-M01/02/09                                                                                                           |
+| FR-002..003 immutable binding/subscription            | T008–T017; Q-V05, Q-M03/06/12                                                                                                                     |
+| FR-004..005/009..010 confirmed full ledger/commission | T004–T005/T009/T013/T018–T022; Q-V02/07/08, Q-M05..08/12                                                                                          |
+| FR-006/008/017..018 isolation/projection              | T008/T010/T023/T026/T028–T032/T042/T055; Q-V03/04/09/12, Q-M01..04/09..11/15                                                                      |
+| FR-007 live client status                             | T024/T026/T029/T031/T038–T043; Q-V12/14, Q-M14                                                                                                    |
+| FR-011..012 receipts/locks                            | T015–T016/T020–T021/T028–T030/T042/T055; Q-V09/10, Q-M05/10/11                                                                                    |
+| FR-013 historical dates                               | T006–T009/T018/T021; Q-V07, fresh Cairo/invalid date probes                                                                                       |
+| FR-014..015 correction                                | T019–T022/T035/T043; Q-V08..10, Q-M06/08/09                                                                                                       |
+| FR-016 audit                                          | T010–T017/T022/T044; Q-V11, Q-M13                                                                                                                 |
+| FR-019..021 / DG2..4 UI                               | T033–T043/T045; Q-V14, Q-M18; docs/09 retained evidence                                                                                           |
+| FR-022 / REQ-P2-01                                    | T013/T016–T017/T025–T027; planned follow-up 011 T063 emits the distribution job outside this F12 U9 gate; Q-V13, Q-M16/17; no form implementation |
+| SC-001..003                                           | Q-V02/05/07/08/10; U1–U4/U9                                                                                                                       |
+| SC-004..005                                           | Q-V03/04/09/12; U5/U6/U8/U9                                                                                                                       |
+| SC-006..007                                           | Q-V05/08..11/13 and Q-M checks; U2–U4/U9                                                                                                          |
+| SC-008                                                | Q-V14/doc09; U7–U9                                                                                                                                |
 
 Final extension coverage: FR-023 and SC-009 -> T049-T054/Q-V15/Q-M19..21; FR-024/SC-010 -> T038-T043/Q-V16/Q-M23; FR-025/SC-011 -> T019-T022/Q-V17/Q-M22; FR-026 -> T014; FR-027 -> T018-T021/Q-M21; FR-028 -> T033-T034/Q-V18; FR-029 -> T028/T033-T035/Q-M24. U9 T043 adds default/custom link issuance, status redirect/manual fallback and dashboard role journeys before GREEN.
 
