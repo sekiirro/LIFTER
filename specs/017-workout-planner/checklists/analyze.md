@@ -29,7 +29,6 @@
 
 Entry Analyze result before the S44 PR #78 fix lane: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0. F17 open PO MCQ IDs at that point: none. Superseded by the S44 fix-lane Analyze below.
 
-
 ## S44 PR #78 fix-lane Analyze - 2026-11-10 12:25 UTC
 
 Scope: eight in-scope technical corrections after the initial review and CodeRabbit follow-up replies. These cover export completeness/template substitution, private reference identity, assigned-copy versioning, PO template authorization, promoted-template task coverage, explicit all-role plan isolation, and static-only copy approval. S44-MCQ-1/2 remain unencoded pending PO decision.
@@ -43,12 +42,12 @@ Scope: eight in-scope technical corrections after the initial review and CodeRab
 
 ### Hostile cross-artifact findings
 
-| Severity | Finding | Evidence / disposition |
-| --- | --- | --- |
-| CRITICAL | 0 open | No new code, schema or privilege behavior is being implemented. |
-| HIGH | 0 open | PO scope exception is explicit; private-reference source workspace is retained; copy identity and version 1 are both specified; static prompt approval does not prohibit authored payload substitution. |
-| MEDIUM | 2 PO questions | S44-MCQ-1 controls mixed per-workspace outcomes; S44-MCQ-2 controls exercise effective-value capture timing. Both remain in the lane report and their review threads stay unresolved. |
-| LOW | 0 open | Task checkboxes remain unticked; no implementation tests were run. |
+| Severity | Finding        | Evidence / disposition                                                                                                                                                                                  |
+| -------- | -------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CRITICAL | 0 open         | No new code, schema or privilege behavior is being implemented.                                                                                                                                         |
+| HIGH     | 0 open         | PO scope exception is explicit; private-reference source workspace is retained; copy identity and version 1 are both specified; static prompt approval does not prohibit authored payload substitution. |
+| MEDIUM   | 2 PO questions | S44-MCQ-1 controls mixed per-workspace outcomes; S44-MCQ-2 controls exercise effective-value capture timing. Both remain in the lane report and their review threads stay unresolved.                   |
+| LOW      | 0 open         | Task checkboxes remain unticked; no implementation tests were run.                                                                                                                                      |
 
 ### Disposition summary
 
