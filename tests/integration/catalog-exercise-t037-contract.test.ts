@@ -655,35 +655,33 @@ describe('T037 remaining workspace and identity contracts', () => {
     ).rejects.toMatchObject({ code: '42501' });
   });
 
-  it.fails(
+  it(
     'makes a new Global exercise visible without replacing a workspace edit (T049)',
     async () => {
       const global = await createGlobal({
         ...core,
         name_ar: 'Test',
         name_en: 'New shared default',
-        default_rest_time: 90,
       });
       const globalId = (
         global[0]?.catalog_create_exercise as { exercise_id: string }
       ).exercise_id;
-      const local = await asActor(
+      await asActor(
         trainerId,
         (tx) =>
-          tx`select public.catalog_write_workspace_exercise(${workspaceId}, ${globalId}, null, ${randomUUID()}, ${tx.json({ name_en: 'Workspace name' })})`,
+          tx`select public.catalog_write_exercise_override(${workspaceId}, ${globalId}, 0, ${randomUUID()}, ${tx.json({ name_en: 'Workspace name' })})`,
       );
-      const localResult = local[0]?.catalog_write_workspace_exercise as {
-        exercise_id: string;
-      };
-      const resolved = await db`
-      select e.id, e.current_version, wv.payload ->> 'name_en' as local_name
-      from public.exercises e
-      left join public.workspace_exercise_versions wv
-        on wv.workspace_id = ${workspaceId} and wv.workspace_exercise_id = ${localResult.exercise_id}
-      where e.id = ${globalId}
-    `;
-      expect(resolved).toHaveLength(1);
-      expect(resolved[0]?.local_name).toBe('Workspace name');
+      const [workspace] = await asActor(trainerId, (tx) => tx`select result_id, result_payload
+        from public.catalog_search('exercise', null, '{}'::jsonb, null, ${workspaceId})
+        where result_id = ${globalId}`);
+      expect(workspace?.result_id).toBe(globalId);
+      expect(workspace?.result_payload.effective_fields.name).toEqual({
+        value: { name_en: 'Workspace name', name_ar: null }, source: 'override',
+      });
+      const [canonical] = await asActor(poId, (tx) => tx`select result_payload
+        from public.catalog_search('exercise', null, '{}'::jsonb, null, null)
+        where result_id = ${globalId}`);
+      expect(canonical?.result_payload.name_en).toBe('New shared default');
     },
   );
 

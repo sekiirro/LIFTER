@@ -220,7 +220,13 @@ describe('workspace exercise tenant keys', () => {
           {
             result_id: kendoExerciseId,
             result_workspace_id: kendoId,
-            result_payload: { marker: 'KENDO exercise' },
+            result_payload: { marker: 'KENDO exercise', effective_fields: {
+              name: { value: { name_en: null, name_ar: null }, source: 'none' },
+              description: { value: null, source: 'none' }, notes: { value: null, source: 'none' },
+              video: { value: null, source: 'none' }, alternatives: { value: [], source: 'none' },
+              default_rest_time: { value: null, source: 'none' }, default_rir: { value: null, source: 'none' },
+              default_reps: { value: null, source: 'none' },
+            } },
           },
         ]);
         const kendoVariations =
@@ -268,7 +274,13 @@ describe('workspace exercise tenant keys', () => {
           {
             result_id: tojiExerciseId,
             result_workspace_id: tojiId,
-            result_payload: { marker: 'TOJI exercise' },
+            result_payload: { marker: 'TOJI exercise', effective_fields: {
+              name: { value: { name_en: null, name_ar: null }, source: 'none' },
+              description: { value: null, source: 'none' }, notes: { value: null, source: 'none' },
+              video: { value: null, source: 'none' }, alternatives: { value: [], source: 'none' },
+              default_rest_time: { value: null, source: 'none' }, default_rir: { value: null, source: 'none' },
+              default_reps: { value: null, source: 'none' },
+            } },
           },
         ]);
         const countsB = await tx`select

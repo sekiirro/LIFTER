@@ -669,3 +669,15 @@ T900 has been marked complete only after its focused integration test passed on 
 - T052 before commit: fetched and scanned all 107 origin refs (271 unique migration path/version pairs); highest remote migration `20261110213000`; T090 `20261110224100` is strictly greater than every remote version and the T044 migration. Separate `npm run check:migration-versions:remote` passed across 106 refs.
 - Findings: 0 open CRITICAL, 0 open HIGH. No open ambiguities. No PO decision required.
 - Verdict: PASS for T090.
+
+## S46 T049 implementation analysis — 2026-11-10 23:30:18 UTC (Z)
+
+- Scope: FR-026 effective resolution for the exact eight library fields, canonical-only Global reads, workspace-private values, staff RPC authorization, and preservation of planner-facing non-video library values under FR-027; FR-038 remains cutover scope and is not implemented by this task.
+- Entry check: PASS. `spec.md` has the numbered requirements, measurable criteria and G/W/T scenarios; PO/architect decisions close null-as-inherit, explicit-empty Alternatives, optional canonical absence, field language, Notes/Instructions, and staff scope. `plan.md` and T049 in `tasks.md` cover the implementation. The previous Analyze entry had 0 open CRITICAL/HIGH findings. No requirement text changed.
+- Implementation: current staff `catalog_search` and `catalog_exercise_detail` attach the per-field `{value, source}` resolution to detail payloads; workspace library search resolves override → canonical independently for all eight fields, null → inherit, explicit-empty Alternatives → empty. Global-template detail is canonical-only. Workspace-private search resolves only its own current version. Explicit workspace reads require PO or current `coaching_work`.
+- Verification: RED recorded before implementation. Final Stack A reset/GREEN: 6 affected integration suites, 78 passed / 24 existing expected failures; affected unit suites, 7 files / 87 passed; `npm run lint` and `npm run typecheck` passed. The T037 assertion tagged T049 is now a normal passing test.
+- Mutations: ignoring a non-null workspace Name override failed effective-resolution test; converting explicit-empty Alternatives to inherit failed the Alternatives test; removing the `coaching_work` checks from selected-workspace search and resolver helper failed foreign-workspace denial. Each mutant was restored and Stack A reset afterward.
+- Findings: 0 open CRITICAL, 0 open HIGH. No PO decision needed; no ambiguity found.
+- T052 before commit: pending final fetch/scan and separate remote filename-conflict check.
+- Verdict: PASS for T049.
+- T052 before commit: PASS. Fetch + scan covered all 107 origin refs / 7,946 migration-path appearances; highest is `20261110224100` on `origin/016-impl-s45`; new `20261110231300` is greater and clock fields 23:13:00 are valid. Separate `npm run check:migration-versions:remote` passed across 106 refs.
