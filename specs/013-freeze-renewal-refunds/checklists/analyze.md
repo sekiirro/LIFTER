@@ -24,3 +24,14 @@
 - SC-033 and SC-034 map to unchecked T041/T042; no test execution or implementation is claimed. Other implementation evidence gaps and independent technical/security gates remain as recorded.
 
 **Analyze result:** CRITICAL 0; HIGH 0; MEDIUM 0 open PO decisions; LOW 0.
+
+## S45 R3 review-fix analysis
+
+**Analyzed:** 2026-11-10 22:43 UTC
+**Scope:** CodeRabbit round-3 fixes for expired-renewal term anchoring and cumulative refund caps.
+
+- PASS: the expired-renewal anchor is the renewal operation date in lifecycle mapping; this follows the existing approved mapping and makes no new product choice.
+- PASS: each source's cumulative refunded principal is bounded by eligible collections; group cumulative refunds use total eligible collections, while a new request is bounded by the pre-operation residual.
+- PASS: subscription/group locking and deterministic allocation remain unchanged; FR/SC/task IDs and task tags are untouched.
+- PASS: no product ambiguity or new PO decision found.
+- CRITICAL: 0 open; HIGH: 0 open.
