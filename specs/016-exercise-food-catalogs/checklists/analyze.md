@@ -609,3 +609,11 @@ T900 has been marked complete only after its focused integration test passed on 
 - **Entry check:** PASS. `spec.md` FR-014 identifies D16-3 and explicitly excludes Docs; `decision-register.md` records the closed S37-PO-10 decision; S45-R9 confirms implementation scope. `plan.md` describes the validator and host list; `tasks.md` T061 is tagged FR-014. No open ambiguity or PO decision.
 - **Findings:** 0 open CRITICAL, 0 open HIGH.
 - **Gate:** PASS for T061. Stack A RED/GREEN, SQL and TypeScript mutation results, T052 ordering checks, lint and typecheck are recorded in `traceability.md` and the lane report.
+
+## S45 T046 exercise override identity
+
+- **Date:** 2026-11-10 22:45 +02:00, after the T046 task-status and traceability updates.
+- **Scope:** `exercise_overrides` and immutable `exercise_override_versions`; composite workspace/canonical identity keys, forced workspace RLS, append-only versions, no direct DML grants, and F16-MCQ-A null-as-inherit storage. No requirement, plan, or decision text changed.
+- **Entry check:** PASS. `spec.md` FR-003/FR-014/FR-016 and User Story 2 acceptance scenarios 1–3 cover the touched scope. Clarifications and `decision-register.md` cite S36-PO-3; F16-MCQ-A is answered (a), and the current spec states no open ambiguities. `plan.md` covers override storage/resolution. `tasks.md` T046 is tagged FR-003/FR-014/FR-016 and depends on completed T043, T052 and T068.
+- **Findings:** 0 open CRITICAL, 0 open HIGH. No PO decision needed.
+- **Gate:** PASS for T046. Stack A RED/GREEN, per-key, append-only and RLS mutation results, unit suites, lint, typecheck and both T052 gates are recorded in the lane report.
