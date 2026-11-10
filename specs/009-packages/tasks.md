@@ -122,6 +122,7 @@ Goal: PO completes create → publish → enable in AR/EN. Independent test uses
 **C5 dependency order**: T064 is the RED-first test of the read-only synthetic-only/dependency preflight; T064a implements that preflight and must pass the T064 RED tests; both must pass before any deletion operation. T064b is the pre-implementation teardown design and security review gate: it produces and independently security-reviews the teardown design for the protected immutable version rows and the existing `packages_no_delete`/`packages_no_truncate` guards, and it must PASS before T065 implements any deletion. T065 implements the narrowly scoped deletion after T064, T064a and T064b pass; its four-category initialization part uses the S34-PO-6 identity (package row unique on (workspace_id, market, type)) but is settled per S35-PO-1 F9=A (the market literal is `Egypt`/`International`). The teardown mechanism for protected immutable version rows is not specified and no guard exception is authorized; until T064b passes, a mock with attached offers/versions makes the preflight refuse. T070 reviews the implemented deletion path after implementation and before acceptance; it is not a prerequisite to implementation and does not replace or duplicate T064b. Only the T064b teardown design/security-review gate remains for T065; no task remains blocked by PD-S34-NEW-02 (resolved by S35-PO-1 F9=A). T064 and T064a do not depend on either decision.
 
 **S36 FX dependency order**: T058 defines the FX RED fixtures; T075 records Frankfurter coverage for every supported currency before T059 accepts that currency; T059 implements the verified adapter; T068 supplies the reporting RED fixtures; T060/T072/T073 consume those fixtures. The FR-026/FR-031 FX policy is resolved by S36-PO-2/S36-PO-3, so T058/T059/T060/T068/T072/T073 are not blocked by rounding. Provider/security verification, T075 coverage evidence, the existing test order and BLOCKED-COPY still apply.
+
 ## Implementation strategy
 
 One bounded Codex implementation pass in a worktree, then independent Claude review; no new delegation is prescribed. Future implementation follows the existing phases and T052–T076 current requirements. S33-PO-6/S34-PO-1/S34-PO-2 decisions are settled; PD-S34-NEW-01 is resolved by S34-PO-6; PD-S34-NEW-02 (market literal) is resolved by S35-PO-1 F9=A (`Egypt`/`International` as wire and stored value); S36-PO-2/S36-PO-3 settle F9 reporting rounding/calendar/publication, currency-coverage verification and optional promotion bounds. Retained ND-F9 items remain and BLOCKED-COPY applies only beyond the four approved label pairs. The C5 preflight, RED-first tests, design gate, security review and fresh Analyze remain mandatory. No task in this artifact pass is implemented or ticked.
@@ -133,40 +134,40 @@ Tasks amendment, against spec, plan, research, model, contract, quickstart and C
 The detailed checklist is [checklists/analyze.md](checklists/analyze.md). No application test
 execution or independent Claude approval is claimed.
 
-| Requirement                           | Implementation / verification tasks                                    | Required tests                                                        |
-| ------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------- |
-| FR-001 canonical identity             | T003, T006, T011, T013, T025                                           | T005, T010, T012, T023, T027                                          |
-| FR-002 fixed unique offers            | T003, T011, T015                                                       | T010, T014, T018, T027                                                |
-| FR-003 duration rules                 | T003, T006, T011, T013, T025                                           | T005, T010, T012, T023                                                |
-| FR-004 authored explicit exact terms  | T003, T006, T008, T011, T013, T019, T021, T024, T025                   | T005, T007, T010, T012, T018, T020, T023, T031                        |
-| FR-005 publication/concurrency/replay | T003, T004, T011, T013                                                 | T010, T014, T032                                                      |
-| FR-006 immutable history/downstream   | T003, T011, T013, T015                                                 | T010, T014, T027, T032                                                |
-| FR-007 availability/confirmation      | T004, T015, T017, T024, T025                                           | T012, T014, T016, T023, T033                                          |
-| FR-008 scoped staff reads             | T002, T003, T019, T021, T026                                           | T010, T014, T018, T020, T027, T028, T033                              |
-| FR-009 rate visibility                | T004, T019, T021, T026, T029                                           | T018, T020, T027, T028, T032, T033                                    |
-| FR-010 two walls/generic failures     | T001, T003, T006, T009, T011, T013, T015, T017, T019, T021, T026, T029 | T010, T012, T014, T016, T018, T020, T022, T027, T028, T031, T032      |
-| FR-011 exact atomic audit             | T004, T011, T013, T015, T017, T019                                     | T010, T014, T018, T027, T032                                          |
-| FR-012 PO route/landing               | T021, T024, T025, T026                                                 | T020, T022, T023, T031, T033                                          |
-| FR-013 AR/EN/UI/exact format          | T008, T024, T025, T026                                                 | T007, T022, T023, T031, T033                                          |
-| FR-014 required verification          | T001, T002, T030, T034                                                 | T005, T007, T010, T012, T014, T016, T018, T020, T022, T023, T027–T033 |
-| FR-015 market attribute               | T036, T038, T039, T042, T044, T045                                     | T036, T038, T039, T041, T047                                          |
-| FR-016 type attribute                 | T036, T038, T039, T042, T044, T045                                     | T036, T038, T039, T041, T047                                          |
-| FR-017 market-currency matrix         | T037, T038, T042, T043                                                 | T037, T038, T040, T048                                                |
-| FR-018 no conversion/own currency     | T037, T043, T044, T050                                                 | T037, T041, T050                                                      |
-| FR-019 four immutable categories      | T036, T038, T042, T066                                                | T036, T038, T047, T066                                                |
-| FR-020 PO-only authorship/control     | T040, T042, T043, T045, T047                                           | T038, T040, T047, T048                                                |
-| FR-021 preserve existing versions     | T035, T042, T046, T050                                                 | T038, T050                                                            |
-| FR-022 mock inventory/no inference    | T052, T053, T064, T064a, T064b, T071                                           | T052, T064, T064a, T070                                              |
-| FR-023 future real-package retirement | T054, T055, T066, T076                                                | T076                                                                 |
-| FR-024 promotional dates/link behavior| T056, T057, T067                                                      | T056, T067                                                           |
-| FR-025 collections/settlement report  | T060, T068, T072, T073                                                | T060, T068                                                           |
-| FR-026 FX snapshot/failure behavior   | T058, T059, T067, T068, T075                                          | T058, T067, T068, T075                                               |
-| FR-027 outbound request minimization  | T059, T062, T075                                                      | T059, T062, T075                                                     |
-| FR-028 C5 removal and empty init      | T053, T055, T064, T064a, T064b, T065, T070                                    | T064, T064a, T065, T070                                              |
-| FR-029 PO-only versioned terms        | T054, T055, T066                                                      | T054, T066                                                           |
-| FR-030 promotion/link expiry          | T056, T057, T067                                                      | T056, T067                                                           |
-| FR-031 dashboard/reporting FX         | T058, T060, T068, T072, T073, T074, T075                              | T058, T060, T068, T075                                               |
-| FR-032/033 installments and labels    | T061, T069, T074                                                      | T069                                                                 |
+| Requirement                            | Implementation / verification tasks                                    | Required tests                                                        |
+| -------------------------------------- | ---------------------------------------------------------------------- | --------------------------------------------------------------------- |
+| FR-001 canonical identity              | T003, T006, T011, T013, T025                                           | T005, T010, T012, T023, T027                                          |
+| FR-002 fixed unique offers             | T003, T011, T015                                                       | T010, T014, T018, T027                                                |
+| FR-003 duration rules                  | T003, T006, T011, T013, T025                                           | T005, T010, T012, T023                                                |
+| FR-004 authored explicit exact terms   | T003, T006, T008, T011, T013, T019, T021, T024, T025                   | T005, T007, T010, T012, T018, T020, T023, T031                        |
+| FR-005 publication/concurrency/replay  | T003, T004, T011, T013                                                 | T010, T014, T032                                                      |
+| FR-006 immutable history/downstream    | T003, T011, T013, T015                                                 | T010, T014, T027, T032                                                |
+| FR-007 availability/confirmation       | T004, T015, T017, T024, T025                                           | T012, T014, T016, T023, T033                                          |
+| FR-008 scoped staff reads              | T002, T003, T019, T021, T026                                           | T010, T014, T018, T020, T027, T028, T033                              |
+| FR-009 rate visibility                 | T004, T019, T021, T026, T029                                           | T018, T020, T027, T028, T032, T033                                    |
+| FR-010 two walls/generic failures      | T001, T003, T006, T009, T011, T013, T015, T017, T019, T021, T026, T029 | T010, T012, T014, T016, T018, T020, T022, T027, T028, T031, T032      |
+| FR-011 exact atomic audit              | T004, T011, T013, T015, T017, T019                                     | T010, T014, T018, T027, T032                                          |
+| FR-012 PO route/landing                | T021, T024, T025, T026                                                 | T020, T022, T023, T031, T033                                          |
+| FR-013 AR/EN/UI/exact format           | T008, T024, T025, T026                                                 | T007, T022, T023, T031, T033                                          |
+| FR-014 required verification           | T001, T002, T030, T034                                                 | T005, T007, T010, T012, T014, T016, T018, T020, T022, T023, T027–T033 |
+| FR-015 market attribute                | T036, T038, T039, T042, T044, T045                                     | T036, T038, T039, T041, T047                                          |
+| FR-016 type attribute                  | T036, T038, T039, T042, T044, T045                                     | T036, T038, T039, T041, T047                                          |
+| FR-017 market-currency matrix          | T037, T038, T042, T043                                                 | T037, T038, T040, T048                                                |
+| FR-018 no conversion/own currency      | T037, T043, T044, T050                                                 | T037, T041, T050                                                      |
+| FR-019 four immutable categories       | T036, T038, T042, T066                                                 | T036, T038, T047, T066                                                |
+| FR-020 PO-only authorship/control      | T040, T042, T043, T045, T047                                           | T038, T040, T047, T048                                                |
+| FR-021 preserve existing versions      | T035, T042, T046, T050                                                 | T038, T050                                                            |
+| FR-022 mock inventory/no inference     | T052, T053, T064, T064a, T064b, T071                                   | T052, T064, T064a, T070                                               |
+| FR-023 future real-package retirement  | T054, T055, T066, T076                                                 | T076                                                                  |
+| FR-024 promotional dates/link behavior | T056, T057, T067                                                       | T056, T067                                                            |
+| FR-025 collections/settlement report   | T060, T068, T072, T073                                                 | T060, T068                                                            |
+| FR-026 FX snapshot/failure behavior    | T058, T059, T067, T068, T075                                           | T058, T067, T068, T075                                                |
+| FR-027 outbound request minimization   | T059, T062, T075                                                       | T059, T062, T075                                                      |
+| FR-028 C5 removal and empty init       | T053, T055, T064, T064a, T064b, T065, T070                             | T064, T064a, T065, T070                                               |
+| FR-029 PO-only versioned terms         | T054, T055, T066                                                       | T054, T066                                                            |
+| FR-030 promotion/link expiry           | T056, T057, T067                                                       | T056, T067                                                            |
+| FR-031 dashboard/reporting FX          | T058, T060, T068, T072, T073, T074, T075                               | T058, T060, T068, T075                                                |
+| FR-032/033 installments and labels     | T061, T069, T074                                                       | T069                                                                  |
 
 SC coverage: SC-001 → T010/T014/T018/T020/T027/T028/T033; SC-002 → T010/T032; SC-003 → T010/T014/T032; SC-004 → T010/T014/T032; SC-005 → T022/T023/T033; SC-006 → T005/T007/T010/T018; SC-007 → T036/T038/T066; SC-008 → T037/T038; SC-009 → T037/T041/T050; SC-010 → T038/T039/T047; SC-011 → T035/T038/T050/T066; SC-012 → T041/T045/T049. Current SC-013..SC-023 mappings are specified in `traceability.md`; downstream reporting work follows FR-025..FR-032 and S33-PO-6/S34-PO-1/S34-PO-2.
 
@@ -214,3 +215,10 @@ No task is complete or ticked by this documentation-only cycle. RED-first descri
 ## S33 test hygiene
 
 - [x] T900 [FR-013, FR-014] Make the authenticated package empty-state Playwright fixture explicit and include route/render diagnostics on failure. Preserve the existing empty-state, role, theme, and localization assertions; do not alter product behavior.
+
+## S43-PO-6/7 tier requirements tasks (documentation only; implementation unstarted)
+
+These tasks follow separately labelled **architect mapping (S43-R7/R8)** in spec.md. They remain unchecked and no migration is authored.
+
+- [ ] T077 [FR-034, FR-036, SC-024, SC-026] Preserve the immutable Silver < Gold < Platinum rank model and implement rank/duration upgrade eligibility after the offer structure and rank placement are decided. Rank placement and dependent eligibility work are BLOCKED by S43-F9-MCQ-2.
+- [ ] T078 [FR-035, SC-025] Preserve workspace-scoped EN/AR tier display defaults using byte-exact PO-approved names; implement renaming independent of rank after the actor is decided. Authorization and audit behavior are BLOCKED by S43-F9-MCQ-3.

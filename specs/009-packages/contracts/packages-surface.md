@@ -21,12 +21,12 @@ All calls carry the current user's JWT via the server session client; never an a
 
 **Baseline note**: the RPC table below describes the shipped pre-S31 F9 contract. The S31 delta adds market/type and currency validation. The old format-only `publish_package_version` path MUST fail closed when the approved delta ships. This table is not the final S31 contract. Under S34-PO-6 (PD-S34-NEW-01=A) the package row is the category: the final publication path targets an existing category package row by `package_id`, takes no market/type input and derives the market from that row; the old path fails closed. Exact final signatures are defined in T042 under this model, and the market literal is `Egypt`/`International` per S35-PO-1 F9=A (option A: the same title-case tokens as the wire and stored value).
 
-| RPC                               | Named JSON input                                           | Successful value                                                            |
-| --------------------------------- | ---------------------------------------------------------- | --------------------------------------------------------------------------- |
-| `create_package`                  | `{code: string}`                                           | canonical package UUID; existing UUID on exact code replay                  |
-| `publish_package_version` | `{workspace_id: uuid, package_id: uuid, duration_months: 1 \| 3 \| 6 \| 8 \| 12 \| null, duration_days: integer, name_ar: string, name_en: string, price_minor: decimal-integer-string, currency: string, commission_rate_bp: integer}` | published version UUID; current version UUID for exact current-payload replay |
-| `set_package_offer_available`     | `{workspace_id: uuid, offer_id: uuid, available: boolean}` | offer UUID, including same-state no-op                                      |
-| `get_package_version_commissions` | `{workspace_id: uuid}`                                     | rows `{version_id, commission_rate_bp}` for requested workspace; PO/WO only |
+| RPC                               | Named JSON input                                                                                                                                                                                                                        | Successful value                                                              |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------- |
+| `create_package`                  | `{code: string}`                                                                                                                                                                                                                        | canonical package UUID; existing UUID on exact code replay                    |
+| `publish_package_version`         | `{workspace_id: uuid, package_id: uuid, duration_months: 1 \| 3 \| 6 \| 8 \| 12 \| null, duration_days: integer, name_ar: string, name_en: string, price_minor: decimal-integer-string, currency: string, commission_rate_bp: integer}` | published version UUID; current version UUID for exact current-payload replay |
+| `set_package_offer_available`     | `{workspace_id: uuid, offer_id: uuid, available: boolean}`                                                                                                                                                                              | offer UUID, including same-state no-op                                        |
+| `get_package_version_commissions` | `{workspace_id: uuid}`                                                                                                                                                                                                                  | rows `{version_id, commission_rate_bp}` for requested workspace; PO/WO only   |
 
 SQL signatures/types and constraints are exact in [data-model.md](../data-model.md#database-api-and-transaction-rules). JSON integer strings preserve bigint input. Required NULLs are rejected; only `duration_months` may be NULL. Currency text is validated before char(3) conversion. No `published_by`, timestamp, version number, current pointer or initial availability is supplied by the caller.
 
@@ -42,10 +42,10 @@ Mutation failure codes: `42501/not_permitted` for authorization, missing/foreign
 
 The future S31 publication surface MUST enforce the approved market/type values and this currency matrix before mutation. The values identify one of the four fixed categories, each a workspace-scoped package row (S34-PO-6). The currency check uses the market stored on the package row. The market tokens in the first column are the approved wire and stored values per S35-PO-1 F9=A (option A: title-case `Egypt`/`International`, no mapping layer); they are normative for the validator, RPC and test literals:
 
-| Market (label) | Permitted currency | Prohibited currency |
-|---|---|---|
-| Egypt | `EGP` | `USD`, `SAR`, every other code |
-| International | `EGP`, `USD`, `SAR` | every other code |
+| Market (label) | Permitted currency  | Prohibited currency            |
+| -------------- | ------------------- | ------------------------------ |
+| Egypt          | `EGP`               | `USD`, `SAR`, every other code |
+| International  | `EGP`, `USD`, `SAR` | every other code               |
 
 FR-007 initial-unavailable behavior is unchanged: a newly created offer still starts unavailable,
 publication never enables it, and only a separate confirmed PO availability action changes it.
@@ -108,8 +108,8 @@ The existing F10/F12 boundaries remain outside this F9 implementation scope. S33
 
 `app/(app)/packages/actions.ts` exports the following actions; `lib/packages/service.ts` owns testable server-only orchestration. Inputs may come from FormData but must be parsed once with shared pure validation, never trusted casts.
 
-| Action                     | Input                                                                                                            | Result                                |
-| -------------------------- | ---------------------------------------------------------------------------------------------------------------- | ------------------------------------- |
+| Action                     | Input                                                                                                            | Result                                                                 |
+| -------------------------- | ---------------------------------------------------------------------------------------------------------------- | ---------------------------------------------------------------------- |
 | `createPackage`            | `{workspaceId, code}`                                                                                            | `{status:'ok', packageId}` or `denied \| invalid_input \| unavailable` |
 | `publishPackageVersion`    | `{workspaceId, packageId, durationMonths, durationDays, nameAr, nameEn, priceMinor, currency, commissionRateBp}` | `{status:'ok', versionId}` or `denied \| invalid_input \| unavailable` |
 | `setPackageOfferAvailable` | `{workspaceId, offerId, available}`                                                                              | `{status:'ok', offerId}` or `denied   \| invalid_input \| unavailable` |
@@ -160,3 +160,7 @@ The PO-only management surface controls workspace-specific names, prices and pac
 Promotional categories use approved Africa/Cairo start-inclusive/end-exclusive periods. Expiry stops new links only; issued links retain snapshots (S33-PO-6 S33-05/06).
 
 Historical FX reporting preserves source transaction/settlement currency and separate settlement records. It uses Africa/Cairo transaction dates, previous published business-day rates, verified Frankfurter data, exact EGP identity rate, and idempotent rate-pending retries excluded from totals until fetched. Converted commission remains PO/WO-only; Sales/Trainer are denied (S33-PO-6). Provider requests exclude client/workspace data.
+
+## S43-PO-6/7 package-tier contract delta (no migration authored)
+
+**architect mapping (S43-R7/R8/R9):** Preserve the immutable rank concept and Silver < Gold < Platinum order, but defer which offer entity carries rank and how offers relate to the four package categories under S43-F9-MCQ-2. Localized tier names use PO-approved EN/AR defaults and cannot alter rank; label-edit authority remains unresolved under S43-F9-MCQ-3. No RPC signature, table, migration, or implementation is authored by this note.

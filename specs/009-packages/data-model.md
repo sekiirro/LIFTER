@@ -54,21 +54,21 @@ First publish creates the offer with NULL pointer, inserts version 1 and sets th
 
 ## `public.package_versions` — immutable published terms (FR-004/005/006)
 
-| Column             | Type          | Rule                                                                                                           |
-| ------------------ | ------------- | -------------------------------------------------------------------------------------------------------------- |
-| id                 | uuid PK       | UNIQUE `(workspace_id, id)`; UNIQUE `(workspace_id, id, offer_id)`                                             |
-| workspace_id       | uuid          | FK `workspaces(id)` ON DELETE RESTRICT                                                                         |
-| offer_id           | uuid          | Composite FK `(workspace_id, offer_id)` → `package_offers(workspace_id, id)` ON DELETE RESTRICT                |
-| version            | integer       | `version >= 1`; UNIQUE `(offer_id, version)`                                                                   |
-| name_ar            | text          | `char_length(name_ar) BETWEEN 1 AND 120` AND `char_length(btrim(name_ar)) >= 1` AND `name_ar ~ '[^[:space:]]'` |
-| name_en            | text          | `char_length(name_en) BETWEEN 1 AND 120` AND `char_length(btrim(name_en)) >= 1` AND `name_en ~ '[^[:space:]]'` |
-| price_minor        | bigint        | `price_minor > 0`; signed bigint technical ceiling `9223372036854775807`; no default                           |
+| Column             | Type          | Rule                                                                                                                                                                        |
+| ------------------ | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| id                 | uuid PK       | UNIQUE `(workspace_id, id)`; UNIQUE `(workspace_id, id, offer_id)`                                                                                                          |
+| workspace_id       | uuid          | FK `workspaces(id)` ON DELETE RESTRICT                                                                                                                                      |
+| offer_id           | uuid          | Composite FK `(workspace_id, offer_id)` → `package_offers(workspace_id, id)` ON DELETE RESTRICT                                                                             |
+| version            | integer       | `version >= 1`; UNIQUE `(offer_id, version)`                                                                                                                                |
+| name_ar            | text          | `char_length(name_ar) BETWEEN 1 AND 120` AND `char_length(btrim(name_ar)) >= 1` AND `name_ar ~ '[^[:space:]]'`                                                              |
+| name_en            | text          | `char_length(name_en) BETWEEN 1 AND 120` AND `char_length(btrim(name_en)) >= 1` AND `name_en ~ '[^[:space:]]'`                                                              |
+| price_minor        | bigint        | `price_minor > 0`; signed bigint technical ceiling `9223372036854775807`; no default                                                                                        |
 | currency           | char(3)       | `currency ~ '^[A-Z]{3}$'`; no default. Under S31 the effective set is market-conditional: Egypt=EGP only; International=EGP/USD/SAR; row-local format alone is insufficient |
-| commission_rate_bp | integer       | `commission_rate_bp BETWEEN 0 AND 10000`; no default, zero must be explicit                                    |
-| duration_days      | integer       | Positive duration copied from offer; same duration CHECK as offers                                             |
-| duration_months    | smallint NULL | Copied exactly from offer, NULL-safe equality                                                                  |
-| published_at       | timestamptz   | DEFAULT `now()`                                                                                                |
-| published_by       | uuid          | FK `staff_profiles(user_id)` ON DELETE RESTRICT; assigned from verified PO `auth.uid()`                        |
+| commission_rate_bp | integer       | `commission_rate_bp BETWEEN 0 AND 10000`; no default, zero must be explicit                                                                                                 |
+| duration_days      | integer       | Positive duration copied from offer; same duration CHECK as offers                                                                                                          |
+| duration_months    | smallint NULL | Copied exactly from offer, NULL-safe equality                                                                                                                               |
+| published_at       | timestamptz   | DEFAULT `now()`                                                                                                                                                             |
+| published_by       | uuid          | FK `staff_profiles(user_id)` ON DELETE RESTRICT; assigned from verified PO `auth.uid()`                                                                                     |
 
 Package identity is resolved through the immutable offer relation; no redundant `package_id` column is needed on versions. `app_private.guard_package_version_insert()` BEFORE INSERT verifies the referenced offer in the same workspace and exact snapshot equality (`IS NOT DISTINCT FROM` for months), price/rate/name/currency validation and PO authority. The S31 forward migration additionally enforces the market/currency matrix at the selected owner. Database constraints enforce row-local ranges too. This prevents privileged SQL test inserts from bypassing snapshot parity. SQL and pure validation reject required NULLs, blanks and invalid ranges; labels are stored/displayed as authored, not translated or silently trimmed.
 
@@ -183,11 +183,11 @@ Unavailable offers and older versions remain readable to authorized staff. Regis
 
 Add branches to the latest `audit_row_change()` body; retain postgres ownership, empty search path and revoked execute grants. Insert audit via AFTER triggers only, never also in RPC code. Standard columns: `actor_user_id=auth.uid()`, target table/id, timestamp and workspace (NULL for canonical packages). Exact details allow-lists:
 
-| Trigger / operation                   | Action                               | Details                                                                                                                                                                             |
-| ------------------------------------- | ------------------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| `audit_packages` AFTER INSERT         | `package.created`                    | `{code}`; target package id; workspace NULL                                                                                                                                         |
+| Trigger / operation                   | Action                               | Details                                                                                                                                                                                                                              |
+| ------------------------------------- | ------------------------------------ | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| `audit_packages` AFTER INSERT         | `package.created`                    | `{code}`; target package id; workspace NULL                                                                                                                                                                                          |
 | `audit_package_versions` AFTER INSERT | `package_version.published`          | `{offer_id, package_id, version, price_minor, currency, commission_rate_bp, duration_days}`; price_minor recorded as an exact decimal string; package_id resolved through same-workspace offer; target version id; version workspace |
-| `audit_package_offers` AFTER UPDATE   | `package_offer.availability_changed` | `{available}` only if actual boolean changes; target offer id; offer workspace                                                                                                      |
+| `audit_package_offers` AFTER UPDATE   | `package_offer.availability_changed` | `{available}` only if actual boolean changes; target offer id; offer workspace                                                                                                                                                       |
 
 Offer insertion and current-pointer-only updates produce no offer event. Replays and same-state toggles produce none. Audit failure rolls back mutation. No names, email, phone, tokens, labels or arbitrary form/provider data in details. The package code is deliberate canonical business data. Preserve existing audit immutability and visibility. Exactly-one means one event per actual business change, not one for every underlying SQL statement.
 
@@ -225,3 +225,7 @@ The constitutional external-model rule applies to development AI handling. S31-P
 - FX uses the transaction timestamp's Africa/Cairo calendar date, the ECB/TARGET business-day calendar and the latest prior valid Frankfurter publication strictly before that date, falling back to the latest earlier valid publication when needed. Coverage is verified for every supported currency; uncovered currencies are recorded blockers. Lines are converted exactly and each reported aggregate is rounded half-up once to EGP minor units. EGP→EGP is exactly 1; a pending rate retries idempotently and is omitted from converted totals until fetched. Existing payment rules are unchanged and no other conversion is allowed.
 - C5 deletion requires a target-stack dependency manifest including FKs, registration links, subscriptions, payments, audit rows and every other reference. Unsafe or unknown state refuses and escalates with zero writes. Safe cleanup initializes four empty categories without commercial defaults.
 - Requirements define Installments data only. Four English/Arabic market/type label pairs are approved by LABELS/S34-PO-2; all other dashboard/Installments/empty/error/help copy remains BLOCKED-COPY.
+
+## S43-PO-6/7 package-tier data-model delta (no migration authored)
+
+**architect mapping (S43-R7, reconsidered by S43-R9):** Preserve the immutable platform rank values (`silver`, `gold`, `platinum`) and comparison order Silver < Gold < Platinum. The entity that carries rank and the offer structure are blocked by S43-F9-MCQ-2; do not assume rank belongs on the current one-row-per-market/type package identity. Tier display names use the PO-approved EN/AR defaults and do not change rank; label-edit authority is blocked by S43-F9-MCQ-3. This note specifies no column, table, migration, SQL, or implementation.
