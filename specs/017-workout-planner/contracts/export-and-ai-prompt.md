@@ -50,7 +50,7 @@ The prompt MUST NOT:
 1. Ask the AI to invent, replace, rename or add exercises.
 2. Ask the AI to alter reps, load, rest, RIR, set counts, order or any programming value.
 3. Ask the AI to generate alternatives.
-4. Include content outside the selected authorized published revision.
+4. Include content outside the selected authorized published revision, except the current authorized video URLs resolved for exercise and alternative references in that revision; no other external or current-library content is included.
 
 Actor rule is resolved: PO/WO/Trainer with export authorization. Action label and confirmation strings are the exact S43-PO-1 MCQ-2 bytes per UI language. Prompt bodies EN/AR are byte-exact in copy-ai-prompt.md; substitute only {{PLAN_CONTENT}}. Coach-original notes remain per item, never in totals rows.
 

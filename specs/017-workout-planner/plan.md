@@ -38,7 +38,7 @@ F17 consumes the **pending F19 PR** contract for Plan ID, private draft, autosav
 
 ### 4.2 Workout document and references
 
-Document schema v1 with `schema_version` and a registry of immutable parsers. References pin the effective global catalog version and applicable workspace override version (or null), captured with effective non-video values when the exercise is added; no `variation`. Effective resolution uses F16 FR-026, canonical-only for Global Template authoring. Draft save/reload preserves those pins and values; later source edits do not alter the draft. Publication copies the captured values/pins into `ExerciseSnapshotV2`; Video is resolved on each authorized read/export and never stored. Defaults copy at add time (three F16 defaults). A fresh exercise begins with zero set rows; editable Notes/Alternatives are copied on add (S42-PO-8; architect mapping (S42 matrix): F17-MCQ-1=C, MCQ-2=B; S44-PO-2; architect mapping (S44-R2)).
+Document schema v1 with `schema_version` and a registry of immutable parsers. Global exercise refs pin the global catalog version and, when applicable, the override version plus source workspace; private refs pin their own workspace-private version and source workspace, without an override. The entry copies effective non-video values on add. Save/reload preserves those pins and values, while later trainer edits to the entry remain editable; later source edits do not alter draft values. Publication freezes the entry's current edited values with the original add-time pins into `ExerciseSnapshotV2` and does not reread catalog/override content; Video is resolved on each authorized read/export and never stored. Defaults copy at add time (three F16 defaults). A fresh exercise begins with zero set rows; editable Notes/Alternatives are copied on add (S42-PO-8; architect mapping (S42 matrix): F17-MCQ-1=C, MCQ-2=B; S44-PO-2; architect mapping (S44-R2)).
 
 ### 4.3 Templates and assignment
 
@@ -46,7 +46,7 @@ Separate global and workspace template identities with append-only versions. Ass
 
 ### 4.4 Volume
 
-Pure function over document + snapshot muscle data. Working sets only; primary 1.0, secondary 0.5, warm-up 0; per session and per plan week. Week grouping uses 7-program-day blocks (days 1?7, 8?14, etc.), including rest days and a final partial block (S43-PO-5; architect mapping (S43-R6)); no calendar start is required. No configurable weights.
+Pure function over the document plus primary/secondary muscle membership resolved from each reference's pinned immutable global or workspace-private exercise version. Do not source muscle taxonomy from `ExerciseSnapshotV2`. Working sets only; primary 1.0, secondary 0.5, warm-up 0; per session and per plan week. Week grouping uses 7-program-day blocks (days 1?7, 8?14, etc.), including rest days and a final partial block (S43-PO-5; architect mapping (S43-R6)); no calendar start is required. No configurable weights.
 
 ### 4.5 Exports
 

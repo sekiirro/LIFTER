@@ -102,3 +102,26 @@ Scope: three unresolved Greptile P2 findings on head `6f70703c887119f0a41bc9f484
 Disposition: the assignment transaction now checks the ledger by operation key before any write, creating the run row only for a new accepted request; the version-bearing run key is distinguished from the permanent `(workspace_id, global_template_id)` identity key; exports state that Reps/Rest/RIR come from the entry-level prescription and that sets carry only type and load. All three statements preserve S42-PO-8, S43-PO-1 and S44-PO-2/S44-R2 behaviour.
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## S44 PR #78 CR round 3 Analyze - 2026-11-10 14:55 UTC
+
+Scope: the 10 unresolved CodeRabbit inline threads on exact head b5362e5d88f989e9f1ca1ba14d201fda9a913f97 plus one unverified outside-diff note. All 10 inline findings were valid consistency or technical corrections within existing PO/F16 decisions and are encoded across the contract, model, plan, spec, tasks, research, and traceability. The outside-diff note identifies a product behavior gap; S44-MCQ-F17-1 is recorded in spec.md section 8.7, with no option encoded.
+
+### Entry and cross-artifact checks
+
+- PASS - numbered FRs, measurable SCs, and Given/When/Then scenarios remain; A1-3, FR-003, and SC-011 now distinguish add-time source pins from editable entry values frozen at publication.
+- PASS - clarifications and PO decisions cite S44-PO-2/S44-R2, F16 FR-027, and S43 approvals; one unresolved behavior is explicitly raised as S44-MCQ-F17-1 with options, implications, a recommendation, and blocked scope.
+- PASS - plan.md, tasks.md T011/T031, data-model.md, contracts/workout-plan-document.md, and traceability.md agree on global vs workspace-private source versions, override source workspace, publication values, pinned-version muscle taxonomy, and live Video.
+- PASS - export contract permits only current authorized video URLs outside revision payload; Section B research reflects approved promotion and UI label/layout decisions; FR-024 recognizes previously approved strings without reproducing them.
+- PASS - SC-005 traceability includes T011, matching tasks.md. No task checkbox was changed; no implementation tests are claimed.
+
+### Hostile cross-artifact findings
+
+| Severity | Finding       | Evidence / disposition                                                                                                                                                            |
+| -------- | ------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CRITICAL | 0 open        | No implementation, schema, privilege, or runtime behavior is changed.                                                                                                             |
+| HIGH     | 0 open        | Source identity/version and override provenance are explicit; editable entry values and published snapshots are unambiguous; export URLs and volume taxonomy sources are bounded. |
+| MEDIUM   | 1 PO decision | S44-MCQ-F17-1: whether moving an exercise to a rest day is rejected, converts the day to a session, or remains allowed with a defined volume rule. No option encoded.             |
+| LOW      | 0 open        | ID/task cross-reference sweep complete; task checkboxes remain unticked.                                                                                                          |
+
+**Analyze result: CRITICAL 0; HIGH 0; MEDIUM 1 PO decision; LOW 0.**
