@@ -288,6 +288,7 @@ describe('tenancy security catalog (T007)', () => {
           'enforce_n08_budget_answer_consistency',
           'f15_cancel_client_alerts_after_relationship_end',
           'f15_client_alert_lifecycle_active',
+          'archive_f15_selection_update',
           ...(existsSync(
             'supabase/migrations/20261108230111_f15_signup_main_reconciliation.sql',
           )
@@ -388,6 +389,9 @@ describe('tenancy security catalog (T007)', () => {
         // 20261108230000 revokes EXECUTE from PUBLIC, anon, authenticated, and service_role.
         expect(row.service_role_execute, row.proname).toBe(false);
       }
+      if (row.proname === 'archive_f15_selection_update') {
+        expect(row.service_role_execute, row.proname).toBe(false);
+      }
       expect(row.authenticated_execute, row.proname).toBe(
         [
           'branding_upload_begin',
@@ -457,6 +461,7 @@ describe('tenancy security catalog (T007)', () => {
               'f15_client_alert_lifecycle_active',
               'guard_f15_assignment_fact',
               'reconcile_f15_form_assignment',
+              'archive_f15_selection_update',
               'guard_f15_form_assignment',
               'guard_f15_form_version',
               'purge_ended_form_answers',
