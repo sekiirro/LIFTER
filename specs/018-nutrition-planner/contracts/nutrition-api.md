@@ -72,7 +72,7 @@ Enforcement rules:
 
 `publish_nutrition_revision(expected_revision, operation_key)`
 
-- Preconditions: current subscription (F19); current authorization; expected draft/revision match; the document passes the frozen schema validator; every referenced food version exists. Ready/publish treatment of a `training_days_only` meal with no matching day is blocked pending S44-MCQ-F18-1; see report.md.
+- Preconditions: current subscription (F19); current authorization; expected draft/revision match; the document passes the frozen schema validator; every referenced food version exists. Meal visibility and totals are independent of day type; no Ready/publish rule depends on training/rest-day meal matching.
 - Effects, one transaction: validate → build snapshot map → recompute all values in SQL → append F19 revision → insert 1:1 content row → carry forward valid selections → one audit event. F19 appends the delivery row and activation/unit in the same transaction.
 - Caller-supplied document values are accepted only for draft content; caller-supplied snapshots, computed values and totals are ignored.
 - An identical idempotency key and canonical request returns its original committed receipt without another revision, delivery, or audit event. Any new authorized Ready & Publish operation, including one whose content is unchanged, appends a new immutable revision and a delivery row through F19 in the same transaction.

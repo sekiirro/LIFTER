@@ -95,16 +95,16 @@
 
 ## Summary
 
-| Status                     |  Count | IDs              |
-| -------------------------- | -----: | ---------------- |
-| RESOLVED-BY-PO             |      3 | C-01, C-02, C-09 |
-| RESOLVED-DESIGN / INFERRED |      3 | C-03, C-04, C-05 |
-| VERIFIED                   |      2 | C-13, C-17       |
-| OPEN-MCQ                   |      1 | S44-MCQ-F18-1    |
-| OPEN-TECH                  |      3 | C-06, C-10, C-11 |
-| REGISTER GAP               |      2 | C-08, C-15       |
-| HISTORIC                   |      3 | C-12, C-14, C-16 |
-| **Total**                  | **18** |                  |
+| Status                     |  Count | IDs                             |
+| -------------------------- | -----: | ------------------------------- |
+| RESOLVED-BY-PO             |      5 | C-01, C-02, C-07, C-09, S44-MCQ-F18-1 |
+| RESOLVED-DESIGN / INFERRED |      3 | C-03, C-04, C-05                |
+| VERIFIED                   |      2 | C-13, C-17                      |
+| OPEN-MCQ                   |      0 | —                               |
+| OPEN-TECH                  |      3 | C-06, C-10, C-11                |
+| REGISTER GAP               |      2 | C-08, C-15                      |
+| HISTORIC                   |      3 | C-12, C-14, C-16                |
+| **Total**                  | **18** |                                 |
 
 ## S43 reconciliation (2026-11-10)
 
@@ -112,4 +112,4 @@ F18-MCQ-1..6 are resolved per S42-PO-8/S43-PO-1. S43-MCQ-A is resolved by S43-PO
 
 ## S44 review reconciliation (2026-11-10)
 
-S44-MCQ-F18-1 is the sole open product decision raised by the #79 review. Existing text disagreed on whether a training-only meal that matches no day blocks Ready/publish. Per-day omission and condition-aware totals are specified; only the validator outcome for an unreachable conditional meal is blocked. Options, implications, recommendation and blocked scope are recorded in the run report at `C:/Users/NEW LAP/.lifter/runs/s44-luna-fix79/report.md`. All other #79 findings were confirmed as technical or already decided by the cited PO records.
+S44-PO-7 closes S44-MCQ-F18-1. Meal-level day applicability is removed: every meal remains visible on every day and contributes to that day's totals, with no Ready/publish rule based on day-type matching. The earlier draft assumptions and blocked question remain historical and are marked superseded in the spec decision register. Day types and carb cycling remain for unrelated nutrition behavior. No other open product decision was introduced.

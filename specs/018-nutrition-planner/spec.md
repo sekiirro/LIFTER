@@ -10,7 +10,7 @@
 
 F18 owns nutrition content and nutrition-only governance:
 
-- the nutrition document schema (single-day or seven-day, day types, conditional meals, meals, foods, coach alternatives, notes, optional recipe/preparation link);
+- the nutrition document schema (single-day or seven-day, day types, meals, foods, coach alternatives, separate Meal Notes and Food Notes, optional recipe/preparation link);
 - one exact decimal macro/total algorithm with TypeScript/SQL parity;
 - publish-time snapshot rebuild and server-side recomputation for nutrition revisions;
 - global and workspace nutrition templates, PO-only manual Assign, and PO-only Make it Global;
@@ -33,17 +33,18 @@ Highest first. PO words are quoted byte-exact in `## Clarifications`; architect 
 
 ### US1 — Build and edit a client nutrition plan (P1)
 
-A Trainer, Workspace Owner (WO) or Platform Owner (PO) builds one nutrition plan for a client in the plan's workspace: meals with foods in exact quantities (basis g/ml or a declared serving unit), per-meal notes, optional recipe/preparation link, computed meal and day calories/macros, and either a single repeating day or a seven-day structure with day types (carb cycling, training vs rest days, conditional pre-workout meal omitted on rest days).
+A Trainer, Workspace Owner (WO) or Platform Owner (PO) builds one nutrition plan for a client in the plan's workspace: meals with foods in exact quantities (basis g/ml or a declared serving unit), separate independently editable Meal Notes and Food Notes, optional recipe/preparation link, computed meal and day calories/macros, and either a single repeating day or a seven-day structure with day types (including carb cycling and training vs rest days). Every meal is visible on every day.
 
-**Independent test**: build a seven-day plan with high/low-carb day types and a `training_days_only` pre-workout meal; assert per-meal and per-day totals equal the golden-fixture values for the exact referenced food versions and quantities, that rest days omit the conditional meal, and that a unit the food version does not declare is rejected.
+**Independent test**: build a seven-day plan with high/low-carb day types and multiple meals; assert every meal is visible on every day and per-meal and per-day totals equal the golden-fixture values for the exact referenced food versions and quantities. Edit a meal's Meal Notes while preserving its Food Notes, then edit a Food Notes field while preserving Meal Notes; assert each field is independently editable. A unit the food version does not declare is rejected.
 
 1. **Given** an approved client in workspace A and acting staff with current `coaching_work` in A, **When** staff add a food with a positive quantity and a declared unit, **Then** item values derive from the exact referenced food version's per-100 values and that unit's exact basis equivalent, using exact decimal arithmetic with no intermediate rounding, and meal/day totals are derived from exact item values (never by adding already-rounded item values).
 2. **Given** a food version whose basis is `g` and which declares no `ml` serving, **When** staff enter `ml`, **Then** the entry is rejected with a field error and no cross-basis conversion is guessed.
-3. **Given** a seven-day structure with day types, **When** a meal is `training_days_only`, **Then** it appears only on days whose resolved day type has `trainingDay = true` and contributes to totals only on those days. A meal is reachable when at least one day matches. Handling a document with no matching day at draft, Ready, and publish is blocked pending S44-MCQ-F18-1.
+3. **Given** a plan with one or more days and any meals, **When** the plan is displayed or its values are calculated, **Then** every meal is visible on every day and contributes to that day's totals. Day types remain available for other nutrition behavior, including carb cycling; meal visibility and totals do not depend on day type.
 4. **Given** day types with no calorie/macro targets, **When** the plan is saved or published, **Then** totals are still calculated (D18-2=A: targets optional, totals always calculated).
 5. **Given** a food version with an optional recipe/preparation HTTPS YouTube or Google Drive link, **When** the plan is rendered or exported, **Then** the link/icon is shown; **When** the link is absent, **Then** the link and its icon are entirely hidden (D18-6).
 6. **Given** reorder, duplicate meal/day or move food, **Then** quantities, alternatives and notes are preserved exactly; a duplicate remaps its own and all descendant ids and inherits no client selection.
 7. **Given** a stale draft save, **Then** it is rejected as `stale_version` with no partial write (F19 contract).
+8. **Given** a meal with Meal Notes and an associated food item with Food Notes, **When** staff edit either field, **Then** the other field remains unchanged; both fields can be cleared and edited independently.
 
 ### US2 — Coach-configured manual alternatives (P1)
 
@@ -114,7 +115,7 @@ Staff export one selected published nutrition revision as PDF or Excel, or copy 
 - A food version has no serving unit for the entered unit → reject; never convert (F16 FR-005, F18-FR-004).
 - Two items use the same food version with different serving units → the published snapshot map must hold one entry per (food version, serving unit); one snapshot cannot serve both.
 - Zero-calorie foods, very small portions and values below the 10 g display threshold → exact stored values; display per F18-FR-003 half-up rounding.
-- Seven-day plan where every day is a rest day → conditional meals never appear; whether an unreachable conditional meal blocks Ready or publish is pending S44-MCQ-F18-1.
+- Every meal appears on every day, including rest days; meal visibility and totals have no day-type filter.
 - Both day totals equal but target values differ → allowed; no consistency rule between day types.
 - Duplicate food/meal allowed inside one plan (S20-11); the duplicate has new ids and no inherited client selection.
 - A merged/removed food after publication → published revision unchanged; new selection resolves to the F16 terminal; the draft shows an unavailable indicator without substitution.
@@ -129,8 +130,8 @@ Staff export one selected published nutrition revision as PDF or Excel, or copy 
 ## Functional Requirements
 
 - **F18-FR-001 — Lifecycle delegation.** Nutrition plans MUST use the F19 stable-identity, private-draft, immutable-revision, Ready & Publish, delivery and activation contract. A nutrition plan root carries `workspace_id` and `client_id` and **no subscription reference**; any subscription association is created only by an F19 `plan_deliveries` row bound to the client's one continuous subscription (F13-FR-037; S43-PO-4 item 1; architect mapping (S43-R1)). F18 owns nutrition content only and MUST NOT create a second lifecycle, delivery, activation or productivity path. (F19-FR-001/002/004/007/015; S20-20; S42-PO-2 architecture; S42-PO-4 MCQ-12.)
-- **F18-FR-002 — Nutrition document schema v1.** The document MUST define: `single_day` = exactly one implicit day, no `days` array, and an always-required `implicitDayTypeId` resolving to a day type; `seven_day` = `dayIndex` 0-6 each exactly once with every `dayTypeId` resolving; day types with AR/EN name, `trainingDay` flag and optional calorie/macro targets; document/day-type/meal/item/alternative ids unique within the document; every meal is associated with its document day or days; `conditional` in `always` | `training_days_only` and evaluated per day; ordered items each referencing one exact food identity + version and a positive quantity `{value: decimal string, unit: tagged basis-or-serving reference}`; per-item coach alternatives (food identity + version, positive quantity, unit); per-meal note; optional recipe/preparation HTTPS link; exact per-item/per-meal/per-day computed-totals shapes. Conditional meals are omitted on days whose day type does not satisfy the condition; behavior for a conditional meal with no matching day is blocked pending S44-MCQ-F18-1. App and RPC validators MUST accept/reject the same frozen fixtures. Plan quantities live in the document; tagged basis quantities are distinct from catalog serving references, and F16 `FoodSnapshotV1` values retain real serving-row ids. (D18-2=A; D18-6; retained F18 FR-002.)
-- **F18-FR-003 — Canonical macro and total algorithm.** Use exact decimal arithmetic with no intermediate rounding: item value = per-100 snapshot value × basis quantity ÷ 100, using only the referenced food version's declared serving equivalences. Quantities, targets, totals and transport values are decimal strings, never JS numbers. Inputs use live F16 fixed scales. Persist the exact computed decimal with enough scale for the exact product of the declared input scales; do not round for storage. Aggregates derive from exact item values, never rounded item values. Apply each meal condition before computing day totals: inactive meals contribute no items to that day's totals, and document totals sum the day totals. Apply half-up exactly once at display, from the persisted exact value. Display calories as integers; protein/carbohydrate/fat grams below 10 g to one decimal, at or above 10 g as integers. TypeScript and SQL MUST pass identical finite-decimal tie and double-rounding goldens over all values ≥ 0. (PO display rule S43-PO-1; technical storage/display settlement architect ruling S43-R9, Sol-1.)
+- **F18-FR-002 — Nutrition document schema v1.** The document MUST define: `single_day` = exactly one implicit day, no `days` array, and an always-required `implicitDayTypeId` resolving to a day type; `seven_day` = `dayIndex` 0-6 each exactly once with every `dayTypeId` resolving; day types with AR/EN name, `trainingDay` flag and optional calorie/macro targets; document/day-type/meal/item/alternative ids unique within the document; every meal is associated with its document day or days and is visible on every day; ordered items each referencing one exact food identity + version and a positive quantity `{value: decimal string, unit: tagged basis-or-serving reference}`; per-item coach alternatives (food identity + version, positive quantity, unit); separate independently editable Meal Notes (per meal) and Food Notes (per food item); optional recipe/preparation HTTPS link; exact per-item/per-meal/per-day computed-totals shapes. Meal Notes and Food Notes MUST remain independent when either is edited or cleared. App and RPC validators MUST accept/reject the same frozen fixtures. Plan quantities live in the document; tagged basis quantities are distinct from catalog serving references, and F16 `FoodSnapshotV1` values retain real serving-row ids. (D18-2=A; D18-6; retained F18 FR-002.)
+- **F18-FR-003 — Canonical macro and total algorithm.** Use exact decimal arithmetic with no intermediate rounding: item value = per-100 snapshot value × basis quantity ÷ 100, using only the referenced food version's declared serving equivalences. Quantities, targets, totals and transport values are decimal strings, never JS numbers. Inputs use live F16 fixed scales. Persist the exact computed decimal with enough scale for the exact product of the declared input scales; do not round for storage. Aggregates derive from exact item values, never rounded item values. Every meal and all of its items contribute to every day on which that meal is included; document totals sum the day totals. Apply half-up exactly once at display, from the persisted exact value. Display calories as integers; protein/carbohydrate/fat grams below 10 g to one decimal, at or above 10 g as integers. TypeScript and SQL MUST pass identical finite-decimal tie and double-rounding goldens over all values ≥ 0. (PO display rule S43-PO-1; technical storage/display settlement architect ruling S43-R9, Sol-1.)
 
   **Acceptance scenario (S43-R9 Sol-1): Given** an exact computed value of 1.44996, **When** a one-decimal display is requested, **Then** display is 1.4 from the exact persisted decimal with no storage rounding or intermediate rounding.
 
@@ -157,6 +158,7 @@ Staff export one selected published nutrition revision as PDF or Excel, or copy 
 - **F18-FR-020 — Schema and algorithm versioning.** Every document schema version keeps a frozen validator, renderer, export path and macro-algorithm version; a new version never reinterprets old documents or totals. Support is added only by forward migration; published revisions, template versions and their computed values are never rewritten. (Constitution V; retained F18 FR-013.)
 - **F18-FR-021 — UI, accessibility and localization.** Any nutrition UI MUST follow DESIGN.md and pass the Frontend Design Gate: AR-first RTL and EN-LTR, light/dark, mobile/desktop, keyboard alternatives to drag, accessible live total announcements, and loading/empty/error/conflict/unavailable states. Food search uses F16's indexed `catalog_search` (no global-food scans). Trainer-authored content is displayed as authored, never machine-translated. No new user-visible string is approved by this draft; any new string requires PO approval before implementation (Constitution VIII). (Retained F18 FR-012.)
 - **F18-FR-022 — Excluded scope.** Excluded: meal check-offs, consumption/calorie logging, calorie diary, AI-generated alternatives or meals, offline client queues, client food-replacement requests (P5), Telegram (P6), workout planning (F17), catalogs (F16), shared lifecycle/delivery/activation and client portal (F19/P4). Telegram AI, when built elsewhere, may only select coach-approved existing alternatives. (PRD-12; S20-21; retained F18 FR-011.)
+- **F18-FR-023 — Independent Meal Notes and Food Notes.** Each meal MUST have a Meal Notes field and each food item MUST have a separate Food Notes field. Both fields MUST be independently editable and clearable; editing or clearing either MUST preserve the other field's value. These fields remain separate in the nutrition document and editor. This requirement does not change F16 catalog food notes.
 
 ## Key entities
 
@@ -171,7 +173,7 @@ Staff export one selected published nutrition revision as PDF or Excel, or copy 
 
 ## Success Criteria
 
-- **F18-SC-001** 500 fixed golden macro/total cases (tagged basis/serving units, finite-decimal precision boundaries, alternatives, selected-alternative totals, and conditional meals excluded from inactive-day totals) pass **identically** in TypeScript and SQL on the same fixtures, including the assertion that aggregates are not derived from already-rounded item values.
+- **F18-SC-001** 500 fixed golden macro/total cases (tagged basis/serving units, finite-decimal precision boundaries, alternatives, selected-alternative totals, and all meals included in each day's totals) pass **identically** in TypeScript and SQL on the same fixtures, including the assertion that aggregates are not derived from already-rounded item values.
 - **F18-SC-002** A complete inventory of every F18 endpoint, RPC, direct-table path and export passes foreign-workspace, foreign-client, PO-without-membership coverage (allow only where the merged F3 rule permits, deny elsewhere), WO, Trainer, Sales, client, unaffiliated-staff and revoked-membership negatives, plus direct-DML denial, UPDATE/DELETE/TRUNCATE denial, creator/origin masking, forged selection keys, operation-key replay/conflict, concurrent draft/publish/selection, malformed references, old-schema export and forged publish payloads (ignored).
 - **F18-SC-003** Two or more simultaneously published, delivered nutrition plans stay visible and exportable; later plans/revisions change neither activation nor productivity counts.
 - **F18-SC-004** 100% of invalid unit swaps (undeclared unit, cross-basis, non-positive quantity) are rejected with no write and no value change.
@@ -182,6 +184,7 @@ Staff export one selected published nutrition revision as PDF or Excel, or copy 
 - **F18-SC-009** Template isolation is proven: workspace B cannot list, load, count or infer workspace A's templates; non-PO cannot read the global library; Make it Global creates a separate global identity/version and leaves the workspace original unchanged; a later global edit never changes an assigned copy.
 - **F18-SC-010** Log-scrub proves zero occurrences of food names, quantities, macros, notes, recipe text, URLs, document JSON and raw operation keys in audit events for every F18 action.
 - **F18-SC-011** Display fixtures show calories as integers and macro grams with one decimal below 10 g and integer at or above 10 g; exact calculations are persisted without storage rounding, aggregates use exact values, and ties round half-up once at final display; exact 1.44996 displays as 1.4 at one decimal.
+- **F18-SC-012** Nutrition schema and editor contract tests prove Meal Notes and Food Notes are separate fields, editing or clearing either preserves the other's value, and both can be edited and cleared independently.
 
 ## Assumptions
 
@@ -376,5 +379,22 @@ architect mapping (S43-R4): The coach’s original appears as a per-item side no
 - **Options:** A) Keep the document valid and omit the meal on every day; B) allow it as a draft warning and reject it at Ready and publish.
 - **Implications:** A permits a meal that is never shown; B requires the author to remove it or add a matching training day before publication.
 - **Recommendation:** A, consistent with the existing all-rest-day edge case; per-day visibility and totals remain unchanged under either option.
-- **Blocked scope:** the validator's draft/Ready/publish outcome only for a `training_days_only` meal with no matching day. Per-day omission and totals are specified.
-- **Status:** AWAITING PO. No applicable S42/S43 or S44 PO decision was found; the existing F18 scenario/FR and edge case conflict. Full question and evidence are in `C:/Users/NEW LAP/.lifter/runs/s44-luna-fix79/report.md`.
+- **Historical blocked scope (superseded by S44-PO-7):** the former draft/Ready/publish outcome for a meal matching no day. That validation question is closed and no corresponding behavior remains.
+- **Status:** CLOSED / SUPERSEDED BY S44-PO-7. The original question, options and recommendation remain as history; its conditional-meal premise and blocked scope are withdrawn.
+
+## S44-PO-7 decision register - PO words copied byte-exact
+
+**Status:** CURRENT; closes S44-MCQ-F18-1.
+
+```text
+S44-MCQ-F18-1: PO overrides A/B.
+
+Remove Training Days Only / Rest Days Only meal functionality entirely from F18 (UI, logic, validation, specs, tests).
+
+All meals remain visible without training/rest-day filtering. Coaches communicate day-specific instructions through Meal Notes before delivery. Preserve Meal Notes and Food Notes; verify both exist and are independently editable.
+
+No publication blockers related to training/rest-day meals. Keep unrelated nutrition functionality unchanged.
+
+```
+
+**architect mapping (S44-R7), not PO words:** conditional meal/day applicability is removed from F18; every meal is visible on every day; Meal Notes and Food Notes are separate and independently editable; day types and carb cycling remain for unrelated uses. Historical conditional-meal assumptions in this register and older draft text are marked superseded by S44-PO-7.

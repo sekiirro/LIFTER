@@ -67,3 +67,10 @@
 Resolved: F18-MCQ-1 (selected primary; coach original per-item side note), F18-MCQ-2 (prompt includes selections/totals), F18-MCQ-3 (half-up), F18-MCQ-4=A (staff export-authorized roles), F18-MCQ-5 (UI action/confirmation strings only), F18-MCQ-6 (skip and report any held copy). Source: S43-PO-1; mappings are in the spec register and labelled architect mapping (S43-R1).
 
 Resolved S43-MCQ-A: exact approved EN/AR bodies in contracts/copy-ai-prompt.md (S43-PO-5; architect mapping (S43-R6)). Resolved by S43-PO-2: S43-MCQ-B (per-item prompt note; totals are client-selection totals only).
+
+## S44-PO-7 — F18 meal/day applicability removal
+
+- **Status:** CURRENT; closes S44-MCQ-F18-1. The byte-exact PO words and separately labelled architect mapping (S44-R7) are in `spec.md` under the S44-PO-7 decision register.
+- **Superseded:** prior F18 draft assumptions that meal visibility/totals depend on training or rest day type, and the S44-MCQ-F18-1 blocked-validation question. Historical question text remains in `spec.md` with superseded status.
+- **Scope retained:** day types and carb-cycling behavior unrelated to meal visibility remain unchanged. Meal Notes and Food Notes remain separate, independently editable fields (F18-FR-023).
+- **Authority sweep:** this decision matrix has no earlier PO decision or architect mapping introducing conditional meals; those rules were draft assumptions in F18 artifacts and are explicitly marked superseded by S44-PO-7.

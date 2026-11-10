@@ -67,11 +67,11 @@ basisQuantity =
 itemValue(field) = per100(field) * basisQuantity / 100
 exactValue       = exactDecimalProduct(per100(field), basisQuantity) / 100
 mealTotal(field) = sum(exact itemValue(field))
-dayTotal(field)  = sum(exact itemValue(field) only for items in meals active on that day)
+dayTotal(field)  = sum(exact itemValue(field) for every item in every meal on that day)
 documentTotal    = sum(dayTotal(field) across the document's day instances)
 ```
 
-For a seven-day document, apply each meal's condition to that day's resolved day type before adding its items to the day total. For `single_day`, evaluate against its implicit day type. The policy for rejecting a conditional meal that matches no day is blocked pending S44-MCQ-F18-1; this does not change per-day omission.
+Every meal is visible on every day and all of its items contribute to that day's total. Day types, including training/rest classification and carb-cycling targets, remain available for their other nutrition uses; they do not filter meals or totals. Meal Notes and Food Notes are separate fields in the document and are independently editable: changing or clearing one preserves the other's value.
 
 - Persist exact computed decimal values without storage rounding. The persisted decimal scale must be large enough to represent the exact product of the declared input scales. No intermediate rounding occurs anywhere; aggregates are computed from exact item values, never rounded stored/display values.
 - A quantity for an undeclared serving key or a basis reference that does not match the food basis is rejected (F18-FR-004). The tagged kind distinguishes basis `g` from a catalog serving whose key is also `g`.
