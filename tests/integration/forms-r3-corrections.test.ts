@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto';
 import { readFileSync } from 'node:fs';
 import { afterAll, expect, it } from 'vitest';
+import type { JSONValue } from 'postgres';
 import { sql } from './harness';
 import {
   clientContext,
@@ -30,10 +31,12 @@ it('T014 appends a client self-correction without changing the original or loggi
   const originalAnswers = {
     ordinary: 'original',
     health: 'synthetic health value',
+    score: 5,
   };
   const correctedAnswers = {
     ordinary: 'corrected',
     health: 'updated synthetic health value',
+    score: 6,
   };
 
   let outerError: unknown;
@@ -57,6 +60,11 @@ it('T014 appends a client self-correction without changing the original or loggi
         questions: [
           { id: 'ordinary', type: 'shortText', charLimit: 10 },
           { id: 'health', type: 'longText', charLimit: 1000 },
+          {
+            id: 'score',
+            type: 'slider',
+            validation: { min: 0, max: 10, step: 1 },
+          },
           { id: 'N08', type: 'singleChoice', choices: ['low', 'high'] },
           {
             id: 'N08.foods',
@@ -161,6 +169,33 @@ it('T014 appends a client self-correction without changing the original or loggi
         ) as result
       `;
       expect(inconsistentBudget?.result).toEqual({ status: 'invalid' });
+      const expectInvalidCorrection = async (
+        values: Record<string, JSONValue>,
+      ) => {
+        const probeRollback = new Error(
+          'rollback T014 invalid correction probe',
+        );
+        let result: unknown;
+        await expect(
+          tx.savepoint(async (sp) => {
+            const [attempt] = await sp`
+              select public.correct_form_answer(
+                ${context.wsA.id},${assignmentId},1,${randomUUID()},
+                ${sp.json(values)},'synthetic correction note'
+              ) as result
+            `;
+            result = attempt?.result;
+            throw probeRollback;
+          }),
+        ).rejects.toBe(probeRollback);
+        expect(result).toEqual({ status: 'invalid' });
+      };
+      await expectInvalidCorrection({ ...correctedAnswers, score: '6' });
+      await expectInvalidCorrection({ ...correctedAnswers, score: 11 });
+      await expectInvalidCorrection({
+        ...correctedAnswers,
+        N08: 'not-a-choice',
+      });
       await tx`reset role`;
       await expect(
         tx.savepoint(async (sp) => {

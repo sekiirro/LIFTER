@@ -1,5 +1,6 @@
 import { randomUUID } from 'node:crypto';
 import { afterAll, expect, it } from 'vitest';
+import type { JSONValue } from 'postgres';
 import { sql } from './harness';
 import {
   clientContext,
@@ -51,18 +52,24 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
           type:
             index === 0
               ? 'shortText'
-              : index === 2
+              : index === 1
                 ? 'singleChoice'
-                : index === 3
-                  ? 'multiChoice'
-                  : 'short_text',
+                : index === 2
+                  ? 'singleChoice'
+                  : index === 3
+                    ? 'multiChoice'
+                    : index === 4
+                      ? 'number'
+                      : 'short_text',
           ...(index === 0 ? { charLimit: 20 } : {}),
+          ...(index === 1 ? { choices: ['yes', 'no'] } : {}),
           ...(index === 2 ? { choices: ['low', 'medium', 'high'] } : {}),
           ...(index === 3
             ? {
                 choices: ['low:eggs', 'medium:chicken', 'high:salmon'],
               }
             : {}),
+          ...(index === 4 ? { validation: { min: 0, max: 10 } } : {}),
         })),
       };
       await tx`
@@ -137,6 +144,80 @@ it('T012 acknowledges drafts, binds retries, rejects stale and late writes', asy
         ) as result
       `;
       expect(invalidN08?.result).toEqual({ status: 'invalid' });
+      const expectInvalidDirectAnswer = async (
+        values: Record<string, JSONValue>,
+      ) => {
+        const probeRollback = new Error('rollback T012 invalid answer probe');
+        let result: unknown;
+        await expect(
+          tx.savepoint(async (sp) => {
+            const [attempt] = await sp`
+              select public.save_form_draft(
+                ${context.wsA.id},${assignmentId},0,${randomUUID()},${sp.json(values)}
+              ) as result
+            `;
+            result = attempt?.result;
+            throw probeRollback;
+          }),
+        ).rejects.toBe(probeRollback);
+        expect(result).toEqual({ status: 'invalid' });
+      };
+      await expectInvalidDirectAnswer({ q2: 1 });
+      await expectInvalidDirectAnswer({ q2: 'not-a-choice' });
+      await expectInvalidDirectAnswer({ q5: 11 });
+      const [answerValidator] = await tx`
+        select pg_catalog.pg_get_functiondef(
+          'app_private.f15_answer_values_valid(jsonb,jsonb)'::regprocedure
+        ) as definition
+      `;
+      const answerValidatorDefinition = answerValidator?.definition as string;
+      const validationMutants = [
+        {
+          name: 'choice',
+          anchor:
+            "if jsonb_typeof(question->'choices') is distinct from 'array'\n        or not ((question->'choices') ? answer_text) then return false; end if;",
+          values: { q2: 'not-a-choice' },
+        },
+        {
+          name: 'range',
+          anchor: 'if value_number>maximum then return false; end if;',
+          values: { q5: 11 },
+        },
+      ] as const;
+      for (const mutant of validationMutants) {
+        let mutationKilled = false;
+        const mutationRollback = new Error(
+          `rollback T012 ${mutant.name} validation mutant`,
+        );
+        await expect(
+          tx.savepoint(async (sp) => {
+            await sp`reset role`;
+            const changed = answerValidatorDefinition.replace(
+              mutant.anchor,
+              mutant.name === 'choice'
+                ? 'null;'
+                : 'if false then return false; end if;',
+            );
+            expect(changed, `${mutant.name} validator mutation`).not.toBe(
+              answerValidatorDefinition,
+            );
+            await sp.unsafe(changed);
+            await sp`set local role authenticated`;
+            const [attempt] = await sp`
+              select public.save_form_draft(
+                ${context.wsA.id},${assignmentId},0,${randomUUID()},${sp.json(mutant.values)}
+              ) as result
+            `;
+            try {
+              expect(attempt?.result).toEqual({ status: 'invalid' });
+            } catch {
+              mutationKilled = true;
+            }
+            throw mutationRollback;
+          }),
+        ).rejects.toBe(mutationRollback);
+        expect(mutationKilled, `${mutant.name} validator mutant`).toBe(true);
+      }
       await tx`reset role`;
       expect(
         await tx`select count(*)::int as count from public.form_answer_drafts where workspace_id=${context.wsA.id} and assignment_id=${assignmentId}`,

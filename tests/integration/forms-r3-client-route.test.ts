@@ -102,6 +102,7 @@ it('T022 exposes only the signed client assignment and audited answer reads', as
         full_name: 'U3 synthetic client',
         date_of_birth: '1990-04-12',
       },
+      relationship_active: true,
     });
     expect(own.draft).toEqual({
       status: 'loaded',

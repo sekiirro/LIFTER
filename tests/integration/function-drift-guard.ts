@@ -5,6 +5,31 @@ import { loadEnv } from './harness';
 
 export const guardedFunctions = [
   {
+    identity: 'app_private.f15_answer_values_valid(jsonb,jsonb)',
+    migration: '20261111024828_f15_direct_rpc_answer_validation.sql',
+    name: 'app_private.f15_answer_values_valid',
+  },
+  {
+    identity: 'public.correct_form_answer(uuid,uuid,integer,uuid,jsonb,text)',
+    migration: '20261111024828_f15_direct_rpc_answer_validation.sql',
+    name: 'public.correct_form_answer',
+  },
+  {
+    identity: 'public.save_form_draft(uuid,uuid,integer,uuid,jsonb)',
+    migration: '20261111024828_f15_direct_rpc_answer_validation.sql',
+    name: 'public.save_form_draft',
+  },
+  {
+    identity: 'public.submit_form_assignment(uuid,uuid,integer,uuid)',
+    migration: '20261111024828_f15_direct_rpc_answer_validation.sql',
+    name: 'public.submit_form_assignment',
+  },
+  {
+    identity: 'public.read_form_assignment_context(uuid)',
+    migration: '20261111024828_f15_direct_rpc_answer_validation.sql',
+    name: 'public.read_form_assignment_context',
+  },
+  {
     identity: 'app_private.f15_valid_builder_definition(jsonb,boolean)',
     migration: [
       '20261108230110_f15_builder_slider_validation_guard_localized.sql',
