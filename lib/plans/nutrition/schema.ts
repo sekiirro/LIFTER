@@ -50,6 +50,7 @@ export type NutritionSchemaErrorCode =
   | 'alternative_limit'
   | 'food_reference';
 
+/** Error thrown by the frozen v1 validator with a stable code and field. */
 export class NutritionDocumentError extends Error {
   readonly code: NutritionSchemaErrorCode;
   readonly field: string;
@@ -116,6 +117,7 @@ export type FoodVersionUnitContext = {
 /** Keyed by `${foodId}@${foodVersion}` (contract section 2.5: exact version). */
 export type NutritionUnitContext = Record<string, FoodVersionUnitContext>;
 
+/** Composite context key for one exact food version: `${foodId}@${version}`. */
 export function nutritionUnitContextKey(
   foodId: string,
   foodVersion: number,

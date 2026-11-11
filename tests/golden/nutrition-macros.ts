@@ -239,6 +239,39 @@ describe('nutrition macros goldens (F18-FR-003, T002)', () => {
     expect(displayCalories('1999.6')).toBe('2000');
   });
 
+  it('keeps the magnitude when a display input has fewer decimals than the target (integer inputs)', () => {
+    // integer strings enter the scale<=dp branch: the coefficient must be
+    // rescaled, not reused (review: displayMacroGrams('5') was '0.5')
+    expect(displayMacroGrams('5')).toBe('5.0');
+    expect(displayMacroGrams('45')).toBe('45');
+    expect(displayCalories('5')).toBe('5');
+    expect(displayCalories('45')).toBe('45');
+  });
+
+  it('does not pollute object prototypes for dangerous document ids', () => {
+    const sentinel = Object.prototype.toString;
+    const doc = singleDayDoc([
+      meal('m-1', [
+        item('__proto__', FOOD_F1, 3, '37', { kind: 'basis', value: 'g' }),
+        item('toString', FOOD_F1, 3, '37', { kind: 'basis', value: 'g' }),
+      ]),
+    ]);
+    const values = computeDocumentValues(doc, SNAPSHOT_MAP);
+    expect(Object.prototype.toString).toBe(sentinel);
+    expect(values.items['__proto__']).toEqual({
+      kcal: '92.500',
+      protein: '4.5658',
+      carbs: '18.5000',
+      fat: '4.5658',
+    });
+    expect(values.items['toString']).toEqual({
+      kcal: '92.500',
+      protein: '4.5658',
+      carbs: '18.5000',
+      fat: '4.5658',
+    });
+  });
+
   it('derives aggregates from exact item values, never from rounded items', () => {
     // three items of 1.175 g each: each item displays 0.1 (protein), but the
     // exact sum 0.4349850 displays 0.4 — the golden demands the exact sum

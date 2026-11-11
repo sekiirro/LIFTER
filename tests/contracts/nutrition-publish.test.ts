@@ -26,12 +26,15 @@ const FOODS: Record<
   {
     basis: 'g' | 'ml';
     unitKeys: string[];
+    /** catalog serving basis quantities per unit key (numeric(12,3) strings) */
+    servings: Record<string, string>;
     per100: { kcal: string; protein: string; carbs: string; fat: string };
   }
 > = {
   'f1@3': {
     basis: 'g',
     unitKeys: ['g'],
+    servings: { g: '100.000' },
     per100: { kcal: '250.0', protein: '12.34', carbs: '50.00', fat: '12.34' },
   },
 };
@@ -94,16 +97,48 @@ function buildSnapshotMap(
       unit.kind === 'basis'
         ? `food:${foodId}@${foodVersion}#basis:${unit.value}`
         : `food:${foodId}@${foodVersion}#serving:${unit.unitKey}`;
+    if (unit.kind === 'basis') {
+      map[key] = {
+        kind: 'basis',
+        foodId,
+        version: foodVersion,
+        names: { ar: 'طعام', en: 'Food' },
+        basis: food.basis,
+        productIdentity: 'raw',
+        preparationIdentity: 'raw',
+        weighingState: 'raw',
+        per100: { ...food.per100, fiber: null },
+      } satisfies NutritionSnapshotEntry;
+      return;
+    }
+    // serving reference: build the wrapped F16 serving entry with its exact
+    // declared basisQuantity so basisQuantityOf never sees a basis entry
+    const basisQuantity = food.servings[unit.unitKey ?? ''];
+    if (basisQuantity === undefined) {
+      throw new Error(`undeclared serving ${unit.unitKey} for ${versionKey}`);
+    }
     map[key] = {
-      kind: 'basis',
-      foodId,
-      version: foodVersion,
-      names: { ar: 'طعام', en: 'Food' },
-      basis: food.basis,
-      productIdentity: 'raw',
-      preparationIdentity: 'raw',
-      weighingState: 'raw',
-      per100: { ...food.per100, fiber: null },
+      kind: 'serving',
+      unitKey: unit.unitKey ?? '',
+      snapshot: {
+        foodId,
+        version: foodVersion,
+        names: { ar: 'طعام', en: 'Food' },
+        basis: food.basis,
+        productIdentity: 'raw',
+        preparationIdentity: 'raw',
+        weighingState: 'raw',
+        kcal: food.per100.kcal,
+        protein: food.per100.protein,
+        carbs: food.per100.carbs,
+        fat: food.per100.fat,
+        fiber: null,
+        serving: {
+          servingId: unit.unitKey ?? '',
+          labels: { ar: 'حصة', en: 'Serving' },
+          basisQuantity,
+        },
+      },
     } satisfies NutritionSnapshotEntry;
   };
   const meals =
@@ -309,6 +344,39 @@ describe('publish ignore-caller-data contract (F18-FR-005, T003)', () => {
       (content.computedValues as { items: Record<string, { protein: string }> })
         .items['i-1']!.protein,
     ).toBe('4.5658');
+  });
+
+  it('builds a serving snapshot for a serving-referenced item and publishes successfully', () => {
+    const state = freshState();
+    const servingDoc = structuredClone(DOC_F1) as Record<string, unknown>;
+    const meals = servingDoc.meals as Array<Record<string, unknown>>;
+    meals[0]!.items = [
+      {
+        id: 'i-serving',
+        foodId: 'f1',
+        foodVersion: 3,
+        quantity: { value: '1', unit: { kind: 'serving', unitKey: 'g' } },
+        note: null,
+        alternatives: [],
+      },
+    ];
+    const result = publishNutritionRevision(
+      state,
+      baseRequest({ payload: { document: servingDoc } }),
+    );
+    expect(result.status).toBe('ok');
+    const content = state.contents[0]!;
+    const servingEntry = content.snapshotMap['food:f1@3#serving:g'];
+    expect(servingEntry).toBeDefined();
+    expect(servingEntry!.kind).toBe('serving');
+    if (servingEntry!.kind === 'serving') {
+      expect(servingEntry!.snapshot.serving.basisQuantity).toBe('100.000');
+    }
+    // 12.34 × 100.000 (basis quantity) × 1 / 100 = 12.34 exactly
+    expect(
+      (content.computedValues as { items: Record<string, { protein: string }> })
+        .items['i-serving']!.protein,
+    ).toBe('12.3400000');
   });
 
   it('returns the original receipt for an identical key/request without new writes', () => {

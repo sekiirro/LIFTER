@@ -21,6 +21,7 @@ export type ExactDecimal = { coef: bigint; scale: number };
 
 const FINITE_DECIMAL_RE = /^(?:[0-9]+(?:\.[0-9]*)?|\.[0-9]+)$/;
 
+/** Error thrown by exact-decimal computation for malformed or missing data. */
 export class NutritionMacroError extends Error {
   constructor(message: string) {
     super(message);
@@ -81,7 +82,8 @@ export function roundHalfUpExact(
   dp: number,
 ): ExactDecimal {
   if (value.scale <= dp) {
-    return { coef: value.coef, scale: dp };
+    // precision increase: rescale the coefficient so the magnitude is kept
+    return { coef: align(value, dp), scale: dp };
   }
   const divisor = 10n ** BigInt(value.scale - dp);
   const rest = value.coef % divisor;
@@ -320,9 +322,11 @@ export function computeDocumentValues(
   snapshotMap: NutritionSnapshotMap,
   selection?: SelectionByItem,
 ): ComputedValues {
-  const items: Record<string, MacroSet> = {};
-  const meals: Record<string, MacroSet> = {};
-  const days: Record<string, MacroSet> = {};
+  // Null-prototype dictionaries: document ids are attacker-influenced strings
+  // and must never resolve to inherited properties or overwrite prototypes.
+  const items: Record<string, MacroSet> = Object.create(null);
+  const meals: Record<string, MacroSet> = Object.create(null);
+  const days: Record<string, MacroSet> = Object.create(null);
   const dayAccumulator: Array<{ dayIndex: string; mealSets: MacroSet[] }> = [];
 
   for (const group of documentMealGroups(document)) {
@@ -330,7 +334,11 @@ export function computeDocumentValues(
     for (const mealEntry of group.meals) {
       const itemSets: MacroSet[] = [];
       for (const itemEntry of mealEntry.items) {
-        const selectedAlternativeId = selection?.[itemEntry.id];
+        const selectedAlternativeId =
+          selection !== undefined &&
+          Object.prototype.hasOwnProperty.call(selection, itemEntry.id)
+            ? selection[itemEntry.id]
+            : undefined;
         let macroSet: MacroSet;
         if (selectedAlternativeId) {
           const alternative = itemEntry.alternatives.find(
@@ -393,13 +401,19 @@ export function computeAlternativeValues(
   document: NutritionDocumentV1,
   snapshotMap: NutritionSnapshotMap,
 ): Record<string, Record<string, MacroSet>> {
-  const out: Record<string, Record<string, MacroSet>> = {};
+  // Null-prototype dictionaries (see computeDocumentValues).
+  const out: Record<string, Record<string, MacroSet>> = Object.create(null);
   for (const group of documentMealGroups(document)) {
     for (const mealEntry of group.meals) {
       for (const itemEntry of mealEntry.items) {
         for (const alternative of itemEntry.alternatives) {
-          out[itemEntry.id] ??= {};
-          out[itemEntry.id]![alternative.id] = computeItemValue(
+          const altMap: Record<string, MacroSet> = Object.hasOwn(
+            out,
+            itemEntry.id,
+          )
+            ? out[itemEntry.id]!
+            : Object.create(null);
+          altMap[alternative.id] = computeItemValue(
             document,
             snapshotMap,
             alternative.foodId,
@@ -407,6 +421,7 @@ export function computeAlternativeValues(
             alternative.quantity.value,
             alternative.quantity.unit,
           );
+          out[itemEntry.id] = altMap;
         }
       }
     }

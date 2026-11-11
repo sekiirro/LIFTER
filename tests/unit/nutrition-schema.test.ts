@@ -210,6 +210,7 @@ describe('nutrition document v1 validator (F18-FR-002, T001)', () => {
             id: 'm-2',
             items: [
               item({
+                id: 'i-2',
                 alternatives: [
                   {
                     id: 'a-1',
@@ -228,6 +229,7 @@ describe('nutrition document v1 validator (F18-FR-002, T001)', () => {
       }),
       CONTEXT,
       'duplicate_id',
+      'meals[1].items[0].alternatives[0].id',
     );
   });
 

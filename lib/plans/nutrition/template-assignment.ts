@@ -49,6 +49,7 @@ export type AssignmentPlan = {
 
 export type NutritionAssignmentErrorCode = 'invalid_selection' | 'zero_copies';
 
+/** Error thrown for an invalid selection or a zero-copy resolution. */
 export class NutritionAssignmentError extends Error {
   readonly code: NutritionAssignmentErrorCode;
 
@@ -78,6 +79,11 @@ function sortedUnique(ids: readonly string[]): string[] {
   return [...new Set(ids)].sort();
 }
 
+/**
+ * Resolve one PO Assign operation's per-target outcomes against the
+ * operation-time template and workspace state. Throws
+ * `NutritionAssignmentError` (`invalid_selection` / `zero_copies`).
+ */
 export function resolveNutritionTemplateAssignment(
   input: ResolveAssignmentInput,
 ): AssignmentPlan {
