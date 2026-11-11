@@ -79,6 +79,17 @@ describe('exercise row input mapping', () => {
     },
   );
 
+  it('does not restore canonical Arabic when the resolved name clears it', () => {
+    const row = validRow();
+    row.payload.name_ar = 'اسم عالمي';
+    row.name_ar = 'اسم عالمي';
+    row.payload.effective_fields.name.value = {
+      name_ar: null,
+      name_en: 'English only',
+    } as never;
+    expect(exerciseInput(row)?.names).toEqual({ en: 'English only' });
+  });
+
   it('does not coerce malformed array members into catalog identifiers', () => {
     const row = validRow();
     (row.payload as Record<string, unknown>).secondary_muscle_codes = [null];

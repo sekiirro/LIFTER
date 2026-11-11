@@ -49,6 +49,20 @@ describe('workspace exercise override actions', () => {
     });
   });
 
+  it('accepts and forwards a Default Reps range object', async () => {
+    await expect(
+      saveExerciseOverrideAction({
+        ...base,
+        request: { default_reps: { min: 8, max: 12 } },
+      }),
+    ).resolves.toEqual({ status: 'ok', data: {} });
+    expect(mocks.writeExerciseOverride).toHaveBeenCalledWith(
+      expect.objectContaining({
+        request: { default_reps: { min: 8, max: 12 } },
+      }),
+    );
+  });
+
   it.each([
     ['name', { name_en: null }],
     ['description', { description: null }],

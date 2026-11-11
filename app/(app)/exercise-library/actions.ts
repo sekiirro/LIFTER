@@ -355,7 +355,14 @@ function validOverrideRequest(
             isRecord(target) &&
             (typeof target.global_exercise_id === 'string' ||
               typeof target.workspace_exercise_id === 'string'),
-        )),
+        )) ||
+      (isRecord(item) &&
+        Object.keys(item).every((key) => key === 'min' || key === 'max') &&
+        Object.keys(item).length > 0 &&
+        typeof item.min === 'number' &&
+        Number.isInteger(item.min) &&
+        typeof item.max === 'number' &&
+        Number.isInteger(item.max)),
   );
 }
 

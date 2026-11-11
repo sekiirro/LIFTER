@@ -19,7 +19,7 @@ function contractExpectationFixture(): {
 } {
   const markdown = readFileSync(contractPath, 'utf8');
   const table = markdown.match(
-    /\| Operation \| PO \| WO \| Trainer \| Sales \| Client \| Unknown\/unauthenticated \|\r?\n\|[^\n]+\|\r?\n((?:\|[^\n]+\|\r?\n)+)/,
+    /\|\s*Operation\s*\|\s*PO\s*\|\s*WO\s*\|\s*Trainer\s*\|\s*Sales\s*\|\s*Client\s*\|\s*Unknown\/unauthenticated\s*\|\r?\n\|[^\n]+\|\r?\n((?:\|[^\n]+\|\r?\n)+)/,
   );
   if (!table)
     throw new Error('Role authorization matrix missing from contract');

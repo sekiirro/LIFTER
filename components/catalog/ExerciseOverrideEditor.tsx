@@ -40,6 +40,7 @@ const ERROR_MESSAGE_KEYS: Record<ExerciseEditorErrorCode, keyof Messages> = {
   too_many_alternatives: 'catalog.editorErrorTooManyAlternatives',
   text_too_long: 'catalog.editorErrorTextTooLong',
   description_too_long: 'catalog.editorErrorDescriptionTooLong',
+  notes_too_long: 'catalog.editorErrorDescriptionTooLong',
   invalid_video_url: 'catalog.videoVariationInvalidUrl',
   duplicate_alternative: 'catalog.editorErrorDuplicateAlternative',
   self_alternative: 'catalog.editorErrorSelfAlternative',
@@ -272,6 +273,7 @@ export function ExerciseOverrideEditor({
             {fieldHeader('notes', m['catalog.editorNotes'])}
             <Field
               label={m['catalog.editorNotes']}
+              error={errorText(errors.notes, m)}
               inputProps={{
                 id: `${exerciseId}-override-notes`,
                 value: draft.notes,

@@ -2,6 +2,7 @@ import {
   EQUIPMENT_CODES,
   EXERCISE_REST_STEP_SECONDS,
   MAX_CATALOG_DESCRIPTION_LENGTH,
+  MAX_CATALOG_NOTE_LENGTH,
   MAX_CATALOG_TEXT_LENGTH,
   MAX_EXERCISE_ALTERNATIVES,
   MAX_EXERCISE_REPS,
@@ -117,6 +118,7 @@ export type ExerciseEditorErrorCode =
   | 'too_many_alternatives'
   | 'text_too_long'
   | 'description_too_long'
+  | 'notes_too_long'
   | 'invalid_video_url'
   | 'duplicate_alternative'
   | 'self_alternative';
@@ -254,6 +256,8 @@ export function validateExerciseEditorDraft(
     Array.from(draft.description.trim()).length > MAX_CATALOG_DESCRIPTION_LENGTH
   )
     errors.description = 'description_too_long';
+  if (Array.from(draft.notes.trim()).length > MAX_CATALOG_NOTE_LENGTH)
+    errors.notes = 'notes_too_long';
   if (draft.videoUrl.trim() && !isAllowedCatalogVideoUrl(draft.videoUrl))
     errors.videoUrl = 'invalid_video_url';
 

@@ -51,8 +51,9 @@ function exerciseRows(data: unknown): CatalogExerciseListItem[] {
         ? ((effective.name as Record<string, unknown>).value as
             Record<string, unknown> | undefined)
         : undefined;
-    const nameAr = resolvedName?.name_ar ?? payload.name_ar;
-    const nameEn = resolvedName?.name_en ?? payload.name_en;
+    // A resolved name is authoritative, including null (cleared override).
+    const nameAr = resolvedName ? resolvedName.name_ar : payload.name_ar;
+    const nameEn = resolvedName ? resolvedName.name_en : payload.name_en;
     const equipment = Array.isArray(payload.equipment_codes)
       ? payload.equipment_codes[0]
       : undefined;

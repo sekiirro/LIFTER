@@ -18,6 +18,7 @@ The Platform Owner (PO) creates canonical Global Library entries with exactly th
 **Independent Test**: As PO, create a global exercise and verify its stable identity/version and audit event; verify a global-admin edit appends a version and that a PO edit made in a personal workspace leaves canonical content unchanged. As WO/Trainer/Sales verify global create/edit is denied by both walls.
 
 **Acceptance Scenarios**:
+
 1. **Given** a PO, **When** they create a global exercise with an English name, optionally an Arabic name, a primary muscle group and metadata from the approved taxonomy, **Then** a stable exercise identity and version 1 exist and an audit event is recorded without free-text content.
 2. **Given** a PO in the explicit global admin scope and an existing global exercise, **When** the PO edits it, **Then** a new version is appended, the previous version stays readable and unchanged, and the identity is preserved. **Given** a PO scoped to a personal workspace, **When** the PO edits the same exercise, **Then** only that workspace's override changes (see User Story 2, scenario 3).
 3. **Given** a non-PO staff member, **When** they attempt to create, edit, remove, restore or merge a global exercise, **Then** the request is denied by app authorization and by RLS.
@@ -30,6 +31,7 @@ Coaching staff see one shared global exercise catalog in every authorized worksp
 **Independent Test**: Create one canonical global exercise and overrides in two synthetic workspaces. Verify both workspaces resolve the same canonical identity, each sees its own allowed override values, and neither workspace can read or infer the other's override or private exercise. Verify an edit made by the PO while operating in a personal workspace changes that workspace's override only.
 
 **Acceptance Scenarios**:
+
 1. **Given** a global exercise visible in workspace A and workspace B, **When** authorized staff open the workspace library, **Then** each sees the shared global entry together with only that workspace's override state.
 2. **Given** a Trainer or WO with current `coaching_work` in workspace A, **When** they create or edit an override, **Then** only the eight FR-003 fields can be changed, and the canonical global identity and content remain unchanged.
 3. **Given** the PO edits an exercise while scoped to the PO's personal workspace, **When** the change is saved, **Then** it writes to that workspace's override only and leaves canonical global content unchanged.
@@ -48,6 +50,7 @@ Any staff member with `coaching_work` adds a food to the global database immedia
 **Independent Test**: Add a valid food (immediately searchable by all coaching staff of all workspaces); attempt an invalid food with negative values (rejected with field errors) and an exact duplicate (blocked, pointing to the existing food); attempt a near-duplicate (warned, explicit confirm allowed); submit a 4/4/9 kcal discrepancy beyond the approved tolerance and verify a warning appears while the food saves.
 
 **Acceptance Scenarios**:
+
 1. **Given** a Trainer, **When** they add a food with AR and/or EN name, canonical product identity, preparation identity and weighing state, per-100 g (or per-100 ml) calories, protein, carbohydrate and fat, and at least one serving unit with a gram (or ml) equivalent, **Then** the food is immediately available globally as version 1.
 2. **Given** negative values or macro grams exceeding the reference quantity, **When** submitted, **Then** it is rejected with field-level bilingual errors and nothing is written. **Given** calories inconsistent with 4/4/9 beyond `max(20 kcal, 10% of stated kcal)`, **When** submitted, **Then** a field-level warning appears and the food saves if all other validation passes (PO S20 Message B section 1, D16-5).
 3. **Given** a food whose language, normalized name, basis, product identity, preparation identity and weighing state match an existing active food, **When** submitted, **Then** creation is blocked and the existing food is offered. **Given** the same normalized name in another language or a different product/preparation identity or raw/cooked state, **When** submitted, **Then** it remains a distinct food. **Given** a near match within the same identity dimensions (similar name and macros within tolerance), **Then** a warning lists candidates and creation proceeds only on explicit confirmation.
@@ -60,6 +63,7 @@ Corrections never rewrite history: an edit creates a new version, Remove hides a
 **Independent Test**: Remove a food and merge a duplicate into a survivor; verify search excludes the removed food for new selection, the survivor is suggested, existing version rows and client plans are unchanged, and frozen `ExerciseSnapshotV1`/`FoodSnapshotV1` fixtures still serialize exactly. (Rendering a stored plan snapshot is an F17/F18 acceptance criterion, not an F16 exit gate.)
 
 **Acceptance Scenarios**:
+
 1. **Given** an authorized actor per the approved edit/merge matrix, **When** they merge food X into food Y, **Then** X is marked superseded by Y (no delete), new selection of X is redirected to Y, and an audit event records both identities.
 2. **Given** a removed or superseded entry, **When** a planner loads an existing draft containing it, **Then** the draft shows a non-blocking "removed/replaced" indicator and the stored values remain intact.
 3. **Given** a PO restores a removed global catalog entry through the backend/API, **When** Restore succeeds, **Then** the same identity and current immutable version become selectable with one lifecycle/audit record; prior plan references and snapshots remain unchanged. Workspace exercise Restore is not authorized and no exercise Restore control is shown in the UI. **Given** X was merged into Y and Y is merged into Z, **Then** X is atomically redirected to Z; a later request targeting X resolves to active terminal Z, with no chain and no plan-reference rewrite.
@@ -80,6 +84,7 @@ A global workout template keeps canonical exercise identity. Client access remai
 **Independent Test**: Use synthetic global-template and client/workspace fixtures. Verify authorization and workspace isolation. After publication, change the authorized library Video and verify the next plan view resolves the current authorized workspace override or Global fallback.
 
 **Acceptance Scenarios**:
+
 1. **Given** a global template and a client in an authorized workspace, **When** the plan is viewed, **Then** only the current authorized workspace Video override or Global fallback is returned.
 2. **Given** a workspace Video changes after publication, **When** the authorized client views the plan again, **Then** the current authorized library Video is returned while the other published values remain frozen.
 3. **Given** a client-view request without the required plan/client workspace authorization, **When** video resolution is attempted, **Then** it is denied with generic security behavior and no foreign workspace information is disclosed.
@@ -200,6 +205,7 @@ D16-1a/b/c and D16-2 through D16-10 for the existing catalog/food scope are appr
 - **No open ambiguities** remain for the removal role matrix, scope, confirmation/cancel behavior, lifecycle revision/idempotency/audit semantics or data preservation in this work.
 
 S30-PO-9 (verbatim, `C:/Users/NEW LAP/.lifter/briefs/s28-po-decisions-verbatim.md`, S30-Q17):
+
 > Move the Remove action to the Exercise Detail page. Remove Merge and Restore from the UI entirely. Keep Add/Edit focused on exercise content. Preserve existing Remove permissions and require confirmation before removal. Do not delete backend data or alter historical references without separate approval. Update the specs and implementation through the normal review gates. No PR merges without my exact-SHA approval.
 
 For the exercise UI, Add/Edit contains no lifecycle controls; the only lifecycle action offered is Remove on Exercise Detail, after confirmation. Merge and Restore controls are absent from the exercise UI. Existing backend RPCs, migrations, exercise data, plan references, snapshots, and history are unchanged by this UI decision.
@@ -217,6 +223,7 @@ Workout/nutrition templates and planners (F17/F18), plan versions and exports, c
 ## Constitution Check
 
 I isolation (workspace rows + composite FKs; global rows readable only by coaching staff; no origin disclosure) - II n/a (no money) - III PO governs global exercises and merges - IV traces to PRD-04/05; open items marked - V immutable versions; snapshots consumed by F17/F18 - VII no PII in catalog audit - VIII bilingual Design System + gate - IX idempotent, optimistic-concurrency RPCs. Round 3 additions: I, the client-visible video projection is one internal scoped resolver behind the F19/P4 wrapper (FR-029) with generic denial and no catalog access; V, override versions and `ExerciseSnapshotV2` are retained permanently (FR-027), so storage growth has no separate per-workspace budget (F16-MCQ-I(2)(b)) and is monitored against the 70% trigger (free tier 500 MB DB); Mandatory Spec Debate, the independent critique was performed by Sonnet 5.5 under S36-PO-2, the constitution's Sol Medium mandate conflicts with that substitution, and the conflict is dispositioned by S37-PO-11, which approved the Sol Medium critique; that critique ran at the same head and its findings are dispositioned in S38 round 7 (analyze A7).
+
 ## Clarifications
 
 ### S37 PO decisions (2026-11-08, round 6)
@@ -253,6 +260,7 @@ PO source: `C:/Users/NEW LAP/.lifter/runs/s40-po/s40-po-1.verbatim.txt`, S40-PO-
 Architect mapping (architect words, NOT PO words; quoted verbatim from the parenthesis in the source file): (Architect mapping, NOT PO words: PDN-S40-F16-01 resolved by none of the offered options. F16 conversion no longer carries legacy Instructions into Notes: legacy exercise rows are deleted, not migrated; the 8-field model keeps Notes only, no Instructions field and no merge format. This supersedes, for legacy exercise rows only, the S36-PO-5 "preserve unique data into Notes" carry-over as applied in #66 T054/T062(b). Before encoding, evidence that no real data is affected: no production/linked Supabase project in use (S38-PO-3; S38 repo evidence NOT LINKED), legacy rows exist only in migrations/seeds/test fixtures/local stacks. Specs and tests updated accordingly.)
 
 Effect (S40-PO-5 applies to legacy exercise rows only; it supersedes the S36-PO-5 "preserve unique data into Notes" carry-over for those rows):
+
 - US2 acceptance scenario 9; FR-003, FR-031, FR-038; SC-016.
 - `plan.md` Summary (line 20), migration steps 1 and 3 (lines 73, 75), and line 166.
 - `data-model.md` (`exercise_variation_versions` row, field contract, Notes row); `research.md` (eight-field row); `contracts/catalog-api.md` (two field-set rows).
@@ -262,9 +270,10 @@ Effect (S40-PO-5 applies to legacy exercise rows only; it supersedes the S36-PO-
 Verification (S40 round 10, read-only): `specs/016-exercise-food-catalogs/verification-s40-po5.md`. No repo-side evidence that real data is affected. Target-database verification was not performed in this round; it is a gate before any deletion (T068).
 
 Open after S40-PO-5 (round-10 state; PDN-S40-F16-02 is resolved by S40-PO-7 and PDN-S40-F16-03 is ruled by S40-R11 in round 11, see below):
+
 - PDN-S40-F16-02: whether "delete" also covers immutable legacy history and legacy variation videos (T062(a), T063, FR-031 "no video lost").
 - PDN-S40-F16-03: how a version write that still submits `instructions_*` is handled between T054 and the joint T040/T074 change (T054 guard, T074 interim upgrade test).
-Round-10 blocks, superseded in round 11: T062(a), T063 and the T054 write-path guard.
+  Round-10 blocks, superseded in round 11: T062(a), T063 and the T054 write-path guard.
 
 **No open ambiguities** is NOT stated for this round: PDN-S40-F16-02 and PDN-S40-F16-03 are open.
 
@@ -279,6 +288,7 @@ Architect mapping (architect words, NOT PO words; verbatim from the parenthesis 
 > (Architect mapping, NOT PO words: at F16 cutover the legacy exercise rows, their immutable version history (exercise_variation_versions for legacy rows) and their legacy videos are deleted; all are mock data. FR-031 "retain legacy history" and the S37-PO-10 "no video lost" carry-over no longer apply to legacy exercise rows only; every other rule unchanged.)
 
 Effect (S40-PO-7 applies to legacy exercise rows only; every other rule is unchanged):
+
 - At cutover, every legacy exercise row, its immutable version history (the `exercise_variation_versions` rows of legacy rows) and its legacy videos are deleted. None is carried over to an override video. FR-031 “retain legacy history” and the S37-PO-10 “no video lost” carry-over no longer apply to legacy exercise rows.
 - Touched: FR-014, FR-031, FR-038, US2 scenario 9, SC-016; `plan.md` migration steps 1 and 3; `data-model.md` (`exercise_variations` and `exercise_variation_versions` rows); `tasks.md` T054, T062, T063, T074 and the dependency order; `traceability.md` (FR-031, SC-016). The legacy video and history carry-over checks are removed from T062(a) and T063.
 - Immutable audit history is not rewritten (existing audit policy). T068 remains the read-only gate before the deletion (S40-PO-5 verification).
@@ -294,6 +304,7 @@ Source: `C:/Users/NEW LAP/.lifter/runs/s40-po/s40-architect-rulings.md`, paragra
 > S40-R13 (#66 A-R10-3, thread PRRT_kwDOVYgYQ861QIXF): valid technical fix. T052 ordering gate compares unapplied F16 migrations against the target's applied versions before deployment; a published migration that now sorts earlier is a STOP whose recovery follows the PO-decided pattern (S36-PO-4/S40-PO-1 rename, S40-PO-4 recorded per-file exception) case by case; no automatic waiver.
 
 Effect (architect rulings, not PO decisions; `decision-register.md` is unchanged):
+
 - PDN-S40-F16-03 is ruled by S40-R11: no interim window exists. T054 (cutover and deletion), T040 (`instructions_*` removal) and T074 (validator replacement) ship in one implementation PR and deploy together. The round-10 interim write-path guard for `instructions_*` and the interim default-bounds guard in T054 are removed, with their upgrade and post-cutover tests.
 - S40-R12: the effective resolution contract (`data-model.md`, Effective resolution) gains the `workspace_private` input and result branch. The canonical branch and its no-fallback rules are unchanged.
 - S40-R13: T052 gains the pre-deployment ordering gate and its STOP and recovery text.
@@ -326,6 +337,7 @@ Effect (architect rulings, not PO decisions; `decision-register.md` is unchanged
 - **Status (round 12): RESOLVED** by S40-PO-8 (PDN-S40-F16-06 = B, "Visible to clients"). See "S40 round 12" below.
 
 **No open ambiguities** is NOT stated for this round: PDN-S40-F16-04, PDN-S40-F16-05 and PDN-S40-F16-06 are open. PDN-S40-F16-02 is resolved (S40-PO-7). PDN-S40-F16-03 is ruled by S40-R11 (architect ruling, not PO).
+
 ### S40 round 12 — S40-PO-8 (PO decisions; resolve PDN-S40-F16-05 and PDN-S40-F16-06) and S40-R15 (architect ruling, not PO; resolves PDN-S40-F16-04)
 
 PO source: `C:/Users/NEW LAP/.lifter/runs/s40-po/s40-po-1.verbatim.txt`, S40-PO-8 (2026-11-09 ~13:45Z, PO answers to architect MCQs, selected option labels verbatim):
@@ -412,7 +424,6 @@ S37-PO-1 Q2: Q2 "F16: S36-PO-5 says 'Published plans retain frozen values' insid
 
 S37-PO-10: S37-PO-10 (2026-11-08, PO message verbatim, answering F16-MCQ-Q, -P, -F-R, -G-R, -D-R; F16-MCQ-O was answered by S37-PO-1 Q2 = A, video stays live):
 PO final: English name required, Arabic optional (Global/Workspace). One optional Description, any language. Max 3 unique Alternatives. Remove dummy docs.google.com links; no legacy support. Account deletion frees email/phone for fresh registration in another workspace, no data transfer. Record in F11/F12. Decisions closed; proceed through gates, no merge without approval.
-
 
 ### Session 2026-11-11 — S48-PO-1/2/3/5/6/7 (T040 copy and workspace override UI)
 

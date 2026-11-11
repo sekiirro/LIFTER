@@ -492,18 +492,22 @@ export function createCatalogServer(deps: CatalogDependencies) {
               nameEntry?.value && typeof nameEntry.value === 'object'
                 ? (nameEntry.value as Record<string, unknown>)
                 : null;
-            const en =
-              typeof nameValue?.name_en === 'string'
+            // A resolved name is authoritative, including an explicit null
+            // Arabic value, so a cleared override does not reappear.
+            const en = nameValue
+              ? typeof nameValue.name_en === 'string'
                 ? nameValue.name_en
-                : typeof payload.name_en === 'string'
-                  ? payload.name_en
-                  : undefined;
-            const ar =
-              typeof nameValue?.name_ar === 'string'
+                : undefined
+              : typeof payload.name_en === 'string'
+                ? payload.name_en
+                : undefined;
+            const ar = nameValue
+              ? typeof nameValue.name_ar === 'string'
                 ? nameValue.name_ar
-                : typeof payload.name_ar === 'string'
-                  ? payload.name_ar
-                  : undefined;
+                : undefined
+              : typeof payload.name_ar === 'string'
+                ? payload.name_ar
+                : undefined;
             if (!en && !ar) return [];
             return [
               {
@@ -514,28 +518,37 @@ export function createCatalogServer(deps: CatalogDependencies) {
             ];
           });
         };
-        const globals = await rpc<unknown>(ready.client!, 'catalog_search', {
-          kind: 'exercise',
-          query: '',
-          filters: { page_size: 50 },
-          cursor: null,
-          workspace_id: workspaceId,
-        });
-        if (globals.status !== 'ok') return { status: globals.status };
-        const options = toOptions(globals.data, 'global');
-        if (!workspaceId) return { status: 'ok', data: options };
-        const privates = await rpc<unknown>(ready.client!, 'catalog_search', {
-          kind: 'workspace_exercise',
-          query: '',
-          filters: { page_size: 50 },
-          cursor: null,
-          workspace_id: workspaceId,
-        });
-        if (privates.status !== 'ok') return { status: privates.status };
-        return {
-          status: 'ok',
-          data: [...options, ...toOptions(privates.data, 'private')],
+        // The picker needs every active target, not just the first page, so a
+        // stored Alternative outside page one stays selectable/removable.
+        const allOptions = async (
+          kind: 'exercise' | 'workspace_exercise',
+          optionKind: 'global' | 'private',
+        ): Promise<CatalogResult<CatalogExerciseOption[]>> => {
+          const options: CatalogExerciseOption[] = [];
+          let cursor: string | null = null;
+          for (let page = 0; page < 100; page += 1) {
+            const result = await rpc<unknown>(ready.client!, 'catalog_search', {
+              kind,
+              query: '',
+              filters: { page_size: 50 },
+              cursor,
+              workspace_id: workspaceId,
+            });
+            if (result.status !== 'ok') return { status: result.status };
+            const rows = Array.isArray(result.data) ? result.data : [];
+            options.push(...toOptions(rows, optionKind));
+            const last = rows.at(-1) as { result_id?: string } | undefined;
+            if (rows.length < 50 || typeof last?.result_id !== 'string') break;
+            cursor = last.result_id;
+          }
+          return { status: 'ok', data: options };
         };
+        const globals = await allOptions('exercise', 'global');
+        if (globals.status !== 'ok') return { status: globals.status };
+        if (!workspaceId) return { status: 'ok', data: globals.data };
+        const privates = await allOptions('workspace_exercise', 'private');
+        if (privates.status !== 'ok') return { status: privates.status };
+        return { status: 'ok', data: [...globals.data, ...privates.data] };
       })();
     },
     createFood: (i: CatalogFoodMutation) =>

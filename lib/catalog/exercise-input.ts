@@ -81,14 +81,14 @@ export function exerciseInput(
   )
     return null;
 
-  const nameAr =
-    optionalText(nameValue?.name_ar) ??
-    optionalText(payload.name_ar) ??
-    optionalText(row.name_ar);
-  const nameEn =
-    optionalText(nameValue?.name_en) ??
-    optionalText(payload.name_en) ??
-    optionalText(row.name_en);
+  // A resolved name is authoritative, including an explicit null Arabic value
+  // (a cleared workspace override must not fall back to the canonical name).
+  const nameAr = nameValue
+    ? optionalText(nameValue.name_ar)
+    : (optionalText(payload.name_ar) ?? optionalText(row.name_ar));
+  const nameEn = nameValue
+    ? optionalText(nameValue.name_en)
+    : (optionalText(payload.name_en) ?? optionalText(row.name_en));
   const names = {
     ...(nameAr ? { ar: nameAr } : {}),
     ...(nameEn ? { en: nameEn } : {}),

@@ -140,6 +140,41 @@ describe('workspace exercise override', () => {
     });
   });
 
+  it('rejects an overlong Note and a half-filled Reps range', () => {
+    const base = overrideDraftFromExercise(exercise);
+    expect(
+      validateOverrideDraft(
+        { ...base, notes: 'x'.repeat(2001) },
+        dirty('notes'),
+        currentId,
+      ).notes,
+    ).toBe('notes_too_long');
+    expect(
+      validateOverrideDraft(
+        {
+          ...base,
+          repsMode: 'range',
+          repsMin: '8',
+          repsMax: '',
+        },
+        dirty('default_reps'),
+        currentId,
+      ).default_reps,
+    ).toBe('required');
+    expect(
+      validateOverrideDraft(
+        {
+          ...base,
+          repsMode: 'range',
+          repsMin: '8',
+          repsMax: '12',
+        },
+        dirty('default_reps'),
+        currentId,
+      ),
+    ).toEqual({});
+  });
+
   it('writes null for a cleared Arabic name and Default Reps', () => {
     const draft = {
       ...overrideDraftFromExercise(exercise),

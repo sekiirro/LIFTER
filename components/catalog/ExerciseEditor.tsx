@@ -60,6 +60,7 @@ const ERROR_MESSAGE_KEYS: Record<ExerciseEditorErrorCode, keyof Messages> = {
   too_many_alternatives: 'catalog.editorErrorTooManyAlternatives',
   text_too_long: 'catalog.editorErrorTextTooLong',
   description_too_long: 'catalog.editorErrorDescriptionTooLong',
+  notes_too_long: 'catalog.editorErrorDescriptionTooLong',
   invalid_video_url: 'catalog.videoVariationInvalidUrl',
   duplicate_alternative: 'catalog.editorErrorDuplicateAlternative',
   self_alternative: 'catalog.editorErrorSelfAlternative',
@@ -143,8 +144,13 @@ export function ExerciseEditor({
   const alternativesAtMax = draft.alternativeExerciseIds.length >= 3;
   const alternativeOptions = alternatives;
   const selectedAlternatives = draft.alternativeExerciseIds.map((id) => {
-    const option = alternativeOptions.find((item) => item.id === id);
-    return { id, name: option ? alternativeName(option, locale) : id };
+    const option = alternativeOptions.find(
+      (item) => alternativeOptionValue(item) === id,
+    );
+    return {
+      id,
+      name: option ? alternativeName(option, locale) : id.replace(/^[gw]:/, ''),
+    };
   });
 
   function setValue<K extends keyof ExerciseEditorDraft>(

@@ -189,6 +189,17 @@ describe('T040 workspace library merged read', () => {
     });
   });
 
+  it('matches a workspace-customized English name (FR-035)', async () => {
+    const prefix = `T040 search ${randomUUID().slice(0, 8)}`;
+    const exerciseId = await createGlobal(`${prefix} Canonical`);
+    await overrideName(exerciseId, `${prefix} Customized`);
+
+    const rows = await library(trainerA.userId, wsA, {
+      query: `${prefix} Customized`,
+    });
+    expect(rows.map((row) => row.result_id)).toEqual([exerciseId]);
+  });
+
   it('breaks equal names by id ascending', async () => {
     const prefix = `T040 tie ${randomUUID().slice(0, 8)}`;
     const first = await createGlobal(`${prefix} same`);

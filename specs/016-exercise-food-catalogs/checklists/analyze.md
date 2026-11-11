@@ -847,14 +847,12 @@ T900 has been marked complete only after its focused integration test passed on 
 - T052(b): PASS across 110 remote refs. Lint, typecheck and unit checks passed earlier in this lane and remain applicable to the unchanged code.
 - Findings: 0 open CRITICAL/HIGH. No PO decision needed. Gate: PASS for T075 commit and push preparation; joint PR remains per S40-R11.
 
-
 ## S48 T040 copy decisions and workspace override UI — 2026-11-11T17:11:07Z
 
 - Scope: T040 remaining UI after S47 — Description/Notes/Video inputs, the approved 2,000-character Description error, self/duplicate Alternative errors, and the workspace override editor with per-field source badge and per-field reset writing `null` (FR-026).
 - Entry check: PASS. `spec.md` has numbered FRs (FR-001/003/018/025/026/036), measurable SCs and Given/When/Then scenarios; the S48-PO-1/2/3/5/6/7 session records the copy sources and the per-field badge/reset decision and states that no ambiguity remains; `plan.md` covers the workspace detail editor and the eight fields; T040 is tagged FR-003/018/026/036; this analysis follows the last spec edit.
 - Review: every user-visible string ships byte-exact from `runs/s48-ds-f16-t040b/approved-copy.md` (nine new EN/AR rows) and no existing approved string changed. The override editor writes only touched fields through the existing CAS RPC; resets write the field's `null`. T040's row also includes the unified workspace list, which S48-PO-7 assigns to a backend read outside this UI lane, so T040 stayed unticked at that time (superseded: item 7 landed and T040 is ticked in the 18:17:01Z entry below).
 - Findings: 0 open CRITICAL, 0 open HIGH. No PO decision needed for the implemented scope.
-
 
 ## S48 T040 item 7 final acceptance analysis — 2026-11-11T18:17:01Z
 

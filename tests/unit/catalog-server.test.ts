@@ -187,6 +187,80 @@ describe('catalog server authorization and RPC boundary', () => {
     });
   });
 
+  it('pages through every Alternative option instead of stopping at 50', async () => {
+    const row = (index: number) => ({
+      result_id: `00000000-0000-4000-8000-${String(index).padStart(12, '0')}`,
+      result_payload: {
+        name_en: `Option ${index}`,
+        primary_muscle_code: 'chest',
+        equipment_codes: ['barbell'],
+        effective_fields: {
+          name: {
+            value: { name_en: `Option ${index}`, name_ar: null },
+            source: 'canonical',
+          },
+        },
+      },
+    });
+    rpc.mockResolvedValueOnce({
+      data: Array.from({ length: 50 }, (_, index) => row(index + 1)),
+      error: null,
+    });
+    rpc.mockResolvedValueOnce({ data: [row(51)], error: null });
+
+    const result = await catalog().alternativeOptions({ workspaceId: null });
+    expect(result.status).toBe('ok');
+    expect((result as { data: unknown[] }).data).toHaveLength(51);
+    expect(rpc).toHaveBeenNthCalledWith(1, 'catalog_search', {
+      kind: 'exercise',
+      query: '',
+      filters: { page_size: 50 },
+      cursor: null,
+      workspace_id: null,
+    });
+    expect(rpc).toHaveBeenNthCalledWith(2, 'catalog_search', {
+      kind: 'exercise',
+      query: '',
+      filters: { page_size: 50 },
+      cursor: row(50).result_id,
+      workspace_id: null,
+    });
+  });
+
+  it('does not restore canonical Arabic in an option when the resolved name clears it', async () => {
+    rpc.mockResolvedValueOnce({
+      data: [
+        {
+          result_id: '55555555-5555-4555-8555-555555555555',
+          result_payload: {
+            name_ar: 'اسم عالمي',
+            name_en: 'English only',
+            primary_muscle_code: 'chest',
+            equipment_codes: ['barbell'],
+            effective_fields: {
+              name: {
+                value: { name_en: 'English only', name_ar: null },
+                source: 'override',
+              },
+            },
+          },
+        },
+      ],
+      error: null,
+    });
+    const result = await catalog().alternativeOptions({ workspaceId: null });
+    expect(result).toEqual({
+      status: 'ok',
+      data: [
+        {
+          id: '55555555-5555-4555-8555-555555555555',
+          kind: 'global',
+          names: { en: 'English only' },
+        },
+      ],
+    });
+  });
+
   it('requires an explicit workspace for the merged workspace library', async () => {
     await expect(
       catalog().workspaceLibrary({ workspaceId: null, query: '' }),

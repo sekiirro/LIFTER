@@ -1,6 +1,7 @@
 import {
   EXERCISE_REST_STEP_SECONDS,
   MAX_CATALOG_DESCRIPTION_LENGTH,
+  MAX_CATALOG_NOTE_LENGTH,
   MAX_CATALOG_TEXT_LENGTH,
   MAX_EXERCISE_ALTERNATIVES,
   MAX_EXERCISE_REPS,
@@ -147,6 +148,11 @@ export function validateOverrideDraft(
       errors.description = 'description_too_long';
   }
 
+  if (dirty.has('notes')) {
+    if (Array.from(draft.notes.trim()).length > MAX_CATALOG_NOTE_LENGTH)
+      errors.notes = 'notes_too_long';
+  }
+
   if (dirty.has('video')) {
     if (draft.videoUrl.trim() && !isAllowedCatalogVideoUrl(draft.videoUrl))
       errors.video = 'invalid_video_url';
@@ -175,15 +181,21 @@ export function validateOverrideDraft(
         if (value.error) errors.default_reps = 'positive_integer';
       }
     } else {
-      const min = parseOptionalInteger(draft.repsMin, 1, MAX_EXERCISE_REPS);
-      const max = parseOptionalInteger(draft.repsMax, 1, MAX_EXERCISE_REPS);
-      if (min.error || max.error) errors.default_reps = 'integer_range';
-      else if (
-        min.value !== undefined &&
-        max.value !== undefined &&
-        min.value > max.value
-      )
-        errors.default_reps = 'range_order';
+      const hasMin = !!draft.repsMin.trim();
+      const hasMax = !!draft.repsMax.trim();
+      if (hasMin !== hasMax) {
+        errors.default_reps = 'required';
+      } else {
+        const min = parseOptionalInteger(draft.repsMin, 1, MAX_EXERCISE_REPS);
+        const max = parseOptionalInteger(draft.repsMax, 1, MAX_EXERCISE_REPS);
+        if (min.error || max.error) errors.default_reps = 'integer_range';
+        else if (
+          min.value !== undefined &&
+          max.value !== undefined &&
+          min.value > max.value
+        )
+          errors.default_reps = 'range_order';
+      }
     }
   }
 

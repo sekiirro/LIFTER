@@ -45,6 +45,37 @@ beforeAll(async () => {
 afterAll(async () => Promise.all([db.end(), concurrentDb.end()]));
 
 describe('T054 PR #43 variation compatibility over F16 overrides', () => {
+  it('finds a saved override beyond the first canonical page', async () => {
+    const prefix = `T054 paging ${randomUUID().slice(0, 8)}`;
+    const ids: string[] = [];
+    await db.begin(async (tx) => {
+      for (let index = 0; index < 51; index += 1) {
+        const id = randomUUID();
+        ids.push(id);
+        await tx`insert into public.exercises(id, created_by, current_version)
+          values (${id}, ${po.userId}, 1)`;
+        await tx`insert into public.exercise_versions(exercise_id, version, payload, created_by)
+          values (${id}, 1, ${tx.json({ name_en: `${prefix} ${index}` })}, ${po.userId})`;
+      }
+    });
+    const target = [...ids].sort().at(-1)!;
+    await asActor(
+      trainerA.userId,
+      (tx) => tx`select public.catalog_write_exercise_override(
+        ${wsA}, ${target}, 0, ${randomUUID()},
+        ${tx.json({ notes: 'Override on the last canonical page' })}
+      )`,
+    );
+
+    const rows = await asActor(
+      trainerA.userId,
+      (tx) => tx`select result_id from public.catalog_search(
+        'variation', ${prefix}, '{"page_size":50}'::jsonb, null, ${wsA}
+      )`,
+    );
+    expect(rows.map((row) => row.result_id)).toContain(target);
+  });
+
   it('keeps workspace exercise and variation reads inside the trainer workspace under RLS', async () => {
     const exerciseId = await createExercise();
     const privateExerciseId = randomUUID();
