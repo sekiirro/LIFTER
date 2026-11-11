@@ -59,5 +59,8 @@ export function containsProhibitedInstruction(prompt: string): boolean {
 }
 `;
 
-fs.writeFileSync(path.join(root, 'lib', 'workout-planner', 'ai-prompt.ts'), out);
+fs.writeFileSync(
+  path.join(root, 'lib', 'workout-planner', 'ai-prompt.ts'),
+  out,
+);
 console.log('wrote ai-prompt.ts EN=' + en.length + ' AR=' + ar.length);

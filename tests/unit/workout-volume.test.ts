@@ -14,7 +14,10 @@ const MUSCLES: Record<string, MuscleMembership> = {
   squat: { primary: 'Quads', secondaries: ['Glutes'] },
 };
 
-function sessionDay(dayIndex: number, sets: { type: 'warmup' | 'working'; exerciseId: string }[]): VolumeDay {
+function sessionDay(
+  dayIndex: number,
+  sets: { type: 'warmup' | 'working'; exerciseId: string }[],
+): VolumeDay {
   return {
     dayIndex,
     kind: 'session',
@@ -75,9 +78,7 @@ describe('F17 volume pure function (FR-016, SC-007)', () => {
     expect(result.perWeek[1]!.days).toEqual([8]);
     expect(result.perWeek[1]!.totals).toEqual({ Quads: 1, Glutes: 0.5 });
     // Rest day contributes zero and appears in its session row as empty.
-    expect(
-      result.perSession.find((s) => s.dayIndex === 2)?.totals,
-    ).toEqual({});
+    expect(result.perSession.find((s) => s.dayIndex === 2)?.totals).toEqual({});
   });
 
   it('counts the final partial block as a week with no calendar date', () => {

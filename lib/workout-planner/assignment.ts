@@ -13,12 +13,10 @@ export type SelectionMode = 'all' | 'specific' | 'all_except';
 export type TargetMode = 'all_workspaces' | 'specific';
 
 export type AssignmentSelection =
-  | { mode: 'all' }
-  | { mode: 'specific' | 'all_except'; ids: string[] };
+  { mode: 'all' } | { mode: 'specific' | 'all_except'; ids: string[] };
 
 export type AssignmentTarget =
-  | { mode: 'all_workspaces' }
-  | { mode: 'specific'; ids: string[] };
+  { mode: 'all_workspaces' } | { mode: 'specific'; ids: string[] };
 
 export type AssignmentRequest = {
   operationKey: string;
@@ -41,9 +39,7 @@ export type AssignmentWorkspace = {
 };
 
 export type WorkspaceOutcome =
-  | 'assigned'
-  | 'skipped_already_assigned'
-  | 'no_copies';
+  'assigned' | 'skipped_already_assigned' | 'no_copies';
 
 export type AssignmentOutcome = {
   workspaceId: string;
@@ -55,7 +51,11 @@ export type AssignmentOutcome = {
 export type AssignmentResult = {
   operationKey: string;
   outcomes: AssignmentOutcome[];
-  created: { workspaceId: string; templateId: string; templateVersion: number }[];
+  created: {
+    workspaceId: string;
+    templateId: string;
+    templateVersion: number;
+  }[];
   flagUpdates: { workspaceId: string; everReceivedGlobal: boolean }[];
   error?: 'zero_total';
 };

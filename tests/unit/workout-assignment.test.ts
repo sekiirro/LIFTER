@@ -18,7 +18,11 @@ const TEMPLATES: AssignmentTemplate[] = Array.from({ length: 10 }, (_, i) => ({
 
 function workspaces(): AssignmentWorkspace[] {
   return [
-    { id: 'Kendo', everReceivedGlobal: true, heldTemplateIds: ['t1', 't2', 't3'] },
+    {
+      id: 'Kendo',
+      everReceivedGlobal: true,
+      heldTemplateIds: ['t1', 't2', 't3'],
+    },
     {
       id: 'Alpha',
       everReceivedGlobal: true,
@@ -32,12 +36,18 @@ function workspaces(): AssignmentWorkspace[] {
 describe('F17 assignment state machine (FR-010, FR-011, SC-003, SC-004)', () => {
   it('All Workspaces x All Templates: skips ever-assigned, assigns the rest', () => {
     const result = planAssignment(
-      { operationKey: 'op-1', selection: { mode: 'all' }, target: { mode: 'all_workspaces' } },
+      {
+        operationKey: 'op-1',
+        selection: { mode: 'all' },
+        target: { mode: 'all_workspaces' },
+      },
       TEMPLATES,
       workspaces(),
     );
     expect(result.error).toBeUndefined();
-    const byId = Object.fromEntries(result.outcomes.map((o) => [o.workspaceId, o]));
+    const byId = Object.fromEntries(
+      result.outcomes.map((o) => [o.workspaceId, o]),
+    );
     expect(byId.Kendo!.outcome).toBe('skipped_already_assigned');
     expect(byId.Kendo!.createdTemplateIds).toEqual([]);
     expect(byId.Alpha!.outcome).toBe('skipped_already_assigned');
@@ -78,7 +88,9 @@ describe('F17 assignment state machine (FR-010, FR-011, SC-003, SC-004)', () => 
       workspaces(),
     );
     expect(mixed.error).toBeUndefined();
-    const byId = Object.fromEntries(mixed.outcomes.map((o) => [o.workspaceId, o]));
+    const byId = Object.fromEntries(
+      mixed.outcomes.map((o) => [o.workspaceId, o]),
+    );
     expect(byId.Alpha!.outcome).toBe('no_copies');
     expect(byId.Alpha!.createdTemplateIds).toEqual([]);
     expect(byId.Beta!.outcome).toBe('assigned');
@@ -100,7 +112,11 @@ describe('F17 assignment state machine (FR-010, FR-011, SC-003, SC-004)', () => 
 
   it('never tops up an intentionally partial workspace under All Workspaces', () => {
     const result = planAssignment(
-      { operationKey: 'op-5', selection: { mode: 'all_except', ids: ['t10'] }, target: { mode: 'all_workspaces' } },
+      {
+        operationKey: 'op-5',
+        selection: { mode: 'all_except', ids: ['t10'] },
+        target: { mode: 'all_workspaces' },
+      },
       TEMPLATES,
       workspaces(),
     );

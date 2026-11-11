@@ -4,12 +4,7 @@
 // every actor (no existence/count/distinction leak).
 
 export type F17Role =
-  | 'PO'
-  | 'WO'
-  | 'Trainer'
-  | 'Sales'
-  | 'client'
-  | 'unaffiliated';
+  'PO' | 'WO' | 'Trainer' | 'Sales' | 'client' | 'unaffiliated';
 
 export type F17Actor = {
   role: F17Role;
@@ -30,8 +25,7 @@ export type F17Action =
   | 'volume.read';
 
 export type F17Decision =
-  | { allowed: true; code: 'ok' }
-  | { allowed: false; code: 'denied' };
+  { allowed: true; code: 'ok' } | { allowed: false; code: 'denied' };
 
 const STAFF_ROLES: ReadonlySet<F17Role> = new Set(['PO', 'WO', 'Trainer']);
 

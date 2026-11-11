@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import {
-  createSchemaRegistry,
-} from '../../lib/workout-planner/schema-registry';
+import { createSchemaRegistry } from '../../lib/workout-planner/schema-registry';
 
 // T010-note: FR-022 schema registry fail-closed. Registered immutable
 // parsers; unknown version fails generically; retained versions render.

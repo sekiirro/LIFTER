@@ -7,13 +7,18 @@
 
 export const PLAN_CONTENT_TOKEN = '{{PLAN_CONTENT}}';
 
-export const AI_PROMPT_EN: string = "You are formatting a workout plan. Turn the plan below into a clean, easy-to-follow document for the client.\n\nRules:\n1. Keep every exercise, set, rep, load, rest time, RIR, note and alternative exactly as written. Do not add, remove, replace or reorder anything.\n2. Do not change any number or unit.\n3. Do not suggest new exercises or alternatives.\n4. Make each exercise name and each alternative name a clickable link to its video URL listed in the plan. If an item has no URL, show its name as plain text.\n5. Keep exercise names in English exactly as written.\n6. Keep the coach's notes word for word.\n7. Write the headings and labels in English.\n8. If something is unclear, leave it as written instead of guessing.\n\nPlan:\n{{PLAN_CONTENT}}\n";
+export const AI_PROMPT_EN: string =
+  "You are formatting a workout plan. Turn the plan below into a clean, easy-to-follow document for the client.\n\nRules:\n1. Keep every exercise, set, rep, load, rest time, RIR, note and alternative exactly as written. Do not add, remove, replace or reorder anything.\n2. Do not change any number or unit.\n3. Do not suggest new exercises or alternatives.\n4. Make each exercise name and each alternative name a clickable link to its video URL listed in the plan. If an item has no URL, show its name as plain text.\n5. Keep exercise names in English exactly as written.\n6. Keep the coach's notes word for word.\n7. Write the headings and labels in English.\n8. If something is unclear, leave it as written instead of guessing.\n\nPlan:\n{{PLAN_CONTENT}}\n";
 
-export const AI_PROMPT_AR: string = "أنت تقوم بتنسيق خطة تمارين. حوّل الخطة التالية إلى مستند واضح وسهل المتابعة للمتدرب.\n\nالقواعد:\n1. احتفظ بكل تمرين ومجموعة وعدد تكرارات ووزن ووقت راحة وRIR وملاحظة وبديل كما هو مكتوب تمامًا. لا تُضِف أي شيء ولا تحذفه ولا تستبدله ولا تغيّر ترتيبه.\n2. لا تغيّر أي رقم أو وحدة.\n3. لا تقترح تمارين أو بدائل جديدة.\n4. اجعل اسم كل تمرين واسم كل بديل رابطًا قابلًا للنقر يفتح رابط الفيديو الخاص به المذكور في الخطة. إذا لم يكن للعنصر رابط، فاعرض اسمه كنص عادي.\n5. أبقِ أسماء التمارين باللغة الإنجليزية كما هي مكتوبة.\n6. انقل ملاحظات الكابتن حرفيًا.\n7. اكتب العناوين والتسميات باللغة العربية.\n8. إذا كان هناك شيء غير واضح، فاتركه كما هو مكتوب ولا تخمّن.\n\nالخطة:\n{{PLAN_CONTENT}}\n";
+export const AI_PROMPT_AR: string =
+  'أنت تقوم بتنسيق خطة تمارين. حوّل الخطة التالية إلى مستند واضح وسهل المتابعة للمتدرب.\n\nالقواعد:\n1. احتفظ بكل تمرين ومجموعة وعدد تكرارات ووزن ووقت راحة وRIR وملاحظة وبديل كما هو مكتوب تمامًا. لا تُضِف أي شيء ولا تحذفه ولا تستبدله ولا تغيّر ترتيبه.\n2. لا تغيّر أي رقم أو وحدة.\n3. لا تقترح تمارين أو بدائل جديدة.\n4. اجعل اسم كل تمرين واسم كل بديل رابطًا قابلًا للنقر يفتح رابط الفيديو الخاص به المذكور في الخطة. إذا لم يكن للعنصر رابط، فاعرض اسمه كنص عادي.\n5. أبقِ أسماء التمارين باللغة الإنجليزية كما هي مكتوبة.\n6. انقل ملاحظات الكابتن حرفيًا.\n7. اكتب العناوين والتسميات باللغة العربية.\n8. إذا كان هناك شيء غير واضح، فاتركه كما هو مكتوب ولا تخمّن.\n\nالخطة:\n{{PLAN_CONTENT}}\n';
 
 export type AiPromptLocale = 'en' | 'ar';
 
-export function buildAiPrompt(locale: AiPromptLocale, planContent: string): string {
+export function buildAiPrompt(
+  locale: AiPromptLocale,
+  planContent: string,
+): string {
   const template = locale === 'en' ? AI_PROMPT_EN : AI_PROMPT_AR;
   return template.split(PLAN_CONTENT_TOKEN).join(planContent);
 }

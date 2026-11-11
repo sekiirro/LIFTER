@@ -36,7 +36,13 @@ describe('F17 Copy AI Prompt builder (FR-019, SC-009)', () => {
 
   it('matches the approved byte-exact locale contract', () => {
     const contract = readFileSync(
-      join(process.cwd(), 'specs', '017-workout-planner', 'contracts', 'copy-ai-prompt.md'),
+      join(
+        process.cwd(),
+        'specs',
+        '017-workout-planner',
+        'contracts',
+        'copy-ai-prompt.md',
+      ),
       'utf8',
     );
     expect(contract).toContain(AI_PROMPT_EN);

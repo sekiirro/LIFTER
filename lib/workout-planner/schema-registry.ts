@@ -8,8 +8,7 @@
 export type SchemaParser = (doc: unknown) => unknown;
 
 export type SchemaParseResult =
-  | { ok: true; value: unknown }
-  | { ok: false; code: 'unknown_schema' };
+  { ok: true; value: unknown } | { ok: false; code: 'unknown_schema' };
 
 export type SchemaRegistry = {
   register: (version: number, parser: SchemaParser) => void;
@@ -20,8 +19,10 @@ export function createSchemaRegistry(): SchemaRegistry {
   const parsers = new Map<number, SchemaParser>();
   return {
     register(version: number, parser: SchemaParser): void {
-      if (!Number.isInteger(version)) throw new Error('version must be an integer');
-      if (parsers.has(version)) throw new Error(`schema version ${version} already registered`);
+      if (!Number.isInteger(version))
+        throw new Error('version must be an integer');
+      if (parsers.has(version))
+        throw new Error(`schema version ${version} already registered`);
       parsers.set(version, parser);
     },
     parse(doc: unknown): SchemaParseResult {

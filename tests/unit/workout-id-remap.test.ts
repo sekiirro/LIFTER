@@ -84,7 +84,11 @@ describe('F17 id continuity and duplicate remap (FR-002, SC-012)', () => {
       expect(originalSetIds.has(set.id)).toBe(false);
     }
     // Field-for-field equality apart from ids.
-    expect({ ...copy, id: 'item-A', sets: copy.sets.map((s, i) => ({ ...s, id: original.sets[i]!.id })) }).toEqual(original);
+    expect({
+      ...copy,
+      id: 'item-A',
+      sets: copy.sets.map((s, i) => ({ ...s, id: original.sets[i]!.id })),
+    }).toEqual(original);
     // No collisions with the source document.
     const before = new Set(collectIds(day));
     for (const id of collectIds({ ...day, items: [copy] } as WorkoutDay)) {
