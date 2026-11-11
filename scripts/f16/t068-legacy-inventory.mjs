@@ -378,6 +378,27 @@ export async function readInventory(db) {
   });
 }
 
+/**
+ * Reads the identity set the cutover guard compares against (S48-PO-17).
+ * IDs only: no payload, note, URL or other content is read or written.
+ */
+async function readIdentitySet(db) {
+  return db.begin(async (tx) => {
+    await tx`set transaction read only`;
+    const [exercises, workspaceExercises] = await Promise.all([
+      tx`select id from public.exercises order by id`,
+      tx`select workspace_id, id from public.workspace_exercises order by workspace_id, id`,
+    ]);
+    return {
+      exercises: exercises.map((row) => row.id),
+      workspace_exercises: workspaceExercises.map((row) => [
+        row.workspace_id,
+        row.id,
+      ]),
+    };
+  });
+}
+
 async function main() {
   if (!process.env.SUPABASE_DB_URL)
     throw new Error(
@@ -386,12 +407,15 @@ async function main() {
   const args = process.argv.slice(2);
   const outputIndex = args.indexOf('--output');
   const mainShaIndex = args.indexOf('--main-sha');
+  const identityIndex = args.indexOf('--identity-json');
   const outputPath = resolve(
     outputIndex >= 0
       ? args[outputIndex + 1]
       : 'specs/016-exercise-food-catalogs/evidence/t068-stack-a-inventory.json',
   );
   const mainSha = mainShaIndex >= 0 ? args[mainShaIndex + 1] : 'not-provided';
+  const identityPath =
+    identityIndex >= 0 ? resolve(args[identityIndex + 1]) : null;
   const db = postgres(process.env.SUPABASE_DB_URL, { max: 1, prepare: false });
   try {
     const report = await readInventory(db);
@@ -399,6 +423,11 @@ async function main() {
     await mkdir(dirname(outputPath), { recursive: true });
     const serialized = serializeInventoryReport(report);
     await writeFile(outputPath, serialized, { encoding: 'utf8', flag: 'wx' });
+    if (identityPath) {
+      const identitySet = await readIdentitySet(db);
+      await mkdir(dirname(identityPath), { recursive: true });
+      await writeFile(identityPath, `${JSON.stringify(identitySet)}\n`, 'utf8');
+    }
     process.stdout.write(serialized);
   } finally {
     await db.end({ timeout: 5 });

@@ -1,6 +1,58 @@
 -- F16 T054/T062: retire PR #43 variation storage and delete every pre-cutover
 -- exercise identity, version, video, lifecycle row and override on this replay.
 -- The T068 Stack A inventory is rerun immediately before this migration is applied.
+--
+-- Deployment gate (S48-PO-17, ruling S48-R23): the transaction below refuses to
+-- delete anything unless the locked identity set equals the set the T068 gate
+-- verified. Capture the verified set with
+--   node scripts/f16/t068-legacy-inventory.mjs --identity-json <path>
+-- and expose it to the migration session, for example:
+--   set app.cutover_verified_identities = '<json from --identity-json>';
+-- JSON shape: {"exercises":[uuid...],"workspace_exercises":[[workspace,uuid],...]}
+-- A fresh database has no identities, so a replay needs no input.
+
+create or replace function app_private.cutover_identity_guard(p_verified text)
+returns void
+language plpgsql stable security definer set search_path = '' as $$
+declare
+  verified jsonb;
+  live_exercises jsonb;
+  live_workspace_exercises jsonb;
+begin
+  select coalesce(jsonb_agg(id order by id), '[]'::jsonb)
+    into live_exercises from public.exercises;
+  select coalesce(
+    jsonb_agg(jsonb_build_array(workspace_id, id) order by workspace_id, id),
+    '[]'::jsonb
+  ) into live_workspace_exercises
+    from public.workspace_exercises;
+
+  -- Nothing to delete: the gate is trivially satisfied on a fresh/replayed DB.
+  if live_exercises = '[]'::jsonb and live_workspace_exercises = '[]'::jsonb then
+    return;
+  end if;
+
+  if p_verified is null or btrim(p_verified) = '' then
+    raise exception 'catalog_cutover_gate_missing' using errcode = 'P0001';
+  end if;
+  begin
+    verified := p_verified::jsonb;
+  exception when others then
+    raise exception 'catalog_cutover_gate_invalid' using errcode = 'P0001';
+  end;
+
+  if jsonb_typeof(verified) <> 'object'
+    or verified->'exercises' is null
+    or verified->'workspace_exercises' is null
+    or verified->'exercises' is distinct from live_exercises
+    or verified->'workspace_exercises' is distinct from live_workspace_exercises then
+    raise exception 'catalog_cutover_identity_set_changed' using errcode = 'P0001';
+  end if;
+end;
+$$;
+alter function app_private.cutover_identity_guard(text) owner to postgres;
+revoke all on function app_private.cutover_identity_guard(text)
+  from public, anon, authenticated, service_role;
 
 begin;
 
@@ -11,6 +63,17 @@ lock table public.exercise_versions, public.workspace_exercise_versions,
   public.exercise_overrides, public.exercise_override_versions,
   public.exercise_version_alternatives, public.workspace_exercise_version_alternatives,
   public.exercise_override_alternatives in share row exclusive mode;
+
+-- Fail closed before the first write: the locked identity set must match the
+-- set the T068 gate verified. Any identity created or removed after the gate,
+-- including one committed before these locks, aborts with zero deletes.
+do $$
+begin
+  perform app_private.cutover_identity_guard(
+    current_setting('app.cutover_verified_identities', true)
+  );
+end;
+$$;
 
 -- These deferred pointer constraints form the reverse half of each identity /
 -- version pair. Drop and recreate them inside this one transactional cutover.
