@@ -33,11 +33,14 @@ export const EXPORT_FIELDS = [
 
 export type ExportField = (typeof EXPORT_FIELDS)[number];
 
+/** True when the name is one of the FR-018 export fields. */
 export function isExportField(field: string): field is ExportField {
   return (EXPORT_FIELDS as readonly string[]).includes(field);
 }
 
-const FORMULA_LEAD = /^[ \t\r\n\v\f\u0000-\u0020\u200B\uFEFF]*[=+\-@]/;
+// The whitespace matcher covers ASCII and Unicode spaces (including
+// U+00A0); the explicit ranges keep C0 controls and ZWSP.
+const FORMULA_LEAD = /^[\s\u0000-\u0008\u000E-\u0020\u200B]*[=+\-@]/;
 
 export type SafeCell = {
   value: string;

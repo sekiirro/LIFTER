@@ -26,9 +26,10 @@ export type WorkoutDay = {
 export type NewId = () => string;
 
 function clone<T>(value: T): T {
-  return JSON.parse(JSON.stringify(value)) as T;
+  return structuredClone(value);
 }
 
+/** Duplicate one exercise item, remapping the item id and every descendant set id. */
 export function duplicateItem(item: WorkoutItem, newId: NewId): WorkoutItem {
   const copy = clone(item);
   copy.id = newId();
@@ -36,6 +37,7 @@ export function duplicateItem(item: WorkoutItem, newId: NewId): WorkoutItem {
   return copy;
 }
 
+/** Duplicate one day, remapping the day id and all descendant item and set ids. */
 export function duplicateDay(day: WorkoutDay, newId: NewId): WorkoutDay {
   const copy = clone(day);
   copy.id = newId();

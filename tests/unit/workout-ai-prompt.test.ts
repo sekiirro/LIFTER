@@ -124,6 +124,12 @@ describe('F17 Copy AI Prompt builder (FR-019, SC-009)', () => {
     }
   });
 
+  it('does not let an early negated verb consume a later clause (CR-84)', () => {
+    expect(
+      containsProhibitedInstruction('Do not add notes. Add exercises.'),
+    ).toBe(true);
+  });
+
   it('flags a prohibited instruction following a negation in a new clause (NEW-2)', () => {
     expect(
       containsProhibitedInstruction(

@@ -65,10 +65,12 @@ export type AssignmentResult = {
 export type AssignmentState =
   'never_assigned' | 'intentionally_partial' | 'own_templates_only';
 
+/** True when the workspace holds self-created templates (derived, not stored). */
 export function hasOwnTemplates(workspace: AssignmentWorkspace): boolean {
   return workspace.hasOwnTemplates === true;
 }
 
+/** Classify the durable assignment state: never assigned, intentionally partial, or own-templates-only. */
 export function assignmentState(
   workspace: AssignmentWorkspace,
 ): AssignmentState {
@@ -83,6 +85,7 @@ export function assignmentState(
   return 'never_assigned';
 }
 
+/** Plan one assignment run: per-workspace assigned/skipped/no_copies outcomes, created copies, and flag updates. Rejects with zero_total before writes when the batch would create no copies. */
 export function planAssignment(
   request: AssignmentRequest,
   templates: AssignmentTemplate[],

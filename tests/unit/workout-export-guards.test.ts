@@ -67,6 +67,15 @@ describe('F17 export field coverage (FR-018, SC-008)', () => {
     }
   });
 
+  it('flags formula markers after Unicode whitespace (CR-84)', () => {
+    for (const attack of [' =1+1', ' @SUM(A1)']) {
+      const cell = toSafeCell(attack);
+      expect(cell.value).toBe(attack);
+      expect(cell.type).toBe('text');
+      expect(cell.quotePrefix).toBe(true);
+    }
+  });
+
   it('does not flag non-leading formula characters', () => {
     for (const plain of ['a=1', 'note -5 kg', 'x@y', '1+1']) {
       expect(toSafeCell(plain).quotePrefix).toBe(false);

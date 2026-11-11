@@ -15,6 +15,7 @@ export const AI_PROMPT_AR: string =
 
 export type AiPromptLocale = 'en' | 'ar';
 
+/** Build the locale prompt by substituting the single plan-content token. */
 export function buildAiPrompt(
   locale: AiPromptLocale,
   planContent: string,
@@ -72,14 +73,36 @@ function isNegated(text: string, index: number): boolean {
   return true;
 }
 
+// A frame never spans a clause boundary (`.!?` newline `;`): without this,
+// an early negated verb would consume a later clause's prohibited
+// instruction and suppress its detection (e.g. "Do not add notes. Add
+// exercises." matched from the first "add" through "exercises").
+const WITHIN_CLAUSE = '(?:(?![.!?\\n\\r;])[\\s\\S])';
+
 const PROHIBITED_FRAMES: RegExp[] = [
-  /\b(invent|replace|rename|add)\b[\s\S]{0,60}?\bexercises?\b/gi,
-  /\badd\b[\s\S]{0,40}?\bsets?\b/gi,
-  /\badd\b[\s\S]{0,40}?\bset counts?\b/gi,
-  /\b(alter|change)\b[\s\S]{0,80}?\b(reps?|load|rest|rir|set counts?|set count|order|programming values?|numbers?|units?)\b/gi,
-  /\b(generate|suggest)\b[\s\S]{0,60}?\b(alternatives?|exercises?)\b/gi,
+  new RegExp(
+    '\\b(invent|replace|rename|add)\\b' +
+      WITHIN_CLAUSE +
+      '{0,60}?\\bexercises?\\b',
+    'gi',
+  ),
+  new RegExp('\\badd\\b' + WITHIN_CLAUSE + '{0,40}?\\bsets?\\b', 'gi'),
+  new RegExp('\\badd\\b' + WITHIN_CLAUSE + '{0,40}?\\bset counts?\\b', 'gi'),
+  new RegExp(
+    '\\b(alter|change)\\b' +
+      WITHIN_CLAUSE +
+      '{0,80}?\\b(reps?|load|rest|rir|set counts?|set count|order|programming values?|numbers?|units?)\\b',
+    'gi',
+  ),
+  new RegExp(
+    '\\b(generate|suggest)\\b' +
+      WITHIN_CLAUSE +
+      '{0,60}?\\b(alternatives?|exercises?)\\b',
+    'gi',
+  ),
 ];
 
+/** True when the instruction scope asks the AI to invent/replace/rename/add content, alter programming values, or generate/suggest alternatives. */
 export function containsProhibitedInstruction(prompt: string): boolean {
   const scope = instructionScope(prompt);
   for (const pattern of PROHIBITED_FRAMES) {

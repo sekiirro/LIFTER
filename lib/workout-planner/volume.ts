@@ -47,20 +47,25 @@ function addCredit(totals: MuscleTotals, muscle: string, credit: number): void {
   totals[muscle] = (totals[muscle] ?? 0) + credit;
 }
 
+/** Compute per-session and per-week muscle volume over program-day blocks. */
 export function computeVolume(
   days: VolumeDay[],
   muscles: Record<string, MuscleMembership>,
 ): { perSession: SessionVolume[]; perWeek: WeekVolume[] } {
   const perSession: SessionVolume[] = days.map((day) => {
     const totals: MuscleTotals = {};
-    for (const item of day.items) {
-      const membership = muscles[item.exerciseId];
-      if (!membership) continue;
-      for (const set of item.sets) {
-        if (set.type !== 'working') continue;
-        addCredit(totals, membership.primary, 1.0);
-        for (const secondary of membership.secondaries) {
-          addCredit(totals, secondary, 0.5);
+    // Rest days contribute zero by definition (A3-7, SC-007): their items, if
+    // any are present, are never credited. Rows are still generated below.
+    if (day.kind === 'session') {
+      for (const item of day.items) {
+        const membership = muscles[item.exerciseId];
+        if (!membership) continue;
+        for (const set of item.sets) {
+          if (set.type !== 'working') continue;
+          addCredit(totals, membership.primary, 1.0);
+          for (const secondary of membership.secondaries) {
+            addCredit(totals, secondary, 0.5);
+          }
         }
       }
     }

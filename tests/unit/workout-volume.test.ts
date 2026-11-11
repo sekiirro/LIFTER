@@ -144,4 +144,22 @@ describe('F17 volume rest-day-only and empty-session (FR-016, SC-007)', () => {
     // NEW-7: the empty session must also own its per-week row.
     expect(result.perWeek).toEqual([{ week: 1, days: [1], totals: {} }]);
   });
+
+  it('credits zero for items on a rest day while keeping its rows (CR-84)', () => {
+    const days: VolumeDay[] = [
+      {
+        dayIndex: 2,
+        kind: 'rest',
+        items: [
+          {
+            exerciseId: 'bench',
+            sets: [{ type: 'working', exerciseId: 'bench' }],
+          },
+        ],
+      },
+    ];
+    const result = computeVolume(days, MUSCLES);
+    expect(result.perSession).toEqual([{ dayIndex: 2, totals: {} }]);
+    expect(result.perWeek).toEqual([{ week: 1, days: [2], totals: {} }]);
+  });
 });

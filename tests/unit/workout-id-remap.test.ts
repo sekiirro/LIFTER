@@ -174,4 +174,20 @@ describe('F17 id remap load variants and reps (FR-002, SC-012)', () => {
     ]);
     for (const id of fresh) expect(before.has(id)).toBe(false);
   });
+
+  it('preserves non-ID field values and keeps nested values independent (CR-84)', () => {
+    const item = {
+      id: 'item-N',
+      exercise: { source: 'global', identity_id: 'ex-1', version: 1 },
+      name: 'Row',
+      notes: undefined,
+      meta: { tags: ['a'] },
+      sets: [],
+    };
+    const copy = duplicateItem(item as WorkoutItem, makeIds('n'));
+    expect('notes' in copy).toBe(true);
+    expect(copy.meta).toEqual({ tags: ['a'] });
+    (copy.meta as { tags: string[] }).tags.push('b');
+    expect(item.meta).toEqual({ tags: ['a'] });
+  });
 });

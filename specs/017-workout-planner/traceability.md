@@ -1,6 +1,6 @@
 # F17 Traceability — spec-only draft (S42)
 
-**Status**: planning traceability. Nothing in F17 is implemented or verified. `PLANNED` means the requirement has tasks and test intent; it is **not** evidence. No task is ticked. No test was written or executed for this draft. Historic evidence is cited separately and is **not** acceptance evidence.
+**Status**: planning traceability plus Phase-0 evidence. The base draft (S42) planned every requirement with test intent but no evidence: `PLANNED` means the requirement has tasks and test intent; it is **not** evidence. Phase-0 pure-TS tasks (T001, T003, T053, T006, T007, T008, T009, T010) are ticked in `tasks.md` with executed tests cited in the Evidence column; every other row stays `PLANNED`. Historic evidence is cited separately and is **not** acceptance evidence.
 
 **Draft base**: `origin/main` `d0c5d1ac7ec8adb13ad12712f85cf9702a97a414`.
 **Artifacts**: `spec.md`, `plan.md`, `data-model.md`, `contracts/`, `tasks.md`, this file, `checklists/analyze.md`, `research/`.
@@ -75,4 +75,4 @@ No code, test, table name or migration version from these branches is adopted by
 
 ## 5. Verification statement
 
-No test suite, typecheck, lint or database check was run, because this change touches only Markdown under `specs/017-workout-planner/`. The only executed check is Prettier formatting on the touched files (recorded in the run report). Any future task may be ticked only after its tests executed and passed on the current head, with `commit + test file::name` evidence recorded here.
+Phase-0 pure-TS evidence (T001, T003, T053, T006, T007, T008, T009, T010) was executed on the implementation head: typecheck, lint and the full unit suite pass, and each ticked task cites its `commit + test file::name` evidence in the tables above. Any future task may be ticked only after its tests executed and passed on the current head, with evidence recorded here.

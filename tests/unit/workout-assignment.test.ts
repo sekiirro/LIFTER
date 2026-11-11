@@ -64,6 +64,29 @@ describe('F17 assignment state machine (FR-010, FR-011, SC-003, SC-004)', () => 
     expect(byId.Gamma!.outcome).toBe('assigned');
     expect(byId.Gamma!.createdTemplateIds).toHaveLength(10);
     expect(result.created).toHaveLength(20);
+    // Nitpick CR-84: the run must record the flag updates that make Beta and
+    // Gamma ineligible for later All Workspaces runs (SC-003 repeat stability).
+    expect(result.flagUpdates).toEqual([
+      { workspaceId: 'Beta', everReceivedGlobal: true },
+      { workspaceId: 'Gamma', everReceivedGlobal: true },
+    ]);
+    const updated = workspaces().map((w) =>
+      result.flagUpdates.some((f) => f.workspaceId === w.id)
+        ? { ...w, everReceivedGlobal: true }
+        : w,
+    );
+    const again = planAssignment(
+      {
+        operationKey: 'op-1b',
+        selection: { mode: 'all' },
+        target: { mode: 'all_workspaces' },
+      },
+      [...TEMPLATES, { id: 't11', version: 1, retired: false }],
+      updated,
+    );
+    expect(again.error).toBe('zero_total');
+    expect(again.created).toEqual([]);
+    expect(again.outcomes).toEqual([]);
   });
 
   it('Specific Workspaces return deliberately without duplicating held copies', () => {
@@ -140,14 +163,17 @@ describe('F17 assignment retired-held reporting (FR-010, FR-011, SC-004)', () =>
       { id: 't2', version: 5, retired: true },
       { id: 't3', version: 1, retired: false },
     ];
+    // Nitpick CR-84: a workspace holding a copy has the flag set (the flag
+    // is written whenever a copy is received), so the normal reporting path
+    // is a Specific Workspaces run.
     const ws: AssignmentWorkspace[] = [
-      { id: 'W', everReceivedGlobal: false, heldTemplateIds: ['t2'] },
+      { id: 'W', everReceivedGlobal: true, heldTemplateIds: ['t2'] },
     ];
     const result = planAssignment(
       {
         operationKey: 'op-r',
         selection: { mode: 'all' },
-        target: { mode: 'all_workspaces' },
+        target: { mode: 'specific', ids: ['W'] },
       },
       templates,
       ws,
