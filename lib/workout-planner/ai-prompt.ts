@@ -41,7 +41,8 @@ const PROHIBITED_VERBS = [
   'suggest',
 ];
 
-const NEGATION_CUE = /\b(do not|don't|never|must not|should not|cannot|can't|won't|no|not)\b|لا/gi;
+const NEGATION_CUE =
+  /\b(do not|don't|never|must not|should not|cannot|can't|won't|no|not)\b|لا/gi;
 
 function isNegated(prompt: string, index: number): boolean {
   const start = Math.max(0, index - 120);

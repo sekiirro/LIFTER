@@ -134,15 +134,11 @@ describe('F17 volume rest-day-only and empty-session (FR-016, SC-007)', () => {
       { dayIndex: 2, kind: 'rest', items: [] },
     ];
     const result = computeVolume(days, MUSCLES);
-    expect(result.perWeek).toEqual([
-      { week: 1, days: [1, 2], totals: {} },
-    ]);
+    expect(result.perWeek).toEqual([{ week: 1, days: [1, 2], totals: {} }]);
   });
 
   it('handles an empty session with zero totals', () => {
-    const days: VolumeDay[] = [
-      { dayIndex: 1, kind: 'session', items: [] },
-    ];
+    const days: VolumeDay[] = [{ dayIndex: 1, kind: 'session', items: [] }];
     const result = computeVolume(days, MUSCLES);
     expect(result.perSession).toEqual([{ dayIndex: 1, totals: {} }]);
   });

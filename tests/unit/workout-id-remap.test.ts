@@ -139,8 +139,16 @@ describe('F17 id remap load variants and reps (FR-002, SC-012)', () => {
       alternatives: [],
       sets: [
         { id: 's1', type: 'working', load: { mode: 'bodyweight' } },
-        { id: 's2', type: 'working', load: { mode: 'assisted', value: '20', unit: 'kg' } },
-        { id: 's3', type: 'working', load: { mode: 'added_weight', value: '10', unit: 'lb' } },
+        {
+          id: 's2',
+          type: 'working',
+          load: { mode: 'assisted', value: '20', unit: 'kg' },
+        },
+        {
+          id: 's3',
+          type: 'working',
+          load: { mode: 'added_weight', value: '10', unit: 'lb' },
+        },
       ],
     };
     const copy = duplicateItem(item as WorkoutItem, () => 'nid');
@@ -152,6 +160,10 @@ describe('F17 id remap load variants and reps (FR-002, SC-012)', () => {
     }).toEqual(item);
     expect(copy.reps).toEqual({ value: 8 });
     expect(copy.sets[0]!.load).toEqual({ mode: 'bodyweight' });
-    expect(copy.sets[1]!.load).toEqual({ mode: 'assisted', value: '20', unit: 'kg' });
+    expect(copy.sets[1]!.load).toEqual({
+      mode: 'assisted',
+      value: '20',
+      unit: 'kg',
+    });
   });
 });

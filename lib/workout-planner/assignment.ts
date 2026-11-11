@@ -64,9 +64,7 @@ export type AssignmentResult = {
 };
 
 export type AssignmentState =
-  | 'never_assigned'
-  | 'intentionally_partial'
-  | 'own_templates_only';
+  'never_assigned' | 'intentionally_partial' | 'own_templates_only';
 
 const OWN_TEMPLATE_KEYS = [
   'hasOwnTemplates',
@@ -90,7 +88,9 @@ export function hasOwnTemplates(workspace: AssignmentWorkspace): boolean {
   return false;
 }
 
-export function assignmentState(workspace: AssignmentWorkspace): AssignmentState {
+export function assignmentState(
+  workspace: AssignmentWorkspace,
+): AssignmentState {
   if (workspace.everReceivedGlobal) return 'intentionally_partial';
   if (hasOwnTemplates(workspace)) return 'own_templates_only';
   return 'never_assigned';

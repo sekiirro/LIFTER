@@ -144,7 +144,11 @@ describe('F17 assignment retired-held reporting (FR-010, FR-011, SC-004)', () =>
       { id: 'W', everReceivedGlobal: false, heldTemplateIds: ['t2'] },
     ];
     const result = planAssignment(
-      { operationKey: 'op-r', selection: { mode: 'all' }, target: { mode: 'all_workspaces' } },
+      {
+        operationKey: 'op-r',
+        selection: { mode: 'all' },
+        target: { mode: 'all_workspaces' },
+      },
       templates,
       ws,
     );
@@ -157,10 +161,18 @@ describe('F17 assignment retired-held reporting (FR-010, FR-011, SC-004)', () =>
 describe('F17 assignment state classification (FR-011)', () => {
   it('distinguishes never / partial / own-only states', () => {
     expect(
-      assignmentState({ id: 'a', everReceivedGlobal: false, heldTemplateIds: [] }),
+      assignmentState({
+        id: 'a',
+        everReceivedGlobal: false,
+        heldTemplateIds: [],
+      }),
     ).toBe('never_assigned');
     expect(
-      assignmentState({ id: 'b', everReceivedGlobal: true, heldTemplateIds: ['t1'] }),
+      assignmentState({
+        id: 'b',
+        everReceivedGlobal: true,
+        heldTemplateIds: ['t1'],
+      }),
     ).toBe('intentionally_partial');
     expect(
       assignmentState({
@@ -171,7 +183,11 @@ describe('F17 assignment state classification (FR-011)', () => {
       }),
     ).toBe('own_templates_only');
     expect(
-      hasOwnTemplates({ id: 'x', everReceivedGlobal: false, heldTemplateIds: [] }),
+      hasOwnTemplates({
+        id: 'x',
+        everReceivedGlobal: false,
+        heldTemplateIds: [],
+      }),
     ).toBe(false);
   });
 });
