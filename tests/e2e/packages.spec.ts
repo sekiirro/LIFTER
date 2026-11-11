@@ -158,6 +158,7 @@ test.describe('local-stack authenticated package acceptance (required for review
         await page
           .locator('select[name="packageId"]')
           .selectOption({ label: code });
+        await page.getByRole('radio', { name: 'Silver' }).check();
         await page.locator('input[name="nameAr"]').fill('test-authored-ar');
         await page.locator('input[name="nameEn"]').fill('test-authored-en');
         await page.locator('input[name="priceMinor"]').fill('9007199254740993');
