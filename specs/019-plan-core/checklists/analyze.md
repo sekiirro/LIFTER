@@ -37,3 +37,41 @@
 ## Analyze result
 
 CRITICAL 0; HIGH 0; open MCQ 0. The F13 continuity change and safe cleanup remain deployment prerequisites, and spec-only status authorizes no implementation or production data changes.
+
+## Analyze — 2026-11-11 01:19Z (S46-R1 cache-key carry-forward)
+
+**Analyzed:** 2026-11-11 01:19 UTC
+**Scope:** Spec-only carry-forward of the F16 FR-034 plan-identity cache-key clause into F19 FR-003, SC-007, and task T020, per architect ruling S46-R1 (`C:/Users/NEW LAP/.lifter/runs/s46-arch/s46-architect-rulings.md`) and the F16 T051 trace (`C:/Users/NEW LAP/.lifter/runs/s46-ds-t051-trace/report.md`, T051 PARTIAL). No cache, feature, task, or user-visible behavior is added.
+
+### Entry check
+
+- PASS — `spec.md` has numbered FRs, measurable SCs, and Given/When/Then scenarios for the touched scope: FR-003 (client plan viewing) and SC-007 (all-and-only-delivered-plan projection).
+- PASS — Clarifications and decision status are explicit. The added clause is a technical architect ruling (S46-R1), not a PO decision; no open MCQ was introduced and none remains.
+- PASS — `plan.md` covers the touched scope (sequencing step 3 implements the delivery projection for FR-003); `tasks.md` has T020 tagged FR-003/SC-007 and now carries the cache-key constraint.
+- PASS — This Analyze follows the latest spec/plan/tasks edits and reports 0 open CRITICAL/HIGH findings.
+
+### Searched locations for the owning FR and task
+
+- Client plan viewing: `spec.md` FR-003 (client projection returns every delivered plan with its latest published revision) and its acceptance SC-007; `tasks.md` T020 ("all-delivered-plan projection"); `contracts/plan-core-delivery-projection.md:9-16, 20-23` (projection result and inclusion rules); `traceability.md` FR-003 row.
+- Exercise Video resolution for published plans: `contracts/plan-core-delivery-projection.md:12` ("Video is resolved live by F16's authorized resolver") and `:22` ("Video is resolved only behind the authorized F19/P4 boundary"); `contracts/plan-core-client.md:13` ("Video remains live"); `spec.md` FR-008 (copy semantics: Video is not copied, F16 resolves it live); `data-model.md:39` (F16's authorized live resolver).
+- Cache-related text: none existed in `specs/019-plan-core` before this edit (case-insensitive search for `cache`/`cach` returned no match), which matches the F16 T051 trace finding that no F16–F19 task owns a client plan or video cache today.
+
+### Review findings and disposition
+
+| Severity | Finding                                                                    | Disposition                                                                                                                                                                                                                                                                                                                                                                                                        |
+| -------- | -------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
+| CRITICAL | 0 open                                                                     | None.                                                                                                                                                                                                                                                                                                                                                                                                              |
+| HIGH     | 0 open                                                                     | None.                                                                                                                                                                                                                                                                                                                                                                                                              |
+| RESOLVED | F16 FR-034 cache-key clause had no owner in F19                            | FR-003 and SC-007 now state that any cache introduced for client plan or exercise Video resolution keys on plan identity, workspace and user, that two plans with the same published version for the same user and workspace never share a cached result, and that a test and a drop-plan-identity mutation are required; T020 carries the same constraint. F16 T051 stays PARTIAL until a task owns such a cache. |
+| RESOLVED | Cache-key clause could be read as an F19 product decision or a new feature | The clause is conditional ("if any cache is introduced"), adds no cache, no default, no key format, and no user-visible behavior; it is recorded as an architect ruling, not a PO decision.                                                                                                                                                                                                                        |
+
+### Cross-artifact sweep
+
+- PASS — FR-003 (`spec.md`), SC-007 (`spec.md`), T020 (`tasks.md`), the FR-003 traceability row, the traceability carry-forward note, and this Analyze state the same conditional criterion with the same citations (F16 FR-034, F16 T051 PARTIAL, S46-R1).
+- PASS — The criterion is bound on the client-facing published-plan projection path only (FR-003/SC-007/T020); the copy-semantics FR-008 and its task T012 were reviewed and not edited, because the clause is about caching client plan views and Video resolution, not copy values.
+- PASS — No task, FR, SC, contract, data model, plan, or client-visible behavior was added or removed; only acceptance text, one task row, traceability rows, and this Analyze section changed.
+- PASS — Identifiers cited across `spec.md`, `tasks.md`, `traceability.md`, and this Analyze are defined in the owning artifacts; no PO identifier was marked pending.
+
+### Analyze result
+
+CRITICAL 0; HIGH 0; open MCQ 0. The plan-identity cache-key criterion is carried forward as an explicit acceptance criterion; implementation remains unauthorized and no cache exists in F19.
