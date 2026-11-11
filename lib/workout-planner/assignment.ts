@@ -68,12 +68,22 @@ export function planAssignment(
   const selection = request.selection;
   const target = request.target;
   const selectable = templates.filter((t) => !t.retired);
-  const selected =
+  // Selection for creation excludes retired templates (not selectable).
+  const selectedForCreation =
     selection.mode === 'all'
       ? selectable
       : selection.mode === 'specific'
         ? selectable.filter((t) => selection.ids.includes(t.id))
         : selectable.filter((t) => !selection.ids.includes(t.id));
+  // Selection for skip/reporting includes retired templates too, so that an
+  // already-held retired template identity is still reported as a skipped
+  // (workspace, template) pair (A2-8, SC-004, S43-PO-1).
+  const selectedForSkip =
+    selection.mode === 'all'
+      ? templates
+      : selection.mode === 'specific'
+        ? templates.filter((t) => selection.ids.includes(t.id))
+        : templates.filter((t) => !selection.ids.includes(t.id));
 
   const targets =
     target.mode === 'all_workspaces'
@@ -99,8 +109,8 @@ export function planAssignment(
       continue;
     }
     const held = new Set(workspace.heldTemplateIds);
-    const missing = selected.filter((t) => !held.has(t.id));
-    const skipped = selected.filter((t) => held.has(t.id));
+    const missing = selectedForCreation.filter((t) => !held.has(t.id));
+    const skipped = selectedForSkip.filter((t) => held.has(t.id));
     if (missing.length === 0) {
       outcomes.push({
         workspaceId: workspace.id,

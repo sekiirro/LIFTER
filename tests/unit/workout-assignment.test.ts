@@ -125,3 +125,24 @@ describe('F17 assignment state machine (FR-010, FR-011, SC-003, SC-004)', () => 
     expect(kendo?.createdTemplateIds).toEqual([]);
   });
 });
+
+describe('F17 assignment retired-held reporting (FR-010, FR-011, SC-004)', () => {
+  it('reports an already-held retired template as a skipped pair', () => {
+    const templates: AssignmentTemplate[] = [
+      { id: 't1', version: 1, retired: false },
+      { id: 't2', version: 5, retired: true },
+      { id: 't3', version: 1, retired: false },
+    ];
+    const ws: AssignmentWorkspace[] = [
+      { id: 'W', everReceivedGlobal: false, heldTemplateIds: ['t2'] },
+    ];
+    const result = planAssignment(
+      { operationKey: 'op-r', selection: { mode: 'all' }, target: { mode: 'all_workspaces' } },
+      templates,
+      ws,
+    );
+    expect(result.error).toBeUndefined();
+    expect(result.outcomes[0]!.createdTemplateIds).toEqual(['t1', 't3']);
+    expect(result.outcomes[0]!.skippedTemplateIds).toEqual(['t2']);
+  });
+});
