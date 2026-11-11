@@ -49,10 +49,10 @@ See [research.md](research.md) (decisions R1–R9), [data-model.md](data-model.m
 Generation sequence (server action `generateRecoveryLink(targetUserId)`):
 
 1. `requireActor()`. If there is no actor, the result is `denied`.
-2. RPC `recovery_link_authorize(target)` with the user JWT → `ws`. The error `not_permitted` maps to `denied`, `rate_limited` maps to `rate_limited`, and anything else maps to `unavailable`.
+2. RPC `recovery_link_authorize(target)` with the user JWT → `ws`. The call reserves the capacity it checked, under the same target and actor advisory locks that `recovery_link_record` uses, so a second concurrent request finds the capacity already taken and is rejected before any provider call. The error `not_permitted` maps to `denied`, `rate_limited` maps to `rate_limited`, and anything else maps to `unavailable`.
 3. `authorize(actor, 'generate_recovery_link', ws)` must be true, otherwise `denied` (second wall).
-4. Admin `getUserById(target)` → email (kept in memory only), then admin `generateLink({ type: 'recovery', email })` → `hashed_token`. On failure → `unavailable`.
-5. RPC `recovery_link_record(target)` with the user JWT. On failure → mapped as in step 2, and the link is discarded.
+4. Admin `getUserById(target)` → email (kept in memory only), then admin `generateLink({ type: 'recovery', email })` → `hashed_token`. On failure → `unavailable`, and the reservation from step 2 is released.
+5. RPC `recovery_link_record(target)` with the user JWT. It converts the reservation from step 2 into the issuance row and writes the audit event in the same transaction. On failure → mapped as in step 2, the link is discarded, and the reservation is released so its capacity returns to the pre-request count.
 6. Return `{ status: 'ok', link: buildRecoveryUrl(APP_ORIGIN, hashed_token) }`.
 
 ## NEEDS DECISION

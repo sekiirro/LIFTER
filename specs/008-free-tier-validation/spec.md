@@ -77,7 +77,7 @@ The PO receives one report in a fixed format. It shows each limit, the measured 
 
 ## NEEDS DECISION
 
-- **ND-F8-1 — Pilot volumes. Decided (S31-PO-4, illustrative pilot only):** 2 workspaces × 150 clients/workspace × 2 staff/workspace × 2 plans/client × 2 new plan versions/client/month. This is an illustrative pilot input; verify schema and units before measurement.
+- **ND-F8-1 — Pilot volumes. Decided (S31-PO-4, illustrative pilot only):** the pilot inputs are independent values, not factors of one product: 2 workspaces; 150 clients per workspace; 2 staff per workspace; 2 plans per client; 2 new plan versions per client per month. Derived volumes: 2 workspaces × 150 clients per workspace = 300 clients, and 300 clients × 2 new plan versions per client per month = 600 new plan versions per month. The staff count and the plans-per-client count are inputs for other tables and are not factors of the plan-version volume. This is an illustrative pilot input; verify schema and units before measurement.
 - **ND-F8-2 — Deployment approval** for the measured run: which Cloudflare account, which Supabase organization/project (see the eligibility report), and the region (bounded by B4).
 - **ND-F8-3 — Authenticated route measurement**: whether a dedicated test account may be used against the approved staging environment.
 
@@ -91,7 +91,7 @@ The PO receives one report in a fixed format. It shows each limit, the measured 
 
 ### S31-PO-4 decision refresh — 2026-11-04
 
-S31-PO-4 decided ND-F8-1 as illustrative pilot values only: 2 workspaces × 150 clients/workspace × 2 staff/workspace × 2 plans/client × 2 new plan versions/client/month. T012 verifies schema units before recording table-level volumes. ND-F8-2/3 remain unresolved; no deployment or authenticated-route measurement is authorized by this refresh.
+S31-PO-4 decided ND-F8-1 as illustrative pilot values only: 2 workspaces; 150 clients per workspace; 2 staff per workspace; 2 plans per client; 2 new plan versions per client per month. These are independent inputs, so the derived monthly new plan versions are 300 clients × 2 new plan versions per client per month = 600 new plan versions per month. T012 verifies schema units before recording table-level volumes. ND-F8-2/3 remain unresolved; no deployment or authenticated-route measurement is authorized by this refresh.
 
 ## Assumptions
 

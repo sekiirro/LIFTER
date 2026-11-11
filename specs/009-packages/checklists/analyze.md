@@ -173,7 +173,7 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 ## 2026-11-11T02:40:45Z Analyze — merge of main d1b1aff3 (PR #77 F13 continuity), no PR content change
 
 - Scope: merged main tip d1b1aff3; conflict resolution only. 3 hunks, all keep-both: HEAD entry-check table + MAIN S43-PO-8 tier-rank bullets; HEAD A1-A6 findings table + MAIN Evidence-status section; HEAD S33-S46 history + MAIN tier-rank amendment note. No statement chosen between alternatives; no PO text altered.
-- Entry: numbered FR-001..FR-036, measurable SC-001..SC-026 (historical merge note recorded FR-001..FR-034 at merge time; FR-035/FR-036 and SC-024..SC-026 are in the current spec), Given/When/Then scenarios, Clarifications register, FR-tagged tasks T042-T078 (T078 authorisation/audit task added by S43-PO-8) present; this pass follows the merge.
+- Entry: numbered FR-001..FR-036, measurable SC-001..SC-026 (historical merge note recorded FR-001..FR-034 at merge time; FR-035/FR-036 and SC-024..SC-026 are in the current spec), Given/When/Then scenarios, Clarifications register, FR-tagged tasks T042-T078 (T078 is the tier-names and workspace-overrides task added by S43-PO-8, covering PO global per-locale renaming and workspace-local Workspace Owner overrides) present; this pass follows the merge.
 - Findings: 0 CRITICAL, 0 HIGH. Pre-existing BLOCKED-COPY and review gates unchanged.
 
 ## S47 CodeRabbit round-6 review-fix analysis — 2026-11-11T06:24:05Z
@@ -181,4 +181,11 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - Scope: CodeRabbit review-body findings F17–F18 (Greptile findings placement, entry-check inventory). The Greptile findings now sit under their heading with the merged history after them; the entry-check row and merge entry are marked as historical snapshots with the current FR-001..FR-036 / SC-001..SC-026 / T042-T078 inventory stated.
 - Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
+- Verdict: PASS for this documentation-only correction.
+
+## S48 CodeRabbit round-7 review-fix analysis - 2026-11-11T14:45:00Z
+
+- Scope: CodeRabbit inline-thread finding on the S47 merge-entry inventory line above. The parenthetical description of T078 now matches the task description in `tasks.md` and the traceability rows (FR-035 / SC-025): T078 is the tier-names and workspace-overrides task covering PO global per-locale renaming and workspace-local Workspace Owner overrides. The inventory itself (FR-001..FR-036, SC-001..SC-026, T042-T078) is unchanged, and no authorization or audit task is claimed for T078.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T078 resolves in `tasks.md` and in the traceability rows; no task status changed.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no tests ran and no status changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.

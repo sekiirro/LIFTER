@@ -31,5 +31,5 @@
 
 ## Notes
 
-- Following project convention (F2/F3/F5), owner sub-decisions are tracked as ND-F4 items rather than `[NEEDS CLARIFICATION]` questions. S31-PO-2/3 resolves ND-F4-1,2,4,5,6; ND-F4-3 was resolved by the 2026-10-29 PO decision; S35-PO-1 decided ND-F4-7. Its implementation and verification remain open; no additional product decision is needed. Approved new behavior has not been implemented in this docs-only change.
+- Following project convention (F2/F3/F5), owner sub-decisions are tracked as ND-F4 items rather than `[NEEDS CLARIFICATION]` questions. S31-PO-2/3 resolves ND-F4-1,2,4,6; ND-F4-3 was resolved by the 2026-10-29 PO decision; S35-PO-1 decided ND-F4-5 and ND-F4-7, as recorded in the D-19 row of the decision register. ND-F4-7's implementation and verification remain open; no additional product decision is needed. Approved new behavior has not been implemented in this docs-only change.
 - The spec names the existing `authorize()` check and the audit action `recovery_link.generated` because they are project-level contracts from F3/F5, not new technology choices.

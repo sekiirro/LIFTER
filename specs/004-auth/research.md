@@ -30,23 +30,24 @@
   - Consuming the token only on POST stops link scanners and chat previews from burning the link.
   - `APP_ORIGIN` comes from server configuration, never from the request `Host` header, to prevent host-header injection.
   - The default `action_link` would send the client to the Supabase domain and needs redirect-URL configuration.
-- **Expiry**: PO decision ND-F4-3 requires 60 minutes in all environments; the 15-minute recovery session TTL is the approved requirement, but enforcement is not currently implemented and remains a pre-production blocker (the application check does not terminate the session or block direct Auth API use after that time; see README and docs/13-production-readiness.md AI-04). S31-PO-2 confirms D-19; AI-04 in docs/13-production-readiness.md tracks hosted provider-expiry verification. The provider's prior local default is not a policy source.
+- **Expiry**: PO decision ND-F4-3 requires 60 minutes in all environments; the 15-minute recovery session TTL is the approved requirement. The password-setting action enforces it: `app/auth/recovery/actions.ts` calls `isRecoverySession` before `updateUser`, and `lib/auth/recovery-session.ts` caps the recovery session at 900 seconds (`RECOVERY_SESSION_MAX_AGE_SECONDS`). What is still not enforced is the server-side session termination, or a block on direct Auth API use after that time; that remains a pre-production blocker (see README and docs/13-production-readiness.md AI-04). S31-PO-2 confirms D-19; AI-04 in docs/13-production-readiness.md tracks hosted provider-expiry verification. The provider's prior local default is not a policy source.
 
 ## R5 — Audit and rate-limit ordering (two walls, no orphaned links)
 
 - **Decision**: The flow has four steps.
-  1. `public.recovery_link_authorize(target)` (RPC, user JWT): checks the capability on the target's workspace, the target kind, and the rate limits. It returns the workspace id or raises a generic error.
+  1. `public.recovery_link_authorize(target)` (RPC, user JWT): checks the capability on the target's workspace, the target kind, and the rate limits, and reserves the capacity it checked under the same target and actor advisory locks that step 4 uses. It returns the workspace id or raises a generic error.
   2. The app-layer `authorize(actor, 'generate_recovery_link', ws)`.
   3. `generateLink` (service role).
-  4. `public.recovery_link_record(target)` (RPC, user JWT): repeats every check under a transaction advisory lock on the target and the actor, then inserts into `recovery_link_issuances`. Its audit trigger writes `recovery_link.generated` in the same transaction.
+  4. `public.recovery_link_record(target)` (RPC, user JWT): repeats every check under a transaction advisory lock on the target and the actor, converts the reservation from step 1 into the `recovery_link_issuances` row, and releases the reservation in the same transaction. Its audit trigger writes `recovery_link.generated` in the same transaction.
 
   The link is returned to the UI only after step 4 commits.
 
 - **Rationale**:
   - Unauthorized callers never reach `generateLink`. Otherwise they could invalidate a client's live link, and the call would reveal that the account exists.
-  - Every link shown has exactly one audit row (FR-009, SC-004). If step 4 fails (a lost race on the limit, or an audit failure), the link is never shown.
+  - Capacity is reserved before step 3, so two concurrent requests cannot both reach the provider when only one issuance is allowed: the second is rejected with `rate_limited` at step 1 and never supersedes a live link. The reservation is released when step 3 or step 4 fails, so the pre-request counts are restored.
+  - Every link shown has exactly one audit row (FR-009, SC-004). If step 4 fails (an audit failure, for example), the link is never shown.
   - The audit actor is `auth.uid()`, because step 4 runs with the user's JWT, not the service role.
-- **Accepted residual**: if step 3 succeeds and step 4 fails, the client's earlier unused link is superseded without an audit row. Nobody can see the new link. This needs a race on the limit or a DB failure between two calls.
+- **Accepted residual**: if step 3 succeeds and step 4 fails, the client's earlier unused link is superseded without an audit row. Nobody can see the new link. This needs a DB failure between two calls; the limit race that used to reach this residual is removed by the step-1 reservation, and a reservation that is never released expires with the window it consumed.
 
 ## R6 — Client target before P1 (ND-F4-5)
 

@@ -245,3 +245,10 @@ Scope: FR-022, FR-027, SC-012, T028 and the pending-marker matcher.
 - Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T033 and T025 [FR-027, SC-016] are now unique; all FR/SC/task tags resolve.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
 - Verdict: PASS for this documentation-only correction.
+
+## S48 CodeRabbit round-7 review-fix analysis - 2026-11-11T14:45:00Z
+
+- Scope: CodeRabbit inline-thread findings on this head. The FR-022/SC-012 traceability row now records the current PARTIAL status, and the earlier VERIFIED (partition) result is marked as historical; this agrees with the S41-R12 entry above, which already recorded PARTIAL because the cited partition script is an external artifact and no committed test asserts the complete partition at this head. The FR-009 row now lists T033 beside T012 and T015 and records that T033 stays unchecked because no tests were run for it. The research CI row now distinguishes a docs-only pull request (validate and the format/spec checks only; `integration-shard`, and with it e2e, plus `integration` and `storage` are skipped) from a full CI attempt, matching FR-029 and the acceptance scenarios in `spec.md`.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T012, T015 and T033 all resolve to tasks in `tasks.md`; no task status changed and no verification status was upgraded.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no workflow, test, or application behavior changed. **No open ambiguities** remain for this factual reconciliation.
+- Verdict: PASS for this documentation-only correction.

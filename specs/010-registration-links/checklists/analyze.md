@@ -59,7 +59,7 @@ T901 is complete after the 16-test page suite passed on the committed code, foll
 ## S41 CodeRabbit round-3 baseline-map re-analysis
 
 - Date: 2026-11-09 23:17 UTC, after restoring the baseline FR-001..FR-014 / SC-001..SC-006 source map in traceability.md.
-- Scope: checked all mapped requirement identifiers against spec.md, the existing issue/integrity/open/grace/reads/audit/UI test files, T035, and the F10 verification report. The map adds no test execution or status upgrade; FR-006 remains unimplemented as documented.
+- Scope: checked all mapped requirement identifiers against spec.md, the existing issue/integrity/open/grace/reads/audit/UI test files, T035, and the F10 verification report. The map adds no test execution or status upgrade; FR-006 remains incomplete as documented (its approved rate limit is unimplemented under T035; its stale-terms and failure behavior is already covered by the existing evidence).
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no task status changed.
 - Verdict: PASS for this documentation-only source map.
 
@@ -74,7 +74,7 @@ T901 is complete after the 16-test page suite passed on the committed code, foll
 ## S42 CodeRabbit full-review link-and-citation re-analysis
 
 - Date: 2026-11-10 03:04 UTC, after the round-4 plan/spec production-readiness link change and the traceability FR-003/FR-010 citation corrections.
-- Scope: `docs/07-production-readiness.md` states its statuses are historical and directs readers to `docs/13-production-readiness.md`; plan.md and spec.md now link the current register. Confirmed the role-scoped and secret-column read tests are in `tests/integration/registration-links-reads.test.ts` (the previously cited `registration-links-read.test.ts` is a unit suite that stays cited for FR-010). FR-003 cites the issue integration suite and the reads integration suite; FR-010 cites both the unit and integration suites. No status was upgraded; the baseline map still claims no fresh execution, and FR-006 remains unimplemented under T035.
+- Scope: `docs/07-production-readiness.md` states its statuses are historical and directs readers to `docs/13-production-readiness.md`; plan.md and spec.md now link the current register. Confirmed the role-scoped and secret-column read tests are in `tests/integration/registration-links-reads.test.ts` (the previously cited `registration-links-read.test.ts` is a unit suite that stays cited for FR-010). FR-003 cites the issue integration suite and the reads integration suite; FR-010 cites both the unit and integration suites. No status was upgraded; the baseline map still claims no fresh execution, and FR-006 remains incomplete under T035 (the approved rate limit is unimplemented, while the stale-terms and failure behavior is already covered).
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no tests ran and no status changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
 
@@ -99,4 +99,11 @@ T901 is complete after the 16-test page suite passed on the committed code, foll
 - Scope: CodeRabbit review-body findings F0, F10–F11 (test-task status, ND-F9-1 open decision, F10 decision statuses). plan.md marks the unchecked-tests wording as the pre-audit historical snapshot (T001–T033 complete, T034 audited); tasks.md no longer lists decided ND-F9-1 among open decisions; requirements.md records two open F10 decisions (ND-F10-4/5) with ND-F10-1..3 decided.
 - Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
+- Verdict: PASS for this documentation-only correction.
+
+## S48 CodeRabbit round-7 review-fix analysis - 2026-11-11T14:45:00Z
+
+- Scope: CodeRabbit inline-thread finding on the FR-006 status wording. The blanket "FR-006 remains unimplemented" statements in `traceability.md` and in the two earlier checklist entries above now read: FR-006 is incomplete because its approved 50-per-authorized-account rolling-24-hour rate limit is unimplemented and unverified under T035, while its stale-terms and failure behavior remains covered by the existing evidence recorded in the FR-006 row. The recorded evidence and its status are unchanged, and T035 stays unchecked.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks cover the scope. FR-006 and T035 resolve in the current spec and task text.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no tests ran and no task status changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.

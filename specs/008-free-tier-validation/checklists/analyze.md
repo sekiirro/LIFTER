@@ -27,7 +27,7 @@
 
 - **Date:** 2026-11-04
 - **Reviewed after:** S31-PO-4 input and T012 were added to `spec.md`, `plan.md`, and `tasks.md`; no code/tests/cloud actions.
-- **Decision:** ND-F8-1 is decided as an illustrative pilot input: 2 workspaces × 150 clients/workspace × 2 staff/workspace × 2 plans/client × 2 new plan versions/client/month. T012 requires schema/unit verification before table-level values are recorded.
+- **Decision:** ND-F8-1 is decided as an illustrative pilot input: 2 workspaces; 150 clients per workspace; 2 staff per workspace; 2 plans per client; 2 new plan versions per client per month. These are independent inputs, so the derived monthly new plan versions are 300 clients × 2 new plan versions per client per month = 600 new plan versions per month. T012 requires schema/unit verification before table-level values are recorded.
 - **Remaining gates:** ND-F8-2 deployment approval remains open for deployment-dependent measurements. ND-F8-3 authenticated-route test-account approval remains open only for measurements that use authenticated routes. Offline measurements remain authorized.
 - **Coverage:** FR-to-task 8/8, SC-to-task 4/4; 0 CRITICAL/HIGH, 2 MEDIUM (ND-F8-2/3). Static only.
 
@@ -142,3 +142,11 @@
 - Coverage: every FR/SC row is present in traceability (2 VERIFIED / 6 PARTIAL FR; 0 VERIFIED / 4 PARTIAL SC, unchanged); every cited identifier resolves to the current spec/tasks text; no unknown or dangling reference found.
 - Findings: 0 open CRITICAL, 0 open HIGH. The 2 inherited MEDIUM open approvals remain exactly as recorded above; nothing was upgraded or introduced by the format-only commit.
 - Verdict: PASS for this format-only re-affirmation.
+
+## S48 CodeRabbit round-7 review-fix analysis - 2026-11-11T14:45:00Z
+
+- Scope: CodeRabbit inline-thread finding on the ND-F8-1 pilot volumes. The decided values are unchanged, but they are now listed as independent inputs instead of one multiplication chain, and the derived monthly volume is stated explicitly: 2 workspaces; 150 clients per workspace; 2 staff per workspace; 2 plans per client; 2 new plan versions per client per month; 300 clients in total; 600 new plan versions per month (300 clients x 2 new plan versions per client per month). The staff count and the plans-per-client count are inputs for other tables and are not factors of the plan-version volume. The same wording is carried in `spec.md` (NEEDS DECISION and the S31-PO-4 decision refresh) and in `plan.md` (Scope IV), so T012's table-volume derivation uses the corrected expression. The PO decision register row for S31-PO-4 in `docs/04-changes-and-questions.md` is unchanged.
+- Entry gate: PASS - all 8 numbered FRs and 4 measurable SCs are present with Given/When/Then scenarios; Clarifications keep the decided pilot input and the two explicitly open approvals unchanged; plan and FR-tagged tasks cover the feature. T012 remains unchecked.
+- Coverage: matrix totals unchanged (2 VERIFIED / 6 PARTIAL FR; 0 VERIFIED / 4 PARTIAL SC); every cited identifier resolves to the current spec/tasks text; no unknown or dangling reference found.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no tests or measurements ran and no verification status was upgraded. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.

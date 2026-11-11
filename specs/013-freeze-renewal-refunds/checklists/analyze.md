@@ -35,7 +35,7 @@ The original analysis and S24 addendum below are preserved as history. The curre
 **Analyzed:** 2026-11-11 00:51 Africa/Cairo
 **Scope:** CodeRabbit round-3 fixes for expired-renewal term anchoring and cumulative refund caps.
 
-Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the immutable lineage-tail guard and makes each of the five validated keys (`client_id`, `predecessor_subscription_id`, `package_offer_id`, `request_key`, `expected_revision`, plus the `renewal_confirmed`/`installments` shape) reject absence as `invalid_input`. A missing or malformed `workspace_id` returns `not_permitted` before that branch. The quickstart and task history record the new current endpoint; round 12's 82-migration replay remains historical.
+Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the immutable lineage-tail guard and makes each of the five validated keys (`client_id`, `predecessor_subscription_id`, `package_offer_id`, `request_key`, `expected_revision`) reject absence as `invalid_input`, and requires `renewal_confirmed` to be `true`. That `invalid_input` result is reached only after authentication and the workspace preflight succeed: an unauthenticated caller returns `not_permitted`, and a missing or malformed `workspace_id` returns `not_permitted` before that branch. `installments` is optional: an omitted or null `installments` is not `invalid_input` — the renewal then uses the package price — and only a present, non-null `installments` that is not an array or is an empty array is rejected as `invalid_input`. The quickstart and task history record the new current endpoint; round 12's 82-migration replay remains historical.
 
 **S45 R3 results (kept with the S45 R3 scope above):**
 
@@ -143,7 +143,14 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 
 ## S47 CodeRabbit round-6 review-fix analysis — 2026-11-11T06:24:05Z
 
-- Scope: CodeRabbit review-body findings F1–F3 (required-key claim, S45 R3 placement, date-check rationale). The migration summary names the five validated keys with workspace_id returning not_permitted first; S45 R3 results sit with the S45 R3 scope; the date-check rationale cites the post-merge re-analyses and the S35-R4 UNCERTAIN record is marked historical.
-- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Scope: CodeRabbit review-body findings F1-F3 (required-key claim, S45 R3 placement, date-check rationale). The migration summary names the five validated keys with workspace_id returning not_permitted first; S45 R3 results sit with the S45 R3 scope; the date-check rationale cites the post-merge re-analyses and the S35-R4 UNCERTAIN record is marked historical.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
+- Verdict: PASS for this documentation-only correction.
+
+## S48 CodeRabbit round-7 review-fix analysis - 2026-11-11T14:45:00Z
+
+- Scope: CodeRabbit inline-thread finding on the required-key migration summary above. The claim is narrowed to what the migration does: the five validated keys (`client_id`, `predecessor_subscription_id`, `package_offer_id`, `request_key`, `expected_revision`) reject absence as `invalid_input` and `renewal_confirmed` must be `true`; `invalid_input` is reached only after authentication and the workspace preflight succeed, so an unauthenticated caller and a missing or malformed `workspace_id` both return `not_permitted` first. `installments` is optional: an omitted or null value is not `invalid_input` and the renewal uses the package price; only a present, non-null value that is not an array or is an empty array is rejected as `invalid_input`.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed, and no status changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.

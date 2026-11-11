@@ -406,13 +406,13 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
 
 - Date: 2026-11-09 19:56:44 UTC, after the FR-011 and SC-007 statuses were corrected to PARTIAL and the historical core record restored.
 - Scope: current spec/traceability evidence; proxy success and error cache headers are asserted. Invalid registration responses assert no-store and referrer-policy, but the full private, no-store registration matrix is not established. Preserve F14-A01..A03 and all later recorded findings/gates.
-- Current core matrix: 17 VERIFIED, 12 PARTIAL; FR-011 and SC-007 remain PARTIAL.
+- Current core matrix: 16 VERIFIED, 13 PARTIAL (10 VERIFIED / 8 PARTIAL requirements plus 6 VERIFIED / 5 PARTIAL success criteria; the FR-009 owner-editor row is DEFERRED and counted separately); FR-011 and SC-007 remain PARTIAL.
 - Findings: 0 open CRITICAL, 0 open HIGH; the existing medium production/evidence gaps remain. No tests or tasks were changed.
 
 ## S41-R12 round-3 PR-wide re-analysis
 
 - Date: 2026-11-09 22:50 UTC (2026-11-10 00:50 Africa/Cairo), after correcting the current core total; no later spec/plan/tasks edits follow this analysis.
-- Scope: rechecked every traceability row and current Analyze total. Core matrix is 17 VERIFIED / 12 PARTIAL; FR-011 and SC-007 remain PARTIAL. Other historical/current feature rows, decision references, links and task evidence were checked without changing status.
+- Scope: rechecked every traceability row and current Analyze total. Core matrix is 16 VERIFIED / 13 PARTIAL; FR-011 and SC-007 remain PARTIAL. Other historical/current feature rows, decision references, links and task evidence were checked without changing status.
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks cover the feature.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no task/status changed.
 - Verdict: PASS for this documentation-only correction.
@@ -444,4 +444,11 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
 - Scope: CodeRabbit review-body findings F19–F21 (redirect header check, Worker benchmarks, preview-response gap). Q-M16 now asserts valid, invalid AND redirect registration responses carry private and no-store with T041 staying open until the redirect sets private; FR-009 core pipeline is PARTIAL until Worker CPU/memory benchmarks (T039) are recorded; the FR-011 preview-response header gap is recorded.
 - Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
+- Verdict: PASS for this documentation-only correction.
+
+## S48 CodeRabbit round-7 review-fix analysis - 2026-11-11T14:45:00Z
+
+- Scope: CodeRabbit inline-thread findings on this head. (a) The current core matrix total is corrected to 16 VERIFIED / 13 PARTIAL, counted from the core traceability table: 10 VERIFIED and 8 PARTIAL requirements plus 6 VERIFIED and 5 PARTIAL success criteria, with the FR-009 owner-editor row counted as DEFERRED and kept separate. The repeated total in the S41-R12 record above now matches. (b) Q-M16 in `quickstart.md` now requires the branding preview success and preview error responses to assert both `private` and `no-store`, in addition to the registration-route valid, invalid and redirect responses, so T041 cannot close on the registration-route checks alone. FR-011 and SC-007 remain PARTIAL and T041 stays unchecked.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks cover the scope. T041 resolves in `tasks.md`; no task status changed and no verification status was upgraded.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no test, code, or application behavior changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.

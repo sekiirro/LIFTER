@@ -190,3 +190,10 @@
 - Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
 - Verdict: PASS for this documentation-only correction.
+
+## S48 CodeRabbit round-7 review-fix analysis - 2026-11-11T14:45:00Z
+
+- Scope: CodeRabbit inline-thread findings on this head. (a) The plan's F12 migration list no longer calls the four U2-U5 files proposed: `20261101120000_registration_approval_model.sql`, `20261101121000_registration_approval_operations.sql`, `20261101122000_payment_operations.sql` and `20261101123000_registration_approval_reads.sql` exist under `supabase/migrations/` and were created by the completed tasks T011, T016, T021 and T026; only their verification stays open and is tracked in `traceability.md`. The U1F migration and its T051 verification status are unchanged. (b) The FR-011..FR-012 traceability row no longer carries the stale "FR-011 VERIFIED" evidence claim; it states that the cited replay tests are evidenced while FR-011 is PARTIAL because its deletion-state replay is mapped to unchecked T055. (c) The summary totals are corrected to 18 VERIFIED / 11 PARTIAL, counted requirement by requirement from the table: the grouped FR-006, FR-008, FR-017..FR-018 row contributes FR-006, FR-008 and FR-018 as verified and FR-017 as its only partial requirement; the partial requirements are FR-011, FR-012, FR-017, FR-019, FR-020, FR-021, FR-022, FR-023, FR-024, FR-028 and FR-029. The success-criteria totals (6 VERIFIED / 5 PARTIAL) are unchanged.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T011, T016, T021, T026, T051 and T055 all resolve in `tasks.md`; no task status changed.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.
