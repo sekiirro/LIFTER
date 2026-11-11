@@ -4,6 +4,7 @@ import {
   duplicateDay,
   duplicateItem,
   type WorkoutDay,
+  type WorkoutItem,
 } from '../../lib/workout-planner/id-remap';
 
 // T003-note: FR-002 id continuity and duplicate remap (SC-012). RED before
@@ -127,7 +128,7 @@ describe('F17 id continuity and duplicate remap (FR-002, SC-012)', () => {
 
 describe('F17 id remap load variants and reps (FR-002, SC-012)', () => {
   it('round-trips bodyweight, assisted and single-value reps exactly', () => {
-    const item: any = {
+    const item = {
       id: 'item-Z',
       exercise: { source: 'global', identity_id: 'ex-9', version: 1 },
       name: 'Pull-up',
@@ -142,12 +143,12 @@ describe('F17 id remap load variants and reps (FR-002, SC-012)', () => {
         { id: 's3', type: 'working', load: { mode: 'added_weight', value: '10', unit: 'lb' } },
       ],
     };
-    const copy = duplicateItem(item, () => 'nid');
+    const copy = duplicateItem(item as WorkoutItem, () => 'nid');
     expect(copy.id).not.toBe(item.id);
     expect({
       ...copy,
       id: item.id,
-      sets: copy.sets.map((s: any, i: number) => ({ ...s, id: item.sets[i].id })),
+      sets: copy.sets.map((s, i) => ({ ...s, id: item.sets[i]!.id })),
     }).toEqual(item);
     expect(copy.reps).toEqual({ value: 8 });
     expect(copy.sets[0]!.load).toEqual({ mode: 'bodyweight' });
