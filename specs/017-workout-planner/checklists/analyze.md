@@ -254,3 +254,33 @@ Scope: revise T007 formula guard so coach-authored cell content is never modifie
 | LOW      | 0 open  | FR/task/SC cross-references remain aligned. |
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+
+## S47 independent-review remediation Analyze — 2026-11-11
+
+Scope: remediate the seven MEDIUM findings of the independent review
+(`runs/s47-mm-f17-review/review.md`) on branch `017-impl-s47-p0`. Includes the
+T007 tasks.md requirement-text revision already present at HEAD (commit
+2c445d2b): T007 now reads "flagged forced-text (`quotePrefix`) without changing
+cell content" instead of "neutralised", recording the architect-ruled
+quotePrefix-flag implementation; FR-017 still says "neutralise formula
+injection" and SC-008 still says "stored as text", with the neutralisation
+obligation carried by the future writer (T037–T039) honoring `quotePrefix`.
+
+### Entry and cross-artifact checks
+
+- PASS — `spec.md` retains numbered FRs, measurable SCs and Given/When/Then scenarios; no spec/plan requirement text was changed by this lane except the T007 tasks.md wording noted above.
+- PASS — `tasks.md` T007 wording now matches the delivered guard contract; FR-017/FR-018 and SC-008 tags unchanged.
+- PASS — `traceability.md` evidence updated for the verified pure-TS tasks (T008, T009, T007, T003, T006); remaining rows stay PLANNED.
+- PASS — this Analyze section is dated after the remediation edits.
+
+### Hostile cross-artifact findings
+
+| Severity | Finding | Disposition |
+| -------- | ------- | ----------- |
+| CRITICAL | 0 open  | Pure-TS and test-only changes; no schema, migration, privilege or runtime behavior. |
+| HIGH     | 0 open  | Guard, assignment reporting/state, export field coverage, id-remap and volume gaps closed with RED/GREEN/mutation evidence. |
+| MEDIUM   | 0 open  | All seven review findings addressed (six fixed, none rebutted; T007 wording retained and documented). |
+| LOW      | 0 open  | FR/task/SC cross-references remain aligned. |
+
+**Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
