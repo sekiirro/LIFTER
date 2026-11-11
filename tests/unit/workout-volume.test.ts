@@ -141,5 +141,7 @@ describe('F17 volume rest-day-only and empty-session (FR-016, SC-007)', () => {
     const days: VolumeDay[] = [{ dayIndex: 1, kind: 'session', items: [] }];
     const result = computeVolume(days, MUSCLES);
     expect(result.perSession).toEqual([{ dayIndex: 1, totals: {} }]);
+    // NEW-7: the empty session must also own its per-week row.
+    expect(result.perWeek).toEqual([{ week: 1, days: [1], totals: {} }]);
   });
 });
