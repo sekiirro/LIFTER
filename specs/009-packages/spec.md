@@ -2,8 +2,8 @@
 
 **Feature Branch**: `009-packages`
 **Created**: 2026-10-27  
-**Last Updated**: 2026-11-10
-**Status**: S33-PO-6, S34-PO-1, S34-PO-2, S34-PO-6 (PD-S34-NEW-01=A, package row is the category), S35-PO-1 (PD-S34-NEW-02=A, canonical market literal `Egypt`/`International` as wire and stored value), S36-PO-2 and S36-PO-3 F9 decisions are recorded. The prior FX-rounding, FX business-day/publication and optional promotion-bound ambiguities are resolved. S43-PO-8 resolves tier structure, label authority, historical nutrition export, post-lapse anchor, and cross-currency upgrade; no open product ambiguity remains in these affected scopes. See the resolved decision register below. UI copy beyond the four approved Arabic/English market/type label pairs remains BLOCKED-COPY.
+**Last Updated**: 2026-11-11
+**Status**: S33-PO-6, S34-PO-1, S34-PO-2, S34-PO-6 (PD-S34-NEW-01=A, package row is the category), S35-PO-1 (PD-S34-NEW-02=A, canonical market literal `Egypt`/`International` as wire and stored value), S36-PO-2 and S36-PO-3 F9 decisions are recorded. The prior FX-rounding, FX business-day/publication and optional promotion-bound ambiguities are resolved. S43-PO-8 resolves tier structure, label authority, historical nutrition export, post-lapse anchor, and cross-currency upgrade; S48-PO-10 resolves treatment of legacy unranked offers. No open product ambiguity remains in these affected scopes. See the resolved decision register below. UI copy beyond the four approved Arabic/English market/type label pairs remains BLOCKED-COPY.
 **Input**: P1-F9, approved architect/reviewer design supplied for this run. Sources (PO records are cited by decision ID and quoted verbatim in this document, not by machine-local path): [BRD](../../LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md) lines 30, 40–41, 53–54, 102, 196, 317; [decision register](../../docs/04-changes-and-questions.md) D-09/D-10, D-11, D-13, D-17; [Constitution v1.4.0](../../.specify/memory/constitution.md) I–III, V, VII–IX. Later decisions supersede historical BRD installment/refund wording. S31 sources: S31-PO-4 and S31-PO-5 (S31-Q4). S32 source: S32-PO-4, quoted verbatim in `## Clarifications` below and in the PO decision register.
 
 ## Clarifications
@@ -537,3 +537,15 @@ Arabic tier names are سيلفر، جولد، بلاتينيوم.
 - **Given** one category has offers at the same duration, **When** the PO publishes Silver, Gold, and Platinum, **Then** three offers coexist with distinct immutable ranks, even if one or more are unavailable. (FR-002/007/034; SC-024; architect mapping (S43-R10))
 - **Given** a PO renames a tier in one locale, **When** workspaces read that locale, **Then** the new global display name is used unless a workspace-local override exists, and no rank or commercial term changes. (FR-035; SC-025; architect mapping (S43-R10))
 - **Given** a Workspace Owner renames a tier in one locale, **When** their workspace reads that locale, **Then** the override appears only in that workspace; other workspaces retain their resolved names, and no rank or commercial term changes. (FR-035; SC-025; architect mapping (S43-R10))
+
+## S48-PO-10 — legacy unranked offers
+
+- Where: T077, `package_offers.tier_rank`, and the forward migration/cleanup boundary.
+- Question: How should existing unranked offers be treated before mandatory tier ranks are applied?
+- Options: A) assign every existing offer Silver; B) refuse if any offers exist, after safely deleting verified mock/test offers; C) retire existing offers.
+- PO words (byte-exact, source: `runs/s48-po/s48-po-10.verbatim.txt`):
+
+> Choose B. Verify all existing offers are mock/test data, delete them safely, then apply T077 with mandatory immutable tier ranks. Preserve required audit/payment test records. No arbitrary Silver defaults.
+
+- Status: RESOLVED by S48-PO-10 (option B). No Silver default or rank backfill is permitted. Existing offers may be deleted only by the separate safe cleanup procedure; migration itself fails closed when unranked offers remain.
+- Architect mapping: S48-R10 requires a new migration to add `tier_rank` NOT NULL without a default and raise if unranked offers remain; a separate reviewed cleanup script may delete only verified test offers with no payment, audit, subscription, or registration-link references. Referenced offers are reported and retained without cascades. Inventory local Stacks A–D and the CI fresh database; any hosted/non-local target halts the work. Publication fixtures supply explicit ranks.
