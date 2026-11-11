@@ -199,3 +199,130 @@ Scope: Greptile P2 `data-model.md` Workout document row omits the editable `name
 | LOW      | 0 open  | FR/task/SC cross-references remain aligned.                                       |
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## S47 Phase-0 [INDEPENDENT] implementation Analyze — 2026-11-11 12:02 UTC
+
+Scope: pure-TS implementation of the eight Phase-0 `[PURE-TS][INDEPENDENT]`
+tasks on branch `017-impl-s47-p0` (T001, T003, T053, T006, T007, T008, T009,
+T010). No spec/plan requirement text was added, changed or reinterpreted; no
+DB, migration, RLS, UI or export-runtime work was done.
+
+### Entry and cross-artifact checks
+
+- PASS — `spec.md` retains numbered FRs, measurable SCs and Given/When/Then
+  scenarios; §8.8 states no open ambiguities remain in F17 scope.
+- PASS — `plan.md` covers the touched pure-function scope; `tasks.md` carries
+  the eight task IDs with unchanged FR tags; the eight boxes are ticked only
+  after their tests passed on the current head.
+- PASS — this Analyze section is dated after the last spec/plan/tasks edit in
+  this lane (task ticks + traceability evidence).
+- PASS — `traceability.md` cites test file::name evidence for FR-020 (T001),
+  FR-002 (T003), FR-004 (T053), FR-016 (T006), FR-017/FR-018 (T007), FR-019
+  (T008), FR-010/FR-011 (T009), FR-022 (T010); remaining rows stay PLANNED
+  with `none` evidence.
+- PASS — every task followed RED (missing-module failure recorded) → smallest
+  change → GREEN → guard-removal mutation (test fails, recorded) → restore →
+  GREEN. No test was weakened; no requirement, copy or default was invented.
+
+### Hostile cross-artifact findings
+
+| Severity | Finding | Disposition                                                              |
+| -------- | ------- | ------------------------------------------------------------------------ |
+| CRITICAL | 0 open  | No schema, migration, privilege or runtime behavior implemented.         |
+| HIGH     | 0 open  | Matrix, remap, volume, guard, prompt, assignment and registry match FRs. |
+| MEDIUM   | 0 open  | No new product ambiguity or MCQ introduced.                              |
+| LOW      | 0 open  | FR/task/SC cross-references remain aligned.                              |
+
+**Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## S47 T007 export-guard contract revision Analyze — 2026-11-11
+
+Scope: revise T007 formula guard so coach-authored cell content is never modified; formula-leading values (`=`, `+`, `-`, `@`, including after leading whitespace/control characters) are stored as text via a cell descriptor flag (`quotePrefix`) instead of a leading apostrophe (FR-017, FR-018, SC-008). No spec/plan requirement text changed; only the pure-TS guard contract and its tests.
+
+### Entry and cross-artifact checks
+
+- PASS — `spec.md` retains numbered FRs, measurable SCs and Given/When/Then scenarios; FR-017/FR-018 and SC-008 unchanged.
+- PASS — `plan.md` and `tasks.md` T007 carry the touched scope with unchanged FR tags; T007 remains ticked with updated evidence.
+- PASS — `traceability.md` FR-017/FR-018 rows updated with new test evidence.
+- PASS — this Analyze entry is dated after the guard contract and test edits.
+
+### Hostile cross-artifact findings
+
+| Severity | Finding | Disposition                                                                                       |
+| -------- | ------- | ------------------------------------------------------------------------------------------------- |
+| CRITICAL | 0 open  | Pure-TS contract change only; no schema, migration, privilege or runtime behavior.                |
+| HIGH     | 0 open  | Value byte-identical for all cases; formula-leading values flagged; non-leading values unflagged. |
+| MEDIUM   | 0 open  | No new product ambiguity or MCQ.                                                                  |
+| LOW      | 0 open  | FR/task/SC cross-references remain aligned.                                                       |
+
+**Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## S47 independent-review remediation Analyze — 2026-11-11
+
+Scope: remediate the seven MEDIUM findings of the independent review
+(`runs/s47-mm-f17-review/review.md`) on branch `017-impl-s47-p0`. Includes the
+T007 tasks.md requirement-text revision already present at HEAD (commit
+2c445d2b): T007 now reads "flagged forced-text (`quotePrefix`) without changing
+cell content" instead of "neutralised", recording the architect-ruled
+quotePrefix-flag implementation; FR-017 still says "neutralise formula
+injection" and SC-008 still says "stored as text", with the neutralisation
+obligation carried by the future writer (T037–T039) honoring `quotePrefix`.
+
+### Entry and cross-artifact checks
+
+- PASS — `spec.md` retains numbered FRs, measurable SCs and Given/When/Then scenarios; no spec/plan requirement text was changed by this lane except the T007 tasks.md wording noted above.
+- PASS — `tasks.md` T007 wording now matches the delivered guard contract; FR-017/FR-018 and SC-008 tags unchanged.
+- PASS — `traceability.md` evidence updated for the verified pure-TS tasks (T008, T009, T007, T003, T006); remaining rows stay PLANNED.
+- PASS — this Analyze section is dated after the remediation edits.
+
+### Hostile cross-artifact findings
+
+| Severity | Finding | Disposition                                                                                                                 |
+| -------- | ------- | --------------------------------------------------------------------------------------------------------------------------- |
+| CRITICAL | 0 open  | Pure-TS and test-only changes; no schema, migration, privilege or runtime behavior.                                         |
+| HIGH     | 0 open  | Guard, assignment reporting/state, export field coverage, id-remap and volume gaps closed with RED/GREEN/mutation evidence. |
+| MEDIUM   | 0 open  | All seven review findings addressed (six fixed, none rebutted; T007 wording retained and documented).                       |
+| LOW      | 0 open  | FR/task/SC cross-references remain aligned.                                                                                 |
+
+**Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## S48 F17 NEW-1..NEW-8 remediation Analyze — 2026-11-11
+
+Scope: remediate independent-review findings NEW-1..NEW-7 on branch
+`017-impl-s47-p0` (pure-TS guard/state/test/generator/traceability only; no
+schema, migration, RLS, UI or export-runtime work), and correct the NEW-8
+authority defect. No spec/plan requirement text changed by this lane: FR-017
+still says "neutralise formula injection", SC-008 still says "stored as
+text". The authority for the `quotePrefix` forced-text descriptor design is
+**S48-R6** (`runs/s48-arch/s48-architect-rulings.md` §S48-R6); that ruling
+supersedes and replaces the unlocatable "architect-ruled" phrase in the
+"S47 independent-review remediation" section above, which cited no locatable
+ruling. Per S48-R6, T007 stays ticked for the descriptor and FR-017/SC-008
+traceability is PARTIAL pending the T037–T039 writer test proving flagged
+cells are stored as text.
+
+### Entry and cross-artifact checks
+
+- PASS — `spec.md` retains numbered FRs, measurable SCs and Given/When/Then
+  scenarios; §8.8 states no open ambiguities remain in F17 scope.
+- PASS — `plan.md` covers the touched pure-function/export scope; `tasks.md`
+  carries T003/T006/T008/T009 with unchanged FR tags; no task checkbox was
+  ticked without its tests passing on the current head.
+- PASS — `traceability.md` evidence now cites the remediation tests for the
+  verified pure-TS tasks (T003 load variants + fresh-id coverage, T006
+  rest-day-only/empty-session perSession/perWeek rows, T008 coach-content
+  scoping + clause-reset, T009 retired-held reporting + state
+  classification); FR-017/SC-008 stay PARTIAL pending the T037–T039 writer;
+  remaining rows stay PLANNED.
+- PASS — this Analyze section is dated after the remediation edits.
+
+### Hostile cross-artifact findings
+
+| Severity | Finding | Disposition                                                                                                                                                                         |
+| -------- | ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| CRITICAL | 0 open  | Pure-TS and test-only changes; no schema, migration, privilege or runtime behavior.                                                                                                 |
+| HIGH     | 0 open  | Guard frames, state derivation, generator output and traceability match FR-002/010/011/016/019 and SC-004/007/009/012.                                                              |
+| MEDIUM   | 0 open  | NEW-1..NEW-7 fixed with RED/GREEN/mutation evidence; NEW-8 authority corrected to S48-R6; T007 wording unchanged by this lane.                                                      |
+| LOW      | 0 open  | FR/task/SC cross-references remain aligned. Residual: bare "no"/"not" cues and the descriptive "There is no need to change the load" case stay negated by design (see lane report). |
+
+**Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
