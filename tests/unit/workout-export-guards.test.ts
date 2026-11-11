@@ -37,12 +37,15 @@ describe('F17 export field coverage (FR-018, SC-008)', () => {
 
   it('keeps ordinary coach-authored cells unchanged as strings', () => {
     for (const plain of ['Bench Press', '90 s', '8-12', 'coach note', '']) {
-      expect(toSafeCell(plain)).toBe(plain);
+      const cell = toSafeCell(plain);
+      expect(cell.value).toBe(plain);
+      expect(cell.type).toBe('text');
+      expect(cell.quotePrefix).toBe(false);
     }
-    expect(typeof toSafeCell('notes')).toBe('string');
+    expect(toSafeCell('notes').type).toBe('text');
   });
 
-  it('neutralises formula injection including leading-space variants', () => {
+  it('flags formula-leading values as forced text without changing value', () => {
     const attacks = [
       '=1+1',
       '+1',
@@ -51,15 +54,19 @@ describe('F17 export field coverage (FR-018, SC-008)', () => {
       '  =cmd',
       '\t@x',
       ' \u200B+evil',
+      '-5 kg',
     ];
     for (const attack of attacks) {
       const cell = toSafeCell(attack);
-      expect(typeof cell).toBe('string');
-      expect(cell).not.toBe(attack);
-      // The neutralised cell must not start with an executable character.
-      expect(/^[\s\u200B]*[=+\-@]/.test(cell)).toBe(false);
-      // Content is preserved after the text marker.
-      expect(cell.slice(1)).toBe(attack);
+      expect(cell.value).toBe(attack);
+      expect(cell.type).toBe('text');
+      expect(cell.quotePrefix).toBe(true);
+    }
+  });
+
+  it('does not flag non-leading formula characters', () => {
+    for (const plain of ['a=1', 'note -5 kg', 'x@y', '1+1']) {
+      expect(toSafeCell(plain).quotePrefix).toBe(false);
     }
   });
 });

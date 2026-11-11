@@ -3,8 +3,9 @@
 // EXPORT_FIELDS is the FR-018 field list, including document-level notes.
 // Every coach-authored Excel cell is a string; values that could execute as
 // a formula (leading `=`, `+`, `-`, `@`, including after leading whitespace
-// or control characters) are neutralised with a leading apostrophe text
-// marker so spreadsheets store them as text.
+// or control characters) are NOT rewritten. Instead the cell is described as
+// text (`type: 'text'`) with `quotePrefix: true` so the future writer stores
+// it as text without changing its content (FR-018, SC-008).
 
 // FR-018 §2 required content, in contract order.
 export const EXPORT_FIELDS = [
@@ -38,12 +39,18 @@ export function isExportField(field: string): field is ExportField {
 
 const FORMULA_LEAD = /^[ \t\r\n\v\f\u0000-\u0020\u200B\uFEFF]*[=+\-@]/;
 
+export type SafeCell = {
+  value: string;
+  type: 'text';
+  quotePrefix: boolean;
+};
+
 /**
- * Return the value as a spreadsheet-safe string cell. Ordinary values pass
- * through unchanged; formula-shaped values get a leading `'` text marker.
+ * Describe a value as a spreadsheet cell. The value is never modified: formula-
+ * shaped values are flagged (`quotePrefix: true`) so the future writer stores
+ * them as text without altering their content.
  */
-export function toSafeCell(value: unknown): string {
+export function toSafeCell(value: unknown): SafeCell {
   const text = typeof value === 'string' ? value : String(value);
-  if (FORMULA_LEAD.test(text)) return `'${text}`;
-  return text;
+  return { value: text, type: 'text', quotePrefix: FORMULA_LEAD.test(text) };
 }

@@ -234,3 +234,23 @@ DB, migration, RLS, UI or export-runtime work was done.
 | LOW      | 0 open  | FR/task/SC cross-references remain aligned.                              |
 
 **Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
+
+## S47 T007 export-guard contract revision Analyze — 2026-11-11
+
+Scope: revise T007 formula guard so coach-authored cell content is never modified; formula-leading values (`=`, `+`, `-`, `@`, including after leading whitespace/control characters) are stored as text via a cell descriptor flag (`quotePrefix`) instead of a leading apostrophe (FR-017, FR-018, SC-008). No spec/plan requirement text changed; only the pure-TS guard contract and its tests.
+
+### Entry and cross-artifact checks
+- PASS — `spec.md` retains numbered FRs, measurable SCs and Given/When/Then scenarios; FR-017/FR-018 and SC-008 unchanged.
+- PASS — `plan.md` and `tasks.md` T007 carry the touched scope with unchanged FR tags; T007 remains ticked with updated evidence.
+- PASS — `traceability.md` FR-017/FR-018 rows updated with new test evidence.
+- PASS — this Analyze entry is dated after the guard contract and test edits.
+
+### Hostile cross-artifact findings
+| Severity | Finding | Disposition |
+| -------- | ------- | ----------- |
+| CRITICAL | 0 open  | Pure-TS contract change only; no schema, migration, privilege or runtime behavior. |
+| HIGH     | 0 open  | Value byte-identical for all cases; formula-leading values flagged; non-leading values unflagged. |
+| MEDIUM   | 0 open  | No new product ambiguity or MCQ. |
+| LOW      | 0 open  | FR/task/SC cross-references remain aligned. |
+
+**Current Analyze result: CRITICAL 0; HIGH 0; MEDIUM 0; LOW 0; open MCQs 0.**
