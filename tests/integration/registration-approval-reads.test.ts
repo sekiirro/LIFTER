@@ -150,7 +150,7 @@ it('Q1 keeps the installed subscription payment status body equal to the latest 
       process.cwd(),
       'supabase',
       'migrations',
-      '20261103130000_f13_review_guards_projection.sql',
+      '20261111123000_f13_continuous_renewal.sql',
     ),
     'utf8',
   );
