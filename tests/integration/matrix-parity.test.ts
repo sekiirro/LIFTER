@@ -503,7 +503,7 @@ describe('package operation parity', () => {
     const { packagesFixture, createSynthetic, publish, publishedFixture } =
       await import('./packages-fixture');
     const fixture = await packagesFixture();
-    const p = await publishedFixture(fixture);
+    const p = await publishedFixture(fixture, { tier_rank: 1 });
     const canonical = await createSynthetic(fixture);
     for (const [name, identity] of Object.entries(fixture.actors)) {
       const role =
@@ -544,7 +544,7 @@ describe('package operation parity', () => {
         const write = await publish(
           fixture,
           canonical.id,
-          { workspace_id: workspaceId },
+          { tier_rank: 1, workspace_id: workspaceId },
           identity.client,
         );
         expect(write.error === null).toBe(

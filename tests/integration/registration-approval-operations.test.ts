@@ -125,7 +125,10 @@ it.each(['audit', 'deferred'] as const)(
 it('T013 money beyond JS safe integer remains exact through snapshot, collection and safe receipt', async () => {
   const fresh = await clientContext(),
     amount = '9007199254740993';
-  const version = await publish(fresh, fresh.p.id, { price_minor: amount });
+  const version = await publish(fresh, fresh.p.id, {
+    tier_rank: 1,
+    price_minor: amount,
+  });
   if (version.error) throw new Error('Bigint fixture publication failed');
   fresh.p.versionId = version.data as string;
   const t = await registered(fresh),
@@ -155,7 +158,8 @@ it('T013 committed signup binding survives consumed/expired link, disabled offer
   });
   expect(disabled.error).toBeNull();
   expect(
-    (await publish(fresh, fresh.p.id, { price_minor: '1300' })).error,
+    (await publish(fresh, fresh.p.id, { tier_rank: 1, price_minor: '1300' }))
+      .error,
   ).toBeNull();
   await new Promise((resolve) =>
     setTimeout(resolve, Math.max(0, Date.parse(expires) - Date.now() + 5000)),

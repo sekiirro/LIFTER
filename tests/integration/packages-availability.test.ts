@@ -18,7 +18,7 @@ afterAll(async () => {
 });
 describe('package availability', () => {
   it('denies non-PO x workspace; missing and foreign offers are generic', async () => {
-    const p = await publishedFixture(f);
+    const p = await publishedFixture(f, { tier_rank: 1 });
     for (const [name, actor] of Object.entries(f.actors))
       for (const workspace_id of [f.wsA.id, f.wsB.id])
         if (name !== 'po') {
@@ -52,7 +52,7 @@ describe('package availability', () => {
     ).toHaveLength(0);
   });
   it('confirms false -> true -> false with exact events, no-op retry and unchanged history', async () => {
-    const p = await publishedFixture(f);
+    const p = await publishedFixture(f, { tier_rank: 1 });
     expect(p.offer.available).toBe(false);
     const before =
       await db`select * from public.package_versions where offer_id=${p.offer.id}`;
@@ -87,7 +87,7 @@ describe('package availability', () => {
     });
   });
   it('requires explicit boolean; no silent re-enable on publication', async () => {
-    const p = await publishedFixture(f);
+    const p = await publishedFixture(f, { tier_rank: 1 });
     expect(
       (
         await f.po.client.rpc('set_package_offer_available', {
@@ -105,16 +105,21 @@ describe('package availability', () => {
           available,
         }),
       );
-      checked(await publish(f, p.id, { price_minor: available ? '20' : '21' }));
+      checked(
+        await publish(f, p.id, {
+          tier_rank: 1,
+          price_minor: available ? '20' : '21',
+        }),
+      );
       const [offer] =
         await db`select available from public.package_offers where id=${p.offer.id}`;
       expect(offer?.available).toBe(available);
     }
   });
   it('serializes publication with toggle without losing either state', async () => {
-    const p = await publishedFixture(f);
+    const p = await publishedFixture(f, { tier_rank: 1 });
     const results = await Promise.all([
-      publish(f, p.id, { price_minor: '22' }),
+      publish(f, p.id, { tier_rank: 1, price_minor: '22' }),
       f.po.client.rpc('set_package_offer_available', {
         workspace_id: f.wsA.id,
         offer_id: p.offer.id,
@@ -130,7 +135,7 @@ describe('package availability', () => {
     });
   });
   it('audit failure rolls back availability', async () => {
-    const p = await publishedFixture(f);
+    const p = await publishedFixture(f, { tier_rank: 1 });
     await expect(
       db.begin(async (tx) => {
         await tx`create function pg_temp.reject_availability_audit() returns trigger language plpgsql as $$ begin raise exception 'test_audit_failure'; end $$`;

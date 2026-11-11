@@ -112,7 +112,7 @@ it('accepts the exact bigint maximum price and rejects overflow', async () => {
   const fresh = await registrationFixture(),
     max = '9223372036854775807';
   const version = checked(
-    await publish(fresh, fresh.p.id, { price_minor: max }),
+    await publish(fresh, fresh.p.id, { tier_rank: 1, price_minor: max }),
   );
   const single = checked(
     await issue(fresh, fresh.po.client, {
@@ -285,6 +285,7 @@ it('global actor limit serializes concurrent calls across workspaces', async () 
   const fresh = await registrationFixture();
   const version = checked(
     await publish(fresh, fresh.p.id, {
+      tier_rank: 1,
       workspace_id: fresh.wsB.id,
       price_minor: '1200',
     }),
@@ -400,7 +401,7 @@ it('exact snapshot and text reads preserve price above 2^53 and old terms after 
   const fresh = await registrationFixture(),
     amount = '9007199254740993';
   const version = checked(
-    await publish(fresh, fresh.p.id, { price_minor: amount }),
+    await publish(fresh, fresh.p.id, { tier_rank: 1, price_minor: amount }),
   );
   const id = checked(
     await issue(fresh, fresh.salesA.client, {
@@ -408,7 +409,9 @@ it('exact snapshot and text reads preserve price above 2^53 and old terms after 
       installments: [{ seq: 1, amount_minor: amount, due_offset_days: 2 }],
     }),
   );
-  checked(await publish(fresh, fresh.p.id, { price_minor: '1300' }));
+  checked(
+    await publish(fresh, fresh.p.id, { tier_rank: 1, price_minor: '1300' }),
+  );
   checked(
     await fresh.po.client.rpc('set_package_offer_available', {
       workspace_id: fresh.wsA.id,
@@ -449,7 +452,7 @@ it('offer lock coordinates publication and issuance without mixed snapshots', as
     await tx`select set_config('role','authenticated',true)`;
     await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: fresh.po.userId, role: 'authenticated' })},true)`;
     const [published] = await tx`select public.publish_package_version(
-      ${fresh.wsA.id}::uuid,${fresh.p.id}::uuid,null::smallint,${syntheticTerms.duration_days},
+      ${fresh.wsA.id}::uuid,${fresh.p.id}::uuid,null::smallint,${syntheticTerms.duration_days},1::smallint,
       ${syntheticTerms.name_ar},${syntheticTerms.name_en},${'1300'}::bigint,${syntheticTerms.currency},
       ${syntheticTerms.commission_rate_bp}) as id`;
     successorVersionId = published!.id as string;

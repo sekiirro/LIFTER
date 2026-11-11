@@ -233,7 +233,7 @@ describe('legacy audit mapping regression', () => {
     ]);
   });
   it('offer availability keeps its pre-F10 shape', async () => {
-    const p = await publishedFixture(f);
+    const p = await publishedFixture(f, { tier_rank: 1 });
     checked(
       await f.po.client.rpc('set_package_offer_available', {
         workspace_id: f.wsA.id,
@@ -254,7 +254,7 @@ describe('legacy audit mapping regression', () => {
   });
   it('package version publication keeps its pre-F10 shape', async () => {
     const versionId = checked(
-      await publish(f, f.p.id, { price_minor: '1301' }),
+      await publish(f, f.p.id, { tier_rank: 1, price_minor: '1301' }),
     ) as string;
     const [version] =
       await db`select version from public.package_versions where id=${versionId}`;

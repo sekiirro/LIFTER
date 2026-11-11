@@ -66,6 +66,7 @@ it('Q-M08 correction uses original commission after the current catalog rate cha
   const fresh = await clientContext();
   const purchase = await bought(fresh);
   const published = await publish(fresh, fresh.p.id, {
+    tier_rank: 1,
     commission_rate_bp: 5000,
   });
   expect(published.error).toBeNull();

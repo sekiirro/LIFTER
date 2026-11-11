@@ -16,10 +16,15 @@ let b: typeof a;
 let unattached: Awaited<ReturnType<typeof createSynthetic>>;
 beforeAll(async () => {
   f = await packagesFixture();
-  a = await publishedFixture(f);
-  b = await publishedFixture(f, { workspace_id: f.wsB.id });
+  a = await publishedFixture(f, { tier_rank: 1 });
+  b = await publishedFixture(f, { tier_rank: 1, workspace_id: f.wsB.id });
   unattached = await createSynthetic(f);
-  checked(await publish(f, a.id, { price_minor: '9223372036854775807' }));
+  checked(
+    await publish(f, a.id, {
+      tier_rank: 1,
+      price_minor: '9223372036854775807',
+    }),
+  );
 });
 afterAll(async () => {
   await db.end();

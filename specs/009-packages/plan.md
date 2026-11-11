@@ -251,3 +251,9 @@ PO wording is byte-exact in specs/009-packages/spec.md; interpretation is separa
 ### S43-PO-8 scope now specified
 
 The four market/type categories each contain Silver, Gold, and Platinum tier offers; rank belongs to the tier offer within its category. PO renames are global per locale, Workspace Owner overrides are workspace-local, and neither changes rank or terms. T077 and T078 are unblocked for implementation planning. **architect mapping (S43-R10).**
+
+### S48-PO-10 migration and legacy cleanup
+
+**PO words (byte-exact):** “Choose B. Verify all existing offers are mock/test data, delete them safely, then apply T077 with mandatory immutable tier ranks. Preserve required audit/payment test records. No arbitrary Silver defaults.”
+
+**architect mapping (S48-R10):** T077 adds `tier_rank` with no default in a forward migration and raises before setting it NOT NULL if any legacy row remains unranked. The old workspace/package/duration unique key is replaced with workspace/category/duration/rank uniqueness; publication requires rank and serializes by that full identity. A separate reviewed cleanup script deletes only verified local test offers with no referencing payment, audit, subscription, registration-link, or restrictive version rows; no cascades are permitted and retained offers are reported. Inventory local Stacks A–D and CI's fresh database before applying migrations. Any hosted/non-local database halts migration work. All rank-bearing fixtures must pass an explicit rank.
