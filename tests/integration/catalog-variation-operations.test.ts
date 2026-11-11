@@ -29,7 +29,7 @@ async function createExercise() {
   await db.begin(async (tx) => {
     await tx`insert into public.exercises(id, created_by, current_version) values (${id}, ${po.userId}, 1)`;
     await tx`insert into public.exercise_versions(exercise_id, version, payload, created_by)
-      values (${id}, 1, ${tx.json({ name_ar: 'تمرين', name_en: 'Exercise' })}, ${po.userId})`;
+      values (${id}, 1, ${tx.json({ name_en: 'Exercise' })}, ${po.userId})`;
   });
   return id;
 }
@@ -44,130 +44,68 @@ beforeAll(async () => {
 
 afterAll(async () => Promise.all([db.end(), concurrentDb.end()]));
 
-describe('workspace exercise variation RPC', () => {
-  it('binds mappings to the selected workspace and validates only HTTPS YouTube/Drive URLs', async () => {
+describe('T054 PR #43 variation compatibility over F16 overrides', () => {
+  it('retires legacy write RPCs and resolves the compatibility read from effective override values', async () => {
     const exerciseId = await createExercise();
-    const request = {
-      video_url: 'https://youtu.be/abcdefghijk',
-      note: 'workspace note',
-    };
+    const request = { video_url: 'https://youtu.be/abcdefghijk', notes: 'workspace note' };
     await expect(
-      asActor(
-        trainerA.userId,
-        (tx) =>
-          tx`select public.catalog_write_variation(${wsB}, ${exerciseId}, null, ${randomUUID()}, ${tx.json(request)})`,
-      ),
+      asActor(trainerA.userId, (tx) => tx`select public.catalog_write_exercise_override(
+        ${wsB}, ${exerciseId}, 0, ${randomUUID()}, ${tx.json(request)}
+      )`),
     ).rejects.toMatchObject({ code: '42501', message: 'not_permitted' });
-    const created = await asActor(
-      trainerA.userId,
-      (tx) =>
-        tx`select public.catalog_write_variation(${wsA}, ${exerciseId}, null, ${randomUUID()}, ${tx.json(request)})`,
-    );
-    expect(
-      (created[0]?.catalog_write_variation as { workspace_id: string })
-        .workspace_id,
-    ).toBe(wsA);
-    await expect(
-      db`select payload ->> 'video_url' as video from public.exercise_versions where exercise_id = ${exerciseId}`,
-    ).resolves.toEqual([{ video: null }]);
-    await expect(
-      asActor(
-        trainerA.userId,
-        (tx) =>
-          tx`select public.catalog_write_variation(${wsA}, ${exerciseId}, 1, ${randomUUID()}, ${tx.json({ video_url: 'https://youtube.com.evil.example/video' })})`,
-      ),
-    ).rejects.toMatchObject({
-      code: '22023',
-      message: 'catalog_variation_invalid',
-    });
-    await expect(
-      asActor(
-        po.userId,
-        (tx) =>
-          tx`select public.catalog_write_variation(${wsB}, ${exerciseId}, null, ${randomUUID()}, ${tx.json({ video_url: 'https://drive.google.com/file/d/abc' })})`,
-      ),
-    ).resolves.toHaveLength(1);
+
+    const created = await asActor(trainerA.userId, (tx) => tx`select public.catalog_write_exercise_override(
+      ${wsA}, ${exerciseId}, 0, ${randomUUID()}, ${tx.json(request)}
+    ) as result`);
+    expect((created[0]?.result as { version: number }).version).toBe(1);
+
+    const variation = await asActor(trainerA.userId, (tx) => tx`select result_workspace_id, result_version,
+      result_payload #>> '{effective_fields,video,value}' as video,
+      result_payload #>> '{effective_fields,notes,value}' as notes
+      from public.catalog_search('variation', '', '{}'::jsonb, null, ${wsA}) where result_id = ${exerciseId}`);
+    expect(variation).toEqual([{
+      result_workspace_id: wsA,
+      result_version: 1,
+      video: request.video_url,
+      notes: request.notes,
+    }]);
+
+    const legacy = await db`select
+      pg_catalog.to_regprocedure('public.catalog_write_variation(uuid,uuid,integer,uuid,jsonb)') as write,
+      pg_catalog.to_regprocedure('public.catalog_transition_variation(uuid,uuid,integer,text,uuid)') as transition`;
+    expect(legacy[0]).toEqual({ write: null, transition: null });
+    await expect(db`select payload ->> 'video_url' as video from public.exercise_versions where exercise_id = ${exerciseId}`)
+      .resolves.toEqual([{ video: null }]);
   });
 
-  it('returns one identical response for concurrent variation creates and versions', async () => {
+  it('versions and resets Video/Notes through the F16 override RPC without changing canonical data', async () => {
     const exerciseId = await createExercise();
-    const key = randomUUID();
-    const request = {
-      video_url: 'https://www.youtube.com/watch?v=abcdefghijk',
-    };
-    const created = await Promise.all(
-      [0, 1].map(() =>
-        asActor(
-          trainerA.userId,
-          (tx) =>
-            tx`select public.catalog_write_variation(${wsA}, ${exerciseId}, null, ${key}, ${tx.json(request)})`,
-        ),
-      ),
-    );
+    const firstKey = randomUUID();
+    const first = { video_url: 'https://www.youtube.com/watch?v=abcdefghijk', notes: 'Keep local' };
+    const created = await Promise.all([0, 1].map(() => asActor(trainerA.userId, (tx) => tx`
+      select public.catalog_write_exercise_override(${wsA}, ${exerciseId}, 0, ${firstKey}, ${tx.json(first)}) as result`)));
     expect(created[0]).toEqual(created[1]);
-    const versionKey = randomUUID();
-    const update = { video_url: 'https://drive.google.com/file/d/updated' };
-    const versioned = await Promise.all(
-      [0, 1].map(() =>
-        asActor(
-          trainerA.userId,
-          (tx) =>
-            tx`select public.catalog_write_variation(${wsA}, ${exerciseId}, 1, ${versionKey}, ${tx.json(update)})`,
-        ),
-      ),
-    );
-    expect(versioned[0]).toEqual(versioned[1]);
-    expect(
-      (versioned[0]![0]?.catalog_write_variation as { version: number })
-        .version,
-    ).toBe(2);
-    await expect(
-      db`select count(*)::int as versions from public.exercise_variation_versions where workspace_id = ${wsA} and exercise_id = ${exerciseId}`,
-    ).resolves.toEqual([{ versions: 2 }]);
-    await expect(
-      db`select payload ->> 'video_url' as video from public.exercise_variation_versions
-        where workspace_id = ${wsA} and exercise_id = ${exerciseId} order by version`,
-    ).resolves.toEqual([
-      { video: request.video_url },
-      { video: update.video_url },
-    ]);
-    const removeKey = randomUUID();
-    const removed = await Promise.all(
-      [0, 1].map(() =>
-        asActor(
-          trainerA.userId,
-          (tx) =>
-            tx`select public.catalog_transition_variation(${wsA}, ${exerciseId}, 2, 'remove', ${removeKey})`,
-        ),
-      ),
-    );
-    expect(removed[0]).toEqual(removed[1]);
-    expect(
-      await asActor(
-        trainerA.userId,
-        (tx) =>
-          tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${wsA})`,
-      ),
-    ).toEqual([{ variation: { workspace_id: wsA, video_url: null, source: 'none' } }]);
-    const restored = await asActor(
-      trainerA.userId,
-      (tx) =>
-        tx`select public.catalog_transition_variation(${wsA}, ${exerciseId}, 3, 'restore', ${randomUUID()})`,
-    );
-    expect(
-      (restored[0]?.catalog_transition_variation as { lifecycle_state: string })
-        .lifecycle_state,
-    ).toBe('active');
-    expect(
-      await asActor(
-        trainerA.userId,
-        (tx) =>
-          tx`select variation from public.catalog_exercise_detail(${exerciseId}, ${wsA})`,
-      ),
-    ).toEqual([
-      {
-        variation: { workspace_id: wsA, video_url: null, source: 'none' },
-      },
-    ]);
+
+    const resetKey = randomUUID();
+    const reset = await asActor(trainerA.userId, (tx) => tx`
+      select public.catalog_write_exercise_override(${wsA}, ${exerciseId}, 1, ${resetKey}, ${tx.json({ video_url: null, notes: null })}) as result`);
+    expect((reset[0]?.result as { version: number }).version).toBe(2);
+
+    const effective = await asActor(trainerA.userId, (tx) => tx`select
+      payload #>> '{effective_fields,video,value}' as video,
+      payload #>> '{effective_fields,video,source}' as video_source,
+      payload #>> '{effective_fields,notes,value}' as notes,
+      payload #>> '{effective_fields,notes,source}' as notes_source
+      from public.catalog_exercise_detail(${exerciseId}, ${wsA})`);
+    expect(effective).toEqual([{
+      video: null,
+      video_source: 'none',
+      notes: null,
+      notes_source: 'none',
+    }]);
+    await expect(db`select payload ->> 'video_url' as video from public.exercise_versions where exercise_id = ${exerciseId}`)
+      .resolves.toEqual([{ video: null }]);
+    await expect(db`select count(*)::int as count from public.exercise_override_versions where workspace_id = ${wsA} and exercise_id = ${exerciseId}`)
+      .resolves.toEqual([{ count: 2 }]);
   });
 });

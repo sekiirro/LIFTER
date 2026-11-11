@@ -101,14 +101,18 @@ export async function loadWorkspaceVideoVariationsAction(
     )
       return [];
     const payload = row.result_payload as Record<string, unknown>;
+    const fields = payload.effective_fields as
+      | Record<string, { value?: unknown }>
+      | undefined;
     return [
       {
         workspaceId,
         exerciseId: row.result_id,
         version: row.result_version,
         videoUrl:
-          typeof payload.video_url === 'string' ? payload.video_url : '',
-        note: typeof payload.note === 'string' ? payload.note : '',
+          typeof fields?.video?.value === 'string' ? fields.video.value : '',
+        note:
+          typeof fields?.notes?.value === 'string' ? fields.notes.value : '',
       },
     ];
   });

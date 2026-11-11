@@ -102,7 +102,7 @@ describe('catalog server authorization and RPC boundary', () => {
     });
   });
 
-  it('binds variation writes to current staff membership and permits PO selection', async () => {
+  it('routes variation compatibility writes through F16 exercise overrides', async () => {
     const input = {
       operationKey: key,
       workspaceId: ws,
@@ -123,10 +123,10 @@ describe('catalog server authorization and RPC boundary', () => {
     expect(await catalog().writeVariation(input)).toMatchObject({
       status: 'ok',
     });
-    expect(rpc).toHaveBeenCalledWith('catalog_write_variation', {
+    expect(rpc).toHaveBeenCalledWith('catalog_write_exercise_override', {
       p_workspace_id: ws,
       p_exercise_id: input.id,
-      p_expected_version: null,
+      p_expected_version: 0,
       p_operation_key: key,
       p_request: input.request,
     });

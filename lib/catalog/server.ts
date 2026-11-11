@@ -83,8 +83,8 @@ const operationNames = {
   removeWorkspaceExercise: 'catalog_remove_workspace_exercise',
   mergeExercise: 'catalog_merge_exercise',
   writeWorkspaceExercise: 'catalog_write_workspace_exercise',
-  writeVariation: 'catalog_write_variation',
-  transitionVariation: 'catalog_transition_variation',
+  writeVariation: 'catalog_write_exercise_override',
+  transitionVariation: 'catalog_write_exercise_override',
   createFood: 'catalog_create_food',
   versionFood: 'catalog_version_food',
   transitionFood: 'catalog_transition_food',
@@ -355,9 +355,16 @@ export function createCatalogServer(deps: CatalogDependencies) {
         (x) => ({
           p_workspace_id: x.workspaceId,
           p_exercise_id: x.id,
-          p_expected_version: x.expectedVersion ?? null,
+          p_expected_version: x.expectedVersion ?? 0,
           p_operation_key: x.operationKey,
-          p_request: x.request,
+          p_request: {
+            ...(typeof x.request?.video_url === 'string'
+              ? { video_url: x.request.video_url }
+              : {}),
+            ...(typeof x.request?.note === 'string'
+              ? { notes: x.request.note }
+              : {}),
+          },
         }),
       ),
     transitionVariation: (i: CatalogMutation) =>
@@ -369,8 +376,8 @@ export function createCatalogServer(deps: CatalogDependencies) {
           p_workspace_id: x.workspaceId,
           p_exercise_id: x.id,
           p_expected_version: x.expectedVersion,
-          p_transition: x.transition,
           p_operation_key: x.operationKey,
+          p_request: { video_url: null, notes: null },
         }),
       ),
     createFood: (i: CatalogFoodMutation) =>

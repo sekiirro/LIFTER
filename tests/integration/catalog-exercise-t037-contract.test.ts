@@ -737,29 +737,172 @@ describe('T037 remaining workspace and identity contracts', () => {
     },
   );
 
-  it.fails(
-    'T054/T062 cutover deletes legacy rows and never merges Instructions into Notes',
+  it(
+    'T054/T062 cutover deletes legacy and pre-F16 records, preserving audit events',
     async () => {
       const files = await readdir(join(process.cwd(), 'supabase/migrations'));
       const candidates = files.filter((name) =>
-        /exercise.*cutover|catalog.*cutover/i.test(name),
+        /^\d+_catalog_exercise_cutover\.sql$/i.test(name),
       );
-      expect(candidates.length).toBeGreaterThan(0);
-      const sources = await Promise.all(
-        candidates.map((name) =>
-          readFile(join(process.cwd(), 'supabase/migrations', name), 'utf8'),
-        ),
+      expect(candidates).toHaveLength(1);
+      const source = await readFile(
+        join(process.cwd(), 'supabase/migrations', candidates[0]!),
+        'utf8',
       );
-      const source = sources.join('\n');
-      expect(source).toMatch(
-        /delete\s+from\s+(?:public\.)?exercise_variations/i,
-      );
-      expect(source).toMatch(
-        /delete\s+from\s+(?:public\.)?exercise_variation_versions/i,
-      );
+      for (const table of [
+        'exercise_variations',
+        'exercise_variation_versions',
+        'exercise_lifecycle_events',
+        'workspace_exercise_lifecycle_events',
+        'exercise_versions',
+        'workspace_exercise_versions',
+        'exercise_overrides',
+        'exercise_override_versions',
+        'exercise_version_alternatives',
+        'workspace_exercise_version_alternatives',
+        'exercise_override_alternatives',
+        'workspace_exercises',
+        'exercises',
+      ]) {
+        expect(source).toMatch(
+          new RegExp(`delete\\s+from\\s+(?:public\\.)?${table}\\b`, 'i'),
+        );
+      }
+      expect(source).toMatch(/delete\s+from\s+(?:public\.)?exercise_lifecycle_events[\s\S]*?delete\s+from\s+(?:public\.)?exercises/i);
+      expect(source).toMatch(/delete\s+from\s+(?:public\.)?workspace_exercise_lifecycle_events[\s\S]*?delete\s+from\s+(?:public\.)?workspace_exercises/i);
+      expect(source).not.toMatch(/delete\s+from\s+(?:public\.)?audit_events/i);
       expect(source).not.toMatch(
         /instructions_(?:ar|en)[\s\S]{0,200}notes|notes[\s\S]{0,200}instructions_(?:ar|en)/i,
       );
     },
   );
+
+  it('T054 leaves the lifecycle append-only guard armed after its scoped cutover bypass', async () => {
+    const files = await readdir(join(process.cwd(), 'supabase/migrations'));
+    const migration = files.find((name) => /^\d+_catalog_exercise_cutover\.sql$/i.test(name));
+    expect(migration).toBeDefined();
+    const source = await readFile(join(process.cwd(), 'supabase/migrations', migration!), 'utf8');
+    expect(source).toMatch(/disable\s+trigger\s+exercise_lifecycle_events_append_only[\s\S]*?enable\s+trigger\s+exercise_lifecycle_events_append_only/i);
+    expect(source).toMatch(/disable\s+trigger\s+workspace_exercise_lifecycle_events_append_only[\s\S]*?enable\s+trigger\s+workspace_exercise_lifecycle_events_append_only/i);
+  });
+
+  it('T054 deletes legacy rows whether or not Instructions fields exist', async () => {
+    const files = await readdir(join(process.cwd(), 'supabase/migrations'));
+    const migration = files.find((name) => /^\d+_catalog_exercise_cutover\.sql$/i.test(name));
+    expect(migration).toBeDefined();
+    const source = await readFile(join(process.cwd(), 'supabase/migrations', migration!), 'utf8');
+    const legacyDelete = source.match(/delete\s+from\s+(?:public\.)?exercise_variations[\s\S]*?;/i)?.[0] ?? '';
+    expect(legacyDelete).not.toMatch(/instructions_(?:ar|en)/i);
+    expect(source).toMatch(/delete\s+from\s+(?:public\.)?exercise_variation_versions/i);
+  });
+
+  it('T054 removes pre-F16 global and workspace-private video and snapshot references', async () => {
+    const files = await readdir(join(process.cwd(), 'supabase/migrations'));
+    const migration = files.find((name) => /^\d+_catalog_exercise_cutover\.sql$/i.test(name));
+    expect(migration).toBeDefined();
+    const source = await readFile(join(process.cwd(), 'supabase/migrations', migration!), 'utf8');
+    expect(source).toMatch(/delete\s+from\s+(?:public\.)?exercise_versions/i);
+    expect(source).toMatch(/delete\s+from\s+(?:public\.)?workspace_exercise_versions/i);
+    expect(source).toMatch(/snapshot/i);
+    expect(source).toMatch(/docs\.google\.com/i);
+  });
+
+  it('T054 retires legacy variation writes and resolves variation consumers through F16 overrides', async () => {
+    const files = await readdir(join(process.cwd(), 'supabase/migrations'));
+    const migration = files.find((name) => /^\d+_catalog_exercise_cutover\.sql$/i.test(name));
+    expect(migration).toBeDefined();
+    const source = await readFile(join(process.cwd(), 'supabase/migrations', migration!), 'utf8');
+    expect(source).toMatch(/catalog_write_variation[\s\S]*?(?:not_permitted|retired)/i);
+    expect(source).not.toMatch(/from\s+public\.exercise_variations\s+e\s+join\s+public\.exercise_variation_versions/i);
+    const server = await readFile(join(process.cwd(), 'lib/catalog/server.ts'), 'utf8');
+    expect(server).not.toMatch(/writeVariation:\s*'catalog_write_variation'/);
+    expect(server).not.toMatch(/transitionVariation:\s*'catalog_transition_variation'/);
+    expect(server).toMatch(/catalog_write_exercise_override/);
+    expect(server).toMatch(/catalog_remove_workspace_exercise/);
+    },
+  );
+
+  it('T054 removes legacy and pre-F16 records, lifecycle chains, and videos while preserving audit events', async () => {
+    const legacyExercise = randomUUID();
+    const mergeSource = randomUUID();
+    const mergeMiddle = randomUUID();
+    const mergeTarget = randomUUID();
+    const privateExercise = randomUUID();
+    const auditBefore = await db`select count(*)::integer as count from public.audit_events`;
+    await db.begin(async (tx) => {
+      await tx`set constraints all deferred`;
+      await tx`insert into public.exercises (id, created_by, lifecycle_state, current_version, lifecycle_revision, superseded_by)
+        values
+          (${legacyExercise}, ${poId}, 'active', 1, 0, null),
+          (${mergeSource}, ${poId}, 'merged', 1, 3, ${mergeMiddle}),
+          (${mergeMiddle}, ${poId}, 'merged', 1, 1, ${mergeTarget}),
+          (${mergeTarget}, ${poId}, 'active', 1, 0, null)`;
+      for (const exerciseId of [legacyExercise, mergeSource, mergeMiddle, mergeTarget]) {
+        await tx`insert into public.exercise_versions (exercise_id, version, payload, created_by)
+          values (${exerciseId}, 1, ${tx.json({ name_en: 'cutover fixture', video_url: 'https://docs.google.com/d/fixture', instructions_en: 'legacy instruction' })}, ${poId})`;
+      }
+      await tx`insert into public.exercise_lifecycle_events (exercise_id, revision, lifecycle_state, actor_user_id)
+        values
+          (${mergeSource}, 1, 'removed', ${poId}),
+          (${mergeSource}, 2, 'active', ${poId}),
+          (${mergeSource}, 3, 'merged', ${poId}),
+          (${mergeMiddle}, 1, 'merged', ${poId})`;
+      await tx`insert into public.workspace_exercises (workspace_id, id, created_by, lifecycle_state, current_version, lifecycle_revision)
+        values (${workspaceId}, ${privateExercise}, ${trainerId}, 'removed', 1, 1)`;
+      await tx`insert into public.workspace_exercise_versions (workspace_id, workspace_exercise_id, version, payload, created_by)
+        values (${workspaceId}, ${privateExercise}, 1, ${tx.json({ name_en: 'private cutover fixture', video_url: 'https://docs.google.com/d/private', instructions_en: 'private instruction' })}, ${trainerId})`;
+      await tx`insert into public.workspace_exercise_lifecycle_events (workspace_id, workspace_exercise_id, revision, lifecycle_state, actor_user_id)
+        values (${workspaceId}, ${privateExercise}, 1, 'removed', ${trainerId})`;
+      await tx`insert into public.exercise_variations (workspace_id, exercise_id, created_by, lifecycle_state, current_version)
+        values (${workspaceId}, ${legacyExercise}, ${trainerId}, 'removed', 1),
+          (${workspaceId}, ${mergeTarget}, ${trainerId}, 'active', 1)`;
+      await tx`insert into public.exercise_variation_versions (workspace_id, exercise_id, version, payload, created_by)
+        values
+          (${workspaceId}, ${legacyExercise}, 1, ${tx.json({ video_url: 'https://docs.google.com/d/legacy', instructions_en: 'present' })}, ${trainerId}),
+          (${workspaceId}, ${mergeTarget}, 1, ${tx.json({ video_url: 'https://youtu.be/legacy-without-instructions' })}, ${trainerId})`;
+      await tx`insert into public.exercise_overrides (workspace_id, exercise_id, current_version)
+        values (${workspaceId}, ${legacyExercise}, 1)`;
+      await tx`insert into public.exercise_override_versions (workspace_id, exercise_id, version, payload, alternatives_present, created_by)
+        values (${workspaceId}, ${legacyExercise}, 1, ${tx.json({ video_url: 'https://youtu.be/override' })}, false, ${trainerId})`;
+    });
+
+    const migration = await readFile(
+      join(process.cwd(), 'supabase/migrations/20261111012000_catalog_exercise_cutover.sql'),
+      'utf8',
+    );
+    await db.unsafe(migration);
+    const counts = await db`
+      select
+        (select count(*) from public.exercise_variations)::integer as legacy_rows,
+        (select count(*) from public.exercise_variation_versions)::integer as legacy_versions,
+        (select count(*) from public.exercise_lifecycle_events)::integer as global_events,
+        (select count(*) from public.workspace_exercise_lifecycle_events)::integer as private_events,
+        (select count(*) from public.exercises)::integer as global_identities,
+        (select count(*) from public.exercise_versions)::integer as global_versions,
+        (select count(*) from public.workspace_exercises)::integer as private_identities,
+        (select count(*) from public.workspace_exercise_versions)::integer as private_versions,
+        (select count(*) from public.exercise_overrides)::integer as overrides,
+        (select count(*) from public.exercise_override_versions)::integer as override_versions,
+        (select count(*) from public.audit_events)::integer as audit_events,
+        (select count(*) from pg_catalog.pg_trigger where tgname in
+          ('exercise_lifecycle_events_append_only','workspace_exercise_lifecycle_events_append_only') and tgenabled = 'O')::integer as active_event_guards`;
+    expect(counts[0]).toEqual({
+      legacy_rows: 0,
+      legacy_versions: 0,
+      global_events: 0,
+      private_events: 0,
+      global_identities: 0,
+      global_versions: 0,
+      private_identities: 0,
+      private_versions: 0,
+      overrides: 0,
+      override_versions: 0,
+      audit_events: auditBefore[0]!.count,
+      active_event_guards: 2,
+    });
+    const legacyWriters = await db`
+      select pg_catalog.to_regprocedure('public.catalog_write_variation(uuid,uuid,integer,uuid,jsonb)') as write,
+        pg_catalog.to_regprocedure('public.catalog_transition_variation(uuid,uuid,integer,text,uuid)') as transition`;
+    expect(legacyWriters[0]).toEqual({ write: null, transition: null });
+  });
 });

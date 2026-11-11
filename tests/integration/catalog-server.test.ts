@@ -164,7 +164,7 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
     expect(restored.error).toBeNull();
   });
 
-  it('creates a workspace variation through the real RPC with an explicit null version', async () => {
+  it('routes a workspace variation through the F16 override RPC with version zero', async () => {
     const action = server(workspaces.po);
     const exercise = await action.createExercise({
       operationKey: fixtureKey(),
@@ -425,7 +425,7 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
             request: {},
           }),
       );
-      await check(canCoach[index] ? ['catalog_write_variation'] : [], () =>
+      await check(canCoach[index] ? ['catalog_write_exercise_override'] : [], () =>
         actions.writeVariation({
           operationKey: key(),
           workspaceId: scoped,
@@ -433,7 +433,7 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
           request: {},
         }),
       );
-      await check(canCoach[index] ? ['catalog_transition_variation'] : [], () =>
+      await check(canCoach[index] ? ['catalog_write_exercise_override'] : [], () =>
         actions.transitionVariation({
           operationKey: key(),
           workspaceId: scoped,
