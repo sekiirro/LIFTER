@@ -226,8 +226,14 @@ describe('tenancy security catalog (T007)', () => {
         'apply_food_default_alternatives',
         'catalog_can_read_global',
         'catalog_create_food_legacy',
+        'catalog_effective_exercise_fields',
+        'catalog_effective_workspace_exercise_fields',
         'catalog_food_duplicate_exists',
         'catalog_food_writer_authorized',
+        'catalog_resolve_exercise_video',
+        'catalog_resolve_workspace_exercise_video',
+        'catalog_search_pre_cutover',
+        'catalog_search_variation',
         'catalog_video_url_allowed',
         'catalog_version_food_legacy',
         'catalog_write_audit',
@@ -265,8 +271,12 @@ describe('tenancy security catalog (T007)', () => {
         'reserve_catalog_food_keys',
         'set_catalog_operation_result',
         'sync_catalog_addition_limits',
+        'validate_exercise_override_alternative',
         'validate_exercise_payload',
+        'validate_exercise_version_alternative',
         'validate_food_request',
+        'validate_workspace_exercise_payload',
+        'validate_workspace_exercise_version_alternative',
       ].sort(),
     );
     for (const row of rows) {
@@ -286,6 +296,7 @@ describe('tenancy security catalog (T007)', () => {
         'registration_link_limits',
         'purge_schedule_activate',
         'purge_schedule_deactivate',
+        'catalog_search_pre_cutover',
       ].includes(row.proname);
       expect(row.prosecdef, row.proname).toBe(expectedDefiner);
       expect(row.proconfig).toContain('search_path=""');
@@ -322,6 +333,8 @@ describe('tenancy security catalog (T007)', () => {
               'catalog_create_food_legacy',
               'catalog_food_duplicate_exists',
               'catalog_food_writer_authorized',
+              'catalog_resolve_exercise_video',
+              'catalog_resolve_workspace_exercise_video',
               'catalog_version_food_legacy',
               'catalog_write_audit',
               'claim_catalog_operation',
@@ -349,8 +362,12 @@ describe('tenancy security catalog (T007)', () => {
               'reserve_catalog_food_keys',
               'set_catalog_operation_result',
               'sync_catalog_addition_limits',
+              'validate_exercise_override_alternative',
               'validate_exercise_payload',
+              'validate_exercise_version_alternative',
               'validate_food_request',
+              'validate_workspace_exercise_payload',
+              'validate_workspace_exercise_version_alternative',
             ].includes(row.proname)),
       );
     }

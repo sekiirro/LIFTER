@@ -174,7 +174,9 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
         primary_muscle_code: 'chest',
         secondary_muscle_codes: [],
         equipment_codes: ['dumbbell'],
-        defaults: {},
+        default_rest_time: 90,
+        default_rir: 2,
+        default_reps: 8,
       },
     });
     expect(exercise.status).toBe('ok');
@@ -199,7 +201,9 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
         primary_muscle_code: 'chest',
         secondary_muscle_codes: [],
         equipment_codes: ['barbell'],
-        defaults: {},
+        default_rest_time: 90,
+        default_rir: 2,
+        default_reps: 8,
       },
     });
     expect(created.status).toBe('ok');
@@ -265,7 +269,9 @@ describe('catalog server authorization uses the signed-in user RPC path', () => 
         primary_muscle_code: 'chest',
         secondary_muscle_codes: [],
         equipment_codes: ['barbell'],
-        defaults: {},
+        default_rest_time: 90,
+        default_rir: 2,
+        default_reps: 8,
       },
     });
     expect(workspaceCreated.status).toBe('ok');
