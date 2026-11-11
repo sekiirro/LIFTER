@@ -197,3 +197,10 @@
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T011, T016, T021, T026, T051 and T055 all resolve in `tasks.md`; no task status changed.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+
+## S48 CodeRabbit round-8 review-fix analysis - 2026-11-11T18:15:00Z
+
+- Scope: CodeRabbit inline-thread finding on the FR-002..FR-003 traceability row. The FR-003 entry now cites the T013 approval assertions that approval creates the subscription and the installment obligations - "T013 %s approval atomically commits one purchase graph and no activation" (one subscription, one installment, one payment, one decision, one receipt, one fact, no activation, and the immutable price/currency/duration/commission snapshot) and "T013 flexible issued rows copy exactly; only the first full obligation is collected" (the copied installment amounts and due offsets). T009 is retained as coverage of the synthetic initial graph only, not as evidence of approval behavior. The row's task mapping, evidence source and VERIFIED status are unchanged.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T009 and T013 both resolve in tasks.md; no task status changed.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no migration, code, test, or application behavior changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.

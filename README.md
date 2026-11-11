@@ -69,6 +69,9 @@ Offline preparation (no deployment):
    Run `npm run free-tier:project -- --per-row usage.json --volumes volumes.json`.
    Null or absent volumes print `MISSING` and exit 2; partial totals are incomplete.
    Projection covers the measured top 15 relations, not all database overhead.
+   The printed `Total` is a subtotal over those supplied relations only, not a
+   full database projection, and must not be used as the projection against the
+   70% exit trigger; full database capacity validation stays pending.
    Database/projection `--limit-mb` defaults to 500 decimal MB (1 MB = 1,000,000 bytes).
 4. Parse synthetic logs offline with
    `npm run free-tier:tail -- scripts/free-tier/fixtures/tail-sample.jsonl`.

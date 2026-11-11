@@ -44,7 +44,7 @@
 
 - **Rationale**:
   - Unauthorized callers never reach `generateLink`. Otherwise they could invalidate a client's live link, and the call would reveal that the account exists.
-  - Capacity is reserved before step 3, so two concurrent requests cannot both reach the provider when only one issuance is allowed: the second is rejected with `rate_limited` at step 1 and never supersedes a live link. The reservation is released when step 3 or step 4 fails, so the pre-request counts are restored.
+  - Capacity is reserved before step 3, so two concurrent requests cannot both reach the provider when only one issuance is allowed: the second is rejected with `rate_limited` at step 1 and never supersedes a live link. The reservation is released when step 2, step 3 or step 4 fails - including a failed application-level `authorize()` check in step 2 - so the pre-request counts are restored.
   - Every link shown has exactly one audit row (FR-009, SC-004). If step 4 fails (an audit failure, for example), the link is never shown.
   - The audit actor is `auth.uid()`, because step 4 runs with the user's JWT, not the service role.
 - **Accepted residual**: if step 3 succeeds and step 4 fails, the client's earlier unused link is superseded without an audit row. Nobody can see the new link. This needs a DB failure between two calls; the limit race that used to reach this residual is removed by the step-1 reservation, and a reservation that is never released expires with the window it consumed.

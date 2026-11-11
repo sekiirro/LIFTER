@@ -452,3 +452,10 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks cover the scope. T041 resolves in `tasks.md`; no task status changed and no verification status was upgraded.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no test, code, or application behavior changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+
+## S48 CodeRabbit round-8 review-fix analysis - 2026-11-11T18:15:00Z
+
+- Scope: CodeRabbit inline-thread finding on the Q-M16 acceptance criterion. Q-M16 now records the T041 implementation prerequisite explicitly: the draft handler and middleware.ts must set the private cache directive alongside no-store on the registration responses (verified: app/api/branding/draft/route.ts line 32 and middleware.ts line 77 set no-store only, while lib/branding/proxy-response.ts line 24 already sets private, no-store), and the preview success and preview error responses must assert both directives. T041 stays open until that implementation is complete and the preview checks exist. The existing registration-response requirements are preserved.
+- Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T041 resolves in tasks.md and remains unchecked.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no test, code, or application behavior changed. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.

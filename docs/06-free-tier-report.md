@@ -51,6 +51,8 @@ across their organizations before treating the organization as eligible.
 
 Pilot volumes: the illustrative input is decided by S31-PO-4 (ND-F8-1). Verify schema and units before measurement; `free-tier:project` projection remains pending that verification.
 
+`free-tier:project` prints its aggregate as `Total` (or `Partial total (MISSING volumes)`). That figure is a **subtotal over the supplied relations only** — the measured top 15 relations produced by `free-tier:db` — and is **not** a full database projection: it excludes every other relation and all database overhead. Do not use it as the database projection against the 70% exit trigger in section 3 above. Full database capacity validation stays pending the schema and unit verification above and the PO-approved deployment measurement (ND-F8-2).
+
 Outstanding production gates: [07-production-readiness.md](07-production-readiness.md). They do not block local development or PR merges (PO 2026-10-27).
 
 ## 4. Sign-off
