@@ -17,7 +17,7 @@ from `LIFTER_Claude_Files/LIFTER_BRD_PRD_Claude_Master.md` (DR-01) and the regis
   Platform Owner, authorization requires actual workspace membership. The verified Platform
   Owner is authorized across workspaces without a workspace-membership row, as defined by the
   merged F3 rule (`specs/003-tenancy-rls/spec.md` FR-004 and FR-007;
-  `supabase/migrations/20261027120000_tenancy.sql:43-46,65-75`). The UI is never a security
+  `supabase/migrations/20261027120000_tenancy.sql:43-46` and `supabase/migrations/20261027140000_access_capability_for_po.sql:1-18`). The UI is never a security
   boundary.
 - Every surface MUST be isolated: APIs, exports, Telegram bot, jobs, storage, notifications, logs.
   No data, existence or membership of one workspace may be revealed in another. Duplicate
@@ -295,7 +295,7 @@ Platform Owner exception already implemented by merged F3. Spec 003 FR-004 defin
 authorization for the PO across every workspace and active membership plus capability for other
 actors; FR-007 requires the matching app-layer policy. Migration
 `supabase/migrations/20261027120000_tenancy.sql:43-46` defines
-`app_private.is_platform_owner()` from the signed-in actor's staff role, and lines 65-75 define
+`app_private.is_platform_owner()` from the signed-in actor's staff role, and `supabase/migrations/20261027140000_access_capability_for_po.sql:1-18` defines
 `app_private.has_workspace_access()` with the PO branch and membership branch. The two
 authorization walls remain mandatory. Every other actor still requires actual workspace
 membership. No other Principle I semantics changed; Principle III and its capability grants are
