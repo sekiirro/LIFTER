@@ -50,7 +50,7 @@ async function createWorkspaceExercise() {
         primary_muscle_code: 'chest',
         secondary_muscle_codes: ['triceps'],
         equipment_codes: ['barbell'],
-        defaults: { working_sets: 3 },
+        default_reps: 3,
       },
     },
   );
@@ -84,25 +84,23 @@ test.beforeAll(async () => {
       primary_muscle_code: 'chest',
       secondary_muscle_codes: ['triceps'],
       equipment_codes: ['barbell'],
-      defaults: {
-        warmup_sets: 1,
-        working_sets: 3,
-        reps: { min: 8, max: 12 },
-        rest_seconds: 90,
-        rir: 2,
-        alternative_exercise_ids: [],
-      },
+      default_reps: { min: 8, max: 12 },
+      default_rest_time: 90,
+      default_rir: 2,
     },
   });
   if (created.error) throw new Error(created.error.message);
   exerciseId = created.data.exercise_id;
-  const variation = await fixture.po.client.rpc('catalog_write_variation', {
-    p_workspace_id: fixture.wsA.id,
-    p_exercise_id: exerciseId,
-    p_expected_version: null,
-    p_operation_key: randomUUID(),
-    p_request: { video_url: 'https://youtu.be/abcdefghijk', note: '' },
-  });
+  const variation = await fixture.po.client.rpc(
+    'catalog_write_exercise_override',
+    {
+      p_workspace_id: fixture.wsA.id,
+      p_exercise_id: exerciseId,
+      p_expected_version: 0,
+      p_operation_key: randomUUID(),
+      p_request: { video_url: 'https://youtu.be/abcdefghijk', notes: '' },
+    },
+  );
   if (variation.error) throw new Error(variation.error.message);
   await mkdir(screenshotDir, { recursive: true });
 });

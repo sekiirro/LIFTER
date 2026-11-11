@@ -40,6 +40,7 @@ export type ExerciseEditorProps = {
   scope?: ExerciseScope;
   hasCoachingWork?: boolean;
   exercise?: NormalizedExercise | null;
+  exerciseId?: string;
   alternatives?: readonly ExerciseAlternativeOption[];
   initialDraft?: ExerciseEditorDraft;
   initialErrors?: ExerciseEditorErrors;
@@ -57,6 +58,9 @@ const ERROR_MESSAGE_KEYS: Record<ExerciseEditorErrorCode, keyof Messages> = {
   invalid_choice: 'catalog.editorErrorChoice',
   too_many_alternatives: 'catalog.editorErrorTooManyAlternatives',
   text_too_long: 'catalog.editorErrorTextTooLong',
+  invalid_video_url: 'catalog.videoVariationInvalidUrl',
+  duplicate_alternative: 'catalog.editorErrorChoice',
+  self_alternative: 'catalog.editorErrorChoice',
 };
 
 function errorText(
@@ -69,11 +73,12 @@ function errorText(
 function emptyDraft(): ExerciseEditorDraft {
   return {
     names: { ar: '', en: '' },
+    description: '',
+    notes: '',
+    videoUrl: '',
     primaryMuscle: '',
     secondaryMuscles: [],
     equipment: '',
-    warmupSets: '',
-    workingSets: '',
     repsMode: 'fixed',
     repsValue: '',
     repsMin: '',
@@ -110,6 +115,7 @@ export function ExerciseEditor({
   scope = 'global',
   hasCoachingWork = false,
   exercise = null,
+  exerciseId,
   alternatives = [],
   initialDraft,
   initialErrors,
@@ -168,10 +174,10 @@ export function ExerciseEditor({
   function handleSubmit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault();
     if (!canEdit) return;
-    const nextErrors = validateExerciseEditorDraft(draft);
+    const nextErrors = validateExerciseEditorDraft(draft, exerciseId);
     setErrors(nextErrors);
     if (hasExerciseEditorErrors(nextErrors)) return;
-    if (!buildExerciseInput(draft)) return;
+    if (!buildExerciseInput(draft, exerciseId)) return;
     onSubmit?.(draft);
   }
 
@@ -236,26 +242,6 @@ export function ExerciseEditor({
         <h3>{m['catalog.editorDefaultsTitle']}</h3>
         <p>{m['catalog.editorDefaultsIntro']}</p>
         <dl className={styles.summaryList}>
-          <div data-defaults-warmup={draft.warmupSets.trim()}>
-            <dt>{m['catalog.editorWarmupSets']}</dt>
-            <dd>
-              {draft.warmupSets.trim() ? (
-                <Bidi dir="ltr">{draft.warmupSets.trim()}</Bidi>
-              ) : (
-                m['catalog.editorNone']
-              )}
-            </dd>
-          </div>
-          <div data-defaults-working={draft.workingSets.trim()}>
-            <dt>{m['catalog.editorWorkingSets']}</dt>
-            <dd>
-              {draft.workingSets.trim() ? (
-                <Bidi dir="ltr">{draft.workingSets.trim()}</Bidi>
-              ) : (
-                m['catalog.editorNone']
-              )}
-            </dd>
-          </div>
           <div data-defaults-reps={repsText}>
             <dt>{m['catalog.editorReps']}</dt>
             <dd>
@@ -406,39 +392,6 @@ export function ExerciseEditor({
 
         <fieldset className={styles.group}>
           <legend>{m['catalog.editorDefaultsFormTitle']}</legend>
-          <div className={styles.grid}>
-            <Field
-              label={m['catalog.editorWarmupSets']}
-              error={errorText(errors.warmupSets, m)}
-              inputProps={{
-                id: `${base}-warmup-sets`,
-                type: 'number',
-                inputMode: 'numeric',
-                min: 0,
-                max: 100,
-                value: draft.warmupSets,
-                disabled: !canEdit,
-                onChange: (event) =>
-                  setValue('warmupSets', event.currentTarget.value),
-              }}
-            />
-            <Field
-              label={m['catalog.editorWorkingSets']}
-              error={errorText(errors.workingSets, m)}
-              inputProps={{
-                id: `${base}-working-sets`,
-                type: 'number',
-                inputMode: 'numeric',
-                min: 0,
-                max: 100,
-                value: draft.workingSets,
-                disabled: !canEdit,
-                onChange: (event) =>
-                  setValue('workingSets', event.currentTarget.value),
-              }}
-            />
-          </div>
-
           <fieldset className={styles.repsGroup}>
             <legend>{m['catalog.editorReps']}</legend>
             <div className={styles.radioRow}>
@@ -473,7 +426,7 @@ export function ExerciseEditor({
                   type: 'number',
                   inputMode: 'numeric',
                   min: 1,
-                  max: 1000,
+                  max: 100,
                   value: draft.repsValue,
                   disabled: !canEdit,
                   onChange: (event) =>
@@ -491,7 +444,7 @@ export function ExerciseEditor({
                   type: 'number',
                   inputMode: 'numeric',
                   min: 1,
-                  max: 1000,
+                  max: 100,
                   value: draft.repsMin,
                   disabled: !canEdit,
                   onChange: (event) =>
@@ -506,7 +459,7 @@ export function ExerciseEditor({
                   type: 'number',
                   inputMode: 'numeric',
                   min: 1,
-                  max: 1000,
+                  max: 100,
                   value: draft.repsMax,
                   disabled: !canEdit,
                   onChange: (event) =>
@@ -530,7 +483,8 @@ export function ExerciseEditor({
                 type: 'number',
                 inputMode: 'numeric',
                 min: 0,
-                max: 100000,
+                max: 600,
+                step: 15,
                 value: draft.restSeconds,
                 disabled: !canEdit,
                 onChange: (event) =>
@@ -545,7 +499,7 @@ export function ExerciseEditor({
                 type: 'number',
                 inputMode: 'numeric',
                 min: 0,
-                max: 10,
+                max: 5,
                 value: draft.rir,
                 disabled: !canEdit,
                 onChange: (event) => setValue('rir', event.currentTarget.value),

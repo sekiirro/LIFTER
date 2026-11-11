@@ -25,18 +25,19 @@ vi.mock('next/cache', () => ({ revalidatePath: vi.fn() }));
 
 const draft = {
   names: { ar: 'تمرين جديد', en: 'New exercise' },
+  description: 'Chest press description',
+  notes: 'Coach note',
+  videoUrl: 'https://www.youtube.com/watch?v=abcdefghijk',
   primaryMuscle: 'chest',
   secondaryMuscles: ['triceps'],
   equipment: 'barbell',
-  warmupSets: '1',
-  workingSets: '3',
   repsMode: 'range' as const,
   repsValue: '',
   repsMin: '8',
   repsMax: '12',
   restSeconds: '90',
   rir: '2',
-  alternativeExerciseIds: [],
+  alternativeExerciseIds: ['66666666-6666-4666-8666-666666666666'],
 };
 const validExerciseId = '55555555-5555-4555-8555-555555555555';
 const validWorkspaceId = '22222222-2222-4222-8222-222222222222';
@@ -57,7 +58,7 @@ describe('production exercise authoring actions', () => {
     mocks.removeWorkspaceExercise.mockResolvedValue({ status: 'ok', data: {} });
   });
 
-  it('writes a global exercise only through the PO create RPC with exact defaults', async () => {
+  it('submits exactly the eight approved fields and no instructions or legacy defaults', async () => {
     const result = await saveExerciseAction({
       draft,
       scope: 'global',
@@ -65,24 +66,44 @@ describe('production exercise authoring actions', () => {
       operationKey: '11111111-1111-4111-8111-111111111111',
     });
     expect(result).toEqual({ status: 'ok', data: {} });
-    expect(mocks.createExercise).toHaveBeenCalledWith(
-      expect.objectContaining({
-        operationKey: '11111111-1111-4111-8111-111111111111',
-        request: expect.objectContaining({
-          name_ar: 'تمرين جديد',
-          name_en: 'New exercise',
-          primary_muscle_code: 'chest',
-          equipment_codes: ['barbell'],
-          defaults: {
-            warmup_sets: 1,
-            working_sets: 3,
-            reps: { min: 8, max: 12 },
-            rest_seconds: 90,
-            rir: 2,
-          },
-        }),
-      }),
-    );
+    const request = (
+      mocks.createExercise.mock.calls[0]![0] as {
+        request: Record<string, unknown>;
+      }
+    ).request;
+    expect(request).toEqual({
+      name_en: 'New exercise',
+      name_ar: 'تمرين جديد',
+      primary_muscle_code: 'chest',
+      secondary_muscle_codes: ['triceps'],
+      equipment_codes: ['barbell'],
+      description: 'Chest press description',
+      notes: 'Coach note',
+      video_url: 'https://www.youtube.com/watch?v=abcdefghijk',
+      default_reps: { min: 8, max: 12 },
+      default_rest_time: 90,
+      default_rir: 2,
+      alternatives: ['66666666-6666-4666-8666-666666666666'],
+    });
+    expect(Object.keys(request)).not.toContain('defaults');
+    expect(Object.keys(request)).not.toContain('instructions_ar');
+    expect(Object.keys(request)).not.toContain('instructions_en');
+  });
+
+  it('accepts an English-only Global create without an Arabic name', async () => {
+    await saveExerciseAction({
+      draft: { ...draft, names: { ar: '', en: 'English only press' } },
+      scope: 'global',
+      workspaceId: null,
+      operationKey: '11111111-1111-4111-8111-111111111111',
+    });
+    const request = (
+      mocks.createExercise.mock.calls[0]![0] as {
+        request: Record<string, unknown>;
+      }
+    ).request;
+    expect(request.name_en).toBe('English only press');
+    expect(request).not.toHaveProperty('name_ar');
   });
 
   it('does not permit a Trainer to request global scope', async () => {
@@ -159,7 +180,7 @@ describe('production exercise authoring actions', () => {
     );
   });
 
-  it('carries current bilingual instructions into a new version when unchanged', async () => {
+  it('never submits legacy instructions when versioning an exercise', async () => {
     await saveExerciseAction({
       draft,
       scope: 'global',
@@ -167,16 +188,19 @@ describe('production exercise authoring actions', () => {
       operationKey: '11111111-1111-4111-8111-111111111111',
       id: validExerciseId,
       expectedVersion: 2,
-      instructions: { ar: 'تعليمات قائمة', en: 'Existing instructions' },
-    } as Parameters<typeof saveExerciseAction>[0]);
+    });
 
-    expect(mocks.versionExercise).toHaveBeenCalledWith(
-      expect.objectContaining({
-        request: expect.objectContaining({
-          instructions_ar: 'تعليمات قائمة',
-          instructions_en: 'Existing instructions',
-        }),
-      }),
+    const request = (
+      mocks.versionExercise.mock.calls[0]![0] as {
+        request: Record<string, unknown>;
+      }
+    ).request;
+    expect(Object.keys(request)).not.toContain('instructions_ar');
+    expect(Object.keys(request)).not.toContain('instructions_en');
+    expect(request.description).toBe('Chest press description');
+    expect(request.notes).toBe('Coach note');
+    expect(request.video_url).toBe(
+      'https://www.youtube.com/watch?v=abcdefghijk',
     );
   });
 

@@ -1,6 +1,13 @@
 import {
   EQUIPMENT_CODES,
+  EXERCISE_REST_STEP_SECONDS,
+  MAX_CATALOG_DESCRIPTION_LENGTH,
+  MAX_CATALOG_NOTE_LENGTH,
   MAX_CATALOG_TEXT_LENGTH,
+  MAX_EXERCISE_ALTERNATIVES,
+  MAX_EXERCISE_REPS,
+  MAX_EXERCISE_REST_SECONDS,
+  MAX_EXERCISE_RIR,
   MUSCLE_GROUP_CODES,
   type CatalogLocale,
   type EquipmentCode,
@@ -10,6 +17,7 @@ import {
   type MuscleGroupCode,
   type NormalizedExercise,
 } from './schemas';
+import { isAllowedCatalogVideoUrl } from './video-variation';
 
 /**
  * Mocked UI role for the presentational catalog editor. Real authorization is
@@ -43,11 +51,12 @@ export type ExerciseAlternativeOption = {
 
 export type ExerciseEditorDraft = {
   names: Record<CatalogLocale, string>;
+  description: string;
+  notes: string;
+  videoUrl: string;
   primaryMuscle: string;
   secondaryMuscles: string[];
   equipment: string;
-  warmupSets: string;
-  workingSets: string;
   repsMode: ExerciseRepsMode;
   repsValue: string;
   repsMin: string;
@@ -60,10 +69,11 @@ export type ExerciseEditorDraft = {
 export type ExerciseEditorField =
   | 'nameAr'
   | 'nameEn'
+  | 'description'
+  | 'notes'
+  | 'videoUrl'
   | 'primaryMuscle'
   | 'equipment'
-  | 'warmupSets'
-  | 'workingSets'
   | 'repsMode'
   | 'repsValue'
   | 'repsMin'
@@ -79,7 +89,10 @@ export type ExerciseEditorErrorCode =
   | 'range_order'
   | 'invalid_choice'
   | 'too_many_alternatives'
-  | 'text_too_long';
+  | 'text_too_long'
+  | 'invalid_video_url'
+  | 'duplicate_alternative'
+  | 'self_alternative';
 
 export type ExerciseEditorErrors = Partial<
   Record<ExerciseEditorField, ExerciseEditorErrorCode>
@@ -114,7 +127,9 @@ export function alternativeName(
   locale: CatalogLocale,
 ): string {
   const fallback: CatalogLocale = locale === 'ar' ? 'en' : 'ar';
-  return option.names[locale] ?? option.names[fallback] ?? option.id;
+  const preferred = option.names[locale]?.trim();
+  if (preferred) return preferred;
+  return option.names[fallback]?.trim() || option.id;
 }
 
 export function formatExerciseReps(reps: ExerciseReps | undefined): string {
@@ -137,13 +152,12 @@ export function draftFromExercise(
   const reps = defaults?.reps;
   return {
     names: { ar: exercise.names.ar, en: exercise.names.en },
+    description: exercise.description ?? '',
+    notes: exercise.notes ?? '',
+    videoUrl: exercise.videoUrl ?? '',
     primaryMuscle: exercise.primaryMuscle,
     secondaryMuscles: [...exercise.secondaryMuscles],
     equipment: exercise.equipment,
-    warmupSets:
-      defaults?.warmupSets === undefined ? '' : String(defaults.warmupSets),
-    workingSets:
-      defaults?.workingSets === undefined ? '' : String(defaults.workingSets),
     repsMode: reps?.kind === 'range' ? 'range' : 'fixed',
     repsValue: reps?.kind === 'fixed' ? String(reps.value) : '',
     repsMin: reps?.kind === 'range' ? String(reps.min) : '',
@@ -182,7 +196,7 @@ function parseFixedReps(raw: string): ParsedInteger {
   if (!trimmed) return { error: 'required' };
   if (!/^\d+$/.test(trimmed)) return { error: 'positive_integer' };
   const value = Number(trimmed);
-  if (!Number.isSafeInteger(value) || value < 1 || value > 1000) {
+  if (!Number.isSafeInteger(value) || value < 1 || value > MAX_EXERCISE_REPS) {
     return { error: 'positive_integer' };
   }
   return { value };
@@ -191,20 +205,32 @@ function parseFixedReps(raw: string): ParsedInteger {
 function parseRangeReps(raw: string): ParsedInteger {
   const trimmed = raw.trim();
   if (!trimmed) return { error: 'required' };
-  return parseOptionalInteger(trimmed, 1, 1000);
+  return parseOptionalInteger(trimmed, 1, MAX_EXERCISE_REPS);
 }
 
 export function validateExerciseEditorDraft(
   draft: ExerciseEditorDraft,
+  currentExerciseId?: string | null,
 ): ExerciseEditorErrors {
   const errors: ExerciseEditorErrors = {};
 
-  if (!draft.names.ar.trim()) errors.nameAr = 'required';
-  else if (Array.from(draft.names.ar.trim()).length > MAX_CATALOG_TEXT_LENGTH)
-    errors.nameAr = 'text_too_long';
+  // English is required and Arabic is optional (S37-PO-10, FR-001/FR-003).
+  if (draft.names.ar.trim()) {
+    if (Array.from(draft.names.ar.trim()).length > MAX_CATALOG_TEXT_LENGTH)
+      errors.nameAr = 'text_too_long';
+  }
   if (!draft.names.en.trim()) errors.nameEn = 'required';
   else if (Array.from(draft.names.en.trim()).length > MAX_CATALOG_TEXT_LENGTH)
     errors.nameEn = 'text_too_long';
+
+  if (
+    Array.from(draft.description.trim()).length > MAX_CATALOG_DESCRIPTION_LENGTH
+  )
+    errors.description = 'text_too_long';
+  if (Array.from(draft.notes.trim()).length > MAX_CATALOG_NOTE_LENGTH)
+    errors.notes = 'text_too_long';
+  if (draft.videoUrl.trim() && !isAllowedCatalogVideoUrl(draft.videoUrl))
+    errors.videoUrl = 'invalid_video_url';
 
   const primaryMuscle = draft.primaryMuscle.trim();
   if (!primaryMuscle) errors.primaryMuscle = 'required';
@@ -217,12 +243,6 @@ export function validateExerciseEditorDraft(
   else if (!EQUIPMENT_CODES.includes(equipment as EquipmentCode)) {
     errors.equipment = 'invalid_choice';
   }
-
-  const warmup = parseOptionalInteger(draft.warmupSets, 0, 100);
-  if (warmup.error) errors.warmupSets = warmup.error;
-
-  const working = parseOptionalInteger(draft.workingSets, 0, 100);
-  if (working.error) errors.workingSets = working.error;
 
   if (draft.repsMode === 'fixed') {
     const fixed = parseFixedReps(draft.repsValue);
@@ -244,17 +264,30 @@ export function validateExerciseEditorDraft(
     errors.repsMode = 'invalid_choice';
   }
 
-  const rest = parseOptionalInteger(draft.restSeconds, 0, 100000);
+  const rest = parseOptionalInteger(
+    draft.restSeconds,
+    0,
+    MAX_EXERCISE_REST_SECONDS,
+  );
   if (rest.error) errors.restSeconds = rest.error;
+  else if (
+    rest.value !== undefined &&
+    rest.value % EXERCISE_REST_STEP_SECONDS !== 0
+  )
+    errors.restSeconds = 'integer_range';
 
-  const rir = parseOptionalInteger(draft.rir, 0, 10);
+  const rir = parseOptionalInteger(draft.rir, 0, MAX_EXERCISE_RIR);
   if (rir.error) errors.rir = rir.error;
 
   const alternatives = draft.alternativeExerciseIds.map((id) => id.trim());
-  if (alternatives.length > 3) {
+  if (alternatives.length > MAX_EXERCISE_ALTERNATIVES) {
     errors.alternatives = 'too_many_alternatives';
   } else if (alternatives.some((id) => !id)) {
     errors.alternatives = 'required';
+  } else if (new Set(alternatives).size !== alternatives.length) {
+    errors.alternatives = 'duplicate_alternative';
+  } else if (!!currentExerciseId && alternatives.includes(currentExerciseId)) {
+    errors.alternatives = 'self_alternative';
   }
 
   return errors;
@@ -266,18 +299,17 @@ export function hasExerciseEditorErrors(errors: ExerciseEditorErrors): boolean {
 
 export function buildExerciseInput(
   draft: ExerciseEditorDraft,
+  currentExerciseId?: string | null,
 ): ExerciseInput | null {
-  if (hasExerciseEditorErrors(validateExerciseEditorDraft(draft))) {
+  if (
+    hasExerciseEditorErrors(
+      validateExerciseEditorDraft(draft, currentExerciseId),
+    )
+  ) {
     return null;
   }
 
   const defaults: ExerciseDefaults = {};
-  if (draft.warmupSets.trim()) {
-    defaults.warmupSets = Number(draft.warmupSets.trim());
-  }
-  if (draft.workingSets.trim()) {
-    defaults.workingSets = Number(draft.workingSets.trim());
-  }
   defaults.reps =
     draft.repsMode === 'fixed'
       ? { kind: 'fixed', value: Number(draft.repsValue.trim()) }
@@ -298,6 +330,10 @@ export function buildExerciseInput(
     .map((code) => code.trim())
     .filter(Boolean);
 
+  const description = draft.description.trim();
+  const notes = draft.notes.trim();
+  const videoUrl = draft.videoUrl.trim();
+
   return {
     names: {
       ar: draft.names.ar.trim(),
@@ -306,6 +342,9 @@ export function buildExerciseInput(
     primaryMuscle: draft.primaryMuscle.trim(),
     ...(secondaryMuscles.length ? { secondaryMuscles } : {}),
     equipment: draft.equipment.trim(),
+    ...(description ? { description } : {}),
+    ...(notes ? { notes } : {}),
+    ...(videoUrl ? { videoUrl } : {}),
     defaults,
   };
 }

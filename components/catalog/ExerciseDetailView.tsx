@@ -138,26 +138,6 @@ export function ExerciseDetailView({
         <h2>{m['catalog.editorDefaultsTitle']}</h2>
         <dl className={styles.details}>
           <div>
-            <dt>{m['catalog.editorWarmupSets']}</dt>
-            <dd>
-              <Bidi dir="ltr">
-                {defaults?.warmupSets === undefined
-                  ? m['catalog.editorNone']
-                  : formatNumber(defaults.warmupSets, locale)}
-              </Bidi>
-            </dd>
-          </div>
-          <div>
-            <dt>{m['catalog.editorWorkingSets']}</dt>
-            <dd>
-              <Bidi dir="ltr">
-                {defaults?.workingSets === undefined
-                  ? m['catalog.editorNone']
-                  : formatNumber(defaults.workingSets, locale)}
-              </Bidi>
-            </dd>
-          </div>
-          <div>
             <dt>{m['catalog.editorReps']}</dt>
             <dd>
               <Bidi dir="ltr">{repText}</Bidi>

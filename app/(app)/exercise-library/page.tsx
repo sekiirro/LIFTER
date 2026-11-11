@@ -42,13 +42,21 @@ function exerciseRows(data: unknown): CatalogExerciseListItem[] {
     )
       return [];
     const payload = row.result_payload as Record<string, unknown>;
-    const nameAr = payload.name_ar;
-    const nameEn = payload.name_en;
+    const effective =
+      payload.effective_fields && typeof payload.effective_fields === 'object'
+        ? (payload.effective_fields as Record<string, unknown>)
+        : null;
+    const resolvedName =
+      effective?.name && typeof effective.name === 'object'
+        ? ((effective.name as Record<string, unknown>).value as
+            Record<string, unknown> | undefined)
+        : undefined;
+    const nameAr = resolvedName?.name_ar ?? payload.name_ar;
+    const nameEn = resolvedName?.name_en ?? payload.name_en;
     const equipment = Array.isArray(payload.equipment_codes)
       ? payload.equipment_codes[0]
       : undefined;
     if (
-      typeof nameAr !== 'string' ||
       typeof nameEn !== 'string' ||
       typeof payload.primary_muscle_code !== 'string' ||
       typeof equipment !== 'string'
@@ -58,7 +66,10 @@ function exerciseRows(data: unknown): CatalogExerciseListItem[] {
       {
         id: row.result_id,
         kind: 'exercise' as const,
-        names: { ar: nameAr, en: nameEn },
+        names: {
+          ar: typeof nameAr === 'string' ? nameAr : '',
+          en: nameEn,
+        },
         primaryMuscle:
           payload.primary_muscle_code as CatalogExerciseListItem['primaryMuscle'],
         equipment: equipment as CatalogExerciseListItem['equipment'],

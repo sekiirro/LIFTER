@@ -26,7 +26,6 @@ export type SaveExerciseInput = {
   operationKey: string;
   id?: string;
   expectedVersion?: number;
-  instructions?: Partial<Record<'ar' | 'en', string>>;
   equipmentCodes?: string[];
 };
 
@@ -52,8 +51,9 @@ function validSavePayload(value: unknown): value is SaveExerciseInput {
   const stringDraftFields = [
     'primaryMuscle',
     'equipment',
-    'warmupSets',
-    'workingSets',
+    'description',
+    'notes',
+    'videoUrl',
     'repsValue',
     'repsMin',
     'repsMax',
@@ -80,12 +80,7 @@ function validSavePayload(value: unknown): value is SaveExerciseInput {
         Number(value.expectedVersion) >= 0)) &&
     (value.equipmentCodes === undefined ||
       (Array.isArray(value.equipmentCodes) &&
-        value.equipmentCodes.every((code) => typeof code === 'string'))) &&
-    (value.instructions === undefined ||
-      (isRecord(value.instructions) &&
-        Object.values(value.instructions).every(
-          (text) => typeof text === 'string',
-        )))
+        value.equipmentCodes.every((code) => typeof code === 'string')))
   );
 }
 
@@ -142,17 +137,24 @@ export async function removeExerciseAction(
   return result;
 }
 
+/**
+ * Builds the approved eight-field payload (FR-003) for the create/version RPCs.
+ * The database validator is authoritative; this conversion only shapes the
+ * request and never sends the retired `instructions_*` or `defaults` keys.
+ */
 function requestFor(
   draft: ExerciseEditorDraft,
-  instructions?: Partial<Record<'ar' | 'en', string>>,
+  scope: 'global' | 'workspace',
+  currentExerciseId?: string,
   equipmentCodes?: string[],
 ): Record<string, unknown> | null {
-  const exercise = buildExerciseInput(draft);
+  const exercise = buildExerciseInput(draft, currentExerciseId);
   if (!exercise) return null;
   const defaults = exercise.defaults;
+  const reps = defaults?.reps;
   return {
-    name_ar: exercise.names.ar,
     name_en: exercise.names.en,
+    ...(exercise.names.ar ? { name_ar: exercise.names.ar } : {}),
     primary_muscle_code: exercise.primaryMuscle,
     ...(exercise.secondaryMuscles?.length
       ? { secondary_muscle_codes: exercise.secondaryMuscles }
@@ -163,32 +165,26 @@ function requestFor(
             EQUIPMENT_CODES.includes(code as (typeof EQUIPMENT_CODES)[number]),
           )
         : [exercise.equipment],
-    ...(instructions?.ar === undefined
-      ? {}
-      : { instructions_ar: instructions.ar }),
-    ...(instructions?.en === undefined
-      ? {}
-      : { instructions_en: instructions.en }),
-    defaults: {
-      ...(defaults?.warmupSets === undefined
-        ? {}
-        : { warmup_sets: defaults.warmupSets }),
-      ...(defaults?.workingSets === undefined
-        ? {}
-        : { working_sets: defaults.workingSets }),
-      ...(defaults?.reps?.kind === 'fixed'
-        ? { reps: { value: defaults.reps.value } }
-        : defaults?.reps?.kind === 'range'
-          ? { reps: { min: defaults.reps.min, max: defaults.reps.max } }
-          : {}),
-      ...(defaults?.restSeconds === undefined
-        ? {}
-        : { rest_seconds: defaults.restSeconds }),
-      ...(defaults?.rir === undefined ? {} : { rir: defaults.rir }),
-      ...(defaults?.alternativeExerciseIds?.length
-        ? { alternative_exercise_ids: defaults.alternativeExerciseIds }
+    ...(exercise.description ? { description: exercise.description } : {}),
+    ...(exercise.notes ? { notes: exercise.notes } : {}),
+    ...(exercise.videoUrl ? { video_url: exercise.videoUrl } : {}),
+    ...(reps?.kind === 'fixed'
+      ? { default_reps: reps.value }
+      : reps?.kind === 'range'
+        ? { default_reps: { min: reps.min, max: reps.max } }
         : {}),
-    },
+    ...(defaults?.restSeconds === undefined
+      ? {}
+      : { default_rest_time: defaults.restSeconds }),
+    ...(defaults?.rir === undefined || defaults.rir === null
+      ? {}
+      : { default_rir: defaults.rir }),
+    // Global Alternatives are canonical identities (FR-025). Workspace
+    // Alternatives require one-of-two target objects and stay unwired until
+    // the private-selection surface is delivered.
+    ...(scope === 'global' && defaults?.alternativeExerciseIds?.length
+      ? { alternatives: defaults.alternativeExerciseIds }
+      : {}),
   };
 }
 
@@ -211,7 +207,8 @@ export async function saveExerciseAction(
       return { status: 'invalid' };
     const request = requestFor(
       input.draft,
-      input.instructions,
+      'global',
+      input.id,
       input.id ? input.equipmentCodes : undefined,
     );
     if (!request) return { status: 'invalid' };
@@ -246,7 +243,7 @@ export async function saveExerciseAction(
     )
   )
     return { status: 'invalid' };
-  const request = requestFor(input.draft, input.instructions);
+  const request = requestFor(input.draft, 'workspace', input.id);
   if (!request) return { status: 'invalid' };
   const result = await writeWorkspaceExercise({
     operationKey: input.operationKey,

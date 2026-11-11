@@ -40,17 +40,13 @@ function draft(
 }
 
 describe('exercise editor defaults presentation', () => {
-  it('renders the exact warm-up/working sets, fixed reps, rest, RIR and alternatives', () => {
+  it('renders the exact fixed reps, rest, RIR and alternatives', () => {
     const html = render();
     expect(html).toContain('data-testid="exercise-defaults"');
-    expect(html).toContain('data-defaults-warmup="2"');
-    expect(html).toContain('data-defaults-working="4"');
     expect(html).toContain('data-defaults-reps="8"');
     expect(html).toContain('data-defaults-rest="90"');
     expect(html).toContain('data-defaults-rir="2"');
     expect(html).toContain(en['catalog.editorRepsFixed']);
-    expect(html).toContain(en['catalog.editorWarmupSets']);
-    expect(html).toContain(en['catalog.editorWorkingSets']);
     expect(html).toContain(en['catalog.editorRest']);
     expect(html).toContain(en['catalog.editorRir']);
     expect(html).toContain('Lat Pulldown');
@@ -72,8 +68,6 @@ describe('exercise editor defaults presentation', () => {
       primaryMuscle: 'chest',
       equipment: 'barbell',
       defaults: {
-        warmupSets: 2,
-        workingSets: 4,
         reps: { kind: 'fixed', value: 8 },
         restSeconds: 90,
         rir: 2,
@@ -298,6 +292,110 @@ describe('exercise editor workspace scope', () => {
     expect(workspaceHtml).not.toContain('data-testid="exercise-read-only"');
     expect(workspaceHtml).toContain(en['catalog.editorIntroWorkspace']);
     expect(workspaceHtml).not.toContain('global exercise');
+  });
+});
+
+describe('exercise editor approved bounds', () => {
+  it('accepts Rest at 0–600 in 15-second steps and rejects other values', () => {
+    for (const restSeconds of ['0', '15', '90', '600']) {
+      expect(
+        validateExerciseEditorDraft(draft({ restSeconds })).restSeconds,
+      ).toBeUndefined();
+    }
+    for (const restSeconds of ['7', '615', '-15', '601']) {
+      expect(
+        validateExerciseEditorDraft(draft({ restSeconds })).restSeconds,
+      ).toBe('integer_range');
+    }
+  });
+
+  it('limits RIR to 0–5 and Reps to 1–100', () => {
+    expect(
+      validateExerciseEditorDraft(draft({ rir: '5' })).rir,
+    ).toBeUndefined();
+    expect(validateExerciseEditorDraft(draft({ rir: '6' })).rir).toBe(
+      'integer_range',
+    );
+    expect(
+      validateExerciseEditorDraft(
+        draft({ repsMode: 'fixed', repsValue: '100' }),
+      ).repsValue,
+    ).toBeUndefined();
+    expect(
+      validateExerciseEditorDraft(
+        draft({ repsMode: 'fixed', repsValue: '101' }),
+      ).repsValue,
+    ).toBe('positive_integer');
+    expect(
+      validateExerciseEditorDraft(
+        draft({ repsMode: 'range', repsMin: '1', repsMax: '100' }),
+      ),
+    ).toEqual({});
+  });
+
+  it('caps Description at 2000 characters and rejects unusable video URLs', () => {
+    const atLimit = 'a'.repeat(2000);
+    expect(
+      validateExerciseEditorDraft(draft({ description: atLimit })).description,
+    ).toBeUndefined();
+    expect(
+      validateExerciseEditorDraft(draft({ description: `${atLimit}a` }))
+        .description,
+    ).toBe('text_too_long');
+    expect(
+      validateExerciseEditorDraft(
+        draft({ videoUrl: 'https://example.com/video' }),
+      ).videoUrl,
+    ).toBe('invalid_video_url');
+    expect(
+      validateExerciseEditorDraft(
+        draft({ videoUrl: 'https://youtu.be/abcdef' }),
+      ).videoUrl,
+    ).toBeUndefined();
+  });
+
+  it('rejects duplicate and self-targeting Alternatives', () => {
+    const selfId = '55555555-5555-4555-8555-555555555555';
+    expect(
+      validateExerciseEditorDraft(draft({ alternativeExerciseIds: ['a', 'a'] }))
+        .alternatives,
+    ).toBe('duplicate_alternative');
+    expect(
+      validateExerciseEditorDraft(
+        draft({ alternativeExerciseIds: [selfId] }),
+        selfId,
+      ).alternatives,
+    ).toBe('self_alternative');
+    expect(
+      validateExerciseEditorDraft(
+        draft({ alternativeExerciseIds: ['a', 'b', 'c', 'd'] }),
+      ).alternatives,
+    ).toBe('too_many_alternatives');
+  });
+
+  it('requires English only, so an English-only draft is submittable', () => {
+    expect(
+      validateExerciseEditorDraft(draft({ names: { ar: '', en: 'Press' } })),
+    ).toEqual({});
+    expect(
+      validateExerciseEditorDraft(draft({ names: { ar: 'ضغط', en: '' } }))
+        .nameEn,
+    ).toBe('required');
+  });
+
+  it('sends Description, Notes and Video through the eight-field input', () => {
+    const input = buildExerciseInput(
+      draft({
+        description: 'Press description',
+        notes: 'Coach note',
+        videoUrl: 'https://youtu.be/abcdef',
+      }),
+    );
+    expect(input).toMatchObject({
+      description: 'Press description',
+      notes: 'Coach note',
+      videoUrl: 'https://youtu.be/abcdef',
+    });
   });
 });
 

@@ -20,7 +20,6 @@ export function ExerciseAuthoringForm({
   id,
   expectedVersion,
   exercise,
-  instructions,
   equipmentCodes,
 }: {
   locale: Locale;
@@ -30,7 +29,6 @@ export function ExerciseAuthoringForm({
   id?: string;
   expectedVersion?: number;
   exercise?: NormalizedExercise;
-  instructions?: Partial<Record<'ar' | 'en', string>>;
   equipmentCodes?: string[];
 }) {
   const router = useRouter();
@@ -61,7 +59,6 @@ export function ExerciseAuthoringForm({
         operationKey: operationKey.current.key,
         id,
         expectedVersion,
-        instructions,
         equipmentCodes,
       });
       if (result.status === 'ok') {
@@ -85,6 +82,7 @@ export function ExerciseAuthoringForm({
         hasCoachingWork={scope === 'workspace'}
         status={status}
         exercise={exercise}
+        exerciseId={id}
         onSubmit={submit}
       />
     </>
