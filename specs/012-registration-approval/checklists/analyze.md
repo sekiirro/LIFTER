@@ -183,3 +183,10 @@
 - Entry gate: PASS for numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks. Totals unchanged by the merge: FR 20 VERIFIED / 9 PARTIAL, SC 6 VERIFIED / 5 PARTIAL.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests executed and no requirement meaning changed.
 - Verdict: PASS for this merge reconciliation.
+
+## S47 CodeRabbit round-6 review-fix analysis — 2026-11-11T06:24:05Z
+
+- Scope: CodeRabbit review-body findings F5–F6 (FR-004 due-date evidence, deletion-state coverage). Traceability cites the T025 activation tests for the default Cairo due date and custom-offset preservation; FR-017 and FR-011 deletion-state coverage is PARTIAL mapped to unchecked T055 with totals recomputed (19 VERIFIED / 10 PARTIAL).
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
+- Verdict: PASS for this documentation-only correction.

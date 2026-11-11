@@ -59,7 +59,7 @@ Staff UI uses accessible-workspace selector and F9 available/current terms, exac
 
 ## Phase 2 — Tasks and gates
 
-[tasks.md](tasks.md) phases: setup → foundational schema/pure helpers → US1 issuance → US2 anonymous open → US3 reads/staff UI → cross-cutting gates → Codex final verification, audited by Claude. Required tests are explicit and unchecked. All FRs/SCs map in Analyze; future mutation checks are in [quickstart.md](quickstart.md).
+[tasks.md](tasks.md) phases: setup → foundational schema/pure helpers → US1 issuance → US2 anonymous open → US3 reads/staff UI → cross-cutting gates → Codex final verification, audited by Claude. Required tests are explicit and unchecked. Historical note (2026-11-11): T001–T033 are recorded complete and T034 is the audited check per tasks.md; the "unchecked" wording above is the pre-audit snapshot and is retained as history. All FRs/SCs map in Analyze; future mutation checks are in [quickstart.md](quickstart.md).
 
 The current documentation-only run: fetch → branch from origin/009-packages → npm ci → read/transcribe → format/check/artifact analyze → set local feature pointer → commit only new feature artifacts. No app tests are represented as run, no implementation task checked. Local feature state is deliberately outside the requested commit.
 

@@ -186,8 +186,8 @@ Scope: FR-022, FR-027, SC-012, T028 and the pending-marker matcher.
 ## S41-R7 FR-009 documentation re-analysis
 
 - Date: 2026-11-09 20:29 UTC, after final edits to spec, plan, tasks, and research.
-- Scope: static Spec Kit recheck of User Story 2 scenario 2, FR-009 and FR-026 credential language, S41-R7 clarification, plan/research descriptions, and FR-tagged task T025. Checked the merged workflow reference at `9b4d7a4c9db0dc0493dbd6419a6fead95290f1dd`; no CI or application behavior was changed. T025 remains unchecked because no tests were run.
-- Cross-references: FR-009 is numbered; FR-009 is linked by task T025; `9b4d7a4c9db0dc0493dbd6419a6fead95290f1dd` is the workflow evidence source. No copied PO decision text was changed.
+- Scope: static Spec Kit recheck of User Story 2 scenario 2, FR-009 and FR-026 credential language, S41-R7 clarification, plan/research descriptions, and FR-tagged task T033. Checked the merged workflow reference at `9b4d7a4c9db0dc0493dbd6419a6fead95290f1dd`; no CI or application behavior was changed. T033 remains unchecked because no tests were run.
+- Cross-references: FR-009 is numbered; FR-009 is linked by task T033; `9b4d7a4c9db0dc0493dbd6419a6fead95290f1dd` is the workflow evidence source. No copied PO decision text was changed.
 - Findings: 0 open CRITICAL, 0 open HIGH. S41-MCQ-001 is resolved by the architect ruling as a factual reconciliation; **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only reconciliation.
 
@@ -211,7 +211,7 @@ Scope: FR-022, FR-027, SC-012, T028 and the pending-marker matcher.
 ## S41 CodeRabbit round-3 final-finding re-analysis
 
 - Date: 2026-11-09 23:45 UTC, after final FR-009 wording edits in spec.md, plan.md, research.md, and tasks.md.
-- Scope: rechecked the token boundary against workflow revision 9d24e6444aea5f72ce5dd00e13d3d25c979c8619: actions/checkout@v4 uses its GitHub-provided token for checkout on pull-request and push runs with contents: read; the workflow separately uses github.token for read-only revision/dispatch metadata requests. No repository-configured secrets are required by validate. The integration aggregator has no Docker Hub credentials; optional pull credentials remain limited to integration-shard/storage. FR-009, T025, and plan/research wording agree; T025 remains unchecked because no tests were run.
+- Scope: rechecked the token boundary against workflow revision 9d24e6444aea5f72ce5dd00e13d3d25c979c8619: actions/checkout@v4 uses its GitHub-provided token for checkout on pull-request and push runs with contents: read; the workflow separately uses github.token for read-only revision/dispatch metadata requests. No repository-configured secrets are required by validate. The integration aggregator has no Docker Hub credentials; optional pull credentials remain limited to integration-shard/storage. FR-009, T033, and plan/research wording agree; T033 remains unchecked because no tests were run.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review; no workflow or application behavior changed. **No open ambiguities** remain for this factual reconciliation.
 - Verdict: PASS for this documentation-only correction.
 
@@ -219,7 +219,7 @@ Scope: FR-022, FR-027, SC-012, T028 and the pending-marker matcher.
 
 - Date: 2026-11-10 00:55 UTC, after the FR-009, FR-022, FR-026, clarification, plan, research and task edits in this round.
 - Scope: rechecked both credential boundaries against workflow revision `9d24e6444aea5f72ce5dd00e13d3d25c979c8619` and the head workflow. (a) `integration-shard` and `storage` declare `DOCKERHUB_USERNAME`/`DOCKERHUB_TOKEN` as job-level `env` (ci.yml lines 111-114 and 524-527), so every step of those two jobs, including `npm ci` and repository test code, can read them; the authenticated-pull restriction is intended use, not step isolation. (b) The `integration` aggregator downloads shard reports with `actions/download-artifact@v4` (ci.yml line 271), which authenticates through the GitHub-provided per-job `ACTIONS_RUNTIME_TOKEN`; earlier shorthand "access no secrets" means no repository-configured secrets, and that token is neither repository-configured nor a Docker Hub credential.
-- Cross-references: FR-009, FR-022, FR-026, User Story 2 scenario 2, the S41-R7 clarification, plan constraints and S39/S40 sections, research, T012 and T025 now state the same boundary. The earlier "no secret access" shorthand in this file and in round-3 sections is defined by this entry as no repository-configured secrets. No PO decision text was changed; T025 remains unchecked because no tests were run.
+- Cross-references: FR-009, FR-022, FR-026, User Story 2 scenario 2, the S41-R7 clarification, plan constraints and S39/S40 sections, research, T012 and T033 now state the same boundary. The earlier "no secret access" shorthand in this file and in round-3 sections is defined by this entry as no repository-configured secrets. No PO decision text was changed; T033 remains unchecked because no tests were run.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no workflow, test, or application behavior changed. **No open ambiguities** remain for this factual reconciliation.
 - Verdict: PASS for this documentation-only correction.
 
@@ -227,14 +227,21 @@ Scope: FR-022, FR-027, SC-012, T028 and the pending-marker matcher.
 
 - Date: 2026-11-10 03:04 UTC, after the round-4 second-batch FR-022/FR-026 wording correction.
 - Scope: rechecked the `ACTIONS_RUNTIME_TOKEN` description against the Actions runtime behaviour used by `actions/download-artifact@v4` (ci.yml line 271). The token is a per-job GitHub Actions runtime token that is not limited to the artifact service (the same runtime token also authenticates Actions cache requests), so FR-022 and FR-026 no longer claim an artifact-only scope. Both keep "no repository-configured secrets", `contents: read` and no checkout. The S42 credential entries above remain otherwise accurate; the Docker Hub job-level env description is unchanged.
-- Cross-references: FR-022, FR-026, plan aggregator steps, research, T012/T025 and the earlier S42 analyze entry agree. No PO decision text changed.
+- Cross-references: FR-022, FR-026, plan aggregator steps, research, T012/T033 and the earlier S42 analyze entry agree. No PO decision text changed.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no workflow, test, or application behavior changed. **No open ambiguities** remain for this factual reconciliation.
 - Verdict: PASS for this documentation-only correction.
 
 ## S46 CodeRabbit round-5 finding + main-merge re-analysis
 
 - Date: 2026-11-10 23:29 UTC (2026-11-11 01:29 Africa/Cairo), after merge `26fbb798` (origin/main `deac6a90`) and the F1 traceability fix.
-- Scope: F1 — the S41 baseline FR-001..FR-014 map now restores the `a917c40` baseline FR statuses and SC-001..SC-005 mappings with static-evidence limits (FR 1 VERIFIED / 13 PARTIAL; SC 0 VERIFIED / 5 PARTIAL; no upgrade, no fresh run claimed). Merge kept both S41 plan sections, merged FR-022 (main docs-only clause + credential-boundary clause), both Clarifications blocks, both tasks sections (duplicate T025 `[FR-009]` vs `[FR-027, SC-016]` noted for owning lanes), main S38/S40 rows, and both S41 baseline-map and S41-R20 sections.
+- Scope: F1 — the S41 baseline FR-001..FR-014 map now restores the `a917c40` baseline FR statuses and SC-001..SC-005 mappings with static-evidence limits (FR 1 VERIFIED / 13 PARTIAL; SC 0 VERIFIED / 5 PARTIAL; no upgrade, no fresh run claimed). Merge kept both S41 plan sections, merged FR-022 (main docs-only clause + credential-boundary clause), both Clarifications blocks, both tasks sections (historical s46 merge note: the duplicate T025 `[FR-009]` vs `[FR-027, SC-016]` was resolved in s47 by renumbering the FR-009 task to T033), main S38/S40 rows, and both S41 baseline-map and S41-R20 sections.
 - Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no tests ran and no verification status was upgraded. **No open ambiguities** remain for this correction.
+- Verdict: PASS for this documentation-only correction.
+
+## S47 CodeRabbit round-6 review-fix analysis — 2026-11-11T06:24:05Z
+
+- Scope: CodeRabbit review-body findings F12 (duplicate T025) and F13–F14 (FR-009 reconciliation wording, VERIFIED-status statement). Renamed the FR-009 reconciliation task T025 to unused T033 and updated its plan (S41-R7 section) and analysis references; recorded the S41-R7 reconciliation in the FR-009 traceability evidence and the remaining SC-002 gap without reopening the resolved conflict; clarified the source-map statement upgrades no status (FR-006 VERIFIED is the restored baseline).
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope. T033 and T025 [FR-027, SC-016] are now unique; all FR/SC/task tags resolve.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
 - Verdict: PASS for this documentation-only correction.

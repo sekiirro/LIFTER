@@ -93,3 +93,10 @@ T901 is complete after the 16-test page suite passed on the committed code, foll
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks are present.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no task status changed.
 - Verdict: PASS for this documentation-only settled-status correction.
+
+## S47 CodeRabbit round-6 review-fix analysis — 2026-11-11T06:24:05Z
+
+- Scope: CodeRabbit review-body findings F0, F10–F11 (test-task status, ND-F9-1 open decision, F10 decision statuses). plan.md marks the unchecked-tests wording as the pre-audit historical snapshot (T001–T033 complete, T034 audited); tasks.md no longer lists decided ND-F9-1 among open decisions; requirements.md records two open F10 decisions (ND-F10-4/5) with ND-F10-1..3 decided.
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
+- Verdict: PASS for this documentation-only correction.

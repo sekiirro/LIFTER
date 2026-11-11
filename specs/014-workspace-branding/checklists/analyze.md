@@ -438,3 +438,10 @@ The core F14 analysis and S31 refresh are restored here as historical evidence; 
 - Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks cover the scope.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+
+## S47 CodeRabbit round-6 review-fix analysis — 2026-11-11T06:24:05Z
+
+- Scope: CodeRabbit review-body findings F19–F21 (redirect header check, Worker benchmarks, preview-response gap). Q-M16 now asserts valid, invalid AND redirect registration responses carry private and no-store with T041 staying open until the redirect sets private; FR-009 core pipeline is PARTIAL until Worker CPU/memory benchmarks (T039) are recorded; the FR-011 preview-response header gap is recorded.
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
+- Verdict: PASS for this documentation-only correction.

@@ -129,3 +129,17 @@ This round changes specification artifacts only. No code, SQL, migration, enviro
 - Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests executed and no status changed.
 - Verdict: PASS for this documentation correction.
+
+## S47 CodeRabbit round-6 finding reconciliation — 2026-11-11
+
+- Scope: CodeRabbit review-body finding on the SC-001–SC-007 traceability gap.
+- Gap recorded: the feature traceability map (`specs/004-auth/traceability.md`) carries ND-F4 rows and SC-008–SC-016 rows but no SC-001–SC-007 rows; the test evidence and status of the original criteria SC-001–SC-007 therefore cannot be found in that map. No rows are fabricated here; the gap stays visible until the map is extended.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests executed and no status changed.
+- Verdict: PASS for this documentation-only correction.
+
+## S47 CodeRabbit round-6 review-fix analysis — 2026-11-11T06:24:05Z
+
+- Scope: CodeRabbit review-body findings F7–F9 (separate rate-limit windows, pending expiry-decision status, SC-001–SC-007 traceability gap). data-model.md now exposes per_actor_win/per_target_win with the approved rolling one-hour issuer and rolling 24-hour client limits and identifies the T031 guard change; plan.md no longer presents expiry as pending (60-minute expiry decided; hosted verification and session-lifetime enforcement remain the gaps); the SC-001–SC-007 map gap is recorded above and stays visible.
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests executed and no status changed.
+- Verdict: PASS for this documentation-only correction.

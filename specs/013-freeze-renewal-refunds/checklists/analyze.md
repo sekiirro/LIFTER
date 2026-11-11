@@ -35,7 +35,15 @@ The original analysis and S24 addendum below are preserved as history. The curre
 **Analyzed:** 2026-11-11 00:51 Africa/Cairo
 **Scope:** CodeRabbit round-3 fixes for expired-renewal term anchoring and cumulative refund caps.
 
-Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the immutable lineage-tail guard and makes each required `record_renewal` key reject absence as `invalid_input`. The quickstart and task history record the new current endpoint; round 12's 82-migration replay remains historical.
+Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the immutable lineage-tail guard and makes each of the five validated keys (`client_id`, `predecessor_subscription_id`, `package_offer_id`, `request_key`, `expected_revision`, plus the `renewal_confirmed`/`installments` shape) reject absence as `invalid_input`. A missing or malformed `workspace_id` returns `not_permitted` before that branch. The quickstart and task history record the new current endpoint; round 12's 82-migration replay remains historical.
+
+**S45 R3 results (kept with the S45 R3 scope above):**
+
+- PASS: the expired-renewal anchor is the renewal operation date in lifecycle mapping; this follows the existing approved mapping and makes no new product choice.
+- PASS: each source's cumulative refunded principal is bounded by eligible collections; group cumulative refunds use total eligible collections, while a new request is bounded by the pre-operation residual.
+- PASS: subscription/group locking and deterministic allocation remain unchanged; FR/SC/task IDs and task tags are untouched.
+- PASS: no product ambiguity or new PO decision found.
+- CRITICAL: 0 open; HIGH: 0 open.
 
 ## S30 analysis snapshot at reviewed revision `0449b100`
 
@@ -111,12 +119,7 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Scope: F5 — the Known-gaps date-check row now retains the S35-R4 UNCERTAIN record as history and states the current check is satisfied (S41 re-analyses of 2026-11-09 postdate the latest spec/plan/tasks changes of 2026-11-04/11-01). This S46 section postdates all spec/plan/tasks edits. Matrix totals unchanged (0 VERIFIED / 43 PARTIAL / 7 UNVERIFIED); T019/T020 remain open/blocked.
 - Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and tagged tasks are present.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
-- Verdict: PASS for this documentation-only correction.
-- PASS: the expired-renewal anchor is the renewal operation date in lifecycle mapping; this follows the existing approved mapping and makes no new product choice.
-- PASS: each source's cumulative refunded principal is bounded by eligible collections; group cumulative refunds use total eligible collections, while a new request is bounded by the pre-operation residual.
-- PASS: subscription/group locking and deterministic allocation remain unchanged; FR/SC/task IDs and task tags are untouched.
-- PASS: no product ambiguity or new PO decision found.
-- CRITICAL: 0 open; HIGH: 0 open.
+- Verdict: PASS for this documentation-only correction. (The S45 R3 PASS results are recorded with the S45 R3 scope above, not here.)
 
 ## 2026-11-11 Analyze — Greptile review PRR_kwDOVYgYQ88AAAABXNC1UA (01:33 UTC)
 
@@ -137,3 +140,10 @@ Forward migration `20261103130700_f13_renewal_required_keys.sql` follows the imm
 - Scope: merged main tip d1b1aff3; conflict resolution only. 7 hunks across 3 files: analyze.md 2 keep-both (HEAD S30-S46 history + MAIN continuity/Greptile/merge notes); spec.md 2 take-main (PR decision-traceability rows restating successor-lineage and purchase-selection facts superseded by S43-PO-5/FR-037..039, recorded as superseded); traceability.md hunk1 keep-both (distinct gap notes), hunks 2-3 take-main (successor-era PARTIAL rows superseded by current UNVERIFIED/PARTIAL). No product choice taken.
 - Entry: numbered FRs, measurable SCs, Given/When/Then scenarios, Clarifications/PO-decision register, FR-tagged tasks present; this pass follows the merge.
 - Findings: 0 CRITICAL, 0 HIGH. T019/T020 gates remain open/blocked as recorded.
+
+## S47 CodeRabbit round-6 review-fix analysis — 2026-11-11T06:24:05Z
+
+- Scope: CodeRabbit review-body findings F1–F3 (required-key claim, S45 R3 placement, date-check rationale). The migration summary names the five validated keys with workspace_id returning not_permitted first; S45 R3 results sit with the S45 R3 scope; the date-check rationale cites the post-merge re-analyses and the S35-R4 UNCERTAIN record is marked historical.
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
+- Verdict: PASS for this documentation-only correction.

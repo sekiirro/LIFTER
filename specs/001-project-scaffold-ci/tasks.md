@@ -78,7 +78,7 @@ Tasks remain unchecked until tests and exact-head GitHub gate evidence are recor
 
 ## S41 documentation reconciliation
 
-- [ ] T025 [FR-009] Reconcile the CI credential boundary in the feature specification, plan, and research from merged workflow commit `9d24e6444aea5f72ce5dd00e13d3d25c979c8619`: `validate` requires no repository-configured secrets; on pull-request and push runs `actions/checkout@v4` uses GitHub-provided `github.token` with read-only `contents: read`, and the workflow also uses that token for read-only revision and dispatch metadata requests; the `integration` aggregator has no repository-configured secrets and no Docker Hub credentials, and its artifact download uses the GitHub-provided per-job `ACTIONS_RUNTIME_TOKEN`; only `integration-shard` and `storage` may use optional Docker Hub pull credentials, set as job-level environment variables available to every step in those jobs, for authenticated image pulls; no deployment secrets or deploy. Documentation only; no workflow change.
+- [ ] T033 [FR-009] Reconcile the CI credential boundary in the feature specification, plan, and research from merged workflow commit `9d24e6444aea5f72ce5dd00e13d3d25c979c8619`: `validate` requires no repository-configured secrets; on pull-request and push runs `actions/checkout@v4` uses GitHub-provided `github.token` with read-only `contents: read`, and the workflow also uses that token for read-only revision and dispatch metadata requests; the `integration` aggregator has no repository-configured secrets and no Docker Hub credentials, and its artifact download uses the GitHub-provided per-job `ACTIONS_RUNTIME_TOKEN`; only `integration-shard` and `storage` may use optional Docker Hub pull credentials, set as job-level environment variables available to every step in those jobs, for authenticated image pulls; no deployment secrets or deploy. Documentation only; no workflow change.
 
 ## S41 CI/CodeRabbit optimization tasks
 
@@ -91,4 +91,4 @@ Tasks remain unchecked until tests and exact-head GitHub gate evidence are recor
 - [ ] T031 [FR-027, FR-028, FR-029, FR-030] Complete pre-request checklist, CodeRabbit review (max 2 requests; incremental first request per S41-R13), fix all valid findings in one push, then exact-head approval and sequential executed PR reruns.
 - [ ] T032 [FR-030] Run gate-check on final exact head; record expected gate e failure. Do not merge.
 
-> NOTE (s46 merge): the `T025 [FR-009]` reconciliation task above and the `T025 [FR-027, SC-016]` task above share the id `T025` (one from each merged side; both kept verbatim). Renumbering is deferred to the owning lanes/architect; see run report.
+> NOTE (s47 fix): the `T025 [FR-009]` reconciliation task above was renumbered to `T033 [FR-009]` (unused id) to resolve the duplicate with `T025 [FR-027, SC-016]`; the s46 verbatim-merge note above is retained as history.

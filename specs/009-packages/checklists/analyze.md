@@ -5,12 +5,12 @@
 
 ## Entry check
 
-| Gate                                                       | Result | Evidence                                                                                                                                                                                                                                                                                                                                                                     |
-| ---------------------------------------------------------- | ------ | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Numbered FRs, measurable SCs and Given/When/Then scenarios | PASS   | `spec.md` FR-001..FR-033, SC-001..SC-023 and acceptance scenarios cover the settled behavior, including the S34-PO-6 category identity (FR-019, FR-028, SC-019, SC-020).                                                                                                                                                                                                     |
-| Clarifications and explicit ambiguity status               | PASS   | `spec.md` records S34-PO-6 verbatim with the architect note (PD-S34-NEW-01=A) and records S35-PO-1 verbatim ("F9=A (Egypt/International)") resolving PD-S34-NEW-02 as option A. It states that no ambiguity remains in the settled decisions.                                                                                                                                |
-| Plan and FR-tagged tasks                                   | PASS   | `plan.md`; `tasks.md` T042-T045, T055, T064, T064a, T064b, T065-T071 tagged to FR/SC. No task remains blocked by PD-S34-NEW-02 (resolved by S35-PO-1 F9=A); T065 still awaits the T064b pre-implementation teardown design/security review gate; T070 remains the post-implementation acceptance review; T064a implements the read-only preflight covered by T064 RED tests. |
-| Analyze after spec/plan/tasks edits; no open CRITICAL/HIGH | PASS   | Dated after the last such edit. 0 CRITICAL, 0 HIGH.                                                                                                                                                                                                                                                                                                                          |
+| Gate                                                       | Result | Evidence                                                                                                                                                                                                                                                                                                                                                                            |
+| ---------------------------------------------------------- | ------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Numbered FRs, measurable SCs and Given/When/Then scenarios | PASS   | `spec.md` FR-001..FR-033, SC-001..SC-023 and acceptance scenarios cover the settled behavior, including the S34-PO-6 category identity (FR-019, FR-028, SC-019, SC-020). Historical snapshot at 2026-11-10 16:50 UTC: the current spec additionally carries FR-034..FR-036, SC-024..SC-026 and tier tasks T077/T078 (S43-PO-8); see the merge entry below and current traceability. |
+| Clarifications and explicit ambiguity status               | PASS   | `spec.md` records S34-PO-6 verbatim with the architect note (PD-S34-NEW-01=A) and records S35-PO-1 verbatim ("F9=A (Egypt/International)") resolving PD-S34-NEW-02 as option A. It states that no ambiguity remains in the settled decisions.                                                                                                                                       |
+| Plan and FR-tagged tasks                                   | PASS   | `plan.md`; `tasks.md` T042-T045, T055, T064, T064a, T064b, T065-T071 tagged to FR/SC. No task remains blocked by PD-S34-NEW-02 (resolved by S35-PO-1 F9=A); T065 still awaits the T064b pre-implementation teardown design/security review gate; T070 remains the post-implementation acceptance review; T064a implements the read-only preflight covered by T064 RED tests.        |
+| Analyze after spec/plan/tasks edits; no open CRITICAL/HIGH | PASS   | Dated after the last such edit. 0 CRITICAL, 0 HIGH.                                                                                                                                                                                                                                                                                                                                 |
 
 - PASS — numbered FRs, measurable SCs and Given/When/Then scenarios cover all three tier ranks in each category and same-duration coexistence.
 - PASS — S43-PO-8 is the binding clarification; no open product ambiguity remains for rank placement.
@@ -52,6 +52,13 @@
 - CRITICAL: 0 open; HIGH: 0 open.
 
 ## 2026-11-11 Analyze — Greptile review PRR_kwDOVYgYQ88AAAABXNC1UA (01:33 UTC)
+
+- Scope: Greptile review PRR_kwDOVYgYQ88AAAABXNC1UA (01:33 UTC): correct the two S43-PO-8 scenario-to-SC citations and the 50-row traceability status summary.
+- Scope: restore the verbatim S39-R8 architect quotation and state the later S43-PO-8 tier-rank amendment separately.
+- PASS: S39-R8 quote matches the archived original wording; the amendment cites S43-PO-8 source line 3, architect mapping S43-R10, and the existing FR-034 acceptance scope.
+- PASS: no FR, SC, task, plan step, or PO decision was added or renumbered; tier-rank scope remains consistent with FR-002/034 and the existing task/traceability mapping.
+- PASS: the amendment is separate from the historical quote and does not alter any PO quotation.
+- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 stale cross-reference findings.
 
 ## Historical analyses (merged from main)
 
@@ -162,14 +169,16 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 - Coverage: every FR/SC is covered in tasks and traceability (combined and ranged rows resolve to the same ordered mapping, unchanged); every cited identifier resolves to the current spec/tasks text; no unknown or dangling reference found.
 - Findings: 0 open CRITICAL, 0 open HIGH. The pre-existing copy and review gates remain exactly as recorded above; nothing was upgraded or introduced by the format-only commit.
 - Verdict: PASS for this format-only re-affirmation.
-- Scope: restore the verbatim S39-R8 architect quotation and state the later S43-PO-8 tier-rank amendment separately.
-- PASS: S39-R8 quote matches the archived original wording; the amendment cites S43-PO-8 source line 3, architect mapping S43-R10, and the existing FR-034 acceptance scope.
-- PASS: no FR, SC, task, plan step, or PO decision was added or renumbered; tier-rank scope remains consistent with FR-002/034 and the existing task/traceability mapping.
-- PASS: the amendment is separate from the historical quote and does not alter any PO quotation.
-- CRITICAL: 0 open; HIGH: 0 open; MEDIUM: 0 open PO decisions; LOW: 0 stale cross-reference findings.
 
 ## 2026-11-11T02:40:45Z Analyze — merge of main d1b1aff3 (PR #77 F13 continuity), no PR content change
 
 - Scope: merged main tip d1b1aff3; conflict resolution only. 3 hunks, all keep-both: HEAD entry-check table + MAIN S43-PO-8 tier-rank bullets; HEAD A1-A6 findings table + MAIN Evidence-status section; HEAD S33-S46 history + MAIN tier-rank amendment note. No statement chosen between alternatives; no PO text altered.
-- Entry: numbered FR-001..FR-034, measurable SCs, Given/When/Then scenarios, Clarifications register, FR-tagged tasks T042-T077 present; this pass follows the merge.
+- Entry: numbered FR-001..FR-036, measurable SC-001..SC-026 (historical merge note recorded FR-001..FR-034 at merge time; FR-035/FR-036 and SC-024..SC-026 are in the current spec), Given/When/Then scenarios, Clarifications register, FR-tagged tasks T042-T078 (T078 authorisation/audit task added by S43-PO-8) present; this pass follows the merge.
 - Findings: 0 CRITICAL, 0 HIGH. Pre-existing BLOCKED-COPY and review gates unchanged.
+
+## S47 CodeRabbit round-6 review-fix analysis — 2026-11-11T06:24:05Z
+
+- Scope: CodeRabbit review-body findings F17–F18 (Greptile findings placement, entry-check inventory). The Greptile findings now sit under their heading with the merged history after them; the entry-check row and merge entry are marked as historical snapshots with the current FR-001..FR-036 / SC-001..SC-026 / T042-T078 inventory stated.
+- Entry gate: PASS — numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the scope.
+- Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
+- Verdict: PASS for this documentation-only correction.

@@ -11,9 +11,9 @@ Columns: `Requirement` (FR/SC from `spec.md`) â†’ `Task(s)` (from `tasks.md`) â†
 ## Known gaps
 
 - Clarifications-heading gap resolved: `spec.md` now has a `## Clarifications` heading at line 329. The explicit "No open ambiguities" statement remains unverified and is tracked separately; no claim is made that this wording gap is resolved.
-- Historical S35-R4 Analyze date check: UNCERTAIN. At the PR base, `spec.md` and `checklists/analyze.md` were last changed in the same commit (`547ecd2`). The current date check is satisfied: the S41 re-analysis is dated after the latest spec, plan and task changes.
+- Historical S35-R4 Analyze date check: UNCERTAIN. At the PR base, `spec.md` and `checklists/analyze.md` were last changed in the same commit (`547ecd2`). The current date check is satisfied: the post-merge re-analyses (2026-11-11 merge of main `d1b1aff3`, after the latest spec/plan/tasks changes of 2026-11-04/11-01) postdate those changes.
 - Spec `013` has an explicit `## Clarifications / PO-decision register` with S43-PO-5 items 1 through 11 and S43-PO-6 lines with separate architect mappings (S43-R6/R7/R8). S43-F13-MCQ-7..11 are resolved by S43-PO-6.
-- Spec `013` Analyze date check is UNCERTAIN: the `checklists/analyze.md` "dated after" check cannot be confirmed. `spec.md` and `checklists/analyze.md` were last changed in the same commit (`547ecd2`, 2026-11-01T21:43:32+02:00), so their dates do not show that Analyze is later than the last spec change. Recorded per architect instruction S35-R4; `analyze.md` and `spec.md` are not edited in this lane.
+- Historical S35-R4 snapshot (superseded; retained as history, not the current status): Spec `013` Analyze date check was UNCERTAIN: the `checklists/analyze.md` "dated after" check could not be confirmed. `spec.md` and `checklists/analyze.md` were last changed in the same commit (`547ecd2`, 2026-11-01T21:43:32+02:00), so their dates do not show that Analyze is later than the last spec change. Recorded per architect instruction S35-R4; `analyze.md` and `spec.md` are not edited in this lane.
 - T019 (retention legal/technical) and T020 (production readiness) remain OPEN; see Blocked tasks.
 
 ## Matrix
