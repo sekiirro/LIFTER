@@ -76,6 +76,22 @@ async function upgrade(
   }
 }
 
+async function refund(
+  tx: TransactionSql,
+  userId: string,
+  request: Record<string, unknown>,
+) {
+  await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: userId, role: 'authenticated' })},true)`;
+  await tx`set local role authenticated`;
+  try {
+    const [row] =
+      await tx`select public.record_refund(${tx.json(request as JSONValue)}) as result`;
+    return row!.result as Record<string, unknown>;
+  } finally {
+    await tx`reset role`;
+  }
+}
+
 async function freeze(
   tx: TransactionSql,
   userId: string,
@@ -919,5 +935,160 @@ it('T042 applies the standard upgrade calculation to the latest PO-adjusted date
     expect(projection!.value).toMatchObject({
       effective_end_exclusive: dates!.upgraded_end_on,
     });
+  });
+});
+
+it('T045 keeps the upgrade refund source guard and SECURITY DEFINER boundary intact', async () => {
+  const [security] = await db`
+    select p.prosecdef as security_definer,p.proconfig as config,
+      has_function_privilege('authenticated',p.oid,'execute') as authenticated,
+      has_function_privilege('anon',p.oid,'execute') as anon,
+      has_function_privilege('public',p.oid,'execute') as public,
+      has_function_privilege('service_role',p.oid,'execute') as service_role
+    from pg_proc p where p.oid='public.record_refund(jsonb)'::regprocedure`;
+  expect(security).toMatchObject({
+    security_definer: true,
+    authenticated: true,
+    anon: false,
+    public: false,
+    service_role: false,
+  });
+  expect(security!.config).toContain('search_path=""');
+  const [tablePolicy] = await db`
+    select c.relforcerowsecurity as force_rls,
+      has_table_privilege('authenticated','public.refund_allocation_events','SELECT') as direct_read
+    from pg_class c where c.oid='public.refund_allocation_events'::regclass`;
+  expect(tablePolicy).toEqual({ force_rls: true, direct_read: false });
+  const [sourceGuard] = await db`
+    select count(*)::int as count from pg_constraint
+    where conrelid='public.refund_allocation_events'::regclass
+      and conname in ('f13_refund_allocation_source_xor','f13_refund_allocation_upgrade_source')`;
+  expect(sourceGuard).toEqual({ count: 2 });
+});
+
+it('T045 refunds the original package plus upgrade charge and leaves a paid renewal untouched', async () => {
+  const { f, purchase } = await egp750Purchase();
+  const originalOffer = await packageOfferId(purchase.t.link);
+  const target = await targetOffer(f, {
+    tier_rank: 2,
+    price_minor: '1400',
+    currency: 'EGP',
+    duration_days: 90,
+    commission_rate_bp: 2000,
+  });
+  await probe(async (tx) => {
+    await activate(tx, f, purchase);
+    await fullyPayAmounts(tx, f, purchase, '250');
+
+    await tx`select set_config('request.jwt.claims',${JSON.stringify({ sub: f.trainerA.userId, role: 'authenticated' })},true)`;
+    await tx`set local role authenticated`;
+    let renewal: Record<string, unknown>;
+    try {
+      const [row] = await tx`select public.record_renewal(${tx.json({
+        workspace_id: f.wsA.id,
+        client_id: purchase.t.id,
+        predecessor_subscription_id: purchase.sid,
+        package_offer_id: originalOffer,
+        request_key: randomUUID(),
+        expected_revision: 0,
+        renewal_confirmed: true,
+        installments: null,
+      } as JSONValue)}) as result`;
+      renewal = row!.result as Record<string, unknown>;
+    } finally {
+      await tx`reset role`;
+    }
+    expect(renewal!.status).toBe('ok');
+    const renewalId = (renewal!.receipt as Record<string, unknown>)
+      .renewal_id as string;
+    const [renewalObligation] = await tx`
+      select id,seq,amount_minor::text,currency from public.subscription_installments
+      where workspace_id=${f.wsA.id} and subscription_id=${purchase.sid}
+        and renewal_id=${renewalId} order by seq limit 1`;
+    const collection = await sqlPay(tx, f.trainerA.userId, 'collect', {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      request_key: randomUUID(),
+      subscription_id: purchase.sid,
+      obligation_id: renewalObligation!.id,
+      expected_installment_seq: renewalObligation!.seq,
+      expected_revision: 0,
+      expected_previous_event_id: null,
+      expected_amount_minor: renewalObligation!.amount_minor,
+      currency: renewalObligation!.currency,
+      collected_on: '1900-01-01',
+      payment_confirmed: true,
+    });
+    expect(collection.status).toBe('ok');
+
+    const upgraded = await upgrade(tx, f.trainerA.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      subscription_id: purchase.sid,
+      package_offer_id: target,
+      request_key: randomUUID(),
+      expected_revision: 1,
+      upgrade_confirmed: true,
+    });
+    expect(upgraded).toMatchObject({
+      status: 'ok',
+      receipt: { additional_payment_minor: '650', commission_minor: '130' },
+    });
+    const [upgradeFact] = await tx`
+      select id from public.subscription_upgrades
+      where workspace_id=${f.wsA.id} and subscription_id=${purchase.sid}`;
+    const overPackage = await refund(tx, f.po.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      purchase_id: purchase.sid,
+      request_key: randomUUID(),
+      amount_minor: '1401',
+      external_confirmation: true,
+    });
+    expect(overPackage).toMatchObject({ status: 'invalid_input' });
+    const overIncludingRenewal = await refund(tx, f.po.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      purchase_id: purchase.sid,
+      request_key: randomUUID(),
+      amount_minor: '1500',
+      external_confirmation: true,
+    });
+    expect(overIncludingRenewal).toMatchObject({ status: 'invalid_input' });
+    const [noRejectedRefundWrites] = await tx`
+      select count(*)::int as refunds from public.refund_operations
+      where workspace_id=${f.wsA.id} and subscription_id=${purchase.sid}`;
+    expect(noRejectedRefundWrites).toEqual({ refunds: 0 });
+    const refunded = await refund(tx, f.po.userId, {
+      workspace_id: f.wsA.id,
+      client_id: purchase.t.id,
+      purchase_id: purchase.sid,
+      request_key: randomUUID(),
+      amount_minor: '1400',
+      external_confirmation: true,
+    });
+    expect(refunded).toMatchObject({ status: 'ok' });
+
+    const [allocation] = await tx`
+      select sum(-amount_minor)::text as principal,
+        sum(-commission_minor)::text as commission,
+        count(*)::int as allocations,
+        count(*) filter(where source_upgrade_id=${upgradeFact!.id})::int as upgrade_allocations,
+        count(*) filter(where obligation_id=${renewalObligation!.id})::int as renewal_allocations
+      from public.refund_allocation_events where subscription_id=${purchase.sid}`;
+    expect(allocation).toEqual({
+      principal: '1400',
+      commission: '205',
+      allocations: 4,
+      upgrade_allocations: 1,
+      renewal_allocations: 0,
+    });
+    const [renewalBalance] = await tx`
+      select count(*)::int as collections,
+        (select count(*)::int from public.refund_allocation_events
+          where subscription_id=${purchase.sid} and obligation_id=${renewalObligation!.id}) as refunds
+      from public.payment_events where subscription_id=${purchase.sid}
+        and obligation_id=${renewalObligation!.id} and kind='collection'`;
+    expect(renewalBalance).toEqual({ collections: 1, refunds: 0 });
   });
 });
