@@ -1293,8 +1293,8 @@ describe('T037 remaining workspace and identity contracts', () => {
         pg_catalog.to_regprocedure('public.catalog_transition_variation(uuid,uuid,integer,text,uuid)') as transition`;
     expect(legacyWriters[0]).toEqual({ write: null, transition: null });
 
-    // This test applies the pushed cutover migration directly; replay its
-    // forward security fix so later tests see the current invoker boundary.
+    // This test applies the pushed cutover migration directly; replay the
+    // later forward fixes so subsequent tests see the current RPC behavior.
     const securityFix = await readFile(
       join(
         process.cwd(),
@@ -1303,6 +1303,14 @@ describe('T037 remaining workspace and identity contracts', () => {
       'utf8',
     );
     await db.unsafe(securityFix);
+    const searchBehaviorFix = await readFile(
+      join(
+        process.cwd(),
+        'supabase/migrations/20261111205300_catalog_search_effective_names_and_variation_pagination.sql',
+      ),
+      'utf8',
+    );
+    await db.unsafe(searchBehaviorFix);
     const [searchSecurity] = await db`
       select prosecdef from pg_catalog.pg_proc
       where oid = 'public.catalog_search(text,text,jsonb,text,uuid)'::regprocedure
