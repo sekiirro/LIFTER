@@ -187,7 +187,7 @@ Rationale: BRD invariants 3–4; historical truth must survive any later change.
 - Every spec, plan and review MUST include a constitution check. Deviations MUST be justified in
   the plan's complexity tracking and approved before implementation.
 
-**Version**: 1.14.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-12 (S48-PO-22; S49-R28)
+**Version**: 1.14.0 | **Ratified**: 2026-10-27 | **Last Amended**: 2026-11-12 (S48-PO-22; S48-R28)
 
 ### Sync impact report and amendment note - 2026-10-29 (D-27)
 
@@ -312,7 +312,7 @@ read the constitution at runtime and are not modified in this workflow. No other
 sync is required by that checklist. The F20 spec and plan remain unchanged; their entry check is
 recorded in the external run report.
 
-### Sync impact report and amendment note - 2026-11-12 (S48-PO-22; S49-R28)
+### Sync impact report and amendment note - 2026-11-12 (S48-PO-22; S48-R28)
 
 MINOR (version 1.13.0 to 1.14.0): Controlled Parallel Development now permits at most nine
 concurrent delegated agents. The total cap accommodates the third concurrent Luna slot. The
