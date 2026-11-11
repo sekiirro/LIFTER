@@ -9,7 +9,7 @@
 
 F8 **prepares** the validation: it adds the measurement tooling, the procedure and a report template, and records the measurements that can be taken without deploying. The measured run against real Cloudflare and Supabase environments is a later step that needs the PO's explicit approval. It isn't part of this feature.
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 Actors: **Product Owner (PO)**, **Technical Lead (reviewer)**.
 
@@ -57,7 +57,7 @@ The PO receives one report in a fixed format. It shows each limit, the measured 
 - Pilot volumes (clients, staff, plans per client) aren't confirmed. Projections take them as explicit inputs and are labeled by their assumptions.
 - A probe that targets a host that isn't approved is refused unless that host is passed explicitly.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 - **FR-001**: Measurement tooling MUST NOT deploy, create, or modify any cloud resource, and MUST NOT write to a database. Database reads MUST run in a read-only session.
 - **FR-002**: The tooling MUST NOT print or persist secrets: connection strings, keys, cookies, tokens.
@@ -68,7 +68,7 @@ The PO receives one report in a fixed format. It shows each limit, the measured 
 - **FR-007**: The report template MUST cover: Workers requests/day, CPU per request, Worker size; Supabase DB size, egress, storage, MAU, active-project count, inactivity pause, backups (not included on Free, so F7 covers them); default auth SMTP restrictions; each row with source, date and verdict.
 - **FR-008**: Every limit value in the template MUST cite the official page and the date it was checked.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 - **SC-001**: All offline rows of the report can be filled from repository commands alone.
 - **SC-002**: 0 cloud resources created or changed while preparing F8.

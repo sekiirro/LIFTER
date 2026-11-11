@@ -188,12 +188,12 @@ These are technical recommendations or external dependencies, not unresolved PO 
 - **AI-F12-6 - P4/P2 handoffs:** P4 derives subscription activation from independent first-delivery records; activation and the productivity unit are recorded in one exactly-once transaction only after both first deliveries succeed. Before that, later due dates remain undefined and later payments denied. P2 owns REQ-P2-01 assignment/intake/Trainer capability. Recommend durable F12 approval facts with later P2 backfill/dedup, no partial form engine.
 
   > **Superseded by Plan Core (S20 §4 / spec 019):** First workout and nutrition deliveries are independent, idempotent delivery records and may occur on different days. After both succeed, activation, including the productivity unit, happens in one exactly-once transaction. See the `019-plan-core` branch for the canonical contract.
+
 - **AI-F12-7 - Production/evidence:** Correction must be operational before real finance; B4 retention, F11 hosted compatibility, backup/restore and exact-head CI/review gates remain. Recommend preserving all existing readiness gates; no deployment authorized.
 
 ## Conflicts for PO
 
 None requiring a new PO decision. Final F12-3/F12-8 explicitly refine the older fixed second-offset-30 wording into a default while preserving custom offsets. F12-4 explicitly selects correction-month accounting over the earlier original-month recommendation. F12-6 assigns the standalone status flow to F12 without transferring P2 intake/assignment. Old D-09/architecture Sales approval is superseded by ND-F12-1/D-23. These are documented precedence resolutions, not reasons to reopen final policy.
-
 
 ## Session 12 — final F11 reconciliation (T001)
 

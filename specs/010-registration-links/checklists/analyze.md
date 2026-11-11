@@ -19,6 +19,7 @@ T900 has been marked complete only after its Playwright acceptance test passed o
 ## Post-verification S33 re-analysis — 2026-11-04
 
 T901 is complete after the 16-test page suite passed on the committed code, followed by the complete unit suite (2,011/2,011). Traceability cites commit `78b1093`. Findings remain 0 open CRITICAL/HIGH.
+
 ## S41 main-sync reconciliation re-analysis
 
 - Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
@@ -34,14 +35,13 @@ T901 is complete after the 16-test page suite passed on the committed code, foll
 - Findings: 0 open CRITICAL, 0 open HIGH; no product decision or task status changed.
 - Verdict: PASS for this plan clarification.
 
-
 ### S41 open findings retained
 
-| ID | Severity | Finding | Status |
-|---|---|---|---|
-| ND-F10-4 | MEDIUM | Public content beyond workspace name remains undecided; the current plan uses only name and validity messages. | Open; no additional content is inferred. |
-| ND-F10-5 | MEDIUM | Sales/Trainer price visibility has interim binding default yes, with PO confirmation still required. | Open; commission remains denied. |
-| T035 | MEDIUM | The approved 50-per-authorized-account rolling-24-hour limit is not implemented or verified. | T035 remains unchecked; implementation and tests are pending. |
+| ID       | Severity | Finding                                                                                                        | Status                                                        |
+| -------- | -------- | -------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------- |
+| ND-F10-4 | MEDIUM   | Public content beyond workspace name remains undecided; the current plan uses only name and validity messages. | Open; no additional content is inferred.                      |
+| ND-F10-5 | MEDIUM   | Sales/Trainer price visibility has interim binding default yes, with PO confirmation still required.           | Open; commission remains denied.                              |
+| T035     | MEDIUM   | The approved 50-per-authorized-account rolling-24-hour limit is not implemented or verified.                   | T035 remains unchecked; implementation and tests are pending. |
 
 **Current finding count:** 0 CRITICAL, 0 HIGH, 3 MEDIUM, 0 LOW. No requirement or task was marked complete.
 
@@ -56,14 +56,12 @@ T901 is complete after the 16-test page suite passed on the committed code, foll
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no task/status changed.
 - Verdict: PASS for this docs-only link repair.
 
-
 ## S41 CodeRabbit round-3 baseline-map re-analysis
 
 - Date: 2026-11-09 23:17 UTC, after restoring the baseline FR-001..FR-014 / SC-001..SC-006 source map in traceability.md.
 - Scope: checked all mapped requirement identifiers against spec.md, the existing issue/integrity/open/grace/reads/audit/UI test files, T035, and the F10 verification report. The map adds no test execution or status upgrade; FR-006 remains unimplemented as documented.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no task status changed.
 - Verdict: PASS for this documentation-only source map.
-
 
 ## S41 CodeRabbit round-3 final-finding re-analysis
 
@@ -72,7 +70,6 @@ T901 is complete after the 16-test page suite passed on the committed code, foll
 - Entry gate: PASS for the docs-only reconciliation; numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan, and tagged existing tasks are present.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests ran and no status changed.
 - Verdict: PASS for this documentation-only source-map correction.
-
 
 ## S42 CodeRabbit full-review link-and-citation re-analysis
 

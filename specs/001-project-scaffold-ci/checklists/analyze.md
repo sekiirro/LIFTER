@@ -167,6 +167,7 @@ Scope: FR-022, FR-027, SC-012, T028 and the pending-marker matcher.
 ### Verdict
 
 **PASS - 0 CRITICAL, 0 HIGH.**
+
 ## S41 main-sync reconciliation re-analysis
 
 - Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
@@ -181,7 +182,6 @@ Scope: FR-022, FR-027, SC-012, T028 and the pending-marker matcher.
 - Scope: static alignment of the Clarifications entry and Analyze scope: FR-015..FR-019 are CI optimization, FR-020 is the migration-version guard, and S33-PO-4 postpones self-hosted runner work.
 - Findings: 0 open CRITICAL, 0 open HIGH. No workflow or task status changed. At the time of this analysis the FR-009 credential wording remained unreconciled and was escalated as S41-MCQ-001 in the run report; S41-R7 resolves it factually in the later analysis below.
 - Verdict: PASS for the documentation correction.
-
 
 ## S41-R7 FR-009 documentation re-analysis
 
@@ -200,7 +200,6 @@ Scope: FR-022, FR-027, SC-012, T028 and the pending-marker matcher.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation consistency only; no tests or CI were run and no test status was upgraded.
 - Verdict: PASS for this documentation-only correction.
 
-
 ## S41 CodeRabbit round-3 correction re-analysis
 
 - Date: 2026-11-09 23:17 UTC, after the credential-boundary edits to plan, research and tasks, FR-024 traceability row correction, and restored baseline source map.
@@ -208,7 +207,6 @@ Scope: FR-022, FR-027, SC-012, T028 and the pending-marker matcher.
 - Result: FR-024 row has five cells; all current amendment rows retain their recorded evidence/status. No tests or CI were run and no task status changed.
 - Findings: 0 open CRITICAL, 0 open HIGH.
 - Verdict: PASS for these documentation corrections.
-
 
 ## S41 CodeRabbit round-3 final-finding re-analysis
 
@@ -224,7 +222,6 @@ Scope: FR-022, FR-027, SC-012, T028 and the pending-marker matcher.
 - Cross-references: FR-009, FR-022, FR-026, User Story 2 scenario 2, the S41-R7 clarification, plan constraints and S39/S40 sections, research, T012 and T025 now state the same boundary. The earlier "no secret access" shorthand in this file and in round-3 sections is defined by this entry as no repository-configured secrets. No PO decision text was changed; T025 remains unchecked because no tests were run.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no workflow, test, or application behavior changed. **No open ambiguities** remain for this factual reconciliation.
 - Verdict: PASS for this documentation-only correction.
-
 
 ## S42 CodeRabbit full-review token-scope re-analysis
 

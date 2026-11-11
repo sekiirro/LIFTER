@@ -9,7 +9,7 @@
 
 Governing documents: [DESIGN.md](../../DESIGN.md) (PO-approved design reference, 2026-10-27; supersedes earlier design assumptions), Constitution v1.0.0 → v1.1.0 (this feature), [Architecture v3](../../docs/02-architecture.md), [Roadmap P0](../../docs/03-roadmap.md), [Assessment](../../docs/00-assessment.md) (Arabic print spike in P0-F2).
 
-## User Scenarios & Testing *(mandatory)*
+## User Scenarios & Testing _(mandatory)_
 
 Actors: **End user** (any future role viewing LIFTER UI), **Feature implementer** (builds later screens on this system), **Reviewer** (Claude), **Product Owner**.
 
@@ -138,7 +138,7 @@ Users see the approved Glisse Liquid Glass treatment on the floating mobile navi
 - Workspace brand equals a semantic color (e.g., red): semantic error remains distinguishable by icon and text, not color alone.
 - JavaScript disabled or slow: initial theme and direction are still correct on first paint.
 
-## Requirements *(mandatory)*
+## Requirements _(mandatory)_
 
 ### Functional Requirements
 
@@ -200,7 +200,7 @@ Users see the approved Glisse Liquid Glass treatment on the floating mobile navi
 - **Language preference**: ar | en, stored per browser; determines direction.
 - **Navigation config**: per-role ordered list of sections (key, label key, icon); defined for Trainer and Client only.
 
-## Success Criteria *(mandatory)*
+## Success Criteria _(mandatory)_
 
 ### Measurable Outcomes
 

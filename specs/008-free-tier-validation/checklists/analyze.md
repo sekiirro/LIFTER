@@ -7,11 +7,11 @@
 
 ## Findings
 
-| ID | Severity | Artifact | Finding | Disposition |
-|---|---|---|---|---|
-| F8-A01 | MEDIUM | `spec.md:80` | ND-F8-1: pilot volume inputs are not sourced; projection must remain missing rather than guessed. | Preserved and escalated as SK-008-01. |
-| F8-A02 | MEDIUM | `spec.md:81` | ND-F8-2: deployment target/approval remains open; feature scope expressly prohibits deployment. | Preserved and escalated as SK-008-02; no cloud action taken. |
-| F8-A03 | MEDIUM | `spec.md:82` | ND-F8-3: permission to use a dedicated test account for authenticated route measurement remains open. | Preserved and escalated as SK-008-03; authenticated external measurement remains blocked. |
+| ID     | Severity | Artifact     | Finding                                                                                               | Disposition                                                                               |
+| ------ | -------- | ------------ | ----------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------- |
+| F8-A01 | MEDIUM   | `spec.md:80` | ND-F8-1: pilot volume inputs are not sourced; projection must remain missing rather than guessed.     | Preserved and escalated as SK-008-01.                                                     |
+| F8-A02 | MEDIUM   | `spec.md:81` | ND-F8-2: deployment target/approval remains open; feature scope expressly prohibits deployment.       | Preserved and escalated as SK-008-02; no cloud action taken.                              |
+| F8-A03 | MEDIUM   | `spec.md:82` | ND-F8-3: permission to use a dedicated test account for authenticated route measurement remains open. | Preserved and escalated as SK-008-03; authenticated external measurement remains blocked. |
 
 ## Coverage and consistency
 
@@ -39,9 +39,9 @@
 
 ### Findings
 
-| ID | Severity | Artifact | Finding | Disposition |
-|---|---|---|---|---|
-| F8-B7-01 | LOW | `tasks.md:T012`; `traceability.md` SC-003 | T012 carried an `SC-003` scope tag even though it verifies pilot-unit mappings and defers measurement; SC-003 is the no-secrets criterion mapped to T005-T006 and T008. | Removed only the unsupported `SC-003` tag from T012. FR-006, the task text, checkbox, and evidence ownership remain unchanged. |
+| ID       | Severity | Artifact                                  | Finding                                                                                                                                                                 | Disposition                                                                                                                    |
+| -------- | -------- | ----------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------ |
+| F8-B7-01 | LOW      | `tasks.md:T012`; `traceability.md` SC-003 | T012 carried an `SC-003` scope tag even though it verifies pilot-unit mappings and defers measurement; SC-003 is the no-secrets criterion mapped to T005-T006 and T008. | Removed only the unsupported `SC-003` tag from T012. FR-006, the task text, checkbox, and evidence ownership remain unchanged. |
 
 ### Coverage and verdict
 
@@ -58,9 +58,9 @@
 
 ### Findings
 
-| ID | Severity | Artifact | Finding | Disposition |
-|---|---|---|---|---|
-| F8-R2-01 | LOW | `checklists/analyze.md` (S31 round 6 refresh, "Remaining gates"); `tasks.md:T012` | The S31 remaining-gates line stated neither measurement nor implementation was authorized, and T012 deferred all measurement until both independently open decisions were approved. Both contradicted the spec (User Story 1 — offline measurements now; FR-001..FR-008; SC-001) and the S31-PO-4 pilot input, under which offline projection remains authorized. | Corrected as documentation-only wording: the S31 line now scopes ND-F8-2 to deployment-dependent measurements and ND-F8-3 to measurements using authenticated routes and a dedicated test account; offline measurements remain authorized. T012 now requires schema/unit verification, recording the mapping and source in the projection volume artifact, and completing offline projection after verification; only deployment-dependent and authenticated-route measurements are deferred until the independently open decisions (ND-F8-2/ND-F8-3) are approved. FR-006 semantics are unchanged; the FR-006 reference is preserved; no checkbox changed. |
+| ID       | Severity | Artifact                                                                          | Finding                                                                                                                                                                                                                                                                                                                                                           | Disposition                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                                 |
+| -------- | -------- | --------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F8-R2-01 | LOW      | `checklists/analyze.md` (S31 round 6 refresh, "Remaining gates"); `tasks.md:T012` | The S31 remaining-gates line stated neither measurement nor implementation was authorized, and T012 deferred all measurement until both independently open decisions were approved. Both contradicted the spec (User Story 1 — offline measurements now; FR-001..FR-008; SC-001) and the S31-PO-4 pilot input, under which offline projection remains authorized. | Corrected as documentation-only wording: the S31 line now scopes ND-F8-2 to deployment-dependent measurements and ND-F8-3 to measurements using authenticated routes and a dedicated test account; offline measurements remain authorized. T012 now requires schema/unit verification, recording the mapping and source in the projection volume artifact, and completing offline projection after verification; only deployment-dependent and authenticated-route measurements are deferred until the independently open decisions (ND-F8-2/ND-F8-3) are approved. FR-006 semantics are unchanged; the FR-006 reference is preserved; no checkbox changed. |
 
 ### Coverage and verdict
 
@@ -77,9 +77,9 @@
 
 ### Findings
 
-| ID | Severity | Artifact | Finding | Disposition |
-|---|---|---|---|---|
-| F8-R4-01 | LOW | `checklists/analyze.md` (S33 SK-52 fix round 2 refresh, "Analyzed commit" line) | The line read "this fix commit (S33 round 2 for PR #52; base `327bce2`)", which does not identify the exact commit holding the analyzed text. | Corrected as documentation-only wording: the line now cites `ab3111caeecbac0594eaf7d3cb42de5c1fba0ebe` (holds the analyzed text; parent of this round-4 fix commit) and records `ff2174de9e9594d76f8497b0108fd6e23cb813be` (baseline parent `327bce265e292c12023c24f8c242ebb1dd53d48a`) as the round-2 landing commit and `ab3111caeecbac0594eaf7d3cb42de5c1fba0ebe` as round 3. No requirement text changed. |
+| ID       | Severity | Artifact                                                                        | Finding                                                                                                                                       | Disposition                                                                                                                                                                                                                                                                                                                                                                                                   |
+| -------- | -------- | ------------------------------------------------------------------------------- | --------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| F8-R4-01 | LOW      | `checklists/analyze.md` (S33 SK-52 fix round 2 refresh, "Analyzed commit" line) | The line read "this fix commit (S33 round 2 for PR #52; base `327bce2`)", which does not identify the exact commit holding the analyzed text. | Corrected as documentation-only wording: the line now cites `ab3111caeecbac0594eaf7d3cb42de5c1fba0ebe` (holds the analyzed text; parent of this round-4 fix commit) and records `ff2174de9e9594d76f8497b0108fd6e23cb813be` (baseline parent `327bce265e292c12023c24f8c242ebb1dd53d48a`) as the round-2 landing commit and `ab3111caeecbac0594eaf7d3cb42de5c1fba0ebe` as round 3. No requirement text changed. |
 
 ### Coverage and verdict
 
@@ -87,6 +87,7 @@
 - ND-F8-1 remains decided by S31-PO-4; ND-F8-2 and ND-F8-3 remain explicitly open. No new ambiguity was introduced; offline scope is unchanged from the spec.
 - Constitution IV alignment is preserved: preparation-only scope, no deployment/no cloud-write boundary, and no invented approval are unchanged.
 - **PASS WITH OPEN PO DECISIONS** — 0 CRITICAL, 0 HIGH, 2 inherited MEDIUM (ND-F8-2/ND-F8-3), 1 LOW documentation-only correction in this round; 12/12 FR/SC items mapped.
+
 ## S41 main-sync reconciliation re-analysis
 
 - Date: 2026-11-09 19:23:34 UTC, after the current-main merge resolution and this reconciliation's spec/plan/task edits.
@@ -101,7 +102,6 @@
 - Scope: traceability status matches the evidence limits: the token-bearing register path is not asserted as redacted, and supplied-relation fixtures do not prove the full database projection. No test or implementation change was made.
 - Findings: 0 open CRITICAL, 0 open HIGH; 4 VERIFIED and 4 PARTIAL functional requirements.
 - Verdict: PASS for honest status reporting; these technical gaps remain open.
-
 
 ## S41-R7 FR-006 documentation re-analysis
 
@@ -118,7 +118,6 @@
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests or measurements ran and no verification status was upgraded.
 - Verdict: PASS for the documentation-only corrections.
 
-
 ## S41 CodeRabbit round-3 evidence re-analysis
 
 - Date: 2026-11-09 23:17 UTC, after the spec, traceability and total corrections.
@@ -126,7 +125,6 @@
 - Current matrix totals: 2 VERIFIED / 6 PARTIAL FR; 0 VERIFIED / 4 PARTIAL SC. FR-005 and FR-006 are PARTIAL for the documented output and unknown-row/coverage limitations.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static inspection only; no tests ran and no verification status was upgraded.
 - Verdict: PASS for this documentation-only evidence correction.
-
 
 ## S42 CodeRabbit full-review coverage-evidence re-analysis
 

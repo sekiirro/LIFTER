@@ -62,32 +62,31 @@ Spec commit `75cacff3166fb13b13be8eb4cf248e0a03c2aaa7` (requirements, plan, T024
 | FR-026 / SC-014 (fail-closed union/skip/failure coverage proof in the no-checkout aggregator) | T024 | `tests/unit/ci-local-e2e.test.ts::fails the integration aggregator unless every shard reports full coverage`; `::executes the sharded coverage proof against tampered reports` | Commit `b282b558`; the extracted aggregator script passed against a synthetic artifact set built from the real 629-test inventory: `{"acceptable":true,"playwright":{"listed":629,"reported":629,"skipped":38,"passed":591},"vitest":{"files":92},"shards":3}`. Tampered fixtures fail closed for a missing test, a duplicate across shards, a new skipped title, an unexpected failure and a missing Vitest file.                                                  | VERIFIED (local)            |
 | SC-015 (integration critical path shorter than baseline)                                      | T024 | main push run 42628343018 on `405e23e4` vs the PR's executed runs                                                                                                              | Baseline: first required job 13:46:01Z → aggregator end 14:03:43Z = 17m42s (shard 1 17m35s). PR before/after job and critical-path times are recorded in `C:/Users/NEW LAP/.lifter/runs/s40-ds-e2e-shard/report.md` once executed.                                                                                                                                                                                                                                  | PENDING (exact-head GitHub) |
 
-
 ## S41 baseline FR-001..FR-014 map
 
 This source map restores the original merged-scope requirement links without upgrading verification status. The requirement text remains in [spec.md](spec.md); tasks and executable evidence are linked below. The existing exact-head and historical execution limits remain in force.
 
-| Requirement | Tasks | Tests / static evidence | Status |
-|---|---|---|---|
-| FR-001 | T001-T006 | `package.json`, `tsconfig.json`, `next.config.ts`; no single asserting scaffold test located | PARTIAL |
-| FR-002 | T001,T010 | `README.md` Development section | PARTIAL |
-| FR-003 | T003,T015 | `.prettierrc`, `eslint.config.mjs`, package scripts; no assertion test | PARTIAL |
-| FR-004 | T006-T008,T014 | `tests/unit/health.test.ts` — `returns exactly the public health fields with the package version`; no run recorded | PARTIAL |
-| FR-005 | T009 | `tests/e2e/health.spec.ts` — `GET /api/health returns the public health contract`; suite not rerun | PARTIAL |
-| FR-006 | T008 | `specs/001-project-scaffold-ci/contracts/health.md`; `app/api/health/route.ts`; `lib/health.ts` — exact public health fields | VERIFIED |
-| FR-007 | T005,T012,T015 | `build:edge` script and original CI artifact; no assertion test | PARTIAL |
-| FR-008 | T011,T014 | `tests/unit/size-report.test.ts` — `Worker size limit` comparison cases | PARTIAL |
-| FR-009 | T012,T015 | Current workflow inspected; secrets use in later jobs conflicts with original scope wording; see SK-001-01 | PARTIAL |
-| FR-010 | T013 | `supabase/config.toml`; static configuration inventory | PARTIAL |
-| FR-011 | T004 | `.env.example` and tracked-file inspection; no asserting test | PARTIAL |
-| FR-012 | T010 | README Development section; static documentation inspection | PARTIAL |
-| FR-013 | T001 | `.nvmrc`, `package.json` packageManager/engine declarations | PARTIAL |
-| FR-014 | T012,T015 | CI platform inspection and edge build scripts; no lane test executed | PARTIAL |
-| SC-001 | T001-T015 | `quickstart.md`, README, historical implementation tasks; no fresh-clone run | PARTIAL |
-| SC-002 | T012,T015 | Workflow inspected; coverage/secret conflict is unresolved | PARTIAL |
-| SC-003 | T007-T009 | Health unit and e2e assertions; no smoke run recorded | PARTIAL |
-| SC-004 | T011,T014 | Size-report comparison test and script | PARTIAL |
-| SC-005 | T012 | Workflow inspection only; no deploy/paid-service assertion test | PARTIAL |
+| Requirement | Tasks          | Tests / static evidence                                                                                                      | Status   |
+| ----------- | -------------- | ---------------------------------------------------------------------------------------------------------------------------- | -------- |
+| FR-001      | T001-T006      | `package.json`, `tsconfig.json`, `next.config.ts`; no single asserting scaffold test located                                 | PARTIAL  |
+| FR-002      | T001,T010      | `README.md` Development section                                                                                              | PARTIAL  |
+| FR-003      | T003,T015      | `.prettierrc`, `eslint.config.mjs`, package scripts; no assertion test                                                       | PARTIAL  |
+| FR-004      | T006-T008,T014 | `tests/unit/health.test.ts` — `returns exactly the public health fields with the package version`; no run recorded           | PARTIAL  |
+| FR-005      | T009           | `tests/e2e/health.spec.ts` — `GET /api/health returns the public health contract`; suite not rerun                           | PARTIAL  |
+| FR-006      | T008           | `specs/001-project-scaffold-ci/contracts/health.md`; `app/api/health/route.ts`; `lib/health.ts` — exact public health fields | VERIFIED |
+| FR-007      | T005,T012,T015 | `build:edge` script and original CI artifact; no assertion test                                                              | PARTIAL  |
+| FR-008      | T011,T014      | `tests/unit/size-report.test.ts` — `Worker size limit` comparison cases                                                      | PARTIAL  |
+| FR-009      | T012,T015      | Current workflow inspected; secrets use in later jobs conflicts with original scope wording; see SK-001-01                   | PARTIAL  |
+| FR-010      | T013           | `supabase/config.toml`; static configuration inventory                                                                       | PARTIAL  |
+| FR-011      | T004           | `.env.example` and tracked-file inspection; no asserting test                                                                | PARTIAL  |
+| FR-012      | T010           | README Development section; static documentation inspection                                                                  | PARTIAL  |
+| FR-013      | T001           | `.nvmrc`, `package.json` packageManager/engine declarations                                                                  | PARTIAL  |
+| FR-014      | T012,T015      | CI platform inspection and edge build scripts; no lane test executed                                                         | PARTIAL  |
+| SC-001      | T001-T015      | `quickstart.md`, README, historical implementation tasks; no fresh-clone run                                                 | PARTIAL  |
+| SC-002      | T012,T015      | Workflow inspected; coverage/secret conflict is unresolved                                                                   | PARTIAL  |
+| SC-003      | T007-T009      | Health unit and e2e assertions; no smoke run recorded                                                                        | PARTIAL  |
+| SC-004      | T011,T014      | Size-report comparison test and script                                                                                       | PARTIAL  |
+| SC-005      | T012           | Workflow inspection only; no deploy/paid-service assertion test                                                              | PARTIAL  |
 
 Baseline summary (restored, not upgraded): FR 1 VERIFIED, 13 PARTIAL; SC 0 VERIFIED, 5 PARTIAL. No tasks were checked or unchecked in this documentation-only pass; no tests were run.
 

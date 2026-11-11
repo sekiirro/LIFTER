@@ -62,12 +62,12 @@ Source: S34-PO-2 (PO record held outside the repository; quoted verbatim below).
 
 Approved English market/type labels and exact Arabic mappings:
 
-| English | Exact approved Arabic | Meaning |
-|---|---|---|
-| Egypt | «مصر» | Egypt market |
-| International | «دولي» | International market |
-| Promotional | «وقت العـروض» | Promotional type |
-| Year-Round | «طول السنـة» | Year-Round type |
+| English       | Exact approved Arabic | Meaning              |
+| ------------- | --------------------- | -------------------- |
+| Egypt         | «مصر»                 | Egypt market         |
+| International | «دولي»                | International market |
+| Promotional   | «وقت العـروض»         | Promotional type     |
+| Year-Round    | «طول السنـة»          | Year-Round type      |
 
 Copy the Arabic strings exactly, including tatweel (ـ). S34-PO-2 resolves BLOCKED-COPY only for these four English labels. All other dashboard, Installments, empty, error, and help UI copy remains BLOCKED-COPY. No English copy is inferred beyond these exact labels.
 
@@ -391,6 +391,7 @@ prices stay in own currency while collection reporting uses only the approved im
   > - **F9:** Use ECB/TARGET calendar and latest prior valid Frankfurter rate; verify currency coverage. Missing promo start = creation; missing end = indefinite.
 
   These decisions resolve the former FX-rounding blocker and the optional promotion-bound ambiguity. FR-026/FR-031 now require exact per-line conversion, one half-up rounding of each reported aggregate to EGP minor units, ECB/TARGET business-day selection of the latest prior valid Frankfurter publication, existing pending/retry behavior when none exists, verified coverage for every supported currency, and unchanged payment rules. FR-024/FR-030 now define missing start as availability from creation and missing end as indefinite.
+
 - No open product ambiguities remain from S33-01..12, C1–C5, LABELS, PD-S34-NEW-01, PD-S34-NEW-02 or the S36-PO-2/S36-PO-3 F9 scopes.
 
 ### Remaining blockers

@@ -8,18 +8,18 @@ Design only. Future additive forward migration after `20261030120000_registratio
 
 All columns NOT NULL unless marked nullable. No password, token, copied package price or subscription. Required name and pending-approval follow ND-F11-3/6; state representation is technical design, no approval UI inferred.
 
-| Column               | Type                    | Constraint/source                                                                                                                    |
-| -------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------ |
-| id                   | uuid                    | PK, server generated; UNIQUE `(workspace_id,id)`                                                                                     |
-| workspace_id         | uuid                    | FK workspaces(id), ON DELETE RESTRICT; derived from locked link                                                                      |
-| auth_user_id         | uuid                    | UNIQUE globally; FK auth.users(id), ON DELETE RESTRICT; no staff profile for same identity                                           |
-| registration_link_id | uuid                    | UNIQUE globally; composite FK `(workspace_id,registration_link_id)` → registration_links(workspace_id,id), ON DELETE RESTRICT        |
-| package_version_id   | uuid                    | Composite FK `(workspace_id,package_version_id)` → package_versions(workspace_id,id), ON DELETE RESTRICT; exact match to issued link |
-| email_normalized     | text                    | UNIQUE globally, nonempty; DB recomputes using ND-F11-2 seam; no ad hoc lower/trim default                                           |
-| phone_e164 | text | UNIQUE globally, nonempty canonical E.164; input selected by country with +20 (Egypt) default and composed server-side under ND-F11-2a (PO, 2026-10-28) |
-| name                 | text                    | Required signup name (ND-F11-3); no invented length bound                                                                            |
-| approval_state       | proposed representation | Initially pending-approval; no client access until admin approval (ND-F11-6); workspace PO/WO approval in F12 (ND-F11-6a)            |
-| created_at           | timestamptz             | Server insert time only                                                                                                              |
+| Column               | Type                    | Constraint/source                                                                                                                                       |
+| -------------------- | ----------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| id                   | uuid                    | PK, server generated; UNIQUE `(workspace_id,id)`                                                                                                        |
+| workspace_id         | uuid                    | FK workspaces(id), ON DELETE RESTRICT; derived from locked link                                                                                         |
+| auth_user_id         | uuid                    | UNIQUE globally; FK auth.users(id), ON DELETE RESTRICT; no staff profile for same identity                                                              |
+| registration_link_id | uuid                    | UNIQUE globally; composite FK `(workspace_id,registration_link_id)` → registration_links(workspace_id,id), ON DELETE RESTRICT                           |
+| package_version_id   | uuid                    | Composite FK `(workspace_id,package_version_id)` → package_versions(workspace_id,id), ON DELETE RESTRICT; exact match to issued link                    |
+| email_normalized     | text                    | UNIQUE globally, nonempty; DB recomputes using ND-F11-2 seam; no ad hoc lower/trim default                                                              |
+| phone_e164           | text                    | UNIQUE globally, nonempty canonical E.164; input selected by country with +20 (Egypt) default and composed server-side under ND-F11-2a (PO, 2026-10-28) |
+| name                 | text                    | Required signup name (ND-F11-3); no invented length bound                                                                                               |
+| approval_state       | proposed representation | Initially pending-approval; no client access until admin approval (ND-F11-6); workspace PO/WO approval in F12 (ND-F11-6a)                               |
+| created_at           | timestamptz             | Server insert time only                                                                                                                                 |
 
 A future composite UNIQUE `(workspace_id,id,package_version_id)` on registration_links supports a three-column client FK `(workspace_id,registration_link_id,package_version_id)` to bind the exact issued version declaratively, in addition to ordinary tenant FKs. Derive offer via that immutable version's same-workspace offer FK; do not accept offer/workspace/terms from the caller. Keep the existing immutable link installment rows as the issued schedule. Current publication/availability changes do not invalidate or rewrite an issued association. No F12 effects.
 

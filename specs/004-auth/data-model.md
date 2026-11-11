@@ -9,13 +9,13 @@ One forward migration, `supabase/migrations/20261028120000_auth_recovery_links.s
 
 ## `public.recovery_link_issuances` (append-only)
 
-| Column | Type | Rule |
-|---|---|---|
-| id | uuid PK default `gen_random_uuid()` | |
-| workspace_id | uuid not null → `workspaces(id)` | the target's workspace |
+| Column         | Type                                                | Rule                                   |
+| -------------- | --------------------------------------------------- | -------------------------------------- |
+| id             | uuid PK default `gen_random_uuid()`                 |                                        |
+| workspace_id   | uuid not null → `workspaces(id)`                    | the target's workspace                 |
 | target_user_id | uuid not null → `auth.users(id)` on delete restrict | never a staff profile, never the actor |
-| issued_by | uuid not null → `staff_profiles(user_id)` | = `auth.uid()` |
-| issued_at | timestamptz not null default now() | |
+| issued_by      | uuid not null → `staff_profiles(user_id)`           | = `auth.uid()`                         |
+| issued_at      | timestamptz not null default now()                  |                                        |
 
 - `unique (workspace_id, id)`. Indexes `(issued_by, issued_at desc)` and `(target_user_id, issued_at desc)`.
 - No secret, email or link is stored.
@@ -28,13 +28,13 @@ One forward migration, `supabase/migrations/20261028120000_auth_recovery_links.s
 
 ## Functions
 
-| Function | Kind | Behavior |
-|---|---|---|
-| `app_private.recovery_target_workspace(target uuid) → uuid` | stable, SECURITY DEFINER | F4: `select null::uuid`. P1 replaces it with the client-account lookup (ND-F4-5). |
-| `app_private.recovery_link_limits() → table(per_actor int, per_target int, win interval)` | immutable | Existing 20 / 3 / 1-hour values are not compliant with S31-PO-3. Approved future values: 10 per issuer per rolling hour and 3 per client per rolling 24 hours across issuers. No code changed; future implementation and configuration verification remain open. |
-| `app_private.recovery_link_guard(target uuid) → uuid` | SECURITY DEFINER | Raises `42501 'not_permitted'` if `auth.uid()` is null, the workspace is null, `not has_workspace_access(ws,'generate_recovery_link')`, `target = auth.uid()`, or the target has a `staff_profiles` row. Raises `P0001 'rate_limited'` if the issuance counts in the window are ≥ the limits. Returns the workspace. |
-| `public.recovery_link_authorize(target uuid) → uuid` | SECURITY DEFINER, granted to authenticated only | `return app_private.recovery_link_guard(target)`. |
-| `public.recovery_link_record(target uuid) → uuid` | SECURITY DEFINER, granted to authenticated only | `pg_advisory_xact_lock` on the target and the actor (`hashtextextended`), then the guard, then the insert. Returns the issuance id. |
+| Function                                                                                  | Kind                                            | Behavior                                                                                                                                                                                                                                                                                                             |
+| ----------------------------------------------------------------------------------------- | ----------------------------------------------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `app_private.recovery_target_workspace(target uuid) → uuid`                               | stable, SECURITY DEFINER                        | F4: `select null::uuid`. P1 replaces it with the client-account lookup (ND-F4-5).                                                                                                                                                                                                                                    |
+| `app_private.recovery_link_limits() → table(per_actor int, per_target int, win interval)` | immutable                                       | Existing 20 / 3 / 1-hour values are not compliant with S31-PO-3. Approved future values: 10 per issuer per rolling hour and 3 per client per rolling 24 hours across issuers. No code changed; future implementation and configuration verification remain open.                                                     |
+| `app_private.recovery_link_guard(target uuid) → uuid`                                     | SECURITY DEFINER                                | Raises `42501 'not_permitted'` if `auth.uid()` is null, the workspace is null, `not has_workspace_access(ws,'generate_recovery_link')`, `target = auth.uid()`, or the target has a `staff_profiles` row. Raises `P0001 'rate_limited'` if the issuance counts in the window are ≥ the limits. Returns the workspace. |
+| `public.recovery_link_authorize(target uuid) → uuid`                                      | SECURITY DEFINER, granted to authenticated only | `return app_private.recovery_link_guard(target)`.                                                                                                                                                                                                                                                                    |
+| `public.recovery_link_record(target uuid) → uuid`                                         | SECURITY DEFINER, granted to authenticated only | `pg_advisory_xact_lock` on the target and the actor (`hashtextextended`), then the guard, then the insert. Returns the issuance id.                                                                                                                                                                                  |
 
 Every function has `set search_path = ''`, owner postgres, and execute revoked from public and anon. The denial message is identical for "no such target", "foreign workspace" and "no capability".
 
@@ -42,7 +42,6 @@ Every function has `set search_path = ''`, owner postgres, and execute revoked f
 
 `issued` →(verify within expiry, first use)→ `consumed` (session created) → password set.
 `issued` →(newer link for the same account)→ `superseded`. `issued` →(expiry)→ `expired`. Consumed, superseded and expired links all fail verification.
-
 
 ## Staff self-service recovery (FR-016 to FR-030; future local-only implementation)
 

@@ -87,7 +87,6 @@ T018 dependency record, checked against `origin/014-workspace-branding` read-onl
 - **T017 reconciliation status:** the active expectation set is now `F12+F13+F14` because the F14 migration is present. The test checks the complete TypeScript and SQL capability catalog, F13 audit actions and the F14 registration-link wrapper/base. Migration `20261103129200` remains the final capability-reconciliation writer; its owner/ACL pattern is `postgres`, revoked defaults, authenticated-only execute. Later forward guards extend through `20261103130700` (current endpoint). T017 is complete: the F12+F13+F14 expectation set, mutation proofs, both full Stack C integration modes, and the integrated reader/ownership/FR-SC audit passed.
 - **Other-lane ownership:** F13 preserves F14's `registration_link_open` wrapper and F10 base in the final replay. F15 T046 owns denial by `client_accept_terms` for deactivated clients if F15 lands after F13.
 
-
 ### S17 r5 T017 runtime acceptance (historical baseline; superseded by S21 round 5 below)
 
 - Stack C was selected by safe-wrapper ownership check (`lifter-stack-c`, API 35421, DB 35422). The approved safe `exec` injected stack variables in memory; the Vault provisioner remained unmodified. The 92bb8ad `loadSelectedStackEnv()` change is retained: safe exec provides API/auth keys, while the harness can still fill unset selected-profile values such as provisioned local settings. Existing injected values take precedence, and this preserves generic stack selection for local profiles.

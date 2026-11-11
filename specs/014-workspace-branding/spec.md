@@ -127,6 +127,7 @@ Decision text is recorded from the PO source: S32-PO-2 Q2, "Card may overlay art
 ## Requirements
 
 ### Functional Requirements
+
 ### Hero Functional Requirements (F14 scope)
 
 - **FR-026**: The production Registration Hero MUST implement the PO-approved `97debaf` design, preserving Emerald `#059669`, approved layout, Apple Liquid Glass treatment, mobile behavior and design tokens. Source: S20 PO final decisions, HERO (verbatim): "Preserve Emerald #059669, approved layout, Apple Liquid Glass treatment, mobile behavior and design tokens."
@@ -215,6 +216,7 @@ The focused critique and architect response are recorded in [spec debate r2](res
 ## Success Criteria
 
 ### Measurable Outcomes
+
 ### Hero Measurable Outcomes
 
 - **SC-018**: Across the approved registration layouts, 100% of exercised banner/no-banner and mobile/desktop combinations retain the approved Hero layout, Emerald branding and design tokens. (FR-026)
@@ -224,7 +226,6 @@ The focused critique and architect response are recorded in [spec debate r2](res
 - **SC-022**: At 390px in the no-banner layout, the language/theme pill overlaps the card heading in zero tested cases and the card remains near-centered. (FR-030)
 - **SC-023**: In all username validation layers, 100% of tested values within 3–30 ASCII `[A-Za-z0-9_.]` characters are accepted and 100% of tested values outside that rule are rejected; both taken and reserved synthetic usernames return the same `invalid_input` status mapped to Username and focus. (FR-028)
 - **SC-024**: Across the banner Hero cases, the glass card remains a separate presentation layer that may overlap artwork, and the text restriction is applied to text baked into artwork. (FR-008)
-
 
 - **SC-001**: In authorization scenarios, all authorized actors can act only within approved workspace scope; unauthorized roles and foreign-workspace attempts disclose zero foreign branding fields.
 - **SC-002**: In concurrency scenarios, no stale draft overwrites a newer revision; each successful changed publication has one current version and one publication audit event; failed audit leaves zero partial publication.
@@ -293,6 +294,7 @@ Earlier ND-F14-1..6 wording is historical and superseded by the final decision r
 - **DG-F14-3 — Decided (PO, 2026-10-28)**: Show inline original-versus-adjusted brand color comparison with an accessibility explanation.
 
 **Plan gate:** The PO-approved focused Sol Medium critique was completed against `c575cfa35b8a22b2f1870692f91846558f332e5e`; all 8 findings were accepted and the architect response is recorded in [spec debate r2](research/spec-debate-r2-scope.md). Final PO decisions are recorded above; r1/r2 debate records remain historical, with retention superseded by PO 2026-10-29 F14-5.
+
 ### S34 PO decisions — H1/A and H2/A
 
 - **S34-PO-1 H1=A (verbatim):** “Approve exact Arabic copy: «اسم المستخدم ده غير متاح. اختار اسم تاني.» / «استخدم من 3 لـ30 حرف: حروف إنجليزي أو أرقام أو نقطة أو شرطة سفلية.»” The first string maps to the English unavailable message; the second maps to the English format message. Use these exact bytes, including Western digits `3` and `30`. Taken and reserved usernames share the unavailable message.

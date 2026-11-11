@@ -228,7 +228,6 @@ The PO and merge lane can collect three full CI results concurrently without acc
 - **Result at the time:** The original scaffold behavior and artifact scope remained as specified by FR-001..FR-014. The later-job credential boundary had not yet been reconciled.
 - **Evidence limit:** Static repository inspection only; no tests or CI were run in this lane.
 
-
 ### Session 2026-11-09 — S41-R7 FR-009 reconciliation
 
 - S41-R7 resolves the prior FR-009 wording as a factual reconciliation, not a product question. The baseline `validate` job uses no repository-configured secrets. On pull-request and push runs, `actions/checkout@v4` uses GitHub-provided `github.token` with read-only `contents: read` permission; the workflow also uses that token for PR revision and dispatch metadata API requests (FR-021). It is distinct from repository-configured secrets. The `integration` aggregator has no repository-configured secrets and no Docker Hub credentials; its artifact download uses the GitHub-provided per-job `ACTIONS_RUNTIME_TOKEN` through `actions/download-artifact@v4`. Optional Docker Hub pull credentials in `integration-shard` and `storage` are job-level environment variables available to every step of those jobs, including `npm ci` and repository test code; the authenticated-pull restriction describes intended use, not step isolation, and login is skipped when credentials are unset. No deployment secrets are used and CI does not deploy.
