@@ -133,3 +133,12 @@
 - Current matrix totals unchanged: 2 VERIFIED / 6 PARTIAL FR; 0 VERIFIED / 4 PARTIAL SC. FR-006 and SC-004 remain PARTIAL.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static documentation review only; no tests ran and no status was upgraded. **No open ambiguities** remain for this correction.
 - Verdict: PASS for this documentation-only correction.
+
+## S46 format-only re-analysis
+
+- Date: 2026-11-11 00:24 UTC, after format-only commit 5bb46751 (which only reflowed table padding, blank lines and line endings in this feature's spec, plan, tasks, traceability and checklist files).
+- Scope: format-only commit 5bb46751, no wording change (proof runs/s46-muse-fmt52/report.md). Static Spec Kit recheck of numbered FRs, measurable SCs, Given/When/Then scenarios, Clarifications and PO decision citations, plan and FR-tagged task cross-references, and traceability rows. Documentation only; no task checkbox or verification status changed and no tests were executed.
+- Entry gate: PASS - all 8 numbered FRs and 4 measurable SCs are present with Given/When/Then scenarios; Clarifications keep the decided pilot input and the two explicitly open approvals unchanged; plan and FR-tagged tasks cover the feature (FR-to-task 8/8, SC-to-task 4/4, as before).
+- Coverage: every FR/SC row is present in traceability (2 VERIFIED / 6 PARTIAL FR; 0 VERIFIED / 4 PARTIAL SC, unchanged); every cited identifier resolves to the current spec/tasks text; no unknown or dangling reference found.
+- Findings: 0 open CRITICAL, 0 open HIGH. The 2 inherited MEDIUM open approvals remain exactly as recorded above; nothing was upgraded or introduced by the format-only commit.
+- Verdict: PASS for this format-only re-affirmation.

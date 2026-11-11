@@ -95,3 +95,12 @@
 - Entry gate: PASS - numbered FRs, measurable SCs, GWT scenarios, Clarifications, plan and FR-tagged tasks cover the feature; no open ambiguity is introduced. Existing PARTIAL rows remain PARTIAL.
 - Findings: 0 open CRITICAL, 0 open HIGH. Static review only; no tests were run and no task or verification status changed.
 - Verdict: PASS for this docs-only reconciliation.
+
+## S46 format-only re-analysis
+
+- Date: 2026-11-11 00:24 UTC, after format-only commit 5bb46751 (which only reflowed table padding, blank lines and line endings in this feature's spec and checklist files).
+- Scope: format-only commit 5bb46751, no wording change (proof runs/s46-muse-fmt52/report.md). Static Spec Kit recheck of numbered FRs, measurable SCs, Given/When/Then scenarios, Clarifications and PO decision citations, plan and FR-tagged task cross-references, and traceability rows. Documentation only; no task checkbox or verification status changed and no tests were executed.
+- Entry gate: PASS - all 29 numbered FRs and 11 measurable SCs are present with Given/When/Then scenarios; Clarifications record the verbatim PO quotations; plan and FR-tagged tasks cover the feature (29/29 FR tagged; SC-007 build-size gate remains untagged by design, 39/40 overall, as before).
+- Coverage: every FR/SC row is present in traceability (19 VERIFIED / 10 PARTIAL FR; 6 VERIFIED / 5 PARTIAL SC, unchanged); every cited identifier resolves to the current spec/tasks text; no unknown or dangling reference found.
+- Findings: 0 open CRITICAL, 0 open HIGH. The 3 pre-existing MEDIUM evidence gaps remain exactly as recorded above; nothing was upgraded or introduced by the format-only commit.
+- Verdict: PASS for this format-only re-affirmation.

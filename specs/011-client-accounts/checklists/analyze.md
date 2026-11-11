@@ -34,3 +34,12 @@ T900 has been marked complete only after its focused integration tests passed on
 - Scope: the touched task-tag gate. T900 carries FR-008 and FR-012 tags, but those tags do not cover all FRs in F11.
 - Entry gate: INCOMPLETE for full feature task-tag coverage; retain the gap until missing task tags are present. This docs-only correction does not change task checkboxes or statuses.
 - Findings: 0 open CRITICAL, 0 open HIGH.
+
+## S46 format-only re-analysis
+
+- Date: 2026-11-11 00:24 UTC, after format-only commit 5bb46751 (which only reflowed table padding, blank lines and line endings in this feature's spec, data-model, contract and checklist files).
+- Scope: format-only commit 5bb46751, no wording change (proof runs/s46-muse-fmt52/report.md). Static Spec Kit recheck of numbered FRs, measurable SCs, Given/When/Then scenarios, Clarifications and PO decision citations, plan and FR-tagged task cross-references, and traceability rows. Documentation only; no task checkbox or verification status changed and no tests were executed.
+- Entry gate: PASS for numbered FRs, measurable SCs, Given/When/Then scenarios, Clarifications and plan; INCOMPLETE for full-feature task-tag coverage (only the scoped task carries FR tags and traceability holds only its row) - retained exactly as recorded above, not new.
+- Coverage: all 17 numbered FRs and 12 measurable SCs are present in the spec; every cited identifier resolves to the current spec/tasks text; no unknown or dangling reference found.
+- Findings: 0 open CRITICAL, 0 open HIGH. Nothing was upgraded or introduced by the format-only commit.
+- Verdict: PASS for this format-only re-affirmation.
