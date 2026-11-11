@@ -99,10 +99,10 @@ export function displayCalories(exact: string): string {
 }
 
 /**
- * Display protein/carbohydrate/fat grams (F18-FR-003; data-model section 2):
- * calories rule for macros — below 10 g one decimal, at or above 10 g an
- * integer; a below-threshold value that rounds to 10.0 renders `10`; zero
- * renders `0`. Half-up exactly once, from the exact persisted decimal.
+ * Display protein/carbohydrate/fat grams (F18-FR-003; S48-R13): the display
+ * threshold is evaluated on the EXACT persisted value — below 10 g exact one
+ * decimal (even when the rounding lands on 10.0), at or above 10 g exact an
+ * integer; zero renders `0`. Half-up exactly once, from the exact decimal.
  */
 export function displayMacroGrams(exact: string): string {
   const value = parseExactDecimal(exact);
@@ -112,9 +112,7 @@ export function displayMacroGrams(exact: string): string {
   }
   const rounded = roundHalfUpExact(value, 1);
   if (rounded.coef === 0n) return '0';
-  const asString = serializeExactDecimal(rounded);
-  if (asString === '10.0') return '10';
-  return asString;
+  return serializeExactDecimal(rounded);
 }
 
 const MACRO_FIELDS = ['kcal', 'protein', 'carbs', 'fat'] as const;
